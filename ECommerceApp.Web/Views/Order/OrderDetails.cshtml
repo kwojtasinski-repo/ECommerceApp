@@ -1,0 +1,69 @@
+﻿@model ECommerceApp.Web.Models.Order
+
+@{
+    ViewData["Title"] = "OrderDetails";
+}
+
+<h1>Order Details</h1>
+
+<div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    @Html.DisplayNameFor(model => model.OrderId)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.OrderNumber)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.ItemOrder.First().Item.ItemId)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.ItemOrder.First().Item.ItemName)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.ItemOrder.First().Item.ItemCost)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.ItemOrder.First().ItemOrderQuantity)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.ItemOrder.First().Item.ItemTypeName)
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.ItemOrder)
+            {
+            <tr>
+                <td>
+                    @Html.DisplayFor(model => model.OrderId)
+                </td>
+                <td>
+                    @Html.DisplayFor(model => model.OrderNumber)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Item.ItemId)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Item.ItemName)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Item.ItemCost)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.ItemOrderQuantity)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.Item.ItemTypeName)
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+    <p>Cost @Html.DisplayFor(model => model.OrderCost) zl</p>
+</div>
+<div>
+    @Html.ActionLink("Back to List", "OrderList", "Order")
+</div>
