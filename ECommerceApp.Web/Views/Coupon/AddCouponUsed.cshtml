@@ -1,0 +1,41 @@
+﻿@model ECommerceApp.Application.ViewModels.Coupon.NewCouponUsedVm
+
+@{
+    ViewData["Title"] = "AddCouponUsed";
+}
+
+<h1>AddCouponUsed</h1>
+
+<h4>NewCouponUsedVm</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="AddCouponUsed">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <input type="hidden" asp-for="Id" class="form-control" />
+                <div class="form-group">
+                    <label asp-for="CouponId" class="control-label"></label>
+                    <input asp-for="CouponId" class="form-control" />
+                    <select id="CouponType" asp-for="CouponId" asp-items="@(new SelectList(ViewBag.CouponTypes,"Id", "Type"))" class="custom-select" data-val="true" value="@Model.CouponId"></select>
+                    <span asp-validation-for="CouponId" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="OrderId" class="control-label"></label>
+                    <input asp-for="OrderId" class="form-control" />
+                    <select id="CouponType" asp-for="OrderId" asp-items="@(new SelectList(ViewBag.Orders,"Id", "Number"))" class="custom-select" data-val="true" value="@Model.OrderId"></select>
+                    <span asp-validation-for="OrderId" class="text-danger"></span>
+                </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Powrót do listy kuponów</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

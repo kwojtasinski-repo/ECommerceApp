@@ -1,0 +1,51 @@
+﻿@model ECommerceApp.Application.ViewModels.Item.ListForItemWithTagsVm
+
+@{
+    ViewData["Title"] = "ShowItemConnectedWithTags";
+}
+
+<h1>ShowItemConnectedWithTags</h1>
+
+
+<p>
+    <a asp-action="Index">Powrót do listy przedmiotów</a>
+</p>
+<form asp-action="ShowItemConnectedWithTags" asp-controller="Item" method="post">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Id przedmiotu
+                </th>
+                <th>
+                    Nazwa przedmiotu
+                </th>
+                <th>
+                    Id Taga
+                </th>
+                <th>
+                    Nazwa Taga
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.ItemTags)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.ItemId)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.ItemName)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.TagId)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.TagName)
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</form>

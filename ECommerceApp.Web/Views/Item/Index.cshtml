@@ -1,0 +1,121 @@
+﻿@model ECommerceApp.Application.ViewModels.Item.ListForItemVm
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+@System.Globalization.CultureInfo.CurrentUICulture
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="AddItem">Stwórz nowy przedmiot</a>
+    <a asp-action="ShowItemBrands">Lista firm</a>
+    <a asp-action="ShowItemTypes">Lista typów przedmiotów</a>
+    <a asp-action="ShowItemTags">Lista tagów</a>
+    <a asp-action="ShowItemConnectedWithTags">Przedmioty z tagami</a>
+</p>
+<form asp-action="Index" asp-controller="Item" method="post">
+    <div class="row">
+        <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
+        <input type="submit" value="Wyszukaj" />
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Id
+                </th>
+                <th>
+                    Nazwa
+                </th>
+                <th>
+                    Koszt
+                </th>
+                <th>
+                    Opis
+                </th>
+                <th>
+                    Gwarancja
+                </th>
+                <th>
+                    Ilość
+                </th>
+                <th>
+                    BrandId
+                </th>
+                <th>
+                    TypeId
+                </th>
+                <th>Akcja</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Id)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Name)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Cost)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Description)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Warranty)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.Quantity)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.BrandId)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => item.TypeId)
+                    </td>
+                    <td>
+                        @Html.ActionLink("Edytuj", "EditItem", new {  id=item.Id }) |
+                        @Html.ActionLink("Szczegóły", "ViewItem", new { id = item.Id }) |
+                        @Html.ActionLink("Delete", "DeleteItem", new { id = item.Id })
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <div class="row">
+        <table>
+            <tr>
+                @for (int i = 1; i <= Math.Ceiling(Model.Count / (double)Model.PageSize); i++)
+                {
+                    <td>
+                        @if (i != Model.CurrentPage)
+                        {
+                            <a href="javascript:PagerClick(@i)">@i</a>
+                        }
+                        else
+                        {
+                            <span>@i</span>
+                        }
+                    </td>
+                }
+            </tr>
+        </table>
+        <input type="hidden" name="pageNo" id="pageNo" />
+        <input type="hidden" name="pageSize" id="pageSize" value="2" />
+    </div>
+</form>
+
+@section Scripts
+{
+    <script type="text/javascript">
+        function PagerClick(index) {
+            document.getElementById("pageNo").value = index;
+            document.forms[0].submit();
+        }
+    </script>
+}

@@ -1,0 +1,249 @@
+﻿using AutoMapper;
+using AutoMapper.QueryableExtensions;
+using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.ViewModels.Item;
+using ECommerceApp.Domain.Interface;
+using ECommerceApp.Domain.Model;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace ECommerceApp.Application.Services
+{
+    public class ItemService : IItemService
+    {
+        private readonly IItemRepository _itemRepo;
+        private readonly IMapper _mapper;
+
+        public ItemService(IItemRepository itemRepo, IMapper mapper)
+        {
+            _itemRepo = itemRepo;
+            _mapper = mapper;
+        }
+
+        public int AddItem(NewItemVm model)
+        {
+            var item = _mapper.Map<Item>(model);
+            var id = _itemRepo.AddItem(item);
+            return id;
+        }
+
+        public int AddItemBrand(NewItemBrandVm model)
+        {
+            var brand = _mapper.Map<Brand>(model);
+            var id = _itemRepo.AddItemBrand(brand);
+            return id;
+        }
+
+        public int AddItemType(NewItemTypeVm model)
+        {
+            var type = _mapper.Map<ECommerceApp.Domain.Model.Type>(model);
+            var id = _itemRepo.AddItemType(type);
+            return id;
+        }
+
+        public ListForItemVm GetAllItemsForList(int pageSize, int pageNo, string searchString)
+        {
+            var items = _itemRepo.GetAllItems().Where(it => it.Name.StartsWith(searchString))
+                .ProjectTo<ItemForListVm>(_mapper.ConfigurationProvider)
+                .ToList();
+            var itemsToShow = items.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+
+            var itemsList = new ListForItemVm()
+            {
+                PageSize = pageSize,
+                CurrentPage = pageNo,
+                SearchString = searchString,
+                Items = itemsToShow,
+                Count = items.Count
+            };
+
+            return itemsList;
+        }
+
+        public NewItemBrandVm GetItemBrandById(int id)
+        {
+            var brand = _itemRepo.GetItemBrandById(id);
+            var brandVm = _mapper.Map<NewItemBrandVm>(brand);
+            return brandVm;
+        }
+
+        public NewItemTypeVm GetItemTypeById(int id)
+        {
+            var itemType = _itemRepo.GetItemTypeById(id);
+            var itemTypeVm = _mapper.Map<NewItemTypeVm>(itemType);
+            return itemTypeVm;
+        }
+
+        public NewTagVm GetItemTagById(int id)
+        {
+            var itemTag = _itemRepo.GetItemTagById(id);
+            var itemTagVm = _mapper.Map<NewTagVm>(itemTag);
+            return itemTagVm;
+        }
+
+        public NewItemVm GetItemById(int id)
+        {
+            var item = _itemRepo.GetItemById(id);
+            var itemVm = _mapper.Map<NewItemVm>(item);
+            return itemVm;
+        }
+
+        public void UpdateItem(NewItemVm model)
+        {
+            var item = _mapper.Map<Item>(model);
+            _itemRepo.UpdateItem(item);
+        }
+
+        public void UpdateItemBrand(NewItemBrandVm model)
+        {
+            var brand = _mapper.Map<Brand>(model);
+            _itemRepo.UpdateItemBrand(brand);
+        }
+
+        public void UpdateItemType(NewItemTypeVm model)
+        {
+            var type = _mapper.Map<ECommerceApp.Domain.Model.Type>(model);
+            _itemRepo.UpdateItemType(type);
+        }
+
+        public void DeleteItem(int id)
+        {
+            _itemRepo.DeleteItem(id);
+        }
+
+        public void DeleteItemType(int id)
+        {
+            _itemRepo.DeleteItemType(id);
+        }
+
+        public void DeleteItemBrand(int id)
+        {
+            _itemRepo.DeleteItemBrand(id);
+        }
+
+        public void DeleteItemTag(int id)
+        {
+            _itemRepo.DeleteTag(id);
+        }
+
+        public ItemDetailsVm GetItemDetails(int id)
+        {
+            var item = _itemRepo.GetItemById(id);
+            var itemVm = _mapper.Map<ItemDetailsVm>(item);
+
+            return itemVm;
+        }
+
+        public ListForItemTypeVm GetAllItemTypes(int pageSize, int pageNo, string searchString)
+        {
+            var types = _itemRepo.GetAllTypes().Where(it => it.Name.StartsWith(searchString))
+                .ProjectTo<TypeForListVm>(_mapper.ConfigurationProvider)
+                .ToList();
+            var typesToShow = types.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+
+            var typesList = new ListForItemTypeVm()
+            {
+                PageSize = pageSize,
+                CurrentPage = pageNo,
+                SearchString = searchString,
+                Types = typesToShow,
+                Count = types.Count
+            };
+
+            return typesList;
+        }
+
+        public ListForItemBrandVm GetAllItemBrands(int pageSize, int pageNo, string searchString)
+        {
+            var brands = _itemRepo.GetAllBrands().Where(it => it.Name.StartsWith(searchString))
+                .ProjectTo<BrandForListVm>(_mapper.ConfigurationProvider)
+                .ToList();
+            var brandsToShow = brands.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+
+            var brandsList = new ListForItemBrandVm()
+            {
+                PageSize = pageSize,
+                CurrentPage = pageNo,
+                SearchString = searchString,
+                Brands = brandsToShow,
+                Count = brands.Count
+            };
+
+            return brandsList;
+        }
+
+        public IQueryable<NewItemBrandVm> GetAllItemBrandsForAddingItems()
+        {
+            var itemBrands = _itemRepo.GetAllBrands();
+            var itemBrandsVm = itemBrands.ProjectTo<NewItemBrandVm>(_mapper.ConfigurationProvider);
+            return itemBrandsVm;
+        }
+
+        public IQueryable<NewItemTypeVm> GetAllItemTypesForAddingItems()
+        {
+            var itemTypes = _itemRepo.GetAllTypes();
+            var itemTypesVm = itemTypes.ProjectTo<NewItemTypeVm>(_mapper.ConfigurationProvider);
+            return itemTypesVm;
+        }
+
+        public int AddItemTag(NewTagVm model)
+        {
+            var itemTag = _mapper.Map<Tag>(model);
+            var id = _itemRepo.AddItemTag(itemTag);
+            return id;
+        }
+
+        public ListForItemTagsVm GetAllTags(int pageSize, int pageNo, string searchString)
+        {
+            var tags = _itemRepo.GetAllTags().Where(it => it.Name.StartsWith(searchString))
+                .ProjectTo<TagForListVm>(_mapper.ConfigurationProvider)
+                .ToList();
+            var tagsToShow = tags.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+
+            var tagsList = new ListForItemTagsVm()
+            {
+                PageSize = pageSize,
+                CurrentPage = pageNo,
+                SearchString = searchString,
+                Tags = tagsToShow,
+                Count = tags.Count
+            };
+
+            return tagsList;
+        }
+
+        public ListForItemWithTagsVm GetAllItemsWithTags(int pageSize, int pageNo, string searchString)
+        {
+            var itemsWithTags = _itemRepo.GetAllItemsWithTags()//.Where(it => it.Item.Name.StartsWith(searchString))
+                .ProjectTo<ItemsWithTagsVm>(_mapper.ConfigurationProvider)
+                .ToList();
+            var itemsWithTagsToShow = itemsWithTags.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+
+            var itemsWithTagsList = new ListForItemWithTagsVm()
+            {
+                PageSize = pageSize,
+                CurrentPage = pageNo,
+                SearchString = searchString,
+                ItemTags = itemsWithTagsToShow,
+                Count = itemsWithTags.Count
+            };
+
+            return itemsWithTagsList;
+        }
+
+        public IQueryable<NewTagVm> GetAllItemTagsForAddingItems()
+        {
+            var itemTags = _itemRepo.GetAllTags();
+            var itemTagsVm = itemTags.ProjectTo<NewTagVm>(_mapper.ConfigurationProvider);
+            return itemTagsVm;
+        }
+
+        public void UpdateItemTag(NewTagVm model)
+        {
+            var tag = _mapper.Map<Tag>(model);
+            _itemRepo.UpdateTag(tag);
+        }
+    }
+}

@@ -1,0 +1,157 @@
+﻿@model ECommerceApp.Application.ViewModels.Customer.NewCustomerVm
+
+@{
+    ViewData["Title"] = "EditCustomer";
+}
+
+<h1>Edycja klienta</h1>
+
+<div>
+    <a asp-action="Index">Powrót do listy klientów</a>
+</div>
+<hr />
+<div class="row">
+    <form method="post" asp-action="EditCustomer">
+        <div class="form-row col-12">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" class="form-control" />
+            <div class="form-group col-5">
+                <label asp-for="FirstName" class="control-label"></label>
+                <input asp-for="FirstName" class="form-control" />
+                <span asp-validation-for="FirstName" class="text-danger"></span>
+            </div>
+            <div class="form-group col-5">
+                <label asp-for="LastName" class="control-label"></label>
+                <input asp-for="LastName" class="form-control" />
+                <span asp-validation-for="LastName" class="text-danger"></span>
+            </div>
+            
+            <div class="form-group form-check col-4"></div><div class="form-group form-check col-6" style=" margin: 0 auto; ">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="IsCompany" /> @Html.DisplayNameFor(model => model.IsCompany)
+                </label>
+            </div>
+            <div class="form-group col-4">
+                <label asp-for="NIP" class="control-label"></label>
+                <input asp-for="NIP" class="form-control" />
+                <span asp-validation-for="NIP" class="text-danger"></span>
+            </div>
+            <div class="form-group col-1"></div> <div class="form-group col-4">
+                <label asp-for="CompanyName" class="control-label"></label>
+                <input asp-for="CompanyName" class="form-control" />
+                <span asp-validation-for="CompanyName" class="text-danger"></span>
+            </div>
+        </div>
+        <br />
+        <div class="form-row">
+            <div class="col">
+                <table class="table table-bordered">
+                    <thead class="thead-dark">
+                        <!--zmien tabelke-->
+                        <tr>
+                            <th>
+                                Kontakt
+                            </th>
+                            <th>
+                                Rodzaj kontaktu
+                            </th>
+                            <th>
+                                Akcja
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var contact in Model.ContactDetails)
+                        {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(model => contact.ContactDetailInformation)
+                            <td>
+                                @Html.DisplayFor(model => contact.ContactDetailTypeName)
+                            </td>
+                            <td>
+                                <a class="btn btn-danger btn-sm" href="@Url.Action("DeleteContactDetail", "Customer", new { id = contact.Id})">Usuń</a>
+                                <a class="btn btn-info btn-sm" href="@Url.Action("EditContactDetail", "Customer", new { id = contact.Id})">Edytuj</a>
+                                <a class="btn btn-info btn-sm" href="@Url.Action("ViewContactDetail", "Customer", new { id = contact.Id})">Szczegóły</a>
+                            </td>
+                        </tr>
+                        }
+                    </tbody>
+                </table>
+                <a class="btn btn-dark btn-sm" href="@Url.Action("AddNewContactDetailClient", "Customer", new { id = Model.Id })">Dodaj kontakt</a>
+            </div>
+        </div>
+        <br><br>
+        <div class="form-row">
+            <div class="col">
+                <table class="table table-bordered">
+                    <thead class="thead-dark">
+                        <!--zmien tabelke-->
+                        <tr>
+                            <th>
+                                Województwo
+                            </th>
+                            <th>
+                                Kod pocztowy
+                            </th>
+                            <th>
+                                Miasto
+                            </th>
+                            <th>
+                                Ulica
+                            </th>
+                            <th>
+                                Nr budynku
+                            </th>
+                            <th>
+                                Nr mieszkania
+                            </th>
+                            <th>
+                                Akcja
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var address in Model.Addresses)
+                        {
+                            <tr>
+                                <td>
+                                    @Html.DisplayFor(model => address.Country)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(model => address.ZipCode)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(model => address.City)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(model => address.Street)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(model => address.BuildingNumber)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(model => address.FlatNumber)
+                                </td>
+                                <td>
+                                    <a class="btn btn-danger btn-sm" href="@Url.Action("DeleteAddress", "Customer", new { id = address.Id})">Usuń</a>
+                                    <a class="btn btn-info btn-sm" href="@Url.Action("EditAddress", "Customer", new { id = address.Id})">Edytuj</a>
+                                    <a class="btn btn-info btn-sm" href="@Url.Action("ViewAddress", "Customer", new { id = address.Id})">Szczegóły</a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+                <input id="AddAddress" type="button" class="btn btn-dark" value="Dodaj adres" onclick="location.href='@Url.Action("AddNewAddressForClient", "Customer", new { id = Model.Id })'" />
+            </div>
+        </div>
+        <br><br>
+        <div class="form-group">
+            <input type="submit" value="Zapisz" class="btn btn-primary" />
+        </div>
+    </form>
+</div>
+
+    @section Scripts {
+        @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    }

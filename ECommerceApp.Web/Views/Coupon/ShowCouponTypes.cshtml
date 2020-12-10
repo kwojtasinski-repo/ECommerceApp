@@ -1,0 +1,49 @@
+﻿@model ECommerceApp.Application.ViewModels.Coupon.ListForCouponTypeVm
+
+@{
+    ViewData["Title"] = "ShowCouponTypes";
+}
+
+<h1>ShowCouponTypes</h1>
+
+<p>
+    <a asp-action="AddCouponType">Utwórz nowy typ</a>
+    <a asp-action="Index">Powrót do listy kuponów</a>
+</p>
+<form asp-action="ShowCouponTypes" asp-controller="Coupon" method="post">
+    <div class="row">
+        <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
+        <input type="submit" value="Wyszukaj" />
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Id
+                </th>
+                <th>
+                    Typ kuponu
+                </th>
+                <th>Akcja</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var coupon in Model.CouponTypes)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelCoupon => coupon.Id)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelCoupon => coupon.Type)
+                    </td>
+                    <td>
+                        @Html.ActionLink("Edytuj", "EditCouponType", new {  id=coupon.Id  }) |
+                        @Html.ActionLink("Szczegóły", "ViewCouponType", new {  id=coupon.Id  }) |
+                        @Html.ActionLink("Usuń", "DeleteCouponType", new {  id=coupon.Id })
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</form>

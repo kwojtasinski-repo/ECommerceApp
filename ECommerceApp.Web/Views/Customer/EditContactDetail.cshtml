@@ -1,0 +1,42 @@
+﻿@model ECommerceApp.Application.ViewModels.Customer.NewContactDetailVm
+
+@{
+    ViewData["Title"] = "EditContactDetail";
+}
+
+<h1>Edycja kontaktu</h1>
+
+
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="EditContactDetail">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" class="form-control" />
+            <input type="hidden" asp-for="CustomerId" value="@Model.Id" />
+            <div class="form-group">
+                <label asp-for="ContactDetailInformation" class="control-label"></label>
+                <input asp-for="ContactDetailInformation" class="form-control" />
+                <span asp-validation-for="ContactDetailInformation" class="text-danger"></span>
+            </div>
+            <div class="form-group col">
+                <label asp-for="ContactDetailTypeId" class="control-label">Rodzaj kontaktu</label>
+                <select asp-for="ContactDetailTypeId" asp-items="@(new SelectList(Model.ContactDetailTypes,"Id", "Name"))" class="custom-select"></select>
+                <span asp-validation-for="ContactDetailTypeId" class="text-danger"></span>
+            </div>
+            
+            <br />
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+<br /><br />
+<div>
+    <a asp-action="Index">Powrót do listy klientów</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

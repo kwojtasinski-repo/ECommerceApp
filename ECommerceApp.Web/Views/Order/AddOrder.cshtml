@@ -1,0 +1,79 @@
+﻿@model ECommerceApp.Application.ViewModels.Order.NewOrderVm
+
+@{
+    ViewData["Title"] = "AddOrder";
+}
+
+<h1>AddOrder</h1>
+
+<h4>NewOrderVm</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="AddOrder">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" class="form-control" />
+            <div class="form-group">
+                <label asp-for="Number" class="control-label"></label>
+                <input asp-for="Number" class="form-control" />
+                <span asp-validation-for="Number" class="text-danger"></span>
+            </div>
+            <div style="display:none;" class="form-group">
+                <label asp-for="Cost" class="control-label"></label>
+                <input asp-for="Cost" value="0" class="form-control" />
+                <span asp-validation-for="Cost" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Ordered" class="control-label"></label>
+                <input asp-for="Ordered" value="@ViewBag.Date" class="form-control" readonly />
+                <span asp-validation-for="Ordered" class="text-danger"></span>
+            </div>
+            <div style="display:none;" class="form-group">
+                <label asp-for="Delivered" class="control-label"></label>
+                <input type="hidden" asp-for="Delivered" class="form-control" />
+                <span asp-validation-for="Delivered" class="text-danger"></span>
+            </div>
+            <div style="display:none;" class="form-group form-check">
+                <label class="form-check-label">
+                    <input type="hidden" class="form-check-input" asp-for="IsDelivered" /> @Html.DisplayNameFor(model => model.IsDelivered)
+                </label>
+            </div>
+            <div style="display:none;" class="form-group">
+                <label asp-for="CouponUsedId" class="control-label"></label>
+                <input type="hidden" asp-for="CouponUsedId" class="form-control" />
+                <span asp-validation-for="CouponUsedId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="CustomerId" class="control-label"></label>
+                <select asp-for="CustomerId" asp-items="@(new SelectList(ViewBag.Customers,"Id", "Information"))" class="custom-select"></select>
+                <span asp-validation-for="CustomerId" class="text-danger"></span>
+            </div>
+            <div style="display:none;" class="form-group">
+                <label asp-for="PaymentId" class="control-label"></label>
+                <input type="hidden" asp-for="PaymentId" class="form-control" />
+                <span asp-validation-for="PaymentId" class="text-danger"></span>
+            </div>
+            <div style="display:none;" class="form-group form-check">
+                <label class="form-check-label">
+                    <input type="hidden" class="form-check-input" asp-for="IsPaid" /> @Html.DisplayNameFor(model => model.IsPaid)
+                </label>
+            </div>
+            <div style="display:none;" class="form-group">
+                <label asp-for="RefundId" class="control-label"></label>
+                <input type="hidden" asp-for="RefundId" class="form-control" />
+                <span asp-validation-for="RefundId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

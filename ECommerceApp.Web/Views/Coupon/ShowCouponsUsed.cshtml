@@ -1,0 +1,67 @@
+﻿@model ECommerceApp.Application.ViewModels.Coupon.ListForCouponUsedVm
+
+@{
+    ViewData["Title"] = "ShowCouponsUsed";
+}
+
+<h1>ShowCouponsUsed</h1>
+
+<p>
+    <a asp-action="AddCouponUsed">Użyj kuponu</a>
+    <a asp-action="Index">Powrót do listy kuponów</a>
+</p>
+<form asp-action="ShowCouponsUsed" asp-controller="Coupon" method="post">
+    <div class="row">
+        <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
+        <input type="submit" value="Wyszukaj" />
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Id
+                </th>
+                <th>
+                    Id kuponu
+                </th>
+                <th>
+                    Kod kuponu
+                </th>
+                <th>
+                    Id zamówienia
+                </th>
+                <th>
+                    Nr zamówienia
+                </th>
+                <th>Akcja</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var coupon in Model.CouponsUsed)
+            {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelCoupon => coupon.Id)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelCoupon => coupon.CouponId)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelCoupon => coupon.Code)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelCoupon => coupon.OrderId)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelCoupon => coupon.Number)
+                </td>
+                <td>
+                    @Html.ActionLink("Edytuj", "EditCouponUsed", new { id=coupon.Id }) |
+                    @Html.ActionLink("Szczegóły", "ViewCouponUsed", new { id=coupon.Id }) |
+                    @Html.ActionLink("Usuń", "DeleteCouponUsed", new { id=coupon.Id })
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+</form>

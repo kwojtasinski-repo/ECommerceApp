@@ -1,0 +1,341 @@
+﻿@model ECommerceApp.Application.ViewModels.Order.NewOrderVm
+
+@{
+    ViewData["Title"] = "AddOrderDetails";
+}
+
+<h1>AddOrderDetails</h1>
+
+<h4>NewOrderVm</h4>
+<hr />
+<div class="row">
+    <div class="col-lg-6">
+        <form asp-action="AddOrderDetails" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" class="form-control" />
+            <div class="form-group">
+                <label asp-for="Number" class="control-label"></label>
+                <input asp-for="Number" class="form-control" readonly />
+                <span asp-validation-for="Number" class="text-danger"></span>
+            </div>
+            <div style="display:none;" class="form-group">
+                <label asp-for="Cost" class="control-label"></label>
+                <input asp-for="Cost" class="form-control" />
+                <span asp-validation-for="Cost" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Ordered" class="control-label"></label>
+                <input asp-for="Ordered" class="form-control" readonly />
+                <span asp-validation-for="Ordered" class="text-danger"></span>
+            </div>
+            <div style="display:none;" class="form-group">
+                <label asp-for="Delivered" class="control-label"></label>
+                <input asp-for="Delivered" class="form-control" />
+                <span asp-validation-for="Delivered" class="text-danger"></span>
+            </div>
+            <div style="display:none;" class="form-group form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="IsDelivered" /> @Html.DisplayNameFor(model => model.IsDelivered)
+                </label>
+            </div>
+            <div style="display:none;" class="form-group">
+                <label asp-for="CouponUsedId" class="control-label"></label>
+                <input asp-for="CouponUsedId" class="form-control" />
+                <span asp-validation-for="CouponUsedId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="CustomerId" class="control-label"></label>
+                <input value="@ViewBag.CustomerInformation" class="form-control" readonly />
+                <span asp-validation-for="CustomerId" class="text-danger"></span>
+            </div>
+            <div style="display:none;" class="form-group">
+                <label asp-for="PaymentId" class="control-label"></label>
+                <input asp-for="PaymentId" class="form-control" />
+                <span asp-validation-for="PaymentId" class="text-danger"></span>
+            </div>
+            <div style="display:none;" class="form-group form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="IsPaid" /> @Html.DisplayNameFor(model => model.IsPaid)
+                </label>
+            </div>
+            <div style="display:none;" class="form-group">
+                <label asp-for="RefundId" class="control-label"></label>
+                <input asp-for="RefundId" class="form-control" />
+                <span asp-validation-for="RefundId" class="text-danger"></span>
+            </div>
+            <div >
+                <p>Przedmioty:</p>
+                <table id="itemWithJS">
+                    @for (int i = 0; i < Model.OrderItems.Count; i++)
+                    {
+                        <tr id="@i" >
+                            <td>
+                                <label asp-for="OrderItems[i].ItemId" class="col-sm-2 col-form-label">@Model.OrderItems[i].Item.Name</label>
+                                <input type="hidden" asp-for="OrderItems[i].OrderId" class="form-control" value="@Model.Id" />
+                                <input type="hidden" asp-for="OrderItems[i].Id" class="form-control" value="0" />
+                            </td>
+                            <td class="col-2">
+                                <a href=""><i class="fas fa-minus-circle mr-2"></i></a>
+                                <input type="number" asp-for="@Model.OrderItems[i].ItemOrderQuantity" readonly />
+                                <a href=""><i class="fas fa-plus-circle ml-2"></i></a>
+                                <button type="button" class="btn btn-danger delete">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                </table><!--You are selecting items using this code "order.Items"-->
+            </div>
+            <div>
+                <label>Kod promocyjny:</label>
+                <input type="text" asp-for="RefCode" />
+            </div>
+            <table id="newrow" style="display:none;">
+                <tr id="%" >
+                    <td>
+                        <input name="Item" value="itemek" class="form-control valid" readonly style="width: 250px;position:static; " />
+                        <label type="hidden" name="OrderItems[#].ItemId" value="wartosc" class="col-sm-2 col-form-label"></label>
+                        <input type="hidden" name="OrderItems[#].OrderId" class="form-control" value="@Model.Id" />
+                        <input type="hidden" name="OrderItems[#].Id" class="form-control" value="0" />
+                    </td>
+                    <td id="buttonDelete" style="position:relative; top:0px;">
+                        <a><i onclick="AddQuantity(this.id)" id="OrderItems[#].ItemOrderQuantity" class="fas fa-plus-circle ml-2 fa_custom"></i></a>
+                        <input id="ItemQuantity[#]" name="OrderItems[#].ItemOrderQuantity" value="ilosc" readonly style="width: 45px;" />
+                        <a><i onclick="RemoveQuantity(this.id)"  class="fa fa-minus-circle ml-2 fa_custom" id="OrderItems[#].ItemOrderQuantity"></i></a>
+                        <button onclick="DeleteItem(this.id)" id="#" type="button" class="btn btn-danger delete">Delete</button>
+                    </td>
+                </tr>
+            </table>
+            <!--NEW ITEM -->
+            <div>
+                <select id="ItemsMain" style="display:none;" asp-items="@(new SelectList(Model.Items,"Id", "Name"))" class="custom-select"></select>
+                <select id="Items" name="Items" asp-items="@(new SelectList(Model.Items,"Id", "Name"))" class="custom-select" data-val="true"></select>
+                <button type="button" id="add" class="btn btn-info">Wybierz przedmiot</button>
+                <input id="indexer" type="hidden" value="0" />
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Create" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Wróć do listy zamówień</a>
+</div>
+
+@section Scripts {
+
+    <script type="text/javascript">
+        var form = $('form');
+        var table = $('#itemWithJS');
+        var newrow = $('#newrow');
+        let index = document.getElementById("indexer").value;
+        var elementOfItemTag = document.getElementById("Items");
+        var selectedIndexItemTags = 0;
+        var copyOfItemTags = elementOfItemTag;
+        var selectedIndex;
+        var selectedValue;
+        var selectedTableRowInTags;
+        var dictOfDeletedValues = {};
+        var listIdTags = [];
+
+        $('#add').click(function () {
+            if (index > 0 && selectedIndex > -1) {
+                var standardValue = copyOfItemTags.attributes.value.ownerElement.children[selectedIndex].value;
+                dictOfDeletedValues[index - 1] = selectedValue;
+                copyOfItemTags.remove(selectedIndex);
+            }
+
+            selectedIndex = copyOfItemTags.options[copyOfItemTags.selectedIndex].index;
+            selectedValue = copyOfItemTags.options[copyOfItemTags.selectedIndex].value;
+            selectedText = copyOfItemTags.options[copyOfItemTags.selectedIndex].text;
+            var valueOfItemTag = selectedValue;
+            var cloneTableRow = newrow.find('tr').clone();
+
+            cloneTableRow.attr('id', index);
+            cloneTableRow.attr("id", index).find("#Item");
+            cloneTableRow.html($(cloneTableRow).html().replace(/\[#\]/g, '[' + index + ']'));
+            cloneTableRow.html($(cloneTableRow).html().replace(/"%"/g, '"' + index + '"'));
+            cloneTableRow.html($(cloneTableRow).html().replace(/"wartosc"/g, '"' + valueOfItemTag + '"'));
+            cloneTableRow.html($(cloneTableRow).html().replace(/"itemek"/g, '"' + selectedText + '"'));
+            cloneTableRow.html($(cloneTableRow).html().replace(/"ilosc"/g, '"' + 1 + '"'));
+            table.append(cloneTableRow);
+            form.data('validator', null);
+            index = parseInt(index) + 1;
+            $.validator.unobtrusive.parse(form);
+        });
+
+        $(document).on('change', 'select', function () {
+            console.log("Jestem w onchange -> select")
+            selectedIndex = (this).index;
+            selectedValue = (this).value;
+            console.log(selectedValue);
+            console.log(selectedIndex);
+        });
+
+        $('#Items').on('change', function () {
+            selectedIndexItemTags = $('#ItemQuantity')[0].selectedIndex;
+            console.log("Jestem w items->change");
+        });
+
+        $('#itemWithJS').click('tr', function (event) {
+            /*console.log("click");
+            console.log(event.target.id);
+            if (event.target.hasAttribute("id")) {
+                selectedTableRowInTags = event.target.id.replace("OrderItems[", "").replace("].ItemOrderQuantity", "");
+                console.log("click - " + selectedTableRowInTags)
+            }*/
+        });
+
+        $('#itemWithJS').on('click', '.delete', function () {
+            var valuesFromSelect = document.getElementById('Items');
+            selectedTableRowInTags = (this).parentNode.parentNode.attributes.id.value;
+            var deletedValue = valuesFromSelect[selectedTableRowInTags].value;
+            var deletedText = valuesFromSelect[selectedTableRowInTags].text;
+            var assignedValuesQuantity = [];
+            var assignedValuesOrderId = [];
+            var assignedValuesItemName = [];
+            var assignedValuesItemId = [];
+
+            if ($('#itemWithJS tr').length > 0) {
+                $("#itemWithJS tr").each(function () {
+                    if (this.id) {
+                        listIdTags.push(this.id);
+                    }
+                });
+            }
+
+            $(this).closest('tr').remove();// this stay
+            var id = $(this).closest('tr').attr("id");
+
+            var collectionValues = $('#itemWithJS')[0].children;
+            for (i = 0; i < collectionValues.length; i++) {
+                assignedValuesQuantity[i] = collectionValues[0].parentNode.children[i].children[1].children[1].value;
+                assignedValuesOrderId[i] = collectionValues[0].parentNode.children[i].children[0].children[2].value;
+                assignedValuesItemName[i] = collectionValues[0].parentNode.children[i].children[0].children[0].value;
+                assignedValuesItemId[i] = collectionValues[0].parentNode.children[i].children[0].children[1].attributes[2].value;
+            }
+            console.log(collectionValues[0].attributes.id);
+            console.log($(this).closest('tr').parentNode);
+            console.log(collectionValues[0].parentNode);
+            //console.log(collectionValues[0].parentNode.children[i]);
+           // console.log("Item.Name " + collectionValues[0].parentNode.children[0].children[0].children[0].value); // value of input name Item (Item.Name)
+          //  console.log("OrderId " + collectionValues[0].parentNode.children[0].children[0].children[2].value); // value of input (OrderId)
+           // console.log("Quantity " + collectionValues[0].parentNode.children[0].children[1].children[1].value); // value of input (Quantity)
+           // console.log(collectionValues[0].parentNode.children[1].children[0].children[1].attributes[2].value); // value of input (ItemId)
+            
+            listIdTags.splice(id, 1);
+            for (i = 0; i < listIdTags.length; i++) {
+                console.log(listIdTags[i]);
+            }
+            var listIdTagsNotChanged = listIdTags.map((x) => x); // clone array
+            Update(listIdTags);
+            console.log("After update\n========");
+            for (i = 0; i < listIdTags.length; i++) {
+                console.log(listIdTags[i]);
+            }
+
+            var allValues = document.getElementById('ItemsMain');
+            $('#Items').empty();
+
+            for (i = 0; i < allValues.length; i++) {
+                $('#Items')
+                    //.append('<option value="' + allValues[i].value + ">+"allValues[i].text+'</option>')
+                    .append($("<option></option>").attr("value", allValues[i].value).text(allValues[i].text));
+            }
+            //-------------------------CREATE NEW TABLE ROWS-----------------------------------------
+            $('#itemWithJS').empty();
+
+            for (i = 0; i < listIdTags.length; i++) {
+                var cloneTableRow = newrow.find('tr').clone();
+                cloneTableRow.attr('id', listIdTags[i]);
+                cloneTableRow.attr("id", listIdTags[i]).find("#Item");
+                cloneTableRow.html($(cloneTableRow).html().replace(/\[#\]/g, '[' + listIdTags[i] + ']'));
+                cloneTableRow.html($(cloneTableRow).html().replace(/"%"/g, '"' + listIdTags[i] + '"'));
+                cloneTableRow.html($(cloneTableRow).html().replace(/"wartosc"/g, '"' + assignedValuesItemId[i] + '"'));
+                cloneTableRow.html($(cloneTableRow).html().replace(/"itemek"/g, '"' + assignedValuesItemName[i] + '"'));
+                cloneTableRow.html($(cloneTableRow).html().replace(/"ilosc"/g, '"' + assignedValuesQuantity[i] + '"'));
+                table.append(cloneTableRow);
+                document.getElementById("ItemQuantity[" + listIdTags[i] + "]").value = assignedValuesQuantity[i];
+             //   $("select#ItemTags" + listIdTags[i]).prop('selectedIndex', listIdTagsNotChanged[i]);
+            }
+            //-------------------------CREATE NEW TABLE ROWS-----------------------------------------
+
+            //----------------------DELETE CHOSEN OPTIONS--------------------
+         /*   copyOfItemTags = document.getElementById("Items");
+            for (i = 0; i < assignedValues.length - 1; i++) {
+                removeSelectOption(assignedValues[i], copyOfItemTags);
+            }*/
+            //----------------------DELETE CHOSEN OPTIONS--------------------
+
+            //$('table#test tr#3').remove();
+            index = listIdTags.length;
+            console.log("index=" + index);
+            listIdTags = [];
+        });
+
+        function Update(listIdTags) {
+            for (j = 0; j < listIdTags.length; j++) {
+                if (listIdTags[j] != j) {
+                    this.listIdTags[j] = j;
+                }
+            }
+        }
+
+        function removeSelectOption(valueToDelete, selectList) {
+            for (var i = selectList.length - 1; i >= 0; i--) {
+                if (selectList.options[i].value == valueToDelete) {
+                    selectList.remove(i);
+                    console.log(" selectList.options[i].value == valueToDelete.value");
+                    console.log(valueToDelete.value);
+                }
+                console.log("loop in RemoveSelectOption");
+            }
+        }
+
+        function AddQuantity(id) {
+            console.log("Jestem w plusie");
+            console.log("id=" + id);
+            selectedTableRowInTags = event.target.id.replace("OrderItems[", "").replace("].ItemOrderQuantity", "");
+            console.log("selectedTableRowInTags=" + selectedTableRowInTags);
+            console.log($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
+            console.log("after add");
+            console.log($('#itemWithJS tr'));
+            var valueInQunatity = parseInt($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
+            valueInQunatity += 1;
+            $('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value = "";
+            $('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value = valueInQunatity;
+            document.getElementById("ItemQuantity[" + selectedTableRowInTags +"]").value = valueInQunatity;
+            console.log($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
+        }
+
+        function RemoveQuantity(id) {
+            console.log("Jestem w minusie");
+            console.log("id=" + id);
+            selectedTableRowInTags = event.target.id.replace("OrderItems[", "").replace("].ItemOrderQuantity", "");
+            console.log("selectedTableRowInTags=" + selectedTableRowInTags);
+            console.log($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
+            var valueInQunatity = parseInt($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
+            console.log("after delete");
+            valueInQunatity -= 1;
+            $('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value = "";
+            $('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value = valueInQunatity;
+            document.getElementById("ItemQuantity").value = valueInQunatity;
+            console.log($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
+        }
+
+        function DeleteItem(id) {
+            console.log("Jestem w delete");
+            console.log("id=" + id);
+        }
+
+    </script>
+    <style type="text/css">
+        .fa_custom {
+            color: #0077cc
+        }
+    </style>
+    <script src='https://kit.fontawesome.com/a076d05399.js'></script>
+
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+

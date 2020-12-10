@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
 namespace ECommerceApp.Domain.Model
@@ -8,7 +10,8 @@ namespace ECommerceApp.Domain.Model
     {
         public int Id { get; set; }
         public string Name { get; set; }
-        public double Cost { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Cost { get; set; }
         public string Description { get; set; }
         public string Warranty { get; set; }
         public int Quantity { get; set; }

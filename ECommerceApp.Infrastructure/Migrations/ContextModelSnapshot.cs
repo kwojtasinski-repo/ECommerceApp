@@ -15,16 +15,16 @@ namespace ECommerceApp.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .UseIdentityColumns()
+                .HasAnnotation("ProductVersion", "3.1.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128)
-                .HasAnnotation("ProductVersion", "5.0.0");
+                .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-            modelBuilder.Entity("ECommerceApp.Domain.Model.Adress", b =>
+            modelBuilder.Entity("ECommerceApp.Domain.Model.Address", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .UseIdentityColumn();
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<string>("BuildingNumber")
                         .HasColumnType("nvarchar(max)");
@@ -51,7 +51,7 @@ namespace ECommerceApp.Infrastructure.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.ToTable("Adresses");
+                    b.ToTable("Addresses");
                 });
 
             modelBuilder.Entity("ECommerceApp.Domain.Model.Brand", b =>
@@ -59,7 +59,7 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .UseIdentityColumn();
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
@@ -74,7 +74,7 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .UseIdentityColumn();
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<string>("ContactDetailInformation")
                         .HasColumnType("nvarchar(max)");
@@ -82,7 +82,7 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<int>("ContactDetailTypeId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("CustomerId")
+                    b.Property<int>("CustomerId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
@@ -99,7 +99,7 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .UseIdentityColumn();
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
@@ -114,7 +114,7 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .UseIdentityColumn();
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<string>("Code")
                         .HasColumnType("nvarchar(max)");
@@ -143,7 +143,7 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .UseIdentityColumn();
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<string>("Type")
                         .HasColumnType("nvarchar(max)");
@@ -158,7 +158,7 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .UseIdentityColumn();
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<int>("CouponId")
                         .HasColumnType("int");
@@ -182,7 +182,7 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .UseIdentityColumn();
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<string>("CompanyName")
                         .HasColumnType("nvarchar(max)");
@@ -190,11 +190,14 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<string>("FirstName")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsCompany")
+                        .HasColumnType("bit");
+
                     b.Property<string>("LastName")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<long?>("NIP")
-                        .HasColumnType("bigint");
+                    b.Property<string>("NIP")
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 
@@ -206,13 +209,13 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .UseIdentityColumn();
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<int>("BrandId")
                         .HasColumnType("int");
 
-                    b.Property<double>("Cost")
-                        .HasColumnType("float");
+                    b.Property<decimal>("Cost")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Description")
                         .HasColumnType("nvarchar(max)");
@@ -258,12 +261,15 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .UseIdentityColumn();
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
-                    b.Property<double>("Cost")
-                        .HasColumnType("float");
+                    b.Property<decimal>("Cost")
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<int?>("CouponUsedId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CustomerId")
                         .HasColumnType("int");
 
                     b.Property<DateTime?>("Delivered")
@@ -289,6 +295,8 @@ namespace ECommerceApp.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CustomerId");
+
                     b.HasIndex("PaymentId")
                         .IsUnique()
                         .HasFilter("[PaymentId] IS NOT NULL");
@@ -305,7 +313,7 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .UseIdentityColumn();
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<int?>("CouponUsedId")
                         .HasColumnType("int");
@@ -340,7 +348,7 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .UseIdentityColumn();
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<int>("CustomerId")
                         .HasColumnType("int");
@@ -366,7 +374,7 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .UseIdentityColumn();
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<bool>("Accepted")
                         .HasColumnType("bit");
@@ -398,7 +406,7 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .UseIdentityColumn();
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
@@ -413,7 +421,7 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .UseIdentityColumn();
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
@@ -433,18 +441,18 @@ namespace ECommerceApp.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .HasMaxLength(256);
 
                     b.Property<string>("NormalizedName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .HasMaxLength(256);
 
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedName")
                         .IsUnique()
-                        .HasDatabaseName("RoleNameIndex")
+                        .HasName("RoleNameIndex")
                         .HasFilter("[NormalizedName] IS NOT NULL");
 
                     b.ToTable("AspNetRoles");
@@ -455,7 +463,7 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .UseIdentityColumn();
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<string>("ClaimType")
                         .HasColumnType("nvarchar(max)");
@@ -487,8 +495,8 @@ namespace ECommerceApp.Infrastructure.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Email")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .HasMaxLength(256);
 
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("bit");
@@ -500,12 +508,12 @@ namespace ECommerceApp.Infrastructure.Migrations
                         .HasColumnType("datetimeoffset");
 
                     b.Property<string>("NormalizedEmail")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .HasMaxLength(256);
 
                     b.Property<string>("NormalizedUserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .HasMaxLength(256);
 
                     b.Property<string>("PasswordHash")
                         .HasColumnType("nvarchar(max)");
@@ -523,17 +531,17 @@ namespace ECommerceApp.Infrastructure.Migrations
                         .HasColumnType("bit");
 
                     b.Property<string>("UserName")
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
+                        .HasColumnType("nvarchar(256)")
+                        .HasMaxLength(256);
 
                     b.HasKey("Id");
 
                     b.HasIndex("NormalizedEmail")
-                        .HasDatabaseName("EmailIndex");
+                        .HasName("EmailIndex");
 
                     b.HasIndex("NormalizedUserName")
                         .IsUnique()
-                        .HasDatabaseName("UserNameIndex")
+                        .HasName("UserNameIndex")
                         .HasFilter("[NormalizedUserName] IS NOT NULL");
 
                     b.ToTable("AspNetUsers");
@@ -544,7 +552,7 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int")
-                        .UseIdentityColumn();
+                        .HasAnnotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn);
 
                     b.Property<string>("ClaimType")
                         .HasColumnType("nvarchar(max)");
@@ -566,12 +574,12 @@ namespace ECommerceApp.Infrastructure.Migrations
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<string>", b =>
                 {
                     b.Property<string>("LoginProvider")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .HasMaxLength(128);
 
                     b.Property<string>("ProviderKey")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .HasMaxLength(128);
 
                     b.Property<string>("ProviderDisplayName")
                         .HasColumnType("nvarchar(max)");
@@ -608,12 +616,12 @@ namespace ECommerceApp.Infrastructure.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("LoginProvider")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .HasMaxLength(128);
 
                     b.Property<string>("Name")
-                        .HasMaxLength(128)
-                        .HasColumnType("nvarchar(128)");
+                        .HasColumnType("nvarchar(128)")
+                        .HasMaxLength(128);
 
                     b.Property<string>("Value")
                         .HasColumnType("nvarchar(max)");
@@ -623,15 +631,13 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.ToTable("AspNetUserTokens");
                 });
 
-            modelBuilder.Entity("ECommerceApp.Domain.Model.Adress", b =>
+            modelBuilder.Entity("ECommerceApp.Domain.Model.Address", b =>
                 {
                     b.HasOne("ECommerceApp.Domain.Model.Customer", "Customer")
-                        .WithMany("Adresses")
+                        .WithMany("Addresses")
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Customer");
                 });
 
             modelBuilder.Entity("ECommerceApp.Domain.Model.ContactDetail", b =>
@@ -642,11 +648,11 @@ namespace ECommerceApp.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("ECommerceApp.Domain.Model.Customer", null)
+                    b.HasOne("ECommerceApp.Domain.Model.Customer", "Customer")
                         .WithMany("ContactDetails")
-                        .HasForeignKey("CustomerId");
-
-                    b.Navigation("ContactDetailType");
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("ECommerceApp.Domain.Model.Coupon", b =>
@@ -656,8 +662,6 @@ namespace ECommerceApp.Infrastructure.Migrations
                         .HasForeignKey("CouponTypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Type");
                 });
 
             modelBuilder.Entity("ECommerceApp.Domain.Model.CouponUsed", b =>
@@ -673,10 +677,6 @@ namespace ECommerceApp.Infrastructure.Migrations
                         .HasForeignKey("ECommerceApp.Domain.Model.CouponUsed", "OrderId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Coupon");
-
-                    b.Navigation("Order");
                 });
 
             modelBuilder.Entity("ECommerceApp.Domain.Model.Item", b =>
@@ -692,10 +692,6 @@ namespace ECommerceApp.Infrastructure.Migrations
                         .HasForeignKey("TypeId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Brand");
-
-                    b.Navigation("Type");
                 });
 
             modelBuilder.Entity("ECommerceApp.Domain.Model.ItemTag", b =>
@@ -711,14 +707,16 @@ namespace ECommerceApp.Infrastructure.Migrations
                         .HasForeignKey("TagId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Item");
-
-                    b.Navigation("Tag");
                 });
 
             modelBuilder.Entity("ECommerceApp.Domain.Model.Order", b =>
                 {
+                    b.HasOne("ECommerceApp.Domain.Model.Customer", "Customer")
+                        .WithMany("Orders")
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("ECommerceApp.Domain.Model.Payment", "Payment")
                         .WithOne("Order")
                         .HasForeignKey("ECommerceApp.Domain.Model.Order", "PaymentId");
@@ -726,10 +724,6 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.HasOne("ECommerceApp.Domain.Model.Refund", "Refund")
                         .WithOne("Order")
                         .HasForeignKey("ECommerceApp.Domain.Model.Order", "RefundId");
-
-                    b.Navigation("Payment");
-
-                    b.Navigation("Refund");
                 });
 
             modelBuilder.Entity("ECommerceApp.Domain.Model.OrderItem", b =>
@@ -753,14 +747,6 @@ namespace ECommerceApp.Infrastructure.Migrations
                     b.HasOne("ECommerceApp.Domain.Model.Refund", "Refund")
                         .WithMany("OrderItems")
                         .HasForeignKey("RefundId");
-
-                    b.Navigation("CouponUsed");
-
-                    b.Navigation("Item");
-
-                    b.Navigation("Order");
-
-                    b.Navigation("Refund");
                 });
 
             modelBuilder.Entity("ECommerceApp.Domain.Model.Payment", b =>
@@ -770,8 +756,6 @@ namespace ECommerceApp.Infrastructure.Migrations
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Customer");
                 });
 
             modelBuilder.Entity("ECommerceApp.Domain.Model.Refund", b =>
@@ -781,8 +765,6 @@ namespace ECommerceApp.Infrastructure.Migrations
                         .HasForeignKey("CustomerId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Customer");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -834,73 +816,6 @@ namespace ECommerceApp.Infrastructure.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-                });
-
-            modelBuilder.Entity("ECommerceApp.Domain.Model.Brand", b =>
-                {
-                    b.Navigation("Items");
-                });
-
-            modelBuilder.Entity("ECommerceApp.Domain.Model.Coupon", b =>
-                {
-                    b.Navigation("CouponUsed");
-                });
-
-            modelBuilder.Entity("ECommerceApp.Domain.Model.CouponType", b =>
-                {
-                    b.Navigation("Coupons");
-                });
-
-            modelBuilder.Entity("ECommerceApp.Domain.Model.CouponUsed", b =>
-                {
-                    b.Navigation("OrderItems");
-                });
-
-            modelBuilder.Entity("ECommerceApp.Domain.Model.Customer", b =>
-                {
-                    b.Navigation("Adresses");
-
-                    b.Navigation("ContactDetails");
-
-                    b.Navigation("Payments");
-
-                    b.Navigation("Refunds");
-                });
-
-            modelBuilder.Entity("ECommerceApp.Domain.Model.Item", b =>
-                {
-                    b.Navigation("ItemTags");
-
-                    b.Navigation("OrderItems");
-                });
-
-            modelBuilder.Entity("ECommerceApp.Domain.Model.Order", b =>
-                {
-                    b.Navigation("CouponUsed");
-
-                    b.Navigation("OrderItems");
-                });
-
-            modelBuilder.Entity("ECommerceApp.Domain.Model.Payment", b =>
-                {
-                    b.Navigation("Order");
-                });
-
-            modelBuilder.Entity("ECommerceApp.Domain.Model.Refund", b =>
-                {
-                    b.Navigation("Order");
-
-                    b.Navigation("OrderItems");
-                });
-
-            modelBuilder.Entity("ECommerceApp.Domain.Model.Tag", b =>
-                {
-                    b.Navigation("ItemTags");
-                });
-
-            modelBuilder.Entity("ECommerceApp.Domain.Model.Type", b =>
-                {
-                    b.Navigation("Items");
                 });
 #pragma warning restore 612, 618
         }

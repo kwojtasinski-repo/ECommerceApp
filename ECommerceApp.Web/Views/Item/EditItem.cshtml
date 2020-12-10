@@ -1,0 +1,80 @@
+﻿@model ECommerceApp.Application.ViewModels.Item.NewItemVm
+
+@{
+    ViewData["Title"] = "EditItem";
+}
+
+<h1>EditItem</h1>
+
+<h4>NewItemVm</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="EditItem">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" class="form-control" />
+            <div class="form-group">
+                <label asp-for="Name" class="control-label"></label>
+                <input asp-for="Name" class="form-control" />
+                <span asp-validation-for="Name" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Cost" class="control-label"></label>
+                <input asp-for="Cost" class="form-control" />
+                <span asp-validation-for="Cost" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Description" class="control-label"></label>
+                <input asp-for="Description" class="form-control" />
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Warranty" class="control-label"></label>
+                <input asp-for="Warranty" class="form-control" />
+                <span asp-validation-for="Warranty" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Quantity" class="control-label"></label>
+                <input asp-for="Quantity" class="form-control" />
+                <span asp-validation-for="Quantity" class="text-danger"></span>
+            </div>
+            <div class="form-group col">
+                <label asp-for="BrandId" class="control-label">Firma: </label>
+                <select asp-for="BrandId" asp-items="@(new SelectList(ViewBag.ItemBrands,"Id", "Name"))" class="custom-select"></select>
+                <span asp-validation-for="BrandId" class="text-danger"></span>
+            </div>
+            <div class="form-group col">
+                <label asp-for="TypeId" class="control-label">Typ: </label>
+                <select asp-for="TypeId" asp-items="@(new SelectList(ViewBag.ItemTypes,"Id", "Name"))" class="custom-select"></select>
+                <span asp-validation-for="TypeId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+            <div><p>List tagów:</p>
+                <table>
+                    @for (int i = 0; i < Model.ItemTags.Count; i++)
+                    {
+                        <tr class="row" id="@i">
+                            <td class="col-10">
+                                <label asp-for="ItemTags[i].TagId" class="col-sm-2 col-form-label">@ViewBag.ItemTags[i].Name</label>
+                                <input type="hidden" asp-for="ItemTags[i].ItemId" class="form-control" value="@Model.Id" />
+                            </td>
+                            <td class="col-2">
+                                <button type="button" class="btn btn-danger delete">Delete</button>
+                            </td>
+                        </tr>
+                    }
+                </table>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

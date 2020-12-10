@@ -9,7 +9,7 @@ namespace ECommerceApp.Infrastructure
 {
     public class Context : IdentityDbContext
     {
-        public DbSet<Adress> Adresses { get; set; }
+        public DbSet<Address> Addresses { get; set; }
         public DbSet<Brand> Brands { get; set; }
         public DbSet<ContactDetail> ContactDetails { get; set; }
         public DbSet<ContactDetailType> ContactDetailTypes { get; set; }

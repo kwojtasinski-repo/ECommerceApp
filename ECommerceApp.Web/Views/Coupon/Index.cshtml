@@ -1,0 +1,74 @@
+﻿@model ECommerceApp.Application.ViewModels.Coupon.ListForCouponVm
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="AddCoupon">Utwórz nowy kupon</a>
+    <a asp-action="ShowCouponTypes">Lista wszystkich typów kuponów</a>
+    <a asp-action="ShowCouponsUsed">Lista wszystkich kuponów użytych</a>
+</p>
+<form asp-action="Index" asp-controller="Coupon" method="post">
+    <div class="row">
+        <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
+        <input type="submit" value="Wyszukaj" />
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Id
+                </th>
+                <th>
+                    Kod
+                </th>
+                <th>
+                    Obniżka [%]
+                </th>
+                <th>
+                    Opis
+                </th>
+                <th>
+                    Id typu kuponu
+                </th>
+                <th>
+                    Id użytego kuponu
+                </th>
+                <th>Akcja</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var coupon in Model.Coupons)
+            {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelCoupon => coupon.Id)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelCoupon => coupon.Code)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelCoupon => coupon.Discount)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelCoupon => coupon.Description)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelCoupon => coupon.CouponTypeId)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelCoupon => coupon.CouponUsedId)
+                </td>
+                <td>
+                    @Html.ActionLink("Edytuj", "EditCoupon", new {  id=coupon.Id }) |
+                    @Html.ActionLink("Szczegóły", "ViewCoupon", new { id = coupon.Id }) |
+                    @Html.ActionLink("Usuń", "DeleteCoupon", new { id = coupon.Id })
+                </td>
+            </tr>
+            }
+        </tbody>
+    </table>
+</form>

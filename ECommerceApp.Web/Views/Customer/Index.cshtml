@@ -1,0 +1,104 @@
+﻿@model ECommerceApp.Application.ViewModels.Customer.ListForCustomerVm
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="AddCustomer">Stwórz nowego klienta</a>
+</p>
+<form asp-action="Index" asp-controller="Customer" method="post">
+    <div class="row">
+        <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
+        <input type="submit" value="Wyszukaj" />
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Id
+                </th>
+                <th>
+                    Imię
+                </th>
+                <th>
+                    Nazwisko
+                </th>
+                <th>
+                    Firma
+                </th>
+                <th>
+                    NIP
+                </th>
+                <th>
+                    Nazwa Firmy
+                </th>
+                <th>Akcja</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var customer in Model.Customers)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelCustomer => customer.Id)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelCustomer => customer.FirstName)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelCustomer => customer.LastName)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelCustomer => customer.IsCompany)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelCustomer => customer.NIP)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelCustomer => customer.CompanyName)
+                    </td>
+                    <td>
+                        @Html.ActionLink("Edytuj", "EditCustomer", new {  id=customer.Id  }) |
+                        @Html.ActionLink("Szczegóły", "ViewCustomer", new { id = customer.Id }) |
+                        @Html.ActionLink("Usuń", "Delete", new { id = customer.Id })
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <div class="row">
+        <table>
+            <tr>
+                @for (int i = 1; i <= Math.Ceiling(Model.Count / (double)Model.PageSize); i++)
+                {
+                    <td>
+                        @if (i != Model.CurrentPage)
+                        {
+                            <a href="javascript:PagerClick(@i)">@i</a>
+                        }
+                        else
+                        {
+                            <span>@i</span>
+                        }
+                    </td>
+                }
+            </tr>
+        </table>
+        <input type="hidden" name="pageNo" id="pageNo" />
+        <input type="hidden" name="pageSize" id="pageSize" value="2" />
+    </div>
+</form>
+
+@section Scripts
+{
+    <script type="text/javascript">
+        function PagerClick(index)
+        {
+            document.getElementById("pageNo").value = index;
+            document.forms[0].submit();
+        }
+    </script>
+}

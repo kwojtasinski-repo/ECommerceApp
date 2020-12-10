@@ -1,0 +1,48 @@
+﻿@model ECommerceApp.Application.ViewModels.Customer.NewContactDetailVm
+
+@{
+    ViewData["Title"] = "ViewContactDetail";
+}
+
+    <h1>Szczegóły kontaktu</h1>
+
+<div>
+    
+    <hr />
+    <dl class="row">
+        <dt class = "col-sm-5">
+            @Html.DisplayNameFor(model => model.Id)
+        </dt>
+        <dd class = "col-sm-5">
+            @Html.DisplayFor(model => model.Id)
+        </dd>
+        <dt class = "col-sm-5">
+            @Html.DisplayNameFor(model => model.ContactDetailInformation)
+        </dt>
+        <dd class = "col-sm-5">
+            @Html.DisplayFor(model => model.ContactDetailInformation)
+        </dd>
+        <dt class = "col-sm-5">
+            @Html.DisplayNameFor(model => model.ContactDetailTypeId)
+        </dt>
+        <dd class = "col-sm-5">
+            @Html.DisplayFor(model => model.ContactDetailTypeId)
+        </dd>
+        <dt class = "col-sm-5">
+            @Html.DisplayNameFor(model => model.ContactDetailTypeName)
+        </dt>
+        <dd class = "col-sm-5">
+            @Html.DisplayFor(model => model.ContactDetailTypeName)
+        </dd>
+        <dt class = "col-sm-5">
+            @Html.DisplayNameFor(model => model.CustomerId)
+        </dt>
+        <dd class = "col-sm-5">
+            @Html.DisplayFor(model => model.CustomerId)
+        </dd>
+    </dl>
+</div>
+<div>
+    @Html.ActionLink("Edytuj", "EditContactDetail", new { id = Model.Id }) |
+    <a asp-action="Index">Powrót do listy klientów</a>
+</div>
