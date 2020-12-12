@@ -63,22 +63,23 @@
                 <input asp-for="RefundId" class="form-control" />
                 <span asp-validation-for="RefundId" class="text-danger"></span>
             </div>
-            <div >
+            <div>
                 <p>Przedmioty:</p>
                 <table id="itemWithJS">
                     @for (int i = 0; i < Model.OrderItems.Count; i++)
                     {
-                        <tr id="@i" >
+                        <tr id="@i">
                             <td>
-                                <label asp-for="OrderItems[i].ItemId" class="col-sm-2 col-form-label">@Model.OrderItems[i].Item.Name</label>
-                                <input type="hidden" asp-for="OrderItems[i].OrderId" class="form-control" value="@Model.Id" />
-                                <input type="hidden" asp-for="OrderItems[i].Id" class="form-control" value="0" />
+                                <input name="Item" value="@Model.OrderItems[i].ItemName" class="form-control valid" readonly style="width: 250px;position:static; " />
+                                <input type="hidden" name="OrderItems[@i].ItemId" value="@Model.OrderItems[i].ItemId" class="col-sm-2 col-form-label" />
+                                <input type="hidden" name="OrderItems[@i].OrderId" class="form-control" value="@Model.Id" />
+                                <input type="hidden" name="OrderItems[@i].Id" class="form-control" value="@Model.OrderItems[i].Id" />
                             </td>
-                            <td class="col-2">
-                                <a href=""><i class="fas fa-minus-circle mr-2"></i></a>
-                                <input type="number" asp-for="@Model.OrderItems[i].ItemOrderQuantity" readonly />
-                                <a href=""><i class="fas fa-plus-circle ml-2"></i></a>
-                                <button type="button" class="btn btn-danger delete">Delete</button>
+                            <td >
+                                <a><i onclick="AddQuantity(this.id)" id="OrderItems[@i].ItemOrderQuantity" class="fas fa-plus-circle ml-2 fa_custom"></i></a>
+                                <input id="ItemQuantity[@i]" name="@Model.OrderItems[i].ItemOrderQuantity" value="@Model.OrderItems[i].ItemOrderQuantity" readonly style="width: 45px;" />
+                                <a><i onclick="RemoveQuantity(this.id)" class="fa fa-minus-circle ml-2 fa_custom" id="OrderItems[@i].ItemOrderQuantity"></i></a>
+                                <button onclick="DeleteItem(this.id)" id="@i" type="button" class="btn btn-danger delete">Delete</button>
                             </td>
                         </tr>
                     }
@@ -89,17 +90,17 @@
                 <input type="text" asp-for="RefCode" />
             </div>
             <table id="newrow" style="display:none;">
-                <tr id="%" >
+                <tr id="%">
                     <td>
                         <input name="Item" value="itemek" class="form-control valid" readonly style="width: 250px;position:static; " />
-                        <label type="hidden" name="OrderItems[#].ItemId" value="wartosc" class="col-sm-2 col-form-label"></label>
+                        <input type="hidden" name="OrderItems[#].ItemId" value="wartosc" class="col-sm-2 col-form-label" />
                         <input type="hidden" name="OrderItems[#].OrderId" class="form-control" value="@Model.Id" />
                         <input type="hidden" name="OrderItems[#].Id" class="form-control" value="0" />
                     </td>
                     <td id="buttonDelete" style="position:relative; top:0px;">
                         <a><i onclick="AddQuantity(this.id)" id="OrderItems[#].ItemOrderQuantity" class="fas fa-plus-circle ml-2 fa_custom"></i></a>
                         <input id="ItemQuantity[#]" name="OrderItems[#].ItemOrderQuantity" value="ilosc" readonly style="width: 45px;" />
-                        <a><i onclick="RemoveQuantity(this.id)"  class="fa fa-minus-circle ml-2 fa_custom" id="OrderItems[#].ItemOrderQuantity"></i></a>
+                        <a><i onclick="RemoveQuantity(this.id)" class="fa fa-minus-circle ml-2 fa_custom" id="OrderItems[#].ItemOrderQuantity"></i></a>
                         <button onclick="DeleteItem(this.id)" id="#" type="button" class="btn btn-danger delete">Delete</button>
                     </td>
                 </tr>
@@ -109,8 +110,19 @@
                 <select id="ItemsMain" style="display:none;" asp-items="@(new SelectList(Model.Items,"Id", "Name"))" class="custom-select"></select>
                 <select id="Items" name="Items" asp-items="@(new SelectList(Model.Items,"Id", "Name"))" class="custom-select" data-val="true"></select>
                 <button type="button" id="add" class="btn btn-info">Wybierz przedmiot</button>
+                <select id="ItemsWithCosts" style="display:none;" name="ItemsCost" asp-items="@(new SelectList(Model.Items, "Id", "Cost"))" class="custom-select"></select>
                 <input id="indexer" type="hidden" value="0" />
             </div>
+            <table id="RefreshCost">
+                <tr>
+                    @if (Model.CustomerId > 0)
+                    {
+                        <td>
+                            Cena: <input id="CalcCost" name="CostToConvert" value="@Model.Cost" readonly style="width: 250px;position:static; " />
+                        </td>
+                    }
+                    </tr>
+            </table>
             <div class="form-group">
                 <input type="submit" value="Create" class="btn btn-primary" />
             </div>
@@ -138,16 +150,55 @@
         var dictOfDeletedValues = {};
         var listIdTags = [];
 
-        $('#add').click(function () {
-            if (index > 0 && selectedIndex > -1) {
-                var standardValue = copyOfItemTags.attributes.value.ownerElement.children[selectedIndex].value;
-                dictOfDeletedValues[index - 1] = selectedValue;
-                copyOfItemTags.remove(selectedIndex);
-            }
+        $(document).ready(function () {
+            console.log("Document ready");
+            console.log($('#itemWithJS tr'));
+            if ($('#itemWithJS tr').length > 0) {
 
+
+                var valueInQuantity = parseInt($('#itemWithJS tr')[0].cells[1].childNodes[3].value); // get value quantity
+                //$('#itemWithJS tr')[i];// list of table rows
+                var listOfTd = $('#itemWithJS tr');
+                console.log($('#itemWithJS tr')[0].children[0].children[1].value); // id of element
+                console.log(document.getElementById('ItemsWithCosts').children); // list of elements
+                var itemsCostWithIds = document.getElementById('ItemsWithCosts').children;
+                var cost = 0;//CalcCost
+                console.log("itemsCostWithIds");
+                console.log(itemsCostWithIds);
+
+                const format = (num, decimals) => num.toLocaleString('pl-PL', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                });
+
+                for (i = 0; i < listOfTd.length; i++) {
+                    var itemId = $('#itemWithJS tr')[i].children[0].children[1].value;
+                    console.log("itemId");
+                    console.log(itemId);
+                    var valueInQuantity = parseInt($('#itemWithJS tr')[i].cells[1].childNodes[3].value);
+                    for (j = 0; j < itemsCostWithIds.length; j++) {
+                        if (itemsCostWithIds[j].value == itemId) {
+                            console.log(itemsCostWithIds[j].value);
+                            console.log(itemsCostWithIds[j].text);
+                            cost += Number(itemsCostWithIds[j].text.replace(",", ".")) * Number(valueInQuantity);
+                            console.log(itemsCostWithIds[j]);
+                            console.log(itemId);
+                            console.log(valueInQuantity);
+                        }
+                    }
+                }
+                cost = format(cost);
+                document.getElementById('CalcCost').value = cost;
+            }
+        });
+
+        $('#add').click(function () {
             selectedIndex = copyOfItemTags.options[copyOfItemTags.selectedIndex].index;
             selectedValue = copyOfItemTags.options[copyOfItemTags.selectedIndex].value;
             selectedText = copyOfItemTags.options[copyOfItemTags.selectedIndex].text;
+            console.log(selectedIndex);
+            console.log(selectedValue);
+            console.log(selectedText);
             var valueOfItemTag = selectedValue;
             var cloneTableRow = newrow.find('tr').clone();
 
@@ -162,6 +213,12 @@
             form.data('validator', null);
             index = parseInt(index) + 1;
             $.validator.unobtrusive.parse(form);
+            if (selectedIndex > -1) {
+                //var standardValue = copyOfItemTags.attributes.value.ownerElement.children[selectedIndex].value;
+                dictOfDeletedValues[index] = selectedValue;
+                copyOfItemTags.remove(selectedIndex);
+            }
+            IncreaseCost();
         });
 
         $(document).on('change', 'select', function () {
@@ -169,28 +226,21 @@
             selectedIndex = (this).index;
             selectedValue = (this).value;
             console.log(selectedValue);
-            console.log(selectedIndex);
-        });
+            console.log(this.children);
+            var collectionInSelectList = this.children;
 
-        $('#Items').on('change', function () {
-            selectedIndexItemTags = $('#ItemQuantity')[0].selectedIndex;
-            console.log("Jestem w items->change");
-        });
-
-        $('#itemWithJS').click('tr', function (event) {
-            /*console.log("click");
-            console.log(event.target.id);
-            if (event.target.hasAttribute("id")) {
-                selectedTableRowInTags = event.target.id.replace("OrderItems[", "").replace("].ItemOrderQuantity", "");
-                console.log("click - " + selectedTableRowInTags)
-            }*/
+            for (i = 0; i < collectionInSelectList.length; i++) {
+                console.log("jestem w forze");
+                if (collectionInSelectList[i].value == selectedValue) {
+                    selectedIndex = i;
+                    
+                }
+            }
         });
 
         $('#itemWithJS').on('click', '.delete', function () {
             var valuesFromSelect = document.getElementById('Items');
             selectedTableRowInTags = (this).parentNode.parentNode.attributes.id.value;
-            var deletedValue = valuesFromSelect[selectedTableRowInTags].value;
-            var deletedText = valuesFromSelect[selectedTableRowInTags].text;
             var assignedValuesQuantity = [];
             var assignedValuesOrderId = [];
             var assignedValuesItemName = [];
@@ -206,28 +256,20 @@
 
             $(this).closest('tr').remove();// this stay
             var id = $(this).closest('tr').attr("id");
-
+            var assignedValues = [];
             var collectionValues = $('#itemWithJS')[0].children;
             for (i = 0; i < collectionValues.length; i++) {
                 assignedValuesQuantity[i] = collectionValues[0].parentNode.children[i].children[1].children[1].value;
                 assignedValuesOrderId[i] = collectionValues[0].parentNode.children[i].children[0].children[2].value;
                 assignedValuesItemName[i] = collectionValues[0].parentNode.children[i].children[0].children[0].value;
                 assignedValuesItemId[i] = collectionValues[0].parentNode.children[i].children[0].children[1].attributes[2].value;
+                assignedValues[i] = collectionValues[i].children[0].children[1].value;
             }
-            console.log(collectionValues[0].attributes.id);
-            console.log($(this).closest('tr').parentNode);
-            console.log(collectionValues[0].parentNode);
-            //console.log(collectionValues[0].parentNode.children[i]);
-           // console.log("Item.Name " + collectionValues[0].parentNode.children[0].children[0].children[0].value); // value of input name Item (Item.Name)
-          //  console.log("OrderId " + collectionValues[0].parentNode.children[0].children[0].children[2].value); // value of input (OrderId)
-           // console.log("Quantity " + collectionValues[0].parentNode.children[0].children[1].children[1].value); // value of input (Quantity)
-           // console.log(collectionValues[0].parentNode.children[1].children[0].children[1].attributes[2].value); // value of input (ItemId)
-            
+
             listIdTags.splice(id, 1);
             for (i = 0; i < listIdTags.length; i++) {
                 console.log(listIdTags[i]);
             }
-            var listIdTagsNotChanged = listIdTags.map((x) => x); // clone array
             Update(listIdTags);
             console.log("After update\n========");
             for (i = 0; i < listIdTags.length; i++) {
@@ -239,7 +281,6 @@
 
             for (i = 0; i < allValues.length; i++) {
                 $('#Items')
-                    //.append('<option value="' + allValues[i].value + ">+"allValues[i].text+'</option>')
                     .append($("<option></option>").attr("value", allValues[i].value).text(allValues[i].text));
             }
             //-------------------------CREATE NEW TABLE ROWS-----------------------------------------
@@ -256,21 +297,20 @@
                 cloneTableRow.html($(cloneTableRow).html().replace(/"ilosc"/g, '"' + assignedValuesQuantity[i] + '"'));
                 table.append(cloneTableRow);
                 document.getElementById("ItemQuantity[" + listIdTags[i] + "]").value = assignedValuesQuantity[i];
-             //   $("select#ItemTags" + listIdTags[i]).prop('selectedIndex', listIdTagsNotChanged[i]);
             }
             //-------------------------CREATE NEW TABLE ROWS-----------------------------------------
 
             //----------------------DELETE CHOSEN OPTIONS--------------------
-         /*   copyOfItemTags = document.getElementById("Items");
-            for (i = 0; i < assignedValues.length - 1; i++) {
-                removeSelectOption(assignedValues[i], copyOfItemTags);
-            }*/
+            copyOfItemTags = document.getElementById("Items");
+            for (i = 0; i < assignedValues.length; i++) {
+                 //   removeSelectOption(i, copyOfItemTags);
+                    removeSelectOption(assignedValues[i], copyOfItemTags);                
+            }
             //----------------------DELETE CHOSEN OPTIONS--------------------
-
-            //$('table#test tr#3').remove();
             index = listIdTags.length;
             console.log("index=" + index);
             listIdTags = [];
+            DecreaseCost();
         });
 
         function Update(listIdTags) {
@@ -286,7 +326,7 @@
                 if (selectList.options[i].value == valueToDelete) {
                     selectList.remove(i);
                     console.log(" selectList.options[i].value == valueToDelete.value");
-                    console.log(valueToDelete.value);
+                    console.log(valueToDelete);
                 }
                 console.log("loop in RemoveSelectOption");
             }
@@ -297,7 +337,7 @@
             console.log("id=" + id);
             selectedTableRowInTags = event.target.id.replace("OrderItems[", "").replace("].ItemOrderQuantity", "");
             console.log("selectedTableRowInTags=" + selectedTableRowInTags);
-            console.log($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
+          //  console.log($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
             console.log("after add");
             console.log($('#itemWithJS tr'));
             var valueInQunatity = parseInt($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
@@ -305,27 +345,124 @@
             $('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value = "";
             $('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value = valueInQunatity;
             document.getElementById("ItemQuantity[" + selectedTableRowInTags +"]").value = valueInQunatity;
-            console.log($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
+          //  console.log($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
+            IncreaseCost();
         }
 
         function RemoveQuantity(id) {
             console.log("Jestem w minusie");
-            console.log("id=" + id);
+         //   console.log("id=" + id);
             selectedTableRowInTags = event.target.id.replace("OrderItems[", "").replace("].ItemOrderQuantity", "");
-            console.log("selectedTableRowInTags=" + selectedTableRowInTags);
-            console.log($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
+      //      console.log("selectedTableRowInTags=" + selectedTableRowInTags);
+       //     console.log($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
             var valueInQunatity = parseInt($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
-            console.log("after delete");
+       //     console.log("after delete");
             valueInQunatity -= 1;
-            $('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value = "";
-            $('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value = valueInQunatity;
-            document.getElementById("ItemQuantity").value = valueInQunatity;
-            console.log($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
+            if (valueInQunatity > 0) {
+                $('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value = "";
+                $('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value = valueInQunatity;
+           //     document.getElementById("ItemQuantity").value = valueInQunatity;
+                console.log($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
+            }
+            DecreaseCost();
         }
 
         function DeleteItem(id) {
             console.log("Jestem w delete");
             console.log("id=" + id);
+        }
+        /******************************************************************
+         *                                                                *
+         *                    SECTION FOR REFRESH COST                    *
+         *                                                                *
+         /*****************************************************************/
+
+        var form2 = $('form');
+        var table2 = $('#RefreshCost');
+
+        function IncreaseCost() {
+            console.log("Jestem w increase");
+            console.log($('#RefreshCost tr td'));
+            console.log($('#RefreshCost tr td')[0]);
+            console.log($('#RefreshCost tr td')[0].children);
+            console.log($('#RefreshCost tr td')[0].children[0]);
+            console.log($('#RefreshCost tr td')[0].children[0].value);
+            var valueInQuantity = parseInt($('#itemWithJS tr')[0].cells[1].childNodes[3].value); // get value quantity
+            console.log(valueInQuantity);
+            console.log($('#itemWithJS tr'));// list of table rows
+            //$('#itemWithJS tr')[i];// list of table rows
+            var listOfTd = $('#itemWithJS tr');
+            console.log($('#itemWithJS tr')[0].children[0].children[1].value); // id of element
+            console.log(document.getElementById('ItemsWithCosts').children); // list of elements
+            var itemsCostWithIds = document.getElementById('ItemsWithCosts').children;
+            var cost = 0;//CalcCost
+            console.log("itemsCostWithIds");
+            console.log(itemsCostWithIds);
+
+            const format = (num, decimals) => num.toLocaleString('pl-PL', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+
+            for (i = 0; i < listOfTd.length; i++) {
+                var itemId = $('#itemWithJS tr')[i].children[0].children[1].value;
+                console.log("itemId");
+                console.log(itemId);
+                var valueInQuantity = parseInt($('#itemWithJS tr')[i].cells[1].childNodes[3].value);
+                for (j = 0; j < itemsCostWithIds.length; j++) {
+                    if (itemsCostWithIds[j].value == itemId) {
+                        console.log(itemsCostWithIds[j].value);
+                        console.log(itemsCostWithIds[j].text);
+                        cost += Number(itemsCostWithIds[j].text.replace(",", ".")) * Number(valueInQuantity);
+                        console.log(itemsCostWithIds[j]);
+                        console.log(itemId);
+                        console.log(valueInQuantity);
+                    }
+                }
+            }
+            cost = format(cost);
+            console.log(cost);
+        //    document.getElementById('CalcCost').value = cost.replace(",", "").replace(".", ",");
+            document.getElementById('CalcCost').value = cost;
+        }
+
+        function DecreaseCost() {
+            console.log("Jestem w decrease");
+            var valueInQuantity = 0;
+
+            if ($('#itemWithJS tr').length > 0) {
+                valueInQuantity = parseInt($('#itemWithJS tr')[0].cells[1].childNodes[3].value); // get value quantity
+            }
+            
+            //$('#itemWithJS tr')[i];// list of table rows
+            var listOfTd = $('#itemWithJS tr');
+            var itemsCostWithIds = document.getElementById('ItemsWithCosts').children;
+            var cost = 0;//CalcCost
+
+            const format = (num, decimals) => num.toLocaleString('pl-PL', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+
+            for (i = 0; i < listOfTd.length; i++) {
+                var itemId = $('#itemWithJS tr')[i].children[0].children[1].value;
+                console.log("itemId");
+                console.log(itemId);
+                var valueInQuantity = parseInt($('#itemWithJS tr')[i].cells[1].childNodes[3].value);
+                for (j = 0; j < itemsCostWithIds.length; j++) {
+                    if (itemsCostWithIds[j].value == itemId) {
+                        console.log(itemsCostWithIds[j].value);
+                        console.log(itemsCostWithIds[j].text);
+                        cost += Number(itemsCostWithIds[j].text.replace(",", ".")) * Number(valueInQuantity);
+                        console.log(itemsCostWithIds[j]);
+                        console.log(itemId);
+                        console.log(valueInQuantity);
+                    }
+                }
+            }
+            cost = format(cost);
+            console.log(cost);
+            document.getElementById('CalcCost').value = cost;
         }
 
     </script>

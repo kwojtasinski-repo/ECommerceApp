@@ -1,0 +1,89 @@
+﻿@model ECommerceApp.Application.ViewModels.Order.NewOrderVm
+
+@{
+    ViewData["Title"] = "AddOrderSummary";
+}
+
+<h1>AddOrderSummary</h1>
+
+<div>
+    <h4>NewOrderVm</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Number)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Number)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Cost)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Cost)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.Ordered)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Ordered)
+        </dd>
+        <dt class="col-sm-2">
+            @Html.DisplayNameFor(model => model.CustomerId)
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.CustomerId)
+        </dd>
+        @if (Model.CouponUsedId != null)
+        {
+            <dt class="col-sm-2">
+                @Html.DisplayNameFor(model => model.RefCode)
+            </dt>
+            <dd class="col-sm-10">
+                @Html.DisplayFor(model => model.RefCode)
+            </dd>
+        }
+    </dl>
+    <p>Zamówione przedmioty</p>
+    <div class="form-row">
+        <div class="col">
+            <table class="table table-bordered">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>
+                            Nazwa
+                        </th>
+                        <th>
+                            Ilość
+                        </th>
+                        <th>
+                            Cena
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.OrderItems)
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(model => item.ItemName)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => item.ItemOrderQuantity)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => item.ItemCost)
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<div>
+    <div class="form-group">
+        <a asp-action="Payment"><input type="button" readonly value="Przejdź do płatności" class="btn btn-primary" /></a>
+        <a asp-action="Index"><input type="button" readonly value="Zrealizuj później" class="btn btn-primary" /></a>
+    </div>
+</div>

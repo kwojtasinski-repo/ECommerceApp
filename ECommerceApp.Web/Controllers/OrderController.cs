@@ -75,22 +75,52 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult AddOrderDetails(NewOrderVm model)
         {
             var id = _orderService.CheckPromoCode(model.RefCode);
+            model.Cost = Convert.ToDecimal(model.CostToConvert);
             if (id != 0)
             {
-                _orderService.UpdateCoupon(id, model.Id);
+                var couponUsedId = _orderService.UpdateCoupon(id, model.Id);
+                model.CouponUsedId = couponUsedId;
+                if (model.OrderItems.Count > 1)
+                {
+                    model.OrderItems.ForEach(oi =>
+                    {
+                        oi.CouponUsedId = couponUsedId;
+                    });
+                }
             }
 
             if (model.OrderItems.Count > 1)
             {
-                _orderService.AddOrderItems(model.OrderItems);
-
+                _orderService.UpdateOrder(model);
             }
             else
             {
                 DeleteOrder(model.Id);
             }
 
-            return RedirectToAction("View");
+            return RedirectToAction("AddOrderSummary", new { id = model.Id });
+        }
+
+
+        [HttpGet]
+        public IActionResult AddOrderSummary(int id)
+        {
+            var order = _orderService.GetOrderById(id);
+            return View(order);
+        }
+
+        [HttpGet]       // TODO Payment, DeleteOrderItems?, Details Orders, Edit Orders, Edit Payment, Details Payment, ?Details and Edit OrderItems?
+        public IActionResult Payment(int id)
+        {
+
+            return View();
+        }
+
+        [HttpPost]
+        public IActionResult Payment(NewPaymentVm model)
+        {
+
+            return RedirectToAction("Index");
         }
 
         public IActionResult DeleteOrder(int id)

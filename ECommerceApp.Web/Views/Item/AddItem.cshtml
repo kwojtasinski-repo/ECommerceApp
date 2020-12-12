@@ -179,8 +179,6 @@
         $('#tagWithJS').on('click', '.delete', function () {
             var allValues = document.getElementById('ItemTagsMain');
             selectedTableRowInTags = (this).parentNode.parentNode.attributes.id.value;
-            var deletedValue = allValues[selectedTableRowInTags].value;
-            var deletedText = allValues[selectedTableRowInTags].text;
             var assignedValues = [];
 
             if ($('#tagWithJS tbody tr').length > 0) {
@@ -191,7 +189,7 @@
                 });
             }
 
-            $(this).closest('tr').remove();// this stay
+            $(this).closest('tr').remove();
             var id = $(this).closest('tr').attr("id");
 
             var collectionValues = $('#tagWithJS tbody')[0].children;
@@ -208,7 +206,6 @@
 
             for (i = 0; i < allValues.length; i++) {
                 $('#ItemTags')
-                    //.append('<option value="' + allValues[i].value + ">+"allValues[i].text+'</option>')
                     .append($("<option></option>").attr("value", allValues[i].value).text(allValues[i].text));
             }
             //-------------------------CREATE NEW TABLE ROWS-----------------------------------------
@@ -232,8 +229,6 @@
                 removeSelectOption(assignedValues[i], copyOfItemTags);
             }
             //----------------------DELETE CHOSEN OPTIONS--------------------
-
-            //$('table#test tr#3').remove();*/
             index = listIdTags.length;
             console.log("index=" + index);
             listIdTags = [];
@@ -257,8 +252,6 @@
                 console.log("loop in RemoveSelectOption");
             }
         }
-
-
 
     </script>
 

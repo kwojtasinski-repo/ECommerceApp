@@ -1,5 +1,6 @@
 ﻿using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -35,7 +36,9 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public Order GetOrderById(int id)
         {
-            var order = _context.Orders.FirstOrDefault(o => o.Id == id);
+            var order = _context.Orders
+                .Include(inc => inc.OrderItems).ThenInclude(inc=>inc.Item)
+                .FirstOrDefault(o => o.Id == id);
             return order;
         }
 
@@ -180,7 +183,9 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public Coupon GetCouponById(int id)
         {
-            return _context.Coupons.FirstOrDefault(c => c.Id == id);
+            return _context.Coupons
+                .Where(c => c.CouponUsedId == null)
+                .FirstOrDefault(c => c.Id == id);
         }
 
         public IQueryable<OrderItem> GetAllOrderItemsByOrderId(int orderId)
@@ -195,10 +200,11 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public void AddOrderItems(List<OrderItem> orderItems)
         {
-            orderItems.ForEach(oi =>
+            for(int i=0;i<orderItems.Count;i++)
             {
-                _context.OrderItem.Add(oi);
-            });
+                _context.OrderItem.Add(orderItems[i]);
+            };
+
             _context.SaveChanges();
         }
     }

@@ -257,7 +257,7 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public void UpdateCoupon(int couponId, int orderId)
+        public int UpdateCoupon(int couponId, int orderId)
         {
             var couponUsed = new NewCouponUsedVm()
             {
@@ -268,6 +268,7 @@ namespace ECommerceApp.Application.Services
             var couponUsedId = AddCouponUsed(couponUsed);
             var coupon = _orderRepo.GetCouponById(couponId);
             _orderRepo.UpdateCoupon(coupon, couponUsedId);
+            return couponUsedId;
         }
 
         public int AddCouponUsed(NewCouponUsedVm couponUsedVm)

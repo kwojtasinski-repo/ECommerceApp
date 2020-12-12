@@ -35,7 +35,7 @@ namespace ECommerceApp.Application.Interfaces
         IQueryable<ECommerceApp.Domain.Model.Item> GetAllItemsToOrder();
         IQueryable<NewCouponVm> GetAllCoupons();
         int CheckPromoCode(string code);
-        void UpdateCoupon(int id, int orderId);
+        int UpdateCoupon(int couponId, int orderId);
         NewOrderVm GetOrderById(int orderId);
         void CalculateCost(NewOrderVm order, NewOrderItemVm model);
         NewCustomerForOrdersVm GetCustomerById(int id);

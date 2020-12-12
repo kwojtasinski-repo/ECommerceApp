@@ -32,6 +32,7 @@ namespace ECommerceApp.Application.ViewModels.Order
         public int? RefundId { get; set; } // 1:1 Order Refund
         public string RefCode { get; set; }
         public int CouponId { get; set; }
+        public double CostToConvert { get; set; }
 
         public List<NewOrderItemVm> OrderItems { get; set; } // 1:Many relation
         public List<ECommerceApp.Domain.Model.Item> Items { get; set; }
@@ -41,7 +42,8 @@ namespace ECommerceApp.Application.ViewModels.Order
             profile.CreateMap<NewOrderVm, ECommerceApp.Domain.Model.Order>().ReverseMap()
                 .ForMember(r => r.RefCode, opt => opt.Ignore())
                 .ForMember(c => c.CouponId, opt => opt.Ignore())
-                .ForMember(i => i.Items, opt => opt.Ignore());
+                .ForMember(i => i.Items, opt => opt.Ignore())
+                .ForMember(c => c.CostToConvert, opt => opt.Ignore());
         }
 }
 }
