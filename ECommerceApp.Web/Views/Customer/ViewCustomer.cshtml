@@ -48,7 +48,9 @@
         </dd>
     </dl>
 </div>
+
 <div>
     @Html.ActionLink("Edytuj", "EditCustomer", new { id = Model.Id }) |
-    <a asp-action="Index">Powrót do listy klientów</a>
+    <a asp-action="Index">Powrót do listy klientów</a> |
+    @Html.ActionLink("Lista zamówień", "ShowOrdersByCustomerId", "Order", new { customerId = Model.Id })
 </div>

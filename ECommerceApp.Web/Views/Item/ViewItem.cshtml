@@ -4,10 +4,9 @@
     ViewData["Title"] = "ViewItem";
 }
 
-<h1>ViewItem</h1>
+<h1>Sczegóły przedmiotu</h1>
 
 <div>
-    <h4>ItemDetailsVm</h4>
     <hr />
     <dl class="row">
         <dt class="col-sm-2">
@@ -72,10 +71,11 @@
         </dd>
 
     </dl>
+    @if (Model.ItemTags.Count > 0)
+    {
     <div class="col">
         <table class="table table-bordered">
             <thead class="thead-dark">
-                <!--zmien tabelke-->
                 <tr>
                     <th>
                         Id przedmiotu
@@ -94,24 +94,28 @@
             <tbody>
                 @foreach (var tag in Model.ItemTags)
                 {
-                <tr>
-                    <td>
-                        @Html.DisplayFor(model => tag.ItemId)
-                    <td>
-                        @Html.DisplayFor(model => tag.ItemName)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(model => tag.TagId)
-                    <td>
-                        @Html.DisplayFor(model => tag.TagName)
-                    </td>
-                </tr>
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(model => tag.ItemId)
+                        <td>
+                            @Html.DisplayFor(model => tag.ItemName)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(model => tag.TagId)
+                        <td>
+                            @Html.DisplayFor(model => tag.TagName)
+                        </td>
+                    </tr>
                 }
             </tbody>
         </table>
     </div>
+    }
 </div>
+
+
 <div>
-    @Html.ActionLink("Edytuj", "EditItem", new {  id = Model.Id  }) |
-    <a asp-action="Index">Wróć do listy przedmiotów</a>
+    @Html.ActionLink("Edytuj", "EditItem", new { id = Model.Id }) |
+    <a asp-action="Index">Wróć do listy przedmiotów</a> |
+    @Html.ActionLink("Lista zamówień", "ShowOrderItemsByItemId", "Order", new { itemId = Model.Id })
 </div>

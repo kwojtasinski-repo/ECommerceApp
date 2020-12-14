@@ -4,10 +4,9 @@
     ViewData["Title"] = "AddOrderSummary";
 }
 
-<h1>AddOrderSummary</h1>
+<h1>Podsumowanie zamówienia</h1>
 
 <div>
-    <h4>NewOrderVm</h4>
     <hr />
     <dl class="row">
         <dt class="col-sm-2">
@@ -83,7 +82,7 @@
 </div>
 <div>
     <div class="form-group">
-        <a asp-action="Payment"><input type="button" readonly value="Przejdź do płatności" class="btn btn-primary" /></a>
+        <a asp-controller="Order" asp-action="Payment" asp-route-id="@Model.Id"><input type="button" readonly value="Przejdź do płatności" class="btn btn-primary" /></a>
         <a asp-action="Index"><input type="button" readonly value="Zrealizuj później" class="btn btn-primary" /></a>
     </div>
 </div>

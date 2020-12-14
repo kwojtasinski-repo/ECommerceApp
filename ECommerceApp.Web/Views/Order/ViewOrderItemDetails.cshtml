@@ -1,10 +1,10 @@
-﻿@model ECommerceApp.Application.ViewModels.Coupon.CouponDetailsVm
+﻿@model ECommerceApp.Application.ViewModels.Order.OrderItemDetailsVm
 
 @{
-    ViewData["Title"] = "ViewCoupon";
+    ViewData["Title"] = "ViewOrdertemDetails";
 }
 
-<h1>Szczegóły kuponu</h1>
+<h1>Szczegóły zamówionego przedmiotu</h1>
 
 <div>
     <hr />
@@ -16,34 +16,34 @@
             @Html.DisplayFor(model => model.Id)
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Code)
+            @Html.DisplayNameFor(model => model.ItemId)
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Code)
+            @Html.DisplayFor(model => model.ItemId)
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Discount)
+            @Html.DisplayNameFor(model => model.ItemName)
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Discount)
+            @Html.DisplayFor(model => model.ItemName)
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Description)
+            @Html.DisplayNameFor(model => model.ItemOrderQuantity)
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Description)
+            @Html.DisplayFor(model => model.ItemOrderQuantity)
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.CouponTypeId)
+            @Html.DisplayNameFor(model => model.ItemCost)
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.CouponTypeId)
+            @Html.DisplayFor(model => model.ItemCost)
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Type.Type)
+            @Html.DisplayNameFor(model => model.OrderId)
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Type.Type)
+            @Html.DisplayFor(model => model.OrderId)
         </dd>
         <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.CouponUsedId)
@@ -52,14 +52,13 @@
             @Html.DisplayFor(model => model.CouponUsedId)
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Number)
+            @Html.DisplayNameFor(model => model.RefundId)
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Number)
+            @Html.DisplayFor(model => model.RefundId)
         </dd>
     </dl>
 </div>
 <div>
-    @Html.ActionLink("Edytuj", "EditCoupon", new { id = Model.Id }) |
-    <a asp-action="Index">Powrót do listy kuponów</a>
+    <a asp-action="Index">Wróć do listy zamówień</a>
 </div>

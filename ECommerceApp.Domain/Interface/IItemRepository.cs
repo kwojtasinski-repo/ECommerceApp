@@ -35,5 +35,8 @@ namespace ECommerceApp.Domain.Interface
         Tag GetItemTagById(int id);
         void UpdateTag(Tag tag);
         void DeleteTag(int id);
+        ItemTag GetItemTagByItemId(int itemId);
+        void AddItemTag(ItemTag itemIag);
+        IQueryable<ItemTag> GetAllItemTags();
     }
 }

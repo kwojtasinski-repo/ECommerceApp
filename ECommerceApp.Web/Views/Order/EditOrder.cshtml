@@ -1,67 +1,122 @@
 ﻿@model ECommerceApp.Application.ViewModels.Order.NewOrderVm
 
 @{
-    ViewData["Title"] = "AddOrderDetails";
+    ViewData["Title"] = "EditOrder";
 }
 
-<h1>Dodawnie szczegółów zamówienia</h1>
+<h1>Edycja zamówienia</h1>
 
 <hr />
 <div class="row">
     <div class="col-lg-6">
-        <form asp-action="AddOrderDetails" method="post">
+        <form id="EditOrderForm" asp-action="EditOrder">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" class="form-control" />
             <div class="form-group">
-                <label asp-for="Number" class="control-label">Numer zamówienia</label>
-                <input asp-for="Number" class="form-control" readonly />
+                <label style="display:none;" asp-for="Number" class="control-label"></label>
+                <label class="control-label">Numer zamówienia</label>
+                <input readonly asp-for="Number" class="form-control" />
                 <span asp-validation-for="Number" class="text-danger"></span>
             </div>
             <div style="display:none;" class="form-group">
-                <label asp-for="Cost" class="control-label"></label>
+                <label style="display:none;" asp-for="Cost" class="control-label"></label>
+                <label class="control-label">Koszt do zapłaty</label>
                 <input asp-for="Cost" class="form-control" />
                 <span asp-validation-for="Cost" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="Ordered" class="control-label">Zamówiono dnia o godzinie</label>
-                <input asp-for="Ordered" class="form-control" readonly />
+                <label style="display:none;" asp-for="Ordered" class="control-label"></label>
+                <label class="control-label">Zamówiono dnia o godzinie</label>
+                <input readonly asp-for="Ordered" class="form-control" />
                 <span asp-validation-for="Ordered" class="text-danger"></span>
             </div>
-            <div style="display:none;" class="form-group">
-                <label asp-for="Delivered" class="control-label"></label>
+            <div class="form-group">
+                <label style="display:none;" asp-for="Delivered" class="control-label"></label>
+                <label class="control-label">Dostarczono dnia o godzinie</label>
                 <input asp-for="Delivered" class="form-control" />
                 <span asp-validation-for="Delivered" class="text-danger"></span>
             </div>
-            <div style="display:none;" class="form-group form-check">
+            <div class="form-group form-check">
                 <label class="form-check-label">
-                    <input class="form-check-input" asp-for="IsDelivered" /> @Html.DisplayNameFor(model => model.IsDelivered)
+                    <input style="display:none;" class="form-check-input" asp-for="IsDelivered" onclick="return false;" />
+                    <input class="form-check-input" asp-for="IsDelivered" /> Dostarczono
                 </label>
             </div>
             <div style="display:none;" class="form-group">
                 <label asp-for="CouponUsedId" class="control-label"></label>
-                <input asp-for="CouponUsedId" class="form-control" />
+                <input asp-for="CouponUsedId" class="form-control" /> <!-- select list or js check if it is correct refcode-->
                 <span asp-validation-for="CouponUsedId" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="CustomerId" class="control-label">Klient</label>
+                <label style="display:none;" asp-for="CustomerId" class="control-label"></label>
+                <label class="control-label">Klient:</label>
                 <input value="@ViewBag.CustomerInformation" class="form-control" readonly />
+                <input type="hidden" asp-for="CustomerId" class="form-control" />
                 <span asp-validation-for="CustomerId" class="text-danger"></span>
             </div>
-            <div style="display:none;" class="form-group">
-                <label asp-for="PaymentId" class="control-label"></label>
-                <input asp-for="PaymentId" class="form-control" />
-                <span asp-validation-for="PaymentId" class="text-danger"></span>
-            </div>
-            <div style="display:none;" class="form-group form-check">
-                <label class="form-check-label">
-                    <input class="form-check-input" asp-for="IsPaid" /> @Html.DisplayNameFor(model => model.IsPaid)
-                </label>
-            </div>
-            <div style="display:none;" class="form-group">
-                <label asp-for="RefundId" class="control-label"></label>
-                <input asp-for="RefundId" class="form-control" />
-                <span asp-validation-for="RefundId" class="text-danger"></span>
-            </div>
+            @if (Model.PaymentId > 0)
+            {
+                <div class="form-group">
+                    <label style="display:none;" asp-for="PaymentId" class="control-label"></label>
+                    <label class="control-label">Nr płatności</label>
+                    <input readonly value="@ViewBag.PaymentNumber" class="form-control" />
+                    <input type="hidden" asp-for="PaymentId" class="form-control" />
+                    <span asp-validation-for="PaymentId" class="text-danger"></span>
+                </div>
+                <div class="form-group form-check">
+                    <label class="form-check-label">
+                        <input type="checkbox" class="form-check-input" asp-for="IsPaid" onclick="return false;" /> Zapłacono
+                    </label>
+                </div>
+                @if (Model.RefundId > 0)
+                {
+                    <p>Naciśnij przycisk, w celu zmiany zwrotu</p>
+
+                    <button type="button" class="btn btn-info" onclick="RefundFunction()">Wprowadź/Anuluj</button>
+                    <div id="RefundEnter" style="top:50px;">
+                        <div class="form-group">
+                            <label asp-for="RefundId" class="control-label">Powód zwrotu</label>
+                            <input type="hidden" readonly asp-for="RefundId" class="form-control" />
+                            <input type="text" id="ReasonRefundText" asp-for="ReasonRefund" class="form-control" />
+                            <span asp-validation-for="ReasonRefund" class="text-danger"></span>
+                        </div>
+                        <div class="form-group form-check">
+                            <label class="form-check-label">
+                                <input class="form-check-input" id="AcceptedRefundChoice" asp-for="AcceptedRefund" /> Akceptacja zwrotu
+                            </label>
+                        </div>
+                        <div class="form-group form-check">
+                            <label class="form-check-label">
+                                <input class="form-check-input" id="OnWarrantyChoice" asp-for="OnWarranty" /> Na gwarancji
+                            </label>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <p>Naciśnij przycisk, w celu wprowadzenia zwrotu</p>
+
+                    <button type="button" class="btn btn-info" onclick="RefundFunction()">Wprowadź/Anuluj</button>
+                    <div id="RefundEnter" style="display:none;top:50px;">
+                        <div class="form-group">
+                            <label asp-for="RefundId" class="control-label">Powód zwrotu</label>
+                            <input type="hidden" readonly asp-for="RefundId" class="form-control" />
+                            <input type="text" id="ReasonRefundText" asp-for="ReasonRefund" class="form-control" />
+                            <span asp-validation-for="RefundId" class="text-danger"></span>
+                        </div>
+                        <div class="form-group form-check">
+                            <label class="form-check-label">
+                                <input class="form-check-input" id="AcceptedRefundChoice" asp-for="AcceptedRefund" /> Akceptacja zwrotu
+                            </label>
+                        </div>
+                        <div class="form-group form-check">
+                            <label class="form-check-label">
+                                <input class="form-check-input" id="OnWarrantyChoice" asp-for="OnWarranty" /> Na gwarancji
+                            </label>
+                        </div>
+                    </div>
+                }
+            }
             <div>
                 <p>Przedmioty:</p>
                 <table id="itemWithJS">
@@ -74,19 +129,20 @@
                                 <input type="hidden" name="OrderItems[@i].OrderId" class="form-control" value="@Model.Id" />
                                 <input type="hidden" name="OrderItems[@i].Id" class="form-control" value="@Model.OrderItems[i].Id" />
                             </td>
-                            <td >
+                            <td>
                                 <a><i onclick="AddQuantity(this.id)" id="OrderItems[@i].ItemOrderQuantity" class="fas fa-plus-circle ml-2 fa_custom"></i></a>
-                                <input id="ItemQuantity[@i]" name="@Model.OrderItems[i].ItemOrderQuantity" value="@Model.OrderItems[i].ItemOrderQuantity" readonly style="width: 45px;" />
+                                <input id="ItemQuantity[@i]" name="OrderItems[@i].ItemOrderQuantity" value="@Model.OrderItems[i].ItemOrderQuantity" readonly style="width: 45px;" />
                                 <a><i onclick="RemoveQuantity(this.id)" class="fa fa-minus-circle ml-2 fa_custom" id="OrderItems[@i].ItemOrderQuantity"></i></a>
                                 <button onclick="DeleteItem(this.id)" id="@i" type="button" class="btn btn-danger delete">Usuń</button>
                             </td>
                         </tr>
                     }
-                </table><!--You are selecting items using this code "order.Items"-->
+                </table>
             </div>
             <div>
                 <label>Kod promocyjny</label>
-                <input type="text" asp-for="RefCode" />
+                <input id="RefCode" type="text" asp-for="RefCode"  value="@Model.RefCode" />
+                <span asp-validation-for="RefCode" class="text-danger"></span>
             </div>
             <table id="newrow" style="display:none;">
                 <tr id="%">
@@ -117,32 +173,33 @@
                     @if (Model.CustomerId > 0)
                     {
                         <td>
-                            Cena <input id="CalcCost" name="CostToConvert" value="@Model.Cost" readonly style="width: 250px;position:static; " />
+                            Cena: <input id="CalcCost" name="CostToConvert" value="@Model.Cost" readonly style="width: 250px;position:static; " />
                         </td>
                     }
-                    </tr>
+                </tr>
             </table>
             <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+                <input type="submit" value="Zatwierdź" class="btn btn-primary" />
             </div>
         </form>
     </div>
 </div>
-
-<div>
+<div class="form-group">
     <a asp-action="Index">Wróć do listy zamówień</a>
+    @if (!Model.IsPaid)
+    {
+        <a asp-controller="Order" asp-action="Payment" asp-route-id="@Model.Id">Przejdź do płatności</a>
+    }
 </div>
 
 @section Scripts {
-
-    <script type="text/javascript">
+    <script>
         var form = $('form');
         var table = $('#itemWithJS');
         var newrow = $('#newrow');
         let index = document.getElementById("indexer").value;
-        var elementOfItemTag = document.getElementById("Items");
+        var copyOfItemTags = document.getElementById("Items");
         var selectedIndexItemTags = 0;
-        var copyOfItemTags = elementOfItemTag;
         var selectedIndex;
         var selectedValue;
         var selectedTableRowInTags;
@@ -152,9 +209,8 @@
         $(document).ready(function () {
             console.log("Document ready");
             console.log($('#itemWithJS tr'));
+
             if ($('#itemWithJS tr').length > 0) {
-
-
                 var valueInQuantity = parseInt($('#itemWithJS tr')[0].cells[1].childNodes[3].value); // get value quantity
                 //$('#itemWithJS tr')[i];// list of table rows
                 var listOfTd = $('#itemWithJS tr');
@@ -164,30 +220,35 @@
                 var cost = 0;//CalcCost
                 console.log("itemsCostWithIds");
                 console.log(itemsCostWithIds);
-
+                console.log("Kolezko jestem przed constem");
                 const format = (num, decimals) => num.toLocaleString('pl-PL', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
                 });
-
                 for (i = 0; i < listOfTd.length; i++) {
                     var itemId = $('#itemWithJS tr')[i].children[0].children[1].value;
-                    console.log("itemId");
-                    console.log(itemId);
                     var valueInQuantity = parseInt($('#itemWithJS tr')[i].cells[1].childNodes[3].value);
                     for (j = 0; j < itemsCostWithIds.length; j++) {
                         if (itemsCostWithIds[j].value == itemId) {
-                            console.log(itemsCostWithIds[j].value);
-                            console.log(itemsCostWithIds[j].text);
                             cost += Number(itemsCostWithIds[j].text.replace(",", ".")) * Number(valueInQuantity);
-                            console.log(itemsCostWithIds[j]);
-                            console.log(itemId);
-                            console.log(valueInQuantity);
                         }
                     }
                 }
                 cost = format(cost);
                 document.getElementById('CalcCost').value = cost;
+                index = $('#itemWithJS tr').length;
+                var assignedValues = [];
+                var collectionValues = $('#itemWithJS')[0].children;
+                console.log(collectionValues[0].children);
+                copyOfItemTags = document.getElementById("Items");
+                for (i = 0; i < collectionValues[0].children.length; i++) {            
+                    assignedValues[i] = collectionValues[0].children[i].children[0].children[1].value;
+                }
+                console.log(collectionValues[0].children[0].children[0].children[1].value);
+                console.log(assignedValues);
+                for (i = 0; i < assignedValues.length; i++) {
+                    removeSelectOption(assignedValues[i], copyOfItemTags);
+                }
             }
         });
 
@@ -195,9 +256,6 @@
             selectedIndex = copyOfItemTags.options[copyOfItemTags.selectedIndex].index;
             selectedValue = copyOfItemTags.options[copyOfItemTags.selectedIndex].value;
             selectedText = copyOfItemTags.options[copyOfItemTags.selectedIndex].text;
-            console.log(selectedIndex);
-            console.log(selectedValue);
-            console.log(selectedText);
             var valueOfItemTag = selectedValue;
             var cloneTableRow = newrow.find('tr').clone();
 
@@ -221,24 +279,19 @@
         });
 
         $(document).on('change', 'select', function () {
-            console.log("Jestem w onchange -> select")
             selectedIndex = (this).index;
             selectedValue = (this).value;
-            console.log(selectedValue);
-            console.log(this.children);
             var collectionInSelectList = this.children;
 
             for (i = 0; i < collectionInSelectList.length; i++) {
-                console.log("jestem w forze");
                 if (collectionInSelectList[i].value == selectedValue) {
                     selectedIndex = i;
-                    
+
                 }
             }
         });
 
         $('#itemWithJS').on('click', '.delete', function () {
-            var valuesFromSelect = document.getElementById('Items');
             selectedTableRowInTags = (this).parentNode.parentNode.attributes.id.value;
             var assignedValuesQuantity = [];
             var assignedValuesOrderId = [];
@@ -302,8 +355,8 @@
             //----------------------DELETE CHOSEN OPTIONS--------------------
             copyOfItemTags = document.getElementById("Items");
             for (i = 0; i < assignedValues.length; i++) {
-                 //   removeSelectOption(i, copyOfItemTags);
-                    removeSelectOption(assignedValues[i], copyOfItemTags);                
+                //   removeSelectOption(i, copyOfItemTags);
+                removeSelectOption(assignedValues[i], copyOfItemTags);
             }
             //----------------------DELETE CHOSEN OPTIONS--------------------
             index = listIdTags.length;
@@ -332,36 +385,22 @@
         }
 
         function AddQuantity(id) {
-            console.log("Jestem w plusie");
-            console.log("id=" + id);
             selectedTableRowInTags = event.target.id.replace("OrderItems[", "").replace("].ItemOrderQuantity", "");
-            console.log("selectedTableRowInTags=" + selectedTableRowInTags);
-          //  console.log($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
-            console.log("after add");
-            console.log($('#itemWithJS tr'));
             var valueInQunatity = parseInt($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
             valueInQunatity += 1;
             $('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value = "";
             $('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value = valueInQunatity;
-            document.getElementById("ItemQuantity[" + selectedTableRowInTags +"]").value = valueInQunatity;
-          //  console.log($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
+            document.getElementById("ItemQuantity[" + selectedTableRowInTags + "]").value = valueInQunatity;
             IncreaseCost();
         }
 
         function RemoveQuantity(id) {
-            console.log("Jestem w minusie");
-         //   console.log("id=" + id);
             selectedTableRowInTags = event.target.id.replace("OrderItems[", "").replace("].ItemOrderQuantity", "");
-      //      console.log("selectedTableRowInTags=" + selectedTableRowInTags);
-       //     console.log($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
             var valueInQunatity = parseInt($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
-       //     console.log("after delete");
             valueInQunatity -= 1;
             if (valueInQunatity > 0) {
                 $('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value = "";
                 $('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value = valueInQunatity;
-           //     document.getElementById("ItemQuantity").value = valueInQunatity;
-                console.log($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
             }
             DecreaseCost();
         }
@@ -380,23 +419,11 @@
         var table2 = $('#RefreshCost');
 
         function IncreaseCost() {
-            console.log("Jestem w increase");
-            console.log($('#RefreshCost tr td'));
-            console.log($('#RefreshCost tr td')[0]);
-            console.log($('#RefreshCost tr td')[0].children);
-            console.log($('#RefreshCost tr td')[0].children[0]);
-            console.log($('#RefreshCost tr td')[0].children[0].value);
             var valueInQuantity = parseInt($('#itemWithJS tr')[0].cells[1].childNodes[3].value); // get value quantity
-            console.log(valueInQuantity);
-            console.log($('#itemWithJS tr'));// list of table rows
             //$('#itemWithJS tr')[i];// list of table rows
             var listOfTd = $('#itemWithJS tr');
-            console.log($('#itemWithJS tr')[0].children[0].children[1].value); // id of element
-            console.log(document.getElementById('ItemsWithCosts').children); // list of elements
             var itemsCostWithIds = document.getElementById('ItemsWithCosts').children;
             var cost = 0;//CalcCost
-            console.log("itemsCostWithIds");
-            console.log(itemsCostWithIds);
 
             const format = (num, decimals) => num.toLocaleString('pl-PL', {
                 minimumFractionDigits: 2,
@@ -405,34 +432,24 @@
 
             for (i = 0; i < listOfTd.length; i++) {
                 var itemId = $('#itemWithJS tr')[i].children[0].children[1].value;
-                console.log("itemId");
-                console.log(itemId);
                 var valueInQuantity = parseInt($('#itemWithJS tr')[i].cells[1].childNodes[3].value);
                 for (j = 0; j < itemsCostWithIds.length; j++) {
                     if (itemsCostWithIds[j].value == itemId) {
-                        console.log(itemsCostWithIds[j].value);
-                        console.log(itemsCostWithIds[j].text);
                         cost += Number(itemsCostWithIds[j].text.replace(",", ".")) * Number(valueInQuantity);
-                        console.log(itemsCostWithIds[j]);
-                        console.log(itemId);
-                        console.log(valueInQuantity);
                     }
                 }
             }
             cost = format(cost);
-            console.log(cost);
-        //    document.getElementById('CalcCost').value = cost.replace(",", "").replace(".", ",");
             document.getElementById('CalcCost').value = cost;
         }
 
         function DecreaseCost() {
-            console.log("Jestem w decrease");
             var valueInQuantity = 0;
 
             if ($('#itemWithJS tr').length > 0) {
                 valueInQuantity = parseInt($('#itemWithJS tr')[0].cells[1].childNodes[3].value); // get value quantity
             }
-            
+
             //$('#itemWithJS tr')[i];// list of table rows
             var listOfTd = $('#itemWithJS tr');
             var itemsCostWithIds = document.getElementById('ItemsWithCosts').children;
@@ -460,8 +477,19 @@
                 }
             }
             cost = format(cost);
-            console.log(cost);
             document.getElementById('CalcCost').value = cost;
+        }
+
+        function RefundFunction() {
+            var x = document.getElementById("RefundEnter");
+            if (x.style.display === "none") {
+                x.style.display = "block";
+            } else {
+                x.style.display = "none";
+                document.getElementById("ReasonRefundText").value = "";
+                document.getElementById("AcceptedRefundChoice").checked = false;
+                document.getElementById("OnWarrantyChoice").checked = false;
+            }
         }
 
     </script>
@@ -474,4 +502,3 @@
 
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }
-

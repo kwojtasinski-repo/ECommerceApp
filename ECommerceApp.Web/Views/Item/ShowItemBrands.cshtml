@@ -4,7 +4,7 @@
     ViewData["Title"] = "ShowItemBrands";
 }
 
-<h1>ShowItemBrands</h1>
+<h1>Lista wszystkich marek przedmiotów</h1>
 
 <p>
     <a asp-action="AddItemBrand">Dodaj nową markę</a>
@@ -41,7 +41,7 @@
                     <td>
                         @Html.ActionLink("Edytuj", "EditItemBrand", new { id = item.Id }) |
                         @Html.ActionLink("Szczegóły", "ViewItemBrand", new { id = item.Id }) |
-                        @Html.ActionLink("Delete", "DeleteItemBrand", new {  id=item.Id })
+                        @Html.ActionLink("Usuń", "DeleteItemBrand", new {  id=item.Id })
                     </td>
                 </tr>
             }

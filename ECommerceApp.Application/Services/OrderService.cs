@@ -35,7 +35,7 @@ namespace ECommerceApp.Application.Services
         public int AddPayment(NewPaymentVm paymentVm)
         {
             var payment = _mapper.Map<Payment>(paymentVm);
-            var id = _orderRepo.AddPayment(payment);
+            var id = _orderRepo.AddPayment(payment);            
             return id;
         }
 
@@ -77,14 +77,15 @@ namespace ECommerceApp.Application.Services
 
         public ListForItemOrderVm GetAllItemsOrdered(int pageSize, int pageNo, string searchString)
         {
-            var itemOrder = _orderRepo.GetAllOrderItems().Where(oi => oi.Item.Name.StartsWith(searchString))
+            var itemOrder = _orderRepo.GetAllOrderItems().Where(oi => oi.Item.Name.StartsWith(searchString) ||
+                            oi.Item.Brand.Name.StartsWith(searchString) || oi.Item.Type.Name.StartsWith(searchString))
                             .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
                             .ToList();
             var itemOrderToShow = itemOrder.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
 
             var itemOrderList = new ListForItemOrderVm()
             {
-                PageSize = pageNo,
+                PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
                 ItemOrders = itemOrderToShow,
@@ -96,14 +97,14 @@ namespace ECommerceApp.Application.Services
 
         public ListForItemOrderVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo)
         {
-            var itemOrder = _orderRepo.GetAllOrderItems().Where(oi => oi.Id == id)
+            var itemOrder = _orderRepo.GetAllOrderItems().Where(oi => oi.ItemId == id)
                             .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
                             .ToList();
             var itemOrderToShow = itemOrder.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
 
             var itemOrderList = new ListForItemOrderVm()
             {
-                PageSize = pageNo,
+                PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = "",
                 ItemOrders = itemOrderToShow,
@@ -122,7 +123,7 @@ namespace ECommerceApp.Application.Services
 
             var ordersList = new ListForOrderVm()
             {
-                PageSize = pageNo,
+                PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
                 Orders = ordersToShow,
@@ -141,7 +142,7 @@ namespace ECommerceApp.Application.Services
 
             var paymentsList = new ListForPaymentVm()
             {
-                PageSize = pageNo,
+                PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
                 Payments = paymentsToShow,
@@ -161,7 +162,7 @@ namespace ECommerceApp.Application.Services
 
             var refundsList = new ListForRefundVm()
             {
-                PageSize = pageNo,
+                PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
                 Refunds = refundsToShow,
@@ -248,7 +249,9 @@ namespace ECommerceApp.Application.Services
         public int CheckPromoCode(string code)
         {
             var coupons = GetAllCoupons().ToList();
-            var coupon = coupons.FirstOrDefault(c => c.Code == code);
+         //   var coupon = coupons.FirstOrDefault(c => c.Code. == code && c.CouponUsedId == null);
+            var coupon = coupons.FirstOrDefault(c => String.Equals(c.Code, code,
+                   StringComparison.Ordinal) && c.CouponUsedId == null);
             var id = 0;
             if (coupon != null)
             {
@@ -257,17 +260,18 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public int UpdateCoupon(int couponId, int orderId)
+        public int UpdateCoupon(int couponId, NewOrderVm order)
         {
             var couponUsed = new NewCouponUsedVm()
             {
                 Id = 0,
                 CouponId = couponId,
-                OrderId = orderId
+                OrderId = order.Id
             };
             var couponUsedId = AddCouponUsed(couponUsed);
             var coupon = _orderRepo.GetCouponById(couponId);
             _orderRepo.UpdateCoupon(coupon, couponUsedId);
+            order.Cost = (1 - (decimal)coupon.Discount/100) * order.Cost;
             return couponUsedId;
         }
 
@@ -301,6 +305,54 @@ namespace ECommerceApp.Application.Services
         {
             var orderItems = _mapper.Map<List<NewOrderItemVm>, List<OrderItem>>(orderItemsVm);
             _orderRepo.AddOrderItems(orderItems);
+        }
+
+        public NewPaymentVm GetPaymentById(int id)
+        {
+            var payment = _orderRepo.GetPaymentById(id);
+            var paymentVm = _mapper.Map<NewPaymentVm>(payment);
+            return paymentVm;
+        }
+
+        public OrderItemDetailsVm GetOrderItemDetail(int id)
+        {
+            var orderItem = _orderRepo.GetOrderItemById(id);
+            var orderItemVm = _mapper.Map<OrderItemDetailsVm>(orderItem);
+            return orderItemVm;
+        }
+
+        public bool CheckEnteredRefund(string reasonRefund)
+        {
+            var refunds = _orderRepo.GetAllRefunds().ToList();
+            var refund = refunds.FirstOrDefault(r => String.Equals(r.Reason, reasonRefund,
+                   StringComparison.OrdinalIgnoreCase));
+            if (refund != null)
+            {
+                return false;
+            }
+            else
+            {
+                return true;
+            }
+        }
+
+        public ListForOrderVm GetAllOrdersByCustomerId(int customerId, int pageSize, int pageNo)
+        {
+            var orders = _orderRepo.GetAllOrders().Where(o => o.CustomerId == customerId)
+                            .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
+                            .ToList();
+            var ordersToShow = orders.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+
+            var ordersList = new ListForOrderVm()
+            {
+                PageSize = pageSize,
+                CurrentPage = pageNo,
+                SearchString = "",
+                Orders = ordersToShow,
+                Count = orders.Count
+            };
+
+            return ordersList;
         }
     }
 }

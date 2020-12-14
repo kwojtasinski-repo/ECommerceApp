@@ -4,9 +4,9 @@
     ViewData["Title"] = "EditItemType";
 }
 
-<h1>EditItemType</h1>
+<h1>Edycja typu przedmiotów</h1>
 
-<h4>NewItemTypeVm</h4>
+
 <hr />
 <div class="row">
     <div class="col-md-4">
@@ -14,19 +14,19 @@
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 <input type="hidden" asp-for="Id" class="form-control" />
             <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
+                <label asp-for="Name" class="control-label">Nazwa</label>
                 <input asp-for="Name" class="form-control" />
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
+                <input type="submit" value="Zatwierdź" class="btn btn-primary" />
             </div>
         </form>
     </div>
 </div>
 
 <div>
-    <a asp-action="Index">Back to List</a>
+    <a asp-action="Index">Wróć do listy przedmiotów</a>
 </div>
 
 @section Scripts {

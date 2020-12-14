@@ -114,6 +114,7 @@ namespace ECommerceApp.Infrastructure.Repositories
         public int AddCouponUsed(CouponUsed couponUsed)
         {
             _context.CouponUsed.Add(couponUsed);
+                
             _context.SaveChanges();
             return couponUsed.Id;
         }
@@ -144,7 +145,8 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public IQueryable<Order> GetAllOrders()
         {
-            return _context.Orders;
+            return _context.Orders
+                .Include(inc=>inc.CouponUsed);
         }
     }
 }

@@ -20,8 +20,49 @@ namespace ECommerceApp.Infrastructure.Repositories
         {
             var customer = _context.Customers.Find(customerId);
 
+
             if (customer != null)
             {
+                var customerWithOrders = _context.Customers.Include(p => p.Orders)
+                                         .SingleOrDefault(p => p.Id == customerId);
+
+                foreach (var order in customerWithOrders.Orders.ToList())
+                {
+                    _context.Orders.Remove(order);
+                }
+
+                var customerWithAddresses = _context.Customers.Include(p => p.Addresses)
+                                            .SingleOrDefault(p => p.Id == customerId);
+
+                foreach (var address in customerWithAddresses.Addresses.ToList())
+                {
+                    _context.Addresses.Remove(address);
+                }
+
+                var customerWithContactDetails = _context.Customers.Include(p => p.ContactDetails)
+                                            .SingleOrDefault(p => p.Id == customerId);
+
+                foreach (var contactDetail in customerWithContactDetails.ContactDetails.ToList())
+                {
+                    _context.ContactDetails.Remove(contactDetail);
+                }
+
+                var customerWithPayments = _context.Customers.Include(p => p.Payments)
+                                            .SingleOrDefault(p => p.Id == customerId);
+
+                foreach (var payment in customerWithPayments.Payments.ToList())
+                {
+                    _context.Payments.Remove(payment);
+                }
+
+                var customerWithRefunds = _context.Customers.Include(p => p.Refunds)
+                                            .SingleOrDefault(p => p.Id == customerId);
+
+                foreach (var refund in customerWithRefunds.Refunds.ToList())
+                {
+                    _context.Refunds.Remove(refund);
+                }
+
                 _context.Customers.Remove(customer);
                 _context.SaveChanges();
             }

@@ -1,0 +1,110 @@
+﻿@model ECommerceApp.Application.ViewModels.Order.ListForOrderVm
+
+@{
+    ViewData["Title"] = "ShowOrdersByCustomerId";
+}
+
+<h1>Lista zamówień klienta</h1>
+
+<p>
+    <a asp-action="Index">Lista zamówień</a>
+</p>
+<form asp-action="ShowOrdersByCustomerId" asp-controller="Order" method="post">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    @Html.DisplayNameFor(model => model.CurrentPage)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.PageSize)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.SearchString)
+                </th>
+                <th>
+                    @Html.DisplayNameFor(model => model.Count)
+                </th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in Model.Orders)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(model => order.Id)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => order.Number)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => order.Cost)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => order.CustomerId)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => order.Ordered)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => order.IsPaid)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => order.PaymentId)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => order.IsDelivered)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => order.Delivered)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => order.CouponUsedId)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => order.RefundId)
+                    </td>
+                    <td>
+                        @Html.ActionLink("Edytuj", "EditOrder", new { id = order.Id }) |
+                        @Html.ActionLink("Szczegóły", "ViewOrderDetails", new { id = order.Id }) |
+                        @Html.ActionLink("Usuń", "DeleteOrder", new { id = order.Id })
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <div class="row">
+        <table>
+            <tr>
+                @for (int i = 1; i <= Math.Ceiling(Model.Count / (double)Model.PageSize); i++)
+                {
+                    <td>
+                        @if (i != Model.CurrentPage)
+                        {
+                            <a href="javascript:PagerClick(@i)">@i</a>
+                        }
+                        else
+                        {
+                            <span>@i</span>
+                        }
+                    </td>
+                }
+            </tr>
+        </table>
+        <input type="hidden" name="pageNo" id="pageNo" />
+        <input type="hidden" name="pageSize" id="pageSize" value="20" />
+        <input type="hidden" name="itemId" id="pageSize" value="@ViewBag.InputParameterId" />
+    </div>
+</form>
+
+@section Scripts
+{
+    <script type="text/javascript">
+        function PagerClick(index)
+        {
+            document.getElementById("pageNo").value = index;
+            document.forms[0].submit();
+        }
+    </script>
+}

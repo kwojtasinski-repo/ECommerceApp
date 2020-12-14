@@ -17,7 +17,7 @@ namespace ECommerceApp.Application.ViewModels.Order
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ECommerceApp.Domain.Model.CouponUsed, PaymentDetailsVm>().ReverseMap();
+            profile.CreateMap<ECommerceApp.Domain.Model.Payment, PaymentDetailsVm>().ReverseMap();
         }
     }
 }

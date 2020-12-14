@@ -12,8 +12,7 @@ namespace ECommerceApp.Web.Controllers
     public class ItemController : Controller
     {
         private readonly IItemService _itemService;
-        // TODO ADD EDITING ITEMS WITH TAGS THIS WILL BE AT THE END
-        // NOW YOU SHOULD DO VIEW AND CONTROLLER FOR ORDER AND COUPON
+        // TODO FLuentValidation
         public ItemController(IItemService itemService)
         {
             _itemService = itemService;

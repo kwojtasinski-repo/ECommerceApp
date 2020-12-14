@@ -85,6 +85,31 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public void UpdateItem(Item item)
         {
+            //Backup new item collection tags before clearing 
+            var newItemTags = item.ItemTags;
+            item.ItemTags = new List<ItemTag>();
+
+            _context.Entry(item).State = EntityState.Modified;
+
+            //Load item's current tags from DB and remove them
+            _context.Entry(item).Collection(i => i.ItemTags).Load();
+            var currentItems = item.ItemTags.ToList();
+            item.ItemTags.Clear();
+
+            foreach (var itemTag in newItemTags)
+            {
+                var currentItem = currentItems.SingleOrDefault(it => it.TagId == itemTag.TagId);
+                if (currentItem != null)
+                {
+                    item.ItemTags.Add(currentItem);
+                }
+                else
+                {
+                    _context.ItemTag.Add(itemTag);
+                    item.ItemTags.Add(itemTag);
+                }
+            }
+
             _context.Attach(item);
             _context.Entry(item).Property("Name").IsModified = true;
             _context.Entry(item).Property("Cost").IsModified = true;
@@ -94,7 +119,8 @@ namespace ECommerceApp.Infrastructure.Repositories
             _context.Entry(item).Property("BrandId").IsModified = true;
             _context.Entry(item).Property("TypeId").IsModified = true;
             _context.Entry(item).Collection("OrderItems").IsModified = true;
-            _context.Entry(item).Collection("ItemTags").IsModified = true;
+           _context.Entry(item).Collection("ItemTags").IsModified = true;
+
             _context.SaveChanges();
         }
 
@@ -180,6 +206,26 @@ namespace ECommerceApp.Infrastructure.Repositories
                 _context.Tags.Remove(tag);
                 _context.SaveChanges();
             }
+        }
+
+        public void AddItemTag(ItemTag itemIag)
+        {
+            _context.ItemTag.Add(itemIag);
+            _context.SaveChanges();
+        }
+
+        public ItemTag GetItemTagByItemId(int itemId)
+        {
+            var itemTag = _context.ItemTag
+                .Include(inc => inc.Item)
+                .Include(inc => inc.Tag)
+                .FirstOrDefault(it => it.ItemId == itemId);
+            return itemTag;
+        }
+
+        public IQueryable<ItemTag>GetAllItemTags()
+        {
+            return _context.ItemTag;
         }
     }
 }
