@@ -4,7 +4,7 @@
     ViewData["Title"] = "ShowItemTypes";
 }
 
-<h1>ShowItemTypes</h1>
+<h1>Lista typów przedmiotów</h1>
 
 <p>
     <a asp-action="AddItemType">Dodaj nowy typ</a>
@@ -40,7 +40,7 @@
                     <td>
                         @Html.ActionLink("Edytuj", "EditItemType", new { id = item.Id }) |
                         @Html.ActionLink("Szczegóły", "ViewItemType", new { id = item.Id }) |
-                        @Html.ActionLink("Delete", "DeleteItemType", new { id = item.Id })
+                        @Html.ActionLink("Usuń", "DeleteItemType", new { id = item.Id })
                     </td>
                 </tr>
             }

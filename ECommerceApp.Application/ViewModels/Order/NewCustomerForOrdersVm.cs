@@ -14,7 +14,13 @@ namespace ECommerceApp.Application.ViewModels.Order
         public void Mapping(Profile profile)
         {
             profile.CreateMap<NewCustomerForOrdersVm, ECommerceApp.Domain.Model.Customer>().ReverseMap()
-                .ForMember(i => i.Information, opt => opt.MapFrom(c => c.FirstName + " " + c.LastName + " " + c.NIP + " " + c.CompanyName));
+                .ForMember(i => i.Information, opt => opt.MapFrom(c => (c.NIP != null && c.CompanyName != null) ?
+                            c.FirstName + " " + c.LastName + " " + c.NIP + " " + c.CompanyName
+                            : c.FirstName + " " + c.LastName));
+                
+                
+                
+                
         }
     }
 }

@@ -18,7 +18,7 @@ namespace ECommerceApp.Application.Interfaces
         NewOrderVm GetOrderForEdit(int id);
         OrderDetailsVm GetOrderDetail(int id);
         int AddPayment(NewPaymentVm payment);
-        void UpdatePayment(NewPaymentVm refund);
+        void UpdatePayment(NewPaymentVm paymentVm);
         void DeletePayment(int id);
         ListForPaymentVm GetAllPayments(int pageSize, int pageNo, string searchString);
         NewPaymentVm GetPaymentForEdit(int id);
@@ -35,10 +35,14 @@ namespace ECommerceApp.Application.Interfaces
         IQueryable<ECommerceApp.Domain.Model.Item> GetAllItemsToOrder();
         IQueryable<NewCouponVm> GetAllCoupons();
         int CheckPromoCode(string code);
-        int UpdateCoupon(int couponId, int orderId);
+        int UpdateCoupon(int couponId, NewOrderVm order);
         NewOrderVm GetOrderById(int orderId);
         void CalculateCost(NewOrderVm order, NewOrderItemVm model);
         NewCustomerForOrdersVm GetCustomerById(int id);
         void AddOrderItems(List<NewOrderItemVm> orderItems);
+        NewPaymentVm GetPaymentById(int id);
+        OrderItemDetailsVm GetOrderItemDetail(int id);
+        bool CheckEnteredRefund(string reasonRefund);
+        ListForOrderVm GetAllOrdersByCustomerId(int customerId, int pageSize, int pageNo);
     }
 }

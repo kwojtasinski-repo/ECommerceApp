@@ -33,6 +33,13 @@ namespace ECommerceApp.Application.ViewModels.Order
         public string RefCode { get; set; }
         public int CouponId { get; set; }
         public double CostToConvert { get; set; }
+        public string ReasonRefund { get; set; }
+        public bool AcceptedRefund { get; set; }
+        public DateTime RefundDate { get; set; }
+        public bool OnWarranty { get; set; }
+        public bool ChangedCode { get; set; }
+        public bool ChangedRefund { get; set; }
+
 
         public List<NewOrderItemVm> OrderItems { get; set; } // 1:Many relation
         public List<ECommerceApp.Domain.Model.Item> Items { get; set; }
@@ -40,10 +47,16 @@ namespace ECommerceApp.Application.ViewModels.Order
         public void Mapping(Profile profile)
         {
             profile.CreateMap<NewOrderVm, ECommerceApp.Domain.Model.Order>().ReverseMap()
-                .ForMember(r => r.RefCode, opt => opt.Ignore())
+                .ForMember(r => r.RefCode, opt => opt.MapFrom(r=>r.CouponUsed.Coupon))
                 .ForMember(c => c.CouponId, opt => opt.Ignore())
                 .ForMember(i => i.Items, opt => opt.Ignore())
-                .ForMember(c => c.CostToConvert, opt => opt.Ignore());
+                .ForMember(c => c.CostToConvert, opt => opt.Ignore())
+                .ForMember(rf => rf.ReasonRefund, opt => opt.MapFrom(r => r.Refund.Reason))
+                .ForMember(af => af.AcceptedRefund, opt => opt.MapFrom(a => a.Refund.Accepted))
+                .ForMember(rd => rd.RefundDate, opt => opt.MapFrom(rd => rd.Refund.RefundDate))
+                .ForMember(ow => ow.OnWarranty, opt => opt.MapFrom(ow => ow.Refund.OnWarranty))
+                .ForMember(cc => cc.ChangedCode, opt => opt.Ignore())
+                .ForMember(cr => cr.ChangedRefund, opt => opt.Ignore());
         }
 }
 }

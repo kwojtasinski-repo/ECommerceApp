@@ -20,31 +20,31 @@
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 <input type="hidden" asp-for="Id" class="form-control" />
                 <div class="col-md-6 mb-3">
-                    <label asp-for="FirstName" class="control-label"></label>
+                    <label asp-for="FirstName" class="control-label">Imię</label>
                     <input asp-for="FirstName" class="form-control" />
                     <span asp-validation-for="FirstName" class="text-danger"></span>
                 </div>
                 <div class="col-md-6 mb-3">
-                    <label asp-for="LastName" class="control-label"></label>
+                    <label asp-for="LastName" class="control-label">Nazwisko</label>
                     <input asp-for="LastName" class="form-control" />
                     <span asp-validation-for="LastName" class="text-danger"></span>
                 </div>
             </div>
             <div class="form-group form-check">
                 <label class="form-check-label">
-                    <input class="form-check-input" asp-for="IsCompany" /> Firma
+                    <input id="CompanyEnter" class="form-check-input" asp-for="IsCompany" onchange="toggleCheckbox(this)" /> Firma
                 </label>
             </div>
-            <div class="form-row">
+            <div id="CompanyData" class="form-row" style="display:none;">
                 <div class="col-md-3 mb-3">
                     <label asp-for="NIP" class="control-label"></label>
-                    <input asp-for="NIP" class="form-control" />
+                    <input id="NIPInput" asp-for="NIP" class="form-control" />
                     <span asp-validation-for="NIP" class="text-danger"></span>
                 </div>
                 <div class="col-md-3 mb-3"></div>
                 <div class="col-md-6 mb-3">
-                    <label asp-for="CompanyName" class="control-label"></label>
-                    <input asp-for="CompanyName" class="form-control" />
+                    <label asp-for="CompanyName" class="control-label">Nazwa firmy</label>
+                    <input id="CompanyInput" asp-for="CompanyName" class="form-control" />
                     <span asp-validation-for="CompanyName" class="text-danger"></span>
                 </div>
             </div>
@@ -78,38 +78,38 @@
             </div>
         </div>
     </div>
-    <br/>
+    <br />
     <div class="form-row">
         <div class="col-xs-6" id="Adresses">
-            <div class="col-md-12 mb-10">
+            <div>
                 <h4>Adres</h4><br />
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Addresses[0].Street" class="control-label"></label>
+                <div>
+                    <label asp-for="Addresses[0].Street" class="control-label">Ulica</label>
                     <input asp-for="Addresses[0].Street" class="form-control" />
                     <span asp-validation-for="Addresses[0].Street" class="text-danger"></span>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Addresses[0].BuildingNumber" class="control-label"></label>
+                <div>
+                    <label asp-for="Addresses[0].BuildingNumber" class="control-label">Numer budynku</label>
                     <input asp-for="Addresses[0].BuildingNumber" class="form-control" />
                     <span asp-validation-for="Addresses[0].BuildingNumber" class="text-danger"></span>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Addresses[0].FlatNumber" class="control-label"></label>
+                <div>
+                    <label asp-for="Addresses[0].FlatNumber" class="control-label">Numer mieszkania</label>
                     <input asp-for="Addresses[0].FlatNumber" class="form-control" />
                     <span asp-validation-for="Addresses[0].FlatNumber" class="text-danger"></span>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Addresses[0].ZipCode" class="control-label"></label>
+                <div>
+                    <label asp-for="Addresses[0].ZipCode" class="control-label">Kod pocztowy</label>
                     <input asp-for="Addresses[0].ZipCode" class="form-control" />
                     <span asp-validation-for="Addresses[0].ZipCode" class="text-danger"></span>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Addresses[0].City" class="control-label"></label>
+                <div>
+                    <label asp-for="Addresses[0].City" class="control-label">Miasto</label>
                     <input asp-for="Addresses[0].City" class="form-control" />
                     <span asp-validation-for="Addresses[0].City" class="text-danger"></span>
                 </div>
-                <div class="col-md-6 mb-3">
-                    <label asp-for="Addresses[0].Country" class="control-label"></label>
+                <div>
+                    <label asp-for="Addresses[0].Country" class="control-label">Kraj</label>
                     <input asp-for="Addresses[0].Country" class="form-control" />
                     <span asp-validation-for="Addresses[0].Country" class="text-danger"></span>
                 </div>
@@ -117,11 +117,24 @@
         </div>
     </div>
     <div class="form-group">
-            <input type="submit" value="Create" class="btn btn-primary" />
+        <input type="submit" value="Utwórz" class="btn btn-primary" />
     </div>
 </form>
 
-
+<script>
+    function toggleCheckbox(element) {
+        if (element.checked) {
+            $('#CompanyData').css("display", "block");
+        }
+        else {
+            $('#CompanyData').css("display", "none");
+            document.getElementById("NIPInput").value = "";
+            document.getElementById("CompanyInput").value = "";
+        }
+    }
+</script>
 @section Scripts {
+
+
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }

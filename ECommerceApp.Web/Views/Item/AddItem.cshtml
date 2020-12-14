@@ -4,9 +4,9 @@
     ViewData["Title"] = "AddItem";
 }
 
-<h1>AddItem</h1>
+<h1>Dodawanie przedmiotu</h1>
 
-<h4>NewItemVm</h4>
+
 <hr />
 <div class="row">
     <div class="col-md-4">
@@ -14,27 +14,27 @@
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" class="form-control" />
             <div class="form-group">
-                <label asp-for="Name" class="control-label"></label>
+                <label asp-for="Name" class="control-label">Nazwa</label>
                 <input asp-for="Name" class="form-control" />
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="Cost" class="control-label"></label>
+                <label asp-for="Cost" class="control-label">Koszt</label>
                 <input asp-for="Cost" class="form-control" />
                 <span asp-validation-for="Cost" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="Description" class="control-label"></label>
+                <label asp-for="Description" class="control-label">Opis</label>
                 <input asp-for="Description" class="form-control" />
                 <span asp-validation-for="Description" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="Warranty" class="control-label"></label>
+                <label asp-for="Warranty" class="control-label">Gwarancja</label>
                 <input asp-for="Warranty" class="form-control" />
                 <span asp-validation-for="Warranty" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="Quantity" class="control-label"></label>
+                <label asp-for="Quantity" class="control-label">Ilość w magazynie</label>
                 <input asp-for="Quantity" class="form-control" />
                 <span asp-validation-for="Quantity" class="text-danger"></span>
             </div>
@@ -95,8 +95,6 @@
                     <td>
                         <select id="ItemTagsMain" style="display:none;" asp-items="@(new SelectList(ViewBag.ItemTags,"Id", "Name"))" class="custom-select"></select>
                         <select id="ItemTags" name="ItemTags[#].TagId" asp-items="@(new SelectList(ViewBag.ItemTags,"Id", "Name"))" class="custom-select" data-val="true" value="wartosc"></select>
-                        <!--label id="ItemTags" name="ItemTags[#].TagId" class="custom-select" data-val="true" value="wartosc"></!--label>
-                        <p id="jsInjectValue"></p-->
                         <input type="hidden" name="ItemTags[#].ItemId" class="form-control" value="@Model.Id" />
                     </td>
                     <td id="buttonDelete">
@@ -110,7 +108,7 @@
             </p>
             <br />
             <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+                <input type="submit" value="Utwórz" class="btn btn-primary" />
             </div>
         </form>
     </div>

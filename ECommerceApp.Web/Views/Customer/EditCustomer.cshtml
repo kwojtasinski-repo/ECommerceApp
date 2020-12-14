@@ -25,22 +25,43 @@
                 <input asp-for="LastName" class="form-control" />
                 <span asp-validation-for="LastName" class="text-danger"></span>
             </div>
-            
+
             <div class="form-group form-check col-4"></div><div class="form-group form-check col-6" style=" margin: 0 auto; ">
                 <label class="form-check-label">
-                    <input class="form-check-input" asp-for="IsCompany" /> @Html.DisplayNameFor(model => model.IsCompany)
+                    <input id="CompanyEnter" class="form-check-input" asp-for="IsCompany" /> @Html.DisplayNameFor(model => model.IsCompany)
                 </label>
             </div>
-            <div class="form-group col-4">
-                <label asp-for="NIP" class="control-label"></label>
-                <input asp-for="NIP" class="form-control" />
-                <span asp-validation-for="NIP" class="text-danger"></span>
-            </div>
-            <div class="form-group col-1"></div> <div class="form-group col-4">
-                <label asp-for="CompanyName" class="control-label"></label>
-                <input asp-for="CompanyName" class="form-control" />
-                <span asp-validation-for="CompanyName" class="text-danger"></span>
-            </div>
+            @if (Model.IsCompany)
+            {
+                <div id="CompanyData" clas="form-row col-12" style="display:block;">
+                    <div>
+                        <label asp-for="NIP" class="control-label"></label>
+                        <input id="NIPInput" asp-for="NIP" class="form-control" />
+                        <span asp-validation-for="NIP" class="text-danger"></span>
+                    </div>
+                    <div>
+                        <label asp-for="CompanyName" class="control-label"></label>
+                        <input id="CompanyInput" asp-for="CompanyName" class="form-control" />
+                        <span asp-validation-for="CompanyName" class="text-danger"></span>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div id="CompanyData" class="form-row" style="display:none;">
+                    <div class="form-group col-4">
+                        <label asp-for="NIP" class="control-label"></label>
+                        <input asp-for="NIP" class="form-control" />
+                        <span asp-validation-for="NIP" class="text-danger"></span>
+                    </div>
+                    <div class="form-group col-1"></div> <div class="form-group col-4">
+                        <label asp-for="CompanyName" class="control-label"></label>
+                        <input asp-for="CompanyName" class="form-control" />
+                        <span asp-validation-for="CompanyName" class="text-danger"></span>
+                    </div>
+                </div>
+            }
+
         </div>
         <br />
         <div class="form-row">
@@ -152,6 +173,22 @@
     </form>
 </div>
 
-    @section Scripts {
+
+
+@section Scripts {
+        <script>
+            $('#CompanyEnter').on('click', function () {
+                if (this.checked) {
+                    $('#CompanyData').css("display", "block");
+                }
+                else {
+                    $('#CompanyData').css("display", "none");
+                    document.getElementById("NIPInput").value = "";
+                    document.getElementById("CompanyInput").value = "";
+                }
+            });
+
+        </script>
+
         @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     }

@@ -13,32 +13,32 @@
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" value="0" class="form-control" />
             <div class="form-group">
-                <label asp-for="Street" class="control-label"></label>
+                <label asp-for="Street" class="control-label">Ulica</label>
                 <input asp-for="Street" class="form-control" />
                 <span asp-validation-for="Street" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="BuildingNumber" class="control-label"></label>
+                <label asp-for="BuildingNumber" class="control-label">Numer budynku</label>
                 <input asp-for="BuildingNumber" class="form-control" />
                 <span asp-validation-for="BuildingNumber" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="FlatNumber" class="control-label"></label>
+                <label asp-for="FlatNumber" class="control-label">Numer mieszkania</label>
                 <input asp-for="FlatNumber" class="form-control" />
                 <span asp-validation-for="FlatNumber" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="ZipCode" class="control-label"></label>
+                <label asp-for="ZipCode" class="control-label">Kod pocztowy</label>
                 <input asp-for="ZipCode" class="form-control" />
                 <span asp-validation-for="ZipCode" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="City" class="control-label"></label>
+                <label asp-for="City" class="control-label">Miasto</label>
                 <input asp-for="City" class="form-control" />
                 <span asp-validation-for="City" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="Country" class="control-label"></label>
+                <label asp-for="Country" class="control-label">Kraj</label>
                 <input asp-for="Country" class="form-control" />
                 <span asp-validation-for="Country" class="text-danger"></span>
             </div>
@@ -51,7 +51,7 @@
 </div>
 
 <div>
-    <a asp-action="Index">Back to List</a>
+    <a asp-action="Index">Powrót do listy klientów</a>
 </div>
 
 @section Scripts {

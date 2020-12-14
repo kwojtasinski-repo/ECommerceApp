@@ -1,15 +1,17 @@
-﻿@model ECommerceApp.Application.ViewModels.Customer.ListForCustomerVm
+﻿@model ECommerceApp.Application.ViewModels.Order.ListForPaymentVm
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "ShowPayments";
 }
 
-<h1>Index</h1>
+<h1>Lista płatności</h1>
 
 <p>
-    <a asp-action="AddCustomer">Stwórz nowego klienta</a>
+    <a asp-action="Index">Wróć do listy zamówień</a>
+    <a asp-action="ShowRefunds">Lista zwrotów</a>
+    <a asp-action="ShowAllOrderItems">Lista wszystkich produktów zamówionych</a>
 </p>
-<form asp-action="Index" asp-controller="Customer" method="post">
+<form asp-action="ShowPayments" asp-controller="Order" method="post">
     <div class="row">
         <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
         <input type="submit" value="Wyszukaj" />
@@ -21,49 +23,45 @@
                     Id
                 </th>
                 <th>
-                    Imię
+                    Nr zamówienia
                 </th>
                 <th>
-                    Nazwisko
+                    Data płatności
                 </th>
                 <th>
-                    Firma
+                    Id klienta
                 </th>
                 <th>
-                    NIP
+                    Id zamówienia
                 </th>
                 <th>
-                    Nazwa Firmy
+                    Akcja
                 </th>
-                <th>Akcja</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var customer in Model.Customers)
+            @foreach (var payment in Model.Payments)
             {
                 <tr>
                     <td>
-                        @Html.DisplayFor(modelCustomer => customer.Id)
+                        @Html.DisplayFor(model => payment.Id)
                     </td>
                     <td>
-                        @Html.DisplayFor(modelCustomer => customer.FirstName)
+                        @Html.DisplayFor(model => payment.Number)
                     </td>
                     <td>
-                        @Html.DisplayFor(modelCustomer => customer.LastName)
+                        @Html.DisplayFor(model => payment.DateOfOrderPayment)
                     </td>
                     <td>
-                        @Html.DisplayFor(modelCustomer => customer.IsCompany)
+                        @Html.DisplayFor(model => payment.CustomerId)
                     </td>
                     <td>
-                        @Html.DisplayFor(modelCustomer => customer.NIP)
+                        @Html.DisplayFor(model => payment.OrderId)
                     </td>
                     <td>
-                        @Html.DisplayFor(modelCustomer => customer.CompanyName)
-                    </td>
-                    <td>
-                        @Html.ActionLink("Edytuj", "EditCustomer", new {  id=customer.Id  }) |
-                        @Html.ActionLink("Szczegóły", "ViewCustomer", new { id = customer.Id }) |
-                        @Html.ActionLink("Usuń", "Delete", new { id = customer.Id })
+                        @Html.ActionLink("Edytuj", "EditPayment", new { id = payment.Id }) |
+                        @Html.ActionLink("Szczegóły", "ViewPaymentDetails", new { id = payment.Id }) |
+                        @Html.ActionLink("Usuń", "DeletePayment", new { id = payment.Id })
                     </td>
                 </tr>
             }
@@ -88,7 +86,7 @@
             </tr>
         </table>
         <input type="hidden" name="pageNo" id="pageNo" />
-        <input type="hidden" name="pageSize" id="pageSize" value="10" />
+        <input type="hidden" name="pageSize" id="pageSize" value="20" />
     </div>
 </form>
 

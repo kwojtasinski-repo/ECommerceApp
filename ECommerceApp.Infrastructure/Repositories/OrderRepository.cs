@@ -18,10 +18,22 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public void DeleteOrder(int orderId)
         {
-            var order = _context.Orders.Find(orderId);
+            var order = _context.Orders
+                .Include(inc => inc.CouponUsed)
+                .Include(inc => inc.Customer)
+                .Include(inc => inc.Payment)
+                .Include(inc => inc.Refund)
+                .FirstOrDefault(o => o.Id == orderId);
 
             if (order != null)
             {
+                var orderWithItems = _context.Orders.Include(p => p.OrderItems)
+                                .SingleOrDefault(p => p.Id == orderId);
+
+                foreach (var orderItem in orderWithItems.OrderItems.ToList())
+                {
+                    _context.OrderItem.Remove(orderItem);
+                }
                 _context.Orders.Remove(order);
                 _context.SaveChanges();
             }
@@ -37,7 +49,9 @@ namespace ECommerceApp.Infrastructure.Repositories
         public Order GetOrderById(int id)
         {
             var order = _context.Orders
-                .Include(inc => inc.OrderItems).ThenInclude(inc=>inc.Item)
+                .Include(inc => inc.OrderItems).ThenInclude(inc => inc.Item)
+                .Include(inc => inc.Refund)
+                .Include(inc => inc.Payment)
                 .FirstOrDefault(o => o.Id == id);
             return order;
         }
@@ -55,7 +69,9 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public IQueryable<OrderItem> GetAllOrderItems()
         {
-            return _context.OrderItem;
+            return _context.OrderItem
+                .Include(inc => inc.Item).ThenInclude(inc => inc.Type)
+                .Include(inc => inc.Item).ThenInclude(inc => inc.Brand);
         }
 
         public IQueryable<Payment> GetAllPayments()
@@ -65,10 +81,16 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public void DeletePayment(int paymentId)
         {
-            var payment = _context.Payments.Find(paymentId);
+            var payment = _context.Payments
+                .Include(inc => inc.Order)
+                .Include(inc => inc.Customer)
+                .FirstOrDefault(p => p.Id == paymentId);
 
             if (payment != null)
             {
+                var order = GetOrderById(payment.OrderId);
+                order.IsPaid = false;
+                UpdatedOrder(order);
                 _context.Payments.Remove(payment);
                 _context.SaveChanges();
             }
@@ -78,6 +100,17 @@ namespace ECommerceApp.Infrastructure.Repositories
         {
             _context.Payments.Add(payment);
             _context.SaveChanges();
+            if(payment.Id > 0)
+            {
+                var order = GetOrderById(payment.OrderId);
+                // should be only PaymentId and IsPaid 
+                // the other properties should be added when customer got package
+                order.PaymentId = payment.Id;
+                order.IsPaid = true;
+                order.Delivered = System.DateTime.Now;
+                order.IsDelivered = true;
+                UpdatedOrder(order);
+            }
             return payment.Id;
         }
 
@@ -94,7 +127,10 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public void DeleteRefund(int refundId)
         {
-            var refund = _context.Refunds.Find(refundId);
+            var refund = _context.Refunds
+                .Include(inc => inc.Order)
+                .Include(inc => inc.OrderItems)
+                .FirstOrDefault(r => r.Id == refundId);
 
             if (refund != null)
             {
@@ -126,8 +162,30 @@ namespace ECommerceApp.Infrastructure.Repositories
             _context.Entry(order).Property("IsDelivered").IsModified = true;
             _context.Entry(order).Property("RefundId").IsModified = true;
             _context.Entry(order).Property("PaymentId").IsModified = true;
+            _context.Entry(order).Property("IsPaid").IsModified = true;
             _context.Entry(order).Collection("OrderItems").IsModified = true;
+            foreach (var orderItem in order.OrderItems)
+            {
+                if (orderItem.Id == 0)
+                {
+                    AddOrderItem(orderItem);
+                }
+                else
+                {
+                    _context.Attach(orderItem).Property("CouponUsedId").IsModified = true;
+                    _context.Attach(orderItem).Property("RefundId").IsModified = true;
+                    _context.Attach(orderItem).Property("ItemOrderQuantity").IsModified = true;
+                }
+            }
+
             _context.SaveChanges();
+    }
+
+        private int AddOrderItem(OrderItem orderItem)
+        {
+            _context.OrderItem.Add(orderItem);
+            _context.SaveChanges();
+            return orderItem.Id;
         }
 
         public void UpdatePayment(Payment payment)
@@ -198,12 +256,12 @@ namespace ECommerceApp.Infrastructure.Repositories
             return _context.Customers.FirstOrDefault(c => c.Id == id);
         }
 
-        public void AddOrderItems(List<OrderItem> orderItems)
+        public void AddOrderItems(ICollection<OrderItem> orderItems)
         {
-            for(int i=0;i<orderItems.Count;i++)
+            foreach(var orderItem in orderItems)
             {
-                _context.OrderItem.Add(orderItems[i]);
-            };
+                _context.OrderItem.Add(orderItem);
+            }
 
             _context.SaveChanges();
         }

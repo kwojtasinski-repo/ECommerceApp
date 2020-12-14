@@ -1,20 +1,17 @@
-﻿@model ECommerceApp.Application.ViewModels.Item.ListForItemVm
+﻿@model ECommerceApp.Application.ViewModels.Order.ListForRefundVm
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "ShowRefunds";
 }
 
-
-<h1>Lista przedmiotów</h1>
+<h1>Lista zwrotów</h1>
 
 <p>
-    <a asp-action="AddItem">Stwórz nowy przedmiot</a>
-    <a asp-action="ShowItemBrands">Lista firm</a>
-    <a asp-action="ShowItemTypes">Lista typów przedmiotów</a>
-    <a asp-action="ShowItemTags">Lista tagów</a>
-    <a asp-action="ShowItemConnectedWithTags">Przedmioty z tagami</a>
+    <a asp-action="Index">Lista zamówień</a>
+    <a asp-action="ShowPayments">Lista płatności</a>
+    <a asp-action="ShowAllOrderItems">Lista wszystkich produktów zamówionych</a>
 </p>
-<form asp-action="Index" asp-controller="Item" method="post">
+<form asp-action="ShowRefunds" asp-controller="Order" method="post">
     <div class="row">
         <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
         <input type="submit" value="Wyszukaj" />
@@ -26,61 +23,57 @@
                     Id
                 </th>
                 <th>
-                    Nazwa
+                    Powód zwrotu
                 </th>
                 <th>
-                    Koszt
+                    Data zwrotu
                 </th>
                 <th>
-                    Opis
+                    Na gwarancji
                 </th>
                 <th>
-                    Gwarancja
+                    Akceptowano
                 </th>
                 <th>
-                    Ilość
+                    Id klienta
                 </th>
                 <th>
-                    BrandId
+                    Id zamówienia
                 </th>
                 <th>
-                    TypeId
+                    Akcja
                 </th>
-                <th>Akcja</th>
             </tr>
         </thead>
         <tbody>
-            @foreach (var item in Model.Items)
+            @foreach (var refund in Model.Refunds)
             {
                 <tr>
                     <td>
-                        @Html.DisplayFor(modelItem => item.Id)
+                        @Html.DisplayFor(model => refund.Id)
                     </td>
                     <td>
-                        @Html.DisplayFor(modelItem => item.Name)
+                        @Html.DisplayFor(model => refund.Reason)
                     </td>
                     <td>
-                        @Html.DisplayFor(modelItem => item.Cost)
+                        @Html.DisplayFor(model => refund.RefundDate)
                     </td>
                     <td>
-                        @Html.DisplayFor(modelItem => item.Description)
+                        @Html.DisplayFor(model => refund.OnWarranty)
                     </td>
                     <td>
-                        @Html.DisplayFor(modelItem => item.Warranty)
+                        @Html.DisplayFor(model => refund.Accepted)
                     </td>
                     <td>
-                        @Html.DisplayFor(modelItem => item.Quantity)
+                        @Html.DisplayFor(model => refund.CustomerId)
                     </td>
                     <td>
-                        @Html.DisplayFor(modelItem => item.BrandId)
+                        @Html.DisplayFor(model => refund.OrderId)
                     </td>
                     <td>
-                        @Html.DisplayFor(modelItem => item.TypeId)
-                    </td>
-                    <td>
-                        @Html.ActionLink("Edytuj", "EditItem", new {  id=item.Id }) |
-                        @Html.ActionLink("Szczegóły", "ViewItem", new { id = item.Id }) |
-                        @Html.ActionLink("Usuń", "DeleteItem", new { id = item.Id })
+                        @Html.ActionLink("Edytuj", "EditOrder", new { id = refund.OrderId }) |
+                        @Html.ActionLink("Szczegóły", "ViewRefundDetails", new { id = refund.Id }) |
+                        @Html.ActionLink("Usuń", "DeleteRefund", new { id = refund.Id })
                     </td>
                 </tr>
             }
@@ -105,14 +98,15 @@
             </tr>
         </table>
         <input type="hidden" name="pageNo" id="pageNo" />
-        <input type="hidden" name="pageSize" id="pageSize" value="2" />
+        <input type="hidden" name="pageSize" id="pageSize" value="20" />
     </div>
 </form>
 
 @section Scripts
 {
     <script type="text/javascript">
-        function PagerClick(index) {
+        function PagerClick(index)
+        {
             document.getElementById("pageNo").value = index;
             document.forms[0].submit();
         }

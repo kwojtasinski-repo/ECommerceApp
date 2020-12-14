@@ -20,10 +20,14 @@ namespace ECommerceApp.Application.ViewModels.Order
         public CouponUsedDetailsVm CouponUsed { get; set; } // 1:Many OrderItem Coupon discount can be used for many Items
         public int? RefundId { get; set; } // 1:Many Refund OrderItem
         public RefundDetailsVm Refund { get; set; }
+        public string ItemName { get; set; }
+        public decimal ItemCost { get; set; }
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ECommerceApp.Domain.Model.CouponUsed, OrderItemDetailsVm>().ReverseMap();
+            profile.CreateMap<OrderItemDetailsVm, ECommerceApp.Domain.Model.OrderItem>().ReverseMap()
+                .ForMember(i => i.ItemName, opt => opt.MapFrom(o => o.Item.Name))
+                .ForMember(i => i.ItemCost, opt => opt.MapFrom(o => o.Item.Cost));
         }
     }
 }

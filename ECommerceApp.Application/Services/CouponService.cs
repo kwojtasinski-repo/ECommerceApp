@@ -133,6 +133,7 @@ namespace ECommerceApp.Application.Services
         public IQueryable<NewOrderVm> GetAllOrders()
         {
             var orders = _couponRepo.GetAllOrders();
+            //var ordersVm = _mapper.Map<List<NewOrderVm>(orders);
             var ordersVm = orders.ProjectTo<NewOrderVm>(_mapper.ConfigurationProvider);
             return ordersVm;
         }

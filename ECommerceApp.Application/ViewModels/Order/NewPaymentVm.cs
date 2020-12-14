@@ -14,10 +14,17 @@ namespace ECommerceApp.Application.ViewModels.Order
         public NewCustomerVm Customer { get; set; }
         public int OrderId { get; set; } // 1:1 Payment Order
         public virtual NewOrderVm Order { get; set; }
+        public int OrderNumber { get; set; }
+        public string CustomerName { get; set; }
+        public decimal OrderCost { get; set; }
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<NewPaymentVm, ECommerceApp.Domain.Model.Payment>().ReverseMap();
+            profile.CreateMap<NewPaymentVm, ECommerceApp.Domain.Model.Payment>().ReverseMap()
+                .ForMember(o => o.OrderNumber, opt => opt.MapFrom(o => o.Order.Number))
+                .ForMember(c => c.CustomerName, opt => opt.MapFrom(c => c.Customer.FirstName + " " +
+                               c.Customer.LastName + " " + c.Customer.NIP + " " + c.Customer.CompanyName))
+                .ForMember(oc => oc.OrderCost, opt => opt.Ignore());
         }
 }
 }

@@ -1,0 +1,63 @@
+﻿@model ECommerceApp.Application.ViewModels.Order.NewPaymentVm
+
+@{
+    ViewData["Title"] = "EditPayment";
+}
+
+<h1>Edycja płatności</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="EditPayment">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <input type="hidden" asp-for="Id" class="form-control" />
+            <div class="form-group">
+                <label asp-for="Number" class="control-label"></label>
+                <input asp-for="Number" class="form-control" />
+                <span asp-validation-for="Number" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="DateOfOrderPayment" class="control-label"></label>
+                <input asp-for="DateOfOrderPayment" class="form-control" />
+                <span asp-validation-for="DateOfOrderPayment" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="CustomerId" class="control-label"></label>
+                <input readonly asp-for="CustomerId" class="form-control" />
+                <span asp-validation-for="CustomerId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="OrderId" class="control-label"></label>
+                <input readonly asp-for="OrderId" class="form-control" />
+                <span asp-validation-for="OrderId" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="OrderNumber" class="control-label"></label>
+                <input readonly asp-for="OrderNumber" class="form-control" />
+                <span asp-validation-for="OrderNumber" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="CustomerName" class="control-label"></label>
+                <input readonly asp-for="CustomerName" class="form-control" />
+                <span asp-validation-for="CustomerName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="OrderCost" class="control-label"></label>
+                <input readonly asp-for="OrderCost" class="form-control" />
+                <span asp-validation-for="OrderCost" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Wróć do listy zamówień</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

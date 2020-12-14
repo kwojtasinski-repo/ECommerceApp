@@ -16,10 +16,16 @@ namespace ECommerceApp.Application.ViewModels.Order
         public int OrderId { get; set; }  // Many : 1 OrderItem Order
         public int? CouponUsedId { get; set; }
         public int? RefundId { get; set; } // 1:Many Refund OrderItem
+        public string ItemName { get; set; }
+        public string ItemBrand { get; set; }
+        public string ItemType { get; set; }
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ECommerceApp.Domain.Model.OrderItem, OrderItemForListVm>().ReverseMap();
+            profile.CreateMap<OrderItemForListVm, ECommerceApp.Domain.Model.OrderItem>().ReverseMap()
+                .ForMember(i => i.ItemName, opt => opt.MapFrom(i => i.Item.Name))
+                .ForMember(i => i.ItemBrand, opt => opt.MapFrom(i => i.Item.Brand.Name))
+                .ForMember(i => i.ItemType, opt => opt.MapFrom(i => i.Item.Type.Name));
         }
     }
 }

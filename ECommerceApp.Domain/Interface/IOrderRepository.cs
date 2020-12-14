@@ -33,6 +33,7 @@ namespace ECommerceApp.Domain.Interface
         int AddCouponUsed(CouponUsed couponUsed);
         IQueryable<OrderItem> GetAllOrderItemsByOrderId(int orderId);
         Customer GetCustomerById(int id);
-        void AddOrderItems(List<OrderItem> orderItems);
+        void AddOrderItems(ICollection<OrderItem> orderItems);
+
     }
 }

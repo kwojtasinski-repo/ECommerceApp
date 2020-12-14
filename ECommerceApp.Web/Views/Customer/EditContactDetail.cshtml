@@ -15,7 +15,7 @@
             <input type="hidden" asp-for="Id" class="form-control" />
             <input type="hidden" asp-for="CustomerId" value="@Model.Id" />
             <div class="form-group">
-                <label asp-for="ContactDetailInformation" class="control-label"></label>
+                <label asp-for="ContactDetailInformation" class="control-label">Dane</label>
                 <input asp-for="ContactDetailInformation" class="form-control" />
                 <span asp-validation-for="ContactDetailInformation" class="text-danger"></span>
             </div>
@@ -27,7 +27,7 @@
             
             <br />
             <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
+                <input type="submit" value="Zatwierdź" class="btn btn-primary" />
             </div>
         </form>
     </div>

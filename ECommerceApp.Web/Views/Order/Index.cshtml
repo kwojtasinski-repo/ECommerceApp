@@ -4,93 +4,134 @@
     ViewData["Title"] = "Index";
 }
 
-<h1>Index</h1>
+<h1>Lista zamówień</h1>
 
 <p>
-    <a asp-action="Create">Create New</a>
+    <a asp-action="AddOrder">Stwórz nowe zamówienie</a>
+    <a asp-action="ShowAllOrderItems">Lista wszystkich produktów zamówionych</a>
+    <a asp-action="ShowPayments">Lista płatności</a>
+    <a asp-action="ShowRefunds">Lista zwrotów</a>
 </p>
-<table class="table">
-    <thead>
-        <tr>
-            <th>
-                Id
-            </th>
-            <th>
-                Nr zamówienia
-            </th>
-            <th>
-                Koszt
-            </th>
-            <th>
-                Data zamówienia
-            </th>
-            <th>
-                Data dostarczenia
-            </th>
-            <th>
-                Czy dostarczono
-            </th>
-            <th>
-                Id użytego kuponu
-            </th>
-            <th>
-                Id zamawiającego
-            </th>
-            <th>
-                Id płatności
-            </th>
-            <th>
-                Czy zapłacono
-            </th>
-            <th>
-                RefundId
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var order in Model.Orders)
+<form asp-action="Index" asp-controller="Order" method="post">
+    <div class="row">
+        <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
+        <input type="submit" value="Wyszukaj" />
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Id
+                </th>
+                <th>
+                    Nr zamówienia
+                </th>
+                <th>
+                    Koszt
+                </th>
+                <th>
+                    Data zamówienia
+                </th>
+                <th>
+                    Data dostarczenia
+                </th>
+                <th>
+                    Czy dostarczono
+                </th>
+                <th>
+                    Id użytego kuponu
+                </th>
+                <th>
+                    Id zamawiającego
+                </th>
+                <th>
+                    Id płatności
+                </th>
+                <th>
+                    Czy zapłacono
+                </th>
+                <th>
+                    RefundId
+                </th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in Model.Orders)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelOrder => order.Id)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelOrder => order.Number)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelOrder => order.Cost)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelOrder => order.Ordered)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelOrder => order.Delivered)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelOrder => order.IsDelivered)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelOrder => order.CouponUsedId)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelOrder => order.CustomerId)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelOrder => order.PaymentId)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelOrder => order.IsPaid)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelOrder => order.RefundId)
+                    </td>
+                    <td>
+                        @Html.ActionLink("Edytuj", "EditOrder", new { id=order.Id }) |
+                        @Html.ActionLink("Szczególy", "ViewOrderDetails", new { id = order.Id }) |
+                        @Html.ActionLink("Usuń", "DeleteOrder", new { id=order.Id })
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <div class="row">
+        <table>
+            <tr>
+                @for (int i = 1; i <= Math.Ceiling(Model.Count / (double)Model.PageSize); i++)
+                {
+                    <td>
+                        @if (i != Model.CurrentPage)
+                        {
+                            <a href="javascript:PagerClick(@i)">@i</a>
+                        }
+                        else
+                        {
+                            <span>@i</span>
+                        }
+                    </td>
+                }
+            </tr>
+        </table>
+        <input type="hidden" name="pageNo" id="pageNo" />
+        <input type="hidden" name="pageSize" id="pageSize" value="20" />
+    </div>
+</form>
+
+@section Scripts
+{
+    <script type="text/javascript">
+        function PagerClick(index)
         {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelOrder => order.Id)
-            </td>
-            <td>
-                @Html.DisplayFor(modelOrder => order.Number)
-            </td>
-            <td>
-                @Html.DisplayFor(modelOrder => order.Cost)
-            </td>
-            <td>
-                @Html.DisplayFor(modelOrder => order.Ordered)
-            </td>
-            <td>
-                @Html.DisplayFor(modelOrder => order.Delivered)
-            </td>
-            <td>
-                @Html.DisplayFor(modelOrder => order.IsDelivered)
-            </td>
-            <td>
-                @Html.DisplayFor(modelOrder => order.CouponUsedId)
-            </td>
-            <td>
-                @Html.DisplayFor(modelOrder => order.CustomerId)
-            </td>
-            <td>
-                @Html.DisplayFor(modelOrder => order.PaymentId)
-            </td>
-            <td>
-                @Html.DisplayFor(modelOrder => order.IsPaid)
-            </td>
-            <td>
-                @Html.DisplayFor(modelOrder => order.RefundId)
-            </td>
-            <td>
-                @Html.ActionLink("Edit", "Edit", new { /* id=item.PrimaryKey */ }) |
-                @Html.ActionLink("Details", "Details", new { /* id=item.PrimaryKey */ }) |
-                @Html.ActionLink("Delete", "Delete", new { /* id=item.PrimaryKey */ })
-            </td>
-        </tr>
+            document.getElementById("pageNo").value = index;
+            document.forms[0].submit();
         }
-    </tbody>
-</table>
+    </script>
+}
