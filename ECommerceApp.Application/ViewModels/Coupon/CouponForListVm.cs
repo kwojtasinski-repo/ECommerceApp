@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
+using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -18,6 +19,18 @@ namespace ECommerceApp.Application.ViewModels.Coupon
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ECommerceApp.Domain.Model.Coupon, CouponForListVm>();
+        }
+    }
+
+    public class CouponForListValidation : AbstractValidator<CouponForListVm>
+    {
+        public CouponForListValidation()
+        {
+            RuleFor(x => x.Id).NotNull();
+            RuleFor(x => x.Code).NotNull();
+            RuleFor(x => x.Discount).InclusiveBetween(0, 99);
+            RuleFor(x => x.Description).MaximumLength(255);
+            RuleFor(x => x.CouponTypeId).NotNull();
         }
     }
 }

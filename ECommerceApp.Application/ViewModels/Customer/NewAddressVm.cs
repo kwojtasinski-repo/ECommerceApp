@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
+using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -20,6 +21,21 @@ namespace ECommerceApp.Application.ViewModels.Customer
         public void Mapping(Profile profile)
         {
             profile.CreateMap<NewAddressVm, ECommerceApp.Domain.Model.Address>().ReverseMap();
+        }
+    }
+
+    public class NewAddressValidation : AbstractValidator<NewAddressVm>
+    {
+        public NewAddressValidation()
+        {
+            RuleFor(x => x.Id).NotNull();
+            RuleFor(x => x.Street).NotNull();
+            RuleFor(x => x.BuildingNumber).NotNull();
+            RuleFor(x => x.FlatNumber).NotNull();
+            RuleFor(x => x.ZipCode).NotNull();
+            RuleFor(x => x.City).NotNull();
+            RuleFor(x => x.Country).NotNull();
+            RuleFor(x => x.CustomerId).NotNull();
         }
     }
 }

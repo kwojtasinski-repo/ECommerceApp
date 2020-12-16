@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.Order;
+using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -23,6 +24,16 @@ namespace ECommerceApp.Application.ViewModels.Coupon
                 .ForMember(c => c.Code, opt => opt.MapFrom(co => co.Coupon.Code))
                 .ForMember(n => n.Number, opt => opt.MapFrom(o => o.Order.Number))
                 .ForMember(oi => oi.OrderItems, opt => opt.MapFrom(orit => orit.OrderItems));
+        }
+    }
+
+    public class CouponUsedForListValidation : AbstractValidator<CouponUsedForListVm>
+    {
+        public CouponUsedForListValidation()
+        {
+            RuleFor(x => x.Id).NotNull();
+            RuleFor(x => x.CouponId).NotNull();
+            RuleFor(x => x.OrderId).NotNull();
         }
     }
 }

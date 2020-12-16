@@ -82,7 +82,7 @@
                             </td>
                         </tr>
                     }
-                </table><!--You are selecting items using this code "order.Items"-->
+                </table>
             </div>
             <div>
                 <label>Kod promocyjny</label>
@@ -150,11 +150,7 @@
         var listIdTags = [];
 
         $(document).ready(function () {
-            console.log("Document ready");
-            console.log($('#itemWithJS tr'));
             if ($('#itemWithJS tr').length > 0) {
-
-
                 var valueInQuantity = parseInt($('#itemWithJS tr')[0].cells[1].childNodes[3].value); // get value quantity
                 //$('#itemWithJS tr')[i];// list of table rows
                 var listOfTd = $('#itemWithJS tr');

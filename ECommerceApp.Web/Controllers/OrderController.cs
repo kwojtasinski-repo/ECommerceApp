@@ -46,11 +46,13 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult AddOrder()
         {
+            Random random = new Random();
             var orderDate = System.DateTime.Now;
             ViewBag.Date = orderDate;
             var customers = _orderService.GetAllCustomers().ToList();
             ViewBag.Customers = customers;
-            return View(new NewOrderVm());
+            var order = new NewOrderVm() { Number = random.Next(100, 10000), };
+            return View(order);
         }
 
         [HttpPost]

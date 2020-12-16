@@ -81,6 +81,9 @@ namespace ECommerceApp.Infrastructure.Repositories
                 .Include(inc => inc.ContactDetails)
                 .Include(inc => inc.ContactDetails).ThenInclude(inc => inc.ContactDetailType)
                 .Include(inc => inc.Addresses)
+                .Include(inc => inc.Orders).ThenInclude(inc => inc.OrderItems)
+                .Include(inc => inc.Payments)
+                .Include(inc => inc.Refunds)
                 .FirstOrDefault(c => c.Id == id);
             return customer;
         }

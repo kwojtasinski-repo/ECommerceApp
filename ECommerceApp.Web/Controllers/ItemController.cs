@@ -12,7 +12,6 @@ namespace ECommerceApp.Web.Controllers
     public class ItemController : Controller
     {
         private readonly IItemService _itemService;
-        // TODO FLuentValidation
         public ItemController(IItemService itemService)
         {
             _itemService = itemService;

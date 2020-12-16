@@ -2,6 +2,7 @@
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Item;
+using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -29,5 +30,16 @@ namespace ECommerceApp.Application.ViewModels.Order
                 .ForMember(i => i.ItemName, opt => opt.MapFrom(o => o.Item.Name))
                 .ForMember(i => i.ItemCost, opt => opt.MapFrom(o => o.Item.Cost));
         }
-}
+    }
+
+    public class NewOrderItemValidation : AbstractValidator<NewOrderItemVm>
+    {
+        public NewOrderItemValidation()
+        {
+            RuleFor(x => x.Id).NotNull();
+            RuleFor(x => x.ItemId).NotNull();
+            RuleFor(x => x.ItemOrderQuantity).NotNull();
+            RuleFor(x => x.OrderId).NotNull();
+        }
+    }
 }

@@ -207,9 +207,6 @@
         var listIdTags = [];
 
         $(document).ready(function () {
-            console.log("Document ready");
-            console.log($('#itemWithJS tr'));
-
             if ($('#itemWithJS tr').length > 0) {
                 var valueInQuantity = parseInt($('#itemWithJS tr')[0].cells[1].childNodes[3].value); // get value quantity
                 //$('#itemWithJS tr')[i];// list of table rows
@@ -247,15 +244,12 @@
                 console.log(collectionValues[0].children[0].children[0].children[1].value);
                 console.log(assignedValues);
                 for (i = 0; i < assignedValues.length; i++) {
-                    removeSelectOption(assignedValues[i], copyOfItemTags);
+                    RemoveSelectOption(assignedValues[i], copyOfItemTags);
                 }
             }
         });
 
         $('#add').click(function () {
-            selectedIndex = copyOfItemTags.options[copyOfItemTags.selectedIndex].index;
-            selectedValue = copyOfItemTags.options[copyOfItemTags.selectedIndex].value;
-            selectedText = copyOfItemTags.options[copyOfItemTags.selectedIndex].text;
             var valueOfItemTag = selectedValue;
             var cloneTableRow = newrow.find('tr').clone();
 
@@ -271,7 +265,6 @@
             index = parseInt(index) + 1;
             $.validator.unobtrusive.parse(form);
             if (selectedIndex > -1) {
-                //var standardValue = copyOfItemTags.attributes.value.ownerElement.children[selectedIndex].value;
                 dictOfDeletedValues[index] = selectedValue;
                 copyOfItemTags.remove(selectedIndex);
             }
@@ -306,7 +299,7 @@
                 });
             }
 
-            $(this).closest('tr').remove();// this stay
+            $(this).closest('tr').remove();
             var id = $(this).closest('tr').attr("id");
             var assignedValues = [];
             var collectionValues = $('#itemWithJS')[0].children;
@@ -355,8 +348,7 @@
             //----------------------DELETE CHOSEN OPTIONS--------------------
             copyOfItemTags = document.getElementById("Items");
             for (i = 0; i < assignedValues.length; i++) {
-                //   removeSelectOption(i, copyOfItemTags);
-                removeSelectOption(assignedValues[i], copyOfItemTags);
+                RemoveSelectOption(assignedValues[i], copyOfItemTags);
             }
             //----------------------DELETE CHOSEN OPTIONS--------------------
             index = listIdTags.length;
@@ -373,7 +365,7 @@
             }
         }
 
-        function removeSelectOption(valueToDelete, selectList) {
+        function RemoveSelectOption(valueToDelete, selectList) {
             for (var i = selectList.length - 1; i >= 0; i--) {
                 if (selectList.options[i].value == valueToDelete) {
                     selectList.remove(i);

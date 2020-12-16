@@ -2,6 +2,7 @@
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Customer;
+using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -31,6 +32,18 @@ namespace ECommerceApp.Application.ViewModels.Order
             profile.CreateMap<ECommerceApp.Domain.Model.Order, OrderForListVm>()
                 .ForMember(oi => oi.OrderItems, opt => opt.MapFrom(i => i.OrderItems));
             profile.CreateMap<ECommerceApp.Domain.Model.OrderItem, OrderForListVm>();
+        }
+    }
+
+    public class OrderForListValidation : AbstractValidator<OrderForListVm>
+    {
+        public OrderForListValidation()
+        {
+            RuleFor(x => x.Id).NotNull();
+            RuleFor(x => x.Number).NotNull();
+            RuleFor(x => x.Cost).NotNull();
+            RuleFor(x => x.Ordered).NotNull();
+            RuleFor(x => x.CustomerId).NotNull();
         }
     }
 }

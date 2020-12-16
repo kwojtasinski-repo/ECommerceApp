@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
+using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -33,6 +34,21 @@ namespace ECommerceApp.Application.ViewModels.Item
         {
             profile.CreateMap<NewItemVm, ECommerceApp.Domain.Model.Item>().ReverseMap()
                 .ForMember(p => p.ItemTags, opt => opt.MapFrom(ps => ps.ItemTags));
+        }
+    }
+
+    public class NewItemValidation : AbstractValidator<NewItemVm>
+    {
+        public NewItemValidation()
+        {
+            RuleFor(x => x.Id).NotNull();
+            RuleFor(x => x.Name).NotNull();
+            RuleFor(x => x.Cost).NotNull();
+            RuleFor(x => x.Description).NotNull();
+            RuleFor(x => x.Warranty).NotNull();
+            RuleFor(x => x.Quantity).NotNull();
+            RuleFor(x => x.BrandId).NotNull();
+            RuleFor(x => x.TypeId).NotNull();
         }
     }
 }

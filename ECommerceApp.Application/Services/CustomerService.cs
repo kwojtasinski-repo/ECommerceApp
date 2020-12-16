@@ -53,7 +53,7 @@ namespace ECommerceApp.Application.Services
                 .Where(p => p.FirstName.StartsWith(searchString) || p.LastName.StartsWith(searchString) 
                 || p.CompanyName.StartsWith(searchString) || p.NIP.StartsWith(searchString))
                 .ProjectTo<CustomerForListVm>(_mapper.ConfigurationProvider)
-                .ToList(); // add parameter to search
+                .ToList(); 
 
             var customersToShow = customers.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
 
@@ -86,7 +86,7 @@ namespace ECommerceApp.Application.Services
 
         public void UpdateCustomer(NewCustomerVm model)
         {
-            var customer = _mapper.Map<Customer>(model); // mapowanie z view model na model klienta
+            var customer = _mapper.Map<Customer>(model); 
             _custRepo.UpdateCustomer(customer);
         }
 

@@ -1,10 +1,11 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.Customer;
+using FluentValidation;
 using System;
 
 namespace ECommerceApp.Application.ViewModels.Order
-{ 
+{
     public class NewPaymentVm : IMapFrom<ECommerceApp.Domain.Model.Payment>
     {
         public int Id { get; set; }
@@ -26,5 +27,17 @@ namespace ECommerceApp.Application.ViewModels.Order
                                c.Customer.LastName + " " + c.Customer.NIP + " " + c.Customer.CompanyName))
                 .ForMember(oc => oc.OrderCost, opt => opt.Ignore());
         }
-}
+    }
+
+    public class NewPaymentValidation : AbstractValidator<NewPaymentVm>
+    {
+        public NewPaymentValidation()
+        {
+            RuleFor(x => x.Id).NotNull();
+            RuleFor(x => x.Number).NotNull();
+            RuleFor(x => x.DateOfOrderPayment).NotNull();
+            RuleFor(x => x.CustomerId).NotNull();
+            RuleFor(x => x.OrderId).NotNull();
+        }
+    }
 }

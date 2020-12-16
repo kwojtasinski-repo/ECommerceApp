@@ -3,6 +3,7 @@ using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Item;
+using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -47,7 +48,7 @@ namespace ECommerceApp.Application.ViewModels.Order
         public void Mapping(Profile profile)
         {
             profile.CreateMap<NewOrderVm, ECommerceApp.Domain.Model.Order>().ReverseMap()
-                .ForMember(r => r.RefCode, opt => opt.MapFrom(r=>r.CouponUsed.Coupon))
+                .ForMember(r => r.RefCode, opt => opt.MapFrom(r => r.CouponUsed.Coupon))
                 .ForMember(c => c.CouponId, opt => opt.Ignore())
                 .ForMember(i => i.Items, opt => opt.Ignore())
                 .ForMember(c => c.CostToConvert, opt => opt.Ignore())
@@ -58,5 +59,17 @@ namespace ECommerceApp.Application.ViewModels.Order
                 .ForMember(cc => cc.ChangedCode, opt => opt.Ignore())
                 .ForMember(cr => cr.ChangedRefund, opt => opt.Ignore());
         }
-}
+    }
+
+    public class NewOrderValidation : AbstractValidator<NewOrderVm>
+    {
+        public NewOrderValidation()
+        {
+            RuleFor(x => x.Id).NotNull();
+            RuleFor(x => x.Number).NotNull();
+            RuleFor(x => x.Cost).NotNull();
+            RuleFor(x => x.Ordered).NotNull();
+            RuleFor(x => x.CustomerId).NotNull();
+        }
+    }
 }

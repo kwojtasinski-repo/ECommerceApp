@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
+using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -19,6 +20,17 @@ namespace ECommerceApp.Application.ViewModels.Customer
         {
             profile.CreateMap<NewContactDetailVm, ECommerceApp.Domain.Model.ContactDetail>().ReverseMap()
                 .ForMember(s => s.ContactDetailTypeName, opt => opt.MapFrom(d => d.ContactDetailType.Name));
+        }
+    }
+
+    public class NewContactDetailValidation : AbstractValidator<NewContactDetailVm>
+    {
+        public NewContactDetailValidation()
+        {
+            RuleFor(x => x.Id).NotNull();
+            RuleFor(x => x.ContactDetailTypeId).NotNull();
+            RuleFor(x => x.ContactDetailTypeName).NotNull();
+            RuleFor(x => x.CustomerId).NotNull();
         }
     }
 }

@@ -110,9 +110,6 @@
         var listIdTags = [];
 
         $(document).ready(function () {
-            console.log("Document ready");
-            console.log($('#tagWithJS tr'));
-
             if ($('#tagWithJS tr').length > 0) {
                 //$('#itemWithJS tr')[i];// list of table rows
                 index = $('#itemWithJS tr').length;
@@ -125,7 +122,7 @@
                 }
                 console.log(assignedValues);
                 for (i = 0; i < assignedValues.length; i++) {
-                    removeSelectOption(assignedValues[i], copyOfItemTags);
+                    RemoveSelectOption(assignedValues[i], copyOfItemTags);
                 }
                 index = $('#tagWithJS tr').length;
                 console.log("index");
@@ -134,9 +131,6 @@
         });
 
         $('#add').click(function () {
-            selectedIndex = copyOfItemTags.options[copyOfItemTags.selectedIndex].index;
-            selectedValue = copyOfItemTags.options[copyOfItemTags.selectedIndex].value;
-            selectedText = copyOfItemTags.options[copyOfItemTags.selectedIndex].text;
             var valueOfItemTag = selectedValue;
             var cloneTableRow = newrow.find('tr').clone();
 
@@ -181,7 +175,7 @@
                 });
             }
 
-            $(this).closest('tr').remove();// this stay
+            $(this).closest('tr').remove();
             var id = $(this).closest('tr').attr("id");
             console.log(id);
             var assignedValues = [];
@@ -233,8 +227,8 @@
             //----------------------DELETE CHOSEN OPTIONS--------------------
             copyOfItemTags = document.getElementById("Tags");
             for (i = 0; i < assignedValues.length; i++) {
-                //   removeSelectOption(i, copyOfItemTags);
-                removeSelectOption(assignedValues[i], copyOfItemTags);
+                //   RemoveSelectOption(i, copyOfItemTags);
+                RemoveSelectOption(assignedValues[i], copyOfItemTags);
             }
             //----------------------DELETE CHOSEN OPTIONS--------------------
             index = listIdTags.length;
@@ -255,7 +249,7 @@
             }
         }
 
-        function removeSelectOption(valueToDelete, selectList) {
+        function RemoveSelectOption(valueToDelete, selectList) {
             for (var i = selectList.length - 1; i >= 0; i--) {
                 if (selectList.options[i].value == valueToDelete) {
                     selectList.remove(i);

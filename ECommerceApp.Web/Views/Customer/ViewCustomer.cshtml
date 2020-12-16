@@ -10,44 +10,337 @@
     <h4>Szczegóły</h4>
     <hr />
     <dl class="row">
-        <dt class = "col-sm-2">
+        <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.Id)
         </dt>
-        <dd class = "col-sm-10">
+        <dd class="col-sm-10">
             @Html.DisplayFor(model => model.Id)
         </dd>
-        <dt class = "col-sm-2">
+        <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.FirstName)
         </dt>
-        <dd class = "col-sm-10">
+        <dd class="col-sm-10">
             @Html.DisplayFor(model => model.FirstName)
         </dd>
-        <dt class = "col-sm-2">
+        <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.LastName)
         </dt>
-        <dd class = "col-sm-10">
+        <dd class="col-sm-10">
             @Html.DisplayFor(model => model.LastName)
         </dd>
-        <dt class = "col-sm-2">
+        <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.IsCompany)
         </dt>
-        <dd class = "col-sm-10">
+        <dd class="col-sm-10">
             @Html.DisplayFor(model => model.IsCompany)
         </dd>
-        <dt class = "col-sm-2">
+        <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.NIP)
         </dt>
-        <dd class = "col-sm-10">
+        <dd class="col-sm-10">
             @Html.DisplayFor(model => model.NIP)
         </dd>
-        <dt class = "col-sm-2">
+        <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.CompanyName)
         </dt>
-        <dd class = "col-sm-10">
+        <dd class="col-sm-10">
             @Html.DisplayFor(model => model.CompanyName)
         </dd>
     </dl>
 </div>
+@if (Model.ContactDetails != null && Model.ContactDetails.Count > 0)
+{
+    <div class="form-row">
+        <div class="col">
+            <table class="table table-bordered">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>
+                            Id
+                        </th>
+                        <th>
+                            Kontakt
+                        </th>
+                        <th>
+                            Id typ kontaktu
+                        </th>
+                        <th>
+                            Rodzaj kontaktu
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var contact in Model.ContactDetails)
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(model => contact.Id)
+                            <td>
+                                @Html.DisplayFor(model => contact.ContactDetailInformation)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => contact.ContactDetailTypeId)
+                            <td>
+                                @Html.DisplayFor(model => contact.ContactDetailTypeName)
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+<br>
+<br>
+@if (Model.Addresses != null && Model.Addresses.Count > 0)
+{
+    <div class="form-row">
+        <div class="col">
+            <table class="table table-bordered">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>
+                            Id
+                        </th>
+                        <th>
+                            Kraj
+                        </th>
+                        <th>
+                            Kod pocztowy
+                        </th>
+                        <th>
+                            Miasto
+                        </th>
+                        <th>
+                            Ulica
+                        </th>
+                        <th>
+                            Nr budynku
+                        </th>
+                        <th>
+                            Nr mieszkania
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var address in Model.Addresses)
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(model => address.Id)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => address.Country)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => address.ZipCode)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => address.City)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => address.Street)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => address.BuildingNumber)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => address.FlatNumber)
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@if (Model.Orders != null && Model.Orders.Count > 0)
+{
+    <div class="form-row">
+        <div class="col">
+            <table class="table table-bordered">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>
+                            Id
+                        </th>
+                        <th>
+                            Numer zamówienia
+                        </th>
+                        <th>
+                            Koszt
+                        </th>
+                        <th>
+                            Data zamówienia
+                        </th>
+                        <th>
+                            Czy dostarczono
+                        </th>
+                        <th>
+                            Data dostarczenia
+                        </th>
+                        <th>
+                            Czy zapłacono
+                        </th>
+                        <th>
+                            Id płatności
+                        </th>
+                        <th>
+                            Id zwrotu
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var order in Model.Orders)
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(model => order.Id)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => order.Number)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => order.Cost)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => order.Ordered)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => order.IsDelivered)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => order.Delivered)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => order.IsPaid)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => order.PaymentId)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => order.RefundId)
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+@if (Model.Payments != null && Model.Payments.Count > 0)
+{
+    <div class="form-row">
+        <div class="col">
+            <table class="table table-bordered">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>
+                            Id
+                        </th>
+                        <th>
+                            Numer płatności
+                        </th>
+                        <th>
+                            Data płatności
+                        </th>
+                        <th>
+                            Id klienta
+                        </th>
+                        <th>
+                            Id zamówienia
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var payment in Model.Payments)
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(model => payment.Id)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => payment.Number)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => payment.DateOfOrderPayment)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => payment.CustomerId)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => payment.OrderId)
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+@if (Model.Refunds != null && Model.Refunds.Count>0)
+{
+    <div class="form-row">
+        <div class="col">
+            <table class="table table-bordered">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>
+                            Id
+                        </th>
+                        <th>
+                            Powód
+                        </th>
+                        <th>
+                            Data zwrotu
+                        </th>
+                        <th>
+                            Na gwarancji
+                        </th>
+                        <th>
+                            Akceptowano
+                        </th>
+                        <th>
+                            Id klienta
+                        </th>
+                        <th>
+                            Id zamówienia
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var refund in Model.Refunds)
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(model => refund.Id)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => refund.Reason)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => refund.RefundDate)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => refund.OnWarranty)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => refund.Accepted)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => refund.CustomerId)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(model => refund.OrderId)
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
 
 <div>
     @Html.ActionLink("Edytuj", "EditCustomer", new { id = Model.Id }) |

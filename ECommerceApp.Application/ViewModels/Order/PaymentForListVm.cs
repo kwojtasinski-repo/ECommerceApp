@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.Customer;
+using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -20,6 +21,18 @@ namespace ECommerceApp.Application.ViewModels.Order
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ECommerceApp.Domain.Model.Payment, PaymentForListVm>();
+        }
+    }
+
+    public class PaymentForListValidation : AbstractValidator<PaymentForListVm>
+    {
+        public PaymentForListValidation()
+        {
+            RuleFor(x => x.Id).NotNull();
+            RuleFor(x => x.Number).NotNull();
+            RuleFor(x => x.DateOfOrderPayment).NotNull();
+            RuleFor(x => x.OrderId).NotNull();
+            RuleFor(x => x.CustomerId).NotNull();
         }
     }
 }

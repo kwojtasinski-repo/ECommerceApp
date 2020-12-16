@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.Customer;
+using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -24,6 +25,20 @@ namespace ECommerceApp.Application.ViewModels.Order
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ECommerceApp.Domain.Model.Refund, RefundForListVm>();
+        }
+    }
+
+    public class RefundForListValidation : AbstractValidator<RefundForListVm>
+    {
+        public RefundForListValidation()
+        {
+            RuleFor(x => x.Id).NotNull();
+            RuleFor(x => x.Reason).NotNull();
+            RuleFor(x => x.Accepted).NotNull();
+            RuleFor(x => x.RefundDate).NotNull();
+            RuleFor(x => x.OnWarranty).NotNull();
+            RuleFor(x => x.CustomerId).NotNull();
+            RuleFor(x => x.OrderId).NotNull();
         }
     }
 }
