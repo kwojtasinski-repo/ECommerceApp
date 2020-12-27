@@ -25,22 +25,9 @@ namespace ECommerceApp.Application.Services
 
         public int AddCustomer(NewCustomerVm newCustomer)
         {
-            CheckIfContactDetailTypeHasValues();
             var customer = _mapper.Map<Customer>(newCustomer);
             var id = _custRepo.AddCustomer(customer);
             return id;
-        }
-
-        private void CheckIfContactDetailTypeHasValues()
-        {
-            var detailTypes = _custRepo.GetAllDetailTypes().ToList();
-            if (detailTypes.Count == 0)
-            {
-                ContactDetailType contactDetailTypePhone = new ContactDetailType() { Name = "PhoneNumber" };
-                _custRepo.AddContactDetailType(contactDetailTypePhone);
-                ContactDetailType contactDetailTypeEmail = new ContactDetailType() { Name = "Email" };
-                _custRepo.AddContactDetailType(contactDetailTypeEmail);
-            }
         }
 
         public void DeleteCustomer(int id)
