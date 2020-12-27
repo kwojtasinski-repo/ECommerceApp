@@ -34,6 +34,6 @@ namespace ECommerceApp.Domain.Interface
         IQueryable<OrderItem> GetAllOrderItemsByOrderId(int orderId);
         Customer GetCustomerById(int id);
         void AddOrderItems(ICollection<OrderItem> orderItems);
-
+        IQueryable<Customer> GetCustomersByUserId(string userId);
     }
 }

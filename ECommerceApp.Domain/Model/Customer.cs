@@ -1,12 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
+using Microsoft.AspNetCore.Identity;
 
 namespace ECommerceApp.Domain.Model
 {
     public class Customer
     {
         public int Id { get; set; }
+        public string UserId { get; set; }
+        public IdentityUser User { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public bool IsCompany { get; set; }

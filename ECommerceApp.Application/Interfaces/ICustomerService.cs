@@ -23,6 +23,6 @@ namespace ECommerceApp.Application.Interfaces
         void DeleteAddress(int id);
         void DeleteContactDetail(int id);
         AddressDetailVm GetAddressDetail(int id);
-        IQueryable<ContactDetailTypeVm> GetConactDetailTypes();
+        IQueryable<ContactDetailTypeVm> GetConactDetailTypes();  
     }
 }

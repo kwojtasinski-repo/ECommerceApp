@@ -1,0 +1,53 @@
+﻿@model ECommerceApp.Application.ViewModels.User.ListUsersVm
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="AddUser">Stwórz nowego użytkownika</a>
+</p>
+<form asp-action="Index" asp-controller="UserRoles" method="post">
+    <div class="row">
+        <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
+        <input type="submit" value="Wyszukaj" />
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Id
+                </th>
+                <th>
+                    Nazwa użytkownika
+                </th>
+                <th>Akcja</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var user in Model.Users)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(model => user.Id)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => user.UserName)
+                    </td>
+                    <td>
+                        @Html.ActionLink("Edytuj", "EditUser", new { id = user.Id }) |
+                        @Html.ActionLink("Zmień hasło", "ChangeUserPassword", new { id = user.Id }) |
+                        @Html.ActionLink("Dodaj/Usuń Rolę", "AddRolesToUser", new { id = user.Id }) |
+                        @Html.ActionLink("Usuń", "Delete", new { /* id=item.PrimaryKey */ })
+                    </td>
+                </tr>
+            }
+        </tbody>
+        <div>
+            <input type="hidden" name="pageNo" id="pageNo" />
+            <input type="hidden" name="pageSize" id="pageSize" value="20" />
+        </div>
+    </table>
+</form>

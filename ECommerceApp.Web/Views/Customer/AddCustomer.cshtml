@@ -7,7 +7,7 @@
 <h1>Tworznie nowego klienta</h1>
 
 <div>
-    <a asp-action="Index">Powrót do listy klientów</a>
+    <a asp-controller="Item" asp-action="Index">Powrót do listy przedmiotów</a>
 </div>
 <hr />
 <form asp-action="AddCustomer">
@@ -19,6 +19,7 @@
             <div class="form-row">
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 <input type="hidden" asp-for="Id" class="form-control" />
+                <input type="hidden" asp-for="UserId" class="form-control" />
                 <div class="col-md-6 mb-3">
                     <label asp-for="FirstName" class="control-label">Imię</label>
                     <input asp-for="FirstName" class="form-control" />
@@ -109,7 +110,7 @@
                     <span asp-validation-for="Addresses[0].City" class="text-danger"></span>
                 </div>
                 <div>
-                    <label asp-for="Addresses[0].Country" class="control-label">Kraj</label>
+                    <label asp-for="Addresses[0].Country" class="control-label">Województwo</label>
                     <input asp-for="Addresses[0].Country" class="form-control" />
                     <span asp-validation-for="Addresses[0].Country" class="text-danger"></span>
                 </div>

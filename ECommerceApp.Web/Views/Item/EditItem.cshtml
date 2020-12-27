@@ -81,7 +81,7 @@
             <div>
                 <select id="TagsMain" style="display:none;" asp-items="@(new SelectList(ViewBag.ItemTags,"Id", "Name"))" class="custom-select"></select>
                 <select id="Tags" name="Tags" asp-items="@(new SelectList(ViewBag.ItemTags,"Id", "Name"))" class="custom-select" data-val="true"></select>
-                <button type="button" id="add" class="btn btn-info">Wybierz przedmiot</button>
+                <button type="button" id="add" class="btn btn-info">Wybierz tag</button>
                 <input id="indexer" type="hidden" value="0" />
             </div>
             <div class="form-group">
@@ -112,41 +112,53 @@
         $(document).ready(function () {
             if ($('#tagWithJS tr').length > 0) {
                 //$('#itemWithJS tr')[i];// list of table rows
-                index = $('#itemWithJS tr').length;
-                var assignedValues = [];
-                var collectionValues = $('#tagWithJS')[0].children;
-                console.log(collectionValues[0].children);
-                copyOfItemTags = document.getElementById("Tags");
-                for (i = 0; i < collectionValues[0].children.length; i++) {
-                    assignedValues[i] = collectionValues[0].children[i].children[0].children[1].value;
-                }
-                console.log(assignedValues);
-                for (i = 0; i < assignedValues.length; i++) {
-                    RemoveSelectOption(assignedValues[i], copyOfItemTags);
-                }
                 index = $('#tagWithJS tr').length;
                 console.log("index");
                 console.log(index);
+                selectedValue = copyOfItemTags.options[copyOfItemTags.selectedIndex].value;
+                if (index > 0) {
+                    var assignedValues = [];
+                    var collectionValues = $('#tagWithJS')[0].children;
+                    console.log(collectionValues[0].children);
+                    copyOfItemTags = document.getElementById("Tags");
+                    for (i = 0; i < collectionValues[0].children.length; i++) {
+                        assignedValues[i] = collectionValues[0].children[i].children[0].children[1].value;
+                    }
+                    console.log(assignedValues);
+                    for (i = 0; i < assignedValues.length; i++) {
+                        RemoveSelectOption(assignedValues[i], copyOfItemTags);
+                    }
+                    console.log("index");
+                    console.log(index);
+                }
             }
         });
 
         $('#add').click(function () {
-            var valueOfItemTag = selectedValue;
-            var cloneTableRow = newrow.find('tr').clone();
-
-            cloneTableRow.attr('id', index);
-            cloneTableRow.attr("id", index).find("#Tag");
-            cloneTableRow.html($(cloneTableRow).html().replace(/\[#\]/g, '[' + index + ']'));
-            cloneTableRow.html($(cloneTableRow).html().replace(/"%"/g, '"' + index + '"'));
-            cloneTableRow.html($(cloneTableRow).html().replace(/"wartosc"/g, '"' + valueOfItemTag + '"'));
-            cloneTableRow.html($(cloneTableRow).html().replace(/"itemek"/g, '"' + selectedText + '"'));
-            table.append(cloneTableRow);
-            form.data('validator', null);
-            index = parseInt(index) + 1;
-            $.validator.unobtrusive.parse(form);
-            if (selectedIndex > -1) {
-                dictOfDeletedValues[index] = selectedValue;
-                copyOfItemTags.remove(selectedIndex);
+            var amountTags = document.getElementById('Tags').length;
+            if (amountTags > 0) {
+                var valueOfItemTag = copyOfItemTags.value;
+                var cloneTableRow = newrow.find('tr').clone();
+                var selectedText = copyOfItemTags.options[copyOfItemTags.selectedIndex].text;
+                console.log("index");
+                console.log(index);
+                selectedIndex = copyOfItemTags.selectedIndex;
+                console.log("selectedIndex");
+                console.log(selectedIndex);
+                cloneTableRow.attr('id', index);
+                cloneTableRow.attr("id", index).find("#Tag");
+                cloneTableRow.html($(cloneTableRow).html().replace(/\[#\]/g, '[' + index + ']'));
+                cloneTableRow.html($(cloneTableRow).html().replace(/"%"/g, '"' + index + '"'));
+                cloneTableRow.html($(cloneTableRow).html().replace(/"wartosc"/g, '"' + valueOfItemTag + '"'));
+                cloneTableRow.html($(cloneTableRow).html().replace(/"itemek"/g, '"' + selectedText + '"'));
+                table.append(cloneTableRow);
+                form.data('validator', null);
+                index = parseInt(index) + 1;
+                $.validator.unobtrusive.parse(form);
+                if (selectedIndex > -1) {
+                    dictOfDeletedValues[index] = selectedValue;
+                    copyOfItemTags.remove(selectedIndex);
+                }
             }
         });
 
@@ -179,61 +191,95 @@
             var id = $(this).closest('tr').attr("id");
             console.log(id);
             var assignedValues = [];
-            var collectionValues = $('#tagWithJS')[0].children[0].children;
-            console.log(collectionValues);
-            for (i = 0; i < collectionValues.length; i++) {
-                assignedValuesItemName[i] = collectionValues[0].parentNode.children[i].children[0].children[0].value;
-                assignedValuesTagId[i] = collectionValues[0].parentNode.children[i].children[0].children[1].attributes[2].value;
-                assignedValues[i] = collectionValues[i].children[0].children[1].value;
-            }
-            console.log(assignedValues);
-            console.log(assignedValuesTagId);
-            console.log(assignedValuesItemName);
+            var idArr = [];
 
-            listIdTags.splice(id, 1);
-            for (i = 0; i < listIdTags.length; i++) {
-                console.log(listIdTags[i]);
-            }
-            console.log(listIdTags);
-            Update(listIdTags);
-            console.log("After update\n========");
-            for (i = 0; i < listIdTags.length; i++) {
-                console.log(listIdTags[i]);
-            }
-            console.log(listIdTags);
-            var allValues = document.getElementById('TagsMain');
-            $('#Tags').empty();
-            console.log(allValues);
+            var trs = document.getElementsByTagName("tr");
 
-            for (i = 0; i < allValues.length; i++) {
-                $('#Tags')
-                    .append($("<option></option>").attr("value", allValues[i].value).text(allValues[i].text));
+            for (var i = 0; i < trs.length -1; i++) {
+                idArr.push(trs[i].id);
             }
-            //-------------------------CREATE NEW TABLE ROWS-----------------------------------------
-            $('#tagWithJS').empty();
+            if (idArr.length > 0) {
+                console.log(idArr);
+                console.log("document.getElementById(idArr[0])");
+                console.log(document.getElementById(idArr[0]));
+                console.log(document.getElementById(idArr[0]).children[0].children[0].value);
+                var collectionValues = $('#tagWithJS')[0].children[0].children;
+                console.log("collectionValues.length");
+                console.log(collectionValues.length);
+                console.log("collectionValues");
+                console.log(collectionValues);
+                var test = collectionValues[0].parentNode.children;
+                var test2 = collectionValues[0].parentNode;
+                console.log("test");
+                console.log(test);
+                console.log("test2");
+                console.log(test2);
+                for (i = 0; i < idArr.length; i++) {
+                    assignedValuesItemName[i] = document.getElementById(idArr[i]).children[0].children[0].value;
+                    assignedValuesTagId[i] = document.getElementById(idArr[i]).children[0].children[1].value;
+                }
+                console.log("assignedValues");
+                console.log(assignedValues);
+                console.log(assignedValuesTagId);
+                console.log(assignedValuesItemName);
 
-            for (i = 0; i < listIdTags.length; i++) {
-                var cloneTableRow = newrow.find('tr').clone();
-                cloneTableRow.attr('id', listIdTags[i]);
-                cloneTableRow.attr("id", listIdTags[i]).find("#Item");
-                cloneTableRow.html($(cloneTableRow).html().replace(/\[#\]/g, '[' + listIdTags[i] + ']'));
-                cloneTableRow.html($(cloneTableRow).html().replace(/"%"/g, '"' + listIdTags[i] + '"'));
-                cloneTableRow.html($(cloneTableRow).html().replace(/"wartosc"/g, '"' + assignedValuesTagId[i] + '"'));
-                cloneTableRow.html($(cloneTableRow).html().replace(/"itemek"/g, '"' + assignedValuesItemName[i] + '"'));
-                table.append(cloneTableRow);
-            }
-            //-------------------------CREATE NEW TABLE ROWS-----------------------------------------
+                listIdTags.splice(id, 1);
+                for (i = 0; i < listIdTags.length; i++) {
+                    console.log(listIdTags[i]);
+                }
+                console.log(listIdTags);
+                Update(listIdTags);
+                console.log("After update\n========");
+                for (i = 0; i < listIdTags.length; i++) {
+                    console.log(listIdTags[i]);
+                }
+                console.log(listIdTags);
+                var allValues = document.getElementById('TagsMain');
+                $('#Tags').empty();
+                console.log(allValues);
 
-            //----------------------DELETE CHOSEN OPTIONS--------------------
-            copyOfItemTags = document.getElementById("Tags");
-            for (i = 0; i < assignedValues.length; i++) {
-                //   RemoveSelectOption(i, copyOfItemTags);
-                RemoveSelectOption(assignedValues[i], copyOfItemTags);
+                for (i = 0; i < allValues.length; i++) {
+                    $('#Tags')
+                        .append($("<option></option>").attr("value", allValues[i].value).text(allValues[i].text));
+                }
+                //-------------------------CREATE NEW TABLE ROWS-----------------------------------------
+                $('#tagWithJS').empty();
+
+                for (i = 0; i < listIdTags.length; i++) {
+                    var cloneTableRow = newrow.find('tr').clone();
+                    cloneTableRow.attr('id', listIdTags[i]);
+                    cloneTableRow.attr("id", listIdTags[i]).find("#Item");
+                    cloneTableRow.html($(cloneTableRow).html().replace(/\[#\]/g, '[' + listIdTags[i] + ']'));
+                    cloneTableRow.html($(cloneTableRow).html().replace(/"%"/g, '"' + listIdTags[i] + '"'));
+                    cloneTableRow.html($(cloneTableRow).html().replace(/"wartosc"/g, '"' + assignedValuesTagId[i] + '"'));
+                    cloneTableRow.html($(cloneTableRow).html().replace(/"itemek"/g, '"' + assignedValuesItemName[i] + '"'));
+                    table.append(cloneTableRow);
+                }
+                //-------------------------CREATE NEW TABLE ROWS-----------------------------------------
+
+                //----------------------DELETE CHOSEN OPTIONS--------------------
+                copyOfItemTags = document.getElementById("Tags");
+                for (i = 0; i < assignedValuesTagId.length; i++) {
+                    //   RemoveSelectOption(i, copyOfItemTags);
+                    RemoveSelectOption(assignedValuesTagId[i], copyOfItemTags);
+                }
+                //----------------------DELETE CHOSEN OPTIONS--------------------
+                index = listIdTags.length;
+                console.log("index=" + index);
+                listIdTags = [];
             }
-            //----------------------DELETE CHOSEN OPTIONS--------------------
-            index = listIdTags.length;
-            console.log("index=" + index);
-            listIdTags = [];
+            else {
+                var allValues = document.getElementById('TagsMain');
+                $('#Tags').empty();
+                console.log(allValues);
+
+                for (i = 0; i < allValues.length; i++) {
+                    $('#Tags')
+                        .append($("<option></option>").attr("value", allValues[i].value).text(allValues[i].text));
+                }
+                index = 0;
+            }
+            
         });
 
         function DeleteItem(id) {

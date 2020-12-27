@@ -7,12 +7,21 @@
 
 <h1>Lista przedmiotów</h1>
 
+
 <p>
-    <a asp-action="AddItem">Stwórz nowy przedmiot</a>
+    
+        <a asp-controller="Order" asp-action="AddOrder">Stwórz zamówienie</a>
+    @if (User.IsInRole("Administrator") || User.IsInRole("Manager") || User.IsInRole("Service") || User.IsInRole("Admin"))
+    {
+        <a asp-action="AddItem">Stwórz nowy przedmiot</a>
+    }
     <a asp-action="ShowItemBrands">Lista firm</a>
     <a asp-action="ShowItemTypes">Lista typów przedmiotów</a>
-    <a asp-action="ShowItemTags">Lista tagów</a>
-    <a asp-action="ShowItemConnectedWithTags">Przedmioty z tagami</a>
+    @if (User.IsInRole("Administrator") || User.IsInRole("Manager") || User.IsInRole("Service") || User.IsInRole("Admin"))
+    {
+        <a asp-action="ShowItemTags">Lista tagów</a>
+        <a asp-action="ShowItemConnectedWithTags">Przedmioty z tagami</a>
+    }
 </p>
 <form asp-action="Index" asp-controller="Item" method="post">
     <div class="row">

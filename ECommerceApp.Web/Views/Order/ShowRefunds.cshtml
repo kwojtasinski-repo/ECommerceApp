@@ -107,7 +107,18 @@
     <script type="text/javascript">
         function PagerClick(index)
         {
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            var userAuthorized = @User.Identity.IsAuthenticated.ToString().ToLower();
+            console.log(userAuthorized);
             document.getElementById("pageNo").value = index;
+            document.getElementsByName("__RequestVerificationToken").value = token;
+            //document.forms[0].submit();
+            console.log(document.forms[0]);
+            document.forms[0].action = 'ShowRefunds/?pageSize=' + document.getElementById("pageSize").value + '&pageNo=' + document.getElementById("pageNo").value;
+            console.log(document.getElementById("pageNo").value)
+            console.log(document.getElementById("pageSize").value)
+            //pageSize, int ? pageNo, string searchString
+            console.log(document.forms[0]);
             document.forms[0].submit();
         }
     </script>

@@ -43,14 +43,14 @@
             </div>
             <div class="form-group">
                 <input type="submit" value="Zapłać" class="btn btn-success" />
-                <a asp-action="Index"><input type="button" readonly value="Anuluj" class="btn btn-warning" /></a>
+                <a asp-controller="Item" asp-action="Index"><input type="button" readonly value="Anuluj" class="btn btn-warning" /></a>
             </div>
         </form>
     </div>
 </div>
 
 <div>
-    <a asp-action="Index">Wróć do listy zamówień</a>
+    <a asp-controller="Item" asp-action="Index">Wróć do listy przedmiotów</a>
 </div>
 
 @section Scripts {

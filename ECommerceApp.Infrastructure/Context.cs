@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.Domain.Model;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -76,6 +77,44 @@ namespace ECommerceApp.Infrastructure
                 .WithOne(o => o.Payment)
                 .HasForeignKey<Order>(o => o.PaymentId);
             // -------------------- RELATION 1:1 --------------------
+
+            // -------------------- USER SEED DATA ----------------------
+            //Seeding a  'Administrator' role to AspNetRoles table
+            builder.Entity<IdentityRole>().HasData(new IdentityRole { Id = "Administrator", Name = "Administrator", NormalizedName = "ADMINISTRATOR".ToUpper() });
+            builder.Entity<IdentityRole>().HasData(new IdentityRole { Id = "Manager", Name = "Manager", NormalizedName = "MANAGER".ToUpper() });
+            builder.Entity<IdentityRole>().HasData(new IdentityRole { Id = "Service", Name = "Service", NormalizedName = "SERVICE".ToUpper() });
+            builder.Entity<IdentityRole>().HasData(new IdentityRole { Id = "User", Name = "User", NormalizedName = "USER".ToUpper() });
+            builder.Entity<IdentityRole>().HasData(new IdentityRole { Id = "NotRegister", Name = "NotRegister", NormalizedName = "NOTREGISTER".ToUpper() });
+
+
+            //a hasher to hash the password before seeding the user to the db
+            var hasher = new PasswordHasher<IdentityUser>();
+
+
+            //Seeding the User to AspNetUsers table
+            builder.Entity<IdentityUser>().HasData(
+                new IdentityUser
+                {
+                    Id = "8e445865-a24d-4543-a6c6-9443d048cdb9", // primary key
+                    UserName = "admin@localhost",
+                    Email = "admin@localhost",
+                    NormalizedUserName = "ADMIN@LOCALHOST",
+                    //PasswordHash = hasher.HashPassword(null, "aDminN@W25!"),
+                    PasswordHash = "AQAAAAEAACcQAAAAELdaCtFvYS8X6XMmd9kWXKoe5TE3YEGIhePJXcIqiY6p6MdTT0XjQLI9OrLC6yOVvw==", // password aDminN@W25!
+                    EmailConfirmed = true,
+                    SecurityStamp = string.Empty
+                }
+            );
+
+            //Seeding the relation between our user and role to AspNetUserRoles table
+            builder.Entity<IdentityUserRole<string>>().HasData(
+                new IdentityUserRole<string>
+                {
+                    RoleId = "Administrator",
+                    UserId = "8e445865-a24d-4543-a6c6-9443d048cdb9"
+                }
+            );
+            // -------------------- USER SEED DATA ----------------------
         }
     }
 }

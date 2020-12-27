@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Web.Models;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.Web.Controllers
@@ -43,6 +44,7 @@ namespace ECommerceApp.Web.Controllers
             return View(model);
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet]
         public IActionResult AddItem()
         {   
@@ -52,6 +54,7 @@ namespace ECommerceApp.Web.Controllers
             return View(new NewItemVm());
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
         public IActionResult AddItem(NewItemVm model)
         {
@@ -59,12 +62,14 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet]
         public IActionResult AddItemBrand()
         {
             return View(new NewItemBrandVm());
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
         public IActionResult AddItemBrand(NewItemBrandVm model)
         {
@@ -72,12 +77,14 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet]
         public IActionResult AddItemType()
         {
             return View(new NewItemTypeVm());
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
         public IActionResult AddItemType(NewItemTypeVm model)
         {
@@ -85,12 +92,14 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet]
         public IActionResult AddItemTag()
         {
             return View(new NewTagVm());
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
         public IActionResult AddItemTag(NewTagVm model)
         {
@@ -98,6 +107,7 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet]
         public IActionResult EditItem(int id)
         {
@@ -108,6 +118,7 @@ namespace ECommerceApp.Web.Controllers
             return View(item);
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
         public IActionResult EditItem(NewItemVm model)
         {
@@ -115,6 +126,7 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet]
         public IActionResult EditItemBrand(int id)
         {
@@ -122,6 +134,7 @@ namespace ECommerceApp.Web.Controllers
             return View(item);
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
         public IActionResult EditItemBrand(NewItemBrandVm model)
         {
@@ -129,6 +142,7 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet]
         public IActionResult EditItemType(int id)
         {
@@ -136,6 +150,7 @@ namespace ECommerceApp.Web.Controllers
             return View(item);
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
         public IActionResult EditItemType(NewItemTypeVm model)
         {
@@ -143,6 +158,7 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet]
         public IActionResult EditItemTag(int id)
         {
@@ -150,6 +166,7 @@ namespace ECommerceApp.Web.Controllers
             return View(tag);
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
         public IActionResult EditItemTag(NewTagVm model)
         {
@@ -205,6 +222,7 @@ namespace ECommerceApp.Web.Controllers
             return View(type);
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet]
         public IActionResult ShowItemTags()
         {
@@ -212,6 +230,7 @@ namespace ECommerceApp.Web.Controllers
             return View(tag);
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
         public IActionResult ShowItemTags(int pageSize, int? pageNo, string searchString)
         {
@@ -229,6 +248,7 @@ namespace ECommerceApp.Web.Controllers
             return View(tag);
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet]
         public IActionResult ShowItemConnectedWithTags()
         {
@@ -236,6 +256,7 @@ namespace ECommerceApp.Web.Controllers
             return View(tag);
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
         public IActionResult ShowItemConnectedWithTags(int pageSize, int? pageNo, string searchString)
         {
@@ -274,6 +295,7 @@ namespace ECommerceApp.Web.Controllers
             return View(item);
         }
 
+        [Authorize(Roles = "Administratorm, Admin, Manager, Service")]
         [HttpGet]
         public IActionResult ViewItemTag(int id)
         {
@@ -281,24 +303,28 @@ namespace ECommerceApp.Web.Controllers
             return View(item);
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         public IActionResult DeleteItem(int id)
         {
             _itemService.DeleteItem(id);
             return RedirectToAction("Index");
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         public IActionResult DeleteItemType(int id)
         {
             _itemService.DeleteItemType(id);
             return RedirectToAction("Index");
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         public IActionResult DeleteItemBrand(int id)
         {
             _itemService.DeleteItemBrand(id);
             return RedirectToAction("Index");
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         public IActionResult DeleteItemTag(int id)
         {
             _itemService.DeleteItemTag(id);

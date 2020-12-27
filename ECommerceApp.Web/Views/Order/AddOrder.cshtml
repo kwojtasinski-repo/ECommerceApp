@@ -43,11 +43,23 @@
                 <input type="hidden" asp-for="CouponUsedId" class="form-control" />
                 <span asp-validation-for="CouponUsedId" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="CustomerId" class="control-label">Klient</label>
-                <select asp-for="CustomerId" asp-items="@(new SelectList(ViewBag.Customers,"Id", "Information"))" class="custom-select"></select>
-                <span asp-validation-for="CustomerId" class="text-danger"></span>
-            </div>
+            @if (ViewBag.Customers.Count > 0)
+            {
+                <div class="form-group">
+                    <label asp-for="CustomerId" class="control-label">Klient</label>
+                    <select asp-for="CustomerId" asp-items="@(new SelectList(ViewBag.Customers, "Id", "Information"))" class="custom-select"></select>
+                    <span asp-validation-for="CustomerId" class="text-danger"></span>
+                </div>
+                <div>
+                    <a asp-controller="Customer" asp-action="AddCustomer">Dodaj dane</a>
+                </div>
+            }
+            else
+            {
+                <div>
+                    <a asp-controller="Customer" asp-action="AddCustomer">Dodaj dane</a>
+                </div>
+            }
             <div style="display:none;" class="form-group">
                 <label asp-for="PaymentId" class="control-label"></label>
                 <input type="hidden" asp-for="PaymentId" class="form-control" />
@@ -64,14 +76,14 @@
                 <span asp-validation-for="RefundId" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+                <input type="submit" value="Utwórz" class="btn btn-primary" />
             </div>
         </form>
     </div>
 </div>
 
 <div>
-    <a asp-action="Index">Wróć do listy zamówień</a>
+    <a asp-controller="Item" asp-action="Index">Wróć do listy przedmiotów</a>
 </div>
 
 @section Scripts {

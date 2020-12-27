@@ -15,6 +15,8 @@ using ECommerceApp.Infrastructure;
 using ECommerceApp.Application;
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using FluentValidation.AspNetCore;
 
 namespace ECommerceApp.Web
 {
@@ -33,14 +35,35 @@ namespace ECommerceApp.Web
             services.AddDbContext<Context>(options =>
                 options.UseSqlServer(
                     Configuration.GetConnectionString("DefaultConnection")));
-            services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true)
+            services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<Context>();
 
             services.AddApplication();
             services.AddInfrastructure();
 
-            services.AddControllersWithViews();
+            services.AddControllersWithViews();/*.AddFluentValidation(fv =>
+            {
+                fv.ImplicitlyValidateChildProperties = true;
+                fv.RunDefaultMvcValidationAfterFluentValidationExecutes = false;
+            });*/
             services.AddRazorPages();
+
+            services.Configure<IdentityOptions>(opt =>
+            {
+                opt.Password.RequireDigit = true;
+                opt.Password.RequireLowercase = true;
+                opt.Password.RequiredLength = 8;
+
+                opt.SignIn.RequireConfirmedEmail = false;
+                opt.User.RequireUniqueEmail = true;
+            });
+
+            services.AddAuthentication().AddGoogle(options =>
+            {
+                IConfigurationSection configurationSection = Configuration.GetSection("Authentication:Google");
+                options.ClientId = configurationSection["ClientId"];
+                options.ClientSecret = configurationSection["ClientSecret"];
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

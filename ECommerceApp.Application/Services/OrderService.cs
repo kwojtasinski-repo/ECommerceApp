@@ -354,5 +354,45 @@ namespace ECommerceApp.Application.Services
 
             return ordersList;
         }
+
+        public IQueryable<NewCustomerForOrdersVm> GetCustomersByUserId(string userId)
+        {
+            var customers = _orderRepo.GetCustomersByUserId(userId);
+            var customersVm = customers.ProjectTo<NewCustomerForOrdersVm>(_mapper.ConfigurationProvider);
+            return customersVm;
+        }
+
+        public ListForOrderVm GetAllOrdersByUserId(string userId, int pageSize, int pageNo)
+        {
+            var allCustomersCreatedByUser = GetCustomersByUserId(userId).ToList();
+            var listOfIdentities = new List<int>();
+            allCustomersCreatedByUser.ForEach(c =>
+            {
+                listOfIdentities.Add(c.Id);
+            });
+
+            var orderss = new List<OrderForListVm>();
+
+            foreach (var id in listOfIdentities)
+            {
+                var ord = _orderRepo.GetAllOrders().Where(o => o.CustomerId == id)
+                            .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
+                            .ToList();
+                orderss.AddRange(ord);
+            }
+
+            var ordersToShow = orderss.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+
+            var ordersList = new ListForOrderVm()
+            {
+                PageSize = pageSize,
+                CurrentPage = pageNo,
+                SearchString = "",
+                Orders = ordersToShow,
+                Count = orderss.Count
+            };
+
+            return ordersList;
+        }
     }
 }

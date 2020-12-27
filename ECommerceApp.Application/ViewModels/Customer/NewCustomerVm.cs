@@ -10,6 +10,7 @@ namespace ECommerceApp.Application.ViewModels.Customer
     public class NewCustomerVm : IMapFrom<ECommerceApp.Domain.Model.Customer>
     {
         public int Id { get; set; }
+        public string UserId { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public bool IsCompany { get; set; }
@@ -18,6 +19,9 @@ namespace ECommerceApp.Application.ViewModels.Customer
 
         public virtual List<NewContactDetailVm> ContactDetails { get; set; }
         public virtual List<NewAddressVm> Addresses { get; set; }
+
+        public string AnnonymousUserName { get; set; }
+        public string AnnonymousUserPassword { get; set; }
 
         public void Mapping(Profile profile)
         {

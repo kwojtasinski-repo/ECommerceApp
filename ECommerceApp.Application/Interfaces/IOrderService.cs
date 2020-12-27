@@ -36,6 +36,7 @@ namespace ECommerceApp.Application.Interfaces
         IQueryable<NewCouponVm> GetAllCoupons();
         int CheckPromoCode(string code);
         int UpdateCoupon(int couponId, NewOrderVm order);
+        IQueryable<NewCustomerForOrdersVm> GetCustomersByUserId(string userId);
         NewOrderVm GetOrderById(int orderId);
         void CalculateCost(NewOrderVm order, NewOrderItemVm model);
         NewCustomerForOrdersVm GetCustomerById(int id);
@@ -44,5 +45,6 @@ namespace ECommerceApp.Application.Interfaces
         OrderItemDetailsVm GetOrderItemDetail(int id);
         bool CheckEnteredRefund(string reasonRefund);
         ListForOrderVm GetAllOrdersByCustomerId(int customerId, int pageSize, int pageNo);
+        ListForOrderVm GetAllOrdersByUserId(string userId, int pageSize, int pageNo);
     }
 }

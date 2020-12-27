@@ -265,5 +265,10 @@ namespace ECommerceApp.Infrastructure.Repositories
 
             _context.SaveChanges();
         }
+
+        public IQueryable<Customer> GetCustomersByUserId(string userId)
+        {
+            return _context.Customers.Where(c => c.UserId == userId);
+        }
     }
 }
