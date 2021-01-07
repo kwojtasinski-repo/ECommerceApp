@@ -10,7 +10,7 @@
     <a asp-action="AddCouponType">Utwórz nowy typ</a>
     <a asp-action="Index">Powrót do listy kuponów</a>
 </p>
-<form asp-action="ShowCouponTypes" asp-controller="Coupon" method="post">
+<form id="reload" asp-action="ShowCouponTypes" asp-controller="Coupon" method="post">
     <div class="row">
         <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
         <input type="submit" value="Wyszukaj" />
@@ -38,12 +38,63 @@
                         @Html.DisplayFor(modelCoupon => coupon.Type)
                     </td>
                     <td>
-                        @Html.ActionLink("Edytuj", "EditCouponType", new {  id=coupon.Id  }) |
-                        @Html.ActionLink("Szczegóły", "ViewCouponType", new {  id=coupon.Id  }) |
-                        @Html.ActionLink("Usuń", "DeleteCouponType", new {  id=coupon.Id })
+                        @Html.ActionLink("Edytuj", "EditCouponType", new { id = coupon.Id }) |
+                        @Html.ActionLink("Szczegóły", "ViewCouponType", new { id = coupon.Id }) |
+                        @Html.ActionLink("Usuń", "DeleteCouponType", new { id = coupon.Id })
                     </td>
                 </tr>
             }
         </tbody>
     </table>
+    <div class="row">
+        <table>
+            <tr>
+                @for (int i = 1; i <= Math.Ceiling(Model.Count / (double)Model.PageSize); i++)
+                {
+                    <td>
+                        @if (i != Model.CurrentPage)
+                        {
+                            <a href="javascript:PagerClick(@i)">@i</a>
+                        }
+                        else
+                        {
+                            <span>@i</span>
+                        }
+                    </td>
+                }
+            </tr>
+        </table>
+        <input type="hidden" name="pageNo" id="pageNo" />
+        <input type="hidden" name="pageSize" id="pageSize" value="20" />
+    </div>
 </form>
+
+<script>
+    function PagerClick(index) {
+        var token = $('input[name="__RequestVerificationToken"]').val();
+        document.getElementById("pageNo").value = index;
+        $.ajax({
+            url: "/Coupon/ShowCouponTypes/",
+            type: 'POST',
+            data: {//int pageSize, int? pageNo, string searchString
+                __RequestVerificationToken: token,
+                pageSize: document.getElementById("pageSize").value,
+                pageNo: index,
+                searchString: document.getElementById("searchString").value
+            },
+            success: function (data) {
+                console.log("Success")
+                console.log(data);
+                var parser = new DOMParser();
+                var htmlDoc = parser.parseFromString(data, 'text/html');
+                console.log(htmlDoc);
+                var form = htmlDoc.getElementById('reload');
+                console.log(form);
+                jQuery('#reload').html(form);
+            },
+            error: function (error) {
+                console.log("error is " + error);
+            }
+        });
+    }
+</script>

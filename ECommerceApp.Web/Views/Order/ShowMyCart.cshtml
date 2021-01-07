@@ -1,0 +1,206 @@
+﻿@model ECommerceApp.Application.ViewModels.Order.ListForItemOrderVm
+
+@{
+    ViewData["Title"] = "ShowMyCard";
+}
+
+<h1>Koszyk</h1>
+
+<p>
+    <a asp-controller="Item" asp-action="Index">Wróć do listy przedmiotów</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                Id
+            </th>
+            <th>
+                Id przedmiotu
+            </th>
+            <th>
+                Nazwa przedmiotu
+            </th>
+            <th>
+                Ilość
+            </th>
+            <th>
+                Id użytkownika
+            </th>
+            <th>
+                Użytkownik
+            </th>
+            <th>
+                Id zamówienia
+            </th>
+            <th>
+                Id kuponu
+            </th>
+            <th>
+                Id zwrotu
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var orderItem in Model.ItemOrders)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(model => orderItem.Id)
+                </td>
+                <td>
+                    @Html.DisplayFor(model => orderItem.ItemId)
+                </td>
+                <td>
+                    @Html.DisplayFor(model => orderItem.ItemName)
+                </td>
+                <td style="width:100px;">
+                    <div class="row">
+                        @using Newtonsoft.Json;
+                        <a><i style="margin-right:5px;" onclick="AddQuantity(@JsonConvert.SerializeObject(orderItem))" id="OrderItemAddQuantity" class="fas fa-plus-circle ml-2 fa_custom"></i></a>
+                        @Html.DisplayFor(model => orderItem.ItemOrderQuantity)
+                        <a><i onclick="RemoveQuantity(@JsonConvert.SerializeObject(orderItem))" class="fa fa-minus-circle ml-2 fa_custom" id="OrderItemRemoveQuantity"></i></a>
+                    </div>
+                </td>
+                <td>
+                    @Html.DisplayFor(model => orderItem.UserId)
+                </td>
+                <td>
+                    @User.Identity.Name
+                </td>
+                <td>
+                    @Html.DisplayFor(model => orderItem.OrderId)
+                </td>
+                <td>
+                    @Html.DisplayFor(model => orderItem.CouponUsedId)
+                </td>
+                <td>
+                    @Html.DisplayFor(model => orderItem.RefundId)
+                </td>
+                <td>
+                    <a style="color: #0366d6; cursor: pointer;" onclick="RemoveItemFromCart(@orderItem.Id)">Usuń</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="form-group">
+    <a asp-controller="Order" asp-action="OrderRealization"><input type="button" readonly value="Zrealizuj zamówienie" class="btn btn-primary" /></a>
+    <a asp-controller="Item" asp-action="Index"><input type="button" readonly value="Zrealizuj później" class="btn btn-primary" /></a>
+</div>
+
+<script>
+    function AddQuantity(object) {
+        console.log("Jestem w plusie");
+        console.log(object);
+        object.ItemOrderQuantity += 1;
+        var objectJson = JSON.stringify(object);
+        console.log(objectJson);
+        // ajax send to controller
+        $.ajax({
+            url: "/Order/UpdateOrderItem",
+            type: 'POST',
+            data: objectJson, 
+            contentType: 'application/json',
+            dataType: 'json', 
+            success: function (data, textStatus) {
+                setTimeout(function () {
+                    location.reload();
+                    }, 0001);
+            },
+            error: function (error) {
+                console.log("error is " + error);
+            }
+        });
+    }
+
+    function RemoveQuantity(object) {
+        console.log("Jestem w minusie");
+        console.log(object);
+        var valueInQunatity = object.ItemOrderQuantity;
+        if (valueInQunatity > 1) {
+            object.ItemOrderQuantity -= 1;
+            var objectJson = JSON.stringify(object);
+            console.log(objectJson);
+            // ajax send to controller
+            $.ajax({
+                url: "/Order/UpdateOrderItem",
+                type: 'POST',
+                data: objectJson,
+                contentType: 'application/json',
+                dataType: 'json',
+                success: function (data, textStatus) {
+                    setTimeout(function () {
+                        location.reload();
+                    }, 0001);
+                },
+                error: function (error) {
+                    console.log("error is " + error);
+                }
+            });
+        }
+    }
+
+    function PagerClick(index) {
+        var token = $('input[name="__RequestVerificationToken"]').val();
+        document.getElementById("pageNo").value = index;
+        $.ajax({
+            url: "/Order/",
+            type: 'POST',
+            data: {
+                __RequestVerificationToken: token,
+                pageNo: index,
+                pageSize: document.getElementById("pageSize").value,
+                searchString: document.getElementById("searchString").value
+            },
+            success: function (data) {
+                console.log("Success")
+                console.log(data);
+                var parser = new DOMParser();
+                var htmlDoc = parser.parseFromString(data, 'text/html');
+                console.log(htmlDoc);
+                var form = htmlDoc.getElementById('reload');
+                console.log(form);
+                jQuery('#reload').html(form);
+            },
+            error: function (error) {
+                console.log("error is " + error);
+            }
+        });
+    }
+
+    function RemoveItemFromCart(itemId) {
+        console.log(itemId);
+        // ajax send to controller
+        $.ajax({
+            url: "/Order/DeleteOrderItem",
+            type: 'GET',
+            data: {
+                'id': itemId
+            },
+            contentType: 'application/json',
+            dataType: 'json',
+            success: function (data, textStatus) {
+                console.log(data);
+                console.log(textStatus);
+                setTimeout(function () {
+                    location.reload();
+                }, 0001);
+            },
+            error: function (jqXHR, status, error) {
+                if (error == 'Unauthorized') {
+                    console.log("Access unathorized");
+                    window.location.href = "Identity/Account/Login";
+                }
+            }
+        });
+    }
+</script>
+<style type="text/css">
+    .fa_custom {
+        color: #0077cc
+    }
+</style>
+<script src='https://kit.fontawesome.com/a076d05399.js'></script>

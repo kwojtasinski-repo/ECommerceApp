@@ -246,13 +246,16 @@
                 for (i = 0; i < assignedValues.length; i++) {
                     RemoveSelectOption(assignedValues[i], copyOfItemTags);
                 }
+                selectedValue = copyOfItemTags.options[copyOfItemTags.selectedIndex].value;
             }
         });
 
         $('#add').click(function () {
+            selectedValue = copyOfItemTags.options[copyOfItemTags.selectedIndex].value;
+            selectedIndex = copyOfItemTags.options[copyOfItemTags.selectedIndex].index;
             var valueOfItemTag = selectedValue;
             var cloneTableRow = newrow.find('tr').clone();
-
+            var selectedText = copyOfItemTags.options[copyOfItemTags.selectedIndex].text;
             cloneTableRow.attr('id', index);
             cloneTableRow.attr("id", index).find("#Item");
             cloneTableRow.html($(cloneTableRow).html().replace(/\[#\]/g, '[' + index + ']'));

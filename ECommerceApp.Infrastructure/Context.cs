@@ -115,6 +115,11 @@ namespace ECommerceApp.Infrastructure
                 }
             );
             // -------------------- USER SEED DATA ----------------------
+
+            // -------------------- CONTACT DETAIL TYPE SEED DATA ----------------------
+            builder.Entity<ContactDetailType>().HasData(new ContactDetailType { Id = 1, Name = "PhoneNumber" });
+            builder.Entity<ContactDetailType>().HasData(new ContactDetailType { Id = 2, Name = "Email" });
+            // -------------------- CONTACT DETAIL TYPE SEED DATA ----------------------
         }
     }
 }

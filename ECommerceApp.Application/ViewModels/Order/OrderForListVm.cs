@@ -31,7 +31,6 @@ namespace ECommerceApp.Application.ViewModels.Order
         {
             profile.CreateMap<ECommerceApp.Domain.Model.Order, OrderForListVm>()
                 .ForMember(oi => oi.OrderItems, opt => opt.MapFrom(i => i.OrderItems));
-            profile.CreateMap<ECommerceApp.Domain.Model.OrderItem, OrderForListVm>();
         }
     }
 

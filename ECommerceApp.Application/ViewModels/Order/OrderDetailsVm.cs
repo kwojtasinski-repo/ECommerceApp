@@ -21,6 +21,7 @@ namespace ECommerceApp.Application.ViewModels.Order
         public bool IsDelivered { get; set; }
         public int? CouponUsedId { get; set; }
         public int CustomerId { get; set; }
+        public string UserId { get; set; }
         public int? PaymentId { get; set; } // 1:1 Order Payment
         public bool IsPaid { get; set; }
         public int? RefundId { get; set; } // 1:1 Order Refund

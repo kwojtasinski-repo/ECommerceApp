@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.Web.Controllers
 {
-    [Authorize(Roles = "Administrator, Admin")]
+    [Authorize(Roles = "Administrator")]
     public class UserRolesController : Controller
     {
         private readonly IUserService _userService;
@@ -94,6 +94,7 @@ namespace ECommerceApp.Web.Controllers
             await _userService.AddUser(model);
             if (model.Id != null)
             {
+                model.UserName = model.Email;
                 await _userService.ChangeRoleAsync(model.Id, model.UserRoles);
             }
             return RedirectToAction("Index");

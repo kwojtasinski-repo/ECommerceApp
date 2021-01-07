@@ -37,13 +37,23 @@
                             @if (User.IsInRole("Administrator") || User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Service") || User.IsInRole("User"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="Order" asp-action="ShowMyOrders" asp-route-Id="@User.FindFirstValue(ClaimTypes.NameIdentifier)" >Moje zamówienia</a>
-</li>
+                                    <a class="nav-link waves-effect" asp-area="" asp-controller="Order" asp-action="ShowMyCart">
+                                        <span id="itemCount" class="badge badge-light z-depth-1 mr-1"> </span>
+                                        <i class="fas fa-shopping-cart"></i>
+                                        <span class="clearfix d-none d-sm-inline-block"> Cart </span>
+                                    </a>
+                                </li>
+                            }
+                            @if (User.IsInRole("Administrator") || User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Service") || User.IsInRole("User"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark waves-effect" asp-area="" asp-controller="Order" asp-action="ShowMyOrders">Moje zamówienia</a>
+                                </li>
                             }
                             @if (User.IsInRole("Administrator") || User.IsInRole("Admin") || User.IsInRole("Manager"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="Customer" asp-action="Index">Klienci</a>
+                                    <a class="nav-link text-dark waves-effect" asp-area="" asp-controller="Customer" asp-action="Index">Klienci</a>
                                 </li>
                             }
                             @if (User.IsInRole("Administrator") || User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Service"))
@@ -84,10 +94,40 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
-
+    <script src='https://kit.fontawesome.com/a076d05399.js'></script>
     <script src="//ajax.aspnetcdn.com/ajax/jquery.validate/1.11.1/jquery.validate.min.js"></script>
     <script src="//ajax.aspnetcdn.com/ajax/mvc/4.0/jquery.validate.unobtrusive.min.js"></script>
+    <script>
 
+        $(document).ready(function () {
+            var span = document.getElementById("itemCount");
+            console.log(span);
+            if (span != null) {
+                console.log("span!=null");
+                $.ajax({
+                    url: "/Order/OrderItemCount",
+                    type: "GET",
+                    dataType: "json",
+                    contentType: "application/json",
+                    success: function (question) {
+                        console.log(question);
+                        console.log(question.count);
+                        if (question.count > 0) {
+                            span.innerHTML = question.count;
+                        }
+                    },
+                    error: function () {
+                       // alert("Error");
+                    }
+                });
+            };
+        });
+    </script>
+    <style type="text/css">
+        .badge.badge-light {
+            color: #0077cc
+        }
+    </style>
     @RenderSection("Scripts", required: false)
 </body>
 </html>

@@ -14,7 +14,8 @@ namespace ECommerceApp.Application.ViewModels.Order
         public int ItemId { get; set; }   // 1:Many Item OrderItem  
         public int ItemOrderQuantity { get; set; }
         public virtual ItemDetailsVm Item { get; set; }
-        public int OrderId { get; set; }  // Many : 1 OrderItem Order
+        public string UserId { get; set; }
+        public int? OrderId { get; set; }  // Many : 1 OrderItem Order
         public OrderDetailsVm Order { get; set; }
         public int? CouponUsedId { get; set; }
         public CouponUsedDetailsVm CouponUsed { get; set; } // 1:Many OrderItem Coupon discount can be used for many Items

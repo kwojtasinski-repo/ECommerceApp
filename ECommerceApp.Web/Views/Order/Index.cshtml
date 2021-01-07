@@ -12,7 +12,7 @@
     <a asp-action="ShowPayments">Lista płatności</a>
     <a asp-action="ShowRefunds">Lista zwrotów</a>
 </p>
-<form asp-action="Index" asp-controller="Order" method="post">
+<form id="reload" asp-action="Index" asp-controller="Order" method="post">
     <div class="row">
         <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
         <input type="submit" value="Wyszukaj" />
@@ -120,7 +120,6 @@
                 }
             </tr>
         </table>
-        <input type="hidden" name="__RequestVerificationToken" value="" />
         <input type="hidden" name="pageNo" id="pageNo" />
         <input type="hidden" name="pageSize" id="pageSize" value="20" />
     </div>
@@ -132,18 +131,30 @@
         function PagerClick(index)
         {
             var token = $('input[name="__RequestVerificationToken"]').val();
-            var userAuthorized = @User.Identity.IsAuthenticated.ToString().ToLower();
-            console.log(userAuthorized);
             document.getElementById("pageNo").value = index;
-            document.getElementsByName("__RequestVerificationToken").value = token;
-            //document.forms[0].submit();
-            console.log(document.forms[0]);
-            document.forms[0].action = 'Order/?pageSize=' + document.getElementById("pageSize").value + '&pageNo=' + document.getElementById("pageNo").value;
-            console.log(document.getElementById("pageNo").value)
-            console.log(document.getElementById("pageSize").value)
-            //pageSize, int ? pageNo, string searchString
-            console.log(document.forms[0]);
-            document.forms[0].submit();
+            $.ajax({
+                url: "/Order/",
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: token,
+                    pageNo: index,
+                    pageSize: document.getElementById("pageSize").value, 
+                    searchString: document.getElementById("searchString").value
+                },
+                success: function (data) {
+                    console.log("Success")
+                    console.log(data);
+                    var parser = new DOMParser();
+                    var htmlDoc = parser.parseFromString(data, 'text/html');
+                    console.log(htmlDoc);
+                    var form = htmlDoc.getElementById('reload');
+                    console.log(form);
+                    jQuery('#reload').html(form);
+                },
+                error: function (error) {
+                    console.log("error is " + error);
+                }
+            });
         }
     </script>
 }

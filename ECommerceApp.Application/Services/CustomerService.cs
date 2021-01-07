@@ -57,6 +57,15 @@ namespace ECommerceApp.Application.Services
             return customersList;
         }
 
+        public List<CustomerForListVm> GetAllCustomersForList()
+        {
+            var customers = _custRepo.GetAllCustomers()
+                .ProjectTo<CustomerForListVm>(_mapper.ConfigurationProvider)
+                .ToList();
+
+            return customers;
+        }
+
         public CustomerDetailsVm GetCustomerDetails(int customerId)
         {
             var customer = _custRepo.GetCustomerById(customerId);
@@ -65,6 +74,13 @@ namespace ECommerceApp.Application.Services
             return customerVm;
         }
 
+        public object GetCustomerDetails(int id, string userId)
+        {
+            var customer = _custRepo.GetCustomerById(id, userId);
+            var customerVm = _mapper.Map<CustomerDetailsVm>(customer);
+
+            return customerVm;
+        }
         public NewCustomerVm GetCustomerForEdit(int id)
         {
             var customer = _custRepo.GetCustomerById(id);
@@ -106,6 +122,13 @@ namespace ECommerceApp.Application.Services
             return contactDetailVm;
         }
 
+        public NewContactDetailVm GetContactDetail(int id, string userId)
+        {
+            var contactDetail = _custRepo.GetContactDetailById(id, userId);
+            var contactDetailVm = _mapper.Map<NewContactDetailVm>(contactDetail);
+            return contactDetailVm;
+        }
+
         public void UpdateAddress(NewAddressVm model)
         {
             var address = _mapper.Map<Address>(model);
@@ -116,6 +139,12 @@ namespace ECommerceApp.Application.Services
         {
             var contactDetail = _mapper.Map<ContactDetail>(model);
             _custRepo.UpdateContactDetail(contactDetail);
+        }
+
+        public void UpdateContactDetailType(NewContactDetailTypeVm model)
+        {
+            var contactDetailType = _mapper.Map<ContactDetailType>(model);
+            _custRepo.UpdateContactDetailType(contactDetailType);
         }
 
         public void DeleteAddress(int id)
@@ -133,6 +162,25 @@ namespace ECommerceApp.Application.Services
             var adress = _custRepo.GetAddressById(id);
             var adressVm = _mapper.Map<AddressDetailVm>(adress);
             return adressVm;
+        }
+
+        public AddressDetailVm GetAddressDetail(int id, string userId)
+        {
+            var adress = _custRepo.GetAddressById(id, userId);
+            var adressVm = _mapper.Map<AddressDetailVm>(adress);
+            return adressVm;
+        }
+
+        public bool CheckIfAddressExists(int id, string userId)
+        {
+            var address = _custRepo.GetAddressById(id, userId);
+            
+            if(address == null)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         public IQueryable<ContactDetailTypeVm> GetConactDetailTypes()
@@ -172,6 +220,121 @@ namespace ECommerceApp.Application.Services
                 chars[i] = validChars[random.Next(0, validChars.Length)];
             }
             return new string(chars);
+        }
+
+        public bool CheckIfCustomerExists(int id, string userId)
+        {
+            var customer = _custRepo.GetCustomerById(id, userId);
+            
+            if (customer == null)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool CheckIfContactDetailExists(int id, string userId)
+        {
+            var contactDetail = _custRepo.GetContactDetailById(id, userId);
+
+            if (contactDetail == null)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool CheckIfContactDetailType(int id)
+        {
+            var contactDetailType = _custRepo.GetContactDetailTypeById(id);
+
+            if (contactDetailType == null)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public int AddAddress(NewAddressVm newAddress)
+        {
+            var address = _mapper.Map<Address>(newAddress);
+            var id = _custRepo.AddNewAddress(address);
+            return id;
+        }
+
+        public int AddAddress(NewAddressVm model, string userId)
+        {
+            var customers = _custRepo.GetAllCustomers().Where(c => c.UserId == userId).ToList();
+            bool customerIdExists = false;
+            foreach (var cust in customers)
+            {
+                if (cust.Id == model.CustomerId)
+                {
+                    customerIdExists = true;
+                    break;
+                }
+            }
+
+            if (customerIdExists)
+            {
+                var address = _mapper.Map<Address>(model);
+                var id = _custRepo.AddNewAddress(address);
+                return id;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+
+        public int AddContactDetail(NewContactDetailVm newContactDetail)
+        {
+            var contactDetail = _mapper.Map<ContactDetail>(newContactDetail);
+            var id = _custRepo.AddNewContact(contactDetail);
+            return id;
+        }
+
+        public int AddContactDetail(NewContactDetailVm model, string userId)
+        {
+            var customers = _custRepo.GetAllCustomers().Where(c => c.UserId == userId).ToList();
+            bool customerIdExists = false;
+            foreach (var cust in customers)
+            {
+                if (cust.Id == model.CustomerId)
+                {
+                    customerIdExists = true;
+                    break;
+                }
+            }
+
+            if (customerIdExists)
+            {
+                var contactDetail = _mapper.Map<ContactDetail>(model);
+                var id = _custRepo.AddNewContact(contactDetail);
+                return id;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+
+        public int AddContactDetailType(NewContactDetailTypeVm newContactDetailType)
+        {
+            var contactDetailType = _mapper.Map<ContactDetailType>(newContactDetailType);
+            var id = _custRepo.AddNewContactDetailType(contactDetailType);
+            return id;
+        }
+
+        public NewContactDetailTypeVm GetContactDetailType(int id)
+        {
+            var contactDetailType = _custRepo.GetContactDetailTypeById(id);
+            var contactDetailTypeVm = _mapper.Map<NewContactDetailTypeVm>(contactDetailType);
+            return contactDetailTypeVm;
         }
     }
 }

@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.Web.Controllers
 {
-    [Authorize(Roles = "Administrator, Admin, Manager, Service")]
+    [Authorize(Roles = "Administrator, Manager, Service")]
     public class CouponController : Controller
     {
         private readonly ICouponService _couponService;

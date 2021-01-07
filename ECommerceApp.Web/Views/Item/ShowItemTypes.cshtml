@@ -7,7 +7,10 @@
 <h1>Lista typów przedmiotów</h1>
 
 <p>
-    <a asp-action="AddItemType">Dodaj nowy typ</a>
+    @if (User.IsInRole("Administrator") || User.IsInRole("Manager") || User.IsInRole("Service"))
+    { 
+        <a asp-action="AddItemType">Dodaj nowy typ</a>
+    }
     <a asp-action="Index">Powrót do listy przedmiotów</a>
 </p>
 <form asp-action="ShowItemTypes" asp-controller="Item" method="post">

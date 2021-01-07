@@ -23,6 +23,21 @@ namespace ECommerceApp.Application.Interfaces
         void DeleteAddress(int id);
         void DeleteContactDetail(int id);
         AddressDetailVm GetAddressDetail(int id);
-        IQueryable<ContactDetailTypeVm> GetConactDetailTypes();  
+        IQueryable<ContactDetailTypeVm> GetConactDetailTypes();
+        List<CustomerForListVm> GetAllCustomersForList();
+        bool CheckIfAddressExists(int id, string userId);
+        bool CheckIfCustomerExists(int id, string userId);
+        bool CheckIfContactDetailExists(int id, string userId);
+        int AddAddress(NewAddressVm model);
+        int AddContactDetail(NewContactDetailVm model);
+        int AddContactDetailType(NewContactDetailTypeVm model);
+        bool CheckIfContactDetailType(int id);
+        void UpdateContactDetailType(NewContactDetailTypeVm model);
+        NewContactDetailTypeVm GetContactDetailType(int id);
+        object GetCustomerDetails(int id, string userId);
+        AddressDetailVm GetAddressDetail(int id, string userId);
+        NewContactDetailVm GetContactDetail(int id, string userId);
+        int AddAddress(NewAddressVm model, string userId);
+        int AddContactDetail(NewContactDetailVm model, string userId);
     }
 }

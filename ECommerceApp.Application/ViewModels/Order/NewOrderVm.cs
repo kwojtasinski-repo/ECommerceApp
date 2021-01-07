@@ -28,6 +28,7 @@ namespace ECommerceApp.Application.ViewModels.Order
         public bool IsDelivered { get; set; }
         public int? CouponUsedId { get; set; }
         public int CustomerId { get; set; }
+        public string UserId { get; set; }
         public int? PaymentId { get; set; } // 1:1 Order Payment
         public bool IsPaid { get; set; }
         public int? RefundId { get; set; } // 1:1 Order Refund
@@ -44,6 +45,8 @@ namespace ECommerceApp.Application.ViewModels.Order
 
         public List<NewOrderItemVm> OrderItems { get; set; } // 1:Many relation
         public List<ECommerceApp.Domain.Model.Item> Items { get; set; }
+        public NewCustomerVm NewCustomer { get; set; }
+        public bool CustomerData { get; set; }
 
         public void Mapping(Profile profile)
         {
@@ -57,7 +60,9 @@ namespace ECommerceApp.Application.ViewModels.Order
                 .ForMember(rd => rd.RefundDate, opt => opt.MapFrom(rd => rd.Refund.RefundDate))
                 .ForMember(ow => ow.OnWarranty, opt => opt.MapFrom(ow => ow.Refund.OnWarranty))
                 .ForMember(cc => cc.ChangedCode, opt => opt.Ignore())
-                .ForMember(cr => cr.ChangedRefund, opt => opt.Ignore());
+                .ForMember(cr => cr.ChangedRefund, opt => opt.Ignore())
+                .ForMember(c => c.NewCustomer, opt => opt.Ignore())
+                .ForMember(c => c.CustomerData, opt => opt.Ignore());
         }
     }
 

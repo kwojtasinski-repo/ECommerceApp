@@ -1,0 +1,186 @@
+﻿@model ECommerceApp.Application.ViewModels.Order.NewOrderItemVm
+
+@{
+    ViewData["Title"] = "AddOrderToCard";
+    ViewBag.ItemsJson = Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.ItemsJson);
+}
+
+<h1>AddOrderToCard</h1>
+
+<h4>NewOrderItemVm</h4>
+<hr />
+<div class="row">
+    <div class="col-lg-6">
+        <form asp-action="AddOrderToCard" method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" class="form-control" />
+            <div class="form-group">
+                <input type="hidden" asp-for="OrderId" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label asp-for="@User.Identity.Name" class="control-label"></label>
+                <input readonly class="form-control" asp-for="@User.Identity.Name" />
+                <input type="hidden" asp-for="UserId" class="form-control" />
+            </div>
+            <div class="form-group">
+                <input type="hidden" asp-for="CouponUsedId" class="form-control" />
+            </div>
+            <div class="form-group">
+                <input type="hidden" asp-for="RefundId" class="form-control" />
+            </div>
+            <div>
+                <p>Przedmiot:</p>
+                <div>
+                    <div>
+                        <select id="Items" asp-items="@(new SelectList(Model.Items,"Id", "Name"))" class="custom-select" data-val="true"></select>
+                        <input type="hidden" id="ItemId" name="ItemId" value="@Model.ItemId" style="width: 45px;" />
+                    </div>
+                    <div class="col">
+                        <input id="Cost" name="Cost" value="" readonly style="width: 125px;" />
+                        <a><i onclick="AddQuantity(this.id)" id="OrderItemAddQuantity" class="fas fa-plus-circle ml-2 fa_custom"></i></a>
+                        <input id="ItemQuantity" name="ItemOrderQuantity" value="@Model.ItemOrderQuantity" readonly style="width: 45px;" />
+                        <a><i onclick="RemoveQuantity(this.id)" class="fa fa-minus-circle ml-2 fa_custom" id="OrderItemRemoveQuantity"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Utwórz" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+
+    <div>
+        <a asp-action="Index">Back to List</a>
+    </div>
+
+    @section Scripts {
+        <script type="text/javascript">
+        var selectedIndex;
+        var selectedValue;
+        var costFromSelectList;
+        var itemSelectList = document.getElementById('Items');
+        var itemList = '@Html.Raw(ViewBag.ItemsJson)';
+        itemList = JSON.parse(itemList);
+
+        $(document).ready(function () {
+            console.log(itemSelectList);
+            console.log(itemList);
+            console.log(typeof(itemList));
+            console.log(itemList.Value);
+            selectedValue = itemSelectList.options[itemSelectList.selectedIndex].value;
+            console.log(GetItemCost(itemList.Value, selectedValue));
+            costFromSelectList = GetItemCost(itemList.Value, selectedValue);
+            selectedValue = itemSelectList.options[itemSelectList.selectedIndex].value;
+            document.getElementById('ItemId').value = selectedValue;
+            document.getElementById('Cost').value = costFromSelectList;
+            document.getElementById('ItemQuantity').value = 1;
+        });
+
+        $(document).on('change', 'select', function () {
+            console.log("Jestem w onchange -> select")
+            selectedIndex = (this).index;
+            selectedValue = (this).value;
+            console.log(selectedValue);
+            console.log(this.children);
+            var collectionInSelectList = this.children;
+
+            for (i = 0; i < collectionInSelectList.length; i++) {
+                console.log("jestem w forze");
+                if (collectionInSelectList[i].value == selectedValue) {
+                    selectedIndex = i;
+
+                }
+            }
+            costFromSelectList = GetItemCost(itemList.Value, selectedValue);
+            document.getElementById('ItemId').value = selectedValue;
+            document.getElementById('Cost').value = costFromSelectList;
+            document.getElementById('ItemQuantity').value = 1;
+        });
+
+        function AddQuantity(id) {
+            console.log("Jestem w plusie");
+            var valueInQunatity = Number(document.getElementById('ItemQuantity').value);
+            valueInQunatity += 1;
+            document.getElementById('ItemQuantity').value = valueInQunatity;
+            //  console.log($('#itemWithJS tr')[selectedTableRowInTags].cells[1].childNodes[3].value);
+            IncreaseCost();
+        }
+
+        function RemoveQuantity(id) {
+            console.log("Jestem w minusie");
+            var valueInQunatity = Number(document.getElementById('ItemQuantity').value);
+            valueInQunatity -= 1;
+            if (valueInQunatity > 0) {
+                //     document.getElementById("ItemQuantity").value = valueInQunatity;
+                document.getElementById('ItemQuantity').value = valueInQunatity;
+            }
+            DecreaseCost();
+        }
+
+        var form2 = $('form');
+        var table2 = $('#RefreshCost');
+
+        function IncreaseCost() {
+            console.log("Jestem w increase");
+            var valueInQuantity = Number(document.getElementById('ItemQuantity').value); // get value quantity
+            console.log(valueInQuantity);
+            var itemCost = Number(costFromSelectList);
+            var cost = 0;
+
+            const format = (num, decimals) => num.toLocaleString('pl-PL', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+
+            cost = itemCost * valueInQuantity;
+            cost = format(cost);
+            console.log(cost);
+            document.getElementById('Cost').value = cost.toString();
+        }
+
+        function DecreaseCost() {
+            console.log("Jestem w decrease");
+            var valueInQuantity = Number(document.getElementById('ItemQuantity').value); // get value quantity
+            console.log(valueInQuantity);
+            var itemCost = Number(costFromSelectList);
+            var cost = 0;
+            console.log(itemCost);
+            console.log(valueInQuantity);
+
+            const format = (num, decimals) => num.toLocaleString('pl-PL', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            });
+
+            cost = itemCost * Number(valueInQuantity);
+            cost = format(cost);
+            console.log(cost);
+            document.getElementById('Cost').value = cost;
+        }
+
+        function GetItemCost(array, itemId) {
+            var cost;
+            array.forEach(a => {
+                if (a.Id == itemId)
+                {
+                    console.log("a");
+                    console.log(a);
+                    cost = a.Cost;
+                }
+            });
+            return cost;
+        }
+
+        </script>
+        <style type="text/css">
+            .fa_custom {
+                color: #0077cc
+            }
+        </style>
+        <script src='https://kit.fontawesome.com/a076d05399.js'></script>
+
+
+        @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    }

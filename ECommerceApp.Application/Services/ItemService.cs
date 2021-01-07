@@ -62,6 +62,15 @@ namespace ECommerceApp.Application.Services
             return itemsList;
         }
 
+        public List<ItemForListVm> GetAllItems()
+        {
+            var items = _itemRepo.GetAllItems()
+                .ProjectTo<ItemForListVm>(_mapper.ConfigurationProvider)
+                .ToList();
+
+            return items;
+        }
+
         public NewItemBrandVm GetItemBrandById(int id)
         {
             var brand = _itemRepo.GetItemBrandById(id);
@@ -155,6 +164,24 @@ namespace ECommerceApp.Application.Services
             return typesList;
         }
 
+        public List<TypeForListVm> GetAllItemTypes()
+        {
+            var types = _itemRepo.GetAllTypes()
+                .ProjectTo<TypeForListVm>(_mapper.ConfigurationProvider)
+                .ToList();
+
+            return types;
+        }
+
+        public List<BrandForListVm> GetAllItemBrands()
+        {
+            var brands = _itemRepo.GetAllBrands()
+                .ProjectTo<BrandForListVm>(_mapper.ConfigurationProvider)
+                .ToList();
+
+            return brands;
+        }
+
         public ListForItemBrandVm GetAllItemBrands(int pageSize, int pageNo, string searchString)
         {
             var brands = _itemRepo.GetAllBrands().Where(it => it.Name.StartsWith(searchString))
@@ -214,6 +241,15 @@ namespace ECommerceApp.Application.Services
             return tagsList;
         }
 
+        public List<TagForListVm> GetAllTags()
+        {
+            var tags = _itemRepo.GetAllTags()
+                .ProjectTo<TagForListVm>(_mapper.ConfigurationProvider)
+                .ToList();
+            
+            return tags;
+        }
+
         public ListForItemWithTagsVm GetAllItemsWithTags(int pageSize, int pageNo, string searchString)
         {
             var itemsWithTags = _itemRepo.GetAllItemsWithTags()//.Where(it => it.Item.Name.StartsWith(searchString))
@@ -244,6 +280,46 @@ namespace ECommerceApp.Application.Services
         {
             var tag = _mapper.Map<Tag>(model);
             _itemRepo.UpdateTag(tag);
+        }
+
+        public bool CheckIfItemExists(int id)
+        {
+            var item = _itemRepo.GetItemById(id);
+            if (item == null)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        public bool CheckIfItemBrandExists(int id)
+        {
+            var brand = _itemRepo.GetItemBrandById(id);
+            if (brand == null)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        public bool CheckIfItemTypeExists(int id)
+        {
+            var type = _itemRepo.GetItemTypeById(id);
+            if (type == null)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        public bool CheckIfItemTagExists(int id)
+        {
+            var tag = _itemRepo.GetItemTagById(id);
+            if (tag == null)
+            {
+                return false;
+            }
+            return true;
         }
     }
 }

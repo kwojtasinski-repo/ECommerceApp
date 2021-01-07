@@ -7,6 +7,20 @@
   <ItemGroup>
     <Compile Remove="Migrations\20201226182405_AddUser.cs" />
     <Compile Remove="Migrations\20201226182405_AddUser.Designer.cs" />
+    <Compile Remove="Migrations\20201226182502_AddUser.cs" />
+    <Compile Remove="Migrations\20201226182502_AddUser.Designer.cs" />
+    <Compile Remove="Migrations\20210101122508_AddedUserIdInOrders.cs" />
+    <Compile Remove="Migrations\20210101122508_AddedUserIdInOrders.Designer.cs" />
+    <Compile Remove="Migrations\20210101123036_UpdateDb.cs" />
+    <Compile Remove="Migrations\20210101123036_UpdateDb.Designer.cs" />
+    <Compile Remove="Migrations\20210107181251_UpdatingDbAddUserId.cs" />
+    <Compile Remove="Migrations\20210107181251_UpdatingDbAddUserId.Designer.cs" />
+    <Compile Remove="Migrations\20210107181705_UpdatingDbAddUserId.cs" />
+    <Compile Remove="Migrations\20210107181705_UpdatingDbAddUserId.Designer.cs" />
+    <Compile Remove="Migrations\20210107185142_UpdatingDbAddUserId.cs" />
+    <Compile Remove="Migrations\20210107185142_UpdatingDbAddUserId.Designer.cs" />
+    <Compile Remove="Migrations\20210107190131_UpdatingDbAddUserId.cs" />
+    <Compile Remove="Migrations\20210107190131_UpdatingDbAddUserId.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>

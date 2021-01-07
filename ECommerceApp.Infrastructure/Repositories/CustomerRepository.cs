@@ -88,6 +88,19 @@ namespace ECommerceApp.Infrastructure.Repositories
             return customer;
         }
 
+        public Customer GetCustomerById(int id, string userId)
+        {
+            var customer = _context.Customers
+                .Include(inc => inc.ContactDetails)
+                .Include(inc => inc.ContactDetails).ThenInclude(inc => inc.ContactDetailType)
+                .Include(inc => inc.Addresses)
+                .Include(inc => inc.Orders).ThenInclude(inc => inc.OrderItems)
+                .Include(inc => inc.Payments)
+                .Include(inc => inc.Refunds)
+                .FirstOrDefault(c => c.Id == id && c.UserId == userId);
+            return customer;
+        }
+
         public IQueryable<Customer> GetAllCustomers()
         {
             return _context.Customers;
@@ -138,11 +151,39 @@ namespace ECommerceApp.Infrastructure.Repositories
             return address;
         }
 
+        public Address GetAddressById(int id, string userId)
+        {
+            var customers = _context.Customers.Where(c => c.UserId == userId).ToList();
+            Address address = null;
+            foreach (var cust in customers)
+            {
+                address = _context.Addresses.FirstOrDefault(c => c.Id == id && c.CustomerId == cust.Id);
+                if (address != null)
+                    break;
+            }
+
+            return address;
+        }
+
         public ContactDetail GetContactDetailById(int id)
         {
             var contactDetail = _context.ContactDetails
                 .Include(inc => inc.ContactDetailType)
                 .FirstOrDefault(c => c.Id == id);
+            return contactDetail;
+        }
+
+        public ContactDetail GetContactDetailById(int id, string userId)
+        {
+            var customers = _context.Customers.Where(c => c.UserId == userId).ToList();
+            ContactDetail contactDetail = null;
+            foreach (var cust in customers)
+            {
+                contactDetail = _context.ContactDetails
+                                    .Include(inc => inc.ContactDetailType)
+                                    .FirstOrDefault(c => c.Id == id && c.CustomerId == cust.Id);
+            }
+
             return contactDetail;
         }
 
@@ -156,7 +197,7 @@ namespace ECommerceApp.Infrastructure.Repositories
             _context.Entry(address).Property("City").IsModified = true;
             _context.Entry(address).Property("Country").IsModified = true;
             _context.SaveChanges();
-    }
+        }
 
         public void UpdateContactDetail(ContactDetail contactDetail)
         {
@@ -164,7 +205,7 @@ namespace ECommerceApp.Infrastructure.Repositories
             _context.Entry(contactDetail).Property("ContactDetailInformation").IsModified = true;
             _context.Entry(contactDetail).Property("ContactDetailTypeId").IsModified = true;
             _context.SaveChanges();
-    }
+        }
 
         public void DeleteAddress(int id)
         {
@@ -186,6 +227,26 @@ namespace ECommerceApp.Infrastructure.Repositories
                 _context.ContactDetails.Remove(contactDetail);
                 _context.SaveChanges();
             }
+        }
+
+        public int AddNewContactDetailType(ContactDetailType contactDetailType)
+        {
+            _context.ContactDetailTypes.Add(contactDetailType);
+            _context.SaveChanges();
+            return contactDetailType.Id;
+        }
+
+        public ContactDetailType GetContactDetailTypeById(int id)
+        {
+            var contactDetailType = _context.ContactDetailTypes.Find(id);
+            return contactDetailType;
+        }
+
+        public void UpdateContactDetailType(ContactDetailType contactDetailType)
+        {
+            _context.Attach(contactDetailType);
+            _context.Entry(contactDetailType).Property("Name").IsModified = true;
+            _context.SaveChanges();
         }
     }
 }

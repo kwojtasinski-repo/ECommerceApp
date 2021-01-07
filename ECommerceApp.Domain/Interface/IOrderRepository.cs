@@ -35,5 +35,13 @@ namespace ECommerceApp.Domain.Interface
         Customer GetCustomerById(int id);
         void AddOrderItems(ICollection<OrderItem> orderItems);
         IQueryable<Customer> GetCustomersByUserId(string userId);
+        int AddOrderItem(OrderItem orderItem);
+        int AddCustomer(Customer customer);
+        void UpdateOrderItems(List<OrderItem> orderItems);
+        void UpdateOrderItem(OrderItem orderItem);
+        OrderItem GetOrderItemNotOrdered(OrderItem orderItem);
+        OrderItem GetOrderItemNotOrderedByItemId(int itemId, string userId);
+        void RemoveOrderedItems(int orderId);
+        void DeleteOrderItem(int id);
     }
 }

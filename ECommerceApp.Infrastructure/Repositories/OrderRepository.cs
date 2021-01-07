@@ -181,7 +181,7 @@ namespace ECommerceApp.Infrastructure.Repositories
             _context.SaveChanges();
     }
 
-        private int AddOrderItem(OrderItem orderItem)
+        public int AddOrderItem(OrderItem orderItem)
         {
             _context.OrderItem.Add(orderItem);
             _context.SaveChanges();
@@ -269,6 +269,73 @@ namespace ECommerceApp.Infrastructure.Repositories
         public IQueryable<Customer> GetCustomersByUserId(string userId)
         {
             return _context.Customers.Where(c => c.UserId == userId);
+        }
+
+        public int AddCustomer(Customer customer)
+        {
+            _context.Customers.Add(customer);
+            _context.SaveChanges();
+            return customer.Id;
+        }
+
+        public void UpdateOrderItems(List<OrderItem> orderItems)
+        {
+            foreach(var orderItem in orderItems)
+            {
+                _context.Attach(orderItem);
+                _context.Entry(orderItem).Property("ItemId").IsModified = true;
+                _context.Entry(orderItem).Property("ItemOrderQuantity").IsModified = true;
+                _context.Entry(orderItem).Property("UserId").IsModified = true;
+                _context.Entry(orderItem).Property("OrderId").IsModified = true;
+                _context.Entry(orderItem).Property("CouponUsedId").IsModified = true;
+                _context.Entry(orderItem).Property("RefundId").IsModified = true;
+            }
+            _context.SaveChanges();
+        }
+
+        public void UpdateOrderItem(OrderItem orderItem)
+        {
+            _context.Attach(orderItem);
+            _context.Entry(orderItem).Property("ItemId").IsModified = true;
+            _context.Entry(orderItem).Property("ItemOrderQuantity").IsModified = true;
+            _context.Entry(orderItem).Property("UserId").IsModified = true;
+            _context.Entry(orderItem).Property("OrderId").IsModified = true;
+            _context.Entry(orderItem).Property("CouponUsedId").IsModified = true;
+            _context.Entry(orderItem).Property("RefundId").IsModified = true;
+            _context.SaveChanges();
+        }
+
+        public OrderItem GetOrderItemNotOrdered(OrderItem orderItem)
+        {
+            var item = _context.OrderItem.FirstOrDefault(oi => oi.ItemId == orderItem.ItemId && oi.OrderId == null);
+            return item;
+        }
+
+        public OrderItem GetOrderItemNotOrderedByItemId(int itemId, string userId)
+        {
+            var orderItem = _context.OrderItem.FirstOrDefault(oi => oi.ItemId == itemId && oi.UserId == userId && oi.OrderId == null);
+            return orderItem;
+        }
+
+        public void RemoveOrderedItems(int orderId)
+        {
+            var orderItems = _context.OrderItem.Where(oi => oi.OrderId == orderId).ToList();
+            orderItems.ForEach(oi =>
+            {
+                var item = _context.Items.Find(oi.ItemId);
+                item.Quantity -= oi.ItemOrderQuantity;
+                _context.SaveChanges();
+            });
+        }
+
+        public void DeleteOrderItem(int id)
+        {
+            var orderItem = _context.OrderItem.Find(id);
+            if(orderItem!=null)
+            {
+                _context.OrderItem.Remove(orderItem);
+                _context.SaveChanges();
+            }
         }
     }
 }

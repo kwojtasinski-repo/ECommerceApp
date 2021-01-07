@@ -14,7 +14,8 @@ namespace ECommerceApp.Application.ViewModels.Order
         public int Id { get; set; }
         public int ItemId { get; set; }   // 1:Many Item OrderItem  
         public int ItemOrderQuantity { get; set; }
-        public int OrderId { get; set; }  // Many : 1 OrderItem Order
+        public string UserId { get; set; }
+        public int? OrderId { get; set; }  // Many : 1 OrderItem Order
         public int? CouponUsedId { get; set; }
         public int? RefundId { get; set; } // 1:Many Refund OrderItem
         public string ItemName { get; set; }

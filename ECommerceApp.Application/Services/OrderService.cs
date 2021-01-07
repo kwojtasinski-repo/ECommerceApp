@@ -25,8 +25,25 @@ namespace ECommerceApp.Application.Services
             _mapper = mapper;
         }
 
-        public int AddOrder(NewOrderVm orderVm)
+        public int AddOrder(NewOrderVm model)
         {
+            var orderVm = new NewOrderVm()
+            {
+                Id = model.Id,
+                Number = model.Number,
+                Cost = model.Cost,
+                Ordered = model.Ordered,
+                Delivered = model.Delivered,
+                IsDelivered = model.IsDelivered,
+                CouponUsedId = model.CouponUsedId,
+                CustomerId = model.CustomerId,
+                UserId = model.UserId,
+                PaymentId = model.PaymentId,
+                IsPaid = model.IsPaid,
+                RefundId = model.RefundId,
+                OrderItems = model.OrderItems
+            };
+            orderVm.OrderItems = orderVm.OrderItems.Where(oi => oi.Id == 0).ToList();
             var order = _mapper.Map<Order>(orderVm);
             var id = _orderRepo.AddOrder(order);
             return id;
@@ -35,7 +52,8 @@ namespace ECommerceApp.Application.Services
         public int AddPayment(NewPaymentVm paymentVm)
         {
             var payment = _mapper.Map<Payment>(paymentVm);
-            var id = _orderRepo.AddPayment(payment);            
+            var id = _orderRepo.AddPayment(payment);
+            _orderRepo.RemoveOrderedItems(payment.OrderId);
             return id;
         }
 
@@ -95,6 +113,15 @@ namespace ECommerceApp.Application.Services
             return itemOrderList;
         }
 
+        public List<OrderItemForListVm> GetAllItemsOrdered()
+        {
+            var itemOrder = _orderRepo.GetAllOrderItems()
+                            .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
+                            .ToList();
+            
+            return itemOrder;
+        }
+
         public ListForItemOrderVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo)
         {
             var itemOrder = _orderRepo.GetAllOrderItems().Where(oi => oi.ItemId == id)
@@ -112,6 +139,15 @@ namespace ECommerceApp.Application.Services
             };
 
             return itemOrderList;
+        }
+
+        public List<OrderItemForListVm> GetAllItemsOrderedByItemId(int id)
+        {
+            var itemOrder = _orderRepo.GetAllOrderItems().Where(oi => oi.ItemId == id)
+                            .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
+                            .ToList();
+            
+            return itemOrder;
         }
 
         public ListForOrderVm GetAllOrders(int pageSize, int pageNo, string searchString)
@@ -133,6 +169,15 @@ namespace ECommerceApp.Application.Services
             return ordersList;
         }
 
+        public List<OrderForListVm> GetAllOrders()
+        {
+            var orders = _orderRepo.GetAllOrders()
+                            .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
+                            .ToList();
+
+            return orders;
+        }
+
         public ListForPaymentVm GetAllPayments(int pageSize, int pageNo, string searchString)
         {
             var payments = _orderRepo.GetAllPayments().Where(p => p.Number.ToString().StartsWith(searchString))
@@ -150,6 +195,15 @@ namespace ECommerceApp.Application.Services
             };
 
             return paymentsList;
+        }
+
+        public List<PaymentForListVm> GetAllPayments()
+        {
+            var payments = _orderRepo.GetAllPayments()
+                            .ProjectTo<PaymentForListVm>(_mapper.ConfigurationProvider)
+                            .ToList();
+
+            return payments;
         }
 
         public ListForRefundVm GetAllRefunds(int pageSize, int pageNo, string searchString)
@@ -171,7 +225,16 @@ namespace ECommerceApp.Application.Services
 
             return refundsList;
         }
-      
+
+        public List<RefundForListVm> GetAllRefunds()
+        {
+            var refunds = _orderRepo.GetAllRefunds()
+                            .ProjectTo<RefundForListVm>(_mapper.ConfigurationProvider)
+                            .ToList();
+
+            return refunds;
+        }
+
         public OrderDetailsVm GetOrderDetail(int id)
         {
             var orderDetails = _orderRepo.GetOrderById(id);
@@ -355,6 +418,15 @@ namespace ECommerceApp.Application.Services
             return ordersList;
         }
 
+        public List<OrderForListVm> GetAllOrdersByCustomerId(int customerId)
+        {
+            var orders = _orderRepo.GetAllOrders().Where(o => o.CustomerId == customerId)
+                            .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
+                            .ToList();
+
+            return orders;
+        }
+
         public IQueryable<NewCustomerForOrdersVm> GetCustomersByUserId(string userId)
         {
             var customers = _orderRepo.GetCustomersByUserId(userId);
@@ -364,24 +436,11 @@ namespace ECommerceApp.Application.Services
 
         public ListForOrderVm GetAllOrdersByUserId(string userId, int pageSize, int pageNo)
         {
-            var allCustomersCreatedByUser = GetCustomersByUserId(userId).ToList();
-            var listOfIdentities = new List<int>();
-            allCustomersCreatedByUser.ForEach(c =>
-            {
-                listOfIdentities.Add(c.Id);
-            });
-
-            var orderss = new List<OrderForListVm>();
-
-            foreach (var id in listOfIdentities)
-            {
-                var ord = _orderRepo.GetAllOrders().Where(o => o.CustomerId == id)
+            var orders = _orderRepo.GetAllOrders().Where(o => o.UserId == userId)
                             .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
                             .ToList();
-                orderss.AddRange(ord);
-            }
 
-            var ordersToShow = orderss.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+            var ordersToShow = orders.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
 
             var ordersList = new ListForOrderVm()
             {
@@ -389,10 +448,188 @@ namespace ECommerceApp.Application.Services
                 CurrentPage = pageNo,
                 SearchString = "",
                 Orders = ordersToShow,
-                Count = orderss.Count
+                Count = orders.Count
             };
 
             return ordersList;
+        }
+
+        public List<OrderForListVm> GetAllOrdersByUserId(string userId)
+        {
+            var orders = _orderRepo.GetAllOrders().Where(o => o.UserId == userId)
+                            .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
+                            .ToList();
+
+            return orders;
+        }
+
+        public int AddOrderItem(NewOrderItemVm model)
+        {
+            var orderItem = _mapper.Map<OrderItem>(model);
+            var orderItemExist = GetOrderItem(orderItem);
+            int id;
+            if(orderItemExist != null)
+            {
+                id = orderItemExist.Id;
+                orderItemExist.ItemOrderQuantity += 1;
+                _orderRepo.UpdateOrderItem(orderItemExist);
+            }
+            else
+            {
+                id = _orderRepo.AddOrderItem(orderItem);
+            }
+            return id;
+        }
+
+        public List<ItemsAddToCartVm> GetItemsAddToCart()
+        {
+            var items = GetAllItemsToOrder();
+            var itemsVm = items.ProjectTo<ItemsAddToCartVm>(_mapper.ConfigurationProvider).ToList();
+            return itemsVm;
+        }
+
+        public ListForItemOrderVm GetOrderItemsNotOrderedByUserId(string userId, int pageSize, int pageNo)
+        {
+            var itemOrders = _orderRepo.GetAllOrderItems().Where(oi => oi.UserId == userId && oi.OrderId == null)
+                            .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
+                            .ToList();
+
+            var itemOrdersToShow = itemOrders.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+
+            var ordersList = new ListForItemOrderVm()
+            {
+                PageSize = pageSize,
+                CurrentPage = pageNo,
+                SearchString = "",
+                ItemOrders = itemOrdersToShow,
+                Count = itemOrders.Count
+            };
+
+            return ordersList;
+        }
+
+        public List<NewOrderItemVm> GetOrderItemsNotOrderedByUserId(string userId)
+        {
+            var itemOrders = _orderRepo.GetAllOrderItems().Where(oi => oi.UserId == userId && oi.OrderId == null)
+                            .ProjectTo<NewOrderItemVm>(_mapper.ConfigurationProvider)
+                            .ToList();
+
+            return itemOrders;
+        }
+
+        public int AddCustomer(NewCustomerVm newCustomer)
+        {
+            var customer = _mapper.Map<Customer>(newCustomer);
+            var id = _orderRepo.AddCustomer(customer);
+            return id;
+        }
+
+        public void UpdateOrderItems(List<NewOrderItemVm> orderItemsVm)
+        {
+            var orderItems = _mapper.Map<List<NewOrderItemVm>, List<OrderItem>>(orderItemsVm);
+            _orderRepo.UpdateOrderItems(orderItems);
+        }
+
+        public int OrderItemCount(string userId)
+        {
+            var itemOrders = _orderRepo.GetAllOrderItems().Where(oi => oi.UserId == userId && oi.OrderId == null)
+                            .ProjectTo<NewOrderItemVm>(_mapper.ConfigurationProvider)
+                            .ToList();
+
+            return itemOrders.Count;
+        }
+
+        public void UpdateOrderItem(OrderItemForListVm orderItemVm)
+        {
+            var orderItem = _mapper.Map<OrderItemForListVm, OrderItem>(orderItemVm);
+            _orderRepo.UpdateOrderItem(orderItem);
+        }
+
+        public int AddItemToOrderItem(int itemId, string userId)
+        {
+            var orderItemExist = GetOrderItemByItemId(itemId, userId);
+            int id;
+            if (orderItemExist != null)
+            {
+                id = orderItemExist.Id;
+                orderItemExist.ItemOrderQuantity += 1;
+                _orderRepo.UpdateOrderItem(orderItemExist);
+            }
+            else
+            {
+                var orderItem = CreateOrderItem(itemId, userId);
+                id = _orderRepo.AddOrderItem(orderItem);
+            }
+            return id;
+        }
+
+        private OrderItem CreateOrderItem(int itemId, string userId)
+        {
+            var orderItem = new OrderItem()
+            {
+                Id = 0,
+                ItemId = itemId,
+                ItemOrderQuantity = 1,
+                UserId = userId,
+            };
+            return orderItem;
+        }
+
+        private OrderItem GetOrderItem(OrderItem orderItem)
+        {
+            var item = _orderRepo.GetOrderItemNotOrdered(orderItem);
+            return item;
+        }
+
+        private OrderItem GetOrderItemByItemId(int itemId, string userId)
+        {
+            var orderItem = _orderRepo.GetOrderItemNotOrderedByItemId(itemId, userId);
+            return orderItem;
+        }
+
+        public void DeleteOrderItem(int id)
+        {
+            _orderRepo.DeleteOrderItem(id);
+        }
+
+        public bool CheckIfOrderExists(int id)
+        {
+            var order = _orderRepo.GetOrderById(id);
+            if (order == null)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        public bool CheckIfPaymentExists(int id)
+        {
+            var payment = _orderRepo.GetPaymentById(id);
+            if (payment == null)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        public bool CheckIfRefundExists(int id)
+        {
+            var refund = _orderRepo.GetRefundById(id);
+            if (refund == null)
+            {
+                return false;
+            }
+            return true;
+        }
+
+        public bool CheckIfOrderItemExists(int id)
+        {
+            var orderItem = _orderRepo.GetOrderItemById(id);
+            if (orderItem == null)
+            {
+                return false;
+            }
+            return true;
         }
     }
 }

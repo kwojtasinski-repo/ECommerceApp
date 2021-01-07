@@ -113,6 +113,9 @@
     </div>
 </div>
 <div>
-    @Html.ActionLink("Edytuj", "EditOrder", new { id = Model.Id }) |
-        <a asp-controller="Item" asp-action="Index">Wróć do listy przedmiotów</a>
+    @if (User.IsInRole("Administrator") || User.IsInRole("Manager") || User.IsInRole("Service") || User.IsInRole("Admin"))
+    {
+        @Html.ActionLink("Edytuj", "EditOrder", new { id = Model.Id }) @('|')
+    }
+    <a asp-controller="Item" asp-action="Index">Wróć do listy przedmiotów</a>
 </div>

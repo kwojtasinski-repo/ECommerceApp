@@ -12,6 +12,7 @@
         <form asp-action="AddOrderDetails" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" class="form-control" />
+            <input type="hidden" asp-for="UserId" class="form-control" />
             <div class="form-group">
                 <label asp-for="Number" class="control-label">Numer zamówienia</label>
                 <input asp-for="Number" class="form-control" readonly />
@@ -74,7 +75,7 @@
                                 <input type="hidden" name="OrderItems[@i].OrderId" class="form-control" value="@Model.Id" />
                                 <input type="hidden" name="OrderItems[@i].Id" class="form-control" value="@Model.OrderItems[i].Id" />
                             </td>
-                            <td >
+                            <td>
                                 <a><i onclick="AddQuantity(this.id)" id="OrderItems[@i].ItemOrderQuantity" class="fas fa-plus-circle ml-2 fa_custom"></i></a>
                                 <input id="ItemQuantity[@i]" name="@Model.OrderItems[i].ItemOrderQuantity" value="@Model.OrderItems[i].ItemOrderQuantity" readonly style="width: 45px;" />
                                 <a><i onclick="RemoveQuantity(this.id)" class="fa fa-minus-circle ml-2 fa_custom" id="OrderItems[@i].ItemOrderQuantity"></i></a>
@@ -120,7 +121,7 @@
                             Cena <input id="CalcCost" name="CostToConvert" value="@Model.Cost" readonly style="width: 250px;position:static; " />
                         </td>
                     }
-                    </tr>
+                </tr>
             </table>
             <div class="form-group">
                 <input type="submit" value="Utwórz" class="btn btn-primary" />

@@ -7,9 +7,12 @@
 <h1>Lista wszystkich marek przedmiotów</h1>
 
 <p>
-    <a asp-action="AddItemBrand">Dodaj nową markę</a>
-    <a asp-action="Index">Powrót do listy przedmiotów</a>
-</p>
+    @if (User.IsInRole("Administrator") || User.IsInRole("Manager") || User.IsInRole("Service") )
+    {
+        <a asp-action="AddItemBrand">Dodaj nową markę</a>
+    }
+        <a asp-action="Index">Powrót do listy przedmiotów</a>
+    </p>
 
 <form asp-action="ShowItemBrands" asp-controller="Item" method="post">
     <div class="row">

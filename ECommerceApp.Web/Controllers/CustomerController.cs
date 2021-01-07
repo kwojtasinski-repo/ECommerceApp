@@ -20,7 +20,7 @@ namespace ECommerceApp.Web.Controllers
             _customerService = customerService;
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
+        [Authorize(Roles = "Administrator, Manager, Service")]
         [HttpGet]
         public IActionResult Index()
         {
@@ -29,7 +29,7 @@ namespace ECommerceApp.Web.Controllers
             return View(model);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
+        [Authorize(Roles = "Administrator, Manager, Service")]
         [HttpPost]
         public IActionResult Index(int pageSize, int? pageNo, string searchString)
         {
@@ -63,7 +63,7 @@ namespace ECommerceApp.Web.Controllers
             return View(customer);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Manager, Service, User")]
         [HttpPost]
         public IActionResult AddCustomer(NewCustomerVm model)
         {
@@ -71,7 +71,21 @@ namespace ECommerceApp.Web.Controllers
             return Redirect("~/");
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        public IActionResult AddCustomerPartialView()
+        {
+            var customer = new NewCustomerVm();
+            if (User.Identity.IsAuthenticated)
+            {
+                customer.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            }
+            else
+            {
+                return Redirect("~/Identity/Account/Register");
+            }
+            return PartialView(customer);
+        }
+
+        [Authorize(Roles = "Administrator, Manager, Service, User")]
         [HttpGet]
         public IActionResult AddNewAddressForClient(int id)
         {
@@ -79,7 +93,7 @@ namespace ECommerceApp.Web.Controllers
             return View();
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Manager, Service, User")]
         [HttpPost]
         public IActionResult AddNewAddressForClient(NewAddressVm newAddress)
         {
@@ -87,7 +101,7 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Manager, Service, User")]
         [HttpGet]
         public IActionResult AddNewContactDetailClient(int id)
         {
@@ -96,7 +110,7 @@ namespace ECommerceApp.Web.Controllers
             return View();
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Manager, Service, User")]
         [HttpPost]
         public IActionResult AddNewContactDetailClient(NewContactDetailVm newContact)
         {
@@ -104,15 +118,15 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Manager, Service, User")]
         [HttpGet]
         public IActionResult EditAddress(int id)
         {
-            var customer = _customerService.GetAddressForEdit(id);
-            return View(customer);
+            var address = _customerService.GetAddressForEdit(id);
+            return View(address);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Manager, Service, User")]
         [HttpPost]
         public IActionResult EditAddress(NewAddressVm model)
         {
@@ -120,7 +134,7 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Manager, Service, User")]
         [HttpGet]
         public IActionResult EditContactDetail(int id)
         {
@@ -129,7 +143,7 @@ namespace ECommerceApp.Web.Controllers
             return View(contactDetail);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Manager, Service, User")]
         [HttpPost]
         public IActionResult EditContactDetail(NewContactDetailVm model)
         {
@@ -137,7 +151,7 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
+        [Authorize(Roles = "Administrator, Manager, Service")]
         [HttpGet]
         public IActionResult EditCustomer(int id)
         {
@@ -145,7 +159,7 @@ namespace ECommerceApp.Web.Controllers
             return View(customer);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
+        [Authorize(Roles = "Administrator, Manager, Service")]
         [HttpPost]
         public IActionResult EditCustomer(NewCustomerVm model)
         {
@@ -153,42 +167,42 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Manager, Service, User")]
         public IActionResult ViewCustomer(int id)
         {
             var customer = _customerService.GetCustomerDetails(id);
             return View(customer);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Manager, Service, User")]
         public IActionResult ViewAddress(int id)
         {
             var address = _customerService.GetAddressDetail(id);
             return View(address);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Manager, Service, User")]
         public IActionResult ViewContactDetail(int id)
         {
             var contactDetail = _customerService.GetContactDetail(id);
             return View(contactDetail);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Manager, Service, User")]
         public IActionResult Delete(int id)
         {
             _customerService.DeleteCustomer(id);
             return RedirectToAction("Index");
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Manager, Service, User")]
         public IActionResult DeleteAddress(int id)
         {
             _customerService.DeleteAddress(id);
             return RedirectToAction("Index");
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Manager, Service, User")]
         public IActionResult DeleteContactDetail(int id)
         {
             _customerService.DeleteContactDetail(id);
