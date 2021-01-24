@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Item;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -15,9 +16,9 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class ItemController : ControllerBase
     {
-        private readonly IItemService _itemService;
+        private readonly ItemServiceAbstract _itemService;
 
-        public ItemController(IItemService itemService)
+        public ItemController(ItemServiceAbstract itemService)
         {
             _itemService = itemService;
         }
@@ -56,7 +57,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet("Tag/All")]
         public ActionResult<List<TagForListVm>> GetItemTags()
         {
@@ -101,7 +102,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(type);
         }
 
-        [Authorize(Roles = "Administratorm, Manager, Service")]
+        [Authorize(Roles = "Administratorm, Admin, Manager, Service")]
         [HttpGet("Tag/Get/{id}")]
         public ActionResult<NewTagVm> GetTag(int id)
         {
@@ -113,7 +114,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(tag);
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPut("Item/Edit/{id}")]
         public IActionResult EditItem(NewItemVm model)
         {
@@ -127,7 +128,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPut("Brand/Edit/{id}")]
         public IActionResult EditItemBrand(NewItemBrandVm model)
         {
@@ -140,7 +141,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPut("Type/Edit/{id}")]
         public IActionResult EditItemType(NewItemTypeVm model)
         {
@@ -153,7 +154,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPut("Tag/Edit/{id}")]
         public IActionResult EditItemTag(NewTagVm model)
         {
@@ -167,7 +168,7 @@ namespace ECommerceApp.API.Controllers
         }
 
 
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost("Item/New")]
         public IActionResult AddItem(NewItemVm model)
         {
@@ -179,7 +180,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost("Brand/New")]
         public IActionResult AddItemBrand(NewItemBrandVm model)
         {
@@ -191,7 +192,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost("Type/New")]
         public IActionResult AddItemType(NewItemTypeVm model)
         {
@@ -203,7 +204,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost("Tag/New")]
         public IActionResult AddItemTag(NewTagVm model)
         {
@@ -216,7 +217,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpDelete("Item/Delete/{id}")]
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         public IActionResult DeleteItem(int id)
         {
             _itemService.DeleteItem(id);
@@ -224,7 +225,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpDelete("Type/Delete/{id}")]
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         public IActionResult DeleteItemType(int id)
         {
             _itemService.DeleteItemType(id);
@@ -232,7 +233,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpDelete("Brand/Delete/{id}")]
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         public IActionResult DeleteItemBrand(int id)
         {
             _itemService.DeleteItemBrand(id);
@@ -240,7 +241,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpDelete("Tag/Delete/{id}")]
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         public IActionResult DeleteItemTag(int id)
         {
             _itemService.DeleteItemTag(id);

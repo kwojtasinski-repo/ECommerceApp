@@ -2,19 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Coupon;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.Web.Controllers
 {
-    [Authorize(Roles = "Administrator, Manager, Service")]
+    [Authorize(Roles = "Administrator, Admin, Manager, Service")]
     public class CouponController : Controller
     {
-        private readonly ICouponService _couponService;
+        private readonly CouponServiceAbstract _couponService;
 
-        public CouponController(ICouponService couponService)
+        public CouponController(CouponServiceAbstract couponService)
         {
             _couponService = couponService;
         }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Customer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -16,14 +17,14 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class CustomerController : ControllerBase
     {
-        private readonly ICustomerService _customerService;
+        private readonly CustomerServiceAbstract _customerService;
 
-        public CustomerController(ICustomerService customerService)
+        public CustomerController(CustomerServiceAbstract customerService)
         {
             _customerService = customerService;
         }
 
-        [Authorize(Roles = "Administrator, Manager")]
+        [Authorize(Roles = "Administrator, Admin, Manager")]
         [HttpGet("Customer/All")]
         public ActionResult<List<CustomerForListVm>> GetCustomers()
         {
@@ -35,7 +36,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(customers);
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet("ContactDetailType/All")]
         public ActionResult<List<ContactDetailTypeVm>> GetContactDetailTypes()
         {
@@ -47,7 +48,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(contactDetailTypes);
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpGet("Customer/Get/{id}")]
         public ActionResult<CustomerDetailsVm> GetCustomer(int id)
         {
@@ -61,7 +62,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(customer);
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpGet("Address/Get/{id}")]
         public ActionResult<AddressDetailVm> GetAddress(int id)
         {
@@ -75,7 +76,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(address);
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpGet("ContactDetail/Get/{id}")]
         public ActionResult<NewContactDetailVm> GetContactDetail(int id)
         {
@@ -89,7 +90,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(contactDetail);
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet("ContactDetailType/Get/{id}")]
         public ActionResult<NewContactDetailTypeVm> GetContactDetailType(int id)
         {
@@ -101,7 +102,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(contactDetailType);
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPut("Customer/Edit/{id}")]
         public IActionResult EditCustomer(NewCustomerVm model)
         {
@@ -116,7 +117,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPut("Address/Edit/{id}")]
         public IActionResult EditAddress([FromBody]NewAddressVm model)
         {
@@ -131,7 +132,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPut("ContactDetail/Edit/{id}")]
         public IActionResult EditContactDetail(NewContactDetailVm model)
         {
@@ -146,7 +147,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPut("ContactDetailType/Edit/{id}")]
         public IActionResult EditContactDetailType(NewContactDetailTypeVm model)
         {
@@ -159,7 +160,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost("Customer/New")]
         public IActionResult AddCustomer([FromBody] NewCustomerVm model)
         {
@@ -171,7 +172,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost("Address/New")]
         public IActionResult AddAddress([FromBody] NewAddressVm model)
         {
@@ -192,7 +193,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost("ContactDetail/New")]
         public IActionResult AddContactDetail([FromBody] NewContactDetailVm model)
         {
@@ -213,7 +214,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost("ContactDetailType/New")]
         public IActionResult AddContactDetailType([FromBody] NewContactDetailTypeVm model)
         {

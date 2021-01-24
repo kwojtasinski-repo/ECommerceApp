@@ -8,9 +8,8 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Order
 {
-    public class RefundForListVm : IMapFrom<ECommerceApp.Domain.Model.Refund>
+    public class RefundForListVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Refund>
     {
-        public int Id { get; set; }
         public string Reason { get; set; }
         public bool Accepted { get; set; }
         public DateTime RefundDate { get; set; }

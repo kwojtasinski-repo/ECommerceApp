@@ -4,6 +4,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Order;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -16,14 +17,14 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class OrderController : ControllerBase
     {
-        private readonly IOrderService _orderService;
+        private readonly OrderServiceAbstract _orderService;
 
-        public OrderController(IOrderService orderService)
+        public OrderController(OrderServiceAbstract orderService)
         {
             _orderService = orderService;
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet("Order/All")]
         public ActionResult<List<OrderForListVm>> GetOrders()
         {
@@ -35,7 +36,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(orders);
         }
 
-        [Authorize(Roles = "Administrator, Manager")]
+        [Authorize(Roles = "Administrator, Admin, Manager")]
         [HttpGet("Payment/All")]
         public ActionResult<List<PaymentForListVm>> GetPayments()
         {
@@ -47,7 +48,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(payments);
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet("Refund/All")]
         public ActionResult<List<RefundForListVm>> GetRefunds()
         {
@@ -59,7 +60,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(refunds);
         }
 
-        [Authorize(Roles = "Administrator, Manager")]
+        [Authorize(Roles = "Administrator, Admin, Manager")]
         [HttpGet("OrderItem/All")]
         public ActionResult<List<OrderItemForListVm>> GetAllOrderItems()
         {
@@ -72,7 +73,7 @@ namespace ECommerceApp.API.Controllers
         }
 
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpGet("Order/Customer/{id}")]
         public ActionResult<List<OrderForListVm>> GetOrdersByCustomerId(int customerId)
         {
@@ -85,7 +86,7 @@ namespace ECommerceApp.API.Controllers
         }
 
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpGet("Order/Get/{id}")]
         public ActionResult<OrderDetailsVm> GetOrder(int id)
         {
@@ -97,7 +98,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(order);
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpGet("Payment/Get/{id}")]
         public ActionResult<PaymentDetailsVm> GetPayment(int id)
         {
@@ -109,7 +110,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(payment);
         }
 
-        [Authorize(Roles = "Administrator, Manager")]
+        [Authorize(Roles = "Administrator, Admin, Manager")]
         [HttpGet("OrderItem/Get/{id}")]
         public ActionResult<OrderItemDetailsVm> GetOrderItem(int id)
         {
@@ -121,7 +122,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(orderItem);
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpGet("Refund/Get/{id}")]
         public ActionResult<RefundDetailsVm> GetRefund(int id)
         {
@@ -133,7 +134,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(refund);
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpGet("Order/User/")]
         public ActionResult<List<OrderForListVm>> GetMyOrders()
         {
@@ -147,7 +148,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(orders);
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet("OrderItem/All/Items/{id}")]
         public ActionResult<List<OrderItemForListVm>> GetOrderItemsByItemId(int id)
         {
@@ -159,7 +160,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(orderItems);
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpGet("OrderItem/All/User/")]
         public ActionResult<List<NewOrderItemVm>> ShowMyCart()
         {
@@ -174,7 +175,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(orderItems);
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost("Order/Edit/{id}")]
         public IActionResult EditOrder([FromBody]NewOrderVm model)
         {
@@ -187,7 +188,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost("Payment/Edit/{id}")]
         public IActionResult EditPayment([FromBody]NewPaymentVm model)
         {
@@ -200,7 +201,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost("Refund/Edit/{id}")]
         public IActionResult EditRefund([FromBody] NewRefundVm model)
         {
@@ -213,7 +214,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost("OrderItem/Edit/{id}")]
         public IActionResult EditOrderItem([FromBody] OrderItemForListVm model)
         {
@@ -227,7 +228,7 @@ namespace ECommerceApp.API.Controllers
         }
 
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost("OrderItem/New")]
         public IActionResult AddOrderItem([FromBody] NewOrderItemVm model)
         {
@@ -241,7 +242,7 @@ namespace ECommerceApp.API.Controllers
         }
         
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost("Order/New")]
         public IActionResult AddOrder([FromBody] NewOrderVm model)
         {
@@ -256,7 +257,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost("Order/FromOrderItem/New")]
         public IActionResult AddOrderFromOrderItems([FromBody] NewOrderVm model)
         {
@@ -277,7 +278,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost("Payment/New")]
         public IActionResult AddPayment([FromBody] NewPaymentVm model)
         {
@@ -291,7 +292,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost("Payment/New")]
         public IActionResult AddRefund([FromBody] NewRefundVm model)
         {

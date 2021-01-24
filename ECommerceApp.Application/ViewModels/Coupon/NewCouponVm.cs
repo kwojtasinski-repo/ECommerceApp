@@ -7,9 +7,8 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Coupon
 {
-    public class NewCouponVm : IMapFrom<ECommerceApp.Domain.Model.Coupon>
+    public class NewCouponVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Coupon>
     {
-        public int Id { get; set; }
         public string Code { get; set; }
         public int Discount { get; set; }
         public string Description { get; set; }

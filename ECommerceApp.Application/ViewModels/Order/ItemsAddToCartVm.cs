@@ -7,9 +7,8 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Order
 {
-    public class ItemsAddToCartVm : IMapFrom<ECommerceApp.Domain.Model.Item>
+    public class ItemsAddToCartVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Item>
     {
-        public int Id { get; set; }
         public string Name { get; set; }
         [Column(TypeName = "decimal(18,2)")]
         public decimal Cost { get; set; }

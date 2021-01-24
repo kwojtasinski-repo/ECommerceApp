@@ -7,9 +7,8 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Coupon
 {
-    public class NewCouponTypeVm : IMapFrom<ECommerceApp.Domain.Model.CouponType>
+    public class NewCouponTypeVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.CouponType>
     {
-        public int Id { get; set; }
         public string Type { get; set; } // Type Coupon for only one Order; for only one Item
 
         public void Mapping(Profile profile)

@@ -7,9 +7,8 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Customer
 {
-    public class NewContactDetailVm : IMapFrom<ECommerceApp.Domain.Model.ContactDetail>
+    public class NewContactDetailVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.ContactDetail>
     {
-        public int Id { get; set; }
         public string ContactDetailInformation { get; set; }
         public int ContactDetailTypeId { get; set; }
         public string ContactDetailTypeName { get; set; }

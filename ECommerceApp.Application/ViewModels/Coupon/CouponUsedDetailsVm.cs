@@ -7,9 +7,8 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Coupon
 {
-    public class CouponUsedDetailsVm : IMapFrom<ECommerceApp.Domain.Model.CouponUsed>
+    public class CouponUsedDetailsVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.CouponUsed>
     {
-        public int Id { get; set; }
         public int CouponId { get; set; }
         public string Code { get; set; }
         public int OrderId { get; set; } // OrderId for order discount relation 1:1

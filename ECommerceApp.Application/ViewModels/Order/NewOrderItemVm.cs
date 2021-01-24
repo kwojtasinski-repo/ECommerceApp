@@ -9,9 +9,8 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Order
 {
-    public class NewOrderItemVm : IMapFrom<ECommerceApp.Domain.Model.OrderItem>
+    public class NewOrderItemVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.OrderItem>
     {
-        public int Id { get; set; }
         public int ItemId { get; set; }   // 1:Many Item OrderItem  
         public int ItemOrderQuantity { get; set; }
         public int? OrderId { get; set; }  // Many : 1 OrderItem Order
