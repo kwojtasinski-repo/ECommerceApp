@@ -11,7 +11,7 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Order
 {
-    public class NewOrderVm : IMapFrom<ECommerceApp.Domain.Model.Order>
+    public class NewOrderVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Order>
     {
         public NewOrderVm()
         {
@@ -19,7 +19,6 @@ namespace ECommerceApp.Application.ViewModels.Order
             Items = new List<Domain.Model.Item>();
         }
 
-        public int Id { get; set; }
         public int Number { get; set; }
         [Column(TypeName = "decimal(18,2)")]
         public decimal Cost { get; set; }

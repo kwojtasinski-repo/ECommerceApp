@@ -10,9 +10,8 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Order
 {
-    public class OrderDetailsVm : IMapFrom<ECommerceApp.Domain.Model.Order>
+    public class OrderDetailsVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Order>
     {
-        public int Id { get; set; }
         public int Number { get; set; }
         [Column(TypeName = "decimal(18,2)")]
         public decimal Cost { get; set; }

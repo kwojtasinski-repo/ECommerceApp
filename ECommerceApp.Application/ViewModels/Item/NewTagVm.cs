@@ -7,9 +7,8 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Item
 {
-    public class NewTagVm : IMapFrom<ECommerceApp.Domain.Model.Tag>
+    public class NewTagVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Tag>
     {
-        public int Id { get; set; }
         public string Name { get; set; }
 
         List<ItemsWithTagsVm> ItemTags { get; set; }

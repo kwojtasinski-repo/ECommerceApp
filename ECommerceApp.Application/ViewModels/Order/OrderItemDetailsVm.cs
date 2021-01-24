@@ -8,9 +8,8 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Order
 {
-    public class OrderItemDetailsVm : IMapFrom<ECommerceApp.Domain.Model.OrderItem>
+    public class OrderItemDetailsVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.OrderItem>
     {
-        public int Id { get; set; }
         public int ItemId { get; set; }   // 1:Many Item OrderItem  
         public int ItemOrderQuantity { get; set; }
         public virtual ItemDetailsVm Item { get; set; }

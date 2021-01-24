@@ -9,14 +9,13 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Item
 {
-    public class NewItemVm : IMapFrom<ECommerceApp.Domain.Model.Item>
+    public class NewItemVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Item>
     {
         public NewItemVm()
         {
             ItemTags = new List<ItemsWithTagsVm>();
         }
 
-        public int Id { get; set; }
         public string Name { get; set; }
         [DataType(DataType.Currency)]
         public decimal Cost { get; set; }

@@ -7,9 +7,8 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Item
 {
-    public class BrandDetailsVm : IMapFrom<ECommerceApp.Domain.Model.Brand>
+    public class BrandDetailsVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Brand>
     {
-        public int Id { get; set; }
         public string Name { get; set; }
 
         public List<NewItemVm> Items { get; set; }

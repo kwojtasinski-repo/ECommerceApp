@@ -7,9 +7,8 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Item
 {
-    public class NewItemTypeVm : IMapFrom<ECommerceApp.Domain.Model.Type>
+    public class NewItemTypeVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Type>
     {
-        public int Id { get; set; }
         public string Name { get; set; }
 
         public void Mapping(Profile profile)

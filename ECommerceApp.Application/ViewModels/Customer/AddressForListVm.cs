@@ -7,9 +7,8 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Customer
 {
-    public class AddressForListVm : IMapFrom<ECommerceApp.Domain.Model.Address>
+    public class AddressForListVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Address>
     {
-        public int Id { get; set; }
         public string Street { get; set; }
         public string BuildingNumber { get; set; }
         public int FlatNumber { get; set; }

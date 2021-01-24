@@ -7,9 +7,8 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Customer
 {
-    public class CustomerForListVm : IMapFrom<ECommerceApp.Domain.Model.Customer>
+    public class CustomerForListVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Customer>
     {
-        public int Id { get; set; }
         public string UserId { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }

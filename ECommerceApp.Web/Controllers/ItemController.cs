@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Web.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -12,8 +13,8 @@ namespace ECommerceApp.Web.Controllers
 {
     public class ItemController : Controller
     {
-        private readonly IItemService _itemService;
-        public ItemController(IItemService itemService)
+        private readonly ItemServiceAbstract _itemService;
+        public ItemController(ItemServiceAbstract itemService)
         {
             _itemService = itemService;
         }

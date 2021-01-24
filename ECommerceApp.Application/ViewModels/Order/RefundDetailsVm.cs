@@ -6,9 +6,8 @@ using System.Collections.Generic;
 
 namespace ECommerceApp.Application.ViewModels.Order
 {
-    public class RefundDetailsVm : IMapFrom<ECommerceApp.Domain.Model.Refund>
+    public class RefundDetailsVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Refund>
     {
-        public int Id { get; set; }
         public string Reason { get; set; }
         public bool Accepted { get; set; }
         public DateTime RefundDate { get; set; }

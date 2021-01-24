@@ -6,9 +6,8 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Order
 {
-    public class NewCustomerForOrdersVm : IMapFrom<ECommerceApp.Domain.Model.Customer>
+    public class NewCustomerForOrdersVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Customer>
     {
-        public int Id { get; set; }
         public string Information { get; set; }
 
         public void Mapping(Profile profile)

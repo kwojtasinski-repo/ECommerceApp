@@ -247,7 +247,7 @@
                                     <input type="hidden" asp-for="NewCustomer.UserId" value="@Model.UserId" class="form-control" />
                                     <div class="col-md-6 mb-3">
                                         <label asp-for="NewCustomer.FirstName" class="control-label">Imię</label>
-                                        <input asp-for="NewCustomer.FirstName" class="form-control" />
+                                        <input asp-for="NewCustomer.FirstName" name="FirstName" class="form-control" />
                                         <span asp-validation-for="NewCustomer.FirstName" class="text-danger"></span>
                                     </div>
                                     <div class="col-md-6 mb-3">
@@ -297,7 +297,7 @@
                                 <br />
                                 <div class="col-xs-6 mb-3">
                                     <label class="control-label">Dane kontaktowe</label>
-                                    <input asp-for="NewCustomer.ContactDetails[0].ContactDetailInformation" class="form-control" />
+                                    <input asp-for="NewCustomer.ContactDetails[0].ContactDetailInformation" name="ContactDetailInformation" class="form-control" />
                                     <span asp-validation-for="NewCustomer.ContactDetails[0].ContactDetailInformation"></span>
                                 </div>
                             </div>
@@ -435,6 +435,12 @@
                 }
             });
             return true;
+        });
+
+        $('input, textarea, select').on('focusout keyup', function () {
+            if ($('orderForm').valid()) {
+                console.log("Walidacja");
+            }
         });
     </script>
 

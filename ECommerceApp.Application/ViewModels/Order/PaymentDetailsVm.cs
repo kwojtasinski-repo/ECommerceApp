@@ -5,9 +5,8 @@ using System;
 
 namespace ECommerceApp.Application.ViewModels.Order
 {
-    public class PaymentDetailsVm : IMapFrom<ECommerceApp.Domain.Model.Payment>
+    public class PaymentDetailsVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Payment>
     {
-        public int Id { get; set; }
         public int Number { get; set; }
         public DateTime DateOfOrderPayment { get; set; }
         public int CustomerId { get; set; }  // 1:Many Customer Payment

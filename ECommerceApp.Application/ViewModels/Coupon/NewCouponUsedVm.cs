@@ -5,9 +5,8 @@ using FluentValidation;
 
 namespace ECommerceApp.Application.ViewModels.Coupon
 {
-    public class NewCouponUsedVm : IMapFrom<ECommerceApp.Domain.Model.CouponUsed>
+    public class NewCouponUsedVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.CouponUsed>
     {
-        public int Id { get; set; }
         public int CouponId { get; set; }
         public string Code { get; set; }
         public int OrderId { get; set; } // OrderId for order discount relation 1:1
