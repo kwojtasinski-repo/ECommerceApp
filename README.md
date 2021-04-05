@@ -25,14 +25,31 @@ Database scheme is shown on the figure below:
 ![Database scheme](schemat_bazy.png)
 
 ## Screens
+Screen 1
 ![screen_1](screen_1.PNG)
+
+Screen 2
 ![screen_2](screen_2.PNG)
+
+Screen 3
 ![screen_3](screen_3.PNG)
+
+Screen 4
 ![screen_4](screen_4.PNG)
+
+Screen 5
 ![screen_5](screen_5.PNG)
+
+Screen 6
 ![screen_6](screen_6.PNG)
+
+Screen 7
 ![screen_7](screen_7.PNG)
+
+Screen 8
 ![screen_8](screen_8.PNG)
+
+Screen 9
 ![screen_9](screen_9.PNG)
 
 ## Status
