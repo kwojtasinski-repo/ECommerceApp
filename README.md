@@ -25,6 +25,15 @@ Database scheme is shown on the figure below:
 ![Database scheme](schemat_bazy.png)
 
 ## Screens
+![screen_1](screen_1.PNG)
+![screen_2](screen_2.PNG)
+![screen_3](screen_3.PNG)
+![screen_4](screen_4.PNG)
+![screen_5](screen_5.PNG)
+![screen_6](screen_6.PNG)
+![screen_7](screen_7.PNG)
+![screen_8](screen_8.PNG)
+![screen_9](screen_9.PNG)
 
 ## Status
 Project is finished, but not closed. In the future, it is possible to expand the application in additional functionalities.
