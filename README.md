@@ -52,5 +52,36 @@ Screen 8
 Screen 9
 ![screen_9](screen_9.PNG)
 
+Screen 9
+![screen_9](screen_9.PNG)
+
+Screen 10
+![screen_10](screen_10.PNG)
+
+Screen 11
+![screen_11](screen_1.PNG)
+
+Screen 12
+![screen_12](screen_12.PNG)
+
+Screen 13
+![screen_13](screen_13.PNG)
+
+Screen 14
+![screen_14](screen_14.PNG)
+
+Screen 15
+![screen_15](screen_15.PNG)
+
+Screen 16
+![screen_16](screen_16.PNG)
+
+Screen 17
+![screen_17](screen_17.PNG)
+
+Screen 18
+![screen_9](screen_18.PNG)
+
+
 ## Status
 Project is finished, but not closed. In the future, it is possible to expand the application in additional functionalities.
