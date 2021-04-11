@@ -4,9 +4,8 @@ using System.Text;
 
 namespace ECommerceApp.Domain.Model
 {
-    public class Refund
+    public class Refund : BaseEntity
     {
-        public int Id { get; set; }
         public string Reason { get; set; }
         public bool Accepted { get; set; }
         public DateTime RefundDate { get; set; }

@@ -6,9 +6,8 @@ using System.Text;
 
 namespace ECommerceApp.Domain.Model
 {
-    public class Order
+    public class Order : BaseEntity
     {
-        public int Id { get; set; }
         public int Number { get; set; }
         [Column(TypeName = "decimal(18,2)")]
         public decimal Cost { get; set; }

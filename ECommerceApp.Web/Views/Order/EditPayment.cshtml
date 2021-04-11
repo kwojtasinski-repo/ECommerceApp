@@ -13,12 +13,12 @@
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 <input type="hidden" asp-for="Id" class="form-control" />
             <div class="form-group">
-                <label asp-for="Number" class="control-label"></label>
+                <label asp-for="Number" class="control-label">Numer płatności</label>
                 <input asp-for="Number" class="form-control" />
                 <span asp-validation-for="Number" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="DateOfOrderPayment" class="control-label"></label>
+                <label asp-for="DateOfOrderPayment" class="control-label">Data płatności</label>
                 <input asp-for="DateOfOrderPayment" class="form-control" />
                 <span asp-validation-for="DateOfOrderPayment" class="text-danger"></span>
             </div>
@@ -33,17 +33,17 @@
                 <span asp-validation-for="OrderId" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="OrderNumber" class="control-label"></label>
+                <label asp-for="OrderNumber" class="control-label">Numer zamówienia</label>
                 <input readonly asp-for="OrderNumber" class="form-control" />
                 <span asp-validation-for="OrderNumber" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="CustomerName" class="control-label"></label>
+                <label asp-for="CustomerName" class="control-label">Nazwa klienta</label>
                 <input readonly asp-for="CustomerName" class="form-control" />
                 <span asp-validation-for="CustomerName" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="OrderCost" class="control-label"></label>
+                <label asp-for="OrderCost" class="control-label">Koszt</label>
                 <input readonly asp-for="OrderCost" class="form-control" />
                 <span asp-validation-for="OrderCost" class="text-danger"></span>
             </div>

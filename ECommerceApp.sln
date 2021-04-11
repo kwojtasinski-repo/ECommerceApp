@@ -23,7 +23,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ECommerceApp.Infrastructure
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ECommerceApp.Tests", "ECommerceApp.Tests\ECommerceApp.Tests.csproj", "{D0D6AAB7-0B70-467C-9952-F2D15EABC772}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerceApp.API", "ECommerceApp.API\ECommerceApp.API.csproj", "{ED508D6F-6EE1-4ECC-A115-9F145645B377}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ECommerceApp.API", "ECommerceApp.API\ECommerceApp.API.csproj", "{ED508D6F-6EE1-4ECC-A115-9F145645B377}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

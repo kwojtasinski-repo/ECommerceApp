@@ -4,9 +4,8 @@ using System.Text;
 
 namespace ECommerceApp.Domain.Model
 {
-    public class ContactDetail
+    public class ContactDetail : BaseEntity
     {
-        public int Id { get; set; }
         public string ContactDetailInformation { get; set; }
         public int ContactDetailTypeId { get; set; }
         public int CustomerId { get; set; }

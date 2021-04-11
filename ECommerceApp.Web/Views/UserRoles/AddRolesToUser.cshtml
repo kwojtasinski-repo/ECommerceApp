@@ -4,9 +4,8 @@
     ViewData["Title"] = "AddRolesToUser";
 }
 
-<h1>AddRolesToUser</h1>
+<h1>Dodawanie ról użytkownika</h1>
 
-<h4>NewUserVm</h4>
 <hr />
 <div class="row">
     <div class="col-md-4">
@@ -14,18 +13,18 @@
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" class="form-control" />
             <div class="form-group">
-                <label asp-for="UserName" class="control-label"></label>
+                <label asp-for="UserName" class="control-label">Nazwa</label>
                 <input readonly asp-for="UserName" class="form-control" />
                 <span asp-validation-for="UserName" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="Email" class="control-label"></label>
+                <label asp-for="Email" class="control-label">Email</label>
                 <input readonly asp-for="Email" class="form-control" />
                 <span asp-validation-for="Email" class="text-danger"></span>
             </div>
             <div class="form-group form-check">
                 <label class="form-check-label">
-                    <input onclick="return false;" class="form-check-input" asp-for="EmailConfirmed" value="true"/> @Html.DisplayNameFor(model => model.EmailConfirmed)
+                    <input onclick="return false;" class="form-check-input" asp-for="EmailConfirmed" value="true"/> Potwierdzony email
                 </label>
             </div>
             <div class="col-sm-6">
@@ -43,14 +42,14 @@
                 </div>}
             </div>
             <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
+                <input type="submit" value="Utwórz" class="btn btn-primary" />
             </div>
         </form>
     </div>
 </div>
 
 <div>
-    <a asp-action="Index">Back to List</a>
+    <a asp-action="Index">Powrót do listy użytkowników</a>
 </div>
 
 @section Scripts {

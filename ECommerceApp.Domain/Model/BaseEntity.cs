@@ -4,8 +4,8 @@ using System.Text;
 
 namespace ECommerceApp.Domain.Model
 {
-    public class ContactDetailType : BaseEntity
+    public class BaseEntity
     {
-        public string Name { get; set; }
+        public int Id { get; set; }
     }
 }

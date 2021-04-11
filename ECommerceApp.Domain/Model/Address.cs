@@ -4,9 +4,8 @@ using System.Text;
 
 namespace ECommerceApp.Domain.Model
 {
-    public class Address
+    public class Address : BaseEntity
     {
-        public int Id { get; set; }
         public string Street { get; set; }
         public string BuildingNumber { get; set; }
         public int FlatNumber { get; set; }

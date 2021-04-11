@@ -3,9 +3,8 @@ using Microsoft.AspNetCore.Identity;
 
 namespace ECommerceApp.Domain.Model
 {
-    public class Customer
+    public class Customer : BaseEntity
     {
-        public int Id { get; set; }
         public string UserId { get; set; }
         public IdentityUser User { get; set; }
         public string FirstName { get; set; }

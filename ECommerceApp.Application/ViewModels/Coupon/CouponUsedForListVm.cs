@@ -15,14 +15,14 @@ namespace ECommerceApp.Application.ViewModels.Coupon
         public string Code { get; set; }
         public int Number { get; set; }
 
-        public ICollection<OrderForListVm> OrderItems { get; set; }
+        public ICollection<OrderItemForListVm> OrderItems { get; set; }
 
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ECommerceApp.Domain.Model.CouponUsed, CouponUsedForListVm>()
                 .ForMember(c => c.Code, opt => opt.MapFrom(co => co.Coupon.Code))
                 .ForMember(n => n.Number, opt => opt.MapFrom(o => o.Order.Number))
-                .ForMember(oi => oi.OrderItems, opt => opt.MapFrom(orit => orit.OrderItems));
+                .ForMember(oi => oi.OrderItems, opt => opt.MapFrom(orit => orit.OrderItems)); 
         }
     }
 

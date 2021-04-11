@@ -5,9 +5,8 @@ using System.Text;
 
 namespace ECommerceApp.Domain.Model
 {
-    public class OrderItem
+    public class OrderItem : BaseEntity
     {
-        public int Id { get; set; }
         public int ItemId { get; set; }   // 1:Many Item OrderItem  
         public int ItemOrderQuantity { get; set; }
         public virtual Item Item { get; set; }

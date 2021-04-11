@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - ECommerceApp.Web</title>
+    <title>@ViewData["Title"] - ECommerceApp</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" />
 </head>
@@ -11,20 +11,24 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
             <div class="container">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">ECommerceApp.Web</a>
+                <div class="navbar col-sm-3">
+                    <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">ECommerceApp</a>
+                </div>
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse">
+                <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse col-sm-3">
                     <partial name="_LoginPartial" />
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
+                        <!--
+    <li class="nav-item">
+        <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+    </li>
+        -->
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Item" asp-action="Index">Przedmioty</a>
                         </li>
@@ -40,7 +44,7 @@
                                     <a class="nav-link waves-effect" asp-area="" asp-controller="Order" asp-action="ShowMyCart">
                                         <span id="itemCount" class="badge badge-light z-depth-1 mr-1"> </span>
                                         <i class="fas fa-shopping-cart"></i>
-                                        <span class="clearfix d-none d-sm-inline-block"> Cart </span>
+                                        <span class="clearfix d-none d-sm-inline-block">Koszyk</span>
                                     </a>
                                 </li>
                             }
@@ -88,7 +92,15 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2020 - ECommerceApp.Web - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            <div class="container-fluid row">
+                <div class="col text-left">
+                    &copy; 2021 - ECommerceApp.Web
+                </div>
+
+                <div class="col text-center">
+                    Created by Kamil Wojtasinski
+                </div>
+            </div>
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>

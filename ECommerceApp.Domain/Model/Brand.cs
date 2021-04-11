@@ -4,9 +4,8 @@ using System.Text;
 
 namespace ECommerceApp.Domain.Model
 {
-    public class Brand
+    public class Brand : BaseEntity
     {
-        public int Id { get; set; }
         public string Name { get; set; }
 
         public ICollection<Item> Items { get; set; }

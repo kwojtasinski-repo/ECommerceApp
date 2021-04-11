@@ -4,9 +4,8 @@ using System.Text;
 
 namespace ECommerceApp.Domain.Model
 {
-    public class Payment
+    public class Payment : BaseEntity
     {
-        public int Id { get; set; }
         public int Number { get; set; }
         public DateTime DateOfOrderPayment { get; set; }
         public int CustomerId { get; set; }  // 1:Many Customer Payment

@@ -4,9 +4,8 @@ using System.Text;
 
 namespace ECommerceApp.Domain.Model
 {
-    public class Coupon
+    public class Coupon : BaseEntity
     {
-        public int Id { get; set; }
         public string Code { get; set; }
         public int Discount { get; set; }
         public string Description { get; set; }

@@ -19,6 +19,8 @@ namespace ECommerceApp.Application.Services
 
         public CouponService(ICouponRepository couponRepo, IMapper mapper) : base(couponRepo, mapper)
         {
+            _couponRepo = couponRepo;
+            _mapper = mapper;
         }
 
         public override int AddCoupon(NewCouponVm couponVm)
