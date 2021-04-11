@@ -52,9 +52,6 @@ Screen 8
 Screen 9
 ![screen_9](screen_9.PNG)
 
-Screen 9
-![screen_9](screen_9.PNG)
-
 Screen 10
 ![screen_10](screen_10.PNG)
 
