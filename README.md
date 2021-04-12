@@ -77,8 +77,25 @@ Screen 17
 ![screen_17](screen_17.PNG)
 
 Screen 18
-![screen_9](screen_18.PNG)
+![screen_18](screen_18.PNG)
 
+Screen 19
+![screen_19](screen_19.PNG)
+
+Screen 20
+![screen_20](screen_20.PNG)
+
+Screen 21
+![screen_21](screen_21.PNG)
+
+Screen 22
+![screen_22](screen_22.PNG)
+
+Screen 23
+![screen_23](screen_23.PNG)
+
+Screen 24
+![screen_24](screen_24.PNG)
 
 ## Status
 Project is finished, but not closed. In the future, it is possible to expand the application in additional functionalities.
