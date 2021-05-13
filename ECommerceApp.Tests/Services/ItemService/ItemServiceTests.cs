@@ -153,8 +153,7 @@ namespace ECommerceApp.Tests.Services.ItemService
             var item = itemService.GetItemById(1);
 
             //assert
-            item.Should().BeOfType(null);
-            item.Should().BeOfType(typeof(Item));
+            item.Should().BeOfType(typeof(ECommerceApp.Application.ViewModels.Item.NewItemVm));
             item.Should().NotBeNull();
             item.Should().BeSameAs(item);
             item.Name.Should().BeSameAs(itemExpected.Name);

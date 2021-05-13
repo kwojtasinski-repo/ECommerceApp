@@ -1,0 +1,55 @@
+{
+  "version": "1.0",
+  "defaultProvider": "cdnjs",
+  "libraries": [
+    {
+      "library": "cldrjs@0.5.5",
+      "destination": "wwwroot/lib/cldrjs/"
+    },
+    {
+      "provider": "filesystem",
+      "library": "cldrjs/dist/cldr",
+      "destination": "wwwroot/lib/cldr/",
+      "files": [
+        "event.js",
+        "supplemental.js"
+      ]
+    },
+    {
+      "provider": "filesystem",
+      "library": "cldrjs/dist/",
+      "destination": "wwwroot/lib/dist/",
+      "files": [
+        "cldr.js"
+      ]
+    },
+    {
+      "provider": "filesystem",
+      "library": "globalize/dist/",
+      "destination": "wwwroot/lib/dist/"
+    },
+    {
+      "provider": "filesystem",
+      "library": "globalize/dist/globalize/",
+      "destination": "wwwroot/lib/globalize/",
+      "files": [
+        "currency.js",
+        "date.js",
+        "message.js",
+        "number.js",
+        "plural.js",
+        "relative-time.js",
+        "unit.js"
+      ]
+    },
+    {
+      "provider": "filesystem",
+      "library": "jquery-validation-globalize-master/",
+      "destination": "wwwroot/lib/jquery-validation-globalize-master/",
+      "files": [
+        "jquery.validate.globalize.min.js",
+        "jquery.validate.globalize.js"
+      ]
+    }
+  ]
+}
