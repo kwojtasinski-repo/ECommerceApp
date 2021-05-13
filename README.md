@@ -1,6 +1,10 @@
 # ECommerceApp
 > Simple Ecommerce application that allows place an offer on the website and order items.
 
+# Admin User
+> login:    admin@localhost
+> password: aDminN@W25!
+
 ## Technologies
 * .NET Core 3.1
 * ASP.NET, HTML5, CSS3, JS, MSSQL
