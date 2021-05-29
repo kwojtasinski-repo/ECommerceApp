@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/customers")]
     [Authorize]
     [ApiController]
     public class CustomerController : ControllerBase
@@ -25,7 +25,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager")]
-        [HttpGet("Customer/All")]
+        [HttpGet("get/all")]
         public ActionResult<List<CustomerForListVm>> GetCustomers()
         {
             var customers = _customerService.GetAllCustomersForList();
@@ -37,7 +37,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpGet("ContactDetailType/All")]
+        [HttpGet("get/contact-detail-type/all")]
         public ActionResult<List<ContactDetailTypeVm>> GetContactDetailTypes()
         {
             var contactDetailTypes = _customerService.GetConactDetailTypes().ToList();
@@ -49,7 +49,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpGet("Customer/Get/{id}")]
+        [HttpGet("get/{id}")]
         public ActionResult<CustomerDetailsVm> GetCustomer(int id)
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
@@ -63,7 +63,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpGet("Address/Get/{id}")]
+        [HttpGet("get/address/{id}")]
         public ActionResult<AddressDetailVm> GetAddress(int id)
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
@@ -77,7 +77,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpGet("ContactDetail/Get/{id}")]
+        [HttpGet("get/contact-detail/{id}")]
         public ActionResult<NewContactDetailVm> GetContactDetail(int id)
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
@@ -91,7 +91,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpGet("ContactDetailType/Get/{id}")]
+        [HttpGet("get/contact-detail-type/{id}")]
         public ActionResult<NewContactDetailTypeVm> GetContactDetailType(int id)
         {
             var contactDetailType = _customerService.GetContactDetailType(id);
@@ -103,7 +103,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpPut("Customer/Edit/{id}")]
+        [HttpPut("edit/{id}")]
         public IActionResult EditCustomer(NewCustomerVm model)
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
@@ -118,7 +118,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpPut("Address/Edit/{id}")]
+        [HttpPut("edit/address/{id}")]
         public IActionResult EditAddress([FromBody]NewAddressVm model)
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
@@ -133,7 +133,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpPut("ContactDetail/Edit/{id}")]
+        [HttpPut("edit/contact-detail/{id}")]
         public IActionResult EditContactDetail(NewContactDetailVm model)
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
@@ -148,7 +148,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpPut("ContactDetailType/Edit/{id}")]
+        [HttpPut("edit/contact-detail-type/{id}")]
         public IActionResult EditContactDetailType(NewContactDetailTypeVm model)
         {
             var modelExists = _customerService.CheckIfContactDetailType(model.Id);
@@ -161,7 +161,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpPost("Customer/New")]
+        [HttpPost("add")]
         public IActionResult AddCustomer([FromBody] NewCustomerVm model)
         {
             if (!ModelState.IsValid || model.Id != 0)
@@ -173,7 +173,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpPost("Address/New")]
+        [HttpPost("add/address")]
         public IActionResult AddAddress([FromBody] NewAddressVm model)
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
@@ -194,7 +194,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpPost("ContactDetail/New")]
+        [HttpPost("add/contact-detail")]
         public IActionResult AddContactDetail([FromBody] NewContactDetailVm model)
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
@@ -215,7 +215,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpPost("ContactDetailType/New")]
+        [HttpPost("add/contact-detail-type")]
         public IActionResult AddContactDetailType([FromBody] NewContactDetailTypeVm model)
         {
             if (!ModelState.IsValid || model.Id != 0)

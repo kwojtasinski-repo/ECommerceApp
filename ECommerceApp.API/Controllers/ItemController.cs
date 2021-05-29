@@ -11,7 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.API.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/items")]
     [Authorize]
     [ApiController]
     public class ItemController : ControllerBase
@@ -23,7 +23,7 @@ namespace ECommerceApp.API.Controllers
             _itemService = itemService;
         }
 
-        [HttpGet("Item/All")]
+        [HttpGet("get/all")]
         public ActionResult<List<ItemForListVm>> GetItems()
         {
             var items = _itemService.GetAllItems();
@@ -34,7 +34,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(items);
         }
 
-        [HttpGet("Brand/All")]
+        [HttpGet("get/brand/all")]
         public ActionResult<List<BrandForListVm>> GetItemBrands()
         {
             var brands = _itemService.GetAllItemBrands();
@@ -45,7 +45,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(brands);
         }
 
-        [HttpGet("Type/All")]
+        [HttpGet("get/type/all")]
         public ActionResult<List<TypeForListVm>> GetItemTypes()
         {
             var types = _itemService.GetAllItemTypes();
@@ -58,7 +58,7 @@ namespace ECommerceApp.API.Controllers
 
         
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpGet("Tag/All")]
+        [HttpGet("get/tag/all")]
         public ActionResult<List<TagForListVm>> GetItemTags()
         {
             var tags = _itemService.GetAllTags();
@@ -69,7 +69,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(tags);
         }
 
-        [HttpGet("Item/Get/{id}")]
+        [HttpGet("get/{id}")]
         public ActionResult<ItemDetailsVm> GetItem(int id)
         {
             var item = _itemService.GetItemDetails(id);
@@ -80,7 +80,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(item);
         }
 
-        [HttpGet("Brand/Get/{id}")]
+        [HttpGet("get/brand/{id}")]
         public ActionResult<NewItemBrandVm> GetBrand(int id)
         {
             var brand = _itemService.GetItemBrandById(id);
@@ -91,7 +91,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(brand);
         }
 
-        [HttpGet("Type/Get/{id}")]
+        [HttpGet("get/type/{id}")]
         public ActionResult<NewItemTypeVm> GetType(int id)
         {
             var type = _itemService.GetItemTypeById(id);
@@ -103,7 +103,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administratorm, Admin, Manager, Service")]
-        [HttpGet("Tag/Get/{id}")]
+        [HttpGet("get/tag/{id}")]
         public ActionResult<NewTagVm> GetTag(int id)
         {
             var tag = _itemService.GetItemTagById(id);
@@ -115,7 +115,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpPut("Item/Edit/{id}")]
+        [HttpPut("edit/{id}")]
         public IActionResult EditItem(NewItemVm model)
         {
             var modelExists = _itemService.CheckIfItemExists(model.Id);
@@ -129,7 +129,7 @@ namespace ECommerceApp.API.Controllers
 
         
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpPut("Brand/Edit/{id}")]
+        [HttpPut("edit/brand/{id}")]
         public IActionResult EditItemBrand(NewItemBrandVm model)
         {
             var modelExists = _itemService.CheckIfItemBrandExists(model.Id);
@@ -142,7 +142,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpPut("Type/Edit/{id}")]
+        [HttpPut("edit/type/{id}")]
         public IActionResult EditItemType(NewItemTypeVm model)
         {
             var modelExists = _itemService.CheckIfItemTypeExists(model.Id);
@@ -155,7 +155,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpPut("Tag/Edit/{id}")]
+        [HttpPut("edit/tag/{id}")]
         public IActionResult EditItemTag(NewTagVm model)
         {
             var modelExists = _itemService.CheckIfItemTagExists(model.Id);
@@ -169,7 +169,7 @@ namespace ECommerceApp.API.Controllers
 
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpPost("Item/New")]
+        [HttpPost("add")]
         public IActionResult AddItem(NewItemVm model)
         {
             if (!ModelState.IsValid || model.Id != 0)
@@ -181,7 +181,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpPost("Brand/New")]
+        [HttpPost("add/brand")]
         public IActionResult AddItemBrand(NewItemBrandVm model)
         {
             if (!ModelState.IsValid || model.Id != 0)
@@ -193,7 +193,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpPost("Type/New")]
+        [HttpPost("add/type")]
         public IActionResult AddItemType(NewItemTypeVm model)
         {
             if (!ModelState.IsValid || model.Id != 0)
@@ -205,7 +205,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpPost("Tag/New")]
+        [HttpPost("add/tag")]
         public IActionResult AddItemTag(NewTagVm model)
         {
             if (!ModelState.IsValid || model.Id != 0)
@@ -216,7 +216,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [HttpDelete("Item/Delete/{id}")]
+        [HttpDelete("delete/{id}")]
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         public IActionResult DeleteItem(int id)
         {
@@ -224,7 +224,7 @@ namespace ECommerceApp.API.Controllers
             return RedirectToAction("Index");
         }
 
-        [HttpDelete("Type/Delete/{id}")]
+        [HttpDelete("delete/type/{id}")]
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         public IActionResult DeleteItemType(int id)
         {
@@ -232,7 +232,7 @@ namespace ECommerceApp.API.Controllers
             return RedirectToAction("Index");
         }
 
-        [HttpDelete("Brand/Delete/{id}")]
+        [HttpDelete("delete/brand/{id}")]
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         public IActionResult DeleteItemBrand(int id)
         {
@@ -240,7 +240,7 @@ namespace ECommerceApp.API.Controllers
             return RedirectToAction("Index");
         }
 
-        [HttpDelete("Tag/Delete/{id}")]
+        [HttpDelete("delete/tag/{id}")]
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         public IActionResult DeleteItemTag(int id)
         {
