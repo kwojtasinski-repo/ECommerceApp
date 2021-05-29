@@ -2,8 +2,8 @@
 > Simple Ecommerce application that allows place an offer on the website and order items.
 
 # Admin User
-> login:    admin@localhost
-> password: aDminN@W25!
+> login:     admin@localhost
+> password:  aDminN@W25!
 
 ## Technologies
 * .NET Core 3.1
