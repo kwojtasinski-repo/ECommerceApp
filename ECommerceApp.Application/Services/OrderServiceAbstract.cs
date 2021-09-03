@@ -140,5 +140,6 @@ namespace ECommerceApp.Application.Services
         public abstract bool CheckIfPaymentExists(int id);
         public abstract bool CheckIfRefundExists(int id);
         public abstract bool CheckIfOrderItemExists(int id);
+        public abstract NewPaymentVm InitPayment(int orderId);
     }
 }

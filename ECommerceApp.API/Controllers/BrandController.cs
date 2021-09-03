@@ -1,80 +1,78 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Services;
+﻿using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Item;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ECommerceApp.API.Controllers
 {
-    [Route("api/items")]
-    [Authorize]
+    [Route("api/brands")]
     [ApiController]
-    public class ItemController : ControllerBase
+    public class BrandController : ControllerBase
     {
         private readonly ItemServiceAbstract _itemService;
 
-        public ItemController(ItemServiceAbstract itemService)
+        public BrandController(ItemServiceAbstract itemService)
         {
             _itemService = itemService;
         }
 
         [HttpGet("all")]
-        public ActionResult<List<ItemForListVm>> GetItems()
+        public ActionResult<List<BrandForListVm>> GetItemBrands()
         {
-            var items = _itemService.GetAllItems();
-            if (items.Count == 0)
+            var brands = _itemService.GetAllItemBrands();
+            if (brands.Count == 0)
             {
                 return NotFound();
             }
-            return Ok(items);
+            return Ok(brands);
         }
 
         [HttpGet("{id}")]
-        public ActionResult<ItemDetailsVm> GetItem(int id)
+        public ActionResult<NewItemBrandVm> GetBrand(int id)
         {
-            var item = _itemService.GetItemDetails(id);
-            if (item == null)
+            var brand = _itemService.GetItemBrandById(id);
+            if (brand == null)
             {
                 return NotFound();
             }
-            return Ok(item);
+            return Ok(brand);
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPut]
-        public IActionResult EditItem(NewItemVm model)
+        public IActionResult EditItemBrand(NewItemBrandVm model)
         {
-            var modelExists = _itemService.CheckIfItemExists(model.Id);
+            var modelExists = _itemService.CheckIfItemBrandExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
             {
                 return Conflict(ModelState);
             }
-            _itemService.UpdateItem(model);
+            _itemService.UpdateItemBrand(model);
             return Ok();
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
-        public IActionResult AddItem(NewItemVm model)
+        public IActionResult AddItemBrand(NewItemBrandVm model)
         {
             if (!ModelState.IsValid || model.Id != 0)
             {
                 return Conflict(ModelState);
             }
-            _itemService.AddItem(model);
+            _itemService.AddItemBrand(model);
             return Ok();
         }
 
         [HttpDelete("{id}")]
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        public IActionResult DeleteItem(int id)
+        public IActionResult DeleteItemBrand(int id)
         {
-            _itemService.DeleteItem(id);
+            _itemService.DeleteItemBrand(id);
             return RedirectToAction("Index");
         }
     }

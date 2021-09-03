@@ -607,5 +607,24 @@ namespace ECommerceApp.Application.Services
             }
             return true;
         }
+
+        public override NewPaymentVm InitPayment(int orderId)
+        {
+            Random random = new Random();
+            var order = GetOrderById(orderId);
+            var customer = GetCustomerById(order.CustomerId);
+            var payment = new NewPaymentVm()
+            {
+                OrderId = order.Id,
+                Number = random.Next(0, 1000),
+                DateOfOrderPayment = System.DateTime.Now,
+                CustomerId = order.CustomerId,
+                OrderNumber = order.Number,
+                CustomerName = customer.Information,
+                OrderCost = order.Cost
+            };
+
+            return payment;
+        }
     }
 }

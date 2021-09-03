@@ -1,80 +1,80 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Services;
+﻿using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Item;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace ECommerceApp.API.Controllers
 {
-    [Route("api/items")]
-    [Authorize]
+    [Route("api/tags")]
     [ApiController]
-    public class ItemController : ControllerBase
+    public class TagController : ControllerBase
     {
         private readonly ItemServiceAbstract _itemService;
 
-        public ItemController(ItemServiceAbstract itemService)
+        public TagController(ItemServiceAbstract itemService)
         {
             _itemService = itemService;
         }
 
-        [HttpGet("all")]
-        public ActionResult<List<ItemForListVm>> GetItems()
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
+        [HttpGet("Tag/All")]
+        public ActionResult<List<TagForListVm>> GetItemTags()
         {
-            var items = _itemService.GetAllItems();
-            if (items.Count == 0)
+            var tags = _itemService.GetAllTags();
+            if (tags.Count == 0)
             {
                 return NotFound();
             }
-            return Ok(items);
+            return Ok(tags);
         }
 
+        [Authorize(Roles = "Administratorm, Admin, Manager, Service")]
         [HttpGet("{id}")]
-        public ActionResult<ItemDetailsVm> GetItem(int id)
+        public ActionResult<NewTagVm> GetTag(int id)
         {
-            var item = _itemService.GetItemDetails(id);
-            if (item == null)
+            var tag = _itemService.GetItemTagById(id);
+            if (tag == null)
             {
                 return NotFound();
             }
-            return Ok(item);
+            return Ok(tag);
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPut]
-        public IActionResult EditItem(NewItemVm model)
+        public IActionResult EditItemTag(NewTagVm model)
         {
-            var modelExists = _itemService.CheckIfItemExists(model.Id);
+            var modelExists = _itemService.CheckIfItemTagExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
             {
                 return Conflict(ModelState);
             }
-            _itemService.UpdateItem(model);
+            _itemService.UpdateItemTag(model);
             return Ok();
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
-        public IActionResult AddItem(NewItemVm model)
+        public IActionResult AddItemTag(NewTagVm model)
         {
             if (!ModelState.IsValid || model.Id != 0)
             {
                 return Conflict(ModelState);
             }
-            _itemService.AddItem(model);
+            _itemService.AddItemTag(model);
             return Ok();
         }
 
         [HttpDelete("{id}")]
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        public IActionResult DeleteItem(int id)
+        public IActionResult DeleteItemTag(int id)
         {
-            _itemService.DeleteItem(id);
+            _itemService.DeleteItemTag(id);
             return RedirectToAction("Index");
         }
     }

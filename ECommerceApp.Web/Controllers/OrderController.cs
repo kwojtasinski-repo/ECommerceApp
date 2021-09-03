@@ -163,20 +163,9 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddOrderDetails(NewOrderVm model)
         {
-            var id = _orderService.CheckPromoCode(model.RefCode);
             model.Cost = Convert.ToDecimal(model.CostToConvert);
-            if (id != 0)
-            {
-                var couponUsedId = _orderService.UpdateCoupon(id, model);
-                model.CouponUsedId = couponUsedId;
-                if (model.OrderItems.Count > 0)
-                {
-                    model.OrderItems.ForEach(oi =>
-                    {
-                        oi.CouponUsedId = couponUsedId;
-                    });
-                }
-            }
+
+            UseCouponIfEntered(model);
 
             if (model.OrderItems.Count > 0)
             {
@@ -206,19 +195,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]       
         public IActionResult Payment(int id)
         {
-            Random random = new Random();
-            var order = _orderService.GetOrderById(id);
-            var customer = _orderService.GetCustomerById(order.CustomerId);
-            var payment = new NewPaymentVm()
-            {
-                OrderId = order.Id,
-                Number = random.Next(0, 1000),
-                DateOfOrderPayment = System.DateTime.Now,
-                CustomerId = order.CustomerId,
-                OrderNumber = order.Number,
-                CustomerName = customer.Information,
-                OrderCost = order.Cost
-            };
+            var payment = _orderService.InitPayment(id);
             return View(payment);
         }
 
@@ -400,23 +377,9 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult EditOrder(NewOrderVm model)
         {
-
-            var id = _orderService.CheckPromoCode(model.RefCode);
             model.Cost = Convert.ToDecimal(model.CostToConvert);
 
-            if (id != 0)
-            {
-                model.ChangedCode = true;
-                var couponUsedId = _orderService.UpdateCoupon(id, model);
-                model.CouponUsedId = couponUsedId;
-                if (model.OrderItems.Count > 0)
-                {
-                    model.OrderItems.ForEach(oi =>
-                    {
-                        oi.CouponUsedId = couponUsedId;
-                    });
-                }
-            }
+            UseCouponIfEntered(model);
 
             if (model.AcceptedRefund)
             {
@@ -569,6 +532,24 @@ namespace ECommerceApp.Web.Controllers
         {
             _orderService.DeleteOrderItem(id);
             return Json(new { });
+        }
+
+        private void UseCouponIfEntered(NewOrderVm model)
+        {
+            var id = _orderService.CheckPromoCode(model.RefCode);
+            if (id != 0)
+            {
+                var couponUsedId = _orderService.UpdateCoupon(id, model);
+                model.CouponUsedId = couponUsedId;
+                if (model.OrderItems.Count > 0)
+                {
+                    model.OrderItems.ForEach(oi =>
+                    {
+                        oi.CouponUsedId = couponUsedId;
+                    });
+                }
+            }
+
         }
     }
 }
