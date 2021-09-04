@@ -52,7 +52,7 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPut("{id}")]
-        public IActionResult EditCustomer(NewCustomerVm model)
+        public IActionResult EditCustomer(CustomerForListVm model)
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -61,19 +61,21 @@ namespace ECommerceApp.API.Controllers
             {
                 return Conflict(ModelState);
             }
-            _customerService.UpdateCustomer(model);
+            var customer = model.MapToNewCustomerVm();
+            _customerService.UpdateCustomer(customer);
             return Ok();
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost]
-        public IActionResult AddCustomer([FromBody] NewCustomerVm model)
+        public IActionResult AddCustomer([FromBody] CustomerForListVm model)
         {
             if (!ModelState.IsValid || model.Id != 0)
             {
                 return Conflict(ModelState);
             }
-            _customerService.AddCustomer(model);
+            var customer = model.MapToNewCustomerVm();
+            _customerService.AddCustomer(customer);
             return Ok();
         }
     }

@@ -38,7 +38,7 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPut]
-        public IActionResult EditContactDetail(NewContactDetailVm model)
+        public IActionResult EditContactDetail(ContactDetailVm model)
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -47,13 +47,14 @@ namespace ECommerceApp.API.Controllers
             {
                 return Conflict(ModelState);
             }
-            _customerService.UpdateContactDetail(model);
+            var contact = model.MapToNewContactDetail();
+            _customerService.UpdateContactDetail(contact);
             return Ok();
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost]
-        public IActionResult AddContactDetail([FromBody] NewContactDetailVm model)
+        public IActionResult AddContactDetail([FromBody] ContactDetailVm model)
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -62,7 +63,8 @@ namespace ECommerceApp.API.Controllers
                 return Conflict(ModelState);
             }
 
-            var id = _customerService.AddContactDetail(model, userId);
+            var contact = model.MapToNewContactDetail();
+            var id = _customerService.AddContactDetail(contact, userId);
 
             if (id == 0)
             {

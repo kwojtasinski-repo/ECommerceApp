@@ -46,11 +46,31 @@ namespace ECommerceApp.Application.Services
                 PaymentId = objectVm.PaymentId,
                 IsPaid = objectVm.IsPaid,
                 RefundId = objectVm.RefundId,
-                OrderItems = objectVm.OrderItems
+                OrderItems = objectVm.OrderItems.Select(oi => new NewOrderItemVm { Id = oi.Id, CouponUsedId = oi.CouponUsedId, ItemCost = oi.ItemCost, ItemId = oi.ItemId, ItemName = oi.ItemName, ItemOrderQuantity = oi.ItemOrderQuantity, OrderId = oi.OrderId, RefundId = oi.RefundId, UserId = oi.UserId }).ToList()
             };
-            orderVm.OrderItems = orderVm.OrderItems.Where(oi => oi.Id == 0).ToList();
+            //orderVm.OrderItems = orderVm.OrderItems.Where(oi => oi.Id == 0).ToList();
             var order = _mapper.Map<Order>(orderVm);
             var id = _orderRepo.AddOrder(order);
+
+            /*foreach(var orderItem in objectVm.OrderItems)
+            {
+                if(orderItem.Id != 0)
+                {
+                    var oi = new OrderItem()
+                    {
+                        Id = orderItem.Id,
+                        CouponUsedId = orderItem.CouponUsedId,
+                        ItemId = orderItem.ItemId,
+                        ItemOrderQuantity = orderItem.ItemOrderQuantity,
+                        OrderId = id,
+                        RefundId = orderItem.RefundId,
+                        UserId = orderItem.UserId
+                    };
+
+                    _orderRepo.UpdateOrderItem(oi);
+                }
+            }*/
+
             return id;
         }
 

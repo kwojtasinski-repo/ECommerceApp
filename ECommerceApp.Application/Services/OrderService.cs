@@ -8,6 +8,7 @@ using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,6 +29,10 @@ namespace ECommerceApp.Application.Services
 
         public override int AddOrder(NewOrderVm model)
         {
+            Random random = new Random();
+            model.Number = random.Next(100, 10000);
+            model.Ordered = DateTime.Now;
+            CheckOrderItemsOrderByUser(model);
             return Add(model);
         }
 
@@ -267,7 +272,49 @@ namespace ECommerceApp.Application.Services
 
         public override void UpdateOrder(NewOrderVm orderVm)
         {
+            var order = _orderRepo.GetAllOrders().Where(o => o.Id == orderVm.Id).AsNoTracking().FirstOrDefault();
+            orderVm.Number = order.Number;
+            orderVm.Ordered = order.Ordered;
+            orderVm.Cost = 0;
+            CheckOrderItemsOrderByUser(orderVm);
             Update(orderVm);
+        }
+
+        private void CheckOrderItemsOrderByUser(NewOrderVm orderVm)
+        {
+            var ids = orderVm.OrderItems.Select(oi => oi.Id).ToList();
+            var orderItemsQueryable = _orderRepo.GetAllOrderItems();
+            var itemsFromDb = (from id in ids
+                               join orderItem in orderItemsQueryable
+                                   on id equals orderItem.Id
+                               select orderItem).AsQueryable().Include(i => i.Item).AsNoTracking().ToList();
+
+            StringBuilder errors = new StringBuilder();
+
+            foreach(var orderItem in orderVm.OrderItems)
+            {
+                var item = itemsFromDb.Where(i => i.Id == orderItem.Id).FirstOrDefault();
+
+                if(item != null)
+                {
+                    if(orderItem.UserId != item.UserId)
+                    {
+                        errors.AppendLine($"This item {orderItem.Id} is not ordered by current user");
+                        continue;
+                    }
+
+                    orderItem.ItemOrderQuantity = item.ItemOrderQuantity;
+                    orderItem.ItemId = item.ItemId;
+                    orderItem.CouponUsedId = item.CouponUsedId;
+
+                    orderVm.Cost += item.Item.Cost * orderItem.ItemOrderQuantity;
+                }
+            }
+
+            if (errors.Length > 0)
+            {
+                throw new BusinessException(errors.ToString());
+            }
         }
 
         public override void UpdatePayment(NewPaymentVm paymentVm)
@@ -591,7 +638,7 @@ namespace ECommerceApp.Application.Services
 
         public override bool CheckIfOrderExists(int id)
         {
-            var order = _orderRepo.GetOrderById(id);
+            var order = _orderRepo.GetAllOrders().Where(o => o.Id == id).AsNoTracking().FirstOrDefault();
             if (order == null)
             {
                 return false;

@@ -4,8 +4,10 @@ using ECommerceApp.Application.POCO;
 using ECommerceApp.Application.ViewModels.Image;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace ECommerceApp.Application.Services
@@ -31,6 +33,18 @@ namespace ECommerceApp.Application.Services
             if (imageVm.Files != null && imageVm.Files.Count > 0)
             {
                 ValidImages(imageVm.Files);
+            }
+
+            if (imageVm.ItemId.HasValue)
+            {
+                var imageCount = _repo.GetAll().Where(im => im.ItemId == imageVm.ItemId.Value).AsNoTracking().Select(i => i.Id).ToList().Count;
+                var imagesToAddCount = imageVm.Files.Count;
+                var count = imagesToAddCount + imageCount;
+
+                if (count >= ALLOWED_IMAGES_COUNT)
+                {
+                    throw new BusinessException($"Cannot add more than {ALLOWED_IMAGES_COUNT} images. There is already {imageCount} images for item id {imageVm.ItemId.Value}");
+                }
             }
 
             var images = new List<Domain.Model.Image>();

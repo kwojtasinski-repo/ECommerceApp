@@ -79,51 +79,45 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPut]
-        public IActionResult EditOrder([FromBody]NewOrderVm model)
+        public IActionResult EditOrder([FromBody] OrderVm model)
         {
             var modelExists = _orderService.CheckIfOrderExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
             {
                 return Conflict(ModelState);
             }
-            _orderService.UpdateOrder(model);
+            var order = model.MapToNewOrderVm();
+            order.UserId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
+            order.OrderItems.ForEach(oi => oi.UserId = order.UserId);
+            _orderService.UpdateOrder(order);
             return Ok();
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost]
-        public IActionResult AddOrder([FromBody] NewOrderVm model)
+        public IActionResult AddOrder([FromBody] OrderVm model)
         {
-            if (!ModelState.IsValid || model.Id != 0 || model.UserId != null || model.Number != 0)
-            {
-                return Conflict(ModelState);
-            }
-            Random random = new Random();
-            model.Number = random.Next(100, 10000);
-            model.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            _orderService.AddOrder(model);
-            return Ok();
+            var order = model.MapToNewOrderVm();
+            order.UserId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
+            order.OrderItems.ForEach(oi => oi.UserId = order.UserId);
+            var id = _orderService.AddOrder(order);
+            return Ok(id);
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpPost("by-order-items")]
-        public IActionResult AddOrderFromOrderItems([FromBody] NewOrderVm model)
+        [HttpPost("with-all-order-items")]
+        public IActionResult AddOrderFromOrderItems([FromBody] OrderVm model)
         {
-            if (!ModelState.IsValid || model.Id != 0 || model.UserId != null || model.Number != 0)
-            {
-                return Conflict(ModelState);
-            }
-            Random random = new Random();
-            model.Number = random.Next(100, 10000);
+            var order = model.MapToNewOrderVm();
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var orderItems = _orderService.GetOrderItemsNotOrderedByUserId(userId);
-            model.UserId = userId;
-            model.OrderItems = orderItems;
-            var id = _orderService.AddOrder(model);
-            model.OrderItems.ForEach(oi => oi.OrderId = id);
-            _orderService.UpdateOrderItems(model.OrderItems);
-            return Ok();
+            order.UserId = userId;
+            order.OrderItems = orderItems;
+            var id = _orderService.AddOrder(order);
+            order.OrderItems.ForEach(oi => oi.OrderId = id);
+            _orderService.UpdateOrderItems(order.OrderItems);
+            return Ok(id);
         }
     }
 }

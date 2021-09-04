@@ -47,26 +47,28 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPut]
-        public IActionResult EditItem(NewItemVm model)
+        public IActionResult EditItem(ItemVm model)
         {
             var modelExists = _itemService.CheckIfItemExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
             {
                 return Conflict(ModelState);
             }
-            _itemService.UpdateItem(model);
+            var item = model.MapToNewItemVm();
+            _itemService.UpdateItem(item);
             return Ok();
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
-        public IActionResult AddItem(NewItemVm model)
+        public IActionResult AddItem(ItemVm model)
         {
             if (!ModelState.IsValid || model.Id != 0)
             {
                 return Conflict(ModelState);
             }
-            _itemService.AddItem(model);
+            var item = model.MapToNewItemVm();
+            _itemService.AddItem(item);
             return Ok();
         }
 

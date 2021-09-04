@@ -41,7 +41,26 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public int AddOrder(Order order)
         {
+            var orderItems = order.OrderItems.Select(oi => new OrderItem { Id = oi.Id, CouponUsedId = oi.CouponUsedId, ItemId = oi.ItemId, ItemOrderQuantity = oi.ItemOrderQuantity, OrderId = oi.OrderId, RefundId = oi.RefundId, UserId = oi.UserId }).ToList();
+            order.OrderItems = order.OrderItems.Where(oi => oi.Id == 0).ToList();
             _context.Orders.Add(order);
+            _context.SaveChanges();
+            // zabezpieczenie przed "tracking"
+            orderItems.ForEach(oi =>
+            {
+                oi.OrderId = order.Id;
+                var local = _context.Set<OrderItem>()
+                    .Local
+                    .FirstOrDefault(entry => entry.Id.Equals(oi.Id));
+
+                if (local != null)
+                {
+                    _context.Entry(local).State = EntityState.Detached;
+                }
+
+                _context.Entry(oi).State = EntityState.Modified;
+            });
+            _context.OrderItem.UpdateRange(orderItems);
             _context.SaveChanges();
             return order.Id;
         }
@@ -154,6 +173,23 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public void UpdatedOrder(Order order)
         {
+            var orderItems = order.OrderItems.ToList();
+            // zabezpieczenie przed "tracking"
+            orderItems.ForEach(oi =>
+            {
+                oi.OrderId = order.Id;
+                var local = _context.Set<OrderItem>()
+                    .Local
+                    .FirstOrDefault(entry => entry.Id.Equals(oi.Id));
+
+                if (local != null)
+                {
+                    _context.Entry(local).State = EntityState.Detached;
+                }
+
+                _context.Entry(oi).State = EntityState.Modified;
+            });
+
             _context.Attach(order);
             _context.Entry(order).Property("Number").IsModified = true;
             _context.Entry(order).Property("Cost").IsModified = true;

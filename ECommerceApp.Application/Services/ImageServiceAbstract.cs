@@ -11,6 +11,7 @@ using System;
 using System.Linq;
 using ECommerceApp.Application.POCO;
 using System.Reflection;
+using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Application.Services
 {
@@ -18,9 +19,10 @@ namespace ECommerceApp.Application.Services
     {
         private readonly IAbstractRepository<Image> _repo;
         private readonly IFileStore _fileStore;
-        protected readonly int allowedSize = 10 * 1024 * 1024; // 10 mb
-        protected readonly List<string> imageExtensionParameters = new List<string> { ".jpg", ".png" }; // extensions
+        protected readonly int ALLOWED_SIZE = 10 * 1024 * 1024; // 10 mb
+        protected readonly List<string> IMAGE_EXTENSION_PARAMETERS = new List<string> { ".jpg", ".png" }; // extensions
         protected readonly string FILE_DIR = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "Upload" + Path.DirectorySeparatorChar + "Files" + Path.DirectorySeparatorChar + Guid.NewGuid().ToString();
+        protected readonly int ALLOWED_IMAGES_COUNT = 5;
 
         public ImageServiceAbstract(IAbstractRepository<Image> repo, IFileStore fileStore)
         {
@@ -48,6 +50,17 @@ namespace ECommerceApp.Application.Services
             if (objectVm.Images != null && objectVm.Images.Count > 0)
             {
                 ValidImages(objectVm.Images);
+            }
+
+            if (objectVm.ItemId.HasValue)
+            {
+                var imageCount = _repo.GetAll().Where(im => im.ItemId == objectVm.ItemId.Value).AsNoTracking().Select(i=>i.Id).ToList().Count;
+                var count = imageCount + 1;
+
+                if (count >= ALLOWED_IMAGES_COUNT)
+                {
+                    throw new BusinessException($"Cannot add more than {ALLOWED_IMAGES_COUNT} images. There is already {imageCount} images for item id {objectVm.ItemId.Value}");
+                }
             }
 
             var imageSrc = objectVm.Images.FirstOrDefault();
@@ -175,18 +188,18 @@ namespace ECommerceApp.Application.Services
                 var size = carImage.Length;
                 var fileName = carImage.FileName;
 
-                if (size > allowedSize)
+                if (size > ALLOWED_SIZE)
                 {
-                    errors.Append("Image ").Append(fileName).Append(" is too big (").Append(size).Append(" bytes). Allowed ").Append(allowedSize).Append("bytes\r\n");
+                    errors.Append("Image ").Append(fileName).Append(" is too big (").Append(size).Append(" bytes). Allowed ").Append(ALLOWED_SIZE).Append("bytes\r\n");
                 }
 
                 var extension = _fileStore.GetFileExtenstion(fileName);
-                var containsExtension = imageExtensionParameters.Contains(extension);
+                var containsExtension = IMAGE_EXTENSION_PARAMETERS.Contains(extension);
 
                 if (!containsExtension)
                 {
                     var sb = new StringBuilder();
-                    imageExtensionParameters.ForEach(i => sb.AppendLine(i));
+                    IMAGE_EXTENSION_PARAMETERS.ForEach(i => sb.AppendLine(i));
                     errors.AppendLine($"Image {fileName} extension {extension} is not allowed. Allowed extensions {sb}");
                 }
             }

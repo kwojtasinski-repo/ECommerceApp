@@ -318,11 +318,11 @@ namespace ECommerceApp.Application.Services
                 throw new BusinessException("When adding object Id should be equals 0");
             }
 
-            var customers = _custRepo.GetAllCustomers().Where(c => c.UserId == userId).ToList();
+            var customersId = _custRepo.GetAllCustomers().Where(c => c.UserId == userId).Select(c => c.Id).ToList();
             bool customerIdExists = false;
-            foreach (var cust in customers)
+            foreach (var custId in customersId)
             {
-                if (cust.Id == model.CustomerId)
+                if (custId == model.CustomerId)
                 {
                     customerIdExists = true;
                     break;
@@ -337,7 +337,7 @@ namespace ECommerceApp.Application.Services
             }
             else
             {
-                return 0;
+                throw new BusinessException("Customer not exists check your id");
             }
         }
 
