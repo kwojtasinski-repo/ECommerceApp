@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Domain.Interface;
@@ -24,6 +25,11 @@ namespace ECommerceApp.Application.Services
 
         public int Add(NewItemVm objectVm)
         {
+            if (objectVm.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             var item = _mapper.Map<Item>(objectVm);
             var id = _itemRepo.AddItem(item);
             return id;

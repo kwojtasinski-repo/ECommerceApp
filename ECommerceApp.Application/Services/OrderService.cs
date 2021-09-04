@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Customer;
@@ -32,6 +33,11 @@ namespace ECommerceApp.Application.Services
 
         public override int AddPayment(NewPaymentVm paymentVm)
         {
+            if (paymentVm.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             var payment = _mapper.Map<Payment>(paymentVm);
             var id = _orderRepo.AddPayment(payment);
             _orderRepo.RemoveOrderedItems(payment.OrderId);
@@ -40,6 +46,11 @@ namespace ECommerceApp.Application.Services
 
         public override int AddRefund(NewRefundVm refundVm)
         {
+            if (refundVm.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             var refund = _mapper.Map<Refund>(refundVm);
             var id = _orderRepo.AddRefund(refund);
             return id;
@@ -316,6 +327,11 @@ namespace ECommerceApp.Application.Services
 
         public override int AddCouponUsed(NewCouponUsedVm couponUsedVm)
         {
+            if (couponUsedVm.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             var couponUsed = _mapper.Map<CouponUsed>(couponUsedVm);
             var id = _orderRepo.AddCouponUsed(couponUsed);
             return id;
@@ -495,6 +511,11 @@ namespace ECommerceApp.Application.Services
 
         public override int AddCustomer(NewCustomerVm newCustomer)
         {
+            if (newCustomer.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             var customer = _mapper.Map<Customer>(newCustomer);
             var id = _orderRepo.AddCustomer(customer);
             return id;

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Order;
@@ -31,6 +32,11 @@ namespace ECommerceApp.Application.Services
 
         public override int AddCouponType(NewCouponTypeVm couponTypeVm)
         {
+            if (couponTypeVm.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             var couponType = _mapper.Map<CouponType>(couponTypeVm);
             var id = _couponRepo.AddCouponType(couponType);
             return id;
@@ -38,6 +44,11 @@ namespace ECommerceApp.Application.Services
 
         public override int AddCouponUsed(NewCouponUsedVm couponUsedVm)
         {
+            if (couponUsedVm.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             var couponUsed = _mapper.Map<CouponUsed>(couponUsedVm);
             var id = _couponRepo.AddCouponUsed(couponUsed);
             return id;

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Domain.Interface;
@@ -25,7 +26,8 @@ namespace ECommerceApp.Application.Services
 
         public override int AddCustomer(NewCustomerVm newCustomer)
         {
-            return Add(newCustomer);
+            var id = Add(newCustomer);
+            return id;
         }
 
         public override void DeleteCustomer(int id)
@@ -83,6 +85,11 @@ namespace ECommerceApp.Application.Services
 
         public override int CreateNewDetailContact(NewContactDetailVm newContact)
         {
+            if (newContact.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             var contactDetail = _mapper.Map<ContactDetail>(newContact);
             var id = _custRepo.AddNewContact(contactDetail);
             return id;
@@ -90,6 +97,11 @@ namespace ECommerceApp.Application.Services
 
         public override int CreateNewAddress(NewAddressVm newAddress)
         {
+            if (newAddress.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             var address = _mapper.Map<Address>(newAddress);
             var id = _custRepo.AddNewAddress(address);
             return id;
@@ -247,6 +259,11 @@ namespace ECommerceApp.Application.Services
 
         public override int AddAddress(NewAddressVm newAddress)
         {
+            if (newAddress.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             var address = _mapper.Map<Address>(newAddress);
             var id = _custRepo.AddNewAddress(address);
             return id;
@@ -254,6 +271,11 @@ namespace ECommerceApp.Application.Services
 
         public override int AddAddress(NewAddressVm model, string userId)
         {
+            if (model.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             var customers = _custRepo.GetAllCustomers().Where(c => c.UserId == userId).ToList();
             bool customerIdExists = false;
             foreach (var cust in customers)
@@ -279,6 +301,11 @@ namespace ECommerceApp.Application.Services
 
         public override int AddContactDetail(NewContactDetailVm newContactDetail)
         {
+            if (newContactDetail.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             var contactDetail = _mapper.Map<ContactDetail>(newContactDetail);
             var id = _custRepo.AddNewContact(contactDetail);
             return id;
@@ -286,6 +313,11 @@ namespace ECommerceApp.Application.Services
 
         public override int AddContactDetail(NewContactDetailVm model, string userId)
         {
+            if (model.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             var customers = _custRepo.GetAllCustomers().Where(c => c.UserId == userId).ToList();
             bool customerIdExists = false;
             foreach (var cust in customers)
@@ -311,6 +343,11 @@ namespace ECommerceApp.Application.Services
 
         public override int AddContactDetailType(NewContactDetailTypeVm newContactDetailType)
         {
+            if (newContactDetailType.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             var contactDetailType = _mapper.Map<ContactDetailType>(newContactDetailType);
             var id = _custRepo.AddNewContactDetailType(contactDetailType);
             return id;

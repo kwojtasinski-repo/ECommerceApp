@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels;
 using ECommerceApp.Application.ViewModels.Coupon;
@@ -26,6 +27,11 @@ namespace ECommerceApp.Application.Services
 
         public int Add(NewCouponVm objectVm)
         {
+            if (objectVm.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             int id = AddCoupon(objectVm);
             return id;
         }

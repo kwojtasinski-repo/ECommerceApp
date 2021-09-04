@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Coupon;
@@ -27,6 +28,10 @@ namespace ECommerceApp.Application
             services.AddTransient<CouponServiceAbstract, CouponService>();
             services.AddTransient<IUserService, UserService>();
             services.AddAutoMapper(Assembly.GetExecutingAssembly());
+            services.AddTransient<IFileStore, FileStore>();
+            services.AddTransient<IFileWrapper, FileWrapper>();
+            services.AddTransient<IDirectoryWrapper, DirectoryWrapper>();
+            services.AddTransient<ImageServiceAbstract, ImageService>();
             return services;
         }
     }

@@ -15,6 +15,7 @@ namespace ECommerceApp.Infrastructure
             services.AddTransient<IItemRepository, ItemRepository>();
             services.AddTransient<IOrderRepository, OrderRepository>();
             services.AddTransient<ICouponRepository, CouponRepository>();
+            services.AddTransient(typeof(IAbstractRepository<>), typeof(AbstractRepository<>));
             return services;
         }
     }

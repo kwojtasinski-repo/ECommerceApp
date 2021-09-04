@@ -21,5 +21,6 @@ namespace ECommerceApp.Domain.Model
         public virtual Type Type { get; set; }
         public ICollection<OrderItem> OrderItems { get; set; }
         public ICollection<ItemTag> ItemTags { get; set; }
+        public ICollection<Image> Images { get; set; }
     }
 }

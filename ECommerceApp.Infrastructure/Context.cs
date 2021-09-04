@@ -26,6 +26,7 @@ namespace ECommerceApp.Infrastructure
         public DbSet<Refund> Refunds { get; set; }
         public DbSet<Tag> Tags { get; set; }
         public DbSet<ECommerceApp.Domain.Model.Type> Types { get; set; }
+        public DbSet<ECommerceApp.Domain.Model.Image> Images { get; set; }
 
         public Context(DbContextOptions options) : base(options)
         {
@@ -77,6 +78,13 @@ namespace ECommerceApp.Infrastructure
                 .WithOne(o => o.Payment)
                 .HasForeignKey<Order>(o => o.PaymentId);
             // -------------------- RELATION 1:1 --------------------
+
+            // -------------------- DELETE BEHAVIOUR --------------------
+            builder.Entity<Item>()
+                .HasMany(i => i.Images)
+                .WithOne(it => it.Item)
+                .OnDelete(DeleteBehavior.SetNull);
+            // -------------------- DELETE BEHAVIOUR --------------------
 
             // -------------------- USER SEED DATA ----------------------
             //Seeding a  'Administrator' role to AspNetRoles table

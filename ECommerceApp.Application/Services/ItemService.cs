@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Domain.Interface;
@@ -29,6 +30,11 @@ namespace ECommerceApp.Application.Services
 
         public override int AddItemBrand(NewItemBrandVm model)
         {
+            if (model.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             var brand = _mapper.Map<Brand>(model);
             var id = _itemRepo.AddItemBrand(brand);
             return id;
@@ -36,6 +42,11 @@ namespace ECommerceApp.Application.Services
 
         public override int AddItemType(NewItemTypeVm model)
         {
+            if (model.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             var type = _mapper.Map<ECommerceApp.Domain.Model.Type>(model);
             var id = _itemRepo.AddItemType(type);
             return id;
@@ -206,6 +217,11 @@ namespace ECommerceApp.Application.Services
 
         public override int AddItemTag(NewTagVm model)
         {
+            if (model.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             var itemTag = _mapper.Map<Tag>(model);
             var id = _itemRepo.AddItemTag(itemTag);
             return id;
