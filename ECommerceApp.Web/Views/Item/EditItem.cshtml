@@ -90,19 +90,19 @@
         </form>
     </div>
     <div class="col-md-6 col-md-offset-2">
-        @if (Model.Images.Count <= 5)
+        @if (Model.Images.Count < 5)
         {
             <div>
-                <h4>Upload Image</h4>
+                <h4>Dodaj obrazki</h4>
             </div>
 
             <div>
-                <form id="UploadImages" action="/Image/@Model.Id"
+                <form id="UploadImages" action="/Image/UploadImages?itemId=@Model.Id"
                       enctype="multipart/form-data" onsubmit="return false"
                       method="post">
                     <dl>
                         <dt>
-                            <label for="FileUpload_FormFile">File</label>
+                            <label for="FileUpload_FormFile">Pliki</label>
                         </dt>
                         <dd>
                             <input id="FileUpload_FormFile" multiple="multiple" type="file"
@@ -110,7 +110,7 @@
                         </dd>
                     </dl>
 
-                    <input class="btn" type="button" value="Upload" onclick="Upload(this)" />
+                    <input class="btn-block" type="button" value="Wgraj" onclick="Upload(this)" />
 
                     <div style="margin-top:15px">
                         <output name="result"></output>
@@ -119,13 +119,16 @@
             </div>
         }
 
-        <br />
-        <h4>Images</h4>
-        @foreach (var image in Model.Images)
-        {
-            <div>
-                <img src="data:image;base64,@System.Convert.ToBase64String(image.ImageSource)" style="display: block; max-width: 550px; height: auto; " />
-            </div>
+        @if (Model.Images.Count > 0) 
+        { 
+            <br />
+            <h4>Obrazki</h4>
+            @foreach (var image in Model.Images)
+            {
+                <div>
+                    <img src="data:image;base64,@System.Convert.ToBase64String(image.ImageSource)" style="display: block; width: auto; max-width: 300px; height: auto; max-height: 300px" />
+                </div>
+            }
         }
     </div>
 </div>
@@ -348,24 +351,21 @@
 
         // --------------------------- SEND IMAGE ---------------------------
         function Upload(input) {
-            console.log(input);
             var uploadForm = document.getElementById("UploadImages");
             AJAXSubmit(uploadForm);
         }
 
         async function AJAXSubmit(oFormElement) {
-            
-            console.log(oFormElement);
+            var files = oFormElement[0].files;
+
+            if (parseInt(files.length) > 5) {
+                alert("You can only upload a maximum of 5 files");
+                return;
+            }
+
             var resultElement = oFormElement.elements.namedItem("result");
             const formData = new FormData(oFormElement);
-            console.log(resultElement);
-            
-            var token = $('input[name="__RequestVerificationToken"]').val();
-            console.log(token);
 
-            console.log("oFormElement.action");
-            console.log(oFormElement.action);
-            
             try {
                 const response = await fetch(oFormElement.action, {
                     
@@ -374,11 +374,12 @@
                 });
 
                 if (response.ok) {
-                   // window.location.reload();
+                   window.location.reload();
                 }
+                let responseText = await response.text();
 
                 resultElement.value = 'Result: ' + response.status + ' ' +
-                    response.statusText;
+                    response.statusText + ' ' + responseText;
             } catch (error) {
                 console.error('Error:', error);
             }

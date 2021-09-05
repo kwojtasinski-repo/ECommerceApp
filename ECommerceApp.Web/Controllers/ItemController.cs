@@ -282,6 +282,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult ViewItem(int id)
         {
             var item = _itemService.GetItemDetails(id);
+            item.Images = _imageService.GetImagesByItemId(id);
             return View(item);
         }
 
