@@ -30,8 +30,15 @@ namespace ECommerceApp.Application.Services
         public override int AddOrder(NewOrderVm model)
         {
             Random random = new Random();
-            model.Number = random.Next(100, 10000);
-            model.Ordered = DateTime.Now;
+            if (model.Number == 0)
+            {
+                model.Number = random.Next(100, 10000);
+            }
+            var dateNotSet = new DateTime();
+            if (model.Ordered == dateNotSet)
+            {
+                model.Ordered = DateTime.Now;
+            }
             CheckOrderItemsOrderByUser(model);
             return Add(model);
         }
@@ -54,6 +61,21 @@ namespace ECommerceApp.Application.Services
             if (refundVm.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
+            }
+
+            if (refundVm.RefundDate == new DateTime())
+            {
+                refundVm.RefundDate = DateTime.Now;
+            }
+
+            if (refundVm.CustomerId == 0)
+            {
+                var customerId = _orderRepo.GetAllOrders().Where(o => o.Id == refundVm.OrderId).Include(c => c.Customer).Select(or => or.CustomerId).FirstOrDefault();
+                if (customerId == 0)
+                {
+                    throw new BusinessException($"There is no order with id = {refundVm.OrderId}");
+                }
+                refundVm.CustomerId = customerId;
             }
 
             var refund = _mapper.Map<Refund>(refundVm);

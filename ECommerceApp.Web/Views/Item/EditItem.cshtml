@@ -9,7 +9,7 @@
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="EditItem">
+        <form id="formEditItem" asp-action="EditItem">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" class="form-control" />
             <div class="form-group">
@@ -53,7 +53,7 @@
                     @for (int i = 0; i < Model.ItemTags.Count; i++)
                     {
                         <tr id="@i">
-                            <td >
+                            <td>
                                 <input name="Tag" value="@ViewBag.ItemTags[Model.ItemTags[i].TagId-1].Name" class="form-control valid" readonly style="width: 250px;position:static; " />
                                 <input type="hidden" name="ItemTags[@i].TagId" value="@Model.ItemTags[i].TagId" class="col-sm-2 col-form-label" />
                                 <input type="hidden" name="ItemTags[@i].ItemId" class="form-control" value="@Model.Id" />
@@ -88,6 +88,45 @@
                 <input type="submit" value="Zatwierdź" class="btn btn-primary" />
             </div>
         </form>
+    </div>
+    <div class="col-md-6 col-md-offset-2">
+        @if (Model.Images.Count <= 5)
+        {
+            <div>
+                <h4>Upload Image</h4>
+            </div>
+
+            <div>
+                <form id="UploadImages" action="/Image/@Model.Id"
+                      enctype="multipart/form-data" onsubmit="return false"
+                      method="post">
+                    <dl>
+                        <dt>
+                            <label for="FileUpload_FormFile">File</label>
+                        </dt>
+                        <dd>
+                            <input id="FileUpload_FormFile" multiple="multiple" type="file"
+                                   name="files" />
+                        </dd>
+                    </dl>
+
+                    <input class="btn" type="button" value="Upload" onclick="Upload(this)" />
+
+                    <div style="margin-top:15px">
+                        <output name="result"></output>
+                    </div>
+                </form>
+            </div>
+        }
+
+        <br />
+        <h4>Images</h4>
+        @foreach (var image in Model.Images)
+        {
+            <div>
+                <img src="data:image;base64,@System.Convert.ToBase64String(image.ImageSource)" style="display: block; max-width: 550px; height: auto; " />
+            </div>
+        }
     </div>
 </div>
 
@@ -306,6 +345,44 @@
             }
         }
 
+
+        // --------------------------- SEND IMAGE ---------------------------
+        function Upload(input) {
+            console.log(input);
+            var uploadForm = document.getElementById("UploadImages");
+            AJAXSubmit(uploadForm);
+        }
+
+        async function AJAXSubmit(oFormElement) {
+            
+            console.log(oFormElement);
+            var resultElement = oFormElement.elements.namedItem("result");
+            const formData = new FormData(oFormElement);
+            console.log(resultElement);
+            
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            console.log(token);
+
+            console.log("oFormElement.action");
+            console.log(oFormElement.action);
+            
+            try {
+                const response = await fetch(oFormElement.action, {
+                    
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                   // window.location.reload();
+                }
+
+                resultElement.value = 'Result: ' + response.status + ' ' +
+                    response.statusText;
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
     </script>
 
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}

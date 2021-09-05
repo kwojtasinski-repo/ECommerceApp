@@ -63,27 +63,32 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPut]
-        public IActionResult EditOrderItem([FromBody] OrderItemForListVm model)
+        public IActionResult EditOrderItem([FromBody] OrderItemVm model)
         {
             var modelExists = _orderService.CheckIfOrderItemExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
             {
                 return Conflict(ModelState);
             }
-            _orderService.UpdateOrderItem(model);
+            var orderItem = model.MapToOrderItemForList();
+            var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
+            orderItem.UserId = userId;
+            _orderService.UpdateOrderItem(orderItem);
             return Ok();
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost]
-        public IActionResult AddOrderItem([FromBody] NewOrderItemVm model)
+        public IActionResult AddOrderItem([FromBody] OrderItemVm model)
         {
-            if (!ModelState.IsValid || model.Id != 0 || model.UserId != null)
+            if (model.Id != 0)
             {
                 return Conflict(ModelState);
             }
-            model.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            _orderService.AddOrderItem(model);
+            var orderItem = model.MapToNewOrderItemVm();
+            var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
+            orderItem.UserId = userId;
+            _orderService.AddOrderItem(orderItem);
             return Ok();
         }
 

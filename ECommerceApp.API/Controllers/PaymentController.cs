@@ -45,31 +45,17 @@ namespace ECommerceApp.API.Controllers
             return Ok(payment);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpPut]
-        public IActionResult EditPayment([FromBody] NewPaymentVm model)
-        {
-            var modelExists = _orderService.CheckIfPaymentExists(model.Id);
-            if (!ModelState.IsValid || !modelExists)
-            {
-                return Conflict(ModelState);
-            }
-            _orderService.UpdatePayment(model);
-            return Ok();
-        }
-
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost]
-        public IActionResult AddPayment([FromBody] NewPaymentVm model)
+        public ActionResult<int> AddPayment([FromBody] CreatePayment model)
         {
-            if (!ModelState.IsValid || model.Id != 0 || model.Number != 0)
+            if (!ModelState.IsValid || model.Id != 0)
             {
                 return Conflict(ModelState);
             }
-            Random random = new Random();
-            model.Number = random.Next(0, 1000);
-            var id = _orderService.AddPayment(model);
-            return Ok();
+            var payment = _orderService.InitPayment(model.OrderId);
+            var id = _orderService.AddPayment(payment);
+            return Ok(id);
         }
     }
 }

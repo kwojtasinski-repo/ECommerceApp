@@ -14,9 +14,11 @@ namespace ECommerceApp.Web.Controllers
     public class ItemController : Controller
     {
         private readonly ItemServiceAbstract _itemService;
-        public ItemController(ItemServiceAbstract itemService)
+        private readonly ImageServiceAbstract _imageService;
+        public ItemController(ItemServiceAbstract itemService, ImageServiceAbstract imageService)
         {
             _itemService = itemService;
+            _imageService = imageService;
         }
 
         [HttpGet]
@@ -116,6 +118,7 @@ namespace ECommerceApp.Web.Controllers
             ViewBag.ItemBrands = _itemService.GetAllItemBrandsForAddingItems().ToList();
             ViewBag.ItemTypes = _itemService.GetAllItemTypesForAddingItems().ToList();
             ViewBag.ItemTags = _itemService.GetAllItemTagsForAddingItems().ToList();
+            item.Images = _imageService.GetImagesByItemId(id);
             return View(item);
         }
 

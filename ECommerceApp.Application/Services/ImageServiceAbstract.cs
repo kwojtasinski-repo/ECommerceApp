@@ -228,5 +228,6 @@ namespace ECommerceApp.Application.Services
 
         public abstract List<int> AddImages(AddImagesPOCO image);
         public abstract void PartialUpdate(UpdateImagePOCO image);
+        public abstract List<GetImageVm> GetImagesByItemId(int imageId);
     }
 }

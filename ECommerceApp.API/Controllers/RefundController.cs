@@ -47,27 +47,29 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPut]
-        public IActionResult EditRefund([FromBody] NewRefundVm model)
+        public IActionResult EditRefund([FromBody] CreateRefundVm model)
         {
             var modelExists = _orderService.CheckIfRefundExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
             {
                 return Conflict(ModelState);
             }
-            _orderService.UpdateRefund(model);
+            var refund = model.MapToNewRefund();
+            _orderService.UpdateRefund(refund);
             return Ok();
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost]
-        public IActionResult AddRefund([FromBody] NewRefundVm model)
+        public ActionResult<int> AddRefund([FromBody] CreateRefundVm model)
         {
             if (!ModelState.IsValid || model.Id != 0)
             {
                 return Conflict(ModelState);
             }
-            var id = _orderService.AddRefund(model);
-            return Ok();
+            var refund = model.MapToNewRefund();
+            var id = _orderService.AddRefund(refund);
+            return Ok(id);
         }
     }
 }

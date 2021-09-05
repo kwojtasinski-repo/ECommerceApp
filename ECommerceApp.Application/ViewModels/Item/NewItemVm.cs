@@ -28,11 +28,13 @@ namespace ECommerceApp.Application.ViewModels.Item
         public List<NewItemBrandVm> Brands { get; set; }
         public List<NewItemTypeVm> Types { get; set; }
         public List<ItemsWithTagsVm> ItemTags { get; set; }
+        public List<Image.GetImageVm> Images { get; set; }
 
         public void Mapping(Profile profile)
         {
             profile.CreateMap<NewItemVm, ECommerceApp.Domain.Model.Item>().ReverseMap()
-                .ForMember(p => p.ItemTags, opt => opt.MapFrom(ps => ps.ItemTags));
+                .ForMember(p => p.ItemTags, opt => opt.MapFrom(ps => ps.ItemTags))
+                .ForMember(p => p.Images, opt => opt.Ignore());
         }
     }
 

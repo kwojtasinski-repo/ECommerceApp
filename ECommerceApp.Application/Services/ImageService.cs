@@ -79,5 +79,24 @@ namespace ECommerceApp.Application.Services
 
             _repo.Update(img);
         }
+        public override List<GetImageVm> GetImagesByItemId(int itemId)
+        {
+            var images = _repo.GetAll().Where(i => i.ItemId == itemId).ToList();
+
+            var imagesVm = new List<GetImageVm>();
+            foreach(var image in images)
+            {
+                var img = new GetImageVm()
+                {
+                    Id = image.Id,
+                    ItemId = image.ItemId,
+                    Name = image.Name,
+                    ImageSource = _fileStore.ReadFile(image.SourcePath)
+                };
+                imagesVm.Add(img);
+            }
+
+            return imagesVm;
+        }
     }
 }
