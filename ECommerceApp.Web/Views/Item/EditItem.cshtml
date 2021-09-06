@@ -125,8 +125,11 @@
             <h4>Obrazki</h4>
             @foreach (var image in Model.Images)
             {
-                <div>
-                    <img src="data:image;base64,@System.Convert.ToBase64String(image.ImageSource)" style="display: block; width: auto; max-width: 300px; height: auto; max-height: 300px" />
+                <div class="card" style="width:18rem;">
+                    <div class="card-body">
+                        <button class="btn btn-sm btn-danger" style="margin-left: auto; margin-right: 0;" onclick="DeleteImage(@image.Id)">Usuń</button>
+                        <img src="data:image;base64,@System.Convert.ToBase64String(image.ImageSource)" style="display: block; width: auto; max-width: 300px; height: auto; max-height: 300px" />
+                    </div>
                 </div>
             }
         }
@@ -321,7 +324,7 @@
                 }
                 index = 0;
             }
-            
+
         });
 
         function DeleteItem(id) {
@@ -368,7 +371,7 @@
 
             try {
                 const response = await fetch(oFormElement.action, {
-                    
+
                     method: 'POST',
                     body: formData
                 });
@@ -384,6 +387,38 @@
                 console.error('Error:', error);
             }
         }
+
+        function DeleteImage(id) {
+            console.log(id);
+            var result = confirm("Czy usunąć obrazek?");
+            if (result) {
+                AJAXDelete(id);
+            }
+        }
+
+        async function AJAXDelete(id) {
+            var imageId = parseInt(id);
+            console.log(imageId);
+            var url = '/Image/DeleteImage/' + imageId;
+            console.log(url);
+
+            try {
+                const response = await fetch(url, {
+                    method: 'DELETE',
+                });
+                
+                if (response.ok) {
+                    window.location.reload();
+                }
+                let responseText = await response.text();
+
+                resultElement.value = 'Result: ' + response.status + ' ' +
+                    response.statusText + ' ' + responseText;
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
     </script>
 
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}

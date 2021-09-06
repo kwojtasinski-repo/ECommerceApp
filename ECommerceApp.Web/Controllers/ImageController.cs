@@ -35,5 +35,12 @@ namespace ECommerceApp.Web.Controllers
             }
             return Ok();
         }
+
+        [HttpDelete]
+        public IActionResult DeleteImage(int id)
+        {
+            _service.Delete(id);
+            return Ok();
+        }
     }
 }
