@@ -11,6 +11,12 @@ namespace ECommerceApp.Application.FileManager
 {
     public class FileWrapper : IFileWrapper
     {
+        public void DeleteFile(string path)
+        {
+            var fileInfo = new FileInfo(path);
+            fileInfo.Delete();
+        }
+
         public byte[] ReadFileAsync(string path)
         {
             var bytes = File.ReadAllBytes(path);

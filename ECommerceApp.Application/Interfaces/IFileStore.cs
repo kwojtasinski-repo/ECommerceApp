@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.Interfaces
 {
@@ -15,5 +16,6 @@ namespace ECommerceApp.Application.Interfaces
         string GetFileExtenstion(string file);
         string ReplaceInvalidChars(string fileName);
         byte[] GetFilesPackedIntoZip(ICollection<FileDirectoryPOCO> fileDirectories);
+        void DeleteFile(string path);
     }
 }

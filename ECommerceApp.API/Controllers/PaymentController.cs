@@ -22,7 +22,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager")]
-        [HttpGet("all")]
+        [HttpGet]
         public ActionResult<List<PaymentForListVm>> GetPayments()
         {
             var payments = _orderService.GetAllPayments();

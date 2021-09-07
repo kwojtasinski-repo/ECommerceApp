@@ -25,7 +25,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager")]
-        [HttpGet("all")]
+        [HttpGet]
         public ActionResult<List<CustomerForListVm>> GetCustomers()
         {
             var customers = _customerService.GetAllCustomersForList();
@@ -51,7 +51,7 @@ namespace ECommerceApp.API.Controllers
         }        
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpPut("{id}")]
+        [HttpPut]
         public IActionResult EditCustomer(CustomerForListVm model)
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;

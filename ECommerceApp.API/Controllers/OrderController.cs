@@ -25,7 +25,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpGet("all")]
+        [HttpGet]
         public ActionResult<List<OrderForListVm>> GetOrders()
         {
             var orders = _orderService.GetAllOrders();

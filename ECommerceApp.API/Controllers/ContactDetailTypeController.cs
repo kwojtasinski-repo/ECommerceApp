@@ -34,7 +34,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpGet("all")]
+        [HttpGet]
         public ActionResult<List<ContactDetailTypeVm>> GetContactDetailTypes()
         {
             var contactDetailTypes = _customerService.GetConactDetailTypes().ToList();

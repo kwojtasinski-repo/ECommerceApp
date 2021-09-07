@@ -23,7 +23,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager")]
-        [HttpGet("all")]
+        [HttpGet]
         public ActionResult<List<OrderItemForListVm>> GetAllOrderItems()
         {
             var orderItems = _orderService.GetAllItemsOrdered();
@@ -47,7 +47,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpGet]
+        [HttpGet("by-user")]
         public ActionResult<List<NewOrderItemVm>> ShowMyCart()
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;

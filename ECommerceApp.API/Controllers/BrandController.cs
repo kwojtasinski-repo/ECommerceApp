@@ -21,7 +21,7 @@ namespace ECommerceApp.API.Controllers
             _itemService = itemService;
         }
 
-        [HttpGet("all")]
+        [HttpGet]
         public ActionResult<List<BrandForListVm>> GetItemBrands()
         {
             var brands = _itemService.GetAllItemBrands();

@@ -88,8 +88,8 @@ namespace ECommerceApp.Application.Services
             var image = _repo.GetById(id);
             if (image != null)
             {
-                DeleteImageFromDisc(image.SourcePath);
                 _repo.Delete(image);
+                _fileStore.DeleteFile(image.SourcePath);
             }
         }
 
@@ -208,21 +208,6 @@ namespace ECommerceApp.Application.Services
             if (errors.Length > 0)
             {
                 throw new BusinessException(errors.ToString());
-            }
-        }
-
-        protected void DeleteImageFromDisc(string path)
-        {
-            System.IO.DirectoryInfo dirInfo = new DirectoryInfo(path);
-            var fileInfo = new FileInfo(path);
-            fileInfo.Delete();
-
-            var parentDir = dirInfo.Parent;
-            var files = parentDir.GetFiles();
-
-            if (files.Length == 0)
-            {
-                parentDir.Delete(true);
             }
         }
 

@@ -125,5 +125,10 @@ namespace ECommerceApp.Application.FileManager
             }
             return zipBytes;
         }
+
+        public void DeleteFile(string path)
+        {
+            _fileWrapper.DeleteFile(path);
+        }
     }
 }

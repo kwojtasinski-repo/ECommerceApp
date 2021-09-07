@@ -22,7 +22,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpGet("Tag/All")]
+        [HttpGet]
         public ActionResult<List<TagForListVm>> GetItemTags()
         {
             var tags = _itemService.GetAllTags();

@@ -12,5 +12,16 @@ namespace ECommerceApp.Application.FileManager
         {
             Directory.CreateDirectory(path);
         }
+
+        public DirectoryInfo GetDirectory(string path)
+        {
+            System.IO.DirectoryInfo dirInfo = new DirectoryInfo(path);
+            return dirInfo;
+        }
+
+        public void DeleteFolder(DirectoryInfo dirInfo)
+        {
+            dirInfo.Delete(true);
+        }
     }
 }

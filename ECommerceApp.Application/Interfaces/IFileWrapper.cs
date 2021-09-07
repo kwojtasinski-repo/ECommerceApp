@@ -11,5 +11,6 @@ namespace ECommerceApp.Application.Interfaces
         byte[] ReadFileAsync(string path);
         void WriteAllBytes(string outputFile, byte[] content);
         Task<string> WriteFileAsync(IFormFile file, string outputFile);
+        void DeleteFile(string path);
     }
 }

@@ -21,7 +21,7 @@ namespace ECommerceApp.API.Controllers
             _itemService = itemService;
         }
 
-        [HttpGet("all")]
+        [HttpGet]
         public ActionResult<List<TypeForListVm>> GetItemTypes()
         {
             var types = _itemService.GetAllItemTypes();
