@@ -19,10 +19,9 @@ namespace ECommerceApp.Application.ViewModels.Customer
 
         public virtual List<ContactDetailsForListVm> ContactDetails { get; set; }
         public virtual List<AddressDetailVm> Addresses { get; set; }
-        public virtual List<ECommerceApp.Domain.Model.Order> Orders { get; set; }
-        public virtual List<ECommerceApp.Domain.Model.OrderItem> OrderItems { get; set; }
-        public List<Payment> Payments { get; set; }
-        public List<Refund> Refunds { get; set; }
+        public virtual List<CustomerOrdersVm> Orders { get; set; }
+        public List<CustomerPaymentsVm> Payments { get; set; }
+        public List<CustomerRefundsVm> Refunds { get; set; }
 
         public void Mapping(Profile profile)
         {

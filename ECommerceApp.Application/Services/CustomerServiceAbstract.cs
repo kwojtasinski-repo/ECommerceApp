@@ -2,6 +2,7 @@
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.ViewModels;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -104,5 +105,6 @@ namespace ECommerceApp.Application.Services
         public abstract int AddContactDetail(NewContactDetailVm model, string userId);
         public abstract int AddContactDetailType(NewContactDetailTypeVm newContactDetailType);
         public abstract NewContactDetailTypeVm GetContactDetailType(int id);
+        public abstract BaseVm MapTo(BaseVm model);
     }
 }

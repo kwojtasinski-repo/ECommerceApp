@@ -7,7 +7,7 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Customer
 {
-    public class CustomerForListVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Customer>
+    public class CustomerForListVm : BaseVm, IMapFrom<NewCustomerVm>
     {
         public string UserId { get; set; }
         public string FirstName { get; set; }
@@ -18,7 +18,7 @@ namespace ECommerceApp.Application.ViewModels.Customer
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ECommerceApp.Domain.Model.Customer, CustomerForListVm>();
+            profile.CreateMap<NewCustomerVm, CustomerForListVm>();
         }
 
         public NewCustomerVm MapToNewCustomerVm()

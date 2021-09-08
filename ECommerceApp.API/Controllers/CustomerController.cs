@@ -26,10 +26,11 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager")]
         [HttpGet]
-        public ActionResult<List<CustomerForListVm>> GetCustomers()
+        public ActionResult<ListForCustomerVm> GetCustomers([FromQuery] int pageSize = 10, int pageNo = 1, string searchString = "")
         {
-            var customers = _customerService.GetAllCustomersForList();
-            if (customers.Count == 0)
+            var customers = _customerService.GetAllCustomersForList(pageSize, pageNo, searchString);
+
+            if (customers.Customers.Count == 0)
             {
                 return NotFound();
             }

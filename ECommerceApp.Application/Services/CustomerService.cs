@@ -2,6 +2,7 @@
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.ViewModels;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -41,12 +42,14 @@ namespace ECommerceApp.Application.Services
 
             var customersToShow = customers.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
 
+            var listCustomers = _mapper.Map<List<CustomerForListVm>>(customersToShow);
+
             var customersList = new ListForCustomerVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
-                Customers = customersToShow,
+                Customers = listCustomers,
                 Count = customers.Count
             };
 
@@ -358,6 +361,12 @@ namespace ECommerceApp.Application.Services
             var contactDetailType = _custRepo.GetContactDetailTypeById(id);
             var contactDetailTypeVm = _mapper.Map<NewContactDetailTypeVm>(contactDetailType);
             return contactDetailTypeVm;
+        }
+
+        public override BaseVm MapTo(BaseVm model)
+        {
+            var objectMapped = _mapper.Map<BaseVm>(model);
+            return objectMapped;
         }
     }
 }
