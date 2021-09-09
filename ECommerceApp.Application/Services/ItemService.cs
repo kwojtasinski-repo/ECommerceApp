@@ -54,8 +54,8 @@ namespace ECommerceApp.Application.Services
 
         public override ListForItemVm GetAllItemsForList(int pageSize, int pageNo, string searchString)
         {
-            var items = GetAll(searchString);
-            var itemsToShow = items.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+            var items = _itemRepo.GetAllItems().Skip(pageSize * (pageNo - 1)).Take(pageSize);
+            var itemsToShow = items.ProjectTo<ItemDetailsVm>(_mapper.ConfigurationProvider).ToList();
 
             var itemsList = new ListForItemVm()
             {
@@ -63,7 +63,7 @@ namespace ECommerceApp.Application.Services
                 CurrentPage = pageNo,
                 SearchString = searchString,
                 Items = itemsToShow,
-                Count = items.Count
+                Count = itemsToShow.Count
             };
 
             return itemsList;

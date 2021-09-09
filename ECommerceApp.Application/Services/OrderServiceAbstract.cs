@@ -2,6 +2,7 @@
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.ViewModels;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Order;
@@ -167,5 +168,7 @@ namespace ECommerceApp.Application.Services
         public abstract bool CheckIfRefundExists(int id);
         public abstract bool CheckIfOrderItemExists(int id);
         public abstract NewPaymentVm InitPayment(int orderId);
+        public abstract T MapTo<T, U>(U model) where T : BaseVm where U : BaseVm;
+        public abstract List<T> MapToList<T, U>(List<U> model) where T : BaseVm where U : BaseVm;
     }
 }

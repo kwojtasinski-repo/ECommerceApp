@@ -24,10 +24,10 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpGet]
-        public ActionResult<List<ItemForListVm>> GetItems()
+        public ActionResult<ListForItemVm> GetItems([FromQuery] int pageSize = 20, int pageNo = 1, string searchString = "")
         {
-            var items = _itemService.GetAllItems();
-            if (items.Count == 0)
+            var items = _itemService.GetAllItemsForList(pageSize, pageNo, searchString);
+            if (items.Items.Count == 0)
             {
                 return NotFound();
             }

@@ -15,7 +15,7 @@ namespace ECommerceApp.Application.ViewModels.Order
         public DateTime RefundDate { get; set; }
         public bool OnWarranty { get; set; }
         public int CustomerId { get; set; }
-        public CustomerForListVm Customer { get; set; } // 1:Many one customer can refund many orders
+        public CustomerDetailsVm Customer { get; set; } // 1:Many one customer can refund many orders
         public int OrderId { get; set; } // 1:1 Only one Order can be refund
         public OrderForListVm Order { get; set; }
 

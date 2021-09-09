@@ -48,17 +48,18 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpGet("by-user")]
-        public ActionResult<List<NewOrderItemVm>> ShowMyCart()
+        public ActionResult<List<OrderItemForListVm>> ShowMyCart()
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userId2 = User.FindAll(ClaimTypes.NameIdentifier).ToList(); // 2 values in list
             var orderItems = _orderService.GetOrderItemsNotOrderedByUserId(userId);
+            var listOrderItems = _orderService.MapToList<GetOrderItemVm, NewOrderItemVm>(orderItems);
             if (orderItems == null)
             {
                 return NotFound();
             }
-            return Ok(orderItems);
+            return Ok(listOrderItems);
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]

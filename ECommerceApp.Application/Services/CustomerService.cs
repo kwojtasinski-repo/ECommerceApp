@@ -38,19 +38,21 @@ namespace ECommerceApp.Application.Services
         
         public override ListForCustomerVm GetAllCustomersForList(int pageSize, int pageNo, string searchString)
         {
-            var customers = GetAll(searchString);
+            var customers = _custRepo.GetAllCustomers()
+                .Where(p => p.FirstName.StartsWith(searchString) || p.LastName.StartsWith(searchString)
+                || p.CompanyName.StartsWith(searchString) || p.NIP.StartsWith(searchString));
 
-            var customersToShow = customers.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
-
-            var listCustomers = _mapper.Map<List<CustomerForListVm>>(customersToShow);
+            var customersToShow = customers.Skip(pageSize * (pageNo - 1)).Take(pageSize)
+                .ProjectTo<CustomerForListVm>(_mapper.ConfigurationProvider)
+                .ToList();
 
             var customersList = new ListForCustomerVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
-                Customers = listCustomers,
-                Count = customers.Count
+                Customers = customersToShow,
+                Count = customersToShow.Count
             };
 
             return customersList;

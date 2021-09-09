@@ -23,10 +23,10 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet]
-        public ActionResult<List<RefundForListVm>> GetRefunds()
+        public ActionResult<ListForRefundVm> GetRefunds([FromQuery] int pageSize = 20, int pageNo = 1, string searchString = "")
         {
-            var refunds = _orderService.GetAllRefunds();
-            if (refunds.Count == 0)
+            var refunds = _orderService.GetAllRefunds(pageSize, pageNo, searchString);
+            if (refunds.Refunds.Count == 0)
             {
                 return NotFound();
             }

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -21,14 +22,15 @@ namespace ECommerceApp.Application.ViewModels.Item
         public string TypeName { get; set; }
 
         public List<ItemTagForListVm> ItemTags { get; set; }
+        [JsonIgnore]
         public List<Image.GetImageVm> Images { get; set; }
 
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ECommerceApp.Domain.Model.Item, ItemDetailsVm>()
                 .ForMember(i => i.BrandName, opt => opt.MapFrom(d => d.Brand.Name))
-                .ForMember(i => i.TypeName, opt => opt.MapFrom(d => d.Type.Name));
-                //.ForMember(i => i.ItemTags, opt => opt.Ignore());
+                .ForMember(i => i.TypeName, opt => opt.MapFrom(d => d.Type.Name))
+                .ForMember(i => i.Images, opt => opt.Ignore());
         }
     }
 }

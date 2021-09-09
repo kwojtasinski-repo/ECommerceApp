@@ -2,6 +2,7 @@
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.ViewModels;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Item;
@@ -440,7 +441,7 @@ namespace ECommerceApp.Application.Services
 
         public override OrderItemDetailsVm GetOrderItemDetail(int id)
         {
-            var orderItem = _orderRepo.GetOrderItemById(id);
+            var orderItem = _orderRepo.GetAllOrderItems().Include(i => i.Item).Where(oi => oi.Id == id).FirstOrDefault();
             var orderItemVm = _mapper.Map<OrderItemDetailsVm>(orderItem);
             return orderItemVm;
         }
@@ -715,6 +716,18 @@ namespace ECommerceApp.Application.Services
             };
 
             return payment;
+        }
+
+        public override T MapTo<T, U>(U model)
+        {
+            var objectVm = _mapper.Map<T>(model);
+            return objectVm;
+        }
+
+        public override List<T> MapToList<T, U>(List<U> model)
+        {
+            var objectVm = _mapper.Map<List<T>>(model);
+            return objectVm;
         }
     }
 }
