@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Coupon;
 using Microsoft.AspNetCore.Authorization;
@@ -12,9 +13,9 @@ namespace ECommerceApp.Web.Controllers
     [Authorize(Roles = "Administrator, Admin, Manager, Service")]
     public class CouponController : Controller
     {
-        private readonly CouponServiceAbstract _couponService;
+        private readonly ICouponService _couponService;
 
-        public CouponController(CouponServiceAbstract couponService)
+        public CouponController(ICouponService couponService)
         {
             _couponService = couponService;
         }
@@ -98,11 +99,11 @@ namespace ECommerceApp.Web.Controllers
         {
             var couponTypes = _couponService.GetAllCouponsTypes().ToList();
             ViewBag.CouponTypes = couponTypes;
-            return View(new NewCouponVm());
+            return View(new CouponVm());
         }
 
         [HttpPost]
-        public IActionResult AddCoupon(NewCouponVm model)
+        public IActionResult AddCoupon(CouponVm model)
         {
             var id = _couponService.AddCoupon(model);
             return RedirectToAction("Index");
@@ -150,7 +151,7 @@ namespace ECommerceApp.Web.Controllers
         }
 
         [HttpPost]
-        public IActionResult EditCoupon(NewCouponVm model)
+        public IActionResult EditCoupon(CouponVm model)
         {
             _couponService.UpdateCoupon(model);
             return RedirectToAction("Index");

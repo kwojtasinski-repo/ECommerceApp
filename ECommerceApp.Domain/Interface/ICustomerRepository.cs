@@ -6,7 +6,7 @@ using System.Text;
 
 namespace ECommerceApp.Domain.Interface
 {
-    public interface ICustomerRepository
+    public interface ICustomerRepository : IGenericRepository<Customer>
     {
         void DeleteCustomer(int customerId);
         int AddCustomer(Customer customer);

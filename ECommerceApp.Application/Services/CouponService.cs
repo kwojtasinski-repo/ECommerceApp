@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Coupon;
@@ -13,7 +14,7 @@ using System.Text;
 
 namespace ECommerceApp.Application.Services
 {
-    public class CouponService : CouponServiceAbstract
+    public class CouponService : AbstractService<CouponVm, ICouponRepository, Coupon>, ICouponService
     {
         private readonly ICouponRepository _couponRepo;
         private readonly IMapper _mapper;
@@ -24,13 +25,17 @@ namespace ECommerceApp.Application.Services
             _mapper = mapper;
         }
 
-        public override int AddCoupon(NewCouponVm couponVm)
+        public int AddCoupon(CouponVm couponVm)
         {
+            if (couponVm.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
             var id = Add(couponVm);
             return id;
         }
 
-        public override int AddCouponType(NewCouponTypeVm couponTypeVm)
+        public int AddCouponType(NewCouponTypeVm couponTypeVm)
         {
             if (couponTypeVm.Id != 0)
             {
@@ -42,7 +47,7 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public override int AddCouponUsed(NewCouponUsedVm couponUsedVm)
+        public int AddCouponUsed(NewCouponUsedVm couponUsedVm)
         {
             if (couponUsedVm.Id != 0)
             {
@@ -54,25 +59,35 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public override void DeleteCoupon(int id)
+        public void DeleteCoupon(int id)
         {
             Delete(id);
         }
 
-        public override void DeleteCouponType(int id)
+        public void DeleteCouponType(int id)
         {
             _couponRepo.DeleteCouponType(id);
         }
 
-        public override void DeleteCouponUsed(int id)
+        public void DeleteCouponUsed(int id)
         {
             _couponRepo.DeleteCouponUsed(id);
         }
 
-        public override ListForCouponVm GetAllCoupons(int pageSize, int pageNo, string searchString)
+        public List<NewCouponVm> GetAll(string searchString)
         {
-            var coupons = GetAll(searchString);
-            var couponsToShow = coupons.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+            var coupons = _couponRepo.GetAllCoupons().Where(coupon => coupon.Code.StartsWith(searchString))
+                .ProjectTo<NewCouponVm>(_mapper.ConfigurationProvider)
+                .ToList();
+            return coupons;
+        }
+
+        public ListForCouponVm GetAllCoupons(int pageSize, int pageNo, string searchString)
+        {
+            var coupons = _couponRepo.GetAllCoupons().Where(coupon => coupon.Code.StartsWith(searchString))
+                .Skip(pageSize * (pageNo - 1)).Take(pageSize)
+                .ProjectTo<NewCouponVm>(_mapper.ConfigurationProvider);
+            var couponsToShow = coupons.ToList();
 
             var couponsList = new ListForCouponVm()
             {
@@ -80,13 +95,13 @@ namespace ECommerceApp.Application.Services
                 CurrentPage = pageNo,
                 SearchString = searchString,
                 Coupons = couponsToShow,
-                Count = coupons.Count
+                Count = couponsToShow.Count
             };
 
             return couponsList;
         }
 
-        public override ListForCouponTypeVm GetAllCouponsTypes(int pageSize, int pageNo, string searchString)
+        public ListForCouponTypeVm GetAllCouponsTypes(int pageSize, int pageNo, string searchString)
         {
             var couponTypes = _couponRepo.GetAllCouponsTypes().Where(coupon => coupon.Type.StartsWith(searchString))
                 .ProjectTo<CouponTypeForListVm>(_mapper.ConfigurationProvider)
@@ -105,14 +120,14 @@ namespace ECommerceApp.Application.Services
             return couponTypesList;
         }
 
-        public override IQueryable<NewCouponTypeVm> GetAllCouponsTypes()
+        public IQueryable<NewCouponTypeVm> GetAllCouponsTypes()
         {
             var couponTypes = _couponRepo.GetAllCouponsTypes();
             var couponTypesVm = couponTypes.ProjectTo<NewCouponTypeVm>(_mapper.ConfigurationProvider);
             return couponTypesVm;
         }
 
-        public override ListForCouponUsedVm GetAllCouponsUsed(int pageSize, int pageNo, string searchString)
+        public ListForCouponUsedVm GetAllCouponsUsed(int pageSize, int pageNo, string searchString)
         {
             var couponsUsed = _couponRepo.GetAllCouponsUsed()//.Where(coupon => coupon..StartsWith(searchString))
                 .ProjectTo<CouponUsedForListVm>(_mapper.ConfigurationProvider)
@@ -131,14 +146,14 @@ namespace ECommerceApp.Application.Services
             return couponsUsedList;
         }
 
-        public override IQueryable<NewCouponUsedVm> GetAllCouponsUsed()
+        public IQueryable<NewCouponUsedVm> GetAllCouponsUsed()
         {
             var couponsUsed = _couponRepo.GetAllCouponsUsed();
             var couponsUsedVm = couponsUsed.ProjectTo<NewCouponUsedVm>(_mapper.ConfigurationProvider);
             return couponsUsedVm;
         }
 
-        public override IQueryable<NewOrderVm> GetAllOrders()
+        public IQueryable<NewOrderVm> GetAllOrders()
         {
             var orders = _couponRepo.GetAllOrders();
             //var ordersVm = _mapper.Map<List<NewOrderVm>(orders);
@@ -146,59 +161,59 @@ namespace ECommerceApp.Application.Services
             return ordersVm;
         }
 
-        public override CouponDetailsVm GetCouponDetail(int id)
+        public CouponDetailsVm GetCouponDetail(int id)
         {
             var couponDetails = _couponRepo.GetCouponById(id);
             var couponDetailsVm = _mapper.Map<CouponDetailsVm>(couponDetails);
             return couponDetailsVm;
         }
 
-        public override NewCouponVm GetCouponForEdit(int id)
+        public CouponVm GetCouponForEdit(int id)
         {
             var couponVm = Get(id);
             return couponVm;
         }
 
-        public override CouponTypeDetailsVm GetCouponTypeDetail(int id)
+        public CouponTypeDetailsVm GetCouponTypeDetail(int id)
         {
             var couponType = _couponRepo.GetCouponTypeById(id);
             var couponTypeVm = _mapper.Map<CouponTypeDetailsVm>(couponType);
             return couponTypeVm;
         }
 
-        public override NewCouponTypeVm GetCouponTypeForEdit(int id)
+        public NewCouponTypeVm GetCouponTypeForEdit(int id)
         {
             var couponType = _couponRepo.GetCouponTypeById(id);
             var couponTypeVm = _mapper.Map<NewCouponTypeVm>(couponType);
             return couponTypeVm;
         }
 
-        public override CouponUsedDetailsVm GetCouponUsedDetail(int id)
+        public CouponUsedDetailsVm GetCouponUsedDetail(int id)
         {
             var couponUsed = _couponRepo.GetCouponUsedById(id);
             var couponUsedVm = _mapper.Map<CouponUsedDetailsVm>(couponUsed);
             return couponUsedVm;
         }
 
-        public override NewCouponTypeVm GetCouponUsedForEdit(int id)
+        public NewCouponTypeVm GetCouponUsedForEdit(int id)
         {
             var couponUsed = _couponRepo.GetCouponUsedById(id);
             var couponUsedVm = _mapper.Map<NewCouponTypeVm>(couponUsed);
             return couponUsedVm;
         }
 
-        public override void UpdateCoupon(NewCouponVm couponVm)
+        public void UpdateCoupon(CouponVm couponVm)
         {
             Update(couponVm);
         }
 
-        public override void UpdateCouponType(NewCouponTypeVm couponTypeVm)
+        public void UpdateCouponType(NewCouponTypeVm couponTypeVm)
         {
             var couponType = _mapper.Map<CouponType>(couponTypeVm);
             _couponRepo.UpdateCouponType(couponType);
         }
 
-        public override void UpdateCouponUsed(NewCouponUsedVm couponUsedVm)
+        public void UpdateCouponUsed(NewCouponUsedVm couponUsedVm)
         {
             var couponUsed = _mapper.Map<CouponUsed>(couponUsedVm);
             _couponRepo.UpdateCouponUsed(couponUsed);

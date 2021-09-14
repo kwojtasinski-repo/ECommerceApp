@@ -13,13 +13,13 @@ namespace ECommerceApp.Tests.Common
     {
         private readonly Context _context;
         private readonly Mock<Context> _contextMock;
-        protected readonly IAbstractRepository<T> _abstractRepository;
+        protected readonly IGenericRepository<T> _abstractRepository;
 
         public BaseTest()
         {
             _contextMock = DbContextFactory.Create();
             _context = _contextMock.Object;
-            _abstractRepository = new AbstractRepository<T>(_context);
+            _abstractRepository = new GenericRepository<T>(_context);
         }
 
         public void Dispose()

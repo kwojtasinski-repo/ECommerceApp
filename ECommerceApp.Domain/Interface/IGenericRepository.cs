@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace ECommerceApp.Domain.Interface
 {
-    public interface IAbstractRepository<T>
+    public interface IGenericRepository<T>
     {
         Task DeleteAsync(int id);
         void Delete(int id);

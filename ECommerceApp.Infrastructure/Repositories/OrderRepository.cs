@@ -8,10 +8,11 @@ using System.Text;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-    public class OrderRepository : IOrderRepository
+    public class OrderRepository : GenericRepository<Order>,  IOrderRepository
     {
         private readonly Context _context;
-        public OrderRepository(Context context)
+
+        public OrderRepository(Context context) : base(context)
         {
             _context = context;
         }

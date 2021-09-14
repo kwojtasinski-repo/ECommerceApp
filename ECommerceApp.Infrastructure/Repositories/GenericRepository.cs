@@ -8,11 +8,11 @@ using System.Threading.Tasks;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-    public class AbstractRepository<T> : IAbstractRepository<T> where T : BaseEntity
+    public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
     {
         private readonly Context _context;
 
-        public AbstractRepository(Context context)
+        public GenericRepository(Context context)
         {
             _context = context;
         }

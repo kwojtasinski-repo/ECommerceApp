@@ -1,5 +1,7 @@
 ﻿using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Order;
+using ECommerceApp.Domain.Interface;
+using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,13 +9,13 @@ using System.Text;
 
 namespace ECommerceApp.Application.Interfaces
 {
-    public interface ICouponService
+    public interface ICouponService : IAbstractService<CouponVm, ICouponRepository, Coupon>
     {
-        int AddCoupon(NewCouponVm coupon);
-        void UpdateCoupon(NewCouponVm coupon);
+        int AddCoupon(CouponVm coupon);
+        void UpdateCoupon(CouponVm coupon);
         void DeleteCoupon(int id);
         ListForCouponVm GetAllCoupons(int pageSize, int pageNo, string searchString);
-        NewCouponVm GetCouponForEdit(int id);
+        CouponVm GetCouponForEdit(int id);
         CouponDetailsVm GetCouponDetail(int id);
         int AddCouponType(NewCouponTypeVm couponType);
         void UpdateCouponType(NewCouponTypeVm couponType);

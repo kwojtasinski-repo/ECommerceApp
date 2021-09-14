@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.POCO;
+﻿using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.POCO;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Image;
 using Microsoft.AspNetCore.Http;
@@ -14,9 +15,9 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class ImageController : ControllerBase
     {
-        private readonly ImageServiceAbstract _service;
+        private readonly IImageService _service;
 
-        public ImageController(ImageServiceAbstract service)
+        public ImageController(IImageService service)
         {
             _service = service;
         }

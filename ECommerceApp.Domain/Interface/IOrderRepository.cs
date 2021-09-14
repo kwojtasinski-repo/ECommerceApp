@@ -6,7 +6,7 @@ using System.Text;
 
 namespace ECommerceApp.Domain.Interface
 {
-    public interface IOrderRepository
+    public interface IOrderRepository : IGenericRepository<Order>
     {
         void DeleteOrder(int orderId);
         int AddOrder(Order order);

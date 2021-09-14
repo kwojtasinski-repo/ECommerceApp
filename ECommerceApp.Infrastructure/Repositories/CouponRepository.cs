@@ -8,10 +8,11 @@ using System.Text;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-    public class CouponRepository : ICouponRepository
+    public class CouponRepository : GenericRepository<Coupon>, ICouponRepository
     {
         private readonly Context _context;
-        public CouponRepository(Context context)
+
+        public CouponRepository(Context context) : base(context)
         {
             _context = context;
         }

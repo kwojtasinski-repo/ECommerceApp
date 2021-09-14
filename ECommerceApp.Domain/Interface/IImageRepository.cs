@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace ECommerceApp.Domain.Interface
 {
-    public interface IImageRepository
+    public interface IImageRepository : IGenericRepository<Image>
     {
         Task DeleteImage(int imageId);
         Task<int> AddImage(Image image);

@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.POCO;
 using ECommerceApp.Application.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -14,9 +15,9 @@ namespace ECommerceApp.Web.Controllers
     [Authorize(Roles = "Administrator, Admin, Manager, Service")]
     public class ImageController : Controller
     {
-        private readonly ImageServiceAbstract _service;
+        private readonly IImageService _service;
 
-        public ImageController(ImageServiceAbstract service)
+        public ImageController(IImageService service)
         {
             _service = service;
         }

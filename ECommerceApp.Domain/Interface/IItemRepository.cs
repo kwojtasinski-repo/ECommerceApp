@@ -6,7 +6,7 @@ using System.Text;
 
 namespace ECommerceApp.Domain.Interface
 {
-    public interface IItemRepository
+    public interface IItemRepository : IGenericRepository<Item>
     {
         void DeleteItem(int itemId);
 

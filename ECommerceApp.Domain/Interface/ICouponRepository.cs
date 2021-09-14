@@ -6,7 +6,7 @@ using System.Text;
 
 namespace ECommerceApp.Domain.Interface
 {
-    public interface ICouponRepository
+    public interface ICouponRepository : IGenericRepository<Coupon>
     {
         void DeleteCoupon(int couponId);
         int AddCoupon(Coupon coupon);
