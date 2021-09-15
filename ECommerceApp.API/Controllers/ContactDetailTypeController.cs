@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Services;
+﻿using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Customer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -14,9 +15,9 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class ContactDetailTypeController : ControllerBase
     {
-        private readonly CustomerServiceAbstract _customerService;
+        private readonly ICustomerService _customerService;
 
-        public ContactDetailTypeController(CustomerServiceAbstract customerService)
+        public ContactDetailTypeController(ICustomerService customerService)
         {
             _customerService = customerService;
         }

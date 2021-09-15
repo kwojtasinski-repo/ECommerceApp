@@ -16,9 +16,9 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class ItemController : ControllerBase
     {
-        private readonly ItemServiceAbstract _itemService;
+        private readonly IItemService _itemService;
 
-        public ItemController(ItemServiceAbstract itemService)
+        public ItemController(IItemService itemService)
         {
             _itemService = itemService;
         }
@@ -54,8 +54,7 @@ namespace ECommerceApp.API.Controllers
             {
                 return Conflict(ModelState);
             }
-            var item = model.MapToNewItemVm();
-            _itemService.UpdateItem(item);
+            _itemService.Update(model);
             return Ok();
         }
 
@@ -67,8 +66,7 @@ namespace ECommerceApp.API.Controllers
             {
                 return Conflict(ModelState);
             }
-            var item = model.MapToNewItemVm();
-            _itemService.AddItem(item);
+            _itemService.Add(model);
             return Ok();
         }
 

@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Services;
+﻿using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Customer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -15,9 +16,9 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class AddressController : ControllerBase
     {
-        private readonly CustomerServiceAbstract _customerService;
+        private readonly ICustomerService _customerService;
 
-        public AddressController(CustomerServiceAbstract customerService)
+        public AddressController(ICustomerService customerService)
         {
             _customerService = customerService;
         }

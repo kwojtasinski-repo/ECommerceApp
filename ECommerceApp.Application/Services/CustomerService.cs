@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels;
@@ -14,7 +15,7 @@ using System.Text;
 
 namespace ECommerceApp.Application.Services
 {
-    public class CustomerService : CustomerServiceAbstract
+    public class CustomerService : AbstractService<CustomerVm, ICustomerRepository, Customer>, ICustomerService
     {
         private readonly ICustomerRepository _custRepo;
         private readonly IMapper _mapper;
@@ -25,18 +26,24 @@ namespace ECommerceApp.Application.Services
             _mapper = mapper;
         }
 
-        public override int AddCustomer(NewCustomerVm newCustomer)
+        public int AddCustomer(NewCustomerVm newCustomer)
         {
-            var id = Add(newCustomer);
+            if (newCustomer.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
+            var customer = _mapper.Map<Domain.Model.Customer>(newCustomer);
+            var id = _custRepo.Add(customer);
             return id;
         }
 
-        public override void DeleteCustomer(int id)
+        public void DeleteCustomer(int id)
         {
             Delete(id);
         }
         
-        public override ListForCustomerVm GetAllCustomersForList(int pageSize, int pageNo, string searchString)
+        public ListForCustomerVm GetAllCustomersForList(int pageSize, int pageNo, string searchString)
         {
             var customers = _custRepo.GetAllCustomers()
                 .Where(p => p.FirstName.StartsWith(searchString) || p.LastName.StartsWith(searchString)
@@ -58,12 +65,16 @@ namespace ECommerceApp.Application.Services
             return customersList;
         }
 
-        public override List<NewCustomerVm> GetAllCustomersForList()
+        public List<NewCustomerVm> GetAllCustomersForList()
         {
-            return GetAll();
+            var customers = _custRepo.GetAllCustomers()
+                .ProjectTo<NewCustomerVm>(_mapper.ConfigurationProvider)
+                .ToList();
+
+            return customers;
         }
 
-        public override CustomerDetailsVm GetCustomerDetails(int customerId)
+        public CustomerDetailsVm GetCustomerDetails(int customerId)
         {
             var customer = _custRepo.GetCustomerById(customerId);
             var customerVm = _mapper.Map<CustomerDetailsVm>(customer); 
@@ -71,24 +82,28 @@ namespace ECommerceApp.Application.Services
             return customerVm;
         }
 
-        public override CustomerDetailsVm GetCustomerDetails(int id, string userId)
+        public CustomerDetailsVm GetCustomerDetails(int id, string userId)
         {
             var customer = _custRepo.GetCustomerById(id, userId);
             var customerVm = _mapper.Map<CustomerDetailsVm>(customer);
 
             return customerVm;
         }
-        public override NewCustomerVm GetCustomerForEdit(int id)
+        public NewCustomerVm GetCustomerForEdit(int id)
         {
-            return Get(id);
+            var customer = _custRepo.GetCustomerById(id);
+            var customerVm = _mapper.Map<NewCustomerVm>(customer);
+
+            return customerVm;
         }
 
-        public override void UpdateCustomer(NewCustomerVm model)
+        public void UpdateCustomer(NewCustomerVm model)
         {
-            Update(model);
+            var customer = _mapper.Map<Customer>(model);
+            _custRepo.UpdateCustomer(customer);
         }
 
-        public override int CreateNewDetailContact(NewContactDetailVm newContact)
+        public int CreateNewDetailContact(NewContactDetailVm newContact)
         {
             if (newContact.Id != 0)
             {
@@ -100,7 +115,7 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public override int CreateNewAddress(NewAddressVm newAddress)
+        public int CreateNewAddress(NewAddressVm newAddress)
         {
             if (newAddress.Id != 0)
             {
@@ -112,70 +127,70 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public override NewAddressVm GetAddressForEdit(int id)
+        public NewAddressVm GetAddressForEdit(int id)
         {
             var address = _custRepo.GetAddressById(id);
             var addresVm = _mapper.Map<NewAddressVm>(address);
             return addresVm;
         }
 
-        public override NewContactDetailVm GetContactDetail(int id)
+        public NewContactDetailVm GetContactDetail(int id)
         {
             var contactDetail = _custRepo.GetContactDetailById(id);
             var contactDetailVm = _mapper.Map<NewContactDetailVm>(contactDetail);
             return contactDetailVm;
         }
 
-        public override NewContactDetailVm GetContactDetail(int id, string userId)
+        public NewContactDetailVm GetContactDetail(int id, string userId)
         {
             var contactDetail = _custRepo.GetContactDetailById(id, userId);
             var contactDetailVm = _mapper.Map<NewContactDetailVm>(contactDetail);
             return contactDetailVm;
         }
 
-        public override void UpdateAddress(NewAddressVm model)
+        public void UpdateAddress(NewAddressVm model)
         {
             var address = _mapper.Map<Address>(model);
             _custRepo.UpdateAddress(address);
         }
 
-        public override void UpdateContactDetail(NewContactDetailVm model)
+        public void UpdateContactDetail(NewContactDetailVm model)
         {
             var contactDetail = _mapper.Map<ContactDetail>(model);
             _custRepo.UpdateContactDetail(contactDetail);
         }
 
-        public override void UpdateContactDetailType(NewContactDetailTypeVm model)
+        public void UpdateContactDetailType(NewContactDetailTypeVm model)
         {
             var contactDetailType = _mapper.Map<ContactDetailType>(model);
             _custRepo.UpdateContactDetailType(contactDetailType);
         }
 
-        public override void DeleteAddress(int id)
+        public void DeleteAddress(int id)
         {
             _custRepo.DeleteAddress(id);
         }
 
-        public override void DeleteContactDetail(int id)
+        public void DeleteContactDetail(int id)
         {
             _custRepo.DeleteContactDetail(id);
         }
 
-        public override AddressDetailVm GetAddressDetail(int id)
+        public AddressDetailVm GetAddressDetail(int id)
         {
             var adress = _custRepo.GetAddressById(id);
             var adressVm = _mapper.Map<AddressDetailVm>(adress);
             return adressVm;
         }
 
-        public override AddressDetailVm GetAddressDetail(int id, string userId)
+        public AddressDetailVm GetAddressDetail(int id, string userId)
         {
             var adress = _custRepo.GetAddressById(id, userId);
             var adressVm = _mapper.Map<AddressDetailVm>(adress);
             return adressVm;
         }
 
-        public override bool CheckIfAddressExists(int id, string userId)
+        public bool CheckIfAddressExists(int id, string userId)
         {
             var address = _custRepo.GetAddressById(id, userId);
             
@@ -187,7 +202,7 @@ namespace ECommerceApp.Application.Services
             return true;
         }
 
-        public override IQueryable<ContactDetailTypeVm> GetConactDetailTypes()
+        public IQueryable<ContactDetailTypeVm> GetConactDetailTypes()
         {
             var contactDetailTypes = _custRepo.GetAllDetailTypes();
             var contactDetailTypesVm = contactDetailTypes.ProjectTo<ContactDetailTypeVm>(_mapper.ConfigurationProvider);
@@ -226,7 +241,7 @@ namespace ECommerceApp.Application.Services
             return new string(chars);
         }
 
-        public override bool CheckIfCustomerExists(int id, string userId)
+        public bool CheckIfCustomerExists(int id, string userId)
         {
             var customer = _custRepo.GetCustomerById(id, userId);
             
@@ -238,7 +253,7 @@ namespace ECommerceApp.Application.Services
             return true;
         }
 
-        public override bool CheckIfContactDetailExists(int id, string userId)
+        public bool CheckIfContactDetailExists(int id, string userId)
         {
             var contactDetail = _custRepo.GetContactDetailById(id, userId);
 
@@ -250,7 +265,7 @@ namespace ECommerceApp.Application.Services
             return true;
         }
 
-        public override bool CheckIfContactDetailType(int id)
+        public bool CheckIfContactDetailType(int id)
         {
             var contactDetailType = _custRepo.GetContactDetailTypeById(id);
 
@@ -262,7 +277,7 @@ namespace ECommerceApp.Application.Services
             return true;
         }
 
-        public override int AddAddress(NewAddressVm newAddress)
+        public int AddAddress(NewAddressVm newAddress)
         {
             if (newAddress.Id != 0)
             {
@@ -274,7 +289,7 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public override int AddAddress(NewAddressVm model, string userId)
+        public int AddAddress(NewAddressVm model, string userId)
         {
             if (model.Id != 0)
             {
@@ -304,7 +319,7 @@ namespace ECommerceApp.Application.Services
             }
         }
 
-        public override int AddContactDetail(NewContactDetailVm newContactDetail)
+        public int AddContactDetail(NewContactDetailVm newContactDetail)
         {
             if (newContactDetail.Id != 0)
             {
@@ -316,7 +331,7 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public override int AddContactDetail(NewContactDetailVm model, string userId)
+        public int AddContactDetail(NewContactDetailVm model, string userId)
         {
             if (model.Id != 0)
             {
@@ -346,7 +361,7 @@ namespace ECommerceApp.Application.Services
             }
         }
 
-        public override int AddContactDetailType(NewContactDetailTypeVm newContactDetailType)
+        public int AddContactDetailType(NewContactDetailTypeVm newContactDetailType)
         {
             if (newContactDetailType.Id != 0)
             {
@@ -358,17 +373,47 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public override NewContactDetailTypeVm GetContactDetailType(int id)
+        public NewContactDetailTypeVm GetContactDetailType(int id)
         {
             var contactDetailType = _custRepo.GetContactDetailTypeById(id);
             var contactDetailTypeVm = _mapper.Map<NewContactDetailTypeVm>(contactDetailType);
             return contactDetailTypeVm;
         }
 
-        public override BaseVm MapTo(BaseVm model)
+        public void UpdateContactDetail(ContactDetailVm model)
         {
-            var objectMapped = _mapper.Map<BaseVm>(model);
-            return objectMapped;
+            var contactDetail = _mapper.Map<ContactDetail>(model);
+            _custRepo.UpdateContactDetail(contactDetail);
+        }
+
+        public int AddContactDetail(ContactDetailVm model, string userId)
+        {
+            if (model.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
+            var customersId = _custRepo.GetAllCustomers().Where(c => c.UserId == userId).Select(c => c.Id).ToList();
+            bool customerIdExists = false;
+            foreach (var custId in customersId)
+            {
+                if (custId == model.CustomerId)
+                {
+                    customerIdExists = true;
+                    break;
+                }
+            }
+
+            if (customerIdExists)
+            {
+                var contactDetail = _mapper.Map<ContactDetail>(model);
+                var id = _custRepo.AddNewContact(contactDetail);
+                return id;
+            }
+            else
+            {
+                throw new BusinessException("Customer not exists check your id");
+            }
         }
     }
 }

@@ -17,9 +17,9 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class CustomerController : ControllerBase
     {
-        private readonly CustomerServiceAbstract _customerService;
+        private readonly ICustomerService _customerService;
 
-        public CustomerController(CustomerServiceAbstract customerService)
+        public CustomerController(ICustomerService customerService)
         {
             _customerService = customerService;
         }
@@ -53,7 +53,7 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPut]
-        public IActionResult EditCustomer(CustomerForListVm model)
+        public IActionResult EditCustomer(CustomerVm model)
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -62,21 +62,19 @@ namespace ECommerceApp.API.Controllers
             {
                 return Conflict(ModelState);
             }
-            var customer = model.MapToNewCustomerVm();
-            _customerService.UpdateCustomer(customer);
+            _customerService.Update(model);
             return Ok();
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost]
-        public IActionResult AddCustomer([FromBody] CustomerForListVm model)
+        public IActionResult AddCustomer([FromBody] CustomerVm model)
         {
             if (!ModelState.IsValid || model.Id != 0)
             {
                 return Conflict(ModelState);
             }
-            var customer = model.MapToNewCustomerVm();
-            _customerService.AddCustomer(customer);
+            _customerService.Add(model);
             return Ok();
         }
     }

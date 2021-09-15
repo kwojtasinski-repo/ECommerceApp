@@ -23,9 +23,9 @@ namespace ECommerceApp.Application
             services.AddTransient<IBaseService<NewCustomerVm>, CustomerServiceAbstract>();
             services.AddTransient<IBaseService<NewOrderVm>, OrderServiceAbstract>();
             services.AddTransient<IBaseService<NewCouponVm>, CouponServiceAbstract>();*/
-            services.AddTransient<ItemServiceAbstract, ItemService>();
-            services.AddTransient<CustomerServiceAbstract, CustomerService>();
-            services.AddTransient<OrderServiceAbstract, OrderService>();
+            services.AddTransient<IItemService, ItemService>();
+            services.AddTransient<ICustomerService, CustomerService>();
+            services.AddTransient<IOrderService, OrderService>();
             services.AddTransient<ICouponService, CouponService>();
             services.AddTransient<IUserService, UserService>();
             services.AddAutoMapper(Assembly.GetExecutingAssembly());

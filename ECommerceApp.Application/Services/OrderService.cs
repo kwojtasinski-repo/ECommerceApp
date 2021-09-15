@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels;
@@ -17,7 +18,7 @@ using System.Text;
 
 namespace ECommerceApp.Application.Services
 {
-    public class OrderService : OrderServiceAbstract
+    public class OrderService : AbstractService<OrderVm, IOrderRepository, Order>, IOrderService
     {
         private readonly IOrderRepository _orderRepo;
         private readonly IMapper _mapper;
@@ -28,8 +29,13 @@ namespace ECommerceApp.Application.Services
             _mapper = mapper;
         }
 
-        public override int AddOrder(NewOrderVm model)
+        public int AddOrder(NewOrderVm model)
         {
+            if (model.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             Random random = new Random();
             if (model.Number == 0)
             {
@@ -41,10 +47,14 @@ namespace ECommerceApp.Application.Services
                 model.Ordered = DateTime.Now;
             }
             CheckOrderItemsOrderByUser(model);
-            return Add(model);
+
+            var order = _mapper.Map<Order>(model);
+            var id = _orderRepo.AddOrder(order);
+
+            return id;
         }
 
-        public override int AddPayment(NewPaymentVm paymentVm)
+        public int AddPayment(NewPaymentVm paymentVm)
         {
             if (paymentVm.Id != 0)
             {
@@ -57,7 +67,7 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public override int AddRefund(NewRefundVm refundVm)
+        public int AddRefund(NewRefundVm refundVm)
         {
             if (refundVm.Id != 0)
             {
@@ -84,28 +94,28 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public override void DeleteOrder(int id)
+        public void DeleteOrder(int id)
         {
             Delete(id);
         }
 
-        public override void DeletePayment(int id)
+        public void DeletePayment(int id)
         {
             _orderRepo.DeletePayment(id);
         }
 
-        public override void DeleteRefund(int id)
+        public void DeleteRefund(int id)
         {
             _orderRepo.DeleteRefund(id);
         }
 
-        public override IQueryable<Item> GetAllItemsToOrder()
+        public IQueryable<Item> GetAllItemsToOrder()
         {
             var items = _orderRepo.GetAllItems();
             return items;
         }
 
-        public override IQueryable<NewOrderItemVm> GetAllItemsOrderedForAdd()
+        public IQueryable<NewOrderItemVm> GetAllItemsOrderedForAdd()
         {
             var itemOrders = _orderRepo.GetAllOrderItems()
                             .ProjectTo<NewOrderItemVm>(_mapper.ConfigurationProvider);
@@ -113,7 +123,7 @@ namespace ECommerceApp.Application.Services
             return itemOrders;
         }
 
-        public override ListForItemOrderVm GetAllItemsOrdered(int pageSize, int pageNo, string searchString)
+        public ListForItemOrderVm GetAllItemsOrdered(int pageSize, int pageNo, string searchString)
         {
             var itemOrder = _orderRepo.GetAllOrderItems().Where(oi => oi.Item.Name.StartsWith(searchString) ||
                             oi.Item.Brand.Name.StartsWith(searchString) || oi.Item.Type.Name.StartsWith(searchString))
@@ -133,7 +143,7 @@ namespace ECommerceApp.Application.Services
             return itemOrderList;
         }
 
-        public override List<OrderItemForListVm> GetAllItemsOrdered()
+        public List<OrderItemForListVm> GetAllItemsOrdered()
         {
             var itemOrder = _orderRepo.GetAllOrderItems()
                             .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
@@ -142,7 +152,7 @@ namespace ECommerceApp.Application.Services
             return itemOrder;
         }
 
-        public override ListForItemOrderVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo)
+        public ListForItemOrderVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo)
         {
             var itemOrder = _orderRepo.GetAllOrderItems().Where(oi => oi.ItemId == id)
                             .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
@@ -161,7 +171,7 @@ namespace ECommerceApp.Application.Services
             return itemOrderList;
         }
 
-        public override List<OrderItemForListVm> GetAllItemsOrderedByItemId(int id)
+        public List<OrderItemForListVm> GetAllItemsOrderedByItemId(int id)
         {
             var itemOrder = _orderRepo.GetAllOrderItems().Where(oi => oi.ItemId == id)
                             .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
@@ -170,7 +180,7 @@ namespace ECommerceApp.Application.Services
             return itemOrder;
         }
 
-        public override ListForOrderVm GetAllOrders(int pageSize, int pageNo, string searchString)
+        public ListForOrderVm GetAllOrders(int pageSize, int pageNo, string searchString)
         {
             var orders = _orderRepo.GetAllOrders().Where(o => o.Number.ToString().StartsWith(searchString))
                             .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
@@ -189,14 +199,14 @@ namespace ECommerceApp.Application.Services
             return ordersList;
         }
 
-        public override List<OrderForListVm> GetAllOrders()
+        public List<OrderForListVm> GetAllOrders()
         {
             return _orderRepo.GetAllOrders()
                             .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
                             .ToList();
         }
 
-        public override ListForPaymentVm GetAllPayments(int pageSize, int pageNo, string searchString)
+        public ListForPaymentVm GetAllPayments(int pageSize, int pageNo, string searchString)
         {
             var payments = _orderRepo.GetAllPayments().Where(p => p.Number.ToString().StartsWith(searchString))
                             .ProjectTo<PaymentForListVm>(_mapper.ConfigurationProvider)
@@ -215,7 +225,7 @@ namespace ECommerceApp.Application.Services
             return paymentsList;
         }
 
-        public override List<PaymentForListVm> GetAllPayments()
+        public List<PaymentForListVm> GetAllPayments()
         {
             var payments = _orderRepo.GetAllPayments()
                             .ProjectTo<PaymentForListVm>(_mapper.ConfigurationProvider)
@@ -224,7 +234,7 @@ namespace ECommerceApp.Application.Services
             return payments;
         }
 
-        public override ListForRefundVm GetAllRefunds(int pageSize, int pageNo, string searchString)
+        public ListForRefundVm GetAllRefunds(int pageSize, int pageNo, string searchString)
         {
             var refunds = _orderRepo.GetAllRefunds().Where(r => r.Reason.StartsWith(searchString) 
                             || r.RefundDate.ToString().StartsWith(searchString))
@@ -244,7 +254,7 @@ namespace ECommerceApp.Application.Services
             return refundsList;
         }
 
-        public override List<RefundForListVm> GetAllRefunds()
+        public List<RefundForListVm> GetAllRefunds()
         {
             var refunds = _orderRepo.GetAllRefunds()
                             .ProjectTo<RefundForListVm>(_mapper.ConfigurationProvider)
@@ -253,54 +263,57 @@ namespace ECommerceApp.Application.Services
             return refunds;
         }
 
-        public override OrderDetailsVm GetOrderDetail(int id)
+        public OrderDetailsVm GetOrderDetail(int id)
         {
             var orderDetails = _orderRepo.GetOrderById(id);
             var orderDetailsVm = _mapper.Map<OrderDetailsVm>(orderDetails);
             return orderDetailsVm;
         }
 
-        public override NewOrderVm GetOrderForEdit(int id)
+        public NewOrderVm GetOrderForEdit(int id)
         {
-            return Get(id);
+            var order = _orderRepo.GetOrderById(id);
+            var orderVm = _mapper.Map<NewOrderVm>(order);
+            return orderVm;
         }
 
-        public override PaymentDetailsVm GetPaymentDetail(int id)
+        public PaymentDetailsVm GetPaymentDetail(int id)
         {
             var paymentDetails = _orderRepo.GetPaymentById(id);
             var paymentDetailsVm = _mapper.Map<PaymentDetailsVm>(paymentDetails);
             return paymentDetailsVm;
         }
 
-        public override NewPaymentVm GetPaymentForEdit(int id)
+        public NewPaymentVm GetPaymentForEdit(int id)
         {
             var payment = _orderRepo.GetPaymentById(id);
             var paymentVm = _mapper.Map<NewPaymentVm>(payment);
             return paymentVm;
         }
 
-        public override RefundDetailsVm GetRefundDetail(int id)
+        public RefundDetailsVm GetRefundDetail(int id)
         {
             var refundDetails = _orderRepo.GetRefundById(id);
             var refundDetailsVm = _mapper.Map<RefundDetailsVm>(refundDetails);
             return refundDetailsVm;
         }
 
-        public override NewRefundVm GetRefundForEdit(int id)
+        public NewRefundVm GetRefundForEdit(int id)
         {
             var refund = _orderRepo.GetRefundById(id);
             var refundVm = _mapper.Map<NewRefundVm>(refund);
             return refundVm;
         }
 
-        public override void UpdateOrder(NewOrderVm orderVm)
+        public void UpdateOrder(NewOrderVm orderVm)
         {
             var order = _orderRepo.GetAllOrders().Where(o => o.Id == orderVm.Id).AsNoTracking().FirstOrDefault();
             orderVm.Number = order.Number;
             orderVm.Ordered = order.Ordered;
             orderVm.Cost = 0;
             CheckOrderItemsOrderByUser(orderVm);
-            Update(orderVm);
+            var orderToUpdate = _mapper.Map<Order>(orderVm);
+            _orderRepo.UpdatedOrder(orderToUpdate);
         }
 
         private void CheckOrderItemsOrderByUser(NewOrderVm orderVm)
@@ -340,33 +353,33 @@ namespace ECommerceApp.Application.Services
             }
         }
 
-        public override void UpdatePayment(NewPaymentVm paymentVm)
+        public void UpdatePayment(NewPaymentVm paymentVm)
         {
             var payment = _mapper.Map<Payment>(paymentVm);
             _orderRepo.UpdatePayment(payment);
         }
 
-        public override void UpdateRefund(NewRefundVm refundVm)
+        public void UpdateRefund(NewRefundVm refundVm)
         {
             var refund = _mapper.Map<Refund>(refundVm);
             _orderRepo.UpdateRefund(refund);
         }
 
-        public override IQueryable<NewCustomerForOrdersVm> GetAllCustomers()
+        public IQueryable<NewCustomerForOrdersVm> GetAllCustomers()
         {
             var customers = _orderRepo.GetAllCustomers();
             var customersVm = customers.ProjectTo<NewCustomerForOrdersVm>(_mapper.ConfigurationProvider);
             return customersVm;
         }
 
-        public override IQueryable<NewCouponVm> GetAllCoupons()
+        public IQueryable<NewCouponVm> GetAllCoupons()
         {
             var coupons = _orderRepo.GetAllCoupons();
             var couponsVm = coupons.ProjectTo<NewCouponVm>(_mapper.ConfigurationProvider);
             return couponsVm;
         }
 
-        public override int CheckPromoCode(string code)
+        public int CheckPromoCode(string code)
         {
             var coupons = GetAllCoupons().ToList();
          //   var coupon = coupons.FirstOrDefault(c => c.Code. == code && c.CouponUsedId == null);
@@ -380,7 +393,7 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public override int UpdateCoupon(int couponId, NewOrderVm order)
+        public int UpdateCoupon(int couponId, NewOrderVm order)
         {
             var couponUsed = new NewCouponUsedVm()
             {
@@ -395,7 +408,7 @@ namespace ECommerceApp.Application.Services
             return couponUsedId;
         }
 
-        public override int AddCouponUsed(NewCouponUsedVm couponUsedVm)
+        public int AddCouponUsed(NewCouponUsedVm couponUsedVm)
         {
             if (couponUsedVm.Id != 0)
             {
@@ -407,46 +420,46 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public override NewOrderVm GetOrderById(int orderId)
+        public NewOrderVm GetOrderById(int orderId)
         {
             var order = _orderRepo.GetOrderById(orderId);
             var orderVm = _mapper.Map<NewOrderVm>(order);
             return orderVm;
         }
 
-        public override void CalculateCost(NewOrderVm order, NewOrderItemVm model)
+        public void CalculateCost(NewOrderVm order, NewOrderItemVm model)
         {
             throw new NotImplementedException();
         }
 
-        public override NewCustomerForOrdersVm GetCustomerById(int id)
+        public NewCustomerForOrdersVm GetCustomerById(int id)
         {
             var customer = _orderRepo.GetCustomerById(id);
             var customerVm = _mapper.Map<NewCustomerForOrdersVm>(customer);
             return customerVm;
         }
 
-        public override void AddOrderItems(List<NewOrderItemVm> orderItemsVm)
+        public void AddOrderItems(List<NewOrderItemVm> orderItemsVm)
         {
             var orderItems = _mapper.Map<List<NewOrderItemVm>, List<OrderItem>>(orderItemsVm);
             _orderRepo.AddOrderItems(orderItems);
         }
 
-        public override NewPaymentVm GetPaymentById(int id)
+        public NewPaymentVm GetPaymentById(int id)
         {
             var payment = _orderRepo.GetPaymentById(id);
             var paymentVm = _mapper.Map<NewPaymentVm>(payment);
             return paymentVm;
         }
 
-        public override OrderItemDetailsVm GetOrderItemDetail(int id)
+        public OrderItemDetailsVm GetOrderItemDetail(int id)
         {
             var orderItem = _orderRepo.GetAllOrderItems().Include(i => i.Item).Where(oi => oi.Id == id).FirstOrDefault();
             var orderItemVm = _mapper.Map<OrderItemDetailsVm>(orderItem);
             return orderItemVm;
         }
 
-        public override bool CheckEnteredRefund(string reasonRefund)
+        public bool CheckEnteredRefund(string reasonRefund)
         {
             var refunds = _orderRepo.GetAllRefunds().ToList();
             var refund = refunds.FirstOrDefault(r => String.Equals(r.Reason, reasonRefund,
@@ -461,7 +474,7 @@ namespace ECommerceApp.Application.Services
             }
         }
 
-        public override ListForOrderVm GetAllOrdersByCustomerId(int customerId, int pageSize, int pageNo)
+        public ListForOrderVm GetAllOrdersByCustomerId(int customerId, int pageSize, int pageNo)
         {
             var orders = _orderRepo.GetAllOrders().Where(o => o.CustomerId == customerId)
                             .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
@@ -480,7 +493,7 @@ namespace ECommerceApp.Application.Services
             return ordersList;
         }
 
-        public override List<OrderForListVm> GetAllOrdersByCustomerId(int customerId)
+        public List<OrderForListVm> GetAllOrdersByCustomerId(int customerId)
         {
             var orders = _orderRepo.GetAllOrders().Where(o => o.CustomerId == customerId)
                             .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
@@ -489,14 +502,14 @@ namespace ECommerceApp.Application.Services
             return orders;
         }
 
-        public override IQueryable<NewCustomerForOrdersVm> GetCustomersByUserId(string userId)
+        public IQueryable<NewCustomerForOrdersVm> GetCustomersByUserId(string userId)
         {
             var customers = _orderRepo.GetCustomersByUserId(userId);
             var customersVm = customers.ProjectTo<NewCustomerForOrdersVm>(_mapper.ConfigurationProvider);
             return customersVm;
         }
 
-        public override ListForOrderVm GetAllOrdersByUserId(string userId, int pageSize, int pageNo)
+        public ListForOrderVm GetAllOrdersByUserId(string userId, int pageSize, int pageNo)
         {
             var orders = _orderRepo.GetAllOrders().Where(o => o.UserId == userId)
                             .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
@@ -516,7 +529,7 @@ namespace ECommerceApp.Application.Services
             return ordersList;
         }
 
-        public override List<OrderForListVm> GetAllOrdersByUserId(string userId)
+        public List<OrderForListVm> GetAllOrdersByUserId(string userId)
         {
             var orders = _orderRepo.GetAllOrders().Where(o => o.UserId == userId)
                             .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
@@ -525,7 +538,7 @@ namespace ECommerceApp.Application.Services
             return orders;
         }
 
-        public override int AddOrderItem(NewOrderItemVm model)
+        public int AddOrderItem(NewOrderItemVm model)
         {
             var orderItem = _mapper.Map<OrderItem>(model);
             var orderItemExist = GetOrderItem(orderItem);
@@ -543,14 +556,14 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public override List<ItemsAddToCartVm> GetItemsAddToCart()
+        public List<ItemsAddToCartVm> GetItemsAddToCart()
         {
             var items = GetAllItemsToOrder();
             var itemsVm = items.ProjectTo<ItemsAddToCartVm>(_mapper.ConfigurationProvider).ToList();
             return itemsVm;
         }
 
-        public override ListForItemOrderVm GetOrderItemsNotOrderedByUserId(string userId, int pageSize, int pageNo)
+        public ListForItemOrderVm GetOrderItemsNotOrderedByUserId(string userId, int pageSize, int pageNo)
         {
             var itemOrders = _orderRepo.GetAllOrderItems().Where(oi => oi.UserId == userId && oi.OrderId == null)
                             .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
@@ -570,7 +583,7 @@ namespace ECommerceApp.Application.Services
             return ordersList;
         }
 
-        public override List<NewOrderItemVm> GetOrderItemsNotOrderedByUserId(string userId)
+        public List<NewOrderItemVm> GetOrderItemsNotOrderedByUserId(string userId)
         {
             var itemOrders = _orderRepo.GetAllOrderItems().Where(oi => oi.UserId == userId && oi.OrderId == null)
                             .ProjectTo<NewOrderItemVm>(_mapper.ConfigurationProvider)
@@ -579,7 +592,7 @@ namespace ECommerceApp.Application.Services
             return itemOrders;
         }
 
-        public override int AddCustomer(NewCustomerVm newCustomer)
+        public int AddCustomer(NewCustomerVm newCustomer)
         {
             if (newCustomer.Id != 0)
             {
@@ -591,13 +604,13 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public override void UpdateOrderItems(List<NewOrderItemVm> orderItemsVm)
+        public void UpdateOrderItems(List<NewOrderItemVm> orderItemsVm)
         {
             var orderItems = _mapper.Map<List<NewOrderItemVm>, List<OrderItem>>(orderItemsVm);
             _orderRepo.UpdateOrderItems(orderItems);
         }
 
-        public override int OrderItemCount(string userId)
+        public int OrderItemCount(string userId)
         {
             var itemOrders = _orderRepo.GetAllOrderItems().Where(oi => oi.UserId == userId && oi.OrderId == null)
                             .ProjectTo<NewOrderItemVm>(_mapper.ConfigurationProvider)
@@ -606,13 +619,13 @@ namespace ECommerceApp.Application.Services
             return itemOrders.Count;
         }
 
-        public override void UpdateOrderItem(OrderItemForListVm orderItemVm)
+        public void UpdateOrderItem(OrderItemForListVm orderItemVm)
         {
             var orderItem = _mapper.Map<OrderItemForListVm, OrderItem>(orderItemVm);
             _orderRepo.UpdateOrderItem(orderItem);
         }
 
-        public override int AddItemToOrderItem(int itemId, string userId)
+        public int AddItemToOrderItem(int itemId, string userId)
         {
             var orderItemExist = GetOrderItemByItemId(itemId, userId);
             int id;
@@ -654,12 +667,12 @@ namespace ECommerceApp.Application.Services
             return orderItem;
         }
 
-        public override void DeleteOrderItem(int id)
+        public void DeleteOrderItem(int id)
         {
             _orderRepo.DeleteOrderItem(id);
         }
 
-        public override bool CheckIfOrderExists(int id)
+        public bool CheckIfOrderExists(int id)
         {
             var order = _orderRepo.GetAllOrders().Where(o => o.Id == id).AsNoTracking().FirstOrDefault();
             if (order == null)
@@ -669,7 +682,7 @@ namespace ECommerceApp.Application.Services
             return true;
         }
 
-        public override bool CheckIfPaymentExists(int id)
+        public bool CheckIfPaymentExists(int id)
         {
             var payment = _orderRepo.GetPaymentById(id);
             if (payment == null)
@@ -679,7 +692,7 @@ namespace ECommerceApp.Application.Services
             return true;
         }
 
-        public override bool CheckIfRefundExists(int id)
+        public bool CheckIfRefundExists(int id)
         {
             var refund = _orderRepo.GetRefundById(id);
             if (refund == null)
@@ -689,7 +702,7 @@ namespace ECommerceApp.Application.Services
             return true;
         }
 
-        public override bool CheckIfOrderItemExists(int id)
+        public bool CheckIfOrderItemExists(int id)
         {
             var orderItem = _orderRepo.GetOrderItemById(id);
             if (orderItem == null)
@@ -699,7 +712,7 @@ namespace ECommerceApp.Application.Services
             return true;
         }
 
-        public override NewPaymentVm InitPayment(int orderId)
+        public NewPaymentVm InitPayment(int orderId)
         {
             Random random = new Random();
             var order = GetOrderById(orderId);
@@ -718,16 +731,13 @@ namespace ECommerceApp.Application.Services
             return payment;
         }
 
-        public override T MapTo<T, U>(U model)
+        public List<OrderItemForListVm> GetOrderItemsNotOrderedByUser(string userId)
         {
-            var objectVm = _mapper.Map<T>(model);
-            return objectVm;
-        }
+            var itemOrders = _orderRepo.GetAllOrderItems().Where(oi => oi.UserId == userId && oi.OrderId == null)
+                            .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
+                            .ToList();
 
-        public override List<T> MapToList<T, U>(List<U> model)
-        {
-            var objectVm = _mapper.Map<List<T>>(model);
-            return objectVm;
+            return itemOrders;
         }
     }
 }

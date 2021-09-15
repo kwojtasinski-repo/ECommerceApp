@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Customer;
 using Microsoft.AspNetCore.Authorization;
@@ -13,9 +14,9 @@ namespace ECommerceApp.Web.Controllers
 {
     public class CustomerController : Controller
     {
-        private readonly CustomerServiceAbstract _customerService;
+        private readonly ICustomerService _customerService;
 
-        public CustomerController(CustomerServiceAbstract customerService)
+        public CustomerController(ICustomerService customerService)
         {
             _customerService = customerService;
         }

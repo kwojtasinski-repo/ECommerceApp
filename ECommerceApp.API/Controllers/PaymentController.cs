@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Services;
+﻿using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Order;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -14,9 +15,9 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class PaymentController : ControllerBase
     {
-        private readonly OrderServiceAbstract _orderService;
+        private readonly IOrderService _orderService;
 
-        public PaymentController(OrderServiceAbstract orderService)
+        public PaymentController(IOrderService orderService)
         {
             _orderService = orderService;
         }

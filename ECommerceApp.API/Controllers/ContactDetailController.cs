@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Services;
+﻿using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Customer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -15,9 +16,9 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class ContactDetailController : ControllerBase
     {
-        private readonly CustomerServiceAbstract _customerService;
+        private readonly ICustomerService _customerService;
 
-        public ContactDetailController(CustomerServiceAbstract customerService)
+        public ContactDetailController(ICustomerService customerService)
         {
             _customerService = customerService;
         }
@@ -47,8 +48,7 @@ namespace ECommerceApp.API.Controllers
             {
                 return Conflict(ModelState);
             }
-            var contact = model.MapToNewContactDetail();
-            _customerService.UpdateContactDetail(contact);
+            _customerService.UpdateContactDetail(model);
             return Ok();
         }
 
@@ -63,8 +63,7 @@ namespace ECommerceApp.API.Controllers
                 return Conflict(ModelState);
             }
 
-            var contact = model.MapToNewContactDetail();
-            var id = _customerService.AddContactDetail(contact, userId);
+            var id = _customerService.AddContactDetail(model, userId);
 
             if (id == 0)
             {

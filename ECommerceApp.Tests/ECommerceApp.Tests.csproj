@@ -31,7 +31,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Services\CouponService\" />
     <Folder Include="Services\CustomerService\" />
     <Folder Include="Services\OrderService\" />
   </ItemGroup>

@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Services;
+﻿using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Order;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -15,9 +16,9 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class OrderItemController : ControllerBase
     {
-        private readonly OrderServiceAbstract _orderService;
+        private readonly IOrderService _orderService;
 
-        public OrderItemController(OrderServiceAbstract orderService)
+        public OrderItemController(IOrderService orderService)
         {
             _orderService = orderService;
         }
@@ -53,13 +54,12 @@ namespace ECommerceApp.API.Controllers
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userId2 = User.FindAll(ClaimTypes.NameIdentifier).ToList(); // 2 values in list
-            var orderItems = _orderService.GetOrderItemsNotOrderedByUserId(userId);
-            var listOrderItems = _orderService.MapToList<GetOrderItemVm, NewOrderItemVm>(orderItems);
+            var orderItems = _orderService.GetOrderItemsNotOrderedByUser(userId);
             if (orderItems == null)
             {
                 return NotFound();
             }
-            return Ok(listOrderItems);
+            return Ok(orderItems);
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]

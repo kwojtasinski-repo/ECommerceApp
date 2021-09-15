@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Services;
+﻿using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Item;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -14,9 +15,9 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class TagController : ControllerBase
     {
-        private readonly ItemServiceAbstract _itemService;
+        private readonly IItemService _itemService;
 
-        public TagController(ItemServiceAbstract itemService)
+        public TagController(IItemService itemService)
         {
             _itemService = itemService;
         }

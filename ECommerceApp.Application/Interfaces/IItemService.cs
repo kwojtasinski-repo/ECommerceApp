@@ -1,4 +1,6 @@
 ﻿using ECommerceApp.Application.ViewModels.Item;
+using ECommerceApp.Domain.Interface;
+using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,7 +8,7 @@ using System.Text;
 
 namespace ECommerceApp.Application.Interfaces
 {
-    public interface IItemService
+    public interface IItemService : IAbstractService<ItemVm, IItemRepository, Item>
     {
         ListForItemVm GetAllItemsForList(int pageSize, int pageNo, string searchString);
         int AddItem(NewItemVm model);
@@ -18,7 +20,7 @@ namespace ECommerceApp.Application.Interfaces
         NewItemTypeVm GetItemTypeById(int id);
         void UpdateItemBrand(NewItemBrandVm model);
         void UpdateItemType(NewItemTypeVm model);
-        List<ItemForListVm> GetAllItems();
+        List<NewItemVm> GetAllItems();
         void DeleteItem(int id);
         void DeleteItemType(int id);
         void DeleteItemBrand(int id);

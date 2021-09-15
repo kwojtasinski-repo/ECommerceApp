@@ -13,9 +13,9 @@ namespace ECommerceApp.Web.Controllers
 {
     public class ItemController : Controller
     {
-        private readonly ItemServiceAbstract _itemService;
+        private readonly IItemService _itemService;
         private readonly IImageService _imageService;
-        public ItemController(ItemServiceAbstract itemService, IImageService imageService)
+        public ItemController(IItemService itemService, IImageService imageService)
         {
             _itemService = itemService;
             _imageService = imageService;

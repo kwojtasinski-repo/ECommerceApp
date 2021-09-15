@@ -11,7 +11,7 @@ namespace ECommerceApp.Tests.Common
 {
     public class BaseTest<T> : IDisposable where T : BaseEntity
     {
-        private readonly Context _context;
+        protected readonly Context _context;
         private readonly Mock<Context> _contextMock;
         protected readonly IGenericRepository<T> _abstractRepository;
 

@@ -2,6 +2,8 @@
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Order;
+using ECommerceApp.Domain.Interface;
+using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +11,7 @@ using System.Text;
 
 namespace ECommerceApp.Application.Interfaces
 {
-    public interface IOrderService
+    public interface IOrderService : IAbstractService<OrderVm, IOrderRepository, Order>
     {
         int AddOrder(NewOrderVm order);
         void UpdateOrder(NewOrderVm order);
@@ -55,6 +57,7 @@ namespace ECommerceApp.Application.Interfaces
         List<ItemsAddToCartVm> GetItemsAddToCart();
         ListForItemOrderVm GetOrderItemsNotOrderedByUserId(string userId, int pageSize, int pageNo);
         List<NewOrderItemVm> GetOrderItemsNotOrderedByUserId(string userId);
+        List<OrderItemForListVm> GetOrderItemsNotOrderedByUser(string userId);
         int AddCustomer(NewCustomerVm newCustomer);
         void UpdateOrderItems(List<NewOrderItemVm> orderItems);
         int OrderItemCount(string userId);
@@ -67,5 +70,6 @@ namespace ECommerceApp.Application.Interfaces
         bool CheckIfRefundExists(int id);
         bool CheckIfOrderItemExists(int id);
         List<OrderForListVm> GetAllOrdersByUserId(string userId);
+        NewPaymentVm InitPayment(int orderId);
     }
 }

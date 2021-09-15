@@ -1,11 +1,13 @@
-﻿using FluentValidation;
+﻿using AutoMapper;
+using ECommerceApp.Application.Mapping;
+using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Item
 {
-    public class ItemVm : BaseVm
+    public class ItemVm : BaseVm, IMapFrom<Domain.Model.Item>
     {
         public string Name { get; set; }
         public decimal Cost { get; set; }
@@ -17,9 +19,9 @@ namespace ECommerceApp.Application.ViewModels.Item
 
         public List<ItemTagVm> ItemTags { get; set; }
 
-        public NewItemVm MapToNewItemVm()
+        public Domain.Model.Item MapToItem()
         {
-            var item = new NewItemVm()
+            var item = new Domain.Model.Item()
             {
                 Id = this.Id,
                 Name = this.Name,
@@ -29,27 +31,68 @@ namespace ECommerceApp.Application.ViewModels.Item
                 Quantity = this.Quantity,
                 BrandId = this.BrandId,
                 TypeId = this.TypeId,
-                ItemTags = new List<ItemsWithTagsVm>()
             };
 
-            if (ItemTags != null && ItemTags.Count > 0)
+            var itemTags = new List<Domain.Model.ItemTag>();
+
+            if (ItemTags != null)
             {
-                var itemTags = new List<ItemsWithTagsVm>();
                 foreach (var tag in ItemTags)
                 {
-                    var itemTag = new ItemsWithTagsVm
+                    var itemTag = new Domain.Model.ItemTag
                     {
-                        ItemId = item.Id,
+                        ItemId = this.Id,
                         TagId = tag.TagId
                     };
 
                     itemTags.Add(itemTag);
                 }
-
-                item.ItemTags = itemTags;
             }
 
+            item.ItemTags = itemTags;
+
             return item;
+        }
+
+        public ItemVm MapToItemVm(Domain.Model.Item item)
+        {
+            if (item != null)
+            {
+                var itemVm = new ItemVm()
+                {
+                    Id = item.Id,
+                    Name = item.Name,
+                    Cost = item.Cost,
+                    Description = item.Description,
+                    Warranty = item.Warranty,
+                    Quantity = item.Quantity,
+                    BrandId = item.BrandId,
+                    TypeId = item.TypeId,
+                };
+
+                var itemTags = new List<ItemTagVm>();
+
+                if (item.ItemTags != null)
+                {
+                    foreach (var tag in item.ItemTags)
+                    {
+                        var itemTag = new ItemTagVm
+                        {
+                            TagId = tag.TagId
+                        };
+
+                        itemTags.Add(itemTag);
+                    }
+                }
+
+                itemVm.ItemTags = itemTags;
+
+                return itemVm;
+            }
+            else
+            {
+                return null;
+            }
         }
 
         public class ItemVmValidation : AbstractValidator<ItemVm>

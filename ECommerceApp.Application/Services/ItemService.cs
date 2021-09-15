@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Item;
@@ -12,7 +13,7 @@ using System.Text;
 
 namespace ECommerceApp.Application.Services
 {
-    public class ItemService : ItemServiceAbstract
+    public class ItemService : AbstractService<ItemVm, IItemRepository, Item>, IItemService
     {
         private readonly IItemRepository _itemRepo;
         private readonly IMapper _mapper;
@@ -23,12 +24,46 @@ namespace ECommerceApp.Application.Services
             _mapper = mapper;
         }
 
-        public override int AddItem(NewItemVm model)
+        public override int Add(ItemVm vm)
         {
-            return Add(model);
+            var item = vm.MapToItem();
+            var id = _itemRepo.Add(item);
+            return id;
         }
 
-        public override int AddItemBrand(NewItemBrandVm model)
+        public override ItemVm Get(int id)
+        {
+            var item = _itemRepo.GetById(id);
+            var itemVm = new ItemVm().MapToItemVm(item);
+            return itemVm;
+        }
+
+        public override void Delete(ItemVm vm)
+        {
+            var item = vm.MapToItem();
+            _itemRepo.Delete(item);
+        }
+
+        public override void Update(ItemVm vm)
+        {
+            var item = vm.MapToItem();
+            _itemRepo.Update(item);
+        }
+
+
+        public int AddItem(NewItemVm model)
+        {
+            if (model.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
+            var item = _mapper.Map<Item>(model);
+            var id = _itemRepo.AddItem(item);
+            return id;
+        }
+
+        public int AddItemBrand(NewItemBrandVm model)
         {
             if (model.Id != 0)
             {
@@ -40,7 +75,7 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public override int AddItemType(NewItemTypeVm model)
+        public int AddItemType(NewItemTypeVm model)
         {
             if (model.Id != 0)
             {
@@ -52,7 +87,7 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public override ListForItemVm GetAllItemsForList(int pageSize, int pageNo, string searchString)
+        public ListForItemVm GetAllItemsForList(int pageSize, int pageNo, string searchString)
         {
             var items = _itemRepo.GetAllItems().Skip(pageSize * (pageNo - 1)).Take(pageSize);
             var itemsToShow = items.ProjectTo<ItemDetailsVm>(_mapper.ConfigurationProvider).ToList();
@@ -69,75 +104,81 @@ namespace ECommerceApp.Application.Services
             return itemsList;
         }
 
-        public override List<NewItemVm> GetAllItems()
+        public List<NewItemVm> GetAllItems()
         {
-            return GetAll();
+            var items = _itemRepo.GetAllItems()
+                .ProjectTo<NewItemVm>(_mapper.ConfigurationProvider)
+                .ToList();
+            return items;
         }
 
-        public override NewItemBrandVm GetItemBrandById(int id)
+        public NewItemBrandVm GetItemBrandById(int id)
         {
             var brand = _itemRepo.GetItemBrandById(id);
             var brandVm = _mapper.Map<NewItemBrandVm>(brand);
             return brandVm;
         }
 
-        public override NewItemTypeVm GetItemTypeById(int id)
+        public NewItemTypeVm GetItemTypeById(int id)
         {
             var itemType = _itemRepo.GetItemTypeById(id);
             var itemTypeVm = _mapper.Map<NewItemTypeVm>(itemType);
             return itemTypeVm;
         }
 
-        public override NewTagVm GetItemTagById(int id)
+        public NewTagVm GetItemTagById(int id)
         {
             var itemTag = _itemRepo.GetItemTagById(id);
             var itemTagVm = _mapper.Map<NewTagVm>(itemTag);
             return itemTagVm;
         }
 
-        public override NewItemVm GetItemById(int id)
+        public NewItemVm GetItemById(int id)
         {
-            return Get(id);
+            var item = _itemRepo.GetItemById(id);
+            var itemVm = _mapper.Map<NewItemVm>(item);
+            return itemVm;
         }
 
-        public override void UpdateItem(NewItemVm model)
+        public void UpdateItem(NewItemVm model)
         {
-            Update(model);
+            var item = _mapper.Map<Item>(model);
+            _itemRepo.UpdateItem(item);
         }
 
-        public override void UpdateItemBrand(NewItemBrandVm model)
+        public void UpdateItemBrand(NewItemBrandVm model)
         {
             var brand = _mapper.Map<Brand>(model);
             _itemRepo.UpdateItemBrand(brand);
         }
 
-        public override void UpdateItemType(NewItemTypeVm model)
+        public void UpdateItemType(NewItemTypeVm model)
         {
             var type = _mapper.Map<ECommerceApp.Domain.Model.Type>(model);
             _itemRepo.UpdateItemType(type);
         }
 
-        public override void DeleteItem(int id)
+        public void DeleteItem(int id)
         {
             Delete(id);
         }
 
-        public override void DeleteItemType(int id)
+        public void DeleteItemType(int id)
         {
             _itemRepo.DeleteItemType(id);
         }
 
-        public override void DeleteItemBrand(int id)
+        public void DeleteItemBrand(int id)
         {
             _itemRepo.DeleteItemBrand(id);
         }
 
-        public override void DeleteItemTag(int id)
+        public void DeleteItemTag(int id)
         {
             _itemRepo.DeleteTag(id);
         }
 
-        public override ItemDetailsVm GetItemDetails(int id)
+        public ItemDetailsVm GetItemDetails(int id)
         {
             var item = _itemRepo.GetItemById(id);
             var itemVm = _mapper.Map<ItemDetailsVm>(item);
@@ -145,7 +186,7 @@ namespace ECommerceApp.Application.Services
             return itemVm;
         }
 
-        public override ListForItemTypeVm GetAllItemTypes(int pageSize, int pageNo, string searchString)
+        public ListForItemTypeVm GetAllItemTypes(int pageSize, int pageNo, string searchString)
         {
             var types = _itemRepo.GetAllTypes().Where(it => it.Name.StartsWith(searchString))
                 .ProjectTo<TypeForListVm>(_mapper.ConfigurationProvider)
@@ -164,7 +205,7 @@ namespace ECommerceApp.Application.Services
             return typesList;
         }
 
-        public override List<TypeForListVm> GetAllItemTypes()
+        public List<TypeForListVm> GetAllItemTypes()
         {
             var types = _itemRepo.GetAllTypes()
                 .ProjectTo<TypeForListVm>(_mapper.ConfigurationProvider)
@@ -173,7 +214,7 @@ namespace ECommerceApp.Application.Services
             return types;
         }
 
-        public override List<BrandForListVm> GetAllItemBrands()
+        public List<BrandForListVm> GetAllItemBrands()
         {
             var brands = _itemRepo.GetAllBrands()
                 .ProjectTo<BrandForListVm>(_mapper.ConfigurationProvider)
@@ -182,7 +223,7 @@ namespace ECommerceApp.Application.Services
             return brands;
         }
 
-        public override ListForItemBrandVm GetAllItemBrands(int pageSize, int pageNo, string searchString)
+        public ListForItemBrandVm GetAllItemBrands(int pageSize, int pageNo, string searchString)
         {
             var brands = _itemRepo.GetAllBrands().Where(it => it.Name.StartsWith(searchString))
                 .ProjectTo<BrandForListVm>(_mapper.ConfigurationProvider)
@@ -201,21 +242,21 @@ namespace ECommerceApp.Application.Services
             return brandsList;
         }
 
-        public override IQueryable<NewItemBrandVm> GetAllItemBrandsForAddingItems()
+        public IQueryable<NewItemBrandVm> GetAllItemBrandsForAddingItems()
         {
             var itemBrands = _itemRepo.GetAllBrands();
             var itemBrandsVm = itemBrands.ProjectTo<NewItemBrandVm>(_mapper.ConfigurationProvider);
             return itemBrandsVm;
         }
 
-        public override IQueryable<NewItemTypeVm> GetAllItemTypesForAddingItems()
+        public IQueryable<NewItemTypeVm> GetAllItemTypesForAddingItems()
         {
             var itemTypes = _itemRepo.GetAllTypes();
             var itemTypesVm = itemTypes.ProjectTo<NewItemTypeVm>(_mapper.ConfigurationProvider);
             return itemTypesVm;
         }
 
-        public override int AddItemTag(NewTagVm model)
+        public int AddItemTag(NewTagVm model)
         {
             if (model.Id != 0)
             {
@@ -227,7 +268,7 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public override ListForItemTagsVm GetAllTags(int pageSize, int pageNo, string searchString)
+        public ListForItemTagsVm GetAllTags(int pageSize, int pageNo, string searchString)
         {
             var tags = _itemRepo.GetAllTags().Where(it => it.Name.StartsWith(searchString))
                 .ProjectTo<TagForListVm>(_mapper.ConfigurationProvider)
@@ -246,7 +287,7 @@ namespace ECommerceApp.Application.Services
             return tagsList;
         }
 
-        public override List<TagForListVm> GetAllTags()
+        public List<TagForListVm> GetAllTags()
         {
             var tags = _itemRepo.GetAllTags()
                 .ProjectTo<TagForListVm>(_mapper.ConfigurationProvider)
@@ -255,7 +296,7 @@ namespace ECommerceApp.Application.Services
             return tags;
         }
 
-        public override ListForItemWithTagsVm GetAllItemsWithTags(int pageSize, int pageNo, string searchString)
+        public ListForItemWithTagsVm GetAllItemsWithTags(int pageSize, int pageNo, string searchString)
         {
             var itemsWithTags = _itemRepo.GetAllItemsWithTags()//.Where(it => it.Item.Name.StartsWith(searchString))
                 .ProjectTo<ItemsWithTagsVm>(_mapper.ConfigurationProvider)
@@ -274,20 +315,20 @@ namespace ECommerceApp.Application.Services
             return itemsWithTagsList;
         }
 
-        public override IQueryable<NewTagVm> GetAllItemTagsForAddingItems()
+        public IQueryable<NewTagVm> GetAllItemTagsForAddingItems()
         {
             var itemTags = _itemRepo.GetAllTags();
             var itemTagsVm = itemTags.ProjectTo<NewTagVm>(_mapper.ConfigurationProvider);
             return itemTagsVm;
         }
 
-        public override void UpdateItemTag(NewTagVm model)
+        public void UpdateItemTag(NewTagVm model)
         {
             var tag = _mapper.Map<Tag>(model);
             _itemRepo.UpdateTag(tag);
         }
 
-        public override bool CheckIfItemExists(int id)
+        public bool CheckIfItemExists(int id)
         {
             var item = _itemRepo.GetItemById(id);
             if (item == null)
@@ -297,7 +338,7 @@ namespace ECommerceApp.Application.Services
             return true;
         }
 
-        public override bool CheckIfItemBrandExists(int id)
+        public bool CheckIfItemBrandExists(int id)
         {
             var brand = _itemRepo.GetItemBrandById(id);
             if (brand == null)
@@ -307,7 +348,7 @@ namespace ECommerceApp.Application.Services
             return true;
         }
 
-        public override bool CheckIfItemTypeExists(int id)
+        public bool CheckIfItemTypeExists(int id)
         {
             var type = _itemRepo.GetItemTypeById(id);
             if (type == null)
@@ -317,7 +358,7 @@ namespace ECommerceApp.Application.Services
             return true;
         }
 
-        public override bool CheckIfItemTagExists(int id)
+        public bool CheckIfItemTagExists(int id)
         {
             var tag = _itemRepo.GetItemTagById(id);
             if (tag == null)
