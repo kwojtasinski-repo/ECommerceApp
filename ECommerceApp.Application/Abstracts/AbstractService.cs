@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels;
 using ECommerceApp.Domain.Interface;
@@ -27,6 +28,11 @@ namespace ECommerceApp.Application.Abstracts
 
         public virtual int Add(T vm)
         {
+            if (vm.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             var entity = _mapper.Map<E>(vm);
             var id = _repo.Add(entity);
             return id;

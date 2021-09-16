@@ -29,6 +29,32 @@ namespace ECommerceApp.Application.Services
             _mapper = mapper;
         }
 
+        public override OrderVm Get(int id)
+        {
+            var order = _orderRepo.GetById(id);
+            var orderVm = new OrderVm().MapToOrderVm(order);
+            return orderVm;
+        }
+
+        public override int Add(OrderVm vm)
+        {
+            var order = vm.MapToOrder();
+            var id = _orderRepo.Add(order);
+            return id;
+        }
+
+        public override void Delete(OrderVm vm)
+        {
+            var order = vm.MapToOrder();
+            _orderRepo.Delete(order);
+        }
+
+        public override void Update(OrderVm vm)
+        {
+            var order = vm.MapToOrder();
+            _orderRepo.Update(order);
+        }
+
         public int AddOrder(NewOrderVm model)
         {
             if (model.Id != 0)

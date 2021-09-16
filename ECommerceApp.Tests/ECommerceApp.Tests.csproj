@@ -31,11 +31,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Services\CustomerService\" />
-    <Folder Include="Services\OrderService\" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\ECommerceApp.Application\ECommerceApp.Application.csproj" />
     <ProjectReference Include="..\ECommerceApp.Domain\ECommerceApp.Domain.csproj" />
     <ProjectReference Include="..\ECommerceApp.Infrastructure\ECommerceApp.Infrastructure.csproj" />

@@ -26,6 +26,11 @@ namespace ECommerceApp.Application.Services
 
         public override int Add(ItemVm vm)
         {
+            if (vm.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
             var item = vm.MapToItem();
             var id = _itemRepo.Add(item);
             return id;
