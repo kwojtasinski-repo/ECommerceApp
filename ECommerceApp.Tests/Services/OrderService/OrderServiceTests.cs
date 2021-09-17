@@ -1,5 +1,9 @@
 ﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.Order;
+using ECommerceApp.Domain.Interface;
+using ECommerceApp.Domain.Model;
+using ECommerceApp.Infrastructure.Repositories;
+using ECommerceApp.Tests.Common;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -10,7 +14,7 @@ using Xunit;
 
 namespace ECommerceApp.Tests.Services.OrderService
 {
-    public class OrderServiceTests : OrderBaseTests
+    public class OrderServiceTests : BaseServiceTest<OrderVm, IOrderRepository, OrderRepository, Application.Services.OrderService, Order>
     {
         [Fact]
         public void CanReturnOrder()

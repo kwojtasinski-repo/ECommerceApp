@@ -13,10 +13,12 @@ using FluentAssertions;
 using ECommerceApp.Domain.Interface;
 using Microsoft.EntityFrameworkCore;
 using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Tests.Common;
+using ECommerceApp.Infrastructure.Repositories;
 
 namespace ECommerceApp.Tests.Services.ItemService
 {
-    public class ItemServiceTests : ItemBaseTests
+    public class ItemServiceTests : BaseServiceTest<ItemVm, IItemRepository, ItemRepository, Application.Services.ItemService, Item>
     {
         [Fact]
         public void CanReturnItem()

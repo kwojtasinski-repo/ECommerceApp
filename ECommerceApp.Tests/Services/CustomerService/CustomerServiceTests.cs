@@ -1,5 +1,9 @@
 ﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.Customer;
+using ECommerceApp.Domain.Interface;
+using ECommerceApp.Domain.Model;
+using ECommerceApp.Infrastructure.Repositories;
+using ECommerceApp.Tests.Common;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -10,7 +14,7 @@ using Xunit;
 
 namespace ECommerceApp.Tests.Services.CustomerService
 {
-    public class CustomerServiceTests : CustomerBaseTests
+    public class CustomerServiceTests : BaseServiceTest<CustomerVm, ICustomerRepository, CustomerRepository, Application.Services.CustomerService, Customer>
     {
         [Fact]
         public void CanReturnCustomer()

@@ -1,5 +1,9 @@
 ﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.Coupon;
+using ECommerceApp.Domain.Interface;
+using ECommerceApp.Domain.Model;
+using ECommerceApp.Infrastructure.Repositories;
+using ECommerceApp.Tests.Common;
 using FluentAssertions;
 using System;
 using System.Collections.Generic;
@@ -8,7 +12,7 @@ using Xunit;
 
 namespace ECommerceApp.Tests.Services.CouponService
 {
-    public class CouponServiceTests : CouponBaseTest
+    public class CouponServiceTests : BaseServiceTest<CouponVm, ICouponRepository, CouponRepository, Application.Services.CouponService, Coupon>
     {
         [Fact]
         public void CanReturnCoupon()
