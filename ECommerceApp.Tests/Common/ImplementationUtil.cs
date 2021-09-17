@@ -14,6 +14,7 @@ namespace ECommerceApp.Tests.Common
 {
     public class ImplementationUtil
     {
+        // zwraca instancje serwisu na podstawie typu podanego w argumencie
         public static IAbstractService<T, U, E> GetServiceInstance<T, U, R, E>(Type serviceType, Context context)
         {
             if (!typeof(IAbstractService<T, U, E>).IsAssignableFrom(serviceType))
@@ -67,6 +68,7 @@ namespace ECommerceApp.Tests.Common
             return instance;
         }
 
+        // zwraca instancje mappera
         public static IMapper GetMapperInstance()
         {
             var configurationProvider = new MapperConfiguration(cfg =>
@@ -79,6 +81,7 @@ namespace ECommerceApp.Tests.Common
             return mapper;
         }
 
+        // zwraca instancje repo w zaleznosci od typu
         public static IGenericRepository<E> GetRepository<U, E>(Type repositoryType, Context context)
         {
             if (!typeof(IGenericRepository<E>).IsAssignableFrom(repositoryType))
@@ -111,12 +114,12 @@ namespace ECommerceApp.Tests.Common
             }
             else
             {
-                throw new NotImplementedException("Service shouldnt have more than one constructor, check your implementation or add another method which can handle more than one constructor");
+                throw new NotImplementedException("Repository shouldnt have more than one constructor, check your implementation or add another method which can handle more than one constructor");
             }
 
             if (paramInstances.Count == 0)
             {
-                throw new InvalidCastException("There is no constructor for this kind of service, check your implementation");
+                throw new InvalidCastException("There is no constructor for this kind of repository, check your implementation");
             }
 
             var instance = (IGenericRepository<E>)constructor.Invoke(paramInstances.ToArray());
@@ -124,6 +127,7 @@ namespace ECommerceApp.Tests.Common
             return instance;
         }
 
+        // zwraca mock IFileStore
         public static IFileStore GetFileStoreInstance()
         {
             var mock = new Mock<IFileStore>();
@@ -143,12 +147,14 @@ namespace ECommerceApp.Tests.Common
             return mock.Object;
         }
 
+        // zwraca instancje IFileWrapper
         public static IFileWrapper GetFileWrapper()
         {
             var fileWrapper = new FileWrapper();
             return fileWrapper;
         }
 
+        // zwraca instancje IDirectoryWrapper
         public static IDirectoryWrapper GetDirectoryWrapper()
         {
             var directoryWrapper = new DirectoryWrapper();
