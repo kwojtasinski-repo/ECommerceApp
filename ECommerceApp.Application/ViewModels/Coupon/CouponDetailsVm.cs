@@ -20,11 +20,12 @@ namespace ECommerceApp.Application.ViewModels.Coupon
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ECommerceApp.Domain.Model.Coupon, CouponDetailsVm>().ReverseMap()
-                 //.ForMember(c => c.Type, opts => opts.MapFrom(t => t.Type))
-                 .ForPath(c => c.Type.Type, opts => opts.MapFrom(t => t.Type))
-                 //.ForMember(c => c.CouponUsed.Order.Number, opt => opt.MapFrom(n => n.Number));
-                .ForPath(c => c.CouponUsed.Order.Number, opt => opt.MapFrom(n => n.Number));
+            profile.CreateMap<ECommerceApp.Domain.Model.Coupon, CouponDetailsVm>()
+                 .ForMember(c => c.Type, opts => opts.MapFrom(t => t.Type))
+                 //  .ForPath(c => c.Type.Type, opts => opts.MapFrom(t => t.Type))
+                 .ForMember(c => c.Number, opt => opt.MapFrom(n => n.CouponUsed.Order.Number))
+               // .ForPath(c => c.CouponUsed.Order.Number, opt => opt.MapFrom(n => n.Number));
+               .ReverseMap();
         }
 
         public class CouponDetailsValidation : AbstractValidator<CouponDetailsVm>

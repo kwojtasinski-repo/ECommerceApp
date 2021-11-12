@@ -1,5 +1,6 @@
 ﻿using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -140,6 +141,24 @@ namespace ECommerceApp.Infrastructure.Repositories
             {
                 _context.Remove(entity);
                 _context.SaveChanges();
+            }
+        }
+
+        public void DetachEntity(T entity)
+        {
+            _context.Entry(entity).State = EntityState.Detached;
+        }
+
+        public void DetachEntity<TEntity>(TEntity entity) where TEntity : BaseEntity
+        {
+            _context.Entry(entity).State = EntityState.Detached;
+        }
+
+        public void DetachEntity<TEntity>(ICollection<TEntity> entities) where TEntity : BaseEntity
+        {
+            foreach(var entity in entities)
+            {
+                _context.Entry(entity).State = EntityState.Detached;
             }
         }
     }

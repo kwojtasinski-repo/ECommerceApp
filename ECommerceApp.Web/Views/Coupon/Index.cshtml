@@ -8,8 +8,8 @@
 
 <p>
     <a asp-action="AddCoupon">Utwórz nowy kupon</a>
-    <a asp-action="ShowCouponTypes">Lista wszystkich typów kuponów</a>
-    <a asp-action="ShowCouponsUsed">Lista wszystkich kuponów użytych</a>
+    <a asp-controller="CouponType" asp-action="Index">Lista wszystkich typów kuponów</a>
+    <a asp-controller="CouponUsed" asp-action="Index">Lista wszystkich kuponów użytych</a>
 </p>
 <form id="reload" asp-action="Index" asp-controller="Coupon" method="post">
     <div class="row">

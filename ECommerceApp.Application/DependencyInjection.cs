@@ -33,6 +33,8 @@ namespace ECommerceApp.Application
             services.AddTransient<IFileWrapper, FileWrapper>();
             services.AddTransient<IDirectoryWrapper, DirectoryWrapper>();
             services.AddTransient<IImageService, ImageService>();
+            services.AddTransient<ICouponTypeService, CouponTypeService>();
+            services.AddTransient<ICouponUsedService, CouponUsedService>();
             return services;
         }
     }

@@ -18,11 +18,11 @@ namespace ECommerceApp.Application.ViewModels.Coupon
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ECommerceApp.Domain.Model.CouponUsed, CouponUsedDetailsVm>().ReverseMap()
-              //  .ForMember(c => c.Coupon.Code, opt => opt.MapFrom(co => co.Code))
-                .ForPath(c => c.Coupon.Code, opt => opt.MapFrom(co => co.Code))
-             //   .ForMember(c => c.Order.Number, opt => opt.MapFrom(n => n.Number));
-                .ForPath(c => c.Order.Number, opt => opt.MapFrom(n => n.Number));
+            profile.CreateMap<ECommerceApp.Domain.Model.CouponUsed, CouponUsedDetailsVm>()
+                //  .ForMember(c => c.Coupon.Code, opt => opt.MapFrom(co => co.Code))
+                .ForPath(c => c.Code, opt => opt.MapFrom(co => co.Coupon.Code))
+                //   .ForMember(c => c.Order.Number, opt => opt.MapFrom(n => n.Number));
+                .ForPath(c => c.Number, opt => opt.MapFrom(n => n.Order.Number));
         }
     }
 }

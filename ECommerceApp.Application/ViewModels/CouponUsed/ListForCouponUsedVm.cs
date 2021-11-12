@@ -5,20 +5,20 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Coupon
 {
-    public class ListForCouponTypeVm
+    public class ListForCouponUsedVm
     {
-        public List<CouponTypeForListVm> CouponTypes { get; set; }
+        public List<CouponUsedVm> CouponsUsed { get; set; }
         public int CurrentPage { get; set; }
         public int PageSize { get; set; }
         public string SearchString { get; set; }
         public int Count { get; set; }
     }
 
-    public class ListForCouponTypeValidation : AbstractValidator<ListForCouponTypeVm>
+    public class ListForCouponUsedValidation : AbstractValidator<ListForCouponUsedVm>
     {
-        public ListForCouponTypeValidation()
+        public ListForCouponUsedValidation()
         {
-            RuleFor(x => x.CouponTypes).NotNull();
+            RuleFor(x => x.CouponsUsed).NotNull();
             RuleFor(x => x.CurrentPage).NotNull();
             RuleFor(x => x.PageSize).NotNull();
             RuleFor(x => x.SearchString).NotNull();

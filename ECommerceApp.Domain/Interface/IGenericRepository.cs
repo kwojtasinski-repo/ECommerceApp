@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ECommerceApp.Domain.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -21,5 +22,8 @@ namespace ECommerceApp.Domain.Interface
         IQueryable<T> GetAll();
         Task<List<int>> AddRangeAsync(List<T> entities);
         List<int> AddRange(List<T> entities);
+        void DetachEntity(T entity);
+        void DetachEntity<TEntity>(TEntity entity) where TEntity : BaseEntity;
+        void DetachEntity<TEntity>(ICollection<TEntity> entity) where TEntity : BaseEntity;
     }
 }

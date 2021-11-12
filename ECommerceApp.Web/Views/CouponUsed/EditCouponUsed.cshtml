@@ -1,27 +1,24 @@
-﻿@model ECommerceApp.Application.ViewModels.Coupon.NewCouponUsedVm
+﻿@model ECommerceApp.Application.ViewModels.Coupon.CouponUsedVm
 
 @{
     ViewData["Title"] = "EditCouponUsed";
 }
 
-<h1>EditCouponUsed</h1>
+<h1>Edycja kuponu użytego</h1>
 
-<h4>NewCouponUsedVm</h4>
 <hr />
 <div class="row">
     <div class="col-md-4">
         <form asp-action="EditCouponUsed">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                <input type="hidden" asp-for="Id" class="form-control" />
-                <div class="form-group">
-                    <label asp-for="CouponId" class="control-label"></label>
-                    <input asp-for="CouponId" class="form-control" />
-                    <select id="CouponType" asp-for="CouponId" asp-items="@(new SelectList(ViewBag.Orders,"Id", "Type"))" class="custom-select" data-val="true" value="@Model.CouponId"></select>
-                    <span asp-validation-for="CouponId" class="text-danger"></span>
-                </div>
+            <input type="hidden" asp-for="Id" class="form-control" />
+            <div class="form-group">
+                <label asp-for="CouponId" class="control-label"></label>
+                <select id="CouponType" asp-for="CouponId" asp-items="@(new SelectList(ViewBag.Coupons,"Id", "Description"))" class="custom-select" data-val="true" value="@Model.CouponId"></select>
+                <span asp-validation-for="CouponId" class="text-danger"></span>
+            </div>
             <div class="form-group">
                 <label asp-for="OrderId" class="control-label"></label>
-                <input asp-for="OrderId" class="form-control" />
                 <select id="Order" asp-for="OrderId" asp-items="@(new SelectList(ViewBag.Orders,"Id", "Number"))" class="custom-select" data-val="true" value="@Model.OrderId"></select>
                 <span asp-validation-for="OrderId" class="text-danger"></span>
             </div>
@@ -33,7 +30,7 @@
 </div>
 
 <div>
-    <a asp-action="Index">Powrót do listy kuponów</a>
+    <a asp-action="Index">Powrót do listy użytych kuponów</a>
 </div>
 
 @section Scripts {

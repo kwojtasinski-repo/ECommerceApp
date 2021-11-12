@@ -17,6 +17,8 @@ namespace ECommerceApp.Infrastructure
             services.AddTransient<ICouponRepository, CouponRepository>();
             services.AddTransient(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             services.AddTransient<IImageRepository, ImageRepository>();
+            services.AddTransient<ICouponTypeRepository, CouponTypeRepository>();
+            services.AddTransient<ICouponUsedRepository, CouponUsedRepository>();
             return services;
         }
     }

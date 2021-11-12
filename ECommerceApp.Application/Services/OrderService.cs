@@ -55,6 +55,12 @@ namespace ECommerceApp.Application.Services
             _orderRepo.Update(order);
         }
 
+        public void Update(NewOrderVm vm)
+        {
+            var order = _mapper.Map<Order>(vm);
+            _orderRepo.Update(order);
+        }
+
         public int AddOrder(NewOrderVm model)
         {
             if (model.Id != 0)
@@ -139,6 +145,32 @@ namespace ECommerceApp.Application.Services
         {
             var items = _orderRepo.GetAllItems();
             return items;
+        }
+
+        public void DeleteCouponUsed(int orderId, int couponUsedId)
+        {
+            var order = _repo.GetAll().Include(oi => oi.OrderItems).Where(o => o.Id == orderId).FirstOrDefault();
+
+            if (order is null)
+            {
+                throw new BusinessException("Given invalid id");
+            }
+
+            if (order.IsPaid)
+            {
+                throw new BusinessException("Cannot delete coupon when order is paid");
+            }
+
+            //_repo.DetachEntity(order);
+            //_repo.DetachEntity(order.OrderItems);
+
+            order.CouponUsedId = null;
+            foreach (var orderItem in order.OrderItems)
+            {
+                orderItem.CouponUsedId = null;
+            }
+
+            //_repo.Update(order);
         }
 
         public IQueryable<NewOrderItemVm> GetAllItemsOrderedForAdd()
@@ -391,6 +423,35 @@ namespace ECommerceApp.Application.Services
             _orderRepo.UpdateRefund(refund);
         }
 
+        public void AddCouponToOrder(int orderId, int couponUsedId)
+        {
+            var order = _repo.GetAll().Include(oi => oi.OrderItems).Where(o => o.Id == orderId).FirstOrDefault();
+
+            if (order is null)
+            {
+                throw new BusinessException("Cannot add coupon if order not exists");
+            }
+
+            _repo.DetachEntity(order); // detach before update
+            _repo.DetachEntity(order.OrderItems);
+
+            var orderVm = _mapper.Map<NewOrderVm>(order);
+
+            if (orderVm.IsPaid)
+            {
+                throw new BusinessException("Cannot add coupon to paid order");
+            }
+
+            orderVm.CouponUsedId = couponUsedId;
+
+            foreach(var orderItem in orderVm.OrderItems)
+            {
+                orderItem.CouponUsedId = couponUsedId;
+            }
+
+            Update(orderVm);
+        }
+
         public IQueryable<NewCustomerForOrdersVm> GetAllCustomers()
         {
             var customers = _orderRepo.GetAllCustomers();
@@ -398,10 +459,10 @@ namespace ECommerceApp.Application.Services
             return customersVm;
         }
 
-        public IQueryable<NewCouponVm> GetAllCoupons()
+        public IQueryable<CouponVm> GetAllCoupons()
         {
             var coupons = _orderRepo.GetAllCoupons();
-            var couponsVm = coupons.ProjectTo<NewCouponVm>(_mapper.ConfigurationProvider);
+            var couponsVm = coupons.ProjectTo<CouponVm>(_mapper.ConfigurationProvider);
             return couponsVm;
         }
 
@@ -421,7 +482,7 @@ namespace ECommerceApp.Application.Services
 
         public int UpdateCoupon(int couponId, NewOrderVm order)
         {
-            var couponUsed = new NewCouponUsedVm()
+            var couponUsed = new CouponUsedVm()
             {
                 Id = 0,
                 CouponId = couponId,
@@ -434,7 +495,7 @@ namespace ECommerceApp.Application.Services
             return couponUsedId;
         }
 
-        public int AddCouponUsed(NewCouponUsedVm couponUsedVm)
+        public int AddCouponUsed(CouponUsedVm couponUsedVm)
         {
             if (couponUsedVm.Id != 0)
             {

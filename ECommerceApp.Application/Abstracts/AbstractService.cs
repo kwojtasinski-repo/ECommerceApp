@@ -12,8 +12,8 @@ namespace ECommerceApp.Application.Abstracts
         where E : BaseEntity 
         where U : IGenericRepository<E>
     {
-        private readonly U _repo;
-        private readonly IMapper _mapper;
+        protected readonly U _repo;
+        protected readonly IMapper _mapper;
 
         public AbstractService(U repo)
         {
