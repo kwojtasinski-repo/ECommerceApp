@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services;
+using ECommerceApp.Application.ViewModels.Brand;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Web.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -14,11 +15,13 @@ namespace ECommerceApp.Web.Controllers
     public class ItemController : Controller
     {
         private readonly IItemService _itemService;
+        private readonly IBrandService _brandService;
         private readonly IImageService _imageService;
-        public ItemController(IItemService itemService, IImageService imageService)
+        public ItemController(IItemService itemService, IImageService imageService, IBrandService brandService)
         {
             _itemService = itemService;
             _imageService = imageService;
+            _brandService = brandService;
         }
 
         [HttpGet]
@@ -50,8 +53,8 @@ namespace ECommerceApp.Web.Controllers
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet]
         public IActionResult AddItem()
-        {   
-            ViewBag.ItemBrands = _itemService.GetAllItemBrandsForAddingItems().ToList();
+        {
+            ViewBag.ItemBrands = _brandService.GetAllBrands(b => true);
             ViewBag.ItemTypes = _itemService.GetAllItemTypesForAddingItems().ToList();
             ViewBag.ItemTags = _itemService.GetAllItemTagsForAddingItems().ToList();
             return View(new NewItemVm());
@@ -69,14 +72,14 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult AddItemBrand()
         {
-            return View(new NewItemBrandVm());
+            return View(new BrandVm());
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
-        public IActionResult AddItemBrand(NewItemBrandVm model)
+        public IActionResult AddItemBrand(BrandVm model)
         {
-            var id = _itemService.AddItemBrand(model);
+            var id = _brandService.AddBrand(model);
             return RedirectToAction("Index");
         }
 
@@ -115,7 +118,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult EditItem(int id)
         {
             var item = _itemService.GetItemById(id);
-            ViewBag.ItemBrands = _itemService.GetAllItemBrandsForAddingItems().ToList();
+            ViewBag.ItemBrands = _brandService.GetAllBrands(b => true);
             ViewBag.ItemTypes = _itemService.GetAllItemTypesForAddingItems().ToList();
             ViewBag.ItemTags = _itemService.GetAllItemTagsForAddingItems().ToList();
             item.Images = _imageService.GetImagesByItemId(id);
@@ -134,15 +137,15 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult EditItemBrand(int id)
         {
-            var item = _itemService.GetItemBrandById(id);
+            var item = _brandService.GetBrand(id);
             return View(item);
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
-        public IActionResult EditItemBrand(NewItemBrandVm model)
+        public IActionResult EditItemBrand(BrandVm model)
         {
-            _itemService.UpdateItemBrand(model);
+            _brandService.UpdateBrand(model);
             return RedirectToAction("Index");
         }
 
@@ -181,7 +184,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult ShowItemBrands()
         {
-            var brand = _itemService.GetAllItemBrands(20, 1, "");
+            var brand = _brandService.GetAllBrands(20, 1, "");
             return View(brand);
         }
 
@@ -198,7 +201,7 @@ namespace ECommerceApp.Web.Controllers
                 searchString = String.Empty;
             }
 
-            var item = _itemService.GetAllItemBrands(pageSize, pageNo.Value, searchString);
+            var item = _brandService.GetAllBrands(pageSize, pageNo.Value, searchString);
             return View(item);
         }
 
@@ -289,7 +292,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult ViewItemBrand(int id)
         {
-            var item = _itemService.GetItemBrandById(id);
+            var item = _brandService.GetBrand(id);
             return View(item);
         }
 
@@ -325,7 +328,7 @@ namespace ECommerceApp.Web.Controllers
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         public IActionResult DeleteItemBrand(int id)
         {
-            _itemService.DeleteItemBrand(id);
+            _brandService.DeleteBrand(id);
             return RedirectToAction("Index");
         }
 

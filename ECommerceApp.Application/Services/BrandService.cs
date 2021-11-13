@@ -81,5 +81,11 @@ namespace ECommerceApp.Application.Services
 
             return brandsToShow;
         }
+
+        public bool BrandExists(int id)
+        {
+            var exists = _repo.GetById(id) != null;
+            return exists;
+        }
     }
 }

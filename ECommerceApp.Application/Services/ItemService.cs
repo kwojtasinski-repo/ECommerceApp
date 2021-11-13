@@ -17,12 +17,10 @@ namespace ECommerceApp.Application.Services
     public class ItemService : AbstractService<ItemVm, IItemRepository, Item>, IItemService
     {
         private readonly IItemRepository _itemRepo;
-        private readonly IMapper _mapper;
 
         public ItemService(IItemRepository itemRepo, IMapper mapper) : base(itemRepo, mapper)
         {
             _itemRepo = itemRepo;
-            _mapper = mapper;
         }
 
         public override int Add(ItemVm vm)
@@ -69,18 +67,6 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public int AddItemBrand(NewItemBrandVm model)
-        {
-            if (model.Id != 0)
-            {
-                throw new BusinessException("When adding object Id should be equals 0");
-            }
-
-            var brand = _mapper.Map<Brand>(model);
-            var id = _itemRepo.AddItemBrand(brand);
-            return id;
-        }
-
         public int AddItemType(NewItemTypeVm model)
         {
             if (model.Id != 0)
@@ -118,13 +104,6 @@ namespace ECommerceApp.Application.Services
             return items;
         }
 
-        public NewItemBrandVm GetItemBrandById(int id)
-        {
-            var brand = _itemRepo.GetItemBrandById(id);
-            var brandVm = _mapper.Map<NewItemBrandVm>(brand);
-            return brandVm;
-        }
-
         public NewItemTypeVm GetItemTypeById(int id)
         {
             var itemType = _itemRepo.GetItemTypeById(id);
@@ -152,12 +131,6 @@ namespace ECommerceApp.Application.Services
             _itemRepo.UpdateItem(item);
         }
 
-        public void UpdateItemBrand(NewItemBrandVm model)
-        {
-            var brand = _mapper.Map<Brand>(model);
-            _itemRepo.UpdateItemBrand(brand);
-        }
-
         public void UpdateItemType(NewItemTypeVm model)
         {
             var type = _mapper.Map<ECommerceApp.Domain.Model.Type>(model);
@@ -172,11 +145,6 @@ namespace ECommerceApp.Application.Services
         public void DeleteItemType(int id)
         {
             _itemRepo.DeleteItemType(id);
-        }
-
-        public void DeleteItemBrand(int id)
-        {
-            _itemRepo.DeleteItemBrand(id);
         }
 
         public void DeleteItemTag(int id)
@@ -218,41 +186,6 @@ namespace ECommerceApp.Application.Services
                 .ToList();
 
             return types;
-        }
-
-        public List<BrandVm> GetAllItemBrands()
-        {
-            var brands = _itemRepo.GetAllBrands()
-                .ProjectTo<BrandVm>(_mapper.ConfigurationProvider)
-                .ToList();
-
-            return brands;
-        }
-
-        public ListForBrandVm GetAllItemBrands(int pageSize, int pageNo, string searchString)
-        {
-            var brands = _itemRepo.GetAllBrands().Where(it => it.Name.StartsWith(searchString))
-                .ProjectTo<BrandVm>(_mapper.ConfigurationProvider)
-                .ToList();
-            var brandsToShow = brands.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
-
-            var brandsList = new ListForBrandVm()
-            {
-                PageSize = pageSize,
-                CurrentPage = pageNo,
-                SearchString = searchString,
-                Brands = brandsToShow,
-                Count = brands.Count
-            };
-
-            return brandsList;
-        }
-
-        public IQueryable<NewItemBrandVm> GetAllItemBrandsForAddingItems()
-        {
-            var itemBrands = _itemRepo.GetAllBrands();
-            var itemBrandsVm = itemBrands.ProjectTo<NewItemBrandVm>(_mapper.ConfigurationProvider);
-            return itemBrandsVm;
         }
 
         public IQueryable<NewItemTypeVm> GetAllItemTypesForAddingItems()
@@ -338,16 +271,6 @@ namespace ECommerceApp.Application.Services
         {
             var item = _itemRepo.GetItemById(id);
             if (item == null)
-            {
-                return false;
-            }
-            return true;
-        }
-
-        public bool CheckIfItemBrandExists(int id)
-        {
-            var brand = _itemRepo.GetItemBrandById(id);
-            if (brand == null)
             {
                 return false;
             }

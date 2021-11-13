@@ -17,5 +17,6 @@ namespace ECommerceApp.Application.Interfaces
         BrandVm GetBrand(int id);
         void UpdateBrand(BrandVm brandVm);
         IEnumerable<BrandVm> GetAllBrands(Expression<Func<Brand, bool>> expression);
+        bool BrandExists(int id);
     }
 }

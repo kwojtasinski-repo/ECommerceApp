@@ -13,25 +13,18 @@ namespace ECommerceApp.Application.Interfaces
     {
         ListForItemVm GetAllItemsForList(int pageSize, int pageNo, string searchString);
         int AddItem(NewItemVm model);
-        int AddItemBrand(NewItemBrandVm model);
         int AddItemType(NewItemTypeVm model);
         NewItemVm GetItemById(int id);
         void UpdateItem(NewItemVm model);
-        NewItemBrandVm GetItemBrandById(int id);
         NewItemTypeVm GetItemTypeById(int id);
-        void UpdateItemBrand(NewItemBrandVm model);
         void UpdateItemType(NewItemTypeVm model);
         List<NewItemVm> GetAllItems();
         void DeleteItem(int id);
         void DeleteItemType(int id);
-        void DeleteItemBrand(int id);
         void DeleteItemTag(int id);
         ItemDetailsVm GetItemDetails(int id);
         ListForItemTypeVm GetAllItemTypes(int pageSize, int pageNo, string searchString);
-        List<BrandVm> GetAllItemBrands();
-        ListForBrandVm GetAllItemBrands(int pageSize, int pageNo, string searchString);
         IQueryable<NewItemTypeVm> GetAllItemTypesForAddingItems();
-        IQueryable<NewItemBrandVm> GetAllItemBrandsForAddingItems();
         List<TypeForListVm> GetAllItemTypes();
         int AddItemTag(NewTagVm model);
         ListForItemTagsVm GetAllTags(int pageSize, int pageNo, string searchString);
@@ -41,7 +34,6 @@ namespace ECommerceApp.Application.Interfaces
         NewTagVm GetItemTagById(int id);
         void UpdateItemTag(NewTagVm model);
         bool CheckIfItemExists(int id);
-        bool CheckIfItemBrandExists(int id);
         bool CheckIfItemTypeExists(int id);
         bool CheckIfItemTagExists(int id);
     }
