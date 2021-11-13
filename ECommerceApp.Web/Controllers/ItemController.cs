@@ -19,12 +19,14 @@ namespace ECommerceApp.Web.Controllers
         private readonly IBrandService _brandService;
         private readonly IImageService _imageService;
         private readonly ITypeService _typeService;
-        public ItemController(IItemService itemService, IImageService imageService, IBrandService brandService, ITypeService typeService)
+        private readonly ITagService _tagService;
+        public ItemController(IItemService itemService, IImageService imageService, IBrandService brandService, ITypeService typeService, ITagService tagService)
         {
             _itemService = itemService;
             _imageService = imageService;
             _brandService = brandService;
             _typeService = typeService;
+            _tagService = tagService;
         }
 
         [HttpGet]
@@ -59,7 +61,7 @@ namespace ECommerceApp.Web.Controllers
         {
             ViewBag.ItemBrands = _brandService.GetAllBrands(b => true);
             ViewBag.ItemTypes = _typeService.GetTypes(t => true);
-            ViewBag.ItemTags = _itemService.GetAllItemTagsForAddingItems().ToList();
+            ViewBag.ItemTags = _tagService.GetTags(t => true);
             return View(new NewItemVm());
         }
 
@@ -73,27 +75,12 @@ namespace ECommerceApp.Web.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet]
-        public IActionResult AddItemTag()
-        {
-            return View(new TagDetailsVm());
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpPost]
-        public IActionResult AddItemTag(TagDetailsVm model)
-        {
-            var id = _itemService.AddItemTag(model);
-            return RedirectToAction("Index");
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpGet]
         public IActionResult EditItem(int id)
         {
             var item = _itemService.GetItemById(id);
             ViewBag.ItemBrands = _brandService.GetAllBrands(b => true);
             ViewBag.ItemTypes = _typeService.GetTypes(t => true);
-            ViewBag.ItemTags = _itemService.GetAllItemTagsForAddingItems().ToList();
+            ViewBag.ItemTags = _tagService.GetTags(t => true);
             item.Images = _imageService.GetImagesByItemId(id);
             return View(item);
         }
@@ -104,48 +91,6 @@ namespace ECommerceApp.Web.Controllers
         {
             _itemService.UpdateItem(model);
             return RedirectToAction("Index");
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpGet]
-        public IActionResult EditItemTag(int id)
-        {
-            var tag = _itemService.GetItemTagById(id);
-            return View(tag);
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpPost]
-        public IActionResult EditItemTag(TagDetailsVm model)
-        {
-            _itemService.UpdateItemTag(model);
-            return RedirectToAction("Index");
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpGet]
-        public IActionResult ShowItemTags()
-        {
-            var tag = _itemService.GetAllTags(20, 1, "");
-            return View(tag);
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpPost]
-        public IActionResult ShowItemTags(int pageSize, int? pageNo, string searchString)
-        {
-            if (!pageNo.HasValue)
-            {
-                pageNo = 1;
-            }
-
-            if (searchString is null)
-            {
-                searchString = String.Empty;
-            }
-
-            var tag = _itemService.GetAllTags(pageSize, pageNo.Value, searchString);
-            return View(tag);
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
@@ -182,25 +127,10 @@ namespace ECommerceApp.Web.Controllers
             return View(item);
         }
 
-        [Authorize(Roles = "Administratorm, Admin, Manager, Service")]
-        [HttpGet]
-        public IActionResult ViewItemTag(int id)
-        {
-            var item = _itemService.GetItemTagById(id);
-            return View(item);
-        }
-
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         public IActionResult DeleteItem(int id)
         {
             _itemService.DeleteItem(id);
-            return RedirectToAction("Index");
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        public IActionResult DeleteItemTag(int id)
-        {
-            _itemService.DeleteItemTag(id);
             return RedirectToAction("Index");
         }
     }

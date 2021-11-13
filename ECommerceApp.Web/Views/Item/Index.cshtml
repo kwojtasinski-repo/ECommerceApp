@@ -17,7 +17,7 @@
     <a asp-action="Index" asp-controller="Type">Lista typów przedmiotów</a>
     @if (User.IsInRole("Administrator") || User.IsInRole("Manager") || User.IsInRole("Service") || User.IsInRole("Admin"))
     {
-        <a asp-action="ShowItemTags">Lista tagów</a>
+        <a asp-action="Index" asp-controller="Tag">Lista tagów</a>
         <a asp-action="ShowItemConnectedWithTags">Przedmioty z tagami</a>
     }
 </p>

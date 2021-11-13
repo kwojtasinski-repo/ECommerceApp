@@ -4,6 +4,7 @@ using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Item;
+using ECommerceApp.Application.ViewModels.Tag;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using Microsoft.EntityFrameworkCore;
@@ -45,7 +46,9 @@ namespace ECommerceApp.Application.Services
 
         public TagDetailsVm GetTagDetails(int id)
         {
-            var tag = _repo.GetAll().Include(it => it.ItemTags).ThenInclude(i => i.Item).Where(t => t.Id == id).FirstOrDefault();
+            var tag = _repo.GetAll().Include(it => it.ItemTags)
+                .ThenInclude(i => i.Item)
+                .Where(t => t.Id == id).FirstOrDefault();
             var tagVm = _mapper.Map<TagDetailsVm>(tag);
             return tagVm;
         }

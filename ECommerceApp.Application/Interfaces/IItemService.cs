@@ -17,16 +17,8 @@ namespace ECommerceApp.Application.Interfaces
         void UpdateItem(NewItemVm model);
         List<NewItemVm> GetAllItems();
         void DeleteItem(int id);
-        void DeleteItemTag(int id);
         ItemDetailsVm GetItemDetails(int id);
-        int AddItemTag(TagDetailsVm model);
-        ListForTagsVm GetAllTags(int pageSize, int pageNo, string searchString);
-        IQueryable<TagDetailsVm> GetAllItemTagsForAddingItems();
         ListForItemWithTagsVm GetAllItemsWithTags(int pageSize, int pageNo, string searchString);
-        List<TagVm> GetAllTags();
-        TagDetailsVm GetItemTagById(int id);
-        void UpdateItemTag(TagDetailsVm model);
-        bool CheckIfItemExists(int id);
-        bool CheckIfItemTagExists(int id);
+        bool ItemExists(int id);
     }
 }

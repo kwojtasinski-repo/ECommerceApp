@@ -1,7 +1,7 @@
-﻿@model ECommerceApp.Application.ViewModels.Item.NewTagVm
+﻿@model ECommerceApp.Application.ViewModels.Tag.TagVm
 
 @{
-    ViewData["Title"] = "AddItemTag";
+    ViewData["Title"] = "AddTag";
 }
 
 <h1>Dodawanie taga</h1>
@@ -10,7 +10,7 @@
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="AddItemTag">
+        <form asp-action="AddTag">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 <input type="hidden" asp-for="Id" class="form-control" />
             <div class="form-group">
@@ -26,7 +26,7 @@
 </div>
 
 <div>
-    <a asp-action="Index">Wróć do listy przedmiotów</a>
+    <a asp-action="Index">Wróć do listy tagów</a>
 </div>
 
 @section Scripts {

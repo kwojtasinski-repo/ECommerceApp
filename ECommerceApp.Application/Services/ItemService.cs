@@ -3,15 +3,13 @@ using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.ViewModels.Brand;
 using ECommerceApp.Application.ViewModels.Item;
+using ECommerceApp.Application.ViewModels.Tag;
 using ECommerceApp.Application.ViewModels.Type;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace ECommerceApp.Application.Services
 {
@@ -89,20 +87,6 @@ namespace ECommerceApp.Application.Services
             return items;
         }
 
-        public TypeVm GetItemTypeById(int id)
-        {
-            var itemType = _repo.GetItemTypeById(id);
-            var itemTypeVm = _mapper.Map<TypeVm>(itemType);
-            return itemTypeVm;
-        }
-
-        public TagDetailsVm GetItemTagById(int id)
-        {
-            var itemTag = _repo.GetItemTagById(id);
-            var itemTagVm = _mapper.Map<TagDetailsVm>(itemTag);
-            return itemTagVm;
-        }
-
         public NewItemVm GetItemById(int id)
         {
             var item = _repo.GetItemById(id);
@@ -116,25 +100,9 @@ namespace ECommerceApp.Application.Services
             _repo.UpdateItem(item);
         }
 
-        public void UpdateItemType(TypeVm model)
-        {
-            var type = _mapper.Map<ECommerceApp.Domain.Model.Type>(model);
-            _repo.UpdateItemType(type);
-        }
-
         public void DeleteItem(int id)
         {
             Delete(id);
-        }
-
-        public void DeleteItemType(int id)
-        {
-            _repo.DeleteItemType(id);
-        }
-
-        public void DeleteItemTag(int id)
-        {
-            _repo.DeleteTag(id);
         }
 
         public ItemDetailsVm GetItemDetails(int id)
@@ -143,81 +111,6 @@ namespace ECommerceApp.Application.Services
             var itemVm = _mapper.Map<ItemDetailsVm>(item);
 
             return itemVm;
-        }
-
-        public ListForTypeVm GetAllItemTypes(int pageSize, int pageNo, string searchString)
-        {
-            var types = _repo.GetAllTypes().Where(it => it.Name.StartsWith(searchString))
-                .ProjectTo<TypeVm>(_mapper.ConfigurationProvider)
-                .ToList();
-            var typesToShow = types.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
-
-            var typesList = new ListForTypeVm()
-            {
-                PageSize = pageSize,
-                CurrentPage = pageNo,
-                SearchString = searchString,
-                Types = typesToShow,
-                Count = types.Count
-            };
-
-            return typesList;
-        }
-
-        public List<TypeVm> GetAllItemTypes()
-        {
-            var types = _repo.GetAllTypes()
-                .ProjectTo<TypeVm>(_mapper.ConfigurationProvider)
-                .ToList();
-
-            return types;
-        }
-
-        public IQueryable<TypeVm> GetAllItemTypesForAddingItems()
-        {
-            var itemTypes = _repo.GetAllTypes();
-            var itemTypesVm = itemTypes.ProjectTo<TypeVm>(_mapper.ConfigurationProvider);
-            return itemTypesVm;
-        }
-
-        public int AddItemTag(TagDetailsVm model)
-        {
-            if (model.Id != 0)
-            {
-                throw new BusinessException("When adding object Id should be equals 0");
-            }
-
-            var itemTag = _mapper.Map<Tag>(model);
-            var id = _repo.AddItemTag(itemTag);
-            return id;
-        }
-
-        public ListForTagsVm GetAllTags(int pageSize, int pageNo, string searchString)
-        {
-            var tags = _repo.GetAllTags().Where(it => it.Name.StartsWith(searchString))
-                .ProjectTo<TagVm>(_mapper.ConfigurationProvider)
-                .ToList();
-            var tagsToShow = tags.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
-
-            var tagsList = new ListForTagsVm()
-            {
-                PageSize = pageSize,
-                CurrentPage = pageNo,
-                SearchString = searchString,
-                Tags = tagsToShow,
-                Count = tags.Count
-            };
-
-            return tagsList;
-        }
-
-        public List<TagVm> GetAllTags()
-        {
-            var tags = _repo.GetAllTags()
-                .ProjectTo<TagVm>(_mapper.ConfigurationProvider)
-                .ToList();
-            
-            return tags;
         }
 
         public ListForItemWithTagsVm GetAllItemsWithTags(int pageSize, int pageNo, string searchString)
@@ -239,43 +132,10 @@ namespace ECommerceApp.Application.Services
             return itemsWithTagsList;
         }
 
-        public IQueryable<TagDetailsVm> GetAllItemTagsForAddingItems()
-        {
-            var itemTags = _repo.GetAllTags();
-            var itemTagsVm = itemTags.ProjectTo<TagDetailsVm>(_mapper.ConfigurationProvider);
-            return itemTagsVm;
-        }
-
-        public void UpdateItemTag(TagDetailsVm model)
-        {
-            var tag = _mapper.Map<Tag>(model);
-            _repo.UpdateTag(tag);
-        }
-
-        public bool CheckIfItemExists(int id)
+        public bool ItemExists(int id)
         {
             var item = _repo.GetItemById(id);
             if (item == null)
-            {
-                return false;
-            }
-            return true;
-        }
-
-        public bool CheckIfItemTypeExists(int id)
-        {
-            var type = _repo.GetItemTypeById(id);
-            if (type == null)
-            {
-                return false;
-            }
-            return true;
-        }
-
-        public bool CheckIfItemTagExists(int id)
-        {
-            var tag = _repo.GetItemTagById(id);
-            if (tag == null)
             {
                 return false;
             }

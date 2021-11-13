@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ECommerceApp.Application.ViewModels.Item
+namespace ECommerceApp.Application.ViewModels.Tag
 {
     public class ListForTagsVm
     {

@@ -1,16 +1,16 @@
-﻿@model ECommerceApp.Application.ViewModels.Item.ListForTagsVm
+﻿@model ECommerceApp.Application.ViewModels.Tag.ListForTagsVm
 
 @{
-    ViewData["Title"] = "ShowItemTags";
+    ViewData["Title"] = "Index";
 }
 
 <h1>Lista tagów</h1>
 
 <p>
-    <a asp-action="AddItemTag">Dodaj nowy tag</a>
-    <a asp-action="Index">Powrót do listy przedmiotów</a>
+    <a asp-action="AddTag">Dodaj nowy tag</a>
+    <a asp-action="Index" asp-controller="Item">Powrót do listy przedmiotów</a>
 </p>
-<form id="reload" asp-action="ShowItemTags" asp-controller="Item" method="post">
+<form id="reload" asp-action="Index" asp-controller="Tag" method="post">
     <div class="row">
         <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
         <input type="submit" value="Wyszukaj" />
@@ -38,9 +38,9 @@
                         @Html.DisplayFor(modelItem => item.Name)
                     </td>
                     <td>
-                        @Html.ActionLink("Edytuj", "EditItemTag", new { id = item.Id }) |
-                        @Html.ActionLink("Szczegóły", "ViewItemTag", new { id = item.Id }) |
-                        @Html.ActionLink("Usuń", "DeleteItemTag", new { id = item.Id })
+                        @Html.ActionLink("Edytuj", "EditTag", new { id = item.Id }) |
+                        @Html.ActionLink("Szczegóły", "ViewTag", new { id = item.Id }) |
+                        @Html.ActionLink("Usuń", "DeleteTag", new { id = item.Id })
                     </td>
                 </tr>
             }
@@ -65,7 +65,7 @@
             </tr>
         </table>
         <input type="hidden" name="pageNo" id="pageNo" />
-        <input type="hidden" name="pageSize" id="pageSize" value="2" />
+        <input type="hidden" name="pageSize" id="pageSize" value="20" />
     </div>
 </form>
 
@@ -76,7 +76,7 @@
             var token = $('input[name="__RequestVerificationToken"]').val();
             document.getElementById("pageNo").value = index;
             $.ajax({
-                url: "/Item/ShowItemTags/", 
+                url: "/Tag/",
                 type: 'POST',
                 data: {//int pageSize, int? pageNo, string searchString
                     __RequestVerificationToken: token,

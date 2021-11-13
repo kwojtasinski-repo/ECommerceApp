@@ -49,7 +49,7 @@ namespace ECommerceApp.API.Controllers
         [HttpPut]
         public IActionResult EditItem(ItemVm model)
         {
-            var modelExists = _itemService.CheckIfItemExists(model.Id);
+            var modelExists = _itemService.ItemExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
             {
                 return Conflict(ModelState);

@@ -1,6 +1,7 @@
 ﻿using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Item;
+using ECommerceApp.Application.ViewModels.Tag;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -15,19 +16,19 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class TagController : ControllerBase
     {
-        private readonly IItemService _itemService;
+        private readonly ITagService _tagService;
 
-        public TagController(IItemService itemService)
+        public TagController(ITagService tagService)
         {
-            _itemService = itemService;
+            _tagService = tagService;
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet]
         public ActionResult<List<TagVm>> GetItemTags()
         {
-            var tags = _itemService.GetAllTags();
-            if (tags.Count == 0)
+            var tags = _tagService.GetTags(t => true);
+            if (tags.Count() == 0)
             {
                 return NotFound();
             }
@@ -38,7 +39,7 @@ namespace ECommerceApp.API.Controllers
         [HttpGet("{id}")]
         public ActionResult<TagDetailsVm> GetTag(int id)
         {
-            var tag = _itemService.GetItemTagById(id);
+            var tag = _tagService.GetTagById(id);
             if (tag == null)
             {
                 return NotFound();
@@ -48,26 +49,26 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPut]
-        public IActionResult EditItemTag(TagDetailsVm model)
+        public IActionResult EditItemTag(TagVm model)
         {
-            var modelExists = _itemService.CheckIfItemTagExists(model.Id);
+            var modelExists = _tagService.TagExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
             {
                 return Conflict(ModelState);
             }
-            _itemService.UpdateItemTag(model);
+            _tagService.UpdateTag(model);
             return Ok();
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
-        public IActionResult AddItemTag(TagDetailsVm model)
+        public IActionResult AddItemTag(TagVm model)
         {
             if (!ModelState.IsValid || model.Id != 0)
             {
                 return Conflict(ModelState);
             }
-            _itemService.AddItemTag(model);
+            _tagService.AddTag(model);
             return Ok();
         }
 
@@ -75,7 +76,7 @@ namespace ECommerceApp.API.Controllers
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         public IActionResult DeleteItemTag(int id)
         {
-            _itemService.DeleteItemTag(id);
+            _tagService.DeleteTag(id);
             return RedirectToAction("Index");
         }
     }

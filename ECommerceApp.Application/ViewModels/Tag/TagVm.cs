@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ECommerceApp.Application.ViewModels.Item
+namespace ECommerceApp.Application.ViewModels.Tag
 {
     public class TagVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Tag>
     {
@@ -13,7 +13,7 @@ namespace ECommerceApp.Application.ViewModels.Item
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ECommerceApp.Domain.Model.Tag, TagVm>();
+            profile.CreateMap<ECommerceApp.Domain.Model.Tag, TagVm>().ReverseMap();
         }
     }
 
