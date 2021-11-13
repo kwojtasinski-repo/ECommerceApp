@@ -7,19 +7,19 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Item
 {
-    public class TagForListVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Tag>
+    public class TagVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Tag>
     {
         public string Name { get; set; }
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ECommerceApp.Domain.Model.Tag, TagForListVm>();
+            profile.CreateMap<ECommerceApp.Domain.Model.Tag, TagVm>();
         }
     }
 
-    public class TagForListValidation : AbstractValidator<TagForListVm>
+    public class TagValidation : AbstractValidator<TagVm>
     {
-        public TagForListValidation()
+        public TagValidation()
         {
             RuleFor(x => x.Id).NotNull();
             RuleFor(x => x.Name).NotNull();

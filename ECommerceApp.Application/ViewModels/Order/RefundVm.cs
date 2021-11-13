@@ -7,7 +7,7 @@ using System.Collections.Generic;
 
 namespace ECommerceApp.Application.ViewModels.Order
 {
-    public class NewRefundVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Refund>
+    public class RefundVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Refund>
     {
         public string Reason { get; set; }
         public bool Accepted { get; set; }
@@ -22,11 +22,11 @@ namespace ECommerceApp.Application.ViewModels.Order
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<NewRefundVm, ECommerceApp.Domain.Model.Refund>().ReverseMap();
+            profile.CreateMap<RefundVm, ECommerceApp.Domain.Model.Refund>().ReverseMap();
         }
     }
 
-    public class NewRefundValidation : AbstractValidator<NewRefundVm>
+    public class NewRefundValidation : AbstractValidator<RefundVm>
     {
         public NewRefundValidation()
         {

@@ -87,7 +87,7 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public int AddPayment(NewPaymentVm paymentVm)
+        public int AddPayment(PaymentVm paymentVm)
         {
             if (paymentVm.Id != 0)
             {
@@ -100,7 +100,7 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public int AddRefund(NewRefundVm refundVm)
+        public int AddRefund(RefundVm refundVm)
         {
             if (refundVm.Id != 0)
             {
@@ -343,10 +343,10 @@ namespace ECommerceApp.Application.Services
             return paymentDetailsVm;
         }
 
-        public NewPaymentVm GetPaymentForEdit(int id)
+        public PaymentVm GetPaymentForEdit(int id)
         {
             var payment = _orderRepo.GetPaymentById(id);
-            var paymentVm = _mapper.Map<NewPaymentVm>(payment);
+            var paymentVm = _mapper.Map<PaymentVm>(payment);
             return paymentVm;
         }
 
@@ -357,10 +357,10 @@ namespace ECommerceApp.Application.Services
             return refundDetailsVm;
         }
 
-        public NewRefundVm GetRefundForEdit(int id)
+        public RefundVm GetRefundForEdit(int id)
         {
             var refund = _orderRepo.GetRefundById(id);
-            var refundVm = _mapper.Map<NewRefundVm>(refund);
+            var refundVm = _mapper.Map<RefundVm>(refund);
             return refundVm;
         }
 
@@ -412,13 +412,13 @@ namespace ECommerceApp.Application.Services
             }
         }
 
-        public void UpdatePayment(NewPaymentVm paymentVm)
+        public void UpdatePayment(PaymentVm paymentVm)
         {
             var payment = _mapper.Map<Payment>(paymentVm);
             _orderRepo.UpdatePayment(payment);
         }
 
-        public void UpdateRefund(NewRefundVm refundVm)
+        public void UpdateRefund(RefundVm refundVm)
         {
             var refund = _mapper.Map<Refund>(refundVm);
             _orderRepo.UpdateRefund(refund);
@@ -533,10 +533,10 @@ namespace ECommerceApp.Application.Services
             _orderRepo.AddOrderItems(orderItems);
         }
 
-        public NewPaymentVm GetPaymentById(int id)
+        public PaymentVm GetPaymentById(int id)
         {
             var payment = _orderRepo.GetPaymentById(id);
-            var paymentVm = _mapper.Map<NewPaymentVm>(payment);
+            var paymentVm = _mapper.Map<PaymentVm>(payment);
             return paymentVm;
         }
 
@@ -800,12 +800,12 @@ namespace ECommerceApp.Application.Services
             return true;
         }
 
-        public NewPaymentVm InitPayment(int orderId)
+        public PaymentVm InitPayment(int orderId)
         {
             Random random = new Random();
             var order = GetOrderById(orderId);
             var customer = GetCustomerById(order.CustomerId);
-            var payment = new NewPaymentVm()
+            var payment = new PaymentVm()
             {
                 OrderId = order.Id,
                 Number = random.Next(0, 1000),

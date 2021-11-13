@@ -96,10 +96,10 @@ namespace ECommerceApp.Application.Services
             return itemTypeVm;
         }
 
-        public NewTagVm GetItemTagById(int id)
+        public TagDetailsVm GetItemTagById(int id)
         {
             var itemTag = _repo.GetItemTagById(id);
-            var itemTagVm = _mapper.Map<NewTagVm>(itemTag);
+            var itemTagVm = _mapper.Map<TagDetailsVm>(itemTag);
             return itemTagVm;
         }
 
@@ -180,7 +180,7 @@ namespace ECommerceApp.Application.Services
             return itemTypesVm;
         }
 
-        public int AddItemTag(NewTagVm model)
+        public int AddItemTag(TagDetailsVm model)
         {
             if (model.Id != 0)
             {
@@ -192,14 +192,14 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public ListForItemTagsVm GetAllTags(int pageSize, int pageNo, string searchString)
+        public ListForTagsVm GetAllTags(int pageSize, int pageNo, string searchString)
         {
             var tags = _repo.GetAllTags().Where(it => it.Name.StartsWith(searchString))
-                .ProjectTo<TagForListVm>(_mapper.ConfigurationProvider)
+                .ProjectTo<TagVm>(_mapper.ConfigurationProvider)
                 .ToList();
             var tagsToShow = tags.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
 
-            var tagsList = new ListForItemTagsVm()
+            var tagsList = new ListForTagsVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
@@ -211,10 +211,10 @@ namespace ECommerceApp.Application.Services
             return tagsList;
         }
 
-        public List<TagForListVm> GetAllTags()
+        public List<TagVm> GetAllTags()
         {
             var tags = _repo.GetAllTags()
-                .ProjectTo<TagForListVm>(_mapper.ConfigurationProvider)
+                .ProjectTo<TagVm>(_mapper.ConfigurationProvider)
                 .ToList();
             
             return tags;
@@ -239,14 +239,14 @@ namespace ECommerceApp.Application.Services
             return itemsWithTagsList;
         }
 
-        public IQueryable<NewTagVm> GetAllItemTagsForAddingItems()
+        public IQueryable<TagDetailsVm> GetAllItemTagsForAddingItems()
         {
             var itemTags = _repo.GetAllTags();
-            var itemTagsVm = itemTags.ProjectTo<NewTagVm>(_mapper.ConfigurationProvider);
+            var itemTagsVm = itemTags.ProjectTo<TagDetailsVm>(_mapper.ConfigurationProvider);
             return itemTagsVm;
         }
 
-        public void UpdateItemTag(NewTagVm model)
+        public void UpdateItemTag(TagDetailsVm model)
         {
             var tag = _mapper.Map<Tag>(model);
             _repo.UpdateTag(tag);

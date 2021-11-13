@@ -5,18 +5,18 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Item
 {
-    public class ListForItemTagsVm
+    public class ListForTagsVm
     {
-        public List<TagForListVm> Tags { get; set; }
+        public List<TagVm> Tags { get; set; }
         public int CurrentPage { get; set; }
         public int PageSize { get; set; }
         public string SearchString { get; set; }
         public int Count { get; set; }
     }
 
-    public class ListForItemTagsValidation : AbstractValidator<ListForItemTagsVm>
+    public class ListForTagsValidation : AbstractValidator<ListForTagsVm>
     {
-        public ListForItemTagsValidation()
+        public ListForTagsValidation()
         {
             RuleFor(x => x.Tags).NotNull();
             RuleFor(x => x.CurrentPage).NotNull();

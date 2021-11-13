@@ -7,7 +7,7 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Item
 {
-    public class NewTagVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Tag>
+    public class TagDetailsVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Tag>
     {
         public string Name { get; set; }
 
@@ -15,13 +15,13 @@ namespace ECommerceApp.Application.ViewModels.Item
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<NewTagVm, ECommerceApp.Domain.Model.Tag>().ReverseMap();
+            profile.CreateMap<TagDetailsVm, ECommerceApp.Domain.Model.Tag>().ReverseMap();
         }
     }
 
-    public class NewTagValidation : AbstractValidator<NewTagVm>
+    public class TagDetailsValidation : AbstractValidator<TagDetailsVm>
     {
-        public NewTagValidation()
+        public TagDetailsValidation()
         {
             RuleFor(x => x.Id).NotNull();
             RuleFor(x => x.Name).NotNull();

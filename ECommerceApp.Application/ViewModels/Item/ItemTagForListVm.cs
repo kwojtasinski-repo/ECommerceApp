@@ -13,7 +13,7 @@ namespace ECommerceApp.Application.ViewModels.Item
         public ItemDetailsVm Item { get; set; }
         public int TagId { get; set; }
         public string TagName { get; set; }
-        public TagForListVm Tag { get; set; }
+        public TagVm Tag { get; set; }
 
         public void Mapping(Profile profile)
         {
