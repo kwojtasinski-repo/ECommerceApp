@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ECommerceApp.Application.ViewModels.Coupon
+namespace ECommerceApp.Application.ViewModels.CouponUsed
 {
     public class CouponUsedDetailsVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.CouponUsed>
     {
@@ -13,8 +13,6 @@ namespace ECommerceApp.Application.ViewModels.Coupon
         public string Code { get; set; }
         public int OrderId { get; set; } // OrderId for order discount relation 1:1
         public int Number { get; set; }
-
-        public ICollection<OrderItemDetailsVm> OrderItems { get; set; }
 
         public void Mapping(Profile profile)
         {

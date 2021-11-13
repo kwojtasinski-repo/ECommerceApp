@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ECommerceApp.Application.ViewModels.Coupon
+namespace ECommerceApp.Application.ViewModels.CouponUsed
 {
     public class ListForCouponUsedVm
     {

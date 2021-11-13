@@ -1,11 +1,12 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
+using ECommerceApp.Application.ViewModels.Coupon;
 using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ECommerceApp.Application.ViewModels.Coupon
+namespace ECommerceApp.Application.ViewModels.CouponType
 {
     public class CouponTypeDetailsVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.CouponType>
     {
