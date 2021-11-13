@@ -35,6 +35,7 @@ namespace ECommerceApp.Application
             services.AddTransient<IImageService, ImageService>();
             services.AddTransient<ICouponTypeService, CouponTypeService>();
             services.AddTransient<ICouponUsedService, CouponUsedService>();
+            services.AddTransient<IBrandService, BrandService>();
             return services;
         }
     }

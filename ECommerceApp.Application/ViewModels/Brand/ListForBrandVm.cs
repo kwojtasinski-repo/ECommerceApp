@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace ECommerceApp.Application.ViewModels.Brand
 {
-    public class ListForItemBrandVm
+    public class ListForBrandVm
     {
         public List<BrandVm> Brands { get; set; }
         public int CurrentPage { get; set; }
@@ -12,7 +12,7 @@ namespace ECommerceApp.Application.ViewModels.Brand
         public int Count { get; set; }
     }
 
-    public class ListForItemBrandValidation : AbstractValidator<ListForItemBrandVm>
+    public class ListForItemBrandValidation : AbstractValidator<ListForBrandVm>
     {
         public ListForItemBrandValidation()
         {
