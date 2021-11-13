@@ -10,11 +10,8 @@ namespace ECommerceApp.Infrastructure.Repositories
 {
     public class CouponTypeRepository : GenericRepository<CouponType>, ICouponTypeRepository
     {
-        private readonly Context _context;
-
         public CouponTypeRepository(Context context) : base(context)
         {
-            _context = context;
         }
 
         public CouponType GetCouponTypeById(int couponTypeId)

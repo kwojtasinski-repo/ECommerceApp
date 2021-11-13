@@ -10,11 +10,8 @@ namespace ECommerceApp.Infrastructure.Repositories
 {
     public class ImageRepository : GenericRepository<Image>, IImageRepository
     {
-        private readonly Context _context;
-
         public ImageRepository(Context context) : base(context)
         {
-            _context = context;
         }
 
         public async Task<int> AddImage(Image image)

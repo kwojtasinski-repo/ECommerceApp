@@ -10,11 +10,8 @@ namespace ECommerceApp.Infrastructure.Repositories
 {
     public class ItemRepository : GenericRepository<Item>, IItemRepository
     {
-        private readonly Context _context;
-
         public ItemRepository(Context context) : base(context)
         {
-            _context = context;
         }
 
         public void DeleteItem(int itemId)

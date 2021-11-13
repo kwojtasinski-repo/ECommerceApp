@@ -10,11 +10,8 @@ namespace ECommerceApp.Infrastructure.Repositories
 {
     public class CouponUsedRepository : GenericRepository<CouponUsed>, ICouponUsedRepository
     {
-        private readonly Context _context;
-
         public CouponUsedRepository(Context context) : base(context)
         {
-            _context = context;
         }
 
         public IQueryable<CouponUsed> GetAllCouponsUsed()

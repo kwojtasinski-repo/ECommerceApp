@@ -10,11 +10,8 @@ namespace ECommerceApp.Infrastructure.Repositories
 {
     public class CustomerRepository :GenericRepository<Customer>, ICustomerRepository
     {
-        private readonly Context _context;
-
         public CustomerRepository(Context context) : base(context)
         {
-            _context = context;
         }
 
         public void DeleteCustomer(int customerId)

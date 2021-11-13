@@ -11,7 +11,7 @@ namespace ECommerceApp.Infrastructure.Repositories
 {
     public class GenericRepository<T> : IGenericRepository<T> where T : BaseEntity
     {
-        private readonly Context _context;
+        protected readonly Context _context;
 
         public GenericRepository(Context context)
         {

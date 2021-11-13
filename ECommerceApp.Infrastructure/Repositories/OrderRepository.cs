@@ -10,11 +10,8 @@ namespace ECommerceApp.Infrastructure.Repositories
 {
     public class OrderRepository : GenericRepository<Order>,  IOrderRepository
     {
-        private readonly Context _context;
-
         public OrderRepository(Context context) : base(context)
         {
-            _context = context;
         }
 
         public void DeleteOrder(int orderId)
