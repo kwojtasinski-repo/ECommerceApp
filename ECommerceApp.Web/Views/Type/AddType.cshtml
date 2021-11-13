@@ -1,7 +1,7 @@
-﻿@model ECommerceApp.Application.ViewModels.Item.NewItemTypeVm
+﻿@model ECommerceApp.Application.ViewModels.Type.TypeVm
 
 @{
-    ViewData["Title"] = "AddItemType";
+    ViewData["Title"] = "AddType";
 }
 
 <h1>Dodaj typ produktu</h1>
@@ -9,7 +9,7 @@
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="AddItemType">
+        <form asp-action="AddType">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 <input type="hidden" asp-for="Id" class="form-control" />
             <div class="form-group">
@@ -25,7 +25,7 @@
 </div>
 
 <div>
-    <a asp-action="Index">Wróć do listy przedmiotów</a>
+    <a asp-action="Index">Wróć do listy typów przedmiotów</a>
 </div>
 
 @section Scripts {

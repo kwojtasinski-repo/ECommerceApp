@@ -12,9 +12,9 @@ namespace ECommerceApp.Application.ViewModels.Brand
         public int Count { get; set; }
     }
 
-    public class ListForItemBrandValidation : AbstractValidator<ListForBrandVm>
+    public class ListForBrandVmValidation : AbstractValidator<ListForBrandVm>
     {
-        public ListForItemBrandValidation()
+        public ListForBrandVmValidation()
         {
             RuleFor(x => x.Brands).NotNull();
             RuleFor(x => x.CurrentPage).NotNull();

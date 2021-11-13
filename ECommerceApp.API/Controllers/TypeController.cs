@@ -1,6 +1,7 @@
 ﻿using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Item;
+using ECommerceApp.Application.ViewModels.Type;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -16,17 +17,19 @@ namespace ECommerceApp.API.Controllers
     public class TypeController : ControllerBase
     {
         private readonly IItemService _itemService;
+        private readonly ITypeService _typeService;
 
-        public TypeController(IItemService itemService)
+        public TypeController(IItemService itemService, ITypeService typeService)
         {
             _itemService = itemService;
+            _typeService = typeService;
         }
 
         [HttpGet]
-        public ActionResult<List<TypeForListVm>> GetItemTypes()
+        public ActionResult<List<TypeVm>> GetItemTypes()
         {
-            var types = _itemService.GetAllItemTypes();
-            if (types.Count == 0)
+            var types = _typeService.GetTypes(t => true);
+            if (types.Count() == 0)
             {
                 return NotFound();
             }
@@ -34,9 +37,9 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpGet("{id}")]
-        public ActionResult<NewItemTypeVm> GetType(int id)
+        public ActionResult<TypeVm> GetType(int id)
         {
-            var type = _itemService.GetItemTypeById(id);
+            var type = _typeService.GetTypeDetails(id);
             if (type == null)
             {
                 return NotFound();
@@ -46,26 +49,26 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPut]
-        public IActionResult EditItemType(NewItemTypeVm model)
+        public IActionResult EditItemType(TypeVm model)
         {
-            var modelExists = _itemService.CheckIfItemTypeExists(model.Id);
+            var modelExists = _typeService.TypeExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
             {
                 return Conflict(ModelState);
             }
-            _itemService.UpdateItemType(model);
+            _typeService.UpdateType(model);
             return Ok();
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
-        public IActionResult AddItemType(NewItemTypeVm model)
+        public IActionResult AddItemType(TypeVm model)
         {
             if (!ModelState.IsValid || model.Id != 0)
             {
                 return Conflict(ModelState);
             }
-            _itemService.AddItemType(model);
+            _typeService.AddType(model);
             return Ok();
         }
 
@@ -73,7 +76,7 @@ namespace ECommerceApp.API.Controllers
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         public IActionResult DeleteItemType(int id)
         {
-            _itemService.DeleteItemType(id);
+            _typeService.DeleteType(id);
             return RedirectToAction("Index");
         }
     }

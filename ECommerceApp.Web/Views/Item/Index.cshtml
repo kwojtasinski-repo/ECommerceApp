@@ -14,7 +14,7 @@
         <a asp-action="AddItem">Stwórz nowy przedmiot</a>
     }
     <a asp-action="Index" asp-controller="Brand">Lista firm</a>
-    <a asp-action="ShowItemTypes">Lista typów przedmiotów</a>
+    <a asp-action="Index" asp-controller="Type">Lista typów przedmiotów</a>
     @if (User.IsInRole("Administrator") || User.IsInRole("Manager") || User.IsInRole("Service") || User.IsInRole("Admin"))
     {
         <a asp-action="ShowItemTags">Lista tagów</a>

@@ -102,8 +102,11 @@ namespace ECommerceApp.Application.Services
 
         public void UpdateCouponUsed(CouponUsedVm couponUsedVm)
         {
-            var couponUsed = _mapper.Map<CouponUsed>(couponUsedVm);
-            _repo.UpdateCouponUsed(couponUsed);
+            if (couponUsedVm != null)
+            {
+                var couponUsed = _mapper.Map<CouponUsed>(couponUsedVm);
+                _repo.UpdateCouponUsed(couponUsed);
+            }
         }
 
         public IEnumerable<CouponVm> GetAllCouponsUsed(Expression<Func<CouponUsed, bool>> expression)

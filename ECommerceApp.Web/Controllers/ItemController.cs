@@ -6,6 +6,7 @@ using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Brand;
 using ECommerceApp.Application.ViewModels.Item;
+using ECommerceApp.Application.ViewModels.Type;
 using ECommerceApp.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,11 +18,13 @@ namespace ECommerceApp.Web.Controllers
         private readonly IItemService _itemService;
         private readonly IBrandService _brandService;
         private readonly IImageService _imageService;
-        public ItemController(IItemService itemService, IImageService imageService, IBrandService brandService)
+        private readonly ITypeService _typeService;
+        public ItemController(IItemService itemService, IImageService imageService, IBrandService brandService, ITypeService typeService)
         {
             _itemService = itemService;
             _imageService = imageService;
             _brandService = brandService;
+            _typeService = typeService;
         }
 
         [HttpGet]
@@ -55,7 +58,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult AddItem()
         {
             ViewBag.ItemBrands = _brandService.GetAllBrands(b => true);
-            ViewBag.ItemTypes = _itemService.GetAllItemTypesForAddingItems().ToList();
+            ViewBag.ItemTypes = _typeService.GetTypes(t => true);
             ViewBag.ItemTags = _itemService.GetAllItemTagsForAddingItems().ToList();
             return View(new NewItemVm());
         }
@@ -65,21 +68,6 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult AddItem(NewItemVm model)
         {
             var id = _itemService.AddItem(model);
-            return RedirectToAction("Index");
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpGet]
-        public IActionResult AddItemType()
-        {
-            return View(new NewItemTypeVm());
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpPost]
-        public IActionResult AddItemType(NewItemTypeVm model)
-        {
-            var id = _itemService.AddItemType(model);
             return RedirectToAction("Index");
         }
 
@@ -104,7 +92,7 @@ namespace ECommerceApp.Web.Controllers
         {
             var item = _itemService.GetItemById(id);
             ViewBag.ItemBrands = _brandService.GetAllBrands(b => true);
-            ViewBag.ItemTypes = _itemService.GetAllItemTypesForAddingItems().ToList();
+            ViewBag.ItemTypes = _typeService.GetTypes(t => true);
             ViewBag.ItemTags = _itemService.GetAllItemTagsForAddingItems().ToList();
             item.Images = _imageService.GetImagesByItemId(id);
             return View(item);
@@ -115,22 +103,6 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult EditItem(NewItemVm model)
         {
             _itemService.UpdateItem(model);
-            return RedirectToAction("Index");
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpGet]
-        public IActionResult EditItemType(int id)
-        {
-            var item = _itemService.GetItemTypeById(id);
-            return View(item);
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpPost]
-        public IActionResult EditItemType(NewItemTypeVm model)
-        {
-            _itemService.UpdateItemType(model);
             return RedirectToAction("Index");
         }
 
@@ -148,30 +120,6 @@ namespace ECommerceApp.Web.Controllers
         {
             _itemService.UpdateItemTag(model);
             return RedirectToAction("Index");
-        }
-
-        [HttpGet]
-        public IActionResult ShowItemTypes()
-        {
-            var type = _itemService.GetAllItemTypes(20, 1, "");
-            return View(type);
-        }
-
-        [HttpPost]
-        public IActionResult ShowItemTypes(int pageSize, int? pageNo, string searchString)
-        {
-            if (!pageNo.HasValue)
-            {
-                pageNo = 1;
-            }
-
-            if (searchString is null)
-            {
-                searchString = String.Empty;
-            }
-
-            var type = _itemService.GetAllItemTypes(pageSize, pageNo.Value, searchString);
-            return View(type);
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
@@ -234,13 +182,6 @@ namespace ECommerceApp.Web.Controllers
             return View(item);
         }
 
-        [HttpGet] 
-        public IActionResult ViewItemType(int id)
-        {
-            var item = _itemService.GetItemTypeById(id);
-            return View(item);
-        }
-
         [Authorize(Roles = "Administratorm, Admin, Manager, Service")]
         [HttpGet]
         public IActionResult ViewItemTag(int id)
@@ -253,13 +194,6 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult DeleteItem(int id)
         {
             _itemService.DeleteItem(id);
-            return RedirectToAction("Index");
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        public IActionResult DeleteItemType(int id)
-        {
-            _itemService.DeleteItemType(id);
             return RedirectToAction("Index");
         }
 

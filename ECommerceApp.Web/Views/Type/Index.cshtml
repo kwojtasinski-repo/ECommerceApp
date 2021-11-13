@@ -1,19 +1,19 @@
-﻿@model ECommerceApp.Application.ViewModels.Item.ListForItemTypeVm
+﻿@model ECommerceApp.Application.ViewModels.Type.ListForTypeVm
 
 @{
-    ViewData["Title"] = "ShowItemTypes";
+    ViewData["Title"] = "Index";
 }
 
 <h1>Lista typów przedmiotów</h1>
 
 <p>
     @if (User.IsInRole("Administrator") || User.IsInRole("Manager") || User.IsInRole("Service"))
-    { 
-        <a asp-action="AddItemType">Dodaj nowy typ</a>
+    {
+        <a asp-action="AddType">Dodaj nowy typ</a>
     }
-    <a asp-action="Index">Powrót do listy przedmiotów</a>
+    <a asp-action="Index" asp-controller="Item">Powrót do listy przedmiotów</a>
 </p>
-<form asp-action="ShowItemTypes" asp-controller="Item" method="post">
+<form asp-action="Index" asp-controller="Type" method="post">
     <div class="row">
         <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
         <input type="submit" value="Wyszukaj" />
@@ -41,9 +41,9 @@
                         @Html.DisplayFor(modelItem => item.Name)
                     </td>
                     <td>
-                        @Html.ActionLink("Edytuj", "EditItemType", new { id = item.Id }) |
-                        @Html.ActionLink("Szczegóły", "ViewItemType", new { id = item.Id }) |
-                        @Html.ActionLink("Usuń", "DeleteItemType", new { id = item.Id })
+                        @Html.ActionLink("Edytuj", "EditType", new { id = item.Id }) |
+                        @Html.ActionLink("Szczegóły", "ViewType", new { id = item.Id }) |
+                        @Html.ActionLink("Usuń", "DeleteType", new { id = item.Id })
                     </td>
                 </tr>
             }

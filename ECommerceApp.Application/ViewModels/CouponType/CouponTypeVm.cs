@@ -20,9 +20,9 @@ namespace ECommerceApp.Application.ViewModels.CouponType
         }
     }
 
-    public class NewCouponTypeValidation : AbstractValidator<CouponTypeVm>
+    public class CouponTypeVmValidation : AbstractValidator<CouponTypeVm>
     {
-        public NewCouponTypeValidation()
+        public CouponTypeVmValidation()
         {
             RuleFor(x => x.Id).NotNull();
             RuleFor(x => x.Type).NotNull();

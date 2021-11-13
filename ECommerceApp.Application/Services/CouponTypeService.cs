@@ -71,8 +71,11 @@ namespace ECommerceApp.Application.Services
 
         public void UpdateCouponType(CouponTypeVm couponTypeVm)
         {
-            var couponType = _mapper.Map<CouponType>(couponTypeVm);
-            _repo.UpdateCouponType(couponType);
+            if (couponTypeVm != null)
+            {
+                var couponType = _mapper.Map<CouponType>(couponTypeVm);
+                _repo.UpdateCouponType(couponType);
+            }
         }
 
         public IEnumerable<CouponTypeVm> GetAllCouponsTypes(Expression<Func<CouponType, bool>> expression)

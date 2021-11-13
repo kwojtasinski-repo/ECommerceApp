@@ -3,20 +3,20 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ECommerceApp.Application.ViewModels.Item
+namespace ECommerceApp.Application.ViewModels.Type
 {
-    public class ListForItemTypeVm
+    public class ListForTypeVm
     {
-        public List<TypeForListVm> Types { get; set; }
+        public List<TypeVm> Types { get; set; }
         public int CurrentPage { get; set; }
         public int PageSize { get; set; }
         public string SearchString { get; set; }
         public int Count { get; set; }
     }
 
-    public class ListForItemTypeValidation : AbstractValidator<ListForItemTypeVm>
+    public class ListForTypeVmValidation : AbstractValidator<ListForTypeVm>
     {
-        public ListForItemTypeValidation()
+        public ListForTypeVmValidation()
         {
             RuleFor(x => x.Types).NotNull();
             RuleFor(x => x.CurrentPage).NotNull();

@@ -70,7 +70,10 @@ namespace ECommerceApp.Application.Services
 
         public void UpdateBrand(BrandVm brandVm)
         {
-            Update(brandVm);
+            if (brandVm != null)
+            {
+                Update(brandVm);
+            }
         }
 
         public IEnumerable<BrandVm> GetAllBrands(Expression<Func<Brand, bool>> expression)
@@ -84,7 +87,14 @@ namespace ECommerceApp.Application.Services
 
         public bool BrandExists(int id)
         {
-            var exists = _repo.GetById(id) != null;
+            var brand = _repo.GetById(id);
+            var exists = brand != null;
+
+            if (exists)
+            {
+                _repo.DetachEntity(brand);
+            }
+
             return exists;
         }
     }

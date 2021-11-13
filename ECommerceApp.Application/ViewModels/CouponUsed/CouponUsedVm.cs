@@ -19,9 +19,9 @@ namespace ECommerceApp.Application.ViewModels.CouponUsed
         }
     }
 
-    public class NewCouponUsedValidation : AbstractValidator<CouponUsedVm>
+    public class CouponUsedVmValidation : AbstractValidator<CouponUsedVm>
     {
-        public NewCouponUsedValidation()
+        public CouponUsedVmValidation()
         {
             RuleFor(x => x.Id).NotNull();
             RuleFor(x => x.CouponId).NotNull();

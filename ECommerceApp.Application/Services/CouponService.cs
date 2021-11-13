@@ -77,7 +77,10 @@ namespace ECommerceApp.Application.Services
 
         public void UpdateCoupon(CouponVm couponVm)
         {
-            Update(couponVm);
+            if (couponVm != null)
+            {
+                Update(couponVm);
+            }
         }
 
         public IEnumerable<CouponVm> GetAllCoupons(Expression<Func<Coupon,bool>> expression)

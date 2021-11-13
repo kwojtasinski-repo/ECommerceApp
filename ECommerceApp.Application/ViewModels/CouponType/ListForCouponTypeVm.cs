@@ -14,9 +14,9 @@ namespace ECommerceApp.Application.ViewModels.CouponType
         public int Count { get; set; }
     }
 
-    public class ListForCouponTypeValidation : AbstractValidator<ListForCouponTypeVm>
+    public class ListForCouponTypeVmValidation : AbstractValidator<ListForCouponTypeVm>
     {
-        public ListForCouponTypeValidation()
+        public ListForCouponTypeVmValidation()
         {
             RuleFor(x => x.CouponTypes).NotNull();
             RuleFor(x => x.CurrentPage).NotNull();

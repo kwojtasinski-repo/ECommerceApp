@@ -13,19 +13,12 @@ namespace ECommerceApp.Application.Interfaces
     {
         ListForItemVm GetAllItemsForList(int pageSize, int pageNo, string searchString);
         int AddItem(NewItemVm model);
-        int AddItemType(NewItemTypeVm model);
         NewItemVm GetItemById(int id);
         void UpdateItem(NewItemVm model);
-        NewItemTypeVm GetItemTypeById(int id);
-        void UpdateItemType(NewItemTypeVm model);
         List<NewItemVm> GetAllItems();
         void DeleteItem(int id);
-        void DeleteItemType(int id);
         void DeleteItemTag(int id);
         ItemDetailsVm GetItemDetails(int id);
-        ListForItemTypeVm GetAllItemTypes(int pageSize, int pageNo, string searchString);
-        IQueryable<NewItemTypeVm> GetAllItemTypesForAddingItems();
-        List<TypeForListVm> GetAllItemTypes();
         int AddItemTag(NewTagVm model);
         ListForItemTagsVm GetAllTags(int pageSize, int pageNo, string searchString);
         IQueryable<NewTagVm> GetAllItemTagsForAddingItems();
@@ -34,7 +27,6 @@ namespace ECommerceApp.Application.Interfaces
         NewTagVm GetItemTagById(int id);
         void UpdateItemTag(NewTagVm model);
         bool CheckIfItemExists(int id);
-        bool CheckIfItemTypeExists(int id);
         bool CheckIfItemTagExists(int id);
     }
 }

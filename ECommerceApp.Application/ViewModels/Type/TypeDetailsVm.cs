@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ECommerceApp.Application.ViewModels.Item
+namespace ECommerceApp.Application.ViewModels.Type
 {
     public class TypeDetailsVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Type>
     {

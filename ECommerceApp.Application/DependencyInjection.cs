@@ -15,14 +15,10 @@ using System.Text;
 
 namespace ECommerceApp.Application
 {
-    public static class DependencyInjection
+    public static class DependencyInjection 
     {
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
-            /*services.AddTransient<IBaseService<NewItemVm>, ItemServiceAbstract>();
-            services.AddTransient<IBaseService<NewCustomerVm>, CustomerServiceAbstract>();
-            services.AddTransient<IBaseService<NewOrderVm>, OrderServiceAbstract>();
-            services.AddTransient<IBaseService<NewCouponVm>, CouponServiceAbstract>();*/
             services.AddTransient<IItemService, ItemService>();
             services.AddTransient<ICustomerService, CustomerService>();
             services.AddTransient<IOrderService, OrderService>();
@@ -36,6 +32,7 @@ namespace ECommerceApp.Application
             services.AddTransient<ICouponTypeService, CouponTypeService>();
             services.AddTransient<ICouponUsedService, CouponUsedService>();
             services.AddTransient<IBrandService, BrandService>();
+            services.AddTransient<ITypeService, TypeService>();
             return services;
         }
     }
