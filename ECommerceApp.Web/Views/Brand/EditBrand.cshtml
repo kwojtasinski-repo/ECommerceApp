@@ -1,16 +1,16 @@
-﻿@model ECommerceApp.Application.ViewModels.Item.NewItemBrandVm
+﻿@model ECommerceApp.Application.ViewModels.Brand.BrandVm
 
 @{
-    ViewData["Title"] = "EditItemBrand";
+    ViewData["Title"] = "EditBrand";
 }
 
-<h1>Edycja marki przedmiotu</h1>
+<h1>Edycja firmy przedmiotu</h1>
 
 
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="EditItemBrand">
+        <form asp-action="EditBrand">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 <input type="hidden" asp-for="Id" class="form-control" />
             <div class="form-group">
@@ -26,7 +26,7 @@
 </div>
 
 <div>
-    <a asp-action="Index">Wróć do listy przedmiotów</a>
+    <a asp-action="Index">Wróć do listy firm przedmiotów</a>
 </div>
 
 @section Scripts {

@@ -1,4 +1,4 @@
-﻿@model ECommerceApp.Application.ViewModels.Coupon.ListForCouponUsedVm
+﻿@model ECommerceApp.Application.ViewModels.CouponUsed.ListForCouponUsedVm
 
 @{
     ViewData["Title"] = "Index";
@@ -87,7 +87,7 @@
         var token = $('input[name="__RequestVerificationToken"]').val();
         document.getElementById("pageNo").value = index;
         $.ajax({
-            url: "/Coupon/ShowCouponsUsed/",
+            url: "/CouponUsed/",
             type: 'POST',
             data: {//int pageSize, int? pageNo, string searchString
                 __RequestVerificationToken: token,

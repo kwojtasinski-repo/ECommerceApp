@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Coupon;
+using ECommerceApp.Application.ViewModels.CouponType;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

@@ -1,5 +1,6 @@
 ﻿using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services;
+using ECommerceApp.Application.ViewModels.Brand;
 using ECommerceApp.Application.ViewModels.Item;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -15,18 +16,18 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class BrandController : ControllerBase
     {
-        private readonly IItemService _itemService;
+        private readonly IBrandService _brandService;
 
-        public BrandController(IItemService itemService)
+        public BrandController(IBrandService brandService)
         {
-            _itemService = itemService;
+            _brandService = brandService;
         }
 
         [HttpGet]
-        public ActionResult<List<BrandForListVm>> GetItemBrands()
+        public ActionResult<List<BrandVm>> GetItemBrands()
         {
-            var brands = _itemService.GetAllItemBrands();
-            if (brands.Count == 0)
+            var brands = _brandService.GetAllBrands(b => true);
+            if (brands.Count() == 0)
             {
                 return NotFound();
             }
@@ -34,9 +35,9 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpGet("{id}")]
-        public ActionResult<NewItemBrandVm> GetBrand(int id)
+        public ActionResult<BrandVm> GetBrand(int id)
         {
-            var brand = _itemService.GetItemBrandById(id);
+            var brand = _brandService.GetBrand(id);
             if (brand == null)
             {
                 return NotFound();
@@ -46,34 +47,34 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPut]
-        public IActionResult EditItemBrand(NewItemBrandVm model)
+        public IActionResult EditBrand(BrandVm model)
         {
-            var modelExists = _itemService.CheckIfItemBrandExists(model.Id);
+            var modelExists = _brandService.BrandExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
             {
                 return Conflict(ModelState);
             }
-            _itemService.UpdateItemBrand(model);
+            _brandService.UpdateBrand(model);
             return Ok();
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
-        public IActionResult AddItemBrand(NewItemBrandVm model)
+        public IActionResult AddBrand(BrandVm model)
         {
             if (!ModelState.IsValid || model.Id != 0)
             {
                 return Conflict(ModelState);
             }
-            _itemService.AddItemBrand(model);
+            _brandService.AddBrand(model);
             return Ok();
         }
 
         [HttpDelete("{id}")]
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        public IActionResult DeleteItemBrand(int id)
+        public IActionResult DeleteBrand(int id)
         {
-            _itemService.DeleteItemBrand(id);
+            _brandService.DeleteBrand(id);
             return RedirectToAction("Index");
         }
     }

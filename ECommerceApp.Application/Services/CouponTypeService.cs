@@ -3,15 +3,13 @@ using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.ViewModels.Coupon;
-using ECommerceApp.Application.ViewModels.Order;
+using ECommerceApp.Application.ViewModels.CouponType;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace ECommerceApp.Application.Services
 {
