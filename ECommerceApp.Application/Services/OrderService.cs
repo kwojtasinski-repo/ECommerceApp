@@ -5,6 +5,7 @@ using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels;
 using ECommerceApp.Application.ViewModels.Coupon;
+using ECommerceApp.Application.ViewModels.CouponUsed;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Order;

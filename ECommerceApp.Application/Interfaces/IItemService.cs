@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.ViewModels.Item;
+﻿using ECommerceApp.Application.ViewModels.Brand;
+using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
@@ -27,8 +28,8 @@ namespace ECommerceApp.Application.Interfaces
         void DeleteItemTag(int id);
         ItemDetailsVm GetItemDetails(int id);
         ListForItemTypeVm GetAllItemTypes(int pageSize, int pageNo, string searchString);
-        List<BrandForListVm> GetAllItemBrands();
-        ListForItemBrandVm GetAllItemBrands(int pageSize, int pageNo, string searchString);
+        List<BrandVm> GetAllItemBrands();
+        ListForBrandVm GetAllItemBrands(int pageSize, int pageNo, string searchString);
         IQueryable<NewItemTypeVm> GetAllItemTypesForAddingItems();
         IQueryable<NewItemBrandVm> GetAllItemBrandsForAddingItems();
         List<TypeForListVm> GetAllItemTypes();

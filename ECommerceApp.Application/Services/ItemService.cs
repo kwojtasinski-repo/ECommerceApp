@@ -3,6 +3,7 @@ using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.ViewModels.Brand;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -219,23 +220,23 @@ namespace ECommerceApp.Application.Services
             return types;
         }
 
-        public List<BrandForListVm> GetAllItemBrands()
+        public List<BrandVm> GetAllItemBrands()
         {
             var brands = _itemRepo.GetAllBrands()
-                .ProjectTo<BrandForListVm>(_mapper.ConfigurationProvider)
+                .ProjectTo<BrandVm>(_mapper.ConfigurationProvider)
                 .ToList();
 
             return brands;
         }
 
-        public ListForItemBrandVm GetAllItemBrands(int pageSize, int pageNo, string searchString)
+        public ListForBrandVm GetAllItemBrands(int pageSize, int pageNo, string searchString)
         {
             var brands = _itemRepo.GetAllBrands().Where(it => it.Name.StartsWith(searchString))
-                .ProjectTo<BrandForListVm>(_mapper.ConfigurationProvider)
+                .ProjectTo<BrandVm>(_mapper.ConfigurationProvider)
                 .ToList();
             var brandsToShow = brands.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
 
-            var brandsList = new ListForItemBrandVm()
+            var brandsList = new ListForBrandVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,

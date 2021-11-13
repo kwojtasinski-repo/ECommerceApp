@@ -88,34 +88,5 @@ namespace ECommerceApp.Application.Services
 
             return couponsToShow;
         }
-
-        public void DeleteCouponUsed(int couponId, int couponUsedId)
-        {
-            var coupon = _repo.GetAll().Where(c => c.Id == couponId && c.CouponUsedId == couponUsedId).FirstOrDefault();
-
-            if (coupon is null)
-            {
-               // throw new BusinessException("Given invalid id");
-                return;
-            }
-
-            _repo.DetachEntity(coupon);
-            coupon.CouponUsedId = null;
-            _repo.Update(coupon);
-        }
-
-        public void AddCouponUsed(int couponId, int couponUsedId)
-        {
-            var coupon = _repo.GetAll().Where(c => c.Id == couponId).FirstOrDefault();
-
-            if (coupon is null)
-            {
-                throw new BusinessException("Given invalid id");
-            }
-
-            _repo.DetachEntity(coupon);
-            coupon.CouponUsedId = couponUsedId;
-            _repo.Update(coupon);
-        }
     }
 }
