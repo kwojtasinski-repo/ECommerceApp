@@ -1,9 +1,8 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
+using ECommerceApp.Application.ViewModels.CouponType;
+using ECommerceApp.Application.ViewModels.CouponUsed;
 using FluentValidation;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Coupon
 {

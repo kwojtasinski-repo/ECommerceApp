@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.Application.ViewModels.Coupon;
+using ECommerceApp.Application.ViewModels.CouponType;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
