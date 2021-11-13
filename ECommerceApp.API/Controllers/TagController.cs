@@ -24,7 +24,7 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet]
-        public ActionResult<List<TagForListVm>> GetItemTags()
+        public ActionResult<List<TagVm>> GetItemTags()
         {
             var tags = _itemService.GetAllTags();
             if (tags.Count == 0)
@@ -36,7 +36,7 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administratorm, Admin, Manager, Service")]
         [HttpGet("{id}")]
-        public ActionResult<NewTagVm> GetTag(int id)
+        public ActionResult<TagDetailsVm> GetTag(int id)
         {
             var tag = _itemService.GetItemTagById(id);
             if (tag == null)
@@ -48,7 +48,7 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPut]
-        public IActionResult EditItemTag(NewTagVm model)
+        public IActionResult EditItemTag(TagDetailsVm model)
         {
             var modelExists = _itemService.CheckIfItemTagExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
@@ -61,7 +61,7 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
-        public IActionResult AddItemTag(NewTagVm model)
+        public IActionResult AddItemTag(TagDetailsVm model)
         {
             if (!ModelState.IsValid || model.Id != 0)
             {

@@ -19,20 +19,20 @@ namespace ECommerceApp.Application.Interfaces
         ListForOrderVm GetAllOrders(int pageSize, int pageNo, string searchString);
         NewOrderVm GetOrderForEdit(int id);
         OrderDetailsVm GetOrderDetail(int id);
-        int AddPayment(NewPaymentVm payment);
-        void UpdatePayment(NewPaymentVm paymentVm);
+        int AddPayment(PaymentVm payment);
+        void UpdatePayment(PaymentVm paymentVm);
         void DeletePayment(int id);
         List<OrderForListVm> GetAllOrders();
         ListForPaymentVm GetAllPayments(int pageSize, int pageNo, string searchString);
-        NewPaymentVm GetPaymentForEdit(int id);
+        PaymentVm GetPaymentForEdit(int id);
         PaymentDetailsVm GetPaymentDetail(int id);
-        int AddRefund(NewRefundVm refundVm);
-        void UpdateRefund(NewRefundVm refundVm);
+        int AddRefund(RefundVm refundVm);
+        void UpdateRefund(RefundVm refundVm);
         void AddCouponToOrder(int orderId, int couponUsedId);
         void DeleteRefund(int id);
         List<PaymentForListVm> GetAllPayments();
         ListForRefundVm GetAllRefunds(int pageSize, int pageNo, string searchString);
-        NewRefundVm GetRefundForEdit(int id);
+        RefundVm GetRefundForEdit(int id);
         RefundDetailsVm GetRefundDetail(int id);
         ListForItemOrderVm GetAllItemsOrdered(int pageSize, int pageNo, string searchString);
         ListForItemOrderVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo);
@@ -49,7 +49,7 @@ namespace ECommerceApp.Application.Interfaces
         void CalculateCost(NewOrderVm order, NewOrderItemVm model);
         NewCustomerForOrdersVm GetCustomerById(int id);
         void AddOrderItems(List<NewOrderItemVm> orderItems);
-        NewPaymentVm GetPaymentById(int id);
+        PaymentVm GetPaymentById(int id);
         OrderItemDetailsVm GetOrderItemDetail(int id);
         bool CheckEnteredRefund(string reasonRefund);
         ListForOrderVm GetAllOrdersByCustomerId(int customerId, int pageSize, int pageNo);
@@ -72,6 +72,6 @@ namespace ECommerceApp.Application.Interfaces
         bool CheckIfRefundExists(int id);
         bool CheckIfOrderItemExists(int id);
         List<OrderForListVm> GetAllOrdersByUserId(string userId);
-        NewPaymentVm InitPayment(int orderId);
+        PaymentVm InitPayment(int orderId);
     }
 }

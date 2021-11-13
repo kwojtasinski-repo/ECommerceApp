@@ -75,12 +75,12 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult AddItemTag()
         {
-            return View(new NewTagVm());
+            return View(new TagDetailsVm());
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
-        public IActionResult AddItemTag(NewTagVm model)
+        public IActionResult AddItemTag(TagDetailsVm model)
         {
             var id = _itemService.AddItemTag(model);
             return RedirectToAction("Index");
@@ -116,7 +116,7 @@ namespace ECommerceApp.Web.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
-        public IActionResult EditItemTag(NewTagVm model)
+        public IActionResult EditItemTag(TagDetailsVm model)
         {
             _itemService.UpdateItemTag(model);
             return RedirectToAction("Index");

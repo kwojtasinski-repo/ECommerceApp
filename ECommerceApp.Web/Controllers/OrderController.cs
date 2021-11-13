@@ -201,7 +201,7 @@ namespace ECommerceApp.Web.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost]
-        public IActionResult Payment(NewPaymentVm model)
+        public IActionResult Payment(PaymentVm model)
         {
             var id = _orderService.AddPayment(model);
             return RedirectToAction("Index", "Item");
@@ -387,7 +387,7 @@ namespace ECommerceApp.Web.Controllers
                 if(model.ChangedRefund)
                 {
                     model.RefundDate = System.DateTime.Now;
-                    var refund = new NewRefundVm()
+                    var refund = new RefundVm()
                     {
                         Reason = model.ReasonRefund,
                         CustomerId = model.CustomerId,
@@ -430,7 +430,7 @@ namespace ECommerceApp.Web.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost] 
-        public IActionResult EditPayment(NewPaymentVm model)
+        public IActionResult EditPayment(PaymentVm model)
         {
             _orderService.UpdatePayment(model);
             return RedirectToAction("Index");

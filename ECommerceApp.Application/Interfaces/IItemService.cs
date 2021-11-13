@@ -19,13 +19,13 @@ namespace ECommerceApp.Application.Interfaces
         void DeleteItem(int id);
         void DeleteItemTag(int id);
         ItemDetailsVm GetItemDetails(int id);
-        int AddItemTag(NewTagVm model);
-        ListForItemTagsVm GetAllTags(int pageSize, int pageNo, string searchString);
-        IQueryable<NewTagVm> GetAllItemTagsForAddingItems();
+        int AddItemTag(TagDetailsVm model);
+        ListForTagsVm GetAllTags(int pageSize, int pageNo, string searchString);
+        IQueryable<TagDetailsVm> GetAllItemTagsForAddingItems();
         ListForItemWithTagsVm GetAllItemsWithTags(int pageSize, int pageNo, string searchString);
-        List<TagForListVm> GetAllTags();
-        NewTagVm GetItemTagById(int id);
-        void UpdateItemTag(NewTagVm model);
+        List<TagVm> GetAllTags();
+        TagDetailsVm GetItemTagById(int id);
+        void UpdateItemTag(TagDetailsVm model);
         bool CheckIfItemExists(int id);
         bool CheckIfItemTagExists(int id);
     }

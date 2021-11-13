@@ -22,7 +22,7 @@ namespace ECommerceApp.Application.ViewModels.Order
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<NewPaymentVm, ECommerceApp.Domain.Model.Payment>().ReverseMap()
+            profile.CreateMap<PaymentVm, ECommerceApp.Domain.Model.Payment>().ReverseMap()
                 .ForMember(o => o.OrderNumber, opt => opt.MapFrom(o => o.Order.Number))
                 .ForMember(c => c.CustomerName, opt => opt.MapFrom(c => c.Customer.FirstName + " " +
                                c.Customer.LastName + " " + c.Customer.NIP + " " + c.Customer.CompanyName))
