@@ -91,52 +91,6 @@ namespace ECommerceApp.Infrastructure.Repositories
                 .Include(inc => inc.Item).ThenInclude(inc => inc.Brand);
         }
 
-        public IQueryable<Payment> GetAllPayments()
-        {
-            return _context.Payments;
-        }
-
-        public void DeletePayment(int paymentId)
-        {
-            var payment = _context.Payments
-                .Include(inc => inc.Order)
-                .Include(inc => inc.Customer)
-                .FirstOrDefault(p => p.Id == paymentId);
-
-            if (payment != null)
-            {
-                var order = GetOrderById(payment.OrderId);
-                order.IsPaid = false;
-                UpdatedOrder(order);
-                _context.Payments.Remove(payment);
-                _context.SaveChanges();
-            }
-        }
-
-        public int AddPayment(Payment payment)
-        {
-            _context.Payments.Add(payment);
-            _context.SaveChanges();
-            if(payment.Id > 0)
-            {
-                var order = GetOrderById(payment.OrderId);
-                // should be only PaymentId and IsPaid 
-                // the other properties should be added when customer got package
-                order.PaymentId = payment.Id;
-                order.IsPaid = true;
-                order.Delivered = System.DateTime.Now;
-                order.IsDelivered = true;
-                UpdatedOrder(order);
-            }
-            return payment.Id;
-        }
-
-        public Payment GetPaymentById(int id)
-        {
-            var payment = _context.Payments.FirstOrDefault(p => p.Id == id);
-            return payment;
-        }
-
         public IQueryable<Refund> GetAllRefunds()
         {
             return _context.Refunds;

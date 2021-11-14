@@ -7,6 +7,7 @@ using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace ECommerceApp.Application.Interfaces
@@ -20,16 +21,10 @@ namespace ECommerceApp.Application.Interfaces
         NewOrderVm GetOrderForEdit(int id);
         OrderDetailsVm GetOrderDetail(int id);
         List<OrderForListVm> GetAllOrders();
-        int AddRefund(RefundVm refundVm);
-        void UpdateRefund(RefundVm refundVm);
         void AddCouponToOrder(int orderId, int couponUsedId);
         void DeleteRefund(int id);
-        ListForRefundVm GetAllRefunds(int pageSize, int pageNo, string searchString);
-        RefundVm GetRefundForEdit(int id);
-        RefundDetailsVm GetRefundDetail(int id);
         ListForItemOrderVm GetAllItemsOrdered(int pageSize, int pageNo, string searchString);
         ListForItemOrderVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo);
-        List<RefundForListVm> GetAllRefunds();
         IQueryable<NewCustomerForOrdersVm> GetAllCustomers();
         IQueryable<ECommerceApp.Domain.Model.Item> GetAllItemsToOrder();
         void DeleteCouponUsed(int orderId, int couponUsedId);
@@ -60,9 +55,10 @@ namespace ECommerceApp.Application.Interfaces
         void DeleteOrderItem(int id);
         List<OrderItemForListVm> GetAllItemsOrderedByItemId(int id);
         bool CheckIfOrderExists(int id);
-        bool CheckIfPaymentExists(int id);
         bool CheckIfRefundExists(int id);
         bool CheckIfOrderItemExists(int id);
         List<OrderForListVm> GetAllOrdersByUserId(string userId);
+        List<OrderForListVm> GetAllOrders(Expression<Func<Order,bool>> expression);
+        void AddRefund(int orderId, int refundId);
     }
 }

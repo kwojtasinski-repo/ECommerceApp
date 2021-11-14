@@ -17,13 +17,9 @@ namespace ECommerceApp.Application.Services
 {
     public class CustomerService : AbstractService<CustomerVm, ICustomerRepository, Customer>, ICustomerService
     {
-        private readonly ICustomerRepository _custRepo;
-        private readonly IMapper _mapper;
 
         public CustomerService(ICustomerRepository custRepo, IMapper mapper) : base(custRepo, mapper)
         {
-            _custRepo = custRepo;
-            _mapper = mapper;
         }
 
         public int AddCustomer(NewCustomerVm newCustomer)
@@ -34,7 +30,7 @@ namespace ECommerceApp.Application.Services
             }
 
             var customer = _mapper.Map<Domain.Model.Customer>(newCustomer);
-            var id = _custRepo.Add(customer);
+            var id = _repo.Add(customer);
             return id;
         }
 
@@ -45,7 +41,7 @@ namespace ECommerceApp.Application.Services
         
         public ListForCustomerVm GetAllCustomersForList(int pageSize, int pageNo, string searchString)
         {
-            var customers = _custRepo.GetAllCustomers()
+            var customers = _repo.GetAllCustomers()
                 .Where(p => p.FirstName.StartsWith(searchString) || p.LastName.StartsWith(searchString)
                 || p.CompanyName.StartsWith(searchString) || p.NIP.StartsWith(searchString));
 
@@ -67,7 +63,7 @@ namespace ECommerceApp.Application.Services
 
         public List<NewCustomerVm> GetAllCustomersForList()
         {
-            var customers = _custRepo.GetAllCustomers()
+            var customers = _repo.GetAllCustomers()
                 .ProjectTo<NewCustomerVm>(_mapper.ConfigurationProvider)
                 .ToList();
 
@@ -76,7 +72,7 @@ namespace ECommerceApp.Application.Services
 
         public CustomerDetailsVm GetCustomerDetails(int customerId)
         {
-            var customer = _custRepo.GetCustomerById(customerId);
+            var customer = _repo.GetCustomerById(customerId);
             var customerVm = _mapper.Map<CustomerDetailsVm>(customer); 
 
             return customerVm;
@@ -84,14 +80,14 @@ namespace ECommerceApp.Application.Services
 
         public CustomerDetailsVm GetCustomerDetails(int id, string userId)
         {
-            var customer = _custRepo.GetCustomerById(id, userId);
+            var customer = _repo.GetCustomerById(id, userId);
             var customerVm = _mapper.Map<CustomerDetailsVm>(customer);
 
             return customerVm;
         }
         public NewCustomerVm GetCustomerForEdit(int id)
         {
-            var customer = _custRepo.GetCustomerById(id);
+            var customer = _repo.GetCustomerById(id);
             var customerVm = _mapper.Map<NewCustomerVm>(customer);
 
             return customerVm;
@@ -100,7 +96,7 @@ namespace ECommerceApp.Application.Services
         public void UpdateCustomer(NewCustomerVm model)
         {
             var customer = _mapper.Map<Customer>(model);
-            _custRepo.UpdateCustomer(customer);
+            _repo.UpdateCustomer(customer);
         }
 
         public int CreateNewDetailContact(NewContactDetailVm newContact)
@@ -111,7 +107,7 @@ namespace ECommerceApp.Application.Services
             }
 
             var contactDetail = _mapper.Map<ContactDetail>(newContact);
-            var id = _custRepo.AddNewContact(contactDetail);
+            var id = _repo.AddNewContact(contactDetail);
             return id;
         }
 
@@ -123,27 +119,27 @@ namespace ECommerceApp.Application.Services
             }
 
             var address = _mapper.Map<Address>(newAddress);
-            var id = _custRepo.AddNewAddress(address);
+            var id = _repo.AddNewAddress(address);
             return id;
         }
 
         public NewAddressVm GetAddressForEdit(int id)
         {
-            var address = _custRepo.GetAddressById(id);
+            var address = _repo.GetAddressById(id);
             var addresVm = _mapper.Map<NewAddressVm>(address);
             return addresVm;
         }
 
         public NewContactDetailVm GetContactDetail(int id)
         {
-            var contactDetail = _custRepo.GetContactDetailById(id);
+            var contactDetail = _repo.GetContactDetailById(id);
             var contactDetailVm = _mapper.Map<NewContactDetailVm>(contactDetail);
             return contactDetailVm;
         }
 
         public NewContactDetailVm GetContactDetail(int id, string userId)
         {
-            var contactDetail = _custRepo.GetContactDetailById(id, userId);
+            var contactDetail = _repo.GetContactDetailById(id, userId);
             var contactDetailVm = _mapper.Map<NewContactDetailVm>(contactDetail);
             return contactDetailVm;
         }
@@ -151,48 +147,48 @@ namespace ECommerceApp.Application.Services
         public void UpdateAddress(NewAddressVm model)
         {
             var address = _mapper.Map<Address>(model);
-            _custRepo.UpdateAddress(address);
+            _repo.UpdateAddress(address);
         }
 
         public void UpdateContactDetail(NewContactDetailVm model)
         {
             var contactDetail = _mapper.Map<ContactDetail>(model);
-            _custRepo.UpdateContactDetail(contactDetail);
+            _repo.UpdateContactDetail(contactDetail);
         }
 
         public void UpdateContactDetailType(NewContactDetailTypeVm model)
         {
             var contactDetailType = _mapper.Map<ContactDetailType>(model);
-            _custRepo.UpdateContactDetailType(contactDetailType);
+            _repo.UpdateContactDetailType(contactDetailType);
         }
 
         public void DeleteAddress(int id)
         {
-            _custRepo.DeleteAddress(id);
+            _repo.DeleteAddress(id);
         }
 
         public void DeleteContactDetail(int id)
         {
-            _custRepo.DeleteContactDetail(id);
+            _repo.DeleteContactDetail(id);
         }
 
         public AddressDetailVm GetAddressDetail(int id)
         {
-            var adress = _custRepo.GetAddressById(id);
+            var adress = _repo.GetAddressById(id);
             var adressVm = _mapper.Map<AddressDetailVm>(adress);
             return adressVm;
         }
 
         public AddressDetailVm GetAddressDetail(int id, string userId)
         {
-            var adress = _custRepo.GetAddressById(id, userId);
+            var adress = _repo.GetAddressById(id, userId);
             var adressVm = _mapper.Map<AddressDetailVm>(adress);
             return adressVm;
         }
 
         public bool CheckIfAddressExists(int id, string userId)
         {
-            var address = _custRepo.GetAddressById(id, userId);
+            var address = _repo.GetAddressById(id, userId);
             
             if(address == null)
             {
@@ -204,7 +200,7 @@ namespace ECommerceApp.Application.Services
 
         public IQueryable<ContactDetailTypeVm> GetConactDetailTypes()
         {
-            var contactDetailTypes = _custRepo.GetAllDetailTypes();
+            var contactDetailTypes = _repo.GetAllDetailTypes();
             var contactDetailTypesVm = contactDetailTypes.ProjectTo<ContactDetailTypeVm>(_mapper.ConfigurationProvider);
             return contactDetailTypesVm;
         }
@@ -243,7 +239,7 @@ namespace ECommerceApp.Application.Services
 
         public bool CheckIfCustomerExists(int id, string userId)
         {
-            var customer = _custRepo.GetCustomerById(id, userId);
+            var customer = _repo.GetCustomerById(id, userId);
             
             if (customer == null)
             {
@@ -255,7 +251,7 @@ namespace ECommerceApp.Application.Services
 
         public bool CheckIfContactDetailExists(int id, string userId)
         {
-            var contactDetail = _custRepo.GetContactDetailById(id, userId);
+            var contactDetail = _repo.GetContactDetailById(id, userId);
 
             if (contactDetail == null)
             {
@@ -267,7 +263,7 @@ namespace ECommerceApp.Application.Services
 
         public bool CheckIfContactDetailType(int id)
         {
-            var contactDetailType = _custRepo.GetContactDetailTypeById(id);
+            var contactDetailType = _repo.GetContactDetailTypeById(id);
 
             if (contactDetailType == null)
             {
@@ -285,7 +281,7 @@ namespace ECommerceApp.Application.Services
             }
 
             var address = _mapper.Map<Address>(newAddress);
-            var id = _custRepo.AddNewAddress(address);
+            var id = _repo.AddNewAddress(address);
             return id;
         }
 
@@ -296,7 +292,7 @@ namespace ECommerceApp.Application.Services
                 throw new BusinessException("When adding object Id should be equals 0");
             }
 
-            var customers = _custRepo.GetAllCustomers().Where(c => c.UserId == userId).ToList();
+            var customers = _repo.GetAllCustomers().Where(c => c.UserId == userId).ToList();
             bool customerIdExists = false;
             foreach (var cust in customers)
             {
@@ -310,7 +306,7 @@ namespace ECommerceApp.Application.Services
             if (customerIdExists)
             {
                 var address = _mapper.Map<Address>(model);
-                var id = _custRepo.AddNewAddress(address);
+                var id = _repo.AddNewAddress(address);
                 return id;
             }
             else
@@ -327,7 +323,7 @@ namespace ECommerceApp.Application.Services
             }
 
             var contactDetail = _mapper.Map<ContactDetail>(newContactDetail);
-            var id = _custRepo.AddNewContact(contactDetail);
+            var id = _repo.AddNewContact(contactDetail);
             return id;
         }
 
@@ -338,7 +334,7 @@ namespace ECommerceApp.Application.Services
                 throw new BusinessException("When adding object Id should be equals 0");
             }
 
-            var customersId = _custRepo.GetAllCustomers().Where(c => c.UserId == userId).Select(c => c.Id).ToList();
+            var customersId = _repo.GetAllCustomers().Where(c => c.UserId == userId).Select(c => c.Id).ToList();
             bool customerIdExists = false;
             foreach (var custId in customersId)
             {
@@ -352,7 +348,7 @@ namespace ECommerceApp.Application.Services
             if (customerIdExists)
             {
                 var contactDetail = _mapper.Map<ContactDetail>(model);
-                var id = _custRepo.AddNewContact(contactDetail);
+                var id = _repo.AddNewContact(contactDetail);
                 return id;
             }
             else
@@ -369,13 +365,13 @@ namespace ECommerceApp.Application.Services
             }
 
             var contactDetailType = _mapper.Map<ContactDetailType>(newContactDetailType);
-            var id = _custRepo.AddNewContactDetailType(contactDetailType);
+            var id = _repo.AddNewContactDetailType(contactDetailType);
             return id;
         }
 
         public NewContactDetailTypeVm GetContactDetailType(int id)
         {
-            var contactDetailType = _custRepo.GetContactDetailTypeById(id);
+            var contactDetailType = _repo.GetContactDetailTypeById(id);
             var contactDetailTypeVm = _mapper.Map<NewContactDetailTypeVm>(contactDetailType);
             return contactDetailTypeVm;
         }
@@ -383,7 +379,7 @@ namespace ECommerceApp.Application.Services
         public void UpdateContactDetail(ContactDetailVm model)
         {
             var contactDetail = _mapper.Map<ContactDetail>(model);
-            _custRepo.UpdateContactDetail(contactDetail);
+            _repo.UpdateContactDetail(contactDetail);
         }
 
         public int AddContactDetail(ContactDetailVm model, string userId)
@@ -393,7 +389,7 @@ namespace ECommerceApp.Application.Services
                 throw new BusinessException("When adding object Id should be equals 0");
             }
 
-            var customersId = _custRepo.GetAllCustomers().Where(c => c.UserId == userId).Select(c => c.Id).ToList();
+            var customersId = _repo.GetAllCustomers().Where(c => c.UserId == userId).Select(c => c.Id).ToList();
             bool customerIdExists = false;
             foreach (var custId in customersId)
             {
@@ -407,7 +403,7 @@ namespace ECommerceApp.Application.Services
             if (customerIdExists)
             {
                 var contactDetail = _mapper.Map<ContactDetail>(model);
-                var id = _custRepo.AddNewContact(contactDetail);
+                var id = _repo.AddNewContact(contactDetail);
                 return id;
             }
             else

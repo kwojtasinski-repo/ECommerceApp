@@ -17,7 +17,6 @@ namespace ECommerceApp.Application.Services
 {
     public class ImageService : AbstractService<ImageVm, IImageRepository, Image>, IImageService
     {
-        private readonly IImageRepository _repo;
         private readonly IFileStore _fileStore;
         private readonly int ALLOWED_SIZE = 10 * 1024 * 1024; // 10 mb
         private readonly List<string> IMAGE_EXTENSION_PARAMETERS = new List<string> { ".jpg", ".png" }; // extensions
@@ -26,7 +25,6 @@ namespace ECommerceApp.Application.Services
 
         public ImageService(IImageRepository repo, IFileStore fileStore) : base(repo)
         {
-            _repo = repo;
             _fileStore = fileStore;
         }
 

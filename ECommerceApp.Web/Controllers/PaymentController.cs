@@ -75,6 +75,10 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult EditPayment(int id)
         {
             var payment = _paymentService.GetPaymentById(id);
+            if (payment is null)
+            {
+                return NotFound();
+            }
             return View(payment);
         }
 

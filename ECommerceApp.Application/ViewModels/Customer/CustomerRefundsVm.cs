@@ -5,7 +5,7 @@ using System;
 
 namespace ECommerceApp.Application.ViewModels.Customer
 {
-    public class CustomerRefundsVm : BaseVm, IMapFrom<Refund>
+    public class CustomerRefundsVm : BaseVm, IMapFrom<Domain.Model.Refund>
     {
         public string Reason { get; set; }
         public bool Accepted { get; set; }
@@ -16,7 +16,7 @@ namespace ECommerceApp.Application.ViewModels.Customer
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<Refund, CustomerRefundsVm>()
+            profile.CreateMap<Domain.Model.Refund, CustomerRefundsVm>()
                 .ForMember(r => r.Id, opt => opt.MapFrom(re => re.Id))
                 .ForMember(r => r.Reason, opt => opt.MapFrom(re => re.Reason))
                 .ForMember(r => r.Accepted, opt => opt.MapFrom(re => re.Accepted))

@@ -67,6 +67,10 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult EditTag(int id)
         {
             var tag = _tagService.GetTagById(id);
+            if (tag is null)
+            {
+                return NotFound();
+            }
             return View(tag);
         }
 
@@ -83,6 +87,10 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult ViewTag(int id)
         {
             var tag = _tagService.GetTagDetails(id);
+            if (tag is null)
+            {
+                return NotFound();
+            }
             return View(tag);
         }
 

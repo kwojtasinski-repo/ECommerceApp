@@ -63,8 +63,12 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult EditBrand(int id)
         {
-            var item = _brandService.GetBrand(id);
-            return View(item);
+            var brand = _brandService.GetBrand(id);
+            if (brand is null)
+            {
+                return NotFound();
+            }
+            return View(brand);
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
@@ -78,8 +82,12 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult ViewBrand(int id)
         {
-            var item = _brandService.GetBrandDetail(id);
-            return View(item);
+            var brand = _brandService.GetBrandDetail(id);
+            if (brand is null)
+            {
+                return NotFound();
+            }
+            return View(brand);
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]

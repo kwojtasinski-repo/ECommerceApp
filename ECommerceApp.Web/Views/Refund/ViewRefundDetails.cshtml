@@ -1,4 +1,4 @@
-﻿@model ECommerceApp.Application.ViewModels.Order.RefundDetailsVm
+﻿@model ECommerceApp.Application.ViewModels.Refund.RefundDetailsVm
 
 @{
     ViewData["Title"] = "ViewRefundDetails";
@@ -54,6 +54,9 @@
     </dl>
 </div>
 <div>
-    @Html.ActionLink("Edytuj", "EditOrder", new { id = Model.OrderId }) |
+    @if (User.IsInRole("Administrator") || User.IsInRole("Manager") || User.IsInRole("Service") || User.IsInRole("Admin"))
+    {
+        @Html.ActionLink("Edytuj", "EditRefund", new { id = Model.OrderId }) @(' ')@('|')@(' ')
+    }
     <a asp-controller="Item" asp-action="Index">Wróć do listy przedmiotów</a>
 </div>

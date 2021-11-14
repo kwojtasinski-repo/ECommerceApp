@@ -48,6 +48,10 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult AddRolesToUser(string id)
         {
             var userVm = _userService.GetUserById(id);
+            if (userVm is null)
+            {
+                return NotFound();
+            }
             return View(userVm);
         }
 
@@ -68,6 +72,10 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult EditUser(string id)
         {
             var user = _userService.GetUserById(id);
+            if (user is null)
+            {
+                return NotFound();
+            }
             return View(user);
         }
 

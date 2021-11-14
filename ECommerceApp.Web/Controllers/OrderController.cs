@@ -8,6 +8,7 @@ using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Order;
+using ECommerceApp.Application.ViewModels.Refund;
 using ECommerceApp.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -19,11 +20,13 @@ namespace ECommerceApp.Web.Controllers
     {
         private readonly IOrderService _orderService;
         private readonly IPaymentService _paymentService;
+        private readonly IRefundService _refundService;
 
-        public OrderController(IOrderService orderService, IPaymentService paymentService)
+        public OrderController(IOrderService orderService, IPaymentService paymentService, IRefundService refundService)
         {
             _orderService = orderService;
             _paymentService = paymentService;
+            _refundService = refundService;
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
@@ -234,32 +237,6 @@ namespace ECommerceApp.Web.Controllers
             return View(orderItems);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpGet]
-        public IActionResult ShowRefunds()
-        {
-            var refunds = _orderService.GetAllRefunds(20, 1, "");
-            return View(refunds);
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpPost]
-        public IActionResult ShowRefunds(int pageSize, int? pageNo, string searchString)
-        {
-            if (!pageNo.HasValue)
-            {
-                pageNo = 1;
-            }
-
-            if (searchString is null)
-            {
-                searchString = String.Empty;
-            }
-
-            var refunds = _orderService.GetAllRefunds(pageSize, pageNo.Value, searchString);
-            return View(refunds);
-        }
-
         [Authorize(Roles = "Administrator, Admin, Manager")]
         [HttpGet]
         public IActionResult ShowAllOrderItems()
@@ -313,6 +290,10 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult EditOrder(int id)
         {
             var order = _orderService.GetOrderById(id);
+            if (order is null)
+            {
+                return NotFound();
+            }
             var items = _orderService.GetAllItemsToOrder().ToList();
             order.Items = items;
             var customer = _orderService.GetCustomerById(order.CustomerId);
@@ -353,7 +334,7 @@ namespace ECommerceApp.Web.Controllers
                         RefundDate = model.RefundDate,
                         OrderId = model.Id
                     };
-                    var refundId = _orderService.AddRefund(refund);
+                    var refundId = _refundService.AddRefund(refund);
                     model.RefundId = refundId;
                     if (model.OrderItems.Count > 0)
                     {
@@ -381,34 +362,28 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult ViewOrderDetails(int id)
         {
             var order = _orderService.GetOrderDetail(id);
+            if (order is null)
+            {
+                return NotFound();
+            }
             return View(order);
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager")]
         public IActionResult ViewOrderItemDetails(int id)
         {
-            var payment = _orderService.GetOrderItemDetail(id);
-            return View(payment);
+            var orderItem = _orderService.GetOrderItemDetail(id);
+            if (orderItem is null)
+            {
+                return NotFound();
+            }
+            return View(orderItem);
         }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        public IActionResult ViewRefundDetails(int id)
-        {
-            var refund = _orderService.GetRefundDetail(id);
-            return View(refund);
-        }
-
+        
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         public IActionResult DeleteOrder(int id)
         {
             _orderService.DeleteOrder(id);
-            return RedirectToAction("Index");
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        public IActionResult DeleteRefund(int id)
-        {
-            _orderService.DeleteRefund(id);
             return RedirectToAction("Index");
         }
 

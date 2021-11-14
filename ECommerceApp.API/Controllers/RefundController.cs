@@ -1,6 +1,6 @@
 ﻿using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services;
-using ECommerceApp.Application.ViewModels.Order;
+using ECommerceApp.Application.ViewModels.Refund;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -15,18 +15,18 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class RefundController : ControllerBase
     {
-        private readonly IOrderService _orderService;
+        private readonly IRefundService _refundService;
 
-        public RefundController(IOrderService orderService)
+        public RefundController(IRefundService refundService)
         {
-            _orderService = orderService;
+            _refundService = refundService;
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet]
         public ActionResult<ListForRefundVm> GetRefunds([FromQuery] int pageSize = 20, int pageNo = 1, string searchString = "")
         {
-            var refunds = _orderService.GetAllRefunds(pageSize, pageNo, searchString);
+            var refunds = _refundService.GetRefunds(pageSize, pageNo, searchString);
             if (refunds.Refunds.Count == 0)
             {
                 return NotFound();
@@ -38,7 +38,7 @@ namespace ECommerceApp.API.Controllers
         [HttpGet("{id}")]
         public ActionResult<RefundDetailsVm> GetRefund(int id)
         {
-            var refund = _orderService.GetRefundDetail(id);
+            var refund = _refundService.GetRefundDetails(id);
             if (refund == null)
             {
                 return NotFound();
@@ -50,13 +50,13 @@ namespace ECommerceApp.API.Controllers
         [HttpPut]
         public IActionResult EditRefund([FromBody] CreateRefundVm model)
         {
-            var modelExists = _orderService.CheckIfRefundExists(model.Id);
+            var modelExists = _refundService.RefundExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
             {
                 return Conflict(ModelState);
             }
             var refund = model.MapToNewRefund();
-            _orderService.UpdateRefund(refund);
+            _refundService.UpdateRefund(refund);
             return Ok();
         }
 
@@ -69,7 +69,7 @@ namespace ECommerceApp.API.Controllers
                 return Conflict(ModelState);
             }
             var refund = model.MapToNewRefund();
-            var id = _orderService.AddRefund(refund);
+            var id = _refundService.AddRefund(refund);
             return Ok(id);
         }
     }

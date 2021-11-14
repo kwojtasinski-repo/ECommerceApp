@@ -78,6 +78,10 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult EditItem(int id)
         {
             var item = _itemService.GetItemById(id);
+            if (item is null)
+            {
+                return NotFound();
+            }
             ViewBag.ItemBrands = _brandService.GetAllBrands(b => true);
             ViewBag.ItemTypes = _typeService.GetTypes(t => true);
             ViewBag.ItemTags = _tagService.GetTags(t => true);
@@ -123,6 +127,10 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult ViewItem(int id)
         {
             var item = _itemService.GetItemDetails(id);
+            if (item is null)
+            {
+                return NotFound();
+            }
             item.Images = _imageService.GetImagesByItemId(id);
             return View(item);
         }

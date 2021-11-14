@@ -65,6 +65,10 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult EditType(int id)
         {
             var item = _typeService.GetTypeById(id);
+            if (item is null)
+            {
+                return NotFound();
+            }
             return View(item);
         }
         
@@ -80,6 +84,10 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult ViewType(int id)
         {
             var item = _typeService.GetTypeDetails(id);
+            if (item is null)
+            {
+                return NotFound();
+            }
             return View(item);
         }
 

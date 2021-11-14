@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace ECommerceApp.Application.Services
@@ -86,33 +87,6 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public int AddRefund(RefundVm refundVm)
-        {
-            if (refundVm.Id != 0)
-            {
-                throw new BusinessException("When adding object Id should be equals 0");
-            }
-
-            if (refundVm.RefundDate == new DateTime())
-            {
-                refundVm.RefundDate = DateTime.Now;
-            }
-
-            if (refundVm.CustomerId == 0)
-            {
-                var customerId = _repo.GetAllOrders().Where(o => o.Id == refundVm.OrderId).Include(c => c.Customer).Select(or => or.CustomerId).FirstOrDefault();
-                if (customerId == 0)
-                {
-                    throw new BusinessException($"There is no order with id = {refundVm.OrderId}");
-                }
-                refundVm.CustomerId = customerId;
-            }
-
-            var refund = _mapper.Map<Refund>(refundVm);
-            var id = _repo.AddRefund(refund);
-            return id;
-        }
-
         public void DeleteOrder(int id)
         {
             Delete(id);
@@ -120,7 +94,23 @@ namespace ECommerceApp.Application.Services
 
         public void DeleteRefund(int id)
         {
-            _repo.DeleteRefund(id);
+            var orders = _repo.GetAll().Include(oi => oi.OrderItems).Where(r => r.RefundId == id).ToList();
+
+            /*orders.ForEach(o =>
+            {
+                _repo.DetachEntity(o);
+                _repo.DetachEntity(o.OrderItems);
+            });*/
+
+            orders.ForEach(o =>
+            {
+                o.RefundId = null;
+                foreach (var oi in o.OrderItems)
+                {
+                    oi.RefundId = null;
+                }
+            });
+            orders.ForEach(order => _repo.Update(order));
         }
 
         public IQueryable<Item> GetAllItemsToOrder()
@@ -246,35 +236,6 @@ namespace ECommerceApp.Application.Services
                             .ToList();
         }
 
-        public ListForRefundVm GetAllRefunds(int pageSize, int pageNo, string searchString)
-        {
-            var refunds = _repo.GetAllRefunds().Where(r => r.Reason.StartsWith(searchString) 
-                            || r.RefundDate.ToString().StartsWith(searchString))
-                            .ProjectTo<RefundForListVm>(_mapper.ConfigurationProvider)
-                            .ToList();
-            var refundsToShow = refunds.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
-
-            var refundsList = new ListForRefundVm()
-            {
-                PageSize = pageSize,
-                CurrentPage = pageNo,
-                SearchString = searchString,
-                Refunds = refundsToShow,
-                Count = refunds.Count
-            };
-
-            return refundsList;
-        }
-
-        public List<RefundForListVm> GetAllRefunds()
-        {
-            var refunds = _repo.GetAllRefunds()
-                            .ProjectTo<RefundForListVm>(_mapper.ConfigurationProvider)
-                            .ToList();
-
-            return refunds;
-        }
-
         public OrderDetailsVm GetOrderDetail(int id)
         {
             var orderDetails = _repo.GetOrderById(id);
@@ -287,20 +248,6 @@ namespace ECommerceApp.Application.Services
             var order = _repo.GetOrderById(id);
             var orderVm = _mapper.Map<NewOrderVm>(order);
             return orderVm;
-        }
-
-        public RefundDetailsVm GetRefundDetail(int id)
-        {
-            var refundDetails = _repo.GetRefundById(id);
-            var refundDetailsVm = _mapper.Map<RefundDetailsVm>(refundDetails);
-            return refundDetailsVm;
-        }
-
-        public RefundVm GetRefundForEdit(int id)
-        {
-            var refund = _repo.GetRefundById(id);
-            var refundVm = _mapper.Map<RefundVm>(refund);
-            return refundVm;
         }
 
         public void UpdateOrder(NewOrderVm orderVm)
@@ -349,12 +296,6 @@ namespace ECommerceApp.Application.Services
             {
                 throw new BusinessException(errors.ToString());
             }
-        }
-
-        public void UpdateRefund(RefundVm refundVm)
-        {
-            var refund = _mapper.Map<Refund>(refundVm);
-            _repo.UpdateRefund(refund);
         }
 
         public void AddCouponToOrder(int orderId, int couponUsedId)
@@ -696,16 +637,6 @@ namespace ECommerceApp.Application.Services
             return true;
         }
 
-        public bool CheckIfPaymentExists(int id)
-        {
-            var payment = _repo.GetPaymentById(id);
-            if (payment == null)
-            {
-                return false;
-            }
-            return true;
-        }
-
         public bool CheckIfRefundExists(int id)
         {
             var refund = _repo.GetRefundById(id);
@@ -733,6 +664,30 @@ namespace ECommerceApp.Application.Services
                             .ToList();
 
             return itemOrders;
+        }
+
+        public List<OrderForListVm> GetAllOrders(Expression<Func<Order, bool>> expression)
+        {
+            return _repo.GetAllOrders().Where(expression)
+                            .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
+                            .ToList();
+        }
+
+        public void AddRefund(int orderId, int refundId)
+        {
+            var order = _repo.GetAll().Include(oi => oi.OrderItems).Where(o => o.Id == orderId).FirstOrDefault();
+            
+            if (order is null)
+            {
+                throw new BusinessException($"Order with id {orderId} not exists");
+            }
+
+            order.RefundId = refundId;
+            foreach (var oi in order.OrderItems)
+            {
+                oi.RefundId = refundId;
+            }
+            _repo.Update(order);
         }
     }
 }

@@ -47,38 +47,14 @@ namespace ECommerceApp.Infrastructure.Repositories
             return item;
         }
 
-        public IQueryable<Tag> GetAllTags()
-        {
-            return _context.Tags;
-        }
-
         public IQueryable<ItemTag> GetAllItemsWithTags()
         {
             return _context.ItemTag.Include(inc => inc.Item);
         }
 
-        public IQueryable<ECommerceApp.Domain.Model.Type> GetAllTypes()
-        {
-            return _context.Types;
-        }
-
         public IQueryable<Item> GetAllItems()
         {
             return _context.Items;
-        }
-
-        public int AddItemBrand(Brand brand)
-        {
-            _context.Brands.Add(brand);
-            _context.SaveChanges();
-            return brand.Id;
-        }
-
-        public int AddItemType(Domain.Model.Type type)
-        {
-            _context.Types.Add(type);
-            _context.SaveChanges();
-            return type.Id;
         }
 
         public void UpdateItem(Item item)
@@ -120,110 +96,6 @@ namespace ECommerceApp.Infrastructure.Repositories
            _context.Entry(item).Collection("ItemTags").IsModified = true;
 
             _context.SaveChanges();
-        }
-
-        public void UpdateItemType(Domain.Model.Type type)
-        {
-            _context.Attach(type);
-            _context.Entry(type).Property("Name").IsModified = true;
-            _context.SaveChanges();
-    }
-
-        public void UpdateItemBrand(Brand brand)
-        {
-            _context.Attach(brand);
-            _context.Entry(brand).Property("Name").IsModified = true;
-            _context.SaveChanges();
-        }
-
-        public Domain.Model.Type GetItemTypeById(int id)
-        {
-            var type = _context.Types.FirstOrDefault(it => it.Id == id);
-            return type;
-        }
-
-        public Brand GetItemBrandById(int id)
-        {
-            var brand = _context.Brands.FirstOrDefault(it => it.Id == id);
-            return brand;
-        }
-
-        public void DeleteItemType(int id)
-        {
-            var itemType = _context.Types.Find(id);
-
-            if (itemType != null)
-            {
-                _context.Types.Remove(itemType);
-                _context.SaveChanges();
-            }
-        }
-
-        public void DeleteItemBrand(int id)
-        {
-            var itemBrand = _context.Brands.Find(id);
-
-            if (itemBrand != null)
-            {
-                _context.Brands.Remove(itemBrand);
-                _context.SaveChanges();
-            }
-        }
-
-        public IQueryable<Brand> GetAllBrands()
-        {
-            return _context.Brands;
-        }
-
-        public int AddItemTag(Tag tag)
-        {
-            _context.Tags.Add(tag);
-            _context.SaveChanges();
-            return tag.Id;
-        }
-
-        public Tag GetItemTagById(int id)
-        {
-            var tag = _context.Tags.FirstOrDefault(it => it.Id == id);
-            return tag;
-        }
-
-        public void UpdateTag(Tag tag)
-        {
-            _context.Attach(tag);
-            _context.Entry(tag).Property("Name").IsModified = true;
-            _context.SaveChanges();
-        }
-
-        public void DeleteTag(int id)
-        {
-            var tag = _context.Tags.Find(id);
-
-            if (tag != null)
-            {
-                _context.Tags.Remove(tag);
-                _context.SaveChanges();
-            }
-        }
-
-        public void AddItemTag(ItemTag itemIag)
-        {
-            _context.ItemTag.Add(itemIag);
-            _context.SaveChanges();
-        }
-
-        public ItemTag GetItemTagByItemId(int itemId)
-        {
-            var itemTag = _context.ItemTag
-                .Include(inc => inc.Item)
-                .Include(inc => inc.Tag)
-                .FirstOrDefault(it => it.ItemId == itemId);
-            return itemTag;
-        }
-
-        public IQueryable<ItemTag>GetAllItemTags()
-        {
-            return _context.ItemTag;
         }
     }
 }

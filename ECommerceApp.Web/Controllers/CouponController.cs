@@ -69,6 +69,10 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult EditCoupon(int id)
         {
             var coupon = _couponService.GetCoupon(id);
+            if (coupon is null)
+            {
+                return NotFound();
+            }
             var couponTypes = _couponTypeService.GetAllCouponsTypes(ct => true).ToList();
             var couponsUsed = _couponUsedService.GetAllCouponsUsed().ToList();
             ViewBag.CouponTypes = couponTypes;
@@ -86,6 +90,10 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult ViewCoupon(int id)
         {
             var coupon = _couponService.GetCouponDetail(id);
+            if (coupon is null)
+            {
+                return NotFound();
+            }
             return View(coupon);
         }
 

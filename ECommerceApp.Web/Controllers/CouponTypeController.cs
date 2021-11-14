@@ -64,6 +64,10 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult EditCouponType(int id)
         {
             var couponType = _couponService.GetCouponType(id);
+            if (couponType is null)
+            {
+                return NotFound();
+            }
             return View(couponType);
         }
 
@@ -78,6 +82,10 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult ViewCouponType(int id)
         {
             var couponType = _couponService.GetCouponTypeDetail(id);
+            if (couponType is null)
+            {
+                return NotFound();
+            }
             return View(couponType);
         }
 
