@@ -145,14 +145,6 @@ namespace ECommerceApp.Application.Services
             //_repo.Update(order);
         }
 
-        public IQueryable<NewOrderItemVm> GetAllItemsOrderedForAdd()
-        {
-            var itemOrders = _repo.GetAllOrderItems()
-                            .ProjectTo<NewOrderItemVm>(_mapper.ConfigurationProvider);
-
-            return itemOrders;
-        }
-
         public ListForItemOrderVm GetAllItemsOrdered(int pageSize, int pageNo, string searchString)
         {
             var itemOrder = _repo.GetAllOrderItems().Where(oi => oi.Item.Name.StartsWith(searchString) ||

@@ -21,9 +21,9 @@ namespace ECommerceApp.Application.ViewModels.Order
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<OrderItemDetailsVm, ECommerceApp.Domain.Model.OrderItem>().ReverseMap()
-                .ForMember(i => i.ItemName, opt => opt.MapFrom(o => o.Item.Name))
-                .ForMember(i => i.ItemCost, opt => opt.MapFrom(o => o.Item.Cost));
+            profile.CreateMap<ECommerceApp.Domain.Model.OrderItem, OrderItemDetailsVm>().ReverseMap()
+                .ForMember(i => i.Item.Name, opt => opt.MapFrom(o => o.ItemName))
+                .ForMember(i => i.Item.Cost, opt => opt.MapFrom(o => o.ItemCost));
         }
     }
 }
