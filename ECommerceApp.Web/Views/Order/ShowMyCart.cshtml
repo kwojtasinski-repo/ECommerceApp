@@ -100,7 +100,7 @@
         console.log(objectJson);
         // ajax send to controller
         $.ajax({
-            url: "/Order/UpdateOrderItem",
+            url: "/OrderItem/UpdateOrderItem",
             type: 'POST',
             data: objectJson, 
             contentType: 'application/json',
@@ -126,7 +126,7 @@
             console.log(objectJson);
             // ajax send to controller
             $.ajax({
-                url: "/Order/UpdateOrderItem",
+                url: "/OrderItem/UpdateOrderItem",
                 type: 'POST',
                 data: objectJson,
                 contentType: 'application/json',
@@ -175,7 +175,7 @@
         console.log(itemId);
         // ajax send to controller
         $.ajax({
-            url: "/Order/DeleteOrderItem",
+            url: "/OrderItem/DeleteOrderItem",
             type: 'GET',
             data: {
                 'id': itemId

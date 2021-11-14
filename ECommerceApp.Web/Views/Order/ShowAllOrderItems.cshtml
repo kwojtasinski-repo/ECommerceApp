@@ -83,7 +83,7 @@
                     @Html.DisplayFor(model => orderItem.CouponUsedId)
                 </td>
                 <td>
-                    @Html.ActionLink("Szczegóły", "ViewOrderItemDetails", new { id=orderItem.Id })
+                    @Html.ActionLink("Szczegóły", "ViewOrderItemDetails", "OrderItem", new { id=orderItem.Id })
                 </td>
             </tr>
             }
