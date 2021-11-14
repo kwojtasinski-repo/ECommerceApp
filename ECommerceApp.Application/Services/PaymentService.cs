@@ -45,9 +45,10 @@ namespace ECommerceApp.Application.Services
         {
             var payment = _repo.GetById(id);
             var order = _orderService.Get(payment.OrderId);
-            _repo.Delete(payment);
             order.IsPaid = false;
+            order.PaymentId = null;
             _orderService.Update(order);
+            _repo.Delete(payment);
         }
 
         public PaymentDetailsVm GetPaymentDetails(int id)

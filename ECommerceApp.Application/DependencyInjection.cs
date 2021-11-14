@@ -36,6 +36,7 @@ namespace ECommerceApp.Application
             services.AddTransient<ITagService, TagService>();
             services.AddTransient<IRefundService, RefundService>();
             services.AddTransient<IPaymentService, PaymentService>();
+            services.AddTransient<IOrderItemService, OrderItemService>();
             return services;
         }
     }

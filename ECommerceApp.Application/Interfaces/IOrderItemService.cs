@@ -16,9 +16,12 @@ namespace ECommerceApp.Application.Interfaces
         OrderItemVm GetOrderItemById(int id);
         void UpdateOrderItem(OrderItemVm model);
         IEnumerable<OrderItemVm> GetOrderItems(Expression<Func<OrderItem, bool>> expression);
-        ListForItemOrderVm GetOrderItems(int pageSize, int pageNo, string searchString);
+        ListForOrderItemVm GetOrderItems(int pageSize, int pageNo, string searchString);
         bool OrderItemExists(int id);
         void DeleteOrderItem(int id);
         void UpdateOrderItems(IEnumerable<OrderItemVm> orderItems);
+        IEnumerable<NewOrderItemVm> GetOrderItemsForRealization(Expression<Func<OrderItem, bool>> expression);
+        int OrderItemCount(string userId);
+        int AddOrderItem(int id, string userId);
     }
 }

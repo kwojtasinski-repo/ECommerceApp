@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text;
 
-namespace ECommerceApp.Application.ViewModels.Order
+namespace ECommerceApp.Application.ViewModels.OrderItem
 {
     public class ItemsAddToCartVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Item>
     {

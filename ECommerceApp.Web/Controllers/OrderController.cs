@@ -4,7 +4,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Services;
+using ECommerceApp.Application;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Order;
@@ -13,6 +13,7 @@ using ECommerceApp.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using ECommerceApp.Application.ViewModels.OrderItem;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -22,13 +23,15 @@ namespace ECommerceApp.Web.Controllers
         private readonly IPaymentService _paymentService;
         private readonly IRefundService _refundService;
         private readonly IOrderItemService _orderItemService;
+        private readonly IItemService _itemService;
 
-        public OrderController(IOrderService orderService, IPaymentService paymentService, IRefundService refundService, IOrderItemService orderItemService)
+        public OrderController(IOrderService orderService, IPaymentService paymentService, IRefundService refundService, IOrderItemService orderItemService, IItemService itemService)
         {
             _orderService = orderService;
             _paymentService = paymentService;
             _refundService = refundService;
             _orderItemService = orderItemService;
+            _itemService = itemService;
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
@@ -123,30 +126,30 @@ namespace ECommerceApp.Web.Controllers
                 return Redirect("~/Identity/Account/Register");
             }
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var orderItems = _orderItemService.GetOrderItems(oi => oi.UserId == userId && oi.OrderId == null).ToList();
+            var orderItems = _orderItemService.GetOrderItemsForRealization(oi => oi.UserId == userId && oi.OrderId == null).ToList();
             Random random = new Random();
             var orderDate = System.DateTime.Now;
             ViewBag.Date = orderDate;
             var customers = _orderService.GetCustomersByUserId(userId).ToList();
             ViewBag.Customers = customers;
-            var order = new OrderVm() { Number = random.Next(100, 10000), OrderItems = orderItems, UserId = userId };
+            var order = new NewOrderVm() { Number = random.Next(100, 10000), OrderItems = orderItems, UserId = userId };
             return View(order);
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost]
-        public IActionResult OrderRealization(OrderVm model)
+        public IActionResult OrderRealization(NewOrderVm model)
         {
             int orderId;
-            if(model.CustomerData) // do analizy
+            if (model.CustomerData)
             {
-                orderId = _orderService.AddOrder(model);
+                orderId = _orderService.AddOrder(model.AsOrderVm());
             }
             else
             {
                 var customerId = _orderService.AddCustomer(model.NewCustomer);
                 model.CustomerId = customerId;
-                orderId = _orderService.AddOrder(model);
+                orderId = _orderService.AddOrder(model.AsOrderVm());
             }
             return RedirectToAction("AddOrderSummary", new { id = orderId });
         }
@@ -155,10 +158,9 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult AddOrderDetails(int orderId)
         {
-            var order = _orderService.GetOrderById(orderId);
-            var items = _orderService.GetAllItemsToOrder().ToList();
-            order.Items = items; // do analizy
+            var order = _orderService.GetOrderForRealization(orderId);
             var customer = _orderService.GetCustomerById(order.CustomerId);
+            order.Items = _orderService.GetAllItemsToOrder().ToList();
             ViewBag.CustomerInformation = customer.Information;
             return View(order);
         }
@@ -177,7 +179,7 @@ namespace ECommerceApp.Web.Controllers
                 {
                     oi.UserId = model.UserId;
                 });
-                _orderService.UpdateOrder(model);
+                _orderService.UpdateOrder(model.AsOrderVm());
             }
             else
             {
@@ -191,7 +193,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult AddOrderSummary(int id)
         {
-            var order = _orderService.GetOrderById(id);
+            var order = _orderService.GetOrderForRealization(id);
             return View(order);
         }
 
@@ -214,54 +216,6 @@ namespace ECommerceApp.Web.Controllers
             }
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var orderItems = _orderService.GetOrderItemsNotOrderedByUserId(userId, pageSize, pageNo.Value);
-            return View(orderItems);
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpGet]
-        public IActionResult ShowOrderItemsByItemId(int itemId)
-        {
-            var orderItems = _orderService.GetAllItemsOrderedByItemId(itemId, 20, 1);
-            ViewBag.InputParameterId = itemId;
-            return View(orderItems);
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpPost]
-        public IActionResult ShowOrderItemsByItemId(int itemId, int pageSize, int? pageNo)
-        {
-            if (!pageNo.HasValue)
-            {
-                pageNo = 1;
-            }
-            ViewBag.InputParameterId = itemId;
-            var orderItems = _orderService.GetAllItemsOrderedByItemId(itemId, pageSize, pageNo.Value);
-            return View(orderItems);
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager")]
-        [HttpGet]
-        public IActionResult ShowAllOrderItems()
-        {
-            var orderItems = _orderService.GetAllItemsOrdered(20, 1, "");
-            return View(orderItems);
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager")]
-        [HttpPost]
-        public IActionResult ShowAllOrderItems(int pageSize, int? pageNo, string searchString)
-        {
-            if (!pageNo.HasValue)
-            {
-                pageNo = 1;
-            }
-
-            if (searchString is null)
-            {
-                searchString = String.Empty;
-            }
-
-            var orderItems = _orderService.GetAllItemsOrdered(pageSize, pageNo.Value, searchString);
             return View(orderItems);
         }
 
@@ -291,13 +245,13 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult EditOrder(int id)
         {
-            var order = _orderService.GetOrderById(id);
+            var order = _orderService.GetOrderForRealization(id);
             if (order is null)
             {
                 return NotFound();
             }
             var items = _orderService.GetAllItemsToOrder().ToList();
-            order.Items = items; // do analizy
+            order.Items = items; 
             var customer = _orderService.GetCustomerById(order.CustomerId);
             int paymentId = (int)(order.PaymentId == null ? 0 : order.PaymentId);
             ViewBag.CustomerInformation = customer.Information;
@@ -310,6 +264,8 @@ namespace ECommerceApp.Web.Controllers
             {
                 ViewBag.PaymentNumber = "";
             }
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            order.UserId = userId;
             return View(order);
         }
 
@@ -318,7 +274,6 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult EditOrder(NewOrderVm model)
         {
             model.Cost = Convert.ToDecimal(model.CostToConvert);
-
             UseCouponIfEntered(model);
 
             if (model.AcceptedRefund)
@@ -354,7 +309,7 @@ namespace ECommerceApp.Web.Controllers
                 {
                     oi.UserId = model.UserId;
                 });
-                _orderService.UpdateOrder(model);
+                _orderService.UpdateOrder(model.AsOrderVm());
             }
             
             return RedirectToAction("Index");
@@ -370,17 +325,6 @@ namespace ECommerceApp.Web.Controllers
             }
             return View(order);
         }
-
-        [Authorize(Roles = "Administrator, Admin, Manager")]
-        public IActionResult ViewOrderItemDetails(int id)
-        {
-            var orderItem = _orderService.GetOrderItemDetail(id);
-            if (orderItem is null)
-            {
-                return NotFound();
-            }
-            return View(orderItem);
-        }
         
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         public IActionResult DeleteOrder(int id)
@@ -395,47 +339,6 @@ namespace ECommerceApp.Web.Controllers
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var orders = _orderService.GetAllOrdersByUserId(userId, 20, 1);
             return View(orders);
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpGet]
-        public IActionResult OrderItemCount()
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var value = _orderService.OrderItemCount(userId);
-            return Json(new { count = value});
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpPost]
-        public IActionResult UpdateOrderItem([FromBody]OrderItemForListVm model)
-        {
-            _orderService.UpdateOrderItem(model);
-            return Json(new { });
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpPost]
-        public IActionResult AddToCart([FromBody]NewOrderItemVm model)
-        {
-            var id = _orderService.AddOrderItem(model);
-            return Json(new { itemId = id });
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpGet]
-        public IActionResult AddToCart(int id)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var itemOrderId = _orderService.AddItemToOrderItem(id, userId);
-            return Json(new { ItemOrderId = itemOrderId });
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        public IActionResult DeleteOrderItem(int id)
-        {
-            _orderService.DeleteOrderItem(id);
-            return Json(new { });
         }
 
         private void UseCouponIfEntered(NewOrderVm model)

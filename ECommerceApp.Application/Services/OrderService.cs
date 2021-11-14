@@ -23,8 +23,13 @@ namespace ECommerceApp.Application.Services
 {
     public class OrderService : AbstractService<OrderVm, IOrderRepository, Order>, IOrderService
     {
-        public OrderService(IOrderRepository orderRepo, IMapper mapper) : base(orderRepo, mapper)
+        private readonly IOrderItemService _orderItemService;
+        private readonly IItemService _itemService;
+
+        public OrderService(IOrderRepository orderRepo, IMapper mapper, IOrderItemService orderItemService, IItemService itemService) : base(orderRepo, mapper)
         {
+            _orderItemService = orderItemService;
+            _itemService = itemService;
         }
 
         public override OrderVm Get(int id)
@@ -146,7 +151,7 @@ namespace ECommerceApp.Application.Services
             //_repo.Update(order);
         }
 
-        public ListForItemOrderVm GetAllItemsOrdered(int pageSize, int pageNo, string searchString)
+        public ListForOrderItemVm GetAllItemsOrdered(int pageSize, int pageNo, string searchString)
         {
             var itemOrder = _repo.GetAllOrderItems().Where(oi => oi.Item.Name.StartsWith(searchString) ||
                             oi.Item.Brand.Name.StartsWith(searchString) || oi.Item.Type.Name.StartsWith(searchString))
@@ -154,7 +159,7 @@ namespace ECommerceApp.Application.Services
                             .ToList();
             var itemOrderToShow = itemOrder.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
 
-            var itemOrderList = new ListForItemOrderVm()
+            var itemOrderList = new ListForOrderItemVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
@@ -175,14 +180,14 @@ namespace ECommerceApp.Application.Services
             return itemOrder;
         }
 
-        public ListForItemOrderVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo)
+        public ListForOrderItemVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo)
         {
             var itemOrder = _repo.GetAllOrderItems().Where(oi => oi.ItemId == id)
                             .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
                             .ToList();
             var itemOrderToShow = itemOrder.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
 
-            var itemOrderList = new ListForItemOrderVm()
+            var itemOrderList = new ListForOrderItemVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
@@ -250,19 +255,67 @@ namespace ECommerceApp.Application.Services
             orderVm.Ordered = order.Ordered;
             orderVm.Cost = 0;
             CheckOrderItemsOrderByUser(orderVm);
+            AddNewItemsIfExists(orderVm);
             var orderToUpdate = _mapper.Map<Order>(orderVm);
             _repo.UpdatedOrder(orderToUpdate);
         }
 
+        private void AddNewItemsIfExists(OrderVm orderVm)
+        {
+            if (orderVm.OrderItems is null)
+            {
+                return;
+            }
+
+            if (orderVm.OrderItems.Count == 0)
+            {
+                return;
+            }
+
+            var orderItemsToAdd = orderVm.OrderItems.Where(oi => oi.Id == 0).ToList();
+
+            if (orderItemsToAdd.Count == 0)
+            {
+                return;
+            }
+            var ids = orderItemsToAdd.Select(i => i.ItemId);
+            var items = (from id in ids
+                         join item in _itemService.GetItems()
+                         on id equals item.Id
+                         select item).AsQueryable().AsNoTracking().ToList();
+
+            var cost = decimal.Zero;
+
+            foreach(var orderItem in orderItemsToAdd)
+            {
+                var orderItemId = _orderItemService.AddOrderItem(new OrderItemVm { Id = 0, ItemId = orderItem.ItemId, ItemOrderQuantity = orderItem.ItemOrderQuantity, UserId = orderVm.UserId, OrderId = orderVm.Id });
+                orderVm.OrderItems.Where(it => it.ItemId == orderItem.ItemId).FirstOrDefault().Id = orderItemId;
+                var item = items.Where(it => it.Id == orderItem.ItemId).FirstOrDefault();
+                cost += item.Cost * orderItem.ItemOrderQuantity;
+            }
+
+            orderVm.Cost += cost;
+        }
+
         private void CheckOrderItemsOrderByUser(OrderVm orderVm)
         {
+            if (orderVm.OrderItems is null)
+            {
+                return;
+            }
+
+            if (orderVm.OrderItems.Count == 0)
+            {
+                return;
+            }
+
             var ids = orderVm.OrderItems.Select(oi => oi.Id).ToList();
             var orderItemsQueryable = _repo.GetAllOrderItems();
             var itemsFromDb = (from id in ids
                                join orderItem in orderItemsQueryable
                                    on id equals orderItem.Id
                                select orderItem).AsQueryable().Include(i => i.Item).AsNoTracking().ToList();
-
+                        
             StringBuilder errors = new StringBuilder();
 
             var orderCost = decimal.Zero;
@@ -350,7 +403,7 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public int UpdateCoupon(int couponId, OrderVm order)
+        public int UpdateCoupon(int couponId, NewOrderVm order)
         {
             var couponUsed = new CouponUsedVm()
             {
@@ -384,9 +437,11 @@ namespace ECommerceApp.Application.Services
             return orderVm;
         }
 
-        public void CalculateCost(OrderVm order, NewOrderItemVm model)
+        public NewOrderVm GetOrderForRealization(int orderId)
         {
-            throw new NotImplementedException();
+            var order = _repo.GetOrderById(orderId);
+            var orderVm = _mapper.Map<NewOrderVm>(order);
+            return orderVm;
         }
 
         public NewCustomerForOrdersVm GetCustomerById(int id)
@@ -513,7 +568,7 @@ namespace ECommerceApp.Application.Services
             return itemsVm;
         }
 
-        public ListForItemOrderVm GetOrderItemsNotOrderedByUserId(string userId, int pageSize, int pageNo)
+        public ListForOrderItemVm GetOrderItemsNotOrderedByUserId(string userId, int pageSize, int pageNo)
         {
             var itemOrders = _repo.GetAllOrderItems().Where(oi => oi.UserId == userId && oi.OrderId == null)
                             .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
@@ -521,7 +576,7 @@ namespace ECommerceApp.Application.Services
 
             var itemOrdersToShow = itemOrders.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
 
-            var ordersList = new ListForItemOrderVm()
+            var ordersList = new ListForOrderItemVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,

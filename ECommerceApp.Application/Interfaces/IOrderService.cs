@@ -19,23 +19,20 @@ namespace ECommerceApp.Application.Interfaces
         void UpdateOrder(OrderVm order);
         void DeleteOrder(int id);
         ListForOrderVm GetAllOrders(int pageSize, int pageNo, string searchString);
-        OrderVm GetOrderForEdit(int id);
         OrderDetailsVm GetOrderDetail(int id);
         List<OrderForListVm> GetAllOrders();
         void AddCouponToOrder(int orderId, int couponUsedId);
         void DeleteRefund(int id);
-        ListForItemOrderVm GetAllItemsOrdered(int pageSize, int pageNo, string searchString);
-        ListForItemOrderVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo);
-        IQueryable<NewCustomerForOrdersVm> GetAllCustomers();
+        ListForOrderItemVm GetAllItemsOrdered(int pageSize, int pageNo, string searchString);
+        ListForOrderItemVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo);
         IQueryable<ECommerceApp.Domain.Model.Item> GetAllItemsToOrder();
         void DeleteCouponUsed(int orderId, int couponUsedId);
         IQueryable<CouponVm> GetAllCoupons();
         int CheckPromoCode(string code);
-        int UpdateCoupon(int couponId, OrderVm order);
+        int UpdateCoupon(int couponId, NewOrderVm order);
         List<OrderItemForListVm> GetAllItemsOrdered();
         IQueryable<NewCustomerForOrdersVm> GetCustomersByUserId(string userId);
         OrderVm GetOrderById(int orderId);
-        void CalculateCost(OrderVm order, NewOrderItemVm model);
         NewCustomerForOrdersVm GetCustomerById(int id);
         void AddOrderItems(List<NewOrderItemVm> orderItems);
         OrderItemDetailsVm GetOrderItemDetail(int id);
@@ -45,7 +42,7 @@ namespace ECommerceApp.Application.Interfaces
         List<OrderForListVm> GetAllOrdersByCustomerId(int customerId);
         int AddOrderItem(NewOrderItemVm model);
         List<ItemsAddToCartVm> GetItemsAddToCart();
-        ListForItemOrderVm GetOrderItemsNotOrderedByUserId(string userId, int pageSize, int pageNo);
+        ListForOrderItemVm GetOrderItemsNotOrderedByUserId(string userId, int pageSize, int pageNo);
         List<NewOrderItemVm> GetOrderItemsNotOrderedByUserId(string userId);
         List<OrderItemForListVm> GetOrderItemsNotOrderedByUser(string userId);
         int AddCustomer(NewCustomerVm newCustomer);
@@ -61,5 +58,6 @@ namespace ECommerceApp.Application.Interfaces
         List<OrderForListVm> GetAllOrdersByUserId(string userId);
         List<OrderForListVm> GetAllOrders(Expression<Func<Order,bool>> expression);
         void AddRefund(int orderId, int refundId);
+        NewOrderVm GetOrderForRealization(int orderId);
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace ECommerceApp.Application.ViewModels.Order
+﻿namespace ECommerceApp.Application.ViewModels.OrderItem
 {
     public class OrderItemsIdsVm
     {

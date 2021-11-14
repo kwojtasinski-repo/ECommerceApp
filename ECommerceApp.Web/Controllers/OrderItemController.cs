@@ -4,10 +4,11 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Services;
+using ECommerceApp.Application;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Order;
+using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Application.ViewModels.Refund;
 using ECommerceApp.Web.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -19,17 +20,19 @@ namespace ECommerceApp.Web.Controllers
     public class OrderItemController : Controller
     {
         private readonly IOrderService _orderService;
+        private readonly IOrderItemService _orderItemService;
 
-        public OrderItemController(IOrderService orderService)
+        public OrderItemController(IOrderService orderService, IOrderItemService orderItemService)
         {
             _orderService = orderService;
+            _orderItemService = orderItemService;
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager")]
         [HttpGet]
         public IActionResult Index()
         {
-            var orderItems = _orderService.GetAllItemsOrdered(20, 1, "");
+            var orderItems = _orderItemService.GetOrderItems(20, 1, "");
             return View(orderItems);
         }
 
@@ -47,7 +50,7 @@ namespace ECommerceApp.Web.Controllers
                 searchString = String.Empty;
             }
 
-            var orderItems = _orderService.GetAllItemsOrdered(pageSize, pageNo.Value, searchString);
+            var orderItems = _orderItemService.GetOrderItems(pageSize, pageNo.Value, searchString);
             return View(orderItems);
         }
 
@@ -76,7 +79,7 @@ namespace ECommerceApp.Web.Controllers
         [Authorize(Roles = "Administrator, Admin, Manager")]
         public IActionResult ViewOrderItemDetails(int id)
         {
-            var orderItem = _orderService.GetOrderItemDetail(id);
+            var orderItem = _orderItemService.GetOrderItemDetails(id);
             if (orderItem is null)
             {
                 return NotFound();
@@ -89,23 +92,23 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult OrderItemCount()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var value = _orderService.OrderItemCount(userId);
+            var value = _orderItemService.OrderItemCount(userId);
             return Json(new { count = value});
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost]
-        public IActionResult UpdateOrderItem([FromBody]OrderItemForListVm model)
+        public IActionResult UpdateOrderItem([FromBody]OrderItemVm model)
         {
-            _orderService.UpdateOrderItem(model);
+            _orderItemService.UpdateOrderItem(model);
             return Json(new { });
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost]
-        public IActionResult AddToCart([FromBody]NewOrderItemVm model)
+        public IActionResult AddToCart([FromBody]OrderItemDto model)
         {
-            var id = _orderService.AddOrderItem(model);
+            var id = _orderItemService.AddOrderItem(model.AsVm());
             return Json(new { itemId = id });
         }
 
@@ -114,7 +117,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult AddToCart(int id)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var itemOrderId = _orderService.AddItemToOrderItem(id, userId);
+            var itemOrderId = _orderItemService.AddOrderItem(id, userId);
             return Json(new { ItemOrderId = itemOrderId });
         }
 

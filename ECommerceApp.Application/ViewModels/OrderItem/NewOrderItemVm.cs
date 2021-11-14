@@ -7,7 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ECommerceApp.Application.ViewModels.Order
+namespace ECommerceApp.Application.ViewModels.OrderItem
 {
     public class NewOrderItemVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.OrderItem>
     {

@@ -12,6 +12,7 @@
         <form id="EditOrderForm" asp-action="EditOrder">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" class="form-control" />
+            <input type="hidden" asp-for="UserId" class="form-control" />
             <div class="form-group">
                 <label style="display:none;" asp-for="Number" class="control-label"></label>
                 <label class="control-label">Numer zamówienia</label>

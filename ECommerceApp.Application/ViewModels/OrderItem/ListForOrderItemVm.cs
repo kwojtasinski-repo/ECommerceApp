@@ -1,9 +1,9 @@
 ﻿using FluentValidation;
 using System.Collections.Generic;
 
-namespace ECommerceApp.Application.ViewModels.Order
+namespace ECommerceApp.Application.ViewModels.OrderItem
 {
-    public class ListForItemOrderVm
+    public class ListForOrderItemVm
     {
         public List<OrderItemForListVm> ItemOrders { get; set; }
         public int CurrentPage { get; set; }
@@ -12,7 +12,7 @@ namespace ECommerceApp.Application.ViewModels.Order
         public int Count { get; set; }
     }
 
-    public class ListForItemOrderValidation : AbstractValidator<ListForItemOrderVm>
+    public class ListForItemOrderValidation : AbstractValidator<ListForOrderItemVm>
     {
         public ListForItemOrderValidation()
         {

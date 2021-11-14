@@ -21,5 +21,6 @@ namespace ECommerceApp.Application.Interfaces
         IEnumerable<CouponVm> GetAllCoupons(Expression<Func<Coupon, bool>> expression);
         void DeleteCouponUsed(int couponId, int couponUsedId);
         void AddCouponUsed(int couponId, int couponUsedId);
+        CouponVm GetCouponByCode(string promoCode);
     }
 }

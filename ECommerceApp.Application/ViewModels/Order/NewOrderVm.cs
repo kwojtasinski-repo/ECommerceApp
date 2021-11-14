@@ -3,6 +3,7 @@ using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Item;
+using ECommerceApp.Application.ViewModels.OrderItem;
 using FluentValidation;
 using System;
 using System.Collections.Generic;

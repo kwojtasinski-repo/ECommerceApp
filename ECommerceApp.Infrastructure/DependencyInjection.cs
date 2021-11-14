@@ -24,6 +24,7 @@ namespace ECommerceApp.Infrastructure
             services.AddTransient<IRefundRepository, RefundRepository>();
             services.AddTransient<ITagRepository, TagRepository>();
             services.AddTransient<ITypeRepository, TypeRepository>();
+            services.AddTransient<IOrderItemRepository, OrderItemRepository>();
             return services;
         }
     }

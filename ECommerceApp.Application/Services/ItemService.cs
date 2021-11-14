@@ -10,6 +10,7 @@ using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services
 {
@@ -140,6 +141,11 @@ namespace ECommerceApp.Application.Services
                 return false;
             }
             return true;
+        }
+
+        public IQueryable<NewItemVm> GetItems()
+        {
+            return _repo.GetAll().ProjectTo<NewItemVm>(_mapper.ConfigurationProvider);
         }
     }
 }
