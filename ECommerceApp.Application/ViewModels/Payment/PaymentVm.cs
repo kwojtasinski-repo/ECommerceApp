@@ -3,21 +3,20 @@ using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.Customer;
 using FluentValidation;
 using System;
-using System.Collections.Generic;
-using System.Text;
+using System.Text.Json.Serialization;
 
-namespace ECommerceApp.Application.ViewModels.Order
+namespace ECommerceApp.Application.ViewModels.Payment
 {
-    public class CreatePaymentVm : IMapFrom<ECommerceApp.Domain.Model.Payment>
+    public class PaymentVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Payment>
     {
         public int Number { get; set; }
         public DateTime DateOfOrderPayment { get; set; }
         public int CustomerId { get; set; }  // 1:Many Customer Payment
-        public NewCustomerVm Customer { get; set; }
         public int OrderId { get; set; } // 1:1 Payment Order
-        public virtual NewOrderVm Order { get; set; }
         public int OrderNumber { get; set; }
+        [JsonIgnore]
         public string CustomerName { get; set; }
+        [JsonIgnore]
         public decimal OrderCost { get; set; }
 
         public void Mapping(Profile profile)
@@ -26,14 +25,16 @@ namespace ECommerceApp.Application.ViewModels.Order
                 .ForMember(o => o.OrderNumber, opt => opt.MapFrom(o => o.Order.Number))
                 .ForMember(c => c.CustomerName, opt => opt.MapFrom(c => c.Customer.FirstName + " " +
                                c.Customer.LastName + " " + c.Customer.NIP + " " + c.Customer.CompanyName))
-                .ForMember(oc => oc.OrderCost, opt => opt.Ignore());
+                //.ForMember(oc => oc.OrderCost, opt => opt.Ignore());
+                .ForMember(oc => oc.OrderCost, opt => opt.MapFrom(o => o.Order.Cost));
         }
     }
 
-    public class CreatePaymentValidation : AbstractValidator<CreatePaymentVm>
+    public class NewPaymentValidation : AbstractValidator<PaymentVm>
     {
-        public CreatePaymentValidation()
+        public NewPaymentValidation()
         {
+            RuleFor(x => x.Id).NotNull();
             RuleFor(x => x.Number).NotNull();
             RuleFor(x => x.DateOfOrderPayment).NotNull();
             RuleFor(x => x.CustomerId).NotNull();

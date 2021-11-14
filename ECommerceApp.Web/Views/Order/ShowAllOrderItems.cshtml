@@ -8,7 +8,7 @@
 
 <p>
     <a asp-action="Index">Lista zamówień</a>
-    <a asp-action="ShowPayments">Lista płatności</a>
+    <a asp-action="Index" asp-controller="Payment">Lista płatności</a>
     <a asp-action="ShowRefunds">Lista zwrotów</a>
 </p>
 <form id="reload" asp-action="ShowAllOrderItems" asp-controller="Order" method="post">

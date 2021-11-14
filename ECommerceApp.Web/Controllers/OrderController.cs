@@ -18,10 +18,12 @@ namespace ECommerceApp.Web.Controllers
     public class OrderController : Controller
     {
         private readonly IOrderService _orderService;
+        private readonly IPaymentService _paymentService;
 
-        public OrderController(IOrderService orderService)
+        public OrderController(IOrderService orderService, IPaymentService paymentService)
         {
             _orderService = orderService;
+            _paymentService = paymentService;
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
@@ -130,21 +132,18 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult OrderRealization(NewOrderVm model)
         {
-            int id;
+            int orderId;
             if(model.CustomerData)
             {
-                id = _orderService.AddOrder(model);
+                orderId = _orderService.AddOrder(model);
             }
             else
             {
                 var customerId = _orderService.AddCustomer(model.NewCustomer);
                 model.CustomerId = customerId;
-                id = _orderService.AddOrder(model);
+                orderId = _orderService.AddOrder(model);
             }
-            model.OrderItems.ForEach(oi => oi.OrderId = id);
-            model.Id = id;
-            _orderService.UpdateOrderItems(model.OrderItems);
-            return RedirectToAction("AddOrderSummary", new { id = model.Id });
+            return RedirectToAction("AddOrderSummary", new { id = orderId });
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
@@ -192,22 +191,6 @@ namespace ECommerceApp.Web.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpGet]       
-        public IActionResult Payment(int id)
-        {
-            var payment = _orderService.InitPayment(id);
-            return View(payment);
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpPost]
-        public IActionResult Payment(PaymentVm model)
-        {
-            var id = _orderService.AddPayment(model);
-            return RedirectToAction("Index", "Item");
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpGet]
         public IActionResult ShowMyCart()
         {
@@ -248,32 +231,6 @@ namespace ECommerceApp.Web.Controllers
             }
             ViewBag.InputParameterId = itemId;
             var orderItems = _orderService.GetAllItemsOrderedByItemId(itemId, pageSize, pageNo.Value);
-            return View(orderItems);
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager")]
-        [HttpGet]
-        public IActionResult ShowPayments()
-        {
-            var payments = _orderService.GetAllPayments(20, 1, "");
-            return View(payments);
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager")]
-        [HttpPost]
-        public IActionResult ShowPayments(int pageSize, int? pageNo, string searchString)
-        {
-            if(!pageNo.HasValue)
-            {
-                pageNo = 1;
-            }
-
-            if (searchString is null)
-            {
-                searchString = String.Empty;
-            }
-
-            var orderItems = _orderService.GetAllPayments(pageSize, pageNo.Value, searchString);
             return View(orderItems);
         }
 
@@ -361,7 +318,7 @@ namespace ECommerceApp.Web.Controllers
             var customer = _orderService.GetCustomerById(order.CustomerId);
             int paymentId = (int)(order.PaymentId == null ? 0 : order.PaymentId);
             ViewBag.CustomerInformation = customer.Information;
-            var paymentNumer = _orderService.GetPaymentById(paymentId);
+            var paymentNumer = _paymentService.GetPaymentById(paymentId);
             if(paymentNumer != null)
             {
                 ViewBag.PaymentNumber = paymentNumer.Number;
@@ -420,34 +377,11 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpGet] 
-        public IActionResult EditPayment(int id)
-        {
-            var payment = _orderService.GetPaymentForEdit(id);
-            return View(payment);
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpPost] 
-        public IActionResult EditPayment(PaymentVm model)
-        {
-            _orderService.UpdatePayment(model);
-            return RedirectToAction("Index");
-        }
-
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         public IActionResult ViewOrderDetails(int id)
         {
             var order = _orderService.GetOrderDetail(id);
             return View(order);
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        public IActionResult ViewPaymentDetails(int id)
-        {
-            var payment = _orderService.GetPaymentDetail(id);
-            return View(payment);
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager")]
@@ -475,13 +409,6 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult DeleteRefund(int id)
         {
             _orderService.DeleteRefund(id);
-            return RedirectToAction("Index");
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager")]
-        public IActionResult DeletePayment(int id)
-        {
-            _orderService.DeletePayment(id);
             return RedirectToAction("Index");
         }
 

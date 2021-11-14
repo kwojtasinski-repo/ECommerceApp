@@ -7,7 +7,7 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Customer
 {
-    public class CustomerPaymentsVm : BaseVm, IMapFrom<Payment>
+    public class CustomerPaymentsVm : BaseVm, IMapFrom<Domain.Model.Payment>
     {
         public int Number { get; set; }
         public DateTime DateOfOrderPayment { get; set; }
@@ -16,7 +16,7 @@ namespace ECommerceApp.Application.ViewModels.Customer
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<Payment, CustomerPaymentsVm>()
+            profile.CreateMap<Domain.Model.Payment, CustomerPaymentsVm>()
                 .ForMember(p => p.Id, opt => opt.MapFrom(pay => pay.Id))
                 .ForMember(p => p.Number, opt => opt.MapFrom(pay => pay.Number))
                 .ForMember(p => p.DateOfOrderPayment, opt => opt.MapFrom(pay => pay.DateOfOrderPayment))

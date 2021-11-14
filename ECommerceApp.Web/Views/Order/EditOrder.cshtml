@@ -188,7 +188,7 @@
         <a asp-controller="Item" asp-action="Index">Wróć do listy przedmiotów</a>
     @if (!Model.IsPaid)
     {
-        <a asp-controller="Order" asp-action="Payment" asp-route-id="@Model.Id">Przejdź do płatności</a>
+        <a asp-controller="Payment" asp-action="AddPayment" asp-route-id="@Model.Id">Przejdź do płatności</a>
     }
 </div>
 
@@ -403,7 +403,39 @@
         function DeleteItem(id) {
             console.log("Jestem w delete");
             console.log("id=" + id);
+            if (id != '#') {
+                var searchName = "OrderItems[" + id + "].Id";
+                console.log(searchName);
+                var orderItemId = document.getElementsByName(searchName)[0].value;
+                console.log(orderItemId);
+                AJAXDelete(orderItemId);
+            }
         }
+
+        async function AJAXDelete(id) {
+            var orderItemId = parseInt(id);
+            console.log(orderItemId);
+            var url = '/Order/DeleteOrderItem/' + orderItemId;
+            console.log(url);
+            console.log('Deleting id = ' + orderItemId);
+            try {
+                const response = await fetch(url, {
+                    method: 'DELETE',
+                });
+
+                if (response.ok) {
+                    window.location.reload();
+                }
+                let responseText = await response.text();
+
+                resultElement.value = 'Result: ' + response.status + ' ' +
+                    response.statusText + ' ' + responseText;
+                console.log(responseText);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+
         /******************************************************************
          *                                                                *
          *                    SECTION FOR REFRESH COST                    *

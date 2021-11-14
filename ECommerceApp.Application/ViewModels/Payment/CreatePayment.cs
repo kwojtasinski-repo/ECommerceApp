@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ECommerceApp.Application.ViewModels.Order
+namespace ECommerceApp.Application.ViewModels.Payment
 {
     public class CreatePayment : BaseVm
     {

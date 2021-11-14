@@ -4,6 +4,7 @@ using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Order;
+using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using Microsoft.EntityFrameworkCore;
@@ -17,8 +18,12 @@ namespace ECommerceApp.Application.Services
 {
     public class PaymentService : AbstractService<PaymentVm, IPaymentRepository, Payment>, IPaymentService
     {
-        public PaymentService(IPaymentRepository paymentRepository, IMapper mapper) : base(paymentRepository, mapper)
-        { }
+        private readonly IOrderService _orderService;
+
+        public PaymentService(IPaymentRepository paymentRepository, IMapper mapper, IOrderService orderService) : base(paymentRepository, mapper)
+        {
+            _orderService = orderService;
+        }
 
         public int AddPayment(PaymentVm model)
         {
@@ -29,12 +34,20 @@ namespace ECommerceApp.Application.Services
 
             var payment = _mapper.Map<Payment>(model);
             var id = _repo.AddPayment(payment);
+            var order = _orderService.Get(payment.OrderId);
+            order.IsPaid = true;
+            order.PaymentId = id;
+            _orderService.Update(order);
             return id;
         }
 
         public void DeletePayment(int id)
         {
-            _repo.DeletePayment(id);
+            var payment = _repo.GetById(id);
+            var order = _orderService.Get(payment.OrderId);
+            _repo.Delete(payment);
+            order.IsPaid = false;
+            _orderService.Update(order);
         }
 
         public PaymentDetailsVm GetPaymentDetails(int id)
@@ -46,8 +59,9 @@ namespace ECommerceApp.Application.Services
 
         public PaymentVm GetPaymentById(int id)
         {
-            var payment = Get(id);
-            return payment;
+            var payment = _repo.GetAll().Include(p => p.Order).Include(c => c.Customer).Where(p => p.Id == id).FirstOrDefault();
+            var paymentVm = _mapper.Map<PaymentVm>(payment);
+            return paymentVm;
         }
 
         public IEnumerable<PaymentVm> GetPayments(Expression<Func<Payment, bool>> expression)
@@ -59,10 +73,22 @@ namespace ECommerceApp.Application.Services
             return paymentsToShow;
         }
 
+        public IEnumerable<PaymentVm> GetPaymentsForUser(Expression<Func<Payment, bool>> expression, string userId)
+        {
+            var payments = _repo.GetAll()
+                .Include(c => c.Customer)
+                .Where(expression)
+                .Where(p => p.Customer.UserId == userId)
+                .ProjectTo<PaymentVm>(_mapper.ConfigurationProvider);
+            var paymentsToShow = payments.ToList();
+
+            return paymentsToShow;
+        }
+
         public ListForPaymentVm GetPayments(int pageSize, int pageNo, string searchString)
         {
             var payments = _repo.GetAllPayments().Where(p => p.Number.ToString().StartsWith(searchString))
-                            .ProjectTo<PaymentForListVm>(_mapper.ConfigurationProvider)
+                            .ProjectTo<PaymentVm>(_mapper.ConfigurationProvider)
                             .ToList();
             var paymentsToShow = payments.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
 
@@ -98,6 +124,34 @@ namespace ECommerceApp.Application.Services
             {
                 _repo.UpdatePayment(payment);
             }
+        }
+
+        public PaymentDetailsVm GetPaymentDetails(int id, string userId)
+        {
+            var payment = _repo.GetAll().Include(c => c.Customer).ThenInclude(a => a.Addresses)
+                                        .Include(o => o.Order)
+                                        .Where(p => p.Customer.UserId == userId && p.Id == id).FirstOrDefault();
+            var paymentVm = _mapper.Map<PaymentDetailsVm>(payment);
+            return paymentVm;
+        }
+
+        public PaymentVm InitPayment(int orderId)
+        {
+            Random random = new Random();
+            var order = _orderService.GetOrderById(orderId);
+            var customer = _orderService.GetCustomerById(order.CustomerId);
+            var payment = new PaymentVm()
+            {
+                OrderId = order.Id,
+                Number = random.Next(0, 1000),
+                DateOfOrderPayment = System.DateTime.Now,
+                CustomerId = order.CustomerId,
+                OrderNumber = order.Number,
+                CustomerName = customer.Information,
+                OrderCost = order.Cost
+            };
+
+            return payment;
         }
     }
 }

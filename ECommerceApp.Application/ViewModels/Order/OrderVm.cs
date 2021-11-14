@@ -8,13 +8,19 @@ namespace ECommerceApp.Application.ViewModels.Order
 {
     public class OrderVm : BaseVm
     {
+        public int Number { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal Cost { get; set; }
         public DateTime? Delivered { get; set; } = null;
+        public DateTime Ordered { get; set; }
         public bool IsDelivered { get; set; } = false;
         public int? CouponUsedId { get; set; } = null;
         public int CustomerId { get; set; }
         public int? PaymentId { get; set; } = null; // 1:1 Order Payment
         public bool IsPaid { get; set; } = false;
         public int? RefundId { get; set; } = null; // 1:1 Order Refund
+        public string UserId { get; set; }
+
 
         public ICollection<OrderItemsIdsVm> OrderItems { get; set; } // 1:Many relation
 
@@ -23,6 +29,10 @@ namespace ECommerceApp.Application.ViewModels.Order
             var orderVm = new OrderVm()
             {
                 Id = order.Id,
+                Ordered = order.Ordered,
+                UserId = order.UserId,
+                Number = order.Number,
+                Cost = order.Cost,
                 Delivered = order.Delivered,
                 IsDelivered = order.IsDelivered,
                 CouponUsedId = order.CouponUsedId,
@@ -56,7 +66,10 @@ namespace ECommerceApp.Application.ViewModels.Order
             var order = new Domain.Model.Order()
             {
                 Id = this.Id,
-                Cost = 0,
+                Ordered = this.Ordered,
+                UserId = this.UserId,
+                Number = this.Number,
+                Cost = this.Cost,
                 Delivered = this.Delivered,
                 IsDelivered = this.IsDelivered,
                 CouponUsedId = this.CouponUsedId,
@@ -90,7 +103,10 @@ namespace ECommerceApp.Application.ViewModels.Order
             var order = new NewOrderVm()
             {
                 Id = this.Id,
-                Cost = 0,
+                Ordered = this.Ordered,
+                UserId = this.UserId,
+                Number = this.Number,
+                Cost = this.Cost,
                 Delivered = this.Delivered,
                 IsDelivered = this.IsDelivered,
                 CouponUsedId = this.CouponUsedId,

@@ -1,9 +1,10 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.Customer;
+using ECommerceApp.Application.ViewModels.Order;
 using System;
 
-namespace ECommerceApp.Application.ViewModels.Order
+namespace ECommerceApp.Application.ViewModels.Payment
 {
     public class PaymentDetailsVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Payment>
     {

@@ -52,6 +52,10 @@ namespace ECommerceApp.Application.Abstracts
         public virtual T Get(int id)
         {
             var entity = _repo.GetById(id);
+            if (entity != null)
+            {
+                _repo.DetachEntity(entity);
+            }
             var vm = _mapper.Map<T>(entity);
             return vm;
         }

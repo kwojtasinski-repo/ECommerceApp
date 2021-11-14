@@ -1,17 +1,17 @@
-﻿@model ECommerceApp.Application.ViewModels.Order.ListForPaymentVm
+﻿@model ECommerceApp.Application.ViewModels.Payment.ListForPaymentVm
 
 @{
-    ViewData["Title"] = "ShowPayments";
+    ViewData["Title"] = "Index";
 }
 
 <h1>Lista płatności</h1>
 
 <p>
-    <a asp-action="Index">Wróć do listy zamówień</a>
-    <a asp-action="ShowRefunds">Lista zwrotów</a>
-    <a asp-action="ShowAllOrderItems">Lista wszystkich produktów zamówionych</a>
+    <a asp-action="Index" asp-controller="Order">Wróć do listy zamówień</a>
+    <a asp-action="ShowRefunds" asp-controller="Order">Lista zwrotów</a>
+    <a asp-action="ShowAllOrderItems" asp-controller="Order">Lista wszystkich produktów zamówionych</a>
 </p>
-<form id="reload" asp-action="ShowPayments" asp-controller="Order" method="post">
+<form id="reload" asp-action="Index" asp-controller="Payment" method="post">
     <div class="row">
         <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
         <input type="submit" value="Wyszukaj" />
@@ -60,7 +60,7 @@
                     </td>
                     <td>
                         @Html.ActionLink("Edytuj", "EditPayment", new { id = payment.Id }) |
-                        @Html.ActionLink("Szczegóły", "ViewPaymentDetails", new { id = payment.Id }) |
+                        @Html.ActionLink("Szczegóły", "ViewPayment", new { id = payment.Id }) |
                         @Html.ActionLink("Usuń", "DeletePayment", new { id = payment.Id })
                     </td>
                 </tr>
@@ -98,7 +98,7 @@
             var token = $('input[name="__RequestVerificationToken"]').val();
             document.getElementById("pageNo").value = index;
             $.ajax({
-                url: "/Order/ShowPayments/",
+                url: "/Payment/",
                 type: 'POST',
                 data: {//int pageSize, int? pageNo, string searchString
                     __RequestVerificationToken: token,

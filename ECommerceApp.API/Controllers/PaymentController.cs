@@ -1,6 +1,7 @@
 ﻿using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Order;
+using ECommerceApp.Application.ViewModels.Payment;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -15,19 +16,19 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class PaymentController : ControllerBase
     {
-        private readonly IOrderService _orderService;
+        private readonly IPaymentService _paymentService;
 
-        public PaymentController(IOrderService orderService)
+        public PaymentController(IPaymentService paymentService)
         {
-            _orderService = orderService;
+            _paymentService = paymentService;
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager")]
         [HttpGet]
-        public ActionResult<List<PaymentForListVm>> GetPayments()
+        public ActionResult<List<PaymentVm>> GetPayments()
         {
-            var payments = _orderService.GetAllPayments();
-            if (payments.Count == 0)
+            var payments = _paymentService.GetPayments(p => true);
+            if (payments.Count() == 0)
             {
                 return NotFound();
             }
@@ -38,7 +39,7 @@ namespace ECommerceApp.API.Controllers
         [HttpGet("{id}")]
         public ActionResult<PaymentDetailsVm> GetPayment(int id)
         {
-            var payment = _orderService.GetPaymentDetail(id);
+            var payment = _paymentService.GetPaymentDetails(id);
             if (payment == null)
             {
                 return NotFound();
@@ -54,8 +55,8 @@ namespace ECommerceApp.API.Controllers
             {
                 return Conflict(ModelState);
             }
-            var payment = _orderService.InitPayment(model.OrderId);
-            var id = _orderService.AddPayment(payment);
+            var payment = _paymentService.InitPayment(model.OrderId);
+            var id = _paymentService.AddPayment(payment);
             return Ok(id);
         }
     }
