@@ -2,6 +2,7 @@
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Order;
+using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
@@ -14,11 +15,11 @@ namespace ECommerceApp.Application.Interfaces
 {
     public interface IOrderService : IAbstractService<OrderVm, IOrderRepository, Order>
     {
-        int AddOrder(NewOrderVm order);
-        void UpdateOrder(NewOrderVm order);
+        int AddOrder(OrderVm order);
+        void UpdateOrder(OrderVm order);
         void DeleteOrder(int id);
         ListForOrderVm GetAllOrders(int pageSize, int pageNo, string searchString);
-        NewOrderVm GetOrderForEdit(int id);
+        OrderVm GetOrderForEdit(int id);
         OrderDetailsVm GetOrderDetail(int id);
         List<OrderForListVm> GetAllOrders();
         void AddCouponToOrder(int orderId, int couponUsedId);
@@ -30,11 +31,11 @@ namespace ECommerceApp.Application.Interfaces
         void DeleteCouponUsed(int orderId, int couponUsedId);
         IQueryable<CouponVm> GetAllCoupons();
         int CheckPromoCode(string code);
-        int UpdateCoupon(int couponId, NewOrderVm order);
+        int UpdateCoupon(int couponId, OrderVm order);
         List<OrderItemForListVm> GetAllItemsOrdered();
         IQueryable<NewCustomerForOrdersVm> GetCustomersByUserId(string userId);
-        NewOrderVm GetOrderById(int orderId);
-        void CalculateCost(NewOrderVm order, NewOrderItemVm model);
+        OrderVm GetOrderById(int orderId);
+        void CalculateCost(OrderVm order, NewOrderItemVm model);
         NewCustomerForOrdersVm GetCustomerById(int id);
         void AddOrderItems(List<NewOrderItemVm> orderItems);
         OrderItemDetailsVm GetOrderItemDetail(int id);

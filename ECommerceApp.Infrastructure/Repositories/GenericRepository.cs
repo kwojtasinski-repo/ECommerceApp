@@ -161,5 +161,16 @@ namespace ECommerceApp.Infrastructure.Repositories
                 _context.Entry(entity).State = EntityState.Detached;
             }
         }
+
+        public void UpdateRange(IEnumerable<T> entities)
+        {
+            if (entities.Count() == 0)
+            {
+                return;
+            }
+
+            _context.UpdateRange(entities);
+            _context.SaveChanges();
+        }
     }
 }

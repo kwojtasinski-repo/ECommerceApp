@@ -119,5 +119,12 @@ namespace ECommerceApp.Application.Services
             coupon.CouponUsedId = couponUsedId;
             _repo.Update(coupon);
         }
+
+        public CouponVm GetCouponByCode(string promoCode)
+        {
+            var coupon = _repo.GetAll().Where(c => c.Code == promoCode).FirstOrDefault();
+            var couponVm = _mapper.Map<CouponVm>(coupon);
+            return couponVm;
+        }
     }
 }

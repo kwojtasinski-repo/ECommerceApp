@@ -1,6 +1,7 @@
 ﻿using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Services;
+using ECommerceApp.Application;
 using ECommerceApp.Application.ViewModels.Order;
+using ECommerceApp.Application.ViewModels.OrderItem;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -16,19 +17,19 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class OrderItemController : ControllerBase
     {
-        private readonly IOrderService _orderService;
+        private readonly IOrderItemService _orderItemService;
 
-        public OrderItemController(IOrderService orderService)
+        public OrderItemController(IOrderItemService orderItemService)
         {
-            _orderService = orderService;
+            _orderItemService = orderItemService;
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager")]
         [HttpGet]
-        public ActionResult<List<OrderItemForListVm>> GetAllOrderItems()
+        public ActionResult<List<OrderItemVm>> GetAllOrderItems()
         {
-            var orderItems = _orderService.GetAllItemsOrdered();
-            if (orderItems.Count == 0)
+            var orderItems = _orderItemService.GetOrderItems(oi => true);
+            if (orderItems.Count() == 0)
             {
                 return NotFound();
             }
@@ -39,7 +40,7 @@ namespace ECommerceApp.API.Controllers
         [HttpGet("{id}")]
         public ActionResult<OrderItemDetailsVm> GetOrderItem(int id)
         {
-            var orderItem = _orderService.GetOrderItemDetail(id);
+            var orderItem = _orderItemService.GetOrderItemDetails(id);
             if (orderItem == null)
             {
                 return NotFound();
@@ -49,12 +50,12 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpGet("by-user")]
-        public ActionResult<List<OrderItemForListVm>> ShowMyCart()
+        public ActionResult<List<OrderItemVm>> ShowMyCart()
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userId2 = User.FindAll(ClaimTypes.NameIdentifier).ToList(); // 2 values in list
-            var orderItems = _orderService.GetOrderItemsNotOrderedByUser(userId);
+            var orderItems = _orderItemService.GetOrderItems(oi => oi.UserId == userId && oi.OrderId == null);
             if (orderItems == null)
             {
                 return NotFound();
@@ -64,32 +65,32 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPut]
-        public IActionResult EditOrderItem([FromBody] OrderItemVm model)
+        public IActionResult EditOrderItem([FromBody] OrderItemDto model)
         {
-            var modelExists = _orderService.CheckIfOrderItemExists(model.Id);
+            var modelExists = _orderItemService.OrderItemExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
             {
                 return Conflict(ModelState);
             }
-            var orderItem = model.MapToOrderItemForList();
+            var orderItem = model.AsVm();
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             orderItem.UserId = userId;
-            _orderService.UpdateOrderItem(orderItem);
+            _orderItemService.UpdateOrderItem(orderItem);
             return Ok();
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost]
-        public IActionResult AddOrderItem([FromBody] OrderItemVm model)
+        public IActionResult AddOrderItem([FromBody] OrderItemDto model)
         {
             if (model.Id != 0)
             {
                 return Conflict(ModelState);
             }
-            var orderItem = model.MapToNewOrderItemVm();
+            var orderItem = model.AsVm();
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             orderItem.UserId = userId;
-            _orderService.AddOrderItem(orderItem);
+            _orderItemService.AddOrderItem(orderItem);
             return Ok();
         }
 
@@ -97,7 +98,7 @@ namespace ECommerceApp.API.Controllers
         [HttpGet("by-items/{id}")]
         public ActionResult<List<OrderItemForListVm>> GetOrderItemsByItemId(int id)
         {
-            var orderItems = _orderService.GetAllItemsOrderedByItemId(id);
+            var orderItems = _orderItemService.GetOrderItems(oi => oi.ItemId == id);
             if (orderItems == null)
             {
                 return NotFound();

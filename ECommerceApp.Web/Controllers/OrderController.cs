@@ -21,12 +21,14 @@ namespace ECommerceApp.Web.Controllers
         private readonly IOrderService _orderService;
         private readonly IPaymentService _paymentService;
         private readonly IRefundService _refundService;
+        private readonly IOrderItemService _orderItemService;
 
-        public OrderController(IOrderService orderService, IPaymentService paymentService, IRefundService refundService)
+        public OrderController(IOrderService orderService, IPaymentService paymentService, IRefundService refundService, IOrderItemService orderItemService)
         {
             _orderService = orderService;
             _paymentService = paymentService;
             _refundService = refundService;
+            _orderItemService = orderItemService;
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
@@ -69,7 +71,7 @@ namespace ECommerceApp.Web.Controllers
                 //var customers = _orderService.GetAllCustomers().ToList();
                 var customers = _orderService.GetCustomersByUserId(userId).ToList();
                 ViewBag.Customers = customers;
-                var order = new NewOrderVm() { Number = random.Next(100, 10000), };
+                var order = new OrderVm() { Number = random.Next(100, 10000), };
                 order.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 return View(order);
             }
@@ -81,7 +83,7 @@ namespace ECommerceApp.Web.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost]
-        public IActionResult AddOrder(NewOrderVm model)
+        public IActionResult AddOrder(OrderVm model)
         {
             var id = _orderService.AddOrder(model);
             return RedirectToAction("AddOrderDetails", new { orderId = id });
@@ -121,22 +123,22 @@ namespace ECommerceApp.Web.Controllers
                 return Redirect("~/Identity/Account/Register");
             }
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var orderItems = _orderService.GetOrderItemsNotOrderedByUserId(userId);
+            var orderItems = _orderItemService.GetOrderItems(oi => oi.UserId == userId && oi.OrderId == null).ToList();
             Random random = new Random();
             var orderDate = System.DateTime.Now;
             ViewBag.Date = orderDate;
             var customers = _orderService.GetCustomersByUserId(userId).ToList();
             ViewBag.Customers = customers;
-            var order = new NewOrderVm() { Number = random.Next(100, 10000), OrderItems = orderItems, UserId = userId };
+            var order = new OrderVm() { Number = random.Next(100, 10000), OrderItems = orderItems, UserId = userId };
             return View(order);
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost]
-        public IActionResult OrderRealization(NewOrderVm model)
+        public IActionResult OrderRealization(OrderVm model)
         {
             int orderId;
-            if(model.CustomerData)
+            if(model.CustomerData) // do analizy
             {
                 orderId = _orderService.AddOrder(model);
             }
@@ -155,7 +157,7 @@ namespace ECommerceApp.Web.Controllers
         {
             var order = _orderService.GetOrderById(orderId);
             var items = _orderService.GetAllItemsToOrder().ToList();
-            order.Items = items;
+            order.Items = items; // do analizy
             var customer = _orderService.GetCustomerById(order.CustomerId);
             ViewBag.CustomerInformation = customer.Information;
             return View(order);
@@ -295,7 +297,7 @@ namespace ECommerceApp.Web.Controllers
                 return NotFound();
             }
             var items = _orderService.GetAllItemsToOrder().ToList();
-            order.Items = items;
+            order.Items = items; // do analizy
             var customer = _orderService.GetCustomerById(order.CustomerId);
             int paymentId = (int)(order.PaymentId == null ? 0 : order.PaymentId);
             ViewBag.CustomerInformation = customer.Information;

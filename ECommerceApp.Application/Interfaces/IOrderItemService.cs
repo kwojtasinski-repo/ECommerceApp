@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.Application.ViewModels.Order;
+using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
@@ -18,5 +19,6 @@ namespace ECommerceApp.Application.Interfaces
         ListForItemOrderVm GetOrderItems(int pageSize, int pageNo, string searchString);
         bool OrderItemExists(int id);
         void DeleteOrderItem(int id);
+        void UpdateOrderItems(IEnumerable<OrderItemVm> orderItems);
     }
 }

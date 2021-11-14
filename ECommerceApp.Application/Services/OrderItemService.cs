@@ -2,6 +2,7 @@
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Order;
+using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using Microsoft.EntityFrameworkCore;
@@ -61,9 +62,12 @@ namespace ECommerceApp.Application.Services
 
         public IEnumerable<OrderItemVm> GetOrderItems(Expression<Func<OrderItem, bool>> expression)
         {
-            var orderItems = _repo.GetAll().Where(expression)
-                 .ProjectTo<OrderItemVm>(_mapper.ConfigurationProvider);
-            var orderItemsToShow = orderItems.ToList();
+            var orderItems = _repo.GetAll().Where(expression).ToList();
+            if (orderItems.Count > 0)
+            {
+                _repo.DetachEntity(orderItems);
+            }
+            var orderItemsToShow = _mapper.Map<List<OrderItemVm>>(orderItems);
             return orderItemsToShow;
         }
 
@@ -104,6 +108,17 @@ namespace ECommerceApp.Application.Services
         {
             var orderItem = _mapper.Map<OrderItem>(model);
             _repo.UpdateOrderItem(orderItem);
+        }
+
+        public void UpdateOrderItems(IEnumerable<OrderItemVm> orderItemsVm)
+        {
+            if (orderItemsVm.Count() == 0)
+            {
+                return;
+            }
+
+            var orderItems = _mapper.Map<List<OrderItem>>(orderItemsVm);
+            _repo.UpdateRange(orderItems);
         }
     }
 }

@@ -9,6 +9,7 @@ using ECommerceApp.Application.ViewModels.CouponUsed;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Order;
+using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using Microsoft.EntityFrameworkCore;
@@ -33,26 +34,26 @@ namespace ECommerceApp.Application.Services
             {
                 _repo.DetachEntity(order);
             }
-            var orderVm = new OrderVm().MapToOrderVm(order);
+            var orderVm = _mapper.Map<OrderVm>(order);
             return orderVm;
         }
 
         public override int Add(OrderVm vm)
         {
-            var order = vm.MapToOrder();
+            var order = _mapper.Map<Order>(vm);
             var id = _repo.Add(order);
             return id;
         }
 
         public override void Delete(OrderVm vm)
         {
-            var order = vm.MapToOrder();
+            var order = _mapper.Map<Order>(vm);
             _repo.Delete(order);
         }
 
         public override void Update(OrderVm vm)
         {
-            var order = vm.MapToOrder();
+            var order = _mapper.Map<Order>(vm);
             _repo.Update(order);
         }
 
@@ -62,7 +63,7 @@ namespace ECommerceApp.Application.Services
             _repo.Update(order);
         }
 
-        public int AddOrder(NewOrderVm model)
+        public int AddOrder(OrderVm model)
         {
             if (model.Id != 0)
             {
@@ -235,14 +236,14 @@ namespace ECommerceApp.Application.Services
             return orderDetailsVm;
         }
 
-        public NewOrderVm GetOrderForEdit(int id)
+        public OrderVm GetOrderForEdit(int id)
         {
             var order = _repo.GetOrderById(id);
-            var orderVm = _mapper.Map<NewOrderVm>(order);
+            var orderVm = _mapper.Map<OrderVm>(order);
             return orderVm;
         }
 
-        public void UpdateOrder(NewOrderVm orderVm)
+        public void UpdateOrder(OrderVm orderVm)
         {
             var order = _repo.GetAllOrders().Where(o => o.Id == orderVm.Id).AsNoTracking().FirstOrDefault();
             orderVm.Number = order.Number;
@@ -253,7 +254,7 @@ namespace ECommerceApp.Application.Services
             _repo.UpdatedOrder(orderToUpdate);
         }
 
-        private void CheckOrderItemsOrderByUser(NewOrderVm orderVm)
+        private void CheckOrderItemsOrderByUser(OrderVm orderVm)
         {
             var ids = orderVm.OrderItems.Select(oi => oi.Id).ToList();
             var orderItemsQueryable = _repo.GetAllOrderItems();
@@ -264,6 +265,7 @@ namespace ECommerceApp.Application.Services
 
             StringBuilder errors = new StringBuilder();
 
+            var orderCost = decimal.Zero;
             foreach(var orderItem in orderVm.OrderItems)
             {
                 var item = itemsFromDb.Where(i => i.Id == orderItem.Id).FirstOrDefault();
@@ -280,9 +282,10 @@ namespace ECommerceApp.Application.Services
                     orderItem.ItemId = item.ItemId;
                     orderItem.CouponUsedId = item.CouponUsedId;
 
-                    //orderVm.Cost += item.Item.Cost * orderItem.ItemOrderQuantity; // JS liczy koszta
+                    orderCost += item.Item.Cost * orderItem.ItemOrderQuantity; 
                 }
             }
+            orderVm.Cost = orderCost;
 
             if (errors.Length > 0)
             {
@@ -347,7 +350,7 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public int UpdateCoupon(int couponId, NewOrderVm order)
+        public int UpdateCoupon(int couponId, OrderVm order)
         {
             var couponUsed = new CouponUsedVm()
             {
@@ -374,14 +377,14 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public NewOrderVm GetOrderById(int orderId)
+        public OrderVm GetOrderById(int orderId)
         {
             var order = _repo.GetOrderById(orderId);
-            var orderVm = _mapper.Map<NewOrderVm>(order);
+            var orderVm = _mapper.Map<OrderVm>(order);
             return orderVm;
         }
 
-        public void CalculateCost(NewOrderVm order, NewOrderItemVm model)
+        public void CalculateCost(OrderVm order, NewOrderItemVm model)
         {
             throw new NotImplementedException();
         }

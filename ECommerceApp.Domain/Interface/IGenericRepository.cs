@@ -19,6 +19,7 @@ namespace ECommerceApp.Domain.Interface
         T GetById(int id);
         Task UpdateAsync(T entity);
         void Update(T entity);
+        void UpdateRange(IEnumerable<T> entities);
         IQueryable<T> GetAll();
         Task<List<int>> AddRangeAsync(List<T> entities);
         List<int> AddRange(List<T> entities);
