@@ -1,0 +1,147 @@
+﻿@model ECommerceApp.Application.ViewModels.Order.ListForItemOrderVm
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Lista zamówionych przedmiotów</h1>
+
+<p>
+    <a asp-action="Index">Lista zamówień</a>
+    <a asp-action="Index" asp-controller="Payment">Lista płatności</a>
+    <a asp-action="Index" asp-controller="Refund">Lista zwrotów</a>
+</p>
+<form id="reload" asp-action="Index" asp-controller="Order" method="post">
+    <div class="row">
+        <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
+        <input type="submit" value="Wyszukaj" />
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Id
+                </th>
+                <th>
+                    Id przedmiotu
+                </th>
+                <th>
+                    Nazwa przedmiotu
+                </th>
+                <th>
+                    Ilość
+                </th>
+                <th>
+                    Marka przedmiotu
+                </th>
+                <th>
+                    Typ przedmiotu
+                </th>
+                <th>
+                    Id zamówienia
+                </th>
+                <th>
+                    Id zwrotu
+                </th>
+                <th>
+                    Id kuponu
+                </th>
+                <th>
+                    Akcja
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var orderItem in Model.ItemOrders)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(model => orderItem.Id)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => orderItem.ItemId)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => orderItem.ItemName)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => orderItem.ItemOrderQuantity)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => orderItem.ItemBrand)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => orderItem.ItemType)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => orderItem.OrderId)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => orderItem.RefundId)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => orderItem.CouponUsedId)
+                    </td>
+                    <td>
+                        @Html.ActionLink("Szczegóły", "ViewOrderItemDetails", "OrderItem", new { id = orderItem.Id })
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <div class="row">
+        <table>
+            <tr>
+                @for (int i = 1; i <= Math.Ceiling(Model.Count / (double)Model.PageSize); i++)
+                {
+                    <td>
+                        @if (i != Model.CurrentPage)
+                        {
+                            <a href="javascript:PagerClick(@i)">@i</a>
+                        }
+                        else
+                        {
+                            <span>@i</span>
+                        }
+                    </td>
+                }
+            </tr>
+        </table>
+        <input type="hidden" name="pageNo" id="pageNo" />
+        <input type="hidden" name="pageSize" id="pageSize" value="20" />
+    </div>
+</form>
+
+@section Scripts
+{
+    <script type="text/javascript">
+        function PagerClick(index)
+        {
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            document.getElementById("pageNo").value = index;
+            $.ajax({
+                url: "/OrderItem/",
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: token,
+                    pageSize: document.getElementById("pageSize").value,
+                    pageNo: index,
+                    searchString: document.getElementById("searchString").value
+                },
+                success: function (data) {
+                    console.log("Success")
+                    console.log(data);
+                    var parser = new DOMParser();
+                    var htmlDoc = parser.parseFromString(data, 'text/html');
+                    console.log(htmlDoc);
+                    var form = htmlDoc.getElementById('reload');
+                    console.log(form);
+                    jQuery('#reload').html(form);
+                },
+                error: function (error) {
+                    console.log("error is " + error);
+                }
+            });
+        }
+    </script>
+}
