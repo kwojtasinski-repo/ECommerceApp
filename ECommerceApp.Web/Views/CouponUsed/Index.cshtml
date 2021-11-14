@@ -10,7 +10,7 @@
     <a asp-action="AddCouponUsed">Użyj kuponu</a>
     <a asp-controller="Coupon" asp-action="Index">Powrót do listy kuponów</a>
 </p>
-<form id="reload" asp-action="Index" asp-controller="Coupon" method="post">
+<form id="reload" asp-action="Index" asp-controller="CouponUsed" method="post">
     <div class="row">
         <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
         <input type="submit" value="Wyszukaj" />

@@ -9,9 +9,9 @@
 <p>
     <a asp-action="Index">Lista zamówień</a>
     <a asp-action="Index" asp-controller="Payment">Lista płatności</a>
-    <a asp-action="ShowAllOrderItems" asp-controller="Order">Lista wszystkich produktów zamówionych</a>
+    <a asp-action="Index" asp-controller="OrderItem">Lista wszystkich produktów zamówionych</a>
 </p>
-<form id="reload" asp-action="ShowRefunds" asp-controller="Order" method="post">
+<form id="reload" asp-action="Index" asp-controller="Refund" method="post">
     <div class="row">
         <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
         <input type="submit" value="Wyszukaj" />
