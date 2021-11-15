@@ -13,6 +13,7 @@ namespace ECommerceApp.Application.Interfaces
         int AddContactDetail(ContactDetailVm contactDetailVm);
         void DeleteContactDetail(int id);
         ContactDetailsForListVm GetContactDetails(int id);
+        ContactDetailsForListVm GetContactDetails(int id, string userId);
         ContactDetailVm GetContactDetailById(int id);
         ContactDetailVm GetContactDetailById(int id, string userId);
         void UpdateContactDetail(ContactDetailVm contactDetailVm);

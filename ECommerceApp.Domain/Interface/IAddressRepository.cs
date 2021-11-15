@@ -8,10 +8,11 @@ namespace ECommerceApp.Domain.Interface
 {
     public interface IAddressRepository : IGenericRepository<Address>
     {
-        void DeleteAddress(int AddressId);
-        int AddAddress(Address Address);
-        Address GetAddressById(int AddressId);
+        void DeleteAddress(int addressId);
+        int AddAddress(Address address);
+        Address GetAddressById(int addressId);
         IQueryable<Address> GetAllAddresses();
-        void UpdateAddress(Address Address);
+        void UpdateAddress(Address address);
+        Address GetAddressById(int id, string userId);
     }
 }

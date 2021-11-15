@@ -1,12 +1,13 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
+using ECommerceApp.Application.ViewModels.Address;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Customer
 {
-    public class CustomerAddressVm : BaseVm, IMapFrom<AddressDetailVm>
+    public class CustomerAddressVm : BaseVm, IMapFrom<AddressVm>
     {
         public string Street { get; set; }
         public string BuildingNumber { get; set; }
@@ -18,7 +19,7 @@ namespace ECommerceApp.Application.ViewModels.Customer
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<AddressDetailVm, CustomerAddressVm>()
+            profile.CreateMap<AddressVm, CustomerAddressVm>()
                 .ForMember(c => c.Id, opt => opt.MapFrom(a => a.Id))
                 .ForMember(c => c.BuildingNumber, opt => opt.MapFrom(a => a.BuildingNumber))
                 .ForMember(c => c.FlatNumber, opt => opt.MapFrom(a => a.FlatNumber))

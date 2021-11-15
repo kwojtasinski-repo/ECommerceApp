@@ -66,5 +66,14 @@ namespace ECommerceApp.Infrastructure.Repositories
             var customerIds = _context.Customers.AsQueryable().Where(expression).Select(c => c.Id);
             return customerIds;
         }
+
+        public ContactDetail GetContactDetailById(int id, string userId)
+        {
+            var contactDetail = _context.ContactDetails.Include(c => c.Customer)
+                                .Include(cdt => cdt.ContactDetailType)
+                                    .Where(c => c.Id == id && c.Customer.UserId == userId).FirstOrDefault();
+
+            return contactDetail;
+        }
     }
 }

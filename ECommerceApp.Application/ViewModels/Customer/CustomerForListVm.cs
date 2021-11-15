@@ -20,22 +20,6 @@ namespace ECommerceApp.Application.ViewModels.Customer
         {
             profile.CreateMap<ECommerceApp.Domain.Model.Customer, CustomerForListVm>();
         }
-
-        public NewCustomerVm MapToNewCustomerVm()
-        {
-            var customer = new NewCustomerVm()
-            {
-                Id = this.Id,
-                UserId = this.UserId,
-                FirstName = this.FirstName,
-                LastName = this.LastName,
-                NIP = this.NIP,
-                CompanyName = this.CompanyName,
-                IsCompany = this.IsCompany
-            };
-
-            return customer;
-        }
     }
 
     public class CustomerForListValidation : AbstractValidator<CustomerForListVm>

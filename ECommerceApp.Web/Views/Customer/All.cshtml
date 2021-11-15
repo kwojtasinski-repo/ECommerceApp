@@ -7,9 +7,9 @@
 <h1>Klienci</h1>
 
 <p>
-    <a asp-action="AddCustomer">Stwórz nowego klienta</a>
+    <a asp-action="AddCustomer">Dodaj nowe dane</a>
 </p>
-<form id="reload" asp-action="Index" asp-controller="Customer" method="post">
+<form id="reload" asp-action="All" asp-controller="Customer" method="post">
     <div class="row">
         <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
         <input type="submit" value="Wyszukaj" />

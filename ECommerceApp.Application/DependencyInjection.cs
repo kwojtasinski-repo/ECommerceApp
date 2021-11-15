@@ -39,6 +39,7 @@ namespace ECommerceApp.Application
             services.AddTransient<IOrderItemService, OrderItemService>();
             services.AddTransient<IContactDetailService, ContactDetailService>();
             services.AddTransient<IContactDetailTypeService, ContactDetailTypeService>();
+            services.AddTransient<IAddressService, AddressService>();
             return services;
         }
     }

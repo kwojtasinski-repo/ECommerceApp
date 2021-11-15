@@ -8,10 +8,10 @@ namespace ECommerceApp.Domain.Interface
 {
     public interface IContactDetailTypeRepository : IGenericRepository<ContactDetailType>
     {
-        void DeleteContactDetailType(int brandId);
-        int AddContactDetailType(ContactDetailType brand);
-        ContactDetailType GetContactDetailTypeById(int brandId);
+        void DeleteContactDetailType(int contactDetailTypeId);
+        int AddContactDetailType(ContactDetailType contactDetailType);
+        ContactDetailType GetContactDetailTypeById(int contactDetailType);
         IQueryable<ContactDetailType> GetAllContactDetailTypes();
-        void UpdateContactDetailType(ContactDetailType brand);
+        void UpdateContactDetailType(ContactDetailType contactDetailType);
     }
 }

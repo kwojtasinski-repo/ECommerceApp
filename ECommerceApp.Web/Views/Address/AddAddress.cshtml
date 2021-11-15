@@ -1,7 +1,7 @@
-﻿@model ECommerceApp.Application.ViewModels.Customer.NewAddressVm
+﻿@model ECommerceApp.Application.ViewModels.Address.AddressVm
 
 @{
-    ViewData["Title"] = "AddNewAddressForClient";
+    ViewData["Title"] = "AddAddress";
 }
 
 <h1>Dodaj nowy adres</h1>
@@ -9,7 +9,7 @@
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="AddNewAddressForClient">
+        <form asp-action="AddAddress">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" value="0" class="form-control" />
             <div class="form-group">
@@ -51,7 +51,7 @@
 </div>
 
 <div>
-    <a asp-action="Index">Powrót do listy klientów</a>
+    <a asp-action="Index" asp-controller="Customer">Powrót do danych kontaktowych</a>
 </div>
 
 @section Scripts {

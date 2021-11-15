@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
+using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Domain.Model;
 using FluentValidation;
@@ -19,7 +20,7 @@ namespace ECommerceApp.Application.ViewModels.Customer
         public string CompanyName { get; set; }
 
         public virtual List<ContactDetailsForListVm> ContactDetails { get; set; }
-        public virtual List<AddressDetailVm> Addresses { get; set; }
+        public virtual List<AddressVm> Addresses { get; set; }
         public virtual List<CustomerOrdersVm> Orders { get; set; }
         public List<CustomerPaymentsVm> Payments { get; set; }
         public List<CustomerRefundsVm> Refunds { get; set; }

@@ -4,6 +4,7 @@ using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels;
+using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Application.ViewModels.ContactDetailType;
 using ECommerceApp.Application.ViewModels.Customer;
@@ -13,13 +14,13 @@ using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 
 namespace ECommerceApp.Application.Services
 {
     public class CustomerService : AbstractService<CustomerVm, ICustomerRepository, Customer>, ICustomerService
     {
-
         public CustomerService(ICustomerRepository custRepo, IMapper mapper) : base(custRepo, mapper)
         {
         }
@@ -134,7 +135,7 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public int CreateNewAddress(NewAddressVm newAddress)
+        public int CreateNewAddress(AddressVm newAddress)
         {
             if (newAddress.Id != 0)
             {
@@ -146,10 +147,10 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public NewAddressVm GetAddressForEdit(int id)
+        public AddressVm GetAddressForEdit(int id)
         {
             var address = _repo.GetAddressById(id);
-            var addresVm = _mapper.Map<NewAddressVm>(address);
+            var addresVm = _mapper.Map<AddressVm>(address);
             return addresVm;
         }
 
@@ -167,7 +168,7 @@ namespace ECommerceApp.Application.Services
             return contactDetailVm;
         }
 
-        public void UpdateAddress(NewAddressVm model)
+        public void UpdateAddress(AddressVm model)
         {
             var address = _mapper.Map<Address>(model);
             _repo.UpdateAddress(address);
@@ -195,17 +196,17 @@ namespace ECommerceApp.Application.Services
             _repo.DeleteContactDetail(id);
         }
 
-        public AddressDetailVm GetAddressDetail(int id)
+        public AddressVm GetAddressDetail(int id)
         {
             var adress = _repo.GetAddressById(id);
-            var adressVm = _mapper.Map<AddressDetailVm>(adress);
+            var adressVm = _mapper.Map<AddressVm>(adress);
             return adressVm;
         }
 
-        public AddressDetailVm GetAddressDetail(int id, string userId)
+        public AddressVm GetAddressDetail(int id, string userId)
         {
             var adress = _repo.GetAddressById(id, userId);
-            var adressVm = _mapper.Map<AddressDetailVm>(adress);
+            var adressVm = _mapper.Map<AddressVm>(adress);
             return adressVm;
         }
 
@@ -260,7 +261,7 @@ namespace ECommerceApp.Application.Services
             return new string(chars);
         }
 
-        public bool CheckIfCustomerExists(int id, string userId)
+        public bool CustomerExists(int id, string userId)
         {
             var customer = _repo.GetCustomerById(id, userId);
             
@@ -296,7 +297,7 @@ namespace ECommerceApp.Application.Services
             return true;
         }
 
-        public int AddAddress(NewAddressVm newAddress)
+        public int AddAddress(AddressVm newAddress)
         {
             if (newAddress.Id != 0)
             {
@@ -308,7 +309,7 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public int AddAddress(NewAddressVm model, string userId)
+        public int AddAddress(AddressVm model, string userId)
         {
             if (model.Id != 0)
             {
@@ -433,6 +434,13 @@ namespace ECommerceApp.Application.Services
             {
                 throw new BusinessException("Customer not exists check your id");
             }
+        }
+
+        public IEnumerable<CustomerVm> GetAllCustomers(Expression<Func<Customer, bool>> expression)
+        {
+            var customers = _repo.GetAllCustomers().Where(expression).ToList();
+            var customersVm = _mapper.Map<List<CustomerVm>>(customers);
+            return customersVm;
         }
     }
 }

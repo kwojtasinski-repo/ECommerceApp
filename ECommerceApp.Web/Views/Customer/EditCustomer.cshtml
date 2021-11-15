@@ -153,15 +153,15 @@
                                     @Html.DisplayFor(model => address.FlatNumber)
                                 </td>
                                 <td>
-                                    <a class="btn btn-danger btn-sm" href="@Url.Action("DeleteAddress", "Customer", new { id = address.Id})">Usuń</a>
-                                    <a class="btn btn-info btn-sm" href="@Url.Action("EditAddress", "Customer", new { id = address.Id})">Edytuj</a>
-                                    <a class="btn btn-info btn-sm" href="@Url.Action("ViewAddress", "Customer", new { id = address.Id})">Szczegóły</a>
+                                    <a class="btn btn-danger btn-sm" href="@Url.Action("DeleteAddress", "Address", new { id = address.Id})">Usuń</a>
+                                    <a class="btn btn-info btn-sm" href="@Url.Action("EditAddress", "Address", new { id = address.Id})">Edytuj</a>
+                                    <a class="btn btn-info btn-sm" href="@Url.Action("ViewAddress", "Address", new { id = address.Id})">Szczegóły</a>
                                 </td>
                             </tr>
                         }
                     </tbody>
                 </table>
-                <input id="AddAddress" type="button" class="btn btn-dark" value="Dodaj adres" onclick="location.href='@Url.Action("AddNewAddressForClient", "Customer", new { id = Model.Id })'" />
+                <input id="AddAddress" type="button" class="btn btn-dark" value="Dodaj adres" onclick="location.href='@Url.Action("AddAddress", "Address", new { id = Model.Id })'" />
             </div>
         </div>
         <br><br>

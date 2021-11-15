@@ -1,5 +1,6 @@
 ﻿using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services;
+using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.Customer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -16,20 +17,20 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class AddressController : ControllerBase
     {
-        private readonly ICustomerService _customerService;
+        private readonly IAddressService _addressService;
 
-        public AddressController(ICustomerService customerService)
+        public AddressController(ICustomerService customerService, IAddressService addressService)
         {
-            _customerService = customerService;
+            _addressService = addressService;
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpGet("{id}")]
-        public ActionResult<AddressDetailVm> GetAddress(int id)
+        public ActionResult<AddressVm> GetAddress(int id)
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var address = _customerService.GetAddressDetail(id, userId);
+            var address = _addressService.GetAddressDetail(id, userId);
             if (address == null)
             {
                 return NotFound();
@@ -39,22 +40,22 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPut]
-        public IActionResult EditAddress([FromBody] NewAddressVm model)
+        public IActionResult EditAddress([FromBody] AddressVm model)
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var modelExists = _customerService.CheckIfAddressExists(model.Id, userId);
+            var modelExists = _addressService.AddressExists(model.Id, userId);
             if (!ModelState.IsValid || !modelExists)
             {
                 return Conflict(ModelState);
             }
-            _customerService.UpdateAddress(model);
+            _addressService.UpdateAddress(model);
             return Ok();
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost]
-        public IActionResult AddAddress([FromBody] NewAddressVm model)
+        public IActionResult AddAddress([FromBody] AddressVm model)
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -63,7 +64,7 @@ namespace ECommerceApp.API.Controllers
                 return Conflict(ModelState);
             }
 
-            var id = _customerService.AddAddress(model, userId);
+            var id = _addressService.AddAddress(model, userId);
 
             if (id == 0)
             {

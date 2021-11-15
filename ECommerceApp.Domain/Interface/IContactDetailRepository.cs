@@ -16,5 +16,6 @@ namespace ECommerceApp.Domain.Interface
         void UpdateContactDetail(ContactDetail contactDetail);
         IQueryable<int> GetCustomersIds();
         IQueryable<int> GetCustomersIds(Expression<Func<Customer,bool>> expression);
+        ContactDetail GetContactDetailById(int id, string userId);
     }
 }

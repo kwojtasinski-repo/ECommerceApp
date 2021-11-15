@@ -5,9 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ECommerceApp.Application.ViewModels.Customer
+namespace ECommerceApp.Application.ViewModels.Address
 {
-    public class NewAddressVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Address>
+    public class AddressVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Address>
     {
         public string Street { get; set; }
         public string BuildingNumber { get; set; }
@@ -19,11 +19,11 @@ namespace ECommerceApp.Application.ViewModels.Customer
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<NewAddressVm, ECommerceApp.Domain.Model.Address>().ReverseMap();
+            profile.CreateMap<AddressVm, ECommerceApp.Domain.Model.Address>().ReverseMap();
         }
     }
 
-    public class NewAddressValidation : AbstractValidator<NewAddressVm>
+    public class NewAddressValidation : AbstractValidator<AddressVm>
     {
         public NewAddressValidation()
         {

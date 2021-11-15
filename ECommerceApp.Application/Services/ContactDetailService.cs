@@ -143,5 +143,12 @@ namespace ECommerceApp.Application.Services
 
             return true;
         }
+
+        public ContactDetailsForListVm GetContactDetails(int id, string userId)
+        {
+            var contactDetail = _repo.GetContactDetailById(id, userId);
+            var contactDetailVm = _mapper.Map<ContactDetailsForListVm>(contactDetail);
+            return contactDetailVm;
+        }
     }
 }

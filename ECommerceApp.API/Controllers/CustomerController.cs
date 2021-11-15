@@ -57,7 +57,7 @@ namespace ECommerceApp.API.Controllers
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var modelExists = _customerService.CheckIfCustomerExists(model.Id, userId);
+            var modelExists = _customerService.CustomerExists(model.Id, userId);
             if (!ModelState.IsValid || !modelExists)
             {
                 return Conflict(ModelState);

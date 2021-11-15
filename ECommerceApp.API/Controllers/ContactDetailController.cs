@@ -17,20 +17,20 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class ContactDetailController : ControllerBase
     {
-        private readonly ICustomerService _customerService;
+        private readonly IContactDetailService _contactDetailService;
 
-        public ContactDetailController(ICustomerService customerService)
+        public ContactDetailController(IContactDetailService contactDetailService)
         {
-            _customerService = customerService;
+            _contactDetailService = contactDetailService;
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpGet("{id}")]
-        public ActionResult<NewContactDetailVm> GetContactDetail(int id)
+        public ActionResult<ContactDetailsForListVm> GetContactDetail(int id)
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var contactDetail = _customerService.GetContactDetail(id, userId);
+            var contactDetail = _contactDetailService.GetContactDetails(id, userId);
             if (contactDetail == null)
             {
                 return NotFound();
@@ -44,12 +44,12 @@ namespace ECommerceApp.API.Controllers
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var modelExists = _customerService.CheckIfContactDetailExists(model.Id, userId);
+            var modelExists = _contactDetailService.ContactDetailExists(model.Id, userId);
             if (!ModelState.IsValid || !modelExists)
             {
                 return Conflict(ModelState);
             }
-            _customerService.UpdateContactDetail(model);
+            _contactDetailService.UpdateContactDetail(model);
             return Ok();
         }
 
@@ -64,7 +64,7 @@ namespace ECommerceApp.API.Controllers
                 return Conflict(ModelState);
             }
 
-            var id = _customerService.AddContactDetail(model, userId);
+            var id = _contactDetailService.AddContactDetail(model, userId);
 
             if (id == 0)
             {

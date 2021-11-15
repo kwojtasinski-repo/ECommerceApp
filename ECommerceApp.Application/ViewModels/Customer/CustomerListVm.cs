@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
+using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using System;
 using System.Collections.Generic;
@@ -17,7 +18,7 @@ namespace ECommerceApp.Application.ViewModels.Customer
         public string CompanyName { get; set; }
 
         public virtual ICollection<ContactDetailVm> ContactDetails { get; set; }
-        public virtual ICollection<AddressDetailVm> Addresses { get; set; }
+        public virtual ICollection<AddressVm> Addresses { get; set; }
         public virtual ICollection<CustomerOrdersVm> Orders { get; set; }
         public ICollection<CustomerPaymentsVm> Payments { get; set; }
         public ICollection<CustomerRefundsVm> Refunds { get; set; }

@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Threading.Tasks;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services;
+using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Application.ViewModels.Customer;
 using Microsoft.AspNetCore.Authorization;
@@ -117,38 +118,6 @@ namespace ECommerceApp.Web.Controllers
             return PartialView(customer);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpGet]
-        public IActionResult AddNewAddressForClient(int id)
-        {
-            ViewBag.CustomerId = id;
-            return View();
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpPost]
-        public IActionResult AddNewAddressForClient(NewAddressVm newAddress)
-        {
-            _customerService.CreateNewAddress(newAddress);
-            return RedirectToAction("Index");
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpGet]
-        public IActionResult EditAddress(int id)
-        {
-            var address = _customerService.GetAddressForEdit(id);
-            return View(address);
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpPost]
-        public IActionResult EditAddress(NewAddressVm model)
-        {
-            _customerService.UpdateAddress(model);
-            return RedirectToAction("Index");
-        }
-
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet]
         public IActionResult EditCustomer(int id)
@@ -173,23 +142,9 @@ namespace ECommerceApp.Web.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        public IActionResult ViewAddress(int id)
-        {
-            var address = _customerService.GetAddressDetail(id);
-            return View(address);
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         public IActionResult Delete(int id)
         {
             _customerService.DeleteCustomer(id);
-            return RedirectToAction("Index");
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        public IActionResult DeleteAddress(int id)
-        {
-            _customerService.DeleteAddress(id);
             return RedirectToAction("Index");
         }
     }
