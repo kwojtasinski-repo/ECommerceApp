@@ -11,5 +11,9 @@ namespace ECommerceApp.Application.Interfaces
     public interface IContactDetailTypeService : IAbstractService<ContactDetailTypeVm, IContactDetailTypeRepository, ContactDetailType>
     {
         IEnumerable<ContactDetailTypeVm> GetContactDetailTypes(Expression<Func<ContactDetailType, bool>> expression);
+        bool ContactDetailTypeExists(int id);
+        int AddContactDetailType(ContactDetailTypeVm model);
+        ContactDetailTypeVm GetContactDetailType(int id);
+        void UpdateContactDetailType(ContactDetailTypeVm model);
     }
 }

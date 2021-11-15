@@ -40,7 +40,6 @@ namespace ECommerceApp.Application.Interfaces
         List<ItemsAddToCartVm> GetItemsAddToCart();
         ListForOrderItemVm GetOrderItemsNotOrderedByUserId(string userId, int pageSize, int pageNo);
         int AddCustomer(NewCustomerVm newCustomer);
-        void DeleteOrderItem(int id);
         List<OrderForListVm> GetAllOrdersByUserId(string userId);
         List<OrderForListVm> GetAllOrders(Expression<Func<Order,bool>> expression);
         void AddRefund(int orderId, int refundId);

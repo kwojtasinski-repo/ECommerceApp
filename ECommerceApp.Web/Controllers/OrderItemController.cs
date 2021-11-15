@@ -19,12 +19,10 @@ namespace ECommerceApp.Web.Controllers
 {
     public class OrderItemController : Controller
     {
-        private readonly IOrderService _orderService;
         private readonly IOrderItemService _orderItemService;
 
-        public OrderItemController(IOrderService orderService, IOrderItemService orderItemService)
+        public OrderItemController(IOrderItemService orderItemService)
         {
-            _orderService = orderService;
             _orderItemService = orderItemService;
         }
 
@@ -58,7 +56,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult ShowOrderItemsByItemId(int itemId)
         {
-            var orderItems = _orderService.GetAllItemsOrderedByItemId(itemId, 20, 1);
+            var orderItems = _orderItemService.GetAllItemsOrderedByItemId(itemId, 20, 1);
             ViewBag.InputParameterId = itemId;
             return View(orderItems);
         }
@@ -72,7 +70,7 @@ namespace ECommerceApp.Web.Controllers
                 pageNo = 1;
             }
             ViewBag.InputParameterId = itemId;
-            var orderItems = _orderService.GetAllItemsOrderedByItemId(itemId, pageSize, pageNo.Value);
+            var orderItems = _orderItemService.GetAllItemsOrderedByItemId(itemId, pageSize, pageNo.Value);
             return View(orderItems);
         }
         
@@ -124,7 +122,7 @@ namespace ECommerceApp.Web.Controllers
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         public IActionResult DeleteOrderItem(int id)
         {
-            _orderService.DeleteOrderItem(id);
+            _orderItemService.DeleteOrderItem(id);
             return Json(new { });
         }
     }

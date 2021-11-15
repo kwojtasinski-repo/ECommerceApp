@@ -170,5 +170,24 @@ namespace ECommerceApp.Application.Services
             };
             return orderItem;
         }
+
+        public ListForOrderItemVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo)
+        {
+            var itemOrder = _repo.GetAllOrderItems().Where(oi => oi.ItemId == id)
+                            .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
+                            .ToList();
+            var itemOrderToShow = itemOrder.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+
+            var itemOrderList = new ListForOrderItemVm()
+            {
+                PageSize = pageSize,
+                CurrentPage = pageNo,
+                SearchString = "",
+                ItemOrders = itemOrderToShow,
+                Count = itemOrder.Count
+            };
+
+            return itemOrderList;
+        }
     }
 }

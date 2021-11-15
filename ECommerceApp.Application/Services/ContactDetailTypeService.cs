@@ -19,11 +19,43 @@ namespace ECommerceApp.Application.Services
         {
         }
 
+        public int AddContactDetailType(ContactDetailTypeVm model)
+        {
+            var contactDetailType = _mapper.Map<ContactDetailType>(model);
+            var id = _repo.Add(contactDetailType);
+            return id;
+        }
+
+        public bool ContactDetailTypeExists(int id)
+        {
+            var contactDetailType = Get(id);
+            var exists = contactDetailType != null;
+
+            if (exists)
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public ContactDetailTypeVm GetContactDetailType(int id)
+        {
+            var contactDetailType = Get(id);
+            return contactDetailType;
+        }
+
         public IEnumerable<ContactDetailTypeVm> GetContactDetailTypes(Expression<Func<ContactDetailType, bool>> expression)
         {
             var contactDetailTypes = _repo.GetAll().Where(expression);
             var contactDetailTypesVm = contactDetailTypes.ProjectTo<ContactDetailTypeVm>(_mapper.ConfigurationProvider).ToList();
             return contactDetailTypesVm;
+        }
+
+        public void UpdateContactDetailType(ContactDetailTypeVm model)
+        {
+            var contactDetailType = _mapper.Map<ContactDetailType>(model);
+            _repo.UpdateContactDetailType(contactDetailType);
         }
     }
 }

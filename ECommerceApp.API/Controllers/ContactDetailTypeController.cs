@@ -16,18 +16,18 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class ContactDetailTypeController : ControllerBase
     {
-        private readonly ICustomerService _customerService;
+        private readonly IContactDetailTypeService _contactDetailTypeService;
 
-        public ContactDetailTypeController(ICustomerService customerService)
+        public ContactDetailTypeController(IContactDetailTypeService contactDetailTypeService)
         {
-            _customerService = customerService;
+            _contactDetailTypeService = contactDetailTypeService;
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet("{id}")]
         public ActionResult<ContactDetailTypeVm> GetContactDetailType(int id)
         {
-            var contactDetailType = _customerService.GetContactDetailType(id);
+            var contactDetailType = _contactDetailTypeService.GetContactDetailType(id);
             if (contactDetailType == null)
             {
                 return NotFound();
@@ -39,7 +39,7 @@ namespace ECommerceApp.API.Controllers
         [HttpGet]
         public ActionResult<List<ContactDetailTypeVm>> GetContactDetailTypes()
         {
-            var contactDetailTypes = _customerService.GetConactDetailTypes().ToList();
+            var contactDetailTypes = _contactDetailTypeService.GetContactDetailTypes(c => true).ToList();
             if (contactDetailTypes.Count == 0)
             {
                 return NotFound();
@@ -51,12 +51,12 @@ namespace ECommerceApp.API.Controllers
         [HttpPut]
         public IActionResult EditContactDetailType(ContactDetailTypeVm model)
         {
-            var modelExists = _customerService.CheckIfContactDetailType(model.Id);
+            var modelExists = _contactDetailTypeService.ContactDetailTypeExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
             {
                 return Conflict(ModelState);
             }
-            _customerService.UpdateContactDetailType(model);
+            _contactDetailTypeService.UpdateContactDetailType(model);
             return Ok();
         }
 
@@ -68,7 +68,7 @@ namespace ECommerceApp.API.Controllers
             {
                 return Conflict(ModelState);
             }
-            _customerService.AddContactDetailType(model);
+            _contactDetailTypeService.AddContactDetailType(model);
             return Ok();
         }
     }

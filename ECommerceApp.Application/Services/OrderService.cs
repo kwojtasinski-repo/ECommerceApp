@@ -541,11 +541,6 @@ namespace ECommerceApp.Application.Services
             return item;
         }
 
-        public void DeleteOrderItem(int id)
-        {
-            _repo.DeleteOrderItem(id);
-        }
-
         public List<OrderForListVm> GetAllOrders(Expression<Func<Order, bool>> expression)
         {
             return _repo.GetAllOrders().Where(expression)

@@ -23,5 +23,6 @@ namespace ECommerceApp.Application.Interfaces
         IEnumerable<NewOrderItemVm> GetOrderItemsForRealization(Expression<Func<OrderItem, bool>> expression);
         int OrderItemCount(string userId);
         int AddOrderItem(int id, string userId);
+        ListForOrderItemVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo);
     }
 }

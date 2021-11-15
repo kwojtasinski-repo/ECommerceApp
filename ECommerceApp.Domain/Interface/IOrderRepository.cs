@@ -26,6 +26,5 @@ namespace ECommerceApp.Domain.Interface
         int AddCustomer(Customer customer);
         void UpdateOrderItem(OrderItem orderItem);
         OrderItem GetOrderItemNotOrdered(OrderItem orderItem);
-        void DeleteOrderItem(int id);
     }
 }
