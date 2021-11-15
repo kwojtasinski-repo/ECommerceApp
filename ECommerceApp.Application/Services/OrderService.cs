@@ -151,35 +151,6 @@ namespace ECommerceApp.Application.Services
             //_repo.Update(order);
         }
 
-        public ListForOrderItemVm GetAllItemsOrdered(int pageSize, int pageNo, string searchString)
-        {
-            var itemOrder = _repo.GetAllOrderItems().Where(oi => oi.Item.Name.StartsWith(searchString) ||
-                            oi.Item.Brand.Name.StartsWith(searchString) || oi.Item.Type.Name.StartsWith(searchString))
-                            .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
-                            .ToList();
-            var itemOrderToShow = itemOrder.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
-
-            var itemOrderList = new ListForOrderItemVm()
-            {
-                PageSize = pageSize,
-                CurrentPage = pageNo,
-                SearchString = searchString,
-                ItemOrders = itemOrderToShow,
-                Count = itemOrder.Count
-            };
-
-            return itemOrderList;
-        }
-
-        public List<OrderItemForListVm> GetAllItemsOrdered()
-        {
-            var itemOrder = _repo.GetAllOrderItems()
-                            .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
-                            .ToList();
-            
-            return itemOrder;
-        }
-
         public ListForOrderItemVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo)
         {
             var itemOrder = _repo.GetAllOrderItems().Where(oi => oi.ItemId == id)
@@ -197,15 +168,6 @@ namespace ECommerceApp.Application.Services
             };
 
             return itemOrderList;
-        }
-
-        public List<OrderItemForListVm> GetAllItemsOrderedByItemId(int id)
-        {
-            var itemOrder = _repo.GetAllOrderItems().Where(oi => oi.ItemId == id)
-                            .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
-                            .ToList();
-            
-            return itemOrder;
         }
 
         public ListForOrderVm GetAllOrders(int pageSize, int pageNo, string searchString)
@@ -239,13 +201,6 @@ namespace ECommerceApp.Application.Services
             var orderDetails = _repo.GetOrderById(id);
             var orderDetailsVm = _mapper.Map<OrderDetailsVm>(orderDetails);
             return orderDetailsVm;
-        }
-
-        public OrderVm GetOrderForEdit(int id)
-        {
-            var order = _repo.GetOrderById(id);
-            var orderVm = _mapper.Map<OrderVm>(order);
-            return orderVm;
         }
 
         public void UpdateOrder(OrderVm orderVm)
@@ -375,13 +330,6 @@ namespace ECommerceApp.Application.Services
             Update(orderVm);
         }
 
-        public IQueryable<NewCustomerForOrdersVm> GetAllCustomers()
-        {
-            var customers = _repo.GetAllCustomers();
-            var customersVm = customers.ProjectTo<NewCustomerForOrdersVm>(_mapper.ConfigurationProvider);
-            return customersVm;
-        }
-
         public IQueryable<CouponVm> GetAllCoupons()
         {
             var coupons = _repo.GetAllCoupons();
@@ -449,19 +397,6 @@ namespace ECommerceApp.Application.Services
             var customer = _repo.GetCustomerById(id);
             var customerVm = _mapper.Map<NewCustomerForOrdersVm>(customer);
             return customerVm;
-        }
-
-        public void AddOrderItems(List<NewOrderItemVm> orderItemsVm)
-        {
-            var orderItems = _mapper.Map<List<NewOrderItemVm>, List<OrderItem>>(orderItemsVm);
-            _repo.AddOrderItems(orderItems);
-        }
-
-        public OrderItemDetailsVm GetOrderItemDetail(int id)
-        {
-            var orderItem = _repo.GetAllOrderItems().Include(i => i.Item).Where(oi => oi.Id == id).FirstOrDefault();
-            var orderItemVm = _mapper.Map<OrderItemDetailsVm>(orderItem);
-            return orderItemVm;
         }
 
         public bool CheckEnteredRefund(string reasonRefund)
@@ -588,15 +523,6 @@ namespace ECommerceApp.Application.Services
             return ordersList;
         }
 
-        public List<NewOrderItemVm> GetOrderItemsNotOrderedByUserId(string userId)
-        {
-            var itemOrders = _repo.GetAllOrderItems().Where(oi => oi.UserId == userId && oi.OrderId == null).ToList();
-            _repo.DetachEntity(itemOrders);
-            var itemOrdersVm = _mapper.Map<List<NewOrderItemVm>>(itemOrders);
-
-            return itemOrdersVm;
-        }
-
         public int AddCustomer(NewCustomerVm newCustomer)
         {
             if (newCustomer.Id != 0)
@@ -609,111 +535,15 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public void UpdateOrderItems(List<NewOrderItemVm> orderItemsVm)
-        {
-            var orderItems = _mapper.Map<List<NewOrderItemVm>, List<OrderItem>>(orderItemsVm);
-            _repo.UpdateOrderItems(orderItems);
-        }
-
-        public int OrderItemCount(string userId)
-        {
-            var itemOrders = _repo.GetAllOrderItems().Where(oi => oi.UserId == userId && oi.OrderId == null)
-                            .ProjectTo<NewOrderItemVm>(_mapper.ConfigurationProvider)
-                            .ToList();
-
-            return itemOrders.Count;
-        }
-
-        public void UpdateOrderItem(OrderItemForListVm orderItemVm)
-        {
-            var orderItem = _mapper.Map<OrderItemForListVm, OrderItem>(orderItemVm);
-            _repo.UpdateOrderItem(orderItem);
-        }
-
-        public int AddItemToOrderItem(int itemId, string userId)
-        {
-            var orderItemExist = GetOrderItemByItemId(itemId, userId);
-            int id;
-            if (orderItemExist != null)
-            {
-                id = orderItemExist.Id;
-                orderItemExist.ItemOrderQuantity += 1;
-                _repo.UpdateOrderItem(orderItemExist);
-            }
-            else
-            {
-                var orderItem = CreateOrderItem(itemId, userId);
-                id = _repo.AddOrderItem(orderItem);
-            }
-            return id;
-        }
-
-        private OrderItem CreateOrderItem(int itemId, string userId)
-        {
-            var orderItem = new OrderItem()
-            {
-                Id = 0,
-                ItemId = itemId,
-                ItemOrderQuantity = 1,
-                UserId = userId,
-            };
-            return orderItem;
-        }
-
         private OrderItem GetOrderItem(OrderItem orderItem)
         {
             var item = _repo.GetOrderItemNotOrdered(orderItem);
             return item;
         }
 
-        private OrderItem GetOrderItemByItemId(int itemId, string userId)
-        {
-            var orderItem = _repo.GetOrderItemNotOrderedByItemId(itemId, userId);
-            return orderItem;
-        }
-
         public void DeleteOrderItem(int id)
         {
             _repo.DeleteOrderItem(id);
-        }
-
-        public bool CheckIfOrderExists(int id)
-        {
-            var order = _repo.GetAllOrders().Where(o => o.Id == id).AsNoTracking().FirstOrDefault();
-            if (order == null)
-            {
-                return false;
-            }
-            return true;
-        }
-
-        public bool CheckIfRefundExists(int id)
-        {
-            var refund = _repo.GetRefundById(id);
-            if (refund == null)
-            {
-                return false;
-            }
-            return true;
-        }
-
-        public bool CheckIfOrderItemExists(int id)
-        {
-            var orderItem = _repo.GetOrderItemById(id);
-            if (orderItem == null)
-            {
-                return false;
-            }
-            return true;
-        }
-
-        public List<OrderItemForListVm> GetOrderItemsNotOrderedByUser(string userId)
-        {
-            var itemOrders = _repo.GetAllOrderItems().Where(oi => oi.UserId == userId && oi.OrderId == null)
-                            .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
-                            .ToList();
-
-            return itemOrders;
         }
 
         public List<OrderForListVm> GetAllOrders(Expression<Func<Order, bool>> expression)

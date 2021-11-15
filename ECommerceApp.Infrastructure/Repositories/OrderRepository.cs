@@ -78,12 +78,6 @@ namespace ECommerceApp.Infrastructure.Repositories
             return _context.Orders;
         }
 
-        public OrderItem GetOrderItemById(int id)
-        {
-            var orderItem = _context.OrderItem.FirstOrDefault(o => o.Id == id);
-            return orderItem;
-        }
-
         public IQueryable<OrderItem> GetAllOrderItems()
         {
             return _context.OrderItem
@@ -94,33 +88,6 @@ namespace ECommerceApp.Infrastructure.Repositories
         public IQueryable<Refund> GetAllRefunds()
         {
             return _context.Refunds;
-        }
-
-        public void DeleteRefund(int refundId)
-        {
-            var refund = _context.Refunds
-                .Include(inc => inc.Order)
-                .Include(inc => inc.OrderItems)
-                .FirstOrDefault(r => r.Id == refundId);
-
-            if (refund != null)
-            {
-                _context.Refunds.Remove(refund);
-                _context.SaveChanges();
-            }
-        }
-
-        public int AddRefund(Refund refund)
-        {
-            _context.Refunds.Add(refund);
-            _context.SaveChanges();
-            return refund.Id;
-        }
-
-        public Refund GetRefundById(int id)
-        {
-            var refund = _context.Refunds.FirstOrDefault(r => r.Id == id);
-            return refund;
         }
 
         public void UpdatedOrder(Order order)
@@ -167,7 +134,7 @@ namespace ECommerceApp.Infrastructure.Repositories
             }
 
             _context.SaveChanges();
-    }
+        }
 
         public int AddOrderItem(OrderItem orderItem)
         {
@@ -176,35 +143,9 @@ namespace ECommerceApp.Infrastructure.Repositories
             return orderItem.Id;
         }
 
-        public void UpdatePayment(Payment payment)
-        {
-            _context.Attach(payment);
-            _context.Entry(payment).Property("Number").IsModified = true;
-            _context.Entry(payment).Property("DateOfOrderPayment").IsModified = true;
-            _context.SaveChanges();
-        }
-
-        public void UpdateRefund(Refund refund)
-        {
-            _context.Attach(refund);
-            _context.Entry(refund).Property("Reason").IsModified = true;
-            _context.Entry(refund).Property("Accepted").IsModified = true;
-            _context.Entry(refund).Property("RefundDate").IsModified = true;
-            _context.Entry(refund).Property("OnWarranty").IsModified = true;
-            _context.Entry(refund).Property("CustomerId").IsModified = true;
-            _context.Entry(refund).Property("OrderId").IsModified = true;
-            _context.Entry(refund).Collection("OrderItems").IsModified = true;
-            _context.SaveChanges();
-        }
-
         public IQueryable<Item> GetAllItems()
         {
             return _context.Items;
-        }
-
-        public IQueryable<Customer> GetAllCustomers()
-        {
-            return _context.Customers;
         }
 
         public IQueryable<Coupon> GetAllCoupons()
@@ -234,24 +175,9 @@ namespace ECommerceApp.Infrastructure.Repositories
                 .FirstOrDefault(c => c.Id == id);
         }
 
-        public IQueryable<OrderItem> GetAllOrderItemsByOrderId(int orderId)
-        {
-            return _context.OrderItem.Where(oi => oi.OrderId == orderId);
-        }
-
         public Customer GetCustomerById(int id)
         {
             return _context.Customers.FirstOrDefault(c => c.Id == id);
-        }
-
-        public void AddOrderItems(ICollection<OrderItem> orderItems)
-        {
-            foreach(var orderItem in orderItems)
-            {
-                _context.OrderItem.Add(orderItem);
-            }
-
-            _context.SaveChanges();
         }
 
         public IQueryable<Customer> GetCustomersByUserId(string userId)
@@ -264,21 +190,6 @@ namespace ECommerceApp.Infrastructure.Repositories
             _context.Customers.Add(customer);
             _context.SaveChanges();
             return customer.Id;
-        }
-
-        public void UpdateOrderItems(List<OrderItem> orderItems)
-        {
-            foreach(var orderItem in orderItems)
-            {
-                _context.Attach(orderItem);
-                _context.Entry(orderItem).Property("ItemId").IsModified = true;
-                _context.Entry(orderItem).Property("ItemOrderQuantity").IsModified = true;
-                _context.Entry(orderItem).Property("UserId").IsModified = true;
-                _context.Entry(orderItem).Property("OrderId").IsModified = true;
-                _context.Entry(orderItem).Property("CouponUsedId").IsModified = true;
-                _context.Entry(orderItem).Property("RefundId").IsModified = true;
-            }
-            _context.SaveChanges();
         }
 
         public void UpdateOrderItem(OrderItem orderItem)
@@ -297,23 +208,6 @@ namespace ECommerceApp.Infrastructure.Repositories
         {
             var item = _context.OrderItem.FirstOrDefault(oi => oi.ItemId == orderItem.ItemId && oi.OrderId == null);
             return item;
-        }
-
-        public OrderItem GetOrderItemNotOrderedByItemId(int itemId, string userId)
-        {
-            var orderItem = _context.OrderItem.FirstOrDefault(oi => oi.ItemId == itemId && oi.UserId == userId && oi.OrderId == null);
-            return orderItem;
-        }
-
-        public void RemoveOrderedItems(int orderId)
-        {
-            var orderItems = _context.OrderItem.Where(oi => oi.OrderId == orderId).ToList();
-            orderItems.ForEach(oi =>
-            {
-                var item = _context.Items.Find(oi.ItemId);
-                item.Quantity -= oi.ItemOrderQuantity;
-                _context.SaveChanges();
-            });
         }
 
         public void DeleteOrderItem(int id)
