@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ECommerceApp.Application.ViewModels.Customer
+namespace ECommerceApp.Application.ViewModels.ContactDetailType
 {
     public class ContactDetailTypeVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.ContactDetail>
     {
@@ -13,7 +13,7 @@ namespace ECommerceApp.Application.ViewModels.Customer
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ECommerceApp.Domain.Model.ContactDetailType, ContactDetailTypeVm>();
+            profile.CreateMap<ECommerceApp.Domain.Model.ContactDetailType, ContactDetailTypeVm>().ReverseMap();
         }
     }
 

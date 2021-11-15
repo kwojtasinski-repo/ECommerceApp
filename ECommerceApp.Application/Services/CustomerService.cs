@@ -4,6 +4,8 @@ using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels;
+using ECommerceApp.Application.ViewModels.ContactDetail;
+using ECommerceApp.Application.ViewModels.ContactDetailType;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -38,7 +40,7 @@ namespace ECommerceApp.Application.Services
         {
             Delete(id);
         }
-        
+
         public ListForCustomerVm GetAllCustomersForList(int pageSize, int pageNo, string searchString)
         {
             var customers = _repo.GetAllCustomers()
@@ -55,7 +57,28 @@ namespace ECommerceApp.Application.Services
                 CurrentPage = pageNo,
                 SearchString = searchString,
                 Customers = customersToShow,
-                Count = customersToShow.Count
+                Count = customers.Count()
+            };
+
+            return customersList;
+        }
+
+        public ListForCustomerVm GetAllCustomersForList(string userId, int pageSize, int pageNo, string searchString)
+        {
+            var customers = _repo.GetAllCustomers().Where(c => c.UserId == userId)
+                    .Where(p => p.FirstName.StartsWith(searchString) || p.LastName.StartsWith(searchString)
+                    || p.CompanyName.StartsWith(searchString) || p.NIP.StartsWith(searchString))
+                    .ProjectTo<CustomerForListVm>(_mapper.ConfigurationProvider);
+
+            var customersToShow = customers.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+
+            var customersList = new ListForCustomerVm()
+            {
+                PageSize = pageSize,
+                CurrentPage = pageNo,
+                SearchString = searchString,
+                Customers = customersToShow,
+                Count = customers.Count()
             };
 
             return customersList;
@@ -156,7 +179,7 @@ namespace ECommerceApp.Application.Services
             _repo.UpdateContactDetail(contactDetail);
         }
 
-        public void UpdateContactDetailType(NewContactDetailTypeVm model)
+        public void UpdateContactDetailType(ContactDetailTypeVm model)
         {
             var contactDetailType = _mapper.Map<ContactDetailType>(model);
             _repo.UpdateContactDetailType(contactDetailType);
@@ -357,7 +380,7 @@ namespace ECommerceApp.Application.Services
             }
         }
 
-        public int AddContactDetailType(NewContactDetailTypeVm newContactDetailType)
+        public int AddContactDetailType(ContactDetailTypeVm newContactDetailType)
         {
             if (newContactDetailType.Id != 0)
             {
@@ -369,10 +392,10 @@ namespace ECommerceApp.Application.Services
             return id;
         }
 
-        public NewContactDetailTypeVm GetContactDetailType(int id)
+        public ContactDetailTypeVm GetContactDetailType(int id)
         {
             var contactDetailType = _repo.GetContactDetailTypeById(id);
-            var contactDetailTypeVm = _mapper.Map<NewContactDetailTypeVm>(contactDetailType);
+            var contactDetailTypeVm = _mapper.Map<ContactDetailTypeVm>(contactDetailType);
             return contactDetailTypeVm;
         }
 

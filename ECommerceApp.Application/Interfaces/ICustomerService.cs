@@ -1,4 +1,6 @@
-﻿using ECommerceApp.Application.ViewModels.Customer;
+﻿using ECommerceApp.Application.ViewModels.ContactDetail;
+using ECommerceApp.Application.ViewModels.ContactDetailType;
+using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
@@ -11,6 +13,7 @@ namespace ECommerceApp.Application.Interfaces
     public interface ICustomerService : IAbstractService<CustomerVm, ICustomerRepository, Customer>
     {
         ListForCustomerVm GetAllCustomersForList(int pageSize, int pageNo, string searchString);
+        ListForCustomerVm GetAllCustomersForList(string userId, int pageSize, int pageNo, string searchString);
         int AddCustomer(NewCustomerVm newCustomer);
         CustomerDetailsVm GetCustomerDetails(int customerId);
         NewCustomerVm GetCustomerForEdit(int id);
@@ -31,11 +34,11 @@ namespace ECommerceApp.Application.Interfaces
         bool CheckIfContactDetailExists(int id, string userId);
         int AddAddress(NewAddressVm model);
         int AddContactDetail(NewContactDetailVm model);
-        int AddContactDetailType(NewContactDetailTypeVm model);
+        int AddContactDetailType(ContactDetailTypeVm model);
         bool CheckIfContactDetailType(int id);
-        void UpdateContactDetailType(NewContactDetailTypeVm model);
+        void UpdateContactDetailType(ContactDetailTypeVm model);
         CustomerDetailsVm GetCustomerDetails(int id, string userId);
-        NewContactDetailTypeVm GetContactDetailType(int id);
+        ContactDetailTypeVm GetContactDetailType(int id);
         AddressDetailVm GetAddressDetail(int id, string userId);
         NewContactDetailVm GetContactDetail(int id, string userId);
         int AddAddress(NewAddressVm model, string userId);

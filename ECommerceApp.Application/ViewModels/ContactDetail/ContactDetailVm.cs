@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ECommerceApp.Application.ViewModels.Customer
+namespace ECommerceApp.Application.ViewModels.ContactDetail
 {
     public class ContactDetailVm : BaseVm, IMapFrom<Domain.Model.ContactDetail>
     {
@@ -19,7 +19,8 @@ namespace ECommerceApp.Application.ViewModels.Customer
                 .ForMember(c => c.Id, opt => opt.MapFrom(co => co.Id))
                 .ForMember(c => c.ContactDetailInformation, opt => opt.MapFrom(co => co.ContactDetailInformation))
                 .ForMember(c => c.ContactDetailTypeId, opt => opt.MapFrom(co => co.ContactDetailTypeId))
-                .ForMember(c => c.CustomerId, opt => opt.MapFrom(co => co.CustomerId));
+                .ForMember(c => c.CustomerId, opt => opt.MapFrom(co => co.CustomerId))
+                .ReverseMap();
         }
     }
 

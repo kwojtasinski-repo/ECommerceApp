@@ -25,6 +25,8 @@ namespace ECommerceApp.Infrastructure
             services.AddTransient<ITagRepository, TagRepository>();
             services.AddTransient<ITypeRepository, TypeRepository>();
             services.AddTransient<IOrderItemRepository, OrderItemRepository>();
+            services.AddTransient<IContactDetailRepository, ContactDetailRepository>();
+            services.AddTransient<IContactDetailTypeRepository, ContactDetailTypeRepository>();
             return services;
         }
     }

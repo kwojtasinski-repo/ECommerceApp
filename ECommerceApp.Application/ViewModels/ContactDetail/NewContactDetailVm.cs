@@ -1,11 +1,12 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
+using ECommerceApp.Application.ViewModels.ContactDetailType;
 using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ECommerceApp.Application.ViewModels.Customer
+namespace ECommerceApp.Application.ViewModels.ContactDetail
 {
     public class NewContactDetailVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.ContactDetail>
     {

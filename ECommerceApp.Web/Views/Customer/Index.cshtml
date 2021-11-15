@@ -1,4 +1,5 @@
 ﻿@model ECommerceApp.Application.ViewModels.Customer.ListForCustomerVm
+@using System.Security.Claims;
 
 @{
     ViewData["Title"] = "Index";
@@ -7,7 +8,11 @@
 <h1>Klienci</h1>
 
 <p>
-    <a asp-action="AddCustomer">Stwórz nowego klienta</a>
+    <a asp-action="AddCustomer">Dodaj nowe dane</a>
+    @if (User.IsInRole("Administrator") || User.IsInRole("Admin") || User.IsInRole("Manager"))
+    {
+        <a asp-controller="Customer" asp-action="All">Klienci</a>
+    }
 </p>
 <form id="reload" asp-action="Index" asp-controller="Customer" method="post">
     <div class="row">
@@ -88,7 +93,8 @@
             </tr>
         </table>
         <input type="hidden" name="pageNo" id="pageNo" />
-        <input type="hidden" name="pageSize" id="pageSize" value="10" />
+        <input type="hidden" name="pageSize" id="pageSize" value="1" />
+        <input type="hidden" name="userId" id="userId" value="@User.FindFirst(ClaimTypes.NameIdentifier).Value"/>
     </div>
 </form>
 
@@ -104,6 +110,7 @@
                 type: 'POST',
                 data: {//int pageSize, int? pageNo, string searchString
                     __RequestVerificationToken: token,
+                    userId: document.getElementById("userId").value,
                     pageSize: document.getElementById("pageSize").value,
                     pageNo: index,
                     searchString: document.getElementById("searchString").value

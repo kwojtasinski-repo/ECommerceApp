@@ -90,15 +90,15 @@
                                 @Html.DisplayFor(model => contact.ContactDetailTypeName)
                             </td>
                             <td>
-                                <a class="btn btn-danger btn-sm" href="@Url.Action("DeleteContactDetail", "Customer", new { id = contact.Id})">Usuń</a>
-                                <a class="btn btn-info btn-sm" href="@Url.Action("EditContactDetail", "Customer", new { id = contact.Id})">Edytuj</a>
-                                <a class="btn btn-info btn-sm" href="@Url.Action("ViewContactDetail", "Customer", new { id = contact.Id})">Szczegóły</a>
+                                <a class="btn btn-danger btn-sm" href="@Url.Action("DeleteContactDetail", "ContactDetail", new { id = contact.Id})">Usuń</a>
+                                <a class="btn btn-info btn-sm" href="@Url.Action("EditContactDetail", "ContactDetail", new { id = contact.Id})">Edytuj</a>
+                                <a class="btn btn-info btn-sm" href="@Url.Action("ViewContactDetail", "ContactDetail", new { id = contact.Id})">Szczegóły</a>
                             </td>
                         </tr>
                         }
                     </tbody>
                 </table>
-                <a class="btn btn-dark btn-sm" href="@Url.Action("AddNewContactDetailClient", "Customer", new { id = Model.Id })">Dodaj kontakt</a>
+                <a class="btn btn-dark btn-sm" href="@Url.Action("AddNewContactDetail", "ContactDetail", new { id = Model.Id })">Dodaj kontakt</a>
             </div>
         </div>
         <br><br>

@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
+using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Domain.Model;
 using FluentValidation;
 using System;

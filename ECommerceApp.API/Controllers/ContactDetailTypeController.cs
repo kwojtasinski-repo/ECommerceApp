@@ -1,5 +1,6 @@
 ﻿using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services;
+using ECommerceApp.Application.ViewModels.ContactDetailType;
 using ECommerceApp.Application.ViewModels.Customer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -24,7 +25,7 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet("{id}")]
-        public ActionResult<NewContactDetailTypeVm> GetContactDetailType(int id)
+        public ActionResult<ContactDetailTypeVm> GetContactDetailType(int id)
         {
             var contactDetailType = _customerService.GetContactDetailType(id);
             if (contactDetailType == null)
@@ -48,7 +49,7 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPut]
-        public IActionResult EditContactDetailType(NewContactDetailTypeVm model)
+        public IActionResult EditContactDetailType(ContactDetailTypeVm model)
         {
             var modelExists = _customerService.CheckIfContactDetailType(model.Id);
             if (!ModelState.IsValid || !modelExists)
@@ -61,7 +62,7 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
-        public IActionResult AddContactDetailType([FromBody] NewContactDetailTypeVm model)
+        public IActionResult AddContactDetailType([FromBody] ContactDetailTypeVm model)
         {
             if (!ModelState.IsValid || model.Id != 0)
             {

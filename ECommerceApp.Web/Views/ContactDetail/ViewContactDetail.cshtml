@@ -1,4 +1,4 @@
-﻿@model ECommerceApp.Application.ViewModels.Customer.NewContactDetailVm
+﻿@model ECommerceApp.Application.ViewModels.ContactDetail.ContactDetailsForListVm
 
 @{
     ViewData["Title"] = "ViewContactDetail";
@@ -44,5 +44,5 @@
 </div>
 <div>
     @Html.ActionLink("Edytuj", "EditContactDetail", new { id = Model.Id }) |
-    <a asp-action="Index">Powrót do listy klientów</a>
+    <a asp-action="Index" asp-controller="Customer">Powrót do danych kontaktowych</a>
 </div>

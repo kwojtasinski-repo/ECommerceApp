@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ECommerceApp.Application.ViewModels.Customer
+namespace ECommerceApp.Application.ViewModels.ContactDetail
 {
     public class ContactDetailsForListVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.ContactDetail>
     {
