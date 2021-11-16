@@ -155,6 +155,7 @@ namespace ECommerceApp.Web.Controllers
                 model.CustomerId = customerId;
                 orderId = _orderService.AddOrder(model.AsOrderVm());
             }
+            UseCouponIfEntered(model);
             return RedirectToAction("AddOrderSummary", new { id = orderId });
         }
 

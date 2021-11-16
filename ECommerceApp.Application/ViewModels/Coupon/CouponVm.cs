@@ -34,7 +34,7 @@ namespace ECommerceApp.Application.ViewModels.Coupon
             {
                 RuleFor(x => x.Id).NotNull();
                 RuleFor(x => x.Code).NotNull();
-                RuleFor(x => x.Discount).InclusiveBetween(0, 99);
+                RuleFor(x => x.Discount).ExclusiveBetween(0, 99);
                 RuleFor(x => x.Description).MaximumLength(255);
                 RuleFor(x => x.CouponTypeId).NotNull();
             }

@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.Application.ViewModels.ContactDetail;
+using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using System;
@@ -152,6 +153,82 @@ namespace ECommerceApp.Application
             };
 
             return orderItem;
+        }
+
+        public static Domain.Model.Item MapToItem(this ItemVm itemVm)
+        {
+            var item = new Domain.Model.Item()
+            {
+                Id = itemVm.Id,
+                Name = itemVm.Name,
+                Cost = itemVm.Cost,
+                Description = itemVm.Description,
+                Warranty = itemVm.Warranty,
+                Quantity = itemVm.Quantity,
+                BrandId = itemVm.BrandId,
+                TypeId = itemVm.TypeId,
+            };
+
+            var itemTags = new List<Domain.Model.ItemTag>();
+
+            if (itemVm.ItemTags != null)
+            {
+                foreach (var tag in itemVm.ItemTags)
+                {
+                    var itemTag = new Domain.Model.ItemTag
+                    {
+                        ItemId = itemVm.Id,
+                        TagId = tag.TagId
+                    };
+
+                    itemTags.Add(itemTag);
+                }
+            }
+
+            item.ItemTags = itemTags;
+
+            return item;
+        }
+
+        public static ItemVm MapToItemVm(this Domain.Model.Item item)
+        {
+            if (item != null)
+            {
+                var itemVm = new ItemVm()
+                {
+                    Id = item.Id,
+                    Name = item.Name,
+                    Cost = item.Cost,
+                    Description = item.Description,
+                    Warranty = item.Warranty,
+                    Quantity = item.Quantity,
+                    BrandId = item.BrandId,
+                    TypeId = item.TypeId,
+                };
+
+                var itemTags = new List<ItemTagVm>();
+
+                if (item.ItemTags != null)
+                {
+                    foreach (var tag in item.ItemTags)
+                    {
+                        var itemTag = new ItemTagVm
+                        {
+                            TagId = tag.TagId
+                        };
+
+                        itemTags.Add(itemTag);
+                    }
+                }
+
+                itemVm.ItemTags = itemTags;
+
+                return itemVm;
+            }
+            else
+            {
+                return null;
+            }
         }
     }
 }

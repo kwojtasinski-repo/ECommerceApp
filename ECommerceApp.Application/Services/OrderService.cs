@@ -26,15 +26,16 @@ namespace ECommerceApp.Application.Services
         private readonly IOrderItemService _orderItemService;
         private readonly IItemService _itemService;
         private readonly ICouponService _couponService;
-        private readonly ICouponUsedService _couponUsedService;
+        private readonly ICouponUsedRepository _couponUsedRepository;
         private readonly ICustomerService _customerService;
 
-        public OrderService(IOrderRepository orderRepo, IMapper mapper, IOrderItemService orderItemService, IItemService itemService, ICouponService couponService, ICouponUsedService couponUsedService) : base(orderRepo, mapper)
+        public OrderService(IOrderRepository orderRepo, IMapper mapper, IOrderItemService orderItemService, IItemService itemService, ICouponService couponService, ICouponUsedRepository couponUsedRepository, ICustomerService customerService) : base(orderRepo, mapper)
         {
             _orderItemService = orderItemService;
             _itemService = itemService;
             _couponService = couponService;
-            _couponUsedService = couponUsedService;
+            _couponUsedRepository = couponUsedRepository;
+            _customerService = customerService;
         }
 
         public override OrderVm Get(int id)
@@ -308,8 +309,6 @@ namespace ECommerceApp.Application.Services
                 throw new BusinessException("Cannot add coupon to paid order");
             }
 
-            orderVm.CouponUsedId = couponUsedId;
-
             foreach(var orderItem in orderVm.OrderItems)
             {
                 orderItem.CouponUsedId = couponUsedId;
@@ -328,16 +327,14 @@ namespace ECommerceApp.Application.Services
 
         public int AddCouponToOrder(int couponId, NewOrderVm order)
         {
-            var couponUsed = new CouponUsedVm()
+            var couponUsed = new CouponUsed()
             {
                 Id = 0,
                 CouponId = couponId,
                 OrderId = order.Id
             };
-            var couponUsedId = _couponUsedService.AddCouponUsed(couponUsed);
+            var couponUsedId = _couponUsedRepository.AddCouponUsed(couponUsed);
             var coupon = _couponService.GetCoupon(couponId);
-            coupon.CouponUsedId = couponUsedId;
-            _couponService.UpdateCoupon(coupon);
             order.Cost = (1 - (decimal)coupon.Discount/100) * order.Cost;
             return couponUsedId;
         }

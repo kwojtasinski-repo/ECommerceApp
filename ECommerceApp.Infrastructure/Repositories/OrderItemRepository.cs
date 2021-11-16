@@ -44,8 +44,8 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public void UpdateOrderItem(OrderItem orderItem)
         {
-            _context.Entry(orderItem).State = Microsoft.EntityFrameworkCore.EntityState.Modified;
             _context.OrderItem.Update(orderItem);
+            _context.SaveChanges();
         }
     }
 }

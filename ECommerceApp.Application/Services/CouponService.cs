@@ -27,6 +27,12 @@ namespace ECommerceApp.Application.Services
             {
                 throw new BusinessException("When adding object Id should be equals 0");
             }
+
+            if (couponVm.Discount < 1 || couponVm.Discount > 99)
+            {
+                throw new BusinessException("Discount should be inclusive between 1 and 99");
+            }
+
             var id = Add(couponVm);
             return id;
         }
@@ -85,15 +91,22 @@ namespace ECommerceApp.Application.Services
 
         public void UpdateCoupon(CouponVm couponVm)
         {
-            if (couponVm != null)
+            if (couponVm == null)
             {
-                Update(couponVm);
+                throw new BusinessException("Given invalid coupon");
             }
+
+            if (couponVm.Discount < 1 || couponVm.Discount > 99)
+            {
+                throw new BusinessException("Discount should be inclusive between 1 and 99");
+            }
+
+            Update(couponVm);
         }
 
         public IEnumerable<CouponVm> GetAllCoupons(Expression<Func<Coupon,bool>> expression)
         {
-            var coupons = _repo.GetAllCoupons().Where(expression)
+            var coupons = _repo.GetAllCoupons().Where(expression).AsNoTracking()
                 .ProjectTo<CouponVm>(_mapper.ConfigurationProvider);
             var couponsToShow = coupons.ToList();
 

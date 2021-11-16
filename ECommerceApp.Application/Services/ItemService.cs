@@ -36,7 +36,7 @@ namespace ECommerceApp.Application.Services
         public override ItemVm Get(int id)
         {
             var item = _repo.GetById(id);
-            var itemVm = new ItemVm().MapToItemVm(item);
+            var itemVm = item.MapToItemVm();
             return itemVm;
         }
 
@@ -92,8 +92,9 @@ namespace ECommerceApp.Application.Services
 
         public IEnumerable<ItemVm> GetAllItems(Expression<Func<Item, bool>> expression)
         {
-            var items = _repo.GetAll().ProjectTo<ItemVm>(_mapper.ConfigurationProvider).ToList();
-            return items;
+            var items = _repo.GetAll().Where(expression).ToList();
+            var itemsVm = items.Select(i => i.MapToItemVm());
+            return itemsVm;
         }
 
         public List<ItemsAddToCartVm> GetItemsAddToCart()
