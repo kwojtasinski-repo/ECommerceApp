@@ -85,11 +85,6 @@ namespace ECommerceApp.Infrastructure.Repositories
                 .Include(inc => inc.Item).ThenInclude(inc => inc.Brand);
         }
 
-        public IQueryable<Refund> GetAllRefunds()
-        {
-            return _context.Refunds;
-        }
-
         public void UpdatedOrder(Order order)
         {
             var orderItems = order.OrderItems.ToList();
@@ -136,88 +131,11 @@ namespace ECommerceApp.Infrastructure.Repositories
             _context.SaveChanges();
         }
 
-        public int AddOrderItem(OrderItem orderItem)
+        private int AddOrderItem(OrderItem orderItem)
         {
             _context.OrderItem.Add(orderItem);
             _context.SaveChanges();
             return orderItem.Id;
-        }
-
-        public IQueryable<Item> GetAllItems()
-        {
-            return _context.Items;
-        }
-
-        public IQueryable<Coupon> GetAllCoupons()
-        {
-            return _context.Coupons;
-        }
-
-        public void UpdateCoupon(Coupon coupon, int couponUsedId)
-        {
-            _context.Attach(coupon);
-            _context.Entry(coupon).Property("CouponUsedId").IsModified = true;
-            _context.SaveChanges();
-        }
-
-
-        public int AddCouponUsed(CouponUsed couponUsed)
-        {
-            _context.CouponUsed.Add(couponUsed);
-            _context.SaveChanges();
-            return couponUsed.Id;
-        }
-
-        public Coupon GetCouponById(int id)
-        {
-            return _context.Coupons
-                .Where(c => c.CouponUsedId == null)
-                .FirstOrDefault(c => c.Id == id);
-        }
-
-        public Customer GetCustomerById(int id)
-        {
-            return _context.Customers.FirstOrDefault(c => c.Id == id);
-        }
-
-        public IQueryable<Customer> GetCustomersByUserId(string userId)
-        {
-            return _context.Customers.Where(c => c.UserId == userId);
-        }
-
-        public int AddCustomer(Customer customer)
-        {
-            _context.Customers.Add(customer);
-            _context.SaveChanges();
-            return customer.Id;
-        }
-
-        public void UpdateOrderItem(OrderItem orderItem)
-        {
-            _context.Attach(orderItem);
-            _context.Entry(orderItem).Property("ItemId").IsModified = true;
-            _context.Entry(orderItem).Property("ItemOrderQuantity").IsModified = true;
-            _context.Entry(orderItem).Property("UserId").IsModified = true;
-            _context.Entry(orderItem).Property("OrderId").IsModified = true;
-            _context.Entry(orderItem).Property("CouponUsedId").IsModified = true;
-            _context.Entry(orderItem).Property("RefundId").IsModified = true;
-            _context.SaveChanges();
-        }
-
-        public OrderItem GetOrderItemNotOrdered(OrderItem orderItem)
-        {
-            var item = _context.OrderItem.FirstOrDefault(oi => oi.ItemId == orderItem.ItemId && oi.OrderId == null);
-            return item;
-        }
-
-        public void DeleteOrderItem(int id)
-        {
-            var orderItem = _context.OrderItem.Find(id);
-            if(orderItem!=null)
-            {
-                _context.OrderItem.Remove(orderItem);
-                _context.SaveChanges();
-            }
         }
     }
 }
