@@ -1,5 +1,6 @@
 ﻿using ECommerceApp.Application.ViewModels.Brand;
 using ECommerceApp.Application.ViewModels.Item;
+using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
@@ -17,6 +18,8 @@ namespace ECommerceApp.Application.Interfaces
         NewItemVm GetItemById(int id);
         void UpdateItem(NewItemVm model);
         List<NewItemVm> GetAllItems();
+        IEnumerable<ItemVm> GetAllItems(Expression<Func<Item, bool>> expression);
+        List<ItemsAddToCartVm> GetItemsAddToCart();
         void DeleteItem(int id);
         ItemDetailsVm GetItemDetails(int id);
         ListForItemWithTagsVm GetAllItemsWithTags(int pageSize, int pageNo, string searchString);

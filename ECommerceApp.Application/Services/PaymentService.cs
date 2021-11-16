@@ -19,10 +19,12 @@ namespace ECommerceApp.Application.Services
     public class PaymentService : AbstractService<PaymentVm, IPaymentRepository, Payment>, IPaymentService
     {
         private readonly IOrderService _orderService;
+        private readonly ICustomerService _customerService;
 
-        public PaymentService(IPaymentRepository paymentRepository, IMapper mapper, IOrderService orderService) : base(paymentRepository, mapper)
+        public PaymentService(IPaymentRepository paymentRepository, IMapper mapper, IOrderService orderService, ICustomerService customerService) : base(paymentRepository, mapper)
         {
             _orderService = orderService;
+            _customerService = customerService;
         }
 
         public int AddPayment(PaymentVm model)
@@ -140,7 +142,7 @@ namespace ECommerceApp.Application.Services
         {
             Random random = new Random();
             var order = _orderService.GetOrderById(orderId);
-            var customer = _orderService.GetCustomerById(order.CustomerId);
+            var customer = _customerService.GetCustomerInformationById(order.CustomerId);
             var payment = new PaymentVm()
             {
                 OrderId = order.Id,

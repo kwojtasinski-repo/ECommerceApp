@@ -24,14 +24,18 @@ namespace ECommerceApp.Web.Controllers
         private readonly IRefundService _refundService;
         private readonly IOrderItemService _orderItemService;
         private readonly IItemService _itemService;
+        private readonly ICustomerService _customerService;
+        private readonly ICouponService _couponService;
 
-        public OrderController(IOrderService orderService, IPaymentService paymentService, IRefundService refundService, IOrderItemService orderItemService, IItemService itemService)
+        public OrderController(IOrderService orderService, IPaymentService paymentService, IRefundService refundService, IOrderItemService orderItemService, IItemService itemService, ICustomerService customerService, ICouponService couponService)
         {
             _orderService = orderService;
             _paymentService = paymentService;
             _refundService = refundService;
             _orderItemService = orderItemService;
             _itemService = itemService;
+            _customerService = customerService;
+            _couponService = couponService;
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
@@ -72,7 +76,7 @@ namespace ECommerceApp.Web.Controllers
             if (userId != null)
             {
                 //var customers = _orderService.GetAllCustomers().ToList();
-                var customers = _orderService.GetCustomersByUserId(userId).ToList();
+                var customers = _customerService.GetCustomersInformationByUserId(userId).ToList();
                 ViewBag.Customers = customers;
                 var order = new OrderVm() { Number = random.Next(100, 10000), };
                 order.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -101,7 +105,7 @@ namespace ECommerceApp.Web.Controllers
                 return Redirect("~/Identity/Account/Register");
             }
             var orderItems = new NewOrderItemVm();
-            var items = _orderService.GetItemsAddToCart();
+            var items = _itemService.GetItemsAddToCart();
             orderItems.Items = items;
             orderItems.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             ViewBag.ItemsJson = Json(items);
@@ -112,7 +116,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddOrderToCart(NewOrderItemVm model)
         {
-            var id = _orderService.AddOrderItem(model);
+            var id = _orderItemService.AddOrderItem(model.AsOrderItemVm());
             return RedirectToAction("Index");
         }
 
@@ -130,7 +134,7 @@ namespace ECommerceApp.Web.Controllers
             Random random = new Random();
             var orderDate = System.DateTime.Now;
             ViewBag.Date = orderDate;
-            var customers = _orderService.GetCustomersByUserId(userId).ToList();
+            var customers = _customerService.GetCustomersInformationByUserId(userId).ToList();
             ViewBag.Customers = customers;
             var order = new NewOrderVm() { Number = random.Next(100, 10000), OrderItems = orderItems, UserId = userId };
             return View(order);
@@ -147,7 +151,7 @@ namespace ECommerceApp.Web.Controllers
             }
             else
             {
-                var customerId = _orderService.AddCustomer(model.NewCustomer);
+                var customerId = _customerService.AddCustomer(model.NewCustomer);
                 model.CustomerId = customerId;
                 orderId = _orderService.AddOrder(model.AsOrderVm());
             }
@@ -159,8 +163,8 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult AddOrderDetails(int orderId)
         {
             var order = _orderService.GetOrderForRealization(orderId);
-            var customer = _orderService.GetCustomerById(order.CustomerId);
-            order.Items = _orderService.GetAllItemsToOrder().ToList();
+            var customer = _customerService.GetCustomerInformationById(order.CustomerId);
+            order.Items = _itemService.GetAllItems(i => true).ToList();
             ViewBag.CustomerInformation = customer.Information;
             return View(order);
         }
@@ -202,7 +206,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult ShowMyCart()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var orderItems = _orderService.GetOrderItemsNotOrderedByUserId(userId, 20, 1);
+            var orderItems = _orderItemService.GetOrderItemsNotOrderedByUserId(userId, 20, 1);
             return View(orderItems);
         }
 
@@ -215,7 +219,7 @@ namespace ECommerceApp.Web.Controllers
                 pageNo = 1;
             }
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var orderItems = _orderService.GetOrderItemsNotOrderedByUserId(userId, pageSize, pageNo.Value);
+            var orderItems = _orderItemService.GetOrderItemsNotOrderedByUserId(userId, pageSize, pageNo.Value);
             return View(orderItems);
         }
 
@@ -250,9 +254,9 @@ namespace ECommerceApp.Web.Controllers
             {
                 return NotFound();
             }
-            var items = _orderService.GetAllItemsToOrder().ToList();
+            var items = _itemService.GetAllItems(i => true).ToList();
             order.Items = items; 
-            var customer = _orderService.GetCustomerById(order.CustomerId);
+            var customer = _customerService.GetCustomerInformationById(order.CustomerId);
             int paymentId = (int)(order.PaymentId == null ? 0 : order.PaymentId);
             ViewBag.CustomerInformation = customer.Information;
             var paymentNumer = _paymentService.GetPaymentById(paymentId);
@@ -278,7 +282,7 @@ namespace ECommerceApp.Web.Controllers
 
             if (model.AcceptedRefund)
             {
-                model.ChangedRefund = _orderService.CheckEnteredRefund(model.ReasonRefund);
+                model.ChangedRefund = _refundService.CheckEnteredRefund(model.ReasonRefund);
                 if(model.ChangedRefund)
                 {
                     model.RefundDate = System.DateTime.Now;
@@ -343,10 +347,10 @@ namespace ECommerceApp.Web.Controllers
 
         private void UseCouponIfEntered(NewOrderVm model)
         {
-            var id = _orderService.CheckPromoCode(model.RefCode);
+            var id = _couponService.CheckPromoCode(model.RefCode);
             if (id != 0)
             {
-                var couponUsedId = _orderService.UpdateCoupon(id, model);
+                var couponUsedId = _orderService.AddCouponToOrder(id, model);
                 model.CouponUsedId = couponUsedId;
                 if (model.OrderItems.Count > 0)
                 {

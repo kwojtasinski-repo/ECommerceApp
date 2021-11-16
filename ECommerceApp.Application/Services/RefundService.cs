@@ -49,13 +49,13 @@ namespace ECommerceApp.Application.Services
 
             var refund = _mapper.Map<Refund>(refundVm);
             var id = _repo.AddRefund(refund);
-            _orderService.AddRefund(refundVm.Id, id);
+            _orderService.AddRefundToOrder(refundVm.Id, id);
             return id;
         }
 
         public void DeleteRefund(int id)
         {
-            _orderService.DeleteRefund(id);
+            _orderService.DeleteRefundFromOrder(id);
             _repo.DeleteRefund(id);
         }
 
@@ -120,6 +120,21 @@ namespace ECommerceApp.Application.Services
             if (refund != null)
             {
                 _repo.UpdateRefund(refund);
+            }
+        }
+
+        public bool CheckEnteredRefund(string reasonRefund)
+        {
+            var refunds = _repo.GetAllRefunds().ToList();
+            var refund = refunds.FirstOrDefault(r => String.Equals(r.Reason, reasonRefund,
+                   StringComparison.OrdinalIgnoreCase));
+            if (refund != null)
+            {
+                return false;
+            }
+            else
+            {
+                return true;
             }
         }
     }

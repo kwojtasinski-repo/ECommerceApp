@@ -19,5 +19,6 @@ namespace ECommerceApp.Application.Interfaces
         ListForRefundVm GetRefunds(int pageSize, int pageNo, string searchString);
         bool RefundExists(int id);
         void DeleteRefund(int id);
+        bool CheckEnteredRefund(string reasonRefund);
     }
 }

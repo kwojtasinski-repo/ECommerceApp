@@ -8,6 +8,7 @@ using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Application.ViewModels.ContactDetailType;
 using ECommerceApp.Application.ViewModels.Customer;
+using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using Microsoft.AspNetCore.Identity;
@@ -102,6 +103,14 @@ namespace ECommerceApp.Application.Services
             return customerVm;
         }
 
+        public CustomerInformationForOrdersVm GetCustomerInformationById(int customerId)
+        {
+            var customer = _repo.GetCustomerById(customerId);
+            var customerVm = _mapper.Map<CustomerInformationForOrdersVm>(customer);
+
+            return customerVm;
+        }
+
         public CustomerDetailsVm GetCustomerDetails(int id, string userId)
         {
             var customer = _repo.GetCustomerById(id, userId);
@@ -173,6 +182,13 @@ namespace ECommerceApp.Application.Services
             var customers = _repo.GetAllCustomers().Where(expression).ToList();
             var customersVm = _mapper.Map<List<CustomerVm>>(customers);
             return customersVm;
+        }
+
+        public IQueryable<CustomerInformationForOrdersVm> GetCustomersInformationByUserId(string userId)
+        {
+            var customers = _repo.GetAll().Where(c => c.UserId == userId)
+                            .ProjectTo<CustomerInformationForOrdersVm>(_mapper.ConfigurationProvider);
+            return customers;
         }
     }
 }

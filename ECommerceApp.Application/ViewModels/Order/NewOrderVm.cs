@@ -17,7 +17,7 @@ namespace ECommerceApp.Application.ViewModels.Order
         public NewOrderVm()
         {
             OrderItems = new List<NewOrderItemVm>();
-            Items = new List<Domain.Model.Item>();
+            Items = new List<ItemVm>();
         }
 
         public int Number { get; set; }
@@ -44,7 +44,7 @@ namespace ECommerceApp.Application.ViewModels.Order
 
 
         public List<NewOrderItemVm> OrderItems { get; set; } // 1:Many relation
-        public List<ECommerceApp.Domain.Model.Item> Items { get; set; }
+        public List<ItemVm> Items { get; set; }
         public NewCustomerVm NewCustomer { get; set; }
         public bool CustomerData { get; set; }
 

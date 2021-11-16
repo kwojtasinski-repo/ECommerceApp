@@ -189,5 +189,25 @@ namespace ECommerceApp.Application.Services
 
             return itemOrderList;
         }
+
+        public ListForOrderItemVm GetOrderItemsNotOrderedByUserId(string userId, int pageSize, int pageNo)
+        {
+            var itemOrders = _repo.GetAllOrderItems().Where(oi => oi.UserId == userId && oi.OrderId == null)
+                            .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
+                            .ToList();
+
+            var itemOrdersToShow = itemOrders.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+
+            var ordersList = new ListForOrderItemVm()
+            {
+                PageSize = pageSize,
+                CurrentPage = pageNo,
+                SearchString = "",
+                ItemOrders = itemOrdersToShow,
+                Count = itemOrders.Count
+            };
+
+            return ordersList;
+        }
     }
 }

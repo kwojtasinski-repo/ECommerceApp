@@ -50,7 +50,7 @@ namespace ECommerceApp.Application.Services
 
             _repo.DetachEntity(coupon);
 
-            _orderService.DeleteCouponUsed(coupon.OrderId, coupon.Id);
+            _orderService.DeleteCouponUsedFromOrder(coupon.OrderId, coupon.Id);
             _couponService.DeleteCouponUsed(coupon.CouponId, coupon.Id);
 
             _repo.Delete(id);

@@ -4,10 +4,12 @@ using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Item;
+using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Application.ViewModels.Tag;
 using ECommerceApp.Application.ViewModels.Type;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -86,6 +88,19 @@ namespace ECommerceApp.Application.Services
                 .ProjectTo<NewItemVm>(_mapper.ConfigurationProvider)
                 .ToList();
             return items;
+        }
+
+        public IEnumerable<ItemVm> GetAllItems(Expression<Func<Item, bool>> expression)
+        {
+            var items = _repo.GetAll().ProjectTo<ItemVm>(_mapper.ConfigurationProvider).ToList();
+            return items;
+        }
+
+        public List<ItemsAddToCartVm> GetItemsAddToCart()
+        {
+            var items = _repo.GetAll();
+            var itemsVm = items.ProjectTo<ItemsAddToCartVm>(_mapper.ConfigurationProvider).ToList();
+            return itemsVm;
         }
 
         public NewItemVm GetItemById(int id)

@@ -7,6 +7,7 @@ using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -75,6 +76,13 @@ namespace ECommerceApp.Application.Services
             return couponVm;
         }
 
+        public CouponVm GetCouponFirstOrDefault(Expression<Func<Coupon, bool>> expression)
+        {
+            var coupon = _repo.GetAll().Where(expression).AsNoTracking().FirstOrDefault();
+            var couponVm = _mapper.Map<CouponVm>(coupon);
+            return couponVm;
+        }
+
         public void UpdateCoupon(CouponVm couponVm)
         {
             if (couponVm != null)
@@ -125,6 +133,19 @@ namespace ECommerceApp.Application.Services
             var coupon = _repo.GetAll().Where(c => c.Code == promoCode).FirstOrDefault();
             var couponVm = _mapper.Map<CouponVm>(coupon);
             return couponVm;
+        }
+
+        public int CheckPromoCode(string code)
+        {
+            var coupons = GetAllCoupons(c => true);
+            var coupon = coupons.FirstOrDefault(c => String.Equals(c.Code, code,
+                   StringComparison.Ordinal) && c.CouponUsedId == null);
+            var id = 0;
+            if (coupon != null)
+            {
+                id = coupon.Id;
+            }
+            return id;
         }
     }
 }

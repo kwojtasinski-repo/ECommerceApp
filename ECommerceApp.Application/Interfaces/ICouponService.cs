@@ -17,10 +17,12 @@ namespace ECommerceApp.Application.Interfaces
         void DeleteCoupon(int id);
         ListForCouponVm GetAllCoupons(int pageSize, int pageNo, string searchString);
         CouponVm GetCoupon(int id);
+        CouponVm GetCouponFirstOrDefault(Expression<Func<Coupon, bool>> expression);
         CouponDetailsVm GetCouponDetail(int id);
         IEnumerable<CouponVm> GetAllCoupons(Expression<Func<Coupon, bool>> expression);
         void DeleteCouponUsed(int couponId, int couponUsedId);
         void AddCouponUsed(int couponId, int couponUsedId);
         CouponVm GetCouponByCode(string promoCode);
+        int CheckPromoCode(string refCode);
     }
 }

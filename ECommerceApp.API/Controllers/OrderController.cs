@@ -138,8 +138,6 @@ namespace ECommerceApp.API.Controllers
         {
             var order = model.AsVm();
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
-            //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            //var orderItems = _orderService.GetOrderItemsNotOrderedByUserId(userId);
             var orderItems = _orderItemService.GetOrderItems(oi => oi.UserId == userId && oi.OrderId == null).ToList();
             order.UserId = userId;
             order.OrderItems = orderItems;

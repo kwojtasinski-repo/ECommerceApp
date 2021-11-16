@@ -24,5 +24,6 @@ namespace ECommerceApp.Application.Interfaces
         int OrderItemCount(string userId);
         int AddOrderItem(int id, string userId);
         ListForOrderItemVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo);
+        ListForOrderItemVm GetOrderItemsNotOrderedByUserId(string userId, int pageSize, int pageNo);
     }
 }

@@ -25,11 +25,16 @@ namespace ECommerceApp.Application.Services
     {
         private readonly IOrderItemService _orderItemService;
         private readonly IItemService _itemService;
+        private readonly ICouponService _couponService;
+        private readonly ICouponUsedService _couponUsedService;
+        private readonly ICustomerService _customerService;
 
-        public OrderService(IOrderRepository orderRepo, IMapper mapper, IOrderItemService orderItemService, IItemService itemService) : base(orderRepo, mapper)
+        public OrderService(IOrderRepository orderRepo, IMapper mapper, IOrderItemService orderItemService, IItemService itemService, ICouponService couponService, ICouponUsedService couponUsedService) : base(orderRepo, mapper)
         {
             _orderItemService = orderItemService;
             _itemService = itemService;
+            _couponService = couponService;
+            _couponUsedService = couponUsedService;
         }
 
         public override OrderVm Get(int id)
@@ -98,7 +103,7 @@ namespace ECommerceApp.Application.Services
             Delete(id);
         }
 
-        public void DeleteRefund(int id)
+        public void DeleteRefundFromOrder(int id)
         {
             var orders = _repo.GetAll().Include(oi => oi.OrderItems).Where(r => r.RefundId == id).ToList();
 
@@ -119,13 +124,7 @@ namespace ECommerceApp.Application.Services
             orders.ForEach(order => _repo.Update(order));
         }
 
-        public IQueryable<Item> GetAllItemsToOrder()
-        {
-            var items = _repo.GetAllItems();
-            return items;
-        }
-
-        public void DeleteCouponUsed(int orderId, int couponUsedId)
+        public void DeleteCouponUsedFromOrder(int orderId, int couponUsedId)
         {
             var order = _repo.GetAll().Include(oi => oi.OrderItems).Where(o => o.Id == orderId).FirstOrDefault();
 
@@ -148,26 +147,15 @@ namespace ECommerceApp.Application.Services
                 orderItem.CouponUsedId = null;
             }
 
-            //_repo.Update(order);
-        }
+            var coupon = _couponService.GetCouponFirstOrDefault(c => c.CouponUsedId == couponUsedId);
 
-        public ListForOrderItemVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo)
-        {
-            var itemOrder = _repo.GetAllOrderItems().Where(oi => oi.ItemId == id)
-                            .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
-                            .ToList();
-            var itemOrderToShow = itemOrder.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
-
-            var itemOrderList = new ListForOrderItemVm()
+            if (coupon is null)
             {
-                PageSize = pageSize,
-                CurrentPage = pageNo,
-                SearchString = "",
-                ItemOrders = itemOrderToShow,
-                Count = itemOrder.Count
-            };
+                throw new BusinessException("Given invalid couponUsedId");
+            }
 
-            return itemOrderList;
+            order.Cost = order.Cost / ((1 - (decimal)coupon.Discount / 100));
+            //_repo.Update(order);
         }
 
         public ListForOrderVm GetAllOrders(int pageSize, int pageNo, string searchString)
@@ -327,31 +315,18 @@ namespace ECommerceApp.Application.Services
                 orderItem.CouponUsedId = couponUsedId;
             }
 
+            var coupon = _couponService.GetCouponFirstOrDefault(c => c.CouponUsedId == couponUsedId);
+
+            if (coupon is null)
+            {
+                throw new BusinessException("Given invalid couponUsedId");
+            }
+
+            order.Cost = (1 - (decimal)coupon.Discount / 100) * order.Cost;
             Update(orderVm);
         }
 
-        public IQueryable<CouponVm> GetAllCoupons()
-        {
-            var coupons = _repo.GetAllCoupons();
-            var couponsVm = coupons.ProjectTo<CouponVm>(_mapper.ConfigurationProvider);
-            return couponsVm;
-        }
-
-        public int CheckPromoCode(string code)
-        {
-            var coupons = GetAllCoupons().ToList();
-         //   var coupon = coupons.FirstOrDefault(c => c.Code. == code && c.CouponUsedId == null);
-            var coupon = coupons.FirstOrDefault(c => String.Equals(c.Code, code,
-                   StringComparison.Ordinal) && c.CouponUsedId == null);
-            var id = 0;
-            if (coupon != null)
-            {
-                id = coupon.Id;
-            }
-            return id;
-        }
-
-        public int UpdateCoupon(int couponId, NewOrderVm order)
+        public int AddCouponToOrder(int couponId, NewOrderVm order)
         {
             var couponUsed = new CouponUsedVm()
             {
@@ -359,23 +334,12 @@ namespace ECommerceApp.Application.Services
                 CouponId = couponId,
                 OrderId = order.Id
             };
-            var couponUsedId = AddCouponUsed(couponUsed);
-            var coupon = _repo.GetCouponById(couponId);
-            _repo.UpdateCoupon(coupon, couponUsedId);
+            var couponUsedId = _couponUsedService.AddCouponUsed(couponUsed);
+            var coupon = _couponService.GetCoupon(couponId);
+            coupon.CouponUsedId = couponUsedId;
+            _couponService.UpdateCoupon(coupon);
             order.Cost = (1 - (decimal)coupon.Discount/100) * order.Cost;
             return couponUsedId;
-        }
-
-        public int AddCouponUsed(CouponUsedVm couponUsedVm)
-        {
-            if (couponUsedVm.Id != 0)
-            {
-                throw new BusinessException("When adding object Id should be equals 0");
-            }
-
-            var couponUsed = _mapper.Map<CouponUsed>(couponUsedVm);
-            var id = _repo.AddCouponUsed(couponUsed);
-            return id;
         }
 
         public OrderVm GetOrderById(int orderId)
@@ -390,28 +354,6 @@ namespace ECommerceApp.Application.Services
             var order = _repo.GetOrderById(orderId);
             var orderVm = _mapper.Map<NewOrderVm>(order);
             return orderVm;
-        }
-
-        public NewCustomerForOrdersVm GetCustomerById(int id)
-        {
-            var customer = _repo.GetCustomerById(id);
-            var customerVm = _mapper.Map<NewCustomerForOrdersVm>(customer);
-            return customerVm;
-        }
-
-        public bool CheckEnteredRefund(string reasonRefund)
-        {
-            var refunds = _repo.GetAllRefunds().ToList();
-            var refund = refunds.FirstOrDefault(r => String.Equals(r.Reason, reasonRefund,
-                   StringComparison.OrdinalIgnoreCase));
-            if (refund != null)
-            {
-                return false;
-            }
-            else
-            {
-                return true;
-            }
         }
 
         public ListForOrderVm GetAllOrdersByCustomerId(int customerId, int pageSize, int pageNo)
@@ -442,11 +384,10 @@ namespace ECommerceApp.Application.Services
             return orders;
         }
 
-        public IQueryable<NewCustomerForOrdersVm> GetCustomersByUserId(string userId)
+        public IQueryable<CustomerInformationForOrdersVm> GetCustomersByUserId(string userId)
         {
-            var customers = _repo.GetCustomersByUserId(userId);
-            var customersVm = customers.ProjectTo<NewCustomerForOrdersVm>(_mapper.ConfigurationProvider);
-            return customersVm;
+            var customers = _customerService.GetCustomersInformationByUserId(userId);
+            return customers;
         }
 
         public ListForOrderVm GetAllOrdersByUserId(string userId, int pageSize, int pageNo)
@@ -478,69 +419,6 @@ namespace ECommerceApp.Application.Services
             return orders;
         }
 
-        public int AddOrderItem(NewOrderItemVm model)
-        {
-            var orderItem = _mapper.Map<OrderItem>(model);
-            var orderItemExist = GetOrderItem(orderItem);
-            int id;
-            if(orderItemExist != null)
-            {
-                id = orderItemExist.Id;
-                orderItemExist.ItemOrderQuantity += 1;
-                _repo.UpdateOrderItem(orderItemExist);
-            }
-            else
-            {
-                id = _repo.AddOrderItem(orderItem);
-            }
-            return id;
-        }
-
-        public List<ItemsAddToCartVm> GetItemsAddToCart()
-        {
-            var items = GetAllItemsToOrder();
-            var itemsVm = items.ProjectTo<ItemsAddToCartVm>(_mapper.ConfigurationProvider).ToList();
-            return itemsVm;
-        }
-
-        public ListForOrderItemVm GetOrderItemsNotOrderedByUserId(string userId, int pageSize, int pageNo)
-        {
-            var itemOrders = _repo.GetAllOrderItems().Where(oi => oi.UserId == userId && oi.OrderId == null)
-                            .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
-                            .ToList();
-
-            var itemOrdersToShow = itemOrders.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
-
-            var ordersList = new ListForOrderItemVm()
-            {
-                PageSize = pageSize,
-                CurrentPage = pageNo,
-                SearchString = "",
-                ItemOrders = itemOrdersToShow,
-                Count = itemOrders.Count
-            };
-
-            return ordersList;
-        }
-
-        public int AddCustomer(NewCustomerVm newCustomer)
-        {
-            if (newCustomer.Id != 0)
-            {
-                throw new BusinessException("When adding object Id should be equals 0");
-            }
-
-            var customer = _mapper.Map<Customer>(newCustomer);
-            var id = _repo.AddCustomer(customer);
-            return id;
-        }
-
-        private OrderItem GetOrderItem(OrderItem orderItem)
-        {
-            var item = _repo.GetOrderItemNotOrdered(orderItem);
-            return item;
-        }
-
         public List<OrderForListVm> GetAllOrders(Expression<Func<Order, bool>> expression)
         {
             return _repo.GetAllOrders().Where(expression)
@@ -548,7 +426,7 @@ namespace ECommerceApp.Application.Services
                             .ToList();
         }
 
-        public void AddRefund(int orderId, int refundId)
+        public void AddRefundToOrder(int orderId, int refundId)
         {
             var order = _repo.GetAll().Include(oi => oi.OrderItems).Where(o => o.Id == orderId).FirstOrDefault();
             

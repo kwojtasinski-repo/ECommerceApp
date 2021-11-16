@@ -137,5 +137,21 @@ namespace ECommerceApp.Application
 
             return newContactDetail;
         }
+
+        public static OrderItemVm AsOrderItemVm(this NewOrderItemVm newOrderItemVm)
+        {
+            var orderItem = new OrderItemVm
+            {
+                Id = newOrderItemVm.Id,
+                CouponUsedId = newOrderItemVm.CouponUsedId,
+                ItemId = newOrderItemVm.ItemId,
+                ItemOrderQuantity = newOrderItemVm.ItemOrderQuantity,
+                OrderId = newOrderItemVm.OrderId,
+                RefundId = newOrderItemVm.RefundId,
+                UserId = newOrderItemVm.UserId
+            };
+
+            return orderItem;
+        }
     }
 }
