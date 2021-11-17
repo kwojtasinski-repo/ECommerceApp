@@ -335,7 +335,18 @@ namespace ECommerceApp.Application.Services
             };
             var couponUsedId = _couponUsedRepository.AddCouponUsed(couponUsed);
             var coupon = _couponService.GetCoupon(couponId);
+            coupon.CouponUsedId = couponUsedId;
+            _couponService.UpdateCoupon(coupon);
             order.Cost = (1 - (decimal)coupon.Discount/100) * order.Cost;
+            order.CouponUsedId = couponUsedId;
+            if (order.OrderItems.Count > 0)
+            {
+                order.OrderItems.ForEach(oi =>
+                {
+                    oi.CouponUsedId = couponUsedId;
+                });
+            }
+            Update(order);
             return couponUsedId;
         }
 

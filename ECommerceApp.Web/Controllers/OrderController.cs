@@ -155,6 +155,7 @@ namespace ECommerceApp.Web.Controllers
                 model.CustomerId = customerId;
                 orderId = _orderService.AddOrder(model.AsOrderVm());
             }
+            model.Id = orderId;
             UseCouponIfEntered(model);
             return RedirectToAction("AddOrderSummary", new { id = orderId });
         }
@@ -279,7 +280,6 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult EditOrder(NewOrderVm model)
         {
             model.Cost = Convert.ToDecimal(model.CostToConvert);
-            UseCouponIfEntered(model);
 
             if (model.AcceptedRefund)
             {
@@ -316,7 +316,8 @@ namespace ECommerceApp.Web.Controllers
                 });
                 _orderService.UpdateOrder(model.AsOrderVm());
             }
-            
+
+            UseCouponIfEntered(model);
             return RedirectToAction("Index");
         }
 
@@ -346,22 +347,22 @@ namespace ECommerceApp.Web.Controllers
             return View(orders);
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [HttpPost]
+        public IActionResult ShowMyOrders(int pageSize, int pageNo)
+        {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var orders = _orderService.GetAllOrdersByUserId(userId, pageSize, pageNo);
+            return View(orders);
+        }
+
         private void UseCouponIfEntered(NewOrderVm model)
         {
             var id = _couponService.CheckPromoCode(model.RefCode);
             if (id != 0)
             {
-                var couponUsedId = _orderService.AddCouponToOrder(id, model);
-                model.CouponUsedId = couponUsedId;
-                if (model.OrderItems.Count > 0)
-                {
-                    model.OrderItems.ForEach(oi =>
-                    {
-                        oi.CouponUsedId = couponUsedId;
-                    });
-                }
+                _orderService.AddCouponToOrder(id, model);
             }
-
         }
     }
 }

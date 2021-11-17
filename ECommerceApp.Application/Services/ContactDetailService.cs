@@ -134,7 +134,7 @@ namespace ECommerceApp.Application.Services
         
         public bool ContactDetailExists(int id, string userId)
         {
-            var contactDetail = _repo.GetAll().Include(c => c.Customer).Where(cd => cd.Id == id && cd.Customer.UserId == userId).FirstOrDefault();
+            var contactDetail = _repo.GetAll().Include(c => c.Customer).Where(cd => cd.Id == id && cd.Customer.UserId == userId).AsNoTracking().FirstOrDefault();
 
             if (contactDetail == null)
             {

@@ -44,7 +44,7 @@
                 <span asp-validation-for="BrandId" class="text-danger"></span>
             </div>
             <p>
-                <a asp-action="AddItemBrand">Dodaj nową firmę</a>
+                <a asp-action="AddBrand" asp-controller="Brand">Dodaj nową firmę</a>
             </p>
             <div class="form-group col">
                 <label asp-for="TypeId" class="control-label">Typ: </label>
@@ -52,7 +52,7 @@
                 <span asp-validation-for="TypeId" class="text-danger"></span>
             </div>
             <p>
-                <a asp-action="AddItemType">Dodaj nowy typ</a>
+                <a asp-action="AddType" asp-controller="Type">Dodaj nowy typ</a>
             </p>
             <!--NOWY TAG-->
             <table id="tagWithJS">

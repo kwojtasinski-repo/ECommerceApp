@@ -133,7 +133,7 @@ namespace ECommerceApp.Application.Services
         public ListForItemWithTagsVm GetAllItemsWithTags(int pageSize, int pageNo, string searchString)
         {
             var itemsWithTags = _repo.GetAllItemsWithTags()//.Where(it => it.Item.Name.StartsWith(searchString))
-                .ProjectTo<ItemsWithTagsVm>(_mapper.ConfigurationProvider)
+                .ProjectTo<ItemsTagsVm>(_mapper.ConfigurationProvider)
                 .ToList();
             var itemsWithTagsToShow = itemsWithTags.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
 

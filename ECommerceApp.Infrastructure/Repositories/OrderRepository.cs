@@ -60,6 +60,8 @@ namespace ECommerceApp.Infrastructure.Repositories
             });
             _context.OrderItem.UpdateRange(orderItems);
             _context.SaveChanges();
+            DetachEntity(order);
+            DetachEntity(order.OrderItems);
             return order.Id;
         }
 
@@ -129,6 +131,8 @@ namespace ECommerceApp.Infrastructure.Repositories
             }
 
             _context.SaveChanges();
+            _context.Entry(order).State = EntityState.Detached;
+            DetachEntity(order.OrderItems);
         }
 
         private int AddOrderItem(OrderItem orderItem)

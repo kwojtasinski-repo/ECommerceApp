@@ -10,7 +10,7 @@ namespace ECommerceApp.Application.ViewModels.Tag
     {
         public string Name { get; set; }
 
-        public List<ItemsWithTagsVm> ItemTags { get; set; }
+        public List<ItemVm> ItemTags { get; set; }
 
         public void Mapping(Profile profile)
         {
