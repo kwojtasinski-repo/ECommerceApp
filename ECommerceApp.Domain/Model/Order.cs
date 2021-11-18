@@ -25,6 +25,8 @@ namespace ECommerceApp.Domain.Model
         public virtual Payment Payment { get; set; }
         public int? RefundId { get; set; } // 1:1 Order Refund
         public virtual Refund Refund { get; set; }
+        public int CurrencyId { get; set; }
+        public Currency Currency { get; set; }
 
         public ICollection<OrderItem> OrderItems { get; set; } // 1:Many relation
     }

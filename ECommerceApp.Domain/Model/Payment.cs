@@ -12,5 +12,7 @@ namespace ECommerceApp.Domain.Model
         public Customer Customer { get; set; }
         public int OrderId { get; set; } // 1:1 Payment Order
         public virtual Order Order { get; set; }
+        public int CurrencyId { get; set; }
+        public Currency Currency { get; set; }
     }
 }

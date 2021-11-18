@@ -16,6 +16,8 @@ namespace ECommerceApp.Domain.Model
         public int Quantity { get; set; }
         public int BrandId { get; set; }
         public int TypeId { get; set; }
+        public int CurrencyId { get; set; }
+        public Currency Currency { get; set; }
 
         public virtual Brand Brand { get; set; }
         public virtual Type Type { get; set; }
