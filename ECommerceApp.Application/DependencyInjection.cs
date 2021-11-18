@@ -1,7 +1,9 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Abstracts;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Middlewares;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Customer;
@@ -40,6 +42,10 @@ namespace ECommerceApp.Application
             services.AddTransient<IContactDetailService, ContactDetailService>();
             services.AddTransient<IContactDetailTypeService, ContactDetailTypeService>();
             services.AddTransient<IAddressService, AddressService>();
+
+            services.AddSingleton<IErrorMapToResponse, ErrorMapToResponse>();
+            services.AddTransient<ExceptionMiddleware>();
+
             return services;
         }
     }

@@ -17,6 +17,7 @@ using System.Globalization;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using FluentValidation.AspNetCore;
+using ECommerceApp.Application.Middlewares;
 
 namespace ECommerceApp.Web
 {
@@ -92,6 +93,7 @@ namespace ECommerceApp.Web
             };
             app.UseRequestLocalization(localizationOptions);
 
+            app.UseMiddleware<ExceptionMiddleware>();
             app.UseRouting();
 
             app.UseAuthentication();

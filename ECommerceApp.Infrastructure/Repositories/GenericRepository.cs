@@ -18,20 +18,20 @@ namespace ECommerceApp.Infrastructure.Repositories
             _context = context;
         }
 
-        public int Add(T entity)
+        public virtual int Add(T entity)
         {
             _context.Add(entity);
             _context.SaveChanges();
             return entity.Id;
         }
         
-        public async Task<int> AddAsync(T entity)
+        public virtual async Task<int> AddAsync(T entity)
         {
             _context.Add(entity);
             await _context.SaveChangesAsync();
             return entity.Id;
         }
-        public List<int> AddRange(List<T> entities)
+        public virtual List<int> AddRange(List<T> entities)
         {
             _context.AddRange(entities);
             _context.SaveChanges();
@@ -45,7 +45,7 @@ namespace ECommerceApp.Infrastructure.Repositories
             return ids;
         }
         
-        public async Task<List<int>> AddRangeAsync(List<T> entities)
+        public virtual async Task<List<int>> AddRangeAsync(List<T> entities)
         {
             _context.Add(entities);
             await _context.SaveChangesAsync();
@@ -59,7 +59,7 @@ namespace ECommerceApp.Infrastructure.Repositories
             return ids;
         }
 
-        public async Task DeleteAsync(int id)
+        public virtual async Task DeleteAsync(int id)
         {
             var type = typeof(T);
             var entity = (T) await _context.FindAsync(type, id);
@@ -71,7 +71,7 @@ namespace ECommerceApp.Infrastructure.Repositories
             }
         }
         
-        public void Delete(int id)
+        public virtual void Delete(int id)
         {
             var type = typeof(T);
             var entity = (T) _context.Find(type, id);
@@ -90,13 +90,13 @@ namespace ECommerceApp.Infrastructure.Repositories
             return queryable;
         }
 
-        public async Task<T> GetByIdAsync(int id)
+        public virtual async Task<T> GetByIdAsync(int id)
         {
             var entity = (T) await _context.FindAsync(typeof(T), id);
             return entity;
         }
         
-        public T GetById(int id)
+        public virtual T GetById(int id)
         {
             var entity = (T) _context.Find(typeof(T), id);
             return entity;
@@ -108,7 +108,7 @@ namespace ECommerceApp.Infrastructure.Repositories
             return dbSet;
         }
 
-        public async Task UpdateAsync(T entity)
+        public virtual async Task UpdateAsync(T entity)
         {
             if (entity != null)
             {
@@ -117,7 +117,7 @@ namespace ECommerceApp.Infrastructure.Repositories
             }
         }
 
-        public void Update(T entity)
+        public virtual void Update(T entity)
         {
             if (entity != null)
             {
@@ -126,7 +126,7 @@ namespace ECommerceApp.Infrastructure.Repositories
             }
         }
 
-        public async Task DeleteAsync(T entity)
+        public virtual async Task DeleteAsync(T entity)
         {
             if (entity != null)
             {
@@ -135,7 +135,7 @@ namespace ECommerceApp.Infrastructure.Repositories
             }
         }
 
-        public void Delete(T entity)
+        public virtual void Delete(T entity)
         {
             if (entity != null)
             {
@@ -162,7 +162,7 @@ namespace ECommerceApp.Infrastructure.Repositories
             }
         }
 
-        public void UpdateRange(IEnumerable<T> entities)
+        public virtual void UpdateRange(IEnumerable<T> entities)
         {
             if (entities.Count() == 0)
             {
