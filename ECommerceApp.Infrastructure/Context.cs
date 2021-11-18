@@ -27,6 +27,8 @@ namespace ECommerceApp.Infrastructure
         public DbSet<Tag> Tags { get; set; }
         public DbSet<ECommerceApp.Domain.Model.Type> Types { get; set; }
         public DbSet<ECommerceApp.Domain.Model.Image> Images { get; set; }
+        public DbSet<Currency> Currencies { get; set; }
+        public DbSet<CurrencyRate> CurrencyRates { get; set; }
 
         public Context(DbContextOptions options) : base(options)
         {
@@ -127,6 +129,7 @@ namespace ECommerceApp.Infrastructure
             // -------------------- CONTACT DETAIL TYPE SEED DATA ----------------------
             builder.Entity<ContactDetailType>().HasData(new ContactDetailType { Id = 1, Name = "PhoneNumber" });
             builder.Entity<ContactDetailType>().HasData(new ContactDetailType { Id = 2, Name = "Email" });
+            builder.Entity<Currency>().HasData(new Currency { Id = 1, Code = "PLN", Description = "Polski złoty" });
             // -------------------- CONTACT DETAIL TYPE SEED DATA ----------------------
         }
     }
