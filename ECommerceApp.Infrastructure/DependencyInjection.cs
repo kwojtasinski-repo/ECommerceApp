@@ -1,8 +1,10 @@
 ﻿using ECommerceApp.Domain.Interface;
+using ECommerceApp.Infrastructure.External.Client;
 using ECommerceApp.Infrastructure.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Text;
 
 namespace ECommerceApp.Infrastructure
@@ -28,6 +30,17 @@ namespace ECommerceApp.Infrastructure
             services.AddTransient<IContactDetailRepository, ContactDetailRepository>();
             services.AddTransient<IContactDetailTypeRepository, ContactDetailTypeRepository>();
             services.AddTransient<IAddressRepository, AddressRepository>();
+            services.AddTransient<ICurrencyRepository, CurrencyRepository>();
+            services.AddTransient<ICurrencyRateRepository, CurrencyRateRepository>();
+
+            // http client
+            services.AddHttpClient("NBPClient", options =>
+            {
+                options.Timeout = new TimeSpan(0, 0, 15);
+                options.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+            }).ConfigurePrimaryHttpMessageHandler(sp => new HttpClientHandler());
+            services.AddScoped<INBPClient, NBPClient>();
+
             return services;
         }
     }
