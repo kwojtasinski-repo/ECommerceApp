@@ -9,10 +9,10 @@
 1. Update database using command Update-Database (apply all migration)
 2. Add account google credentials
 use this command 
-> dotnet user-secrets set "Authentication:Google:ClientId" "ClientIdFromGoogle"
-> dotnet user-secrets set "Authentication:Google:ClientSecret" "ClientSecretFromGoogle"
+* dotnet user-secrets set "Authentication:Google:ClientId" "ClientIdFromGoogle"
+* dotnet user-secrets set "Authentication:Google:ClientSecret" "ClientSecretFromGoogle"
 Where can i get ClientId and ClientSecret?
-> https://console.cloud.google.com/
+* https://console.cloud.google.com/
 Credentials and choose OAuth2, then create new data logging. In the section URI place https://localhost:44364/signin-google
 
 ## Technologies
