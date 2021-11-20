@@ -41,6 +41,8 @@ namespace ECommerceApp.Application.ViewModels.Order
         public bool OnWarranty { get; set; }
         public bool ChangedCode { get; set; }
         public bool ChangedRefund { get; set; }
+        public int CurrencyId { get; set; }
+        public string CurrencyName { get; set; }
 
 
         public List<NewOrderItemVm> OrderItems { get; set; } // 1:Many relation
@@ -62,7 +64,8 @@ namespace ECommerceApp.Application.ViewModels.Order
                 .ForMember(cc => cc.ChangedCode, opt => opt.Ignore())
                 .ForMember(cr => cr.ChangedRefund, opt => opt.Ignore())
                 .ForMember(c => c.NewCustomer, opt => opt.Ignore())
-                .ForMember(c => c.CustomerData, opt => opt.Ignore());
+                .ForMember(c => c.CustomerData, opt => opt.Ignore())
+                .ForMember(c => c.CurrencyName, opt => opt.MapFrom(c => c.Currency.Code));
         }
     }
 

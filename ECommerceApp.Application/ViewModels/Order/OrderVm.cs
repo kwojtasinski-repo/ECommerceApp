@@ -22,6 +22,7 @@ namespace ECommerceApp.Application.ViewModels.Order
         public int? PaymentId { get; set; } // 1:1 Order Payment
         public bool IsPaid { get; set; }
         public int? RefundId { get; set; } // 1:1 Order Refund
+        public int CurrencyId { get; set; }
 
         public List<OrderItemVm> OrderItems { get; set; } // 1:Many relation
 

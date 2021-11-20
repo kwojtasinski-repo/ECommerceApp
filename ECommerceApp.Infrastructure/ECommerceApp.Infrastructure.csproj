@@ -23,6 +23,8 @@
     <Compile Remove="Migrations\20210107190131_UpdatingDbAddUserId.Designer.cs" />
     <Compile Remove="Migrations\20211120022726_AddedCurrencies.cs" />
     <Compile Remove="Migrations\20211120022726_AddedCurrencies.Designer.cs" />
+    <Compile Remove="Migrations\20211120212143_SetPrecisionAndScaleOnRate.cs" />
+    <Compile Remove="Migrations\20211120212143_SetPrecisionAndScaleOnRate.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>

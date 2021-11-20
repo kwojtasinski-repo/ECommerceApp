@@ -16,6 +16,7 @@ namespace ECommerceApp.Application.ViewModels.Item
         public int Quantity { get; set; }
         public int BrandId { get; set; }
         public int TypeId { get; set; }
+        public int CurrencyId { get; set; }
 
         public List<ItemTagVm> ItemTags { get; set; }
 

@@ -13,6 +13,7 @@ namespace ECommerceApp.Application.ViewModels.Order
         [Column(TypeName = "decimal(18,2)")]
         public string PromoCode { get; set; }
         public int CustomerId { get; set; }
+        public int CurrencyId { get; set; }
 
         public ICollection<OrderItemsIdsVm> OrderItems { get; set; } // 1:Many relation
 

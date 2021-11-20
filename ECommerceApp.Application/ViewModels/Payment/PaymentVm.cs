@@ -14,10 +14,13 @@ namespace ECommerceApp.Application.ViewModels.Payment
         public int CustomerId { get; set; }  // 1:Many Customer Payment
         public int OrderId { get; set; } // 1:1 Payment Order
         public int OrderNumber { get; set; }
+        public int CurrencyId { get; set; }
         [JsonIgnore]
         public string CustomerName { get; set; }
         [JsonIgnore]
         public decimal OrderCost { get; set; }
+        [JsonIgnore]
+        public string CurrencyName { get; set; }
 
         public void Mapping(Profile profile)
         {
@@ -26,7 +29,8 @@ namespace ECommerceApp.Application.ViewModels.Payment
                 .ForMember(c => c.CustomerName, opt => opt.MapFrom(c => c.Customer.FirstName + " " +
                                c.Customer.LastName + " " + c.Customer.NIP + " " + c.Customer.CompanyName))
                 //.ForMember(oc => oc.OrderCost, opt => opt.Ignore());
-                .ForMember(oc => oc.OrderCost, opt => opt.MapFrom(o => o.Order.Cost));
+                .ForMember(oc => oc.OrderCost, opt => opt.MapFrom(o => o.Order.Cost))
+                .ForMember(p => p.CurrencyName, opt => opt.MapFrom(c => c.Currency.Code));
         }
     }
 

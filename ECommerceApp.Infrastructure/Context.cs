@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace ECommerceApp.Infrastructure
@@ -132,9 +133,10 @@ namespace ECommerceApp.Infrastructure
             builder.Entity<Currency>().HasData(new Currency { Id = 1, Code = "PLN", Description = "Polski złoty" });
             // -------------------- CONTACT DETAIL TYPE SEED DATA ----------------------
 
-            // -------------------- SET MAX LENGTH --------------------
+            // -------------------- SET PROPERTY --------------------
             builder.Entity<Currency>().Property(c => c.Code).IsRequired().HasMaxLength(3);
-            // -------------------- SET MAX LENGTH --------------------
+            builder.Entity<CurrencyRate>().Property(cr => cr.Rate).HasColumnType("decimal(18,4)").IsRequired();
+            // -------------------- SET PEROPERTY --------------------
 
             // -------------------- ADD INDEX --------------------
             builder.Entity<Currency>().HasIndex(c => new { c.Code }).IsUnique(true);

@@ -20,6 +20,8 @@ namespace ECommerceApp.Application.ViewModels.Item
         public string BrandName { get; set; }
         public int TypeId { get; set; }
         public string TypeName { get; set; }
+        public int CurrencyId { get; set; }
+        public string CurrencyName { get; set; }
 
         public List<ItemTagForListVm> ItemTags { get; set; }
         [JsonIgnore]
@@ -30,6 +32,7 @@ namespace ECommerceApp.Application.ViewModels.Item
             profile.CreateMap<ECommerceApp.Domain.Model.Item, ItemDetailsVm>()
                 .ForMember(i => i.BrandName, opt => opt.MapFrom(d => d.Brand.Name))
                 .ForMember(i => i.TypeName, opt => opt.MapFrom(d => d.Type.Name))
+                .ForMember(i => i.CurrencyName, opt => opt.MapFrom(d => d.Currency.Code))
                 .ForMember(i => i.Images, opt => opt.Ignore());
         }
     }

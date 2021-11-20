@@ -14,10 +14,14 @@ namespace ECommerceApp.Application.ViewModels.Payment
         public CustomerDetailsVm Customer { get; set; }
         public int OrderId { get; set; } // 1:1 Payment Order
         public virtual OrderDetailsVm Order { get; set; }
+        public int CurrencyId { get; set; }
+        public string CurrencyName { get; set; }
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ECommerceApp.Domain.Model.Payment, PaymentDetailsVm>().ReverseMap();
+            profile.CreateMap<ECommerceApp.Domain.Model.Payment, PaymentDetailsVm>()
+                .ForMember(p => p.CurrencyName, opt => opt.MapFrom(src => src.Currency.Code))
+                .ReverseMap();
         }
     }
 }
