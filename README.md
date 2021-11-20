@@ -7,7 +7,7 @@
 
 # Problems with start
 1. Update database using command Update-Database (apply all migration)
-2. Add account google credentials
+2. Add account google credentials, first navigate console to ECommerceApp.Web directory then
 use this command 
 * dotnet user-secrets set "Authentication:Google:ClientId" "ClientIdFromGoogle"
 * dotnet user-secrets set "Authentication:Google:ClientSecret" "ClientSecretFromGoogle"
