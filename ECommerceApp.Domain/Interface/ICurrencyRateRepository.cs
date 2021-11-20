@@ -7,6 +7,7 @@ namespace ECommerceApp.Domain.Interface
 {
     public interface ICurrencyRateRepository : IGenericRepository<CurrencyRate>
     {
-        decimal GetRateForDay(DateTime dateTime);
+        public decimal GetRateForDay(int currencyId, DateTime dateTime);
+        public decimal GetLatestRate(int currencyId);
     }
 }

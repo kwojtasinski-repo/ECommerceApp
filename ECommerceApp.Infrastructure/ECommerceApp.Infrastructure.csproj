@@ -21,6 +21,8 @@
     <Compile Remove="Migrations\20210107185142_UpdatingDbAddUserId.Designer.cs" />
     <Compile Remove="Migrations\20210107190131_UpdatingDbAddUserId.cs" />
     <Compile Remove="Migrations\20210107190131_UpdatingDbAddUserId.Designer.cs" />
+    <Compile Remove="Migrations\20211120022726_AddedCurrencies.cs" />
+    <Compile Remove="Migrations\20211120022726_AddedCurrencies.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>
