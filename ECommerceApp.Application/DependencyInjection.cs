@@ -48,6 +48,17 @@ namespace ECommerceApp.Application
             services.AddSingleton<IErrorMapToResponse, ErrorMapToResponse>();
             services.AddTransient<ExceptionMiddleware>();
 
+            // http client
+            services.AddHttpClient("NBPClient", options =>
+            {
+                options.Timeout = new TimeSpan(0, 0, 15);
+                options.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
+            }).ConfigurePrimaryHttpMessageHandler(sp => new HttpClientHandler());
+            services.AddScoped<INBPClient, NBPClient>();
+
+            services.AddTransient<ICurrencyService, CurrencyService>();
+            services.AddTransient<ICurrencyRateService, CurrencyRateService>();
+
             return services;
         }
     }
