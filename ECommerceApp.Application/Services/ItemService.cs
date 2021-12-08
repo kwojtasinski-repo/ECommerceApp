@@ -5,8 +5,6 @@ using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.OrderItem;
-using ECommerceApp.Application.ViewModels.Tag;
-using ECommerceApp.Application.ViewModels.Type;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
@@ -19,7 +17,7 @@ namespace ECommerceApp.Application.Services
     public class ItemService : AbstractService<ItemVm, IItemRepository, Item>, IItemService
     {
         public ItemService(IItemRepository itemRepo, IMapper mapper) : base(itemRepo, mapper)
-        { }
+        {}
 
         public override int Add(ItemVm vm)
         {

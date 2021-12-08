@@ -54,6 +54,11 @@
             <p>
                 <a asp-action="AddType" asp-controller="Type">Dodaj nowy typ</a>
             </p>
+            <div class="form-group col">
+                <label asp-for="CurrencyId" class="control-label">Waluta: </label>
+                <select asp-for="CurrencyId" asp-items="@(new SelectList(ViewBag.Currencies,"Id", "Code"))" class="custom-select"></select>
+                <span asp-validation-for="CurrencyId" class="text-danger"></span>
+            </div>
             <!--NOWY TAG-->
             <table id="tagWithJS">
                 <thead>

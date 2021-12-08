@@ -47,6 +47,11 @@
                 <select asp-for="TypeId" asp-items="@(new SelectList(ViewBag.ItemTypes,"Id", "Name"))" class="custom-select"></select>
                 <span asp-validation-for="TypeId" class="text-danger"></span>
             </div>
+            <div class="form-group col">
+                <label asp-for="CurrencyId" class="control-label">Waluta: </label>
+                <select asp-for="CurrencyId" asp-items="@(new SelectList(ViewBag.Currencies,"Id", "Code"))" class="custom-select"></select>
+                <span asp-validation-for="CurrencyId" class="text-danger"></span>
+            </div>
             <div>
                 <p>List tagów:</p>
                 <table id="tagWithJS">
