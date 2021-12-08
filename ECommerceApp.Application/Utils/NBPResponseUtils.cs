@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace ECommerceApp.Infrastructure.Utils
+namespace ECommerceApp.Application.Utils
 {
     internal class NBPResponseUtils
     {

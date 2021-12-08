@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ECommerceApp.Infrastructure.External.Client
+namespace ECommerceApp.Application.External.Client
 {
     public interface INBPClient
     {

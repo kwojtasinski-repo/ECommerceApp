@@ -1,4 +1,4 @@
-﻿using ECommerceApp.Infrastructure.Exceptions;
+﻿using ECommerceApp.Application.Exceptions;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ECommerceApp.Infrastructure.External.Client
+namespace ECommerceApp.Application.External.Client
 {
     public class NBPClient : INBPClient
     {
@@ -68,13 +68,13 @@ namespace ECommerceApp.Infrastructure.External.Client
                     }
                     else
                     {
-                        throw new InfrastructureException($"Check base url: {urlBuilder}");
+                        throw new BusinessException($"Check base url: {urlBuilder}");
                     }
                 }
             }
             catch (Exception ex)
             {
-                throw new InfrastructureException($"Check if url {urlBuilder} is entered correctly or service is unavaible", ex);
+                throw new BusinessException($"Check if url {urlBuilder} is entered correctly or service is unavaible", ex);
             }
         }
     }

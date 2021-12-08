@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.External.Client;
 using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Middlewares;
@@ -12,6 +13,7 @@ using ECommerceApp.Application.ViewModels.Order;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Reflection;
 using System.Text;
 

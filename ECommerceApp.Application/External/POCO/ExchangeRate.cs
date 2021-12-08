@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace ECommerceApp.Infrastructure.External.POCO
+namespace ECommerceApp.Application.External.POCO
 {
     internal class ExchangeRate
     {

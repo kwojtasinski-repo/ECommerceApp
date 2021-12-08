@@ -3,6 +3,8 @@ using ECommerceApp.Domain.Interface;
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Linq.Expressions;
+using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
@@ -10,6 +12,12 @@ namespace ECommerceApp.Infrastructure.Repositories
     {
         public CurrencyRepository(Context context) : base(context)
         {
+        }
+
+        public List<Currency> GetAll(Expression<Func<Currency, bool>> expression)
+        {
+            var currencies = _context.Currencies.Where(expression).ToList();
+            return currencies;
         }
     }
 }
