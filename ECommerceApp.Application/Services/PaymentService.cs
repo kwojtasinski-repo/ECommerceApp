@@ -20,11 +20,13 @@ namespace ECommerceApp.Application.Services
     {
         private readonly IOrderService _orderService;
         private readonly ICustomerService _customerService;
+        private readonly ICurrencyRateService _currencyRateService;
 
-        public PaymentService(IPaymentRepository paymentRepository, IMapper mapper, IOrderService orderService, ICustomerService customerService) : base(paymentRepository, mapper)
+        public PaymentService(IPaymentRepository paymentRepository, IMapper mapper, IOrderService orderService, ICustomerService customerService, ICurrencyRateService currencyRateService) : base(paymentRepository, mapper)
         {
             _orderService = orderService;
             _customerService = customerService;
+            _currencyRateService = currencyRateService;
         }
 
         public int AddPayment(PaymentVm model)
@@ -39,6 +41,8 @@ namespace ECommerceApp.Application.Services
             var order = _orderService.Get(payment.OrderId);
             order.IsPaid = true;
             order.PaymentId = id;
+            order.CurrencyId = model.CurrencyId;
+            order.Cost = calculateCost(order.Cost, model.CurrencyId);
             _orderService.Update(order);
             return id;
         }
@@ -155,6 +159,13 @@ namespace ECommerceApp.Application.Services
             };
 
             return payment;
+        }
+
+        private decimal calculateCost(decimal cost, int currencyId)
+        {
+            var rate = _currencyRateService.GetLatestRate(currencyId);
+            var calculatedCost = cost * rate.Rate;
+            return calculatedCost;
         }
     }
 }

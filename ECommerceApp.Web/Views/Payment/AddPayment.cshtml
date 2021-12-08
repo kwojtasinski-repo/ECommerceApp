@@ -42,6 +42,12 @@
                 <span asp-validation-for="OrderCost" class="text-danger"></span>
             </div>
             <div class="form-group">
+                <label asp-for="OrderCost" class="control-label">Waluta</label>
+                <input readonly asp-for="CurrencyName" class="form-control" />
+                <span asp-validation-for="CurrencyName" class="text-danger"></span>
+                <input type="hidden" asp-for="CurrencyId" />
+            </div>
+            <div class="form-group">
                 <input type="submit" value="Zapłać" class="btn btn-success" />
                 <a asp-controller="Item" asp-action="Index"><input type="button" readonly value="Anuluj" class="btn btn-warning" /></a>
             </div>
