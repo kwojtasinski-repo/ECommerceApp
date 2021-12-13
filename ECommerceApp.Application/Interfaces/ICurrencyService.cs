@@ -11,5 +11,6 @@ namespace ECommerceApp.Application.Interfaces
     public interface ICurrencyService : IAbstractService<CurrencyVm, ICurrencyRepository, Currency>
     {
         List<CurrencyVm> GetAll(Expression<Func<Currency, bool>> expression);
+        ListCurrencyVm GetAllCurrencies(int pageSize, int pageNo, string searchString);
     }
 }

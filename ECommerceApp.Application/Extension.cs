@@ -78,6 +78,7 @@ namespace ECommerceApp.Application
                 CouponUsedId = newOrderVm.CouponUsedId,
                 CustomerId = newOrderVm.CustomerId,
                 PaymentId = newOrderVm.PaymentId,
+                CurrencyId = newOrderVm.CurrencyId,
                 Delivered = newOrderVm.Delivered,
                 RefundId = newOrderVm.RefundId,
                 IsDelivered = newOrderVm.IsDelivered,

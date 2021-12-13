@@ -94,6 +94,7 @@
                         <a style="color: #0366d6; cursor: pointer;" onclick="AddItemToCart(@item.Id)">Dodaj do koszyka</a>
                         @if (User.IsInRole("Administrator") || User.IsInRole("Manager") || User.IsInRole("Service") || User.IsInRole("Admin"))
                         {
+                            @(' ')@('|')@(' ')
                             @Html.ActionLink("Edytuj", "EditItem", new { id = item.Id }) @(' ')@('|')@(' ')
                             @Html.ActionLink("Szczegóły", "ViewItem", new { id = item.Id }) @(' ')@('|')@(' ')
                         }

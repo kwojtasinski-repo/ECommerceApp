@@ -20,11 +20,13 @@ namespace ECommerceApp.Web.Controllers
     {
         private readonly IOrderService _orderService;
         private readonly IPaymentService _paymentService;
+        private readonly ICurrencyService _currencyService;
 
-        public PaymentController(IOrderService orderService, IPaymentService paymentService)
+        public PaymentController(IOrderService orderService, IPaymentService paymentService, ICurrencyService currencyService)
         {
             _orderService = orderService;
             _paymentService = paymentService;
+            _currencyService = currencyService;
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
@@ -59,6 +61,8 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult AddPayment(int id)
         {
             var payment = _paymentService.InitPayment(id);
+            var currencies = _currencyService.GetAll(cr => true);
+            ViewBag.Currencies = currencies;
             return View(payment);
         }
 

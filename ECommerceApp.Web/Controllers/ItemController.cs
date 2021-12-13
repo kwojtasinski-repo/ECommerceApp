@@ -20,16 +20,14 @@ namespace ECommerceApp.Web.Controllers
         private readonly IImageService _imageService;
         private readonly ITypeService _typeService;
         private readonly ITagService _tagService;
-        private readonly ICurrencyService _currencyService;
 
-        public ItemController(IItemService itemService, IImageService imageService, IBrandService brandService, ITypeService typeService, ITagService tagService, ICurrencyService currencyService)
+        public ItemController(IItemService itemService, IImageService imageService, IBrandService brandService, ITypeService typeService, ITagService tagService)
         {
             _itemService = itemService;
             _imageService = imageService;
             _brandService = brandService;
             _typeService = typeService;
             _tagService = tagService;
-            _currencyService = currencyService;
         }
 
         [HttpGet]
@@ -65,8 +63,6 @@ namespace ECommerceApp.Web.Controllers
             ViewBag.ItemBrands = _brandService.GetAllBrands(b => true);
             ViewBag.ItemTypes = _typeService.GetTypes(t => true);
             ViewBag.ItemTags = _tagService.GetTags(t => true);
-            var currencies = _currencyService.GetAll(cr => true);
-            ViewBag.Currencies = currencies;
             return View(new NewItemVm());
         }
 
@@ -90,8 +86,6 @@ namespace ECommerceApp.Web.Controllers
             ViewBag.ItemBrands = _brandService.GetAllBrands(b => true);
             ViewBag.ItemTypes = _typeService.GetTypes(t => true);
             ViewBag.ItemTags = _tagService.GetTags(t => true);
-            var currencies = _currencyService.GetAll(cr => true);
-            ViewBag.Currencies = currencies;
             item.Images = _imageService.GetImagesByItemId(id);
             return View(item);
         }

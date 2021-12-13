@@ -20,7 +20,7 @@
             </div>
             <div class="form-group">
                 <label asp-for="Ordered" class="control-label">Zamówione:</label>
-                <input asp-for="Ordered" class="form-control" readonly value="@ViewBag.Date" />
+                <input type="text" asp-for="Ordered" class="form-control" readonly value="@ViewBag.Date" />
                 <span asp-validation-for="Ordered" class="text-danger"></span>
             </div>
             <div class="form-group" style="display:none;">
@@ -109,10 +109,18 @@
                 <input asp-for="RefCode" class="form-control" />
                 <span asp-validation-for="RefCode" class="text-danger"></span>
             </div>
-            <div class="form-group">
-                <label asp-for="Cost" class="control-label">Koszt:</label>
-                <input id="CostCurrency" asp-for="Cost" class="form-control" value="" readonly />
-                <span asp-validation-for="Cost" class="text-danger"></span>
+            <div class="form-row">
+                <div class="col-md-6 mb-4">
+                    <label asp-for="Cost" class="control-label">Koszt:</label>
+                    <input id="CostCurrency" asp-for="Cost" class="form-control" value="" readonly />
+                    <span asp-validation-for="Cost" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label class="control-label">Waluta:</label>
+                    <input type="text" id="CurrencyName" class="form-control" value="PLN" readonly />
+                    <input type="hidden" id="Currency" asp-for="CurrencyId" class="form-control" value="1" readonly />
+                    <span asp-validation-for="CurrencyId" class="text-danger"></span>
+                </div>
             </div>
             <div class="form-group" style="display:none;">
                 <input id="Cost" asp-for="CostToConvert" class="form-control" readonly />
