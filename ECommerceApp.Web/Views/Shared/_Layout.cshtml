@@ -63,7 +63,10 @@
                             @if (User.IsInRole("Administrator") || User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Service"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="Order" asp-action="Index">Zamówienia</a>
+                                    <a class="nav-link hover_drop_down text-dark" asp-area="" asp-controller="Order" asp-action="Index">Zamówienia</a>
+                                    <ul class="dropdown">
+                                        <li><a asp-controller="Currency" asp-action="Index">Waluty</a></li>
+                                    </ul>
                                 </li>
                             }
                             @if (User.IsInRole("Administrator") || User.IsInRole("Admin") || User.IsInRole("Manager"))
@@ -138,6 +141,41 @@
     <style type="text/css">
         .badge.badge-light {
             color: #0077cc
+        }
+
+        ul {
+            padding: 0;
+            list-style: none;
+        }
+        ul li {
+            display: inline-block;
+            position: relative;
+            line-height: 21px;
+            text-align: left;
+        }
+        ul li a {
+            display: block;
+            padding: 8px 25px;
+            color: #333;
+            text-decoration: none;
+        }
+        ul li a:hover {
+            color: #fff;
+            background: #939393;
+        }
+        ul li ul.dropdown {
+            min-width: 100%; /* Set width of the dropdown */
+            background: #f2f2f2;
+            display: none;
+            position: absolute;
+            z-index: 999;
+            left: 0;
+        }
+        ul li:hover ul.dropdown {
+            display: block; /* Display the dropdown */
+        }
+        ul li ul.dropdown li {
+            display: block;
         }
     </style>
     @RenderSection("Scripts", required: false)
