@@ -25,7 +25,9 @@
             Koszt
         </dt>
         <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Cost)
+            @{
+                <span>@Model.Cost.ToString("N2") @Model.CurrencyCode</span>
+            }
         </dd>
         <dt class = "col-sm-2">
             Data zamówienia
@@ -89,7 +91,7 @@
                         Ilość zamówiona
                     </th>
                     <th>
-                        Koszt
+                        Koszt [PLN]
                     </th>
                 </tr>
             </thead>

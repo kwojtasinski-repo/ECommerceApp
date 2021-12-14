@@ -4,9 +4,8 @@
     ViewData["Title"] = "OrderRealization";
 }
 
-<h1>OrderRealization</h1>
+<h1>Realizacja zamówienia</h1>
 
-<h4>NewOrderVm</h4>
 <hr />
 <div class="row">
     <div class="col-lg-6">
@@ -162,7 +161,7 @@
                                     </label>
                                 </div>
                                 <div id="CompanyData" class="form-row" style="display:none;">
-                                    <div class="col-md-3 mb-3">
+                                    <div class="col-md-6 mb-3">
                                         <label asp-for="NewCustomer.NIP" class="control-label"></label>
                                         <input id="NIPInput" asp-for="NewCustomer.NIP" class="form-control" />
                                         <span asp-validation-for="NewCustomer.NIP" class="text-danger"></span>
@@ -270,7 +269,8 @@
                                     </label>
                                 </div>
                                 <div id="CompanyData" class="form-row" style="display:none;">
-                                    <div class="col-md-3 mb-3">
+                                    <div class="col-md-6 mb-3"></div>
+                                    <div>
                                         <label asp-for="NewCustomer.NIP" class="control-label"></label>
                                         <input id="NIPInput" asp-for="NewCustomer.NIP" class="form-control" />
                                         <span asp-validation-for="NewCustomer.NIP" class="text-danger"></span>
@@ -359,7 +359,7 @@
 </div>
 
 <div>
-    <a asp-action="Index">Back to List</a>
+    <a asp-action="Index">Wróć do przedmiotów</a>
 </div>
 
 @section Scripts {
