@@ -1,0 +1,168 @@
+﻿@model ECommerceApp.Application.ViewModels.Order.ListForOrderVm
+
+@{
+    ViewData["Title"] = "ShowOrdersPaid";
+}
+
+
+<h1>Wydania</h1>
+
+
+<form asp-action="ShowOrdersPaid" asp-controller="Order" method="post">
+    <div class="row">
+        <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
+        <input type="submit" value="Wyszukaj" />
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>
+                    Id
+                </th>
+                <th>
+                    Nr zamówienia
+                </th>
+                <th>
+                    Data zamówienia
+                </th>
+                <th>
+                    Data dostarczenia
+                </th>
+                <th>
+                    Czy dostarczono
+                </th>
+                <th>
+                    Id zamawiającego
+                </th>
+                <th>
+                    Id płatności
+                </th>
+                <th>
+                    Czy zapłacono
+                </th>
+                <th>Akcja</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in Model.Orders)
+            {
+                <tr>
+                    <td>
+                        @Html.DisplayFor(modelItem => order.Id)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => order.Number)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => order.Ordered)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => order.Delivered)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => order.IsDelivered)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => order.UserId)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(modelItem => order.PaymentId)
+                    </td>
+                     <td>
+                        @Html.DisplayFor(modelItem => order.IsPaid)
+                    </td>
+                    <td>
+                        <a style="color: #0366d6; cursor: pointer;" onclick="OrderDispatched(@order.Id)">Wyślij zamówienie</a>
+                        @if (User.IsInRole("Administrator") || User.IsInRole("Manager") || User.IsInRole("Service") || User.IsInRole("Admin"))
+                        {
+                            @(' ')@('|')@(' ')
+                            @Html.ActionLink("Edytuj", "EditOrder", new { id = order.Id }) @(' ')@('|')@(' ')
+                            @Html.ActionLink("Szczegóły", "ViewOrderDetails", new { id = order.Id })
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <div class="row">
+        <table>
+            <tr>
+                @for (int i = 1; i <= Math.Ceiling(Model.Count / (double)Model.PageSize); i++)
+                {
+                    <td>
+                        @if (i != Model.CurrentPage)
+                        {
+                            <a href="javascript:PagerClick(@i)">@i</a>
+                        }
+                        else
+                        {
+                            <span>@i</span>
+                        }
+                    </td>
+                }
+            </tr>
+        </table>
+        <input type="hidden" name="pageNo" id="pageNo" />
+        <input type="hidden" name="pageSize" id="pageSize" value="20" />
+    </div>
+</form>
+
+@section Scripts
+{
+    <script type="text/javascript">
+        function PagerClick(index)
+        {
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            document.getElementById("pageNo").value = index;
+            $.ajax({
+                url: "/Order/ShowOrdersPaid", 
+                type: 'POST',
+                data: {//int pageSize, int? pageNo, string searchString
+                    __RequestVerificationToken: token,
+                    pageSize: document.getElementById("pageSize").value,
+                    pageNo: index,
+                    searchString: document.getElementById("searchString").value
+                },
+                success: function (data) {
+                    console.log("Success")
+                    console.log(data);
+                    var parser = new DOMParser();
+                    var htmlDoc = parser.parseFromString(data, 'text/html');
+                    console.log(htmlDoc);
+                    var form = htmlDoc.getElementById('reload');
+                    console.log(form);
+                    jQuery('#reload').html(form);
+                },
+                error: function (error) {
+                    console.log("error is " + error);
+                }
+            });
+        }
+
+        function OrderDispatched(id)
+        {
+            console.log(id);
+                // ajax send to controller
+            $.ajax({
+                url: "/Order/DispatchOrder/",
+                type: 'GET',
+                data: {
+                    'id': id
+                },
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                success: function (data, textStatus) {
+                    setTimeout(function () {
+                    }, 0100);
+                    window.location.reload(true);
+                },
+                error: function (jqXHR, status, error) {
+                    if (error == 'Unauthorized') {
+                        console.log("Access unathorized");
+                        window.location.href = "Identity/Account/Login";
+                    }
+                }
+            });
+        }
+    </script>
+}
