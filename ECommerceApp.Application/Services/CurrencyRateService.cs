@@ -77,6 +77,13 @@ namespace ECommerceApp.Application.Services
 
             var date = DateTime.Now.Date;
 
+            if (currencyId == 1)
+            {
+                var currencyRatePLN = TryGetCurrencyRatePLN(currencyId, date);
+                var currencyRatePLNVm = _mapper.Map<CurrencyRateVm>(currencyRatePLN);
+                return currencyRatePLNVm;
+            }
+
             var currencyRate = getCurrencyRate(currency, date);
             CurrencyRateVm currencyRateVm = null; 
 

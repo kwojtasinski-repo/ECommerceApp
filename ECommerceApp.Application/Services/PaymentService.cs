@@ -164,7 +164,7 @@ namespace ECommerceApp.Application.Services
         private decimal calculateCost(decimal cost, int currencyId)
         {
             var rate = _currencyRateService.GetLatestRate(currencyId);
-            var calculatedCost = cost * rate.Rate;
+            var calculatedCost = cost / rate.Rate;
             return calculatedCost;
         }
     }

@@ -33,5 +33,7 @@ namespace ECommerceApp.Application.Interfaces
         List<OrderForListVm> GetAllOrders(Expression<Func<Order,bool>> expression);
         void AddRefundToOrder(int orderId, int refundId);
         NewOrderVm GetOrderForRealization(int orderId);
+        ListForOrderVm GetAllOrdersPaid(int pageSize, int pageNo, string searchString);
+        void DispatchOrder(int orderId);
     }
 }

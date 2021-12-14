@@ -71,6 +71,7 @@ namespace ECommerceApp.Infrastructure.Repositories
                 .Include(inc => inc.OrderItems).ThenInclude(inc => inc.Item)
                 .Include(inc => inc.Refund)
                 .Include(inc => inc.Payment)
+                .Include(inc => inc.Currency)
                 .FirstOrDefault(o => o.Id == id);
             return order;
         }

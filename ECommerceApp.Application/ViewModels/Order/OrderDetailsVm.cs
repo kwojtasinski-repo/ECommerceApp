@@ -26,12 +26,15 @@ namespace ECommerceApp.Application.ViewModels.Order
         public bool IsPaid { get; set; }
         public int? RefundId { get; set; } // 1:1 Order Refund
         public int CurrencyId { get; set; }
+        public string CurrencyCode { get; set; }
 
         public List<OrderItemDetailsVm> OrderItems { get; set; } // 1:Many relation
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<OrderDetailsVm, ECommerceApp.Domain.Model.Order>().ReverseMap();
+            profile.CreateMap<ECommerceApp.Domain.Model.Order, OrderDetailsVm>()
+                .ForMember(o => o.CurrencyCode, src => src.MapFrom(o => o.Currency.Code))
+                .ReverseMap();
         }
     }
 }

@@ -450,5 +450,39 @@ namespace ECommerceApp.Application.Services
             }
             _repo.Update(order);
         }
+
+        public ListForOrderVm GetAllOrdersPaid(int pageSize, int pageNo, string searchString)
+        {
+            var orders = _repo.GetAll().Where(o => o.IsPaid == true && o.IsDelivered == false)
+                            .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider);
+
+            var ordersToShow = orders.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+
+            var ordersList = new ListForOrderVm()
+            {
+                PageSize = pageSize,
+                CurrentPage = pageNo,
+                SearchString = searchString,
+                Orders = ordersToShow,
+                Count = orders.Count()
+            };
+
+            return ordersList;
+        }
+
+        public void DispatchOrder(int orderId)
+        {
+            var order = _repo.GetAll().Where(o => o.Id == orderId).Where(o => o.IsDelivered == false && o.IsPaid == true)
+                .FirstOrDefault();
+
+            if (order == null)
+            {
+                throw new BusinessException($"Order with id {orderId} not found, check your order if is not delivered and is paid");
+            }
+
+            order.IsDelivered = true;
+            order.Delivered = DateTime.Now;
+            _repo.Update(order);
+        }
     }
 }
