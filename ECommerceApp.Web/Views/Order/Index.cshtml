@@ -67,7 +67,9 @@
                         @Html.DisplayFor(modelOrder => order.Number)
                     </td>
                     <td>
-                        @Html.DisplayFor(modelOrder => order.Cost)
+                         @{
+                        <span>@order.Cost.ToString("N2") @order.CurrencyCode</span>
+                        }
                     </td>
                     <td>
                         @Html.DisplayFor(modelOrder => order.Ordered)

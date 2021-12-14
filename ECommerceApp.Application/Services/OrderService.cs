@@ -162,6 +162,7 @@ namespace ECommerceApp.Application.Services
         public ListForOrderVm GetAllOrders(int pageSize, int pageNo, string searchString)
         {
             var orders = _repo.GetAllOrders().Where(o => o.Number.ToString().StartsWith(searchString))
+                            .Include(c => c.Currency)
                             .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
                             .ToList();
             var ordersToShow = orders.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
@@ -367,6 +368,7 @@ namespace ECommerceApp.Application.Services
         public ListForOrderVm GetAllOrdersByCustomerId(int customerId, int pageSize, int pageNo)
         {
             var orders = _repo.GetAllOrders().Where(o => o.CustomerId == customerId)
+                            .Include(c => c.Currency)
                             .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
                             .ToList();
             var ordersToShow = orders.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
@@ -401,6 +403,7 @@ namespace ECommerceApp.Application.Services
         public ListForOrderVm GetAllOrdersByUserId(string userId, int pageSize, int pageNo)
         {
             var orders = _repo.GetAllOrders().Where(o => o.UserId == userId)
+                            .Include(c => c.Currency)
                             .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
                             .ToList();
 

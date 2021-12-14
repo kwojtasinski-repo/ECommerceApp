@@ -39,7 +39,9 @@
                         @Html.DisplayFor(model => order.Number)
                     </td>
                     <td>
-                        @Html.DisplayFor(model => order.Cost)
+                         @{
+                        <span>@order.Cost.ToString("N2") @order.CurrencyCode</span>
+                        }
                     </td>
                     <td>
                         @Html.DisplayFor(model => order.CustomerId)
