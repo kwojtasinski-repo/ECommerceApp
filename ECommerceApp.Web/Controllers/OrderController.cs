@@ -356,6 +356,42 @@ namespace ECommerceApp.Web.Controllers
             return View(orders);
         }
 
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
+        [HttpGet]
+        public IActionResult ShowOrdersPaid()
+        {
+            var model = _orderService.GetAllOrdersPaid(20, 1, "");
+
+            return View(model);
+        }
+
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
+        [HttpPost]
+        public IActionResult ShowOrdersPaid(int pageSize, int? pageNo, string searchString)
+        {
+            if (!pageNo.HasValue)
+            {
+                pageNo = 1;
+            }
+
+            if (searchString is null)
+            {
+                searchString = String.Empty;
+            }
+
+            var model = _orderService.GetAllOrdersPaid(pageSize, pageNo.Value, searchString);
+
+            return View(model);
+        }
+
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
+        [HttpGet]
+        public IActionResult DispatchOrder(int id)
+        {
+            _orderService.DispatchOrder(id);
+            return Ok();
+        }
+
         private void UseCouponIfEntered(NewOrderVm model)
         {
             var id = _couponService.CheckPromoCode(model.RefCode);
