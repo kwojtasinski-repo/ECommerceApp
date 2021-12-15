@@ -85,6 +85,27 @@
         }
     </tbody>
 </table>
+ <div class="row">
+    <table>
+        <tr>
+            @for (int i = 1; i <= Math.Ceiling(Model.Count / (double)Model.PageSize); i++)
+            {
+                <td>
+                    @if (i != Model.CurrentPage)
+                    {
+                        <a href="javascript:PagerClick(@i)">@i</a>
+                    }
+                    else
+                    {
+                        <span>@i</span>
+                    }
+                </td>
+            }
+        </tr>
+    </table>
+</div>
+<input type="hidden" name="pageNo" id="pageNo" />
+<input type="hidden" name="pageSize" id="pageSize" value="20" />
 
 <div class="form-group">
     <a asp-controller="Order" asp-action="OrderRealization"><input type="button" readonly value="Zrealizuj zamówienie" class="btn btn-primary" /></a>
@@ -143,34 +164,6 @@
         }
     }
 
-    function PagerClick(index) {
-        var token = $('input[name="__RequestVerificationToken"]').val();
-        document.getElementById("pageNo").value = index;
-        $.ajax({
-            url: "/Order/",
-            type: 'POST',
-            data: {
-                __RequestVerificationToken: token,
-                pageNo: index,
-                pageSize: document.getElementById("pageSize").value,
-                searchString: document.getElementById("searchString").value
-            },
-            success: function (data) {
-                console.log("Success")
-                console.log(data);
-                var parser = new DOMParser();
-                var htmlDoc = parser.parseFromString(data, 'text/html');
-                console.log(htmlDoc);
-                var form = htmlDoc.getElementById('reload');
-                console.log(form);
-                jQuery('#reload').html(form);
-            },
-            error: function (error) {
-                console.log("error is " + error);
-            }
-        });
-    }
-
     function RemoveItemFromCart(itemId) {
         console.log(itemId);
         // ajax send to controller
@@ -196,7 +189,38 @@
                 }
             }
         });
+     }
+
+     function PagerClick(index)
+    {
+        var token = $('input[name="__RequestVerificationToken"]').val();
+        console.log(index);
+        console.log('document.getElementById("pageSize")');
+        console.log(document.getElementById("pageSize"));
+        $.ajax({
+            url: "/Order/ShowMyCart",
+            type: 'POST',
+            data: {
+                __RequestVerificationToken: token,
+                pageNo: index,
+                pageSize: document.getElementById("pageSize").value
+            },
+            success: function (data) {
+                console.log("Success")
+                console.log(data);
+                var parser = new DOMParser();
+                var htmlDoc = parser.parseFromString(data, 'text/html');
+                console.log(htmlDoc);
+                var form = htmlDoc.getElementById('reload');
+                console.log(form);
+                jQuery('#reload').html(form);
+            },
+            error: function (error) {
+                console.log("error is " + error);
+            }
+        });
     }
+
 </script>
 <style type="text/css">
     .fa_custom {
