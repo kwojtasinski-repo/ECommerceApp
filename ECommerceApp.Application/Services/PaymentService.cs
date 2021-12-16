@@ -42,7 +42,7 @@ namespace ECommerceApp.Application.Services
             order.IsPaid = true;
             order.PaymentId = id;
             order.CurrencyId = model.CurrencyId;
-            order.Cost = calculateCost(order.Cost, model.CurrencyId);
+            order.Cost = CalculateCost(order.Cost, model.CurrencyId);
             _orderService.Update(order);
             return id;
         }
@@ -161,7 +161,7 @@ namespace ECommerceApp.Application.Services
             return payment;
         }
 
-        private decimal calculateCost(decimal cost, int currencyId)
+        private decimal CalculateCost(decimal cost, int currencyId)
         {
             var rate = _currencyRateService.GetLatestRate(currencyId);
             var calculatedCost = cost / rate.Rate;

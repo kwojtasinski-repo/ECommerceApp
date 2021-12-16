@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.Text;
 using Xunit;
 
-namespace ECommerceApp.Tests.Services.Image
+namespace ECommerceApp.Tests.Services.ImageService
 {
     public class ImageServiceTests : BaseServiceTest<ImageVm, IImageRepository, ImageRepository, Application.Services.ImageService, Domain.Model.Image>
     {

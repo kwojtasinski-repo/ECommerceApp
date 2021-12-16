@@ -36,4 +36,20 @@
     <ProjectReference Include="..\ECommerceApp.Infrastructure\ECommerceApp.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Services\Address\" />
+    <Folder Include="Services\Brand\" />
+    <Folder Include="Services\ContactDetail\" />
+    <Folder Include="Services\ContactDetailType\" />
+    <Folder Include="Services\CouponType\" />
+    <Folder Include="Services\CouponUsed\" />
+    <Folder Include="Services\Currency\" />
+    <Folder Include="Services\User\" />
+    <Folder Include="Services\Type\" />
+    <Folder Include="Services\Tag\" />
+    <Folder Include="Services\Refund\" />
+    <Folder Include="Services\Payment\" />
+    <Folder Include="Services\OrderItem\" />
+  </ItemGroup>
+
 </Project>
