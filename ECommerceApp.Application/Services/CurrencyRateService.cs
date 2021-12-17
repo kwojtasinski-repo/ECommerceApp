@@ -35,6 +35,11 @@ namespace ECommerceApp.Application.Services
 
         public CurrencyRateVm GetRateForDay(int currencyId, DateTime dateTime)
         {
+            if (dateTime < archiveDate)
+            {
+                throw new BusinessException($"There is no rate for {dateTime}");
+            }
+
             var currency = _currencyRepository.GetAll().Where(c => c.Id == currencyId).FirstOrDefault();
 
             if (currency is null)
@@ -52,7 +57,7 @@ namespace ECommerceApp.Application.Services
                 return currencyRateVm;
             }
 
-            var currencyRate = getCurrencyRate(currency, date);
+            var currencyRate = GetCurrencyRate(currency, date);
 
             if(currencyRate.Id != 0)
             {
@@ -84,7 +89,7 @@ namespace ECommerceApp.Application.Services
                 return currencyRatePLNVm;
             }
 
-            var currencyRate = getCurrencyRate(currency, date);
+            var currencyRate = GetCurrencyRate(currency, date);
             CurrencyRateVm currencyRateVm = null; 
 
             if (currencyRate.Id != 0)
@@ -120,7 +125,7 @@ namespace ECommerceApp.Application.Services
             return currencyRatePLN;
         }
 
-        private CurrencyRate getCurrencyRate(Currency currency, DateTime date)
+        private CurrencyRate GetCurrencyRate(Currency currency, DateTime date)
         {
             var requestCounts = 1;
             ExchangeRate exchangeRate = null;
