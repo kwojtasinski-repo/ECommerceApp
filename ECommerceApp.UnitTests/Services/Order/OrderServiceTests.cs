@@ -61,7 +61,7 @@ namespace ECommerceApp.Tests.Services.Order
         [Fact]
         public void given_proper_order_when_dispatching_order_should_throw_an_exception()
         {
-            var order = GetDefaultModel();
+            var order = GetDefaultOrder();
             order.IsPaid = true;
             _orderRepository.Setup(o => o.GetAll()).Returns(new List<Domain.Model.Order>() { order }.AsQueryable());
             _orderRepository.Setup(o => o.Update(It.IsAny<Domain.Model.Order>())).Verifiable();
@@ -72,7 +72,7 @@ namespace ECommerceApp.Tests.Services.Order
             _orderRepository.Verify(o => o.Update(It.IsAny<Domain.Model.Order>()), Times.Once);
         }
 
-        private Domain.Model.Order GetDefaultModel()
+        private Domain.Model.Order GetDefaultOrder()
         {
             var order = new Domain.Model.Order();
             order.Id = 1;
