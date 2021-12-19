@@ -161,6 +161,8 @@ namespace ECommerceApp.Application.Services
 
         public ListForOrderVm GetAllOrders(int pageSize, int pageNo, string searchString)
         {
+            ValidatePageSizeAndPageNo(pageSize, pageNo);
+
             var orders = _repo.GetAllOrders().Where(o => o.Number.ToString().StartsWith(searchString))
                             .Include(c => c.Currency)
                             .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
@@ -328,6 +330,13 @@ namespace ECommerceApp.Application.Services
 
         public int AddCouponToOrder(int couponId, NewOrderVm order)
         {
+            var coupon = _couponService.GetCoupon(couponId);
+
+            if (coupon == null)
+            {
+                throw new BusinessException($"Coupon with id {couponId} doesnt exists");
+            }
+
             var couponUsed = new CouponUsed()
             {
                 Id = 0,
@@ -335,7 +344,6 @@ namespace ECommerceApp.Application.Services
                 OrderId = order.Id
             };
             var couponUsedId = _couponUsedRepository.AddCouponUsed(couponUsed);
-            var coupon = _couponService.GetCoupon(couponId);
             coupon.CouponUsedId = couponUsedId;
             _couponService.UpdateCoupon(coupon);
             order.Cost = (1 - (decimal)coupon.Discount/100) * order.Cost;
@@ -367,6 +375,8 @@ namespace ECommerceApp.Application.Services
 
         public ListForOrderVm GetAllOrdersByCustomerId(int customerId, int pageSize, int pageNo)
         {
+            ValidatePageSizeAndPageNo(pageSize, pageNo);
+
             var orders = _repo.GetAllOrders().Where(o => o.CustomerId == customerId)
                             .Include(c => c.Currency)
                             .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
@@ -402,6 +412,8 @@ namespace ECommerceApp.Application.Services
 
         public ListForOrderVm GetAllOrdersByUserId(string userId, int pageSize, int pageNo)
         {
+            ValidatePageSizeAndPageNo(pageSize, pageNo);
+
             var orders = _repo.GetAllOrders().Where(o => o.UserId == userId)
                             .Include(c => c.Currency)
                             .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
@@ -439,7 +451,9 @@ namespace ECommerceApp.Application.Services
 
         public void AddRefundToOrder(int orderId, int refundId)
         {
-            var order = _repo.GetAll().Include(oi => oi.OrderItems).Where(o => o.Id == orderId).FirstOrDefault();
+            var order = _repo.GetAll()
+                .Include(oi => oi.OrderItems)
+                .Where(o => o.Id == orderId && o.IsPaid && o.IsDelivered).FirstOrDefault();
             
             if (order is null)
             {
@@ -456,7 +470,10 @@ namespace ECommerceApp.Application.Services
 
         public ListForOrderVm GetAllOrdersPaid(int pageSize, int pageNo, string searchString)
         {
+            ValidatePageSizeAndPageNo(pageSize, pageNo);
+
             var orders = _repo.GetAll().Where(o => o.IsPaid == true && o.IsDelivered == false)
+                            .Where(o => o.Number.ToString().StartsWith(searchString))
                             .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider);
 
             var ordersToShow = orders.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
@@ -471,6 +488,19 @@ namespace ECommerceApp.Application.Services
             };
 
             return ordersList;
+        }
+
+        private void ValidatePageSizeAndPageNo(int pageSize, int pageNo)
+        {
+            if (pageSize <= 0)
+            {
+                throw new BusinessException("Page size should be positive and greater than 0");
+            }
+
+            if (pageNo <= 0)
+            {
+                throw new BusinessException("Page number should be positive and greater than 0");
+            }
         }
 
         public void DispatchOrder(int orderId)
