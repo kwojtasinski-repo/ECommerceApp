@@ -5,6 +5,7 @@ using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Order;
+using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Repositories;
@@ -15,6 +16,7 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
 using Xunit;
 
@@ -62,7 +64,7 @@ namespace ECommerceApp.Tests.Services.Order
         [Fact]
         public void given_proper_order_when_dispatching_order_should_throw_an_exception()
         {
-            var order = GetDefaultOrder();
+            var order = CreateDefaultOrder();
             order.IsPaid = true;
             _orderRepository.Setup(o => o.GetAll()).Returns(new List<Domain.Model.Order>() { order }.AsQueryable());
             _orderRepository.Setup(o => o.Update(It.IsAny<Domain.Model.Order>())).Verifiable();
@@ -79,7 +81,7 @@ namespace ECommerceApp.Tests.Services.Order
             var ordersCount = 3;
             var pageSize = 3;
             var pageNo = 1;
-            var orders = GetDefaultOrders(ordersCount, o => new Domain.Model.Order { Id = o.Id, Number = o.Number, Ordered = o.Ordered, Cost = o.Cost, CouponUsedId = o.CouponUsedId, CurrencyId = o.CurrencyId, CustomerId = o.CustomerId, Delivered = o.Delivered, IsDelivered = false, IsPaid = true, PaymentId = o.PaymentId, RefundId = o.RefundId, UserId = o.UserId, OrderItems = o.OrderItems, Currency = o.Currency, Customer = o.Customer, User = o.User });
+            var orders = CreateDefaultOrders(ordersCount, o => new Domain.Model.Order { Id = o.Id, Number = o.Number, Ordered = o.Ordered, Cost = o.Cost, CouponUsedId = o.CouponUsedId, CurrencyId = o.CurrencyId, CustomerId = o.CustomerId, Delivered = o.Delivered, IsDelivered = false, IsPaid = true, PaymentId = o.PaymentId, RefundId = o.RefundId, UserId = o.UserId, OrderItems = o.OrderItems, Currency = o.Currency, Customer = o.Customer, User = o.User });
             _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
             var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
 
@@ -127,7 +129,7 @@ namespace ECommerceApp.Tests.Services.Order
             var pageSize = 3;
             var pageNo = 1;
             var searchString = "253";
-            var orders = GetDefaultOrders(ordersCount, o => new Domain.Model.Order { Id = o.Id, Number = o.Number, Ordered = o.Ordered, Cost = o.Cost, CouponUsedId = o.CouponUsedId, CurrencyId = o.CurrencyId, CustomerId = o.CustomerId, Delivered = o.Delivered, IsDelivered = false, IsPaid = true, PaymentId = o.PaymentId, RefundId = o.RefundId, UserId = o.UserId, OrderItems = o.OrderItems, Currency = o.Currency, Customer = o.Customer, User = o.User });
+            var orders = CreateDefaultOrders(ordersCount, o => new Domain.Model.Order { Id = o.Id, Number = o.Number, Ordered = o.Ordered, Cost = o.Cost, CouponUsedId = o.CouponUsedId, CurrencyId = o.CurrencyId, CustomerId = o.CustomerId, Delivered = o.Delivered, IsDelivered = false, IsPaid = true, PaymentId = o.PaymentId, RefundId = o.RefundId, UserId = o.UserId, OrderItems = o.OrderItems, Currency = o.Currency, Customer = o.Customer, User = o.User });
             orders.First().Number = 25362654;
             _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
             var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
@@ -148,12 +150,12 @@ namespace ECommerceApp.Tests.Services.Order
         {
             int orderId = 1;
             int refundId = 1;
-            var orders = GetDefaultOrders();
+            var orders = CreateDefaultOrders();
             var order = orders.First();
             order.IsPaid = true;
             order.Delivered = DateTime.Now;
             order.IsDelivered = true;
-            order.OrderItems = GetDefaultOrderItems(order);
+            order.OrderItems = CreateDefaultOrderItems(order);
             _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
             _orderRepository.Setup(o => o.Update(It.IsAny<Domain.Model.Order>())).Verifiable();
             var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
@@ -206,7 +208,7 @@ namespace ECommerceApp.Tests.Services.Order
         }
 
         [Fact]
-        public void given_valid_parameters_when_adding_coupon_to_order_should_update_order()
+        public void given_valid_coupon_id_and_order_when_adding_coupon_to_order_should_update_order()
         {
             var order = CreateDefaultNewOrderVm();
             var couponId = 1;
@@ -238,9 +240,102 @@ namespace ECommerceApp.Tests.Services.Order
             action.Should().Throw<BusinessException>().WithMessage(expectedException.Message);
         }
 
+        [Fact]
+        public void given_valid_coupon_id_and_order_id_when_adding_coupon_used_to_order_should_update_order()
+        {
+            var orders = CreateDefaultOrders();
+            var order = orders.First();
+            var orderId = order.Id;
+            var cost = order.Cost;
+            var couponUsedId = 1;
+            var coupon = CreateDefaultCouponVm(null);
+            _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.Update(It.IsAny<Domain.Model.Order>())).Verifiable();
+            _couponService.Setup(cu => cu.GetCouponFirstOrDefault(It.IsAny<Expression<Func<Coupon, bool>>>())).Returns(coupon);
+            var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
+
+            orderService.AddCouponUsedToOrder(orderId, couponUsedId);
+
+            order.Cost.Should().BeLessThan(cost);
+            _orderRepository.Verify(o => o.Update(It.IsAny<Domain.Model.Order>()), Times.Once);
+
+        }
+
+        [Fact]
+        public void given_valid_coupon_id_and_invalid_order_id_when_adding_coupon_used_to_order_should_throw_an_exception()
+        {
+            var orderId = 1;
+            var couponUsedId = 1;
+            var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
+            var expectedException = new BusinessException("Cannot add coupon if order not exists");
+
+            Action action = () => { orderService.AddCouponUsedToOrder(orderId, couponUsedId); };
+
+            action.Should().Throw<BusinessException>().WithMessage(expectedException.Message);
+        }
+
+        [Fact]
+        public void given_valid_coupon_id_and_order_id_for_paid_order_when_adding_coupon_used_to_order_should_throw_an_exception()
+        {
+            var orders = CreateDefaultOrders();
+            var order = orders.First();
+            var orderId = order.Id;
+            order.IsPaid = true;
+            var cost = order.Cost;
+            var couponUsedId = 1;
+            _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.Update(It.IsAny<Domain.Model.Order>())).Verifiable();
+            var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
+            var expectedException = new BusinessException("Cannot add coupon to paid order");
+
+            Action action = () => { orderService.AddCouponUsedToOrder(orderId, couponUsedId); };
+
+            action.Should().Throw<BusinessException>().WithMessage(expectedException.Message);
+
+        }
+
+        [Fact]
+        public void given_invalid_coupon_id_and_order_id_when_adding_coupon_used_to_order_should_update_order()
+        {
+            var orders = CreateDefaultOrders();
+            var order = orders.First();
+            var orderId = order.Id;
+            var cost = order.Cost;
+            var couponUsedId = 1;
+            _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.Update(It.IsAny<Domain.Model.Order>())).Verifiable();
+            var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
+            var expectedException = new BusinessException("Given invalid couponUsedId");
+
+            Action action = () => { orderService.AddCouponUsedToOrder(orderId, couponUsedId); };
+
+            action.Should().Throw<BusinessException>().WithMessage(expectedException.Message);
+
+        }
+
+        [Fact]
+        public void given_valid_order_should_update()
+        {
+            var orderVm = CreateDefaultOrderVm();
+            var cost = orderVm.Cost;
+            var orders = CreateDefaultOrders();
+            var order = orders.First();
+            order.Id = orderVm.Id;
+            var orderItems = CreateDefaultOrderItems(orderVm.OrderItems);
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.GetAllOrderItems()).Returns(orderItems.AsQueryable());
+            _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
+            var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
+
+            orderService.UpdateOrder(orderVm);
+
+            _orderRepository.Verify(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>()), Times.Once);
+            orderVm.Cost.Should().BeGreaterThan(cost);
+        }
+
         #region DataInitial
 
-        private Domain.Model.Order GetDefaultOrder()
+        private Domain.Model.Order CreateDefaultOrder()
         {
             var order = new Domain.Model.Order();
             order.Id = new Random().Next(1, 9999);
@@ -260,13 +355,13 @@ namespace ECommerceApp.Tests.Services.Order
             return order;
         }
 
-        private List<Domain.Model.Order> GetDefaultOrders(int ordersCount = 3, Func<Domain.Model.Order, Domain.Model.Order> selector = null)
+        private List<Domain.Model.Order> CreateDefaultOrders(int ordersCount = 3, Func<Domain.Model.Order, Domain.Model.Order> selector = null)
         {
             var orders = new List<Domain.Model.Order>();
             
             for (int i = 1; i <= ordersCount; i++)
             {
-                var order = GetDefaultOrder();
+                var order = CreateDefaultOrder();
                 order.Id = i;
                 orders.Add(order);
             }
@@ -279,13 +374,13 @@ namespace ECommerceApp.Tests.Services.Order
             return orders;
         }
 
-        private List<OrderItem> GetDefaultOrderItems(Domain.Model.Order order, int orderItemCount = 3)
+        private List<OrderItem> CreateDefaultOrderItems(Domain.Model.Order order, int orderItemCount = 3)
         {
             var orderItems = new List<OrderItem>();
 
             for (int i = 1; i <= orderItemCount; i++)
             {
-                var orderItem = GetDefaultOrderItem(order);
+                var orderItem = CreateDefaultOrderItem(order);
                 orderItem.Id = i;
                 orderItems.Add(orderItem);
             }
@@ -293,7 +388,7 @@ namespace ECommerceApp.Tests.Services.Order
             return orderItems;
         }
 
-        private OrderItem GetDefaultOrderItem(Domain.Model.Order order)
+        private OrderItem CreateDefaultOrderItem(Domain.Model.Order order)
         {
             var orderItem = new OrderItem();
             orderItem.Id = 1;
@@ -303,7 +398,7 @@ namespace ECommerceApp.Tests.Services.Order
             orderItem.Order = order;
             var itemId = new Random().Next(1, 9999);
             orderItem.ItemId = itemId;
-            orderItem.Item = new Item { Id = itemId };
+            orderItem.Item = new Item { Id = itemId, Cost = decimal.One };
             orderItem.ItemOrderQuantity = 1;
             return orderItem;
         }
@@ -340,6 +435,7 @@ namespace ECommerceApp.Tests.Services.Order
             {
                 Id = couponId,
                 Code = "AB" + new Random().Next(1, 9999),
+                CouponUsedId = 1,
                 Description = "",
                 Discount = new Random().Next(1, 20),
                 CouponTypeId = type.Id
@@ -355,6 +451,84 @@ namespace ECommerceApp.Tests.Services.Order
                 Type = "Coupon"
             };
             return couponType;
+        }
+
+        private Coupon CreateDefaultCoupon()
+        {
+            var type = CreateDefaultCouponType();
+
+            var coupon = new Coupon()
+            {
+                Id = new Random().Next(1, 9999),
+                Code = "ABVC",
+                CouponUsedId = 1,
+                CouponUsed = new CouponUsed() { Id = 1 },
+                Discount = new Random().Next(1, 20),
+                Type = type,
+                CouponTypeId = type.Id
+            };
+
+            return coupon;
+        }
+
+        private OrderVm CreateDefaultOrderVm()
+        {
+            OrderVm orderVm = new OrderVm()
+            { 
+                Id = new Random().Next(1, 9999),
+                Cost = Decimal.One,
+                IsPaid = false,
+                IsDelivered = false,
+                CurrencyId = 1,
+                Ordered = DateTime.Now,
+                Number = new Random().Next(1, 200),
+                UserId = Guid.NewGuid().ToString(),
+                CustomerId = new Random().Next(1, 200)
+            };
+            orderVm.OrderItems = CreateDefaultOrderItemVm(orderVm);
+            return orderVm;
+        }
+
+        private List<OrderItemVm> CreateDefaultOrderItemVm(OrderVm orderVm, int count = 3)
+        {
+            var orderItems = new List<OrderItemVm>();
+            
+            for (int i = 1; i <= count; i++)
+            {
+                var orderItem = new OrderItemVm()
+                {
+                    Id = new Random().Next(1, 999),
+                    ItemId = new Random().Next(1, 999),
+                    ItemOrderQuantity = new Random().Next(1, 10),
+                    UserId = orderVm.UserId,
+                    OrderId = orderVm.Id
+                };
+                orderItems.Add(orderItem);
+            }
+
+            return orderItems;
+        }
+
+        private List<OrderItem> CreateDefaultOrderItems(List<OrderItemVm> orderItemsIn)
+        {
+            var orderItems = new List<OrderItem>();
+
+            foreach(var orderItem in orderItemsIn)
+            {
+                var orderItemNew = new OrderItem()
+                {
+                    Id = orderItem.Id,
+                    ItemId = orderItem.ItemId,
+                    Item = new Item() { Id = orderItem.ItemId, Cost = decimal.One },
+                    UserId = orderItem.UserId,
+                    User = new Microsoft.AspNetCore.Identity.IdentityUser { Id = orderItem.UserId },
+                    OrderId = orderItem.OrderId,
+                    ItemOrderQuantity = orderItem.ItemOrderQuantity
+                };
+                orderItems.Add(orderItemNew);
+            }
+
+            return orderItems;
         }
 
         #endregion

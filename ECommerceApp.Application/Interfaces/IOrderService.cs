@@ -21,7 +21,7 @@ namespace ECommerceApp.Application.Interfaces
         ListForOrderVm GetAllOrders(int pageSize, int pageNo, string searchString);
         OrderDetailsVm GetOrderDetail(int id);
         List<OrderForListVm> GetAllOrders();
-        void AddCouponToOrder(int orderId, int couponUsedId);
+        void AddCouponUsedToOrder(int orderId, int couponUsedId);
         void DeleteRefundFromOrder(int id);
         void DeleteCouponUsedFromOrder(int orderId, int couponUsedId);
         int AddCouponToOrder(int couponId, NewOrderVm order);

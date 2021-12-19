@@ -293,7 +293,7 @@ namespace ECommerceApp.Application.Services
             }
         }
 
-        public void AddCouponToOrder(int orderId, int couponUsedId)
+        public void AddCouponUsedToOrder(int orderId, int couponUsedId)
         {
             var order = _repo.GetAll().Include(oi => oi.OrderItems).Where(o => o.Id == orderId).FirstOrDefault();
 
