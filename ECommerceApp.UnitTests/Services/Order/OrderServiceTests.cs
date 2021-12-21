@@ -4,6 +4,7 @@ using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Coupon;
+using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
@@ -322,8 +323,8 @@ namespace ECommerceApp.Tests.Services.Order
             var order = orders.First();
             order.Id = orderVm.Id;
             var orderItems = CreateDefaultOrderItems(orderVm.OrderItems);
+            orderItems.ForEach(oi => order.OrderItems.Add(oi));
             _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
-            _orderRepository.Setup(o => o.GetAllOrderItems()).Returns(orderItems.AsQueryable());
             _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
             var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
 
@@ -331,6 +332,63 @@ namespace ECommerceApp.Tests.Services.Order
 
             _orderRepository.Verify(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>()), Times.Once);
             orderVm.Cost.Should().BeGreaterThan(cost);
+        }
+
+        [Fact]
+        public void given_invalid_order_should_throw_an_exception() 
+        {
+            var orderVm = new OrderVm();
+            var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
+            var expectedException = new BusinessException("Items shouldnt be empty");
+
+            Action action = () => { orderService.UpdateOrder(orderVm); };
+
+            action.Should().Throw<BusinessException>().WithMessage(expectedException.Message);
+        }
+
+        [Fact]
+        public void given_valid_order_with_new_order_items_should_update()
+        {
+            var orderVm = CreateDefaultOrderVm();
+            orderVm.OrderItems.ForEach(oi => oi.Id = 0);
+            var cost = orderVm.Cost;
+            var orders = CreateDefaultOrders();
+            var order = orders.First();
+            order.Id = orderVm.Id;
+            var orderItems = CreateDefaultOrderItems(orderVm.OrderItems);
+            var items = orderItems.Select(oi => _mapper.Map<NewItemVm>(oi.Item));
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.GetAllOrderItems()).Returns(orderItems.AsQueryable());
+            _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
+            _itemService.Setup(o => o.GetItems()).Returns(items.AsQueryable());
+            _orderItemService.Setup(o => o.AddOrderItem(It.IsAny<OrderItemVm>())).Verifiable();
+            var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
+
+            orderService.UpdateOrder(orderVm);
+
+            _orderRepository.Verify(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>()), Times.Once);
+            orderVm.Cost.Should().BeGreaterThan(cost);
+            _orderItemService.Verify(oi => oi.AddOrderItem(It.IsAny<OrderItemVm>()), Times.Exactly(orderItems.Count));
+        }
+
+        [Fact]
+        public void given_invalid_order_with_one_item_not_ordered_by_user_should_update()
+        {
+            var orderVm = CreateDefaultOrderVm();
+            orderVm.OrderItems.ForEach(oi => oi.Id = 0);
+            var cost = orderVm.Cost;
+            var orders = CreateDefaultOrders();
+            var order = orders.First();
+            order.Id = orderVm.Id;
+            orderVm.OrderItems.ForEach(oi => order.OrderItems.Add(_mapper.Map<OrderItem>(oi)));
+            var orderItem = orders.First().OrderItems.First();
+            orderItem.UserId = "ABC";
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
+            var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
+
+            Action action = () => { orderService.UpdateOrder(orderVm); };
+
+            var exception = Assert.Throws<BusinessException>(action);
         }
 
         #region DataInitial
@@ -530,7 +588,7 @@ namespace ECommerceApp.Tests.Services.Order
 
             return orderItems;
         }
-
+        
         #endregion
     }
 }
