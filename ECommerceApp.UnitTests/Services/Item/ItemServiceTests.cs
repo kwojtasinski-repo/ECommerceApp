@@ -18,50 +18,42 @@ using ECommerceApp.Infrastructure.Repositories;
 
 namespace ECommerceApp.Tests.Services.ItemService
 {
-    public class ItemServiceTests : BaseServiceTest<ItemVm, IItemRepository, ItemRepository, Application.Services.ItemService, Item>
+    public class ItemServiceTests
     {
-        [Fact]
-        public void CanReturnItem()
+        private readonly IMapper _mapper;
+        private readonly Mock<IItemRepository> _itemRepository;
+
+        public ItemServiceTests()
         {
-            var id = 1;
-
-            var coupon = _service.Get(id);
-
-            coupon.Should().NotBeNull();
-            coupon.Should().BeOfType(typeof(ItemVm));
-        }
-
-        [Fact]
-        public void ShouldAddItem()
-        {
-            var item = new ItemVm
+            var configurationProvider = new MapperConfiguration(cfg =>
             {
-                Id = 0,
-                BrandId = 1,
-                Cost = new decimal(1000),
-                Description = "Opis",
-                Name = "Testowy",
-                Quantity = 10,
-                TypeId = 1,
-                Warranty = "123",
-                ItemTags = new List<ItemTagVm> { new ItemTagVm { TagId = 1 }, new ItemTagVm { TagId = 2 } }
-            };
+                cfg.AddProfile<MappingProfile>();
+            });
 
-            var id = _service.Add(item);
-            var itemFromDb = _context.Items.Where(i => i.Id == id).Include(it => it.ItemTags).AsNoTracking().FirstOrDefault();
-
-            itemFromDb.Should().NotBeNull();
-            itemFromDb.ItemTags.Count.Should().Be(item.ItemTags.Count);
+            _mapper = configurationProvider.CreateMapper();
+            _itemRepository = new Mock<IItemRepository>();
         }
 
         [Fact]
-        public void ShouldntAddItem()
+        public void given_valid_item_should_add()
         {
-            var item = new ItemVm { Id = 1000 };
+            var item = new ItemVm { Id = 0, Cost = decimal.One, BrandId = 1, CurrencyId = 1, Name = "Item 1", Quantity = 10, TypeId = 1, Warranty = "100", Description = "ABC" };
+            var itemService = new Application.Services.ItemService(_itemRepository.Object, _mapper);
 
-            Action act = () => _service.Add(item);
+            itemService.Add(item);
 
-            act.Should().ThrowExactly<BusinessException>().WithMessage("When adding object Id should be equals 0");
+            _itemRepository.Verify(i => i.Add(It.IsAny<Item>()), Times.Once);
+        }
+
+        [Fact]
+        public void given_invalid_item_should_throw_an_exception()
+        {
+            var item = new ItemVm { Id = 10 };
+            var itemService = new Application.Services.ItemService(_itemRepository.Object, _mapper);
+
+            Action action = () => { itemService.Add(item); };
+
+            Assert.Throws<BusinessException>(action);
         }
     }
 }
