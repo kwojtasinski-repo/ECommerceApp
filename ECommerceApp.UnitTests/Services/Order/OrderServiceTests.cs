@@ -391,6 +391,98 @@ namespace ECommerceApp.Tests.Services.Order
             var exception = Assert.Throws<BusinessException>(action);
         }
 
+        [Fact]
+        public void given_valid_order_should_delete_coupon_from_order()
+        {
+            var orders = CreateDefaultOrders();
+            var order = orders.First();
+            int orderId = order.Id;
+            order.IsPaid = false;
+            order.OrderItems = CreateDefaultOrderItems(order);
+            var cost = order.Cost;
+            var coupon = CreateDefaultCoupon();
+            int couponUsedId = coupon.CouponUsedId.Value;
+            order.CouponUsedId = couponUsedId;
+            _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
+            _couponService.Setup(c => c.GetCouponFirstOrDefault(It.IsAny<Expression<Func<Coupon, bool>>>())).Returns(_mapper.Map<CouponVm>(coupon));
+            var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
+
+            orderService.DeleteCouponUsedFromOrder(orderId, couponUsedId);
+
+            order.Cost.Should().BeGreaterThan(cost);
+        }
+
+        [Fact]
+        public void given_invalid_order_when_deleting_coupon_from_order_should_throw_an_exception()
+        {
+            int orderId = 1;
+            int couponUsedId = 1;
+            var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
+
+            Action action = () => { orderService.DeleteCouponUsedFromOrder(orderId, couponUsedId); };
+
+            var exception = Assert.Throws<BusinessException>(action);
+        }
+
+        [Fact]
+        public void given_invalid_coupon_when_deleting_coupon_from_order_should_throw_an_exception()
+        {
+            var orders = CreateDefaultOrders();
+            var order = orders.First();
+            int orderId = order.Id;
+            order.IsPaid = false;
+            order.OrderItems = CreateDefaultOrderItems(order);
+            var couponUsedId = 1;
+            _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
+            var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
+
+            Action action = () => { orderService.DeleteCouponUsedFromOrder(orderId, couponUsedId); };
+
+            var exception = Assert.Throws<BusinessException>(action);
+        }
+
+
+        [Fact]
+        public void given_paid_order_when_deleting_coupon_from_order_should_throw_an_exception()
+        {
+            var orders = CreateDefaultOrders();
+            var order = orders.First();
+            int orderId = order.Id;
+            order.IsPaid = true;
+            order.OrderItems = CreateDefaultOrderItems(order);
+            var couponUsedId = 1;
+            _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
+            var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
+
+            Action action = () => { orderService.DeleteCouponUsedFromOrder(orderId, couponUsedId); };
+
+            var exception = Assert.Throws<BusinessException>(action);
+        }
+
+        [Fact]
+        public void given_valid_order_should_add_order()
+        {
+            var order = CreateDefaultOrderVm();
+            order.Id = 0;
+            _orderRepository.Setup(o => o.AddOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
+            var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
+
+            orderService.AddOrder(order);
+
+            _orderRepository.Verify(o => o.AddOrder(It.IsAny<Domain.Model.Order>()), Times.Once);
+        }
+
+        [Fact]
+        public void given_invalid_order_should_add_order()
+        {
+            var order = CreateDefaultOrderVm();
+            var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
+
+            Action action = () => { orderService.AddOrder(order); };
+
+            var exception = Assert.Throws<BusinessException>(action);
+        }
+
         #region DataInitial
 
         private Domain.Model.Order CreateDefaultOrder()
