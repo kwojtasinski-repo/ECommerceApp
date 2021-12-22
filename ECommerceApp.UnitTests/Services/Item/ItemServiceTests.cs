@@ -16,7 +16,7 @@ using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Tests.Common;
 using ECommerceApp.Infrastructure.Repositories;
 
-namespace ECommerceApp.Tests.Services.ItemService
+namespace ECommerceApp.Tests.Services.Item
 {
     public class ItemServiceTests
     {
@@ -42,7 +42,7 @@ namespace ECommerceApp.Tests.Services.ItemService
 
             itemService.Add(item);
 
-            _itemRepository.Verify(i => i.Add(It.IsAny<Item>()), Times.Once);
+            _itemRepository.Verify(i => i.Add(It.IsAny<Domain.Model.Item>()), Times.Once);
         }
 
         [Fact]

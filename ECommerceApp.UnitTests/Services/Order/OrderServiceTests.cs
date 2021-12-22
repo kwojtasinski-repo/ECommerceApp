@@ -252,7 +252,7 @@ namespace ECommerceApp.Tests.Services.Order
             var coupon = CreateDefaultCouponVm(null);
             _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
             _orderRepository.Setup(o => o.Update(It.IsAny<Domain.Model.Order>())).Verifiable();
-            _couponService.Setup(cu => cu.GetCouponFirstOrDefault(It.IsAny<Expression<Func<Coupon, bool>>>())).Returns(coupon);
+            _couponService.Setup(cu => cu.GetCouponFirstOrDefault(It.IsAny<Expression<Func<Domain.Model.Coupon, bool>>>())).Returns(coupon);
             var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
 
             orderService.AddCouponUsedToOrder(orderId, couponUsedId);
@@ -404,7 +404,7 @@ namespace ECommerceApp.Tests.Services.Order
             int couponUsedId = coupon.CouponUsedId.Value;
             order.CouponUsedId = couponUsedId;
             _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
-            _couponService.Setup(c => c.GetCouponFirstOrDefault(It.IsAny<Expression<Func<Coupon, bool>>>())).Returns(_mapper.Map<CouponVm>(coupon));
+            _couponService.Setup(c => c.GetCouponFirstOrDefault(It.IsAny<Expression<Func<Domain.Model.Coupon, bool>>>())).Returns(_mapper.Map<CouponVm>(coupon));
             var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
 
             orderService.DeleteCouponUsedFromOrder(orderId, couponUsedId);
@@ -548,7 +548,7 @@ namespace ECommerceApp.Tests.Services.Order
             orderItem.Order = order;
             var itemId = new Random().Next(1, 9999);
             orderItem.ItemId = itemId;
-            orderItem.Item = new Item { Id = itemId, Cost = decimal.One };
+            orderItem.Item = new Domain.Model.Item { Id = itemId, Cost = decimal.One };
             orderItem.ItemOrderQuantity = 1;
             return orderItem;
         }
@@ -603,11 +603,11 @@ namespace ECommerceApp.Tests.Services.Order
             return couponType;
         }
 
-        private Coupon CreateDefaultCoupon()
+        private Domain.Model.Coupon CreateDefaultCoupon()
         {
             var type = CreateDefaultCouponType();
 
-            var coupon = new Coupon()
+            var coupon = new Domain.Model.Coupon()
             {
                 Id = new Random().Next(1, 9999),
                 Code = "ABVC",
@@ -669,7 +669,7 @@ namespace ECommerceApp.Tests.Services.Order
                 {
                     Id = orderItem.Id,
                     ItemId = orderItem.ItemId,
-                    Item = new Item() { Id = orderItem.ItemId, Cost = decimal.One },
+                    Item = new Domain.Model.Item() { Id = orderItem.ItemId, Cost = decimal.One },
                     UserId = orderItem.UserId,
                     User = new Microsoft.AspNetCore.Identity.IdentityUser { Id = orderItem.UserId },
                     OrderId = orderItem.OrderId,
