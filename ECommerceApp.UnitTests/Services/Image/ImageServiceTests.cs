@@ -7,7 +7,6 @@ using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Image;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Infrastructure.Repositories;
-using ECommerceApp.Tests.Common;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Moq;

@@ -6,7 +6,6 @@ using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Repositories;
-using ECommerceApp.Tests.Common;
 using FluentAssertions;
 using Moq;
 using System;
