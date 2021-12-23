@@ -22,14 +22,19 @@ namespace ECommerceApp.Application.Services
             _customerService = customerService;
         }
 
-        public int AddAddress(AddressVm AddressVm)
+        public int AddAddress(AddressVm addressVm)
         {
-            if (AddressVm.Id != 0)
+            if (addressVm.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
             }
 
-            var address = _mapper.Map<Address>(AddressVm);
+            if(addressVm.CustomerId <= 0)
+            {
+                throw new BusinessException("Given ivalid customer id");
+            }
+
+            var address = _mapper.Map<Address>(addressVm);
             var id = _repo.AddAddress(address);
             return id;
         }
@@ -52,16 +57,14 @@ namespace ECommerceApp.Application.Services
                 }
             }
 
-            if (customerIdExists)
+            if (!customerIdExists)
             {
-                var address = _mapper.Map<Address>(model);
-                var id = _repo.AddAddress(address);
-                return id;
+                throw new BusinessException("Cannot add address check your customer id");
             }
-            else
-            {
-                return 0;
-            }
+
+            var address = _mapper.Map<Address>(model);
+            var id = _repo.AddAddress(address);
+            return id;
         }
 
         public bool AddressExists(int id)

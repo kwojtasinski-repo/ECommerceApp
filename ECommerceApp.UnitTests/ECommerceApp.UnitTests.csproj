@@ -37,8 +37,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Services\Address\" />
-    <Folder Include="Services\Brand\" />
     <Folder Include="Services\ContactDetail\" />
     <Folder Include="Services\ContactDetailType\" />
     <Folder Include="Services\CouponType\" />
