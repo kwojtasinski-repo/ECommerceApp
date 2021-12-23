@@ -37,7 +37,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Services\Currency\" />
     <Folder Include="Services\User\" />
     <Folder Include="Services\Type\" />
     <Folder Include="Services\Tag\" />

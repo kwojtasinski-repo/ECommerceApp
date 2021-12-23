@@ -40,6 +40,11 @@ namespace ECommerceApp.Application.Abstracts
 
         public virtual void Delete(T vm)
         {
+            if (vm is null)
+            {
+                throw new BusinessException("Object shouldnt be null");
+            }
+
             var entity = _mapper.Map<E>(vm);
             _repo.Delete(entity);
         }
@@ -62,6 +67,11 @@ namespace ECommerceApp.Application.Abstracts
 
         public virtual void Update(T vm)
         {
+            if (vm is null)
+            {
+                throw new BusinessException("Object shouldnt be null");
+            }
+
             var entity = _mapper.Map<E>(vm);
             _repo.Update(entity);
         }

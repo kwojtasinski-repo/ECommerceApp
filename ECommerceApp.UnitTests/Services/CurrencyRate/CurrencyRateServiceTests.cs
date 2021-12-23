@@ -43,7 +43,7 @@ namespace ECommerceApp.UnitTests.Services.CurrencyRate
             int currencyId = 1;
             var date = DateTime.Now;
             var currency = GetDefaultCurrency(currencyId);
-            _currencyRepository.Setup(c => c.GetAll()).Returns(new List<Currency> { currency }.AsQueryable());
+            _currencyRepository.Setup(c => c.GetAll()).Returns(new List<Domain.Model.Currency> { currency }.AsQueryable());
             _currencyRateRepository.Setup(c => c.GetAll(It.IsAny<Expression<Func<Domain.Model.CurrencyRate, bool>>>())).Returns(new List<Domain.Model.CurrencyRate>());
             _currencyRateRepository.Setup(c => c.Add(It.IsAny<Domain.Model.CurrencyRate>())).Verifiable();
             var currencyRateService = new CurrencyRateService(_currencyRateRepository.Object, _currencyRepository.Object, _mapper, _NBPClient.Object);
@@ -62,7 +62,7 @@ namespace ECommerceApp.UnitTests.Services.CurrencyRate
             var code = "EUR";
             var date = DateTime.Now;
             var currency = GetCurrency(currencyId, code);
-            _currencyRepository.Setup(c => c.GetAll()).Returns(new List<Currency> { currency }.AsQueryable());
+            _currencyRepository.Setup(c => c.GetAll()).Returns(new List<Domain.Model.Currency> { currency }.AsQueryable());
             _currencyRateRepository.Setup(c => c.GetAll(It.IsAny<Expression<Func<Domain.Model.CurrencyRate, bool>>>())).Returns(new List<Domain.Model.CurrencyRate>());
             _currencyRateRepository.Setup(c => c.Add(It.IsAny<Domain.Model.CurrencyRate>())).Verifiable();
             _NBPClient.Setup(n => n.GetCurrencyRateOnDate(code, date.Date, CancellationToken.None)).ReturnsAsync(GetDefaultContentMessage());
@@ -95,7 +95,7 @@ namespace ECommerceApp.UnitTests.Services.CurrencyRate
             int currencyId = 10;
             var date = DateTime.Now;
             var currency = GetDefaultCurrency(currencyId);
-            _currencyRepository.Setup(c => c.GetAll()).Returns(new List<Currency> { currency }.AsQueryable());
+            _currencyRepository.Setup(c => c.GetAll()).Returns(new List<Domain.Model.Currency> { currency }.AsQueryable());
             _currencyRateRepository.Setup(c => c.GetAll(It.IsAny<Expression<Func<Domain.Model.CurrencyRate, bool>>>())).Returns(new List<Domain.Model.CurrencyRate>());
             var currencyRateService = new CurrencyRateService(_currencyRateRepository.Object, _currencyRepository.Object, _mapper, _NBPClient.Object);
             var expectedException = new BusinessException($"Check currency code {currency.Code} if is valid");
@@ -137,7 +137,7 @@ namespace ECommerceApp.UnitTests.Services.CurrencyRate
             int currencyId = 1;
             var date = DateTime.Now;
             var currency = GetDefaultCurrency(currencyId);
-            _currencyRepository.Setup(c => c.GetAll()).Returns(new List<Currency> { currency }.AsQueryable());
+            _currencyRepository.Setup(c => c.GetAll()).Returns(new List<Domain.Model.Currency> { currency }.AsQueryable());
             _currencyRateRepository.Setup(c => c.GetAll(It.IsAny<Expression<Func<Domain.Model.CurrencyRate, bool>>>())).Returns(new List<Domain.Model.CurrencyRate>());
             _currencyRateRepository.Setup(c => c.Add(It.IsAny<Domain.Model.CurrencyRate>())).Verifiable();
             var currencyRateService = new CurrencyRateService(_currencyRateRepository.Object, _currencyRepository.Object, _mapper, _NBPClient.Object);
@@ -156,7 +156,7 @@ namespace ECommerceApp.UnitTests.Services.CurrencyRate
             var code = "EUR";
             var date = DateTime.Now;
             var currency = GetCurrency(currencyId, code);
-            _currencyRepository.Setup(c => c.GetAll()).Returns(new List<Currency> { currency }.AsQueryable());
+            _currencyRepository.Setup(c => c.GetAll()).Returns(new List<Domain.Model.Currency> { currency }.AsQueryable());
             _currencyRateRepository.Setup(c => c.GetAll(It.IsAny<Expression<Func<Domain.Model.CurrencyRate, bool>>>())).Returns(new List<Domain.Model.CurrencyRate>());
             _currencyRateRepository.Setup(c => c.Add(It.IsAny<Domain.Model.CurrencyRate>())).Verifiable();
             _NBPClient.Setup(n => n.GetCurrencyRateOnDate(code, date.Date, CancellationToken.None)).ReturnsAsync(GetDefaultContentMessage());
@@ -175,7 +175,7 @@ namespace ECommerceApp.UnitTests.Services.CurrencyRate
             int currencyId = 10;
             var date = DateTime.Now;
             var currency = GetDefaultCurrency(currencyId);
-            _currencyRepository.Setup(c => c.GetAll()).Returns(new List<Currency> { currency }.AsQueryable());
+            _currencyRepository.Setup(c => c.GetAll()).Returns(new List<Domain.Model.Currency> { currency }.AsQueryable());
             _currencyRateRepository.Setup(c => c.GetAll(It.IsAny<Expression<Func<Domain.Model.CurrencyRate, bool>>>())).Returns(new List<Domain.Model.CurrencyRate>());
             var currencyRateService = new CurrencyRateService(_currencyRateRepository.Object, _currencyRepository.Object, _mapper, _NBPClient.Object);
             var expectedException = new BusinessException($"Check currency code {currency.Code} if is valid");
@@ -185,18 +185,18 @@ namespace ECommerceApp.UnitTests.Services.CurrencyRate
             action.Should().Throw<BusinessException>().WithMessage(expectedException.Message);
         }
 
-        private Currency GetDefaultCurrency(int currencyId)
+        private Domain.Model.Currency GetDefaultCurrency(int currencyId)
         {
-            var currency = new Currency();
+            var currency = new Domain.Model.Currency();
             currency.Id = currencyId;
             currency.Code = "PLN";
             currency.Description = "Polski złoty";
             return currency;
         }
 
-        private Currency GetCurrency(int currencyId, string code)
+        private Domain.Model.Currency GetCurrency(int currencyId, string code)
         {
-            var currency = new Currency();
+            var currency = new Domain.Model.Currency();
             currency.Id = currencyId;
             currency.Code = code.ToUpper();
             currency.Description = "";
