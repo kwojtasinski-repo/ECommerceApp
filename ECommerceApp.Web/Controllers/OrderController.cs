@@ -283,7 +283,7 @@ namespace ECommerceApp.Web.Controllers
 
             if (model.AcceptedRefund)
             {
-                model.ChangedRefund = _refundService.CheckEnteredRefund(model.ReasonRefund);
+                model.ChangedRefund = _refundService.SameReasonNotExists(model.ReasonRefund);
                 if(model.ChangedRefund)
                 {
                     model.RefundDate = System.DateTime.Now;

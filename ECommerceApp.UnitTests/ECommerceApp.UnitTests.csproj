@@ -40,7 +40,6 @@
     <Folder Include="Services\User\" />
     <Folder Include="Services\Type\" />
     <Folder Include="Services\Tag\" />
-    <Folder Include="Services\Refund\" />
   </ItemGroup>
 
 </Project>

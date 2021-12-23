@@ -123,11 +123,16 @@ namespace ECommerceApp.Application.Services
             }
         }
 
-        public bool CheckEnteredRefund(string reasonRefund)
+        public bool SameReasonNotExists(string reasonRefund)
         {
-            var refunds = _repo.GetAllRefunds().ToList();
-            var refund = refunds.FirstOrDefault(r => String.Equals(r.Reason, reasonRefund,
-                   StringComparison.OrdinalIgnoreCase));
+            if (string.IsNullOrWhiteSpace(reasonRefund))
+            {
+                throw new BusinessException("Check your reason if is not null");
+            }
+
+            var refunds = _repo.GetAllRefunds();
+            var refund = refunds.Where(r => String.Equals(r.Reason, reasonRefund,
+                   StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
             if (refund != null)
             {
                 return false;
