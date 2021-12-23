@@ -38,7 +38,6 @@
 
   <ItemGroup>
     <Folder Include="Services\User\" />
-    <Folder Include="Services\Type\" />
   </ItemGroup>
 
 </Project>
