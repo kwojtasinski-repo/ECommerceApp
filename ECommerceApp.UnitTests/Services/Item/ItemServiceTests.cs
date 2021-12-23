@@ -55,5 +55,28 @@ namespace ECommerceApp.Tests.Services.Item
 
             Assert.Throws<BusinessException>(action);
         }
+
+        [Fact]
+        public void given_valid_item_id_should_exists()
+        {
+            int id = 1;
+            _itemRepository.Setup(i => i.GetItemById(id)).Returns(new Domain.Model.Item { Id = id });
+            var itemService = new Application.Services.ItemService(_itemRepository.Object, _mapper);
+
+            var exists = itemService.ItemExists(id);
+
+            exists.Should().BeTrue();
+        }
+
+        [Fact]
+        public void given_invalid_item_id_shouldnt_exists()
+        {
+            int id = 1;
+            var itemService = new Application.Services.ItemService(_itemRepository.Object, _mapper);
+
+            var exists = itemService.ItemExists(id);
+
+            exists.Should().BeFalse();
+        }
     }
 }
