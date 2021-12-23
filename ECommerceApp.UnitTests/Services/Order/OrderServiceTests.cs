@@ -498,9 +498,9 @@ namespace ECommerceApp.Tests.Services.Order
             order.CustomerId = 1;
             order.CurrencyId = 1;
             order.UserId = Guid.NewGuid().ToString();
-            order.OrderItems = new List<OrderItem>();
-            order.Currency = new Currency() { Id = 1 };
-            order.Customer = new Customer() { Id = 1 };
+            order.OrderItems = new List<Domain.Model.OrderItem>();
+            order.Currency = new Domain.Model.Currency() { Id = 1 };
+            order.Customer = new Domain.Model.Customer() { Id = 1 };
             order.User = new Microsoft.AspNetCore.Identity.IdentityUser { Id = order.UserId };
             return order;
         }
