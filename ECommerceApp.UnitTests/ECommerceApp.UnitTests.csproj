@@ -42,7 +42,6 @@
     <Folder Include="Services\Tag\" />
     <Folder Include="Services\Refund\" />
     <Folder Include="Services\Payment\" />
-    <Folder Include="Services\OrderItem\" />
   </ItemGroup>
 
 </Project>

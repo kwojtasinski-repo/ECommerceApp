@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
@@ -31,9 +32,13 @@ namespace ECommerceApp.Application.Services
                 orderItemExist.ItemOrderQuantity += 1;
                 _repo.UpdateOrderItem(orderItemExist);
             }
-            else
+            else if (model.Id == 0)
             {
                 id = _repo.AddOrderItem(orderItem);
+            }
+            else
+            {
+                throw new BusinessException("Given invalid orderItem");
             }
             return id;
         }
@@ -51,33 +56,21 @@ namespace ECommerceApp.Application.Services
 
         public OrderItemDetailsVm GetOrderItemDetails(int id)
         {
-            var orderItem = _repo.GetAll().Include(i => i.Item).Where(oi => oi.Id == id).FirstOrDefault();
-            if (orderItem != null)
-            {
-                _repo.DetachEntity(orderItem);
-            }
+            var orderItem = _repo.GetAll().Include(i => i.Item).Where(oi => oi.Id == id).AsNoTracking().FirstOrDefault();
             var orderItemVm = _mapper.Map<OrderItemDetailsVm>(orderItem);
             return orderItemVm;
         }
 
         public IEnumerable<OrderItemVm> GetOrderItems(Expression<Func<OrderItem, bool>> expression)
         {
-            var orderItems = _repo.GetAll().Where(expression).ToList();
-            if (orderItems.Count > 0)
-            {
-                _repo.DetachEntity(orderItems);
-            }
+            var orderItems = _repo.GetAll().Where(expression).AsNoTracking().ToList();
             var orderItemsToShow = _mapper.Map<List<OrderItemVm>>(orderItems);
             return orderItemsToShow;
         }
 
         public IEnumerable<NewOrderItemVm> GetOrderItemsForRealization(Expression<Func<OrderItem, bool>> expression)
         {
-            var orderItems = _repo.GetAll().Include(i => i.Item).Where(expression).ToList();
-            if (orderItems.Count > 0)
-            {
-                _repo.DetachEntity(orderItems);
-            }
+            var orderItems = _repo.GetAll().Include(i => i.Item).Where(expression).AsNoTracking().ToList();
             var orderItemsToShow = _mapper.Map<List<NewOrderItemVm>>(orderItems);
             return orderItemsToShow;
         }
@@ -104,13 +97,8 @@ namespace ECommerceApp.Application.Services
 
         public bool OrderItemExists(int id)
         {
-            var orderItem = _repo.GetAll().Where(oi => oi.Id == id).FirstOrDefault();
+            var orderItem = _repo.GetAll().Where(oi => oi.Id == id).AsNoTracking().FirstOrDefault();
             var exists = orderItem != null;
-
-            if (exists)
-            {
-                _repo.DetachEntity(orderItem);
-            }
 
             return exists;
         }
