@@ -39,7 +39,6 @@
   <ItemGroup>
     <Folder Include="Services\User\" />
     <Folder Include="Services\Type\" />
-    <Folder Include="Services\Tag\" />
   </ItemGroup>
 
 </Project>
