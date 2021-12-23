@@ -99,7 +99,7 @@ namespace ECommerceApp.Tests.Services.Coupon
 
             Action act = () => couponService.UpdateCoupon(coupon);
 
-            act.Should().ThrowExactly<BusinessException>().WithMessage("Given invalid coupon");
+            act.Should().ThrowExactly<BusinessException>().WithMessage("Discount should be inclusive between 1 and 99");
         }
 
         [Fact]
