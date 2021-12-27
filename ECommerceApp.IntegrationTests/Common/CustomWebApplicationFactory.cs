@@ -19,21 +19,23 @@ namespace ECommerceApp.IntegrationTests.Common
             {
                 builder.ConfigureServices(services =>
                 {
-                    var servicesProvider = new ServiceCollection()
-                        .AddEntityFrameworkInMemoryDatabase()
-                        .BuildServiceProvider();
-
+                    // remove implementation of infrastructure dbContext
                     var contextDb = services.FirstOrDefault(descriptor => descriptor.ServiceType == typeof(Context));
                     if (contextDb != null)
                     {
                         services.Remove(contextDb);
                         var options = services.Where(r => (r.ServiceType == typeof(DbContextOptions))
-                          || (r.ServiceType.IsGenericType && r.ServiceType.GetGenericTypeDefinition() == typeof(DbContextOptions<>))).ToArray();
+                          || (r.ServiceType.IsGenericType && r.ServiceType.GetGenericTypeDefinition() == typeof(DbContextOptions<>))).ToList();
+                        
                         foreach (var option in options)
                         {
                             services.Remove(option);
                         }
                     }
+
+                    var servicesProvider = new ServiceCollection()
+                        .AddEntityFrameworkInMemoryDatabase()
+                        .BuildServiceProvider();
 
                     services.AddDbContext<Context>(options =>
                     {
