@@ -4,7 +4,7 @@ using Shouldly;
 using System;
 using Xunit;
 
-namespace ECommerceApp.IntegrationTests
+namespace ECommerceApp.IntegrationTests.Services
 {
     public class CurrencyServiceTests : BaseTest<ICurrencyService>
     {
