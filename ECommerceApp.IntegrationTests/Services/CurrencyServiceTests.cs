@@ -1,4 +1,6 @@
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.ViewModels.Currency;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
 using System;
@@ -18,6 +20,101 @@ namespace ECommerceApp.IntegrationTests.Services
 
             currency.ShouldNotBeNull();
             currency.Code.ShouldBe(code);
+        }
+
+        [Fact]
+        public void given_invalid_id_shouldnt_return_currency()
+        {
+            var id = 123;
+
+            var currency = _service.Get(id);
+
+            currency.ShouldBeNull();
+        }
+
+        [Fact]
+        public void given_valid_currency_should_add()
+        {
+            var currency = CreateCurrency(0);
+
+            var id = _service.Add(currency);
+
+            id.ShouldBeGreaterThan(0);
+        }
+
+        [Fact]
+        public void given_invalid_currency_when_add_should_throw_an_exception()
+        {
+            var currency = CreateCurrency(0);
+            currency.Code = "";
+
+            var exception = Should.Throw<BusinessException>(() => _service.Add(currency));
+
+            exception.Message.ShouldBe("Code shouldnt be empty");
+        }
+
+        [Fact]
+        public void given_valid_currency_should_update()
+        {
+            var id = 1;
+            var code = "ABC";
+            var currency = _service.Get(id);
+            currency.Code = code;
+
+            _service.Update(currency);
+
+            var currencyUpdated = _service.Get(id);
+            currencyUpdated.Code.ShouldBe(code);
+        }
+
+        [Fact]
+        public void given_invalid_currency_when_update_should_throw_an_exception()
+        {
+            var currency = CreateCurrency(1);
+            currency.Code = "";
+
+            var exception = Should.Throw<BusinessException>(() => _service.Update(currency));
+
+            exception.Message.ShouldBe("Code shouldnt be empty");
+        }
+
+        [Fact]
+        public void given_valid_id_should_delete()
+        {
+            var currency = CreateCurrency(0);
+            var id = _service.Add(currency);
+            
+            _service.Delete(id);
+
+            var currencyDeleted = _service.Get(id);
+            currencyDeleted.ShouldBeNull();
+        }
+
+        [Fact]
+        public void given_valid_parameters_should_return_currencies()
+        {
+            var currencies = _service.GetAllCurrencies(20, 1, "");
+
+            currencies.Count.ShouldBeGreaterThan(0);
+        }
+
+        [Fact]
+        public void given_currencies_in_db_should_return_currencies()
+        {
+            var currencies = _service.GetAll(c => true);
+
+            currencies.Count.ShouldBeGreaterThan(0);
+        }
+
+        private CurrencyVm CreateCurrency(int id)
+        {
+            var currency = new CurrencyVm
+            {
+                Id = id,
+                Code = "TST",
+                Description = ""
+            };
+            return currency;
         }
     }
 }
