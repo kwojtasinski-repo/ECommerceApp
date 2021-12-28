@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.Infrastructure;
+using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -46,6 +47,27 @@ namespace ECommerceApp.IntegrationTests.Common
             context.Add(currencyRate1);
             var currencyRate2 = new Domain.Model.CurrencyRate { Id = 2, Currency = currency2, CurrencyDate = DateTime.Now.Date, CurrencyId = 2, Rate = new decimal(0.5214) };
             context.Add(currencyRate2);
+
+            //user: { email: "test@test", userName: "test", password: "Test@test12" }
+            var testUser = new IdentityUser 
+            { 
+                Id = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", 
+                Email = "test@test", 
+                UserName = "test@test",
+                NormalizedUserName = "TEST@TEST",
+                PasswordHash = "AQAAAAEAACcQAAAAEAhNvr909GdhKMLVvTQ6kj17HAWZPg6c+YgQ8rl/m1Ww6Pf+fqJ8FUf+yU5N5stXOA==", ConcurrencyStamp = "db68806b-190f-4abf-a39f-9b2d74039dd9",
+                SecurityStamp = string.Empty,
+                EmailConfirmed = true
+            };
+            context.Add(testUser);
+            
+            var userRole = new IdentityUserRole<string>
+            {
+                RoleId = "Administrator",
+                UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e"
+            };
+            context.Add(userRole);
+
 
             // ---------------------------------- Dane testowe ----------------------------------
 
