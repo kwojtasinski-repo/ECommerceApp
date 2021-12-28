@@ -66,8 +66,8 @@ namespace ECommerceApp.API.Controllers
             {
                 return Conflict(ModelState);
             }
-            _brandService.AddBrand(model);
-            return Ok();
+            var id = _brandService.AddBrand(model);
+            return Ok(id);
         }
 
         [HttpDelete("{id}")]
@@ -75,7 +75,7 @@ namespace ECommerceApp.API.Controllers
         public IActionResult DeleteBrand(int id)
         {
             _brandService.DeleteBrand(id);
-            return RedirectToAction("Index");
+            return Ok();
         }
     }
 }
