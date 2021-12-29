@@ -23,7 +23,7 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_valid_id_should_return_address()
+        public async Task given_valid_id_should_return_contact_detail()
         {
             var id = 1;
             var phoneNumber = "867123563";
@@ -53,7 +53,7 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_valid_address_should_update()
+        public async Task given_valid_contact_detail_should_update()
         {
             var contactDetail = CreateContactDetail(0);
             var id = await _client.Request($"api/contact-details")
@@ -79,7 +79,7 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_invalid_address_when_update_should_return_status_code_conflict()
+        public async Task given_invalid_contact_detail_when_update_should_return_status_code_conflict()
         {
             var contactDetail = CreateContactDetail(100);
 
@@ -92,7 +92,7 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_valid_address_should_add()
+        public async Task given_valid_contact_detail_should_add()
         {
             var contactDetail = CreateContactDetail(0);
 
@@ -107,7 +107,7 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_invalid_when_add_address_should_return_status_code_conflict()
+        public async Task given_invalid_contact_detail_when_add_should_return_status_code_conflict()
         {
             var contactDetail = CreateContactDetail(1);
 
