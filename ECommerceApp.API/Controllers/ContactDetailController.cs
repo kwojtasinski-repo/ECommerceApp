@@ -66,12 +66,7 @@ namespace ECommerceApp.API.Controllers
 
             var id = _contactDetailService.AddContactDetail(model, userId);
 
-            if (id == 0)
-            {
-                return NotFound();
-            }
-
-            return Ok();
+            return Ok(id);
         }
     }
 }

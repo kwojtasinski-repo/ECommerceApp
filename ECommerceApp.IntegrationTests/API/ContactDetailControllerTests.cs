@@ -1,5 +1,5 @@
 ﻿using ECommerceApp.API;
-using ECommerceApp.Application.ViewModels.Address;
+using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.IntegrationTests.Common;
 using Flurl.Http;
 using Newtonsoft.Json;
@@ -13,11 +13,11 @@ using Xunit;
 
 namespace ECommerceApp.IntegrationTests.API
 {
-    public class AddressControllerTests : IClassFixture<BaseApiTest<Startup>>
+    public class ContactDetailControllerTests : IClassFixture<BaseApiTest<Startup>>
     {
         private readonly FlurlClient _client;
 
-        public AddressControllerTests(BaseApiTest<Startup> baseApiTest)
+        public ContactDetailControllerTests(BaseApiTest<Startup> baseApiTest)
         {
             _client = baseApiTest.Client;
         }
@@ -26,29 +26,25 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task given_valid_id_should_return_address()
         {
             var id = 1;
-            var buildingNumber = "2";
-            var flatNumber = 10;
-            var city = "Nowa Sól";
+            var phoneNumber = "867123563";
 
-            var response = await _client.Request($"api/addresses/{id}")
+            var response = await _client.Request($"api/contact-details/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetAsync();
-            var address = JsonConvert.DeserializeObject<AddressVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
+            var contactDetail = JsonConvert.DeserializeObject<ContactDetailsForListVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
-            address.ShouldNotBeNull();
-            address.BuildingNumber.ShouldBe(buildingNumber);
-            address.FlatNumber.ShouldBe(flatNumber);
-            address.City.ShouldBe(city);
+            contactDetail.ShouldNotBeNull();
+            contactDetail.ContactDetailInformation.ShouldBe(phoneNumber);
         }
 
         [Fact]
         public async Task given_invalid_id_should_return_status_code_not_found()
         {
-            var id = 234;
+            var id = 212;
 
-            var response = await _client.Request($"api/addresses/{id}")
+            var response = await _client.Request($"api/contact-details/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetAsync();
@@ -59,38 +55,38 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_address_should_update()
         {
-            var address = CreateAddress(0);
-            var id = await _client.Request($"api/addresses")
+            var contactDetail = CreateContactDetail(0);
+            var id = await _client.Request($"api/contact-details")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(address)
+                .PostJsonAsync(contactDetail)
                 .ReceiveJson<int>();
-            address.Id = id;
-            address.Street = "StrTest";
+            contactDetail.Id = id;
+            contactDetail.ContactDetailInformation = "895423143";
 
-            var response = await _client.Request($"api/addresses")
+            var response = await _client.Request($"api/contact-details")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
-                .PutJsonAsync(address);
+                .PutJsonAsync(contactDetail);
 
-            var addressUpdated = await _client.Request($"api/addresses/{address.Id}")
+            var contactDetailUpdated = await _client.Request($"api/contact-details/{contactDetail.Id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
-                .GetJsonAsync<AddressVm>();
+                .GetJsonAsync<ContactDetailVm>();
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
-            addressUpdated.ShouldNotBeNull();
-            addressUpdated.Street.ShouldBe(address.Street);
+            contactDetailUpdated.ShouldNotBeNull();
+            contactDetailUpdated.ContactDetailInformation.ShouldBe(contactDetail.ContactDetailInformation);
         }
 
         [Fact]
         public async Task given_invalid_address_when_update_should_return_status_code_conflict()
         {
-            var address = CreateAddress(100);
+            var contactDetail = CreateContactDetail(100);
 
-            var response = await _client.Request($"api/addresses")
+            var response = await _client.Request($"api/contact-details")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
-                .PutJsonAsync(address);
+                .PutJsonAsync(contactDetail);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.Conflict);
         }
@@ -98,12 +94,12 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_address_should_add()
         {
-            var address = CreateAddress(0);
+            var contactDetail = CreateContactDetail(0);
 
-            var response = await _client.Request($"api/addresses")
+            var response = await _client.Request($"api/contact-details")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(address);
+                .PostJsonAsync(contactDetail);
 
             var id = JsonConvert.DeserializeObject<int>(await response.ResponseMessage.Content.ReadAsStringAsync());
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
@@ -113,30 +109,27 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_when_add_address_should_return_status_code_conflict()
         {
-            var address = CreateAddress(1);
+            var contactDetail = CreateContactDetail(1);
 
-            var response = await _client.Request($"api/addresses")
+            var response = await _client.Request($"api/contact-details")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(address);
+                .PostJsonAsync(contactDetail);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.Conflict);
         }
 
-        private AddressVm CreateAddress(int id)
+        private ContactDetailVm CreateContactDetail(int id)
         {
-            var address = new AddressVm 
-            { 
+            var contactDetail = new ContactDetailVm
+            {
                 Id = id,
-                BuildingNumber = "1",
-                City = "ZG",
-                Country = "PL",
-                CustomerId = 1,
-                FlatNumber = 10,
-                Street = "Testowa",
-                ZipCode = 65010
+                ContactDetailInformation = "567234123",
+                ContactDetailTypeId = 1,
+                CustomerId = 1
             };
-            return address;
+
+            return contactDetail;
         }
     }
 }
