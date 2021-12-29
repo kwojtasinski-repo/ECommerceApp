@@ -12,7 +12,7 @@ namespace ECommerceApp.IntegrationTests.Common
         {
             // ---------------------------------- Dane testowe ----------------------------------
 
-            var customer = new Domain.Model.Customer { Id = 1, FirstName = "Mr", LastName = "Tester", IsCompany = false, UserId = Guid.NewGuid().ToString() };
+            var customer = new Domain.Model.Customer { Id = 1, FirstName = "Mr", LastName = "Tester", IsCompany = false, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e" };
             context.Add(customer);
 
             var address = new Domain.Model.Address { Id = 1, BuildingNumber = "2", FlatNumber = 10, City = "Nowa Sól", Country = "Poland", Street = "Testowa" , CustomerId = 1, ZipCode = 67100 };
@@ -48,7 +48,7 @@ namespace ECommerceApp.IntegrationTests.Common
             var currencyRate2 = new Domain.Model.CurrencyRate { Id = 2, Currency = currency2, CurrencyDate = DateTime.Now.Date, CurrencyId = 2, Rate = new decimal(0.5214) };
             context.Add(currencyRate2);
 
-            //user: { email: "test@test", userName: "test", password: "Test@test12" }
+            //user: { email: "test@test", userName: "test@test", password: "Test@test12" }
             var testUser = new IdentityUser 
             { 
                 Id = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", 

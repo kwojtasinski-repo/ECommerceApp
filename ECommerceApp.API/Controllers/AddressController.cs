@@ -66,11 +66,6 @@ namespace ECommerceApp.API.Controllers
 
             var id = _addressService.AddAddress(model, userId);
 
-            if (id == 0)
-            {
-                return NotFound();
-            }
-
             return Ok(id);
         }
     }

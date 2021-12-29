@@ -5,6 +5,7 @@ using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -81,7 +82,7 @@ namespace ECommerceApp.Application.Services
 
         public bool AddressExists(int id, string userId)
         {
-            var address = _repo.GetAddressById(id, userId);
+            var address = _repo.GetAll().Include(c => c.Customer).Where(a => a.Id == id && a.Customer.UserId == userId).AsNoTracking().FirstOrDefault();
 
             if (address == null)
             {
