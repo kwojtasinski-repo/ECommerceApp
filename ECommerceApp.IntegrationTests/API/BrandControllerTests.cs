@@ -155,29 +155,6 @@ namespace ECommerceApp.IntegrationTests.API
             brands.Count.ShouldBe(3);
         }
 
-        [Fact]
-        public async Task given_no_brands_should_return_status_code_not_found()
-        {
-            _ = DeleteBrand(1);
-            _ = DeleteBrand(2);
-            await DeleteBrand(3);
-
-            var brands = await _client.Request($"api/brands")
-                .WithHeader("content-type", "application/json")
-                .AllowAnyHttpStatus()
-                .GetAsync();
-
-            brands.StatusCode.ShouldBe((int) HttpStatusCode.NotFound);
-        }
-
-        private Task DeleteBrand(int id)
-        {
-            return _client.Request($"api/brands/{id}")
-                .WithHeader("content-type", "application/json")
-                .AllowAnyHttpStatus()
-                .DeleteAsync();
-        }
-
         private BrandVm CreateDefaultBrandVm(int id)
         {
             var brand = new BrandVm

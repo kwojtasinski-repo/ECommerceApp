@@ -42,6 +42,13 @@ namespace ECommerceApp.API.Controllers
         [HttpPut]
         public IActionResult EditCoupon(CouponVm model)
         {
+            var coupon = _couponService.Get(model.Id);
+            
+            if(coupon == null)
+            {
+                return Conflict();
+            }
+
             _couponService.UpdateCoupon(model);
             return Ok();
         }
@@ -51,6 +58,12 @@ namespace ECommerceApp.API.Controllers
         public ActionResult<CouponDetailsVm> ViewCoupon(int id)
         {
             var coupon = _couponService.GetCouponDetail(id);
+            
+            if(coupon == null)
+            {
+                return NotFound();
+            }
+
             return coupon;
         }
 

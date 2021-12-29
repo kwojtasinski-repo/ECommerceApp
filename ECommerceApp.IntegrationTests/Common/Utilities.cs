@@ -68,6 +68,12 @@ namespace ECommerceApp.IntegrationTests.Common
             };
             context.Add(userRole);
 
+            var couponType = new Domain.Model.CouponType { Id = 1, Type = "Type1" };
+            context.Add(couponType);
+
+            var coupon = new Domain.Model.Coupon { Id = 1, Code = "AGEWEDSGFEW", CouponTypeId = 1, Description = "DesciprtionText", Discount = 10 };
+            context.Add(coupon);
+
 
             // ---------------------------------- Dane testowe ----------------------------------
 
