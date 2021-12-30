@@ -1,14 +1,16 @@
 ﻿using ECommerceApp.API;
+using ECommerceApp.Infrastructure;
 using Flurl.Http;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.IntegrationTests.Common
 {
-    public class BaseApiTest<TStartup> : CustomWebApplicationFactory<TStartup> where TStartup : class
+    public class BaseApiTest<TStartup> : CustomWebApplicationFactory<TStartup>, IDisposable where TStartup : class
     {
         public FlurlClient Client { get; private set; }
 
@@ -33,6 +35,14 @@ namespace ECommerceApp.IntegrationTests.Common
             deserializedToken.TryGetValue("token", out var token);
 
             return token;
+        }
+
+        public new virtual void Dispose()
+        {
+            var context = Services.GetService(typeof(Context)) as Context;
+            context.Database.EnsureDeleted();
+            context.Dispose();
+            base.Dispose();
         }
     }
 }

@@ -14,13 +14,26 @@ namespace ECommerceApp.Application.FileManager
         public void DeleteFile(string path)
         {
             var fileInfo = new FileInfo(path);
-            fileInfo.Delete();
+
+            if (fileInfo.Exists)
+            {
+                fileInfo.Delete();
+            }
         }
 
-        public byte[] ReadFileAsync(string path)
+        public byte[] ReadFile(string path)
         {
-            var bytes = File.ReadAllBytes(path);
-            return bytes;
+            var fileInfo = new FileInfo(path);
+
+            if (fileInfo.Exists)
+            {
+                var bytes = File.ReadAllBytes(path);
+                return bytes;
+            }
+            else
+            {
+                return Array.Empty<byte>();
+            }
         }
 
         public void WriteAllBytes(string outputFile, byte[] content)

@@ -257,10 +257,10 @@ namespace ECommerceApp.Application.Services
             var errors = new StringBuilder();
 
             // FIRST VALIDATION
-            foreach (var carImage in images)
+            foreach (var image in images)
             {
-                var size = carImage.Length;
-                var fileName = carImage.FileName;
+                var size = image.Length;
+                var fileName = image.FileName;
 
                 if (size > ALLOWED_SIZE)
                 {

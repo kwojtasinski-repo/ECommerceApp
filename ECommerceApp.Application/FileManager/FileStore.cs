@@ -78,7 +78,7 @@ namespace ECommerceApp.Application.FileManager
 
         public byte[] ReadFile(string path)
         {
-            var bytes = _fileWrapper.ReadFileAsync(path);
+            var bytes = _fileWrapper.ReadFile(path);
             return bytes;
         }
 
