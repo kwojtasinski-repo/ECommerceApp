@@ -246,5 +246,11 @@ namespace ECommerceApp.Infrastructure.Repositories
             _context.Entry(contactDetailType).Property("Name").IsModified = true;
             _context.SaveChanges();
         }
+
+        public bool CustomerExists(int id, string userId)
+        {
+            var customer = _context.Customers.Where(c => c.Id == id && c.UserId == userId).AsNoTracking().FirstOrDefault();
+            return customer != null;
+        }
     }
 }

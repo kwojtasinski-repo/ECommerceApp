@@ -24,6 +24,7 @@ namespace ECommerceApp.Application.ViewModels.Customer
                 .ForMember(c => c.IsCompany, opt => opt.MapFrom(src => src.IsCompany))
                 .ForMember(c => c.NIP, opt => opt.MapFrom(src => src.NIP))
                 .ForMember(c => c.CompanyName, opt => opt.MapFrom(src => src.CompanyName))
+                .ForMember(c => c.UserId, opt => opt.MapFrom(src => src.UserId))
                 .ReverseMap()
                 .ForAllOtherMembers(c => c.Ignore());
         }

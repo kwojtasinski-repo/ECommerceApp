@@ -14,5 +14,6 @@ namespace ECommerceApp.Domain.Interface
         IQueryable<Customer> GetAllCustomers();
         void UpdateCustomer(Customer customer);
         Customer GetCustomerById(int id, string userId);
+        bool CustomerExists(int id, string userId);
     }
 }

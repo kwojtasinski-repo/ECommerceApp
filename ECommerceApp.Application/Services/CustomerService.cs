@@ -167,14 +167,8 @@ namespace ECommerceApp.Application.Services
 
         public bool CustomerExists(int id, string userId)
         {
-            var customer = _repo.GetCustomerById(id, userId);
-            
-            if (customer == null)
-            {
-                return false;
-            }
-
-            return true;
+            var exists = _repo.CustomerExists(id, userId);
+            return exists;
         }
 
         public IEnumerable<CustomerVm> GetAllCustomers(Expression<Func<Customer, bool>> expression)

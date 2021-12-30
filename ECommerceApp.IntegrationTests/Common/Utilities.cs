@@ -1,8 +1,14 @@
 ﻿using ECommerceApp.Infrastructure;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using MimeTypes;
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ECommerceApp.IntegrationTests.Common
 {
@@ -12,14 +18,16 @@ namespace ECommerceApp.IntegrationTests.Common
         {
             // ---------------------------------- Dane testowe ----------------------------------
 
-            var customer = new Domain.Model.Customer { Id = 1, FirstName = "Mr", LastName = "Tester", IsCompany = false, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e" };
-            context.Add(customer);
-
             var address = new Domain.Model.Address { Id = 1, BuildingNumber = "2", FlatNumber = 10, City = "Nowa Sól", Country = "Poland", Street = "Testowa" , CustomerId = 1, ZipCode = 67100 };
             context.Add(address);
 
             var contactDetail = new Domain.Model.ContactDetail() { Id = 1, ContactDetailInformation = "867123563", ContactDetailTypeId = 1, CustomerId = 1 };
             context.Add(contactDetail);
+
+            var customer = new Domain.Model.Customer { Id = 1, FirstName = "Mr", LastName = "Tester", IsCompany = false, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Addresses = new List<Domain.Model.Address>(), ContactDetails = new List<Domain.Model.ContactDetail>() };
+            customer.Addresses.Add(address);
+            customer.ContactDetails.Add(contactDetail);
+            context.Add(customer);
 
             var brand = new Domain.Model.Brand() { Id = 1, Name = "Samsung" };
             context.Add(brand);
@@ -74,10 +82,112 @@ namespace ECommerceApp.IntegrationTests.Common
             var coupon = new Domain.Model.Coupon { Id = 1, Code = "AGEWEDSGFEW", CouponTypeId = 1, Description = "DesciprtionText", Discount = 10 };
             context.Add(coupon);
 
+            var image = new Domain.Model.Image { Id = 1, ItemId = 1, Name = "image1", SourcePath = "../src/image1.jpg" };
+            context.Add(image);
+
+            var item = new Domain.Model.Item { Id = 1, BrandId = 1, Cost = new decimal(2500), CurrencyId = 1, Description = "ItemTestDescription", Name = "Samsung New", Quantity = 50, Warranty = "365", TypeId = 1 };
+            context.Add(item);
 
             // ---------------------------------- Dane testowe ----------------------------------
 
             context.SaveChanges();
+        }
+
+        public static async Task<IFormFile> AddFileToIFormFile(string filePath)
+        {
+            var fileName = Path.GetFileName(filePath);
+            var extension = Path.GetExtension(fileName);
+            var mimeType = MimeTypeMap.GetMimeType(extension);
+            var bytes = await File.ReadAllBytesAsync(filePath);
+            var stream = new MemoryStream(bytes);
+            var formFile = new FormFile(stream, 0, stream.Length, extension, fileName)
+            {
+                Headers = new HeaderDictionary(),
+                ContentDisposition = mimeType
+            };
+            return formFile;
+        }
+
+        public static MultipartFormDataContent SerializeObjectWithImageToBytes<T>(T obj)
+        {
+            Type type = typeof(T);
+
+            // jesli przekazuje liste IFormFile
+            if (typeof(System.Collections.Generic.ICollection<IFormFile>).IsAssignableFrom(type))
+            {
+                List<IFormFile> files = obj as List<IFormFile>;
+                MultipartFormDataContent multiContent = FilesToMultiContent(files);
+                return multiContent;
+            }
+            // jesli przekazuje IFormFile
+            else if (typeof(IFormFile).IsAssignableFrom(type))
+            {
+                IFormFile file = obj as IFormFile;
+                MultipartFormDataContent multiContent = FileToMultiContent(file);
+                return multiContent;
+            }
+            // jesli przekazuje object zawierajacy IFormFile lub ICollection<IFormFile>
+            else
+            {
+                var properties = type.GetProperties();
+
+                var listIFormFile = properties.Where(o => typeof(System.Collections.Generic.ICollection<IFormFile>).IsAssignableFrom(o.PropertyType)).FirstOrDefault();
+                var iFormFile = properties.Where(o => o.PropertyType.Equals(typeof(IFormFile))).FirstOrDefault();
+
+                if (listIFormFile != null)
+                {
+                    List<IFormFile> files = (List<IFormFile>)listIFormFile.GetValue(obj);
+                    MultipartFormDataContent multiContent = FilesToMultiContent(files);
+
+                    var filterProperties = properties.Where(p => !typeof(System.Collections.Generic.ICollection<IFormFile>).IsAssignableFrom(p.PropertyType)).ToList();
+
+                    foreach (var prop in filterProperties)
+                    {
+                        multiContent.Add(new StringContent(prop.GetValue(obj).ToString()), prop.Name);
+                    }
+
+                    return multiContent;
+                }
+                else if (iFormFile != null)
+                {
+                    IFormFile file = (IFormFile)iFormFile.GetValue(obj);
+                    MultipartFormDataContent multiContent = FileToMultiContent(file);
+
+                    var filterProperties = properties.Where(p => !p.PropertyType.Equals(typeof(IFormFile))).ToList();
+                    foreach (var prop in filterProperties)
+                    {
+                        multiContent.Add(new StringContent(prop.GetValue(obj).ToString()), prop.Name);
+                    }
+
+                    return multiContent;
+                }
+                else
+                {
+                    throw new Exception("There is no IFormFile");
+                }
+            }
+        }
+
+        private static MultipartFormDataContent FilesToMultiContent(ICollection<IFormFile> formFiles)
+        {
+            MultipartFormDataContent multiContent = new MultipartFormDataContent();
+            foreach (var file in formFiles)
+            {
+                var fileContent = new StreamContent(file.OpenReadStream());
+                fileContent.Headers.Add("Content-Disposition", $"form-data; name=\"files\"; filename=\"{file.FileName}\"");
+                multiContent.Add(fileContent);
+            }
+
+            return multiContent;
+        }
+
+        private static MultipartFormDataContent FileToMultiContent(IFormFile formFile)
+        {
+            MultipartFormDataContent multiContent = new MultipartFormDataContent();
+            var fileContent = new StreamContent(formFile.OpenReadStream());
+            fileContent.Headers.Add("Content-Disposition", $"form-data; name=\"file\"; filename=\"{formFile.FileName}\"");
+            multiContent.Add(fileContent);
+            return multiContent;
         }
     }
 }

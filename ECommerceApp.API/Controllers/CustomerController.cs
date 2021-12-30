@@ -74,8 +74,8 @@ namespace ECommerceApp.API.Controllers
             {
                 return Conflict(ModelState);
             }
-            _customerService.Add(model);
-            return Ok();
+            var id = _customerService.Add(model);
+            return Ok(id);
         }
     }
 }

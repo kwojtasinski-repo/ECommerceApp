@@ -81,7 +81,7 @@ namespace ECommerceApp.Tests.Services.Customer
             var id = 1;
             var userId = Guid.NewGuid().ToString();
             var customer = CreateCustomer(id, userId);
-            _customerRepository.Setup(c=>c.GetCustomerById(id, userId)).Returns(customer);
+            _customerRepository.Setup(c => c.CustomerExists(id, userId)).Returns(true);
             var customerService = new CustomerService(_customerRepository.Object, _mapper);
 
             var exists = customerService.CustomerExists(id, userId);
