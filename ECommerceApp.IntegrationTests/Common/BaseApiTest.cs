@@ -25,13 +25,13 @@ namespace ECommerceApp.IntegrationTests.Common
         private async Task<string> GetTokenAsync()
         {
             var testUser = new UserModel { Email = "test@test", Password = "Test@test12" };
-            var jsontoken = await Client.Request("api/login")
+            var jsonToken = await Client.Request("api/login")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(testUser)
                 .ReceiveString();
 
-            var deserializedToken = JsonConvert.DeserializeObject<Dictionary<string,string>>(jsontoken);
+            var deserializedToken = JsonConvert.DeserializeObject<Dictionary<string,string>>(jsonToken);
             deserializedToken.TryGetValue("token", out var token);
 
             return token;
