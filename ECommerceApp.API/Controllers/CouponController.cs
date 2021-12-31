@@ -26,8 +26,13 @@ namespace ECommerceApp.API.Controllers
         [HttpGet]
         public ActionResult<ListForCouponVm> Index([FromQuery] int pageSize = 20, int pageNo = 1, string searchString = "")
         {
-            var model = _couponService.GetAllCoupons(pageSize, pageNo, searchString);
-            return model;
+            var coupons = _couponService.GetAllCoupons(pageSize, pageNo, searchString);
+
+            if (coupons.Coupons.Count == 0)
+            {
+                return NotFound();
+            }
+            return coupons;
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]

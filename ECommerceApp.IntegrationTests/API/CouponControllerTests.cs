@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using Shouldly;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -146,6 +147,36 @@ namespace ECommerceApp.IntegrationTests.API
             brands.Count.ShouldBeGreaterThan(0);
         }
 
+        [Fact]
+        public async Task given_page_size_number_and_search_string_when_paginate_should_return_coupons()
+        {
+            int pageSize = 20;
+            int pageNo = 1;
+            string searchString = "AGEWEDSGFEW";
+
+            var response = await _client.Request($"api/coupons?=pageSize={pageSize}&pageNo={pageNo}&searchString={searchString}")
+                .AllowAnyHttpStatus()
+                .GetAsync();
+            var coupons = JsonConvert.DeserializeObject<ListForCouponVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
+
+            coupons.Count.ShouldBe(1);
+            coupons.Coupons.Count.ShouldBe(1);
+            coupons.Coupons.Where(c => c.Id == 1).FirstOrDefault().ShouldNotBeNull();
+        }
+
+        [Fact]
+        public async Task given_page_size_number_and_invalid_search_string_when_paginate_should_return_status_code_not_found()
+        {
+            int pageSize = 20;
+            int pageNo = 1;
+            string searchString = "MABC";
+
+            var response = await _client.Request($"api/coupons?=pageSize={pageSize}&pageNo={pageNo}&searchString={searchString}")
+                .AllowAnyHttpStatus()
+                .GetAsync();
+
+            response.StatusCode.ShouldBe((int) HttpStatusCode.NotFound);
+        }
         private CouponVm CreateDefaultCouponVm(int id)
         {
             var coupon = new CouponVm

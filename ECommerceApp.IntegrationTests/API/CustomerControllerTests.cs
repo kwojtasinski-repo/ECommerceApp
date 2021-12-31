@@ -135,11 +135,11 @@ namespace ECommerceApp.IntegrationTests.API
             var response = await _client.Request($"api/customers?=pageSize={pageSize}&pageNo={pageNo}&searchString={searchString}")
                 .AllowAnyHttpStatus()
                 .GetAsync();
-            var items = JsonConvert.DeserializeObject<ListForCustomerVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
+            var customers = JsonConvert.DeserializeObject<ListForCustomerVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
 
-            items.Count.ShouldBe(1);
-            items.Customers.Count.ShouldBe(1);
-            items.Customers.Where(c => c.FirstName == "Mr").FirstOrDefault().ShouldNotBeNull();
+            customers.Count.ShouldBe(1);
+            customers.Customers.Count.ShouldBe(1);
+            customers.Customers.Where(c => c.FirstName == "Mr").FirstOrDefault().ShouldNotBeNull();
         }
 
         [Fact]
