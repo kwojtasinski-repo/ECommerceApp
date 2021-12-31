@@ -59,7 +59,7 @@ namespace ECommerceApp.Tests.Services.Item
         public void given_valid_item_id_should_exists()
         {
             int id = 1;
-            _itemRepository.Setup(i => i.GetItemById(id)).Returns(new Domain.Model.Item { Id = id });
+            _itemRepository.Setup(i => i.ItemExists(id)).Returns(true);
             var itemService = new Application.Services.ItemService(_itemRepository.Object, _mapper);
 
             var exists = itemService.ItemExists(id);

@@ -151,6 +151,20 @@ namespace ECommerceApp.IntegrationTests.API
             items.Items.Where(i => i.Name == "Item4").FirstOrDefault().ShouldNotBeNull();
         }
 
+        [Fact]
+        public async Task given_page_size_number_and_invalid_search_string_when_paginate_should_return_status_code_not_found()
+        {
+            int pageSize = 20;
+            int pageNo = 1;
+            string searchString = "Abxsat23";
+
+            var response = await _client.Request($"api/items?=pageSize={pageSize}&pageNo={pageNo}&searchString={searchString}")
+                .AllowAnyHttpStatus()
+                .GetAsync();
+
+            response.StatusCode.ShouldBe((int) HttpStatusCode.NotFound);
+        }
+
         private ItemVm CreateItem(int id)
         {
             var item = new ItemVm
