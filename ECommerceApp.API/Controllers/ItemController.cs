@@ -66,8 +66,8 @@ namespace ECommerceApp.API.Controllers
             {
                 return Conflict(ModelState);
             }
-            _itemService.Add(model);
-            return Ok();
+            var id = _itemService.Add(model);
+            return Ok(id);
         }
 
         [HttpDelete("{id}")]
@@ -75,7 +75,7 @@ namespace ECommerceApp.API.Controllers
         public IActionResult DeleteItem(int id)
         {
             _itemService.DeleteItem(id);
-            return RedirectToAction("Index");
+            return Ok();
         }
     }
 }

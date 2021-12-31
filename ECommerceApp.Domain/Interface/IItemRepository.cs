@@ -15,5 +15,6 @@ namespace ECommerceApp.Domain.Interface
         IQueryable<Item> GetAllItems();
         void UpdateItem(Item item);
         IQueryable<ItemTag> GetAllItemsWithTags();
+        bool ItemExists(int id);
     }
 }

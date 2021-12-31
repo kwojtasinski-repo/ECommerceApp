@@ -130,8 +130,11 @@ namespace ECommerceApp.Infrastructure
             // -------------------- CONTACT DETAIL TYPE SEED DATA ----------------------
             builder.Entity<ContactDetailType>().HasData(new ContactDetailType { Id = 1, Name = "PhoneNumber" });
             builder.Entity<ContactDetailType>().HasData(new ContactDetailType { Id = 2, Name = "Email" });
-            builder.Entity<Currency>().HasData(new Currency { Id = 1, Code = "PLN", Description = "Polski złoty" });
             // -------------------- CONTACT DETAIL TYPE SEED DATA ----------------------
+
+            // -------------------- CURRENCY SEED DATA ----------------------
+            builder.Entity<Currency>().HasData(new Currency { Id = 1, Code = "PLN", Description = "Polski złoty" });
+            // -------------------- CURRENCY SEED DATA ----------------------
 
             // -------------------- SET PROPERTY --------------------
             builder.Entity<Currency>().Property(c => c.Code).IsRequired().HasMaxLength(3);

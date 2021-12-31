@@ -31,6 +31,7 @@ namespace ECommerceApp.Application
             {
                 Id = dto.Id,
                 CustomerId = dto.CustomerId,
+                CurrencyId = dto.CurrencyId,
                 OrderItems = dto.OrderItems.Select(oi => new OrderItemVm { Id = oi.Id }).ToList()
             };
 
@@ -108,6 +109,7 @@ namespace ECommerceApp.Application
                 IsPaid = orderVm.IsPaid,
                 Number = orderVm.Number,
                 Ordered = orderVm.Ordered,
+                CurrencyId = orderVm.CurrencyId,
                 OrderItems = orderVm.OrderItems.Select(oi => oi.AsNewOrderItemVm()).ToList()
             };
 
@@ -168,6 +170,7 @@ namespace ECommerceApp.Application
                 Quantity = itemVm.Quantity,
                 BrandId = itemVm.BrandId,
                 TypeId = itemVm.TypeId,
+                CurrencyId = itemVm.CurrencyId
             };
 
             var itemTags = new List<Domain.Model.ItemTag>();
@@ -205,6 +208,7 @@ namespace ECommerceApp.Application
                     Quantity = item.Quantity,
                     BrandId = item.BrandId,
                     TypeId = item.TypeId,
+                    CurrencyId = item.CurrencyId
                 };
 
                 var itemTags = new List<ItemTagVm>();

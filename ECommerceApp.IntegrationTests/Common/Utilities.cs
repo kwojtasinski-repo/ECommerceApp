@@ -36,7 +36,7 @@ namespace ECommerceApp.IntegrationTests.Common
             var brand3 = new Domain.Model.Brand() { Id = 3, Name = "Xiaomi" };
             context.Add(brand3);
 
-            var type = new Domain.Model.Type { Id = 100, Name = "TypeDelete" };
+            var type = new Domain.Model.Type { Id = 1, Name = "TypeDelete" };
             context.Add(type);
 
             var contactDetailType = new Domain.Model.ContactDetailType { Id = 3, Name = "ContactDetailTypeDelete" };
@@ -86,7 +86,15 @@ namespace ECommerceApp.IntegrationTests.Common
             context.Add(image);
 
             var item = new Domain.Model.Item { Id = 1, BrandId = 1, Cost = new decimal(2500), CurrencyId = 1, Description = "ItemTestDescription", Name = "Samsung New", Quantity = 50, Warranty = "365", TypeId = 1 };
+            item.Brand = brand;
+            item.Type = type;
             context.Add(item);
+            var item2 = new Domain.Model.Item { Id = 2, BrandId = 1, Cost = new decimal(2500), CurrencyId = 1, Description = "ItemTestDescription", Name = "Item2", Quantity = 50, Warranty = "365", TypeId = 1, Brand = brand, Type = type };
+            var item3 = new Domain.Model.Item { Id = 3, BrandId = 1, Cost = new decimal(2500), CurrencyId = 1, Description = "ItemTestDescription", Name = "Item3", Quantity = 50, Warranty = "365", TypeId = 1, Brand = brand, Type = type };
+            var item4 = new Domain.Model.Item { Id = 4, BrandId = 1, Cost = new decimal(2500), CurrencyId = 1, Description = "ItemTestDescription", Name = "Item4", Quantity = 50, Warranty = "365", TypeId = 1, Brand = brand, Type = type };
+            context.Add(item2);
+            context.Add(item3);
+            context.Add(item4);
 
             // ---------------------------------- Dane testowe ----------------------------------
 

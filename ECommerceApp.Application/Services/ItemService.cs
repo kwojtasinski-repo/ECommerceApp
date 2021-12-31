@@ -65,7 +65,9 @@ namespace ECommerceApp.Application.Services
 
         public ListForItemVm GetAllItemsForList(int pageSize, int pageNo, string searchString)
         {
-            var items = _repo.GetAllItems().Skip(pageSize * (pageNo - 1)).Take(pageSize);
+            var items = _repo.GetAllItems()
+                .Where(i => i.Name.StartsWith(searchString))
+                .Skip(pageSize * (pageNo - 1)).Take(pageSize);
             var itemsToShow = items.ProjectTo<ItemDetailsVm>(_mapper.ConfigurationProvider).ToList();
 
             var itemsList = new ListForItemVm()
@@ -149,12 +151,8 @@ namespace ECommerceApp.Application.Services
 
         public bool ItemExists(int id)
         {
-            var item = _repo.GetItemById(id);
-            if (item == null)
-            {
-                return false;
-            }
-            return true;
+            var exists = _repo.ItemExists(id);
+            return exists;
         }
 
         public IQueryable<NewItemVm> GetItems()

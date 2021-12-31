@@ -32,6 +32,7 @@ namespace ECommerceApp.Application.ViewModels.Item
                 RuleFor(x => x.Quantity).NotNull();
                 RuleFor(x => x.BrandId).NotNull();
                 RuleFor(x => x.TypeId).NotNull();
+                RuleFor(x => x.CurrencyId).NotNull();
 
                 When(x => x.ItemTags != null && x.ItemTags.Count > 0, () =>
                 {

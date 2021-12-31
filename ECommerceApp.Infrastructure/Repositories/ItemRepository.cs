@@ -97,5 +97,11 @@ namespace ECommerceApp.Infrastructure.Repositories
 
             _context.SaveChanges();
         }
+
+        public bool ItemExists(int id)
+        {
+            var item = _context.Items.Where(i => i.Id == id).AsNoTracking().FirstOrDefault();
+            return item != null;
+        }
     }
 }
