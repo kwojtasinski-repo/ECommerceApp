@@ -6,6 +6,7 @@ using Newtonsoft.Json;
 using Shouldly;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -122,6 +123,37 @@ namespace ECommerceApp.IntegrationTests.API
                 .PutJsonAsync(customer);
 
             response.StatusCode.ShouldBe((int) HttpStatusCode.Conflict);
+        }
+
+        [Fact]
+        public async Task given_page_size_number_and_search_string_when_paginate_should_return_customers()
+        {
+            int pageSize = 20;
+            int pageNo = 1;
+            string searchString = "M";
+
+            var response = await _client.Request($"api/customers?=pageSize={pageSize}&pageNo={pageNo}&searchString={searchString}")
+                .AllowAnyHttpStatus()
+                .GetAsync();
+            var items = JsonConvert.DeserializeObject<ListForCustomerVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
+
+            items.Count.ShouldBe(1);
+            items.Customers.Count.ShouldBe(1);
+            items.Customers.Where(c => c.FirstName == "Mr").FirstOrDefault().ShouldNotBeNull();
+        }
+
+        [Fact]
+        public async Task given_page_size_number_and_invalid_search_string_when_paginate_should_return_status_code_not_found()
+        {
+            int pageSize = 20;
+            int pageNo = 1;
+            string searchString = "MABC";
+
+            var response = await _client.Request($"api/customers?=pageSize={pageSize}&pageNo={pageNo}&searchString={searchString}")
+                .AllowAnyHttpStatus()
+                .GetAsync();
+
+            response.StatusCode.ShouldBe((int) HttpStatusCode.NotFound);
         }
 
         private CustomerVm CreateCustomer(int id)
