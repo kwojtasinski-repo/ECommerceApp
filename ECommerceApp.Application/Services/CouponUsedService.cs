@@ -35,8 +35,8 @@ namespace ECommerceApp.Application.Services
 
             var couponUsed = _mapper.Map<CouponUsed>(couponUsedVm);
             var id = _repo.AddCouponUsed(couponUsed);
-            _orderService.AddCouponUsedToOrder(couponUsed.OrderId, id);
             _couponService.AddCouponUsed(couponUsed.CouponId, id);
+            _orderService.AddCouponUsedToOrder(couponUsed.OrderId, id);
             return id;
         }
         public void DeleteCouponUsed(int id)

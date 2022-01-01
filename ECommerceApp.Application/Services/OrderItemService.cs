@@ -196,5 +196,11 @@ namespace ECommerceApp.Application.Services
 
             return ordersList;
         }
+
+        public IQueryable<OrderItem> GetOrderItems()
+        {
+            var orderItems = _repo.GetAll();
+            return orderItems;
+        }
     }
 }

@@ -325,11 +325,6 @@ namespace ECommerceApp.Application.Services
                 throw new BusinessException("Cannot add coupon to paid order");
             }
 
-            foreach(var orderItem in orderVm.OrderItems)
-            {
-                orderItem.CouponUsedId = couponUsedId;
-            }
-
             var coupon = _couponService.GetCouponFirstOrDefault(c => c.CouponUsedId == couponUsedId);
 
             if (coupon is null)
@@ -337,7 +332,13 @@ namespace ECommerceApp.Application.Services
                 throw new BusinessException("Given invalid couponUsedId");
             }
 
-            order.Cost = (1 - (decimal)coupon.Discount / 100) * order.Cost;
+            orderVm.CouponUsedId = couponUsedId;
+            foreach(var orderItem in orderVm.OrderItems)
+            {
+                orderItem.CouponUsedId = couponUsedId;
+            }
+
+            orderVm.Cost = (1 - (decimal)coupon.Discount / 100) * order.Cost;
             Update(orderVm);
         }
 
@@ -529,6 +530,74 @@ namespace ECommerceApp.Application.Services
             order.IsDelivered = true;
             order.Delivered = DateTime.Now;
             _repo.Update(order);
+        }
+
+        public void UpdateOrderWithExistedOrderItemsIds(OrderVm orderVm)
+        {
+            ValidateOrder(orderVm);
+            AddExistedOrderItemsToOrder(orderVm);
+            var order = _repo.GetAllOrders().Where(o => o.Id == orderVm.Id)
+                .Include(inc => inc.OrderItems)
+                .Include(inc => inc.OrderItems).ThenInclude(inc => inc.Item)
+                .FirstOrDefault();
+            orderVm.Number = order.Number;
+            orderVm.Ordered = order.Ordered;
+            orderVm.Cost = 0;
+            var orderItems = order.OrderItems;
+            CheckOrderItemsOrderByUser(orderVm, orderItems);
+            orderItems = order.OrderItems;
+            CalculateCost(orderVm, orderItems);
+            order.Cost = orderVm.Cost;
+            _repo.UpdatedOrder(order);
+        }
+
+        private void AddExistedOrderItemsToOrder(OrderVm orderVm)
+        {
+            var order = _repo.GetAllOrders().Where(o => o.Id == orderVm.Id)
+                .Include(inc => inc.OrderItems).FirstOrDefault();
+
+            var ids = orderVm.OrderItems.Where(oi => oi.Id > 0 && oi.OrderId == null).Select(i => i.Id);
+            var items = (from id in ids
+                         join orderItem in _orderItemService.GetOrderItems()
+                         on id equals orderItem.Id
+                         select orderItem).AsQueryable().AsNoTracking().ToList();
+
+            var errors = new StringBuilder();
+            foreach(var orderItem in items)
+            {
+                if (orderItem.UserId != orderVm.UserId)
+                {
+                    errors.AppendLine($"Order item with id: '{orderItem.Id}' is not order by this user");
+                }
+            }
+
+            if (errors.Length > 0)
+            {
+                throw new BusinessException(errors.ToString());
+            }
+
+            order.OrderItems = new List<OrderItem>();
+            foreach (var orderItem in items)
+            {
+                orderItem.OrderId = orderVm.Id;
+                order.OrderItems.Add(orderItem);
+
+                var oi = orderVm.OrderItems.Where(oi => oi.Id == orderItem.Id).FirstOrDefault();
+                if (oi != null)
+                {
+                    orderVm.OrderItems.Remove(oi);
+                    orderVm.OrderItems.Add(_mapper.Map<OrderItemVm>(orderItem));
+                }
+            }
+
+            _repo.Update(order);
+        }
+
+        public OrderVm GetOrderByIdReadOnly(int id)
+        {
+            var order = _repo.GetByIdReadOnly(id);
+            var orderVm = _mapper.Map<OrderVm>(order);
+            return orderVm;
         }
     }
 }

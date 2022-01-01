@@ -142,5 +142,18 @@ namespace ECommerceApp.Infrastructure.Repositories
             _context.SaveChanges();
             return orderItem.Id;
         }
+
+        public Order GetByIdReadOnly(int id)
+        {
+            var order = _context.Orders
+                .Include(inc => inc.OrderItems).ThenInclude(inc => inc.Item)
+                .Include(inc => inc.Refund)
+                .Include(inc => inc.Payment)
+                .Include(inc => inc.Currency)
+                .Where(o => o.Id == id)
+                .AsNoTracking()
+                .FirstOrDefault();
+            return order;
+        }
     }
 }

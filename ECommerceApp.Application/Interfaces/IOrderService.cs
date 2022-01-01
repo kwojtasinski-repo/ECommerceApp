@@ -35,5 +35,7 @@ namespace ECommerceApp.Application.Interfaces
         NewOrderVm GetOrderForRealization(int orderId);
         ListForOrderVm GetAllOrdersPaid(int pageSize, int pageNo, string searchString);
         void DispatchOrder(int orderId);
+        void UpdateOrderWithExistedOrderItemsIds(OrderVm vm);
+        OrderVm GetOrderByIdReadOnly(int id);
     }
 }

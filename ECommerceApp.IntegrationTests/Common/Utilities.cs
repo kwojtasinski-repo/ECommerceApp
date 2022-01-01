@@ -96,6 +96,20 @@ namespace ECommerceApp.IntegrationTests.Common
             context.Add(item3);
             context.Add(item4);
 
+            var orderItem = new Domain.Model.OrderItem { Id = 1, ItemId = 1, ItemOrderQuantity = 1, OrderId = 1, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e" };
+            context.Add(orderItem);
+            var item5 = new Domain.Model.Item { Id = 5, BrandId = 1, Cost = new decimal(2500), CurrencyId = 1, Description = "ItemTestDescription", Name = "Nr5", Quantity = 50, Warranty = "365", TypeId = 1, Brand = brand, Type = type };
+            context.Add(item5);
+            var item6 = new Domain.Model.Item { Id = 6, BrandId = 1, Cost = new decimal(2500), CurrencyId = 1, Description = "ItemTestDescription", Name = "Nr6", Quantity = 50, Warranty = "365", TypeId = 1, Brand = brand, Type = type };
+            context.Add(item6);
+            var orderItem2 = new Domain.Model.OrderItem { Id = 2, ItemId = 5, ItemOrderQuantity = 1, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e" };
+            context.Add(orderItem2);
+            var orderItem3 = new Domain.Model.OrderItem { Id = 3, ItemId = 6, ItemOrderQuantity = 1, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e" };
+            context.Add(orderItem3);
+
+            var order = new Domain.Model.Order { Id = 1, Cost = new decimal(2500), CurrencyId = 1, CustomerId = 1, Number = 12445, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now };
+            context.Add(order);
+
             // ---------------------------------- Dane testowe ----------------------------------
 
             context.SaveChanges();

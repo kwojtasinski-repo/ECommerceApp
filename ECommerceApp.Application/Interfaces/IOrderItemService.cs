@@ -4,6 +4,7 @@ using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
@@ -25,5 +26,6 @@ namespace ECommerceApp.Application.Interfaces
         int AddOrderItem(int id, string userId);
         ListForOrderItemVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo);
         ListForOrderItemVm GetOrderItemsNotOrderedByUserId(string userId, int pageSize, int pageNo);
+        IQueryable<OrderItem> GetOrderItems();
     }
 }

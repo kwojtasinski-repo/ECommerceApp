@@ -10,6 +10,7 @@ using ECommerceApp.Application.ViewModels.Order;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using ECommerceApp.Application.ViewModels.OrderItem;
 
 namespace ECommerceApp.API.Controllers
 {
@@ -88,7 +89,7 @@ namespace ECommerceApp.API.Controllers
         [HttpPut]
         public IActionResult EditOrder([FromBody] OrderDto model)
         {
-            var vm = _orderService.GetOrderById(model.Id);
+            var vm = _orderService.GetOrderByIdReadOnly(model.Id);
             var modelExists = vm != null;
             if (!ModelState.IsValid || !modelExists)
             {
@@ -99,17 +100,37 @@ namespace ECommerceApp.API.Controllers
             {
                 return Conflict();
             }
-
-            var couponUsedId = FindCoupon(model);
-            if (couponUsedId != null)
-            {
-                vm.CouponUsedId = couponUsedId;
-                vm.OrderItems.ForEach(oi => oi.CouponUsedId = couponUsedId);
-            }
-
             vm.UserId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             vm.OrderItems.ForEach(oi => oi.UserId = vm.UserId);
-            _orderService.UpdateOrder(vm);
+            
+            foreach(var id in model.OrderItems)
+            {
+                if (!vm.OrderItems.Any(o => o.Id == id.Id))
+                {
+                    vm.OrderItems.Add(new OrderItemVm { Id = id.Id });
+                }
+            }
+
+            var orderItemsToRemove = new List<OrderItemVm>();
+            foreach (var orderItem in vm.OrderItems)
+            {
+                var id = model.OrderItems.Where(oi => oi.Id == orderItem.Id).FirstOrDefault();
+
+                if(id == null)
+                {
+                    orderItemsToRemove.Add(orderItem);
+                }
+            }
+
+            foreach(var orderItem in orderItemsToRemove)
+            {
+                vm.OrderItems.Remove(orderItem);
+            }
+
+            _orderService.UpdateOrderWithExistedOrderItemsIds(vm);
+            
+            FindCoupon(model);
+
             return Ok();
         }
 
@@ -118,17 +139,12 @@ namespace ECommerceApp.API.Controllers
         public IActionResult AddOrder([FromBody] OrderDto model)
         {
             var order = model.AsVm();
-
-            var couponUsedId = FindCoupon(model);
-            if (couponUsedId != null)
-            {
-                order.CouponUsedId = couponUsedId;
-                order.OrderItems.ForEach(oi => oi.CouponUsedId = couponUsedId);
-            }
-
             order.UserId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             order.OrderItems.ForEach(oi => oi.UserId = order.UserId);
             var id = _orderService.AddOrder(order);
+            model.Id = id;
+            FindCoupon(model);
+
             return Ok(id);
         }
 
@@ -136,6 +152,7 @@ namespace ECommerceApp.API.Controllers
         [HttpPost("with-all-order-items")]
         public IActionResult AddOrderFromOrderItems([FromBody] OrderDto model)
         {
+            model.OrderItems = new List<OrderItemsIdsVm>();
             var order = model.AsVm();
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             var orderItems = _orderItemService.GetOrderItems(oi => oi.UserId == userId && oi.OrderId == null).ToList();
@@ -144,6 +161,10 @@ namespace ECommerceApp.API.Controllers
             var id = _orderService.AddOrder(order);
             order.OrderItems.ForEach(oi => oi.OrderId = id);
             _orderItemService.UpdateOrderItems(order.OrderItems);
+            model.Id = id;
+            model.OrderItems = orderItems.Select(oi => new OrderItemsIdsVm { Id = oi.Id }).ToList();
+            FindCoupon(model);
+
             return Ok(id);
         }
 
