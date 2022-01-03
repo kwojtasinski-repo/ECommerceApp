@@ -129,7 +129,7 @@ namespace ECommerceApp.API.Controllers
 
             _orderService.UpdateOrderWithExistedOrderItemsIds(vm);
             
-            FindCoupon(model);
+            TryUseCoupon(model);
 
             return Ok();
         }
@@ -143,7 +143,7 @@ namespace ECommerceApp.API.Controllers
             order.OrderItems.ForEach(oi => oi.UserId = order.UserId);
             var id = _orderService.AddOrder(order);
             model.Id = id;
-            FindCoupon(model);
+            TryUseCoupon(model);
 
             return Ok(id);
         }
@@ -163,26 +163,22 @@ namespace ECommerceApp.API.Controllers
             _orderItemService.UpdateOrderItems(order.OrderItems);
             model.Id = id;
             model.OrderItems = orderItems.Select(oi => new OrderItemsIdsVm { Id = oi.Id }).ToList();
-            FindCoupon(model);
+            TryUseCoupon(model);
 
             return Ok(id);
         }
 
-        private int? FindCoupon(OrderDto model)
+        private void TryUseCoupon(OrderDto model)
         {
-            int? couponUsedId = null;
-
             if (!string.IsNullOrWhiteSpace(model.PromoCode))
             {
                 var coupon = _couponService.GetCouponByCode(model.PromoCode);
                 if (coupon != null)
                 {
                     var couponUsed = new CouponUsedVm { CouponId = coupon.Id, OrderId = model.Id };
-                    couponUsedId = _couponUsedService.AddCouponUsed(couponUsed);
+                    _couponUsedService.AddCouponUsed(couponUsed);
                 }
             }
-
-            return couponUsedId;
         }
     }
 }

@@ -11,6 +11,8 @@ namespace ECommerceApp.Application.FileManager
 {
     public class FileWrapper : IFileWrapper
     {
+        private readonly object _fileLock = new object();
+
         public void DeleteFile(string path)
         {
             var fileInfo = new FileInfo(path);
@@ -25,14 +27,17 @@ namespace ECommerceApp.Application.FileManager
         {
             var fileInfo = new FileInfo(path);
 
-            if (fileInfo.Exists)
+            lock (_fileLock)
             {
-                var bytes = File.ReadAllBytes(path);
-                return bytes;
-            }
-            else
-            {
-                return Array.Empty<byte>();
+                if (fileInfo.Exists)
+                {
+                    var bytes = File.ReadAllBytes(path);
+                    return bytes;
+                }
+                else
+                {
+                    return Array.Empty<byte>();
+                }
             }
         }
 
