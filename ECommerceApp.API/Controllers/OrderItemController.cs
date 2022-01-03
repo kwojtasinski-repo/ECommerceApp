@@ -56,7 +56,7 @@ namespace ECommerceApp.API.Controllers
             //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userId2 = User.FindAll(ClaimTypes.NameIdentifier).ToList(); // 2 values in list
             var orderItems = _orderItemService.GetOrderItems(oi => oi.UserId == userId && oi.OrderId == null);
-            if (orderItems == null)
+            if (orderItems.Count() == 0)
             {
                 return NotFound();
             }
@@ -90,8 +90,8 @@ namespace ECommerceApp.API.Controllers
             var orderItem = model.AsVm();
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             orderItem.UserId = userId;
-            _orderItemService.AddOrderItem(orderItem);
-            return Ok();
+            var id = _orderItemService.AddOrderItem(orderItem);
+            return Ok(id);
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
@@ -99,7 +99,7 @@ namespace ECommerceApp.API.Controllers
         public ActionResult<List<OrderItemForListVm>> GetOrderItemsByItemId(int id)
         {
             var orderItems = _orderItemService.GetOrderItems(oi => oi.ItemId == id);
-            if (orderItems == null)
+            if (orderItems.Count() == 0)
             {
                 return NotFound();
             }
