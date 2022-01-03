@@ -251,14 +251,15 @@ namespace ECommerceApp.Tests.Services.Order
             var coupon = CreateDefaultCouponVm(null);
             _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
             _orderRepository.Setup(o => o.Update(It.IsAny<Domain.Model.Order>())).Verifiable();
+            Domain.Model.Order updatingOrder = null;
+            _orderRepository.Setup(o => o.Update(It.IsAny<Domain.Model.Order>())).Callback<Domain.Model.Order>(r => updatingOrder = r);
             _couponService.Setup(cu => cu.GetCouponFirstOrDefault(It.IsAny<Expression<Func<Domain.Model.Coupon, bool>>>())).Returns(coupon);
             var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
 
             orderService.AddCouponUsedToOrder(orderId, couponUsedId);
 
-            order.Cost.Should().BeLessThan(cost);
+            updatingOrder.Cost.Should().BeLessThan(cost);
             _orderRepository.Verify(o => o.Update(It.IsAny<Domain.Model.Order>()), Times.Once);
-
         }
 
         [Fact]
