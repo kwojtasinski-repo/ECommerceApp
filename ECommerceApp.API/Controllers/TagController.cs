@@ -35,7 +35,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(tags);
         }
 
-        [Authorize(Roles = "Administratorm, Admin, Manager, Service")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet("{id}")]
         public ActionResult<TagDetailsVm> GetTag(int id)
         {
@@ -68,8 +68,8 @@ namespace ECommerceApp.API.Controllers
             {
                 return Conflict(ModelState);
             }
-            _tagService.AddTag(model);
-            return Ok();
+            var id = _tagService.AddTag(model);
+            return Ok(id);
         }
 
         [HttpDelete("{id}")]
@@ -77,7 +77,7 @@ namespace ECommerceApp.API.Controllers
         public IActionResult DeleteItemTag(int id)
         {
             _tagService.DeleteTag(id);
-            return RedirectToAction("Index");
+            return Ok();
         }
     }
 }

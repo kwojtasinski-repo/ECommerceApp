@@ -133,6 +133,9 @@ namespace ECommerceApp.IntegrationTests.Common
             var payment3 = new Domain.Model.Payment { Id = 3, CurrencyId = 1, CustomerId = 1, DateOfOrderPayment = DateTime.Now, OrderId = 2, Number = 12452 };
             context.Add(payment3);
 
+            var tag = new Domain.Model.Tag { Id = 1, Name = "Tag" };
+            context.Add(tag);
+
             // ---------------------------------- Dane testowe ----------------------------------
 
             context.SaveChanges();
