@@ -109,6 +109,13 @@ namespace ECommerceApp.IntegrationTests.Common
 
             var order = new Domain.Model.Order { Id = 1, Cost = new decimal(2500), CurrencyId = 1, CustomerId = 1, Number = 12445, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now };
             context.Add(order);
+            var order2 = new Domain.Model.Order { Id = 2, Cost = new decimal(1000), CurrencyId = 1, CustomerId = 1, Number = 153465, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now, IsPaid = true, PaymentId = 1 };
+            context.Add(order2);
+            var order3 = new Domain.Model.Order { Id = 3, Cost = new decimal(1000), CurrencyId = 1, CustomerId = 1, Number = 153465, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now };
+            context.Add(order3);
+
+            var payment = new Domain.Model.Payment { Id = 1, CurrencyId = 1, CustomerId = 1, DateOfOrderPayment = DateTime.Now, OrderId = 2, Number = 12452 };
+            context.Add(payment);
 
             // ---------------------------------- Dane testowe ----------------------------------
 
