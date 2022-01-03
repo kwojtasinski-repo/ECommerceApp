@@ -117,6 +117,22 @@ namespace ECommerceApp.IntegrationTests.Common
             var payment = new Domain.Model.Payment { Id = 1, CurrencyId = 1, CustomerId = 1, DateOfOrderPayment = DateTime.Now, OrderId = 2, Number = 12452 };
             context.Add(payment);
 
+            var order4 = new Domain.Model.Order { Id = 4, Cost = new decimal(1000), CurrencyId = 1, CustomerId = 1, Number = 153465, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now, RefundId = 1, IsPaid = true, PaymentId = 2 };
+            context.Add(order4);
+            var payment2 = new Domain.Model.Payment { Id = 2, CurrencyId = 1, CustomerId = 1, DateOfOrderPayment = DateTime.Now, OrderId = 4, Number = 12452 };
+            context.Add(payment2);
+            var refund = new Domain.Model.Refund { Id = 1, CustomerId = 1, OnWarranty = true, OrderId = 4, Reason = "TestReason", RefundDate = DateTime.Now };
+            context.Add(refund);
+
+            var order5 = new Domain.Model.Order { Id = 5, Cost = new decimal(1000), CurrencyId = 1, CustomerId = 1, Number = 153465, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now, IsPaid = true, PaymentId = 3, IsDelivered = true };
+            context.Add(order5);
+            var item7 = new Domain.Model.Item { Id = 7, BrandId = 1, Cost = new decimal(1000), CurrencyId = 1, Description = "ItemTestDescriptionABC", Name = "Nr6", Quantity = 50, Warranty = "365", TypeId = 1, Brand = brand, Type = type };
+            context.Add(item7);
+            var orderItem4 = new Domain.Model.OrderItem { Id = 4, OrderId = 5, ItemId = 7, ItemOrderQuantity = 1, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e" };
+            context.Add(orderItem4);
+            var payment3 = new Domain.Model.Payment { Id = 3, CurrencyId = 1, CustomerId = 1, DateOfOrderPayment = DateTime.Now, OrderId = 2, Number = 12452 };
+            context.Add(payment3);
+
             // ---------------------------------- Dane testowe ----------------------------------
 
             context.SaveChanges();

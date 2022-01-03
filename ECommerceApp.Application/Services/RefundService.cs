@@ -49,7 +49,7 @@ namespace ECommerceApp.Application.Services
 
             var refund = _mapper.Map<Refund>(refundVm);
             var id = _repo.AddRefund(refund);
-            _orderService.AddRefundToOrder(refundVm.Id, id);
+            _orderService.AddRefundToOrder(refundVm.OrderId, id);
             return id;
         }
 
