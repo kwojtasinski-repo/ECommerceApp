@@ -16,12 +16,10 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class TypeController : ControllerBase
     {
-        private readonly IItemService _itemService;
         private readonly ITypeService _typeService;
 
-        public TypeController(IItemService itemService, ITypeService typeService)
+        public TypeController(ITypeService typeService)
         {
-            _itemService = itemService;
             _typeService = typeService;
         }
 
@@ -68,8 +66,8 @@ namespace ECommerceApp.API.Controllers
             {
                 return Conflict(ModelState);
             }
-            _typeService.AddType(model);
-            return Ok();
+            var id = _typeService.AddType(model);
+            return Ok(id);
         }
 
         [HttpDelete("{id}")]
@@ -77,7 +75,7 @@ namespace ECommerceApp.API.Controllers
         public IActionResult DeleteItemType(int id)
         {
             _typeService.DeleteType(id);
-            return RedirectToAction("Index");
+            return Ok();
         }
     }
 }

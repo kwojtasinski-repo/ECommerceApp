@@ -1,0 +1,146 @@
+﻿using ECommerceApp.API;
+using ECommerceApp.Application.ViewModels.Type;
+using ECommerceApp.IntegrationTests.Common;
+using Flurl.Http;
+using Newtonsoft.Json;
+using Shouldly;
+using System;
+using System.Collections.Generic;
+using System.Net;
+using System.Text;
+using System.Threading.Tasks;
+using Xunit;
+
+namespace ECommerceApp.IntegrationTests.API
+{
+    public class TypeControllerTests : IClassFixture<BaseApiTest<Startup>>
+    {
+        private readonly FlurlClient _client;
+
+        public TypeControllerTests(BaseApiTest<Startup> baseApiTest)
+        {
+            _client = baseApiTest.Client;
+        }
+
+        [Fact]
+        public async Task given_valid_id_should_return_type()
+        {
+            var id = 1;
+
+            var response = await _client.Request($"api/types/{id}")
+                .AllowAnyHttpStatus()
+                .GetAsync();
+
+            var tag = JsonConvert.DeserializeObject<TypeVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
+            response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
+            tag.ShouldNotBeNull();
+            tag.Id.ShouldBe(id);
+        }
+
+        [Fact]
+        public async Task given_invalid_id_should_return_status_code_not_found()
+        {
+            var id = 13453;
+
+            var response = await _client.Request($"api/types/{id}")
+                .AllowAnyHttpStatus()
+                .GetAsync();
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.NotFound);
+        }
+
+        [Fact]
+        public async Task given_valid_type_should_add()
+        {
+            var tag = new TypeVm { Id = 0, Name = "Type2" };
+
+            var response = await _client.Request("api/types")
+                .AllowAnyHttpStatus()
+                .PostJsonAsync(tag);
+
+            var id = JsonConvert.DeserializeObject<int>(await response.ResponseMessage.Content.ReadAsStringAsync());
+            response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
+            id.ShouldBeGreaterThan(1);
+        }
+
+        [Fact]
+        public async Task given_invalid_type_should_return_status_code_conflict()
+        {
+            var tag = new TypeVm { Id = 235 };
+
+            var response = await _client.Request("api/types")
+                .AllowAnyHttpStatus()
+                .PostJsonAsync(tag);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.Conflict);
+        }
+
+        [Fact]
+        public async Task given_valid_type_should_update()
+        {
+            var tag = new TypeVm { Id = 0, Name = "Type2" };
+            var id = await _client.Request("api/types")
+                .AllowAnyHttpStatus()
+                .PostJsonAsync(tag)
+                .ReceiveJson<int>();
+            tag.Id = id;
+            var name = "Type25";
+            tag.Name = name;
+
+            var response = await _client.Request("api/types")
+                .AllowAnyHttpStatus()
+                .PutJsonAsync(tag);
+
+            var tagUpdated = await _client.Request($"api/types/{id}")
+                .AllowAnyHttpStatus()
+                .GetJsonAsync<TypeVm>();
+            response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
+            tagUpdated.ShouldNotBeNull();
+            tagUpdated.Name.ShouldBe(name);
+        }
+
+        [Fact]
+        public async Task given_invalid_type_when_update_should_return_status_code_conflict()
+        {
+            var tag = new TypeVm { Id = 234235 };
+
+            var response = await _client.Request("api/types")
+                .AllowAnyHttpStatus()
+                .PutJsonAsync(tag);
+
+            response.StatusCode.ShouldBe((int) HttpStatusCode.Conflict);
+        }
+
+        [Fact]
+        public async Task given_valid_type_should_delete()
+        {
+            var type = new TypeVm { Id = 0, Name = "Type2" };
+            var id = await _client.Request("api/types")
+                .AllowAnyHttpStatus()
+                .PostJsonAsync(type)
+                .ReceiveJson<int>();
+
+            var response = await _client.Request($"api/types/{id}")
+                .AllowAnyHttpStatus()
+                .DeleteAsync();
+
+            var typeDeleted = await _client.Request($"api/types/{id}")
+                .AllowAnyHttpStatus()
+                .GetAsync();
+            response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
+            typeDeleted.StatusCode.ShouldBe((int) HttpStatusCode.NotFound);
+        }
+
+        [Fact]
+        public async Task given_types_in_db_should_return_types()
+        {
+            var response = await _client.Request($"api/types")
+                .AllowAnyHttpStatus()
+                .GetAsync();
+
+            var types = JsonConvert.DeserializeObject<List<TypeVm>>(await response.ResponseMessage.Content.ReadAsStringAsync());
+            response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
+            types.Count.ShouldBeGreaterThan(0);
+        }
+    }
+}
