@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -26,19 +27,29 @@ namespace ECommerceApp.Application.FileManager
         public byte[] ReadFile(string path)
         {
             var fileInfo = new FileInfo(path);
-
-            lock (_fileLock)
+            var bytes = Array.Empty<byte>();
+                
+            try
             {
                 if (fileInfo.Exists)
                 {
-                    var bytes = File.ReadAllBytes(path);
-                    return bytes;
-                }
-                else
-                {
-                    return Array.Empty<byte>();
+                    bytes = File.ReadAllBytes(path);
                 }
             }
+            catch(IOException)
+            {
+                //the file is unavailable because it is:
+                //still being written to
+                //or being processed by another thread
+                //or does not exist (has already been processed)
+                return Array.Empty<byte>();
+            }
+            catch(Exception)
+            {
+                throw;
+            }
+
+            return bytes;
         }
 
         public void WriteAllBytes(string outputFile, byte[] content)
