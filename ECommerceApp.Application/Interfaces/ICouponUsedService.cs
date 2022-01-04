@@ -19,6 +19,6 @@ namespace ECommerceApp.Application.Interfaces
         CouponUsedDetailsVm GetCouponUsedDetail(int id);
         CouponUsedVm GetCouponUsed(int id);
         void UpdateCouponUsed(CouponUsedVm couponUsedVm);
-        IEnumerable<CouponVm> GetAllCouponsUsed(Expression<Func<CouponUsed, bool>> expression);
+        IEnumerable<CouponUsedVm> GetAllCouponsUsed(Expression<Func<CouponUsed, bool>> expression);
     }
 }

@@ -109,10 +109,10 @@ namespace ECommerceApp.Application.Services
             }
         }
 
-        public IEnumerable<CouponVm> GetAllCouponsUsed(Expression<Func<CouponUsed, bool>> expression)
+        public IEnumerable<CouponUsedVm> GetAllCouponsUsed(Expression<Func<CouponUsed, bool>> expression)
         {
             var coupons = _repo.GetAll().Where(expression)
-                .ProjectTo<CouponVm>(_mapper.ConfigurationProvider);
+                .ProjectTo<CouponUsedVm>(_mapper.ConfigurationProvider);
             var couponsToShow = coupons.ToList();
 
             return couponsToShow;

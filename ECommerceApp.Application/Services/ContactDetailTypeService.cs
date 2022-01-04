@@ -21,8 +21,7 @@ namespace ECommerceApp.Application.Services
 
         public int AddContactDetailType(ContactDetailTypeVm model)
         {
-            var contactDetailType = _mapper.Map<ContactDetailType>(model);
-            var id = _repo.Add(contactDetailType);
+            var id = Add(model);
             return id;
         }
 
