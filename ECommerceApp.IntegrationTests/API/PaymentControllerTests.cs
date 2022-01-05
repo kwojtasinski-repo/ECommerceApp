@@ -13,21 +13,22 @@ using Xunit;
 
 namespace ECommerceApp.IntegrationTests.API
 {
-    public class PaymentControllerTests : IClassFixture<BaseApiTest<Startup>>
+    public class PaymentControllerTests : IClassFixture<CustomWebApplicationFactory<Startup>>
     {
-        private readonly FlurlClient _client;
+        private readonly CustomWebApplicationFactory<Startup> _factory;
 
-        public PaymentControllerTests(BaseApiTest<Startup> baseApiTest)
+        public PaymentControllerTests(CustomWebApplicationFactory<Startup> factory)
         {
-            _client = baseApiTest.Client;
+            _factory = factory;
         }
 
         [Fact]
         public async Task given_valid_id_should_return_payment()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var id = 1;
 
-            var response = await _client.Request($"api/payments/{id}")
+            var response = await client.Request($"api/payments/{id}")
                 .AllowAnyHttpStatus()
                 .GetAsync();
 
@@ -40,9 +41,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_id_should_return_status_code_not_found()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var id = 152345;
 
-            var response = await _client.Request($"api/payments/{id}")
+            var response = await client.Request($"api/payments/{id}")
                 .AllowAnyHttpStatus()
                 .GetAsync();
 
@@ -52,9 +54,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_payment_should_add()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var payment = new CreatePayment() { Id = 0, CurrencyId = 1, OrderId = 3 };
 
-            var response = await _client.Request("api/payments")
+            var response = await client.Request("api/payments")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(payment);
 
@@ -66,9 +69,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_payment_should_return_status_code_conflict()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var payment = new CreatePayment() { Id = 1 };
 
-            var response = await _client.Request("api/payments")
+            var response = await client.Request("api/payments")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(payment);
 
@@ -78,7 +82,8 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_payments_in_db_should_return_payments()
         {
-            var response = await _client.Request("api/payments")
+            var client = await _factory.GetAuthenticatedClient();
+            var response = await client.Request("api/payments")
                 .AllowAnyHttpStatus()
                 .GetAsync();
             

@@ -14,22 +14,23 @@ using Xunit;
 
 namespace ECommerceApp.IntegrationTests.API
 {
-    public class CouponControllerTests : IClassFixture<BaseApiTest<Startup>>
+    public class CouponControllerTests : IClassFixture<CustomWebApplicationFactory<Startup>>
     {
-        private readonly FlurlClient _client;
+        private readonly CustomWebApplicationFactory<Startup> _factory;
 
-        public CouponControllerTests(BaseApiTest<Startup> baseApiTest)
+        public CouponControllerTests(CustomWebApplicationFactory<Startup> factory)
         {
-            _client = baseApiTest.Client;
+            _factory = factory;
         }
 
         [Fact]
         public async Task given_valid_id_should_return_coupon()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var id = 1;
             var code = "AGEWEDSGFEW";
 
-            var response = await _client.Request($"api/coupons/{id}")
+            var response = await client.Request($"api/coupons/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetAsync();
@@ -43,9 +44,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_id_should_return_status_not_found()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var id = 21;
 
-            var response = await _client.Request($"api/coupons/{id}")
+            var response = await client.Request($"api/coupons/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetAsync();
@@ -56,9 +58,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_coupon_should_add()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var brand = CreateDefaultCouponVm(0);
 
-            var response = await _client.Request("api/coupons")
+            var response = await client.Request("api/coupons")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(brand);
@@ -69,9 +72,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_coupon_should_return_status_code_conflict()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var brand = CreateDefaultCouponVm(53);
 
-            var response = await _client.Request("api/coupons")
+            var response = await client.Request("api/coupons")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(brand);
@@ -82,16 +86,17 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_coupon_should_update()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var coupon = CreateDefaultCouponVm(1);
             var code = "TestBrand";
             coupon.Code = code;
 
-            var response = await _client.Request("api/coupons")
+            var response = await client.Request("api/coupons")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(coupon);
 
-            var couponUpdated = await _client.Request($"api/coupons/{coupon.Id}")
+            var couponUpdated = await client.Request($"api/coupons/{coupon.Id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetJsonAsync<CouponDetailsVm>();
@@ -102,10 +107,11 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_not_existed_coupon_should_return_status_code_conflict()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var id = 223;
             var brand = CreateDefaultCouponVm(id);
 
-            var response = await _client.Request("api/coupons")
+            var response = await client.Request("api/coupons")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(brand);
@@ -116,19 +122,20 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_id_should_delete_coupon()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var brand = CreateDefaultCouponVm(0);
-            var id = await _client.Request("api/coupons")
+            var id = await client.Request("api/coupons")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(brand)
                 .ReceiveJson<int>();
 
-            var response = await _client.Request($"api/coupons/{id}")
+            var response = await client.Request($"api/coupons/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .DeleteAsync();
 
-            var responseAfterUpdate = await _client.Request($"api/coupons/{id}")
+            var responseAfterUpdate = await client.Request($"api/coupons/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetAsync();
@@ -139,7 +146,9 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_brands_in_db_should_return_coupons()
         {
-            var brands = await _client.Request($"api/coupons")
+            var client = await _factory.GetAuthenticatedClient();
+
+            var brands = await client.Request($"api/coupons")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetJsonAsync<ListForCouponVm>();
@@ -150,11 +159,12 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_page_size_number_and_search_string_when_paginate_should_return_coupons()
         {
+            var client = await _factory.GetAuthenticatedClient();
             int pageSize = 20;
             int pageNo = 1;
             string searchString = "AGEWEDSGFEW";
 
-            var response = await _client.Request($"api/coupons?=pageSize={pageSize}&pageNo={pageNo}&searchString={searchString}")
+            var response = await client.Request($"api/coupons?=pageSize={pageSize}&pageNo={pageNo}&searchString={searchString}")
                 .AllowAnyHttpStatus()
                 .GetAsync();
             var coupons = JsonConvert.DeserializeObject<ListForCouponVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
@@ -167,11 +177,12 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_page_size_number_and_invalid_search_string_when_paginate_should_return_status_code_not_found()
         {
+            var client = await _factory.GetAuthenticatedClient();
             int pageSize = 20;
             int pageNo = 1;
             string searchString = "MABC";
 
-            var response = await _client.Request($"api/coupons?=pageSize={pageSize}&pageNo={pageNo}&searchString={searchString}")
+            var response = await client.Request($"api/coupons?=pageSize={pageSize}&pageNo={pageNo}&searchString={searchString}")
                 .AllowAnyHttpStatus()
                 .GetAsync();
 

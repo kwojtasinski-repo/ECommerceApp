@@ -17,22 +17,23 @@ using Xunit;
 
 namespace ECommerceApp.IntegrationTests.API
 {
-    public class BrandControllerTests : IClassFixture<BaseApiTest<Startup>>
+    public class BrandControllerTests : IClassFixture<CustomWebApplicationFactory<Startup>>
     {
-        private readonly FlurlClient _client;
+        private readonly CustomWebApplicationFactory<Startup> _factory;
 
-        public BrandControllerTests(BaseApiTest<Startup> baseApiTest)
+        public BrandControllerTests(CustomWebApplicationFactory<Startup> factory)
         {
-            _client = baseApiTest.Client;
+            _factory = factory;
         }
 
         [Fact]
         public async Task given_valid_id_should_return_brand()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var id = 1;
             var name = "Samsung";
 
-            var response = await _client.Request($"api/brands/{id}")
+            var response = await client.Request($"api/brands/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetAsync();
@@ -46,9 +47,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_id_should_return_status_not_found()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var id = 21;
 
-            var response = await _client.Request($"api/brands/{id}")
+            var response = await client.Request($"api/brands/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetAsync();
@@ -59,9 +61,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_brand_should_add()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var brand = CreateDefaultBrandVm(0);
 
-            var response = await _client.Request("api/brands")
+            var response = await client.Request("api/brands")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(brand);
@@ -72,9 +75,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_brand_should_return_status_code_conflict()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var brand = CreateDefaultBrandVm(53);
 
-            var response = await _client.Request("api/brands")
+            var response = await client.Request("api/brands")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(brand);
@@ -85,20 +89,21 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_brand_should_update()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var id = 2;
             var name = "TestBrand";
-            var brand = await _client.Request($"api/brands/{id}")
+            var brand = await client.Request($"api/brands/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetJsonAsync<BrandVm>();
             brand.Name = name;
 
-            var response = await _client.Request("api/brands")
+            var response = await client.Request("api/brands")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(brand);
 
-            var brandUpdated = await _client.Request($"api/brands/{id}")
+            var brandUpdated = await client.Request($"api/brands/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetJsonAsync<BrandVm>();
@@ -109,10 +114,11 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_not_existed_brand_should_return_status_code_conflict()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var id = 223;
             var brand = CreateDefaultBrandVm(id);
 
-            var response = await _client.Request("api/brands")
+            var response = await client.Request("api/brands")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(brand);
@@ -123,19 +129,20 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_id_should_delete_brand()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var brand = CreateDefaultBrandVm(0);
-            var id = await _client.Request("api/brands")
+            var id = await client.Request("api/brands")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(brand)
                 .ReceiveJson<int>();
 
-            var response = await _client.Request($"api/brands/{id}")
+            var response = await client.Request($"api/brands/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .DeleteAsync();
 
-            var responseAfterUpdate = await _client.Request($"api/brands/{id}")
+            var responseAfterUpdate = await client.Request($"api/brands/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetAsync();
@@ -146,7 +153,9 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_brands_in_db_should_return_brands()
         {
-            var brands = await _client.Request($"api/brands")
+            var client = await _factory.GetAuthenticatedClient();
+
+            var brands = await client.Request($"api/brands")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetJsonAsync<List<BrandVm>>();

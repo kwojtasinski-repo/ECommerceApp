@@ -13,24 +13,25 @@ using Xunit;
 
 namespace ECommerceApp.IntegrationTests.API
 {
-    public class AddressControllerTests : IClassFixture<BaseApiTest<Startup>>
+    public class AddressControllerTests : IClassFixture<CustomWebApplicationFactory<Startup>>
     {
-        private readonly FlurlClient _client;
+        private readonly CustomWebApplicationFactory<Startup> _factory;
 
-        public AddressControllerTests(BaseApiTest<Startup> baseApiTest)
+        public AddressControllerTests(CustomWebApplicationFactory<Startup> factory)
         {
-            _client = baseApiTest.Client;
+            _factory = factory;
         }
 
         [Fact]
         public async Task given_valid_id_should_return_address()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var id = 1;
             var buildingNumber = "2";
             var flatNumber = 10;
             var city = "Nowa Sól";
 
-            var response = await _client.Request($"api/addresses/{id}")
+            var response = await client.Request($"api/addresses/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetAsync();
@@ -46,9 +47,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_id_should_return_status_code_not_found()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var id = 234;
 
-            var response = await _client.Request($"api/addresses/{id}")
+            var response = await client.Request($"api/addresses/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetAsync();
@@ -59,8 +61,9 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_address_should_update()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var address = CreateAddress(0);
-            var id = await _client.Request($"api/addresses")
+            var id = await client.Request($"api/addresses")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(address)
@@ -68,12 +71,12 @@ namespace ECommerceApp.IntegrationTests.API
             address.Id = id;
             address.Street = "StrTest";
 
-            var response = await _client.Request($"api/addresses")
+            var response = await client.Request($"api/addresses")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(address);
 
-            var addressUpdated = await _client.Request($"api/addresses/{address.Id}")
+            var addressUpdated = await client.Request($"api/addresses/{address.Id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetJsonAsync<AddressVm>();
@@ -85,9 +88,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_address_when_update_should_return_status_code_conflict()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var address = CreateAddress(100);
 
-            var response = await _client.Request($"api/addresses")
+            var response = await client.Request($"api/addresses")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(address);
@@ -98,9 +102,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_address_should_add()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var address = CreateAddress(0);
 
-            var response = await _client.Request($"api/addresses")
+            var response = await client.Request($"api/addresses")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(address);
@@ -113,9 +118,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_when_add_address_should_return_status_code_conflict()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var address = CreateAddress(1);
 
-            var response = await _client.Request($"api/addresses")
+            var response = await client.Request($"api/addresses")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(address);

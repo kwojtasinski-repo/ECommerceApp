@@ -18,9 +18,23 @@ namespace ECommerceApp.Application.FileManager
         {
             var fileInfo = new FileInfo(path);
 
-            if (fileInfo.Exists)
+            try
             {
-                fileInfo.Delete();
+                if (fileInfo.Exists)
+                {
+                    fileInfo.Delete();
+                }
+            }
+            catch (IOException)
+            {
+                //the file is unavailable because it is:
+                //still being written to
+                //or being processed by another thread
+                //or does not exist (has already been processed)
+            }
+            catch (Exception)
+            {
+                throw;
             }
         }
 

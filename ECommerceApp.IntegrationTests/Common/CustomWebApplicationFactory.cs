@@ -1,13 +1,17 @@
-﻿using ECommerceApp.Infrastructure;
+﻿using ECommerceApp.API;
+using ECommerceApp.Infrastructure;
+using Flurl.Http;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ECommerceApp.IntegrationTests.Common
 {
@@ -68,6 +72,30 @@ namespace ECommerceApp.IntegrationTests.Common
             {
                 throw;
             }
+        }
+
+        public async Task<FlurlClient> GetAuthenticatedClient()
+        {
+            var httpClient = CreateClient();
+            var client = new FlurlClient(httpClient);
+            var token = await GetTokenAsync(client);
+            client.WithHeader("Authorization", $"Bearer {token}");
+            return client;
+        }
+
+        private async Task<string> GetTokenAsync(FlurlClient client)
+        {
+            var testUser = new UserModel { Email = "test@test", Password = "Test@test12" };
+            var jsonToken = await client.Request("api/login")
+                .WithHeader("content-type", "application/json")
+                .AllowAnyHttpStatus()
+                .PostJsonAsync(testUser)
+                .ReceiveString();
+
+            var deserializedToken = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonToken);
+            deserializedToken.TryGetValue("token", out var token);
+
+            return token;
         }
     }
 }

@@ -13,21 +13,22 @@ using Xunit;
 
 namespace ECommerceApp.IntegrationTests.API
 {
-    public class TypeControllerTests : IClassFixture<BaseApiTest<Startup>>
+    public class TypeControllerTests : IClassFixture<CustomWebApplicationFactory<Startup>>
     {
-        private readonly FlurlClient _client;
+        private readonly CustomWebApplicationFactory<Startup> _factory;
 
-        public TypeControllerTests(BaseApiTest<Startup> baseApiTest)
+        public TypeControllerTests(CustomWebApplicationFactory<Startup> factory)
         {
-            _client = baseApiTest.Client;
+            _factory = factory;
         }
 
         [Fact]
         public async Task given_valid_id_should_return_type()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var id = 1;
 
-            var response = await _client.Request($"api/types/{id}")
+            var response = await client.Request($"api/types/{id}")
                 .AllowAnyHttpStatus()
                 .GetAsync();
 
@@ -40,9 +41,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_id_should_return_status_code_not_found()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var id = 13453;
 
-            var response = await _client.Request($"api/types/{id}")
+            var response = await client.Request($"api/types/{id}")
                 .AllowAnyHttpStatus()
                 .GetAsync();
 
@@ -52,9 +54,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_type_should_add()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var tag = new TypeVm { Id = 0, Name = "Type2" };
 
-            var response = await _client.Request("api/types")
+            var response = await client.Request("api/types")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(tag);
 
@@ -66,9 +69,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_type_should_return_status_code_conflict()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var tag = new TypeVm { Id = 235 };
 
-            var response = await _client.Request("api/types")
+            var response = await client.Request("api/types")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(tag);
 
@@ -78,8 +82,9 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_type_should_update()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var tag = new TypeVm { Id = 0, Name = "Type2" };
-            var id = await _client.Request("api/types")
+            var id = await client.Request("api/types")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(tag)
                 .ReceiveJson<int>();
@@ -87,11 +92,11 @@ namespace ECommerceApp.IntegrationTests.API
             var name = "Type25";
             tag.Name = name;
 
-            var response = await _client.Request("api/types")
+            var response = await client.Request("api/types")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(tag);
 
-            var tagUpdated = await _client.Request($"api/types/{id}")
+            var tagUpdated = await client.Request($"api/types/{id}")
                 .AllowAnyHttpStatus()
                 .GetJsonAsync<TypeVm>();
             response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
@@ -102,9 +107,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_type_when_update_should_return_status_code_conflict()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var tag = new TypeVm { Id = 234235 };
 
-            var response = await _client.Request("api/types")
+            var response = await client.Request("api/types")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(tag);
 
@@ -114,17 +120,18 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_type_should_delete()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var type = new TypeVm { Id = 0, Name = "Type2" };
-            var id = await _client.Request("api/types")
+            var id = await client.Request("api/types")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(type)
                 .ReceiveJson<int>();
 
-            var response = await _client.Request($"api/types/{id}")
+            var response = await client.Request($"api/types/{id}")
                 .AllowAnyHttpStatus()
                 .DeleteAsync();
 
-            var typeDeleted = await _client.Request($"api/types/{id}")
+            var typeDeleted = await client.Request($"api/types/{id}")
                 .AllowAnyHttpStatus()
                 .GetAsync();
             response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
@@ -134,7 +141,8 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_types_in_db_should_return_types()
         {
-            var response = await _client.Request($"api/types")
+            var client = await _factory.GetAuthenticatedClient();
+            var response = await client.Request($"api/types")
                 .AllowAnyHttpStatus()
                 .GetAsync();
 

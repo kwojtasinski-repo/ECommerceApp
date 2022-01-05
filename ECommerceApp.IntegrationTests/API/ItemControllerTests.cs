@@ -14,21 +14,22 @@ using Xunit;
 
 namespace ECommerceApp.IntegrationTests.API
 {
-    public class ItemControllerTests : IClassFixture<BaseApiTest<Startup>>
+    public class ItemControllerTests : IClassFixture<CustomWebApplicationFactory<Startup>>
     {
-        private readonly FlurlClient _client;
+        private readonly CustomWebApplicationFactory<Startup> _factory;
 
-        public ItemControllerTests(BaseApiTest<Startup> baseApiTest)
+        public ItemControllerTests(CustomWebApplicationFactory<Startup> factory)
         {
-            _client = baseApiTest.Client;
+            _factory = factory;
         }
 
         [Fact]
         public async Task given_valid_id_should_return_item()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var id = 1;
 
-            var response = await _client.Request($"api/items/{id}")
+            var response = await client.Request($"api/items/{id}")
                 .AllowAnyHttpStatus()
                 .GetAsync();
             var item = JsonConvert.DeserializeObject<ItemDetailsVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
@@ -40,9 +41,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_id_should_return_status_not_found()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var id = 153;
 
-            var response = await _client.Request($"api/items/{id}")
+            var response = await client.Request($"api/items/{id}")
                 .AllowAnyHttpStatus()
                 .GetAsync();
 
@@ -52,9 +54,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_item_should_add()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var item = CreateItem(0);
 
-            var response = await _client.Request("api/items")
+            var response = await client.Request("api/items")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(item);
             var id = JsonConvert.DeserializeObject<int>(await response.ResponseMessage.Content.ReadAsStringAsync());
@@ -66,9 +69,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_item_should_return_status_code_conflict()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var item = CreateItem(1);
 
-            var response = await _client.Request("api/items")
+            var response = await client.Request("api/items")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(item);
 
@@ -78,8 +82,9 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_item_should_update()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var item = CreateItem(0);
-            var response = await _client.Request("api/items")
+            var response = await client.Request("api/items")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(item);
             var id = JsonConvert.DeserializeObject<int>(await response.ResponseMessage.Content.ReadAsStringAsync());
@@ -89,11 +94,11 @@ namespace ECommerceApp.IntegrationTests.API
             item.Cost = cost;
             item.Id = id;
 
-            response = await _client.Request("api/items")
+            response = await client.Request("api/items")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(item);
 
-            var itemUpdated = await _client.Request($"api/items/{id}")
+            var itemUpdated = await client.Request($"api/items/{id}")
                 .AllowAnyHttpStatus()
                 .GetAsync()
                 .ReceiveJson<ItemDetailsVm>();
@@ -105,9 +110,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_item_when_update_should_return_status_code_conflict()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var customer = CreateItem(189);
 
-            var response = await _client.Request("api/items")
+            var response = await client.Request("api/items")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(customer);
 
@@ -117,17 +123,18 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_id_should_delete_item() 
         {
+            var client = await _factory.GetAuthenticatedClient();
             var item = CreateItem(0);
-            var id = await _client.Request("api/items")
+            var id = await client.Request("api/items")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(item)
                 .ReceiveJson<int>();
 
-            var response = await _client.Request($"api/items/{id}")
+            var response = await client.Request($"api/items/{id}")
                 .AllowAnyHttpStatus()
                 .DeleteAsync();
 
-            var responseAfterDelete = await _client.Request($"api/items/{id}")
+            var responseAfterDelete = await client.Request($"api/items/{id}")
                 .AllowAnyHttpStatus()
                 .GetAsync();
             response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
@@ -137,11 +144,12 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_page_size_number_and_search_string_when_paginate_should_return_items()
         {
+            var client = await _factory.GetAuthenticatedClient();
             int pageSize = 20;
             int pageNo = 1; 
             string searchString = "Item";
 
-            var response = await _client.Request($"api/items?=pageSize={pageSize}&pageNo={pageNo}&searchString={searchString}")
+            var response = await client.Request($"api/items?=pageSize={pageSize}&pageNo={pageNo}&searchString={searchString}")
                 .AllowAnyHttpStatus()
                 .GetAsync();
             var items = JsonConvert.DeserializeObject<ListForItemVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
@@ -154,11 +162,12 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_page_size_number_and_invalid_search_string_when_paginate_should_return_status_code_not_found()
         {
+            var client = await _factory.GetAuthenticatedClient();
             int pageSize = 20;
             int pageNo = 1;
             string searchString = "Abxsat23";
 
-            var response = await _client.Request($"api/items?=pageSize={pageSize}&pageNo={pageNo}&searchString={searchString}")
+            var response = await client.Request($"api/items?=pageSize={pageSize}&pageNo={pageNo}&searchString={searchString}")
                 .AllowAnyHttpStatus()
                 .GetAsync();
 

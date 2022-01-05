@@ -13,21 +13,22 @@ using Xunit;
 
 namespace ECommerceApp.IntegrationTests.API
 {
-    public class OrderItemControllerTests : IClassFixture<BaseApiTest<Startup>>
+    public class OrderItemControllerTests : IClassFixture<CustomWebApplicationFactory<Startup>>
     {
-        private readonly FlurlClient _client;
+        private readonly CustomWebApplicationFactory<Startup> _factory;
 
-        public OrderItemControllerTests(BaseApiTest<Startup> baseApiTest)
+        public OrderItemControllerTests(CustomWebApplicationFactory<Startup> factory)
         {
-            _client = baseApiTest.Client;
+            _factory = factory;
         }
 
         [Fact]
         public async Task given_valid_id_should_return_order_item()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var id = 1;
 
-            var response = await _client.Request($"api/order-items/{id}")
+            var response = await client.Request($"api/order-items/{id}")
                 .AllowAnyHttpStatus()
                 .GetAsync();
 
@@ -40,9 +41,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_id_should_return_status_not_found()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var id = 13523;
 
-            var response = await _client.Request($"api/order-items/{id}")
+            var response = await client.Request($"api/order-items/{id}")
                 .AllowAnyHttpStatus()
                 .GetAsync();
 
@@ -52,9 +54,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_order_item_should_add()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var orderItem = CreateOrderItem(0);
             
-            var response = await _client.Request("api/order-items")
+            var response = await client.Request("api/order-items")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(orderItem);
             
@@ -66,9 +69,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_order_item_should_return_status_conflict()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var orderItem = CreateOrderItem(1);
 
-            var response = await _client.Request("api/order-items")
+            var response = await client.Request("api/order-items")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(orderItem);
 
@@ -78,8 +82,9 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_order_item_should_update()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var orderItem = CreateOrderItem(0);
-            var id = await _client.Request("api/order-items")
+            var id = await client.Request("api/order-items")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(orderItem)
                 .ReceiveJson<int>();
@@ -87,11 +92,11 @@ namespace ECommerceApp.IntegrationTests.API
             var quantity = 20;
             orderItem.ItemOrderQuantity = quantity;
 
-            var response = await _client.Request("api/order-items")
+            var response = await client.Request("api/order-items")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(orderItem);
 
-            var orderItemUpdated = await _client.Request($"api/order-items/{id}")
+            var orderItemUpdated = await client.Request($"api/order-items/{id}")
                 .AllowAnyHttpStatus()
                 .GetJsonAsync<OrderItemDetailsVm>();
             response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
@@ -101,9 +106,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_order_item_should_return_status_code_conflict()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var orderItem = CreateOrderItem(12452);
 
-            var response = await _client.Request("api/order-items")
+            var response = await client.Request("api/order-items")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(orderItem);
 
@@ -113,9 +119,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_item_id_should_return_order_items()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var itemId = 1;
 
-            var response = await _client.Request($"api/order-items/by-items/{itemId}")
+            var response = await client.Request($"api/order-items/by-items/{itemId}")
                 .AllowAnyHttpStatus()
                 .GetAsync();
 
@@ -127,9 +134,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_item_id_should_return_code_not_found()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var itemId = 15346;
 
-            var response = await _client.Request($"api/order-items/by-items/{itemId}")
+            var response = await client.Request($"api/order-items/by-items/{itemId}")
                 .AllowAnyHttpStatus()
                 .GetAsync();
 
@@ -139,7 +147,9 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_items_added_to_cart_should_return_order_items()
         {
-            var response = await _client.Request("api/order-items/by-user")
+            var client = await _factory.GetAuthenticatedClient();
+
+            var response = await client.Request("api/order-items/by-user")
                 .AllowAnyHttpStatus()
                 .GetAsync();
 
@@ -151,7 +161,9 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_order_items_in_db_to_should_return_order_items()
         {
-            var response = await _client.Request("api/order-items")
+            var client = await _factory.GetAuthenticatedClient();
+
+            var response = await client.Request("api/order-items")
                 .AllowAnyHttpStatus()
                 .GetAsync();
 

@@ -13,22 +13,23 @@ using Xunit;
 
 namespace ECommerceApp.IntegrationTests.API
 {
-    public class ContactDetailControllerTests : IClassFixture<BaseApiTest<Startup>>
+    public class ContactDetailControllerTests : IClassFixture<CustomWebApplicationFactory<Startup>>
     {
-        private readonly FlurlClient _client;
+        private readonly CustomWebApplicationFactory<Startup> _factory;
 
-        public ContactDetailControllerTests(BaseApiTest<Startup> baseApiTest)
+        public ContactDetailControllerTests(CustomWebApplicationFactory<Startup> factory)
         {
-            _client = baseApiTest.Client;
+            _factory = factory;
         }
 
         [Fact]
         public async Task given_valid_id_should_return_contact_detail()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var id = 1;
             var phoneNumber = "867123563";
 
-            var response = await _client.Request($"api/contact-details/{id}")
+            var response = await client.Request($"api/contact-details/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetAsync();
@@ -42,9 +43,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_id_should_return_status_code_not_found()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var id = 212;
 
-            var response = await _client.Request($"api/contact-details/{id}")
+            var response = await client.Request($"api/contact-details/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetAsync();
@@ -55,8 +57,9 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_contact_detail_should_update()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var contactDetail = CreateContactDetail(0);
-            var id = await _client.Request($"api/contact-details")
+            var id = await client.Request($"api/contact-details")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(contactDetail)
@@ -64,12 +67,12 @@ namespace ECommerceApp.IntegrationTests.API
             contactDetail.Id = id;
             contactDetail.ContactDetailInformation = "895423143";
 
-            var response = await _client.Request($"api/contact-details")
+            var response = await client.Request($"api/contact-details")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(contactDetail);
 
-            var contactDetailUpdated = await _client.Request($"api/contact-details/{contactDetail.Id}")
+            var contactDetailUpdated = await client.Request($"api/contact-details/{contactDetail.Id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetJsonAsync<ContactDetailVm>();
@@ -81,9 +84,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_contact_detail_when_update_should_return_status_code_conflict()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var contactDetail = CreateContactDetail(100);
 
-            var response = await _client.Request($"api/contact-details")
+            var response = await client.Request($"api/contact-details")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(contactDetail);
@@ -94,9 +98,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_contact_detail_should_add()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var contactDetail = CreateContactDetail(0);
 
-            var response = await _client.Request($"api/contact-details")
+            var response = await client.Request($"api/contact-details")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(contactDetail);
@@ -109,9 +114,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_contact_detail_when_add_should_return_status_code_conflict()
         {
+            var client = await _factory.GetAuthenticatedClient();
             var contactDetail = CreateContactDetail(1);
 
-            var response = await _client.Request($"api/contact-details")
+            var response = await client.Request($"api/contact-details")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(contactDetail);
