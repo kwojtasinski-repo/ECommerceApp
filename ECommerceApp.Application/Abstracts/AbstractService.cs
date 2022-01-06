@@ -28,6 +28,11 @@ namespace ECommerceApp.Application.Abstracts
 
         public virtual int Add(T vm)
         {
+            if (vm is null)
+            {
+                throw new BusinessException($"{vm.GetType().Name} cannot be null");
+            }
+
             if (vm.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
@@ -42,7 +47,7 @@ namespace ECommerceApp.Application.Abstracts
         {
             if (vm is null)
             {
-                throw new BusinessException("Object shouldnt be null");
+                throw new BusinessException($"{typeof(T).Name} cannot be null");
             }
 
             var entity = _mapper.Map<E>(vm);
@@ -69,7 +74,7 @@ namespace ECommerceApp.Application.Abstracts
         {
             if (vm is null)
             {
-                throw new BusinessException("Object shouldnt be null");
+                throw new BusinessException($"{typeof(T).Name} cannot be null");
             }
 
             var entity = _mapper.Map<E>(vm);

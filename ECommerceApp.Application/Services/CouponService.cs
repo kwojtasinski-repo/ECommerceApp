@@ -23,6 +23,11 @@ namespace ECommerceApp.Application.Services
 
         public int AddCoupon(CouponVm couponVm)
         {
+            if (couponVm is null)
+            {
+                throw new BusinessException($"{typeof(CouponVm).Name} cannot be null");
+            }
+
             if (couponVm.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
@@ -91,9 +96,9 @@ namespace ECommerceApp.Application.Services
 
         public void UpdateCoupon(CouponVm couponVm)
         {
-            if (couponVm == null)
+            if (couponVm is null)
             {
-                throw new BusinessException("Given invalid coupon");
+                throw new BusinessException($"{typeof(CouponVm).Name} cannot be null");
             }
 
             if (couponVm.Discount < 1 || couponVm.Discount > 99)

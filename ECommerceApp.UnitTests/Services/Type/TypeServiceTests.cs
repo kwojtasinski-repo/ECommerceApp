@@ -17,6 +17,7 @@ namespace ECommerceApp.UnitTests.Services.Type
     {
         private readonly IMapper _mapper;
         private readonly Mock<ITypeRepository> _typeRepository;
+
         public TypeServiceTests()
         {
             var configurationProvider = new MapperConfiguration(cfg =>
@@ -85,14 +86,25 @@ namespace ECommerceApp.UnitTests.Services.Type
             _typeRepository.Verify(t => t.UpdateType(It.IsAny<Domain.Model.Type>()), Times.Once);
         }
 
+
         [Fact]
-        public void given_null_type_shouldnt_update()
+        public void given_null_type_when_add_should_throw_an_exception()
         {
-            var tagService = new TypeService(_typeRepository.Object, _mapper);
+            var typeService = new TypeService(_typeRepository.Object, _mapper);
 
-            tagService.UpdateType(null);
+            Action action = () => typeService.AddType(null);
 
-            _typeRepository.Verify(t => t.UpdateType(It.IsAny<Domain.Model.Type>()), Times.Never);
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
+        [Fact]
+        public void given_null_type_when_update_should_throw_an_exception()
+        {
+            var typeService = new TypeService(_typeRepository.Object, _mapper);
+
+            Action action = () => typeService.UpdateType(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
         private TypeVm CreateTypeVm(int id)

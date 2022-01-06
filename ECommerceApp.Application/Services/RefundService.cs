@@ -27,6 +27,11 @@ namespace ECommerceApp.Application.Services
 
         public int AddRefund(RefundVm refundVm)
         {
+            if (refundVm is null)
+            {
+                throw new BusinessException($"{typeof(RefundVm).Name} cannot be null");
+            }
+
             if (refundVm.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
@@ -116,6 +121,11 @@ namespace ECommerceApp.Application.Services
 
         public void UpdateRefund(RefundVm refundVm)
         {
+            if (refundVm is null)
+            {
+                throw new BusinessException($"{typeof(RefundVm).Name} cannot be null");
+            }
+
             var refund = _mapper.Map<Refund>(refundVm);
             if (refund != null)
             {

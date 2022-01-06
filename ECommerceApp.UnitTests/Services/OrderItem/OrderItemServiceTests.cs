@@ -151,6 +151,26 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
             _orderItemRepository.Verify(oi => oi.UpdateOrderItem(It.IsAny<Domain.Model.OrderItem>()), Times.Once);
         }
 
+        [Fact]
+        public void given_null_order_item_when_add_should_throw_an_exception()
+        {
+            var orderItemService = new OrderItemService(_orderItemRepository.Object, _mapper);
+
+            Action action = () => orderItemService.AddOrderItem(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
+        [Fact]
+        public void given_null_order_item_when_update_should_throw_an_exception()
+        {
+            var orderItemService = new OrderItemService(_orderItemRepository.Object, _mapper);
+
+            Action action = () => orderItemService.UpdateOrderItem(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
         private OrderItemVm CreateOrderItemVm(int id, int itemId, string userId, int quantity, int? orderId = null)
         {
             var orderItem = new OrderItemVm

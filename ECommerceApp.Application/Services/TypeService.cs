@@ -21,6 +21,11 @@ namespace ECommerceApp.Application.Services
 
         public int AddType(TypeVm model)
         {
+            if (model is null)
+            {
+                throw new BusinessException($"{typeof(TypeVm).Name} cannot be null");
+            }
+
             if (model.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
@@ -92,6 +97,11 @@ namespace ECommerceApp.Application.Services
 
         public void UpdateType(TypeVm model)
         {
+            if (model is null)
+            {
+                throw new BusinessException($"{typeof(TypeVm).Name} cannot be null");
+            }
+
             var type = _mapper.Map<ECommerceApp.Domain.Model.Type>(model);
             if (type != null)
             {

@@ -62,7 +62,7 @@ namespace ECommerceApp.Tests.Services.Customer
 
             Action action = () => customerService.Update(null);
 
-            action.Should().Throw<BusinessException>().WithMessage("Object shouldnt be null");
+            action.Should().Throw<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
         [Fact]
@@ -72,7 +72,7 @@ namespace ECommerceApp.Tests.Services.Customer
 
             Action action = () => customerService.Delete(null);
 
-            action.Should().Throw<BusinessException>().WithMessage("Object shouldnt be null");
+            action.Should().Throw<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
         [Fact]
@@ -99,6 +99,16 @@ namespace ECommerceApp.Tests.Services.Customer
             var exists = customerService.CustomerExists(id, userId);
 
             exists.Should().BeFalse();
+        }
+
+        [Fact]
+        public void given_null_customer_when_add_should_throw_an_exception()
+        {
+            var customerService = new CustomerService(_customerRepository.Object, _mapper);
+
+            Action action = () => customerService.AddCustomer(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
         private Domain.Model.Customer CreateCustomer(int id, string userId)

@@ -31,6 +31,11 @@ namespace ECommerceApp.Application.Services
 
         public int AddPayment(PaymentVm model)
         {
+            if (model is null)
+            {
+                throw new BusinessException($"{typeof(PaymentVm).Name} cannot be null");
+            }
+
             if (model.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
@@ -126,6 +131,11 @@ namespace ECommerceApp.Application.Services
 
         public void UpdatePayment(PaymentVm model)
         {
+            if (model is null)
+            {
+                throw new BusinessException($"{typeof(PaymentVm).Name} cannot be null");
+            }
+
             var payment = _mapper.Map<Payment>(model);
             if (payment != null)
             {

@@ -115,13 +115,13 @@ namespace ECommerceApp.UnitTests.Services.Payment
         }
 
         [Fact]
-        public void given_invalid_payment_shouldnt_update()
+        public void given_null_payment_when_add_should_throw_an_exception()
         {
             var paymentService = new PaymentService(_paymentRepository.Object, _mapper, _orderService.Object, _customerService.Object, _currencyRateService.Object);
-            
-            paymentService.UpdatePayment(null);
 
-            _paymentRepository.Verify(p => p.UpdatePayment(It.IsAny<Domain.Model.Payment>()), Times.Never);
+            Action action = () => paymentService.AddPayment(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
         private PaymentVm CreatePaymentVm(int id, int currencyId, int orderId)

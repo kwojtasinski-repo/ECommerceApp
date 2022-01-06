@@ -53,6 +53,26 @@ namespace ECommerceApp.UnitTests.Services.CouponType
             action.Should().ThrowExactly<BusinessException>().WithMessage("When adding object Id should be equals 0");
         }
 
+        [Fact]
+        public void given_null_coupon_type_when_add_should_throw_an_exception()
+        {
+            var couponTypeService = new CouponTypeService(_couponTypeRepository.Object, _mapper);
+
+            Action action = () => couponTypeService.AddCouponType(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
+        [Fact]
+        public void given_null_coupon_type_when_update_should_throw_an_exception()
+        {
+            var couponTypeService = new CouponTypeService(_couponTypeRepository.Object, _mapper);
+
+            Action action = () => couponTypeService.UpdateCouponType(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
         private CouponTypeVm CreateCouponTypeVm(int id)
         {
             var couponType = new CouponTypeVm

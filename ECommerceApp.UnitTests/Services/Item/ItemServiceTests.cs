@@ -77,5 +77,25 @@ namespace ECommerceApp.Tests.Services.Item
 
             exists.Should().BeFalse();
         }
+
+        [Fact]
+        public void given_null_item_when_add_should_throw_an_exception()
+        {
+            var itemService = new ItemService(_itemRepository.Object, _mapper);
+
+            Action action = () => itemService.AddItem(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
+        [Fact]
+        public void given_null_item_when_update_should_throw_an_exception()
+        {
+            var itemService = new ItemService(_itemRepository.Object, _mapper);
+
+            Action action = () => itemService.UpdateItem(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
     }
 }

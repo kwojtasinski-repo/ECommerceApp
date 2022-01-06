@@ -75,6 +75,26 @@ namespace ECommerceApp.UnitTests.Services.ContactDetailType
             exists.Should().BeFalse();
         }
 
+        [Fact]
+        public void given_null_contact_detail_type_when_add_should_throw_an_exception()
+        {
+            var contactDetailTypeService = new ContactDetailTypeService(_contactDetailTypeRepository.Object, _mapper);
+
+            Action action = () => contactDetailTypeService.AddContactDetailType(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
+        [Fact]
+        public void given_null_contact_detail_type_when_update_should_throw_an_exception()
+        {
+            var contactDetailTypeService = new ContactDetailTypeService(_contactDetailTypeRepository.Object, _mapper);
+
+            Action action = () => contactDetailTypeService.UpdateContactDetailType(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
         private ContactDetailTypeVm CreateContactDetailTypeVm(int id)
         {
             var contactDetailType = new ContactDetailTypeVm

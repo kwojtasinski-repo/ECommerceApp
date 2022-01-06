@@ -25,6 +25,11 @@ namespace ECommerceApp.Application.Services
 
         public int AddAddress(AddressVm addressVm)
         {
+            if (addressVm is null)
+            {
+                throw new BusinessException($"{typeof(AddressVm).Name} cannot be null");
+            }
+
             if (addressVm.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
@@ -42,6 +47,11 @@ namespace ECommerceApp.Application.Services
 
         public int AddAddress(AddressVm model, string userId)
         {
+            if (model is null)
+            {
+                throw new BusinessException($"{typeof(AddressVm).Name} cannot be null");
+            }
+
             if (model.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
@@ -118,9 +128,14 @@ namespace ECommerceApp.Application.Services
             return addressesVm;
         }
 
-        public void UpdateAddress(AddressVm AddressVm)
+        public void UpdateAddress(AddressVm addressVm)
         {
-            var address = _mapper.Map<Address>(AddressVm);
+            if (addressVm is null)
+            {
+                throw new BusinessException($"{typeof(AddressVm).Name} cannot be null");
+            }
+
+            var address = _mapper.Map<Address>(addressVm);
             _repo.UpdateAddress(address);
         }
     }

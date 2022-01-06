@@ -22,6 +22,11 @@ namespace ECommerceApp.Application.Services
 
         public int AddBrand(BrandVm brandVm)
         {
+            if (brandVm is null)
+            {
+                throw new BusinessException($"{typeof(BrandVm).Name} cannot be null");
+            }
+
             if (brandVm.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
@@ -70,6 +75,11 @@ namespace ECommerceApp.Application.Services
 
         public void UpdateBrand(BrandVm brandVm)
         {
+            if (brandVm is null)
+            {
+                throw new BusinessException($"{typeof(BrandVm).Name} cannot be null");
+            }
+
             if (brandVm != null)
             {
                 Update(brandVm);

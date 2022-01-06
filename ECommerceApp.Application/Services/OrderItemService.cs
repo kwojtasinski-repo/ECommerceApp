@@ -23,6 +23,11 @@ namespace ECommerceApp.Application.Services
 
         public int AddOrderItem(OrderItemVm model)
         {
+            if (model is null)
+            {
+                throw new BusinessException($"{typeof(OrderItemVm).Name} cannot be null");
+            }
+
             var orderItem = _mapper.Map<OrderItem>(model);
             var orderItemExist = _repo.GetOrderItemById(model.Id);
             int id;
@@ -105,6 +110,11 @@ namespace ECommerceApp.Application.Services
 
         public void UpdateOrderItem(OrderItemVm model)
         {
+            if (model is null)
+            {
+                throw new BusinessException($"{typeof(OrderItemVm).Name} cannot be null");
+            }
+
             var orderItem = _mapper.Map<OrderItem>(model);
             _repo.UpdateOrderItem(orderItem);
         }

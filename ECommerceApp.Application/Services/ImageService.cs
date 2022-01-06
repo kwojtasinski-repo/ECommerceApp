@@ -30,6 +30,11 @@ namespace ECommerceApp.Application.Services
 
         public override int Add(ImageVm objectVm)
         {
+            if (objectVm is null)
+            {
+                throw new BusinessException($"{typeof(ImageVm).Name} cannot be null");
+            }
+
             if (objectVm.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
@@ -158,6 +163,11 @@ namespace ECommerceApp.Application.Services
 
         public override void Update(ImageVm objectVm)
         {
+            if (objectVm is null)
+            {
+                throw new BusinessException($"{typeof(ImageVm).Name} cannot be null");
+            }
+
             var image = Get(objectVm.Id);
 
             if (image.SourcePath != objectVm.SourcePath)
@@ -178,6 +188,11 @@ namespace ECommerceApp.Application.Services
 
         public List<int> AddImages(AddImagesPOCO imageVm)
         {
+            if (imageVm is null)
+            {
+                throw new BusinessException($"{typeof(AddImagesPOCO).Name} cannot be null");
+            }
+
             if (imageVm.Files == null || (imageVm.Files != null && imageVm.Files.Count == 0))
             {
                 throw new BusinessException("Adding image without source is not allowed");
@@ -224,6 +239,11 @@ namespace ECommerceApp.Application.Services
 
         public void PartialUpdate(UpdateImagePOCO image)
         {
+            if (image is null)
+            {
+                throw new BusinessException($"{typeof(UpdateImagePOCO).Name} cannot be null");
+            }
+
             var img = _repo.GetById(image.Id);
 
             img.ItemId = image.ItemId;

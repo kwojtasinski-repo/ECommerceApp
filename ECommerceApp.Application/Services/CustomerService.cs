@@ -28,6 +28,11 @@ namespace ECommerceApp.Application.Services
 
         public int AddCustomer(NewCustomerVm newCustomer)
         {
+            if (newCustomer is null)
+            {
+                throw new BusinessException($"{typeof(NewCustomerVm).Name} cannot be null");
+            }
+
             if (newCustomer.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
@@ -129,6 +134,11 @@ namespace ECommerceApp.Application.Services
 
         public void UpdateCustomer(NewCustomerVm model)
         {
+            if (model is null)
+            {
+                throw new BusinessException($"{typeof(NewCustomerVm).Name} cannot be null");
+            }
+
             var customer = _mapper.Map<Customer>(model);
             _repo.UpdateCustomer(customer);
         }

@@ -51,6 +51,11 @@ namespace ECommerceApp.Application.Services
 
         public override int Add(OrderVm vm)
         {
+            if (vm is null)
+            {
+                throw new BusinessException($"{typeof(OrderVm).Name} cannot be null");
+            }
+
             var order = _mapper.Map<Order>(vm);
             var id = _repo.Add(order);
             return id;
@@ -58,24 +63,44 @@ namespace ECommerceApp.Application.Services
 
         public override void Delete(OrderVm vm)
         {
+            if (vm is null)
+            {
+                throw new BusinessException($"{typeof(OrderVm).Name} cannot be null");
+            }
+
             var order = _mapper.Map<Order>(vm);
             _repo.Delete(order);
         }
 
         public override void Update(OrderVm vm)
         {
+            if (vm is null)
+            {
+                throw new BusinessException($"{typeof(OrderVm).Name} cannot be null");
+            }
+
             var order = _mapper.Map<Order>(vm);
             _repo.Update(order);
         }
 
         public void Update(NewOrderVm vm)
         {
+            if (vm is null)
+            {
+                throw new BusinessException($"{typeof(NewOrderVm).Name} cannot be null");
+            }
+
             var order = _mapper.Map<Order>(vm);
             _repo.Update(order);
         }
 
         public int AddOrder(OrderVm model)
         {
+            if (model is null)
+            {
+                throw new BusinessException($"{typeof(OrderVm).Name} cannot be null");
+            }
+
             if (model.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
@@ -225,6 +250,11 @@ namespace ECommerceApp.Application.Services
 
         private void ValidateOrder(OrderVm orderVm)
         {
+            if (orderVm is null)
+            {
+                throw new BusinessException($"{typeof(OrderVm).Name} cannot be null");
+            }
+
             if (orderVm.OrderItems is null)
             {
                 throw new BusinessException("Items shouldnt be empty");
@@ -344,6 +374,11 @@ namespace ECommerceApp.Application.Services
 
         public int AddCouponToOrder(int couponId, NewOrderVm order)
         {
+            if (order is null)
+            {
+                throw new BusinessException($"{typeof(NewOrderVm).Name} cannot be null");
+            }
+
             var coupon = _couponService.GetCoupon(couponId);
 
             if (coupon == null)

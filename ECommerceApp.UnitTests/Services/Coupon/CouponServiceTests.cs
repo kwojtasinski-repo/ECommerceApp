@@ -86,7 +86,7 @@ namespace ECommerceApp.Tests.Services.Coupon
 
             Action act = () => couponService.UpdateCoupon(null);
 
-            act.Should().ThrowExactly<BusinessException>().WithMessage("Given invalid coupon");
+            act.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
         [Fact]
@@ -151,6 +151,26 @@ namespace ECommerceApp.Tests.Services.Coupon
             Action act = () => couponService.AddCouponUsed(couponId, couponUsedId);
 
             act.Should().ThrowExactly<BusinessException>().WithMessage("Given invalid id");
+        }
+
+        [Fact]
+        public void given_null_coupon_when_add_should_throw_an_exception()
+        {
+            var couponService = new CouponService(_couponRepository.Object, _mapper);
+
+            Action action = () => couponService.AddCoupon(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
+        [Fact]
+        public void given_null_coupon_when_update_should_throw_an_exception()
+        {
+            var couponService = new CouponService(_couponRepository.Object, _mapper);
+
+            Action action = () => couponService.UpdateCoupon(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
         private CouponVm CreateCoupon()

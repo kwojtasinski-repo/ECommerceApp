@@ -234,6 +234,46 @@ namespace ECommerceApp.Tests.Services.Image
             action.Should().ThrowExactly<BusinessException>().WithMessage("Adding image without source is not allowed");
         }
 
+        [Fact]
+        public void given_null_image_when_add_should_throw_an_exception()
+        {
+            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
+
+            Action action = () => imageService.Add(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
+        [Fact]
+        public void given_null_image_when_add_images_should_throw_an_exception()
+        {
+            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
+
+            Action action = () => imageService.AddImages(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
+        [Fact]
+        public void given_null_image_when_update_should_throw_an_exception()
+        {
+            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
+
+            Action action = () => imageService.Update(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
+        [Fact]
+        public void given_null_image_when_partial_update_should_throw_an_exception()
+        {
+            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
+
+            Action action = () => imageService.Update(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
         private ImageVm CreateImageVm()
         {
             Random random = new Random();

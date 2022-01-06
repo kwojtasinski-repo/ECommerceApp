@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.ContactDetailType;
 using ECommerceApp.Domain.Interface;
@@ -21,6 +22,11 @@ namespace ECommerceApp.Application.Services
 
         public int AddContactDetailType(ContactDetailTypeVm model)
         {
+            if (model is null)
+            {
+                throw new BusinessException($"{typeof(ContactDetailTypeVm).Name} cannot be null");
+            }
+
             var id = Add(model);
             return id;
         }
@@ -53,6 +59,11 @@ namespace ECommerceApp.Application.Services
 
         public void UpdateContactDetailType(ContactDetailTypeVm model)
         {
+            if (model is null)
+            {
+                throw new BusinessException($"{typeof(ContactDetailTypeVm).Name} cannot be null");
+            }
+
             var contactDetailType = _mapper.Map<ContactDetailType>(model);
             _repo.UpdateContactDetailType(contactDetailType);
         }

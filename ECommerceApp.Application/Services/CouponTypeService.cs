@@ -21,6 +21,11 @@ namespace ECommerceApp.Application.Services
 
         public int AddCouponType(CouponTypeVm couponTypeVm)
         {
+            if (couponTypeVm is null)
+            {
+                throw new BusinessException($"{typeof(CouponTypeVm).Name} cannot be null");
+            }
+
             if (couponTypeVm.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
@@ -71,11 +76,13 @@ namespace ECommerceApp.Application.Services
 
         public void UpdateCouponType(CouponTypeVm couponTypeVm)
         {
-            if (couponTypeVm != null)
+            if (couponTypeVm is null)
             {
-                var couponType = _mapper.Map<CouponType>(couponTypeVm);
-                _repo.UpdateCouponType(couponType);
+                throw new BusinessException($"{typeof(CouponTypeVm).Name} cannot be null");
             }
+
+            var couponType = _mapper.Map<CouponType>(couponTypeVm);
+            _repo.UpdateCouponType(couponType);
         }
 
         public IEnumerable<CouponTypeVm> GetAllCouponsTypes(Expression<Func<CouponType, bool>> expression)

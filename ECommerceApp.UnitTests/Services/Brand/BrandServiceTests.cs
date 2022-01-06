@@ -52,6 +52,26 @@ namespace ECommerceApp.UnitTests.Services.Brand
             action.Should().ThrowExactly<BusinessException>().WithMessage("When adding object Id should be equals 0");
         }
 
+        [Fact]
+        public void given_null_brand_when_add_should_throw_an_exception()
+        {
+            var brandService = new BrandService(_brandRepository.Object, _mapper);
+
+            Action action = () => brandService.AddBrand(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
+        [Fact]
+        public void given_null_brand_when_update_should_throw_an_exception()
+        {
+            var brandService = new BrandService(_brandRepository.Object, _mapper);
+
+            Action action = () => brandService.AddBrand(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
         private BrandVm CreateBrand()
         {
             var brand = new BrandVm

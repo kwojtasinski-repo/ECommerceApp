@@ -23,6 +23,11 @@ namespace ECommerceApp.Application.Services
 
         public int AddTag(TagVm model)
         {
+            if (model is null)
+            {
+                throw new BusinessException($"{typeof(TagVm).Name} cannot be null");
+            }
+
             if (model.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
@@ -96,6 +101,11 @@ namespace ECommerceApp.Application.Services
 
         public void UpdateTag(TagVm model)
         {
+            if (model is null)
+            {
+                throw new BusinessException($"{typeof(TagVm).Name} cannot be null");
+            }
+
             var tag = _mapper.Map<Tag>(model);
             if (tag != null)
             {

@@ -23,6 +23,11 @@ namespace ECommerceApp.Application.Services
 
         public int AddContactDetail(ContactDetailVm contactDetailVm)
         {
+            if (contactDetailVm is null)
+            {
+                throw new BusinessException($"{typeof(ContactDetailVm).Name} cannot be null");
+            }
+
             if (contactDetailVm.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
@@ -86,12 +91,22 @@ namespace ECommerceApp.Application.Services
 
         public void UpdateContactDetail(ContactDetailVm contactDetailVm)
         {
+            if (contactDetailVm is null)
+            {
+                throw new BusinessException($"{typeof(ContactDetailVm).Name} cannot be null");
+            }
+
             var contactDetail = _mapper.Map<ContactDetail>(contactDetailVm);
             _repo.UpdateContactDetail(contactDetail);
         }
 
         public int AddContactDetail(ContactDetailVm model, string userId)
         {
+            if (model is null)
+            {
+                throw new BusinessException($"{typeof(ContactDetailVm).Name} cannot be null");
+            }
+
             if (model.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");

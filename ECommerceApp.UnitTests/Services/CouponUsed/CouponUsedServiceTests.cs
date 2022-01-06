@@ -106,13 +106,23 @@ namespace ECommerceApp.UnitTests.Services.CouponUsed
         }
 
         [Fact]
-        public void given_invalid_coupon_shouldnt_update()
+        public void given_null_coupon_used_when_add_should_throw_an_exception()
         {
             var couponUsedService = new CouponUsedService(_couponUsedRepository.Object, _mapper, _orderService.Object, _couponService.Object);
 
-            couponUsedService.UpdateCouponUsed(null);
+            Action action = () => couponUsedService.AddCouponUsed(null);
 
-            _couponUsedRepository.Verify(cu => cu.UpdateCouponUsed(It.IsAny<Domain.Model.CouponUsed>()), Times.Never);
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
+        [Fact]
+        public void given_null_coupon_used_when_update_should_throw_an_exception()
+        {
+            var couponUsedService = new CouponUsedService(_couponUsedRepository.Object, _mapper, _orderService.Object, _couponService.Object);
+
+            Action action = () => couponUsedService.UpdateCouponUsed(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
         private CouponUsedVm CreateCouponUsedVm(int id, int couponId, int orderId)

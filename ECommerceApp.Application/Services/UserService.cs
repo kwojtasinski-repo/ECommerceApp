@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.User;
 using Microsoft.AspNetCore.Identity;
@@ -114,6 +115,11 @@ namespace ECommerceApp.Application.Services
 
         public async Task<IdentityResult> EditUser(NewUserVm userToEdit)
         {
+            if (userToEdit is null)
+            {
+                throw new BusinessException($"{typeof(NewUserVm).Name} cannot be null");
+            }
+
             var currentUser = await _userManager.FindByIdAsync(userToEdit.Id);
             CheckChangesInCurrentUser(currentUser, userToEdit); // allowed only change email and verification
             return await _userManager.UpdateAsync(currentUser);
@@ -121,6 +127,11 @@ namespace ECommerceApp.Application.Services
 
         public async Task<IdentityResult> AddUser(NewUserToAddVm newUser)
         {
+            if (newUser is null)
+            {
+                throw new BusinessException($"{typeof(NewUserToAddVm).Name} cannot be null");
+            }
+
             //var user = _mapper.Map<IdentityUser>(newUser);
             var user = new IdentityUser() { UserName = newUser.UserName, Email = newUser.Email,
                                             EmailConfirmed = newUser.EmailConfirmed };
@@ -166,6 +177,11 @@ namespace ECommerceApp.Application.Services
 
         public async Task ChangeUserPassword(NewUserVm model)
         {
+            if (model is null)
+            {
+                throw new BusinessException($"{typeof(NewUserVm).Name} cannot be null");
+            }
+
             var user = await _userManager.FindByIdAsync(model.Id);
             await _userManager.RemovePasswordAsync(user);
             var result = await _userManager.AddPasswordAsync(user, model.PasswordToChange);

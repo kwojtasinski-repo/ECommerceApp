@@ -139,6 +139,36 @@ namespace ECommerceApp.UnitTests.Services.Address
             exists.Should().BeFalse();
         }
 
+        [Fact]
+        public void given_null_address_when_add_should_throw_an_exception()
+        {
+            var addressService = new AddressService(_addressRepository.Object, _mapper, _customerService.Object);
+
+            Action action = () => addressService.AddAddress(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
+        [Fact]
+        public void given_null_address_when_add_with_user_id_should_throw_an_exception()
+        {
+            var addressService = new AddressService(_addressRepository.Object, _mapper, _customerService.Object);
+
+            Action action = () => addressService.AddAddress(null, "");
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
+        [Fact]
+        public void given_null_address_when_update_should_throw_an_exception()
+        {
+            var addressService = new AddressService(_addressRepository.Object, _mapper, _customerService.Object);
+
+            Action action = () => addressService.UpdateAddress(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
         private AddressVm CreateAddressVm()
         {
             var vm = new AddressVm();

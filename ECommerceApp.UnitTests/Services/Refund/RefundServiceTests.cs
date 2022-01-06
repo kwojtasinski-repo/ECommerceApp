@@ -131,16 +131,6 @@ namespace ECommerceApp.UnitTests.Services.Refund
         }
 
         [Fact]
-        public void given_null_refund_shouldnt_update()
-        {
-            var refundService = new RefundService(_refundRepository.Object, _mapper, _orderService.Object);
-
-            refundService.UpdateRefund(null);
-
-            _refundRepository.Verify(r => r.UpdateRefund(It.IsAny<Domain.Model.Refund>()), Times.Never);
-        }
-
-        [Fact]
         public void given_proper_reason_when_compare_refund_should_return_true()
         {
             string reason = "This is text";
@@ -174,6 +164,26 @@ namespace ECommerceApp.UnitTests.Services.Refund
             Action action = () => refundService.SameReasonNotExists(reason);
 
             action.Should().Throw<BusinessException>().WithMessage("Check your reason if is not null");
+        }
+
+        [Fact]
+        public void given_null_refund_when_add_should_throw_an_exception()
+        {
+            var refundService = new RefundService(_refundRepository.Object, _mapper, _orderService.Object);
+
+            Action action = () => refundService.AddRefund(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
+        [Fact]
+        public void given_null_refund_when_update_should_throw_an_exception()
+        {
+            var refundService = new RefundService(_refundRepository.Object, _mapper, _orderService.Object);
+
+            Action action = () => refundService.UpdateRefund(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
         private RefundVm CreateRefundVm(int id, int customerId, int orderId)

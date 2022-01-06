@@ -21,6 +21,11 @@ namespace ECommerceApp.Application.Services
 
         public override int Add(ItemVm vm)
         {
+            if (vm is null)
+            {
+                throw new BusinessException($"{vm.GetType().Name} cannot be null");
+            }
+
             if (vm.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
@@ -44,12 +49,22 @@ namespace ECommerceApp.Application.Services
 
         public override void Delete(ItemVm vm)
         {
+            if (vm is null)
+            {
+                throw new BusinessException($"{vm.GetType().Name} cannot be null");
+            }
+
             var item = vm.MapToItem();
             _repo.Delete(item);
         }
 
         public override void Update(ItemVm vm)
         {
+            if (vm is null)
+            {
+                throw new BusinessException($"{vm.GetType().Name} cannot be null");
+            }
+
             var item = vm.MapToItem();
             _repo.Update(item);
         }
@@ -57,6 +72,11 @@ namespace ECommerceApp.Application.Services
 
         public int AddItem(NewItemVm model)
         {
+            if (model is null)
+            {
+                throw new BusinessException($"{typeof(NewItemVm).Name} cannot be null");
+            }
+
             if (model.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
@@ -117,6 +137,11 @@ namespace ECommerceApp.Application.Services
 
         public void UpdateItem(NewItemVm model)
         {
+            if (model is null)
+            {
+                throw new BusinessException($"{typeof(NewItemVm).Name} cannot be null");
+            }
+
             var item = _mapper.Map<Item>(model);
             _repo.UpdateItem(item);
         }

@@ -87,6 +87,26 @@ namespace ECommerceApp.UnitTests.Services.Currency
             action.Should().ThrowExactly<BusinessException>().WithMessage("Code shouldnt be empty");
         }
 
+        [Fact]
+        public void given_null_currency_when_add_should_throw_an_exception()
+        {
+            var currencyService = new CurrencyService(_currencyRepository.Object, _mapper);
+
+            Action action = () => currencyService.Add(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
+        [Fact]
+        public void given_null_currency_when_update_should_throw_an_exception()
+        {
+            var currencyService = new CurrencyService(_currencyRepository.Object, _mapper);
+
+            Action action = () => currencyService.Update(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
         private CurrencyVm CreateCurrencyVm(int id)
         {
             return new CurrencyVm

@@ -28,6 +28,11 @@ namespace ECommerceApp.Application.Services
 
         public int AddCouponUsed(CouponUsedVm couponUsedVm)
         {
+            if (couponUsedVm is null)
+            {
+                throw new BusinessException($"{typeof(CouponUsedVm).Name} cannot be null");
+            }
+
             if (couponUsedVm.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
@@ -102,11 +107,13 @@ namespace ECommerceApp.Application.Services
 
         public void UpdateCouponUsed(CouponUsedVm couponUsedVm)
         {
-            if (couponUsedVm != null)
+            if (couponUsedVm is null)
             {
-                var couponUsed = _mapper.Map<CouponUsed>(couponUsedVm);
-                _repo.UpdateCouponUsed(couponUsed);
+                throw new BusinessException($"{typeof(CouponUsedVm).Name} cannot be null");
             }
+
+            var couponUsed = _mapper.Map<CouponUsed>(couponUsedVm);
+            _repo.UpdateCouponUsed(couponUsed);        
         }
 
         public IEnumerable<CouponUsedVm> GetAllCouponsUsed(Expression<Func<CouponUsed, bool>> expression)

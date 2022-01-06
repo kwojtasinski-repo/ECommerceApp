@@ -483,6 +483,26 @@ namespace ECommerceApp.Tests.Services.Order
             var exception = Assert.Throws<BusinessException>(action);
         }
 
+        [Fact]
+        public void given_null_order_when_add_should_throw_an_exception()
+        {
+            var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
+
+            Action action = () => orderService.AddOrder(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
+        [Fact]
+        public void given_null_order_when_update_should_throw_an_exception()
+        {
+            var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
+
+            Action action = () => orderService.UpdateOrder(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
         #region DataInitial
 
         private Domain.Model.Order CreateDefaultOrder()

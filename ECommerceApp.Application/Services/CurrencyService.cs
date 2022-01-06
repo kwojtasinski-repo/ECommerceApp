@@ -21,6 +21,11 @@ namespace ECommerceApp.Application.Services
 
         public override int Add(CurrencyVm vm)
         {
+            if (vm is null)
+            {
+                throw new BusinessException($"{typeof(CurrencyVm).Name} cannot be null");
+            }
+
             if (string.IsNullOrWhiteSpace(vm.Code))
             {
                 throw new BusinessException("Code shouldnt be empty");
@@ -32,6 +37,11 @@ namespace ECommerceApp.Application.Services
 
         public override void Update(CurrencyVm vm)
         {
+            if (vm is null)
+            {
+                throw new BusinessException($"{typeof(CurrencyVm).Name} cannot be null");
+            }
+
             if (string.IsNullOrWhiteSpace(vm.Code))
             {
                 throw new BusinessException("Code shouldnt be empty");

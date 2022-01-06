@@ -87,13 +87,23 @@ namespace ECommerceApp.UnitTests.Services.Tag
         }
 
         [Fact]
-        public void given_null_tag_shouldnt_update()
+        public void given_null_tag_when_add_should_throw_an_exception()
         {
             var tagService = new TagService(_tagRepository.Object, _mapper);
 
-            tagService.UpdateTag(null);
+            Action action = () => tagService.AddTag(null);
 
-            _tagRepository.Verify(t => t.UpdateTag(It.IsAny<Domain.Model.Tag>()), Times.Never);
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
+        [Fact]
+        public void given_null_tag_when_update_should_throw_an_exception()
+        {
+            var tagService = new TagService(_tagRepository.Object, _mapper);
+
+            Action action = () => tagService.UpdateTag(null);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
         private TagVm CreateTagVm(int id)
