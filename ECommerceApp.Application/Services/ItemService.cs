@@ -34,6 +34,10 @@ namespace ECommerceApp.Application.Services
         public override ItemVm Get(int id)
         {
             var item = _repo.GetById(id);
+            if (item != null)
+            {
+                _repo.DetachEntity(item);
+            }
             var itemVm = item.MapToItemVm();
             return itemVm;
         }

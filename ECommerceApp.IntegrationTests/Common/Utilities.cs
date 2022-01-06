@@ -76,6 +76,19 @@ namespace ECommerceApp.IntegrationTests.Common
             };
             context.Add(userRole);
 
+            //user: { email: "test2@test2", userName: "test2@test2", password: "Test@test12" }
+            var testUser2 = new IdentityUser
+            {
+                Id = "e4fc1feb-7d08-4207-bd52-3f3464a01564",
+                Email = "test2@test2",
+                UserName = "test2@test2",
+                NormalizedUserName = "TEST2@TEST2",
+                PasswordHash = "AQAAAAEAACcQAAAAEAhNvr909GdhKMLVvTQ6kj17HAWZPg6c+YgQ8rl/m1Ww6Pf+fqJ8FUf+yU5N5stXOA==",
+                SecurityStamp = string.Empty,
+                EmailConfirmed = true
+            };
+            context.Add(testUser2);
+
             var couponType = new Domain.Model.CouponType { Id = 1, Type = "Type1" };
             context.Add(couponType);
 
@@ -89,6 +102,11 @@ namespace ECommerceApp.IntegrationTests.Common
             item.Brand = brand;
             item.Type = type;
             context.Add(item);
+            var tag2 = new Domain.Model.Tag { Id = 2, Name = "Tag2" };
+            context.Add(tag2);
+            var itemTag = new Domain.Model.ItemTag { ItemId = 1, TagId = 2 };
+            context.Add(itemTag);
+
             var item2 = new Domain.Model.Item { Id = 2, BrandId = 1, Cost = new decimal(2500), CurrencyId = 1, Description = "ItemTestDescription", Name = "Item2", Quantity = 50, Warranty = "365", TypeId = 1, Brand = brand, Type = type };
             var item3 = new Domain.Model.Item { Id = 3, BrandId = 1, Cost = new decimal(2500), CurrencyId = 1, Description = "ItemTestDescription", Name = "Item3", Quantity = 50, Warranty = "365", TypeId = 1, Brand = brand, Type = type };
             var item4 = new Domain.Model.Item { Id = 4, BrandId = 1, Cost = new decimal(2500), CurrencyId = 1, Description = "ItemTestDescription", Name = "Item4", Quantity = 50, Warranty = "365", TypeId = 1, Brand = brand, Type = type };

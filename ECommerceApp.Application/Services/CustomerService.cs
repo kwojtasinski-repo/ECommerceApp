@@ -105,7 +105,7 @@ namespace ECommerceApp.Application.Services
 
         public CustomerInformationForOrdersVm GetCustomerInformationById(int customerId)
         {
-            var customer = _repo.GetCustomerById(customerId);
+            var customer = _repo.GetById(customerId);
             var customerVm = _mapper.Map<CustomerInformationForOrdersVm>(customer);
 
             return customerVm;

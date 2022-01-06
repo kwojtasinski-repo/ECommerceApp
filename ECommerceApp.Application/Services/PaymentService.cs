@@ -150,7 +150,7 @@ namespace ECommerceApp.Application.Services
             var payment = new PaymentVm()
             {
                 OrderId = order.Id,
-                Number = random.Next(0, 1000),
+                Number = random.Next(1, 1000),
                 DateOfOrderPayment = System.DateTime.Now,
                 CustomerId = order.CustomerId,
                 OrderNumber = order.Number,

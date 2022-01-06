@@ -68,6 +68,12 @@ namespace ECommerceApp.Application.Services
         {
             var user = _userManager.FindByIdAsync(id).Result;
             var userVm = _mapper.Map<NewUserVm>(user);
+
+            if (userVm is null)
+            {
+                return null;
+            }
+
             userVm.UserRoles = GetRolesByUser(user.Id).ToList();
             userVm.Roles = GetAllRoles().ToList();
             return userVm;
@@ -162,7 +168,7 @@ namespace ECommerceApp.Application.Services
         {
             var user = await _userManager.FindByIdAsync(model.Id);
             await _userManager.RemovePasswordAsync(user);
-            await _userManager.AddPasswordAsync(user, model.PasswordToChange);
+            var result = await _userManager.AddPasswordAsync(user, model.PasswordToChange);
         }
     }
 }
