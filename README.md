@@ -16,6 +16,20 @@ Where can i get ClientId and ClientSecret?
 * https://console.cloud.google.com/
 Credentials and choose OAuth2, then create new data logging. In the section URI place https://localhost:44364/signin-google
 
+# Docker run
+Before run docker setup your database 
+https://stackoverflow.com/questions/66210339/how-to-connect-to-a-local-sql-server-express-database-from-a-docker-composed-c-s 
+Then add user docker to SQL using this script:
+``` sql
+CREATE LOGIN docker WITH PASSWORD=N'docker', 
+                 DEFAULT_DATABASE=[master], CHECK_EXPIRATION=OFF, CHECK_POLICY=OFF
+
+EXEC sp_addsrvrolemember 'docker', 'sysadmin'
+CREATE USER docker FOR LOGIN docker WITH DEFAULT_SCHEMA=[dbo]
+```
+Next in ECommerceApp root directory in powershell or cmd run this command:
+> Docker compose up
+
 ## Technologies
 * .NET Core 3.1
 * ASP.NET, HTML5, CSS3, JS, MSSQL

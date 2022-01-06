@@ -23,12 +23,14 @@ namespace ECommerceApp.Web
 {
     public class Startup
     {
-        public Startup(IConfiguration configuration)
+        public Startup(IConfiguration configuration, IWebHostEnvironment environment)
         {
             Configuration = configuration;
+            Environment = environment;
         }
 
         public IConfiguration Configuration { get; }
+        public IWebHostEnvironment Environment { get; set; }
 
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
@@ -59,12 +61,15 @@ namespace ECommerceApp.Web
                 opt.User.RequireUniqueEmail = true;
             });
 
-            services.AddAuthentication().AddGoogle(options =>
+            if (!Environment.IsEnvironment("docker"))
             {
-                IConfigurationSection configurationSection = Configuration.GetSection("Authentication:Google");
-                options.ClientId = configurationSection["ClientId"];
-                options.ClientSecret = configurationSection["ClientSecret"];
-            });
+                services.AddAuthentication().AddGoogle(options =>
+                {
+                    IConfigurationSection configurationSection = Configuration.GetSection("Authentication:Google");
+                    options.ClientId = configurationSection["ClientId"];
+                    options.ClientSecret = configurationSection["ClientSecret"];
+                });
+            }
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
