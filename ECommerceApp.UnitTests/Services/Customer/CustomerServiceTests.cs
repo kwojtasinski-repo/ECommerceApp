@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.Internal;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.Services;
@@ -27,6 +28,7 @@ namespace ECommerceApp.Tests.Services.Customer
             var configurationProvider = new MapperConfiguration(cfg =>
             {
                 cfg.AddProfile<MappingProfile>();
+                cfg.Internal().MethodMappingEnabled = false;
             });
 
             _mapper = configurationProvider.CreateMapper();

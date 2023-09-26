@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.Internal;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.Services;
@@ -7,10 +8,12 @@ using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Repositories;
 using FluentAssertions;
+using FluentAssertions.Common;
 using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using Xunit;
 
@@ -26,6 +29,7 @@ namespace ECommerceApp.Tests.Services.Coupon
             var configurationProvider = new MapperConfiguration(cfg =>
             {
                 cfg.AddProfile<MappingProfile>();
+                cfg.Internal().MethodMappingEnabled = false;
             });
 
             _mapper = configurationProvider.CreateMapper();
