@@ -32,9 +32,10 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Item" asp-action="Index">Przedmioty</a>
                         </li>
+@using ECommerceApp.Domain.Model;
                         @using Microsoft.AspNetCore.Identity
-                        @inject SignInManager<IdentityUser> SignInManager
-                        @inject UserManager<IdentityUser> UserManager
+                        @inject SignInManager<ApplicationUser> SignInManager
+                        @inject UserManager<ApplicationUser> UserManager
                         @using System.Security.Claims;
                         @if (SignInManager.IsSignedIn(User))
                         {

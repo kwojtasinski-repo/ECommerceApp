@@ -18,6 +18,7 @@ using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using FluentValidation.AspNetCore;
 using ECommerceApp.Application.Middlewares;
+using ECommerceApp.Domain.Model;
 
 namespace ECommerceApp.Web
 {
@@ -38,8 +39,9 @@ namespace ECommerceApp.Web
             services.AddDbContext<Context>(options =>
                 options.UseSqlServer(
                     Configuration.GetConnectionString("DefaultConnection")));
-            services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = true).AddRoles<IdentityRole>()
-                .AddEntityFrameworkStores<Context>();
+            services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+                     .AddRoles<IdentityRole>()
+                     .AddEntityFrameworkStores<Context>();
 
             services.AddApplication();
             services.AddInfrastructure();

@@ -1,9 +1,11 @@
 ﻿using AutoMapper;
+using AutoMapper.Internal;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.External.Client;
 using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.Middlewares;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Coupon;
@@ -28,7 +30,7 @@ namespace ECommerceApp.Application
             services.AddTransient<IOrderService, OrderService>();
             services.AddTransient<ICouponService, CouponService>();
             services.AddTransient<IUserService, UserService>();
-            services.AddAutoMapper(Assembly.GetExecutingAssembly());
+            services.AddAutoMapper(cfg => cfg.Internal().MethodMappingEnabled = false, Assembly.GetExecutingAssembly());
             services.AddTransient<IFileStore, FileStore>();
             services.AddTransient<IFileWrapper, FileWrapper>();
             services.AddTransient<IDirectoryWrapper, DirectoryWrapper>();

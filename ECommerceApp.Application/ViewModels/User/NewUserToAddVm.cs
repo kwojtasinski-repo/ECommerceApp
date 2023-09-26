@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
+using ECommerceApp.Domain.Model;
 using FluentValidation;
 using Microsoft.AspNetCore.Identity;
 using System;
@@ -9,7 +10,7 @@ using System.Text.RegularExpressions;
 
 namespace ECommerceApp.Application.ViewModels.User
 {
-    public class NewUserToAddVm : IMapFrom<IdentityUser>
+    public class NewUserToAddVm : IMapFrom<ApplicationUser>
     {
         public string Id { get; set; }
         public string UserName { get; set; }
@@ -21,7 +22,7 @@ namespace ECommerceApp.Application.ViewModels.User
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<NewUserVm, IdentityUser>();
+            profile.CreateMap<NewUserVm, ApplicationUser>();
         }
     }
 

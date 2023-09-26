@@ -3,6 +3,7 @@ using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.User;
+using ECommerceApp.Domain.Model;
 using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
@@ -14,11 +15,11 @@ namespace ECommerceApp.Application.Services
 {
     public class UserService : IUserService
     {
-        private readonly UserManager<IdentityUser> _userManager;
+        private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IMapper _mapper;
 
-        public UserService(UserManager<IdentityUser> userManager, RoleManager<IdentityRole> roleManager, IMapper mapper)
+        public UserService(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, IMapper mapper)
         {
             _userManager = userManager;
             _roleManager = roleManager;
@@ -133,13 +134,13 @@ namespace ECommerceApp.Application.Services
             }
 
             //var user = _mapper.Map<IdentityUser>(newUser);
-            var user = new IdentityUser() { UserName = newUser.UserName, Email = newUser.Email,
+            var user = new ApplicationUser() { UserName = newUser.UserName, Email = newUser.Email,
                                             EmailConfirmed = newUser.EmailConfirmed };
             newUser.Id = user.Id;
             return await _userManager.CreateAsync(user, newUser.Password);
         }
 
-        private void CheckChangesInCurrentUser(IdentityUser currentUser, NewUserVm userToEdit)
+        private void CheckChangesInCurrentUser(ApplicationUser currentUser, NewUserVm userToEdit)
         {
             if(currentUser.Email != userToEdit.Email)
             {
@@ -152,7 +153,7 @@ namespace ECommerceApp.Application.Services
             }
         }
 
-        private async Task<IdentityResult> AddRolesToUserAsync(IdentityUser user, IEnumerable<string> roles)
+        private async Task<IdentityResult> AddRolesToUserAsync(ApplicationUser user, IEnumerable<string> roles)
         {
             IdentityResult result;
             roles = RemoveDuplicateRoles(user, roles);
@@ -160,14 +161,14 @@ namespace ECommerceApp.Application.Services
             return result;
         }
 
-        private List<string> RemoveDuplicateRoles(IdentityUser user, IEnumerable<string> roles)
+        private List<string> RemoveDuplicateRoles(ApplicationUser user, IEnumerable<string> roles)
         {
             var userRoles = _userManager.GetRolesAsync(user).Result.ToList();
             var rolesToAdd = roles.Where(r => !userRoles.Contains(r)).ToList();
             return rolesToAdd;
         }
 
-        private async Task<IdentityResult> RemoveRolesFromUserAsync(IdentityUser user, IEnumerable<string> roles)
+        private async Task<IdentityResult> RemoveRolesFromUserAsync(ApplicationUser user, IEnumerable<string> roles)
         {
             var currentUserRoles = await _userManager.GetRolesAsync(user);
             await _userManager.RemoveFromRolesAsync(user, currentUserRoles);

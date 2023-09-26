@@ -521,7 +521,7 @@ namespace ECommerceApp.Tests.Services.Order
             order.OrderItems = new List<Domain.Model.OrderItem>();
             order.Currency = new Domain.Model.Currency() { Id = 1 };
             order.Customer = new Domain.Model.Customer() { Id = 1 };
-            order.User = new Microsoft.AspNetCore.Identity.IdentityUser { Id = order.UserId };
+            order.User = new ApplicationUser { Id = order.UserId };
             return order;
         }
 
@@ -691,7 +691,7 @@ namespace ECommerceApp.Tests.Services.Order
                     ItemId = orderItem.ItemId,
                     Item = new Domain.Model.Item() { Id = orderItem.ItemId, Cost = decimal.One },
                     UserId = orderItem.UserId,
-                    User = new Microsoft.AspNetCore.Identity.IdentityUser { Id = orderItem.UserId },
+                    User = new ApplicationUser { Id = orderItem.UserId },
                     OrderId = orderItem.OrderId,
                     ItemOrderQuantity = orderItem.ItemOrderQuantity
                 };

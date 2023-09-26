@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Infrastructure;
+﻿using ECommerceApp.Domain.Model;
+using ECommerceApp.Infrastructure;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using MimeTypes;
@@ -57,7 +58,7 @@ namespace ECommerceApp.IntegrationTests.Common
             context.Add(currencyRate2);
 
             //user: { email: "test@test", userName: "test@test", password: "Test@test12" }
-            var testUser = new IdentityUser 
+            var testUser = new ApplicationUser
             { 
                 Id = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", 
                 Email = "test@test", 
@@ -77,7 +78,7 @@ namespace ECommerceApp.IntegrationTests.Common
             context.Add(userRole);
 
             //user: { email: "test2@test2", userName: "test2@test2", password: "Test@test12" }
-            var testUser2 = new IdentityUser
+            var testUser2 = new ApplicationUser
             {
                 Id = "e4fc1feb-7d08-4207-bd52-3f3464a01564",
                 Email = "test2@test2",
@@ -176,7 +177,7 @@ namespace ECommerceApp.IntegrationTests.Common
 
         public static MultipartFormDataContent SerializeObjectWithImageToBytes<T>(T obj)
         {
-            Type type = typeof(T);
+            System.Type type = typeof(T);
 
             // jesli przekazuje liste IFormFile
             if (typeof(System.Collections.Generic.ICollection<IFormFile>).IsAssignableFrom(type))

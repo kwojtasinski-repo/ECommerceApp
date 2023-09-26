@@ -24,8 +24,8 @@ namespace ECommerceApp.Application.ViewModels.Coupon
                 .ForMember(c => c.Description, opt => opt.MapFrom(src => src.Description))
                 .ForMember(c => c.CouponTypeId, opt => opt.MapFrom(src => src.CouponTypeId))
                 .ForMember(c => c.CouponUsedId, opt => opt.MapFrom(src => src.CouponUsedId))
-                .ReverseMap()
-                .ForAllOtherMembers(c => c.Ignore());
+                .ReverseMap();
+               // .ForAllOtherMembers(c => c.Ignore());
         }
 
         public class CouponVmValidation : AbstractValidator<CouponVm>

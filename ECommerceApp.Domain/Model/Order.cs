@@ -19,7 +19,7 @@ namespace ECommerceApp.Domain.Model
         public int CustomerId { get; set; }
         public Customer Customer { get; set; }
         public string UserId { get; set; }
-        public IdentityUser User { get; set; }
+        public ApplicationUser User { get; set; }
         public int? PaymentId { get; set; } // 1:1 Order Payment
         public bool IsPaid { get; set; }
         public virtual Payment Payment { get; set; }

@@ -1,12 +1,12 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
+using ECommerceApp.Domain.Model;
 using FluentValidation;
-using Microsoft.AspNetCore.Identity;
 using System.Collections.Generic;
 
 namespace ECommerceApp.Application.ViewModels.User
 {
-    public class NewUserVm : IMapFrom<IdentityUser>
+    public class NewUserVm : IMapFrom<ApplicationUser>
     {
         public string Id { get; set; }
         public string UserName { get; set; }
@@ -19,7 +19,7 @@ namespace ECommerceApp.Application.ViewModels.User
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<IdentityUser, NewUserVm>();
+            profile.CreateMap<ApplicationUser, NewUserVm>();
         }
     }
     public class NewUserValidation : AbstractValidator<NewUserVm>

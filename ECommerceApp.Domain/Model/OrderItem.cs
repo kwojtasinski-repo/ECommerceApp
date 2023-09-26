@@ -11,7 +11,7 @@ namespace ECommerceApp.Domain.Model
         public int ItemOrderQuantity { get; set; }
         public virtual Item Item { get; set; }
         public string UserId { get; set; }
-        public IdentityUser User { get; set; }
+        public ApplicationUser User { get; set; }
         public int? OrderId { get; set; }  // Many : 1 OrderItem Order
         public Order Order { get; set; }
         public int? CouponUsedId { get; set; }
