@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
+using System.Linq;
 
 namespace ECommerceApp.Infrastructure
 {
@@ -140,6 +142,12 @@ namespace ECommerceApp.Infrastructure
             // -------------------- ADD INDEX --------------------
             builder.Entity<Currency>().HasIndex(c => new { c.Code }).IsUnique(true);
             // -------------------- ADD INDEX --------------------
+
+            var keysProperties = builder.Model.GetEntityTypes().Select(x => x.FindPrimaryKey()).SelectMany(x => x.Properties);
+            foreach (var property in keysProperties)
+            {
+                property.ValueGenerated = ValueGenerated.OnAdd;
+            }
         }
     }
 }

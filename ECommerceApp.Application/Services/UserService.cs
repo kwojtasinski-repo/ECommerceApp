@@ -136,8 +136,9 @@ namespace ECommerceApp.Application.Services
             //var user = _mapper.Map<IdentityUser>(newUser);
             var user = new ApplicationUser() { UserName = newUser.UserName, Email = newUser.Email,
                                             EmailConfirmed = newUser.EmailConfirmed };
+            var result = await _userManager.CreateAsync(user, newUser.Password);
             newUser.Id = user.Id;
-            return await _userManager.CreateAsync(user, newUser.Password);
+            return result;
         }
 
         private void CheckChangesInCurrentUser(ApplicationUser currentUser, NewUserVm userToEdit)

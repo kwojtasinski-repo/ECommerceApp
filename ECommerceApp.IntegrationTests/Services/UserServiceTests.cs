@@ -1,6 +1,8 @@
 ﻿using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.User;
+using ECommerceApp.Domain.Model;
 using ECommerceApp.IntegrationTests.Common;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
@@ -143,6 +145,17 @@ namespace ECommerceApp.IntegrationTests.Services
         {
             var user = CreateUser();
             await _service.AddUser(user);
+            var newPassword = "PaSW0Rd!@1245";
+            var changePasswordUser = new NewUserVm { Id = user.Id, UserName = user.UserName, Email = user.Email, EmailConfirmed = true, PasswordToChange = newPassword };
+
+            await _service.ChangeUserPassword(changePasswordUser);
+
+            using var scope = Services.CreateScope();
+            var httpContextAccessor = scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>();
+            httpContextAccessor.HttpContext = new DefaultHttpContext() { RequestServices = scope.ServiceProvider };
+            var signInManager = scope.ServiceProvider.GetRequiredService<SignInManager<ApplicationUser>>();
+            var result = await signInManager.PasswordSignInAsync(changePasswordUser.Email, changePasswordUser.PasswordToChange, true, lockoutOnFailure: false);
+            result.Succeeded.ShouldBeTrue();
         }
 
         [Fact]
