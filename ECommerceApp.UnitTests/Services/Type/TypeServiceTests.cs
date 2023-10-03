@@ -1,10 +1,8 @@
-﻿using AutoMapper;
-using AutoMapper.Internal;
-using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Mapping;
+﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Type;
 using ECommerceApp.Domain.Interface;
+using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
 using Moq;
 using System;
@@ -12,20 +10,12 @@ using Xunit;
 
 namespace ECommerceApp.UnitTests.Services.Type
 {
-    public class TypeServiceTests
+    public class TypeServiceTests : BaseTest
     {
-        private readonly IMapper _mapper;
         private readonly Mock<ITypeRepository> _typeRepository;
 
         public TypeServiceTests()
         {
-            var configurationProvider = new MapperConfiguration(cfg =>
-            {
-                cfg.Internal().MethodMappingEnabled = false;
-                cfg.AddProfile<MappingProfile>();
-            });
-
-            _mapper = configurationProvider.CreateMapper();
             _typeRepository = new Mock<ITypeRepository>();
         }
 

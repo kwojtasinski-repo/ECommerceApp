@@ -11,30 +11,17 @@ using System.Text;
 using Xunit;
 using FluentAssertions;
 using ECommerceApp.Domain.Interface;
-using Microsoft.EntityFrameworkCore;
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Infrastructure.Repositories;
-using FluentAssertions.Common;
-using System.Reflection;
-using AutoMapper.Internal;
+using ECommerceApp.UnitTests.Common;
 
 namespace ECommerceApp.Tests.Services.Item
 {
-    public class ItemServiceTests
+    public class ItemServiceTests : BaseTest
     {
-        private readonly IMapper _mapper;
         private readonly Mock<IItemRepository> _itemRepository;
 
         public ItemServiceTests()
         {
-            var configurationProvider = new MapperConfiguration(cfg =>
-            {
-                cfg.Internal().MethodMappingEnabled = false;
-                cfg.AddProfile<MappingProfile>();
-            });
-
-
-            _mapper = configurationProvider.CreateMapper();
             _itemRepository = new Mock<IItemRepository>();
         }
 

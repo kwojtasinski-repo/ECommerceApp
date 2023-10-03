@@ -1,12 +1,9 @@
-﻿using AutoMapper;
-using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.POCO;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Image;
 using ECommerceApp.Domain.Interface;
-using ECommerceApp.Infrastructure.Repositories;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Moq;
@@ -14,8 +11,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 
 namespace ECommerceApp.Tests.Services.Image

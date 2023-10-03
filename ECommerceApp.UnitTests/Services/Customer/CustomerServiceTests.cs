@@ -5,15 +5,9 @@ using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Domain.Interface;
-using ECommerceApp.Domain.Model;
-using ECommerceApp.Infrastructure.Repositories;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
 using Moq;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Xunit;
 
 namespace ECommerceApp.Tests.Services.Customer

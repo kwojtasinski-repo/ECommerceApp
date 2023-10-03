@@ -1,13 +1,11 @@
-﻿using AutoMapper;
-using AutoMapper.Internal;
-using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.CurrencyRate;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.Domain.Interface;
+using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
 using Moq;
 using System;
@@ -15,9 +13,8 @@ using Xunit;
 
 namespace ECommerceApp.UnitTests.Services.Payment
 {
-    public class PaymentServiceTests
+    public class PaymentServiceTests : BaseTest
     {
-        private readonly IMapper _mapper;
         private readonly Mock<IPaymentRepository> _paymentRepository;
         private readonly Mock<IOrderService> _orderService;
         private readonly Mock<ICustomerService> _customerService;
@@ -25,13 +22,6 @@ namespace ECommerceApp.UnitTests.Services.Payment
 
         public PaymentServiceTests()
         {
-            var configurationProvider = new MapperConfiguration(cfg =>
-            {
-                cfg.Internal().MethodMappingEnabled = false;
-                cfg.AddProfile<MappingProfile>();
-            });
-
-            _mapper = configurationProvider.CreateMapper();
             _paymentRepository = new Mock<IPaymentRepository>();
             _orderService = new Mock<IOrderService>();
             _customerService = new Mock<ICustomerService>();

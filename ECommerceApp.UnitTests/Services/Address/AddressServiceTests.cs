@@ -1,12 +1,10 @@
-﻿using AutoMapper;
-using AutoMapper.Internal;
-using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Domain.Interface;
+using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
 using Moq;
 using System;
@@ -17,24 +15,15 @@ using Xunit;
 
 namespace ECommerceApp.UnitTests.Services.Address
 {
-    public class AddressServiceTests
+    public class AddressServiceTests : BaseTest
     {
         private readonly Mock<IAddressRepository> _addressRepository;
         private readonly Mock<ICustomerService> _customerService;
-        private readonly IMapper _mapper;
 
         public AddressServiceTests()
         {
             _addressRepository = new Mock<IAddressRepository>();
             _customerService = new Mock<ICustomerService>();
-
-            var configurationProvider = new MapperConfiguration(cfg =>
-            {
-                cfg.Internal().MethodMappingEnabled = false;
-                cfg.AddProfile<MappingProfile>();
-            });
-
-            _mapper = configurationProvider.CreateMapper();
         }
 
         [Fact]

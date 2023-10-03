@@ -1,10 +1,8 @@
-﻿using AutoMapper;
-using AutoMapper.Internal;
-using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.External.Client;
-using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Domain.Interface;
+using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
 using Moq;
 using System;
@@ -16,22 +14,14 @@ using Xunit;
 
 namespace ECommerceApp.UnitTests.Services.CurrencyRate
 {
-    public class CurrencyRateServiceTests
+    public class CurrencyRateServiceTests : BaseTest
     {
-        private readonly IMapper _mapper;
         private readonly Mock<ICurrencyRateRepository> _currencyRateRepository;
         private readonly Mock<ICurrencyRepository> _currencyRepository;
         private readonly Mock<INBPClient> _NBPClient;
 
         public CurrencyRateServiceTests()
         {
-            var configurationProvider = new MapperConfiguration(cfg =>
-            {
-                cfg.Internal().MethodMappingEnabled = false;
-                cfg.AddProfile<MappingProfile>();
-            });
-
-            _mapper = configurationProvider.CreateMapper();
             _currencyRateRepository = new Mock<ICurrencyRateRepository>();
             _currencyRepository = new Mock<ICurrencyRepository>();
             _NBPClient = new Mock<INBPClient>();

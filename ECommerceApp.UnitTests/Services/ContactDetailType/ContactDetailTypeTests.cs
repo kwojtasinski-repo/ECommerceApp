@@ -1,10 +1,8 @@
-﻿using AutoMapper;
-using AutoMapper.Internal;
-using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Mapping;
+﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.ContactDetailType;
 using ECommerceApp.Domain.Interface;
+using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
 using Moq;
 using System;
@@ -12,20 +10,12 @@ using Xunit;
 
 namespace ECommerceApp.UnitTests.Services.ContactDetailType
 {
-    public class ContactDetailTypeTests
+    public class ContactDetailTypeTests : BaseTest
     {
-        private readonly IMapper _mapper;
         private readonly Mock<IContactDetailTypeRepository> _contactDetailTypeRepository;
 
         public ContactDetailTypeTests()
         {
-            var configurationProvider = new MapperConfiguration(cfg =>
-            {
-                cfg.Internal().MethodMappingEnabled = false;
-                cfg.AddProfile<MappingProfile>();
-            });
-
-            _mapper = configurationProvider.CreateMapper();
             _contactDetailTypeRepository = new Mock<IContactDetailTypeRepository>();
         }
 

@@ -1,12 +1,10 @@
-﻿using AutoMapper;
-using AutoMapper.Internal;
-using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Application.ViewModels.Refund;
 using ECommerceApp.Domain.Interface;
+using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
 using Moq;
 using System;
@@ -16,21 +14,13 @@ using Xunit;
 
 namespace ECommerceApp.UnitTests.Services.Refund
 {
-    public class RefundServiceTests
+    public class RefundServiceTests : BaseTest
     {
-        private readonly IMapper _mapper;
         private readonly Mock<IRefundRepository> _refundRepository;
         private readonly Mock<IOrderService> _orderService;
 
         public RefundServiceTests()
         {
-            var configurationProvider = new MapperConfiguration(cfg =>
-            {
-                cfg.Internal().MethodMappingEnabled = false;
-                cfg.AddProfile<MappingProfile>();
-            });
-
-            _mapper = configurationProvider.CreateMapper();
             _refundRepository = new Mock<IRefundRepository>();
             _orderService = new Mock<IOrderService>();
         }

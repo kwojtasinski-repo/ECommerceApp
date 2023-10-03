@@ -1,11 +1,9 @@
-﻿using AutoMapper;
-using AutoMapper.Internal;
-using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.CouponUsed;
 using ECommerceApp.Domain.Interface;
+using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
 using Moq;
 using System;
@@ -15,22 +13,14 @@ using Xunit;
 
 namespace ECommerceApp.UnitTests.Services.CouponUsed
 {
-    public class CouponUsedServiceTests
+    public class CouponUsedServiceTests : BaseTest
     {
-        private readonly IMapper _mapper;
         private readonly Mock<ICouponUsedRepository> _couponUsedRepository;
         private readonly Mock<IOrderService> _orderService;
         private readonly Mock<ICouponService> _couponService;
 
         public CouponUsedServiceTests()
         {
-            var configurationProvider = new MapperConfiguration(cfg =>
-            {
-                cfg.Internal().MethodMappingEnabled = false;
-                cfg.AddProfile<MappingProfile>();
-            });
-
-            _mapper = configurationProvider.CreateMapper();
             _couponUsedRepository = new Mock<ICouponUsedRepository>();
             _orderService = new Mock<IOrderService>();
             _couponService = new Mock<ICouponService>();

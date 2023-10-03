@@ -1,8 +1,5 @@
-﻿using AutoMapper;
-using AutoMapper.Internal;
-using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Item;
@@ -10,6 +7,7 @@ using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
+using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
 using Moq;
 using System;
@@ -20,10 +18,9 @@ using Xunit;
 
 namespace ECommerceApp.Tests.Services.Order
 { 
-    public class OrderServiceTests
+    public class OrderServiceTests : BaseTest
     {
         private readonly Mock<IOrderRepository> _orderRepository = new Mock<IOrderRepository>();
-        private readonly IMapper _mapper;
         private readonly Mock<IOrderItemService> _orderItemService;
         private readonly Mock<IItemService> _itemService;
         private readonly Mock<ICouponService> _couponService;
@@ -32,13 +29,6 @@ namespace ECommerceApp.Tests.Services.Order
 
         public OrderServiceTests()
         {
-            var configurationProvider = new MapperConfiguration(cfg =>
-            {
-                cfg.Internal().MethodMappingEnabled = false;
-                cfg.AddProfile<MappingProfile>();
-            });
-
-            _mapper = configurationProvider.CreateMapper();
             _orderRepository = new Mock<IOrderRepository>();
             _orderItemService = new Mock<IOrderItemService>();
             _itemService = new Mock<IItemService>();
