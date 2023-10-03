@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
+using AutoMapper.Internal;
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Currency;
@@ -8,8 +8,6 @@ using ECommerceApp.Domain.Interface;
 using FluentAssertions;
 using Moq;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace ECommerceApp.UnitTests.Services.Currency
@@ -23,6 +21,7 @@ namespace ECommerceApp.UnitTests.Services.Currency
         {
             var configurationProvider = new MapperConfiguration(cfg =>
             {
+                cfg.Internal().MethodMappingEnabled = false;
                 cfg.AddProfile<MappingProfile>();
             });
 

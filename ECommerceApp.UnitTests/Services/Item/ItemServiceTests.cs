@@ -14,6 +14,9 @@ using ECommerceApp.Domain.Interface;
 using Microsoft.EntityFrameworkCore;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Infrastructure.Repositories;
+using FluentAssertions.Common;
+using System.Reflection;
+using AutoMapper.Internal;
 
 namespace ECommerceApp.Tests.Services.Item
 {
@@ -26,8 +29,10 @@ namespace ECommerceApp.Tests.Services.Item
         {
             var configurationProvider = new MapperConfiguration(cfg =>
             {
+                cfg.Internal().MethodMappingEnabled = false;
                 cfg.AddProfile<MappingProfile>();
             });
+
 
             _mapper = configurationProvider.CreateMapper();
             _itemRepository = new Mock<IItemRepository>();

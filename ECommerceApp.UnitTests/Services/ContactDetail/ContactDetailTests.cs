@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.Internal;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.Services;
@@ -10,7 +11,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using Xunit;
 
 namespace ECommerceApp.UnitTests.Services.ContactDetail
@@ -24,6 +24,7 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
         {
             var configurationProvider = new MapperConfiguration(cfg =>
             {
+                cfg.Internal().MethodMappingEnabled = false;
                 cfg.AddProfile<MappingProfile>();
             });
 

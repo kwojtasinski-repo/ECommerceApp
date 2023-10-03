@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.Internal;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Mapping;
@@ -11,7 +12,6 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Xunit;
 
 namespace ECommerceApp.UnitTests.Services.Refund
@@ -26,6 +26,7 @@ namespace ECommerceApp.UnitTests.Services.Refund
         {
             var configurationProvider = new MapperConfiguration(cfg =>
             {
+                cfg.Internal().MethodMappingEnabled = false;
                 cfg.AddProfile<MappingProfile>();
             });
 

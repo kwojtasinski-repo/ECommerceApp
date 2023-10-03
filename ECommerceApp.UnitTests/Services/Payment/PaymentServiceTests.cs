@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.Internal;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Mapping;
@@ -10,8 +11,6 @@ using ECommerceApp.Domain.Interface;
 using FluentAssertions;
 using Moq;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace ECommerceApp.UnitTests.Services.Payment
@@ -28,6 +27,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
         {
             var configurationProvider = new MapperConfiguration(cfg =>
             {
+                cfg.Internal().MethodMappingEnabled = false;
                 cfg.AddProfile<MappingProfile>();
             });
 

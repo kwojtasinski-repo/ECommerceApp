@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.Internal;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.Services;
@@ -9,7 +10,6 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Xunit;
 
 namespace ECommerceApp.UnitTests.Services.OrderItem
@@ -23,6 +23,7 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
         {
             var configurationProvider = new MapperConfiguration(cfg =>
             {
+                cfg.Internal().MethodMappingEnabled = false;
                 cfg.AddProfile<MappingProfile>();
             });
 
