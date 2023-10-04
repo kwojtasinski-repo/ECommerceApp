@@ -16,4 +16,12 @@
                 Pokaż przedmioty
             </a>
         </div>
+        <div>
+            <button class="btn btn-primary" id="show-modal">Pokaż modal</button>
+        </div>
     </div>
+
+<script>
+    const showModal = document.getElementById('show-modal');
+    showModal.onclick = () => modalService.show("Header", "BodyText1234");
+</script>
