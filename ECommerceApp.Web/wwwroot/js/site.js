@@ -95,7 +95,7 @@ const modalService = (function () {
 
         modal.modal('hide');
         // cleanup 150ms for animation
-        setTimeout(() => $('.' + modalIdentifyClass).remove(), 150);
+        setTimeout(() => modal.remove(), 150);
     }
 
     // public variables functions
