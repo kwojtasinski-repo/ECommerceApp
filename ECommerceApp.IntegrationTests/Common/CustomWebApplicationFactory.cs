@@ -10,7 +10,6 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.IntegrationTests.Common
@@ -46,6 +45,8 @@ namespace ECommerceApp.IntegrationTests.Common
                         options.UseInMemoryDatabase("InMemoryDatabase");
                         options.UseInternalServiceProvider(servicesProvider);
                     });
+
+                    services.AddScoped<IDatabaseInitializer, TestDatabaseInitializer>();
 
                     var sp = services.BuildServiceProvider();
 
