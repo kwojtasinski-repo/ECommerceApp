@@ -18,6 +18,9 @@ namespace ECommerceApp.Infrastructure.Database
                      .AddRoles<IdentityRole>()
                      .AddEntityFrameworkStores<Context>();
 
+            services.AddHostedService<DbInitializer>();
+            services.AddScoped<IDatabaseInitializer, DatabaseInitalizer>();
+
             return services;
         }
     }
