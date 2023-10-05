@@ -7,7 +7,7 @@ using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Database
 {
-    public class Context : IdentityDbContext
+    public class Context : IdentityDbContext<ApplicationUser, IdentityRole, string>
     {
         public DbSet<Address> Addresses { get; set; }
         public DbSet<Brand> Brands { get; set; }
