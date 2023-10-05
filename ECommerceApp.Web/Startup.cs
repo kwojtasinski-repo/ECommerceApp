@@ -37,10 +37,6 @@ namespace ECommerceApp.Web
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-                     .AddRoles<IdentityRole>()
-                     .AddEntityFrameworkStores<Context>();
-
             services.AddApplication();
             services.AddInfrastructure(Configuration);
 
