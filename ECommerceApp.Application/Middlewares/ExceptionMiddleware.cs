@@ -39,8 +39,8 @@ namespace ECommerceApp.Application.Middlewares
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int) (error?.StatusCode ?? HttpStatusCode.BadRequest);
             var response = error?.ToString();
-            
-            if(response is null)
+
+            if (response is null)
             {
                 await context.Response.WriteAsync(string.Empty);
                 return;

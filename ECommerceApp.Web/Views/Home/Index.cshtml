@@ -21,3 +21,13 @@
             <button id="test-conf-modal" class="btn btn-primary">TEst conf modal</button>
         </div>
     </div>
+    
+@section Scripts
+{
+<script type="text/javascript">
+    const button = document.getElementById('test-modal');
+    button.onclick = () => modalService.showInformationModal("SHould be on header", "Should be in body");
+    const button2 = document.getElementById('test-conf-modal');
+    button2.onclick = () => modalService.showConfirmationModal("THis is simple text", "Do you want to delete?", () => alert('clicked yes'));
+</script>
+}
