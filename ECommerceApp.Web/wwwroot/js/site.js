@@ -1,11 +1,4 @@
-﻿// Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification
-// for details on configuring this project to bundle and minify static web assets.
-
-// Write your JavaScript code.
-
-
-
-const buttonTemplate = (function () {
+﻿const buttonTemplate = (function () {
     return {
         /**
          * Creates button template
@@ -155,6 +148,36 @@ const modalService = (function () {
         },
         close: function () {
             closeModal();
+        }
+    }
+})();
+
+const ajaxRequest = (function () {
+    function asyncAjax(url, type, data, contentType, dataType) {
+        return new Promise(function (resolve, reject) {
+            debugger
+            $.ajax({
+                url,
+                type: type ? type : 'GET',
+                data: data,
+                contentType: contentType,
+                dataType: dataType,
+                beforeSend: function () {
+                },
+                success: function (data) {
+                    resolve(data);
+                },
+                error: function (err) {
+                    reject(err);
+                }
+            });
+        });
+    }
+
+    return {
+        send: function (url, type, data, contentType, dataType) {
+            debugger
+            return asyncAjax(url, type, data, contentType, dataType);
         }
     }
 })();

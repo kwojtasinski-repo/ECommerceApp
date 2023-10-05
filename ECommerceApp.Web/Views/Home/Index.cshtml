@@ -21,13 +21,3 @@
             <button id="test-conf-modal" class="btn btn-primary">TEst conf modal</button>
         </div>
     </div>
-    
-@section Scripts
-{
-<script type="text/javascript">
-    const button = document.getElementById('test-modal');
-    button.onclick = () => modalService.showInformationModal();
-    const button2 = document.getElementById('test-conf-modal');
-    button2.onclick = () => modalService.showConfirmationModal(undefined, undefined, () => alert('clicked yes'));
-</script>
-}
