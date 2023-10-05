@@ -1,5 +1,7 @@
 ﻿using ECommerceApp.Domain.Interface;
+using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Repositories;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -10,7 +12,7 @@ namespace ECommerceApp.Infrastructure
 {
     public static class DependencyInjection
     {
-        public static IServiceCollection AddInfrastructure(this IServiceCollection services)
+        public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
             services.AddTransient<ICustomerRepository, CustomerRepository>();
             services.AddTransient<IItemRepository, ItemRepository>();
@@ -31,6 +33,7 @@ namespace ECommerceApp.Infrastructure
             services.AddTransient<IAddressRepository, AddressRepository>();
             services.AddTransient<ICurrencyRepository, CurrencyRepository>();
             services.AddTransient<ICurrencyRateRepository, CurrencyRateRepository>();
+            services.AddDatabase(configuration);
 
             return services;
         }

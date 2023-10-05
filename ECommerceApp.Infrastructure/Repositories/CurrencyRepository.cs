@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Text;
 using System.Linq.Expressions;
 using System.Linq;
+using ECommerceApp.Infrastructure.Database;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {

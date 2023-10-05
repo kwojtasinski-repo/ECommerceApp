@@ -1,5 +1,5 @@
 ﻿using ECommerceApp.Domain.Model;
-using ECommerceApp.Infrastructure;
+using ECommerceApp.Infrastructure.Database;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using MimeTypes;

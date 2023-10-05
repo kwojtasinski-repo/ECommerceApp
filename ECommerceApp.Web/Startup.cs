@@ -19,6 +19,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using FluentValidation.AspNetCore;
 using ECommerceApp.Application.Middlewares;
 using ECommerceApp.Domain.Model;
+using ECommerceApp.Infrastructure.Database;
 
 namespace ECommerceApp.Web
 {
@@ -36,15 +37,12 @@ namespace ECommerceApp.Web
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<Context>(options =>
-                options.UseSqlServer(
-                    Configuration.GetConnectionString("DefaultConnection")));
             services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
                      .AddRoles<IdentityRole>()
                      .AddEntityFrameworkStores<Context>();
 
             services.AddApplication();
-            services.AddInfrastructure();
+            services.AddInfrastructure(Configuration);
 
             services.AddControllersWithViews();/*.AddFluentValidation(fv =>
             {

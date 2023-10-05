@@ -1,5 +1,5 @@
 ﻿using ECommerceApp.API;
-using ECommerceApp.Infrastructure;
+using ECommerceApp.Infrastructure.Database;
 using Flurl.Http;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;

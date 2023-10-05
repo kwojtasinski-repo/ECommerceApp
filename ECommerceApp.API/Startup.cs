@@ -7,6 +7,7 @@ using ECommerceApp.Application;
 using ECommerceApp.Application.Middlewares;
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure;
+using ECommerceApp.Infrastructure.Database;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -36,9 +37,6 @@ namespace ECommerceApp.API
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddDbContext<Context>(options =>
-                options.UseSqlServer(
-                    Configuration.GetConnectionString("DefaultConnection")));
             /*services.AddIdentity<IdentityUser, IdentityRole>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddUserStore<UserStore>()
                 .AddRoleStore<IdentityRole>()
@@ -66,7 +64,7 @@ namespace ECommerceApp.API
             services.AddControllers().AddNewtonsoftJson(options =>
                      options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore); 
             services.AddApplication();
-            services.AddInfrastructure();
+            services.AddInfrastructure(Configuration);
 
             services.AddSwaggerGen(setup =>
             {

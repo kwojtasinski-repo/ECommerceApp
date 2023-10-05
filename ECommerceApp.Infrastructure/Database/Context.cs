@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata;
 using System.Linq;
 
-namespace ECommerceApp.Infrastructure
+namespace ECommerceApp.Infrastructure.Database
 {
     public class Context : IdentityDbContext
     {
@@ -24,8 +24,8 @@ namespace ECommerceApp.Infrastructure
         public DbSet<Payment> Payments { get; set; }
         public DbSet<Refund> Refunds { get; set; }
         public DbSet<Tag> Tags { get; set; }
-        public DbSet<ECommerceApp.Domain.Model.Type> Types { get; set; }
-        public DbSet<ECommerceApp.Domain.Model.Image> Images { get; set; }
+        public DbSet<Type> Types { get; set; }
+        public DbSet<Image> Images { get; set; }
         public DbSet<Currency> Currencies { get; set; }
         public DbSet<CurrencyRate> CurrencyRates { get; set; }
 
@@ -42,12 +42,12 @@ namespace ECommerceApp.Infrastructure
                 .HasKey(it => new { it.ItemId, it.TagId });
 
             builder.Entity<ItemTag>()
-                .HasOne<Item>(it => it.Item)
+                .HasOne(it => it.Item)
                 .WithMany(i => i.ItemTags)
                 .HasForeignKey(it => it.ItemId);
 
             builder.Entity<ItemTag>()
-                .HasOne<Tag>(it => it.Tag)
+                .HasOne(it => it.Tag)
                 .WithMany(t => t.ItemTags)
                 .HasForeignKey(it => it.TagId);
             // -------------------- RELATION N:N --------------------
