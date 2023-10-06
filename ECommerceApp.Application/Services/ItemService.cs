@@ -100,7 +100,8 @@ namespace ECommerceApp.Application.Services
                 CurrentPage = pageNo,
                 SearchString = searchString,
                 Items = itemsToShow,
-                Count = itemsToShow.Count
+                // TODO: Think about performance
+                Count = _repo.GetAll().Count()
             };
 
             return itemsList;

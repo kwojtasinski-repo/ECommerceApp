@@ -12,7 +12,7 @@
     <a asp-action="Index" asp-controller="Payment">Lista płatności</a>
     <a asp-action="Index" asp-controller="Refund">Lista zwrotów</a>
 </p>
-<form id="reload" asp-action="Index" asp-controller="Order" method="post">
+<form id="search-form" asp-action="Index" asp-controller="Order" method="post">
     <div class="row">
         <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
         <input type="submit" value="Wyszukaj" />
@@ -132,31 +132,9 @@
     <script type="text/javascript">
         function PagerClick(index)
         {
-            var token = $('input[name="__RequestVerificationToken"]').val();
             document.getElementById("pageNo").value = index;
-            $.ajax({
-                url: "/Order/",
-                type: 'POST',
-                data: {
-                    __RequestVerificationToken: token,
-                    pageNo: index,
-                    pageSize: document.getElementById("pageSize").value, 
-                    searchString: document.getElementById("searchString").value
-                },
-                success: function (data) {
-                    console.log("Success")
-                    console.log(data);
-                    var parser = new DOMParser();
-                    var htmlDoc = parser.parseFromString(data, 'text/html');
-                    console.log(htmlDoc);
-                    var form = htmlDoc.getElementById('reload');
-                    console.log(form);
-                    jQuery('#reload').html(form);
-                },
-                error: function (error) {
-                    console.log("error is " + error);
-                }
-            });
+            var form = $('#search-form')[0];
+            form.submit();
         }
     </script>
 }
