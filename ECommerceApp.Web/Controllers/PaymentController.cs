@@ -94,7 +94,7 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        [Authorize(Roles = "Administratorm, Admin, Manager, Service, User")]
+        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpGet]
         public IActionResult ViewPayment(int id)
         {

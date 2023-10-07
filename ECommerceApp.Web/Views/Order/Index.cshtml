@@ -112,7 +112,7 @@
                     <td>
                         @if (i != Model.CurrentPage)
                         {
-                            <a href="javascript:PagerClick(@i)">@i</a>
+                            <a href='javascript:PagerClick(@i, "search-form")'>@i</a>
                         }
                         else
                         {
@@ -126,15 +126,3 @@
         <input type="hidden" name="pageSize" id="pageSize" value="20" />
     </div>
 </form>
-
-@section Scripts
-{
-    <script type="text/javascript">
-        function PagerClick(index)
-        {
-            document.getElementById("pageNo").value = index;
-            var form = $('#search-form')[0];
-            form.submit();
-        }
-    </script>
-}

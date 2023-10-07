@@ -196,7 +196,6 @@ const modalService = (function () {
     // public variables functions
     return {
         showInformationModal: function (headerText, bodyText) {
-            debugger
             const headerTemplate = createModalHeader(headerText);
             const bodyTemplate = createModalBody(bodyText);
             const footerTemplate = createModalFooter();
@@ -228,7 +227,6 @@ const modalService = (function () {
 const ajaxRequest = (function () {
     function asyncAjax(url, type, data, contentType, dataType) {
         return new Promise(function (resolve, reject) {
-            debugger
             $.ajax({
                 url,
                 type: type ? type : 'GET',
@@ -249,8 +247,21 @@ const ajaxRequest = (function () {
 
     return {
         send: function (url, type, data, contentType, dataType) {
-            debugger
             return asyncAjax(url, type, data, contentType, dataType);
         }
     }
 })();
+
+/**
+* Creates button template
+* @param index Page to choose in form.
+* @param id Form id.
+* @param pageNo The page number element identifier - default pageNo.
+*
+*/
+function PagerClick(index, id, pageNo) {
+    document.getElementById(pageNo ? pageNo : "pageNo").value = index;
+    debugger
+    var form = $('#'+id)[0];
+    form.submit();
+}

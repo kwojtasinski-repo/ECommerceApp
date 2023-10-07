@@ -8,7 +8,7 @@
 <h1>Wydania</h1>
 
 
-<form asp-action="ShowOrdersPaid" asp-controller="Order" method="post">
+<form id="search-form" asp-action="ShowOrdersPaid" asp-controller="Order" method="post">
     <div class="row">
         <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
         <input type="submit" value="Wyszukaj" />
@@ -92,7 +92,7 @@
                     <td>
                         @if (i != Model.CurrentPage)
                         {
-                            <a href="javascript:PagerClick(@i)">@i</a>
+                            <a href='javascript:PagerClick(@i, "search-form")'>@i</a>
                         }
                         else
                         {
@@ -110,35 +110,6 @@
 @section Scripts
 {
     <script type="text/javascript">
-        function PagerClick(index)
-        {
-            var token = $('input[name="__RequestVerificationToken"]').val();
-            document.getElementById("pageNo").value = index;
-            $.ajax({
-                url: "/Order/ShowOrdersPaid", 
-                type: 'POST',
-                data: {//int pageSize, int? pageNo, string searchString
-                    __RequestVerificationToken: token,
-                    pageSize: document.getElementById("pageSize").value,
-                    pageNo: index,
-                    searchString: document.getElementById("searchString").value
-                },
-                success: function (data) {
-                    console.log("Success")
-                    console.log(data);
-                    var parser = new DOMParser();
-                    var htmlDoc = parser.parseFromString(data, 'text/html');
-                    console.log(htmlDoc);
-                    var form = htmlDoc.getElementById('reload');
-                    console.log(form);
-                    jQuery('#reload').html(form);
-                },
-                error: function (error) {
-                    console.log("error is " + error);
-                }
-            });
-        }
-
         function OrderDispatched(id)
         {
             console.log(id);

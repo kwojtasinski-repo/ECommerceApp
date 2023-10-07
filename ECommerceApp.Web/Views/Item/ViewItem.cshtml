@@ -131,5 +131,5 @@
         @Html.ActionLink("Edytuj", "EditItem", new { id = Model.Id }) @(' ')@('|')@(' ')
     }
     <a asp-action="Index">Wróć do listy przedmiotów</a> |
-    @Html.ActionLink("Lista zamówień", "ShowOrderItemsByItemId", "Order", new { itemId = Model.Id })
+    @Html.ActionLink("Lista zamówień", "ShowOrderItemsByItemId", "OrderItem", new { itemId = Model.Id })
 </div>

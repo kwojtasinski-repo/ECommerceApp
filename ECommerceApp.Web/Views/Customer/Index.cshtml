@@ -14,7 +14,7 @@
         <a asp-controller="Customer" asp-action="All">Klienci</a>
     }
 </p>
-<form id="reload" asp-action="Index" asp-controller="Customer" method="post">
+<form id="search-form" asp-action="Index" asp-controller="Customer" method="post">
     <div class="row">
         <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
         <input type="submit" value="Wyszukaj" />
@@ -82,7 +82,7 @@
                     <td>
                         @if (i != Model.CurrentPage)
                         {
-                            <a href="javascript:PagerClick(@i)">@i</a>
+                            <a href='javascript:PagerClick(@i, "search-form")'>@i</a>
                         }
                         else
                         {
@@ -97,38 +97,3 @@
         <input type="hidden" name="userId" id="userId" value="@User.FindFirst(ClaimTypes.NameIdentifier).Value"/>
     </div>
 </form>
-
-@section Scripts
-{
-    <script type="text/javascript">
-        function PagerClick(index)
-        {
-            var token = $('input[name="__RequestVerificationToken"]').val();
-            document.getElementById("pageNo").value = index;
-            $.ajax({
-                url: "/Customer/", 
-                type: 'POST',
-                data: {//int pageSize, int? pageNo, string searchString
-                    __RequestVerificationToken: token,
-                    userId: document.getElementById("userId").value,
-                    pageSize: document.getElementById("pageSize").value,
-                    pageNo: index,
-                    searchString: document.getElementById("searchString").value
-                },
-                success: function (data) {
-                    console.log("Success")
-                    console.log(data);
-                    var parser = new DOMParser();
-                    var htmlDoc = parser.parseFromString(data, 'text/html');
-                    console.log(htmlDoc);
-                    var form = htmlDoc.getElementById('reload');
-                    console.log(form);
-                    jQuery('#reload').html(form);
-                },
-                error: function (error) {
-                    console.log("error is " + error);
-                }
-            });
-        }
-    </script>
-}

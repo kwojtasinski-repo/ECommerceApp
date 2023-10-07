@@ -42,12 +42,7 @@ namespace ECommerceApp.Web.Controllers
                 pageNo = 1;
             }
 
-            if (searchString is null)
-            {
-                searchString = String.Empty;
-            }
-
-            var model = _customerService.GetAllCustomersForList(userId, pageSize, pageNo.Value, searchString);
+            var model = _customerService.GetAllCustomersForList(userId, pageSize, pageNo.Value, searchString ?? string.Empty);
 
             return View(model);
         }

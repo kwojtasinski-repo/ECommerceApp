@@ -9,7 +9,7 @@
 <p>
     <a asp-controller="Item" asp-action="Index">Wróć do listy przedmiotów</a>
 </p>
-<table id="reload"  class="table">
+<table id="search-form" class="table">
     <thead>
         <tr>
             <th>
@@ -93,7 +93,7 @@
                 <td>
                     @if (i != Model.CurrentPage)
                     {
-                        <a href="javascript:PagerClick(@i)">@i</a>
+                        <a href='javascript:PagerClick(@i, "search-form")'>@i</a>
                     }
                     else
                     {
@@ -190,37 +190,6 @@
             }
         });
      }
-
-     function PagerClick(index)
-    {
-        var token = $('input[name="__RequestVerificationToken"]').val();
-        console.log(index);
-        console.log('document.getElementById("pageSize")');
-        console.log(document.getElementById("pageSize"));
-        $.ajax({
-            url: "/Order/ShowMyCart",
-            type: 'POST',
-            data: {
-                __RequestVerificationToken: token,
-                pageNo: index,
-                pageSize: document.getElementById("pageSize").value
-            },
-            success: function (data) {
-                console.log("Success")
-                console.log(data);
-                var parser = new DOMParser();
-                var htmlDoc = parser.parseFromString(data, 'text/html');
-                console.log(htmlDoc);
-                var form = htmlDoc.getElementById('reload');
-                console.log(form);
-                jQuery('#reload').html(form);
-            },
-            error: function (error) {
-                console.log("error is " + error);
-            }
-        });
-    }
-
 </script>
 <style type="text/css">
     .fa_custom {

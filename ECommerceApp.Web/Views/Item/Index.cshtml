@@ -21,7 +21,7 @@
         <a asp-action="ShowItemConnectedWithTags">Przedmioty z tagami</a>
     }
 </p>
-<form asp-action="Index" asp-controller="Item" method="post">
+<form asp-action="Index" asp-controller="Item" method="post" id="search-form">
     <div class="row">
         <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
         <input type="submit" value="Wyszukaj" />
@@ -115,7 +115,7 @@
                     <td>
                         @if (i != Model.CurrentPage)
                         {
-                            <a href="javascript:PagerClick(@i)">@i</a>
+                            <a href='javascript:PagerClick(@i, "search-form")'>@i</a>
                         }
                         else
                         {
@@ -133,11 +133,6 @@
 @section Scripts
 {
     <script type="text/javascript">
-        function PagerClick(index) {
-            document.getElementById("pageNo").value = index;
-            document.forms[0].submit();
-        }
-
         function AddItemToCart(itemId)
         {
             console.log(itemId);
