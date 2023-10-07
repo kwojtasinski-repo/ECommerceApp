@@ -118,25 +118,13 @@
 
         $(document).ready(function () {
             var span = document.getElementById("itemCount");
-            console.log(span);
-            if (span != null) {
-                console.log("span!=null");
-                $.ajax({
-                    url: "/OrderItem/OrderItemCount",
-                    type: "GET",
-                    dataType: "json",
-                    contentType: "application/json",
-                    success: function (question) {
-                        console.log(question);
-                        console.log(question.count);
-                        if (question.count > 0) {
-                            span.innerHTML = question.count;
-                        }
-                    },
-                    error: function () {
-                       // alert("Error");
-                    }
-                });
+            if (span) {
+                ajaxRequest.send("/OrderItem/OrderItemCount", "GET", undefined, "application/json", "json")
+                           .then(response => { 
+                               if (response.count > 0) {
+                                    span.innerHTML = response.count;
+                               }
+                           });
             };
         });
     </script>

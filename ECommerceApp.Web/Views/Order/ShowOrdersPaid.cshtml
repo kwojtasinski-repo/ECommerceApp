@@ -110,30 +110,18 @@
 @section Scripts
 {
     <script type="text/javascript">
-        function OrderDispatched(id)
+        async function OrderDispatched(id)
         {
-            console.log(id);
-                // ajax send to controller
-            $.ajax({
-                url: "/Order/DispatchOrder/",
-                type: 'GET',
-                data: {
+            try {
+                await ajaxRequest.send("/Order/DispatchOrder/", "GET", {
                     'id': id
-                },
-                contentType: 'application/json; charset=utf-8',
-                dataType: 'json',
-                success: function (data, textStatus) {
-                    setTimeout(function () {
-                    }, 0100);
-                    window.location.reload(true);
-                },
-                error: function (jqXHR, status, error) {
-                    if (error == 'Unauthorized') {
-                        console.log("Access unathorized");
-                        window.location.href = "Identity/Account/Login";
-                    }
+                }, "application/json; charset=utf-8", "json");
+                window.location.reload();
+            } catch (error) {
+                if (error.status === statusCodes.Unauthorized) {
+                    window.location.href = "Identity/Account/Login";
                 }
-            });
+            }
         }
     </script>
 }

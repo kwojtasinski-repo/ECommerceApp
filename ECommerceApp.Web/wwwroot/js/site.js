@@ -265,3 +265,15 @@ function PagerClick(index, id, pageNo) {
     var form = $('#'+id)[0];
     form.submit();
 }
+
+const statusCodes = (function () {
+    return {
+        OK: 200,
+        Created: 201,
+        Unauthorized: 401,
+        Forbidden: 403,
+        NotFound: 404,
+        MethodNotAllowed: 405,
+        InternalErrorServer: 500
+    }
+})();
