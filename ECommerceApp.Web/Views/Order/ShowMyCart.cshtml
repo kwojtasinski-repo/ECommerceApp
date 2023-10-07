@@ -113,87 +113,38 @@
 </div>
 
 <script>
-    function AddQuantity(object) {
-        console.log("Jestem w plusie");
-        console.log(object);
+    async function AddQuantity(object) {
         object.ItemOrderQuantity += 1;
         var objectJson = JSON.stringify(object);
-        console.log(objectJson);
-        // ajax send to controller
-        $.ajax({
-            url: "/OrderItem/UpdateOrderItem",
-            type: 'POST',
-            data: objectJson, 
-            contentType: 'application/json',
-            dataType: 'json', 
-            success: function (data, textStatus) {
-                setTimeout(function () {
-                    location.reload();
-                    }, 0001);
-            },
-            error: function (error) {
-                console.log("error is " + error);
-            }
-        });
+        await ajaxRequest.send("/OrderItem/UpdateOrderItem", "POST", objectJson, "application/json", "json");
+        location.reload();
     }
 
-    function RemoveQuantity(object) {
-        console.log("Jestem w minusie");
-        console.log(object);
-        var valueInQunatity = object.ItemOrderQuantity;
-        if (valueInQunatity > 1) {
-            object.ItemOrderQuantity -= 1;
-            var objectJson = JSON.stringify(object);
-            console.log(objectJson);
-            // ajax send to controller
-            $.ajax({
-                url: "/OrderItem/UpdateOrderItem",
-                type: 'POST',
-                data: objectJson,
-                contentType: 'application/json',
-                dataType: 'json',
-                success: function (data, textStatus) {
-                    setTimeout(function () {
-                        location.reload();
-                    }, 0001);
-                },
-                error: function (error) {
-                    console.log("error is " + error);
-                }
-            });
+    async function RemoveQuantity(object) {
+        if (object.ItemOrderQuantity <= 1) {
+            return;
         }
+
+        object.ItemOrderQuantity -= 1;
+        const objectJson = JSON.stringify(object);
+        await ajaxRequest.send("/OrderItem/UpdateOrderItem", "POST", objectJson, "application/json", "json");
+        location.reload();
     }
 
-    function RemoveItemFromCart(itemId) {
-        console.log(itemId);
-        // ajax send to controller
-        $.ajax({
-            url: "/OrderItem/DeleteOrderItem",
-            type: 'GET',
-            data: {
-                'id': itemId
-            },
-            contentType: 'application/json',
-            dataType: 'json',
-            success: function (data, textStatus) {
-                console.log(data);
-                console.log(textStatus);
-                setTimeout(function () {
-                    location.reload();
-                }, 0001);
-            },
-            error: function (jqXHR, status, error) {
-                if (error == 'Unauthorized') {
-                    console.log("Access unathorized");
-                    window.location.href = "Identity/Account/Login";
-                }
+    async function RemoveItemFromCart(itemId) {
+        try {
+            await ajaxRequest.send("/OrderItem/DeleteOrderItem", "GET", { "id": itemId }, "application/json", "json");
+            location.reload();
+        } catch (error) {
+            if (error.status === statusCodes.Unauthorized) {
+                window.location.href = "Identity/Account/Login";
             }
-        });
+        }
      }
 </script>
 <style type="text/css">
     .fa_custom {
-        color: #0077cc
+        color: #0077cc;
+        cursor: pointer;
     }
 </style>
-<script src='https://kit.fontawesome.com/a076d05399.js'></script>
