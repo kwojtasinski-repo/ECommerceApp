@@ -78,7 +78,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult AddCustomer()
         {
-            var customer = new NewCustomerVm();
+            var customer = new NewCustomerVm() { Addresses = new List<AddressVm> { new AddressVm()}, ContactDetails = new List<NewContactDetailVm> { new NewContactDetailVm() } };
             if (User.Identity.IsAuthenticated)
             {
                 customer.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
