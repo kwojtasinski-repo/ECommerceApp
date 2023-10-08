@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Services;
+﻿using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Item;
+using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.API.Controllers
@@ -45,7 +40,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(item);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpPut]
         public IActionResult EditItem(ItemVm model)
         {
@@ -58,7 +53,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpPost]
         public IActionResult AddItem(ItemVm model)
         {
@@ -70,8 +65,8 @@ namespace ECommerceApp.API.Controllers
             return Ok(id);
         }
 
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         public IActionResult DeleteItem(int id)
         {
             _itemService.DeleteItem(id);

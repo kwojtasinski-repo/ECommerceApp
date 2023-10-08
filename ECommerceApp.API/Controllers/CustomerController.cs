@@ -2,12 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Customer;
+using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.API.Controllers
@@ -24,7 +22,7 @@ namespace ECommerceApp.API.Controllers
             _customerService = customerService;
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager")]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}")]
         [HttpGet]
         public ActionResult<ListForCustomerVm> GetCustomers([FromQuery] int pageSize = 10, int pageNo = 1, string searchString = "")
         {
@@ -37,7 +35,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(customers);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet("{id}")]
         public ActionResult<CustomerDetailsVm> GetCustomer(int id)
         {
@@ -49,9 +47,9 @@ namespace ECommerceApp.API.Controllers
                 return NotFound();
             }
             return Ok(customer);
-        }        
+        }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPut]
         public IActionResult EditCustomer(CustomerVm model)
         {
@@ -66,7 +64,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
         public IActionResult AddCustomer([FromBody] CustomerVm model)
         {

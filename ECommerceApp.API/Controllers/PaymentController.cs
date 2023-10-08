@@ -1,14 +1,10 @@
 ﻿using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Services;
-using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Application.ViewModels.Payment;
+using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace ECommerceApp.API.Controllers
 {
@@ -23,7 +19,7 @@ namespace ECommerceApp.API.Controllers
             _paymentService = paymentService;
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager")]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}")]
         [HttpGet]
         public ActionResult<List<PaymentVm>> GetPayments()
         {
@@ -35,7 +31,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(payments);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet("{id}")]
         public ActionResult<PaymentDetailsVm> GetPayment(int id)
         {
@@ -47,7 +43,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(payment);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
         public ActionResult<int> AddPayment([FromBody] CreatePayment model)
         {

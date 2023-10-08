@@ -35,14 +35,15 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Item" asp-action="Index">Przedmioty</a>
                         </li>
-@using ECommerceApp.Domain.Model;
+                        @using ECommerceApp.Domain.Model;
+                        @using ECommerceApp.Infrastructure.Permissions;
                         @using Microsoft.AspNetCore.Identity
                         @inject SignInManager<ApplicationUser> SignInManager
                         @inject UserManager<ApplicationUser> UserManager
                         @using System.Security.Claims;
                         @if (SignInManager.IsSignedIn(User))
                         {
-                            @if (User.IsInRole("Administrator") || User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Service") || User.IsInRole("User"))
+                            @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service) || User.IsInRole(UserPermissions.Roles.User))
                             {
                                 <li class="nav-item">
                                     <a class="nav-link waves-effect" asp-area="" asp-controller="Order" asp-action="ShowMyCart">
@@ -52,19 +53,19 @@
                                     </a>
                                 </li>
                             }
-                            @if (User.IsInRole("Administrator") || User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Service") || User.IsInRole("User"))
+                            @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service) || User.IsInRole(UserPermissions.Roles.User))
                             {
                                 <li class="nav-item">
                                     <a class="nav-link text-dark waves-effect" asp-area="" asp-controller="Order" asp-action="ShowMyOrders">Moje zamówienia</a>
                                 </li>
                             }
-                            @if (User.IsInRole("Administrator") || User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Service") || User.IsInRole("User"))
+                            @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service) || User.IsInRole(UserPermissions.Roles.User))
                             {
                                 <li class="nav-item">
                                     <a class="nav-link text-dark waves-effect" asp-area="" asp-controller="Customer" asp-action="Index">Dane kontaktowe</a>
                                 </li>
                             }
-                            @if (User.IsInRole("Administrator") || User.IsInRole("Admin") || User.IsInRole("Manager") || User.IsInRole("Service"))
+                            @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service))
                             {
                                 <li class="nav-item">
                                     <a class="nav-link hover_drop_down text-dark" asp-area="" asp-controller="Order" asp-action="Index">Zamówienia</a>
@@ -74,13 +75,13 @@
                                     </ul>
                                 </li>
                             }
-                            @if (User.IsInRole("Administrator") || User.IsInRole("Admin") || User.IsInRole("Manager"))
+                            @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager))
                             {
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" asp-area="" asp-controller="Coupon" asp-action="Index">Kupony</a>
                                 </li>
                             }
-                            @if (User.IsInRole("Administrator") || User.IsInRole("Admin"))
+                            @if (User.IsInRole(UserPermissions.Roles.Administrator))
                             {
                                 <li class="nav-item">
                                     <a class="nav-link text-dark" asp-area="" asp-controller="UserRoles" asp-action="Index">Zarządzanie użytkownikami</a>

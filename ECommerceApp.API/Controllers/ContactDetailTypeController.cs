@@ -1,17 +1,14 @@
 ﻿using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.ContactDetailType;
-using ECommerceApp.Application.ViewModels.Customer;
+using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace ECommerceApp.API.Controllers
 {
+    [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
     [Route("api/contact-detail-types")]
     [ApiController]
     public class ContactDetailTypeController : ControllerBase
@@ -23,7 +20,6 @@ namespace ECommerceApp.API.Controllers
             _contactDetailTypeService = contactDetailTypeService;
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet("{id}")]
         public ActionResult<ContactDetailTypeVm> GetContactDetailType(int id)
         {
@@ -35,7 +31,6 @@ namespace ECommerceApp.API.Controllers
             return Ok(contactDetailType);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet]
         public ActionResult<List<ContactDetailTypeVm>> GetContactDetailTypes()
         {
@@ -47,7 +42,6 @@ namespace ECommerceApp.API.Controllers
             return Ok(contactDetailTypes);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPut]
         public IActionResult EditContactDetailType(ContactDetailTypeVm model)
         {
@@ -60,7 +54,6 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
         public IActionResult AddContactDetailType([FromBody] ContactDetailTypeVm model)
         {

@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using ECommerceApp.Application.ViewModels.OrderItem;
+using ECommerceApp.Infrastructure.Permissions;
 
 namespace ECommerceApp.API.Controllers
 {
@@ -32,7 +33,7 @@ namespace ECommerceApp.API.Controllers
             _orderItemService = orderItemService;
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpGet]
         public ActionResult<List<OrderForListVm>> GetOrders()
         {
@@ -44,7 +45,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(orders);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet("by-customer/{customerId}")]
         public ActionResult<List<OrderForListVm>> GetOrdersByCustomerId(int customerId)
         {
@@ -56,8 +57,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(orders);
         }
 
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet("{id}")]
         public ActionResult<OrderDetailsVm> GetOrder(int id)
         {
@@ -69,9 +69,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(order);
         }
 
-        
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet("by-user")]
         public ActionResult<List<OrderForListVm>> GetMyOrders()
         {
@@ -85,7 +83,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(orders);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPut]
         public IActionResult EditOrder([FromBody] OrderDto model)
         {
@@ -134,7 +132,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
         public IActionResult AddOrder([FromBody] OrderDto model)
         {
@@ -148,7 +146,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(id);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost("with-all-order-items")]
         public IActionResult AddOrderFromOrderItems([FromBody] OrderDto model)
         {

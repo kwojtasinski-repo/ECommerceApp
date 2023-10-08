@@ -1,17 +1,14 @@
 ﻿using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Services;
-using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Tag;
+using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 
 namespace ECommerceApp.API.Controllers
 {
+    [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
     [Route("api/tags")]
     [ApiController]
     public class TagController : ControllerBase
@@ -23,7 +20,6 @@ namespace ECommerceApp.API.Controllers
             _tagService = tagService;
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet]
         public ActionResult<List<TagVm>> GetItemTags()
         {
@@ -35,7 +31,6 @@ namespace ECommerceApp.API.Controllers
             return Ok(tags);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpGet("{id}")]
         public ActionResult<TagDetailsVm> GetTag(int id)
         {
@@ -47,7 +42,6 @@ namespace ECommerceApp.API.Controllers
             return Ok(tag);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPut]
         public IActionResult EditItemTag(TagVm model)
         {
@@ -60,7 +54,6 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         [HttpPost]
         public IActionResult AddItemTag(TagVm model)
         {
@@ -73,7 +66,6 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Administrator, Admin, Manager, Service")]
         public IActionResult DeleteItemTag(int id)
         {
             _tagService.DeleteTag(id);

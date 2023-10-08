@@ -1,30 +1,25 @@
 ﻿using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Services;
 using ECommerceApp.Application.ViewModels.Address;
-using ECommerceApp.Application.ViewModels.Customer;
+using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
 
 namespace ECommerceApp.API.Controllers
 {
+    [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
     [Route("api/addresses")]
     [ApiController]
     public class AddressController : ControllerBase
     {
         private readonly IAddressService _addressService;
 
-        public AddressController(ICustomerService customerService, IAddressService addressService)
+        public AddressController(IAddressService addressService)
         {
             _addressService = addressService;
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpGet("{id}")]
         public ActionResult<AddressVm> GetAddress(int id)
         {
@@ -38,7 +33,6 @@ namespace ECommerceApp.API.Controllers
             return Ok(address);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPut]
         public IActionResult EditAddress([FromBody] AddressVm model)
         {
@@ -53,7 +47,6 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost]
         public IActionResult AddAddress([FromBody] AddressVm model)
         {
