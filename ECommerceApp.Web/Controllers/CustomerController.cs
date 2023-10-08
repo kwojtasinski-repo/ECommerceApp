@@ -35,8 +35,9 @@ namespace ECommerceApp.Web.Controllers
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost]
-        public IActionResult Index(string userId, int pageSize, int? pageNo, string searchString)
+        public IActionResult Index(int pageSize, int? pageNo, string searchString)
         {
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!pageNo.HasValue)
             {
                 pageNo = 1;
@@ -51,9 +52,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult All()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var model = _customerService.GetAllCustomersForList(10, 1, "");
-
             return View(model);
         }
 

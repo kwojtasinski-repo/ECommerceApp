@@ -99,7 +99,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult UpdateOrderItem(int id, [FromBody]OrderItemVm model)
         {
             model.Id = id;
-            model.UserId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            model.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             _orderItemService.UpdateOrderItem(model);
             return Json(new { Status = "Updated" });
         }
@@ -108,7 +108,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddToCart([FromBody]OrderItemDto model)
         {
-            var userId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var dto = model.AsVm();
             dto.UserId = userId;
             var id = _orderItemService.AddOrderItem(dto);
