@@ -29,7 +29,8 @@ namespace ECommerceApp.Application.Services
             }
 
             var orderItem = _mapper.Map<OrderItem>(model);
-            var orderItemExist = _repo.GetOrderItemById(model.Id);
+            var orderItemExist = _repo.GetAllOrderItems()
+                                      .FirstOrDefault(oi => oi.ItemId == model.ItemId && oi.UserId == model.UserId && oi.OrderId == null);
             int id;
             if (orderItemExist != null)
             {
@@ -115,7 +116,8 @@ namespace ECommerceApp.Application.Services
                 throw new BusinessException($"{typeof(OrderItemVm).Name} cannot be null");
             }
 
-            var orderItem = _mapper.Map<OrderItem>(model);
+            var orderItem = _repo.GetById(model.Id) ?? throw new BusinessException($"OrderItem with id '{model.Id}' was not found");
+            orderItem.ItemOrderQuantity = model.ItemOrderQuantity;
             _repo.UpdateOrderItem(orderItem);
         }
 

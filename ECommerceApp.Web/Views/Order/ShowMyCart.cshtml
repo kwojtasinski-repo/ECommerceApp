@@ -58,9 +58,9 @@
                 <td style="width:100px;">
                     <div class="row">
                         @using Newtonsoft.Json;
-                        <a><i style="margin-right:5px;" onclick="AddQuantity(@JsonConvert.SerializeObject(orderItem))" id="OrderItemAddQuantity" class="fas fa-plus-circle ml-2 fa_custom"></i></a>
+                        <a><i style="margin-right:5px;" onclick="AddQuantity(@orderItem.Id, @orderItem.ItemId, @orderItem.ItemOrderQuantity)" id="OrderItemAddQuantity" class="fas fa-plus-circle ml-2 fa_custom"></i></a>
                         @Html.DisplayFor(model => orderItem.ItemOrderQuantity)
-                        <a><i onclick="RemoveQuantity(@JsonConvert.SerializeObject(orderItem))" class="fa fa-minus-circle ml-2 fa_custom" id="OrderItemRemoveQuantity"></i></a>
+                        <a><i onclick="RemoveQuantity(@orderItem.Id, @orderItem.ItemId, @orderItem.ItemOrderQuantity)" class="fa fa-minus-circle ml-2 fa_custom" id="OrderItemRemoveQuantity"></i></a>
                     </div>
                 </td>
                 <td>
@@ -113,27 +113,29 @@
 </div>
 
 <script>
-    async function AddQuantity(object) {
-        object.ItemOrderQuantity += 1;
-        var objectJson = JSON.stringify(object);
-        await ajaxRequest.send("/OrderItem/UpdateOrderItem", "POST", objectJson, "application/json", "json");
+    async function AddQuantity(id, itemId, quantity) {
+        const objectJson = JSON.stringify({
+            "itemOrderQuantity": quantity + 1
+        })
+        await ajaxRequest.send("/OrderItem/UpdateOrderItem/" + id, "PUT", objectJson, "application/json", "json");
         location.reload();
     }
 
-    async function RemoveQuantity(object) {
-        if (object.ItemOrderQuantity <= 1) {
+    async function RemoveQuantity(id, itemId, quantity) {
+        if (quantity <= 1) {
             return;
         }
 
-        object.ItemOrderQuantity -= 1;
-        const objectJson = JSON.stringify(object);
-        await ajaxRequest.send("/OrderItem/UpdateOrderItem", "POST", objectJson, "application/json", "json");
+        const objectJson = JSON.stringify({
+            "itemOrderQuantity": quantity - 1
+        })
+        await ajaxRequest.send("/OrderItem/UpdateOrderItem/" + id, "PUT", objectJson, "application/json", "json");
         location.reload();
     }
 
     async function RemoveItemFromCart(itemId) {
         try {
-            await ajaxRequest.send("/OrderItem/DeleteOrderItem", "GET", { "id": itemId }, "application/json", "json");
+            await ajaxRequest.send("/OrderItem/DeleteOrderItem/" + itemId, "DELETE", undefined, "application/json", "json");
             location.reload();
         } catch (error) {
             if (error.status === statusCodes.Unauthorized) {

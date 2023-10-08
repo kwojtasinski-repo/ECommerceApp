@@ -95,28 +95,24 @@ namespace ECommerceApp.Web.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpPost]
-        public IActionResult UpdateOrderItem([FromBody]OrderItemVm model)
+        [HttpPut("/{id}")]
+        public IActionResult UpdateOrderItem(int id, [FromBody]OrderItemVm model)
         {
+            model.Id = id;
+            model.UserId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
             _orderItemService.UpdateOrderItem(model);
-            return Json(new { });
+            return Json(new { Status = "Updated" });
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost]
         public IActionResult AddToCart([FromBody]OrderItemDto model)
         {
-            var id = _orderItemService.AddOrderItem(model.AsVm());
+            var userId = HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var dto = model.AsVm();
+            dto.UserId = userId;
+            var id = _orderItemService.AddOrderItem(dto);
             return Json(new { itemId = id });
-        }
-
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
-        [HttpGet]
-        public IActionResult AddToCart(int id)
-        {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var itemOrderId = _orderItemService.AddOrderItem(id, userId);
-            return Json(new { ItemOrderId = itemOrderId });
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]

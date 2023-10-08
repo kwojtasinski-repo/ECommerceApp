@@ -385,7 +385,7 @@ namespace ECommerceApp.Web.Controllers
         }
 
         [Authorize(Roles = "Administrator, Admin, Manager, Service")]
-        [HttpGet]
+        [HttpPatch]
         public IActionResult DispatchOrder(int id)
         {
             _orderService.DispatchOrder(id);

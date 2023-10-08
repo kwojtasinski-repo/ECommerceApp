@@ -136,9 +136,10 @@
         async function AddItemToCart(itemId)
         {
             try {
-                await ajaxRequest.send("/OrderItem/AddToCart", "GET", {
-                    "id": itemId
-                }, "application/json", "json");
+                await ajaxRequest.send("/OrderItem/AddToCart", "POST", JSON.stringify({
+                        "ItemId": itemId,
+                        "ItemOrderQuantity": 1
+                    }), "application/json");
                 location.reload();
             } catch (error) {
                 if (error.status === statusCodes.Unauthorized) {

@@ -14,7 +14,7 @@
         <a asp-action="Index">Powrót do listy przedmiotów</a>
     </p>
 
-<form asp-action="ShowItemBrands" asp-controller="Item" method="post">
+<form id="search-form" asp-action="ShowItemBrands" asp-controller="Item" method="post">
     <div class="row">
         <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
         <input type="submit" value="Wyszukaj" />
@@ -58,7 +58,7 @@
                     <td>
                         @if (i != Model.CurrentPage)
                         {
-                            <a href="javascript:PagerClick(@i)">@i</a>
+                            <a href='javascript:PagerClick(@i, "search-form")'>@i</a>
                         }
                         else
                         {
@@ -72,13 +72,3 @@
         <input type="hidden" name="pageSize" id="pageSize" value="2" />
     </div>
 </form>
-
-@section Scripts
-{
-    <script type="text/javascript">
-        function PagerClick(index) {
-            document.getElementById("pageNo").value = index;
-            document.forms[0].submit();
-        }
-    </script>
-}

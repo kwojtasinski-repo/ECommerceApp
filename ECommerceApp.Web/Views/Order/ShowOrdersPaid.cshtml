@@ -113,9 +113,7 @@
         async function OrderDispatched(id)
         {
             try {
-                await ajaxRequest.send("/Order/DispatchOrder/", "GET", {
-                    'id': id
-                }, "application/json; charset=utf-8", "json");
+                await ajaxRequest.send("/Order/DispatchOrder?id="+id, "PATCH");
                 window.location.reload();
             } catch (error) {
                 if (error.status === statusCodes.Unauthorized) {

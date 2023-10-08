@@ -253,7 +253,7 @@ const ajaxRequest = (function () {
 })();
 
 /**
-* Creates button template
+* PagerClick method to submit pagination form with data
 * @param index Page to choose in form.
 * @param id Form id.
 * @param pageNo The page number element identifier - default pageNo.

@@ -554,14 +554,8 @@ namespace ECommerceApp.Application.Services
 
         public void DispatchOrder(int orderId)
         {
-            var order = _repo.GetAll().Where(o => o.Id == orderId).Where(o => o.IsDelivered == false && o.IsPaid == true)
-                .FirstOrDefault();
-
-            if (order == null)
-            {
-                throw new BusinessException($"Order with id {orderId} not found, check your order if is not delivered and is paid");
-            }
-
+            var order = _repo.GetAll().Where(o => o.Id == orderId).FirstOrDefault(o => o.IsDelivered == false && o.IsPaid == true) 
+                ?? throw new BusinessException($"Order with id {orderId} not found, check your order if is not delivered and is paid");
             order.IsDelivered = true;
             order.Delivered = DateTime.Now;
             _repo.Update(order);
