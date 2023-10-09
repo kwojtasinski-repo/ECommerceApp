@@ -1,4 +1,5 @@
-﻿@model ECommerceApp.Application.ViewModels.Brand.ListForBrandVm
+﻿@using ECommerceApp.Infrastructure.Permissions;
+@model ECommerceApp.Application.ViewModels.Brand.ListForBrandVm
 
 @{
     ViewData["Title"] = "ShowItemBrands";
@@ -7,7 +8,7 @@
 <h1>Lista wszystkich marek przedmiotów</h1>
 
 <p>
-    @if (User.IsInRole("Administrator") || User.IsInRole("Manager") || User.IsInRole("Service") )
+    @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service))
     {
         <a asp-action="AddItemBrand">Dodaj nową markę</a>
     }

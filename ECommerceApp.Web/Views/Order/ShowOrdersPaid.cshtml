@@ -1,4 +1,5 @@
-﻿@model ECommerceApp.Application.ViewModels.Order.ListForOrderVm
+﻿@using ECommerceApp.Infrastructure.Permissions;
+@model ECommerceApp.Application.ViewModels.Order.ListForOrderVm
 
 @{
     ViewData["Title"] = "ShowOrdersPaid";
@@ -73,7 +74,7 @@
                     </td>
                     <td>
                         <a style="color: #0366d6; cursor: pointer;" onclick="OrderDispatched(@order.Id)">Wyślij zamówienie</a>
-                        @if (User.IsInRole("Administrator") || User.IsInRole("Manager") || User.IsInRole("Service") || User.IsInRole("Admin"))
+                        @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service))
                         {
                             @(' ')@('|')@(' ')
                             @Html.ActionLink("Edytuj", "EditOrder", new { id = order.Id }) @(' ')@('|')@(' ')

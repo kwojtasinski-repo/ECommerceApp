@@ -1,5 +1,6 @@
 ﻿using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
+using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using MimeTypes;
@@ -71,7 +72,7 @@ namespace ECommerceApp.IntegrationTests.Common
             
             var userRole = new IdentityUserRole<string>
             {
-                RoleId = "Administrator",
+                RoleId = UserPermissions.Roles.Administrator,
                 UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e"
             };
             context.Add(userRole);

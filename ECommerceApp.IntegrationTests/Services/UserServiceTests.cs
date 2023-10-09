@@ -1,6 +1,7 @@
 ﻿using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.User;
 using ECommerceApp.Domain.Model;
+using ECommerceApp.Infrastructure.Permissions;
 using ECommerceApp.IntegrationTests.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -75,7 +76,7 @@ namespace ECommerceApp.IntegrationTests.Services
         public async Task given_valid_id_and_role_should_add_role_to_user()
         {
             var id = "e4fc1feb-7d08-4207-bd52-3f3464a01564";
-            var role = "Administrator";
+            var role = UserPermissions.Roles.Administrator;
 
             await _service.ChangeRoleAsync(id, new List<string> { role });
 
@@ -105,7 +106,7 @@ namespace ECommerceApp.IntegrationTests.Services
         public async Task given_valid_id_and_role_should_remove_role_from_user()
         {
             var id = "e4fc1feb-7d08-4207-bd52-3f3464a01564";
-            var role = "Administrator";
+            var role = UserPermissions.Roles.Administrator;
             await _service.ChangeRoleAsync(id, new List<string> { role });
 
             _service.RemoveRoleFromUser(id, role);

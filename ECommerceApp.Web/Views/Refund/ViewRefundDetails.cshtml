@@ -1,4 +1,5 @@
-﻿@model ECommerceApp.Application.ViewModels.Refund.RefundDetailsVm
+﻿@using ECommerceApp.Infrastructure.Permissions;
+@model ECommerceApp.Application.ViewModels.Refund.RefundDetailsVm
 
 @{
     ViewData["Title"] = "ViewRefundDetails";
@@ -54,7 +55,7 @@
     </dl>
 </div>
 <div>
-    @if (User.IsInRole("Administrator") || User.IsInRole("Manager") || User.IsInRole("Service") || User.IsInRole("Admin"))
+    @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service))
     {
         @Html.ActionLink("Edytuj", "EditRefund", new { id = Model.OrderId }) @(' ')@('|')@(' ')
     }

@@ -1,4 +1,5 @@
-﻿@model ECommerceApp.Application.ViewModels.Item.ListForItemVm
+﻿@using ECommerceApp.Infrastructure.Permissions;
+@model ECommerceApp.Application.ViewModels.Item.ListForItemVm
 
 @{
     ViewData["Title"] = "Index";
@@ -92,13 +93,13 @@
                     </td>
                     <td>
                         <a style="color: #0366d6; cursor: pointer;" onclick="AddItemToCart(@item.Id)">Dodaj do koszyka</a>
-                        @if (User.IsInRole("Administrator") || User.IsInRole("Manager") || User.IsInRole("Service") || User.IsInRole("Admin"))
+                        @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service))
                         {
                             @(' ')@('|')@(' ')
                             @Html.ActionLink("Edytuj", "EditItem", new { id = item.Id }) @(' ')@('|')@(' ')
                             @Html.ActionLink("Szczegóły", "ViewItem", new { id = item.Id }) @(' ')@('|')@(' ')
                         }
-                        @if (User.IsInRole("Administrator") || User.IsInRole("Manager") || User.IsInRole("Admin"))
+                        @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager))
                         {
                             @Html.ActionLink("Usuń", "DeleteItem", new { id = item.Id })
                         }

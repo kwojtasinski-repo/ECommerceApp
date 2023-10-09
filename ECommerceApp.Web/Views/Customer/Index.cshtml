@@ -1,5 +1,6 @@
 ﻿@model ECommerceApp.Application.ViewModels.Customer.ListForCustomerVm
 @using System.Security.Claims;
+@using ECommerceApp.Infrastructure.Permissions;
 
 @{
     ViewData["Title"] = "Index";
@@ -9,7 +10,7 @@
 
 <p>
     <a asp-action="AddCustomer">Dodaj nowe dane</a>
-    @if (User.IsInRole("Administrator") || User.IsInRole("Admin") || User.IsInRole("Manager"))
+    @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager))
     {
         <a asp-controller="Customer" asp-action="All">Klienci</a>
     }
