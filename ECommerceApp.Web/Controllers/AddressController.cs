@@ -1,19 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Claims;
-using System.Threading.Tasks;
-using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Services;
+﻿using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Address;
-using ECommerceApp.Application.ViewModels.ContactDetail;
-using ECommerceApp.Application.ViewModels.Customer;
+using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Routing;
 
 namespace ECommerceApp.Web.Controllers
 {
+    [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
     public class AddressController : Controller
     {
         private readonly IAddressService _addressService;
@@ -23,7 +16,6 @@ namespace ECommerceApp.Web.Controllers
             _addressService = addressService;
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpGet]
         public IActionResult AddAddress(int id)
         {
@@ -31,7 +23,6 @@ namespace ECommerceApp.Web.Controllers
             return View();
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost]
         public IActionResult AddAddress(AddressVm address)
         {
@@ -39,7 +30,6 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction(actionName: "Index", controllerName: "Customer");
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpGet]
         public IActionResult EditAddress(int id)
         {
@@ -47,7 +37,6 @@ namespace ECommerceApp.Web.Controllers
             return View(address);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         [HttpPost]
         public IActionResult EditAddress(AddressVm model)
         {
@@ -55,14 +44,12 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction(actionName: "Index", controllerName: "Customer");
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         public IActionResult ViewAddress(int id)
         {
             var address = _addressService.GetAddress(id);
             return View(address);
         }
 
-        [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
         public IActionResult DeleteAddress(int id)
         {
             _addressService.DeleteAddress(id);

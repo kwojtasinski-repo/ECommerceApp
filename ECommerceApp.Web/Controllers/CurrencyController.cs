@@ -1,12 +1,13 @@
 ﻿using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Currency;
+using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 
 namespace ECommerceApp.Web.Controllers
 {
-    [Authorize(Roles = "Administrator, Admin, Manager, Service")]
+    [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
     public class CurrencyController : Controller
     {
         private readonly ICurrencyService _currencyService;
@@ -52,7 +53,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddCurrency(CurrencyVm model)
         {
-            var id = _currencyService.Add(model);
+            _currencyService.Add(model);
             return RedirectToAction("Index");
         }
 

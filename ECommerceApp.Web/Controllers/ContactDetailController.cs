@@ -3,13 +3,12 @@ using ECommerceApp.Application.ViewModels.ContactDetail;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ECommerceApp.Application;
-using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
+using ECommerceApp.Infrastructure.Permissions;
 
 namespace ECommerceApp.Web.Controllers
 {
-    [Authorize(Roles = "Administrator, Admin, Manager, Service, User")]
+    [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
     public class ContactDetailController : Controller
     {
         private readonly IContactDetailService _contactDetailService;
