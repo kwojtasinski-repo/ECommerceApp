@@ -123,21 +123,9 @@
 @section Scripts {
 
     <script type="text/javascript">
-        var form = $('form');
-        var table = $('#tagWithJS');
-        var newrow = $('#newrow');
-        var copyOfItemTags = document.getElementById("Tags");
-        var selectedIndexItemTags = 0;
+        var itemTagsElement = document.getElementById("Tags");
         var selectedIndex = 0;
         var selectedValue;
-        var selectedTableRowInTags;
-        var dictOfDeletedValues = {};
-
-        $(document).ready(function () {
-            if ($('#tagWithJS tr').length > 0) {
-                index = 0;
-            }
-        });
 
         $('#add').click(function () {
             if (selectedIndex < 0) {
@@ -152,10 +140,10 @@
                 index = tableRows.length;
             }
 
-            const valueOfItemTag = copyOfItemTags.value;
-            const selectedText = copyOfItemTags.options[copyOfItemTags.selectedIndex].text;
+            const valueOfItemTag = itemTagsElement.value;
+            const selectedText = itemTagsElement.options[itemTagsElement.selectedIndex].text;
             fillTableWithRow(index, valueOfItemTag, selectedText);
-            copyOfItemTags.remove(selectedIndex);
+            itemTagsElement.remove(selectedIndex);
             selectedIndex = 0;
         });
 
@@ -172,7 +160,6 @@
         });
 
         $('#tagsWithJS').on('click', '.delete', function () {
-            debugger;
             const tagIndexToDelete = (this).attributes.id.value;
             const rowToDelete = document.querySelectorAll('#tagsWithJS > tbody > tr')[tagIndexToDelete];
 
@@ -187,37 +174,12 @@
             }
 
             rowToDelete.remove();
-            const rows = [];
-            for (const row of document.querySelectorAll('#tagsWithJS > tbody > tr')) {
-                rows.push(row);
-            }
+            const rows = getAllTagRows();
             $('#tagsWithJS > tbody').empty();
-
-            for (let i = 0; i < rows.length; i++) {
-                const a = rows[i].querySelector('[name="Tag"]').value;
-                fillTableWithRow(i, rows[i].querySelector('#tagId').value, rows[i].querySelector('[name="Tag"]').value);
-            }
-
+            fillTableWithRows(rows);
             const allTags = document.querySelector('#TagsMain');
-            const tags = [];
-            for (const tag of document.querySelector('#Tags')) {
-                tags.push(tag);
-            }
-
-            $('#Tags').empty();
-
-            for (let i = 0; i < allTags.length; i++) {
-                if (allTags[i].value === tagId.value) {
-                    $('#Tags').append($("<option></option>").attr("value", allTags[i].value).text(allTags[i].text));
-                    continue;
-                }
-
-                if (!containsValue(tags, allTags[i].value)) {
-                    continue;
-                }
-
-                $('#Tags').append($("<option></option>").attr("value", allTags[i].value).text(allTags[i].text));
-            }
+            const tags = getAllTags();
+            updateTags(allTags, tags, tagId);
         });
 
         function containsValue(array, value) {
@@ -241,31 +203,44 @@
             table.append(copyRow);
         }
 
-
-        function DeleteItem(id) {
-            console.log("Jestem w delete");
-            console.log("id=" + id);
+        function getAllTagRows() {
+            const rows = [];
+            for (const row of document.querySelectorAll('#tagsWithJS > tbody > tr')) {
+                rows.push(row);
+            }
+            return rows;
         }
 
-        function Update(listIdTags) {
-            for (j = 0; j < listIdTags.length; j++) {
-                if (listIdTags[j] != j) {
-                    this.listIdTags[j] = j;
-                }
+        function fillTableWithRows(rows) {
+            for (let i = 0; i < rows.length; i++) {
+                fillTableWithRow(i, rows[i].querySelector('#tagId').value, rows[i].querySelector('[name="Tag"]').value);
             }
         }
 
-        function RemoveSelectOption(valueToDelete, selectList) {
-            for (var i = selectList.length - 1; i >= 0; i--) {
-                if (selectList.options[i].value == valueToDelete) {
-                    selectList.remove(i);
-                    console.log(" selectList.options[i].value == valueToDelete.value");
-                    console.log(valueToDelete);
-                }
-                console.log("loop in RemoveSelectOption");
+        function getAllTags() {
+            const tags = [];
+            for (const tag of document.querySelector('#Tags')) {
+                tags.push(tag);
             }
+            return tags;
         }
 
+        function updateTags(allTags, tags, currentTag) {
+            $('#Tags').empty();
+
+            for (let i = 0; i < allTags.length; i++) {
+                if (allTags[i].value === currentTag.value) {
+                    $('#Tags').append($("<option></option>").attr("value", allTags[i].value).text(allTags[i].text));
+                    continue;
+                }
+
+                if (!containsValue(tags, allTags[i].value)) {
+                    continue;
+                }
+
+                $('#Tags').append($("<option></option>").attr("value", allTags[i].value).text(allTags[i].text));
+            }
+        }
     </script>
 
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
