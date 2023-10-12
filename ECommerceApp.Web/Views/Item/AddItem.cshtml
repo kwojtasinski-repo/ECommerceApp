@@ -63,7 +63,7 @@
             <!--NOWY TAG-->
             <table id="tagsWithJS">
                 <thead>
-                        Tag:
+                    List tagów:
                 </thead>
                 <tbody>
                     @for (int i = 0; i < Model.ItemTags.Count; i++)
@@ -75,20 +75,12 @@
                                 <input id="itemId" type="hidden" name="ItemTags[@i].ItemId" class="form-control" value="@Model.Id" />
                             </td>
                             <td class="col-2">
-                                <button onclick="DeleteItem(this.id)" id="@i" type="button" class="btn btn-danger delete">Usuń</button>
+                                <button id="@i" type="button" class="btn btn-danger delete">Usuń</button>
                             </td>
                         </tr>
                     }
                 </tbody>
             </table>
-            <!--table>
-        <tr class="row" id="ChooseItemTag">
-            <td>
-                <select id="ItemTags" name="ItemTags[#].TagId" asp-items="@(new SelectList(ViewBag.ItemTags,"Id", "Name"))" class="custom-select" data-val="true" value=""></select>
-                <input type="hidden" name="ItemTags[#].ItemId" class="form-control" value="@Model.Id" />
-            </td>
-        </tr>
-    </table-->
             <table id="newrow" style="display:none;">
                 <tr id="%">
                     <td>
