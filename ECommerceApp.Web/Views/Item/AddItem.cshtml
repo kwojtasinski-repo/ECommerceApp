@@ -60,7 +60,6 @@
                 <input type="hidden" asp-for="CurrencyId" value="1" />
                 <span asp-validation-for="CurrencyId" class="text-danger"></span>
             </div>
-            <!--NOWY TAG-->
             <table id="tagsWithJS">
                 <thead>
                     List tagów:
@@ -81,21 +80,7 @@
                     }
                 </tbody>
             </table>
-            <table id="newrow" style="display:none;">
-                <tr id="%">
-                    <td>
-                        <input name="Tag" value="itemek" class="form-control valid" readonly style="width: 250px;position:static; " />
-                        <input id="tagId" type="hidden" name="ItemTags[#].TagId" value="wartosc" class="col-sm-2 col-form-label" />
-                        <input id="itemId" type="hidden" name="ItemTags[#].ItemId" class="form-control" value="@Model.Id" />
-                    </td>
-                    <td class="col-2">
-                        <button type="button" id="%" class="btn btn-danger delete">Usuń</button>
-                    </td>
-                </tr>
-            </table>
-            <!--NEW TAG -->
             <div>
-                <select id="TagsMain" style="display:none;" asp-items="@(new SelectList(ViewBag.ItemTags,"Id", "Name"))" class="custom-select"></select>
                 <select id="Tags" name="Tags" asp-items="@(new SelectList(ViewBag.ItemTags,"Id", "Name"))" class="custom-select" data-val="true"></select>
                 <button type="button" id="add" class="btn btn-info">Wybierz tag</button>
             </div>
@@ -115,29 +100,27 @@
 @section Scripts {
 
     <script type="text/javascript">
-        const tags = [];
-
-        var itemTagsElement = document.getElementById("Tags");
+        let tags = [];
+        const itemTagsElement = document.getElementById("Tags");
         var selectedIndex = 0;
         var selectedValue;
+
+        $(document).ready(function () {
+            initTags();
+            selectedValue = itemTagsElement?.options[itemTagsElement?.selectedIndex ?? 0]?.value ?? 0;
+        });
 
         $('#add').click(function () {
             if (selectedIndex < 0) {
                 return;
             }
 
-            const tableBody = document.querySelector('#tagsWithJS > tbody');
-            const tableRows = tableBody.querySelectorAll('tr');
-            let index = 0;
-
-            if (tableRows.length > 0) {
-                index = tableRows.length;
-            }
-
-            const valueOfItemTag = itemTagsElement.value;
+            const tagValue = itemTagsElement.value;
             const selectedText = itemTagsElement.options[itemTagsElement.selectedIndex].text;
-            fillTableWithRow(index, valueOfItemTag, selectedText);
-            itemTagsElement.remove(selectedIndex);
+            tags.push({ name: selectedText, value: tagValue });
+
+            fillTableWithTags(tags);
+            removeUsedTags();
             selectedIndex = 0;
         });
 
@@ -167,13 +150,10 @@
                 return;
             }
 
-            rowToDelete.remove();
-            const rows = getAllTagRows();
-            $('#tagsWithJS > tbody').empty();
-            fillTableWithRows(rows);
-            const allTags = document.querySelector('#TagsMain');
-            const tags = getAllTags();
-            updateTags(allTags, tags, tagId);
+            const tagToAdd = tags.find(t => t.value === tagId.value);
+            addDeletedTag(tagToAdd);
+            tags = tags.filter(t => t.value !== tagId.value);
+            fillTableWithTags(tags);
         });
 
         function containsValue(array, value) {
@@ -186,54 +166,89 @@
             return false;
         }
 
-        function fillTableWithRow(index, value, text) {
-            const copyRow = document.querySelector('#newrow > tbody > tr').cloneNode(true);
-            copyRow.setAttribute('id', index);
-            copyRow.innerHTML = ($(copyRow).html().replace(/\[#\]/g, '[' + index + ']'));
-            copyRow.innerHTML = ($(copyRow).html().replace(/"%"/g, '"' + index + '"'));
-            copyRow.innerHTML = ($(copyRow).html().replace(/"wartosc"/g, '"' + value + '"'));
-            copyRow.innerHTML = ($(copyRow).html().replace(/"itemek"/g, '"' + text + '"'));
-            const table = $('#tagsWithJS');
-            table.append(copyRow);
-        }
+        function fillTableWithTags(tags) {
+            $('#tagsWithJS > tbody').empty();
 
-        function getAllTagRows() {
-            const rows = [];
-            for (const row of document.querySelectorAll('#tagsWithJS > tbody > tr')) {
-                rows.push(row);
-            }
-            return rows;
-        }
-
-        function fillTableWithRows(rows) {
-            for (let i = 0; i < rows.length; i++) {
-                fillTableWithRow(i, rows[i].querySelector('#tagId').value, rows[i].querySelector('[name="Tag"]').value);
+            for (let i = 0; i < tags.length; i++) {
+                const row = createTagRow(tags[i], i.toString());
+                const table = $('#tagsWithJS');
+                table.append(row);
             }
         }
 
-        function getAllTags() {
-            const tags = [];
-            for (const tag of document.querySelector('#Tags')) {
-                tags.push(tag);
-            }
-            return tags;
+        function createTagRow(tag, index) {
+            const row = document.createElement('tr');
+            const dataTag = document.createElement('td');
+
+            const tagNameInput = document.createElement('input');
+            tagNameInput.name = "Tag";
+            tagNameInput.value = tag.name;
+            tagNameInput.className = "form-control valid";
+            tagNameInput.readOnly = true;
+            tagNameInput.style = "width: 250px;position:static;";
+            dataTag.appendChild(tagNameInput);
+
+            const tagIdInput = document.createElement('input');
+            tagIdInput.value = tag.value;
+            tagIdInput.setAttribute("id", "tagId");
+            tagIdInput.type = "hidden";
+            tagIdInput.name = "ItemTags[" + index + "].TagId";
+            dataTag.appendChild(tagIdInput);
+
+            const itemIdInput = document.createElement('input');
+            itemIdInput.value = document.querySelector('[data-name="itemId"]')?.value ?? 0;
+            itemIdInput.setAttribute("id", "itemId");
+            itemIdInput.type = "hidden";
+            itemIdInput.name = "ItemTags[" + index + "].ItemId";
+            dataTag.appendChild(itemIdInput);
+
+
+            const dataButton = document.createElement('td');
+            const button = buttonTemplate.createButton('Usuń', 'btn btn-danger delete', undefined, 'button', [{ key: "id", value: index }]);
+            dataButton.className = "col-2";
+            dataButton.appendChild(button);
+
+            row.appendChild(dataTag);
+            row.appendChild(dataButton);
+            return row;
         }
 
-        function updateTags(allTags, tags, currentTag) {
-            $('#Tags').empty();
+        function initTags() {
+            tags = initUsedTags();
+            removeUsedTags();
+        }
 
-            for (let i = 0; i < allTags.length; i++) {
-                if (allTags[i].value === currentTag.value) {
-                    $('#Tags').append($("<option></option>").attr("value", allTags[i].value).text(allTags[i].text));
+        function initUsedTags() {
+            const tableRows = $('#tagsWithJS tr');
+            const usedTags = [];
+
+            if (!tableRows) {
+                return usedTags;
+            }
+
+            for (let i = 0; i < tableRows.length; i++) {
+                const name = tableRows[i].querySelector('[name="Tag"]');
+                const id = tableRows[i].querySelector('#tagId');
+                if (!name) {
                     continue;
                 }
-
-                if (!containsValue(tags, allTags[i].value)) {
-                    continue;
-                }
-
-                $('#Tags').append($("<option></option>").attr("value", allTags[i].value).text(allTags[i].text));
+                usedTags.push({ name: name.value, value: id.value });
             }
+
+            return usedTags;
+        }
+
+        function removeUsedTags() {
+            const tagsSelector = document.querySelector('#Tags');
+            for (let i = tagsSelector.length - 1; i >= 0; i--) {
+                if (containsValue(tags, tagsSelector[i].value)) {
+                    tagsSelector[i].remove();
+                }
+            }
+        }
+
+        function addDeletedTag(tag) {
+            $('#Tags').append($("<option></option>").attr("value", tag.value).text(tag.name));
         }
     </script>
 
