@@ -117,7 +117,7 @@
         const objectJson = JSON.stringify({
             "itemOrderQuantity": quantity + 1
         })
-        await ajaxRequest.send("/OrderItem/UpdateOrderItem/" + id, "PUT", objectJson, "application/json", "json");
+        await ajaxRequest.send("/OrderItem/UpdateOrderItem/?id=" + id, "PUT", objectJson, "application/json", "json");
         location.reload();
     }
 
@@ -129,7 +129,7 @@
         const objectJson = JSON.stringify({
             "itemOrderQuantity": quantity - 1
         })
-        await ajaxRequest.send("/OrderItem/UpdateOrderItem/" + id, "PUT", objectJson, "application/json", "json");
+        await ajaxRequest.send("/OrderItem/UpdateOrderItem/?id=" + id, "PUT", objectJson, "application/json", "json");
         location.reload();
     }
 

@@ -87,8 +87,8 @@ namespace ECommerceApp.Web.Controllers
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
-        [HttpPut("/{id}")]
-        public IActionResult UpdateOrderItem(int id, [FromBody]OrderItemVm model)
+        [HttpPut]
+        public IActionResult UpdateOrderItem([FromQuery]int id, [FromBody]OrderItemVm model)
         {
             model.Id = id;
             model.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
