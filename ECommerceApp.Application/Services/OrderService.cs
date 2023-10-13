@@ -106,6 +106,7 @@ namespace ECommerceApp.Application.Services
                 throw new BusinessException("When adding object Id should be equals 0");
             }
 
+            model.CurrencyId = 1;
             Random random = new Random();
 
             if (model.Number == 0)
@@ -120,7 +121,7 @@ namespace ECommerceApp.Application.Services
                 model.Ordered = DateTime.Now;
             }
 
-            var ids = model.OrderItems.Select(oi => oi.Id).ToList();
+            var ids = model.OrderItems?.Select(oi => oi.Id)?.ToList() ?? new List<int>();
             var orderItemsQueryable = _repo.GetAllOrderItems();
             var orderItems = (from orderItemId in ids
                              join orderItem in orderItemsQueryable
@@ -269,7 +270,7 @@ namespace ECommerceApp.Application.Services
         private void CalculateCost(OrderVm orderVm, ICollection<OrderItem> itemsFromDb)
         {
             var orderCost = decimal.Zero;
-            foreach (var orderItem in orderVm.OrderItems)
+            foreach (var orderItem in orderVm.OrderItems ?? new List<OrderItemVm>())
             {
                 var item = itemsFromDb.Where(i => i.Id == orderItem.Id).FirstOrDefault();
 
@@ -316,7 +317,7 @@ namespace ECommerceApp.Application.Services
         {
             StringBuilder errors = new StringBuilder();
 
-            foreach(var orderItem in orderVm.OrderItems)
+            foreach(var orderItem in orderVm.OrderItems ?? new List<OrderItemVm>())
             {
                 var item = itemsFromDb.Where(i => i.Id == orderItem.Id).FirstOrDefault();
 

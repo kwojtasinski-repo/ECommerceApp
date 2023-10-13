@@ -26,7 +26,7 @@
             </div>
             <div class="form-group">
                 <label asp-for="Ordered" class="control-label">Zamówiono dnia o godzinie</label>
-                <input asp-for="Ordered" value="@ViewBag.Date" class="form-control" readonly />
+                <input asp-for="Ordered" type="datetime" value="@Model.Ordered" class="form-control" readonly />
                 <span asp-validation-for="Ordered" class="text-danger"></span>
             </div>
             <div style="display:none;" class="form-group">

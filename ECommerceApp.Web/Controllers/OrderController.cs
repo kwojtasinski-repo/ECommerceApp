@@ -75,7 +75,7 @@ namespace ECommerceApp.Web.Controllers
                 //var customers = _orderService.GetAllCustomers().ToList();
                 var customers = _customerService.GetCustomersInformationByUserId(userId).ToList();
                 ViewBag.Customers = customers;
-                var order = new OrderVm() { Number = random.Next(100, 10000), };
+                var order = new OrderVm() { Number = random.Next(100, 10000), Ordered = orderDate };
                 order.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 return View(order);
             }
