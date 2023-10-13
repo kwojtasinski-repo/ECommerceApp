@@ -291,10 +291,10 @@
         // --------------------------- SEND IMAGE ---------------------------
         function Upload(input) {
             var uploadForm = document.getElementById("UploadImages");
-            AJAXSubmit(uploadForm);
+            SendAddImageRequest(uploadForm);
         }
 
-        async function AJAXSubmit(oFormElement) {
+        async function SendAddImageRequest(oFormElement) {
             var files = oFormElement[0].files;
 
             if (parseInt(files.length) > 5) {
@@ -307,7 +307,6 @@
 
             try {
                 const response = await fetch(oFormElement.action, {
-
                     method: 'POST',
                     body: formData
                 });
@@ -325,18 +324,15 @@
         }
 
         function DeleteImage(id) {
-            console.log(id);
             var result = confirm("Czy usunąć obrazek?");
             if (result) {
-                AJAXDelete(id);
+                SendDeleteRequest(id);
             }
         }
 
-        async function AJAXDelete(id) {
+        async function SendDeleteRequest(id) {
             var imageId = parseInt(id);
-            console.log(imageId);
             var url = '/Image/DeleteImage/' + imageId;
-            console.log(url);
 
             try {
                 const response = await fetch(url, {

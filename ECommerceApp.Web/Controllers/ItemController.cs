@@ -1,5 +1,4 @@
-﻿using System;
-using ECommerceApp.Application.Interfaces;
+﻿using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -40,10 +39,7 @@ namespace ECommerceApp.Web.Controllers
                 pageNo = 1;
             }
 
-            if (searchString is null)
-            {
-                searchString = String.Empty;
-            }
+            searchString ??= string.Empty;
 
             var model = _itemService.GetAllItemsForList(pageSize, pageNo.Value, searchString);
 
@@ -65,7 +61,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult AddItem(NewItemVm model)
         {
             var id = _itemService.AddItem(model);
-            return RedirectToAction("Index");
+            return RedirectToAction("EditItem", new { id });
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
@@ -109,10 +105,7 @@ namespace ECommerceApp.Web.Controllers
                 pageNo = 1;
             }
 
-            if (searchString is null)
-            {
-                searchString = String.Empty;
-            }
+            searchString ??= string.Empty;
 
             var tag = _itemService.GetAllItemsWithTags(pageSize, pageNo.Value, searchString);
             return View(tag);
