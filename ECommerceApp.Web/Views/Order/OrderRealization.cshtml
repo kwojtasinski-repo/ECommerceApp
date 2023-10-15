@@ -369,25 +369,18 @@
         var quantityItems = document.getElementsByClassName('QuantiyOfItem');
         var cost = 0.0;
         var token = $('input[name="__RequestVerificationToken"]').val();
+        const format = (num, decimals) => num.toLocaleString('pl-PL', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2,
+        });
 
         $(document).ready(function () {
-            console.log(costItems);
-            console.log(quantityItems);
-          //  console.log(document.getElementById("SelectListCustomer"));
-        //    console.log(document.getElementById("SelectListCustomer").value);
             for (i = 0; i < costItems.length; i++) {
                 var quantity = Number(quantityItems[i].innerText);
-                console.log(quantity);
                 var currency = costItems[i].children[0].textContent.replace(" zł", "").replace(",", ".");
                 var number = Number(currency.replace(/[^0-9.-]+/g, "")) * quantity;
-                console.log(number);
                 cost += number;
             }
-
-            const format = (num, decimals) => num.toLocaleString('pl-PL', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            });
 
             document.getElementById('Cost').value = Number(cost);
             document.getElementById('CostCurrency').value = format(cost);
@@ -417,11 +410,8 @@
         }
 
         $(document).on('change', 'select', function () {
-            console.log("Jestem w onchange -> select")
             selectedIndex = (this).index;
             selectedValue = (this).value;
-            console.log(selectedValue);
-            console.log(this.children);
             var collectionInSelectList = this.children;
 
             for (i = 0; i < collectionInSelectList.length; i++) {
@@ -448,6 +438,7 @@
         $('input, textarea, select').on('focusout keyup', function () {
             if ($('orderForm').valid()) {
                 console.log("Walidacja");
+                // TODO think of validation
             }
         });
     </script>
