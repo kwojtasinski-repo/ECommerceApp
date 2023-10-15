@@ -95,7 +95,7 @@ namespace ECommerceApp.Web.Controllers
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet]
-        public IActionResult AddOrderToCart()
+        public IActionResult AddOrderItemToCart()
         {
             if (!User.Identity.IsAuthenticated)
             {
@@ -111,7 +111,7 @@ namespace ECommerceApp.Web.Controllers
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
-        public IActionResult AddOrderToCart(NewOrderItemVm model)
+        public IActionResult AddOrderItemToCart(NewOrderItemVm model)
         {
             var id = _orderItemService.AddOrderItem(model.AsOrderItemVm());
             return RedirectToAction("Index");
