@@ -27,11 +27,6 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
-                        <!--
-    <li class="nav-item">
-        <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-    </li>
-        -->
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Item" asp-action="Index">Przedmioty</a>
                         </li>
@@ -120,15 +115,18 @@
     <script>
 
         $(document).ready(function () {
-            var span = document.getElementById("itemCount");
-            if (span) {
-                ajaxRequest.send("/OrderItem/OrderItemCount", "GET", undefined, "application/json", "json")
-                           .then(response => { 
-                               if (response.count > 0) {
-                                    span.innerHTML = response.count;
-                               }
-                           });
-            };
+            var itemCount = document.getElementById("itemCount");
+
+            if (!itemCount) {
+                return;
+            }
+
+            ajaxRequest.send("/OrderItem/OrderItemCount", "GET", undefined, "application/json", "json")
+                        .then(response => { 
+                            if (response.count > 0) {
+                                itemCount.innerHTML = response.count;
+                            }
+                        });
         });
     </script>
     <style type="text/css">
