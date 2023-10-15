@@ -73,7 +73,7 @@
                         @Html.DisplayFor(modelItem => order.IsPaid)
                     </td>
                     <td>
-                        <a style="color: #0366d6; cursor: pointer;" onclick="OrderDispatched(@order.Id)">Wyślij zamówienie</a>
+                        <a style="color: #0366d6; cursor: pointer;" onclick="DispatchOrder(@order.Id)">Wyślij zamówienie</a>
                         @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service))
                         {
                             @(' ')@('|')@(' ')
@@ -111,8 +111,7 @@
 @section Scripts
 {
     <script type="text/javascript">
-        async function OrderDispatched(id)
-        {
+        async function DispatchOrder(id) {
             try {
                 await ajaxRequest.send("/Order/DispatchOrder?id="+id, "PATCH");
                 window.location.reload();
