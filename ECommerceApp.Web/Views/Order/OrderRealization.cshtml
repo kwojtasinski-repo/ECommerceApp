@@ -146,7 +146,7 @@
                                     <input type="hidden" asp-for="NewCustomer.UserId" value="@Model.UserId" class="form-control" />
                                     <div class="col-md-6 mb-3">
                                         <label asp-for="NewCustomer.FirstName" class="control-label">Imię</label>
-                                        <input asp-for="NewCustomer.FirstName" class="form-control" />
+                                        <input asp-for="NewCustomer.FirstName" class="form-control" onchange="validOnChange(this, orderFormValidator.customer.firstName)" />
                                         <span asp-validation-for="NewCustomer.FirstName" class="text-danger"></span>
                                     </div>
                                     <div class="col-md-6 mb-3">
@@ -373,6 +373,16 @@
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
         });
+        const orderFormValidator = {
+            customer: {
+                firstName: {
+                    rules: [
+                        (v) => v && v.length > 0 || 'Imie jest wymagane'
+                    ],
+                    valid: false
+                }
+            }
+        }
 
         $(document).ready(function () {
             for (i = 0; i < costItems.length; i++) {
@@ -435,12 +445,19 @@
             return true;
         });
 
-        $('input, textarea, select').on('focusout keyup', function () {
-            if ($('orderForm').valid()) {
-                console.log("Walidacja");
-                // TODO think of validation
+        function validOnChange(context, field) {
+            for (const rule of field.rules) {
+                const message = rule(context.value);
+                if (message && message.length > 0) {
+                    field.valid = false;
+                    $(context).siblings('span').text(message);
+                    return;
+                }
             }
-        });
+
+            field.valid = true;
+            $(context).siblings('span').text('');
+        }
     </script>
 
     <style type="text/css">
