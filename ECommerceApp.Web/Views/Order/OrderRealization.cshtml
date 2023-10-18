@@ -151,7 +151,7 @@
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label asp-for="NewCustomer.LastName" class="control-label">Nazwisko</label>
-                                        <input asp-for="NewCustomer.LastName" class="form-control" />
+                                        <input asp-for="NewCustomer.LastName" class="form-control" onchange="validOnChange(this, orderFormValidator.customer.lastName)" />
                                         <span asp-validation-for="NewCustomer.LastName" class="text-danger"></span>
                                     </div>
                                 </div>
@@ -163,13 +163,13 @@
                                 <div id="CompanyData" class="form-row" style="display:none;">
                                     <div class="col-md-6 mb-3">
                                         <label asp-for="NewCustomer.NIP" class="control-label"></label>
-                                        <input id="NIPInput" asp-for="NewCustomer.NIP" class="form-control" />
+                                        <input id="NIPInput" asp-for="NewCustomer.NIP" class="form-control" onchange="validOnChange(this, orderFormValidator.customer.nip)" />
                                         <span asp-validation-for="NewCustomer.NIP" class="text-danger"></span>
                                     </div>
                                     <div class="col-md-3 mb-3"></div>
                                     <div class="col-md-6 mb-3">
                                         <label asp-for="NewCustomer.CompanyName" class="control-label">Nazwa firmy</label>
-                                        <input id="CompanyInput" asp-for="NewCustomer.CompanyName" class="form-control" />
+                                        <input id="CompanyInput" asp-for="NewCustomer.CompanyName" class="form-control" onchange="validOnChange(this, orderFormValidator.customer.companyName)" />
                                         <span asp-validation-for="NewCustomer.CompanyName" class="text-danger"></span>
                                     </div>
                                 </div>
@@ -375,12 +375,62 @@
         });
         const orderFormValidator = {
             customer: {
+                useExistingData: false,
+                hasCompany: false,
                 firstName: {
                     rules: [
-                        (v) => v && v.length > 0 || 'Imie jest wymagane'
+                        (v) => !orderFormValidator.customer.useExistingData && v && v.length > 0 || 'Imie jest wymagane',
+                        (v) => !orderFormValidator.customer.useExistingData && v && v.length > 2 || 'Imie powinno mieć więcej niż 2 znaki'
                     ],
-                    valid: false
+                    valid: false,
+                    value: ''
+                },
+                lastName: {
+                    rules: [
+                        (v) => !orderFormValidator.customer.useExistingData && v && v.length > 0 || 'Nazwisko jest wymagane',
+                        (v) => !orderFormValidator.customer.useExistingData && v && v.length > 2 || 'Nazwisko powinno mieć więcej niż 2 znaki'
+                    ],
+                    valid: false,
+                    value: ''
+                },
+                nip: {
+                    rules: [
+                        (v) => !orderFormValidator.customer.useExistingData && orderFormValidator.customer.hasCompany && v && v.length > 0 || 'NIP jest wymagany',
+                    ],
+                    valid: false,
+                    value: ''
+                },
+                companyName: {
+                    rules: [
+                        (v) => !orderFormValidator.customer.useExistingData && orderFormValidator.customer.hasCompany && v && v.length > 0 || 'Nazwa firmy jest wymagana',
+                    ],
+                    valid: false,
+                    value: ''
                 }
+            },
+            valid: function () {
+                let valid = true;
+                for (const obj in customer) {
+                    if (!customer[obj].valid) {
+                        valid = false;
+                        break;
+                    }
+                }
+                return valid;
+            },
+            validate: function () {
+                let valid = true;
+                for (const obj in customer) {
+                    for (const rule in customer[obj].rules) {
+                        const val = rule(customer[obj].value);
+                        if (val && val.length > 0) {
+                            customer[obj].valid = false;
+                            // message to show
+                            valid = false;
+                        }
+                    }
+                }
+                return valid;
             }
         }
 
@@ -398,12 +448,14 @@
 
         function toggleCheckbox(element) {
             if (element.checked) {
+                orderFormValidator.customer.hasCompany = true;
                 $('#CompanyData').css("display", "block");
             }
             else {
                 $('#CompanyData').css("display", "none");
                 document.getElementById("NIPInput").value = "";
                 document.getElementById("CompanyInput").value = "";
+                orderFormValidator.customer.hasCompany = false;
             }
         }
 
@@ -411,11 +463,12 @@
             if (element.checked) {
                 $('#ExistingData').css("display", "block");
                 $('#NewData').css("display", "none");
-                console.log(document.getElementById("SelectListCustomer").value);
+                orderFormValidator.customer.useExistingData = true;
             }
             else {
                 $('#ExistingData').css("display", "none");
                 $('#NewData').css("display", "block");
+                orderFormValidator.customer.useExistingData = false;
             }
         }
 
@@ -446,6 +499,7 @@
         });
 
         function validOnChange(context, field) {
+            field.value = context.value;
             for (const rule of field.rules) {
                 const message = rule(context.value);
                 if (message && message.length > 0) {
