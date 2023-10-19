@@ -146,12 +146,12 @@
                                     <input type="hidden" asp-for="NewCustomer.UserId" value="@Model.UserId" class="form-control" />
                                     <div class="col-md-6 mb-3">
                                         <label asp-for="NewCustomer.FirstName" class="control-label">Imię</label>
-                                        <input asp-for="NewCustomer.FirstName" class="form-control" onchange="validOnChange(this, orderFormValidator.customer.firstName)" />
+                                        <input id="CustomerFirstNameInput" asp-for="NewCustomer.FirstName" class="form-control" onchange="validOnChange(this, orderFormValidator.customer.firstName)" />
                                         <span asp-validation-for="NewCustomer.FirstName" class="text-danger"></span>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label asp-for="NewCustomer.LastName" class="control-label">Nazwisko</label>
-                                        <input asp-for="NewCustomer.LastName" class="form-control" onchange="validOnChange(this, orderFormValidator.customer.lastName)" />
+                                        <input id="CustomerLastNameInput" asp-for="NewCustomer.LastName" class="form-control" onchange="validOnChange(this, orderFormValidator.customer.lastName)" />
                                         <span asp-validation-for="NewCustomer.LastName" class="text-danger"></span>
                                     </div>
                                 </div>
@@ -378,59 +378,73 @@
                 useExistingData: false,
                 hasCompany: false,
                 firstName: {
+                    controlId: 'CustomerFirstNameInput',
                     rules: [
-                        (v) => !orderFormValidator.customer.useExistingData && v && v.length > 0 || 'Imie jest wymagane',
-                        (v) => !orderFormValidator.customer.useExistingData && v && v.length > 2 || 'Imie powinno mieć więcej niż 2 znaki'
+                        (v) => orderFormValidator.customer.useExistingData || (v && v.length > 0) || 'Imie jest wymagane',
+                        (v) => orderFormValidator.customer.useExistingData || (v && v.length > 2) || 'Imie powinno mieć więcej niż 2 znaki'
                     ],
                     valid: false,
                     value: ''
                 },
                 lastName: {
+                    controlId: 'CustomerLastNameInput',
                     rules: [
-                        (v) => !orderFormValidator.customer.useExistingData && v && v.length > 0 || 'Nazwisko jest wymagane',
-                        (v) => !orderFormValidator.customer.useExistingData && v && v.length > 2 || 'Nazwisko powinno mieć więcej niż 2 znaki'
+                        (v) => orderFormValidator.customer.useExistingData || (v && v.length > 0) || 'Nazwisko jest wymagane',
+                        (v) => orderFormValidator.customer.useExistingData || (v && v.length > 2) || 'Nazwisko powinno mieć więcej niż 2 znaki'
                     ],
                     valid: false,
                     value: ''
                 },
                 nip: {
+                    controlId: 'NIPInput',
                     rules: [
-                        (v) => !orderFormValidator.customer.useExistingData && orderFormValidator.customer.hasCompany && v && v.length > 0 || 'NIP jest wymagany',
+                        (v) => (!(!orderFormValidator.customer.useExistingData && orderFormValidator.customer.hasCompany)) || (v && v.length > 0) || 'NIP jest wymagany',
                     ],
                     valid: false,
                     value: ''
                 },
                 companyName: {
+                    controlId: 'CompanyInput',
                     rules: [
-                        (v) => !orderFormValidator.customer.useExistingData && orderFormValidator.customer.hasCompany && v && v.length > 0 || 'Nazwa firmy jest wymagana',
+                        (v) => (!(!orderFormValidator.customer.useExistingData && orderFormValidator.customer.hasCompany)) || (v && v.length > 0) || 'Nazwa firmy jest wymagana',
                     ],
                     valid: false,
                     value: ''
                 }
             },
-            valid: function () {
-                let valid = true;
-                for (const obj in customer) {
-                    if (!customer[obj].valid) {
-                        valid = false;
-                        break;
-                    }
-                }
-                return valid;
-            },
             validate: function () {
+                this.clearErrors();
                 let valid = true;
-                for (const obj in customer) {
-                    for (const rule in customer[obj].rules) {
-                        const val = rule(customer[obj].value);
+                for (const obj in this.customer) {
+                    if (typeof this.customer[obj] !== 'object' || this.customer[obj] === null || !Array.isArray(this.customer[obj].rules)) {
+                        continue;
+                    }
+                    for (const rule of this.customer[obj].rules) {
+                        const val = rule(this.customer[obj].value);
                         if (val && val.length > 0) {
-                            customer[obj].valid = false;
-                            // message to show
+                            this.customer[obj].valid = false;
+                            const siblingSpan = $('#' + this.customer[obj].controlId).siblings('span');
+                            if (siblingSpan[0]) {
+                                siblingSpan.text(val);
+                            } else {
+                               $('#' + this.customer[obj].controlId)[0].parentElement.appendChild(forms.createErrorSpan(val));
+                            }
                             valid = false;
+                            // to show only one message
+                            break;
                         }
                     }
                 }
                 return valid;
+            },
+            clearErrors: function () {
+                for (const obj in this.customer) {
+                    if (typeof this.customer[obj] !== 'object' || this.customer[obj] === null || !Array.isArray(this.customer[obj].rules)) {
+                        continue;
+                    }
+                    $('#' + this.customer[obj].controlId).siblings('span').text('');
+                    this.customer[obj].valid = true;
+                }
             }
         }
 
@@ -512,6 +526,15 @@
             field.valid = true;
             $(context).siblings('span').text('');
         }
+
+        $('#orderForm').submit(function (event) {
+            event.preventDefault();
+            const valid = orderFormValidator.validate();
+            if (!valid) {
+                return;
+            }
+            $(this).unbind('submit').submit(); // continue the submit unbind preventDefault
+        });
     </script>
 
     <style type="text/css">

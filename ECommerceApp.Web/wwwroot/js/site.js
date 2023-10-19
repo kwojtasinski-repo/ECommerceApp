@@ -277,3 +277,14 @@ const statusCodes = (function () {
         InternalErrorServer: 500
     }
 })();
+
+const forms = (function () {
+    return {
+        createErrorSpan: function (text) {
+            const span = document.createElement('span');
+            span.className = "text-danger field-validation-valid";
+            span.textContent = text;
+            return span;
+        }
+    }
+})();
