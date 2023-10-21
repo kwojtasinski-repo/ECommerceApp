@@ -280,23 +280,16 @@ const statusCodes = (function () {
 
 const forms = (function () {
     function iterateThroughObjectAndSetRulesListeners(obj) {
-        for (const field in obj) {
-            if (typeof obj[field] !== 'object' || obj[field] === null) {
-                continue;
-            }
-
-            if (Array.isArray(obj[field].rules) && (typeof obj[field].controlId === 'string' || obj[field].controlId instanceof String)) {
-                setRulesListeners(obj[field]);
-                continue;
-            }
-
-            iterateThroughObjectAndSetRulesListeners(obj[field]);
-        }
+        iterateThroughObjectAndRunCallbackOnRules(obj, setRulesListeners);
     }
 
     function setRulesListeners(field) {
         document.addEventListener("change", function (event) {
-            if (event.target.id === field.controlId) {
+            if (event.target.id === field.controlId || event.target.name === field.controlName) {
+                if (typeof field.onChange === 'function') {
+                    field.onChange(event.target);
+                    return;
+                }
                 validOnChange(event.target, field);
             }
         });
@@ -341,18 +334,7 @@ const forms = (function () {
     }
 
     function validAllFields(obj) {
-        for (const field in obj) {
-            if (typeof obj[field] !== 'object' || obj[field] === null) {
-                continue;
-            }
-
-            if (Array.isArray(obj[field].rules) && (typeof obj[field].controlId === 'string' || obj[field].controlId instanceof String)) {
-                validField(obj[field]);
-                continue;
-            }
-
-            validAllFields(obj[field]);
-        }
+        iterateThroughObjectAndRunCallbackOnRules(obj, validField);
     }
 
     function validField(field) {
@@ -368,23 +350,27 @@ const forms = (function () {
     }
 
     function clearValidationMessagesForAllFields(obj) {
+        iterateThroughObjectAndRunCallbackOnRules(obj, clearValidationMessageForField);
+    }
+
+    function clearValidationMessageForField(field) {
+        field.valid = true;
+        forms.showValidationError(field.controlId, '');
+    }
+
+    function iterateThroughObjectAndRunCallbackOnRules(obj, callback) {
         for (const field in obj) {
             if (typeof obj[field] !== 'object' || obj[field] === null) {
                 continue;
             }
 
             if (Array.isArray(obj[field].rules) && (typeof obj[field].controlId === 'string' || obj[field].controlId instanceof String)) {
-                clearValidationMessageForField(obj[field]);
+                callback(obj[field]);
                 continue;
             }
 
-            clearValidationMessagesForAllFields(obj[field]);
+            iterateThroughObjectAndRunCallbackOnRules(obj[field], callback);
         }
-    }
-
-    function clearValidationMessageForField(field) {
-        field.valid = true;
-        forms.showValidationError(field.controlId, '');
     }
 
     return {
@@ -408,7 +394,7 @@ const forms = (function () {
             if (siblingSpan[0]) {
                 siblingSpan.text(text);
             } else {
-                $('#' + controlId)[0].parentElement.appendChild(createErrorSpan(text));
+                $('#' + controlId)[0].parentElement.appendChild(forms.createErrorSpan(text));
             }
         },
         createErrorSpan: function (text) {

@@ -184,13 +184,15 @@
                                     <label class="col-form-label col-sm-10 pt-0">Rodzaj kontaktu</label>
                                     <input id="typeName" type="hidden" asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeName" class="form-control" value="" />
                                     <input id="typeId" type="hidden" asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" class="form-control" value="" />
-                                    <div class="custom-control custom-radio custom-control-inline">
-                                        <input asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" type="radio" id="1" value='{ "i": "1", "v": "PhoneNumber" }' name="ContactDetailType" class="custom-control-input"  />
-                                        <label class="custom-control-label" for="1">Telefon</label>
-                                    </div>
-                                    <div class="custom-control custom-radio custom-control-inline">
-                                        <input asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" type="radio" id="2" value='{ "i": "2", "v": "Email" }' name="ContactDetailType" class="custom-control-input"  />
-                                        <label class="custom-control-label" for="2">E-mail</label>
+                                    <div id="ContactDetailType">
+                                        <div class="custom-control custom-radio custom-control-inline">
+                                            <input asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" type="radio" id="1" value='{ "i": "1", "v": "PhoneNumber" }' name="ContactDetailType" class="custom-control-input"  />
+                                            <label class="custom-control-label" for="1">Telefon</label>
+                                        </div>
+                                        <div class="custom-control custom-radio custom-control-inline">
+                                            <input asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" type="radio" id="2" value='{ "i": "2", "v": "Email" }' name="ContactDetailType" class="custom-control-input"  />
+                                            <label class="custom-control-label" for="2">E-mail</label>
+                                        </div>
                                     </div>
                                 </div>
                                 <br />
@@ -411,6 +413,20 @@
                     ],
                     valid: false,
                     value: ''
+                },
+                contactDetailType: {
+                    controlId: "ContactDetailType",
+                    controlName: "ContactDetailType",
+                    rules: [
+                        v => orderFormValidator.customer.useExistingData || (v && v.length > 0) || 'Rodzaj kontaktu jest wymagany'
+                    ],
+                    valid: false,
+                    value: '',
+                    onChange: function(event) {
+                        this.value = JSON.parse(event.value)?.i ?? '';
+                        const text = this.rules[0](this.value);
+                        forms.showValidationError(this.controlId, text && text.length > 0 ? text : '');
+                    }
                 },
                 contactDetailInformation: {
                     controlId: "ContactDetailInformationInput",
