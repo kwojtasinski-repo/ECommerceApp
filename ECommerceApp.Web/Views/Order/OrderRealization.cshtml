@@ -146,12 +146,12 @@
                                     <input type="hidden" asp-for="NewCustomer.UserId" value="@Model.UserId" class="form-control" />
                                     <div class="col-md-6 mb-3">
                                         <label asp-for="NewCustomer.FirstName" class="control-label">Imię</label>
-                                        <input id="CustomerFirstNameInput" asp-for="NewCustomer.FirstName" class="form-control" onchange="validOnChange(this, orderFormValidator.customer.firstName)" />
+                                        <input id="CustomerFirstNameInput" asp-for="NewCustomer.FirstName" class="form-control" />
                                         <span asp-validation-for="NewCustomer.FirstName" class="text-danger"></span>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label asp-for="NewCustomer.LastName" class="control-label">Nazwisko</label>
-                                        <input id="CustomerLastNameInput" asp-for="NewCustomer.LastName" class="form-control" onchange="validOnChange(this, orderFormValidator.customer.lastName)" />
+                                        <input id="CustomerLastNameInput" asp-for="NewCustomer.LastName" class="form-control" />
                                         <span asp-validation-for="NewCustomer.LastName" class="text-danger"></span>
                                     </div>
                                 </div>
@@ -163,13 +163,13 @@
                                 <div id="CompanyData" class="form-row" style="display:none;">
                                     <div class="col-md-6 mb-3">
                                         <label asp-for="NewCustomer.NIP" class="control-label"></label>
-                                        <input id="NIPInput" asp-for="NewCustomer.NIP" class="form-control" onchange="validOnChange(this, orderFormValidator.customer.nip)" />
+                                        <input id="NIPInput" asp-for="NewCustomer.NIP" class="form-control" />
                                         <span asp-validation-for="NewCustomer.NIP" class="text-danger"></span>
                                     </div>
                                     <div class="col-md-3 mb-3"></div>
                                     <div class="col-md-6 mb-3">
                                         <label asp-for="NewCustomer.CompanyName" class="control-label">Nazwa firmy</label>
-                                        <input id="CompanyInput" asp-for="NewCustomer.CompanyName" class="form-control" onchange="validOnChange(this, orderFormValidator.customer.companyName)" />
+                                        <input id="CompanyInput" asp-for="NewCustomer.CompanyName" class="form-control" />
                                         <span asp-validation-for="NewCustomer.CompanyName" class="text-danger"></span>
                                     </div>
                                 </div>
@@ -196,7 +196,7 @@
                                 <br />
                                 <div class="col-xs-6 mb-3">
                                     <label class="control-label">Dane kontaktowe</label>
-                                    <input asp-for="NewCustomer.ContactDetails[0].ContactDetailInformation" class="form-control" />
+                                    <input id="ContactDetailInformationInput" asp-for="NewCustomer.ContactDetails[0].ContactDetailInformation" class="form-control" />
                                     <span asp-validation-for="NewCustomer.ContactDetails[0].ContactDetailInformation"></span>
                                 </div>
                             </div>
@@ -208,32 +208,32 @@
                                     <h4>Adres</h4><br />
                                     <div>
                                         <label asp-for="NewCustomer.Addresses[0].Street" class="control-label">Ulica</label>
-                                        <input asp-for="NewCustomer.Addresses[0].Street" class="form-control" />
+                                        <input id="AddressStreetInput" asp-for="NewCustomer.Addresses[0].Street" class="form-control" />
                                         <span asp-validation-for="NewCustomer.Addresses[0].Street" class="text-danger"></span>
                                     </div>
                                     <div>
                                         <label asp-for="NewCustomer.Addresses[0].BuildingNumber" class="control-label">Numer budynku</label>
-                                        <input asp-for="NewCustomer.Addresses[0].BuildingNumber" class="form-control" />
+                                        <input id="AddressBuildingNumberInput" asp-for="NewCustomer.Addresses[0].BuildingNumber" class="form-control" />
                                         <span asp-validation-for="NewCustomer.Addresses[0].BuildingNumber" class="text-danger"></span>
                                     </div>
                                     <div>
                                         <label asp-for="NewCustomer.Addresses[0].FlatNumber" class="control-label">Numer mieszkania</label>
-                                        <input asp-for="NewCustomer.Addresses[0].FlatNumber" class="form-control" />
+                                        <input id="AddressFlatNumberInput" asp-for="NewCustomer.Addresses[0].FlatNumber" class="form-control" />
                                         <span asp-validation-for="NewCustomer.Addresses[0].FlatNumber" class="text-danger"></span>
                                     </div>
                                     <div>
                                         <label asp-for="NewCustomer.Addresses[0].ZipCode" class="control-label">Kod pocztowy</label>
-                                        <input asp-for="NewCustomer.Addresses[0].ZipCode" class="form-control" />
+                                        <input id="AddressZipCodeInput" asp-for="NewCustomer.Addresses[0].ZipCode" class="form-control" />
                                         <span asp-validation-for="NewCustomer.Addresses[0].ZipCode" class="text-danger"></span>
                                     </div>
                                     <div>
                                         <label asp-for="NewCustomer.Addresses[0].City" class="control-label">Miasto</label>
-                                        <input asp-for="NewCustomer.Addresses[0].City" class="form-control" />
+                                        <input id="AddressCityInput" asp-for="NewCustomer.Addresses[0].City" class="form-control" />
                                         <span asp-validation-for="NewCustomer.Addresses[0].City" class="text-danger"></span>
                                     </div>
                                     <div>
                                         <label asp-for="NewCustomer.Addresses[0].Country" class="control-label">Województwo</label>
-                                        <input asp-for="NewCustomer.Addresses[0].Country" class="form-control" />
+                                        <input id="AddressCountryInput" asp-for="NewCustomer.Addresses[0].Country" class="form-control" />
                                         <span asp-validation-for="NewCustomer.Addresses[0].Country" class="text-danger"></span>
                                     </div>
                                 </div>
@@ -254,12 +254,12 @@
                                     <input type="hidden" asp-for="NewCustomer.UserId" value="@Model.UserId" class="form-control" />
                                     <div class="col-md-6 mb-3">
                                         <label asp-for="NewCustomer.FirstName" class="control-label">Imię</label>
-                                        <input asp-for="NewCustomer.FirstName" name="FirstName" class="form-control" />
+                                        <input id="CustomerFirstNameInput" asp-for="NewCustomer.FirstName" name="FirstName" class="form-control" />
                                         <span asp-validation-for="NewCustomer.FirstName" class="text-danger"></span>
                                     </div>
                                     <div class="col-md-6 mb-3">
                                         <label asp-for="NewCustomer.LastName" class="control-label">Nazwisko</label>
-                                        <input asp-for="NewCustomer.LastName" class="form-control" />
+                                        <input id="CustomerLastNameInput" asp-for="NewCustomer.LastName" class="form-control" />
                                         <span asp-validation-for="NewCustomer.LastName" class="text-danger"></span>
                                     </div>
                                 </div>
@@ -305,7 +305,7 @@
                                 <br />
                                 <div class="col-xs-6 mb-3">
                                     <label class="control-label">Dane kontaktowe</label>
-                                    <input asp-for="NewCustomer.ContactDetails[0].ContactDetailInformation" name="ContactDetailInformation" class="form-control" />
+                                    <input id="ContactDetailInformationInput" asp-for="NewCustomer.ContactDetails[0].ContactDetailInformation" name="ContactDetailInformation" class="form-control" />
                                     <span asp-validation-for="NewCustomer.ContactDetails[0].ContactDetailInformation"></span>
                                 </div>
                             </div>
@@ -317,32 +317,32 @@
                                     <h4>Adres</h4><br />
                                     <div>
                                         <label asp-for="NewCustomer.Addresses[0].Street" class="control-label">Ulica</label>
-                                        <input asp-for="NewCustomer.Addresses[0].Street" class="form-control" />
+                                        <input id="AddressStreetInput" asp-for="NewCustomer.Addresses[0].Street" class="form-control" />
                                         <span asp-validation-for="NewCustomer.Addresses[0].Street" class="text-danger"></span>
                                     </div>
                                     <div>
                                         <label asp-for="NewCustomer.Addresses[0].BuildingNumber" class="control-label">Numer budynku</label>
-                                        <input asp-for="NewCustomer.Addresses[0].BuildingNumber" class="form-control" />
+                                        <input id="AddressBuildingNumberInput" asp-for="NewCustomer.Addresses[0].BuildingNumber" class="form-control" />
                                         <span asp-validation-for="NewCustomer.Addresses[0].BuildingNumber" class="text-danger"></span>
                                     </div>
                                     <div>
                                         <label asp-for="NewCustomer.Addresses[0].FlatNumber" class="control-label">Numer mieszkania</label>
-                                        <input asp-for="NewCustomer.Addresses[0].FlatNumber" class="form-control" />
+                                        <input id="AddressFlatNumberInput" asp-for="NewCustomer.Addresses[0].FlatNumber" class="form-control" />
                                         <span asp-validation-for="NewCustomer.Addresses[0].FlatNumber" class="text-danger"></span>
                                     </div>
                                     <div>
                                         <label asp-for="NewCustomer.Addresses[0].ZipCode" class="control-label">Kod pocztowy</label>
-                                        <input asp-for="NewCustomer.Addresses[0].ZipCode" class="form-control" />
+                                        <input id="AddressZipCodeInput" asp-for="NewCustomer.Addresses[0].ZipCode" class="form-control" />
                                         <span asp-validation-for="NewCustomer.Addresses[0].ZipCode" class="text-danger"></span>
                                     </div>
                                     <div>
                                         <label asp-for="NewCustomer.Addresses[0].City" class="control-label">Miasto</label>
-                                        <input asp-for="NewCustomer.Addresses[0].City" class="form-control" />
+                                        <input id="AddressCityInput" asp-for="NewCustomer.Addresses[0].City" class="form-control" />
                                         <span asp-validation-for="NewCustomer.Addresses[0].City" class="text-danger"></span>
                                     </div>
                                     <div>
                                         <label asp-for="NewCustomer.Addresses[0].Country" class="control-label">Województwo</label>
-                                        <input asp-for="NewCustomer.Addresses[0].Country" class="form-control" />
+                                        <input id="AddressCountryInput" asp-for="NewCustomer.Addresses[0].Country" class="form-control" />
                                         <span asp-validation-for="NewCustomer.Addresses[0].Country" class="text-danger"></span>
                                     </div>
                                 </div>
@@ -365,6 +365,33 @@
 @section Scripts {
 
     <script>
+        function initValidator(validator) {
+            iterateThroughObject(validator);
+        }
+
+        function iterateThroughObject(obj) {
+            for (const field in obj) {
+                if (typeof obj[field] !== 'object' || obj[field] === null) {
+                    continue;
+                }
+
+                if (Array.isArray(obj[field].rules) && (typeof obj[field].controlId === 'string' || obj[field].controlId instanceof String)) {
+                    setRulesListeners(obj[field]);
+                    continue;
+                }
+
+                iterateThroughObject(obj[field]);
+            }
+        }
+
+        function setRulesListeners(field) {
+            document.addEventListener("change", function (event) {
+                if (event.target.id === field.controlId) {
+                    validOnChange(event.target, field);
+                }
+            });
+        }
+
         var costItems = document.getElementsByClassName('CostOfItem');
         var quantityItems = document.getElementsByClassName('QuantiyOfItem');
         var cost = 0.0;
@@ -410,6 +437,60 @@
                     ],
                     valid: false,
                     value: ''
+                },
+                contactDetailInformation: {
+                    controlId: "ContactDetailInformationInput",
+                    rules: [
+                        v => orderFormValidator.customer.useExistingData || (v && v.length > 0) || 'Dane kontaktowe są wymagane',
+                    ],
+                    valid: false,
+                    value: ''
+                },
+                addressStreet: {
+                    controlId: "AddressStreetInput",
+                    rules: [
+                        v => orderFormValidator.customer.useExistingData || (v && v.length > 0) || 'Ulica jest wymagana',
+                    ],
+                    valid: false,
+                    value: ''
+                },
+                addressBuildingNumber: {
+                    controlId: "AddressBuildingNumberInput",
+                    rules: [
+                        v => orderFormValidator.customer.useExistingData || (v && v.length > 0) || 'Nr budynku jest wymagany',
+                    ],
+                    valid: false,
+                    value: ''
+                },
+                addressFlatNumber: {
+                    controlId: "AddressFlatNumberInput",
+                    rules: [],
+                    valid: false,
+                    value: ''
+                },
+                addressZipCode: {
+                    controlId: "AddressZipCodeInput",
+                    rules: [
+                        v => orderFormValidator.customer.useExistingData || (v && v.length > 0) || 'Kod pocztowy jest wymagany',
+                    ],
+                    valid: false,
+                    value: ''
+                },
+                addressCity: {
+                    controlId: "AddressCityInput",
+                    rules: [
+                        v => orderFormValidator.customer.useExistingData || (v && v.length > 0) || 'Miasto jest wymagane',
+                    ],
+                    valid: false,
+                    value: ''
+                },
+                addressCountry: {
+                    controlId: "AddressCountryInput",
+                    rules: [
+                        v => orderFormValidator.customer.useExistingData || (v && v.length > 0) || 'Województwo jest wymagane',
+                    ],
+                    valid: false,
+                    value: ''
                 }
             },
             validate: function () {
@@ -447,6 +528,7 @@
                 }
             }
         }
+        initValidator(orderFormValidator);
 
         $(document).ready(function () {
             for (i = 0; i < costItems.length; i++) {
@@ -529,8 +611,7 @@
 
         $('#orderForm').submit(function (event) {
             event.preventDefault();
-            const valid = orderFormValidator.validate();
-            if (!valid) {
+            if (!orderFormValidator.validate()) {
                 return;
             }
             $(this).unbind('submit').submit(); // continue the submit unbind preventDefault
