@@ -365,33 +365,6 @@
 @section Scripts {
 
     <script>
-        function initValidator(validator) {
-            iterateThroughObject(validator);
-        }
-
-        function iterateThroughObject(obj) {
-            for (const field in obj) {
-                if (typeof obj[field] !== 'object' || obj[field] === null) {
-                    continue;
-                }
-
-                if (Array.isArray(obj[field].rules) && (typeof obj[field].controlId === 'string' || obj[field].controlId instanceof String)) {
-                    setRulesListeners(obj[field]);
-                    continue;
-                }
-
-                iterateThroughObject(obj[field]);
-            }
-        }
-
-        function setRulesListeners(field) {
-            document.addEventListener("change", function (event) {
-                if (event.target.id === field.controlId) {
-                    validOnChange(event.target, field);
-                }
-            });
-        }
-
         var costItems = document.getElementsByClassName('CostOfItem');
         var quantityItems = document.getElementsByClassName('QuantiyOfItem');
         var cost = 0.0;
@@ -504,12 +477,7 @@
                         const val = rule(this.customer[obj].value);
                         if (val && val.length > 0) {
                             this.customer[obj].valid = false;
-                            const siblingSpan = $('#' + this.customer[obj].controlId).siblings('span');
-                            if (siblingSpan[0]) {
-                                siblingSpan.text(val);
-                            } else {
-                               $('#' + this.customer[obj].controlId)[0].parentElement.appendChild(forms.createErrorSpan(val));
-                            }
+                            forms.showValidationError(this.customer[obj].controlId, val);
                             valid = false;
                             // to show only one message
                             break;
@@ -528,7 +496,7 @@
                 }
             }
         }
-        initValidator(orderFormValidator);
+        forms.initValidator(orderFormValidator);
 
         $(document).ready(function () {
             for (i = 0; i < costItems.length; i++) {

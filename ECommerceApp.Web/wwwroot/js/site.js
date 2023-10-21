@@ -279,12 +279,80 @@ const statusCodes = (function () {
 })();
 
 const forms = (function () {
+    function iterateThroughObject(obj) {
+        for (const field in obj) {
+            if (typeof obj[field] !== 'object' || obj[field] === null) {
+                continue;
+            }
+
+            if (Array.isArray(obj[field].rules) && (typeof obj[field].controlId === 'string' || obj[field].controlId instanceof String)) {
+                setRulesListeners(obj[field]);
+                continue;
+            }
+
+            iterateThroughObject(obj[field]);
+        }
+    }
+
+    function setRulesListeners(field) {
+        document.addEventListener("change", function (event) {
+            if (event.target.id === field.controlId) {
+                validOnChange(event.target, field);
+            }
+        });
+    }
+
+    function validOnChange(context, field) {
+        field.value = context.value;
+        for (const rule of field.rules) {
+            const message = rule(context.value);
+            if (message && message.length > 0) {
+                field.valid = false;
+                showError(context, message);
+                return;
+            }
+        }
+
+        field.valid = true;
+        $(context).siblings('span').text('');
+    }
+
+    function createErrorSpanInner(text) {
+        const span = document.createElement('span');
+        span.className = "text-danger field-validation-valid";
+        span.textContent = text;
+        return span;
+    }
+
+    function showError(context, text) {
+        debugger
+        const siblingSpan = $(context).siblings('span');
+        if (siblingSpan[0]) {
+            siblingSpan.text(text);
+        } else {
+            $('#' + context.attributes.id.value)[0].parentElement.appendChild(createErrorSpanInner(text));
+        }
+
+        
+    }
+    
     return {
+        initValidator: function (validator) {
+            if (typeof validator !== 'object' || validator === null) {
+                return;
+            }
+            iterateThroughObject(validator);
+        },
+        showValidationError: function (controlId, text) {
+            const siblingSpan = $('#' + controlId).siblings('span');
+            if (siblingSpan[0]) {
+                siblingSpan.text(text);
+            } else {
+                $('#' + controlId)[0].parentElement.appendChild(createErrorSpan(text));
+            }
+        },
         createErrorSpan: function (text) {
-            const span = document.createElement('span');
-            span.className = "text-danger field-validation-valid";
-            span.textContent = text;
-            return span;
+            return createErrorSpanInner(text);
         }
     }
 })();
