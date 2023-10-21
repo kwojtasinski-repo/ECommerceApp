@@ -197,7 +197,7 @@
                                 <div class="col-xs-6 mb-3">
                                     <label class="control-label">Dane kontaktowe</label>
                                     <input id="ContactDetailInformationInput" asp-for="NewCustomer.ContactDetails[0].ContactDetailInformation" class="form-control" />
-                                    <span asp-validation-for="NewCustomer.ContactDetails[0].ContactDetailInformation"></span>
+                                    <span asp-validation-for="NewCustomer.ContactDetails[0].ContactDetailInformation" class="text-danger"></span>
                                 </div>
                             </div>
                         </div>
@@ -306,7 +306,7 @@
                                 <div class="col-xs-6 mb-3">
                                     <label class="control-label">Dane kontaktowe</label>
                                     <input id="ContactDetailInformationInput" asp-for="NewCustomer.ContactDetails[0].ContactDetailInformation" name="ContactDetailInformation" class="form-control" />
-                                    <span asp-validation-for="NewCustomer.ContactDetails[0].ContactDetailInformation"></span>
+                                    <span asp-validation-for="NewCustomer.ContactDetails[0].ContactDetailInformation" class="text-danger"></span>
                                 </div>
                             </div>
                         </div>
@@ -374,6 +374,7 @@
             maximumFractionDigits: 2,
         });
         const orderFormValidator = {
+            formId: "orderForm",
             customer: {
                 useExistingData: false,
                 hasCompany: false,
@@ -465,38 +466,8 @@
                     valid: false,
                     value: ''
                 }
-            },
-            validate: function () {
-                this.clearErrors();
-                let valid = true;
-                for (const obj in this.customer) {
-                    if (typeof this.customer[obj] !== 'object' || this.customer[obj] === null || !Array.isArray(this.customer[obj].rules)) {
-                        continue;
-                    }
-                    for (const rule of this.customer[obj].rules) {
-                        const val = rule(this.customer[obj].value);
-                        if (val && val.length > 0) {
-                            this.customer[obj].valid = false;
-                            forms.showValidationError(this.customer[obj].controlId, val);
-                            valid = false;
-                            // to show only one message
-                            break;
-                        }
-                    }
-                }
-                return valid;
-            },
-            clearErrors: function () {
-                for (const obj in this.customer) {
-                    if (typeof this.customer[obj] !== 'object' || this.customer[obj] === null || !Array.isArray(this.customer[obj].rules)) {
-                        continue;
-                    }
-                    $('#' + this.customer[obj].controlId).siblings('span').text('');
-                    this.customer[obj].valid = true;
-                }
             }
         }
-        forms.initValidator(orderFormValidator);
 
         $(document).ready(function () {
             for (i = 0; i < costItems.length; i++) {
@@ -508,6 +479,7 @@
 
             document.getElementById('Cost').value = Number(cost);
             document.getElementById('CostCurrency').value = format(cost);
+            forms.initValidator(orderFormValidator);
         });
 
         function toggleCheckbox(element) {
@@ -550,40 +522,6 @@
             document.getElementById("CustId") = selectedValue;
         });
 
-        $("#orderForm").on("submit", function () {
-            var contactDetailTypes = $('input[name ="ContactDetailType"]');
-            $.each(contactDetailTypes, function (key, valueObj) {
-                if (valueObj.checked) {
-                    var tempValues = JSON.parse(valueObj.value);
-                    $('#typeId').attr('value', tempValues.i);
-                    $('#typeName').attr('value', tempValues.v);
-                }
-            });
-            return true;
-        });
-
-        function validOnChange(context, field) {
-            field.value = context.value;
-            for (const rule of field.rules) {
-                const message = rule(context.value);
-                if (message && message.length > 0) {
-                    field.valid = false;
-                    $(context).siblings('span').text(message);
-                    return;
-                }
-            }
-
-            field.valid = true;
-            $(context).siblings('span').text('');
-        }
-
-        $('#orderForm').submit(function (event) {
-            event.preventDefault();
-            if (!orderFormValidator.validate()) {
-                return;
-            }
-            $(this).unbind('submit').submit(); // continue the submit unbind preventDefault
-        });
     </script>
 
     <style type="text/css">

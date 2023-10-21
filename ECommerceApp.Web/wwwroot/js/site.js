@@ -279,7 +279,7 @@ const statusCodes = (function () {
 })();
 
 const forms = (function () {
-    function iterateThroughObject(obj) {
+    function iterateThroughObjectAndSetRulesListeners(obj) {
         for (const field in obj) {
             if (typeof obj[field] !== 'object' || obj[field] === null) {
                 continue;
@@ -290,7 +290,7 @@ const forms = (function () {
                 continue;
             }
 
-            iterateThroughObject(obj[field]);
+            iterateThroughObjectAndSetRulesListeners(obj[field]);
         }
     }
 
@@ -325,23 +325,83 @@ const forms = (function () {
     }
 
     function showError(context, text) {
-        debugger
         const siblingSpan = $(context).siblings('span');
         if (siblingSpan[0]) {
             siblingSpan.text(text);
         } else {
             $('#' + context.attributes.id.value)[0].parentElement.appendChild(createErrorSpanInner(text));
-        }
-
-        
+        }        
     }
-    
+
+    function validateForm(validator) {
+        if (typeof validator.validate === 'function') {
+            return validator.validate();
+        }
+        return validAllFields(validator);
+    }
+
+    function validAllFields(obj) {
+        for (const field in obj) {
+            if (typeof obj[field] !== 'object' || obj[field] === null) {
+                continue;
+            }
+
+            if (Array.isArray(obj[field].rules) && (typeof obj[field].controlId === 'string' || obj[field].controlId instanceof String)) {
+                validField(obj[field]);
+                continue;
+            }
+
+            validAllFields(obj[field]);
+        }
+    }
+
+    function validField(field) {
+        for (const rule of field.rules) {
+            const val = rule(field.value);
+            if (val && val.length > 0) {
+                field.valid = false;
+                forms.showValidationError(field.controlId, val);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function clearValidationMessagesForAllFields(obj) {
+        for (const field in obj) {
+            if (typeof obj[field] !== 'object' || obj[field] === null) {
+                continue;
+            }
+
+            if (Array.isArray(obj[field].rules) && (typeof obj[field].controlId === 'string' || obj[field].controlId instanceof String)) {
+                clearValidationMessageForField(obj[field]);
+                continue;
+            }
+
+            clearValidationMessagesForAllFields(obj[field]);
+        }
+    }
+
+    function clearValidationMessageForField(field) {
+        field.valid = true;
+        forms.showValidationError(field.controlId, '');
+    }
+
     return {
         initValidator: function (validator) {
             if (typeof validator !== 'object' || validator === null) {
                 return;
             }
-            iterateThroughObject(validator);
+            iterateThroughObjectAndSetRulesListeners(validator);
+
+            $('#' + validator.formId).submit(function (event) {
+                event.preventDefault();
+                clearValidationMessagesForAllFields(validator);
+                if (!validateForm(validator)) {
+                    return;
+                }
+                $(this).unbind('submit').submit(); // continue the submit unbind preventDefault
+            });
         },
         showValidationError: function (controlId, text) {
             const siblingSpan = $('#' + controlId).siblings('span');
