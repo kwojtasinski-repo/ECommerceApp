@@ -186,11 +186,11 @@
                                     <input id="typeId" type="hidden" asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" class="form-control" value="" />
                                     <div id="ContactDetailType">
                                         <div class="custom-control custom-radio custom-control-inline">
-                                            <input asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" type="radio" id="1" value='{ "i": "1", "v": "PhoneNumber" }' name="ContactDetailType" class="custom-control-input"  />
+                                            <input asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" type="radio" id="1" value='{ "i": "1", "v": "PhoneNumber" }' name="ContactDetailType" class="custom-control-input" />
                                             <label class="custom-control-label" for="1">Telefon</label>
                                         </div>
                                         <div class="custom-control custom-radio custom-control-inline">
-                                            <input asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" type="radio" id="2" value='{ "i": "2", "v": "Email" }' name="ContactDetailType" class="custom-control-input"  />
+                                            <input asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" type="radio" id="2" value='{ "i": "2", "v": "Email" }' name="ContactDetailType" class="custom-control-input" />
                                             <label class="custom-control-label" for="2">E-mail</label>
                                         </div>
                                     </div>
@@ -482,6 +482,10 @@
                     valid: false,
                     value: ''
                 }
+            },
+            preSubmit: function() {
+                const typeId = document.getElementById('typeId');
+                typeId.value = this.customer.contactDetailType.value;
             }
         }
 
@@ -495,6 +499,7 @@
 
             document.getElementById('Cost').value = Number(cost);
             document.getElementById('CostCurrency').value = format(cost);
+            initModel();
             forms.initValidator(orderFormValidator);
         });
 
@@ -537,6 +542,20 @@
             }
             document.getElementById("CustId") = selectedValue;
         });
+
+        function initModel() {
+            orderFormValidator.customer.firstName.value = document.getElementById('CustomerFirstNameInput').value;
+            orderFormValidator.customer.lastName.value = document.getElementById('CustomerLastNameInput').value;
+            orderFormValidator.customer.nip.value = document.getElementById('NIPInput').value;
+            orderFormValidator.customer.companyName.value = document.getElementById('CompanyInput').value;
+            orderFormValidator.customer.contactDetailInformation.value = document.getElementById('ContactDetailInformationInput').value;
+            orderFormValidator.customer.addressStreet.value = document.getElementById('AddressStreetInput').value;
+            orderFormValidator.customer.addressBuildingNumber.value = document.getElementById('AddressBuildingNumberInput').value;
+            orderFormValidator.customer.addressFlatNumber.value = document.getElementById('AddressFlatNumberInput').value;
+            orderFormValidator.customer.addressZipCode.value = document.getElementById('AddressZipCodeInput').value;
+            orderFormValidator.customer.addressCity.value = document.getElementById('AddressCityInput').value;
+            orderFormValidator.customer.addressCountry.value = document.getElementById('AddressCountryInput').value;
+        }
 
     </script>
 

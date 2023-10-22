@@ -261,7 +261,6 @@ const ajaxRequest = (function () {
 */
 function PagerClick(index, id, pageNo) {
     document.getElementById(pageNo ? pageNo : "pageNo").value = index;
-    debugger
     var form = $('#'+id)[0];
     form.submit();
 }
@@ -330,11 +329,12 @@ const forms = (function () {
         if (typeof validator.validate === 'function') {
             return validator.validate();
         }
-        return validAllFields(validator);
+        const value = validAllFields(validator);
+        return value;
     }
 
     function validAllFields(obj) {
-        iterateThroughObjectAndRunCallbackOnRules(obj, validField);
+        return iterateThroughObjectAndRunCallbackOnRules(obj, validField);
     }
 
     function validField(field) {
@@ -359,18 +359,20 @@ const forms = (function () {
     }
 
     function iterateThroughObjectAndRunCallbackOnRules(obj, callback) {
+        let value;
         for (const field in obj) {
             if (typeof obj[field] !== 'object' || obj[field] === null) {
                 continue;
             }
 
             if (Array.isArray(obj[field].rules) && (typeof obj[field].controlId === 'string' || obj[field].controlId instanceof String)) {
-                callback(obj[field]);
+                value = callback(obj[field]);
                 continue;
             }
 
-            iterateThroughObjectAndRunCallbackOnRules(obj[field], callback);
+            value = iterateThroughObjectAndRunCallbackOnRules(obj[field], callback);
         }
+        return value;
     }
 
     return {
@@ -385,6 +387,9 @@ const forms = (function () {
                 clearValidationMessagesForAllFields(validator);
                 if (!validateForm(validator)) {
                     return;
+                }
+                if (typeof validator.preSubmit === 'function') {
+                    validator.preSubmit();
                 }
                 $(this).unbind('submit').submit(); // continue the submit unbind preventDefault
             });
