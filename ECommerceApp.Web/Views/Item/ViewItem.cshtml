@@ -4,13 +4,20 @@
 @{
     ViewData["Title"] = "ViewItem";
 }
-
-<h1>Sczegóły przedmiotu</h1>
+<div class="d-flex justify-content-lg-between">
+    <div>
+        <h1>Sczegóły przedmiotu</h1>
+    </div>
+    <div style="cursor: pointer; display: flex; align-items: center;">
+        <i class="fa-solid fa-cart-plus fa-2x" data-toggle="tooltip" title="Dodaj do koszyka" onclick="addToCart()"></i>
+    </div>
+</div>
 
 <div>
     <hr />
     <dl class="row">
         <dt class="col-sm-2">
+            <input type="hidden" id="ItemId" asp-for="Id" />
             @Html.DisplayNameFor(model => model.Id)
         </dt>
         <dd class="col-sm-10">
@@ -133,4 +140,25 @@
     }
     <a asp-action="Index">Wróć do listy przedmiotów</a> |
     @Html.ActionLink("Lista zamówień", "ShowOrderItemsByItemId", "OrderItem", new { itemId = Model.Id })
+    | <a class="anchor-link" onclick="addToCart()">Dodaj do koszyka</a>
 </div>
+
+@section Scripts
+{
+    <script>
+        async function addToCart() {
+            const id = document.querySelector('#ItemId').value;
+            try {
+                await ajaxRequest.send("/OrderItem/AddToCart", "POST", JSON.stringify({
+                    "ItemId": id,
+                    "ItemOrderQuantity": 1
+                }), "application/json");
+                location.reload();
+            } catch (error) {
+                if (error.status === statusCodes.Unauthorized) {
+                    window.location.href = "Identity/Account/Login";
+                }
+            }
+        }
+    </script>
+}
