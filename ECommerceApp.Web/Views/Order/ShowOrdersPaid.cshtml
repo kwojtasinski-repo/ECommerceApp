@@ -73,7 +73,7 @@
                         @Html.DisplayFor(modelItem => order.IsPaid)
                     </td>
                     <td>
-                        <a style="color: #0366d6; cursor: pointer;" onclick="DispatchOrder(@order.Id)">Wyślij zamówienie</a>
+                        <a class="anchor-link" onclick="DispatchOrder(@order.Id)">Wyślij zamówienie</a>
                         @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service))
                         {
                             @(' ')@('|')@(' ')

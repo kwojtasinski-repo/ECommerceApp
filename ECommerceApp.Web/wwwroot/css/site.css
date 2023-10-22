@@ -69,3 +69,19 @@ body {
   white-space: nowrap;
   line-height: 60px; /* Vertically center the text there */
 }
+
+.anchor-link {
+    color: #0366d6 !important;
+    cursor: pointer !important;
+}
+
+
+.anchor-link:-webkit-any-link:active {
+    color: -webkit-activelink !important;
+}
+
+.anchor-link:hover {
+    color: #0056b3 !important;
+    text-decoration: underline !important;
+}
+

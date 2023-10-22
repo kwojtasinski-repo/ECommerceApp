@@ -92,7 +92,7 @@
                         @Html.DisplayFor(modelItem => item.CurrencyName)
                     </td>
                     <td>
-                        <a style="color: #0366d6; cursor: pointer;" onclick="AddItemToCart(@item.Id)">Dodaj do koszyka</a>
+                        <a class="anchor-link" onclick="AddItemToCart(@item.Id)">Dodaj do koszyka</a>
                         @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service))
                         {
                             @(' ')@('|')@(' ')

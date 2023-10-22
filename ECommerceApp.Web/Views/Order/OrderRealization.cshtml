@@ -483,7 +483,7 @@
                     value: ''
                 }
             },
-            preSubmit: function() {
+            beforeSubmit: function() {
                 const typeId = document.getElementById('typeId');
                 typeId.value = this.customer.contactDetailType.value;
             }
@@ -500,7 +500,7 @@
             document.getElementById('Cost').value = Number(cost);
             document.getElementById('CostCurrency').value = format(cost);
             initModel();
-            forms.initValidator(orderFormValidator);
+            forms.initFormValidator(orderFormValidator);
         });
 
         function toggleCheckbox(element) {

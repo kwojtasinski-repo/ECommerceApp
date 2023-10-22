@@ -376,20 +376,20 @@ const forms = (function () {
     }
 
     return {
-        initValidator: function (validator) {
-            if (typeof validator !== 'object' || validator === null) {
+        initFormValidator: function (formValidator) {
+            if (typeof formValidator !== 'object' || formValidator === null) {
                 return;
             }
-            iterateThroughObjectAndSetRulesListeners(validator);
+            iterateThroughObjectAndSetRulesListeners(formValidator);
 
-            $('#' + validator.formId).submit(function (event) {
+            $('#' + formValidator.formId).submit(function (event) {
                 event.preventDefault();
-                clearValidationMessagesForAllFields(validator);
-                if (!validateForm(validator)) {
+                clearValidationMessagesForAllFields(formValidator);
+                if (!validateForm(formValidator)) {
                     return;
                 }
-                if (typeof validator.preSubmit === 'function') {
-                    validator.preSubmit();
+                if (typeof formValidator.preSubmit === 'function') {
+                    formValidator.beforeSubmit();
                 }
                 $(this).unbind('submit').submit(); // continue the submit unbind preventDefault
             });
