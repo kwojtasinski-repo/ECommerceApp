@@ -1,4 +1,5 @@
-﻿@model ECommerceApp.Application.ViewModels.Payment.PaymentDetailsVm
+﻿@using ECommerceApp.Infrastructure.Permissions;
+@model ECommerceApp.Application.ViewModels.Payment.PaymentDetailsVm
 
 @{
     ViewData["Title"] = "ViewPayment";
@@ -60,6 +61,9 @@
     </dl>
 </div>
 <div>
-    @Html.ActionLink("Edytuj", "EditPayment", new { id = Model.Id }) |
-        <a asp-controller="Item" asp-action="Index">Wróć do listy przedmiotów</a>
+    @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service))
+    {
+        @Html.ActionLink("Edytuj", "EditPayment", new { id = Model.Id }) @(" | ")
+    }
+    <a asp-controller="Order" asp-action="ShowMyOrders">Wróć do moich zamówień</a>
 </div>

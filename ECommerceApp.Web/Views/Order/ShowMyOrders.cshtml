@@ -1,4 +1,5 @@
-﻿@model ECommerceApp.Application.ViewModels.Order.ListForOrderVm
+﻿@using ECommerceApp.Infrastructure.Permissions;
+@model ECommerceApp.Application.ViewModels.Order.ListForOrderVm
 
 @{
     ViewData["Title"] = "ShowMyOrders";
@@ -10,124 +11,137 @@
     <a asp-controller="Item" asp-action="Index">Wróć do listy przedmiotów</a>
     <a asp-controller="Payment" asp-action="ViewMyPayments">Moje płatności</a>
 </p>
-<form id="search-form" asp-action="Index" asp-controller="Order" method="post">
+<form id="search-form" asp-action="ShowMyOrders" asp-controller="Order" method="post">
     <div class="row">
         <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
         <input type="submit" value="Wyszukaj" />
     </div>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>
-                    Id
-                </th>
-                <th>
-                    Nr zamówienia
-                </th>
-                <th>
-                    Koszt
-                </th>
-                <th>
-                    Data zamówienia
-                </th>
-                <th>
-                    Data dostarczenia
-                </th>
-                <th>
-                    Czy dostarczono
-                </th>
-                <th>
-                    Id użytego kuponu
-                </th>
-                <th>
-                    Id zamawiającego
-                </th>
-                <th>
-                    Id płatności
-                </th>
-                <th>
-                    Czy zapłacono
-                </th>
-                <th>
-                    RefundId
-                </th>
-                <th>Akcja</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var order in Model.Orders)
-            {
+    @if (Model.Orders is null || Model.Orders.Count == 0)
+    {
+        <p><em>Aktualnie nie masz zamówionych przedmiotów</em></p>
+    }
+    else
+    {
+        <table class="table">
+            <thead>
                 <tr>
-                    <td>
-                        @Html.DisplayFor(modelOrder => order.Id)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelOrder => order.Number)
-                    </td>
-                    <td>
-                        @{
-                        <span>@order.Cost.ToString("N2") @order.CurrencyCode</span>
-                        }
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelOrder => order.Ordered)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelOrder => order.Delivered)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelOrder => order.IsDelivered)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelOrder => order.CouponUsedId)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelOrder => order.CustomerId)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelOrder => order.PaymentId)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelOrder => order.IsPaid)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelOrder => order.RefundId)
-                    </td>
-                    <td>
-                        @if (order.PaymentId != null)
-                        {
-                            @Html.ActionLink("Szczególy", "ViewOrderDetails", new { id = order.Id })
-                        }
-                        else
-                        {
-                            @Html.ActionLink("Edytuj", "EditOrder", new { id = order.Id }) @(" | ")
-                            @Html.ActionLink("Szczególy", "ViewOrderDetails", new { id = order.Id }) @(" | ")
-                            @Html.ActionLink("Usuń", "DeleteOrder", new { id = order.Id })
-                        }
-                    </td>
+                    <th>
+                        Id
+                    </th>
+                    <th>
+                        Nr zamówienia
+                    </th>
+                    <th>
+                        Koszt
+                    </th>
+                    <th>
+                        Data zamówienia
+                    </th>
+                    <th>
+                        Data dostarczenia
+                    </th>
+                    <th>
+                        Czy dostarczono
+                    </th>
+                    <th>
+                        Id użytego kuponu
+                    </th>
+                    <th>
+                        Id zamawiającego
+                    </th>
+                    <th>
+                        Id płatności
+                    </th>
+                    <th>
+                        Czy zapłacono
+                    </th>
+                    <th>
+                        RefundId
+                    </th>
+                    <th>Akcja</th>
                 </tr>
-            }
-        </tbody>
-    </table>
-    <div class="row">
-        <table>
-            <tr>
-                @for (int i = 1; i <= Math.Ceiling(Model.Count / (double)Model.PageSize); i++)
+            </thead>
+            <tbody>
+                @foreach (var order in Model.Orders)
                 {
-                    <td>
-                        @if (i != Model.CurrentPage)
-                        {
-                            <a href='javascript:PagerClick(@i, "search-form")'>@i</a>
-                        }
-                        else
-                        {
-                            <span>@i</span>
-                        }
-                    </td>
+                    <tr>
+                        <td>
+                            @Html.DisplayFor(modelOrder => order.Id)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelOrder => order.Number)
+                        </td>
+                        <td>
+                            @{
+                            <span>@order.Cost.ToString("N2") @order.CurrencyCode</span>
+                            }
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelOrder => order.Ordered)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelOrder => order.Delivered)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelOrder => order.IsDelivered)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelOrder => order.CouponUsedId)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelOrder => order.CustomerId)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelOrder => order.PaymentId)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelOrder => order.IsPaid)
+                        </td>
+                        <td>
+                            @Html.DisplayFor(modelOrder => order.RefundId)
+                        </td>
+                        <td>
+                            @if (order.PaymentId != null)
+                            {
+                                @Html.ActionLink("Szczególy", "ViewOrderDetails", new { id = order.Id })
+                            }
+                            else
+                            {
+                                if (!order.PaymentId.HasValue || order.PaymentId == 0)
+                                {
+                                    @Html.ActionLink("Realizuj zamówienie", "AddOrderSummary", "Order", new { id = order.Id }) @(" | ")
+                                }
+                                @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service))
+                                {
+                                    @Html.ActionLink("Edytuj", "EditOrder", new { id = order.Id }) @(" | ")
+                                    @Html.ActionLink("Usuń", "DeleteOrder", new { id = order.Id })
+                                }
+                            }                        
+                        </td>
+                    </tr>
                 }
-            </tr>
+            </tbody>
         </table>
-        <input type="hidden" name="pageNo" id="pageNo" />
-        <input type="hidden" name="pageSize" id="pageSize" value="20" />
-    </div>
+        <div class="row">
+            <table>
+                <tr>
+                    @for (int i = 1; i <= Math.Ceiling(Model.Count / (double)Model.PageSize); i++)
+                    {
+                        <td>
+                            @if (i != Model.CurrentPage)
+                            {
+                                <a href='javascript:PagerClick(@i, "search-form")'>@i</a>
+                            }
+                            else
+                            {
+                                <span>@i</span>
+                            }
+                        </td>
+                    }
+                </tr>
+            </table>
+            <input type="hidden" name="pageNo" id="pageNo" />
+            <input type="hidden" name="pageSize" id="pageSize" value="20" />
+        </div>
+    }
 </form>

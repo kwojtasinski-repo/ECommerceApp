@@ -9,99 +9,105 @@
 <p>
     <a asp-controller="Item" asp-action="Index">Wróć do listy przedmiotów</a>
 </p>
-<table id="search-form" class="table">
-    <thead>
-        <tr>
-            <th>
-                Id
-            </th>
-            <th>
-                Id przedmiotu
-            </th>
-            <th>
-                Nazwa przedmiotu
-            </th>
-            <th>
-                Ilość
-            </th>
-            <th>
-                Id użytkownika
-            </th>
-            <th>
-                Użytkownik
-            </th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var orderItem in Model.ItemOrders)
-        {
+@if (Model.ItemOrders is null || Model.ItemOrders.Count == 0)
+{
+    <p><em>Aktualnie nie masz przedmiotów w koszyku</em></p>
+}
+else
+{
+    <table id="search-form" class="table">
+        <thead>
             <tr>
-                <td>
-                    @Html.DisplayFor(model => orderItem.Id)
-                </td>
-                <td>
-                    @Html.DisplayFor(model => orderItem.ItemId)
-                </td>
-                <td>
-                    @Html.ActionLink($"{orderItem.ItemName}", "ViewItem", "Item", new { id = orderItem.ItemId })
-                </td>
-                <td style="width:100px;">
-                    <div class="row item-info">
-                        <a><i style="margin-right:5px;" onclick="AddQuantity(@orderItem.Id, @orderItem.ItemId, @orderItem.ItemOrderQuantity)" id="OrderItemAddQuantity" class="fas fa-plus-circle ml-2 fa_custom"></i></a>
-                        <span id="ItemQuantity">@Html.DisplayFor(model => orderItem.ItemOrderQuantity)</span>
-                        <input type="hidden" id="ItemCost" value="@(orderItem.ItemCost)" />
-                        <a><i onclick="RemoveQuantity(@orderItem.Id, @orderItem.ItemId, @orderItem.ItemOrderQuantity)" class="fa fa-minus-circle ml-2 fa_custom" id="OrderItemRemoveQuantity"></i></a>
-                    </div>
-                </td>
-                <td>
-                    @Html.DisplayFor(model => orderItem.UserId)
-                </td>
-                <td>
-                    @User.Identity.Name
-                </td>
-                <td>
-                    <a class="anchor-link" onclick="RemoveItemFromCart(@orderItem.Id)">Usuń</a>
-                </td>
+                <th>
+                    Id
+                </th>
+                <th>
+                    Id przedmiotu
+                </th>
+                <th>
+                    Nazwa przedmiotu
+                </th>
+                <th>
+                    Ilość
+                </th>
+                <th>
+                    Id użytkownika
+                </th>
+                <th>
+                    Użytkownik
+                </th>
+                <th></th>
             </tr>
-        }
-    </tbody>
-</table>
-<table class="table d-flex justify-content-end mt-4 mb-2">
-    <tbody>
-        <tr>
-            <th>Do zapłaty:</th>
-            <td id="SummaryCost"></td>
-            <td>PLN</td>
-        </tr>
-    </tbody>
-</table>
- <div class="row">
-    <table>
-        <tr>
-            @for (int i = 1; i <= Math.Ceiling(Model.Count / (double)Model.PageSize); i++)
+        </thead>
+        <tbody>
+            @foreach (var orderItem in Model.ItemOrders)
             {
-                <td>
-                    @if (i != Model.CurrentPage)
-                    {
-                        <a href='javascript:PagerClick(@i, "search-form")'>@i</a>
-                    }
-                    else
-                    {
-                        <span>@i</span>
-                    }
-                </td>
+                <tr>
+                    <td>
+                        @Html.DisplayFor(model => orderItem.Id)
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => orderItem.ItemId)
+                    </td>
+                    <td>
+                        @Html.ActionLink($"{orderItem.ItemName}", "ViewItem", "Item", new { id = orderItem.ItemId })
+                    </td>
+                    <td style="width:100px;">
+                        <div class="row item-info">
+                            <a><i style="margin-right:5px;" onclick="AddQuantity(@orderItem.Id, @orderItem.ItemId, @orderItem.ItemOrderQuantity)" id="OrderItemAddQuantity" class="fas fa-plus-circle ml-2 fa_custom"></i></a>
+                            <span id="ItemQuantity">@Html.DisplayFor(model => orderItem.ItemOrderQuantity)</span>
+                            <input type="hidden" id="ItemCost" value="@(orderItem.ItemCost)" />
+                            <a><i onclick="RemoveQuantity(@orderItem.Id, @orderItem.ItemId, @orderItem.ItemOrderQuantity)" class="fa fa-minus-circle ml-2 fa_custom" id="OrderItemRemoveQuantity"></i></a>
+                        </div>
+                    </td>
+                    <td>
+                        @Html.DisplayFor(model => orderItem.UserId)
+                    </td>
+                    <td>
+                        @User.Identity.Name
+                    </td>
+                    <td>
+                        <a class="anchor-link" onclick="RemoveItemFromCart(@orderItem.Id)">Usuń</a>
+                    </td>
+                </tr>
             }
-        </tr>
+        </tbody>
     </table>
-</div>
-<input type="hidden" name="pageNo" id="pageNo" />
-<input type="hidden" name="pageSize" id="pageSize" value="20" />
-
-<div class="form-group">
-    <a asp-controller="Order" asp-action="OrderRealization"><input type="button" readonly value="Zrealizuj zamówienie" class="btn btn-primary" /></a>
-    <a asp-controller="Item" asp-action="Index"><input type="button" readonly value="Zrealizuj później" class="btn btn-primary" /></a>
-</div>
+    <table class="table d-flex justify-content-end mt-4 mb-2">
+        <tbody>
+            <tr>
+                <th>Do zapłaty:</th>
+                <td id="SummaryCost"></td>
+                <td>PLN</td>
+            </tr>
+        </tbody>
+    </table>
+     <div class="row">
+        <table>
+            <tr>
+                @for (int i = 1; i <= Math.Ceiling(Model.Count / (double)Model.PageSize); i++)
+                {
+                    <td>
+                        @if (i != Model.CurrentPage)
+                        {
+                            <a href='javascript:PagerClick(@i, "search-form")'>@i</a>
+                        }
+                        else
+                        {
+                            <span>@i</span>
+                        }
+                    </td>
+                }
+            </tr>
+        </table>
+    </div>
+    <input type="hidden" name="pageNo" id="pageNo" />
+    <input type="hidden" name="pageSize" id="pageSize" value="20" />
+    <div class="form-group">
+        <a asp-controller="Order" asp-action="OrderRealization"><input type="button" readonly value="Zrealizuj zamówienie" class="btn btn-primary" /></a>
+        <a asp-controller="Item" asp-action="Index"><input type="button" readonly value="Zrealizuj później" class="btn btn-primary" /></a>
+    </div>
+}
 
 @section Scripts
 {
@@ -142,7 +148,6 @@
             const summaryCost = document.querySelector('[id="SummaryCost"]');
             const elements = $('.item-info');
             let value = 0.0;
-            debugger
             for (const element of elements) {
                 const quantity = Number(element.querySelector('#ItemQuantity')?.textContent ?? 0);
                 const cost = Number(element.querySelector('#ItemCost')?.value?.replace(',','.') ?? 0);
