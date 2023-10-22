@@ -192,7 +192,7 @@ namespace ECommerceApp.Application.Services
 
         public ListForOrderItemVm GetOrderItemsNotOrderedByUserId(string userId, int pageSize, int pageNo)
         {
-            var itemOrders = _repo.GetAllOrderItems().Where(oi => oi.UserId == userId && oi.OrderId == null)
+            var itemOrders = _repo.GetAllOrderItems().Include(i => i.Item).Where(oi => oi.UserId == userId && oi.OrderId == null)
                             .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider);
 
             var itemOrdersToShow = itemOrders.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();

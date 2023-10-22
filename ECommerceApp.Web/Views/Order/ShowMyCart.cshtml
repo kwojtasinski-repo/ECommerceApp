@@ -30,15 +30,6 @@
             <th>
                 Użytkownik
             </th>
-            <th>
-                Id zamówienia
-            </th>
-            <th>
-                Id kuponu
-            </th>
-            <th>
-                Id zwrotu
-            </th>
             <th></th>
         </tr>
     </thead>
@@ -53,13 +44,13 @@
                     @Html.DisplayFor(model => orderItem.ItemId)
                 </td>
                 <td>
-                    @Html.DisplayFor(model => orderItem.ItemName)
+                    @Html.ActionLink($"{orderItem.ItemName}", "ViewItem", "Item", new { id = orderItem.ItemId })
                 </td>
                 <td style="width:100px;">
-                    <div class="row">
-                        @using Newtonsoft.Json;
+                    <div class="row item-info">
                         <a><i style="margin-right:5px;" onclick="AddQuantity(@orderItem.Id, @orderItem.ItemId, @orderItem.ItemOrderQuantity)" id="OrderItemAddQuantity" class="fas fa-plus-circle ml-2 fa_custom"></i></a>
-                        @Html.DisplayFor(model => orderItem.ItemOrderQuantity)
+                        <span id="ItemQuantity">@Html.DisplayFor(model => orderItem.ItemOrderQuantity)</span>
+                        <input type="hidden" id="ItemCost" value="@(orderItem.ItemCost)" />
                         <a><i onclick="RemoveQuantity(@orderItem.Id, @orderItem.ItemId, @orderItem.ItemOrderQuantity)" class="fa fa-minus-circle ml-2 fa_custom" id="OrderItemRemoveQuantity"></i></a>
                     </div>
                 </td>
@@ -70,19 +61,19 @@
                     @User.Identity.Name
                 </td>
                 <td>
-                    @Html.DisplayFor(model => orderItem.OrderId)
-                </td>
-                <td>
-                    @Html.DisplayFor(model => orderItem.CouponUsedId)
-                </td>
-                <td>
-                    @Html.DisplayFor(model => orderItem.RefundId)
-                </td>
-                <td>
                     <a class="anchor-link" onclick="RemoveItemFromCart(@orderItem.Id)">Usuń</a>
                 </td>
             </tr>
         }
+    </tbody>
+</table>
+<table class="table d-flex justify-content-end mt-4 mb-2">
+    <tbody>
+        <tr>
+            <th>Do zapłaty:</th>
+            <td id="SummaryCost"></td>
+            <td>PLN</td>
+        </tr>
     </tbody>
 </table>
  <div class="row">
@@ -112,38 +103,56 @@
     <a asp-controller="Item" asp-action="Index"><input type="button" readonly value="Zrealizuj później" class="btn btn-primary" /></a>
 </div>
 
-<script>
-    async function AddQuantity(id, itemId, quantity) {
-        const objectJson = JSON.stringify({
-            "itemOrderQuantity": quantity + 1
-        })
-        await ajaxRequest.send("/OrderItem/UpdateOrderItem/?id=" + id, "PUT", objectJson, "application/json", "json");
-        location.reload();
-    }
-
-    async function RemoveQuantity(id, itemId, quantity) {
-        if (quantity <= 1) {
-            return;
-        }
-
-        const objectJson = JSON.stringify({
-            "itemOrderQuantity": quantity - 1
-        })
-        await ajaxRequest.send("/OrderItem/UpdateOrderItem/?id=" + id, "PUT", objectJson, "application/json", "json");
-        location.reload();
-    }
-
-    async function RemoveItemFromCart(itemId) {
-        try {
-            await ajaxRequest.send("/OrderItem/DeleteOrderItem/" + itemId, "DELETE", undefined, "application/json", "json");
+@section Scripts
+{
+    <script>
+        async function AddQuantity(id, itemId, quantity) {
+            const objectJson = JSON.stringify({
+                "itemOrderQuantity": quantity + 1
+            })
+            await ajaxRequest.send("/OrderItem/UpdateOrderItem/?id=" + id, "PUT", objectJson, "application/json", "json");
             location.reload();
-        } catch (error) {
-            if (error.status === statusCodes.Unauthorized) {
-                window.location.href = "Identity/Account/Login";
-            }
         }
-     }
-</script>
+
+        async function RemoveQuantity(id, itemId, quantity) {
+            if (quantity <= 1) {
+                return;
+            }
+
+            const objectJson = JSON.stringify({
+                "itemOrderQuantity": quantity - 1
+            })
+            await ajaxRequest.send("/OrderItem/UpdateOrderItem/?id=" + id, "PUT", objectJson, "application/json", "json");
+            location.reload();
+        }
+
+        async function RemoveItemFromCart(itemId) {
+            try {
+                await ajaxRequest.send("/OrderItem/DeleteOrderItem/" + itemId, "DELETE", undefined, "application/json", "json");
+                location.reload();
+            } catch (error) {
+                if (error.status === statusCodes.Unauthorized) {
+                    window.location.href = "Identity/Account/Login";
+                }
+            }
+         }
+
+
+        $(document).ready(function () {
+            const summaryCost = document.querySelector('[id="SummaryCost"]');
+            const elements = $('.item-info');
+            let value = 0.0;
+            debugger
+            for (const element of elements) {
+                const quantity = Number(element.querySelector('#ItemQuantity')?.textContent ?? 0);
+                const cost = Number(element.querySelector('#ItemCost')?.value?.replace(',','.') ?? 0);
+                value += quantity * cost;
+            }
+            summaryCost.textContent = value;
+        });
+
+    </script>
+}
 <style type="text/css">
     .fa_custom {
         color: #0077cc;

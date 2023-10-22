@@ -1,11 +1,6 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
-using ECommerceApp.Application.ViewModels.Coupon;
-using ECommerceApp.Application.ViewModels.Item;
 using FluentValidation;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.OrderItem
 {
@@ -20,13 +15,15 @@ namespace ECommerceApp.Application.ViewModels.OrderItem
         public string ItemName { get; set; }
         public string ItemBrand { get; set; }
         public string ItemType { get; set; }
+        public decimal ItemCost { get; set; }
 
         public void Mapping(Profile profile)
         {
             profile.CreateMap<OrderItemForListVm, ECommerceApp.Domain.Model.OrderItem>().ReverseMap()
                 .ForMember(i => i.ItemName, opt => opt.MapFrom(i => i.Item.Name))
                 .ForMember(i => i.ItemBrand, opt => opt.MapFrom(i => i.Item.Brand.Name))
-                .ForMember(i => i.ItemType, opt => opt.MapFrom(i => i.Item.Type.Name));
+                .ForMember(i => i.ItemType, opt => opt.MapFrom(i => i.Item.Type.Name))
+                .ForMember(i => i.ItemCost, opt => opt.MapFrom(i => i.Item.Cost));
         }
     }
 
