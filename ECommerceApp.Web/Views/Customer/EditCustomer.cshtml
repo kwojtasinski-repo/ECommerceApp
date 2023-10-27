@@ -11,18 +11,18 @@
 </div>
 <hr />
 <div class="row">
-    <form method="post" asp-action="EditCustomer">
+    <form id="customerForm" method="post" asp-action="EditCustomer">
         <div class="form-row col-12">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" class="form-control" />
             <div class="form-group col-5">
                 <label asp-for="FirstName" class="control-label">Imię</label>
-                <input asp-for="FirstName" class="form-control" />
+                <input id="FirstName" asp-for="FirstName" class="form-control" />
                 <span asp-validation-for="FirstName" class="text-danger"></span>
             </div>
             <div class="form-group col-5">
                 <label asp-for="LastName" class="control-label">Nazwisko</label>
-                <input asp-for="LastName" class="form-control" />
+                <input id="LastName" asp-for="LastName" class="form-control" />
                 <span asp-validation-for="LastName" class="text-danger"></span>
             </div>
 
@@ -51,12 +51,12 @@
                 <div id="CompanyData" class="form-row col-12 mt-2" style="display:none;width:100%">
                     <div class="form-group col-5">
                         <label asp-for="NIP" class="control-label"></label>
-                        <input asp-for="NIP" class="form-control" />
+                        <input id="NIPInput" asp-for="NIP" class="form-control" />
                         <span asp-validation-for="NIP" class="text-danger"></span>
                     </div>
-                    <div class="form-group col-5"></div> <div class="form-group col-4">
+                    <div class="form-group col-5">
                         <label asp-for="CompanyName" class="control-label"></label>
-                        <input asp-for="CompanyName" class="form-control" />
+                        <input id="CompanyInput" asp-for="CompanyName" class="form-control" />
                         <span asp-validation-for="CompanyName" class="text-danger"></span>
                     </div>
                 </div>
@@ -173,14 +173,64 @@
 
 @section Scripts {
         <script>
+            const customerFormValidator = {
+                formId: "customerForm",
+                hasCompany: false,
+                firstName: {
+                    controlId: 'FirstName',
+                    rules: [
+                        v => v && v.trim().length > 0 || 'Imie jest wymagane',
+                        v => v && v.trim().length > 2 || 'Imie powinno mieć więcej niż 2 znaki',
+                    ],
+                    valid: false,
+                    value: ''
+                },
+                lastName: {
+                    controlId: 'LastName',
+                    rules: [
+                        v => v && v.trim().length > 0 || 'Nazwisko jest wymagane',
+                        v => v && v.trim().length > 2 || 'Nazwisko powinno mieć więcej niż 2 znaki',
+                    ],
+                    valid: false,
+                    value: ''
+                },
+                nip: {
+                controlId: 'NIPInput',
+                    rules: [
+                        v => !customerFormValidator.hasCompany || v && v.trim().length > 0 || 'NIP jest wymagany',
+                    ],
+                    valid: false,
+                    value: ''
+                },
+                company: {
+                controlId: 'CompanyInput',
+                    rules: [
+                        v => !customerFormValidator.hasCompany || v && v.trim().length > 0 || 'Nazwa firmy jest wymagana'
+                    ],
+                    valid: false,
+                    value: ''
+                }
+            }
+
+            $(document).ready(function () {
+                forms.initFormValidator(customerFormValidator);
+                customerFormValidator.hasCompany = document.getElementById('CompanyEnter').checked;
+                customerFormValidator.firstName.value = document.getElementById(customerFormValidator.firstName.controlId).value;
+                customerFormValidator.lastName.value = document.getElementById(customerFormValidator.lastName.controlId).value;
+                customerFormValidator.nip.value = document.getElementById(customerFormValidator.nip.controlId).value;
+                customerFormValidator.company.value = document.getElementById(customerFormValidator.company.controlId).value;
+            });
+
             $('#CompanyEnter').on('click', function () {
                 if (this.checked) {
-                    $('#CompanyData').css("display", "flex");
+                    $('#CompanyData').css({ "display": "flex", "width": "100%" });
+                    customerFormValidator.hasCompany = true;
                 }
                 else {
                     $('#CompanyData').css("display", "none");
                     document.getElementById("NIPInput").value = "";
                     document.getElementById("CompanyInput").value = "";
+                    customerFormValidator.hasCompany = false;
                 }
             });
 

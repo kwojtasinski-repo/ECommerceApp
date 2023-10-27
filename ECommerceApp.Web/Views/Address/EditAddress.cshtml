@@ -95,7 +95,7 @@
             city: {
                 controlId: 'CityName',
                 rules: [
-                    v => v && v.length > 0 || 'Miasto jest wymagane'
+                    v => v && v.trim().length > 0 || 'Miasto jest wymagane'
                 ],
                 valid: false,
                 value: ''
@@ -103,7 +103,7 @@
             country: {
                 controlId: 'CountryName',
                 rules: [
-                    v => v && v.length > 0 || 'Województwo jest wymagane'
+                    v => v && v.trim().length > 0 || 'Województwo jest wymagane'
                 ],
                 valid: false,
                 value: ''

@@ -383,8 +383,8 @@
                 firstName: {
                     controlId: 'CustomerFirstNameInput',
                     rules: [
-                        (v) => orderFormValidator.customer.useExistingData || (v && v.length > 0) || 'Imie jest wymagane',
-                        (v) => orderFormValidator.customer.useExistingData || (v && v.length > 2) || 'Imie powinno mieć więcej niż 2 znaki'
+                        (v) => orderFormValidator.customer.useExistingData || (v && v.trim().length > 0) || 'Imie jest wymagane',
+                        (v) => orderFormValidator.customer.useExistingData || (v && v.trim().length > 2) || 'Imie powinno mieć więcej niż 2 znaki'
                     ],
                     valid: false,
                     value: ''
@@ -392,8 +392,8 @@
                 lastName: {
                     controlId: 'CustomerLastNameInput',
                     rules: [
-                        (v) => orderFormValidator.customer.useExistingData || (v && v.length > 0) || 'Nazwisko jest wymagane',
-                        (v) => orderFormValidator.customer.useExistingData || (v && v.length > 2) || 'Nazwisko powinno mieć więcej niż 2 znaki'
+                        (v) => orderFormValidator.customer.useExistingData || (v && v.trim().length > 0) || 'Nazwisko jest wymagane',
+                        (v) => orderFormValidator.customer.useExistingData || (v && v.trim().length > 2) || 'Nazwisko powinno mieć więcej niż 2 znaki'
                     ],
                     valid: false,
                     value: ''
@@ -401,7 +401,7 @@
                 nip: {
                     controlId: 'NIPInput',
                     rules: [
-                        (v) => (!(!orderFormValidator.customer.useExistingData && orderFormValidator.customer.hasCompany)) || (v && v.length > 0) || 'NIP jest wymagany',
+                        (v) => (!(!orderFormValidator.customer.useExistingData && orderFormValidator.customer.hasCompany)) || (v && v.trim().length > 0) || 'NIP jest wymagany',
                     ],
                     valid: false,
                     value: ''
@@ -409,7 +409,7 @@
                 companyName: {
                     controlId: 'CompanyInput',
                     rules: [
-                        (v) => (!(!orderFormValidator.customer.useExistingData && orderFormValidator.customer.hasCompany)) || (v && v.length > 0) || 'Nazwa firmy jest wymagana',
+                        (v) => (!(!orderFormValidator.customer.useExistingData && orderFormValidator.customer.hasCompany)) || (v && v.trim().length > 0) || 'Nazwa firmy jest wymagana',
                     ],
                     valid: false,
                     value: ''
@@ -418,20 +418,20 @@
                     controlId: "ContactDetailType",
                     controlName: "ContactDetailType",
                     rules: [
-                        v => orderFormValidator.customer.useExistingData || (v && v.length > 0) || 'Rodzaj kontaktu jest wymagany'
+                        v => orderFormValidator.customer.useExistingData || (v && v.trim().length > 0) || 'Rodzaj kontaktu jest wymagany'
                     ],
                     valid: false,
                     value: '',
                     onChange: function(event) {
                         this.value = JSON.parse(event.value)?.i ?? '';
                         const text = this.rules[0](this.value);
-                        forms.showValidationError(this.controlId, text && text.length > 0 ? text : '');
+                        forms.showValidationError(this.controlId, text && text.trim().length > 0 ? text : '');
                     }
                 },
                 contactDetailInformation: {
                     controlId: "ContactDetailInformationInput",
                     rules: [
-                        v => orderFormValidator.customer.useExistingData || (v && v.length > 0) || 'Dane kontaktowe są wymagane',
+                        v => orderFormValidator.customer.useExistingData || (v && v.trim().length > 0) || 'Dane kontaktowe są wymagane',
                     ],
                     valid: false,
                     value: ''
@@ -439,7 +439,7 @@
                 addressStreet: {
                     controlId: "AddressStreetInput",
                     rules: [
-                        v => orderFormValidator.customer.useExistingData || (v && v.length > 0) || 'Ulica jest wymagana',
+                        v => orderFormValidator.customer.useExistingData || (v && v.trim().length > 0) || 'Ulica jest wymagana',
                     ],
                     valid: false,
                     value: ''
@@ -447,7 +447,7 @@
                 addressBuildingNumber: {
                     controlId: "AddressBuildingNumberInput",
                     rules: [
-                        v => orderFormValidator.customer.useExistingData || (v && v.length > 0) || 'Nr budynku jest wymagany',
+                        v => orderFormValidator.customer.useExistingData || (v && v.trim().length > 0) || 'Nr budynku jest wymagany',
                     ],
                     valid: false,
                     value: ''
@@ -470,7 +470,7 @@
                 addressCity: {
                     controlId: "AddressCityInput",
                     rules: [
-                        v => orderFormValidator.customer.useExistingData || (v && v.length > 0) || 'Miasto jest wymagane',
+                        v => orderFormValidator.customer.useExistingData || (v && v.trim().length > 0) || 'Miasto jest wymagane',
                     ],
                     valid: false,
                     value: ''
@@ -478,7 +478,7 @@
                 addressCountry: {
                     controlId: "AddressCountryInput",
                     rules: [
-                        v => orderFormValidator.customer.useExistingData || (v && v.length > 0) || 'Województwo jest wymagane',
+                        v => orderFormValidator.customer.useExistingData || (v && v.trim().length > 0) || 'Województwo jest wymagane',
                     ],
                     valid: false,
                     value: ''
