@@ -225,7 +225,7 @@
                                     </div>
                                     <div>
                                         <label asp-for="NewCustomer.Addresses[0].ZipCode" class="control-label">Kod pocztowy</label>
-                                        <input id="AddressZipCodeInput" asp-for="NewCustomer.Addresses[0].ZipCode" class="form-control" />
+                                        <input id="AddressZipCodeInput" type="number" asp-for="NewCustomer.Addresses[0].ZipCode" class="form-control" />
                                         <span asp-validation-for="NewCustomer.Addresses[0].ZipCode" class="text-danger"></span>
                                     </div>
                                     <div>
@@ -334,7 +334,7 @@
                                     </div>
                                     <div>
                                         <label asp-for="NewCustomer.Addresses[0].ZipCode" class="control-label">Kod pocztowy</label>
-                                        <input id="AddressZipCodeInput" asp-for="NewCustomer.Addresses[0].ZipCode" class="form-control" />
+                                        <input id="AddressZipCodeInput" type="number" asp-for="NewCustomer.Addresses[0].ZipCode" class="form-control" />
                                         <span asp-validation-for="NewCustomer.Addresses[0].ZipCode" class="text-danger"></span>
                                     </div>
                                     <div>
@@ -461,7 +461,8 @@
                 addressZipCode: {
                     controlId: "AddressZipCodeInput",
                     rules: [
-                        v => orderFormValidator.customer.useExistingData || (v && v.length > 0) || 'Kod pocztowy jest wymagany',
+                        v => orderFormValidator.customer.useExistingData || (v && v.trim().length > 0) || 'Kod pocztowy jest wymagany',
+                        v => orderFormValidator.customer.useExistingData || (v && !isNaN(v) && Number(v) > 0) || 'Kod pocztowy jest niepoprawny'
                     ],
                     valid: false,
                     value: ''

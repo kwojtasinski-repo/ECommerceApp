@@ -329,12 +329,24 @@ const forms = (function () {
         if (typeof validator.validate === 'function') {
             return validator.validate();
         }
-        const value = validAllFields(validator);
-        return value;
+        return validAllFields(validator);
     }
 
     function validAllFields(obj) {
-        return iterateThroughObjectAndRunCallbackOnRules(obj, validField);
+        iterateThroughObjectAndRunCallbackOnRules(obj, validField);
+        try {
+            iterateThroughObjectAndRunCallbackOnRules(obj, throwIfFieldIsInvalidAndScrollToControl);
+            return true;
+        } catch {
+            return false;
+        }
+    }
+
+    function throwIfFieldIsInvalidAndScrollToControl(field) {
+        if (!field.valid) {
+            $('#' + field.controlId)[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+            throw new Error('Field ' + field.controlId + ' has invalid field');
+        }
     }
 
     function validField(field) {
@@ -359,20 +371,18 @@ const forms = (function () {
     }
 
     function iterateThroughObjectAndRunCallbackOnRules(obj, callback) {
-        let value;
         for (const field in obj) {
             if (typeof obj[field] !== 'object' || obj[field] === null) {
                 continue;
             }
 
             if (Array.isArray(obj[field].rules) && (typeof obj[field].controlId === 'string' || obj[field].controlId instanceof String)) {
-                value = callback(obj[field]);
+                callback(obj[field]);
                 continue;
             }
 
-            value = iterateThroughObjectAndRunCallbackOnRules(obj[field], callback);
+            iterateThroughObjectAndRunCallbackOnRules(obj[field], callback);
         }
-        return value;
     }
 
     return {
