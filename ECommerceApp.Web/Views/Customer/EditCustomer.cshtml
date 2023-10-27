@@ -33,13 +33,13 @@
             </div>
             @if (Model.IsCompany)
             {
-                <div id="CompanyData" clas="form-row col-12" style="display:block;">
-                    <div>
+                <div id="CompanyData" class="form-row col-12 mt-2" style="display:flex;width:100%">
+                    <div class="form-group col-5">
                         <label asp-for="NIP" class="control-label"></label>
                         <input id="NIPInput" asp-for="NIP" class="form-control" />
                         <span asp-validation-for="NIP" class="text-danger"></span>
                     </div>
-                    <div>
+                    <div class="form-group col-5">
                         <label asp-for="CompanyName" class="control-label">Nazwa firmy</label>
                         <input id="CompanyInput" asp-for="CompanyName" class="form-control" />
                         <span asp-validation-for="CompanyName" class="text-danger"></span>
@@ -48,13 +48,13 @@
             }
             else
             {
-                <div id="CompanyData" class="form-row" style="display:none;">
-                    <div class="form-group col-4">
+                <div id="CompanyData" class="form-row col-12 mt-2" style="display:none;width:100%">
+                    <div class="form-group col-5">
                         <label asp-for="NIP" class="control-label"></label>
                         <input asp-for="NIP" class="form-control" />
                         <span asp-validation-for="NIP" class="text-danger"></span>
                     </div>
-                    <div class="form-group col-1"></div> <div class="form-group col-4">
+                    <div class="form-group col-5"></div> <div class="form-group col-4">
                         <label asp-for="CompanyName" class="control-label"></label>
                         <input asp-for="CompanyName" class="form-control" />
                         <span asp-validation-for="CompanyName" class="text-danger"></span>
@@ -63,7 +63,9 @@
             }
 
         </div>
-        <br />
+        <div class="form-group mt-2">
+            <input type="submit" value="Zapisz" class="btn btn-primary" />
+        </div>
         <div class="form-row">
             <div class="col">
                 <table class="table table-bordered">
@@ -98,7 +100,7 @@
                         }
                     </tbody>
                 </table>
-                <a class="btn btn-dark btn-sm" href="@Url.Action("AddNewContactDetail", "ContactDetail", new { id = Model.Id })">Dodaj kontakt</a>
+                <button class="btn btn-dark" onclick="location.href='@Url.Action("AddNewContactDetail", "ContactDetail", new { id = Model.Id })'" type="button">Dodaj kontakt</button>
             </div>
         </div>
         <br><br>
@@ -164,10 +166,6 @@
                 <input id="AddAddress" type="button" class="btn btn-dark" value="Dodaj adres" onclick="location.href='@Url.Action("AddAddress", "Address", new { id = Model.Id })'" />
             </div>
         </div>
-        <br><br>
-        <div class="form-group">
-            <input type="submit" value="Zapisz" class="btn btn-primary" />
-        </div>
     </form>
 </div>
 
@@ -177,7 +175,7 @@
         <script>
             $('#CompanyEnter').on('click', function () {
                 if (this.checked) {
-                    $('#CompanyData').css("display", "block");
+                    $('#CompanyData').css("display", "flex");
                 }
                 else {
                     $('#CompanyData').css("display", "none");
