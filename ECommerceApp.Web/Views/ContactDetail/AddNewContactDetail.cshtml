@@ -36,7 +36,7 @@
 </div>
 
 <div>
-    <a asp-action="Index" asp-controller="Customer">Powrót do danych kontaktowych</a>
+    <a asp-route-id="@ViewBag.CustomerId" asp-action="EditCustomer" asp-controller="Customer">Powrót do danych kontaktowych</a>
 </div>
 
 @section Scripts {

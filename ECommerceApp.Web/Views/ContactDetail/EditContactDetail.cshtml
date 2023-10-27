@@ -12,14 +12,14 @@
     <div class="col-md-4">
         <form asp-action="EditContactDetail">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" class="form-control" />
-            <input type="hidden" asp-for="CustomerId" value="@Model.Id" />
+            <input type="hidden" asp-for="Id" value="@Model.Id" class="form-control" />
+            <input type="hidden" asp-for="CustomerId" value="@Model.CustomerId" />
             <div class="form-group">
                 <label asp-for="ContactDetailInformation" class="control-label">Dane</label>
                 <input asp-for="ContactDetailInformation" class="form-control" />
                 <span asp-validation-for="ContactDetailInformation" class="text-danger"></span>
             </div>
-            <div class="form-group col">
+            <div class="form-group">
                 <label asp-for="ContactDetailTypeId" class="control-label">Rodzaj kontaktu</label>
                 <select asp-for="ContactDetailTypeId" asp-items="@(new SelectList(Model.ContactDetailTypes,"Id", "Name"))" class="custom-select"></select>
                 <span asp-validation-for="ContactDetailTypeId" class="text-danger"></span>
@@ -34,7 +34,7 @@
 </div>
 <br /><br />
 <div>
-    <a asp-action="Index" asp-controller="Customer">Powrót do danych kontaktowych</a>
+    <a asp-route-id="@Model.CustomerId" asp-action="EditCustomer" asp-controller="Customer">Powrót do danych kontaktowych</a>
 </div>
 
 @section Scripts {

@@ -44,5 +44,5 @@
 </div>
 <div>
     @Html.ActionLink("Edytuj", "EditContactDetail", new { id = Model.Id }) |
-    <a asp-action="Index" asp-controller="Customer">Powrót do danych kontaktowych</a>
+    <a asp-route-id="@Model.CustomerId" asp-action="EditCustomer" asp-controller="Customer">Powrót do danych kontaktowych</a>
 </div>

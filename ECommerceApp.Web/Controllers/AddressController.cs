@@ -27,7 +27,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult AddAddress(AddressVm address)
         {
             _addressService.AddAddress(address);
-            return RedirectToAction(actionName: "Index", controllerName: "Customer");
+            return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = address.CustomerId });
         }
 
         [HttpGet]
@@ -41,7 +41,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult EditAddress(AddressVm model)
         {
             _addressService.UpdateAddress(model);
-            return RedirectToAction(actionName: "Index", controllerName: "Customer");
+            return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = model.CustomerId });
         }
 
         public IActionResult ViewAddress(int id)
