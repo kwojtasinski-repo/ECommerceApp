@@ -10,37 +10,37 @@
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="EditAddress">
+        <form id="addressForm" asp-action="EditAddress">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 <input type="hidden" asp-for="Id" class="form-control" />
             <div class="form-group">
                 <label asp-for="Street" class="control-label">Ulica</label>
-                <input asp-for="Street" class="form-control" />
+                <input id="StreetName" asp-for="Street" class="form-control" />
                 <span asp-validation-for="Street" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="BuildingNumber" class="control-label">Numer budynku</label>
-                <input asp-for="BuildingNumber" class="form-control" />
+                <input id="BuildingNumber" asp-for="BuildingNumber" class="form-control" />
                 <span asp-validation-for="BuildingNumber" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="FlatNumber" class="control-label">Numer mieszkania</label>
-                <input asp-for="FlatNumber" class="form-control" />
+                <input id="FlatNumber" asp-for="FlatNumber" class="form-control" />
                 <span asp-validation-for="FlatNumber" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="ZipCode" class="control-label">Kod pocztowy</label>
-                <input asp-for="ZipCode" class="form-control" />
+                <input id="ZipCode" asp-for="ZipCode" class="form-control" />
                 <span asp-validation-for="ZipCode" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="City" class="control-label">Miasto</label>
-                <input asp-for="City" class="form-control" />
+                <input id="CityName" asp-for="City" class="form-control" />
                 <span asp-validation-for="City" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="Country" class="control-label">Kraj</label>
-                <input asp-for="Country" class="form-control" />
+                <input id="CountryName" asp-for="Country" class="form-control" />
                 <span asp-validation-for="Country" class="text-danger"></span>
             </div>
                 <input type="hidden" asp-for="CustomerId" class="form-control" />
@@ -56,5 +56,72 @@
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+
+        const addressFormValidator = {
+            formId: "addressForm",
+            streetName: {
+                controlId: 'StreetName',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Ulica jest wymagana',
+                ],
+                valid: false,
+                value: ''
+            },
+            buildingNumber: {
+                controlId: 'BuildingNumber',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Nr budynku jest wymagany',
+                    v => !isNaN(v) && Number(v) > 0 || 'Nr budynku jest niepoprawny'
+                ],
+                valid: false,
+                value: ''
+            },
+            flatNumber: {
+                controlId: 'FlatNumber',
+                rules: [],
+                valid: false,
+                value: ''
+            },
+            zipCode: {
+                controlId: 'ZipCode',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Kod pocztowy jest wymagany',
+                    v => v && !isNaN(v) && Number(v) > 0 || 'Kod pocztowy jest niepoprawny'
+                ],
+                valid: false,
+                value: ''
+            },
+            city: {
+                controlId: 'CityName',
+                rules: [
+                    v => v && v.length > 0 || 'Miasto jest wymagane'
+                ],
+                valid: false,
+                value: ''
+            },
+            country: {
+                controlId: 'CountryName',
+                rules: [
+                    v => v && v.length > 0 || 'Województwo jest wymagane'
+                ],
+                valid: false,
+                value: ''
+            }
+        };
+
+        $(document).ready(function () {
+            forms.initFormValidator(addressFormValidator);
+            initForm();
+        });
+
+        function initForm() {
+            addressFormValidator.streetName.value = document.querySelector('#' + addressFormValidator.streetName.controlId).value;
+            addressFormValidator.buildingNumber.value = document.querySelector('#' + addressFormValidator.buildingNumber.controlId).value;
+            addressFormValidator.flatNumber.value = document.querySelector('#' + addressFormValidator.flatNumber.controlId).value;
+            addressFormValidator.zipCode.value = document.querySelector('#' + addressFormValidator.zipCode.controlId).value;
+            addressFormValidator.city.value = document.querySelector('#' + addressFormValidator.city.controlId).value;
+            addressFormValidator.country.value = document.querySelector('#' + addressFormValidator.country.controlId).value;
+        }
+    </script>
 }
