@@ -1,9 +1,6 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
 using FluentValidation;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Address
 {
@@ -11,7 +8,7 @@ namespace ECommerceApp.Application.ViewModels.Address
     {
         public string Street { get; set; }
         public string BuildingNumber { get; set; }
-        public int FlatNumber { get; set; }
+        public int? FlatNumber { get; set; }
         public int ZipCode { get; set; }
         public string City { get; set; }
         public string Country { get; set; }
@@ -30,7 +27,8 @@ namespace ECommerceApp.Application.ViewModels.Address
             RuleFor(x => x.Id).NotNull();
             RuleFor(x => x.Street).NotNull();
             RuleFor(x => x.BuildingNumber).NotNull();
-            RuleFor(x => x.FlatNumber).NotNull();
+            When(x => x.FlatNumber is not null && x.FlatNumber.Value <= 0,
+                () => RuleFor(x => x.FlatNumber).NotNull());
             RuleFor(x => x.ZipCode).NotNull();
             RuleFor(x => x.City).NotNull();
             RuleFor(x => x.Country).NotNull();

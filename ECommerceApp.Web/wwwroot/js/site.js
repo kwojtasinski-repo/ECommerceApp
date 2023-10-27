@@ -408,6 +408,7 @@ const forms = (function () {
     }
 })();
 
+// enable tooltips
 $(document).ready(function () {
     $('[data-toggle="tooltip"]').tooltip();
 });
