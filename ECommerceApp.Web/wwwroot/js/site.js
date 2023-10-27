@@ -398,7 +398,7 @@ const forms = (function () {
                 if (!validateForm(formValidator)) {
                     return;
                 }
-                if (typeof formValidator.preSubmit === 'function') {
+                if (typeof formValidator.beforeSubmit === 'function') {
                     formValidator.beforeSubmit();
                 }
                 $(this).unbind('submit').submit(); // continue the submit unbind preventDefault

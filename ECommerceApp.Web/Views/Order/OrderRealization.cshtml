@@ -556,6 +556,13 @@
             orderFormValidator.customer.addressZipCode.value = document.getElementById('AddressZipCodeInput').value;
             orderFormValidator.customer.addressCity.value = document.getElementById('AddressCityInput').value;
             orderFormValidator.customer.addressCountry.value = document.getElementById('AddressCountryInput').value;
+            for (const radioButton of $('[name="ContactDetailType"]')) {
+                if (radioButton.checked) {
+                    orderFormValidator.customer.contactDetailType.value = JSON.parse(radioButton.value)?.i ?? '';
+                    break;
+                }
+            }
+            
         }
 
     </script>
