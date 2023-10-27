@@ -92,7 +92,7 @@
                                 @Html.DisplayFor(model => contact.ContactDetailTypeName)
                             </td>
                             <td>
-                                <a class="btn btn-danger btn-sm" href="@Url.Action("DeleteContactDetail", "ContactDetail", new { id = contact.Id})">Usuń</a>
+                                <button type="button" class="btn btn-danger btn-sm" onclick="deleteContactDetail(@contact.Id)">Usuń</button>
                                 <a class="btn btn-info btn-sm" href="@Url.Action("EditContactDetail", "ContactDetail", new { id = contact.Id})">Edytuj</a>
                                 <a class="btn btn-info btn-sm" href="@Url.Action("ViewContactDetail", "ContactDetail", new { id = contact.Id})">Szczegóły</a>
                             </td>
@@ -155,7 +155,7 @@
                                     @Html.DisplayFor(model => address.FlatNumber)
                                 </td>
                                 <td>
-                                    <a class="btn btn-danger btn-sm" href="@Url.Action("DeleteAddress", "Address", new { id = address.Id})">Usuń</a>
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="deleteAddress(@address.Id)">Usuń</button>
                                     <a class="btn btn-info btn-sm" href="@Url.Action("EditAddress", "Address", new { id = address.Id})">Edytuj</a>
                                     <a class="btn btn-info btn-sm" href="@Url.Action("ViewAddress", "Address", new { id = address.Id})">Szczegóły</a>
                                 </td>
@@ -183,6 +183,24 @@
                     document.getElementById("CompanyInput").value = "";
                 }
             });
+
+            async function deleteAddress(id) {
+                try {
+                    await ajaxRequest.send('/Address/DeleteAddress/' + id, 'DELETE', undefined);
+                    window.location.reload();
+                } catch (error) {
+                    console.error(error);
+                }
+            }
+
+            async function deleteContactDetail(id) {
+                try {
+                    await ajaxRequest.send('/ContactDetail/DeleteContactDetail/' + id, 'DELETE', undefined);
+                    window.location.reload();
+                } catch (error) {
+                    console.error(error);
+                }
+            }
 
         </script>
 

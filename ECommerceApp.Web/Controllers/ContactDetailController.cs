@@ -32,7 +32,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult AddNewContactDetail(NewContactDetailVm newContact)
         {
             _contactDetailService.AddContactDetail(newContact.AsContactDetailVm());
-            return RedirectToAction(actionName: "Index", controllerName: "Customer");
+            return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = newContact.CustomerId });
         }
 
         [HttpGet]
@@ -47,7 +47,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult EditContactDetail(NewContactDetailVm model)
         {
             _contactDetailService.UpdateContactDetail(model.AsContactDetailVm());
-            return RedirectToAction(actionName: "Index", controllerName: "Customer");
+            return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = model.CustomerId });
         }
 
         public IActionResult ViewContactDetail(int id)
@@ -59,7 +59,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult DeleteContactDetail(int id)
         {
             _contactDetailService.DeleteContactDetail(id);
-            return RedirectToAction(actionName: "Index", controllerName: "Customer");
+            return Json(new { Success = true });
         }
     }
 }

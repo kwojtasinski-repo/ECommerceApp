@@ -53,7 +53,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult DeleteAddress(int id)
         {
             _addressService.DeleteAddress(id);
-            return RedirectToAction(actionName: "Index", controllerName: "Customer");
+            return Json(new { Success = true });
         }
     }
 }
