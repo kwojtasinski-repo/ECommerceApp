@@ -10,13 +10,13 @@
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="EditContactDetail">
+        <form id="contactDetailForm" asp-action="EditContactDetail">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" value="@Model.Id" class="form-control" />
             <input type="hidden" asp-for="CustomerId" value="@Model.CustomerId" />
             <div class="form-group">
                 <label asp-for="ContactDetailInformation" class="control-label">Dane</label>
-                <input asp-for="ContactDetailInformation" class="form-control" />
+                <input id="ContactDetailInformation" asp-for="ContactDetailInformation" class="form-control" />
                 <span asp-validation-for="ContactDetailInformation" class="text-danger"></span>
             </div>
             <div class="form-group">
@@ -38,5 +38,22 @@
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        const contactDetailFormValidator = {
+            formId: "contactDetailForm",
+            contactDetailInformation: {
+                controlId: 'ContactDetailInformation',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Dane są wymagane',
+                ],
+                valid: false,
+                value: ''
+            }
+        };
+
+        $(document).ready(function () {
+            forms.initFormValidator(contactDetailFormValidator);
+            contactDetailFormValidator.contactDetailInformation.value = document.querySelector('#' + contactDetailFormValidator.contactDetailInformation.controlId).value;
+        });
+    </script>
 }
