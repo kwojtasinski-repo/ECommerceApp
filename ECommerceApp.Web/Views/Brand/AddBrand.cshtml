@@ -9,12 +9,12 @@
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="AddBrand">
+        <form id="brandForm" asp-action="AddBrand">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 <input type="hidden" asp-for="Id" class="form-control" />
             <div class="form-group">
                 <label asp-for="Name" class="control-label">Nazwa</label>
-                <input asp-for="Name" class="form-control" />
+                <input id="NameInput" asp-for="Name" class="form-control" />
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
             <div class="form-group">
@@ -29,5 +29,22 @@
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        const brandFormValidator = {
+            formId: "brandForm",
+            name: {
+                controlId: 'NameInput',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Nazwa firmy jest wymagana',
+                    v => v && v.trim().length > 2 || 'Nazwa firmy powinna zawierać więcej niż 2 znaki'
+                ],
+                valid: false,
+                value: ''
+            }
+        };
+
+        $(document).ready(function () {
+            forms.initFormValidator(brandFormValidator);
+        });
+    </script>
 }
