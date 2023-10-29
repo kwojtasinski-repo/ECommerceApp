@@ -10,35 +10,35 @@
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="AddItem">
+        <form id="itemForm" asp-action="AddItem">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" class="form-control" />
             <div class="form-group">
                 <label asp-for="Name" class="control-label">Nazwa</label>
-                <input asp-for="Name" class="form-control" />
+                <input id="ItemNameInput" asp-for="Name" class="form-control" />
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="Cost" class="control-label">Koszt</label>
-                <input asp-for="Cost" class="form-control" />
+                <input id="ItemCostInput" asp-for="Cost" class="form-control" />
                 <span asp-validation-for="Cost" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="Description" class="control-label">Opis</label>
-                <input asp-for="Description" class="form-control" />
+                <input id="ItemDescriptionInput" asp-for="Description" class="form-control" />
                 <span asp-validation-for="Description" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="Warranty" class="control-label">Gwarancja</label>
-                <input asp-for="Warranty" class="form-control" />
+                <input id="ItemWarrantyInput" asp-for="Warranty" class="form-control" />
                 <span asp-validation-for="Warranty" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="Quantity" class="control-label">Ilość w magazynie</label>
-                <input asp-for="Quantity" class="form-control" />
+                <input id="ItemQuantityInput" asp-for="Quantity" class="form-control" />
                 <span asp-validation-for="Quantity" class="text-danger"></span>
             </div>
-            <div class="form-group col">
+            <div class="form-group">
                 <label asp-for="BrandId" class="control-label">Firma: </label>
                 <select asp-for="BrandId" asp-items="@(new SelectList(ViewBag.ItemBrands,"Id", "Name"))" class="custom-select"></select>
                 <span asp-validation-for="BrandId" class="text-danger"></span>
@@ -46,7 +46,7 @@
             <p>
                 <a asp-action="AddBrand" asp-controller="Brand">Dodaj nową firmę</a>
             </p>
-            <div class="form-group col">
+            <div class="form-group">
                 <label asp-for="TypeId" class="control-label">Typ: </label>
                 <select asp-for="TypeId" asp-items="@(new SelectList(ViewBag.ItemTypes,"Id", "Name"))" class="custom-select"></select>
                 <span asp-validation-for="TypeId" class="text-danger"></span>
@@ -54,7 +54,7 @@
             <p>
                 <a asp-action="AddType" asp-controller="Type">Dodaj nowy typ</a>
             </p>
-            <div class="form-group col">
+            <div class="form-group">
                 <label asp-for="CurrencyId" class="control-label">Waluta: </label>
                 <input readonly type="text" class="form-control" value="PLN" />
                 <input type="hidden" asp-for="CurrencyId" value="1" />
@@ -108,6 +108,7 @@
         $(document).ready(function () {
             initTags();
             selectedValue = itemTagsElement?.options[itemTagsElement?.selectedIndex ?? 0]?.value ?? 0;
+            forms.initFormValidator(itemFormValidator);
         });
 
         $('#add').click(function () {
@@ -250,7 +251,65 @@
         function addDeletedTag(tag) {
             $('#Tags').append($("<option></option>").attr("value", tag.value).text(tag.name));
         }
-    </script>
 
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+        const itemFormValidator = {
+            formId: "itemForm",
+            name: {
+                controlId: 'ItemNameInput',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Nazwa jest wymagana',
+                    v => v && v.trim().length > 2 || 'Nazwa powinnna więcej niż 2 znaki',
+                ],
+                valid: false,
+                value: ''
+            },
+            cost: {
+                controlId: 'ItemCostInput',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Cena przedmiotu jest wymagana',
+                    v => {
+                        const value = v?.replace(',', '.');
+                        return v && !isNaN(value) || 'Cena przedmiotu zawiera niepoprawny format'
+                    },
+                    v => {
+                        const value = v?.replace(',', '.');
+                        return v && Number(value) > 0 || 'Cena przedmiotu powinna być większa niż 0'
+                    },
+                ],
+                valid: false,
+                value: ''
+            },
+            description: {
+                controlId: 'ItemDescriptionInput',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Opis jest wymagany',
+                    v => v && v.trim().length > 2 || 'Opis powinien zawierać więcej niż 2 znaki',
+                    v => v && v.trim().length <= 255 || 'Opis powinien nie może zawierać więcej niż 255 znaków',
+                ],
+                valid: false,
+                value: ''
+            },
+            warranty: {
+                controlId: 'ItemWarrantyInput',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Gwarancja jest wymagana',
+                    v => v && !isNaN(v) || 'Gwarancja zawiera niepoprawny format',
+                    v => v && Number(v) > 0 || 'Gwarancja powinna być większa niż 0',
+                ],
+                valid: false,
+                value: ''
+            },
+            quantity: {
+                controlId: 'ItemQuantityInput',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Ilość jest wymagana',
+                    v => v && !isNaN(v) || 'Ilość zawiera niepoprawny format',
+                    v => v && Number(v) > 0 || 'Ilość powinna być większa niż 0',
+                ],
+                valid: false,
+                value: ''
+            }
+        };
+
+    </script>
 }

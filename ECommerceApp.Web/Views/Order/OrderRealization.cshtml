@@ -425,7 +425,7 @@
                     onChange: function(event) {
                         this.value = JSON.parse(event.value)?.i ?? '';
                         const text = this.rules[0](this.value);
-                        forms.showValidationError(this.controlId, text && text.trim().length > 0 ? text : '');
+                        forms.showValidationError(this.controlId, text && text.length > 0 && text.trim().length > 0 ? text : '');
                     }
                 },
                 contactDetailInformation: {
