@@ -14,40 +14,40 @@
             <input data-name="itemId" type="hidden" asp-for="Id" class="form-control" />
             <div class="form-group">
                 <label asp-for="Name" class="control-label">Nazwa</label>
-                <input asp-for="Name" class="form-control" />
+                <input id="ItemNameInput" asp-for="Name" class="form-control" />
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="Cost" class="control-label">Koszt</label>
-                <input asp-for="Cost" class="form-control" />
+                <input id="ItemCostInput" asp-for="Cost" class="form-control" />
                 <span asp-validation-for="Cost" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="Description" class="control-label">Opis</label>
-                <input asp-for="Description" class="form-control" />
+                <input id="ItemDescriptionInput" asp-for="Description" class="form-control" />
                 <span asp-validation-for="Description" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="Warranty" class="control-label">Gwarancja</label>
-                <input asp-for="Warranty" class="form-control" />
+                <input id="ItemWarrantyInput" asp-for="Warranty" class="form-control" />
                 <span asp-validation-for="Warranty" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="Quantity" class="control-label">Ilość w magazynie</label>
-                <input asp-for="Quantity" class="form-control" />
+                <input id="ItemQuantityInput" asp-for="Quantity" class="form-control" />
                 <span asp-validation-for="Quantity" class="text-danger"></span>
             </div>
-            <div class="form-group col">
+            <div class="form-group">
                 <label asp-for="BrandId" class="control-label">Firma: </label>
                 <select asp-for="BrandId" asp-items="@(new SelectList(ViewBag.ItemBrands,"Id", "Name"))" class="custom-select"></select>
                 <span asp-validation-for="BrandId" class="text-danger"></span>
             </div>
-            <div class="form-group col">
+            <div class="form-group">
                 <label asp-for="TypeId" class="control-label">Typ: </label>
                 <select asp-for="TypeId" asp-items="@(new SelectList(ViewBag.ItemTypes,"Id", "Name"))" class="custom-select"></select>
                 <span asp-validation-for="TypeId" class="text-danger"></span>
             </div>
-            <div class="form-group col">
+            <div class="form-group">
                 <label asp-for="CurrencyId" class="control-label">Waluta: </label>
                 <input readonly type="text" class="form-control" value="PLN" />
                 <input type="hidden" asp-for="CurrencyId" value="1" />
@@ -75,11 +75,11 @@
                     </tbody>
                 </table>
             </div>
-            <div>
+            <div class="mt-2 mb-2">
                 <select id="Tags" name="Tags" asp-items="@(new SelectList(ViewBag.ItemTags,"Id", "Name"))" class="custom-select" data-val="true"></select>
                 <button type="button" id="add" class="btn btn-info">Wybierz tag</button>
             </div>
-            <div class="form-group">
+            <div class="form-group mt-2 mb-2">
                 <input type="submit" value="Zatwierdź" class="btn btn-primary" />
             </div>
         </form>
@@ -145,6 +145,8 @@
         $(document).ready(function () {
             initTags();
             selectedValue = itemTagsElement?.options[itemTagsElement?.selectedIndex ?? 0]?.value ?? 0;
+            forms.initFormValidator(itemFormValidator);
+            initItemForm();
         });
 
         $('#add').click(function () {
@@ -289,9 +291,9 @@
         }
 
         // --------------------------- SEND IMAGE ---------------------------
-        function Upload(input) {
+        async function Upload(input) {
             var uploadForm = document.getElementById("UploadImages");
-            SendAddImageRequest(uploadForm);
+            await SendAddImageRequest(uploadForm);
         }
 
         async function SendAddImageRequest(oFormElement) {
@@ -323,10 +325,10 @@
             }
         }
 
-        function DeleteImage(id) {
+        async function DeleteImage(id) {
             var result = confirm("Czy usunąć obrazek?");
             if (result) {
-                SendDeleteRequest(id);
+               await SendDeleteRequest(id);
             }
         }
 
@@ -351,7 +353,71 @@
             }
         }
 
-    </script>
+        const itemFormValidator = {
+            formId: "formEditItem",
+            name: {
+                controlId: 'ItemNameInput',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Nazwa jest wymagana',
+                    v => v && v.trim().length > 2 || 'Nazwa powinnna więcej niż 2 znaki',
+                ],
+                valid: false,
+                value: ''
+            },
+            cost: {
+                controlId: 'ItemCostInput',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Cena przedmiotu jest wymagana',
+                    v => {
+                        const value = v?.replace(',', '.');
+                        return v && !isNaN(value) || 'Cena przedmiotu zawiera niepoprawny format'
+                    },
+                    v => {
+                        const value = v?.replace(',', '.');
+                        return v && Number(value) > 0 || 'Cena przedmiotu powinna być większa niż 0'
+                    },
+                ],
+                valid: false,
+                value: ''
+            },
+            description: {
+                controlId: 'ItemDescriptionInput',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Opis jest wymagany',
+                    v => v && v.trim().length > 2 || 'Opis powinien zawierać więcej niż 2 znaki',
+                    v => v && v.trim().length <= 255 || 'Opis powinien nie może zawierać więcej niż 255 znaków',
+                ],
+                valid: false,
+                value: ''
+            },
+            warranty: {
+                controlId: 'ItemWarrantyInput',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Gwarancja jest wymagana',
+                    v => v && !isNaN(v) || 'Gwarancja zawiera niepoprawny format',
+                    v => v && Number(v) > 0 || 'Gwarancja powinna być większa niż 0',
+                ],
+                valid: false,
+                value: ''
+            },
+            quantity: {
+                controlId: 'ItemQuantityInput',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Ilość jest wymagana',
+                    v => v && !isNaN(v) || 'Ilość zawiera niepoprawny format',
+                    v => v && Number(v) > 0 || 'Ilość powinna być większa niż 0',
+                ],
+                valid: false,
+                value: ''
+            }
+        };
 
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+        function initItemForm() {
+            itemFormValidator.name.value = document.getElementById(itemFormValidator.name.controlId).value;
+            itemFormValidator.cost.value = document.getElementById(itemFormValidator.cost.controlId).value;
+            itemFormValidator.description.value = document.getElementById(itemFormValidator.description.controlId).value;
+            itemFormValidator.quantity.value = document.getElementById(itemFormValidator.quantity.controlId).value;
+            itemFormValidator.warranty.value = document.getElementById(itemFormValidator.warranty.controlId).value;
+        }
+    </script>
 }
