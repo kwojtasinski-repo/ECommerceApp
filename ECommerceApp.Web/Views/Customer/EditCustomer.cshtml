@@ -92,7 +92,10 @@
                                 @Html.DisplayFor(model => contact.ContactDetailTypeName)
                             </td>
                             <td>
-                                <button type="button" class="btn btn-danger btn-sm" onclick="deleteContactDetail(@contact.Id)">Usuń</button>
+                                @if (Model.ContactDetails.Count > 1)
+                                {
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="deleteContactDetail(@contact.Id)">Usuń</button>
+                                }
                                 <a class="btn btn-info btn-sm" href="@Url.Action("EditContactDetail", "ContactDetail", new { id = contact.Id})">Edytuj</a>
                                 <a class="btn btn-info btn-sm" href="@Url.Action("ViewContactDetail", "ContactDetail", new { id = contact.Id})">Szczegóły</a>
                             </td>
@@ -155,7 +158,10 @@
                                     @Html.DisplayFor(model => address.FlatNumber)
                                 </td>
                                 <td>
-                                    <button type="button" class="btn btn-danger btn-sm" onclick="deleteAddress(@address.Id)">Usuń</button>
+                                    @if (Model.Addresses.Count > 1)
+                                    {
+                                        <button type="button" class="btn btn-danger btn-sm" onclick="deleteAddress(@address.Id)">Usuń</button>
+                                    }
                                     <a class="btn btn-info btn-sm" href="@Url.Action("EditAddress", "Address", new { id = address.Id})">Edytuj</a>
                                     <a class="btn btn-info btn-sm" href="@Url.Action("ViewAddress", "Address", new { id = address.Id})">Szczegóły</a>
                                 </td>
