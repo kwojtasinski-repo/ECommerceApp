@@ -9,7 +9,7 @@
 <hr />
 <div class="row">
     <div class="col-lg-6">
-        <form asp-action="AddOrderDetails" method="post">
+        <form id="orderForm" asp-action="AddOrderDetails" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input data-name="Id" type="hidden" asp-for="Id" class="form-control" />
             <input type="hidden" asp-for="UserId" class="form-control" />
@@ -64,6 +64,10 @@
                 <span asp-validation-for="RefundId" class="text-danger"></span>
             </div>
             <div>
+                <label>Kod promocyjny</label>
+                <input type="text" asp-for="RefCode" class="form-control" />
+            </div>
+            <div class="mt-2 mb-2">
                 <p>Przedmioty:</p>
                 <table id="itemWithJS">
                     @for (int i = 0; i < Model.OrderItems.Count; i++)
@@ -77,7 +81,7 @@
                             </td>
                             <td>
                                 <a><i onclick="AddQuantity(this.id)" id="OrderItems[@i].ItemOrderQuantity" class="fas fa-plus-circle ml-2 fa_custom add-quantity"></i></a>
-                                <input id="ItemQuantity[@i]" name="@Model.OrderItems[i].ItemOrderQuantity" value="@Model.OrderItems[i].ItemOrderQuantity" readonly style="width: 45px;" />
+                                <input id="ItemQuantity[@i]" name="@Model.OrderItems[i].ItemOrderQuantity" value="@Model.OrderItems[i].ItemOrderQuantity" readonly style="width: 45px;" class="form-control" />
                                 <a><i onclick="RemoveQuantity(this.id)" class="fa fa-minus-circle ml-2 fa_custom remove-quantity" id="OrderItems[@i].ItemOrderQuantity"></i></a>
                                 <button id="@i" type="button" class="btn btn-danger delete">Usuń</button>
                             </td>
@@ -86,25 +90,21 @@
                 </table>
             </div>
             <div>
-                <label>Kod promocyjny</label>
-                <input type="text" asp-for="RefCode" />
-            </div>
-            <div>
                 <select id="Items" name="Items" asp-items="@(new SelectList(Model.Items,"Id", "Name"))" class="custom-select" data-val="true"></select>
                 <button type="button" id="add" class="btn btn-info">Wybierz przedmiot</button>
                 <select id="ItemsWithCosts" style="display:none;" name="ItemsCost" asp-items="@(new SelectList(Model.Items, "Id", "Cost"))" class="custom-select"></select>
             </div>
-            <table id="RefreshCost">
+            <table id="RefreshCost" class="mt-2 mb-2">
                 <tr>
                     @if (Model.CustomerId > 0)
                     {
                         <td>
-                            Cena <input id="CalcCost" name="CostToConvert" value="@Model.Cost" readonly style="width: 250px;position:static; " />
+                            Cena <input id="CalcCost" name="CostToConvert" value="@Model.Cost" readonly style="width: 250px;position:static;" class="form-control" />
                         </td>
                     }
                 </tr>
             </table>
-            <div class="form-group">
+            <div class="form-group mt-2 mb-2">
                 <input type="submit" value="Utwórz" class="btn btn-primary" />
             </div>
         </form>
@@ -285,8 +285,9 @@
             const inputQuantity = document.createElement('input');
             inputQuantity.setAttribute("id", "ItemQuantity[" + index + "]");
             inputQuantity.name = "OrderItems[" + index + "].ItemOrderQuantity";
-            inputQuantity.readonly = "true";
-            inputQuantity.style = "width: 45px;";
+            inputQuantity.setAttribute("readonly", true);
+            inputQuantity.style = "width: 45px; display: inline !important";
+            inputQuantity.className = "form-control ml-2 mr-2";
             inputQuantity.value = orderItem.quantity;
             const deleteQuantityAnchor = document.createElement('a');
             const deleteIcon = document.createElement('i');
@@ -307,6 +308,14 @@
             return row;
         }
 
+        function validateQuantity(control) {
+
+            if (siblingSpan[0]) {
+                siblingSpan.text(text);
+            } else {
+                $('#' + context.attributes.id.value)[0].parentElement.appendChild(createErrorSpanInner(text));
+            }
+        }
     </script>
     <style type="text/css">
         .fa_custom {
