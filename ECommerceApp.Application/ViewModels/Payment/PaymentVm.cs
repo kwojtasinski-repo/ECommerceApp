@@ -39,7 +39,7 @@ namespace ECommerceApp.Application.ViewModels.Payment
         public NewPaymentValidation()
         {
             RuleFor(x => x.Id).NotNull();
-            RuleFor(x => x.Number).NotNull();
+            RuleFor(x => x.Number).NotNull().GreaterThan(0);
             RuleFor(x => x.DateOfOrderPayment).NotNull();
             RuleFor(x => x.CustomerId).NotNull();
             RuleFor(x => x.OrderId).NotNull();
