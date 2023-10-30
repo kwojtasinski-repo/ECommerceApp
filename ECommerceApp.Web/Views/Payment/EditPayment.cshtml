@@ -9,18 +9,18 @@
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="EditPayment">
+        <form id="paymentForm" asp-action="EditPayment">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                <input type="hidden" asp-for="Id" class="form-control" />
+            <input type="hidden" asp-for="Id" class="form-control" />
+            <input type="hidden" asp-for="CurrencyId" class="form-control" />
             <div class="form-group">
                 <label asp-for="Number" class="control-label">Numer płatności</label>
-                <input asp-for="Number" class="form-control" />
+                <input id="NumberInput" asp-for="Number" class="form-control" />
                 <span asp-validation-for="Number" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="DateOfOrderPayment" class="control-label">Data płatności</label>
-                <input asp-for="DateOfOrderPayment" class="form-control" />
-                <span asp-validation-for="DateOfOrderPayment" class="text-danger"></span>
+                <input id="DateOfOrderPaymentInput" asp-for="DateOfOrderPayment" class="form-control" />
             </div>
             <div class="form-group">
                 <label asp-for="CustomerId" class="control-label"></label>
@@ -54,5 +54,34 @@
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        const paymentFormValidator = {
+            formId: 'paymentForm',
+            paymentNumber: {
+                controlId: 'NumberInput',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Numer płatności jest wymagany',
+                    v => v && !isNaN(v) || 'Numer płatności zawiera niepoprawny format',
+                    v => v && Number(v) > 0 || 'Numer płatności powinien być większy niż 0',
+                ],
+                valid: false,
+                value: ''
+            },
+            dateOfPayment: {
+                controlId: 'DateOfOrderPaymentInput',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Data płatności jest wymanaga',
+                    v => v && new Date(v) || 'Data płatności zawiera niepoprawny format',
+                ],
+                valid: false,
+                value: ''
+            }
+        };
+
+        $(document).ready(function () {
+            forms.initFormValidator(paymentFormValidator);
+            paymentFormValidator.paymentNumber.value = document.getElementById(paymentFormValidator.paymentNumber.controlId).value;
+            paymentFormValidator.dateOfPayment.value = document.getElementById(paymentFormValidator.dateOfPayment.controlId).value;
+        });
+    </script>
 }

@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
-using ECommerceApp.Application.ViewModels.Customer;
 using FluentValidation;
 using System;
 using System.Text.Json.Serialization;
