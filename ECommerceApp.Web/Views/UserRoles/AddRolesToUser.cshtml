@@ -9,7 +9,7 @@
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="AddRolesToUser">
+        <form id="addRolesToUserForm" asp-action="AddRolesToUser">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" class="form-control" />
             <div class="form-group">
@@ -24,22 +24,24 @@
             </div>
             <div class="form-group form-check">
                 <label class="form-check-label">
-                    <input onclick="return false;" class="form-check-input" asp-for="EmailConfirmed" value="true"/> Potwierdzony email
+                    <input onclick="return false;" class="form-check-input" asp-for="EmailConfirmed" /> Potwierdzony email
                 </label>
             </div>
             <div class="col-sm-6">
                 <h4>Nadane prawa:</h4>
-                <br />
-                @foreach (var role in Model.Roles)
-                {
-                <div class="checkbox">
-                    <label>
-                        <input type="checkbox"
-                               name="UserRoles"
-                               value="@role.Name"
-                               @if (Model.UserRoles.Contains(role.Name)) { <text> checked </text> } /> @role.Name
-                    </label>
-                </div>}
+                <div id="roles" class="mt-2 mb-2">
+                    @foreach (var role in Model.Roles)
+                    {
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox"
+                                       name="UserRoles"
+                                       value="@role.Name"
+                                       @if (Model.UserRoles.Contains(role.Name)) { <text> checked </text> } /> @role.Name
+                            </label>
+                        </div>
+                    }
+                </div>
             </div>
             <div class="form-group">
                 <input type="submit" value="Utwórz" class="btn btn-primary" />
@@ -53,5 +55,55 @@
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        const addRolesToUserFormValidator = {
+            formId: "addRolesToUserForm",
+            userRoles: {
+                controlId: 'roles',
+                controlName: 'UserRoles',
+                rules: [
+                    v => v && v.length > 0 || 'Wymagane jest przypisanie przynajmniej 1 roli użytkownikowi',
+                    v => v && v.some(v => v.checked) > 0 || 'Wymagane jest przypisanie przynajmniej 1 roli użytkownikowi',
+                ],
+                onChange: function (event) {
+                    if (this.value.some(v => v.name === event.value)) {
+                        const role = this.value.find(v => v.name === event.value);
+                        role.checked = event.checked;
+                    } else {
+                        this.value.push({ name: event.value, checked: event.checked });
+                    }
+
+                    if (event.checked) {
+                        forms.showValidationError(this.controlId, '');
+                        return;
+                    }
+
+                    let checkedOption = false;
+                    for (const userRole of $('input[name="UserRoles"]')) {
+                        if (userRole.checked) {
+                            checkedOption = true;
+                        }
+                    }
+
+                    if (checkedOption) {
+                        return;
+                    }
+
+                    forms.showValidationError(this.controlId, 'Wymagane jest przypisanie przynajmniej 1 roli użytkownikowi');
+                },
+                valid: false,
+                value: []
+            },
+        };
+
+
+        $(document).ready(function () {
+            forms.initFormValidator(addRolesToUserFormValidator);
+            for (const userRole of $('input[name="UserRoles"]')) {
+                addRolesToUserFormValidator.userRoles.value.push({
+                    name: userRole.value, checked: userRole.checked
+                });
+            }
+        });
+    </script>
 }
