@@ -9,7 +9,7 @@
 <hr />
 <div class="row">
     <div class="col-md-4">
-        <form asp-action="EditUser">
+        <form id="userForm" asp-action="EditUser">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 <input type="hidden" asp-for="Id" class="form-control" />
             <div class="form-group">
@@ -19,7 +19,7 @@
             </div>
             <div class="form-group">
                 <label asp-for="Email" class="control-label">Email</label>
-                <input asp-for="Email" class="form-control" />
+                <input id="LoginInput" asp-for="Email" class="form-control" />
                 <span asp-validation-for="Email" class="text-danger"></span>
             </div>
             <div class="form-group form-check">
@@ -39,5 +39,24 @@
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        const editUserFormValidator = {
+            formId: "userForm",
+            login: {
+                controlId: 'LoginInput',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Email jest wymagany',
+                    v => v && emailRegex.test(v) || 'Email zawiera niepoprawny format',
+                ],
+                valid: false,
+                value: ''
+            }
+        };
+
+
+        $(document).ready(function () {
+            forms.initFormValidator(editUserFormValidator);
+            editUserFormValidator.login.value = document.getElementById('LoginInput').value;
+        });
+    </script>
 }

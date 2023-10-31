@@ -123,6 +123,7 @@ namespace ECommerceApp.Application.Services
 
             var currentUser = await _userManager.FindByIdAsync(userToEdit.Id);
             CheckChangesInCurrentUser(currentUser, userToEdit); // allowed only change email and verification
+            // TODO check if username is same as email if yes it should be changed too
             return await _userManager.UpdateAsync(currentUser);
         }
 
