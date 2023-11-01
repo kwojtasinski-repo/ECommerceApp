@@ -30,11 +30,7 @@ namespace ECommerceApp.Web
             services.AddApplication();
             services.AddInfrastructure(Configuration);
 
-            services.AddControllersWithViews();/*.AddFluentValidation(fv =>
-            {
-                fv.ImplicitlyValidateChildProperties = true;
-                fv.RunDefaultMvcValidationAfterFluentValidationExecutes = false;
-            });*/
+            services.AddControllersWithViews();
             services.AddRazorPages();
 
             services.Configure<IdentityOptions>(opt =>
@@ -47,15 +43,12 @@ namespace ECommerceApp.Web
                 opt.User.RequireUniqueEmail = true;
             });
 
-            if (!Environment.IsEnvironment("docker"))
+            services.AddAuthentication().AddGoogle(options =>
             {
-                services.AddAuthentication().AddGoogle(options =>
-                {
-                    IConfigurationSection configurationSection = Configuration.GetSection("Authentication:Google");
-                    options.ClientId = configurationSection["ClientId"];
-                    options.ClientSecret = configurationSection["ClientSecret"];
-                });
-            }
+                IConfigurationSection configurationSection = Configuration.GetSection("Authentication:Google");
+                options.ClientId = configurationSection["ClientId"];
+                options.ClientSecret = configurationSection["ClientSecret"];
+            });
             services.AddDatabaseDeveloperPageExceptionFilter();
         }
 
@@ -83,8 +76,6 @@ namespace ECommerceApp.Web
                 SupportedUICultures = new List<CultureInfo> { defaultCulture }
             };
             app.UseRequestLocalization(localizationOptions);
-
-            app.UseMiddleware<ExceptionMiddleware>();
             app.UseRouting();
 
             app.UseAuthentication();
