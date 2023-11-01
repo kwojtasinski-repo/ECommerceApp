@@ -10,11 +10,11 @@ using Microsoft.AspNetCore.Mvc;
 namespace ECommerceApp.Web.Controllers
 {
     [Authorize(Roles = $"{UserPermissions.Roles.Administrator}")]
-    public class UserRolesController : Controller
+    public class UserManagementController : Controller
     {
         private readonly IUserService _userService;
 
-        public UserRolesController(IUserService userService)
+        public UserManagementController(IUserService userService)
         {
             _userService = userService;
         }
