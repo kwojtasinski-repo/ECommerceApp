@@ -14,21 +14,26 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-2">
             <div class="container">
-                <div class="navbar col-sm-3">
+                <div class="navbar title-header">
                     <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">ECommerceApp</a>
                 </div>
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse col-sm-3">
+                <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse items-header">
                     <partial name="_LoginPartial" />
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Item" asp-action="Index">Przedmioty</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Item" asp-action="Index">
+                                <div class="d-flex flex-column align-items-center">
+                                    <i class="fa-solid fa-cubes fa-2x"></i>
+                                    Przedmioty
+                                </div>
+                            </a>
                         </li>
                         @using ECommerceApp.Domain.Model;
                         @using ECommerceApp.Infrastructure.Permissions;
@@ -41,45 +46,62 @@
                             @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service) || User.IsInRole(UserPermissions.Roles.User))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link waves-effect" asp-area="" asp-controller="Order" asp-action="ShowMyCart">
-                                        <span id="itemCount" class="badge badge-light z-depth-1 mr-1"> </span>
-                                        <i class="fas fa-shopping-cart"></i>
-                                        <span class="clearfix d-none d-sm-inline-block">Koszyk</span>
-                                    </a>
+                                    <div>
+                                        <a class="nav-link text-dark" asp-area="" asp-controller="Order" asp-action="ShowMyCart">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <div class="d-flex">
+                                                    <span id="itemCount" class="position-absolute top-0 left-position translate-middle badge rounded-pill badge badge-light"></span>
+                                                    <i class="fas fa-shopping-cart fa-2x"></i>
+                                                </div>
+                                                Koszyk
+                                            </div>
+
+                                        </a>
+                                    </div>
                                 </li>
                             }
                             @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service) || User.IsInRole(UserPermissions.Roles.User))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark waves-effect" asp-area="" asp-controller="Order" asp-action="ShowMyOrders">Moje zamówienia</a>
+                                    <div>
+                                        <a class="nav-link text-dark waves-effect" asp-area="" asp-controller="Order" asp-action="ShowMyOrders">Moje zamówienia</a>
+                                    </div>
                                 </li>
                             }
                             @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service) || User.IsInRole(UserPermissions.Roles.User))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark waves-effect" asp-area="" asp-controller="Customer" asp-action="Index">Dane kontaktowe</a>
+                                    <div>
+                                        <a class="nav-link text-dark waves-effect" asp-area="" asp-controller="Customer" asp-action="Index">Dane kontaktowe</a>
+                                    </div>
                                 </li>
                             }
                             @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link hover_drop_down text-dark" asp-area="" asp-controller="Order" asp-action="Index">Zamówienia</a>
-                                    <ul class="dropdown">
-                                        <li><a asp-controller="Currency" asp-action="Index">Waluty</a></li>
-                                        <li><a asp-controller="Order" asp-action="ShowOrdersPaid">Wydania</a></li>
-                                    </ul>
+                                    <div>
+                                        <a class="nav-link hover_drop_down text-dark" asp-area="" asp-controller="Order" asp-action="Index">Zamówienia</a>
+                                        <ul class="dropdown">
+                                            <li><a asp-controller="Currency" asp-action="Index">Waluty</a></li>
+                                            <li><a asp-controller="Order" asp-action="ShowOrdersPaid">Wydania</a></li>
+                                        </ul>
+                                    </div>
                                 </li>
                             }
                             @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="Coupon" asp-action="Index">Kupony</a>
+                                    <div>
+                                        <a class="nav-link text-dark" asp-area="" asp-controller="Coupon" asp-action="Index">Kupony</a>
+                                    </div>
                                 </li>
                             }
                             @if (User.IsInRole(UserPermissions.Roles.Administrator))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="UserManagement" asp-action="Index">Zarządzanie użytkownikami</a>
+                                    <div>
+                                        <a class="nav-link text-dark" asp-area="" asp-controller="UserManagement" asp-action="Index">Zarządzanie użytkownikami</a>
+                                    </div>
                                 </li>
                             }
                         }
@@ -167,6 +189,21 @@
         ul li ul.dropdown li {
             display: block;
         }
+
+        @@media (min-width: 576px) {
+            .left-position {
+                left: 60% !important;
+            }
+        }
+
+        .left-position {
+            left: 50%;
+        }
+
+        .top-0 {
+            top: 0 !important;
+        }
+
     </style>
     @RenderSection("Scripts", required: false)
 </body>
