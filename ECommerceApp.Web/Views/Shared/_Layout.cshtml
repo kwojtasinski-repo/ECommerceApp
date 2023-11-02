@@ -14,18 +14,23 @@
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-2">
             <div class="container">
-                <div class="navbar title-header">
+                <div class="navbar">
                     <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">ECommerceApp</a>
                 </div>
                 <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse items-header">
+                <div class="navbar-collapse collapse d-sm-inline-flex flex-sm-row-reverse">
                     <partial name="_LoginPartial" />
                     <ul class="navbar-nav flex-grow-1">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">
+                                <div class="d-flex flex-column align-items-center">
+                                    <i class="fa-solid fa-house fa-2x"></i>
+                                    Home
+                                </div>
+                            </a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link text-dark" asp-area="" asp-controller="Item" asp-action="Index">
@@ -64,7 +69,12 @@
                             {
                                 <li class="nav-item">
                                     <div>
-                                        <a class="nav-link text-dark waves-effect" asp-area="" asp-controller="Order" asp-action="ShowMyOrders">Moje zamówienia</a>
+                                        <a class="nav-link text-dark waves-effect" asp-area="" asp-controller="Order" asp-action="ShowMyOrders">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <i class="fa-solid fa-pen-to-square fa-2x"></i>
+                                                Moje zamówienia
+                                            </div>
+                                        </a>
                                     </div>
                                 </li>
                             }
@@ -72,7 +82,12 @@
                             {
                                 <li class="nav-item">
                                     <div>
-                                        <a class="nav-link text-dark waves-effect" asp-area="" asp-controller="Customer" asp-action="Index">Dane kontaktowe</a>
+                                        <a class="nav-link text-dark waves-effect" asp-area="" asp-controller="Customer" asp-action="Index">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <i class="fa-solid fa-address-card fa-2x"></i>
+                                                Dane kontaktowe
+                                            </div>
+                                        </a>
                                     </div>
                                 </li>
                             }
@@ -80,7 +95,12 @@
                             {
                                 <li class="nav-item">
                                     <div>
-                                        <a class="nav-link hover_drop_down text-dark" asp-area="" asp-controller="Order" asp-action="Index">Zamówienia</a>
+                                        <a class="nav-link hover_drop_down text-dark" asp-area="" asp-controller="Order" asp-action="Index">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <i class="fa-solid fa-list-check fa-2x"></i>
+                                                Zamówienia
+                                            </div>
+                                        </a>
                                         <ul class="dropdown">
                                             <li><a asp-controller="Currency" asp-action="Index">Waluty</a></li>
                                             <li><a asp-controller="Order" asp-action="ShowOrdersPaid">Wydania</a></li>
@@ -92,7 +112,12 @@
                             {
                                 <li class="nav-item">
                                     <div>
-                                        <a class="nav-link text-dark" asp-area="" asp-controller="Coupon" asp-action="Index">Kupony</a>
+                                        <a class="nav-link text-dark" asp-area="" asp-controller="Coupon" asp-action="Index">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <i class="fa-solid fa-percent fa-2x"></i>
+                                                Kupony
+                                            </div>
+                                        </a>
                                     </div>
                                 </li>
                             }
@@ -100,7 +125,12 @@
                             {
                                 <li class="nav-item">
                                     <div>
-                                        <a class="nav-link text-dark" asp-area="" asp-controller="UserManagement" asp-action="Index">Zarządzanie użytkownikami</a>
+                                        <a class="nav-link text-dark" asp-area="" asp-controller="UserManagement" asp-action="Index">
+                                            <div class="d-flex flex-column align-items-center">
+                                                <i class="fa-solid fa-users fa-2x"></i>
+                                                Zarządzanie użytkownikami
+                                            </div>
+                                        </a>
                                     </div>
                                 </li>
                             }
