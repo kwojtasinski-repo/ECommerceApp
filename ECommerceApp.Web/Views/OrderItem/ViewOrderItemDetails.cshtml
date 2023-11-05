@@ -16,10 +16,10 @@
             @Html.DisplayFor(model => model.Id)
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.ItemId)
+            Przedmiot
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.ItemId)
+            @Html.ActionLink("Kliknij aby zobaczyć", "ViewItem", "Item", new { id = Model.ItemId }, new { target = "_blank" })
         </dd>
         <dt class="col-sm-2">
             Nazwa przedmiotu

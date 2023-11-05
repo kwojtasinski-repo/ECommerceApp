@@ -24,55 +24,55 @@
             @Html.DisplayFor(model => model.Id)
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Name)
+            Nazwa przedmiotu
         </dt>
         <dd class="col-sm-10">
             @Html.DisplayFor(model => model.Name)
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Cost)
+            Koszt
         </dt>
         <dd class="col-sm-10">
             @Html.DisplayFor(model => model.Cost)
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Description)
+            Opis
         </dt>
         <dd class="col-sm-10">
             @Html.DisplayFor(model => model.Description)
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Warranty)
+            Gwarancja
         </dt>
         <dd class="col-sm-10">
             @Html.DisplayFor(model => model.Warranty)
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Quantity)
+            Dostępna ilość
         </dt>
         <dd class="col-sm-10">
             @Html.DisplayFor(model => model.Quantity)
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.BrandId)
+            Firma
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.BrandId)
+            @Html.ActionLink("Kliknij aby zobaczyć", "ViewBrand", "Brand", new { id = @Model.BrandId }, new { target = "_blank" })
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.BrandName)
+            Nazwa firmy
         </dt>
         <dd class="col-sm-10">
             @Html.DisplayFor(model => model.BrandName)
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.TypeId)
+            Typ przedmiotu
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.TypeId)
+            @Html.ActionLink("Kliknij aby zobaczyć", "ViewType", "Type", new { id = @Model.TypeId }, new { target = "_blank" })
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.TypeName)
+            Nazwa typu przedmiotu
         </dt>
         <dd class="col-sm-10">
             @Html.DisplayFor(model => model.TypeName)

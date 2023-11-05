@@ -17,28 +17,22 @@
             @Html.DisplayFor(model => model.Id)
         </dd>
         <dt class = "col-sm-5">
-            @Html.DisplayNameFor(model => model.ContactDetailInformation)
+            Informacje kontakowe
         </dt>
         <dd class = "col-sm-5">
             @Html.DisplayFor(model => model.ContactDetailInformation)
         </dd>
         <dt class = "col-sm-5">
-            @Html.DisplayNameFor(model => model.ContactDetailTypeId)
-        </dt>
-        <dd class = "col-sm-5">
-            @Html.DisplayFor(model => model.ContactDetailTypeId)
-        </dd>
-        <dt class = "col-sm-5">
-            @Html.DisplayNameFor(model => model.ContactDetailTypeName)
+            Typ informacji kontakowych
         </dt>
         <dd class = "col-sm-5">
             @Html.DisplayFor(model => model.ContactDetailTypeName)
         </dd>
         <dt class = "col-sm-5">
-            @Html.DisplayNameFor(model => model.CustomerId)
+            Dane kontatkowe
         </dt>
         <dd class = "col-sm-5">
-            @Html.DisplayFor(model => model.CustomerId)
+            @Html.ActionLink("Kliknij aby zobaczyć", "ViewCustomer", "Customer", new { id = @Model.CustomerId }, new { target = "_blank" })
         </dd>
     </dl>
 </div>

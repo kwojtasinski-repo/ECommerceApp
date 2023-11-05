@@ -48,17 +48,20 @@
         <dd class = "col-sm-10">
             @Html.DisplayFor(model => model.IsDelivered)
         </dd>
+        @if (Model.CouponUsedId.HasValue)
+        {
+            <dt class = "col-sm-2">
+                @Html.DisplayNameFor(model => model.CouponUsedId)
+            </dt>
+            <dd class = "col-sm-10">
+                @Html.DisplayFor(model => model.CouponUsedId)
+            </dd>
+        }
         <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.CouponUsedId)
+            Dane kontaktowe
         </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.CouponUsedId)
-        </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.CustomerId)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.CustomerId)
+        <dd class="col-sm-10">
+            @Html.ActionLink("Kliknij aby zobaczyć", "ViewCustomer", "Customer", new { id = @Model.CustomerId }, new { target = "_blank" })
         </dd>
         <dt class = "col-sm-2">
             @Html.DisplayNameFor(model => model.PaymentId)
@@ -72,12 +75,15 @@
         <dd class = "col-sm-10">
             @Html.DisplayFor(model => model.IsPaid)
         </dd>
-        <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.RefundId)
-        </dt>
-        <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.RefundId)
+        @if (Model.RefundId.HasValue)
+        {
+            <dt class = "col-sm-2">
+                @Html.DisplayNameFor(model => model.RefundId)
+            </dt>
+            <dd class = "col-sm-10">
+                @Html.DisplayFor(model => model.RefundId)
         </dd>
+        }
     </dl>
 </div>
 <div class="form-row">

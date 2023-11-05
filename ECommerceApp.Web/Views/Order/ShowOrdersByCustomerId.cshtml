@@ -14,16 +14,37 @@
         <thead>
             <tr>
                 <th>
-                    @Html.DisplayNameFor(model => model.CurrentPage)
+                    Id
                 </th>
                 <th>
-                    @Html.DisplayNameFor(model => model.PageSize)
+                    Nr zamówienia
                 </th>
                 <th>
-                    @Html.DisplayNameFor(model => model.SearchString)
+                    Kod waluty
                 </th>
                 <th>
-                    @Html.DisplayNameFor(model => model.Count)
+                    Dane kontaktowe
+                </th>
+                <th>
+                    Zamówiono
+                </th>
+                <th>
+                    Opłacone
+                </th>
+                <th>
+                    Id płatności
+                </th>
+                <th>
+                    Czy dostarczono
+                </th>
+                <th>
+                    Dostarczono
+                </th>
+                <th>
+                    Id użytego kuponu
+                </th>
+                <th>
+                    Id reklamacji
                 </th>
                 <th></th>
             </tr>
@@ -44,7 +65,7 @@
                         }
                     </td>
                     <td>
-                        @Html.DisplayFor(model => order.CustomerId)
+                        @Html.ActionLink("Kliknij aby zobaczyć", "ViewCustomer", "Customer", new { id = order.CustomerId }, new { target = "_blank" })
                     </td>
                     <td>
                         @Html.DisplayFor(model => order.Ordered)

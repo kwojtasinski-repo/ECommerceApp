@@ -4,7 +4,7 @@
     ViewData["Title"] = "OrderList";
 }
 
-<h1>List of Orders</h1>
+<h1>Lista zamówień</h1>
 
 
 <table class="table">
@@ -14,30 +14,31 @@
                 @Html.DisplayNameFor(model => model.OrderId)
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.OrderNumber)
+                Nr zamówienia
             </th>
             <th>
-                @Html.DisplayNameFor(model => model.OrderCost)
+                Koszt
             </th>
             <th></th>
         </tr>
     </thead>
     <tbody>
-@foreach (var item in Model) {
-        <tr>
-            <td>
-                @Html.DisplayFor(modelItem => item.OrderId)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.OrderNumber)
-            </td>
-            <td>
-                @Html.DisplayFor(modelItem => item.OrderCost)
-            </td>
-            <td>
-                @Html.ActionLink("Show Details", "OrderDetails", "Order", new { id = item.OrderId })
-            </td>
-        </tr>
-}
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>
+                    @Html.DisplayFor(modelItem => item.OrderId)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.OrderNumber)
+                </td>
+                <td>
+                    @Html.DisplayFor(modelItem => item.OrderCost)
+                </td>
+                <td>
+                    @Html.ActionLink("Pokaż zamówienie", "OrderDetails", "Order", new { id = item.OrderId })
+                </td>
+            </tr>
+        }
     </tbody>
 </table>

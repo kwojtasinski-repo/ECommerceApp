@@ -4,174 +4,176 @@
     ViewData["Title"] = "EditOrder";
 }
 
-<h1>Edycja zamówienia</h1>
+<div>
+    <h1>Edycja zamówienia</h1>
 
-<hr />
-<div class="row">
-    <div class="col-lg-6">
-        <form id="EditOrderForm" asp-action="EditOrder">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input data-name="Id" type="hidden" asp-for="Id" class="form-control" />
-            <input type="hidden" asp-for="UserId" class="form-control" />
-            <div class="form-group">
-                <label style="display:none;" asp-for="Number" class="control-label"></label>
-                <label class="control-label">Numer zamówienia</label>
-                <input readonly asp-for="Number" class="form-control" />
-                <span asp-validation-for="Number" class="text-danger"></span>
-            </div>
-            <div style="display:none;" class="form-group">
-                <label style="display:none;" asp-for="Cost" class="control-label"></label>
-                <label class="control-label">Koszt do zapłaty</label>
-                <input asp-for="Cost" class="form-control" />
-                <span asp-validation-for="Cost" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label style="display:none;" asp-for="Ordered" class="control-label"></label>
-                <label class="control-label">Zamówiono dnia o godzinie</label>
-                <input readonly asp-for="Ordered" class="form-control" />
-                <span asp-validation-for="Ordered" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label style="display:none;" asp-for="Delivered" class="control-label"></label>
-                <label class="control-label">Dostarczono dnia o godzinie</label>
-                <input asp-for="Delivered" class="form-control" />
-                <span asp-validation-for="Delivered" class="text-danger"></span>
-            </div>
-            <div class="form-group form-check">
-                <label class="form-check-label">
-                    <input style="display:none;" class="form-check-input" asp-for="IsDelivered" onclick="return false;" />
-                    <input class="form-check-input" asp-for="IsDelivered" /> Dostarczono
-                </label>
-            </div>
-            <div style="display:none;" class="form-group">
-                <label asp-for="CouponUsedId" class="control-label"></label>
-                <input asp-for="CouponUsedId" class="form-control" /> <!-- select list or js check if it is correct refcode-->
-                <span asp-validation-for="CouponUsedId" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label style="display:none;" asp-for="CustomerId" class="control-label"></label>
-                <label class="control-label">Klient:</label>
-                <input value="@ViewBag.CustomerInformation" class="form-control" readonly />
-                <input type="hidden" asp-for="CustomerId" class="form-control" />
-                <span asp-validation-for="CustomerId" class="text-danger"></span>
-            </div>
-            @if (Model.PaymentId > 0)
-            {
+    <hr />
+    <div class="row d-flex flex-column">
+        <div>
+            <form id="EditOrderForm" asp-action="EditOrder">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <input data-name="Id" type="hidden" asp-for="Id" class="form-control" />
+                <input type="hidden" asp-for="UserId" class="form-control" />
                 <div class="form-group">
-                    <label style="display:none;" asp-for="PaymentId" class="control-label"></label>
-                    <label class="control-label">Nr płatności</label>
-                    <input readonly value="@ViewBag.PaymentNumber" class="form-control" />
-                    <input type="hidden" asp-for="PaymentId" class="form-control" />
-                    <span asp-validation-for="PaymentId" class="text-danger"></span>
+                    <label style="display:none;" asp-for="Number" class="control-label"></label>
+                    <label class="control-label">Numer zamówienia</label>
+                    <input readonly asp-for="Number" class="form-control" />
+                    <span asp-validation-for="Number" class="text-danger"></span>
+                </div>
+                <div style="display:none;" class="form-group">
+                    <label style="display:none;" asp-for="Cost" class="control-label"></label>
+                    <label class="control-label">Koszt do zapłaty</label>
+                    <input asp-for="Cost" class="form-control" />
+                    <span asp-validation-for="Cost" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label style="display:none;" asp-for="Ordered" class="control-label"></label>
+                    <label class="control-label">Zamówiono dnia o godzinie</label>
+                    <input readonly asp-for="Ordered" class="form-control" />
+                    <span asp-validation-for="Ordered" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label style="display:none;" asp-for="Delivered" class="control-label"></label>
+                    <label class="control-label">Dostarczono dnia o godzinie</label>
+                    <input asp-for="Delivered" class="form-control" />
+                    <span asp-validation-for="Delivered" class="text-danger"></span>
                 </div>
                 <div class="form-group form-check">
                     <label class="form-check-label">
-                        <input type="checkbox" class="form-check-input" asp-for="IsPaid" onclick="return false;" /> Zapłacono
+                        <input style="display:none;" class="form-check-input" asp-for="IsDelivered" onclick="return false;" />
+                        <input class="form-check-input" asp-for="IsDelivered" /> Dostarczono
                     </label>
                 </div>
-                @if (Model.RefundId > 0)
+                <div style="display:none;" class="form-group">
+                    <label asp-for="CouponUsedId" class="control-label"></label>
+                    <input asp-for="CouponUsedId" class="form-control" /> <!-- select list or js check if it is correct refcode-->
+                    <span asp-validation-for="CouponUsedId" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    <label style="display:none;" asp-for="CustomerId" class="control-label"></label>
+                    <label class="control-label">Klient:</label>
+                    <input value="@ViewBag.CustomerInformation" class="form-control" readonly />
+                    <input type="hidden" asp-for="CustomerId" class="form-control" />
+                    <span asp-validation-for="CustomerId" class="text-danger"></span>
+                </div>
+                @if (Model.PaymentId > 0)
                 {
-                    <p>Naciśnij przycisk, w celu zmiany zwrotu</p>
-
-                    <button type="button" class="btn btn-info" onclick="ToggleRefund()">Wprowadź/Anuluj</button>
-                    <div id="RefundEnter" style="top:50px;">
-                        <div class="form-group">
-                            <label asp-for="RefundId" class="control-label">Powód zwrotu</label>
-                            <input type="hidden" readonly asp-for="RefundId" class="form-control" />
-                            <input type="text" id="ReasonRefundText" asp-for="ReasonRefund" class="form-control" />
-                            <span asp-validation-for="ReasonRefund" class="text-danger"></span>
-                        </div>
-                        <div class="form-group form-check">
-                            <label class="form-check-label">
-                                <input class="form-check-input" id="AcceptedRefundChoice" asp-for="AcceptedRefund" /> Akceptacja zwrotu
-                            </label>
-                        </div>
-                        <div class="form-group form-check">
-                            <label class="form-check-label">
-                                <input class="form-check-input" id="OnWarrantyChoice" asp-for="OnWarranty" /> Na gwarancji
-                            </label>
-                        </div>
+                    <div class="form-group">
+                        <label style="display:none;" asp-for="PaymentId" class="control-label"></label>
+                        <label class="control-label">Nr płatności</label>
+                        <input readonly value="@ViewBag.PaymentNumber" class="form-control" />
+                        <input type="hidden" asp-for="PaymentId" class="form-control" />
+                        <span asp-validation-for="PaymentId" class="text-danger"></span>
                     </div>
-                }
-                else
-                {
-                    <p>Naciśnij przycisk, w celu wprowadzenia zwrotu</p>
-
-                    <button type="button" class="btn btn-info" onclick="ToggleRefund()">Wprowadź/Anuluj</button>
-                    <div id="RefundEnter" style="display:none;top:50px;">
-                        <div class="form-group">
-                            <label asp-for="RefundId" class="control-label">Powód zwrotu</label>
-                            <input type="hidden" readonly asp-for="RefundId" class="form-control" />
-                            <input type="text" id="ReasonRefundText" asp-for="ReasonRefund" class="form-control" />
-                            <span asp-validation-for="RefundId" class="text-danger"></span>
-                        </div>
-                        <div class="form-group form-check">
-                            <label class="form-check-label">
-                                <input class="form-check-input" id="AcceptedRefundChoice" asp-for="AcceptedRefund" /> Akceptacja zwrotu
-                            </label>
-                        </div>
-                        <div class="form-group form-check">
-                            <label class="form-check-label">
-                                <input class="form-check-input" id="OnWarrantyChoice" asp-for="OnWarranty" /> Na gwarancji
-                            </label>
-                        </div>
+                    <div class="form-group form-check">
+                        <label class="form-check-label">
+                            <input type="checkbox" class="form-check-input" asp-for="IsPaid" onclick="return false;" /> Zapłacono
+                        </label>
                     </div>
-                }
-            }
-            <div class="mt-2 mb-2">
-                <label>Kod promocyjny</label>
-                <input id="RefCode" type="text" asp-for="RefCode" value="@Model.RefCode" class="form-control" />
-                <span asp-validation-for="RefCode" class="text-danger"></span>
-            </div>
-            <div class="mb-2 mt-2">
-                <p>Przedmioty:</p>
-                <table id="itemWithJS">
-                    @for (int i = 0; i < Model.OrderItems.Count; i++)
+                    @if (Model.RefundId > 0)
                     {
-                        <tr id="@i">
-                            <td>
-                                <input name="Item" value="@Model.OrderItems[i].ItemName" class="form-control valid" readonly style="width: 250px;position:static; " />
-                                <input id="itemId" type="hidden" name="OrderItems[@i].ItemId" value="@Model.OrderItems[i].ItemId" class="col-sm-2 col-form-label" />
-                                <input id="orderId" type="hidden" name="OrderItems[@i].OrderId" class="form-control" value="@Model.Id" />
-                                <input id="orderItemId" type="hidden" name="OrderItems[@i].Id" class="form-control" value="@Model.OrderItems[i].Id" />
-                            </td>
-                            <td>
-                                <a><i id="OrderItems[@i].ItemOrderQuantity" class="fas fa-plus-circle ml-2 fa_custom add-quantity"></i></a>
-                                <input id="ItemQuantity[@i]" name="OrderItems[@i].ItemOrderQuantity" value="@Model.OrderItems[i].ItemOrderQuantity" readonly style="width: 45px; display: inline !important; margin-left: 4px; margin-right: 4px;" class="form-control" />
-                                <a><i class="fa fa-minus-circle fa_custom remove-quantity" style="margin-right: 4px" id="OrderItems[@i].ItemOrderQuantity"></i></a>
-                                <button id="@i" type="button" class="btn btn-danger delete">Usuń</button>
-                            </td>
-                        </tr>
+                        <p>Naciśnij przycisk, w celu zmiany zwrotu</p>
+
+                        <button type="button" class="btn btn-info" onclick="ToggleRefund()">Wprowadź/Anuluj</button>
+                        <div id="RefundEnter" style="top:50px;">
+                            <div class="form-group">
+                                <label asp-for="RefundId" class="control-label">Powód zwrotu</label>
+                                <input type="hidden" readonly asp-for="RefundId" class="form-control" />
+                                <input type="text" id="ReasonRefundText" asp-for="ReasonRefund" class="form-control" />
+                                <span asp-validation-for="ReasonRefund" class="text-danger"></span>
+                            </div>
+                            <div class="form-group form-check">
+                                <label class="form-check-label">
+                                    <input class="form-check-input" id="AcceptedRefundChoice" asp-for="AcceptedRefund" /> Akceptacja zwrotu
+                                </label>
+                            </div>
+                            <div class="form-group form-check">
+                                <label class="form-check-label">
+                                    <input class="form-check-input" id="OnWarrantyChoice" asp-for="OnWarranty" /> Na gwarancji
+                                </label>
+                            </div>
+                        </div>
                     }
+                    else
+                    {
+                        <p>Naciśnij przycisk, w celu wprowadzenia zwrotu</p>
+
+                        <button type="button" class="btn btn-info" onclick="ToggleRefund()">Wprowadź/Anuluj</button>
+                        <div id="RefundEnter" style="display:none;top:50px;">
+                            <div class="form-group">
+                                <label asp-for="RefundId" class="control-label">Powód zwrotu</label>
+                                <input type="hidden" readonly asp-for="RefundId" class="form-control" />
+                                <input type="text" id="ReasonRefundText" asp-for="ReasonRefund" class="form-control" />
+                                <span asp-validation-for="RefundId" class="text-danger"></span>
+                            </div>
+                            <div class="form-group form-check">
+                                <label class="form-check-label">
+                                    <input class="form-check-input" id="AcceptedRefundChoice" asp-for="AcceptedRefund" /> Akceptacja zwrotu
+                                </label>
+                            </div>
+                            <div class="form-group form-check">
+                                <label class="form-check-label">
+                                    <input class="form-check-input" id="OnWarrantyChoice" asp-for="OnWarranty" /> Na gwarancji
+                                </label>
+                            </div>
+                        </div>
+                    }
+                }
+                <div class="mt-2 mb-2">
+                    <label>Kod promocyjny</label>
+                    <input id="RefCode" type="text" asp-for="RefCode" value="@Model.RefCode" class="form-control" />
+                    <span asp-validation-for="RefCode" class="text-danger"></span>
+                </div>
+                <div class="mb-2 mt-2">
+                    <p>Przedmioty:</p>
+                    <table id="itemWithJS">
+                        @for (int i = 0; i < Model.OrderItems.Count; i++)
+                        {
+                            <tr id="@i">
+                                <td>
+                                    <input name="Item" value="@Model.OrderItems[i].ItemName" class="form-control valid" readonly style="width: 250px;position:static; " />
+                                    <input id="itemId" type="hidden" name="OrderItems[@i].ItemId" value="@Model.OrderItems[i].ItemId" class="col-sm-2 col-form-label" />
+                                    <input id="orderId" type="hidden" name="OrderItems[@i].OrderId" class="form-control" value="@Model.Id" />
+                                    <input id="orderItemId" type="hidden" name="OrderItems[@i].Id" class="form-control" value="@Model.OrderItems[i].Id" />
+                                </td>
+                                <td>
+                                    <a><i id="OrderItems[@i].ItemOrderQuantity" class="fas fa-plus-circle ml-2 fa_custom add-quantity"></i></a>
+                                    <input id="ItemQuantity[@i]" name="OrderItems[@i].ItemOrderQuantity" value="@Model.OrderItems[i].ItemOrderQuantity" readonly style="width: 45px; display: inline !important; margin-left: 4px; margin-right: 4px;" class="form-control" />
+                                    <a><i class="fa fa-minus-circle fa_custom remove-quantity" style="margin-right: 4px" id="OrderItems[@i].ItemOrderQuantity"></i></a>
+                                    <button id="@i" type="button" class="btn btn-danger delete">Usuń</button>
+                                </td>
+                            </tr>
+                        }
+                    </table>
+                </div>
+                <div>
+                    <select id="Items" name="Items" asp-items="@(new SelectList(Model.Items,"Id", "Name"))" class="custom-select" data-val="true"></select>
+                    <button type="button" id="add" class="btn btn-info">Wybierz przedmiot</button>
+                    <select id="ItemsWithCosts" style="display:none;" name="ItemsCost" asp-items="@(new SelectList(Model.Items, "Id", "Cost"))" class="custom-select"></select>
+                </div>
+                <table id="RefreshCost">
+                    <tr>
+                        @if (Model.CustomerId > 0)
+                        {
+                            <td>
+                                Cena: <input id="CalcCost" name="CostToConvert" value="@Model.Cost" readonly style="width: 250px;position:static; " class="form-control" />
+                            </td>
+                        }
+                    </tr>
                 </table>
-            </div>
-            <div>
-                <select id="Items" name="Items" asp-items="@(new SelectList(Model.Items,"Id", "Name"))" class="custom-select" data-val="true"></select>
-                <button type="button" id="add" class="btn btn-info">Wybierz przedmiot</button>
-                <select id="ItemsWithCosts" style="display:none;" name="ItemsCost" asp-items="@(new SelectList(Model.Items, "Id", "Cost"))" class="custom-select"></select>
-            </div>
-            <table id="RefreshCost">
-                <tr>
-                    @if (Model.CustomerId > 0)
-                    {
-                        <td>
-                            Cena: <input id="CalcCost" name="CostToConvert" value="@Model.Cost" readonly style="width: 250px;position:static; " />
-                        </td>
-                    }
-                </tr>
-            </table>
-            <div class="form-group">
-                <input type="submit" value="Zatwierdź" class="btn btn-primary" />
-            </div>
-        </form>
+                <div class="form-group">
+                    <input type="submit" value="Zatwierdź" class="btn btn-primary" />
+                </div>
+            </form>
+        </div>
     </div>
-</div>
-<div class="form-group">
-        <a asp-controller="Item" asp-action="Index">Wróć do listy przedmiotów</a>
-    @if (!Model.IsPaid)
-    {
-        <a asp-controller="Payment" asp-action="AddPayment" asp-route-id="@Model.Id">Przejdź do płatności</a>
-    }
+    <div class="form-group">
+            <a asp-controller="Item" asp-action="Index">Wróć do listy przedmiotów</a>
+        @if (!Model.IsPaid)
+        {
+            @(" | ")<a asp-controller="Payment" asp-action="AddPayment" asp-route-id="@Model.Id">Przejdź do płatności</a>
+        }
+    </div>
 </div>
 
 @section Scripts {

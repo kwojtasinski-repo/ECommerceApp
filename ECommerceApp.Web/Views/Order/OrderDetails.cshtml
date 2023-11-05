@@ -4,7 +4,7 @@
     ViewData["Title"] = "OrderDetails";
 }
 
-<h1>Order Details</h1>
+<h1>Szczegóły zamówienia</h1>
 
 <div>
     <table class="table">
@@ -14,22 +14,19 @@
                     @Html.DisplayNameFor(model => model.OrderId)
                 </th>
                 <th>
-                    @Html.DisplayNameFor(model => model.OrderNumber)
+                    Numer zamówienia
                 </th>
                 <th>
-                    @Html.DisplayNameFor(model => model.ItemOrder.First().Item.ItemId)
+                    Przedmiot
                 </th>
                 <th>
-                    @Html.DisplayNameFor(model => model.ItemOrder.First().Item.ItemName)
+                    Koszt przedmiotu
                 </th>
                 <th>
-                    @Html.DisplayNameFor(model => model.ItemOrder.First().Item.ItemCost)
+                    Ilość przedmiotów
                 </th>
                 <th>
-                    @Html.DisplayNameFor(model => model.ItemOrder.First().ItemOrderQuantity)
-                </th>
-                <th>
-                    @Html.DisplayNameFor(model => model.ItemOrder.First().Item.ItemTypeName)
+                    Nazwa typu przedmiotu
                 </th>
             </tr>
         </thead>
@@ -44,10 +41,7 @@
                     @Html.DisplayFor(model => model.OrderNumber)
                 </td>
                 <td>
-                    @Html.DisplayFor(modelItem => item.Item.ItemId)
-                </td>
-                <td>
-                    @Html.DisplayFor(modelItem => item.Item.ItemName)
+                    @Html.ActionLink("Kliknij aby zobaczyć", "ViewItem", "Item", new { id = item.Item.ItemId }, new { target = "_blank" })
                 </td>
                 <td>
                     @Html.DisplayFor(modelItem => item.Item.ItemCost)
