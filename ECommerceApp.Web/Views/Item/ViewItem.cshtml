@@ -138,8 +138,11 @@
     {
         @Html.ActionLink("Edytuj", "EditItem", new { id = Model.Id }) @(' ')@('|')@(' ')
     }
-    <a asp-action="Index">Wróć do listy przedmiotów</a> |
-    @Html.ActionLink("Lista zamówień", "ShowOrderItemsByItemId", "OrderItem", new { itemId = Model.Id })
+    <a asp-action="Index">Wróć do listy przedmiotów</a> 
+    @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service))
+    {
+        @(" | ") @Html.ActionLink("Lista zamówień", "ShowOrderItemsByItemId", "OrderItem", new { itemId = Model.Id })
+    }
     | <a class="anchor-link" onclick="addToCart()">Dodaj do koszyka</a>
 </div>
 
