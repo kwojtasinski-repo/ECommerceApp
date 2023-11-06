@@ -103,20 +103,17 @@
                         <td>
                             @if (order.PaymentId != null)
                             {
-                                @Html.ActionLink("Szczególy", "ViewOrderDetails", new { id = order.Id })
+                                @Html.ActionLink("Szczegóły", "ViewOrderDetails", new { id = order.Id })
                             }
                             else
                             {
-                                if (!order.PaymentId.HasValue || order.PaymentId == 0)
-                                {
-                                    @Html.ActionLink("Realizuj zamówienie", "AddOrderSummary", "Order", new { id = order.Id }) @(" | ")
-                                }
-                                @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service))
-                                {
-                                    @Html.ActionLink("Edytuj", "EditOrder", new { id = order.Id }) @(" | ")
-                                    @Html.ActionLink("Usuń", "DeleteOrder", new { id = order.Id })
-                                }
-                            }                        
+                                @Html.ActionLink("Realizuj zamówienie", "AddOrderSummary", "Order", new { id = order.Id }) 
+                            }
+                            @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service))
+                            {
+                                @(" | ") @Html.ActionLink("Edytuj", "EditOrder", new { id = order.Id }) @(" | ")
+                                @Html.ActionLink("Usuń", "DeleteOrder", new { id = order.Id })
+                            }
                         </td>
                     </tr>
                 }

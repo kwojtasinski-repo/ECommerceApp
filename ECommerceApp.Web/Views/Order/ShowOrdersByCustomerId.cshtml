@@ -1,4 +1,5 @@
-﻿@model ECommerceApp.Application.ViewModels.Order.ListForOrderVm
+﻿@using ECommerceApp.Infrastructure.Permissions;
+@model ECommerceApp.Application.ViewModels.Order.ListForOrderVm
 
 @{
     ViewData["Title"] = "ShowOrdersByCustomerId";
@@ -89,9 +90,15 @@
                         @Html.DisplayFor(model => order.RefundId)
                     </td>
                     <td>
-                        @Html.ActionLink("Edytuj", "EditOrder", new { id = order.Id }) |
-                        @Html.ActionLink("Szczegóły", "ViewOrderDetails", new { id = order.Id }) |
-                        @Html.ActionLink("Usuń", "DeleteOrder", new { id = order.Id })
+                        @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service))
+                        {
+                            @Html.ActionLink("Edytuj", "EditOrder", new { id = order.Id }) @(" | ")
+                        }
+                        @Html.ActionLink("Szczegóły", "ViewOrderDetails", new { id = order.Id })
+                        @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service))
+                        {
+                            @(" | ") @Html.ActionLink("Usuń", "DeleteOrder", new { id = order.Id })
+                        }
                     </td>
                 </tr>
             }
