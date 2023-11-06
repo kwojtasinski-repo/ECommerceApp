@@ -1,17 +1,19 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Application.ViewModels.Customer;
+using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.Web.Controllers
 {
-    public class CustomerController : Controller
+    public class CustomerController : BaseController
     {
         private readonly ICustomerService _customerService;
 
@@ -109,25 +111,41 @@ namespace ECommerceApp.Web.Controllers
             return PartialView(customer);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize]
         [HttpGet]
         public IActionResult EditCustomer(int id)
         {
+            // TODO return null from backend
             var customer = _customerService.GetCustomerForEdit(id);
+            var userId = GetUserId();
+            var role = GetUserRole();
+            if (userId.Value != customer.UserId || !MaintenancePermissions.Any(p => p == role.Value))
+            {
+                return Forbid();
+            }
             return View(customer);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize]
         [HttpPost]
         public IActionResult EditCustomer(NewCustomerVm model)
         {
+            // TODO check if user has rights on backend to this customer
+            var userId = GetUserId();
+            var role = GetUserRole();
+            if (userId.Value != model.UserId || !MaintenancePermissions.Any(p => p == role.Value))
+            {
+                return Forbid();
+            }
             _customerService.UpdateCustomer(model);
             return RedirectToAction("Index");
         }
 
+
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         public IActionResult ViewCustomer(int id)
         {
+            // TODO check if user has rights on backend to this customer
             var customer = _customerService.GetCustomerDetails(id);
             return View(customer);
         }
@@ -135,6 +153,7 @@ namespace ECommerceApp.Web.Controllers
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         public IActionResult Delete(int id)
         {
+            // TODO check if user has rights on backend to this customer
             _customerService.DeleteCustomer(id);
             return RedirectToAction("Index");
         }

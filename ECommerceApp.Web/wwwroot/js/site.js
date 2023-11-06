@@ -409,7 +409,6 @@ const forms = (function () {
             if (siblingSpan[0]) {
                 siblingSpan.text(text);
             } else {
-                console.log('controlId', controlId);
                 $('#' + controlId)[0].parentElement.appendChild(forms.createErrorSpan(text));
             }
         },
