@@ -6,7 +6,6 @@ using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Application.ViewModels.Customer;
-using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -119,7 +118,7 @@ namespace ECommerceApp.Web.Controllers
             var customer = _customerService.GetCustomerForEdit(id);
             var userId = GetUserId();
             var role = GetUserRole();
-            if (userId.Value != customer.UserId || !MaintenancePermissions.Any(p => p == role.Value))
+            if (userId.Value != customer.UserId && role.Value == UserPermissions.Roles.User)
             {
                 return Forbid();
             }
@@ -133,7 +132,7 @@ namespace ECommerceApp.Web.Controllers
             // TODO check if user has rights on backend to this customer
             var userId = GetUserId();
             var role = GetUserRole();
-            if (userId.Value != model.UserId || !MaintenancePermissions.Any(p => p == role.Value))
+            if (userId.Value != model.UserId && role.Value == UserPermissions.Roles.User)
             {
                 return Forbid();
             }
