@@ -153,7 +153,7 @@ const modalService = (function () {
         const titleText = document.createElement("h5");
         titleText.className = "modal-title";
         titleText.textContent = title ? title : "";
-        const closeButton = buttonTemplate.createButton(undefined, "close", closeModal, "button", [{ key: "data-dismiss", value: "modal" }, { key: "aria-label", value: "Close" }]);
+        const closeButton = buttonTemplate.createButton(undefined, "close", closeButtonHandler, "button", [{ key: "data-dismiss", value: "modal" }, { key: "aria-label", value: "Close" }]);
         const spanCloseButton = document.createElement("span");
         spanCloseButton.setAttribute("aria-hidden", "true");
         spanCloseButton.innerHTML = "&times;";
@@ -177,7 +177,7 @@ const modalService = (function () {
             return modalFooter;
         }
 
-        const closeButton = buttonTemplate.createButton("Close", "btn btn-secondary", closeModal, "button", [{ key: "data-dismiss", value: "modal" }]);
+        const closeButton = buttonTemplate.createButton("Close", "btn btn-secondary", closeButtonHandler, "button", [{ key: "data-dismiss", value: "modal" }]);
         modalFooter.appendChild(closeButton);
 
         return modalFooter;
@@ -194,6 +194,23 @@ const modalService = (function () {
         setTimeout(() => modal.remove(), 150);
     }
 
+    const actions = [];
+    const confirmAction = 'confirm';
+    const denyAction = 'deny';
+
+    function invokeActionAfterButtonClick(actionName) {
+        const actionToInvoke = actions.find(a => a.actionName == actionName);
+        actionToInvoke?.func();
+        if (actions.length > 0) {
+            actions.splice(0, actions.length + 1);
+        }
+    }
+
+    function closeButtonHandler() {
+        closeModal();
+        invokeActionAfterButtonClick(denyAction);
+    }
+
     // public variables functions
     return {
         showInformationModal: function (headerText, bodyText) {
@@ -207,22 +224,15 @@ const modalService = (function () {
         showConfirmationModal: function (headerText, bodyText) {
             const headerTemplate = createModalHeader(headerText);
             const bodyTemplate = createModalBody(bodyText);
-            const confirmButton = buttonTemplate.createButton("Yes", "btn btn-danger", () => { this.close(); }, "type");
+            const confirmButton = buttonTemplate.createButton("Yes", "btn btn-danger", () => { closeModal(); invokeActionAfterButtonClick(confirmAction); }, "type");
             const cancelButton = buttonTemplate.createButton("No", "btn btn-secondary", this.close, "type");
             const footerTemplate = createModalFooter([confirmButton, cancelButton]);
             const modalTemplate = createModalTemplate(headerTemplate, bodyTemplate, footerTemplate);
             document.body.appendChild(modalTemplate);
             $('.' + modalIdentifyClass).modal('show');
             return new Promise((resolve, _) => {
-                confirmButton.addEventListener('click', function () {
-                    resolve(true);
-                }, { once: true });
-                cancelButton.addEventListener('click', function () {
-                    resolve(false);
-                }, { once: true });
-                document.querySelector(querySelectorCloseBtn)?.addEventListener('click', function () {
-                    resolve(false);
-                }, { once: true });
+                actions.push({ actionName: confirmAction, func: () => resolve(true) });
+                actions.push({ actionName: denyAction, func: () => resolve(false) });
             });
         },
         showCustomModal: function (header, body, footer) {
@@ -231,7 +241,7 @@ const modalService = (function () {
             $('.' + modalIdentifyClass).modal('show');
         },
         close: function () {
-            closeModal();
+            closeButtonHandler();
         }
     }
 })();
