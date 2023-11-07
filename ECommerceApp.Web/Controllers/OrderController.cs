@@ -14,7 +14,7 @@ using ECommerceApp.Infrastructure.Permissions;
 
 namespace ECommerceApp.Web.Controllers
 {
-    public class OrderController : Controller
+    public class OrderController : BaseController
     {
         private readonly IOrderService _orderService;
         private readonly IPaymentService _paymentService;
@@ -69,20 +69,13 @@ namespace ECommerceApp.Web.Controllers
             Random random = new Random();
             var orderDate = System.DateTime.Now;
             ViewBag.Date = orderDate;
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (userId != null)
-            {
-                //var customers = _orderService.GetAllCustomers().ToList();
-                var customers = _customerService.GetCustomersInformationByUserId(userId).ToList();
-                ViewBag.Customers = customers;
-                var order = new OrderVm() { Number = random.Next(100, 10000), Ordered = orderDate };
-                order.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-                return View(order);
-            }
-            else
-            {
-                return Redirect("~/Identity/Account/Login");
-            }
+            var userId = GetUserId();
+            //var customers = _orderService.GetAllCustomers().ToList();
+            var customers = _customerService.GetCustomersInformationByUserId(userId.Value).ToList();
+            ViewBag.Customers = customers;
+            var order = new OrderVm() { Number = random.Next(100, 10000), Ordered = orderDate };
+            order.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            return View(order);
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
@@ -97,10 +90,6 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult AddOrderItemToCart()
         {
-            if (!User.Identity.IsAuthenticated)
-            {
-                return Redirect("~/Identity/Account/Register");
-            }
             var orderItems = new NewOrderItemVm();
             var items = _itemService.GetItemsAddToCart();
             orderItems.Items = items;
@@ -122,10 +111,6 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult OrderRealization()
         {
-            if (!User.Identity.IsAuthenticated)
-            {
-                return Redirect("~/Identity/Account/Register");
-            }
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var orderItems = _orderItemService.GetOrderItemsForRealization(oi => oi.UserId == userId && oi.OrderId == null).ToList();
             Random random = new Random();
@@ -339,8 +324,8 @@ namespace ECommerceApp.Web.Controllers
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         public IActionResult ShowMyOrders()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var orders = _orderService.GetAllOrdersByUserId(userId, 20, 1);
+            var userId = GetUserId();
+            var orders = _orderService.GetAllOrdersByUserId(userId.Value, 20, 1);
             return View(orders);
         }
 
@@ -348,8 +333,8 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult ShowMyOrders(int pageSize, int pageNo)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var orders = _orderService.GetAllOrdersByUserId(userId, pageSize, pageNo);
+            var userId = GetUserId();
+            var orders = _orderService.GetAllOrdersByUserId(userId.Value, pageSize, pageNo);
             return View(orders);
         }
 

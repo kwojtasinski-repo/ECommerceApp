@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Security.Claims;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Address;
@@ -74,17 +73,11 @@ namespace ECommerceApp.Web.Controllers
         }
 
         [HttpGet]
+        [Authorize]
         public IActionResult AddCustomer()
         {
             var customer = new NewCustomerVm() { Addresses = new List<AddressVm> { new AddressVm()}, ContactDetails = new List<NewContactDetailVm> { new NewContactDetailVm() } };
-            if (User.Identity.IsAuthenticated)
-            {
-                customer.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            }
-            else
-            {
-                return Redirect("~/Identity/Account/Register");
-            }
+            customer.UserId = GetUserId().Value;
             return View(customer);
         }
 
@@ -96,17 +89,11 @@ namespace ECommerceApp.Web.Controllers
             return Redirect("~/");
         }
 
+        [Authorize]
         public IActionResult AddCustomerPartialView()
         {
             var customer = new NewCustomerVm();
-            if (User.Identity.IsAuthenticated)
-            {
-                customer.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            }
-            else
-            {
-                return Redirect("~/Identity/Account/Register");
-            }
+            customer.UserId = GetUserId().Value;
             return PartialView(customer);
         }
 
