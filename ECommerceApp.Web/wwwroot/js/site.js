@@ -120,6 +120,7 @@ const dialogTeplate = (function () {
 
 const modalService = (function () {
     const modalIdentifyClass = "modalClass";
+    const querySelectorCloseBtn = 'button.close[type="button"][data-dismiss="modal"][aria-label="Close"]';
 
     function createModalTemplate(headerTemplate, bodyTemplate, footerTemplate) {
         const modalDiv = document.createElement("div");
@@ -203,15 +204,26 @@ const modalService = (function () {
             document.body.appendChild(modalTemplate);
             $('.' + modalIdentifyClass).modal('show');
         },
-        showConfirmationModal: function (headerText, bodyText, result) {
+        showConfirmationModal: function (headerText, bodyText) {
             const headerTemplate = createModalHeader(headerText);
             const bodyTemplate = createModalBody(bodyText);
-            const confirmButton = buttonTemplate.createButton("Yes", "btn btn-danger", () => { this.close();result(); }, "type");
+            const confirmButton = buttonTemplate.createButton("Yes", "btn btn-danger", () => { this.close(); }, "type");
             const cancelButton = buttonTemplate.createButton("No", "btn btn-secondary", this.close, "type");
             const footerTemplate = createModalFooter([confirmButton, cancelButton]);
             const modalTemplate = createModalTemplate(headerTemplate, bodyTemplate, footerTemplate);
             document.body.appendChild(modalTemplate);
             $('.' + modalIdentifyClass).modal('show');
+            return new Promise((resolve, _) => {
+                confirmButton.addEventListener('click', function () {
+                    resolve(true);
+                }, { once: true });
+                cancelButton.addEventListener('click', function () {
+                    resolve(false);
+                }, { once: true });
+                document.querySelector(querySelectorCloseBtn)?.addEventListener('click', function () {
+                    resolve(false);
+                }, { once: true });
+            });
         },
         showCustomModal: function (header, body, footer) {
             const modalTemplate = createModalTemplate(header, body, footer);

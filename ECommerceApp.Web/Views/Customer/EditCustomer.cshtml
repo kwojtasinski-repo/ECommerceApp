@@ -242,6 +242,11 @@
             });
 
             async function deleteAddress(id) {
+                const result = await modalService.showConfirmationModal('Usuń dane address', 'Czy na pewno chcesz usunąć address?');
+                if (!result) {
+                    return;
+                }
+
                 try {
                     await ajaxRequest.send('/Address/DeleteAddress/' + id, 'DELETE', undefined);
                     window.location.reload();
@@ -251,6 +256,11 @@
             }
 
             async function deleteContactDetail(id) {
+                const result  = await modalService.showConfirmationModal('Usuń kontakt', 'Czy na pewno chcesz usunąć kontakt?');
+                if (!result) {
+                    return;
+                }
+
                 try {
                     await ajaxRequest.send('/ContactDetail/DeleteContactDetail/' + id, 'DELETE', undefined);
                     window.location.reload();
