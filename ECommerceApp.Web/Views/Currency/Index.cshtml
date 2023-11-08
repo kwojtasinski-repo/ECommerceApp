@@ -41,7 +41,7 @@
                     <td>
                         @Html.ActionLink("Edytuj", "EditCurrency", new {  id = currency.Id  }) |
                         @Html.ActionLink("Szczegóły", "ViewCurrency", new { id = currency.Id }) |
-                        @Html.ActionLink("Usuń", "DeleteCurrency", new { id = currency.Id })
+                        <a class="anchor-link" onclick="deleteCurrency(@currency.Id, '@currency.Code')">Usuń</a>
                     </td>
                 </tr>
             }
@@ -69,3 +69,21 @@
         <input type="hidden" name="pageSize" id="pageSize" value="10" />
     </div>
 </form>
+
+@section Scripts {
+    <script>
+        async function deleteCurrency(id, name) {
+            const result = await modalService.showConfirmationModal('Usuń walutę', 'Czy na pewno chcesz usunąć walutę \'' + name + '\'?');
+            if (!result) {
+                return;
+            }
+
+            try {
+                await ajaxRequest.send('/Currency/DeleteCurrency/' + id, 'DELETE', undefined);
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    </script>
+}

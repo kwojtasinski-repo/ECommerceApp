@@ -318,7 +318,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult DeleteOrder(int id)
         {
             _orderService.DeleteOrder(id);
-            return RedirectToAction("Index");
+            return Json("deleted");
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]

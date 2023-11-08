@@ -127,7 +127,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult DeleteItem(int id)
         {
             _itemService.DeleteItem(id);
-            return RedirectToAction("Index");
+            return Json("deleted");
         }
     }
 }

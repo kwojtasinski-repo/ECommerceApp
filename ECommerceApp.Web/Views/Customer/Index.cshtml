@@ -69,7 +69,7 @@
                     <td>
                         @Html.ActionLink("Edytuj", "EditCustomer", new {  id=customer.Id  }) |
                         @Html.ActionLink("Szczegóły", "ViewCustomer", new { id = customer.Id }) |
-                        @Html.ActionLink("Usuń", "Delete", new { id = customer.Id })
+                        <a class="anchor-link" onclick="deleteCustomer(@customer.Id, '@customer.FirstName @customer.LastName')">Usuń</a>
                     </td>
                 </tr>
             }
@@ -97,3 +97,22 @@
         <input type="hidden" name="pageSize" id="pageSize" value="10" />
     </div>
 </form>
+
+
+@section Scripts {
+    <script>
+        async function deleteCustomer(id, name) {
+            const result = await modalService.showConfirmationModal('Usuń dane kontaktowe', 'Czy na pewno chcesz usunąć dane kontktowe dla \'' + name + '\'?');
+            if (!result) {
+                return;
+            }
+
+            try {
+                await ajaxRequest.send('/Customer/Delete/' + id, 'DELETE', undefined);
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    </script>
+}

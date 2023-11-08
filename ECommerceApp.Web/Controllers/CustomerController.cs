@@ -141,7 +141,7 @@ namespace ECommerceApp.Web.Controllers
         {
             // TODO check if user has rights on backend to this customer
             _customerService.DeleteCustomer(id);
-            return RedirectToAction("Index");
+            return Json("deleted");
         }
     }
 }

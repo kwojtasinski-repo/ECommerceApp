@@ -112,7 +112,7 @@
                             @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service))
                             {
                                 @(" | ") @Html.ActionLink("Edytuj", "EditOrder", new { id = order.Id }) @(" | ")
-                                @Html.ActionLink("Usuń", "DeleteOrder", new { id = order.Id })
+                                <a class="anchor-link" onclick="deleteOrder(@order.Id, '@order.Number')">Usuń</a>
                             }
                         </td>
                     </tr>
@@ -142,3 +142,22 @@
         </div>
     }
 </form>
+
+
+@section Scripts {
+    <script>
+        async function deleteOrder(id, name) {
+            const result = await modalService.showConfirmationModal('Usuń zamówienie', 'Czy na pewno chcesz usunąć zamówienie z numerem \'' + name + '\'?');
+            if (!result) {
+                return;
+            }
+
+            try {
+                await ajaxRequest.send('/Order/DeleteOrder/' + id, 'DELETE', undefined);
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    </script>
+}

@@ -101,7 +101,7 @@
                         }
                         @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager))
                         {
-                            @Html.ActionLink("Usuń", "DeleteItem", new { id = item.Id })
+                            <a class="anchor-link" onclick="deleteItem(@item.Id, '@item.Name')">Usuń</a>
                         }
                     </td>
                 </tr>
@@ -146,6 +146,20 @@
                 if (error.status === statusCodes.Unauthorized) {
                     window.location.href = "Identity/Account/Login";
                 }
+            }
+        }
+
+        async function deleteItem(id, name) {
+            const result = await modalService.showConfirmationModal('Usuń przedmiot', 'Czy na pewno chcesz usunąć przedmiot \'' + name + '\'?');
+            if (!result) {
+                return;
+            }
+
+            try {
+                await ajaxRequest.send('/Item/DeleteItem/' + id, 'DELETE', undefined);
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
             }
         }
     </script>

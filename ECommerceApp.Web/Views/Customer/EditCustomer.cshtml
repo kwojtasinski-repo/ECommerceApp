@@ -242,7 +242,7 @@
             });
 
             async function deleteAddress(id) {
-                const result = await modalService.showConfirmationModal('Usuń dane address', 'Czy na pewno chcesz usunąć address?');
+                const result = await modalService.showConfirmationModal('Usuń address', 'Czy na pewno chcesz usunąć address?');
                 if (!result) {
                     return;
                 }

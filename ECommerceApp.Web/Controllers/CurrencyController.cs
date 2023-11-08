@@ -81,7 +81,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult DeleteCurrency(int id)
         {
             _currencyService.Delete(id);
-            return RedirectToAction("Index");
+            return Json("deleted");
         }
     }
 }
