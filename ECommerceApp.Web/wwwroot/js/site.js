@@ -126,6 +126,8 @@ const modalService = (function () {
         modalDiv.className = "modal fade " + modalIdentifyClass;
         modalDiv.tabIndex = "-1";
         modalDiv.role = "dialog";
+        modalDiv.setAttribute('data-keyboard', 'false');
+        modalDiv.setAttribute('data-backdrop', 'static')
         modalDiv.appendChild(createDialog(headerTemplate, bodyTemplate, footerTemplate));
         return modalDiv;
     }

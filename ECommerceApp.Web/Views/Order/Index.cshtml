@@ -129,8 +129,8 @@
 
 @section Scripts {
     <script>
-        async function deleteOrder(id, name) {
-            const result = await modalService.showConfirmationModal('Usuń zamówienie', 'Czy na pewno chcesz usunąć zamówienie z numerem \'' + name + '\'?');
+        async function deleteOrder(id, orderNumber) {
+            const result = await modalService.showConfirmationModal('Usuń zamówienie', 'Czy na pewno chcesz usunąć zamówienie z numerem \'' + orderNumber + '\'?');
             if (!result) {
                 return;
             }
