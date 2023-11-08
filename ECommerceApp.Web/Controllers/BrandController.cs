@@ -89,7 +89,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult DeleteBrand(int id)
         {
             _brandService.DeleteBrand(id);
-            return RedirectToAction("Index");
+            return Json("deleted");
         }
     }
 }

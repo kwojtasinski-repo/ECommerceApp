@@ -33,28 +33,27 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var item in Model.Brands)
+            @foreach (var brand in Model.Brands)
             {
                 <tr>
                     <td>
-                        @Html.DisplayFor(modelItem => item.Id)
+                        @Html.DisplayFor(modelItem => brand.Id)
                     </td>
                     <td>
-                        @Html.DisplayFor(modelItem => item.Name)
+                        @Html.DisplayFor(modelItem => brand.Name)
                     </td>
                     <td>
                         @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service))
                         {
-                            @Html.ActionLink("Edytuj", "EditBrand", new { id = item.Id }) @(' ')@('|')@(' ')
+                            @Html.ActionLink("Edytuj", "EditBrand", new { id = brand.Id }) @(' ')@('|')@(' ')
                         }
-                        @Html.ActionLink("Szczegóły", "ViewBrand", new { id = item.Id })
+                        @Html.ActionLink("Szczegóły", "ViewBrand", new { id = brand.Id })
                         @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service))
                         {
-                            @(' ')@('|')@(' ') @Html.ActionLink("Usuń", "DeleteBrand", new { id = item.Id })
+                            @(' ')@('|')@(' ') <a class="anchor-link" onclick="deleteBrand(@brand.Id, '@brand.Name')">Usuń</a>
                         }
                     </td>
-    
-                    </tr>
+                </tr>
             }
         </tbody>
     </table>
@@ -80,3 +79,21 @@
         <input type="hidden" name="pageSize" id="pageSize" value="20" />
     </div>
 </form>
+
+@section Scripts {
+    <script>
+        async function deleteBrand(id, name) {
+            const result = await modalService.showConfirmationModal('Usuń firmę', 'Czy na pewno chcesz usunąć firmę \'' + name + '\'?');
+            if (!result) {
+                return;
+            }
+
+            try {
+                await ajaxRequest.send('/Brand/DeleteBrand/' + id, 'DELETE', undefined);
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    </script>
+}

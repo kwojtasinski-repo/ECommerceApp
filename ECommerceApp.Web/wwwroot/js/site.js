@@ -120,7 +120,6 @@ const dialogTeplate = (function () {
 
 const modalService = (function () {
     const modalIdentifyClass = "modalClass";
-    const querySelectorCloseBtn = 'button.close[type="button"][data-dismiss="modal"][aria-label="Close"]';
 
     function createModalTemplate(headerTemplate, bodyTemplate, footerTemplate) {
         const modalDiv = document.createElement("div");
@@ -202,7 +201,7 @@ const modalService = (function () {
         const actionToInvoke = actions.find(a => a.actionName == actionName);
         actionToInvoke?.func();
         if (actions.length > 0) {
-            actions.splice(0, actions.length + 1);
+            actions.splice(0, actions.length);
         }
     }
 
