@@ -9,7 +9,7 @@
 <p>
     <a asp-action="AddUser">Stwórz nowego użytkownika</a>
 </p>
-<form id="search-form" asp-action="Index" asp-controller="UserRoles" method="post">
+<form id="search-form" asp-action="Index" asp-controller="UserManagement" method="post">
     <div class="row">
         <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
         <input type="submit" value="Wyszukaj" />
@@ -40,7 +40,7 @@
                         @Html.ActionLink("Edytuj", "EditUser", new { id = user.Id }) |
                         @Html.ActionLink("Zmień hasło", "ChangeUserPassword", new { id = user.Id }) |
                         @Html.ActionLink("Dodaj/Usuń Rolę", "AddRolesToUser", new { id = user.Id }) |
-                        @Html.ActionLink("Usuń", "Delete", new { /* id=item.PrimaryKey */ })
+                        <a class="anchor-link" onclick="deleteUser('@user.Id', '@user.UserName')">Usuń</a>
                     </td>
                 </tr>
             }
@@ -68,3 +68,21 @@
         <input type="hidden" name="pageSize" id="pageSize" value="20" />
     </div>
 </form>
+
+@section Scripts {
+    <script>
+        async function deleteUser(id, name) {
+            const result = await modalService.showConfirmationModal('Usuń użytkownika', 'Czy na pewno chcesz usunąć użytkownika \'' + name + '\'?');
+            if (!result) {
+                return;
+            }
+
+            try {
+                await ajaxRequest.send('/UserManagement/DeleteUser/' + id, 'DELETE', undefined);
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    </script>
+}

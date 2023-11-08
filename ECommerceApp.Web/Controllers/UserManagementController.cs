@@ -65,7 +65,7 @@ namespace ECommerceApp.Web.Controllers
         public async Task<IActionResult> DeleteUser(string id)
         {
             await _userService.DeleteUserAsync(id);
-            return RedirectToAction("Index");
+            return Json("deleted");
         }
 
         [HttpGet]
