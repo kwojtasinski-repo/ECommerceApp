@@ -25,9 +25,6 @@
                     Id kuponu
                 </th>
                 <th>
-                    Kod kuponu
-                </th>
-                <th>
                     Id zamówienia
                 </th>
                 <th>
@@ -52,7 +49,7 @@
                     <td>
                         @Html.ActionLink("Edytuj", "EditCouponUsed", new { id = coupon.Id }) |
                         @Html.ActionLink("Szczegóły", "ViewCouponUsed", new { id = coupon.Id }) |
-                        @Html.ActionLink("Usuń", "DeleteCouponUsed", new { id = coupon.Id })
+                        <a class="anchor-link" onclick="deleteCouponUsed(@coupon.Id, @coupon.CouponId, @coupon.OrderId)">Usuń</a>
                     </td>
                 </tr>
             }
@@ -80,3 +77,21 @@
         <input type="hidden" name="pageSize" id="pageSize" value="20" />
     </div>
 </form>
+
+@section Scripts {
+    <script>
+        async function deleteCouponUsed(id, couponId, orderId) {
+            const result = await modalService.showConfirmationModal('Usuń użyty kupon', 'Czy na pewno chcesz usunąć użyty kupon z id \'' + couponId + '\' dla zamówienia \'' + orderId + '\'?');
+            if (!result) {
+                return;
+            }
+
+            try {
+                await ajaxRequest.send('/CouponUsed/DeleteCouponUsed/' + id, 'DELETE', undefined);
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    </script>
+}

@@ -40,7 +40,7 @@
                     <td>
                         @Html.ActionLink("Edytuj", "EditCouponType", new { id = coupon.Id }) |
                         @Html.ActionLink("Szczegóły", "ViewCouponType", new { id = coupon.Id }) |
-                        @Html.ActionLink("Usuń", "DeleteCouponType", new { id = coupon.Id })
+                        <a class="anchor-link" onclick="deleteCouponType(@coupon.Id, '@coupon.Type')">Usuń</a>
                     </td>
                 </tr>
             }
@@ -68,3 +68,21 @@
         <input type="hidden" name="pageSize" id="pageSize" value="20" />
     </div>
 </form>
+
+@section Scripts {
+    <script>
+        async function deleteCouponType(id, name) {
+            const result = await modalService.showConfirmationModal('Usuń typ kuponu', 'Czy na pewno chcesz usunąć typ kuponu \'' + name + '\'?');
+            if (!result) {
+                return;
+            }
+
+            try {
+                await ajaxRequest.send('/CouponType/DeleteCouponType/' + id, 'DELETE', undefined);
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    </script>
+}

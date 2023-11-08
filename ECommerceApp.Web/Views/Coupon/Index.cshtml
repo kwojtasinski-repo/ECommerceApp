@@ -65,7 +65,7 @@
                     <td>
                         @Html.ActionLink("Edytuj", "EditCoupon", new { id = coupon.Id }) |
                         @Html.ActionLink("Szczegóły", "ViewCoupon", new { id = coupon.Id }) |
-                        @Html.ActionLink("Usuń", "DeleteCoupon", new { id = coupon.Id })
+                        <a class="anchor-link" onclick="deleteCoupon(@coupon.Id, '@coupon.Code')">Usuń</a>
                     </td>
                 </tr>
             }
@@ -93,3 +93,21 @@
         <input type="hidden" name="pageSize" id="pageSize" value="20" />
     </div>
 </form>
+
+@section Scripts {
+    <script>
+        async function deleteCoupon(id, name) {
+            const result = await modalService.showConfirmationModal('Usuń kupon', 'Czy na pewno chcesz usunąć kupon \'' + name + '\'?');
+            if (!result) {
+                return;
+            }
+
+            try {
+                await ajaxRequest.send('/Coupon/DeleteCoupon/' + id, 'DELETE', undefined);
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    </script>
+}

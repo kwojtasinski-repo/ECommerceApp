@@ -98,7 +98,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult DeleteCoupon(int id)
         {
             _couponService.DeleteCoupon(id);
-            return RedirectToAction("Index");
+            return Json("deleted");
         }
     }
 }
