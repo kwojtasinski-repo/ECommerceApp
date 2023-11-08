@@ -61,7 +61,7 @@
                     <td>
                         @Html.ActionLink("Edytuj", "EditPayment", new { id = payment.Id }) |
                         @Html.ActionLink("Szczegóły", "ViewPayment", new { id = payment.Id }) |
-                        @Html.ActionLink("Usuń", "DeletePayment", new { id = payment.Id })
+                        <a class="anchor-link" onclick="deletePayment(@payment.Id, '@payment.Number')">Usuń</a>
                     </td>
                 </tr>
             }
@@ -89,3 +89,21 @@
         <input type="hidden" name="pageSize" id="pageSize" value="20" />
     </div>
 </form>
+
+@section Scripts {
+    <script>
+        async function deletePayment(id, paymentNumber) {
+            const result = await modalService.showConfirmationModal('Usuń płatność', 'Czy na pewno chcesz usunąć płatność z numerem \'' + paymentNumber + '\'?');
+            if (!result) {
+                return;
+            }
+
+            try {
+                await ajaxRequest.send('/Payment/DeletePayment/' + id, 'DELETE', undefined);
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    </script>
+}

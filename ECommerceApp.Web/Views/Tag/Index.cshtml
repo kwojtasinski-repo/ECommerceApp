@@ -40,7 +40,7 @@
                     <td>
                         @Html.ActionLink("Edytuj", "EditTag", new { id = item.Id }) |
                         @Html.ActionLink("Szczegóły", "ViewTag", new { id = item.Id }) |
-                        @Html.ActionLink("Usuń", "DeleteTag", new { id = item.Id })
+                        <a class="anchor-link" onclick="deleteTag(@item.Id, '@item.Name')">Usuń</a>
                     </td>
                 </tr>
             }
@@ -68,3 +68,21 @@
         <input type="hidden" name="pageSize" id="pageSize" value="20" />
     </div>
 </form>
+
+@section Scripts {
+    <script>
+        async function deleteTag(id, name) {
+            const result = await modalService.showConfirmationModal('Usuń tag', 'Czy na pewno chcesz usunąć tag \'' + name + '\'?');
+            if (!result) {
+                return;
+            }
+
+            try {
+                await ajaxRequest.send('/Tag/DeleteTag/' + id, 'DELETE', undefined);
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    </script>
+}

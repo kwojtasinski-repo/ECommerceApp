@@ -89,7 +89,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult DeleteType(int id)
         {
             _typeService.DeleteType(id);
-            return RedirectToAction("Index");
+            return Json("deleted");
         }
     }
 }

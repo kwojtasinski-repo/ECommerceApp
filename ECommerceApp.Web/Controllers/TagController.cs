@@ -91,7 +91,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult DeleteTag(int id)
         {
             _tagService.DeleteTag(id);
-            return RedirectToAction("Index");
+            return Json("deleted");
         }
     }
 }

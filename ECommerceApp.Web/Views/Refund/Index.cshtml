@@ -73,7 +73,7 @@
                     <td>
                         @Html.ActionLink("Edytuj", "EditRefund", new { id = refund.OrderId }) |
                         @Html.ActionLink("Szczegóły", "ViewRefundDetails", new { id = refund.Id }) |
-                        @Html.ActionLink("Usuń", "DeleteRefund", new { id = refund.Id })
+                        <a class="anchor-link" onclick="deleteRefund(@refund.Id, '@refund.OrderId')">Usuń</a>
                     </td>
                 </tr>
             }
@@ -101,3 +101,21 @@
         <input type="hidden" name="pageSize" id="pageSize" value="20" />
     </div>
 </form>
+
+@section Scripts {
+    <script>
+        async function deleteRefund(id, orderId) {
+            const result = await modalService.showConfirmationModal('Usuń reklamację', 'Czy na pewno chcesz usunąć reklamację do zamówienia z id \'' + orderId + '\'?');
+            if (!result) {
+                return;
+            }
+
+            try {
+                await ajaxRequest.send('/Refund/DeleteRefund/' + id, 'DELETE', undefined);
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    </script>
+}

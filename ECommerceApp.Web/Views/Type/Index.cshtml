@@ -44,7 +44,7 @@
                     <td>
                         @Html.ActionLink("Edytuj", "EditType", new { id = item.Id }) |
                         @Html.ActionLink("Szczegóły", "ViewType", new { id = item.Id }) |
-                        @Html.ActionLink("Usuń", "DeleteType", new { id = item.Id })
+                        <a class="anchor-link" onclick="deleteType(@item.Id, '@item.Name')">Usuń</a>
                     </td>
                 </tr>
             }
@@ -72,3 +72,21 @@
         <input type="hidden" name="pageSize" id="pageSize" value="20" />
     </div>
 </form>
+
+@section Scripts {
+    <script>
+        async function deleteType(id, name) {
+            const result = await modalService.showConfirmationModal('Usuń typ', 'Czy na pewno chcesz usunąć typ \'' + name + '\'?');
+            if (!result) {
+                return;
+            }
+
+            try {
+                await ajaxRequest.send('/Type/DeleteType/' + id, 'DELETE', undefined);
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+    </script>
+}

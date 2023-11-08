@@ -78,7 +78,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult DeleteRefund(int id)
         {
             _refundService.DeleteRefund(id);
-            return RedirectToAction("Index");
+            return Json("deleted");
         }
     }
 }
