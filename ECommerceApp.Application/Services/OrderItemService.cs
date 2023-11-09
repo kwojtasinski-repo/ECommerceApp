@@ -118,6 +118,10 @@ namespace ECommerceApp.Application.Services
 
             var orderItem = _repo.GetById(model.Id) ?? throw new BusinessException($"OrderItem with id '{model.Id}' was not found");
             orderItem.ItemOrderQuantity = model.ItemOrderQuantity;
+            if (model.OrderId.HasValue)
+            {
+                orderItem.OrderId = model.OrderId.Value;
+            }
             _repo.UpdateOrderItem(orderItem);
         }
 

@@ -33,13 +33,15 @@ namespace ECommerceApp.IntegrationTests.API
                 .ReceiveJson<Dictionary<string, string>>();
 
             jsonToken.ShouldNotBeNull();
-            jsonToken.TryGetValue("token", out var token);
+            jsonToken.TryGetValue("accessToken", out var token);
             token.ShouldNotBeNullOrWhiteSpace();
             token.Length.ShouldBeGreaterThan(1);
+            jsonToken.TryGetValue("refreshToken", out var refreshToken);
+            refreshToken.ShouldNotBeNull();
         }
 
         [Fact]
-        public async Task given_invalid_credentials_should()
+        public async Task given_invalid_credentials_should_return_bad_request()
         {
             var testUser = new UserModel { Email = "123", Password = "123" };
 
@@ -48,7 +50,7 @@ namespace ECommerceApp.IntegrationTests.API
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(testUser);
 
-            response.StatusCode.ShouldBe((int) HttpStatusCode.Unauthorized);
+            response.StatusCode.ShouldBe((int) HttpStatusCode.BadRequest);
         }
     }
 }

@@ -1,9 +1,6 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.Address;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Customer
 {
@@ -11,7 +8,7 @@ namespace ECommerceApp.Application.ViewModels.Customer
     {
         public string Street { get; set; }
         public string BuildingNumber { get; set; }
-        public int FlatNumber { get; set; }
+        public int? FlatNumber { get; set; }
         public int ZipCode { get; set; }
         public string City { get; set; }
         public string Country { get; set; }

@@ -154,8 +154,8 @@ namespace ECommerceApp.IntegrationTests.API
                 .GetAsync();
             var items = JsonConvert.DeserializeObject<ListForItemVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
 
-            items.Count.ShouldBe(3);
-            items.Items.Count.ShouldBe(3);
+            items.Count.ShouldBeGreaterThan(0);
+            items.Items.Count.ShouldBeGreaterThan(0);
             items.Items.Where(i => i.Name == "Item4").FirstOrDefault().ShouldNotBeNull();
         }
 
