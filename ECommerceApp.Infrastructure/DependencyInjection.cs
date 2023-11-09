@@ -1,12 +1,9 @@
 ﻿using ECommerceApp.Domain.Interface;
+using ECommerceApp.Infrastructure.Auth;
 using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Text;
 
 namespace ECommerceApp.Infrastructure
 {
@@ -34,6 +31,7 @@ namespace ECommerceApp.Infrastructure
             services.AddTransient<ICurrencyRepository, CurrencyRepository>();
             services.AddTransient<ICurrencyRateRepository, CurrencyRateRepository>();
             services.AddDatabase(configuration);
+            services.AddAuth(configuration);
 
             return services;
         }

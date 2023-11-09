@@ -1,23 +1,14 @@
-﻿using AutoMapper;
-using AutoMapper.Internal;
-using ECommerceApp.Application.Abstracts;
+﻿using AutoMapper.Internal;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.External.Client;
 using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.Middlewares;
 using ECommerceApp.Application.Services;
-using ECommerceApp.Application.ViewModels.Coupon;
-using ECommerceApp.Application.ViewModels.Customer;
-using ECommerceApp.Application.ViewModels.Item;
-using ECommerceApp.Application.ViewModels.Order;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Reflection;
-using System.Text;
 
 namespace ECommerceApp.Application
 {
@@ -60,6 +51,8 @@ namespace ECommerceApp.Application
 
             services.AddTransient<ICurrencyService, CurrencyService>();
             services.AddTransient<ICurrencyRateService, CurrencyRateService>();
+
+            services.AddServices();
 
             return services;
         }
