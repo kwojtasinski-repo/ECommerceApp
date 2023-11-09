@@ -1,0 +1,13 @@
+{
+  "profiles": {
+    "ECommerceApp.API": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "launchUrl": "swagger",
+      "applicationUrl": "https://localhost:49609;http://localhost:49610"
+    }
+  }
+}
