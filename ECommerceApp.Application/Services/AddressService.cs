@@ -36,6 +36,11 @@ namespace ECommerceApp.Application.Services
             {
                 throw new BusinessException("When adding object Id should be equals 0");
             }
+            
+            if (model.CustomerId <= 0)
+            {
+                throw new BusinessException("Given ivalid customer id");
+            }
 
             var userId = _httpContextAccessor.GetUserId();
             var customers = _customerService.GetAllCustomers(c => c.UserId == userId);
