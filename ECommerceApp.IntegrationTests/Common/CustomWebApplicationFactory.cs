@@ -47,6 +47,7 @@ namespace ECommerceApp.IntegrationTests.Common
                     });
 
                     services.AddScoped<IDatabaseInitializer, TestDatabaseInitializer>();
+                    OverrideServicesImplementation(services);
 
                     var sp = services.BuildServiceProvider();
 
@@ -73,6 +74,11 @@ namespace ECommerceApp.IntegrationTests.Common
             {
                 throw;
             }
+        }
+
+        protected virtual void OverrideServicesImplementation(IServiceCollection services)
+        {
+
         }
 
         public async Task<FlurlClient> GetAuthenticatedClient()

@@ -2,11 +2,12 @@
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.IntegrationTests.Common;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Security.Claims;
 using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Services
@@ -86,9 +87,10 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_address_with_user_id_should_add()
         {
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var address = CreateAddress(0);
 
-            var id = _service.AddAddress(address, PROPER_CUSTOMER_ID);
+            var id = _service.AddAddress(address);
 
             id.ShouldBeGreaterThan(0);
         }
@@ -96,9 +98,10 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_address_with_invalid_user_id_should_throw_an_exception()
         {
+            SetHttpContextUserId("");
             var address = CreateAddress(0);
 
-            var exception = Should.Throw<BusinessException>(() => _service.AddAddress(address, ""));
+            var exception = Should.Throw<BusinessException>(() => _service.AddAddress(address));
 
             exception.Message.ShouldBe("Cannot add address check your customer id");
         }
@@ -201,6 +204,11 @@ namespace ECommerceApp.IntegrationTests.Services
                 CustomerId = 1
             };
             return address;
+        }
+
+        protected override void OverrideServicesImplementation(IServiceCollection services)
+        {
+           services.AddSingleton<IHttpContextAccessor, HttpContextAccessorTest>();
         }
     }
 }

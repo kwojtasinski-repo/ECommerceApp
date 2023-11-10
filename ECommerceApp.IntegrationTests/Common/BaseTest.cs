@@ -1,8 +1,9 @@
 ﻿using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Web;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Security.Claims;
 
 namespace ECommerceApp.IntegrationTests.Common
 {
@@ -21,6 +22,15 @@ namespace ECommerceApp.IntegrationTests.Common
             context.Database.EnsureDeleted();
             context.Dispose();
             base.Dispose();
+        }
+
+        protected void SetHttpContextUserId(string userId)
+        {
+            var httpContextAccessor = Services.GetService(typeof(IHttpContextAccessor)) as IHttpContextAccessor;
+            httpContextAccessor.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, userId)
+            }));
         }
     }
 }
