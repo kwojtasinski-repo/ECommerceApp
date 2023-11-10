@@ -23,9 +23,7 @@ namespace ECommerceApp.API.Controllers
         [HttpGet("{id}")]
         public ActionResult<AddressVm> GetAddress(int id)
         {
-            var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
-            //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var address = _addressService.GetAddressDetail(id, userId);
+            var address = _addressService.GetAddressDetail(id);
             if (address == null)
             {
                 return NotFound();

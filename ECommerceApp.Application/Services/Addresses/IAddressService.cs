@@ -13,7 +13,7 @@ namespace ECommerceApp.Application.Services.Addresses
         int AddAddress(AddressVm AddressVm);
         void DeleteAddress(int id);
         AddressVm GetAddress(int id);
-        AddressVm GetAddressDetail(int id, string userId);
+        AddressVm GetAddressDetail(int id);
         void UpdateAddress(AddressVm AddressVm);
         IEnumerable<AddressVm> GetAllAddresss(Expression<Func<Address, bool>> expression);
         bool AddressExists(int id);

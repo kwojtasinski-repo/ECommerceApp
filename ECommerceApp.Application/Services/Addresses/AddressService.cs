@@ -79,8 +79,9 @@ namespace ECommerceApp.Application.Services.Addresses
             return adressVm;
         }
 
-        public AddressVm GetAddressDetail(int id, string userId)
+        public AddressVm GetAddressDetail(int id)
         {
+            var userId = _httpContextAccessor.GetUserId();
             var adress = _repo.GetAddressById(id, userId);
             var adressVm = _mapper.Map<AddressVm>(adress);
             return adressVm;

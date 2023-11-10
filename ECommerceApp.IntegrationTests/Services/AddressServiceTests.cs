@@ -5,9 +5,7 @@ using ECommerceApp.IntegrationTests.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
-using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Services
@@ -44,8 +42,9 @@ namespace ECommerceApp.IntegrationTests.Services
         {
             var id = 1;
             var zipCode = 67100;
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
 
-            var address = _service.GetAddressDetail(id, PROPER_CUSTOMER_ID);
+            var address = _service.GetAddressDetail(id);
 
             address.ShouldNotBeNull();
             address.ShouldBeOfType<AddressVm>();
@@ -56,9 +55,9 @@ namespace ECommerceApp.IntegrationTests.Services
         public void given_valid_id_and_invalid_user_id_shouldnt_return_null()
         {
             var id = 1;
-            var userId = "";
+            SetHttpContextUserId("");
 
-            var address = _service.GetAddressDetail(id, userId);
+            var address = _service.GetAddressDetail(id);
 
             address.ShouldBeNull();
         }
@@ -66,6 +65,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_address_should_add()
         {
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var address = CreateAddress(0);
 
             var id = _service.AddAddress(address);
@@ -109,6 +109,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_id_address_should_exists()
         {
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var id = 1;
 
             var exists = _service.AddressExists(id);
@@ -119,11 +120,11 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_invalid_id_address_shouldnt_exists()
         {
-            var id = 1;
+            var id = 1000;
 
             var exists = _service.AddressExists(id);
 
-            exists.ShouldBeTrue();
+            exists.ShouldBeFalse();
         }
 
         [Fact]
@@ -167,6 +168,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_address_should_update()
         {
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var address = CreateAddress(0);
             var id = _service.AddAddress(address);
             address = _service.Get(id);
@@ -183,6 +185,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_address_should_delete()
         {
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var address = CreateAddress(0);
             var id = _service.AddAddress(address);
 
