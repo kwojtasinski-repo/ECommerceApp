@@ -5,47 +5,27 @@ using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace ECommerceApp.Application.Services
 {
     public class AddressService : AbstractService<AddressVm, IAddressRepository, Address>, IAddressService
     {
         private readonly ICustomerService _customerService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public AddressService(IAddressRepository addressRepository, IMapper mapper, ICustomerService customerService) : base(addressRepository, mapper)
+        public AddressService(IAddressRepository addressRepository, IMapper mapper, ICustomerService customerService, IHttpContextAccessor httpContextAccessor) : base(addressRepository, mapper)
         {
             _customerService = customerService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
-        public int AddAddress(AddressVm addressVm)
-        {
-            if (addressVm is null)
-            {
-                throw new BusinessException($"{typeof(AddressVm).Name} cannot be null");
-            }
-
-            if (addressVm.Id != 0)
-            {
-                throw new BusinessException("When adding object Id should be equals 0");
-            }
-
-            if(addressVm.CustomerId <= 0)
-            {
-                throw new BusinessException("Given ivalid customer id");
-            }
-
-            var address = _mapper.Map<Address>(addressVm);
-            var id = _repo.AddAddress(address);
-            return id;
-        }
-
-        public int AddAddress(AddressVm model, string userId)
+        public int AddAddress(AddressVm model)
         {
             if (model is null)
             {
@@ -57,18 +37,9 @@ namespace ECommerceApp.Application.Services
                 throw new BusinessException("When adding object Id should be equals 0");
             }
 
+            var userId = _httpContextAccessor.GetUserId();
             var customers = _customerService.GetAllCustomers(c => c.UserId == userId);
-            bool customerIdExists = false;
-            foreach (var cust in customers)
-            {
-                if (cust.Id == model.CustomerId)
-                {
-                    customerIdExists = true;
-                    break;
-                }
-            }
-
-            if (!customerIdExists)
+            if (!customers.Any(c => c.Id == model.CustomerId))
             {
                 throw new BusinessException("Cannot add address check your customer id");
             }

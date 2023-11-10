@@ -50,14 +50,12 @@ namespace ECommerceApp.API.Controllers
         [HttpPost]
         public IActionResult AddAddress([FromBody] AddressVm model)
         {
-            var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
-            //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             if (!ModelState.IsValid || model.Id != 0)
             {
                 return Conflict(ModelState);
             }
 
-            var id = _addressService.AddAddress(model, userId);
+            var id = _addressService.AddAddress(model);
 
             return Ok(id);
         }

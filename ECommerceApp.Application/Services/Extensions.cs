@@ -8,6 +8,7 @@ namespace ECommerceApp.Application.Services
         public static IServiceCollection AddServices(this IServiceCollection services)
         {
             services.AddScoped<IAuthenticationService, AuthenticationService>();
+            services.AddHttpContextAccessor();
             return services;
         }
     }

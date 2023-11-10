@@ -2,10 +2,11 @@
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Application.ViewModels.OrderItem;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using System.Security.Claims;
 
 namespace ECommerceApp.Application
 {
@@ -234,6 +235,12 @@ namespace ECommerceApp.Application
             {
                 return null;
             }
+        }
+
+        public static string GetUserId(this IHttpContextAccessor httpContextAccessor)
+        {
+            return httpContextAccessor.HttpContext?.User?.Claims?
+                        .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
         }
     }
 }

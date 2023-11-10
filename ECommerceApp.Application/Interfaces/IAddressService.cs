@@ -4,14 +4,12 @@ using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace ECommerceApp.Application.Interfaces
 {
     public interface IAddressService : IAbstractService<AddressVm, IAddressRepository, Address>
     {
         int AddAddress(AddressVm AddressVm);
-        int AddAddress(AddressVm model, string userId);
         void DeleteAddress(int id);
         AddressVm GetAddress(int id);
         AddressVm GetAddressDetail(int id, string userId);
