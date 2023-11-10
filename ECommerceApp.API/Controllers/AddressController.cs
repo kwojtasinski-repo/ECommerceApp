@@ -1,4 +1,4 @@
-﻿using ECommerceApp.Application.Interfaces;
+﻿using ECommerceApp.Application.Services.Addresses;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -36,9 +36,7 @@ namespace ECommerceApp.API.Controllers
         [HttpPut]
         public IActionResult EditAddress([FromBody] AddressVm model)
         {
-            var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
-            //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var modelExists = _addressService.AddressExists(model.Id, userId);
+            var modelExists = _addressService.AddressExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
             {
                 return Conflict(ModelState);

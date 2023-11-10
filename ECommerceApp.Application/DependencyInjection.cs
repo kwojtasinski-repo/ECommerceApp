@@ -5,6 +5,7 @@ using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Middlewares;
 using ECommerceApp.Application.Services;
+using ECommerceApp.Application.Services.Addresses;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Net.Http;
@@ -36,7 +37,6 @@ namespace ECommerceApp.Application
             services.AddTransient<IOrderItemService, OrderItemService>();
             services.AddTransient<IContactDetailService, ContactDetailService>();
             services.AddTransient<IContactDetailTypeService, ContactDetailTypeService>();
-            services.AddTransient<IAddressService, AddressService>();
 
             services.AddSingleton<IErrorMapToResponse, ErrorMapToResponse>();
             services.AddTransient<ExceptionMiddleware>();

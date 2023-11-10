@@ -1,5 +1,5 @@
 ﻿using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services.Addresses;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.IntegrationTests.Common;
 using Microsoft.AspNetCore.Http;
@@ -129,9 +129,10 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_id_and_user_id_address_should_exists()
         {
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var id = 1;
 
-            var exists = _service.AddressExists(id, PROPER_CUSTOMER_ID);
+            var exists = _service.AddressExists(id);
 
             exists.ShouldBeTrue();
         }
@@ -139,9 +140,10 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_id_and_invalid_user_id_address_shouldnt_exists()
         {
+            SetHttpContextUserId("");
             var id = 1;
 
-            var exists = _service.AddressExists(id, "");
+            var exists = _service.AddressExists(id);
 
             exists.ShouldBeFalse();
         }

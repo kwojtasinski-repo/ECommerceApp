@@ -12,7 +12,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 
-namespace ECommerceApp.Application.Services
+namespace ECommerceApp.Application.Services.Addresses
 {
     public class AddressService : AbstractService<AddressVm, IAddressRepository, Address>, IAddressService
     {
@@ -36,7 +36,7 @@ namespace ECommerceApp.Application.Services
             {
                 throw new BusinessException("When adding object Id should be equals 0");
             }
-            
+
             if (model.CustomerId <= 0)
             {
                 throw new BusinessException("Given ivalid customer id");
@@ -56,18 +56,7 @@ namespace ECommerceApp.Application.Services
 
         public bool AddressExists(int id)
         {
-            var address = _repo.GetAddressById(id);
-
-            if (address == null)
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        public bool AddressExists(int id, string userId)
-        {
+            var userId = _httpContextAccessor.GetUserId();
             var address = _repo.GetAll().Include(c => c.Customer).Where(a => a.Id == id && a.Customer.UserId == userId).AsNoTracking().FirstOrDefault();
 
             if (address == null)

@@ -1,11 +1,12 @@
-﻿using ECommerceApp.Application.ViewModels.Address;
+﻿using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
 
-namespace ECommerceApp.Application.Interfaces
+namespace ECommerceApp.Application.Services.Addresses
 {
     public interface IAddressService : IAbstractService<AddressVm, IAddressRepository, Address>
     {
@@ -16,6 +17,5 @@ namespace ECommerceApp.Application.Interfaces
         void UpdateAddress(AddressVm AddressVm);
         IEnumerable<AddressVm> GetAllAddresss(Expression<Func<Address, bool>> expression);
         bool AddressExists(int id);
-        bool AddressExists(int id, string userId);
     }
 }

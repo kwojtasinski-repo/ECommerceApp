@@ -1,4 +1,4 @@
-﻿using ECommerceApp.Application.Interfaces;
+﻿using ECommerceApp.Application.Services.Addresses;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;

@@ -1,11 +1,12 @@
 ﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Services;
+using ECommerceApp.Application.Services.Addresses;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -100,8 +101,10 @@ namespace ECommerceApp.UnitTests.Services.Address
         {
             var id = 1;
             var customerId = 1;
-            var address = CreateAddress(id, customerId);
-            _addressRepository.Setup(a => a.GetAddressById(It.IsAny<int>())).Returns(address);
+            var userId = Guid.NewGuid().ToString();
+            _contextAccessor.SetUserId(userId);
+            var address = CreateAddress(id, customerId, userId);
+            _addressRepository.Setup(a => a.GetAll()).Returns(new List<Domain.Model.Address> { address }.AsQueryable());
             var addressService = new AddressService(_addressRepository.Object, _mapper, _customerService.Object, _contextAccessor);
 
             var exists = addressService.AddressExists(id);
@@ -165,7 +168,7 @@ namespace ECommerceApp.UnitTests.Services.Address
             return vm;
         }
 
-        private Domain.Model.Address CreateAddress(int id, int customerId)
+        private Domain.Model.Address CreateAddress(int id, int customerId, string userId = null)
         {
             var address = new Domain.Model.Address
             {
@@ -177,7 +180,7 @@ namespace ECommerceApp.UnitTests.Services.Address
                 CustomerId = 1,
                 Street = "Warszawska",
                 ZipCode = 13425,
-                Customer = new Domain.Model.Customer { Id = customerId }
+                Customer = new Domain.Model.Customer { Id = customerId, UserId = userId }
             };
             return address;
         }
