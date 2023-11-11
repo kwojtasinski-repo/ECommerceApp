@@ -1,5 +1,5 @@
 ﻿using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;

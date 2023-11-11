@@ -2,7 +2,6 @@
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
@@ -12,12 +11,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 
-namespace ECommerceApp.Application.Services
+namespace ECommerceApp.Application.Services.Items
 {
     public class ItemService : AbstractService<ItemVm, IItemRepository, Item>, IItemService
     {
         public ItemService(IItemRepository itemRepo, IMapper mapper) : base(itemRepo, mapper)
-        {}
+        { }
 
         public override int Add(ItemVm vm)
         {

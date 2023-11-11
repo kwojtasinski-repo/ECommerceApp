@@ -4,6 +4,8 @@ using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services.Coupons;
+using ECommerceApp.Application.Services.Customers;
+using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.CouponUsed;

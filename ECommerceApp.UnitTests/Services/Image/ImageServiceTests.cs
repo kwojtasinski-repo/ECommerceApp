@@ -1,7 +1,7 @@
 ﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.POCO;
-using ECommerceApp.Application.Services;
+using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Image;
 using ECommerceApp.Domain.Interface;
 using FluentAssertions;

@@ -1,6 +1,6 @@
 ﻿using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services.Addresses;
+using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Domain.Interface;

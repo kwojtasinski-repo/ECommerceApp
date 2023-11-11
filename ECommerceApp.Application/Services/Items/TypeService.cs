@@ -2,7 +2,6 @@
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Type;
 using ECommerceApp.Domain.Interface;
 using Microsoft.EntityFrameworkCore;
@@ -10,9 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 
-namespace ECommerceApp.Application.Services
+namespace ECommerceApp.Application.Services.Items
 {
     public class TypeService : AbstractService<TypeVm, ITypeRepository, Domain.Model.Type>, ITypeService
     {
@@ -31,7 +29,7 @@ namespace ECommerceApp.Application.Services
                 throw new BusinessException("When adding object Id should be equals 0");
             }
 
-            var type = _mapper.Map<ECommerceApp.Domain.Model.Type>(model);
+            var type = _mapper.Map<Domain.Model.Type>(model);
             var id = _repo.AddType(type);
             return id;
         }
@@ -86,7 +84,7 @@ namespace ECommerceApp.Application.Services
         {
             var type = _repo.GetById(id);
             var exists = type != null;
-            
+
             if (exists)
             {
                 _repo.DetachEntity(type);
@@ -102,7 +100,7 @@ namespace ECommerceApp.Application.Services
                 throw new BusinessException($"{typeof(TypeVm).Name} cannot be null");
             }
 
-            var type = _mapper.Map<ECommerceApp.Domain.Model.Type>(model);
+            var type = _mapper.Map<Domain.Model.Type>(model);
             if (type != null)
             {
                 _repo.UpdateType(type);

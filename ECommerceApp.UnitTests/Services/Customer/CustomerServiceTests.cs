@@ -2,7 +2,7 @@
 using AutoMapper.Internal;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Mapping;
-using ECommerceApp.Application.Services;
+using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Domain.Interface;
 using FluentAssertions;

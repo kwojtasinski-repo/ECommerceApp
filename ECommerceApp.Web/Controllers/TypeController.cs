@@ -1,5 +1,5 @@
 ﻿using System;
-using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Type;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;

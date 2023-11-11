@@ -1,4 +1,4 @@
-﻿using ECommerceApp.Application.ViewModels.Brand;
+﻿using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
@@ -7,9 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 
-namespace ECommerceApp.Application.Interfaces
+namespace ECommerceApp.Application.Services.Items
 {
     public interface IItemService : IAbstractService<ItemVm, IItemRepository, Item>
     {

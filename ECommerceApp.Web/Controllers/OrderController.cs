@@ -12,6 +12,8 @@ using Microsoft.AspNetCore.Mvc;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Infrastructure.Permissions;
 using ECommerceApp.Application.Services.Coupons;
+using ECommerceApp.Application.Services.Customers;
+using ECommerceApp.Application.Services.Items;
 
 namespace ECommerceApp.Web.Controllers
 {

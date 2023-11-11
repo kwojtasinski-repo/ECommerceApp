@@ -1,5 +1,5 @@
-﻿using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.POCO;
+﻿using ECommerceApp.Application.POCO;
+using ECommerceApp.Application.Services.Items;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
 using System;

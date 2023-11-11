@@ -2,7 +2,6 @@
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.ContactDetail;
@@ -18,7 +17,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace ECommerceApp.Application.Services
+namespace ECommerceApp.Application.Services.Customers
 {
     public class CustomerService : AbstractService<CustomerVm, ICustomerRepository, Customer>, ICustomerService
     {
@@ -38,7 +37,7 @@ namespace ECommerceApp.Application.Services
                 throw new BusinessException("When adding object Id should be equals 0");
             }
 
-            var customer = _mapper.Map<Domain.Model.Customer>(newCustomer);
+            var customer = _mapper.Map<Customer>(newCustomer);
             var id = _repo.Add(customer);
             return id;
         }
@@ -103,7 +102,7 @@ namespace ECommerceApp.Application.Services
         public CustomerDetailsVm GetCustomerDetails(int customerId)
         {
             var customer = _repo.GetCustomerById(customerId);
-            var customerVm = _mapper.Map<CustomerDetailsVm>(customer); 
+            var customerVm = _mapper.Map<CustomerDetailsVm>(customer);
 
             return customerVm;
         }

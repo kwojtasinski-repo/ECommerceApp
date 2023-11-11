@@ -1,6 +1,6 @@
 ﻿using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.POCO;
+using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;

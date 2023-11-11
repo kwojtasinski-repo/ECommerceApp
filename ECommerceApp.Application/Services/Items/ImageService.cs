@@ -13,7 +13,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace ECommerceApp.Application.Services
+namespace ECommerceApp.Application.Services.Items
 {
     public class ImageService : AbstractService<ImageVm, IImageRepository, Image>, IImageService
     {
@@ -40,7 +40,7 @@ namespace ECommerceApp.Application.Services
                 throw new BusinessException("When adding object Id should be equals 0");
             }
 
-            if (objectVm.Images == null || (objectVm.Images != null && objectVm.Images.Count == 0))
+            if (objectVm.Images == null || objectVm.Images != null && objectVm.Images.Count == 0)
             {
                 throw new BusinessException("Adding image without source is not allowed");
             }
@@ -68,7 +68,7 @@ namespace ECommerceApp.Application.Services
 
             var imageSrc = objectVm.Images.FirstOrDefault();
 
-            var image = new Domain.Model.Image()
+            var image = new Image()
             {
                 Id = objectVm.Id,
                 ItemId = objectVm.ItemId,
@@ -117,7 +117,7 @@ namespace ECommerceApp.Application.Services
             return imageVm;
         }
 
-        public System.Collections.Generic.List<ImageVm> GetAll()
+        public List<ImageVm> GetAll()
         {
             var images = _repo.GetAll().ToList();
 
@@ -139,7 +139,7 @@ namespace ECommerceApp.Application.Services
             return imagesVm;
         }
 
-        public System.Collections.Generic.List<ImageVm> GetAll(string searchName)
+        public List<ImageVm> GetAll(string searchName)
         {
             var images = _repo.GetAll().Where(i => i.Name.Contains(searchName)).ToList();
 
@@ -175,7 +175,7 @@ namespace ECommerceApp.Application.Services
                 throw new BusinessException("Cannot update source path, contact with admin");
             }
 
-            var img = new Domain.Model.Image()
+            var img = new Image()
             {
                 Id = objectVm.Id,
                 ItemId = objectVm.ItemId,
@@ -193,7 +193,7 @@ namespace ECommerceApp.Application.Services
                 throw new BusinessException($"{typeof(AddImagesPOCO).Name} cannot be null");
             }
 
-            if (imageVm.Files == null || (imageVm.Files != null && imageVm.Files.Count == 0))
+            if (imageVm.Files == null || imageVm.Files != null && imageVm.Files.Count == 0)
             {
                 throw new BusinessException("Adding image without source is not allowed");
             }
@@ -215,13 +215,13 @@ namespace ECommerceApp.Application.Services
                 }
             }
 
-            var images = new List<Domain.Model.Image>();
+            var images = new List<Image>();
 
             foreach (var image in imageVm.Files)
             {
                 var fileDir = _fileStore.WriteFile(image, FILE_DIR);
 
-                var img = new Domain.Model.Image()
+                var img = new Image()
                 {
                     Id = 0,
                     ItemId = imageVm.ItemId,
@@ -257,7 +257,7 @@ namespace ECommerceApp.Application.Services
             var images = _repo.GetAll().Where(i => i.ItemId == itemId).ToList();
 
             var imagesVm = new List<GetImageVm>();
-            foreach(var image in images)
+            foreach (var image in images)
             {
                 var img = new GetImageVm()
                 {

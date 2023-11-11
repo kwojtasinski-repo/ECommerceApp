@@ -1,7 +1,7 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;

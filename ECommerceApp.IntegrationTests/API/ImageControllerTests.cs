@@ -1,6 +1,6 @@
 ﻿using ECommerceApp.API;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.POCO;
+using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Image;
 using ECommerceApp.IntegrationTests.Common;
 using Flurl.Http;

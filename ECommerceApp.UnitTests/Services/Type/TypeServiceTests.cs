@@ -1,5 +1,5 @@
 ﻿using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Services;
+using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Type;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.UnitTests.Common;

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;

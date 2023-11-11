@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.ViewModels.Address;
+﻿using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Application.ViewModels.ContactDetailType;
 using ECommerceApp.Application.ViewModels.Customer;
@@ -11,7 +12,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace ECommerceApp.Application.Interfaces
+namespace ECommerceApp.Application.Services.Customers
 {
     public interface ICustomerService : IAbstractService<CustomerVm, ICustomerRepository, Customer>
     {

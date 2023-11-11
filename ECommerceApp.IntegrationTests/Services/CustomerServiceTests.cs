@@ -1,4 +1,4 @@
-﻿using ECommerceApp.Application.Interfaces;
+﻿using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Application.ViewModels.Customer;

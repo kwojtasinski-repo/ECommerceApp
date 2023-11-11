@@ -1,4 +1,4 @@
-﻿using ECommerceApp.Application.Interfaces;
+﻿using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Type;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;

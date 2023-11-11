@@ -1,11 +1,11 @@
-﻿using ECommerceApp.Application.ViewModels.Type;
+﻿using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.ViewModels.Type;
 using ECommerceApp.Domain.Interface;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Text;
 
-namespace ECommerceApp.Application.Interfaces
+namespace ECommerceApp.Application.Services.Items
 {
     public interface ITypeService : IAbstractService<TypeVm, ITypeRepository, Domain.Model.Type>
     {

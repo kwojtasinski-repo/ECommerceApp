@@ -1,13 +1,12 @@
-﻿using ECommerceApp.Application.ViewModels.Item;
+﻿using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Tag;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Text;
 
-namespace ECommerceApp.Application.Interfaces
+namespace ECommerceApp.Application.Services.Items
 {
     public interface ITagService : IAbstractService<TagVm, ITagRepository, Tag>
     {
@@ -15,7 +14,7 @@ namespace ECommerceApp.Application.Interfaces
         TagDetailsVm GetTagDetails(int id);
         TagVm GetTagById(int id);
         void UpdateTag(TagVm model);
-        IEnumerable<TagVm> GetTags(Expression<Func<Domain.Model.Tag, bool>> expression);
+        IEnumerable<TagVm> GetTags(Expression<Func<Tag, bool>> expression);
         ListForTagsVm GetTags(int pageSize, int pageNo, string searchString);
         bool TagExists(int id);
         void DeleteTag(int id);

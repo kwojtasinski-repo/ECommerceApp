@@ -1,6 +1,6 @@
-﻿using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.POCO;
+﻿using ECommerceApp.Application.POCO;
 using ECommerceApp.Application.Services;
+using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Image;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

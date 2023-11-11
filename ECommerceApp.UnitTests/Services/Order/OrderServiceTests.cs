@@ -2,6 +2,8 @@
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.Services.Coupons;
+using ECommerceApp.Application.Services.Customers;
+using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Order;

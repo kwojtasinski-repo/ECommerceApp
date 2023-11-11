@@ -1,10 +1,11 @@
-﻿using ECommerceApp.Application.POCO;
+﻿using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.POCO;
 using ECommerceApp.Application.ViewModels.Image;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System.Collections.Generic;
 
-namespace ECommerceApp.Application.Interfaces
+namespace ECommerceApp.Application.Services.Items
 {
     public interface IImageService : IAbstractService<ImageVm, IImageRepository, Image>
     {

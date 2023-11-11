@@ -16,17 +16,13 @@ namespace ECommerceApp.Application
     {
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
-            services.AddTransient<IItemService, ItemService>();
-            services.AddTransient<ICustomerService, CustomerService>();
             services.AddTransient<IOrderService, OrderService>();
             services.AddTransient<IUserService, UserService>();
             services.AddAutoMapper(cfg => cfg.Internal().MethodMappingEnabled = false, Assembly.GetExecutingAssembly());
             services.AddTransient<IFileStore, FileStore>();
             services.AddTransient<IFileWrapper, FileWrapper>();
             services.AddTransient<IDirectoryWrapper, DirectoryWrapper>();
-            services.AddTransient<IImageService, ImageService>();
-            services.AddTransient<ITypeService, TypeService>();
-            services.AddTransient<ITagService, TagService>();
+
             services.AddTransient<IRefundService, RefundService>();
             services.AddTransient<IPaymentService, PaymentService>();
             services.AddTransient<IOrderItemService, OrderItemService>();
