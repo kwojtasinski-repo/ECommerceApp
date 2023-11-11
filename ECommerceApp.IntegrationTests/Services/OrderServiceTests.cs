@@ -4,15 +4,12 @@ using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Services
 {
     public class OrderServiceTests : BaseTest<IOrderService>
     {
-        private readonly string PROPER_CUSTOMER_ID = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e";
-
         [Fact]
         public void given_valid_id_should_delete_order()
         {

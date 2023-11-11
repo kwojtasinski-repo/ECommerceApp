@@ -12,8 +12,6 @@ namespace ECommerceApp.IntegrationTests.Services
 {
     public class ContactDetailServiceTests : BaseTest<IContactDetailService>
     {
-        private readonly string PROPER_CUSTOMER_ID = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e";
-
         [Fact]
         public void given_valid_id_should_return_contact_detail()
         {
