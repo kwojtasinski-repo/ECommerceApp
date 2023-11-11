@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.ViewModels.ContactDetailType;
+﻿using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.ViewModels.ContactDetailType;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
@@ -6,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace ECommerceApp.Application.Interfaces
+namespace ECommerceApp.Application.Services.ContactDetails
 {
     public interface IContactDetailTypeService : IAbstractService<ContactDetailTypeVm, IContactDetailTypeRepository, ContactDetailType>
     {

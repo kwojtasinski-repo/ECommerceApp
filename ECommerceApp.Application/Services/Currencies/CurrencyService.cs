@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Currency;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -11,7 +10,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace ECommerceApp.Application.Services
+namespace ECommerceApp.Application.Services.Currencies
 {
     public class CurrencyService : AbstractService<CurrencyVm, ICurrencyRepository, Currency>, ICurrencyService
     {
@@ -56,7 +55,7 @@ namespace ECommerceApp.Application.Services
             List<Currency> currencies = _repo.GetAll(expression);
             List<CurrencyVm> currencyVms = new List<CurrencyVm>();
 
-            foreach(Currency currency in currencies)
+            foreach (Currency currency in currencies)
             {
                 var currencyVm = _mapper.Map<CurrencyVm>(currency);
                 currencyVms.Add(currencyVm);

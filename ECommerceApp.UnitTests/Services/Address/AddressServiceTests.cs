@@ -6,7 +6,6 @@ using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Moq;
 using System;
 using System.Collections.Generic;

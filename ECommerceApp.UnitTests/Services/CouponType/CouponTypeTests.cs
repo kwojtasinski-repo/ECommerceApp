@@ -1,5 +1,5 @@
 ﻿using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Services;
+using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.ViewModels.CouponType;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.UnitTests.Common;

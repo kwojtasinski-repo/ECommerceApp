@@ -2,11 +2,10 @@
 using ECommerceApp.Application.Services.ContactDetails;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.IntegrationTests.Common;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Services
@@ -18,6 +17,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_id_should_return_contact_detail()
         {
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var id = 1;
             var contactDetailInformation = "867123563";
 
@@ -41,10 +41,11 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_id_and_user_id_should_return_contact_detail()
         {
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var id = 1;
             var contactDetailInformation = "867123563";
 
-            var contactDetail = _service.GetContactDetailById(id, PROPER_CUSTOMER_ID);
+            var contactDetail = _service.GetContactDetailById(id);
 
             contactDetail.ShouldNotBeNull();
             contactDetail.ShouldBeOfType<ContactDetailVm>();
@@ -54,9 +55,10 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_id_and_invalid_user_id_shouldnt_return_contact_detail()
         {
+            SetHttpContextUserId("");
             var id = 1;
 
-            var contactDetail = _service.GetContactDetailById(id, "");
+            var contactDetail = _service.GetContactDetailById(id);
 
             contactDetail.ShouldBeNull();
         }
@@ -84,9 +86,10 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_id_and_user_id_contact_detail_should_exists()
         {
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var id = 1;
 
-            var exists = _service.ContactDetailExists(id, PROPER_CUSTOMER_ID);
+            var exists = _service.ContactDetailExists(id);
 
             exists.ShouldBeTrue();
         }
@@ -94,9 +97,10 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_id_and_invalid_user_id_contact_detail_shouldnt_exists()
         {
+            SetHttpContextUserId("");
             var id = 1;
 
-            var exists = _service.ContactDetailExists(id, "");
+            var exists = _service.ContactDetailExists(id);
 
             exists.ShouldBeFalse();
         }
@@ -120,6 +124,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_contact_detail_should_add()
         {
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var contactDetail = CreateContactDetail(0);
 
             var id = _service.AddContactDetail(contactDetail);
@@ -151,6 +156,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_contact_detail_should_update()
         {
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var contactDetail = CreateContactDetail(0);
             var id = _service.AddContactDetail(contactDetail);
             contactDetail = _service.Get(id);
@@ -168,6 +174,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_id_should_delete_contact_detail()
         {
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var contactDetail = CreateContactDetail(0);
             var id = _service.AddContactDetail(contactDetail);
 
@@ -187,6 +194,11 @@ namespace ECommerceApp.IntegrationTests.Services
                 CustomerId = 1
             };
             return brand;
+        }
+
+        protected override void OverrideServicesImplementation(IServiceCollection services)
+        {
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessorTest>();
         }
     }
 }

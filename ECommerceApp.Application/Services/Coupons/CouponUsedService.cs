@@ -3,7 +3,6 @@ using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.CouponUsed;
 using ECommerceApp.Domain.Interface;
@@ -14,7 +13,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 
-namespace ECommerceApp.Application.Services
+namespace ECommerceApp.Application.Services.Coupons
 {
     public class CouponUsedService : AbstractService<CouponUsedVm, ICouponUsedRepository, CouponUsed>, ICouponUsedService
     {
@@ -114,7 +113,7 @@ namespace ECommerceApp.Application.Services
             }
 
             var couponUsed = _mapper.Map<CouponUsed>(couponUsedVm);
-            _repo.UpdateCouponUsed(couponUsed);        
+            _repo.UpdateCouponUsed(couponUsed);
         }
 
         public IEnumerable<CouponUsedVm> GetAllCouponsUsed(Expression<Func<CouponUsed, bool>> expression)

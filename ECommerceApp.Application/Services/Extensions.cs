@@ -1,5 +1,4 @@
-﻿using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Services.Addresses;
+﻿using ECommerceApp.Application.Services.Addresses;
 using ECommerceApp.Application.Services.Authentication;
 using ECommerceApp.Application.Services.Brands;
 using ECommerceApp.Application.Services.ContactDetails;

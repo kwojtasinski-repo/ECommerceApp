@@ -1,6 +1,6 @@
 ﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.External.Client;
-using ECommerceApp.Application.Services;
+using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.UnitTests.Common;
 using FluentAssertions;

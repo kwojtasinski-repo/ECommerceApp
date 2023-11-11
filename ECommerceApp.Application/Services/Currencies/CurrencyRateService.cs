@@ -2,7 +2,6 @@
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.External.Client;
 using ECommerceApp.Application.External.POCO;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Utils;
 using ECommerceApp.Application.ViewModels.Currency;
 using ECommerceApp.Application.ViewModels.CurrencyRate;
