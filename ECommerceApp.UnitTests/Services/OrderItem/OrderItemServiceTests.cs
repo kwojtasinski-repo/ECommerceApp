@@ -60,7 +60,7 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
             var quantity = 1;
             var orderItem = CreateOrderItemVm(id, itemId, userId, quantity);
             var orderItemFromDb = CreateOrderItem(id, itemId, userId, quantity);
-            _orderItemRepository.Setup(oi => oi.GetOrderItemById(id)).Returns(orderItemFromDb);
+            _orderItemRepository.Setup(oi => oi.GetAllOrderItems()).Returns((new List<Domain.Model.OrderItem> { orderItemFromDb }).AsQueryable());
             var orderItemService = new OrderItemService(_orderItemRepository.Object, _mapper);
 
             orderItemService.AddOrderItem(orderItem);
