@@ -6,6 +6,7 @@ using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.Services.Items;
+using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.Services.Refunds;
 using ECommerceApp.Application.Services.Users;
@@ -35,6 +36,8 @@ namespace ECommerceApp.Application.Services
             services.AddTransient<IUserService, UserService>();
             services.AddTransient<IRefundService, RefundService>();
             services.AddTransient<IPaymentService, PaymentService>();
+            services.AddTransient<IOrderService, OrderService>();
+            services.AddTransient<IOrderItemService, OrderItemService>();
             services.AddHttpContextAccessor();
             return services;
         }
