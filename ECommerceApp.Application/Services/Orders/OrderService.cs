@@ -2,7 +2,6 @@
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.Services.Items;
@@ -22,7 +21,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace ECommerceApp.Application.Services
+namespace ECommerceApp.Application.Services.Orders
 {
     public class OrderService : AbstractService<OrderVm, IOrderRepository, Order>, IOrderService
     {
@@ -127,9 +126,9 @@ namespace ECommerceApp.Application.Services
             var ids = model.OrderItems?.Select(oi => oi.Id)?.ToList() ?? new List<int>();
             var orderItemsQueryable = _repo.GetAllOrderItems();
             var orderItems = (from orderItemId in ids
-                             join orderItem in orderItemsQueryable
-                                on orderItemId equals orderItem.Id
-                             select orderItem).AsQueryable().Include(i => i.Item).AsNoTracking().ToList();
+                              join orderItem in orderItemsQueryable
+                                 on orderItemId equals orderItem.Id
+                              select orderItem).AsQueryable().Include(i => i.Item).AsNoTracking().ToList();
 
             CheckOrderItemsOrderByUser(model, orderItems);
             CalculateCost(model, orderItems);
@@ -196,7 +195,7 @@ namespace ECommerceApp.Application.Services
                 throw new BusinessException("Given invalid couponUsedId");
             }
 
-            order.Cost = order.Cost / ((1 - (decimal)coupon.Discount / 100));
+            order.Cost = order.Cost / (1 - (decimal)coupon.Discount / 100);
             //_repo.Update(order);
         }
 
@@ -304,7 +303,7 @@ namespace ECommerceApp.Application.Services
                          on id equals item.Id
                          select item).AsQueryable().AsNoTracking().ToList();
 
-            foreach(var orderItem in orderItemsToAdd)
+            foreach (var orderItem in orderItemsToAdd)
             {
                 var orderItemVm = new OrderItemVm { Id = 0, ItemId = orderItem.ItemId, ItemOrderQuantity = orderItem.ItemOrderQuantity, UserId = orderVm.UserId, OrderId = orderVm.Id };
                 var orderItemId = _orderItemService.AddOrderItem(orderItemVm);
@@ -320,20 +319,20 @@ namespace ECommerceApp.Application.Services
         {
             StringBuilder errors = new StringBuilder();
 
-            foreach(var orderItem in orderVm.OrderItems ?? new List<OrderItemVm>())
+            foreach (var orderItem in orderVm.OrderItems ?? new List<OrderItemVm>())
             {
                 var item = itemsFromDb.Where(i => i.Id == orderItem.Id).FirstOrDefault();
 
-                if(item != null)
+                if (item != null)
                 {
-                    if(orderItem.UserId != item.UserId)
+                    if (orderItem.UserId != item.UserId)
                     {
                         errors.AppendLine($"This item {orderItem.Id} is not ordered by current user");
                         continue;
                     }
                 }
             }
-            
+
             if (errors.Length > 0)
             {
                 throw new BusinessException(errors.ToString());
@@ -367,7 +366,7 @@ namespace ECommerceApp.Application.Services
             }
 
             orderVm.CouponUsedId = couponUsedId;
-            foreach(var orderItem in orderVm.OrderItems)
+            foreach (var orderItem in orderVm.OrderItems)
             {
                 orderItem.CouponUsedId = couponUsedId;
             }
@@ -399,7 +398,7 @@ namespace ECommerceApp.Application.Services
             var couponUsedId = _couponUsedRepository.AddCouponUsed(couponUsed);
             coupon.CouponUsedId = couponUsedId;
             _couponService.UpdateCoupon(coupon);
-            order.Cost = (1 - (decimal)coupon.Discount/100) * order.Cost;
+            order.Cost = (1 - (decimal)coupon.Discount / 100) * order.Cost;
             order.CouponUsedId = couponUsedId;
             if (order.OrderItems.Count > 0)
             {
@@ -507,7 +506,7 @@ namespace ECommerceApp.Application.Services
             var order = _repo.GetAll()
                 .Include(oi => oi.OrderItems)
                 .Where(o => o.Id == orderId && o.IsPaid && o.IsDelivered).FirstOrDefault();
-            
+
             if (order is null)
             {
                 throw new BusinessException($"Order with id {orderId} not exists");
@@ -558,7 +557,7 @@ namespace ECommerceApp.Application.Services
 
         public void DispatchOrder(int orderId)
         {
-            var order = _repo.GetAll().Where(o => o.Id == orderId).FirstOrDefault(o => o.IsDelivered == false && o.IsPaid == true) 
+            var order = _repo.GetAll().Where(o => o.Id == orderId).FirstOrDefault(o => o.IsDelivered == false && o.IsPaid == true)
                 ?? throw new BusinessException($"Order with id {orderId} not found, check your order if is not delivered and is paid");
             order.IsDelivered = true;
             order.Delivered = DateTime.Now;
@@ -596,7 +595,7 @@ namespace ECommerceApp.Application.Services
                          select orderItem).AsQueryable().AsNoTracking().ToList();
 
             var errors = new StringBuilder();
-            foreach(var orderItem in items)
+            foreach (var orderItem in items)
             {
                 if (orderItem.UserId != orderVm.UserId)
                 {

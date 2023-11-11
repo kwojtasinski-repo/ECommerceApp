@@ -1,5 +1,4 @@
 ﻿using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Application.Services.Customers;
@@ -12,6 +11,7 @@ using FluentAssertions;
 using Moq;
 using System;
 using Xunit;
+using ECommerceApp.Application.Services.Orders;
 
 namespace ECommerceApp.UnitTests.Services.Payment
 {

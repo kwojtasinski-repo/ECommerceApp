@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.ViewModels.Order;
+﻿using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -8,7 +9,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace ECommerceApp.Application.Interfaces
+namespace ECommerceApp.Application.Services.Orders
 {
     public interface IOrderItemService : IAbstractService<OrderItemVm, IOrderItemRepository, OrderItem>
     {

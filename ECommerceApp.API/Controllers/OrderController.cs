@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application;
 using ECommerceApp.Application.ViewModels.CouponUsed;
 using ECommerceApp.Application.ViewModels.Order;
@@ -13,6 +12,7 @@ using Microsoft.AspNetCore.Mvc;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Infrastructure.Permissions;
 using ECommerceApp.Application.Services.Coupons;
+using ECommerceApp.Application.Services.Orders;
 
 namespace ECommerceApp.API.Controllers
 {

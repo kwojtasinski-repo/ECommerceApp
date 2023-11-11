@@ -5,6 +5,7 @@ using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Middlewares;
 using ECommerceApp.Application.Services;
+using ECommerceApp.Application.Services.Orders;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Net.Http;

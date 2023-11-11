@@ -1,5 +1,4 @@
-﻿using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application;
+﻿using ECommerceApp.Application;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using ECommerceApp.Infrastructure.Permissions;
+using ECommerceApp.Application.Services.Orders;
 
 namespace ECommerceApp.API.Controllers
 {

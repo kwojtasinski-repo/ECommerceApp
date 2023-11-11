@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.ViewModels.Coupon;
+﻿using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Order;
@@ -11,7 +12,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace ECommerceApp.Application.Interfaces
+namespace ECommerceApp.Application.Services.Orders
 {
     public interface IOrderService : IAbstractService<OrderVm, IOrderRepository, Order>
     {
@@ -30,7 +31,7 @@ namespace ECommerceApp.Application.Interfaces
         ListForOrderVm GetAllOrdersByUserId(string userId, int pageSize, int pageNo);
         List<OrderForListVm> GetAllOrdersByCustomerId(int customerId);
         List<OrderForListVm> GetAllOrdersByUserId(string userId);
-        List<OrderForListVm> GetAllOrders(Expression<Func<Order,bool>> expression);
+        List<OrderForListVm> GetAllOrders(Expression<Func<Order, bool>> expression);
         void AddRefundToOrder(int orderId, int refundId);
         NewOrderVm GetOrderForRealization(int orderId);
         ListForOrderVm GetAllOrdersPaid(int pageSize, int pageNo, string searchString);
