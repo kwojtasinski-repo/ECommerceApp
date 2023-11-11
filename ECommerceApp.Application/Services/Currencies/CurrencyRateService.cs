@@ -14,7 +14,7 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 
-namespace ECommerceApp.Application.Services
+namespace ECommerceApp.Application.Services.Currencies
 {
     public class CurrencyRateService : ICurrencyRateService
     {
@@ -59,7 +59,7 @@ namespace ECommerceApp.Application.Services
 
             var currencyRate = GetCurrencyRate(currency, date);
 
-            if(currencyRate.Id != 0)
+            if (currencyRate.Id != 0)
             {
                 currencyRateVm = _mapper.Map<CurrencyRateVm>(currencyRate);
                 return currencyRateVm;
@@ -90,7 +90,7 @@ namespace ECommerceApp.Application.Services
             }
 
             var currencyRate = GetCurrencyRate(currency, date);
-            CurrencyRateVm currencyRateVm = null; 
+            CurrencyRateVm currencyRateVm = null;
 
             if (currencyRate.Id != 0)
             {

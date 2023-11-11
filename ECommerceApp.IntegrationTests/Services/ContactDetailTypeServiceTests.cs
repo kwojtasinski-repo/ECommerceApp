@@ -1,5 +1,5 @@
 ﻿using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services.ContactDetails;
 using ECommerceApp.Application.ViewModels.ContactDetailType;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;

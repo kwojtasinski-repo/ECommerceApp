@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;

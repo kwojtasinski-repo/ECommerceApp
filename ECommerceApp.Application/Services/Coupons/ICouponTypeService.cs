@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.ViewModels.Coupon;
+﻿using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.CouponType;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -7,7 +8,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace ECommerceApp.Application.Interfaces
+namespace ECommerceApp.Application.Services.Coupons
 {
     public interface ICouponTypeService : IAbstractService<CouponTypeVm, ICouponTypeRepository, CouponType>
     {

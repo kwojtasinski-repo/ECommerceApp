@@ -1,4 +1,4 @@
-﻿using ECommerceApp.Application.Interfaces;
+﻿using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Application.ViewModels.CurrencyRate;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;

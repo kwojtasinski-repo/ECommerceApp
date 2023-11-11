@@ -2,7 +2,6 @@
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Domain.Interface;
@@ -14,8 +13,11 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace ECommerceApp.Application.Services
+namespace ECommerceApp.Application.Services.Coupons
 {
+    // TODO: Strategy with coupons assiging using
+    // one could be used for some time, another no limit, another one order, another sepcial to user and etc
+    // make it possible maybe for not all purposes aboves but more dynamic :)
     public class CouponService : AbstractService<CouponVm, ICouponRepository, Coupon>, ICouponService
     {
         public CouponService(ICouponRepository couponRepo, IMapper mapper) : base(couponRepo, mapper)
@@ -109,7 +111,7 @@ namespace ECommerceApp.Application.Services
             Update(couponVm);
         }
 
-        public IEnumerable<CouponVm> GetAllCoupons(Expression<Func<Coupon,bool>> expression)
+        public IEnumerable<CouponVm> GetAllCoupons(Expression<Func<Coupon, bool>> expression)
         {
             var coupons = _repo.GetAllCoupons().Where(expression).AsNoTracking()
                 .ProjectTo<CouponVm>(_mapper.ConfigurationProvider);
@@ -156,7 +158,7 @@ namespace ECommerceApp.Application.Services
         public int CheckPromoCode(string code)
         {
             var coupons = GetAllCoupons(c => true);
-            var coupon = coupons.FirstOrDefault(c => String.Equals(c.Code, code,
+            var coupon = coupons.FirstOrDefault(c => string.Equals(c.Code, code,
                    StringComparison.Ordinal) && c.CouponUsedId == null);
             var id = 0;
             if (coupon != null)

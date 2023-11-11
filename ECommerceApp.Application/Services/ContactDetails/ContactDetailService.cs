@@ -2,7 +2,6 @@
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -11,9 +10,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 
-namespace ECommerceApp.Application.Services
+namespace ECommerceApp.Application.Services.ContactDetails
 {
     public class ContactDetailService : AbstractService<ContactDetailVm, IContactDetailRepository, ContactDetail>, IContactDetailService
     {
@@ -74,7 +72,7 @@ namespace ECommerceApp.Application.Services
             var contactDetailVm = _mapper.Map<ContactDetailVm>(contactDetail);
             return contactDetailVm;
         }
-        
+
         public ContactDetailVm GetContactDetailById(int id, string userId)
         {
             var contactDetail = _repo.GetAll().Include(c => c.Customer).Where(cd => cd.Id == id && cd.Customer.UserId == userId).FirstOrDefault();
@@ -146,7 +144,7 @@ namespace ECommerceApp.Application.Services
 
             return true;
         }
-        
+
         public bool ContactDetailExists(int id, string userId)
         {
             var contactDetail = _repo.GetAll().Include(c => c.Customer).Where(cd => cd.Id == id && cd.Customer.UserId == userId).AsNoTracking().FirstOrDefault();

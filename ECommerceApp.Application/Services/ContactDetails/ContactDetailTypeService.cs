@@ -2,7 +2,6 @@
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.ContactDetailType;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -12,7 +11,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace ECommerceApp.Application.Services
+namespace ECommerceApp.Application.Services.ContactDetails
 {
     public class ContactDetailTypeService : AbstractService<ContactDetailTypeVm, IContactDetailTypeRepository, ContactDetailType>, IContactDetailTypeService
     {

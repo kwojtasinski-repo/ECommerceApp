@@ -1,5 +1,5 @@
 ﻿using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.ViewModels.CouponType;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;

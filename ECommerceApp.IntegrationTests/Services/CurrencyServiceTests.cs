@@ -1,5 +1,5 @@
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Application.ViewModels.Currency;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;

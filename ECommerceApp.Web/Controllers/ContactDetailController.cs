@@ -1,10 +1,10 @@
-﻿using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.ViewModels.ContactDetail;
+﻿using ECommerceApp.Application.ViewModels.ContactDetail;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ECommerceApp.Application;
 using System.Linq;
 using ECommerceApp.Infrastructure.Permissions;
+using ECommerceApp.Application.Services.ContactDetails;
 
 namespace ECommerceApp.Web.Controllers
 {

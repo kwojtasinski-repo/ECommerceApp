@@ -1,6 +1,7 @@
 ﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services;
+using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Order;
@@ -17,7 +18,7 @@ using System.Linq.Expressions;
 using Xunit;
 
 namespace ECommerceApp.Tests.Services.Order
-{ 
+{
     public class OrderServiceTests : BaseTest
     {
         private readonly Mock<IOrderRepository> _orderRepository = new Mock<IOrderRepository>();

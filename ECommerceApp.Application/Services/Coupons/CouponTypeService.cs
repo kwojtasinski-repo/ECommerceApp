@@ -2,7 +2,6 @@
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.CouponType;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -11,7 +10,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 
-namespace ECommerceApp.Application.Services
+namespace ECommerceApp.Application.Services.Coupons
 {
     public class CouponTypeService : AbstractService<CouponTypeVm, ICouponTypeRepository, CouponType>, ICouponTypeService
     {
