@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.ViewModels.Brand;
+﻿using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.ViewModels.Brand;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
@@ -6,7 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 
-namespace ECommerceApp.Application.Interfaces
+namespace ECommerceApp.Application.Services.Brands
 {
     public interface IBrandService : IAbstractService<BrandVm, IBrandRepository, Brand>
     {

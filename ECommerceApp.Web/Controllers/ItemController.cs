@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services.Brands;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;

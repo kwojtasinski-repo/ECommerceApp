@@ -1,5 +1,6 @@
 ﻿using ECommerceApp.Application.Services.Addresses;
 using ECommerceApp.Application.Services.Authentication;
+using ECommerceApp.Application.Services.Brands;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ECommerceApp.Application.Services
@@ -10,6 +11,7 @@ namespace ECommerceApp.Application.Services
         {
             services.AddScoped<IAuthenticationService, AuthenticationService>();
             services.AddTransient<IAddressService, AddressService>();
+            services.AddTransient<IBrandService, BrandService>();
             services.AddHttpContextAccessor();
             return services;
         }
