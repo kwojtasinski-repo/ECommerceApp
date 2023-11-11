@@ -1,4 +1,4 @@
-﻿using ECommerceApp.Application.Interfaces;
+﻿using ECommerceApp.Application.Services.Users;
 using ECommerceApp.Application.ViewModels.User;
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Permissions;

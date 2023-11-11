@@ -1,17 +1,14 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.User;
 using ECommerceApp.Domain.Model;
 using Microsoft.AspNetCore.Identity;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace ECommerceApp.Application.Services
+namespace ECommerceApp.Application.Services.Users
 {
     public class UserService : IUserService
     {
@@ -135,8 +132,12 @@ namespace ECommerceApp.Application.Services
             }
 
             //var user = _mapper.Map<IdentityUser>(newUser);
-            var user = new ApplicationUser() { UserName = newUser.UserName, Email = newUser.Email,
-                                            EmailConfirmed = newUser.EmailConfirmed };
+            var user = new ApplicationUser()
+            {
+                UserName = newUser.UserName,
+                Email = newUser.Email,
+                EmailConfirmed = newUser.EmailConfirmed
+            };
             var result = await _userManager.CreateAsync(user, newUser.Password);
             newUser.Id = user.Id;
             return result;
@@ -144,12 +145,12 @@ namespace ECommerceApp.Application.Services
 
         private void CheckChangesInCurrentUser(ApplicationUser currentUser, NewUserVm userToEdit)
         {
-            if(currentUser.Email != userToEdit.Email)
+            if (currentUser.Email != userToEdit.Email)
             {
                 currentUser.Email = userToEdit.Email;
             }
-            
-            if(currentUser.EmailConfirmed != userToEdit.EmailConfirmed)
+
+            if (currentUser.EmailConfirmed != userToEdit.EmailConfirmed)
             {
                 currentUser.EmailConfirmed = userToEdit.EmailConfirmed;
             }

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Services.Users;
 using ECommerceApp.Application.ViewModels.User;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;

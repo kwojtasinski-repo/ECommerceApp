@@ -17,7 +17,6 @@ namespace ECommerceApp.Application
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
             services.AddTransient<IOrderService, OrderService>();
-            services.AddTransient<IUserService, UserService>();
             services.AddAutoMapper(cfg => cfg.Internal().MethodMappingEnabled = false, Assembly.GetExecutingAssembly());
             services.AddTransient<IFileStore, FileStore>();
             services.AddTransient<IFileWrapper, FileWrapper>();
