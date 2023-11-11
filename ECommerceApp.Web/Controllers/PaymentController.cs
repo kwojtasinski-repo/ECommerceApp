@@ -92,8 +92,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult ViewPayment(int id)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var payment = _paymentService.GetPaymentDetails(id, userId);
+            var payment = _paymentService.GetPaymentDetails(id);
             if (payment is null)
             {
                 return NotFound("Nie znaleziono płatności");

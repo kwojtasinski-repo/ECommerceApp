@@ -21,6 +21,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
         private readonly Mock<IOrderService> _orderService;
         private readonly Mock<ICustomerService> _customerService;
         private readonly Mock<ICurrencyRateService> _currencyRateService;
+        private readonly HttpContextAccessorTest _contextAccessor;
 
         public PaymentServiceTests()
         {
@@ -28,6 +29,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
             _orderService = new Mock<IOrderService>();
             _customerService = new Mock<ICustomerService>();
             _currencyRateService = new Mock<ICurrencyRateService>();
+            _contextAccessor = new HttpContextAccessorTest();
         }
 
         [Fact]
@@ -43,7 +45,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
             _orderService.Setup(o => o.Get(orderId)).Returns(order);
             var rate = CreateCurrencyRate(currencyId);
             _currencyRateService.Setup(cr => cr.GetLatestRate(currencyId)).Returns(rate);
-            var paymentService = new PaymentService(_paymentRepository.Object, _mapper, _orderService.Object, _customerService.Object, _currencyRateService.Object);
+            var paymentService = new PaymentService(_paymentRepository.Object, _mapper, _orderService.Object, _customerService.Object, _currencyRateService.Object, _contextAccessor);
 
             paymentService.AddPayment(payment);
 
@@ -59,7 +61,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
             var currencyId = 2;
             var orderId = 1;
             var payment = CreatePaymentVm(id, currencyId, orderId);
-            var paymentService = new PaymentService(_paymentRepository.Object, _mapper, _orderService.Object, _customerService.Object, _currencyRateService.Object);
+            var paymentService = new PaymentService(_paymentRepository.Object, _mapper, _orderService.Object, _customerService.Object, _currencyRateService.Object, _contextAccessor);
 
             Action action = () => paymentService.AddPayment(payment);
 
@@ -74,7 +76,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
             var orderId = 1;
             var payment = CreatePayment(id, currencyId, orderId);
             _paymentRepository.Setup(p => p.GetById(id)).Returns(payment);
-            var paymentService = new PaymentService(_paymentRepository.Object, _mapper, _orderService.Object, _customerService.Object, _currencyRateService.Object);
+            var paymentService = new PaymentService(_paymentRepository.Object, _mapper, _orderService.Object, _customerService.Object, _currencyRateService.Object, _contextAccessor);
 
             var exists = paymentService.PaymentExists(id);
 
@@ -85,7 +87,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
         public void given_invalid_id_payment_shouldnt_exists()
         {
             var id = 1;
-            var paymentService = new PaymentService(_paymentRepository.Object, _mapper, _orderService.Object, _customerService.Object, _currencyRateService.Object);
+            var paymentService = new PaymentService(_paymentRepository.Object, _mapper, _orderService.Object, _customerService.Object, _currencyRateService.Object, _contextAccessor);
 
             var exists = paymentService.PaymentExists(id);
 
@@ -99,7 +101,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
             var currencyId = 1;
             var orderId = 1;
             var payment = CreatePaymentVm(id, currencyId, orderId);
-            var paymentService = new PaymentService(_paymentRepository.Object, _mapper, _orderService.Object, _customerService.Object, _currencyRateService.Object);
+            var paymentService = new PaymentService(_paymentRepository.Object, _mapper, _orderService.Object, _customerService.Object, _currencyRateService.Object, _contextAccessor);
 
             paymentService.UpdatePayment(payment);
 
@@ -109,7 +111,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
         [Fact]
         public void given_null_payment_when_add_should_throw_an_exception()
         {
-            var paymentService = new PaymentService(_paymentRepository.Object, _mapper, _orderService.Object, _customerService.Object, _currencyRateService.Object);
+            var paymentService = new PaymentService(_paymentRepository.Object, _mapper, _orderService.Object, _customerService.Object, _currencyRateService.Object, _contextAccessor);
 
             Action action = () => paymentService.AddPayment(null);
 

@@ -1,11 +1,11 @@
 ﻿using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.IntegrationTests.Common;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Services
@@ -37,6 +37,7 @@ namespace ECommerceApp.IntegrationTests.Services
         public void given_valid_id_should_return_payment_details()
         {
             var id = 1;
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
 
             var payment = _service.GetPaymentDetails(id);
 
@@ -58,9 +59,9 @@ namespace ECommerceApp.IntegrationTests.Services
         public void given_valid_id_and_user_id_should_return_payment_details()
         {
             var id = 1;
-            var userId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e";
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
 
-            var payment = _service.GetPaymentDetails(id, userId);
+            var payment = _service.GetPaymentDetails(id);
 
             payment.ShouldNotBeNull();
             payment.Id.ShouldBe(id);
@@ -69,9 +70,10 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_invalid_user_id_should_return_null_payment_details()
         {
+            SetHttpContextUserId("");
             var id = 1;
 
-            var payment = _service.GetPaymentDetails(id, "");
+            var payment = _service.GetPaymentDetails(id);
 
             payment.ShouldBeNull();
         }
@@ -114,6 +116,11 @@ namespace ECommerceApp.IntegrationTests.Services
 
             var paymentDeleted = _service.GetPaymentById(id);
             paymentDeleted.ShouldBeNull();
+        }
+
+        protected override void OverrideServicesImplementation(IServiceCollection services)
+        {
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessorTest>();
         }
     }
 }

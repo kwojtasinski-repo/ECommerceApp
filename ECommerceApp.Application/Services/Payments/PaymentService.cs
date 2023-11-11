@@ -8,6 +8,7 @@ using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -21,12 +22,14 @@ namespace ECommerceApp.Application.Services.Payments
         private readonly IOrderService _orderService;
         private readonly ICustomerService _customerService;
         private readonly ICurrencyRateService _currencyRateService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public PaymentService(IPaymentRepository paymentRepository, IMapper mapper, IOrderService orderService, ICustomerService customerService, ICurrencyRateService currencyRateService) : base(paymentRepository, mapper)
+        public PaymentService(IPaymentRepository paymentRepository, IMapper mapper, IOrderService orderService, ICustomerService customerService, ICurrencyRateService currencyRateService, IHttpContextAccessor httpContextAccessor) : base(paymentRepository, mapper)
         {
             _orderService = orderService;
             _customerService = customerService;
             _currencyRateService = currencyRateService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public int AddPayment(PaymentVm model)
@@ -60,13 +63,6 @@ namespace ECommerceApp.Application.Services.Payments
             order.PaymentId = null;
             _orderService.Update(order);
             _repo.Delete(payment);
-        }
-
-        public PaymentDetailsVm GetPaymentDetails(int id)
-        {
-            var payment = _repo.GetAll().Include(o => o.Order).Include(c => c.Customer).Where(p => p.Id == id).FirstOrDefault();
-            var paymentVm = _mapper.Map<PaymentDetailsVm>(payment);
-            return paymentVm;
         }
 
         public PaymentVm GetPaymentById(int id)
@@ -143,8 +139,9 @@ namespace ECommerceApp.Application.Services.Payments
             }
         }
 
-        public PaymentDetailsVm GetPaymentDetails(int id, string userId)
+        public PaymentDetailsVm GetPaymentDetails(int id)
         {
+            var userId = _httpContextAccessor.GetUserId();
             var payment = _repo.GetAll().Include(c => c.Customer).ThenInclude(a => a.Addresses)
                                         .Include(o => o.Order)
                                         .Where(p => p.Customer.UserId == userId && p.Id == id).FirstOrDefault();

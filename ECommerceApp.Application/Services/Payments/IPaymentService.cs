@@ -11,7 +11,6 @@ namespace ECommerceApp.Application.Services.Payments
     public interface IPaymentService : IAbstractService<PaymentVm, IPaymentRepository, Payment>
     {
         int AddPayment(PaymentVm model);
-        PaymentDetailsVm GetPaymentDetails(int id);
         PaymentVm GetPaymentById(int id);
         void UpdatePayment(PaymentVm model);
         IEnumerable<PaymentVm> GetPayments(Expression<Func<Payment, bool>> expression);
@@ -19,7 +18,7 @@ namespace ECommerceApp.Application.Services.Payments
         ListForPaymentVm GetPayments(int pageSize, int pageNo, string searchString);
         bool PaymentExists(int id);
         void DeletePayment(int id);
-        PaymentDetailsVm GetPaymentDetails(int id, string userId);
+        PaymentDetailsVm GetPaymentDetails(int id);
         PaymentVm InitPayment(int orderId);
     }
 }
