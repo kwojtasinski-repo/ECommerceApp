@@ -1,6 +1,6 @@
 ﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.Services;
+using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.ViewModels.CurrencyRate;

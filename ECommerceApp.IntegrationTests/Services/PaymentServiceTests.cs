@@ -1,4 +1,4 @@
-﻿using ECommerceApp.Application.Interfaces;
+﻿using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;

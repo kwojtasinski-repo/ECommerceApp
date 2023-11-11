@@ -16,7 +16,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace ECommerceApp.Application.Services
+namespace ECommerceApp.Application.Services.Payments
 {
     public class PaymentService : AbstractService<PaymentVm, IPaymentRepository, Payment>, IPaymentService
     {
@@ -163,7 +163,7 @@ namespace ECommerceApp.Application.Services
             {
                 OrderId = order.Id,
                 Number = random.Next(1, 1000),
-                DateOfOrderPayment = System.DateTime.Now,
+                DateOfOrderPayment = DateTime.Now,
                 CustomerId = order.CustomerId,
                 OrderNumber = order.Number,
                 CustomerName = customer.Information,

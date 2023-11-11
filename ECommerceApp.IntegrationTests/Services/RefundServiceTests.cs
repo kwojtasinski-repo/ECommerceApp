@@ -1,4 +1,4 @@
-﻿using ECommerceApp.Application.Interfaces;
+﻿using ECommerceApp.Application.Services.Refunds;
 using ECommerceApp.Application.ViewModels.Refund;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;

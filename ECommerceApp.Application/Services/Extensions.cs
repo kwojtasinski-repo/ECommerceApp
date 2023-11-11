@@ -6,6 +6,8 @@ using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.Services.Items;
+using ECommerceApp.Application.Services.Payments;
+using ECommerceApp.Application.Services.Refunds;
 using ECommerceApp.Application.Services.Users;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -31,6 +33,8 @@ namespace ECommerceApp.Application.Services
             services.AddTransient<ITypeService, TypeService>();
             services.AddTransient<ITagService, TagService>();
             services.AddTransient<IUserService, UserService>();
+            services.AddTransient<IRefundService, RefundService>();
+            services.AddTransient<IPaymentService, PaymentService>();
             services.AddHttpContextAccessor();
             return services;
         }

@@ -14,7 +14,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 
-namespace ECommerceApp.Application.Services
+namespace ECommerceApp.Application.Services.Refunds
 {
     public class RefundService : AbstractService<RefundVm, IRefundRepository, Refund>, IRefundService
     {
@@ -141,7 +141,7 @@ namespace ECommerceApp.Application.Services
             }
 
             var refunds = _repo.GetAllRefunds();
-            var refund = refunds.Where(r => String.Equals(r.Reason, reasonRefund,
+            var refund = refunds.Where(r => string.Equals(r.Reason, reasonRefund,
                    StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
             if (refund != null)
             {

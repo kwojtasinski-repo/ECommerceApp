@@ -21,9 +21,6 @@ namespace ECommerceApp.Application
             services.AddTransient<IFileStore, FileStore>();
             services.AddTransient<IFileWrapper, FileWrapper>();
             services.AddTransient<IDirectoryWrapper, DirectoryWrapper>();
-
-            services.AddTransient<IRefundService, RefundService>();
-            services.AddTransient<IPaymentService, PaymentService>();
             services.AddTransient<IOrderItemService, OrderItemService>();
 
             services.AddSingleton<IErrorMapToResponse, ErrorMapToResponse>();
