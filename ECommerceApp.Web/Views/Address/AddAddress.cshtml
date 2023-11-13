@@ -42,7 +42,7 @@
                 <input id="CountryName" asp-for="Country" class="form-control" />
                 <span asp-validation-for="Country" class="text-danger"></span>
             </div>
-            <input type="hidden" asp-for="CustomerId" value="@ViewBag.CustomerId" />
+            <input type="hidden" asp-for="CustomerId" value="@Model.CustomerId" />
             <div class="form-group">
                 <button type="submit" class="btn btn-primary">Utwórz</button>
             </div>

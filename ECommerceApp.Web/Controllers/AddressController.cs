@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Services.Addresses;
+﻿using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.Services.Addresses;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -19,35 +20,52 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult AddAddress(int id)
         {
-            ViewBag.CustomerId = id;
-            return View();
+            return View(new AddressVm { CustomerId = id });
         }
 
         [HttpPost]
         public IActionResult AddAddress(AddressVm address)
         {
-            _addressService.AddAddress(address);
-            return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = address.CustomerId });
+            try
+            {
+                _addressService.AddAddress(address);
+                return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = address.CustomerId });
+            }
+            catch (BusinessException ex)
+            {
+                return RedirectToAction(actionName: "AddAddress", controllerName: "Address", new { Id = address.CustomerId, Error = ex.Message });
+            }
         }
 
         [HttpGet]
         public IActionResult EditAddress(int id)
         {
             var address = _addressService.GetAddress(id);
-            return View(address);
+            return address is null
+                ? NotFound()
+                : View(address);
         }
 
         [HttpPost]
         public IActionResult EditAddress(AddressVm model)
         {
-            _addressService.UpdateAddress(model);
-            return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = model.CustomerId });
+            try
+            { 
+                _addressService.UpdateAddress(model);
+                return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = model.CustomerId });
+            }
+            catch (BusinessException ex)
+            {
+                return RedirectToAction(actionName: "EditAddress", controllerName: "Address", new { Id = model.CustomerId, Error = ex.Message });
+            }
         }
 
         public IActionResult ViewAddress(int id)
         {
             var address = _addressService.GetAddress(id);
-            return View(address);
+            return address is null
+                ? NotFound()
+                : View(address);
         }
 
         public IActionResult DeleteAddress(int id)

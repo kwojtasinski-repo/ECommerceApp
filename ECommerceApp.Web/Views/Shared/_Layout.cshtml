@@ -152,6 +152,16 @@
     </header>
     <div class="container">
         <main role="main" class="pb-3">
+            @if (!string.IsNullOrWhiteSpace(Context.Request.Query["Error"]))
+            {
+                <div>
+                    <div class="alert alert-danger w-100">
+                        <span>
+                            @Context.Request.Query["Error"]
+                        </span>
+                    </div>
+                </div>
+            }
             @RenderBody()
         </main>
     </div>
