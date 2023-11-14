@@ -55,6 +55,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(id);
         }
 
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpDelete("{id:int}")]
         public IActionResult DeleteAddress(int id)
         {

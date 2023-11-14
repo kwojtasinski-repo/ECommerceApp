@@ -68,6 +68,7 @@ namespace ECommerceApp.Application.Services.Addresses
 
         public bool DeleteAddress(int id)
         {
+            // TODO: don't let delete address when only one is existing
             return !_addressRepository.DeleteAddress(id);
         }
 
