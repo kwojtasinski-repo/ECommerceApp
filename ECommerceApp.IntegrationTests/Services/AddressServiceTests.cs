@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Addresses;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.IntegrationTests.Common;
@@ -21,8 +22,8 @@ namespace ECommerceApp.IntegrationTests.Services
             var address = _service.GetAddress(id);
 
             address.ShouldNotBeNull();
-            address.ShouldBeOfType<AddressVm>();
-            address.ZipCode.ShouldBe(zipCode);
+            address.ShouldBeOfType<AddressDto>();
+            address.ZipCode.ShouldBe(AddressDto.MapToZipCode(zipCode));
         }
 
         [Fact]
@@ -45,8 +46,8 @@ namespace ECommerceApp.IntegrationTests.Services
             var address = _service.GetAddressDetail(id);
 
             address.ShouldNotBeNull();
-            address.ShouldBeOfType<AddressVm>();
-            address.ZipCode.ShouldBe(zipCode);
+            address.ShouldBeOfType<AddressDto>();
+            address.ZipCode.ShouldBe(AddressDto.MapToZipCode(zipCode));
         }
 
         [Fact]
@@ -148,28 +149,12 @@ namespace ECommerceApp.IntegrationTests.Services
         }
 
         [Fact]
-        public void given_valid_expression_should_return_addresses()
-        {
-            var addresses = _service.GetAllAddresss(a => true);
-
-            addresses.Count().ShouldBeGreaterThan(0);
-        }
-
-        [Fact]
-        public void given_invalid_expression_should_return_empty_addresses()
-        {
-            var addresses = _service.GetAllAddresss(a => a.Country == "abcsadwrwqwe");
-
-            addresses.Count().ShouldBe(0);
-        }
-
-        [Fact]
         public void given_valid_address_should_update()
         {
             SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var address = CreateAddress(0);
             var id = _service.AddAddress(address);
-            address = _service.Get(id);
+            address = _service.GetAddress(id);
             var street = "Ul. Ma";
             address.Street = street;
 
@@ -193,14 +178,14 @@ namespace ECommerceApp.IntegrationTests.Services
             addressDeleted.ShouldBeNull();
         }
 
-        private AddressVm CreateAddress(int id)
+        private AddressDto CreateAddress(int id)
         {
-            var address = new AddressVm
+            var address = new AddressDto
             {
                 Id = id,
                 City = "ZG",
                 Street = "Street 1",
-                ZipCode = 65010,
+                ZipCode = "65-010",
                 Country = "PL",
                 BuildingNumber = "2a",
                 FlatNumber = 1,

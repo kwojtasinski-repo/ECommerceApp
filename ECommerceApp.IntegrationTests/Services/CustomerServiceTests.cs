@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Services.Customers;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Application.ViewModels.Customer;
@@ -43,7 +44,7 @@ namespace ECommerceApp.IntegrationTests.Services
         {
             var customer = GetSampleCustomer();
             customer.Id = 0;
-            customer.Addresses = new List<AddressVm>();
+            customer.Addresses = new List<AddressDto>();
             customer.ContactDetails = new List<NewContactDetailVm>();
             var customerId = _service.AddCustomer(customer);
 
@@ -150,9 +151,9 @@ namespace ECommerceApp.IntegrationTests.Services
                 LastName = "Tester",
                 IsCompany = false,
                 UserId = PROPER_CUSTOMER_ID,
-                Addresses = new List<AddressVm>()
+                Addresses = new List<AddressDto>()
                 {
-                    new AddressVm { Id = 1, BuildingNumber = "2", FlatNumber = 10, City = "Nowa Sól", Country = "Poland", Street = "Testowa", CustomerId = 1, ZipCode = 67100 }
+                    new AddressDto { Id = 1, BuildingNumber = "2", FlatNumber = 10, City = "Nowa Sól", Country = "Poland", Street = "Testowa", CustomerId = 1, ZipCode = "67-100" }
                 },
                 ContactDetails = new List<NewContactDetailVm>()
                 {

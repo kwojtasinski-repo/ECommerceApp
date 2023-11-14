@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.API;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.IntegrationTests.Common;
 using Flurl.Http;
@@ -35,7 +36,7 @@ namespace ECommerceApp.IntegrationTests.API
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetAsync();
-            var address = JsonConvert.DeserializeObject<AddressVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
+            var address = JsonConvert.DeserializeObject<AddressDto>(await response.ResponseMessage.Content.ReadAsStringAsync());
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
             address.ShouldNotBeNull();
@@ -79,14 +80,14 @@ namespace ECommerceApp.IntegrationTests.API
             var addressUpdated = await client.Request($"api/addresses/{address.Id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
-                .GetJsonAsync<AddressVm>();
+                .GetJsonAsync<AddressDto>();
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
             addressUpdated.ShouldNotBeNull();
             addressUpdated.Street.ShouldBe(address.Street);
         }
 
         [Fact]
-        public async Task given_invalid_address_when_update_should_return_status_code_conflict()
+        public async Task given_not_existing_address_when_update_should_return_status_code_not_found()
         {
             var client = await _factory.GetAuthenticatedClient();
             var address = CreateAddress(100);
@@ -96,7 +97,7 @@ namespace ECommerceApp.IntegrationTests.API
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(address);
 
-            response.StatusCode.ShouldBe((int)HttpStatusCode.Conflict);
+            response.StatusCode.ShouldBe((int)HttpStatusCode.NotFound);
         }
 
         [Fact]
@@ -129,9 +130,9 @@ namespace ECommerceApp.IntegrationTests.API
             response.StatusCode.ShouldBe((int)HttpStatusCode.Conflict);
         }
 
-        private AddressVm CreateAddress(int id)
+        private AddressDto CreateAddress(int id)
         {
-            var address = new AddressVm 
+            var address = new AddressDto 
             { 
                 Id = id,
                 BuildingNumber = "1",
@@ -140,7 +141,7 @@ namespace ECommerceApp.IntegrationTests.API
                 CustomerId = 1,
                 FlatNumber = 10,
                 Street = "Testowa",
-                ZipCode = 65010
+                ZipCode = "65-010"
             };
             return address;
         }
