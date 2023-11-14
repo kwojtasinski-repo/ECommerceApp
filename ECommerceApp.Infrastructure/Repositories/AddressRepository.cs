@@ -22,15 +22,18 @@ namespace ECommerceApp.Infrastructure.Repositories
             return address.Id;
         }
 
-        public void DeleteAddress(int addressId)
+        public bool DeleteAddress(int addressId)
         {
             var address = _context.Addresses.Find(addressId);
-
-            if (address != null)
+            
+            if (address is null)
             {
-                _context.Addresses.Remove(address);
-                _context.SaveChanges();
+                return false;
             }
+
+            _context.Addresses.Remove(address);
+            _context.SaveChanges();
+            return true;
         }
 
         public Address GetAddressById(int addressId)

@@ -1,21 +1,14 @@
-﻿using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.ViewModels.Address;
-using ECommerceApp.Domain.Interface;
-using ECommerceApp.Domain.Model;
-using System;
-using System.Collections.Generic;
-using System.Linq.Expressions;
+﻿using ECommerceApp.Application.DTO;
 
 namespace ECommerceApp.Application.Services.Addresses
 {
-    public interface IAddressService : IAbstractService<AddressVm, IAddressRepository, Address>
+    public interface IAddressService
     {
-        int AddAddress(AddressVm AddressVm);
-        void DeleteAddress(int id);
-        AddressVm GetAddress(int id);
-        AddressVm GetAddressDetail(int id);
-        void UpdateAddress(AddressVm AddressVm);
-        IEnumerable<AddressVm> GetAllAddresss(Expression<Func<Address, bool>> expression);
+        int AddAddress(AddressDto addressDto);
+        bool DeleteAddress(int id);
+        AddressDto GetAddress(int id);
+        AddressDto GetAddressDetail(int id);
+        bool UpdateAddress(AddressDto addressDto);
         bool AddressExists(int id);
     }
 }

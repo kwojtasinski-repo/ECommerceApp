@@ -1,63 +1,62 @@
 ﻿using AutoMapper;
-using ECommerceApp.Application.Abstracts;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Addresses
 {
-    public class AddressService : AbstractService<AddressVm, IAddressRepository, Address>, IAddressService
+    public class AddressService : IAddressService
     {
-        private readonly ICustomerService _customerService;
+        private readonly IAddressRepository _addressRepository;
+        private readonly ICustomerRepository _customerRepository;
+        private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public AddressService(IAddressRepository addressRepository, IMapper mapper, ICustomerService customerService, IHttpContextAccessor httpContextAccessor) : base(addressRepository, mapper)
+        public AddressService(IAddressRepository addressRepository, ICustomerRepository customerRepository, IMapper mapper, IHttpContextAccessor httpContextAccessor)
         {
-            _customerService = customerService;
+            _addressRepository = addressRepository;
+            _customerRepository = customerRepository;
+            _mapper = mapper;
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public int AddAddress(AddressVm model)
+        public int AddAddress(AddressDto addressDto)
         {
-            if (model is null)
+            if (addressDto is null)
             {
                 throw new BusinessException($"{typeof(AddressVm).Name} cannot be null");
             }
 
-            if (model.Id != 0)
+            if (addressDto.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
             }
 
-            if (model.CustomerId <= 0)
+            if (addressDto.CustomerId <= 0)
             {
                 throw new BusinessException("Given ivalid customer id");
             }
 
             var userId = _httpContextAccessor.GetUserId();
-            var customers = _customerService.GetAllCustomers(c => c.UserId == userId);
-            if (!customers.Any(c => c.Id == model.CustomerId))
+            if (!_customerRepository.CustomerExists(addressDto.CustomerId, userId))
             {
                 throw new BusinessException("Cannot add address check your customer id");
             }
 
-            var address = _mapper.Map<Address>(model);
-            var id = _repo.AddAddress(address);
+            var address = _mapper.Map<Address>(addressDto);
+            var id = _addressRepository.AddAddress(address);
             return id;
         }
 
         public bool AddressExists(int id)
         {
             var userId = _httpContextAccessor.GetUserId();
-            var address = _repo.GetAll().Include(c => c.Customer).Where(a => a.Id == id && a.Customer.UserId == userId).AsNoTracking().FirstOrDefault();
+            var address = _addressRepository.GetAll().Include(c => c.Customer).Where(a => a.Id == id && a.Customer.UserId == userId).AsNoTracking().FirstOrDefault();
 
             if (address == null)
             {
@@ -67,42 +66,49 @@ namespace ECommerceApp.Application.Services.Addresses
             return true;
         }
 
-        public void DeleteAddress(int id)
+        public bool DeleteAddress(int id)
         {
-            _repo.DeleteAddress(id);
+            return !_addressRepository.DeleteAddress(id);
         }
 
-        public AddressVm GetAddress(int id)
+        public AddressDto GetAddress(int id)
         {
-            var adress = _repo.GetAddressById(id);
-            var adressVm = _mapper.Map<AddressVm>(adress);
-            return adressVm;
+            var adress = _addressRepository.GetAddressById(id);
+            var adressDto = _mapper.Map<AddressDto>(adress);
+            return adressDto;
         }
 
-        public AddressVm GetAddressDetail(int id)
+        public AddressDto GetAddressDetail(int id)
         {
             var userId = _httpContextAccessor.GetUserId();
-            var adress = _repo.GetAddressById(id, userId);
-            var adressVm = _mapper.Map<AddressVm>(adress);
-            return adressVm;
+            var adress = _addressRepository.GetAddressById(id, userId);
+            var adressDto = _mapper.Map<AddressDto>(adress);
+            return adressDto;
         }
 
-        public IEnumerable<AddressVm> GetAllAddresss(Expression<Func<Address, bool>> expression)
+        public bool UpdateAddress(AddressDto addressDto)
         {
-            var addresses = _repo.GetAll().Where(expression);
-            var addressesVm = _mapper.Map<List<AddressVm>>(addresses);
-            return addressesVm;
-        }
-
-        public void UpdateAddress(AddressVm addressVm)
-        {
-            if (addressVm is null)
+            if (addressDto is null)
             {
                 throw new BusinessException($"{typeof(AddressVm).Name} cannot be null");
             }
 
-            var address = _mapper.Map<Address>(addressVm);
-            _repo.UpdateAddress(address);
+
+            var userId = _httpContextAccessor.GetUserId();
+            var address = _addressRepository.GetAddressById(addressDto.Id ?? 0, userId);
+            if (address == null)
+            {
+                return false;
+            }
+            
+            address.City = addressDto.City;
+            address.Country = addressDto.Country;
+            address.Street = addressDto.Street;
+            address.BuildingNumber = addressDto.BuildingNumber;
+            address.FlatNumber = addressDto.FlatNumber;
+            address.ZipCode = AddressDto.MapToZipCodeNumber(addressDto.ZipCode);
+            _addressRepository.UpdateAddress(address);
+            return true;
         }
     }
 }

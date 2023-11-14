@@ -15,5 +15,6 @@ namespace ECommerceApp.Domain.Interface
         void UpdateCustomer(Customer customer);
         Customer GetCustomerById(int id, string userId);
         bool CustomerExists(int id, string userId);
+        List<Customer> GetCustomersByUserId(string userId);
     }
 }

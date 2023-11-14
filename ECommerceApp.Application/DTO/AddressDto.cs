@@ -19,13 +19,20 @@ namespace ECommerceApp.Application.DTO
         public void Mapping(Profile profile)
         {
             profile.CreateMap<AddressDto, Address>()
-                .ForMember(a => a.ZipCode, a => a.MapFrom(ad => MapToZipCode(ad.ZipCode)))
-                .ReverseMap();
+                .ForMember(a => a.ZipCode, a => a.MapFrom(ad => MapToZipCodeNumber(ad.ZipCode)))
+                .ReverseMap()
+                .ForMember(a => a.ZipCode, a => a.MapFrom(ad => MapToZipCode(ad.ZipCode)));
         }
 
-        private static int MapToZipCode(string zipCode)
+        public static string MapToZipCode(int zipCodeNumber)
         {
-            int.TryParse(zipCode.Replace("-", zipCode), out var zipIntNumber);
+            var zipCodeString = string.Format("{0:00000}", zipCodeNumber);
+            return zipCodeString.Insert(2, "-");
+        }
+
+        public static int MapToZipCodeNumber(string zipCode)
+        {
+            int.TryParse(zipCode.Replace("-", ""), out var zipIntNumber);
             return zipIntNumber;
         }
     }
@@ -35,7 +42,7 @@ namespace ECommerceApp.Application.DTO
         public AddressDtoValidation()
         {
             When(x => x.Id is not null,
-                () => RuleFor(x => x.FlatNumber).GreaterThan(0));
+                () => RuleFor(x => x.Id).GreaterThan(0));
             RuleFor(x => x.Street).NotNull().MinimumLength(2).MaximumLength(255);
             RuleFor(x => x.BuildingNumber).NotNull().MinimumLength(1).MaximumLength(100);
             When(x => x.FlatNumber is not null && x.FlatNumber.Value <= 0,

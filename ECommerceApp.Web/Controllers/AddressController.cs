@@ -24,16 +24,16 @@ namespace ECommerceApp.Web.Controllers
         }
 
         [HttpPost]
-        public IActionResult AddAddress(AddressVm address)
+        public IActionResult AddAddress(AddressVm addressVm)
         {
             try
             {
-                _addressService.AddAddress(address);
-                return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = address.CustomerId });
+                _addressService.AddAddress(addressVm.Address);
+                return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = addressVm.Address.CustomerId });
             }
             catch (BusinessException ex)
             {
-                return RedirectToAction(actionName: "AddAddress", controllerName: "Address", new { Id = address.CustomerId, Error = ex.Message });
+                return RedirectToAction(actionName: "AddAddress", controllerName: "Address", new { Id = addressVm.Address.CustomerId, Error = ex.Message });
             }
         }
 
@@ -51,12 +51,12 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             { 
-                _addressService.UpdateAddress(model);
-                return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = model.CustomerId });
+                _addressService.UpdateAddress(model.Address);
+                return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = model.Address.CustomerId });
             }
             catch (BusinessException ex)
             {
-                return RedirectToAction(actionName: "EditAddress", controllerName: "Address", new { Id = model.CustomerId, Error = ex.Message });
+                return RedirectToAction(actionName: "EditAddress", controllerName: "Address", new { Id = model.Address.CustomerId, Error = ex.Message });
             }
         }
 
@@ -70,8 +70,9 @@ namespace ECommerceApp.Web.Controllers
 
         public IActionResult DeleteAddress(int id)
         {
-            _addressService.DeleteAddress(id);
-            return Json(new { Success = true });
+            return _addressService.DeleteAddress(id)
+                ? Json(new { Success = true })
+                : NotFound();
         }
     }
 }

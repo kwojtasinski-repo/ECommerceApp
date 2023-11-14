@@ -9,7 +9,7 @@ using System.Text;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-    public class CustomerRepository :GenericRepository<Customer>, ICustomerRepository
+    public class CustomerRepository : GenericRepository<Customer>, ICustomerRepository
     {
         public CustomerRepository(Context context) : base(context)
         {
@@ -252,6 +252,11 @@ namespace ECommerceApp.Infrastructure.Repositories
         {
             var customer = _context.Customers.Where(c => c.Id == id && c.UserId == userId).AsNoTracking().FirstOrDefault();
             return customer != null;
+        }
+
+        public List<Customer> GetCustomersByUserId(string userId)
+        {
+            return _context.Customers.Where(c => c.UserId == userId).ToList();
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Mapping;
 using FluentValidation;
 
@@ -6,6 +7,8 @@ namespace ECommerceApp.Application.ViewModels.Address
 {
     public class AddressVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Address>
     {
+        public AddressDto Address { get; set; }
+
         public string Street { get; set; }
         public string BuildingNumber { get; set; }
         public int? FlatNumber { get; set; }

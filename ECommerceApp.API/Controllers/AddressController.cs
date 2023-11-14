@@ -1,10 +1,9 @@
-﻿using ECommerceApp.Application.Services.Addresses;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Services.Addresses;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Linq;
-using System.Security.Claims;
 
 namespace ECommerceApp.API.Controllers
 {
@@ -20,7 +19,7 @@ namespace ECommerceApp.API.Controllers
             _addressService = addressService;
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public ActionResult<AddressVm> GetAddress(int id)
         {
             var address = _addressService.GetAddressDetail(id);
@@ -32,21 +31,21 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpPut]
-        public IActionResult EditAddress([FromBody] AddressVm model)
+        public IActionResult EditAddress([FromBody] AddressDto model)
         {
-            var modelExists = _addressService.AddressExists(model.Id);
-            if (!ModelState.IsValid || !modelExists)
+            if (!ModelState.IsValid)
             {
                 return Conflict(ModelState);
             }
-            _addressService.UpdateAddress(model);
-            return Ok();
+            return _addressService.UpdateAddress(model)
+                ? Ok()
+                : NotFound();
         }
 
         [HttpPost]
-        public IActionResult AddAddress([FromBody] AddressVm model)
+        public IActionResult AddAddress([FromBody] AddressDto model)
         {
-            if (!ModelState.IsValid || model.Id != 0)
+            if (!ModelState.IsValid || (model.Id.HasValue && model.Id.Value != 0))
             {
                 return Conflict(ModelState);
             }
@@ -54,6 +53,14 @@ namespace ECommerceApp.API.Controllers
             var id = _addressService.AddAddress(model);
 
             return Ok(id);
+        }
+
+        [HttpDelete("{id:int}")]
+        public IActionResult DeleteAddress(int id)
+        {
+            return _addressService.DeleteAddress(id)
+                ? Ok()
+                : NotFound();
         }
     }
 }
