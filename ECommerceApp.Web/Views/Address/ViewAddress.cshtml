@@ -19,47 +19,47 @@
             Ulica
         </dt>
         <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Street)
+            @Html.DisplayFor(model => model.Address.Street)
         </dd>
         <dt class = "col-sm-2">
             Nr budynku
         </dt>
         <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.BuildingNumber)
+            @Html.DisplayFor(model => model.Address.BuildingNumber)
         </dd>
         <dt class = "col-sm-2">
             Nr mieszkania
         </dt>
         <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.FlatNumber)
+            @Html.DisplayFor(model => model.Address.FlatNumber)
         </dd>
         <dt class = "col-sm-2">
             Kod pocztowy
         </dt>
         <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.ZipCode)
+            @Html.DisplayFor(model => model.Address.ZipCode)
         </dd>
         <dt class = "col-sm-2">
             Miasto
         </dt>
         <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.City)
+            @Html.DisplayFor(model => model.Address.City)
         </dd>
         <dt class = "col-sm-2">
             Województwo
         </dt>
         <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Country)
+            @Html.DisplayFor(model => model.Address.Country)
         </dd>
         <dt class = "col-sm-2">
             Dane kontaktowe
         </dt>
         <dd class = "col-sm-10">
-            @Html.ActionLink("Kliknij aby zobaczyć", "ViewCustomer", "Customer", new { id = @Model.CustomerId }, new { target = "_blank" })
+            @Html.ActionLink("Kliknij aby zobaczyć", "ViewCustomer", "Customer", new { id = @Model.Address.CustomerId }, new { target = "_blank" })
         </dd>
     </dl>
 </div>
 <div>
     @Html.ActionLink("Edytuj", "EditAddress", new { id = Model.Id }) |
-    <a asp-route-id="@Model.CustomerId" asp-action="EditCustomer" asp-controller="Customer">Powrót do danych kontaktowych</a>
+    <a asp-route-id="@Model.Address.CustomerId" asp-action="EditCustomer" asp-controller="Customer">Powrót do danych kontaktowych</a>
 </div>

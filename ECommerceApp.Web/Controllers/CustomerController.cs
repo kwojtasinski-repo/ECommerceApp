@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Security.Claims;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.ContactDetail;
@@ -76,7 +77,7 @@ namespace ECommerceApp.Web.Controllers
         [Authorize]
         public IActionResult AddCustomer()
         {
-            var customer = new NewCustomerVm() { Addresses = new List<AddressVm> { new AddressVm()}, ContactDetails = new List<NewContactDetailVm> { new NewContactDetailVm() } };
+            var customer = new NewCustomerVm() { Addresses = new List<AddressDto> { new AddressDto()}, ContactDetails = new List<NewContactDetailVm> { new NewContactDetailVm() } };
             customer.UserId = GetUserId().Value;
             return View(customer);
         }

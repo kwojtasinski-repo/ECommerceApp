@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.ContactDetail;
@@ -20,7 +21,7 @@ namespace ECommerceApp.Application.ViewModels.Customer
         public string CompanyName { get; set; }
 
         public virtual List<ContactDetailsForListVm> ContactDetails { get; set; }
-        public virtual List<AddressVm> Addresses { get; set; }
+        public virtual List<AddressDto> Addresses { get; set; }
         public virtual List<CustomerOrdersVm> Orders { get; set; }
         public List<CustomerPaymentsVm> Payments { get; set; }
         public List<CustomerRefundsVm> Refunds { get; set; }

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.ContactDetail;
@@ -19,7 +20,7 @@ namespace ECommerceApp.Application.ViewModels.Customer
         public string CompanyName { get; set; }
 
         public virtual List<NewContactDetailVm> ContactDetails { get; set; }
-        public virtual List<AddressVm> Addresses { get; set; }
+        public virtual List<AddressDto> Addresses { get; set; }
 
         public string AnnonymousUserName { get; set; }
         public string AnnonymousUserPassword { get; set; }

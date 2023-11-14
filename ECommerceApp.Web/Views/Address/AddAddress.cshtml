@@ -13,36 +13,36 @@
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Id" value="0" class="form-control" />
             <div class="form-group">
-                <label asp-for="Street" class="control-label">Ulica</label>
-                <input id="StreetName" asp-for="Street" class="form-control" />
-                <span asp-validation-for="Street" class="text-danger"></span>
+                <label asp-for="Address.Street" class="control-label">Ulica</label>
+                <input id="StreetName" asp-for="Address.Street" class="form-control" />
+                <span asp-validation-for="Address.Street" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="BuildingNumber" class="control-label">Numer budynku</label>
-                <input id="BuildingNumber" asp-for="BuildingNumber" class="form-control" />
-                <span asp-validation-for="BuildingNumber" class="text-danger"></span>
+                <label asp-for="Address.BuildingNumber" class="control-label">Numer budynku</label>
+                <input id="BuildingNumber" asp-for="Address.BuildingNumber" class="form-control" />
+                <span asp-validation-for="Address.BuildingNumber" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="FlatNumber" class="control-label">Numer mieszkania</label>
-                <input id="FlatNumber" asp-for="FlatNumber" class="form-control" />
-                <span asp-validation-for="FlatNumber" class="text-danger"></span>
+                <label asp-for="Address.FlatNumber" class="control-label">Numer mieszkania</label>
+                <input id="FlatNumber" asp-for="Address.FlatNumber" class="form-control" />
+                <span asp-validation-for="Address.FlatNumber" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="ZipCode" class="control-label">Kod pocztowy</label>
-                <input id="ZipCode" asp-for="ZipCode" class="form-control" />
-                <span asp-validation-for="ZipCode" class="text-danger"></span>
+                <label asp-for="Address.ZipCode" class="control-label">Kod pocztowy</label>
+                <input id="ZipCode" asp-for="Address.ZipCode" class="form-control" />
+                <span asp-validation-for="Address.ZipCode" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="City" class="control-label">Miasto</label>
-                <input id="CityName" asp-for="City" class="form-control" />
-                <span asp-validation-for="City" class="text-danger"></span>
+                <label asp-for="Address.City" class="control-label">Miasto</label>
+                <input id="CityName" asp-for="Address.City" class="form-control" />
+                <span asp-validation-for="Address.City" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="Country" class="control-label">Województwo</label>
-                <input id="CountryName" asp-for="Country" class="form-control" />
-                <span asp-validation-for="Country" class="text-danger"></span>
+                <label asp-for="Address.Country" class="control-label">Województwo</label>
+                <input id="CountryName" asp-for="Address.Country" class="form-control" />
+                <span asp-validation-for="Address.Country" class="text-danger"></span>
             </div>
-            <input type="hidden" asp-for="CustomerId" value="@Model.CustomerId" />
+            <input type="hidden" asp-for="Address.CustomerId" value="@Model.Address.CustomerId" />
             <div class="form-group">
                 <button type="submit" class="btn btn-primary">Utwórz</button>
             </div>

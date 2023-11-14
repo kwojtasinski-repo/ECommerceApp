@@ -18,12 +18,12 @@ namespace ECommerceApp.Application.ViewModels.Customer
         {
             profile.CreateMap<AddressVm, CustomerAddressVm>()
                 .ForMember(c => c.Id, opt => opt.MapFrom(a => a.Id))
-                .ForMember(c => c.BuildingNumber, opt => opt.MapFrom(a => a.BuildingNumber))
-                .ForMember(c => c.FlatNumber, opt => opt.MapFrom(a => a.FlatNumber))
-                .ForMember(c => c.ZipCode, opt => opt.MapFrom(a => a.ZipCode))
-                .ForMember(c => c.City, opt => opt.MapFrom(a => a.City))
-                .ForMember(c => c.Country, opt => opt.MapFrom(a => a.Country))
-                .ForMember(c => c.CustomerId, opt => opt.MapFrom(a => a.CustomerId));
+                .ForMember(c => c.BuildingNumber, opt => opt.MapFrom(a => a.Address.BuildingNumber))
+                .ForMember(c => c.FlatNumber, opt => opt.MapFrom(a => a.Address.FlatNumber))
+                .ForMember(c => c.ZipCode, opt => opt.MapFrom(a => a.Address.ZipCode))
+                .ForMember(c => c.City, opt => opt.MapFrom(a => a.Address.City))
+                .ForMember(c => c.Country, opt => opt.MapFrom(a => a.Address.Country))
+                .ForMember(c => c.CustomerId, opt => opt.MapFrom(a => a.Address.CustomerId));
         }
     }
 }

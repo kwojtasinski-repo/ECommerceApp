@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Addresses;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Infrastructure.Permissions;
@@ -20,7 +21,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult AddAddress(int id)
         {
-            return View(new AddressVm { CustomerId = id });
+            return View(new AddressVm { Address = new AddressDto { CustomerId = id } });
         }
 
         [HttpPost]
