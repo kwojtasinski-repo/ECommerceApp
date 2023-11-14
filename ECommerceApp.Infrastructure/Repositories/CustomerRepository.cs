@@ -250,8 +250,7 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public bool CustomerExists(int id, string userId)
         {
-            var customer = _context.Customers.Where(c => c.Id == id && c.UserId == userId).AsNoTracking().FirstOrDefault();
-            return customer != null;
+            return _context.Customers.Where(c => c.Id == id && c.UserId == userId).AsNoTracking().Any();
         }
 
         public List<Customer> GetCustomersByUserId(string userId)
