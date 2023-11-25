@@ -1,5 +1,6 @@
 ﻿using System;
 using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Brands;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -50,8 +51,15 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddBrand(BrandDto model)
         {
-            var id = _brandService.AddBrand(model);
-            return RedirectToAction("Index");
+            try
+            { 
+                _brandService.AddBrand(model);
+                return RedirectToAction("Index");
+            }
+            catch (BusinessException ex)
+            {
+                return RedirectToAction(actionName: "AddBrand", controllerName: "Brand", new { Error = ex.Message });
+            }
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
@@ -70,8 +78,15 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult EditBrand(BrandDto model)
         {
-            _brandService.UpdateBrand(model);
-            return RedirectToAction("Index");
+            try
+            {
+                _brandService.UpdateBrand(model);
+                return RedirectToAction("Index");
+            }
+            catch (BusinessException ex)
+            {
+                return RedirectToAction(actionName: "EditBrand", controllerName: "Brand", new { model.Id, Error = ex.Message });
+            }
         }
 
         [HttpGet]
