@@ -35,29 +35,6 @@ namespace ECommerceApp.IntegrationTests.Services
         }
 
         [Fact]
-        public void given_valid_id_should_return_brand_details()
-        {
-            var id = 1;
-            var name = "Samsung";
-
-            var brand = _service.GetBrandDetail(id);
-
-            brand.ShouldNotBeNull();
-            brand.ShouldBeOfType<BrandDetailsVm>();
-            brand.Name.ShouldBe(name);
-        }
-
-        [Fact]
-        public void given_invalid_id_shouldnt_return_brand_details()
-        {
-            var id = 123;
-
-            var brand = _service.GetBrandDetail(id);
-
-            brand.ShouldBeNull();
-        }
-
-        [Fact]
         public void given_valid_id_brand_should_exists()
         {
             var id = 1;

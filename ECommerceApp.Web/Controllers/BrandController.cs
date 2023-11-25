@@ -11,6 +11,7 @@ namespace ECommerceApp.Web.Controllers
     public class BrandController : Controller
     {
         private readonly IBrandService _brandService;
+
         public BrandController(IBrandService brandService)
         {
             _brandService = brandService;

@@ -71,13 +71,6 @@ namespace ECommerceApp.Application.Services.Brands
             return brandsList;
         }
 
-        public BrandDetailsVm GetBrandDetail(int id)
-        {
-            var brand = _brandRepository.GetAll().Include(i => i.Items).Where(b => b.Id == id).FirstOrDefault();
-            var brandDetails = _mapper.Map<BrandDetailsVm>(brand);
-            return brandDetails;
-        }
-
         public BrandDto GetBrand(int id)
         {
             var brand = _brandRepository.GetBrandById(id);
