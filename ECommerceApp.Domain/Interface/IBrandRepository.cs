@@ -10,5 +10,6 @@ namespace ECommerceApp.Domain.Interface
         Brand GetBrandById(int brandId);
         IQueryable<Brand> GetAllBrands();
         void UpdateBrand(Brand brand);
+        bool ExistsBrand(int id);
     }
 }

@@ -5,7 +5,6 @@ using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.Brand;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -43,7 +42,7 @@ namespace ECommerceApp.Application.Services.Brands
 
         public bool DeleteBrand(int id)
         {
-            if (!BrandExists(id))
+            if (!_brandRepository.ExistsBrand(id))
             {
                 return false;
             }
@@ -101,15 +100,7 @@ namespace ECommerceApp.Application.Services.Brands
 
         public bool BrandExists(int id)
         {
-            var brand = _brandRepository.GetById(id);
-            var exists = brand != null;
-
-            if (exists)
-            {
-                _brandRepository.DetachEntity(brand);
-            }
-
-            return exists;
+            return _brandRepository.ExistsBrand(id);
         }
     }
 }

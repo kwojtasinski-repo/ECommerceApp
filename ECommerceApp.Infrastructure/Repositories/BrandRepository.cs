@@ -1,11 +1,8 @@
 ﻿using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
-using System;
-using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
@@ -31,6 +28,13 @@ namespace ECommerceApp.Infrastructure.Repositories
                 _context.Brands.Remove(brand);
                 _context.SaveChanges();
             }
+        }
+
+        public bool ExistsBrand(int id)
+        {
+            return _context.Brands
+                .AsNoTracking()
+                .Any(b => b.Id == id);
         }
 
         public IQueryable<Brand> GetAllBrands()
