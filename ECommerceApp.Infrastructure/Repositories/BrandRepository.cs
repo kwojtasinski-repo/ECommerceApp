@@ -41,7 +41,7 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public Brand GetBrandById(int brandId)
         {
-            var brand = _context.Brands.Where(b => b.Id == brandId).FirstOrDefault();
+            var brand = _context.Brands.FirstOrDefault(b => b.Id == brandId);
             return brand;
         }
 

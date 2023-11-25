@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
-using ECommerceApp.Application.Abstracts;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.Brand;
 using ECommerceApp.Domain.Interface;
@@ -13,35 +13,49 @@ using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Brands
 {
-    public class BrandService : AbstractService<BrandVm, IBrandRepository, Brand>, IBrandService
+    public class BrandService : IBrandService
     {
-        public BrandService(IBrandRepository brandRepo, IMapper mapper) : base(brandRepo, mapper)
-        { }
+        private readonly IBrandRepository _brandRepository;
+        private readonly IMapper _mapper;
 
-        public int AddBrand(BrandVm brandVm)
+        public BrandService(IBrandRepository brandRepo, IMapper mapper)
         {
-            if (brandVm is null)
+            _brandRepository = brandRepo;
+            _mapper = mapper;
+        }
+
+        public int AddBrand(BrandDto brandDto)
+        {
+            if (brandDto is null)
             {
                 throw new BusinessException($"{typeof(BrandVm).Name} cannot be null");
             }
 
-            if (brandVm.Id != 0)
+            if (brandDto.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
             }
-            var id = Add(brandVm);
+
+            var entity = _mapper.Map<Brand>(brandDto);
+            var id = _brandRepository.Add(entity);
             return id;
         }
 
-        public void DeleteBrand(int id)
+        public bool DeleteBrand(int id)
         {
-            Delete(id);
+            if (!BrandExists(id))
+            {
+                return false;
+            }
+
+            _brandRepository.Delete(id);
+            return true;
         }
 
         public ListForBrandVm GetAllBrands(int pageSize, int pageNo, string searchString)
         {
-            var brands = _repo.GetAllBrands().Where(it => it.Name.StartsWith(searchString))
-                .ProjectTo<BrandVm>(_mapper.ConfigurationProvider)
+            var brands = _brandRepository.GetAllBrands().Where(it => it.Name.StartsWith(searchString))
+                .ProjectTo<BrandDto>(_mapper.ConfigurationProvider)
                 .ToList();
             var brandsToShow = brands.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
 
@@ -59,35 +73,34 @@ namespace ECommerceApp.Application.Services.Brands
 
         public BrandDetailsVm GetBrandDetail(int id)
         {
-            var brand = _repo.GetAll().Include(i => i.Items).Where(b => b.Id == id).FirstOrDefault();
+            var brand = _brandRepository.GetAll().Include(i => i.Items).Where(b => b.Id == id).FirstOrDefault();
             var brandDetails = _mapper.Map<BrandDetailsVm>(brand);
             return brandDetails;
         }
 
-        public BrandVm GetBrand(int id)
+        public BrandDto GetBrand(int id)
         {
-            var brand = _repo.GetBrandById(id);
-            var brandVm = _mapper.Map<BrandVm>(brand);
-            return brandVm;
+            var brand = _brandRepository.GetBrandById(id);
+            var brandDto = _mapper.Map<BrandDto>(brand);
+            return brandDto;
         }
 
-        public void UpdateBrand(BrandVm brandVm)
+        public void UpdateBrand(BrandDto brandDto)
         {
-            if (brandVm is null)
+            if (brandDto is null)
             {
                 throw new BusinessException($"{typeof(BrandVm).Name} cannot be null");
             }
 
-            if (brandVm != null)
-            {
-                Update(brandVm);
-            }
+            var entity = _brandRepository.GetBrandById(brandDto.Id);
+            entity.Name = brandDto.Name;
+            _brandRepository.Update(entity);
         }
 
-        public IEnumerable<BrandVm> GetAllBrands(Expression<Func<Brand, bool>> expression)
+        public IEnumerable<BrandDto> GetAllBrands(Expression<Func<Brand, bool>> expression)
         {
-            var brands = _repo.GetAllBrands().Where(expression)
-                .ProjectTo<BrandVm>(_mapper.ConfigurationProvider);
+            var brands = _brandRepository.GetAllBrands().Where(expression)
+                .ProjectTo<BrandDto>(_mapper.ConfigurationProvider);
             var brandsToShow = brands.ToList();
 
             return brandsToShow;
@@ -95,12 +108,12 @@ namespace ECommerceApp.Application.Services.Brands
 
         public bool BrandExists(int id)
         {
-            var brand = _repo.GetById(id);
+            var brand = _brandRepository.GetById(id);
             var exists = brand != null;
 
             if (exists)
             {
-                _repo.DetachEntity(brand);
+                _brandRepository.DetachEntity(brand);
             }
 
             return exists;

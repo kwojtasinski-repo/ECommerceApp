@@ -1,6 +1,6 @@
 ﻿using System;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Brands;
-using ECommerceApp.Application.ViewModels.Brand;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -43,12 +43,12 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult AddBrand()
         {
-            return View(new BrandVm());
+            return View(new BrandDto());
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpPost]
-        public IActionResult AddBrand(BrandVm model)
+        public IActionResult AddBrand(BrandDto model)
         {
             var id = _brandService.AddBrand(model);
             return RedirectToAction("Index");
@@ -68,7 +68,7 @@ namespace ECommerceApp.Web.Controllers
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpPost]
-        public IActionResult EditBrand(BrandVm model)
+        public IActionResult EditBrand(BrandDto model)
         {
             _brandService.UpdateBrand(model);
             return RedirectToAction("Index");
@@ -77,7 +77,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult ViewBrand(int id)
         {
-            var brand = _brandService.GetBrandDetail(id);
+            var brand = _brandService.GetBrand(id);
             if (brand is null)
             {
                 return NotFound();
@@ -88,8 +88,9 @@ namespace ECommerceApp.Web.Controllers
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         public IActionResult DeleteBrand(int id)
         {
-            _brandService.DeleteBrand(id);
-            return Json("deleted");
+            return _brandService.DeleteBrand(id)
+                ? Json(new { Success = true })
+                : NotFound();
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Services.Brands;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Services.Brands;
 using ECommerceApp.Application.ViewModels.Brand;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -20,10 +21,10 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpGet]
-        public ActionResult<List<BrandVm>> GetItemBrands()
+        public ActionResult<List<BrandDto>> GetItemBrands()
         {
             var brands = _brandService.GetAllBrands(b => true);
-            if (brands.Count() == 0)
+            if (!brands.Any())
             {
                 return NotFound();
             }
@@ -31,7 +32,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpGet("{id}")]
-        public ActionResult<BrandVm> GetBrand(int id)
+        public ActionResult<BrandDto> GetBrand(int id)
         {
             var brand = _brandService.GetBrand(id);
             if (brand == null)
@@ -43,7 +44,7 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpPut]
-        public IActionResult EditBrand(BrandVm model)
+        public IActionResult EditBrand(BrandDto model)
         {
             var modelExists = _brandService.BrandExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
@@ -56,7 +57,7 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpPost]
-        public IActionResult AddBrand(BrandVm model)
+        public IActionResult AddBrand(BrandDto model)
         {
             if (!ModelState.IsValid || model.Id != 0)
             {
