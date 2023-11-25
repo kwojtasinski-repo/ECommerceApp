@@ -1,12 +1,10 @@
-﻿using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Brands;
 using ECommerceApp.Application.ViewModels.Brand;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Services
@@ -22,7 +20,7 @@ namespace ECommerceApp.IntegrationTests.Services
             var brand = _service.GetBrand(id);
 
             brand.ShouldNotBeNull();
-            brand.ShouldBeOfType<BrandVm>();
+            brand.ShouldBeOfType<BrandDto>();
             brand.Name.ShouldBe(name);
         }
 
@@ -120,7 +118,7 @@ namespace ECommerceApp.IntegrationTests.Services
         {
             var brand = CreateBrand(0);
             var id = _service.AddBrand(brand);
-            brand = _service.Get(id);
+            brand = _service.GetBrand(id);
             var name = "Brand1234";
             brand.Name = name;
 
@@ -128,7 +126,7 @@ namespace ECommerceApp.IntegrationTests.Services
 
             var brandUpdated = _service.GetBrand(id);
             brandUpdated.ShouldNotBeNull();
-            brandUpdated.ShouldBeOfType<BrandVm>();
+            brandUpdated.ShouldBeOfType<BrandDto>();
             brandUpdated.Name.ShouldBe(name);
         }
 
@@ -170,13 +168,13 @@ namespace ECommerceApp.IntegrationTests.Services
 
             _service.DeleteBrand(id);
 
-            var brandDeleted = _service.Get(id);
+            var brandDeleted = _service.GetBrand(id);
             brandDeleted.ShouldBeNull();
         }
 
-        private BrandVm CreateBrand(int id)
+        private BrandDto CreateBrand(int id)
         {
-            var brand = new BrandVm
+            var brand = new BrandDto
             {
                 Id = id,
                 Name = "Test"

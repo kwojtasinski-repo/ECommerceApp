@@ -1,6 +1,6 @@
-﻿using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Brands;
-using ECommerceApp.Application.ViewModels.Brand;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
@@ -62,9 +62,9 @@ namespace ECommerceApp.UnitTests.Services.Brand
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
-        private BrandVm CreateBrand()
+        private BrandDto CreateBrand()
         {
-            var brand = new BrandVm
+            var brand = new BrandDto
             {
                 Id = 1,
                 Name = "Name"
