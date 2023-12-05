@@ -12,17 +12,17 @@
     <div class="col-md-4">
         <form id="contactDetailForm" asp-action="EditContactDetail">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" value="@Model.Id" class="form-control" />
-            <input type="hidden" asp-for="CustomerId" value="@Model.CustomerId" />
+            <input type="hidden" asp-for="ContactDetail.Id" value="@Model.ContactDetail.Id" class="form-control" />
+            <input type="hidden" asp-for="ContactDetail.CustomerId" value="@Model.ContactDetail.CustomerId" />
             <div class="form-group">
-                <label asp-for="ContactDetailInformation" class="control-label">Dane</label>
-                <input id="ContactDetailInformation" asp-for="ContactDetailInformation" class="form-control" />
-                <span asp-validation-for="ContactDetailInformation" class="text-danger"></span>
+                <label asp-for="@Model.ContactDetail.ContactDetailInformation" class="control-label">Dane</label>
+                <input id="ContactDetailInformation" asp-for="@Model.ContactDetail.ContactDetailInformation" class="form-control" />
+                <span asp-validation-for="@Model.ContactDetail.ContactDetailInformation" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="ContactDetailTypeId" class="control-label">Rodzaj kontaktu</label>
-                <select asp-for="ContactDetailTypeId" asp-items="@(new SelectList(Model.ContactDetailTypes,"Id", "Name"))" class="custom-select"></select>
-                <span asp-validation-for="ContactDetailTypeId" class="text-danger"></span>
+                <label asp-for="@Model.ContactDetail.ContactDetailTypeId" class="control-label">Rodzaj kontaktu</label>
+                <select asp-for="@Model.ContactDetail.ContactDetailTypeId" asp-items="@(new SelectList(Model.ContactDetailTypes,"Id", "Name"))" class="custom-select"></select>
+                <span asp-validation-for="@Model.ContactDetail.ContactDetailTypeId" class="text-danger"></span>
             </div>
             
             <br />
@@ -34,7 +34,7 @@
 </div>
 <br /><br />
 <div>
-    <a asp-route-id="@Model.CustomerId" asp-action="EditCustomer" asp-controller="Customer">Powrót do danych kontaktowych</a>
+    <a asp-route-id="@Model.ContactDetail.CustomerId" asp-action="EditCustomer" asp-controller="Customer">Powrót do danych kontaktowych</a>
 </div>
 
 @section Scripts {

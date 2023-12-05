@@ -14,18 +14,18 @@
     <div class="col-md-4">
         <form id="contactDetailForm" asp-action="AddNewContactDetail">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" value="0" />
+            <input type="hidden" asp-for="@Model.ContactDetail.Id" value="0" />
             <div class="form-group">
-                <label asp-for="ContactDetailInformation" class="control-label">Dane</label>
-                <input id="ContactDetailInformation" asp-for="ContactDetailInformation" class="form-control" />
-                <span asp-validation-for="ContactDetailInformation" class="text-danger"></span>
+                <label asp-for="@Model.ContactDetail.ContactDetailInformation" class="control-label">Dane</label>
+                <input id="ContactDetailInformation" asp-for="@Model.ContactDetail.ContactDetailInformation" class="form-control" />
+                <span asp-validation-for="@Model.ContactDetail.ContactDetailInformation" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="ContactDetailTypeId" class="control-label">Rodzaj kontaktu</label>
-                <select asp-for="ContactDetailTypeId" asp-items="@(new SelectList(ViewBag.ContactDetailTypes,"Id", "Name"))" class="custom-select"></select>
-                <span asp-validation-for="ContactDetailTypeId" class="text-danger"></span>
+                <label asp-for="@Model.ContactDetail.ContactDetailTypeId" class="control-label">Rodzaj kontaktu</label>
+                <select asp-for="@Model.ContactDetail.ContactDetailTypeId" asp-items="@(new SelectList(Model.ContactDetailTypes,"Id", "Name"))" class="custom-select"></select>
+                <span asp-validation-for="@Model.ContactDetail.ContactDetailTypeId" class="text-danger"></span>
             </div>
-            <input type="hidden" asp-for="CustomerId" value="@ViewBag.CustomerId" />
+            <input type="hidden" asp-for="@Model.ContactDetail.CustomerId" value="@Model.ContactDetail.CustomerId" />
             <div class="form-group">
                 <input type="submit" value="Utwórz" class="btn btn-dark" />
             </div>
@@ -34,7 +34,7 @@
 </div>
 
 <div>
-    <a asp-route-id="@ViewBag.CustomerId" asp-action="EditCustomer" asp-controller="Customer">Powrót do danych kontaktowych</a>
+    <a asp-route-id="@Model.ContactDetail.CustomerId" asp-action="EditCustomer" asp-controller="Customer">Powrót do danych kontaktowych</a>
 </div>
 
 @section Scripts {

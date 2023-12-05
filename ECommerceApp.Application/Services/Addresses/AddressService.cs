@@ -94,7 +94,6 @@ namespace ECommerceApp.Application.Services.Addresses
                 throw new BusinessException($"{typeof(AddressVm).Name} cannot be null");
             }
 
-
             var userId = _httpContextAccessor.GetUserId();
             var address = _addressRepository.GetAddressById(addressDto.Id ?? 0, userId);
             if (address == null)

@@ -3,10 +3,8 @@ using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
@@ -23,15 +21,17 @@ namespace ECommerceApp.Infrastructure.Repositories
             return contactDetail.Id;
         }
 
-        public void DeleteContactDetail(int contactDetailId)
+        public bool DeleteContactDetail(int contactDetailId)
         {
             var contactDetail = _context.ContactDetails.Find(contactDetailId);
-
-            if (contactDetail != null)
+            if (contactDetail is null)
             {
-                _context.ContactDetails.Remove(contactDetail);
-                _context.SaveChanges();
+                return false;
             }
+
+            _context.ContactDetails.Remove(contactDetail);
+            _context.SaveChanges();
+            return true;
         }
 
         public IQueryable<ContactDetail> GetAllContactDetails()

@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
-using ECommerceApp.Application.Abstracts;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Domain.Interface;
@@ -14,74 +14,90 @@ using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.ContactDetails
 {
-    public class ContactDetailService : AbstractService<ContactDetailVm, IContactDetailRepository, ContactDetail>, IContactDetailService
+    public class ContactDetailService : IContactDetailService
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IMapper _mapper;
+        private readonly IContactDetailRepository _contactDetailRepository;
+        private readonly IContactDetailTypeRepository _contactDetailTypeRepository;
 
-        public ContactDetailService(IContactDetailRepository contactDetailRepository, IMapper mapper, IHttpContextAccessor httpContextAccessor) : base(contactDetailRepository, mapper)
+        public ContactDetailService(IContactDetailRepository contactDetailRepository, IMapper mapper, IHttpContextAccessor httpContextAccessor)
         {
             _httpContextAccessor = httpContextAccessor;
+            _contactDetailRepository = contactDetailRepository;
+            _mapper = mapper;
         }
 
-        public int AddContactDetail(ContactDetailVm contactDetailVm)
+        public int AddContactDetail(ContactDetailDto contactDetailDto)
         {
-            if (contactDetailVm is null)
+            if (contactDetailDto is null)
             {
                 throw new BusinessException($"{typeof(ContactDetailVm).Name} cannot be null");
             }
 
-            if (contactDetailVm.Id != 0)
+            if (contactDetailDto.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
             }
 
             var userId = _httpContextAccessor.GetUserId();
-            var customerIds = _repo.GetCustomersIds(c => c.UserId == userId).ToList();
+            var customerIds = _contactDetailRepository.GetCustomersIds(c => c.UserId == userId).ToList();
 
-            if (!customerIds.Any(c => c == contactDetailVm.CustomerId))
+            if (!customerIds.Any(c => c == contactDetailDto.CustomerId))
             {
                 throw new BusinessException("Customer not exists check your id");
             }
 
-            var contactDetail = _mapper.Map<ContactDetail>(contactDetailVm);
-            var id = _repo.AddContactDetail(contactDetail);
+            var contactDetail = _mapper.Map<ContactDetail>(contactDetailDto);
+            var id = _contactDetailRepository.AddContactDetail(contactDetail);
             return id;
         }
 
-        public void DeleteContactDetail(int id)
+        public bool DeleteContactDetail(int id)
         {
-            _repo.DeleteContactDetail(id);
+            return _contactDetailRepository.DeleteContactDetail(id);
         }
 
-        public IEnumerable<ContactDetailVm> GetAllContactDetails(Expression<Func<ContactDetail, bool>> expression)
+        public IEnumerable<ContactDetailDto> GetAllContactDetails(Expression<Func<ContactDetail, bool>> expression)
         {
-            var contactDetailTypes = _repo.GetAll().Where(expression);
-            var contactDetailTypesVm = contactDetailTypes.ProjectTo<ContactDetailVm>(_mapper.ConfigurationProvider).ToList();
+            var contactDetailTypes = _contactDetailRepository.GetAll().Where(expression);
+            var contactDetailTypesVm = contactDetailTypes.ProjectTo<ContactDetailDto>(_mapper.ConfigurationProvider).ToList();
             return contactDetailTypesVm;
         }
 
-        public ContactDetailVm GetContactDetailById(int id)
+        public ContactDetailDto GetContactDetailById(int id)
         {
             var userId = _httpContextAccessor.GetUserId();
-            var contactDetail = _repo.GetAll().Include(c => c.Customer).Where(cd => cd.Id == id && cd.Customer.UserId == userId).FirstOrDefault();
-            var contactDetailVm = _mapper.Map<ContactDetailVm>(contactDetail);
+            var contactDetail = _contactDetailRepository.GetAll().Include(c => c.Customer).Where(cd => cd.Id == id && cd.Customer.UserId == userId).FirstOrDefault();
+            var contactDetailVm = _mapper.Map<ContactDetailDto>(contactDetail);
             return contactDetailVm;
         }
 
-        public void UpdateContactDetail(ContactDetailVm contactDetailVm)
+        public bool UpdateContactDetail(ContactDetailDto contactDetailDto)
         {
-            if (contactDetailVm is null)
+            if (contactDetailDto is null)
             {
                 throw new BusinessException($"{typeof(ContactDetailVm).Name} cannot be null");
             }
 
-            var contactDetail = _mapper.Map<ContactDetail>(contactDetailVm);
-            _repo.UpdateContactDetail(contactDetail);
+            var contactDetail = _contactDetailRepository.GetContactDetailById(contactDetailDto.Id);
+            if (contactDetail is null)
+            {
+                return false;
+            }
+
+            var contactDetailType = _contactDetailTypeRepository.GetById(contactDetailDto.ContactDetailTypeId)
+                ?? throw new BusinessException($"Contact Detail with id '{contactDetailDto.ContactDetailTypeId}' was not found");
+            contactDetail.ContactDetailInformation = contactDetailDto.ContactDetailInformation;
+            contactDetail.ContactDetailType = contactDetailType;
+            contactDetail.ContactDetailTypeId = contactDetailDto.ContactDetailTypeId;
+            _contactDetailRepository.UpdateContactDetail(contactDetail);
+            return true;
         }
 
         public bool ContactDetailExists(Expression<Func<ContactDetail, bool>> expression)
         {
-            var contactDetail = _repo.GetAll().Where(expression).FirstOrDefault();
+            var contactDetail = _contactDetailRepository.GetAll().Where(expression).FirstOrDefault();
 
             if (contactDetail == null)
             {
@@ -94,7 +110,7 @@ namespace ECommerceApp.Application.Services.ContactDetails
         public bool ContactDetailExists(int id)
         {
             var userId = _httpContextAccessor.GetUserId();
-            var contactDetail = _repo.GetAll().Include(c => c.Customer).Where(cd => cd.Id == id && cd.Customer.UserId == userId).AsNoTracking().FirstOrDefault();
+            var contactDetail = _contactDetailRepository.GetAll().Include(c => c.Customer).Where(cd => cd.Id == id && cd.Customer.UserId == userId).AsNoTracking().FirstOrDefault();
 
             if (contactDetail == null)
             {
@@ -107,7 +123,7 @@ namespace ECommerceApp.Application.Services.ContactDetails
         public ContactDetailsForListVm GetContactDetails(int id)
         {
             var userId = _httpContextAccessor.GetUserId();
-            var contactDetail = _repo.GetContactDetailById(id, userId);
+            var contactDetail = _contactDetailRepository.GetContactDetailById(id, userId);
             var contactDetailVm = _mapper.Map<ContactDetailsForListVm>(contactDetail);
             return contactDetailVm;
         }

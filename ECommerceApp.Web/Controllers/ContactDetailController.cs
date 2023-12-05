@@ -1,10 +1,11 @@
 ﻿using ECommerceApp.Application.ViewModels.ContactDetail;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ECommerceApp.Application;
 using System.Linq;
 using ECommerceApp.Infrastructure.Permissions;
 using ECommerceApp.Application.Services.ContactDetails;
+using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.DTO;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -23,42 +24,75 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult AddNewContactDetail(int id)
         {
-            ViewBag.CustomerId = id;
-            ViewBag.ContactDetailTypes = _contactDetailTypeService.GetContactDetailTypes(cdt => true);
-            return View();
+            return View(new NewContactDetailVm { 
+                ContactDetail = new ContactDetailDto { CustomerId = id }, 
+                ContactDetailTypes = _contactDetailTypeService.GetContactDetailTypes(cdt => true).ToList() 
+            });
         }
 
         [HttpPost]
         public IActionResult AddNewContactDetail(NewContactDetailVm newContact)
         {
-            _contactDetailService.AddContactDetail(newContact.AsContactDetailVm());
-            return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = newContact.CustomerId });
+            try
+            {
+                _contactDetailService.AddContactDetail(newContact.ContactDetail);
+                return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = newContact.ContactDetail.CustomerId });
+            }
+            catch (BusinessException ex)
+            {
+                return RedirectToAction(actionName: "AddNewContactDetail", controllerName: "ContactDetail", new { newContact.ContactDetail.CustomerId, Error = ex.Message });
+            }
         }
 
         [HttpGet]
         public IActionResult EditContactDetail(int id)
         {
-            var contactDetail = _contactDetailService.GetContactDetailById(id).AsNewContactDetailVm();
-            contactDetail.ContactDetailTypes = _contactDetailTypeService.GetContactDetailTypes(cdt => true).ToList();
-            return View(contactDetail);
+            var contactDetail = _contactDetailService.GetContactDetailById(id);
+            if (contactDetail is null)
+            {
+                return NotFound();
+            }
+
+            var vm = new NewContactDetailVm { ContactDetail = contactDetail, ContactDetailTypes = _contactDetailTypeService.GetContactDetailTypes(cdt => true).ToList() };
+            return View(vm);
         }
 
         [HttpPost]
         public IActionResult EditContactDetail(NewContactDetailVm model)
         {
-            _contactDetailService.UpdateContactDetail(model.AsContactDetailVm());
-            return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = model.CustomerId });
+            try
+            {
+                if (!_contactDetailService.UpdateContactDetail(model.ContactDetail))
+                {
+                    return NotFound();
+                }
+
+                return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = model.ContactDetail.CustomerId });
+            }
+            catch (BusinessException ex)
+            {
+                return RedirectToAction(actionName: "EditContactDetail", controllerName: "ContactDetail", new { model.ContactDetail.Id, Error = ex.Message });
+            }
         }
 
         public IActionResult ViewContactDetail(int id)
         {
             var contactDetail = _contactDetailService.GetContactDetails(id);
+            if (contactDetail is null)
+            {
+                return NotFound();
+            }
+
             return View(contactDetail);
         }
 
         public IActionResult DeleteContactDetail(int id)
         {
-            _contactDetailService.DeleteContactDetail(id);
+            if (!_contactDetailService.DeleteContactDetail(id))
+            {
+                return NotFound();
+            }
+
             return Json(new { Success = true });
         }
     }

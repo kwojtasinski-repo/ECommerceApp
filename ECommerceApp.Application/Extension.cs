@@ -117,32 +117,6 @@ namespace ECommerceApp.Application
             return order;
         }
 
-        public static ContactDetailVm AsContactDetailVm(this NewContactDetailVm newContactDetailVm)
-        {
-            var contactDetail = new ContactDetailVm
-            {
-                Id = newContactDetailVm.Id,
-                ContactDetailInformation = newContactDetailVm.ContactDetailInformation,
-                ContactDetailTypeId = newContactDetailVm.ContactDetailTypeId,
-                CustomerId = newContactDetailVm.CustomerId
-            };
-
-            return contactDetail;
-        }
-
-        public static NewContactDetailVm AsNewContactDetailVm(this ContactDetailVm contactDetailVm)
-        {
-            var newContactDetail = new NewContactDetailVm
-            {
-                Id = contactDetailVm.Id,
-                ContactDetailInformation = contactDetailVm.ContactDetailInformation,
-                ContactDetailTypeId = contactDetailVm.ContactDetailTypeId,
-                CustomerId = contactDetailVm.CustomerId
-            };
-
-            return newContactDetail;
-        }
-
         public static OrderItemVm AsOrderItemVm(this NewOrderItemVm newOrderItemVm)
         {
             var orderItem = new OrderItemVm
