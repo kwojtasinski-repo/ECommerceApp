@@ -1,38 +1,35 @@
 ﻿using AutoMapper;
-using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Mapping;
 using FluentValidation;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace ECommerceApp.Application.ViewModels.ContactDetail
+namespace ECommerceApp.Application.DTO
 {
-    public class ContactDetailVm : BaseVm, IMapFrom<Domain.Model.ContactDetail>
+    public class ContactDetailDto : IMapFrom<Domain.Model.ContactDetail>
     {
+        public int Id { get; set; }
         public string ContactDetailInformation { get; set; }
         public int ContactDetailTypeId { get; set; }
         public int CustomerId { get; set; }
-        public ContactDetailDto ContactDetail { get; set; }
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ContactDetailVm, Domain.Model.ContactDetail>()
+            profile.CreateMap<ContactDetailDto, Domain.Model.ContactDetail>()
                 .ForMember(c => c.Id, opt => opt.MapFrom(co => co.Id))
                 .ForMember(c => c.ContactDetailInformation, opt => opt.MapFrom(co => co.ContactDetailInformation))
                 .ForMember(c => c.ContactDetailTypeId, opt => opt.MapFrom(co => co.ContactDetailTypeId))
                 .ForMember(c => c.CustomerId, opt => opt.MapFrom(co => co.CustomerId))
                 .ReverseMap();
         }
-    }
 
-    public class ContactDetailVmValidation : AbstractValidator<ContactDetailVm>
-    {
-        public ContactDetailVmValidation()
+        public class ContactDetailDtoValidation : AbstractValidator<ContactDetailDto>
         {
-            RuleFor(x => x.Id).NotNull();
-            RuleFor(x => x.ContactDetailTypeId).NotNull();
-            RuleFor(x => x.CustomerId).NotNull();
+            public ContactDetailDtoValidation()
+            {
+                RuleFor(x => x.Id).NotNull();
+                RuleFor(x => x.ContactDetailInformation).NotNull();
+                RuleFor(x => x.ContactDetailTypeId).NotNull();
+                RuleFor(x => x.CustomerId).NotNull();
+            }
         }
     }
 }

@@ -8,9 +8,9 @@ namespace ECommerceApp.Application.ViewModels.Address
         public AddressDto Address { get; set; }
     }
 
-    public class NewAddressValidation : AbstractValidator<AddressVm>
+    public class AddressVmValidation : AbstractValidator<AddressVm>
     {
-        public NewAddressValidation()
+        public AddressVmValidation()
         {
             RuleFor(a => a.Address).SetValidator(new AddressDtoValidation());
         }
