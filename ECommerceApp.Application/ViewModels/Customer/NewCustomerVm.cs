@@ -1,12 +1,9 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Mapping;
-using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using FluentValidation;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Customer
 {

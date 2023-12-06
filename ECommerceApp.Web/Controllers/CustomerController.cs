@@ -1,9 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Services.ContactDetails;
 using ECommerceApp.Application.Services.Customers;
-using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Infrastructure.Permissions;
@@ -15,6 +16,7 @@ namespace ECommerceApp.Web.Controllers
     public class CustomerController : BaseController
     {
         private readonly ICustomerService _customerService;
+        private readonly IContactDetailTypeService _contactDetailTypeService;
 
         public CustomerController(ICustomerService customerService)
         {
@@ -106,6 +108,8 @@ namespace ECommerceApp.Web.Controllers
             var customer = _customerService.GetCustomerForEdit(id);
             var userId = GetUserId();
             var role = GetUserRole();
+            var contactDetailTypes = _contactDetailTypeService.GetContactDetailTypes(_ => true).ToList();
+            customer.ContactDetails.ForEach(cd => cd.ContactDetailTypes = contactDetailTypes);
             if (userId.Value != customer.UserId && role.Value == UserPermissions.Roles.User)
             {
                 return Forbid();

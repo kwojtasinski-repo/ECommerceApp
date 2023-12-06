@@ -88,17 +88,19 @@
                         {
                         <tr>
                             <td>
-                                @Html.DisplayFor(model => contact.ContactDetailInformation)
+                                @Html.DisplayFor(model => contact.ContactDetail.ContactDetailInformation)
                             <td>
-                                @Html.DisplayFor(model => contact.ContactDetailTypeName)
+                                <span>
+                                    @(contact.ContactDetailTypes.FirstOrDefault(cdt => cdt.Id == contact.ContactDetail.ContactDetailTypeId)?.Name ?? string.Empty)
+                                </span>
                             </td>
                             <td>
                                 @if (Model.ContactDetails.Count > 1)
                                 {
-                                    <button type="button" class="btn btn-danger btn-sm" onclick="deleteContactDetail(@contact.Id)">Usuń</button>
+                                    <button type="button" class="btn btn-danger btn-sm" onclick="deleteContactDetail(@contact.ContactDetail.Id)">Usuń</button>
                                 }
-                                <a class="btn btn-info btn-sm" href="@Url.Action("EditContactDetail", "ContactDetail", new { id = contact.Id})">Edytuj</a>
-                                <a class="btn btn-info btn-sm" href="@Url.Action("ViewContactDetail", "ContactDetail", new { id = contact.Id})">Szczegóły</a>
+                                <a class="btn btn-info btn-sm" href="@Url.Action("EditContactDetail", "ContactDetail", new { id = contact.ContactDetail.Id})">Edytuj</a>
+                                <a class="btn btn-info btn-sm" href="@Url.Action("ViewContactDetail", "ContactDetail", new { id = contact.ContactDetail.Id})">Szczegóły</a>
                             </td>
                         </tr>
                         }

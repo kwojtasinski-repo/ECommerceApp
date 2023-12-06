@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Services.ContactDetails;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Services.ContactDetails;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -30,7 +31,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpPut]
-        public IActionResult EditContactDetail(ContactDetailVm model)
+        public IActionResult EditContactDetail(ContactDetailDto model)
         {
             var modelExists = _contactDetailService.ContactDetailExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
@@ -42,7 +43,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpPost]
-        public IActionResult AddContactDetail([FromBody] ContactDetailVm model)
+        public IActionResult AddContactDetail([FromBody] ContactDetailDto model)
         {
             if (!ModelState.IsValid || model.Id != 0)
             {
