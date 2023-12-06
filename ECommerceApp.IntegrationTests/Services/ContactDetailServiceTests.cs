@@ -23,7 +23,7 @@ namespace ECommerceApp.IntegrationTests.Services
             var contactDetail = _service.GetContactDetailById(id);
 
             contactDetail.ShouldNotBeNull();
-            contactDetail.ShouldBeOfType<ContactDetailVm>();
+            contactDetail.ShouldBeOfType<ContactDetailDto>();
             contactDetail.ContactDetailInformation.ShouldBe(contactDetailInformation);
         }
 
@@ -47,7 +47,7 @@ namespace ECommerceApp.IntegrationTests.Services
             var contactDetail = _service.GetContactDetailById(id);
 
             contactDetail.ShouldNotBeNull();
-            contactDetail.ShouldBeOfType<ContactDetailVm>();
+            contactDetail.ShouldBeOfType<ContactDetailDto>();
             contactDetail.ContactDetailInformation.ShouldBe(contactDetailInformation);
         }
 
@@ -166,7 +166,7 @@ namespace ECommerceApp.IntegrationTests.Services
 
             var contactDetailUpdated = _service.GetContactDetailById(id);
             contactDetailUpdated.ShouldNotBeNull();
-            contactDetailUpdated.ShouldBeOfType<ContactDetailVm>();
+            contactDetailUpdated.ShouldBeOfType<ContactDetailDto>();
             contactDetailUpdated.ContactDetailInformation.ShouldBe(contactDetailInformation);
         }
 
