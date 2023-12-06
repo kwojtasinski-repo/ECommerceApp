@@ -9,7 +9,7 @@ namespace ECommerceApp.Application.ViewModels.ContactDetail
     public class NewContactDetailVm
     {
         public ContactDetailDto ContactDetail { get; set; }
-        public List<ContactDetailTypeVm> ContactDetailTypes { get; set; }
+        public List<ContactDetailTypeDto> ContactDetailTypes { get; set; }
     }
 
     public class NewContactDetailValidation : AbstractValidator<NewContactDetailVm>

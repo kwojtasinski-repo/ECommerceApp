@@ -1,5 +1,5 @@
-﻿using ECommerceApp.Application.Services.ContactDetails;
-using ECommerceApp.Application.ViewModels.ContactDetailType;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Services.ContactDetails;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +21,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpGet("{id}")]
-        public ActionResult<ContactDetailTypeVm> GetContactDetailType(int id)
+        public ActionResult<ContactDetailTypeDto> GetContactDetailType(int id)
         {
             var contactDetailType = _contactDetailTypeService.GetContactDetailType(id);
             if (contactDetailType == null)
@@ -32,7 +32,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpGet]
-        public ActionResult<List<ContactDetailTypeVm>> GetContactDetailTypes()
+        public ActionResult<List<ContactDetailTypeDto>> GetContactDetailTypes()
         {
             var contactDetailTypes = _contactDetailTypeService.GetContactDetailTypes(c => true).ToList();
             if (contactDetailTypes.Count == 0)
@@ -43,7 +43,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpPut]
-        public IActionResult EditContactDetailType(ContactDetailTypeVm model)
+        public IActionResult EditContactDetailType(ContactDetailTypeDto model)
         {
             var modelExists = _contactDetailTypeService.ContactDetailTypeExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
@@ -55,7 +55,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpPost]
-        public IActionResult AddContactDetailType([FromBody] ContactDetailTypeVm model)
+        public IActionResult AddContactDetailType([FromBody] ContactDetailTypeDto model)
         {
             if (!ModelState.IsValid || model.Id != 0)
             {

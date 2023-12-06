@@ -1,25 +1,18 @@
-﻿using AutoMapper;
-using ECommerceApp.Application.Mapping;
+﻿using ECommerceApp.Application.DTO;
 using FluentValidation;
 
 namespace ECommerceApp.Application.ViewModels.ContactDetailType
 {
-    public class ContactDetailTypeVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.ContactDetail>
+    public class ContactDetailTypeVm
     {
-        public string Name { get; set; }
-
-        public void Mapping(Profile profile)
-        {
-            profile.CreateMap<ECommerceApp.Domain.Model.ContactDetailType, ContactDetailTypeVm>().ReverseMap();
-        }
+        public ContactDetailTypeDto ContactDetailType { get; set; }
     }
 
     public class ContactDetailTypeValidation : AbstractValidator<ContactDetailTypeVm>
     {
         public ContactDetailTypeValidation()
         {
-            RuleFor(x => x.Id).NotNull();
-            RuleFor(x => x.Name).NotNull();
+            RuleFor(x => x.ContactDetailType).SetValidator(new ContactDetailTypeDtoValidator());
         }
     }
 }

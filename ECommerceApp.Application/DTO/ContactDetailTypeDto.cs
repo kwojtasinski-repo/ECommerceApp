@@ -15,9 +15,9 @@ namespace ECommerceApp.Application.DTO
         }
     }
 
-    public class ContactDetailTypeDtoValidation : AbstractValidator<ContactDetailTypeDto>
+    public class ContactDetailTypeDtoValidator : AbstractValidator<ContactDetailTypeDto>
     {
-        public ContactDetailTypeDtoValidation()
+        public ContactDetailTypeDtoValidator()
         {
             RuleFor(x => x.Id).NotNull();
             RuleFor(x => x.Name).NotNull();

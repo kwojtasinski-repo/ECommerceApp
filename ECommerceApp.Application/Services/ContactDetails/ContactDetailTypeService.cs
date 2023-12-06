@@ -1,38 +1,42 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
-using ECommerceApp.Application.Abstracts;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.ViewModels.ContactDetailType;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace ECommerceApp.Application.Services.ContactDetails
 {
-    public class ContactDetailTypeService : AbstractService<ContactDetailTypeVm, IContactDetailTypeRepository, ContactDetailType>, IContactDetailTypeService
+    public class ContactDetailTypeService : IContactDetailTypeService
     {
-        public ContactDetailTypeService(IContactDetailTypeRepository contactDetailTypeRepository, IMapper mapper) : base(contactDetailTypeRepository, mapper)
+        private readonly IMapper _mapper;
+        private readonly IContactDetailTypeRepository _contactDetailTypeRepository;
+
+        public ContactDetailTypeService(IContactDetailTypeRepository contactDetailTypeRepository, IMapper mapper)
         {
+            _mapper = mapper;
+            _contactDetailTypeRepository = contactDetailTypeRepository;
         }
 
-        public int AddContactDetailType(ContactDetailTypeVm model)
+        public int AddContactDetailType(ContactDetailTypeDto model)
         {
             if (model is null)
             {
-                throw new BusinessException($"{typeof(ContactDetailTypeVm).Name} cannot be null");
+                throw new BusinessException($"{typeof(ContactDetailTypeDto).Name} cannot be null");
             }
 
-            var id = Add(model);
+            var entity = _mapper.Map<ContactDetailType>(model);
+            var id = _contactDetailTypeRepository.Add(entity);
             return id;
         }
 
         public bool ContactDetailTypeExists(int id)
         {
-            var contactDetailType = Get(id);
+            var contactDetailType = _contactDetailTypeRepository.GetById(id);
             var exists = contactDetailType != null;
 
             if (exists)
@@ -43,28 +47,30 @@ namespace ECommerceApp.Application.Services.ContactDetails
             return false;
         }
 
-        public ContactDetailTypeVm GetContactDetailType(int id)
+        public ContactDetailTypeDto GetContactDetailType(int id)
         {
-            var contactDetailType = Get(id);
-            return contactDetailType;
+            var contactDetailType = _contactDetailTypeRepository.GetById(id);
+            return _mapper.Map<ContactDetailTypeDto>(contactDetailType);
         }
 
-        public IEnumerable<ContactDetailTypeVm> GetContactDetailTypes(Expression<Func<ContactDetailType, bool>> expression)
+        public IEnumerable<ContactDetailTypeDto> GetContactDetailTypes(Expression<Func<ContactDetailType, bool>> expression)
         {
-            var contactDetailTypes = _repo.GetAll().Where(expression);
-            var contactDetailTypesVm = contactDetailTypes.ProjectTo<ContactDetailTypeVm>(_mapper.ConfigurationProvider).ToList();
+            var contactDetailTypes = _contactDetailTypeRepository.GetAll().Where(expression);
+            var contactDetailTypesVm = contactDetailTypes.ProjectTo<ContactDetailTypeDto>(_mapper.ConfigurationProvider).ToList();
             return contactDetailTypesVm;
         }
 
-        public void UpdateContactDetailType(ContactDetailTypeVm model)
+        public void UpdateContactDetailType(ContactDetailTypeDto model)
         {
             if (model is null)
             {
-                throw new BusinessException($"{typeof(ContactDetailTypeVm).Name} cannot be null");
+                throw new BusinessException($"{typeof(ContactDetailTypeDto).Name} cannot be null");
             }
 
-            var contactDetailType = _mapper.Map<ContactDetailType>(model);
-            _repo.UpdateContactDetailType(contactDetailType);
+            var entity = _contactDetailTypeRepository.GetById(model.Id)
+                ?? throw new BusinessException($"Contact detail with id '{model.Id}' was not found");
+            entity.Name = model.Name;
+            _contactDetailTypeRepository.UpdateContactDetailType(entity);
         }
     }
 }

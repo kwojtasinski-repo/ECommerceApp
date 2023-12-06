@@ -17,7 +17,7 @@ namespace ECommerceApp.Application.ViewModels.Customer
         public string CompanyName { get; set; }
 
         public List<ContactDetailDto> ContactDetails { get; set; }
-        public List<ContactDetailTypeVm> ContactDetailTypes { get; set; }
+        public List<ContactDetailTypeDto> ContactDetailTypes { get; set; }
         public virtual List<AddressDto> Addresses { get; set; }
 
         public string AnnonymousUserName { get; set; }
