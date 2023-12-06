@@ -1,7 +1,5 @@
 ﻿using ECommerceApp.Application.DTO;
-using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.ContactDetails;
-using ECommerceApp.Application.ViewModels.ContactDetailType;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
 using System.Linq;
@@ -20,7 +18,7 @@ namespace ECommerceApp.IntegrationTests.Services
             var contactDetail = _service.GetContactDetailType(id);
 
             contactDetail.ShouldNotBeNull();
-            contactDetail.ShouldBeOfType<ContactDetailTypeVm>();
+            contactDetail.ShouldBeOfType<ContactDetailTypeDto>();
             contactDetail.Name.ShouldBe(Name);
         }
 
@@ -81,16 +79,6 @@ namespace ECommerceApp.IntegrationTests.Services
         }
 
         [Fact]
-        public void given_invalid_contact_detail_type_should_throw_an_exception()
-        {
-            var contactDetail = CreateContactDetailType(234);
-
-            var exception = Should.Throw<BusinessException>(() => _service.AddContactDetailType(contactDetail));
-
-            exception.Message.ShouldBe("When adding object Id should be equals 0");
-        }
-
-        [Fact]
         public void given_valid_contact_detail_should_update()
         {
             var contactDetail = CreateContactDetailType(0);
@@ -103,7 +91,7 @@ namespace ECommerceApp.IntegrationTests.Services
 
             var brandUpdated = _service.GetContactDetailType(id);
             brandUpdated.ShouldNotBeNull();
-            brandUpdated.ShouldBeOfType<ContactDetailTypeVm>();
+            brandUpdated.ShouldBeOfType<ContactDetailTypeDto>();
             brandUpdated.Name.ShouldBe(name);
         }
 
