@@ -1,12 +1,10 @@
-﻿using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.ContactDetails;
 using ECommerceApp.Application.ViewModels.ContactDetailType;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Services
@@ -97,33 +95,21 @@ namespace ECommerceApp.IntegrationTests.Services
         {
             var contactDetail = CreateContactDetailType(0);
             var id = _service.AddContactDetailType(contactDetail);
-            contactDetail = _service.Get(id);
+            contactDetail = _service.GetContactDetailType(id);
             var name = "CD1234";
             contactDetail.Name = name;
 
             _service.UpdateContactDetailType(contactDetail);
 
-            var brandUpdated = _service.Get(id);
+            var brandUpdated = _service.GetContactDetailType(id);
             brandUpdated.ShouldNotBeNull();
             brandUpdated.ShouldBeOfType<ContactDetailTypeVm>();
             brandUpdated.Name.ShouldBe(name);
         }
 
-        [Fact]
-        public void given_valid_id_should_delete_contact_detail()
+        private static ContactDetailTypeDto CreateContactDetailType(int id)
         {
-            var contactDetail = CreateContactDetailType(0);
-            var id = _service.AddContactDetailType(contactDetail);
-
-            _service.Delete(id);
-
-            var brandDeleted = _service.Get(id);
-            brandDeleted.ShouldBeNull();
-        }
-
-        private ContactDetailTypeVm CreateContactDetailType(int id)
-        {
-            var brand = new ContactDetailTypeVm
+            var brand = new ContactDetailTypeDto
             {
                 Id = id,
                 Name = "test124"

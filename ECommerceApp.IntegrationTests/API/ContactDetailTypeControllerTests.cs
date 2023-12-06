@@ -1,13 +1,11 @@
 ﻿using ECommerceApp.API;
-using ECommerceApp.Application.ViewModels.ContactDetailType;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.IntegrationTests.Common;
 using Flurl.Http;
 using Newtonsoft.Json;
 using Shouldly;
-using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -33,11 +31,11 @@ namespace ECommerceApp.IntegrationTests.API
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetAsync();
-            var brand = JsonConvert.DeserializeObject<ContactDetailTypeVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
+            var contactDetailType = JsonConvert.DeserializeObject<ContactDetailTypeDto>(await response.ResponseMessage.Content.ReadAsStringAsync());
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
-            brand.ShouldNotBeNull();
-            brand.Name.ShouldBe(name);
+            contactDetailType.ShouldNotBeNull();
+            contactDetailType.Name.ShouldBe(name);
         }
 
         [Fact]
@@ -58,12 +56,12 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task given_valid_contact_detail_type_should_add()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var brand = CreateDefaultBrandVm(0);
+            var contactDetailType = CreateDefaultContactDetailTypeVm(0);
 
             var response = await client.Request("api/contact-detail-types")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(brand);
+                .PostJsonAsync(contactDetailType);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
         }
@@ -72,7 +70,7 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task given_invalid_contact_detail_type_should_return_status_code_conflict()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var brand = CreateDefaultBrandVm(53);
+            var brand = CreateDefaultContactDetailTypeVm(53);
 
             var response = await client.Request("api/contact-detail-types")
                 .WithHeader("content-type", "application/json")
@@ -88,23 +86,23 @@ namespace ECommerceApp.IntegrationTests.API
             var client = await _factory.GetAuthenticatedClient();
             var id = 2;
             var name = "TestBrand";
-            var brand = await client.Request($"api/contact-detail-types/{id}")
+            var contactDetailType = await client.Request($"api/contact-detail-types/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
-                .GetJsonAsync<ContactDetailTypeVm>();
-            brand.Name = name;
+                .GetJsonAsync<ContactDetailTypeDto>();
+            contactDetailType.Name = name;
 
             var response = await client.Request("api/contact-detail-types")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
-                .PutJsonAsync(brand);
+                .PutJsonAsync(contactDetailType);
 
-            var brandUpdated = await client.Request($"api/contact-detail-types/{id}")
+            var contactDetailTypeUpdated = await client.Request($"api/contact-detail-types/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
-                .GetJsonAsync<ContactDetailTypeVm>();
+                .GetJsonAsync<ContactDetailTypeDto>();
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
-            brandUpdated.Name.ShouldBe(name);
+            contactDetailTypeUpdated.Name.ShouldBe(name);
         }
 
         [Fact]
@@ -112,12 +110,12 @@ namespace ECommerceApp.IntegrationTests.API
         {
             var client = await _factory.GetAuthenticatedClient();
             var id = 223;
-            var brand = CreateDefaultBrandVm(id);
+            var contactDetailType = CreateDefaultContactDetailTypeVm(id);
 
             var response = await client.Request("api/contact-detail-types")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
-                .PutJsonAsync(brand);
+                .PutJsonAsync(contactDetailType);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.Conflict);
         }
@@ -131,15 +129,15 @@ namespace ECommerceApp.IntegrationTests.API
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetAsync();
-            var contactDetails = JsonConvert.DeserializeObject<List<ContactDetailTypeVm>>(await response.ResponseMessage.Content.ReadAsStringAsync());
+            var contactDetails = JsonConvert.DeserializeObject<List<ContactDetailTypeDto>>(await response.ResponseMessage.Content.ReadAsStringAsync());
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
             contactDetails.Count.ShouldBeGreaterThan(0);
         }
 
-        private ContactDetailTypeVm CreateDefaultBrandVm(int id)
+        private static ContactDetailTypeDto CreateDefaultContactDetailTypeVm(int id)
         {
-            var brand = new ContactDetailTypeVm
+            var brand = new ContactDetailTypeDto
             {
                 Id = id,
                 Name = "ContactDetailTypeVmTest"
