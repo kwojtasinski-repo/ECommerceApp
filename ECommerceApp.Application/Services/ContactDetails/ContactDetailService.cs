@@ -21,11 +21,12 @@ namespace ECommerceApp.Application.Services.ContactDetails
         private readonly IContactDetailRepository _contactDetailRepository;
         private readonly IContactDetailTypeRepository _contactDetailTypeRepository;
 
-        public ContactDetailService(IContactDetailRepository contactDetailRepository, IMapper mapper, IHttpContextAccessor httpContextAccessor)
+        public ContactDetailService(IContactDetailRepository contactDetailRepository, IMapper mapper, IHttpContextAccessor httpContextAccessor, IContactDetailTypeRepository contactDetailTypeRepository)
         {
             _httpContextAccessor = httpContextAccessor;
             _contactDetailRepository = contactDetailRepository;
             _mapper = mapper;
+            _contactDetailTypeRepository = contactDetailTypeRepository;
         }
 
         public int AddContactDetail(ContactDetailDto contactDetailDto)

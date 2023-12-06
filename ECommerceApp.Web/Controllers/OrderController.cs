@@ -124,7 +124,7 @@ namespace ECommerceApp.Web.Controllers
             ViewBag.Date = orderDate;
             var customers = _customerService.GetCustomersInformationByUserId(userId).ToList();
             ViewBag.Customers = customers;
-            var order = new NewOrderVm() { Number = random.Next(100, 10000), OrderItems = orderItems, UserId = userId, NewCustomer = new NewCustomerVm { Addresses = new List<AddressDto> { new AddressDto() }, ContactDetails = new List<Application.ViewModels.ContactDetail.NewContactDetailVm> { new Application.ViewModels.ContactDetail.NewContactDetailVm() } } };
+            var order = new NewOrderVm() { Number = random.Next(100, 10000), OrderItems = orderItems, UserId = userId, NewCustomer = new NewCustomerVm { Addresses = new List<AddressDto> { new AddressDto() }, ContactDetails = new List<ContactDetailDto> { new ContactDetailDto() } } };
             return View(order);
         }
 

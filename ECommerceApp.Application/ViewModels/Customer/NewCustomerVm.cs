@@ -1,13 +1,13 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Mapping;
-using ECommerceApp.Application.ViewModels.ContactDetail;
+using ECommerceApp.Application.ViewModels.ContactDetailType;
 using FluentValidation;
 using System.Collections.Generic;
 
 namespace ECommerceApp.Application.ViewModels.Customer
 {
-    public class NewCustomerVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Customer>
+    public class NewCustomerVm : BaseVm, IMapFrom<Domain.Model.Customer>
     {
         public string UserId { get; set; }
         public string FirstName { get; set; }
@@ -16,7 +16,8 @@ namespace ECommerceApp.Application.ViewModels.Customer
         public string NIP { get; set; } // NIP contatins 11 numbers, can be null if private person order sth
         public string CompanyName { get; set; }
 
-        public virtual List<NewContactDetailVm> ContactDetails { get; set; }
+        public List<ContactDetailDto> ContactDetails { get; set; }
+        public List<ContactDetailTypeVm> ContactDetailTypes { get; set; }
         public virtual List<AddressDto> Addresses { get; set; }
 
         public string AnnonymousUserName { get; set; }
@@ -24,7 +25,7 @@ namespace ECommerceApp.Application.ViewModels.Customer
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<NewCustomerVm, ECommerceApp.Domain.Model.Customer>().ReverseMap()
+            profile.CreateMap<NewCustomerVm, Domain.Model.Customer>().ReverseMap()
                 .ForMember(p => p.ContactDetails, opt => opt.MapFrom(ps => ps.ContactDetails))
                 .ForMember(p => p.Addresses, opt => opt.MapFrom(ps => ps.Addresses));
         }

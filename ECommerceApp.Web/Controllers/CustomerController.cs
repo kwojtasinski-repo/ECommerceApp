@@ -5,7 +5,6 @@ using System.Security.Claims;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.ContactDetails;
 using ECommerceApp.Application.Services.Customers;
-using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -18,9 +17,10 @@ namespace ECommerceApp.Web.Controllers
         private readonly ICustomerService _customerService;
         private readonly IContactDetailTypeService _contactDetailTypeService;
 
-        public CustomerController(ICustomerService customerService)
+        public CustomerController(ICustomerService customerService, IContactDetailTypeService contactDetailTypeService)
         {
             _customerService = customerService;
+            _contactDetailTypeService = contactDetailTypeService;
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
@@ -79,7 +79,7 @@ namespace ECommerceApp.Web.Controllers
         [Authorize]
         public IActionResult AddCustomer()
         {
-            var customer = new NewCustomerVm() { Addresses = new List<AddressDto> { new AddressDto()}, ContactDetails = new List<NewContactDetailVm> { new NewContactDetailVm() } };
+            var customer = new NewCustomerVm() { Addresses = new List<AddressDto> { new AddressDto()}, ContactDetails = new List<ContactDetailDto> { new ContactDetailDto() } };
             customer.UserId = GetUserId().Value;
             return View(customer);
         }
@@ -106,10 +106,14 @@ namespace ECommerceApp.Web.Controllers
         {
             // TODO return null from backend
             var customer = _customerService.GetCustomerForEdit(id);
+            if (customer is null)
+            {
+                return NotFound();
+            }
+
             var userId = GetUserId();
             var role = GetUserRole();
-            var contactDetailTypes = _contactDetailTypeService.GetContactDetailTypes(_ => true).ToList();
-            customer.ContactDetails.ForEach(cd => cd.ContactDetailTypes = contactDetailTypes);
+            customer.ContactDetailTypes = _contactDetailTypeService.GetContactDetailTypes(_ => true).ToList();
             if (userId.Value != customer.UserId && role.Value == UserPermissions.Roles.User)
             {
                 return Forbid();
