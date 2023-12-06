@@ -184,6 +184,8 @@
                     controlId: "AddressStreetInput",
                     rules: [
                         v => v && v.trim().length > 0 || 'Ulica jest wymagana',
+                        v => v && v.trim().length >= 2 || 'Ulica powinna mieć więcej niż 1 znak',
+                        v => v && v.trim().length <= 255 || 'Ulica nie może mieć więcej niż 255 znaków'
                     ],
                     valid: false,
                     value: ''
@@ -192,13 +194,16 @@
                     controlId: "AddressBuildingNumber",
                     rules: [
                         v => v && v.trim().length > 0 || 'Nr budynku jest wymagany',
+                        v => v && v.trim().length <= 100 || 'Nr budynku nie może mieć więcej niż 100 znaków'
                     ],
                     valid: false,
                     value: ''
                 },
                 addressFlatNumber: {
                     controlId: "AddressFlatNumberInput",
-                    rules: [],
+                    rules: [
+                        v => !v || (v && v > 0) || 'Numer budynku nie może być ujemny',
+                    ],
                     valid: false,
                     value: ''
                 },
@@ -206,7 +211,7 @@
                     controlId: "AddressZipCodeInput",
                     rules: [
                         v => v && v.trim().length > 0 || 'Kod pocztowy jest wymagany',
-                        v => v && !isNaN(v) && Number(v) > 0 || 'Kod pocztowy jest niepoprawny'
+                        v => v && /\d{2}-\d{3}/.test(v) || 'Kod pocztowy jest niepoprawny, poprawny format 00-000'
                     ],
                     valid: false,
                     value: ''
@@ -215,6 +220,7 @@
                     controlId: "AddressCityInput",
                     rules: [
                         v => v && v.trim().length > 0 || 'Miasto jest wymagane',
+                        v => v && v.trim().length <= 255 || 'Miasto nie może mieć więcej niż 255 znaków'
                     ],
                     valid: false,
                     value: ''
@@ -223,6 +229,8 @@
                     controlId: "AddressCountryInput",
                     rules: [
                         v => v && v.trim().length > 0 || 'Województwo jest wymagane',
+                        v => v && v.trim().length >= 3 || 'Województwo powinno mieć więcej niż 2 znaki',
+                        v => v && v.trim().length <= 255 || 'Województwo nie może mieć więcej niż 255 znaków'
                     ],
                     valid: false,
                     value: ''

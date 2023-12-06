@@ -224,7 +224,7 @@
                                     </div>
                                     <div>
                                         <label asp-for="NewCustomer.Addresses[0].ZipCode" class="control-label">Kod pocztowy</label>
-                                        <input id="AddressZipCodeInput" type="number" asp-for="NewCustomer.Addresses[0].ZipCode" class="form-control" />
+                                        <input id="AddressZipCodeInput" type="text" asp-for="NewCustomer.Addresses[0].ZipCode" class="form-control" />
                                         <span asp-validation-for="NewCustomer.Addresses[0].ZipCode" class="text-danger"></span>
                                     </div>
                                     <div>
@@ -332,7 +332,7 @@
                                     </div>
                                     <div>
                                         <label asp-for="NewCustomer.Addresses[0].ZipCode" class="control-label">Kod pocztowy</label>
-                                        <input id="AddressZipCodeInput" type="number" asp-for="NewCustomer.Addresses[0].ZipCode" class="form-control" />
+                                        <input id="AddressZipCodeInput" type="text" asp-for="NewCustomer.Addresses[0].ZipCode" class="form-control" />
                                         <span asp-validation-for="NewCustomer.Addresses[0].ZipCode" class="text-danger"></span>
                                     </div>
                                     <div>
@@ -438,6 +438,8 @@
                     controlId: "AddressStreetInput",
                     rules: [
                         v => orderFormValidator.customer.useExistingData || (v && v.trim().length > 0) || 'Ulica jest wymagana',
+                        v => orderFormValidator.customer.useExistingData || (v && v.trim().length >= 2) || 'Ulica powinna mieć więcej niż 1 znak',
+                        v => orderFormValidator.customer.useExistingData || (v && v.trim().length <= 255) || 'Ulica nie może mieć więcej niż 255 znaków'
                     ],
                     valid: false,
                     value: ''
@@ -446,13 +448,16 @@
                     controlId: "AddressBuildingNumberInput",
                     rules: [
                         v => orderFormValidator.customer.useExistingData || (v && v.trim().length > 0) || 'Nr budynku jest wymagany',
+                        v => orderFormValidator.customer.useExistingData || (v && v.trim().length <= 100) || 'Nr budynku nie może mieć więcej niż 100 znaków'
                     ],
                     valid: false,
                     value: ''
                 },
                 addressFlatNumber: {
                     controlId: "AddressFlatNumberInput",
-                    rules: [],
+                    rules: [
+                        v => orderFormValidator.customer.useExistingData || (!v || (v && v > 0)) || 'Numer budynku nie może być ujemny',
+                    ],
                     valid: false,
                     value: ''
                 },
@@ -460,7 +465,7 @@
                     controlId: "AddressZipCodeInput",
                     rules: [
                         v => orderFormValidator.customer.useExistingData || (v && v.trim().length > 0) || 'Kod pocztowy jest wymagany',
-                        v => orderFormValidator.customer.useExistingData || (v && !isNaN(v) && Number(v) > 0) || 'Kod pocztowy jest niepoprawny'
+                        v => orderFormValidator.customer.useExistingData || (v && /\d{2}-\d{3}/.test(v)) || 'Kod pocztowy jest niepoprawny, poprawny format 00-000'
                     ],
                     valid: false,
                     value: ''
@@ -469,6 +474,7 @@
                     controlId: "AddressCityInput",
                     rules: [
                         v => orderFormValidator.customer.useExistingData || (v && v.trim().length > 0) || 'Miasto jest wymagane',
+                        v => orderFormValidator.customer.useExistingData || (v && v.trim().length <= 255) || 'Miasto nie może mieć więcej niż 255 znaków'
                     ],
                     valid: false,
                     value: ''
@@ -477,6 +483,8 @@
                     controlId: "AddressCountryInput",
                     rules: [
                         v => orderFormValidator.customer.useExistingData || (v && v.trim().length > 0) || 'Województwo jest wymagane',
+                        v => orderFormValidator.customer.useExistingData || (v && v.trim().length >= 3) || 'Województwo powinno mieć więcej niż 2 znaki',
+                        v => orderFormValidator.customer.useExistingData || (v && v.trim().length <= 255) || 'Województwo nie może mieć więcej niż 255 znaków'
                     ],
                     valid: false,
                     value: ''
