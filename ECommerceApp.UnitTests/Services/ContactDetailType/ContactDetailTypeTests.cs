@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.ContactDetails;
 using ECommerceApp.Application.ViewModels.ContactDetailType;
 using ECommerceApp.Domain.Interface;
@@ -22,23 +23,12 @@ namespace ECommerceApp.UnitTests.Services.ContactDetailType
         [Fact]
         public void given_valid_contact_detail_type_should_add()
         {
-            var contactDetailType = CreateContactDetailTypeVm(0);
+            var contactDetailType = CreateContactDetailTypeDto(0);
             var contactDetailTypeService = new ContactDetailTypeService(_contactDetailTypeRepository.Object, _mapper);
 
-            contactDetailTypeService.Add(contactDetailType);
+            contactDetailTypeService.AddContactDetailType(contactDetailType);
 
             _contactDetailTypeRepository.Verify(cdt => cdt.Add(It.IsAny<Domain.Model.ContactDetailType>()), Times.Once);
-        }
-
-        [Fact]
-        public void given_invalid_contact_detail_type_should_throw_an_exception()
-        {
-            var contactDetailType = CreateContactDetailTypeVm(1);
-            var contactDetailTypeService = new ContactDetailTypeService(_contactDetailTypeRepository.Object, _mapper);
-
-            Action action = () => contactDetailTypeService.Add(contactDetailType);
-
-            action.Should().ThrowExactly<BusinessException>().WithMessage("When adding object Id should be equals 0");
         }
 
         [Fact]
@@ -85,9 +75,9 @@ namespace ECommerceApp.UnitTests.Services.ContactDetailType
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
-        private ContactDetailTypeVm CreateContactDetailTypeVm(int id)
+        private static ContactDetailTypeDto CreateContactDetailTypeDto(int id)
         {
-            var contactDetailType = new ContactDetailTypeVm
+            var contactDetailType = new ContactDetailTypeDto
             {
                 Id = id,
                 Name = "name"
