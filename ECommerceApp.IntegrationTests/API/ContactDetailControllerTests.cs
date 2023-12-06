@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.API;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.IntegrationTests.Common;
 using Flurl.Http;
@@ -75,7 +76,7 @@ namespace ECommerceApp.IntegrationTests.API
             var contactDetailUpdated = await client.Request($"api/contact-details/{contactDetail.Id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
-                .GetJsonAsync<ContactDetailVm>();
+                .GetJsonAsync<ContactDetailDto>();
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
             contactDetailUpdated.ShouldNotBeNull();
             contactDetailUpdated.ContactDetailInformation.ShouldBe(contactDetail.ContactDetailInformation);
@@ -125,9 +126,9 @@ namespace ECommerceApp.IntegrationTests.API
             response.StatusCode.ShouldBe((int)HttpStatusCode.Conflict);
         }
 
-        private ContactDetailVm CreateContactDetail(int id)
+        private ContactDetailDto CreateContactDetail(int id)
         {
-            var contactDetail = new ContactDetailVm
+            var contactDetail = new ContactDetailDto
             {
                 Id = id,
                 ContactDetailInformation = "567234123",

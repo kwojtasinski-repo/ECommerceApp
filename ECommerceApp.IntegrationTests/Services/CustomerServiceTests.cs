@@ -45,7 +45,7 @@ namespace ECommerceApp.IntegrationTests.Services
             var customer = GetSampleCustomer();
             customer.Id = 0;
             customer.Addresses = new List<AddressDto>();
-            customer.ContactDetails = new List<NewContactDetailVm>();
+            customer.ContactDetails = new List<ContactDetailDto>();
             var customerId = _service.AddCustomer(customer);
 
             _service.DeleteCustomer(customerId);
@@ -155,9 +155,9 @@ namespace ECommerceApp.IntegrationTests.Services
                 {
                     new AddressDto { Id = 1, BuildingNumber = "2", FlatNumber = 10, City = "Nowa Sól", Country = "Poland", Street = "Testowa", CustomerId = 1, ZipCode = "67-100" }
                 },
-                ContactDetails = new List<NewContactDetailVm>()
+                ContactDetails = new List<ContactDetailDto>()
                 {
-                    new NewContactDetailVm{ Id = 1, ContactDetailInformation = "867123563", ContactDetailTypeId = 1, CustomerId = 1 }
+                    new ContactDetailDto{ Id = 1, ContactDetailInformation = "867123563", ContactDetailTypeId = 1, CustomerId = 1 }
                 }
             };
             return customer;

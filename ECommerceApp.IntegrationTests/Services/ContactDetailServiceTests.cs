@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.ContactDetails;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.IntegrationTests.Common;
@@ -157,16 +158,16 @@ namespace ECommerceApp.IntegrationTests.Services
             SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var contactDetail = CreateContactDetail(0);
             var id = _service.AddContactDetail(contactDetail);
-            contactDetail = _service.Get(id);
+            contactDetail = _service.GetContactDetailById(id);
             var contactDetailInformation = "CD1234";
             contactDetail.ContactDetailInformation = contactDetailInformation;
 
             _service.UpdateContactDetail(contactDetail);
 
-            var brandUpdated = _service.Get(id);
-            brandUpdated.ShouldNotBeNull();
-            brandUpdated.ShouldBeOfType<ContactDetailVm>();
-            brandUpdated.ContactDetailInformation.ShouldBe(contactDetailInformation);
+            var contactDetailUpdated = _service.GetContactDetailById(id);
+            contactDetailUpdated.ShouldNotBeNull();
+            contactDetailUpdated.ShouldBeOfType<ContactDetailVm>();
+            contactDetailUpdated.ContactDetailInformation.ShouldBe(contactDetailInformation);
         }
 
         [Fact]
@@ -178,13 +179,13 @@ namespace ECommerceApp.IntegrationTests.Services
 
             _service.DeleteContactDetail(id);
 
-            var brandDeleted = _service.Get(id);
-            brandDeleted.ShouldBeNull();
+            var contactDetailDeleted = _service.GetContactDetailById(id);
+            contactDetailDeleted.ShouldBeNull();
         }
 
-        private ContactDetailVm CreateContactDetail(int id)
+        private static ContactDetailDto CreateContactDetail(int id)
         {
-            var brand = new ContactDetailVm
+            var brand = new ContactDetailDto
             {
                 Id = id,
                 ContactDetailInformation = "test124",
