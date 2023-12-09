@@ -21,7 +21,7 @@
             </div>
             <div class="form-group">
                 <label asp-for="@Model.ContactDetail.ContactDetailTypeId" class="control-label">Rodzaj kontaktu</label>
-                <select asp-for="@Model.ContactDetail.ContactDetailTypeId" asp-items="@(new SelectList(Model.ContactDetailTypes,"Id", "Name"))" class="custom-select"></select>
+                <select id="ContactDetailType" asp-for="@Model.ContactDetail.ContactDetailTypeId" asp-items="@(new SelectList(Model.ContactDetailTypes,"Id", "Name"))" class="custom-select"></select>
                 <span asp-validation-for="@Model.ContactDetail.ContactDetailTypeId" class="text-danger"></span>
             </div>
             
@@ -41,10 +41,48 @@
     <script>
         const contactDetailFormValidator = {
             formId: "contactDetailForm",
+            contactDetailType: {
+                controlId: 'ContactDetailType',
+                rules: [
+                    v => (v !== null && v !== undefined) || 'Niepoprawna wartość'
+                ],
+                onChange: function (event) {
+                    this.value = event.options[event.selectedIndex].value;
+                    forms.clearValidationError(contactDetailFormValidator.contactDetailInformation.controlId);
+                    forms.validControl(contactDetailFormValidator.contactDetailInformation);
+                },
+                valid: false,
+                value: ''
+            },
             contactDetailInformation: {
                 controlId: 'ContactDetailInformation',
                 rules: [
                     v => v && v.trim().length > 0 || 'Dane są wymagane',
+                    v => {
+                        const error = 'Numer telefonu musi zawierać 9 cyfr';
+                        if (!v) {
+                            return error;
+                        }
+
+                        if (contactDetailFormValidator.contactDetailType.value === '1' && (v.trim().length != 9 || isNaN(v))) {
+                            return error;
+                        }
+
+                        return true;
+                    },
+                    v => {
+                        const error = 'Email zawiera niepoprawny format';
+                        if (!v) {
+                            return error;
+                        }
+
+                        if (contactDetailFormValidator.contactDetailType.value === '2' && !emailRegex.test(v)) {
+                            return error;
+                        }
+
+                        return true;
+                    },
+                    v => v && v.trim().length <= 100 || 'Dane nie mogą być dłuższe niż 100 znaków'
                 ],
                 valid: false,
                 value: ''
@@ -53,6 +91,7 @@
 
         $(document).ready(function () {
             forms.initFormValidator(contactDetailFormValidator);
+            contactDetailFormValidator.contactDetailType.value = $('#' + contactDetailFormValidator.contactDetailType.controlId).val();
             contactDetailFormValidator.contactDetailInformation.value = document.querySelector('#' + contactDetailFormValidator.contactDetailInformation.controlId).value;
         });
     </script>

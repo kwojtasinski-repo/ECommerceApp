@@ -334,7 +334,7 @@ const forms = (function () {
 
     function createErrorSpanInner(text) {
         const span = document.createElement('span');
-        span.className = "text-danger field-validation-valid";
+        span.className = "text-danger field-validation-invalid";
         span.textContent = text;
         return span;
     }
@@ -428,6 +428,9 @@ const forms = (function () {
             });
         },
         showValidationError: function (controlId, text) {
+            if (!controlId) {
+                return;
+            }
             const siblingSpan = $('#' + controlId).siblings('span');
             if (siblingSpan[0]) {
                 siblingSpan.text(text);

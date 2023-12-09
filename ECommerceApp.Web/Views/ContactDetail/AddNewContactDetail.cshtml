@@ -44,10 +44,11 @@
             contactDetailType: {
                 controlId: 'ContactDetailType',
                 rules: [
-                    v => v || 'Niepoprawna wartość'
+                    v => (v !== null && v !== undefined) || 'Niepoprawna wartość'
                 ],
                 onChange: function (event) {
                     this.value = event.options[event.selectedIndex].value;
+                    forms.clearValidationError(contactDetailFormValidator.contactDetailInformation.controlId);
                     forms.validControl(contactDetailFormValidator.contactDetailInformation);
                 },
                 valid: false,
@@ -63,7 +64,7 @@
                             return error;
                         }
 
-                        if (contactDetailFormValidator.contactDetailType.value === '1' && v.trim().length != 9 && isNaN(v)) {
+                        if (contactDetailFormValidator.contactDetailType.value === '1' && (v.trim().length != 9 || isNaN(v))) {
                             return error;
                         }
 
