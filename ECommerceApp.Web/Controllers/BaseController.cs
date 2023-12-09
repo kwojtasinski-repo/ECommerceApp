@@ -11,7 +11,7 @@ namespace ECommerceApp.Web.Controllers
         public readonly string[] ManagingPermissions = new string[] { UserPermissions.Roles.Administrator, UserPermissions.Roles.Manager };
         public readonly string[] MaintenancePermissions = new string[] { UserPermissions.Roles.Administrator, UserPermissions.Roles.Manager, UserPermissions.Roles.Service };
 
-        protected Claim GetUserId()
+        protected string GetUserId()
         {
             var userId = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
             if (userId == null)
@@ -19,10 +19,10 @@ namespace ECommerceApp.Web.Controllers
                 throw new ArgumentNullException(nameof(userId));
             }
 
-            return userId;
+            return userId?.Value ?? "";
         }
 
-        protected Claim GetUserRole() 
+        protected string GetUserRole() 
         {
             var role = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role);
             if (role == null)
@@ -30,7 +30,7 @@ namespace ECommerceApp.Web.Controllers
                 throw new ArgumentNullException(nameof(role));
             }
 
-            return role;
+            return role?.Value ?? "";
         }
     }
 }

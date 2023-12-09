@@ -77,7 +77,7 @@ namespace ECommerceApp.Web.Controllers
             ViewBag.Date = orderDate;
             var userId = GetUserId();
             //var customers = _orderService.GetAllCustomers().ToList();
-            var customers = _customerService.GetCustomersInformationByUserId(userId.Value).ToList();
+            var customers = _customerService.GetCustomersInformationByUserId(userId).ToList();
             ViewBag.Customers = customers;
             var order = new OrderVm() { Number = random.Next(100, 10000), Ordered = orderDate };
             order.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -331,7 +331,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult ShowMyOrders()
         {
             var userId = GetUserId();
-            var orders = _orderService.GetAllOrdersByUserId(userId.Value, 20, 1);
+            var orders = _orderService.GetAllOrdersByUserId(userId, 20, 1);
             return View(orders);
         }
 
@@ -340,7 +340,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult ShowMyOrders(int pageSize, int pageNo)
         {
             var userId = GetUserId();
-            var orders = _orderService.GetAllOrdersByUserId(userId.Value, pageSize, pageNo);
+            var orders = _orderService.GetAllOrdersByUserId(userId, pageSize, pageNo);
             return View(orders);
         }
 

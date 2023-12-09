@@ -37,7 +37,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult Index(int pageSize, int? pageNo, string searchString)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = GetUserId();
             if (!pageNo.HasValue)
             {
                 pageNo = 1;
@@ -80,7 +80,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult AddCustomer()
         {
             var customer = new NewCustomerVm() { Addresses = new List<AddressDto> { new AddressDto()}, ContactDetails = new List<ContactDetailDto> { new ContactDetailDto() } };
-            customer.UserId = GetUserId().Value;
+            customer.UserId = GetUserId();
             return View(customer);
         }
 
@@ -96,7 +96,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult AddCustomerPartialView()
         {
             var customer = new NewCustomerVm();
-            customer.UserId = GetUserId().Value;
+            customer.UserId = GetUserId();
             return PartialView(customer);
         }
 
@@ -114,7 +114,7 @@ namespace ECommerceApp.Web.Controllers
             var userId = GetUserId();
             var role = GetUserRole();
             customer.ContactDetailTypes = _contactDetailTypeService.GetContactDetailTypes(_ => true).ToList();
-            if (userId.Value != customer.UserId && role.Value == UserPermissions.Roles.User)
+            if (userId != customer.UserId && role == UserPermissions.Roles.User)
             {
                 return Forbid();
             }
@@ -128,7 +128,7 @@ namespace ECommerceApp.Web.Controllers
             // TODO check if user has rights on backend to this customer
             var userId = GetUserId();
             var role = GetUserRole();
-            if (userId.Value != model.UserId && role.Value == UserPermissions.Roles.User)
+            if (userId != model.UserId && role == UserPermissions.Roles.User)
             {
                 return Forbid();
             }
