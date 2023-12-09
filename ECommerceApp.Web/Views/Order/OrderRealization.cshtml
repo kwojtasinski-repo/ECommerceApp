@@ -124,7 +124,7 @@
             <div class="form-group" style="display:none;">
                 <input id="Cost" asp-for="CostToConvert" class="form-control" readonly />
             </div>
-            <div class="form-group"> <!--VALIDATION USING JS TRY THIS-->
+            <div class="form-group">
                 @if (ViewBag.Customers.Count > 0)
                 {
                     <label>Czy chcesz zamówić z istniejącymi już danymi?</label>
@@ -137,19 +137,19 @@
                     </div>
                     <div id="NewData">
                         <div class="form-row">
-                            <div class="col-md-8 ">
+                            <div class="w-100">
                                 <div class="form-row">
                                     <h4>Dane osobowe</h4>
                                 </div>
                                 <div class="form-row">
                                     <input type="hidden" asp-for="NewCustomer.Id" class="form-control" />
                                     <input type="hidden" asp-for="NewCustomer.UserId" value="@Model.UserId" class="form-control" />
-                                    <div class="col-md-6 mb-3">
+                                    <div style="width: 48%; margin-right: 4%;">
                                         <label asp-for="NewCustomer.FirstName" class="control-label">Imię</label>
                                         <input id="CustomerFirstNameInput" asp-for="NewCustomer.FirstName" class="form-control" />
                                         <span asp-validation-for="NewCustomer.FirstName" class="text-danger"></span>
                                     </div>
-                                    <div class="col-md-6 mb-3">
+                                    <div style="width: 48%;">
                                         <label asp-for="NewCustomer.LastName" class="control-label">Nazwisko</label>
                                         <input id="CustomerLastNameInput" asp-for="NewCustomer.LastName" class="form-control" />
                                         <span asp-validation-for="NewCustomer.LastName" class="text-danger"></span>
@@ -161,13 +161,13 @@
                                     </label>
                                 </div>
                                 <div id="CompanyData" class="form-row" style="display:none;">
-                                    <div class="col-md-6 mb-3">
+                                    <div class="mb-3 w-100">
                                         <label asp-for="NewCustomer.NIP" class="control-label"></label>
                                         <input id="NIPInput" asp-for="NewCustomer.NIP" class="form-control" />
                                         <span asp-validation-for="NewCustomer.NIP" class="text-danger"></span>
                                     </div>
                                     <div class="col-md-3 mb-3"></div>
-                                    <div class="col-md-6 mb-3">
+                                    <div class="mb-3 w-100">
                                         <label asp-for="NewCustomer.CompanyName" class="control-label">Nazwa firmy</label>
                                         <input id="CompanyInput" asp-for="NewCustomer.CompanyName" class="form-control" />
                                         <span asp-validation-for="NewCustomer.CompanyName" class="text-danger"></span>
@@ -177,9 +177,9 @@
                         </div>
                         <br />
                         <div class="form-row">
-                            <div class="col-xs-10" id="ContactDetails">
+                            <div class="col-xs-10 w-100" id="ContactDetails">
                                 <h4>Dane kontaktowe</h4><br />
-                                <div class="row col-8">
+                                <div class="row col-8 w-100">
                                     <input type="hidden" asp-for="NewCustomer.ContactDetails[0].CustomerId" />
                                     <label class="col-form-label col-sm-10 pt-0">Rodzaj kontaktu</label>
                                     <input id="typeId" type="hidden" asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" class="form-control" value="" />
@@ -204,7 +204,7 @@
                         </div>
                         <br />
                         <div class="form-row">
-                            <div class="col-xs-6" id="Adresses">
+                            <div class="col-xs-6 w-100" id="Adresses">
                                 <div>
                                     <h4>Adres</h4><br />
                                     <div>
@@ -246,19 +246,19 @@
                 {
                     <div id="NewData">
                         <div class="form-row">
-                            <div class="col-md-8 ">
+                            <div class="w-100">
                                 <div class="form-row">
                                     <h4>Dane osobowe</h4>
                                 </div>
                                 <div class="form-row">
                                     <input type="hidden" asp-for="NewCustomer.Id" class="form-control" />
                                     <input type="hidden" asp-for="NewCustomer.UserId" value="@Model.UserId" class="form-control" />
-                                    <div class="col-md-6 mb-3">
+                                    <div style="width: 48%; margin-right: 4%;">
                                         <label asp-for="NewCustomer.FirstName" class="control-label">Imię</label>
                                         <input id="CustomerFirstNameInput" asp-for="NewCustomer.FirstName" name="FirstName" class="form-control" />
                                         <span asp-validation-for="NewCustomer.FirstName" class="text-danger"></span>
                                     </div>
-                                    <div class="col-md-6 mb-3">
+                                    <div style="width: 48%;">
                                         <label asp-for="NewCustomer.LastName" class="control-label">Nazwisko</label>
                                         <input id="CustomerLastNameInput" asp-for="NewCustomer.LastName" class="form-control" />
                                         <span asp-validation-for="NewCustomer.LastName" class="text-danger"></span>
@@ -270,14 +270,14 @@
                                     </label>
                                 </div>
                                 <div id="CompanyData" class="form-row" style="display:none;">
-                                    <div class="col-md-6 mb-3"></div>
+                                    <div class="mb-3 w-100"></div>
                                     <div>
                                         <label asp-for="NewCustomer.NIP" class="control-label"></label>
                                         <input id="NIPInput" asp-for="NewCustomer.NIP" class="form-control" />
                                         <span asp-validation-for="NewCustomer.NIP" class="text-danger"></span>
                                     </div>
                                     <div class="col-md-3 mb-3"></div>
-                                    <div class="col-md-6 mb-3">
+                                    <div class="mb-3 w-100">
                                         <label asp-for="NewCustomer.CompanyName" class="control-label">Nazwa firmy</label>
                                         <input id="CompanyInput" asp-for="NewCustomer.CompanyName" class="form-control" />
                                         <span asp-validation-for="NewCustomer.CompanyName" class="text-danger"></span>
@@ -287,7 +287,7 @@
                         </div>
                         <br />
                         <div class="form-row">
-                            <div class="col-xs-10" id="ContactDetailType">
+                            <div class="col-xs-10 w-100" id="ContactDetailType">
                                 <h4>Dane kontaktowe</h4><br />
                                 <div class="row col-8">
                                     <input type="hidden" asp-for="NewCustomer.ContactDetails[0].CustomerId" />
@@ -312,7 +312,7 @@
                         </div>
                         <br />
                         <div class="form-row">
-                            <div class="col-xs-6" id="Adresses">
+                            <div class="col-xs-6 w-100" id="Adresses">
                                 <div>
                                     <h4>Adres</h4><br />
                                     <div>
@@ -424,12 +424,47 @@
                         this.value = JSON.parse(event.value)?.i ?? '';
                         const text = this.rules[0](this.value);
                         forms.showValidationError(this.controlId, text && text.length > 0 && text.trim().length > 0 ? text : '');
+                        forms.clearValidationError(orderFormValidator.customer.contactDetailInformation.controlId);
+                        forms.validControl(orderFormValidator.customer.contactDetailInformation);
                     }
                 },
                 contactDetailInformation: {
                     controlId: "ContactDetailInformationInput",
                     rules: [
                         v => orderFormValidator.customer.useExistingData || (v && v.trim().length > 0) || 'Dane kontaktowe są wymagane',
+                        v => {
+                            if (orderFormValidator.customer.useExistingData) {
+                                return true;
+                            }
+
+                            const error = 'Numer telefonu musi zawierać 9 cyfr';
+                            if (!v) {
+                                return error;
+                            }
+
+                            if (orderFormValidator.customer.contactDetailType.value === '1' && (v.trim().length != 9 || isNaN(v))) {
+                                return error;
+                            }
+
+                            return true;
+                        },
+                        v => {
+                            if (orderFormValidator.customer.useExistingData) {
+                                return true;
+                            }
+
+                            const error = 'Email zawiera niepoprawny format';
+                            if (!v) {
+                                return error;
+                            }
+
+                            if (orderFormValidator.customer.contactDetailType.value === '2' && !emailRegex.test(v)) {
+                                return error;
+                            }
+
+                            return true;
+                        },
+                        v => orderFormValidator.customer.useExistingData || (v && v.trim().length <= 100) || 'Dane nie mogą być dłuższe niż 100 znaków'
                     ],
                     valid: false,
                     value: ''
