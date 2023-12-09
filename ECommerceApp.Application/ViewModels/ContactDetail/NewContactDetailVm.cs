@@ -1,5 +1,4 @@
 ﻿using ECommerceApp.Application.DTO;
-using ECommerceApp.Application.ViewModels.ContactDetailType;
 using FluentValidation;
 using System.Collections.Generic;
 using static ECommerceApp.Application.DTO.ContactDetailDto;

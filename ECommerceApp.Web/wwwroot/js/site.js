@@ -437,6 +437,12 @@ const forms = (function () {
         },
         createErrorSpan: function (text) {
             return createErrorSpanInner(text);
+        },
+        validControl: function(controlField) {
+            validField(controlField);
+        },
+        clearValidationError(controlId) {
+            forms.showValidationError(controlId, '');
         }
     }
 })();
