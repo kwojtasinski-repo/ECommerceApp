@@ -170,12 +170,39 @@
                         this.value = event.value;
                         const text = this.rules[0](this.value);
                         forms.showValidationError(this.controlId, text && text.length > 0 && text.trim().length > 0 ? text : '');
+                        forms.clearValidationError(customerFormValidator.customer.contactDetailInformation.controlId);
+                        forms.validControl(customerFormValidator.customer.contactDetailInformation);
                     }
                 },
                 contactDetailInformation: {
                     controlId: "ContactDetailInformationInput",
                     rules: [
                         v => v && v.trim().length > 0 || 'Dane kontaktowe są wymagane',
+                        v => {
+                            const error = 'Numer telefonu musi zawierać 9 cyfr';
+                            if (!v) {
+                                return error;
+                            }
+
+                            if (customerFormValidator.customer.contactDetailType.value === '1' && (v.trim().length != 9 || isNaN(v))) {
+                                return error;
+                            }
+
+                            return true;
+                        },
+                        v => {
+                            const error = 'Email zawiera niepoprawny format';
+                            if (!v) {
+                                return error;
+                            }
+
+                            if (customerFormValidator.customer.contactDetailType.value === '2' && !emailRegex.test(v)) {
+                                return error;
+                            }
+
+                            return true;
+                        },
+                        v => v && v.trim().length <= 100 || 'Dane nie mogą być dłuższe niż 100 znaków'
                     ],
                     valid: false,
                     value: ''

@@ -48,6 +48,8 @@
                 ],
                 onChange: function (event) {
                     this.value = event.options[event.selectedIndex].value;
+                    const text = this.rules[0](this.value);
+                    forms.showValidationError(this.controlId, text && text.length > 0 && text.trim().length > 0 ? text : '');
                     forms.clearValidationError(contactDetailFormValidator.contactDetailInformation.controlId);
                     forms.validControl(contactDetailFormValidator.contactDetailInformation);
                 },
