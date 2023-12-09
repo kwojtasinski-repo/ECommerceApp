@@ -89,7 +89,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult AddCustomer(NewCustomerVm model)
         {
             var id = _customerService.AddCustomer(model);
-            return Redirect("~/");
+            return RedirectToAction("Index");
         }
 
         [Authorize]
