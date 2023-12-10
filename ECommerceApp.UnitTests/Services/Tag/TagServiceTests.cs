@@ -1,6 +1,6 @@
-﻿using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Items;
-using ECommerceApp.Application.ViewModels.Tag;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
@@ -22,7 +22,7 @@ namespace ECommerceApp.UnitTests.Services.Tag
         [Fact]
         public void given_valid_tag_should_add()
         {
-            var tag = CreateTagVm(0);
+            var tag = CreateTagDto(0);
             var tagService = new TagService(_tagRepository.Object, _mapper);
 
             tagService.AddTag(tag);
@@ -33,7 +33,7 @@ namespace ECommerceApp.UnitTests.Services.Tag
         [Fact]
         public void given_invalid_tag_should_throw_an_exception()
         {
-            var tag = CreateTagVm(1);
+            var tag = CreateTagDto(1);
             var tagService = new TagService(_tagRepository.Object, _mapper);
 
             Action action = () => tagService.AddTag(tag);
@@ -68,7 +68,7 @@ namespace ECommerceApp.UnitTests.Services.Tag
         [Fact]
         public void given_valid_tag_should_update()
         {
-            var tag = CreateTagVm(1);
+            var tag = CreateTagDto(1);
             var tagService = new TagService(_tagRepository.Object, _mapper);
             
             tagService.UpdateTag(tag);
@@ -96,9 +96,9 @@ namespace ECommerceApp.UnitTests.Services.Tag
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
-        private TagVm CreateTagVm(int id)
+        private static TagDto CreateTagDto(int id)
         {
-            var tag = new TagVm
+            var tag = new TagDto
             {
                 Id = id,
                 Name = "Tag"
@@ -106,7 +106,7 @@ namespace ECommerceApp.UnitTests.Services.Tag
             return tag;
         }
         
-        private Domain.Model.Tag CreateTag(int id)
+        private static Domain.Model.Tag CreateTag(int id)
         {
             var tag = new Domain.Model.Tag
             {
