@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.Tag;
 using System;
@@ -14,7 +15,7 @@ namespace ECommerceApp.Application.ViewModels.Item
         public ItemDetailsVm Item { get; set; }
         public int TagId { get; set; }
         public string TagName { get; set; }
-        public TagVm Tag { get; set; }
+        public TagDto Tag { get; set; }
 
         public void Mapping(Profile profile)
         {

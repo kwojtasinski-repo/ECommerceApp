@@ -1,13 +1,12 @@
-﻿using FluentValidation;
-using System;
+﻿using ECommerceApp.Application.DTO;
+using FluentValidation;
 using System.Collections.Generic;
-using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Tag
 {
     public class ListForTagsVm
     {
-        public List<TagVm> Tags { get; set; }
+        public List<TagDto> Tags { get; set; }
         public int CurrentPage { get; set; }
         public int PageSize { get; set; }
         public string SearchString { get; set; }

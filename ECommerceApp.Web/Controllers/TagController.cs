@@ -1,4 +1,5 @@
 ﻿using System;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Tag;
 using ECommerceApp.Infrastructure.Permissions;
@@ -43,7 +44,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult AddTag()
         {
-            var tag = new TagVm();
+            var tag = new TagVm() { Tag = new TagDto() };
             return View(tag);
         }
 
@@ -51,7 +52,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddTag(TagVm model)
         {
-            var id = _tagService.AddTag(model);
+            var id = _tagService.AddTag(model.Tag);
             return RedirectToAction("Index");
         }
 
@@ -64,14 +65,14 @@ namespace ECommerceApp.Web.Controllers
             {
                 return NotFound();
             }
-            return View(tag);
+            return View(new TagVm { Tag = tag });
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpPost]
         public IActionResult EditTag(TagVm model)
         {
-            _tagService.UpdateTag(model);
+            _tagService.UpdateTag(model.Tag);
             return RedirectToAction("Index");
         }
 

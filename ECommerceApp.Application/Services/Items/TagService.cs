@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
-using ECommerceApp.Application.Abstracts;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.Tag;
 using ECommerceApp.Domain.Interface;
@@ -13,16 +13,22 @@ using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Items
 {
-    public class TagService : AbstractService<TagVm, ITagRepository, Tag>, ITagService
+    public class TagService : ITagService
     {
-        public TagService(ITagRepository tagRepository, IMapper mapper) : base(tagRepository, mapper)
-        { }
+        private readonly IMapper _mapper;
+        private readonly ITagRepository _tagRepository;
 
-        public int AddTag(TagVm model)
+        public TagService(ITagRepository tagRepository, IMapper mapper)
+        {
+            _mapper = mapper;
+            _tagRepository = tagRepository;
+        }
+
+        public int AddTag(TagDto model)
         {
             if (model is null)
             {
-                throw new BusinessException($"{typeof(TagVm).Name} cannot be null");
+                throw new BusinessException($"{typeof(TagDto).Name} cannot be null");
             }
 
             if (model.Id != 0)
@@ -31,34 +37,34 @@ namespace ECommerceApp.Application.Services.Items
             }
 
             var tag = _mapper.Map<Tag>(model);
-            var id = _repo.AddTag(tag);
+            var id = _tagRepository.AddTag(tag);
             return id;
         }
 
         public void DeleteTag(int id)
         {
-            _repo.DeleteTag(id);
+            _tagRepository.DeleteTag(id);
         }
 
-        public TagVm GetTagById(int id)
+        public TagDto GetTagById(int id)
         {
-            var tag = Get(id);
-            return tag;
+            var tag = _tagRepository.GetById(id);
+            return _mapper.Map<TagDto>(tag);
         }
 
         public TagDetailsVm GetTagDetails(int id)
         {
-            var tag = _repo.GetAll().Include(it => it.ItemTags)
+            var tag = _tagRepository.GetAll().Include(it => it.ItemTags)
                 .ThenInclude(i => i.Item)
                 .Where(t => t.Id == id).FirstOrDefault();
             var tagVm = _mapper.Map<TagDetailsVm>(tag);
             return tagVm;
         }
 
-        public IEnumerable<TagVm> GetTags(Expression<Func<Tag, bool>> expression)
+        public IEnumerable<TagDto> GetTags(Expression<Func<Tag, bool>> expression)
         {
-            var tags = _repo.GetAll().Where(expression)
-               .ProjectTo<TagVm>(_mapper.ConfigurationProvider);
+            var tags = _tagRepository.GetAll().Where(expression)
+               .ProjectTo<TagDto>(_mapper.ConfigurationProvider);
             var tagsToShow = tags.ToList();
 
             return tagsToShow;
@@ -66,8 +72,8 @@ namespace ECommerceApp.Application.Services.Items
 
         public ListForTagsVm GetTags(int pageSize, int pageNo, string searchString)
         {
-            var tags = _repo.GetAllTags().Where(it => it.Name.StartsWith(searchString))
-                .ProjectTo<TagVm>(_mapper.ConfigurationProvider)
+            var tags = _tagRepository.GetAllTags().Where(it => it.Name.StartsWith(searchString))
+                .ProjectTo<TagDto>(_mapper.ConfigurationProvider)
                 .ToList();
             var tagsToShow = tags.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
 
@@ -85,28 +91,28 @@ namespace ECommerceApp.Application.Services.Items
 
         public bool TagExists(int id)
         {
-            var tag = _repo.GetById(id);
+            var tag = _tagRepository.GetById(id);
             var exists = tag != null;
 
             if (exists)
             {
-                _repo.DetachEntity(tag);
+                _tagRepository.DetachEntity(tag);
             }
 
             return exists;
         }
 
-        public void UpdateTag(TagVm model)
+        public void UpdateTag(TagDto model)
         {
             if (model is null)
             {
-                throw new BusinessException($"{typeof(TagVm).Name} cannot be null");
+                throw new BusinessException($"{typeof(TagDto).Name} cannot be null");
             }
 
             var tag = _mapper.Map<Tag>(model);
             if (tag != null)
             {
-                _repo.UpdateTag(tag);
+                _tagRepository.UpdateTag(tag);
             }
         }
     }

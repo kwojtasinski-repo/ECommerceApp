@@ -12,11 +12,11 @@
     <div class="col-md-4">
         <form id="tagForm" asp-action="AddTag">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" class="form-control" />
+            <input type="hidden" asp-for="Tag.Id" class="form-control" />
             <div class="form-group">
-                <label asp-for="Name" class="control-label">Nazwa</label>
-                <input id="TagNameInput" asp-for="Name" class="form-control" />
-                <span asp-validation-for="Name" class="text-danger"></span>
+                <label asp-for="Tag.Name" class="control-label">Nazwa</label>
+                <input id="TagNameInput" asp-for="Tag.Name" class="form-control" />
+                <span asp-validation-for="Tag.Name" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <input type="submit" value="Utwórz" class="btn btn-primary" />
