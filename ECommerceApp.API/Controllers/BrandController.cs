@@ -1,6 +1,5 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Brands;
-using ECommerceApp.Application.ViewModels.Brand;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

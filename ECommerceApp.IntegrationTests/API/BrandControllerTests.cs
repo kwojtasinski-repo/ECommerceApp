@@ -1,17 +1,11 @@
 ﻿using ECommerceApp.API;
-using ECommerceApp.API.Controllers;
-using ECommerceApp.Application.ViewModels.Brand;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.IntegrationTests.Common;
-using Flurl;
 using Flurl.Http;
-using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Shouldly;
-using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -37,7 +31,7 @@ namespace ECommerceApp.IntegrationTests.API
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetAsync();
-            var brand = JsonConvert.DeserializeObject<BrandVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
+            var brand = JsonConvert.DeserializeObject<BrandDto>(await response.ResponseMessage.Content.ReadAsStringAsync());
 
             response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
             brand.ShouldNotBeNull();
@@ -95,7 +89,7 @@ namespace ECommerceApp.IntegrationTests.API
             var brand = await client.Request($"api/brands/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
-                .GetJsonAsync<BrandVm>();
+                .GetJsonAsync<BrandDto>();
             brand.Name = name;
 
             var response = await client.Request("api/brands")
@@ -106,7 +100,7 @@ namespace ECommerceApp.IntegrationTests.API
             var brandUpdated = await client.Request($"api/brands/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
-                .GetJsonAsync<BrandVm>();
+                .GetJsonAsync<BrandDto>();
             response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
             brandUpdated.Name.ShouldBe(name);
         }
@@ -158,15 +152,15 @@ namespace ECommerceApp.IntegrationTests.API
             var brands = await client.Request($"api/brands")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
-                .GetJsonAsync<List<BrandVm>>();
+                .GetJsonAsync<List<BrandDto>>();
 
             brands.Count.ShouldBeGreaterThan(0);
             brands.Count.ShouldBe(3);
         }
 
-        private BrandVm CreateDefaultBrandVm(int id)
+        private BrandDto CreateDefaultBrandVm(int id)
         {
-            var brand = new BrandVm
+            var brand = new BrandDto
             {
                 Id = id,
                 Name = "BrandTest"

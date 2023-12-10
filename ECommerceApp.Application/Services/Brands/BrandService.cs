@@ -27,7 +27,7 @@ namespace ECommerceApp.Application.Services.Brands
         {
             if (brandDto is null)
             {
-                throw new BusinessException($"{typeof(BrandVm).Name} cannot be null");
+                throw new BusinessException($"{typeof(BrandDto).Name} cannot be null");
             }
 
             if (brandDto.Id != 0)
@@ -81,7 +81,7 @@ namespace ECommerceApp.Application.Services.Brands
         {
             if (brandDto is null)
             {
-                throw new BusinessException($"{typeof(BrandVm).Name} cannot be null");
+                throw new BusinessException($"{typeof(BrandDto).Name} cannot be null");
             }
 
             var entity = _brandRepository.GetBrandById(brandDto.Id);

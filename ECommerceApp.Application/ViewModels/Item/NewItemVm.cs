@@ -1,13 +1,10 @@
 ﻿using AutoMapper;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Mapping;
-using ECommerceApp.Application.ViewModels.Brand;
 using ECommerceApp.Application.ViewModels.Type;
 using FluentValidation;
-using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Item
 {
@@ -28,7 +25,7 @@ namespace ECommerceApp.Application.ViewModels.Item
         public int TypeId { get; set; }
         public int CurrencyId { get; set; }
 
-        public List<BrandVm> Brands { get; set; }
+        public List<BrandDto> Brands { get; set; }
         public List<TypeVm> Types { get; set; }
         public List<ItemsWithTagsVm> ItemTags { get; set; }
         public List<Image.GetImageVm> Images { get; set; }
