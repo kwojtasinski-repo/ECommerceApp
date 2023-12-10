@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Services.Items;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Tag;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -21,10 +22,10 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpGet]
-        public ActionResult<List<TagVm>> GetItemTags()
+        public ActionResult<List<TagDto>> GetItemTags()
         {
             var tags = _tagService.GetTags(t => true);
-            if (tags.Count() == 0)
+            if (!tags.Any())
             {
                 return NotFound();
             }
@@ -43,7 +44,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpPut]
-        public IActionResult EditItemTag(TagVm model)
+        public IActionResult EditItemTag(TagDto model)
         {
             var modelExists = _tagService.TagExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
@@ -55,7 +56,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpPost]
-        public IActionResult AddItemTag(TagVm model)
+        public IActionResult AddItemTag(TagDto model)
         {
             if (!ModelState.IsValid || model.Id != 0)
             {
