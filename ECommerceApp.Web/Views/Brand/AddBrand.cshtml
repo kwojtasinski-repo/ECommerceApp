@@ -36,7 +36,8 @@
                 controlId: 'NameInput',
                 rules: [
                     v => v && v.trim().length > 0 || 'Nazwa firmy jest wymagana',
-                    v => v && v.trim().length > 2 || 'Nazwa firmy powinna zawierać więcej niż 2 znaki'
+                    v => v && v.trim().length > 2 || 'Nazwa firmy powinna zawierać więcej niż 2 znaki',
+                    v => v && v.trim().length <= 100 || 'Nazwa firmy nie może mieć więcej niż 100 znaków'
                 ],
                 valid: false,
                 value: ''
