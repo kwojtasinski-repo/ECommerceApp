@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.API;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.ViewModels.Tag;
 using ECommerceApp.IntegrationTests.Common;
 using Flurl.Http;
@@ -55,7 +56,7 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task given_valid_tag_should_add()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var tag = new TagVm { Id = 0, Name = "Tag2" };
+            var tag = new TagDto { Id = 0, Name = "Tag2" };
 
             var response = await client.Request("api/tags")
                 .AllowAnyHttpStatus()
@@ -70,7 +71,7 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task given_invalid_tag_should_return_status_code_conflict()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var tag = new TagVm { Id = 235 };
+            var tag = new TagDto { Id = 235 };
 
             var response = await client.Request("api/tags")
                 .AllowAnyHttpStatus()
@@ -83,7 +84,7 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task given_valid_tag_should_update()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var tag = new TagVm { Id = 0, Name = "Tag2" };
+            var tag = new TagDto { Id = 0, Name = "Tag2" };
             var id = await client.Request("api/tags")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(tag)
@@ -108,7 +109,7 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task given_invalid_tag_when_update_should_return_status_code_conflict()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var tag = new TagVm { Id = 234235 };
+            var tag = new TagDto { Id = 234235 };
 
             var response = await client.Request("api/tags")
                 .AllowAnyHttpStatus()
@@ -121,7 +122,7 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task given_valid_tag_should_delete()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var tag = new TagVm { Id = 0, Name = "Tag2" };
+            var tag = new TagDto { Id = 0, Name = "Tag2" };
             var id = await client.Request("api/tags")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(tag)
@@ -147,7 +148,7 @@ namespace ECommerceApp.IntegrationTests.API
                 .AllowAnyHttpStatus()
                 .GetAsync();
 
-            var tags = JsonConvert.DeserializeObject<List<TagVm>>(await response.ResponseMessage.Content.ReadAsStringAsync());
+            var tags = JsonConvert.DeserializeObject<List<TagDto>>(await response.ResponseMessage.Content.ReadAsStringAsync());
             response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
             tags.Count.ShouldBeGreaterThan(0);
         }

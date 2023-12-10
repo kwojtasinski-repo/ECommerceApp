@@ -1,11 +1,8 @@
-﻿using ECommerceApp.Application.Services.Items;
-using ECommerceApp.Application.ViewModels.Tag;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Services.Items;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Services
@@ -81,12 +78,12 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_id_should_delete_tag()
         {
-            var tag = new TagVm { Id = 0, Name = "NameTag2" };
+            var tag = new TagDto { Id = 0, Name = "NameTag2" };
             var id = _service.AddTag(tag);
 
             _service.DeleteTag(id);
 
-            var tagDeleted = _service.Get(id);
+            var tagDeleted = _service.GetTagById(id);
             tagDeleted.ShouldBeNull();
         }
     }
