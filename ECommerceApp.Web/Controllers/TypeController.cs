@@ -1,4 +1,5 @@
 ﻿using System;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Type;
 using ECommerceApp.Infrastructure.Permissions;
@@ -10,6 +11,7 @@ namespace ECommerceApp.Web.Controllers
     public class TypeController : Controller
     {
         private readonly ITypeService _typeService;
+
         public TypeController(ITypeService typeService)
         {
             _typeService = typeService;
@@ -43,14 +45,14 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult AddType()
         {
-            return View(new TypeVm());
+            return View(new TypeVm { Type = new TypeDto() });
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpPost]
         public IActionResult AddType(TypeVm model)
         {
-            _typeService.AddType(model);
+            _typeService.AddType(model.Type);
             return RedirectToAction("Index");
         }
 
@@ -58,19 +60,19 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult EditType(int id)
         {
-            var item = _typeService.GetTypeById(id);
-            if (item is null)
+            var type = _typeService.GetTypeById(id);
+            if (type is null)
             {
                 return NotFound();
             }
-            return View(item);
+            return View(new TypeVm { Type = type });
         }
         
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpPost]
         public IActionResult EditType(TypeVm model)
         {
-            _typeService.UpdateType(model);
+            _typeService.UpdateType(model.Type);
             return RedirectToAction("Index");
         }
 

@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
-using ECommerceApp.Application.Abstracts;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.Type;
 using ECommerceApp.Domain.Interface;
@@ -12,16 +12,22 @@ using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Items
 {
-    public class TypeService : AbstractService<TypeVm, ITypeRepository, Domain.Model.Type>, ITypeService
+    public class TypeService : ITypeService
     {
-        public TypeService(ITypeRepository typeRepository, IMapper mapper) : base(typeRepository, mapper)
-        { }
+        private readonly IMapper _mapper;
+        private readonly ITypeRepository _typeRepository;
 
-        public int AddType(TypeVm model)
+        public TypeService(ITypeRepository typeRepository, IMapper mapper)
+        {
+            _mapper = mapper;
+            _typeRepository = typeRepository;
+        }
+
+        public int AddType(TypeDto model)
         {
             if (model is null)
             {
-                throw new BusinessException($"{typeof(TypeVm).Name} cannot be null");
+                throw new BusinessException($"{typeof(TypeDto).Name} cannot be null");
             }
 
             if (model.Id != 0)
@@ -30,32 +36,32 @@ namespace ECommerceApp.Application.Services.Items
             }
 
             var type = _mapper.Map<Domain.Model.Type>(model);
-            var id = _repo.AddType(type);
+            var id = _typeRepository.AddType(type);
             return id;
         }
 
         public void DeleteType(int id)
         {
-            _repo.DeleteType(id);
+            _typeRepository.DeleteType(id);
         }
 
-        public TypeVm GetTypeById(int id)
+        public TypeDto GetTypeById(int id)
         {
-            var type = Get(id);
-            return type;
+            var type = _typeRepository.GetById(id);
+            return _mapper.Map<TypeDto>(type);
         }
 
         public TypeDetailsVm GetTypeDetails(int id)
         {
-            var type = _repo.GetAll().Include(t => t.Items).Where(t => t.Id == id).FirstOrDefault();
+            var type = _typeRepository.GetAll().Include(t => t.Items).Where(t => t.Id == id).FirstOrDefault();
             var typeVm = _mapper.Map<TypeDetailsVm>(type);
             return typeVm;
         }
 
-        public IEnumerable<TypeVm> GetTypes(Expression<Func<Domain.Model.Type, bool>> expression)
+        public IEnumerable<TypeDto> GetTypes(Expression<Func<Domain.Model.Type, bool>> expression)
         {
-            var types = _repo.GetAll().Where(expression)
-               .ProjectTo<TypeVm>(_mapper.ConfigurationProvider);
+            var types = _typeRepository.GetAll().Where(expression)
+               .ProjectTo<TypeDto>(_mapper.ConfigurationProvider);
             var typesToShow = types.ToList();
 
             return typesToShow;
@@ -63,8 +69,8 @@ namespace ECommerceApp.Application.Services.Items
 
         public ListForTypeVm GetTypes(int pageSize, int pageNo, string searchString)
         {
-            var types = _repo.GetAllTypes().Where(it => it.Name.StartsWith(searchString))
-                .ProjectTo<TypeVm>(_mapper.ConfigurationProvider)
+            var types = _typeRepository.GetAllTypes().Where(it => it.Name.StartsWith(searchString))
+                .ProjectTo<TypeDto>(_mapper.ConfigurationProvider)
                 .ToList();
             var typesToShow = types.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
 
@@ -82,28 +88,28 @@ namespace ECommerceApp.Application.Services.Items
 
         public bool TypeExists(int id)
         {
-            var type = _repo.GetById(id);
+            var type = _typeRepository.GetById(id);
             var exists = type != null;
 
             if (exists)
             {
-                _repo.DetachEntity(type);
+                _typeRepository.DetachEntity(type);
             }
 
             return exists;
         }
 
-        public void UpdateType(TypeVm model)
+        public void UpdateType(TypeDto model)
         {
             if (model is null)
             {
-                throw new BusinessException($"{typeof(TypeVm).Name} cannot be null");
+                throw new BusinessException($"{typeof(TypeDto).Name} cannot be null");
             }
 
             var type = _mapper.Map<Domain.Model.Type>(model);
             if (type != null)
             {
-                _repo.UpdateType(type);
+                _typeRepository.UpdateType(type);
             }
         }
     }

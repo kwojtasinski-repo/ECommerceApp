@@ -1,5 +1,5 @@
-﻿using ECommerceApp.Application.Services.Items;
-using ECommerceApp.Application.ViewModels.Type;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,7 +20,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpGet]
-        public ActionResult<List<TypeVm>> GetItemTypes()
+        public ActionResult<List<TypeDto>> GetItemTypes()
         {
             var types = _typeService.GetTypes(t => true);
             if (types.Count() == 0)
@@ -31,9 +31,9 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpGet("{id}")]
-        public ActionResult<TypeVm> GetType(int id)
+        public ActionResult<TypeDto> GetType(int id)
         {
-            var type = _typeService.GetTypeDetails(id);
+            var type = _typeService.GetTypeById(id);
             if (type == null)
             {
                 return NotFound();
@@ -43,7 +43,7 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpPut]
-        public IActionResult EditItemType(TypeVm model)
+        public IActionResult EditItemType(TypeDto model)
         {
             var modelExists = _typeService.TypeExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
@@ -56,7 +56,7 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpPost]
-        public IActionResult AddItemType(TypeVm model)
+        public IActionResult AddItemType(TypeDto model)
         {
             if (!ModelState.IsValid || model.Id != 0)
             {
