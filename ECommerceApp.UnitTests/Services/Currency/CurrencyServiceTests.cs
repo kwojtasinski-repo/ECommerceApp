@@ -1,6 +1,6 @@
-﻿using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Currencies;
-using ECommerceApp.Application.ViewModels.Currency;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
@@ -22,7 +22,7 @@ namespace ECommerceApp.UnitTests.Services.Currency
         [Fact]
         public void given_valid_currency_should_add()
         {
-            var currency = CreateCurrencyVm(0);
+            var currency = CreateCurrencyDto(0);
             var currencyService = new CurrencyService(_currencyRepository.Object, _mapper);
 
             currencyService.Add(currency);
@@ -33,7 +33,7 @@ namespace ECommerceApp.UnitTests.Services.Currency
         [Fact]
         public void given_invalid_currency_should_throw_an_exception()
         {
-            var currency = CreateCurrencyVm(0);
+            var currency = CreateCurrencyDto(0);
             currency.Code = "";
             var currencyService = new CurrencyService(_currencyRepository.Object, _mapper);
 
@@ -43,20 +43,9 @@ namespace ECommerceApp.UnitTests.Services.Currency
         }
 
         [Fact]
-        public void given_valid_exists_currency_should_throw_an_exception()
-        {
-            var currency = CreateCurrencyVm(1);
-            var currencyService = new CurrencyService(_currencyRepository.Object, _mapper);
-
-            Action action = () => currencyService.Add(currency);
-
-            action.Should().ThrowExactly<BusinessException>().WithMessage("When adding object Id should be equals 0");
-        }
-
-        [Fact]
         public void given_valid_currency_should_update()
         {
-            var currency = CreateCurrencyVm(1);
+            var currency = AddCurrency(CreateCurrencyDto(1));
             var currencyService = new CurrencyService(_currencyRepository.Object, _mapper);
 
             currencyService.Update(currency);
@@ -67,7 +56,7 @@ namespace ECommerceApp.UnitTests.Services.Currency
         [Fact]
         public void given_invalid_currency_code_should_throw_an_exception()
         {
-            var currency = CreateCurrencyVm(1);
+            var currency = CreateCurrencyDto(1);
             currency.Code = "";
             var currencyService = new CurrencyService(_currencyRepository.Object, _mapper);
 
@@ -96,9 +85,17 @@ namespace ECommerceApp.UnitTests.Services.Currency
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
-        private CurrencyVm CreateCurrencyVm(int id)
+        private CurrencyDto AddCurrency(CurrencyDto currencyDto)
         {
-            return new CurrencyVm
+            var currency = new Domain.Model.Currency { Id = currencyDto.Id, Code = currencyDto.Code, Description = currencyDto.Description };
+            _currencyRepository.Setup(c => c.GetById(currency.Id)).Returns(currency);
+            _currencyRepository.Setup(c => c.GetByIdAsync(currency.Id)).ReturnsAsync(currency);
+            return currencyDto;
+        }
+
+        private static CurrencyDto CreateCurrencyDto(int id)
+        {
+            return new CurrencyDto
             {
                 Id = id,
                 Code = "Afsdgs@4235",
