@@ -1,16 +1,13 @@
 ﻿using AutoMapper;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.External.Client;
 using ECommerceApp.Application.External.POCO;
 using ECommerceApp.Application.Utils;
-using ECommerceApp.Application.ViewModels.Currency;
-using ECommerceApp.Application.ViewModels.CurrencyRate;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 
 namespace ECommerceApp.Application.Services.Currencies
@@ -21,7 +18,7 @@ namespace ECommerceApp.Application.Services.Currencies
         private readonly ICurrencyRateRepository _currencyRateRepository;
         private readonly ICurrencyRepository _currencyRepository;
         private readonly INBPClient _NBPClient;
-        private static readonly DateTime archiveDate = new DateTime(2002, 1, 2);
+        private static readonly DateTime archiveDate = new (2002, 1, 2);
         private static readonly int allowedRequests = 15;
 
         public CurrencyRateService(ICurrencyRateRepository currencyRateRepository, ICurrencyRepository currencyRepository, IMapper mapper, INBPClient nBPClient)
@@ -32,7 +29,7 @@ namespace ECommerceApp.Application.Services.Currencies
             _NBPClient = nBPClient;
         }
 
-        public CurrencyRateVm GetRateForDay(int currencyId, DateTime dateTime)
+        public CurrencyRateDto GetRateForDay(int currencyId, DateTime dateTime)
         {
             if (dateTime < archiveDate)
             {
@@ -46,13 +43,13 @@ namespace ECommerceApp.Application.Services.Currencies
                 throw new BusinessException($"Currency with id: {currencyId} not found");
             }
 
-            CurrencyRateVm currencyRateVm = null;
+            CurrencyRateDto currencyRateVm = null;
             var date = dateTime.Date;
 
             if (currencyId == 1)
             {
                 var currencyRatePLN = TryGetCurrencyRatePLN(currencyId, dateTime);
-                currencyRateVm = _mapper.Map<CurrencyRateVm>(currencyRatePLN);
+                currencyRateVm = _mapper.Map<CurrencyRateDto>(currencyRatePLN);
                 return currencyRateVm;
             }
 
@@ -60,17 +57,17 @@ namespace ECommerceApp.Application.Services.Currencies
 
             if (currencyRate.Id != 0)
             {
-                currencyRateVm = _mapper.Map<CurrencyRateVm>(currencyRate);
+                currencyRateVm = _mapper.Map<CurrencyRateDto>(currencyRate);
                 return currencyRateVm;
             }
 
             _currencyRateRepository.Add(currencyRate);
 
-            currencyRateVm = _mapper.Map<CurrencyRateVm>(currencyRate);
+            currencyRateVm = _mapper.Map<CurrencyRateDto>(currencyRate);
             return currencyRateVm;
         }
 
-        public CurrencyRateVm GetLatestRate(int currencyId)
+        public CurrencyRateDto GetLatestRate(int currencyId)
         {
             var currency = _currencyRepository.GetAll().Where(c => c.Id == currencyId).FirstOrDefault();
 
@@ -84,21 +81,21 @@ namespace ECommerceApp.Application.Services.Currencies
             if (currencyId == 1)
             {
                 var currencyRatePLN = TryGetCurrencyRatePLN(currencyId, date);
-                var currencyRatePLNVm = _mapper.Map<CurrencyRateVm>(currencyRatePLN);
+                var currencyRatePLNVm = _mapper.Map<CurrencyRateDto>(currencyRatePLN);
                 return currencyRatePLNVm;
             }
 
             var currencyRate = GetCurrencyRate(currency, date);
-            CurrencyRateVm currencyRateVm = null;
+            CurrencyRateDto currencyRateVm = null;
 
             if (currencyRate.Id != 0)
             {
-                currencyRateVm = _mapper.Map<CurrencyRateVm>(currencyRate);
+                currencyRateVm = _mapper.Map<CurrencyRateDto>(currencyRate);
                 return currencyRateVm;
             }
 
             _currencyRateRepository.Add(currencyRate);
-            currencyRateVm = _mapper.Map<CurrencyRateVm>(currencyRate);
+            currencyRateVm = _mapper.Map<CurrencyRateDto>(currencyRate);
 
             return currencyRateVm;
         }
