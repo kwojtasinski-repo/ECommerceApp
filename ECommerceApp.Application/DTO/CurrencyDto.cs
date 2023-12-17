@@ -21,7 +21,7 @@ namespace ECommerceApp.Application.DTO
         public CurrencyDtoValidator()
         {
             RuleFor(c => c.Code).NotEmpty().Length(3);
-            RuleFor(c=> c.Description).NotEmpty().MinimumLength(3).MaximumLength(100);
+            RuleFor(c=> c.Description).NotEmpty().MinimumLength(3).MaximumLength(255);
         }
     }
 }
