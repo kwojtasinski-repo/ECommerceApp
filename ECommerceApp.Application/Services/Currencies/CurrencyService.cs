@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using ECommerceApp.Application.Abstracts;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.Currency;
 using ECommerceApp.Domain.Interface;
@@ -8,57 +8,67 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace ECommerceApp.Application.Services.Currencies
 {
-    public class CurrencyService : AbstractService<CurrencyVm, ICurrencyRepository, Currency>, ICurrencyService
+    public class CurrencyService : ICurrencyService
     {
-        public CurrencyService(ICurrencyRepository currencyRepository, IMapper mapper) : base(currencyRepository, mapper)
+        private readonly IMapper _mapper;
+        private readonly ICurrencyRepository _currencyRepository;
+
+        public CurrencyService(ICurrencyRepository currencyRepository, IMapper mapper)
         {
+            _currencyRepository = currencyRepository;
+            _mapper = mapper;
         }
 
-        public override int Add(CurrencyVm vm)
+        public int Add(CurrencyDto dto)
         {
-            if (vm is null)
+            if (dto is null)
             {
-                throw new BusinessException($"{typeof(CurrencyVm).Name} cannot be null");
+                throw new BusinessException($"{typeof(CurrencyDto).Name} cannot be null");
             }
 
-            if (string.IsNullOrWhiteSpace(vm.Code))
+            if (string.IsNullOrWhiteSpace(dto.Code))
             {
                 throw new BusinessException("Code shouldnt be empty");
             }
 
-            vm.Code = vm.Code.ToUpper();
-            return base.Add(vm);
+            dto.Code = dto.Code.ToUpper();
+            var currency = _mapper.Map<Currency>(dto);
+            _currencyRepository.Add(currency);
+            return currency.Id;
         }
 
-        public override void Update(CurrencyVm vm)
+        public void Update(CurrencyDto dto)
         {
-            if (vm is null)
+            if (dto is null)
             {
-                throw new BusinessException($"{typeof(CurrencyVm).Name} cannot be null");
+                throw new BusinessException($"{typeof(CurrencyDto).Name} cannot be null");
             }
 
-            if (string.IsNullOrWhiteSpace(vm.Code))
+            if (string.IsNullOrWhiteSpace(dto.Code))
             {
                 throw new BusinessException("Code shouldnt be empty");
             }
 
-            vm.Code = vm.Code.ToUpper();
-            base.Update(vm);
+            dto.Code = dto.Code.ToUpper();
+            var currency = _currencyRepository.GetById(dto.Id)
+                ?? throw new BusinessException($"Currency with id '{dto.Id}' not found");
+            currency.Code = dto.Code;
+            currency.Description = dto.Description;
+            _currencyRepository.Update(currency);
         }
 
-        public List<CurrencyVm> GetAll(Expression<Func<Currency, bool>> expression)
+        public List<CurrencyDto> GetAll(Expression<Func<Currency, bool>> expression)
         {
-            List<Currency> currencies = _repo.GetAll(expression);
-            List<CurrencyVm> currencyVms = new List<CurrencyVm>();
+            List<Currency> currencies = _currencyRepository.GetAll(expression);
+            List<CurrencyDto> currencyVms = new ();
 
             foreach (Currency currency in currencies)
             {
-                var currencyVm = _mapper.Map<CurrencyVm>(currency);
-                currencyVms.Add(currencyVm);
+                var currencyDto = _mapper.Map<CurrencyDto>(currency);
+                currencyVms.Add(currencyDto);
             }
 
             return currencyVms;
@@ -66,13 +76,13 @@ namespace ECommerceApp.Application.Services.Currencies
 
         public ListCurrencyVm GetAllCurrencies(int pageSize, int pageNo, string searchString)
         {
-            var currencies = _repo.GetAll().Where(c => c.Code.StartsWith(searchString));
+            var currencies = _currencyRepository.GetAll().Where(c => c.Code.StartsWith(searchString));
             List<Currency> currenciesToShow = currencies.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
-            List<CurrencyVm> currencyVms = new List<CurrencyVm>();
+            List<CurrencyDto> currencyVms = new ();
 
             foreach (Currency currency in currenciesToShow)
             {
-                var currencyVm = _mapper.Map<CurrencyVm>(currency);
+                var currencyVm = _mapper.Map<CurrencyDto>(currency);
                 currencyVms.Add(currencyVm);
             }
 
@@ -86,6 +96,19 @@ namespace ECommerceApp.Application.Services.Currencies
             };
 
             return listCurrency;
+        }
+
+        public CurrencyDto GetById(int id)
+        {
+            var currency = _currencyRepository.GetById(id);
+            return _mapper.Map<CurrencyDto>(currency);
+        }
+
+        public void Delete(int id)
+        {
+            var currency = _currencyRepository.GetById(id)
+                ?? throw new BusinessException($"Currency with id '{id}' was not found");
+            _currencyRepository.Delete(currency);
         }
     }
 }

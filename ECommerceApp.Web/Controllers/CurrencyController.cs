@@ -46,36 +46,36 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult AddCurrency()
         {
-            var currency = new CurrencyVm();
+            var currency = new CurrencyVm { Currency = new () };
             return View(currency);
         }
 
         [HttpPost]
         public IActionResult AddCurrency(CurrencyVm model)
         {
-            _currencyService.Add(model);
+            _currencyService.Add(model.Currency);
             return RedirectToAction("Index");
         }
 
         [HttpGet]
         public IActionResult EditCurrency(int id)
         {
-            var currency = _currencyService.Get(id);
-            return View(currency);
+            var currency = _currencyService.GetById(id);
+            return View(new CurrencyVm { Currency = currency });
         }
 
         [HttpPost]
         public IActionResult EditCurrency(CurrencyVm model)
         {
-            _currencyService.Update(model);
+            _currencyService.Update(model.Currency);
             return RedirectToAction("Index");
         }
 
         [HttpGet]
         public IActionResult ViewCurrency(int id)
         {
-            var currency = _currencyService.Get(id);
-            return View(currency);
+            var currency = _currencyService.GetById(id);
+            return View(new CurrencyVm { Currency = currency });
         }
 
         public IActionResult DeleteCurrency(int id)

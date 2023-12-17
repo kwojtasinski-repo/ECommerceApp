@@ -5,26 +5,26 @@
     <hr />
     <dl class="row">
          <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.Id)
+            @Html.DisplayNameFor(model => model.Currency.Id)
         </dt>
         <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Id)
+            @Html.DisplayFor(model => model.Currency.Id)
         </dd>
         <dt class = "col-sm-2">
             Kod
         </dt>
         <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Code)
+            @Html.DisplayFor(model => model.Currency.Code)
         </dd>
         <dt class = "col-sm-2">
             Opis
         </dt>
         <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.Description)
+            @Html.DisplayFor(model => model.Currency.Description)
         </dd>
     </dl>
 </div>
 <div>
-    @Html.ActionLink("Edytuj", "EditCurrency", new { id = Model.Id }) |
+    @Html.ActionLink("Edytuj", "EditCurrency", new { id = Model.Currency.Id }) |
     <a asp-action="Index">Wróć do lity walut</a>
 </div>

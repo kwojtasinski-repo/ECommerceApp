@@ -1,24 +1,24 @@
 ﻿@model ECommerceApp.Application.ViewModels.Currency.CurrencyVm
 
-<h4>Edycja waluty @Model.Code</h4>
+<h4>Edycja waluty @Model.Currency.Code</h4>
 <hr />
 <div class="row">
     <div class="col-md-4">
         <form id="currencyForm" asp-action="EditCurrency">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
              <div class="form-group">
-                <input type="hidden" asp-for="Id" class="form-control" />
-                <span asp-validation-for="Id" class="text-danger"></span>
+                <input type="hidden" asp-for="Currency.Id" class="form-control" />
+                <span asp-validation-for="Currency.Id" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="Code" class="control-label">Kod:</label>
-                <input id="CurrencyCodeInput" asp-for="Code" class="form-control" />
-                <span asp-validation-for="Code" class="text-danger"></span>
+                <label asp-for="Currency.Code" class="control-label">Kod:</label>
+                <input id="CurrencyCodeInput" asp-for="Currency.Code" class="form-control" />
+                <span asp-validation-for="Currency.Code" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="Description" class="control-label">Opis:</label>
-                <input id="CurrencyDescriptionInput" asp-for="Description" class="form-control" />
-                <span asp-validation-for="Description" class="text-danger"></span>
+                <label asp-for="Currency.Description" class="control-label">Opis:</label>
+                <input id="CurrencyDescriptionInput" asp-for="Currency.Description" class="form-control" />
+                <span asp-validation-for="Currency.Description" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <input type="submit" value="Zapisz" class="btn btn-primary" />

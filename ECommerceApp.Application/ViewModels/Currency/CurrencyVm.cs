@@ -1,19 +1,18 @@
-﻿using AutoMapper;
-using ECommerceApp.Application.Mapping;
-using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using ECommerceApp.Application.DTO;
+using FluentValidation;
 
 namespace ECommerceApp.Application.ViewModels.Currency
 {
-    public class CurrencyVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Currency>
+    public class CurrencyVm
     {
-        public string Code { get; set; }
-        public string Description { get; set; }
+        public CurrencyDto Currency { get; set; }
+    }
 
-        public void Mapping(Profile profile)
+    public class CurrencyVmValidator : AbstractValidator<CurrencyVm>
+    {
+        public CurrencyVmValidator()
         {
-            profile.CreateMap<CurrencyVm, ECommerceApp.Domain.Model.Currency>().ReverseMap();
+            RuleFor(c => c.Currency).SetValidator(new CurrencyDtoValidator());
         }
     }
 }

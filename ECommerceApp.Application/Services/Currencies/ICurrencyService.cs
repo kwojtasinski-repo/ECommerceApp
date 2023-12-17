@@ -1,17 +1,19 @@
-﻿using ECommerceApp.Application.Interfaces;
+﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.ViewModels.Currency;
-using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace ECommerceApp.Application.Services.Currencies
 {
-    public interface ICurrencyService : IAbstractService<CurrencyVm, ICurrencyRepository, Currency>
+    public interface ICurrencyService
     {
-        List<CurrencyVm> GetAll(Expression<Func<Currency, bool>> expression);
+        List<CurrencyDto> GetAll(Expression<Func<Currency, bool>> expression);
+        CurrencyDto GetById(int id);
+        int Add(CurrencyDto dto);
+        void Update(CurrencyDto dto);
+        void Delete(int id);
         ListCurrencyVm GetAllCurrencies(int pageSize, int pageNo, string searchString);
     }
 }
