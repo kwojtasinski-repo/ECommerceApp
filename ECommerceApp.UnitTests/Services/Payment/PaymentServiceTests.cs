@@ -2,7 +2,6 @@
 using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Application.Services.Customers;
-using ECommerceApp.Application.ViewModels.CurrencyRate;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.Domain.Interface;
