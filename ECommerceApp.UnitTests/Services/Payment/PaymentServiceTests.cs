@@ -12,6 +12,7 @@ using Moq;
 using System;
 using Xunit;
 using ECommerceApp.Application.Services.Orders;
+using ECommerceApp.Application.DTO;
 
 namespace ECommerceApp.UnitTests.Services.Payment
 {
@@ -118,7 +119,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
-        private PaymentVm CreatePaymentVm(int id, int currencyId, int orderId)
+        private static PaymentVm CreatePaymentVm(int id, int currencyId, int orderId)
         {
             var payment = new PaymentVm
             {
@@ -133,7 +134,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
             return payment;
         }
 
-        private Domain.Model.Payment CreatePayment(int id, int currencyId, int orderId)
+        private static Domain.Model.Payment CreatePayment(int id, int currencyId, int orderId)
         {
             var payment = new Domain.Model.Payment
             {
@@ -146,7 +147,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
             return payment;
         }
 
-        private OrderVm CreateOrder(int orderId)
+        private static OrderVm CreateOrder(int orderId)
         {
             var order = new OrderVm
             {
@@ -157,9 +158,9 @@ namespace ECommerceApp.UnitTests.Services.Payment
             return order;
         }
 
-        private CurrencyRateVm CreateCurrencyRate(int currencyId)
+        private static CurrencyRateDto CreateCurrencyRate(int currencyId)
         {
-            var currencyRate = new CurrencyRateVm
+            var currencyRate = new CurrencyRateDto
             {
                 Id = 1,
                 CurrencyDate = DateTime.Now,
