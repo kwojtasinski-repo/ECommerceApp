@@ -1,9 +1,8 @@
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Currencies;
-using ECommerceApp.Application.ViewModels.Currency;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
-using System;
 using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Services
@@ -16,7 +15,7 @@ namespace ECommerceApp.IntegrationTests.Services
             var id = 2;
             var code = "EUR";
 
-            var currency = _service.Get(id);
+            var currency = _service.GetById(id);
 
             currency.ShouldNotBeNull();
             currency.Code.ShouldBe(code);
@@ -27,7 +26,7 @@ namespace ECommerceApp.IntegrationTests.Services
         {
             var id = 123;
 
-            var currency = _service.Get(id);
+            var currency = _service.GetById(id);
 
             currency.ShouldBeNull();
         }
@@ -58,12 +57,12 @@ namespace ECommerceApp.IntegrationTests.Services
         {
             var id = 1;
             var code = "ABC";
-            var currency = _service.Get(id);
+            var currency = _service.GetById(id);
             currency.Code = code;
 
             _service.Update(currency);
 
-            var currencyUpdated = _service.Get(id);
+            var currencyUpdated = _service.GetById(id);
             currencyUpdated.Code.ShouldBe(code);
         }
 
@@ -86,7 +85,7 @@ namespace ECommerceApp.IntegrationTests.Services
             
             _service.Delete(id);
 
-            var currencyDeleted = _service.Get(id);
+            var currencyDeleted = _service.GetById(id);
             currencyDeleted.ShouldBeNull();
         }
 
@@ -106,9 +105,9 @@ namespace ECommerceApp.IntegrationTests.Services
             currencies.Count.ShouldBeGreaterThan(0);
         }
 
-        private CurrencyVm CreateCurrency(int id)
+        private static CurrencyDto CreateCurrency(int id)
         {
-            var currency = new CurrencyVm
+            var currency = new CurrencyDto
             {
                 Id = id,
                 Code = "TST",
