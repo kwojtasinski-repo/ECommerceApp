@@ -1,13 +1,12 @@
 ﻿using ECommerceApp.API;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.ViewModels.Type;
 using ECommerceApp.IntegrationTests.Common;
 using Flurl.Http;
 using Newtonsoft.Json;
 using Shouldly;
-using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -32,7 +31,7 @@ namespace ECommerceApp.IntegrationTests.API
                 .AllowAnyHttpStatus()
                 .GetAsync();
 
-            var tag = JsonConvert.DeserializeObject<TypeVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
+            var tag = JsonConvert.DeserializeObject<TypeDto>(await response.ResponseMessage.Content.ReadAsStringAsync());
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
             tag.ShouldNotBeNull();
             tag.Id.ShouldBe(id);
@@ -55,7 +54,7 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task given_valid_type_should_add()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var tag = new TypeVm { Id = 0, Name = "Type2" };
+            var tag = new TypeDto { Id = 0, Name = "Type2" };
 
             var response = await client.Request("api/types")
                 .AllowAnyHttpStatus()
@@ -70,7 +69,7 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task given_invalid_type_should_return_status_code_conflict()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var tag = new TypeVm { Id = 235 };
+            var tag = new TypeDto { Id = 235 };
 
             var response = await client.Request("api/types")
                 .AllowAnyHttpStatus()
@@ -83,7 +82,7 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task given_valid_type_should_update()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var tag = new TypeVm { Id = 0, Name = "Type2" };
+            var tag = new TypeDto { Id = 0, Name = "Type2" };
             var id = await client.Request("api/types")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(tag)
@@ -98,7 +97,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var tagUpdated = await client.Request($"api/types/{id}")
                 .AllowAnyHttpStatus()
-                .GetJsonAsync<TypeVm>();
+                .GetJsonAsync<TypeDto>();
             response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
             tagUpdated.ShouldNotBeNull();
             tagUpdated.Name.ShouldBe(name);
@@ -108,7 +107,7 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task given_invalid_type_when_update_should_return_status_code_conflict()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var tag = new TypeVm { Id = 234235 };
+            var tag = new TypeDto { Id = 234235 };
 
             var response = await client.Request("api/types")
                 .AllowAnyHttpStatus()
@@ -121,7 +120,7 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task given_valid_type_should_delete()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var type = new TypeVm { Id = 0, Name = "Type2" };
+            var type = new TypeDto { Id = 0, Name = "Type2" };
             var id = await client.Request("api/types")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(type)

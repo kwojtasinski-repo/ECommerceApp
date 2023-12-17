@@ -1,10 +1,7 @@
-﻿using ECommerceApp.Application.Services.Items;
-using ECommerceApp.Application.ViewModels.Type;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Services.Items;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Services
@@ -80,12 +77,12 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_id_should_delete_type()
         {
-            var type = new TypeVm { Id = 0, Name = "Type #1" };
+            var type = new TypeDto { Id = 0, Name = "Type #1" };
             var id = _service.AddType(type);
 
             _service.DeleteType(id);
 
-            var typeDeleted = _service.Get(id);
+            var typeDeleted = _service.GetTypeById(id);
             typeDeleted.ShouldBeNull();
         }
     }
