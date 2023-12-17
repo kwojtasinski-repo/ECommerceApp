@@ -1,6 +1,6 @@
-﻿using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Items;
-using ECommerceApp.Application.ViewModels.Type;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
@@ -22,7 +22,7 @@ namespace ECommerceApp.UnitTests.Services.Type
         [Fact]
         public void given_valid_type_should_add()
         {
-            var tag = CreateTypeVm(0);
+            var tag = CreateTypeDto(0);
             var typeService = new TypeService(_typeRepository.Object, _mapper);
 
             typeService.AddType(tag);
@@ -33,7 +33,7 @@ namespace ECommerceApp.UnitTests.Services.Type
         [Fact]
         public void given_invalid_type_should_throw_an_exception()
         {
-            var type = CreateTypeVm(1);
+            var type = CreateTypeDto(1);
             var tagService = new TypeService(_typeRepository.Object, _mapper);
 
             Action action = () => tagService.AddType(type);
@@ -68,7 +68,7 @@ namespace ECommerceApp.UnitTests.Services.Type
         [Fact]
         public void given_valid_type_should_update()
         {
-            var tag = CreateTypeVm(1);
+            var tag = CreateTypeDto(1);
             var typeService = new TypeService(_typeRepository.Object, _mapper);
 
             typeService.UpdateType(tag);
@@ -97,9 +97,9 @@ namespace ECommerceApp.UnitTests.Services.Type
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
-        private TypeVm CreateTypeVm(int id)
+        private static TypeDto CreateTypeDto(int id)
         {
-            var type = new TypeVm
+            var type = new TypeDto
             {
                 Id = id,
                 Name = "Type"
@@ -107,7 +107,7 @@ namespace ECommerceApp.UnitTests.Services.Type
             return type;
         }
 
-        private Domain.Model.Type CreateType(int id)
+        private static Domain.Model.Type CreateType(int id)
         {
             var type = new Domain.Model.Type
             {
