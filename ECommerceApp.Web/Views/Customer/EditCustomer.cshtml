@@ -188,8 +188,9 @@
                 firstName: {
                     controlId: 'FirstName',
                     rules: [
-                        v => v && v.trim().length > 0 || 'Imie jest wymagane',
-                        v => v && v.trim().length > 2 || 'Imie powinno mieć więcej niż 2 znaki',
+                        v => v && v.trim().length > 0 || 'Imię jest wymagane',
+                        v => v && v.trim().length > 2 || 'Imię powinno mieć więcej niż 2 znaki',
+                        v => v && v.trim().length <= 255 || 'Imię nie może być dłuższe niż 255 znaków'
                     ],
                     valid: false,
                     value: ''
@@ -199,6 +200,7 @@
                     rules: [
                         v => v && v.trim().length > 0 || 'Nazwisko jest wymagane',
                         v => v && v.trim().length > 2 || 'Nazwisko powinno mieć więcej niż 2 znaki',
+                        v => v && v.trim().length <= 255 || 'Nazwisko nie może być dłuższe niż 255 znaków'
                     ],
                     valid: false,
                     value: ''
@@ -206,7 +208,7 @@
                 nip: {
                 controlId: 'NIPInput',
                     rules: [
-                        v => !customerFormValidator.hasCompany || v && v.trim().length > 0 || 'NIP jest wymagany',
+                        v => !customerFormValidator.hasCompany || (v && v.trim().length > 0) || 'NIP jest wymagany',
                     ],
                     valid: false,
                     value: ''
@@ -214,7 +216,9 @@
                 company: {
                 controlId: 'CompanyInput',
                     rules: [
-                        v => !customerFormValidator.hasCompany || v && v.trim().length > 0 || 'Nazwa firmy jest wymagana'
+                        v => !customerFormValidator.hasCompany || (v && v.trim().length > 0) || 'Nazwa firmy jest wymagana',
+                        v => !customerFormValidator.customer.hasCompany || (v && v.trim().length > 2) || 'Nazwa firmy powinna mieć więcej niż 2 znaki',
+                        v => !customerFormValidator.customer.hasCompany || (v && v.trim().length <= 255) || 'Nazwa firmy nie może być dłuższa niż 255 znaków'
                     ],
                     valid: false,
                     value: ''
