@@ -2,11 +2,10 @@
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.IntegrationTests.Common;
+using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Services

@@ -61,12 +61,26 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public virtual async Task<bool> DeleteAsync(int id)
         {
-            return (await GetDbSet().Where(e => e.Id == id).ExecuteDeleteAsync()) > 0;
+            var dbSet = GetDbSet();
+            var entity = await dbSet.FirstOrDefaultAsync(e => e.Id == id);
+            if (entity == null)
+            {
+                return false;
+            }
+            dbSet.Remove(entity);
+            return (await _context.SaveChangesAsync()) > 0;
         }
         
         public virtual bool Delete(int id)
         {
-            return GetDbSet().Where(e => e.Id == id).ExecuteDelete() > 0;
+            var dbSet = GetDbSet();
+            var entity = dbSet.FirstOrDefault(e => e.Id == id);
+            if (entity == null)
+            {
+                return false;
+            }
+            dbSet.Remove(entity);
+            return _context.SaveChanges() > 0;
         }
 
         public IQueryable<T> GetAll()

@@ -1,14 +1,12 @@
 ﻿using ECommerceApp.API;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.IntegrationTests.Common;
 using Flurl.Http;
 using Newtonsoft.Json;
 using Shouldly;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -166,9 +164,9 @@ namespace ECommerceApp.IntegrationTests.API
             response.StatusCode.ShouldBe((int) HttpStatusCode.NotFound);
         }
 
-        private CustomerVm CreateCustomer(int id)
+        private static CustomerDto CreateCustomer(int id)
         {
-            var customer = new CustomerVm
+            var customer = new CustomerDto
             {
                 Id = id,
                 CompanyName = "Test sp. z.o.o.",

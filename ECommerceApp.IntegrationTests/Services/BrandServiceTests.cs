@@ -1,7 +1,6 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Brands;
-using ECommerceApp.Application.ViewModels.Brand;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
 using System.Linq;
@@ -149,7 +148,7 @@ namespace ECommerceApp.IntegrationTests.Services
             brandDeleted.ShouldBeNull();
         }
 
-        private BrandDto CreateBrand(int id)
+        private static                                                                               BrandDto CreateBrand(int id)
         {
             var brand = new BrandDto
             {

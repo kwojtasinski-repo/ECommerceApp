@@ -1,10 +1,7 @@
 ﻿using ECommerceApp.Application.Services.Currencies;
-using ECommerceApp.Application.ViewModels.CurrencyRate;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Services

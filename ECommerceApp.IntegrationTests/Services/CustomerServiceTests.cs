@@ -32,26 +32,37 @@ namespace ECommerceApp.IntegrationTests.Services
             var lastName = "Stanton";
             customer.LastName = lastName;
 
-            _service.UpdateCustomer(customer);
+            _service.UpdateCustomer(MapToCustomerDto(customer));
 
-            var customerUpdated = _service.Get(customer.Id);
+            var customerUpdated = _service.GetCustomerForEdit(customer.Id);
             customerUpdated.FirstName.ShouldBe(firstName);
             customerUpdated.LastName.ShouldBe(lastName);
         }
 
         [Fact]
-        public void given_valid_id_should_delete()
+        public void given_valid_id_when_delete_should_delete_and_return_true()
         {
             var customer = GetSampleCustomer();
             customer.Id = 0;
             customer.Addresses = new List<AddressDto>();
             customer.ContactDetails = new List<ContactDetailDto>();
-            var customerId = _service.AddCustomer(customer);
+            var customerId = _service.AddCustomerDetails(customer);
 
-            _service.DeleteCustomer(customerId);
+            var deleted = _service.DeleteCustomer(customerId);
 
-            var customerDelted = _service.Get(customerId);
+            deleted.ShouldBeTrue();
+            var customerDelted = _service.GetCustomerForEdit(customerId);
             customerDelted.ShouldBeNull();
+        }
+
+        [Fact]
+        public void given_invalid_id_when_delete_should_return_false()
+        {
+            var id = 100000;
+
+            var deleted = _service.DeleteCustomer(id);
+
+            deleted.ShouldBeFalse();
         }
 
         [Fact]
@@ -142,9 +153,9 @@ namespace ECommerceApp.IntegrationTests.Services
             customer.ShouldNotBeNull();
         }
 
-        private CustomerVm GetSampleCustomer()
+        private CustomerDetailsDto GetSampleCustomer()
         {
-            var customer = new CustomerVm
+            var customer = new CustomerDetailsDto
             {
                 Id = 1,
                 FirstName = "Mr",
@@ -161,6 +172,20 @@ namespace ECommerceApp.IntegrationTests.Services
                 }
             };
             return customer;
+        }
+
+        private static CustomerDto MapToCustomerDto(CustomerDetailsDto dto)
+        {
+            return new ()
+            {
+                Id = dto.Id,
+                FirstName = dto.FirstName,
+                LastName = dto.LastName,
+                IsCompany = dto.IsCompany,
+                UserId = dto.UserId,
+                CompanyName = dto.CompanyName,
+                NIP = dto.NIP,
+            };
         }
     }
 }
