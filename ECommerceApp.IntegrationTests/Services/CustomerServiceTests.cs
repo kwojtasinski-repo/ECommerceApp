@@ -142,9 +142,9 @@ namespace ECommerceApp.IntegrationTests.Services
             customer.ShouldNotBeNull();
         }
 
-        private NewCustomerVm GetSampleCustomer()
+        private CustomerVm GetSampleCustomer()
         {
-            var customer = new NewCustomerVm
+            var customer = new CustomerVm
             {
                 Id = 1,
                 FirstName = "Mr",

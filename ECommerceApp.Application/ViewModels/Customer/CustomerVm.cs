@@ -1,32 +1,31 @@
 ﻿using AutoMapper;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Mapping;
-using System;
+using FluentValidation;
 using System.Collections.Generic;
-using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Customer
 {
-    public class CustomerVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Customer>
+    public class CustomerVm : IMapFrom<Domain.Model.Customer>
     {
-        public string UserId { get; set; }
-        public string FirstName { get; set; }
-        public string LastName { get; set; }
-        public bool IsCompany { get; set; }
-        public string NIP { get; set; } // NIP contatins 11 numbers, can be null if private person order sth
-        public string CompanyName { get; set; }
+        public CustomerDto Customer { get; set; }
+        public List<ContactDetailDto> ContactDetails { get; set; }
+        public List<ContactDetailTypeDto> ContactDetailTypes { get; set; }
+        public virtual List<AddressDto> Addresses { get; set; }
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<ECommerceApp.Domain.Model.Customer, CustomerVm>()
-                .ForMember(c => c.Id, opt => opt.MapFrom(src => src.Id))
-                .ForMember(c => c.FirstName, opt => opt.MapFrom(src => src.FirstName))
-                .ForMember(c => c.LastName, opt => opt.MapFrom(src => src.LastName))
-                .ForMember(c => c.IsCompany, opt => opt.MapFrom(src => src.IsCompany))
-                .ForMember(c => c.NIP, opt => opt.MapFrom(src => src.NIP))
-                .ForMember(c => c.CompanyName, opt => opt.MapFrom(src => src.CompanyName))
-                .ForMember(c => c.UserId, opt => opt.MapFrom(src => src.UserId))
-                .ReverseMap();
-               // .ForAllOtherMembers(c => c.Ignore());
+            profile.CreateMap<CustomerVm, Domain.Model.Customer>().ReverseMap()
+                .ForMember(p => p.ContactDetails, opt => opt.MapFrom(ps => ps.ContactDetails))
+                .ForMember(p => p.Addresses, opt => opt.MapFrom(ps => ps.Addresses));
+        }
+    }
+
+    public class CustomerVmValidation : AbstractValidator<CustomerVm>
+    {
+        public CustomerVmValidation()
+        {
+            RuleFor(x => x.Customer).SetValidator(new CustomerDtoValidator());
         }
     }
 }

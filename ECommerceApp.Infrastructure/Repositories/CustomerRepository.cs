@@ -2,10 +2,8 @@
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
@@ -15,56 +13,49 @@ namespace ECommerceApp.Infrastructure.Repositories
         {
         }
 
-        public void DeleteCustomer(int customerId)
+        public bool DeleteCustomer(int customerId)
         {
-            var customer = _context.Customers.Find(customerId);
-
-
-            if (customer != null)
+            if (!_context.Customers.Any(c => c.Id == customerId))
             {
-                var customerWithOrders = _context.Customers.Include(p => p.Orders)
-                                         .SingleOrDefault(p => p.Id == customerId);
-
-                foreach (var order in customerWithOrders.Orders.ToList())
-                {
-                    _context.Orders.Remove(order);
-                }
-
-                var customerWithAddresses = _context.Customers.Include(p => p.Addresses)
-                                            .SingleOrDefault(p => p.Id == customerId);
-
-                foreach (var address in customerWithAddresses.Addresses.ToList())
-                {
-                    _context.Addresses.Remove(address);
-                }
-
-                var customerWithContactDetails = _context.Customers.Include(p => p.ContactDetails)
-                                            .SingleOrDefault(p => p.Id == customerId);
-
-                foreach (var contactDetail in customerWithContactDetails.ContactDetails.ToList())
-                {
-                    _context.ContactDetails.Remove(contactDetail);
-                }
-
-                var customerWithPayments = _context.Customers.Include(p => p.Payments)
-                                            .SingleOrDefault(p => p.Id == customerId);
-
-                foreach (var payment in customerWithPayments.Payments.ToList())
-                {
-                    _context.Payments.Remove(payment);
-                }
-
-                var customerWithRefunds = _context.Customers.Include(p => p.Refunds)
-                                            .SingleOrDefault(p => p.Id == customerId);
-
-                foreach (var refund in customerWithRefunds.Refunds.ToList())
-                {
-                    _context.Refunds.Remove(refund);
-                }
-
-                _context.Customers.Remove(customer);
-                _context.SaveChanges();
+                return false;
             }
+
+            var customer = _context.Customers
+                                    .Include(c => c.Addresses)
+                                    .Include(c => c.ContactDetails)
+                                    .Include(c => c.Payments)
+                                    .Include(c => c.Refunds)
+                                    .Include(c => c.Orders)
+                                    .FirstOrDefault(p => p.Id == customerId);
+
+            foreach (var address in customer.Addresses)
+            {
+                _context.Addresses.Remove(address);
+            }
+
+            foreach (var contactDetail in customer.ContactDetails)
+            {
+                _context.ContactDetails.Remove(contactDetail);
+            }
+
+            foreach (var payment in customer.Payments)
+            {
+                _context.Payments.Remove(payment);
+            }
+
+            foreach (var refund in customer.Refunds)
+            {
+                _context.Refunds.Remove(refund);
+            }
+
+            foreach (var order in customer.Orders)
+            {
+                _context.Orders.Remove(order);
+            }
+
+            _context.Customers.Remove(customer);
+            _context.SaveChanges();
+            return true;
         }
 
         public int AddCustomer(Customer customer)

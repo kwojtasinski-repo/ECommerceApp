@@ -79,24 +79,46 @@ namespace ECommerceApp.Web.Controllers
         [Authorize]
         public IActionResult AddCustomer()
         {
-            var customer = new NewCustomerVm() { Addresses = new List<AddressDto> { new AddressDto()}, ContactDetails = new List<ContactDetailDto> { new ContactDetailDto() } };
-            customer.UserId = GetUserId();
+
+            var customer = new CustomerVm
+            {
+                Customer = new CustomerDto { UserId = GetUserId() },
+                ContactDetailTypes = new List<ContactDetailTypeDto>(),
+                ContactDetails = new List<ContactDetailDto>(),
+                Addresses = new List<AddressDto>()
+            };
             return View(customer);
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
-        public IActionResult AddCustomer(NewCustomerVm model)
+        public IActionResult AddCustomer(CustomerVm model)
         {
-            var id = _customerService.AddCustomer(model);
+            var id = _customerService.AddCustomerDetails(new CustomerDetailsDto
+            {
+                Id = model.Customer.Id,
+                FirstName = model.Customer.FirstName,
+                LastName = model.Customer.LastName,
+                IsCompany = model.Customer.IsCompany,
+                CompanyName = model.Customer.CompanyName,
+                NIP = model.Customer.NIP,
+                UserId = model.Customer.UserId,
+                Addresses = model.Addresses,
+                ContactDetails = model.ContactDetails
+            });
             return RedirectToAction("Index");
         }
 
         [Authorize]
         public IActionResult AddCustomerPartialView()
         {
-            var customer = new NewCustomerVm();
-            customer.UserId = GetUserId();
+            var customer = new CustomerVm
+            {
+                Customer = new CustomerDto { UserId = GetUserId() },
+                ContactDetailTypes = new List<ContactDetailTypeDto>(),
+                ContactDetails = new List<ContactDetailDto>(),
+                Addresses = new List<AddressDto>()
+            };
             return PartialView(customer);
         }
 
@@ -113,26 +135,41 @@ namespace ECommerceApp.Web.Controllers
 
             var userId = GetUserId();
             var role = GetUserRole();
-            customer.ContactDetailTypes = _contactDetailTypeService.GetContactDetailTypes(_ => true).ToList();
             if (userId != customer.UserId && role == UserPermissions.Roles.User)
             {
                 return Forbid();
             }
-            return View(customer);
+            var vm = new CustomerVm
+            {
+                Customer = new CustomerDto
+                {
+                    Id = id,
+                    FirstName = customer.FirstName,
+                    LastName = customer.LastName,
+                    IsCompany = customer.IsCompany,
+                    CompanyName = customer.CompanyName,
+                    NIP = customer.NIP,
+                    UserId = customer.UserId
+                },
+                Addresses = customer.Addresses,
+                ContactDetails = customer.ContactDetails,
+                ContactDetailTypes = _contactDetailTypeService.GetContactDetailTypes(_ => true).ToList()
+            };
+            return View(vm);
         }
 
         [Authorize]
         [HttpPost]
-        public IActionResult EditCustomer(NewCustomerVm model)
+        public IActionResult EditCustomer(CustomerVm model)
         {
             // TODO check if user has rights on backend to this customer
             var userId = GetUserId();
             var role = GetUserRole();
-            if (userId != model.UserId && role == UserPermissions.Roles.User)
+            if (userId != model.Customer.UserId && role == UserPermissions.Roles.User)
             {
                 return Forbid();
             }
-            _customerService.UpdateCustomer(model);
+            _customerService.UpdateCustomer(model.Customer);
             return RedirectToAction("Index");
         }
 
@@ -149,8 +186,8 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult Delete(int id)
         {
             // TODO check if user has rights on backend to this customer
-            _customerService.DeleteCustomer(id);
-            return Json("deleted");
+            return _customerService.DeleteCustomer(id)
+                ? Json("deleted") : NotFound();
         }
     }
 }

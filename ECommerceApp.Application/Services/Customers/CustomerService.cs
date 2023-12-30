@@ -1,35 +1,34 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
-using ECommerceApp.Application.Abstracts;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.ViewModels;
-using ECommerceApp.Application.ViewModels.Address;
-using ECommerceApp.Application.ViewModels.ContactDetail;
-using ECommerceApp.Application.ViewModels.ContactDetailType;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using Microsoft.AspNetCore.Identity;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace ECommerceApp.Application.Services.Customers
 {
-    public class CustomerService : AbstractService<CustomerVm, ICustomerRepository, Customer>, ICustomerService
+    public class CustomerService : ICustomerService
     {
-        public CustomerService(ICustomerRepository custRepo, IMapper mapper) : base(custRepo, mapper)
+        private readonly IMapper _mapper;
+        private readonly ICustomerRepository _customerRepository;
+
+        public CustomerService(ICustomerRepository custRepo, IMapper mapper)
         {
+            _mapper = mapper;
+            _customerRepository = custRepo;
         }
 
-        public int AddCustomer(NewCustomerVm newCustomer)
+        public int AddCustomer(CustomerDto newCustomer)
         {
             if (newCustomer is null)
             {
-                throw new BusinessException($"{typeof(NewCustomerVm).Name} cannot be null");
+                throw new BusinessException($"{typeof(CustomerDto).Name} cannot be null");
             }
 
             if (newCustomer.Id != 0)
@@ -38,18 +37,35 @@ namespace ECommerceApp.Application.Services.Customers
             }
 
             var customer = _mapper.Map<Customer>(newCustomer);
-            var id = _repo.Add(customer);
+            var id = _customerRepository.Add(customer);
             return id;
         }
 
-        public void DeleteCustomer(int id)
+        public int AddCustomerDetails(CustomerDetailsDto newCustomer)
         {
-            Delete(id);
+            if (newCustomer is null)
+            {
+                throw new BusinessException($"{typeof(CustomerDetailsDto).Name} cannot be null");
+            }
+
+            if (newCustomer.Id != 0)
+            {
+                throw new BusinessException("When adding object Id should be equals 0");
+            }
+
+            var customer = _mapper.Map<Customer>(newCustomer);
+            var id = _customerRepository.Add(customer);
+            return id;
+        }
+
+        public bool DeleteCustomer(int id)
+        {
+            return _customerRepository.DeleteCustomer(id);
         }
 
         public ListForCustomerVm GetAllCustomersForList(int pageSize, int pageNo, string searchString)
         {
-            var customers = _repo.GetAllCustomers()
+            var customers = _customerRepository.GetAllCustomers()
                 .Where(p => p.FirstName.StartsWith(searchString) || p.LastName.StartsWith(searchString)
                 || p.CompanyName.StartsWith(searchString) || p.NIP.StartsWith(searchString));
 
@@ -71,7 +87,7 @@ namespace ECommerceApp.Application.Services.Customers
 
         public ListForCustomerVm GetAllCustomersForList(string userId, int pageSize, int pageNo, string searchString)
         {
-            var customers = _repo.GetAllCustomers().Where(c => c.UserId == userId)
+            var customers = _customerRepository.GetAllCustomers().Where(c => c.UserId == userId)
                     .Where(p => p.FirstName.StartsWith(searchString) || p.LastName.StartsWith(searchString)
                     || p.CompanyName.StartsWith(searchString) || p.NIP.StartsWith(searchString))
                     .ProjectTo<CustomerForListVm>(_mapper.ConfigurationProvider);
@@ -90,10 +106,10 @@ namespace ECommerceApp.Application.Services.Customers
             return customersList;
         }
 
-        public List<NewCustomerVm> GetAllCustomersForList()
+        public List<CustomerDetailsDto> GetAllCustomersForList()
         {
-            var customers = _repo.GetAllCustomers()
-                .ProjectTo<NewCustomerVm>(_mapper.ConfigurationProvider)
+            var customers = _customerRepository.GetAllCustomers()
+                .ProjectTo<CustomerDetailsDto>(_mapper.ConfigurationProvider)
                 .ToList();
 
             return customers;
@@ -101,7 +117,7 @@ namespace ECommerceApp.Application.Services.Customers
 
         public CustomerDetailsVm GetCustomerDetails(int customerId)
         {
-            var customer = _repo.GetCustomerById(customerId);
+            var customer = _customerRepository.GetCustomerById(customerId);
             var customerVm = _mapper.Map<CustomerDetailsVm>(customer);
 
             return customerVm;
@@ -109,7 +125,7 @@ namespace ECommerceApp.Application.Services.Customers
 
         public CustomerInformationForOrdersVm GetCustomerInformationById(int customerId)
         {
-            var customer = _repo.GetById(customerId);
+            var customer = _customerRepository.GetById(customerId);
             var customerVm = _mapper.Map<CustomerInformationForOrdersVm>(customer);
 
             return customerVm;
@@ -117,30 +133,58 @@ namespace ECommerceApp.Application.Services.Customers
 
         public CustomerDetailsVm GetCustomerDetails(int id, string userId)
         {
-            var customer = _repo.GetCustomerById(id, userId);
+            var customer = _customerRepository.GetCustomerById(id, userId);
             var customerVm = _mapper.Map<CustomerDetailsVm>(customer);
 
             return customerVm;
         }
 
-        public NewCustomerVm GetCustomerForEdit(int id)
+        public CustomerDetailsDto GetCustomerForEdit(int id)
         {
-            var customer = _repo.GetCustomerById(id);
-            var customerVm = _mapper.Map<NewCustomerVm>(customer);
+            var customer = _customerRepository.GetCustomerById(id);
+            var customerVm = _mapper.Map<CustomerDetailsDto>(customer);
 
             return customerVm;
         }
 
-        public void UpdateCustomer(NewCustomerVm model)
+        public void UpdateCustomer(CustomerDto model)
         {
             if (model is null)
             {
-                throw new BusinessException($"{typeof(NewCustomerVm).Name} cannot be null");
+                throw new BusinessException($"{typeof(CustomerDto).Name} cannot be null");
             }
 
-            var customer = _mapper.Map<Customer>(model);
-            _repo.UpdateCustomer(customer);
+            var customer = _customerRepository.GetById(model.Id)
+                ?? throw new BusinessException($"Customer with id '{model.Id}' was not found");
+            customer.FirstName = model.FirstName;
+            customer.LastName = model.LastName;
+            customer.IsCompany = model.IsCompany;
+            customer.CompanyName = model.CompanyName;
+            customer.NIP = model.NIP;
+            _customerRepository.Update(customer);
         }
+
+        public bool CustomerExists(int id, string userId)
+        {
+            var exists = _customerRepository.CustomerExists(id, userId);
+            return exists;
+        }
+
+        public IEnumerable<CustomerDto> GetAllCustomers(Expression<Func<Customer, bool>> expression)
+        {
+            var customers = _customerRepository.GetAllCustomers().Where(expression).ToList();
+            var customersVm = _mapper.Map<List<CustomerDto>>(customers);
+            return customersVm;
+        }
+
+        public IQueryable<CustomerInformationForOrdersVm> GetCustomersInformationByUserId(string userId)
+        {
+            var customers = _customerRepository.GetAll().Where(c => c.UserId == userId)
+                            .ProjectTo<CustomerInformationForOrdersVm>(_mapper.ConfigurationProvider);
+            return customers;
+        }
+
+        #region AnnonymousUser TODO In Future
 
         private static string CreateRandomUser(int length = 10)
         {
@@ -174,24 +218,6 @@ namespace ECommerceApp.Application.Services.Customers
             return new string(chars);
         }
 
-        public bool CustomerExists(int id, string userId)
-        {
-            var exists = _repo.CustomerExists(id, userId);
-            return exists;
-        }
-
-        public IEnumerable<CustomerVm> GetAllCustomers(Expression<Func<Customer, bool>> expression)
-        {
-            var customers = _repo.GetAllCustomers().Where(expression).ToList();
-            var customersVm = _mapper.Map<List<CustomerVm>>(customers);
-            return customersVm;
-        }
-
-        public IQueryable<CustomerInformationForOrdersVm> GetCustomersInformationByUserId(string userId)
-        {
-            var customers = _repo.GetAll().Where(c => c.UserId == userId)
-                            .ProjectTo<CustomerInformationForOrdersVm>(_mapper.ConfigurationProvider);
-            return customers;
-        }
+        #endregion
     }
 }

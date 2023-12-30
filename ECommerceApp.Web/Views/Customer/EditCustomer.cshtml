@@ -1,4 +1,4 @@
-﻿@model ECommerceApp.Application.ViewModels.Customer.NewCustomerVm
+﻿@model ECommerceApp.Application.ViewModels.Customer.CustomerVm
 
 @{
     ViewData["Title"] = "EditCustomer";
@@ -14,36 +14,36 @@
     <form id="customerForm" method="post" asp-action="EditCustomer">
         <div class="form-row col-12">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" class="form-control" />
-            <input type="hidden" asp-for="UserId" class="form-control" />
+            <input type="hidden" asp-for="Customer.Id" class="form-control" />
+            <input type="hidden" asp-for="Customer.UserId" class="form-control" />
             <div class="form-group col-5">
-                <label asp-for="FirstName" class="control-label">Imię</label>
-                <input id="FirstName" asp-for="FirstName" class="form-control" />
-                <span asp-validation-for="FirstName" class="text-danger"></span>
+                <label asp-for="Customer.FirstName" class="control-label">Imię</label>
+                <input id="FirstName" asp-for="Customer.FirstName" class="form-control" />
+                <span asp-validation-for="Customer.FirstName" class="text-danger"></span>
             </div>
             <div class="form-group col-5">
-                <label asp-for="LastName" class="control-label">Nazwisko</label>
-                <input id="LastName" asp-for="LastName" class="form-control" />
-                <span asp-validation-for="LastName" class="text-danger"></span>
+                <label asp-for="Customer.LastName" class="control-label">Nazwisko</label>
+                <input id="LastName" asp-for="Customer.LastName" class="form-control" />
+                <span asp-validation-for="Customer.LastName" class="text-danger"></span>
             </div>
 
             <div class="form-group form-check col-4"></div><div class="form-group form-check col-6" style=" margin: 0 auto; ">
                 <label class="form-check-label">
-                    <input id="CompanyEnter" class="form-check-input" asp-for="IsCompany" /> Firma
+                    <input id="CompanyEnter" class="form-check-input" asp-for="Customer.IsCompany" /> Firma
                 </label>
             </div>
-            @if (Model.IsCompany)
+            @if (Model.Customer.IsCompany)
             {
                 <div id="CompanyData" class="form-row col-12 mt-2" style="display:flex;width:100%">
                     <div class="form-group col-5">
-                        <label asp-for="NIP" class="control-label"></label>
-                        <input id="NIPInput" asp-for="NIP" class="form-control" />
-                        <span asp-validation-for="NIP" class="text-danger"></span>
+                        <label asp-for="Customer.NIP" class="control-label"></label>
+                        <input id="NIPInput" asp-for="Customer.NIP" class="form-control" />
+                        <span asp-validation-for="Customer.NIP" class="text-danger"></span>
                     </div>
                     <div class="form-group col-5">
-                        <label asp-for="CompanyName" class="control-label">Nazwa firmy</label>
-                        <input id="CompanyInput" asp-for="CompanyName" class="form-control" />
-                        <span asp-validation-for="CompanyName" class="text-danger"></span>
+                        <label asp-for="Customer.CompanyName" class="control-label">Nazwa firmy</label>
+                        <input id="CompanyInput" asp-for="Customer.CompanyName" class="form-control" />
+                        <span asp-validation-for="Customer.CompanyName" class="text-danger"></span>
                     </div>
                 </div>
             }
@@ -51,14 +51,14 @@
             {
                 <div id="CompanyData" class="form-row col-12 mt-2" style="display:none;width:100%">
                     <div class="form-group col-5">
-                        <label asp-for="NIP" class="control-label"></label>
-                        <input id="NIPInput" asp-for="NIP" class="form-control" />
-                        <span asp-validation-for="NIP" class="text-danger"></span>
+                        <label asp-for="Customer.NIP" class="control-label"></label>
+                        <input id="NIPInput" asp-for="Customer.NIP" class="form-control" />
+                        <span asp-validation-for="Customer.NIP" class="text-danger"></span>
                     </div>
                     <div class="form-group col-5">
-                        <label asp-for="CompanyName" class="control-label"></label>
-                        <input id="CompanyInput" asp-for="CompanyName" class="form-control" />
-                        <span asp-validation-for="CompanyName" class="text-danger"></span>
+                        <label asp-for="Customer.CompanyName" class="control-label"></label>
+                        <input id="CompanyInput" asp-for="Customer.CompanyName" class="form-control" />
+                        <span asp-validation-for="Customer.CompanyName" class="text-danger"></span>
                     </div>
                 </div>
             }
@@ -106,7 +106,7 @@
                         }
                     </tbody>
                 </table>
-                <button class="btn btn-dark" onclick="location.href='@Url.Action("AddNewContactDetail", "ContactDetail", new { id = Model.Id })'" type="button">Dodaj kontakt</button>
+                <button class="btn btn-dark" onclick="location.href='@Url.Action("AddNewContactDetail", "ContactDetail", new { id = Model.Customer.Id })'" type="button">Dodaj kontakt</button>
             </div>
         </div>
         <br><br>
@@ -172,7 +172,7 @@
                         }
                     </tbody>
                 </table>
-                <input id="AddAddress" type="button" class="btn btn-dark" value="Dodaj adres" onclick="location.href='@Url.Action("AddAddress", "Address", new { id = Model.Id })'" />
+                <input id="AddAddress" type="button" class="btn btn-dark" value="Dodaj adres" onclick="location.href='@Url.Action("AddAddress", "Address", new { id = Model.Customer.Id })'" />
             </div>
         </div>
     </form>
@@ -217,8 +217,8 @@
                 controlId: 'CompanyInput',
                     rules: [
                         v => !customerFormValidator.hasCompany || (v && v.trim().length > 0) || 'Nazwa firmy jest wymagana',
-                        v => !customerFormValidator.customer.hasCompany || (v && v.trim().length > 2) || 'Nazwa firmy powinna mieć więcej niż 2 znaki',
-                        v => !customerFormValidator.customer.hasCompany || (v && v.trim().length <= 255) || 'Nazwa firmy nie może być dłuższa niż 255 znaków'
+                        v => !customerFormValidator.hasCompany || (v && v.trim().length > 2) || 'Nazwa firmy powinna mieć więcej niż 2 znaki',
+                        v => !customerFormValidator.hasCompany || (v && v.trim().length <= 255) || 'Nazwa firmy nie może być dłuższa niż 255 znaków'
                     ],
                     valid: false,
                     value: ''
@@ -244,6 +244,8 @@
                     document.getElementById("NIPInput").value = "";
                     document.getElementById("CompanyInput").value = "";
                     customerFormValidator.hasCompany = false;
+                    customerFormValidator.company.value = "";
+                    customerFormValidator.nip.value = "";
                 }
             });
 

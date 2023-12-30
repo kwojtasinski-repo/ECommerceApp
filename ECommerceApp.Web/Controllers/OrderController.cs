@@ -124,7 +124,7 @@ namespace ECommerceApp.Web.Controllers
             ViewBag.Date = orderDate;
             var customers = _customerService.GetCustomersInformationByUserId(userId).ToList();
             ViewBag.Customers = customers;
-            var order = new NewOrderVm() { Number = random.Next(100, 10000), OrderItems = orderItems, UserId = userId, NewCustomer = new NewCustomerVm { Addresses = new List<AddressDto> { new AddressDto() }, ContactDetails = new List<ContactDetailDto> { new ContactDetailDto() } } };
+            var order = new NewOrderVm() { Number = random.Next(100, 10000), OrderItems = orderItems, UserId = userId, NewCustomer = new CustomerDetailsDto { Addresses = new List<AddressDto> { new AddressDto() }, ContactDetails = new List<ContactDetailDto> { new ContactDetailDto() } } };
             return View(order);
         }
 
@@ -139,7 +139,7 @@ namespace ECommerceApp.Web.Controllers
             }
             else
             {
-                var customerId = _customerService.AddCustomer(model.NewCustomer);
+                var customerId = _customerService.AddCustomerDetails(model.NewCustomer);
                 model.CustomerId = customerId;
                 orderId = _orderService.AddOrder(model.AsOrderVm());
             }

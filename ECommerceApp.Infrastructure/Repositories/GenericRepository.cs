@@ -2,10 +2,8 @@
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Infrastructure.Repositories
@@ -21,20 +19,21 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public virtual int Add(T entity)
         {
-            _context.Add(entity);
+            GetDbSet().Add(entity);
             _context.SaveChanges();
             return entity.Id;
         }
         
         public virtual async Task<int> AddAsync(T entity)
         {
-            _context.Add(entity);
+            await GetDbSet().AddAsync(entity);
             await _context.SaveChangesAsync();
             return entity.Id;
         }
-        public virtual List<int> AddRange(List<T> entities)
+
+        public virtual List<int> AddRange(IEnumerable<T> entities)
         {
-            _context.AddRange(entities);
+            GetDbSet().AddRange(entities);
             _context.SaveChanges();
 
             var ids = new List<int>();
@@ -46,9 +45,9 @@ namespace ECommerceApp.Infrastructure.Repositories
             return ids;
         }
         
-        public virtual async Task<List<int>> AddRangeAsync(List<T> entities)
+        public virtual async Task<List<int>> AddRangeAsync(IEnumerable<T> entities)
         {
-            _context.Add(entities);
+            await GetDbSet().AddRangeAsync(entities);
             await _context.SaveChangesAsync();
 
             var ids = new List<int>();
@@ -60,28 +59,14 @@ namespace ECommerceApp.Infrastructure.Repositories
             return ids;
         }
 
-        public virtual async Task DeleteAsync(int id)
+        public virtual async Task<bool> DeleteAsync(int id)
         {
-            var type = typeof(T);
-            var entity = (T) await _context.FindAsync(type, id);
-
-            if (entity != null)
-            {
-                _context.Remove(entity);
-                await _context.SaveChangesAsync();
-            }
+            return (await GetDbSet().Where(e => e.Id == id).ExecuteDeleteAsync()) > 0;
         }
         
-        public virtual void Delete(int id)
+        public virtual bool Delete(int id)
         {
-            var type = typeof(T);
-            var entity = (T) _context.Find(type, id);
-
-            if (entity != null)
-            {
-                _context.Remove(entity);
-                _context.SaveChanges();
-            }
+            return GetDbSet().Where(e => e.Id == id).ExecuteDelete() > 0;
         }
 
         public IQueryable<T> GetAll()
@@ -93,27 +78,21 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public virtual async Task<T> GetByIdAsync(int id)
         {
-            var entity = (T) await _context.FindAsync(typeof(T), id);
+            var entity = await GetDbSet().FindAsync(id);
             return entity;
         }
         
         public virtual T GetById(int id)
         {
-            var entity = (T) _context.Find(typeof(T), id);
+            var entity = GetDbSet().Find(id);
             return entity;
-        }
-
-        protected Microsoft.EntityFrameworkCore.DbSet<T> GetDbSet()
-        {
-            var dbSet = _context.Set<T>();
-            return dbSet;
         }
 
         public virtual async Task UpdateAsync(T entity)
         {
             if (entity != null)
             {
-                _context.Update(entity);
+                GetDbSet().Update(entity);
                 await _context.SaveChangesAsync();
             }
         }
@@ -122,32 +101,26 @@ namespace ECommerceApp.Infrastructure.Repositories
         {
             if (entity != null)
             {
-                _context.Update(entity);
+                GetDbSet().Update(entity);
                 _context.SaveChanges();
             }
         }
 
-        public virtual async Task DeleteAsync(T entity)
+        public virtual async Task<bool> DeleteAsync(T entity)
         {
-            if (entity != null)
-            {
-                _context.Remove(entity);
-                await _context.SaveChangesAsync();
-            }
+            GetDbSet().Remove(entity);
+            return await _context.SaveChangesAsync() > 0;
         }
 
-        public virtual void Delete(T entity)
+        public virtual bool Delete(T entity)
         {
-            if (entity != null)
-            {
-                _context.Remove(entity);
-                _context.SaveChanges();
-            }
+            GetDbSet().Remove(entity);
+            return _context.SaveChanges() > 0;
         }
 
         public void DetachEntity(T entity)
         {
-            _context.Entry(entity).State = EntityState.Detached;
+            GetDbSet().Entry(entity).State = EntityState.Detached;
         }
 
         public void DetachEntity<TEntity>(TEntity entity) where TEntity : BaseEntity
@@ -165,13 +138,18 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public virtual void UpdateRange(IEnumerable<T> entities)
         {
-            if (entities.Count() == 0)
+            if (!entities.Any())
             {
                 return;
             }
 
-            _context.UpdateRange(entities);
+            GetDbSet().UpdateRange(entities);
             _context.SaveChanges();
+        }
+
+        protected DbSet<T> GetDbSet()
+        {
+            return _context.Set<T>();
         }
     }
 }

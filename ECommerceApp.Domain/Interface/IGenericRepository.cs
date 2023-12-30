@@ -7,10 +7,10 @@ namespace ECommerceApp.Domain.Interface
 {
     public interface IGenericRepository<T>
     {
-        Task DeleteAsync(int id);
-        void Delete(int id);
-        Task DeleteAsync(T entity);
-        void Delete(T entity);
+        Task<bool> DeleteAsync(int id);
+        bool Delete(int id);
+        Task<bool> DeleteAsync(T entity);
+        bool Delete(T entity);
         Task<int> AddAsync(T entity);
         int Add(T entity);
         Task<T> GetByIdAsync(int id);
@@ -19,8 +19,8 @@ namespace ECommerceApp.Domain.Interface
         void Update(T entity);
         void UpdateRange(IEnumerable<T> entities);
         IQueryable<T> GetAll();
-        Task<List<int>> AddRangeAsync(List<T> entities);
-        List<int> AddRange(List<T> entities);
+        Task<List<int>> AddRangeAsync(IEnumerable<T> entities);
+        List<int> AddRange(IEnumerable<T> entities);
         void DetachEntity(T entity);
         void DetachEntity<TEntity>(TEntity entity) where TEntity : BaseEntity;
         void DetachEntity<TEntity>(ICollection<TEntity> entity) where TEntity : BaseEntity;

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Customer;
@@ -47,7 +48,7 @@ namespace ECommerceApp.Application.ViewModels.Order
 
         public List<NewOrderItemVm> OrderItems { get; set; } // 1:Many relation
         public List<ItemVm> Items { get; set; }
-        public NewCustomerVm NewCustomer { get; set; }
+        public CustomerDetailsDto NewCustomer { get; set; }
         public bool CustomerData { get; set; }
 
         public void Mapping(Profile profile)

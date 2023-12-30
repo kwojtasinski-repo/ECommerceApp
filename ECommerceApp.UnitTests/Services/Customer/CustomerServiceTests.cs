@@ -122,9 +122,9 @@ namespace ECommerceApp.Tests.Services.Customer
             return customer;
         }
 
-        private NewCustomerVm CreateNewCustomerVm(int id, string userId)
+        private CustomerVm CreateNewCustomerVm(int id, string userId)
         {
-            var customer = new NewCustomerVm
+            var customer = new CustomerVm
             {
                 Id = id,
                 NIP = "",

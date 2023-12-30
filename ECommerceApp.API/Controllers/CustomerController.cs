@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using System.Security.Claims;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Infrastructure.Permissions;
@@ -51,7 +50,7 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPut]
-        public IActionResult EditCustomer(CustomerVm model)
+        public IActionResult EditCustomer(CustomerDto model)
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -60,19 +59,19 @@ namespace ECommerceApp.API.Controllers
             {
                 return Conflict(ModelState);
             }
-            _customerService.Update(model);
+            _customerService.UpdateCustomer(model);
             return Ok();
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
-        public IActionResult AddCustomer([FromBody] CustomerVm model)
+        public IActionResult AddCustomer([FromBody] CustomerDto model)
         {
             if (!ModelState.IsValid || model.Id != 0)
             {
                 return Conflict(ModelState);
             }
-            var id = _customerService.Add(model);
+            var id = _customerService.AddCustomer(model);
             return Ok(id);
         }
     }
