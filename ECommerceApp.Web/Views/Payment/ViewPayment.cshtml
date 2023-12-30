@@ -38,7 +38,7 @@
             Imię i nazwisko
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Customer.FirstName) @(' ') @Html.DisplayFor(model => model.Customer.LastName)
+            @Html.DisplayFor(model => model.Customer.Customer.FirstName) @(' ') @Html.DisplayFor(model => model.Customer.Customer.LastName)
         </dd>
         <dt class="col-sm-2">
             @Html.DisplayNameFor(model => model.OrderId)

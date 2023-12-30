@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
-using ECommerceApp.Domain.Model;
 using System;
 
 namespace ECommerceApp.Application.ViewModels.Customer

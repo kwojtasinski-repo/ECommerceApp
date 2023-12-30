@@ -9,7 +9,6 @@ using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Customers
 {
@@ -70,7 +69,7 @@ namespace ECommerceApp.Application.Services.Customers
                 || p.CompanyName.StartsWith(searchString) || p.NIP.StartsWith(searchString));
 
             var customersToShow = customers.Skip(pageSize * (pageNo - 1)).Take(pageSize)
-                .ProjectTo<CustomerForListVm>(_mapper.ConfigurationProvider)
+                .ProjectTo<CustomerDto>(_mapper.ConfigurationProvider)
                 .ToList();
 
             var customersList = new ListForCustomerVm()
@@ -90,7 +89,7 @@ namespace ECommerceApp.Application.Services.Customers
             var customers = _customerRepository.GetAllCustomers().Where(c => c.UserId == userId)
                     .Where(p => p.FirstName.StartsWith(searchString) || p.LastName.StartsWith(searchString)
                     || p.CompanyName.StartsWith(searchString) || p.NIP.StartsWith(searchString))
-                    .ProjectTo<CustomerForListVm>(_mapper.ConfigurationProvider);
+                    .ProjectTo<CustomerDto>(_mapper.ConfigurationProvider);
 
             var customersToShow = customers.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
 
@@ -117,7 +116,7 @@ namespace ECommerceApp.Application.Services.Customers
 
         public CustomerDetailsVm GetCustomerDetails(int customerId)
         {
-            var customer = _customerRepository.GetCustomerById(customerId);
+            var customer = _customerRepository.GetCustomerDetailsById(customerId);
             var customerVm = _mapper.Map<CustomerDetailsVm>(customer);
 
             return customerVm;
@@ -133,15 +132,23 @@ namespace ECommerceApp.Application.Services.Customers
 
         public CustomerDetailsVm GetCustomerDetails(int id, string userId)
         {
-            var customer = _customerRepository.GetCustomerById(id, userId);
+            var customer = _customerRepository.GetCustomerDetailsById(id, userId);
             var customerVm = _mapper.Map<CustomerDetailsVm>(customer);
 
             return customerVm;
         }
 
-        public CustomerDetailsDto GetCustomerForEdit(int id)
+        public CustomerDetailsDto GetCustomer(int id)
         {
             var customer = _customerRepository.GetCustomerById(id);
+            var customerVm = _mapper.Map<CustomerDetailsDto>(customer);
+
+            return customerVm;
+        }
+
+        public CustomerDetailsDto GetCustomer(int id, string userId)
+        {
+            var customer = _customerRepository.GetCustomerById(id, userId);
             var customerVm = _mapper.Map<CustomerDetailsDto>(customer);
 
             return customerVm;
@@ -168,13 +175,6 @@ namespace ECommerceApp.Application.Services.Customers
         {
             var exists = _customerRepository.CustomerExists(id, userId);
             return exists;
-        }
-
-        public IEnumerable<CustomerDto> GetAllCustomers(Expression<Func<Customer, bool>> expression)
-        {
-            var customers = _customerRepository.GetAllCustomers().Where(expression).ToList();
-            var customersVm = _mapper.Map<List<CustomerDto>>(customers);
-            return customersVm;
         }
 
         public IQueryable<CustomerInformationForOrdersVm> GetCustomersInformationByUserId(string userId)

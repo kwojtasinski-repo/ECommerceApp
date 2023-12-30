@@ -1,25 +1,14 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Mapping;
-using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Application.ViewModels.ContactDetail;
-using ECommerceApp.Domain.Model;
-using FluentValidation;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Customer
 {
-    public class CustomerDetailsVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Customer>
+    public class CustomerDetailsVm : IMapFrom<ECommerceApp.Domain.Model.Customer>
     {
-        public string FirstName { get; set; }
-        public string UserId { get; set; }
-        public string LastName { get; set; }
-        public bool IsCompany { get; set; }
-        public string NIP { get; set; } // NIP contatins 11 numbers, can be null if private person order sth
-        public string CompanyName { get; set; }
-
+        public CustomerDto Customer { get; set; }
         public virtual List<ContactDetailsForListVm> ContactDetails { get; set; }
         public virtual List<AddressDto> Addresses { get; set; }
         public virtual List<CustomerOrdersVm> Orders { get; set; }
@@ -29,21 +18,13 @@ namespace ECommerceApp.Application.ViewModels.Customer
         public void Mapping(Profile profile)
         {
             profile.CreateMap<ECommerceApp.Domain.Model.Customer, CustomerDetailsVm>()
+                .ForMember(c => c.Customer, opt => opt.MapFrom(c => c))
                 .ForMember(c => c.Addresses, opt => opt.MapFrom(c => c.Addresses))
+                .ForMember(c => c.ContactDetails, opt => opt.MapFrom(c => c.ContactDetails))
+                .ForMember(c => c.Orders, opt => opt.MapFrom(c => c.Orders))
+                .ForMember(c => c.Payments, opt => opt.MapFrom(c => c.Payments))
+                .ForMember(c => c.Refunds, opt => opt.MapFrom(c => c.Refunds))
                 .ReverseMap();
-        }
-
-        public class CustomerDetailsValidation : AbstractValidator<CustomerDetailsVm>
-        {
-            public CustomerDetailsValidation()
-            {
-                RuleFor(x => x.Id).NotNull();
-                RuleFor(x => x.FirstName).NotNull();
-                RuleFor(x => x.LastName).NotNull();
-                RuleFor(x => x.IsCompany).NotNull();
-                RuleFor(x => x.NIP).Length(9);
-                RuleFor(x => x.CompanyName).MaximumLength(100);
-            }
         }
     }
 }

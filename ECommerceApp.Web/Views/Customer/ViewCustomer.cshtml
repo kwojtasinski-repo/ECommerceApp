@@ -4,52 +4,52 @@
     ViewData["Title"] = "ViewCustomer";
 }
 
-<h1>Klient nr @Model.Id</h1>
+<h1>Klient nr @Model.Customer.Id</h1>
 
 <div>
     <h4>Szczegóły</h4>
     <hr />
     <dl class="row">
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Id)
+            @Html.DisplayNameFor(model => model.Customer.Id)
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Id)
+            @Html.DisplayFor(model => model.Customer.Id)
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.UserId)
+            @Html.DisplayNameFor(model => model.Customer.UserId)
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.UserId)
+            @Html.DisplayFor(model => model.Customer.UserId)
         <dt class="col-sm-2">
             Imię
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.FirstName)
+            @Html.DisplayFor(model => model.Customer.FirstName)
         </dd>
         <dt class="col-sm-2">
             Nazwisko
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.LastName)
+            @Html.DisplayFor(model => model.Customer.LastName)
         </dd>
         <dt class="col-sm-2">
             Firma
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.IsCompany)
+            @Html.DisplayFor(model => model.Customer.IsCompany)
         </dd>
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.NIP)
+            @Html.DisplayNameFor(model => model.Customer.NIP)
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.NIP)
+            @Html.DisplayFor(model => model.Customer.NIP)
         </dd>
         <dt class="col-sm-2">
             Nazwa firmy
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.CompanyName)
+            @Html.DisplayFor(model => model.Customer.CompanyName)
         </dd>
     </dl>
 </div>
@@ -348,7 +348,7 @@
 }
 
 <div>
-    @Html.ActionLink("Edytuj", "EditCustomer", new { id = Model.Id }) |
+    @Html.ActionLink("Edytuj", "EditCustomer", new { id = Model.Customer.Id }) |
     <a asp-action="Index">Powrót do listy klientów</a> |
-    @Html.ActionLink("Lista zamówień", "ShowOrdersByCustomerId", "Order", new { customerId = Model.Id })
+    @Html.ActionLink("Lista zamówień", "ShowOrdersByCustomerId", "Order", new { customerId = Model.Customer.Id })
 </div>

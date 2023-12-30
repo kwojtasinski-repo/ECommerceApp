@@ -65,7 +65,7 @@ namespace ECommerceApp.Infrastructure.Repositories
             return customer.Id;
         }
 
-        public Customer GetCustomerById(int id)
+        public Customer GetCustomerDetailsById(int id)
         {
             var customer = _context.Customers
                 .Include(inc => inc.ContactDetails)
@@ -78,7 +78,7 @@ namespace ECommerceApp.Infrastructure.Repositories
             return customer;
         }
 
-        public Customer GetCustomerById(int id, string userId)
+        public Customer GetCustomerDetailsById(int id, string userId)
         {
             var customer = _context.Customers
                 .Include(inc => inc.ContactDetails)
@@ -247,6 +247,26 @@ namespace ECommerceApp.Infrastructure.Repositories
         public List<Customer> GetCustomersByUserId(string userId)
         {
             return _context.Customers.Where(c => c.UserId == userId).ToList();
+        }
+
+        public Customer GetCustomerById(int id)
+        {
+            var customer = _context.Customers
+                .Include(inc => inc.ContactDetails)
+                .Include(inc => inc.ContactDetails).ThenInclude(inc => inc.ContactDetailType)
+                .Include(inc => inc.Addresses)
+                .FirstOrDefault(c => c.Id == id);
+            return customer;
+        }
+
+        public Customer GetCustomerById(int id, string userId)
+        {
+            var customer = _context.Customers
+                .Include(inc => inc.ContactDetails)
+                .Include(inc => inc.ContactDetails).ThenInclude(inc => inc.ContactDetailType)
+                .Include(inc => inc.Addresses)
+                .FirstOrDefault(c => c.Id == id && c.UserId == userId);
+            return customer;
         }
     }
 }

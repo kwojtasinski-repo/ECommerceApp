@@ -1,11 +1,7 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Order;
-using ECommerceApp.Domain.Model;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Customers
 {
@@ -17,10 +13,10 @@ namespace ECommerceApp.Application.Services.Customers
         int AddCustomerDetails(CustomerDetailsDto newCustomer);
         CustomerDetailsVm GetCustomerDetails(int customerId);
         CustomerInformationForOrdersVm GetCustomerInformationById(int customerId);
-        CustomerDetailsDto GetCustomerForEdit(int id);
+        CustomerDetailsDto GetCustomer(int id);
+        CustomerDetailsDto GetCustomer(int id, string userId);
         void UpdateCustomer(CustomerDto model);
         bool DeleteCustomer(int id);
-        IEnumerable<CustomerDto> GetAllCustomers(Expression<Func<Customer, bool>> expression);
         bool CustomerExists(int id, string userId);
         CustomerDetailsVm GetCustomerDetails(int id, string userId);
         IQueryable<CustomerInformationForOrdersVm> GetCustomersInformationByUserId(string userId);

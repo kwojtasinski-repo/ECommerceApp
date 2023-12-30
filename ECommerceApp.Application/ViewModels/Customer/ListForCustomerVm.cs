@@ -1,28 +1,14 @@
-﻿using FluentValidation;
-using System;
+﻿using ECommerceApp.Application.DTO;
 using System.Collections.Generic;
-using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Customer
 {
     public class ListForCustomerVm
     {
-        public List<CustomerForListVm> Customers { get; set; }
+        public List<CustomerDto> Customers { get; set; }
         public int CurrentPage { get; set; }
         public int PageSize { get; set; }
         public string SearchString { get; set; }
         public int Count { get; set; }
-    }
-
-    public class ListForCustomerValidation : AbstractValidator<ListForCustomerVm>
-    {
-        public ListForCustomerValidation()
-        {
-            RuleFor(x => x.Customers).NotNull();
-            RuleFor(x => x.CurrentPage).NotNull();
-            RuleFor(x => x.PageSize).NotNull();
-            RuleFor(x => x.SearchString).NotNull();
-            RuleFor(x => x.Count).NotNull();
-        }
     }
 }

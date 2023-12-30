@@ -127,7 +127,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult EditCustomer(int id)
         {
             // TODO return null from backend
-            var customer = _customerService.GetCustomerForEdit(id);
+            var customer = _customerService.GetCustomer(id);
             if (customer is null)
             {
                 return NotFound();

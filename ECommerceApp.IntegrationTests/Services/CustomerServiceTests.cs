@@ -18,7 +18,7 @@ namespace ECommerceApp.IntegrationTests.Services
         {
             var customerId = 1;
 
-            var customer = _service.GetCustomerForEdit(customerId);
+            var customer = _service.GetCustomer(customerId);
 
             customer.Id.ShouldBe(customerId);
         }
@@ -34,7 +34,7 @@ namespace ECommerceApp.IntegrationTests.Services
 
             _service.UpdateCustomer(MapToCustomerDto(customer));
 
-            var customerUpdated = _service.GetCustomerForEdit(customer.Id);
+            var customerUpdated = _service.GetCustomer(customer.Id);
             customerUpdated.FirstName.ShouldBe(firstName);
             customerUpdated.LastName.ShouldBe(lastName);
         }
@@ -51,7 +51,7 @@ namespace ECommerceApp.IntegrationTests.Services
             var deleted = _service.DeleteCustomer(customerId);
 
             deleted.ShouldBeTrue();
-            var customerDelted = _service.GetCustomerForEdit(customerId);
+            var customerDelted = _service.GetCustomer(customerId);
             customerDelted.ShouldBeNull();
         }
 

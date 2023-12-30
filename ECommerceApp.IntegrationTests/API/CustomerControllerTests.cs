@@ -46,7 +46,7 @@ namespace ECommerceApp.IntegrationTests.API
             var customer = JsonConvert.DeserializeObject<CustomerDetailsVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
 
             customer.ShouldNotBeNull();
-            customer.Id.ShouldBe(id);
+            customer.Customer.Id.ShouldBe(id);
         }
 
         [Fact]

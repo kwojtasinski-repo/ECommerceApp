@@ -1,9 +1,7 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
 using System;
-using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Customer
 {
