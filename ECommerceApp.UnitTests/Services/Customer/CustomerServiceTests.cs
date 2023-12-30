@@ -1,5 +1,6 @@
 ﻿using AutoMapper;
 using AutoMapper.Internal;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.Services.Customers;
@@ -56,17 +57,7 @@ namespace ECommerceApp.Tests.Services.Customer
         {
             var customerService = new CustomerService(_customerRepository.Object, _mapper);
 
-            Action action = () => customerService.Update(null);
-
-            action.Should().Throw<BusinessException>().Which.Message.Contains("cannot be null");
-        }
-
-        [Fact]
-        public void given_null_customer_when_delete_should_throw_an_exception()
-        {
-            var customerService = new CustomerService(_customerRepository.Object, _mapper);
-
-            Action action = () => customerService.Delete(null);
+            Action action = () => customerService.UpdateCustomer(null);
 
             action.Should().Throw<BusinessException>().Which.Message.Contains("cannot be null");
         }
@@ -122,9 +113,9 @@ namespace ECommerceApp.Tests.Services.Customer
             return customer;
         }
 
-        private CustomerVm CreateNewCustomerVm(int id, string userId)
+        private static CustomerDto CreateNewCustomerVm(int id, string userId)
         {
-            var customer = new CustomerVm
+            var customer = new CustomerDto
             {
                 Id = id,
                 NIP = "",

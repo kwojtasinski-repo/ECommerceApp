@@ -184,9 +184,9 @@ namespace ECommerceApp.UnitTests.Services.Address
             return address;
         }
 
-        private List<CustomerVm> CreateCustomers() 
+        private static List<CustomerDto> CreateCustomers()
         {
-            var customers = new List<CustomerVm>
+            var customers = new List<CustomerDto>
             {
                 CreateCustomer(1),
                 CreateCustomer(2),
@@ -195,9 +195,9 @@ namespace ECommerceApp.UnitTests.Services.Address
             return customers;
         }
 
-        private CustomerVm CreateCustomer(int id)
+        private static CustomerDto CreateCustomer(int id)
         {
-            var customer = new CustomerVm
+            var customer = new CustomerDto
             {
                 Id = id,
                 UserId = Guid.NewGuid().ToString()
