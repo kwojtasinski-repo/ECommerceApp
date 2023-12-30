@@ -114,8 +114,8 @@ namespace ECommerceApp.IntegrationTests.API
                 .GetAsync()
                 .ReceiveJson<CustomerDetailsVm>();
             response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
-            customerUpdated.FirstName.ShouldBe(firstName);
-            customerUpdated.LastName.ShouldBe(lastName);
+            customerUpdated.Customer.FirstName.ShouldBe(firstName);
+            customerUpdated.Customer.LastName.ShouldBe(lastName);
         }
 
         [Fact]
