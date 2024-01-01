@@ -1,10 +1,7 @@
 ﻿using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
@@ -40,8 +37,13 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public Payment GetPaymentById(int paymentId)
         {
-            var payment = _context.Payments.Where(p => p.Id == paymentId).FirstOrDefault();
+            var payment = _context.Payments.FirstOrDefault(p => p.Id == paymentId);
             return payment;
+        }
+
+        public Payment GetPaymentByOrderId(int orderId)
+        {
+            return _context.Payments.FirstOrDefault(p => p.OrderId == orderId);
         }
 
         public void UpdatePayment(Payment payment)

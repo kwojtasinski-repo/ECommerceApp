@@ -51,9 +51,11 @@ namespace ECommerceApp.API.Controllers
             {
                 return Conflict(ModelState);
             }
-            var payment = _paymentService.InitPayment(model.OrderId);
-            payment.CurrencyId = model.CurrencyId;
-            var id = _paymentService.AddPayment(payment);
+            var id = _paymentService.AddPayment(new PaymentVm
+            {
+                CurrencyId = model.CurrencyId,
+                OrderId = model.OrderId,
+            });
             return Ok(id);
         }
     }

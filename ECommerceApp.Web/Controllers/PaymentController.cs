@@ -64,7 +64,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddPayment(PaymentVm model)
         {
-            var id = _paymentService.AddPayment(model);
+            var id = _paymentService.PaidIssuedPayment(model);
             return RedirectToAction("Index", "Item");
         }
 

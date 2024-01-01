@@ -1,16 +1,10 @@
 ﻿using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.ViewModels.Coupon;
-using ECommerceApp.Application.ViewModels.Customer;
-using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Order;
-using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace ECommerceApp.Application.Services.Orders
 {
@@ -38,5 +32,6 @@ namespace ECommerceApp.Application.Services.Orders
         void DispatchOrder(int orderId);
         void UpdateOrderWithExistedOrderItemsIds(OrderVm vm);
         OrderVm GetOrderByIdReadOnly(int id);
+        int GetOrderNumber(int orderId);
     }
 }

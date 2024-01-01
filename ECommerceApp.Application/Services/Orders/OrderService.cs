@@ -5,11 +5,6 @@ using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.Services.Items;
-using ECommerceApp.Application.ViewModels;
-using ECommerceApp.Application.ViewModels.Coupon;
-using ECommerceApp.Application.ViewModels.CouponUsed;
-using ECommerceApp.Application.ViewModels.Customer;
-using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
@@ -630,6 +625,14 @@ namespace ECommerceApp.Application.Services.Orders
             var order = _repo.GetByIdReadOnly(id);
             var orderVm = _mapper.Map<OrderVm>(order);
             return orderVm;
+        }
+
+        public int GetOrderNumber(int orderId)
+        {
+            return _repo.GetAll()
+                .Where(o => o.Id == orderId)
+                .Select(o => o.Number)
+                .FirstOrDefault();
         }
     }
 }

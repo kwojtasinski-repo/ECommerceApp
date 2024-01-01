@@ -44,15 +44,46 @@ namespace ECommerceApp.Application.Services.Payments
                 throw new BusinessException("When adding object Id should be equals 0");
             }
 
-            var payment = _mapper.Map<Payment>(model);
-            var id = _repo.AddPayment(payment);
-            var order = _orderService.Get(payment.OrderId);
+            var order = _orderService.Get(model.OrderId) ??
+                throw new BusinessException($"Order with id '{model.OrderId}' was not found");
+            var payment = new Payment()
+            {
+                Number = Guid.NewGuid().ToString(),
+                State = PaymentState.Paid,
+                CurrencyId = model.CurrencyId,
+                DateOfOrderPayment = DateTime.Now,
+                Cost = CalculateCost(order.Cost, model.CurrencyId),
+                CustomerId = order.CustomerId,
+                OrderId = order.Id
+            };
+            _repo.Add(payment);
             order.IsPaid = true;
-            order.PaymentId = id;
-            order.CurrencyId = model.CurrencyId;
-            order.Cost = CalculateCost(order.Cost, model.CurrencyId);
+            order.PaymentId = payment.Id;
             _orderService.Update(order);
-            return id;
+            return payment.Id;
+        }
+
+        public int PaidIssuedPayment(PaymentVm model)
+        {
+            if (model is null)
+            {
+                throw new BusinessException($"{typeof(PaymentVm).Name} cannot be null");
+            }
+
+            var payment = _repo.GetById(model.Id)
+                ?? throw new BusinessException($"Payment with id '{model.Id}' was not found");
+            var order = _orderService.Get(payment.OrderId) ??
+                throw new BusinessException($"Order with id '{payment.Id}' was not found");
+            payment.State = PaymentState.Paid;
+            payment.CurrencyId = model.CurrencyId;
+            payment.Cost = CalculateCost(payment.Cost, model.CurrencyId);
+            payment.DateOfOrderPayment = DateTime.Now;
+            payment.CustomerId = order.CustomerId;
+            _repo.Update(payment);
+            order.IsPaid = true;
+            order.PaymentId = payment.Id;
+            _orderService.Update(order);
+            return payment.Id;
         }
 
         public void DeletePayment(int id)
@@ -151,21 +182,50 @@ namespace ECommerceApp.Application.Services.Payments
 
         public PaymentVm InitPayment(int orderId)
         {
-            Random random = new Random();
-            var order = _orderService.GetOrderById(orderId);
-            var customer = _customerService.GetCustomerInformationById(order.CustomerId);
-            var payment = new PaymentVm()
+            var paymentExists = _repo.GetPaymentByOrderId(orderId);
+            if (paymentExists is not null)
             {
-                OrderId = order.Id,
-                Number = $"{random.Next(1, 1000)}",
+                var customerInformation = _customerService.GetCustomerInformationById(paymentExists.CustomerId);
+                return new PaymentVm()
+                {
+                    Id = paymentExists.Id,
+                    CurrencyId = paymentExists.CurrencyId,
+                    OrderId = paymentExists.OrderId,
+                    Number = paymentExists.Number,
+                    DateOfOrderPayment = SetFormat(DateTime.Now),
+                    CustomerId = paymentExists.CustomerId,
+                    OrderNumber = _orderService.GetOrderNumber(orderId),
+                    CustomerName = customerInformation.Information,
+                    OrderCost = paymentExists.Cost
+                };
+            }
+
+            var order = _orderService.Get(orderId);
+            var customer = _customerService.GetCustomerInformationById(order.CustomerId);
+            var payment = new Payment
+            {
+                Cost = order.Cost,
+                OrderId = orderId,
+                Number = Guid.NewGuid().ToString(),
                 DateOfOrderPayment = DateTime.Now,
+                State = PaymentState.Issued,
+                CustomerId = customer.Id,
+                CurrencyId = order.CurrencyId
+            };
+            _repo.Add(payment);
+            var paymentVm = new PaymentVm()
+            {
+                Id = payment.Id,
+                OrderId = order.Id,
+                Number = payment.Number,
+                DateOfOrderPayment = SetFormat(payment.DateOfOrderPayment),
                 CustomerId = order.CustomerId,
                 OrderNumber = order.Number,
                 CustomerName = customer.Information,
                 OrderCost = order.Cost
             };
 
-            return payment;
+            return paymentVm;
         }
 
         private decimal CalculateCost(decimal cost, int currencyId)
@@ -173,6 +233,11 @@ namespace ECommerceApp.Application.Services.Payments
             var rate = _currencyRateService.GetLatestRate(currencyId);
             var calculatedCost = cost / rate.Rate;
             return calculatedCost;
+        }
+
+        private static DateTime SetFormat(DateTime dateTime)
+        {
+            return new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, dateTime.Hour, dateTime.Minute, dateTime.Second);
         }
     }
 }

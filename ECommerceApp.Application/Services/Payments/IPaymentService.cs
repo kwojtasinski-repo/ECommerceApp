@@ -11,6 +11,7 @@ namespace ECommerceApp.Application.Services.Payments
     public interface IPaymentService : IAbstractService<PaymentVm, IPaymentRepository, Payment>
     {
         int AddPayment(PaymentVm model);
+        int PaidIssuedPayment(PaymentVm model);
         PaymentVm GetPaymentById(int id);
         void UpdatePayment(PaymentVm model);
         IEnumerable<PaymentVm> GetPayments(Expression<Func<Payment, bool>> expression);
