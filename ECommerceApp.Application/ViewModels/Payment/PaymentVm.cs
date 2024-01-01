@@ -8,7 +8,7 @@ namespace ECommerceApp.Application.ViewModels.Payment
 {
     public class PaymentVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Payment>
     {
-        public int Number { get; set; }
+        public string Number { get; set; }
         public DateTime DateOfOrderPayment { get; set; }
         public int CustomerId { get; set; }  // 1:Many Customer Payment
         public int OrderId { get; set; } // 1:1 Payment Order
@@ -38,7 +38,7 @@ namespace ECommerceApp.Application.ViewModels.Payment
         public NewPaymentValidation()
         {
             RuleFor(x => x.Id).NotNull();
-            RuleFor(x => x.Number).NotNull().GreaterThan(0);
+            RuleFor(x => x.Number).NotNull().NotEmpty();
             RuleFor(x => x.DateOfOrderPayment).NotNull();
             RuleFor(x => x.CustomerId).NotNull();
             RuleFor(x => x.OrderId).NotNull();

@@ -8,7 +8,7 @@ namespace ECommerceApp.Application.ViewModels.Payment
 {
     public class PaymentDetailsVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Payment>
     {
-        public int Number { get; set; }
+        public string Number { get; set; }
         public DateTime DateOfOrderPayment { get; set; }
         public int CustomerId { get; set; }  // 1:Many Customer Payment
         public CustomerDetailsVm Customer { get; set; }

@@ -126,7 +126,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
                 CurrencyId = currencyId,
                 OrderId = orderId,
                 CustomerId = 1,
-                Number = 1234,
+                Number = "1234",
                 OrderNumber = 124,
                 OrderCost = new decimal(100)
             };
@@ -141,7 +141,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
                 CurrencyId = currencyId,
                 OrderId = orderId,
                 CustomerId = 1,
-                Number = 1234
+                Number = "1234"
             };
             return payment;
         }
