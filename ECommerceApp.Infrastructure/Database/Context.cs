@@ -36,6 +36,7 @@ namespace ECommerceApp.Infrastructure.Database
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+            builder.ApplyConfigurationsFromAssembly(GetType().Assembly);
 
             // -------------------- RELATION N:N --------------------
             builder.Entity<ItemTag>()
@@ -71,13 +72,6 @@ namespace ECommerceApp.Infrastructure.Database
                 .HasOne(r => r.Order)
                 .WithOne(o => o.Refund)
                 .HasForeignKey<Order>(o => o.RefundId);
-            // -------------------- RELATION 1:1 --------------------
-
-            // -------------------- RELATION 1:1 --------------------
-            builder.Entity<Payment>()
-                .HasOne(p => p.Order)
-                .WithOne(o => o.Payment)
-                .HasForeignKey<Order>(o => o.PaymentId);
             // -------------------- RELATION 1:1 --------------------
 
             // -------------------- DELETE BEHAVIOUR --------------------
