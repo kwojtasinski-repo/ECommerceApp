@@ -1,12 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ECommerceApp.Domain.Model
 {
     public class Payment : BaseEntity
     {
-        public int Number { get; set; }
+        public string Number { get; set; }
+        public decimal Cost { get; set; }
+        public PaymentState State { get; set; }
         public DateTime DateOfOrderPayment { get; set; }
         public int CustomerId { get; set; }  // 1:Many Customer Payment
         public Customer Customer { get; set; }
