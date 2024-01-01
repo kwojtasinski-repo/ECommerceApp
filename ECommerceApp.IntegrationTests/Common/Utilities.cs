@@ -133,12 +133,12 @@ namespace ECommerceApp.IntegrationTests.Common
             var order3 = new Domain.Model.Order { Id = 3, Cost = new decimal(1000), CurrencyId = 1, CustomerId = 1, Number = 153465, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now };
             context.Add(order3);
 
-            var payment = new Domain.Model.Payment { Id = 1, CurrencyId = 1, CustomerId = 1, DateOfOrderPayment = DateTime.Now, OrderId = 2, Number = "124521" };
+            var payment = new Domain.Model.Payment { Id = 1, CurrencyId = 1, CustomerId = 1, DateOfOrderPayment = DateTime.Now, OrderId = 2, Number = "124521", State = PaymentState.Paid, Cost = order2.Cost };
             context.Add(payment);
 
             var order4 = new Domain.Model.Order { Id = 4, Cost = new decimal(1000), CurrencyId = 1, CustomerId = 1, Number = 153465, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now, RefundId = 1, IsPaid = true, PaymentId = 2 };
             context.Add(order4);
-            var payment2 = new Domain.Model.Payment { Id = 2, CurrencyId = 1, CustomerId = 1, DateOfOrderPayment = DateTime.Now, OrderId = 4, Number = "124522" };
+            var payment2 = new Domain.Model.Payment { Id = 2, CurrencyId = 1, CustomerId = 1, DateOfOrderPayment = DateTime.Now, OrderId = 4, Number = "124522", Cost = order4.Cost, State = PaymentState.Issued };
             context.Add(payment2);
             var refund = new Domain.Model.Refund { Id = 1, CustomerId = 1, OnWarranty = true, OrderId = 4, Reason = "TestReason", RefundDate = DateTime.Now };
             context.Add(refund);

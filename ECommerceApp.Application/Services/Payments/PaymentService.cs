@@ -56,7 +56,7 @@ namespace ECommerceApp.Application.Services.Payments
                 CustomerId = order.CustomerId,
                 OrderId = order.Id
             };
-            _repo.Add(payment);
+            _repo.AddPayment(payment);
             order.IsPaid = true;
             order.PaymentId = payment.Id;
             _orderService.Update(order);
@@ -212,7 +212,7 @@ namespace ECommerceApp.Application.Services.Payments
                 CustomerId = customer.Id,
                 CurrencyId = order.CurrencyId
             };
-            _repo.Add(payment);
+            _repo.AddPayment(payment);
             var paymentVm = new PaymentVm()
             {
                 Id = payment.Id,

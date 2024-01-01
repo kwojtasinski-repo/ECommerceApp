@@ -45,11 +45,19 @@ namespace ECommerceApp.UnitTests.Services.Payment
             _orderService.Setup(o => o.Get(orderId)).Returns(order);
             var rate = CreateCurrencyRate(currencyId);
             _currencyRateService.Setup(cr => cr.GetLatestRate(currencyId)).Returns(rate);
+            Domain.Model.Payment paymentAdded = null;
+            _paymentRepository.Setup(p => p.AddPayment(It.IsAny<Domain.Model.Payment>()))
+                .Callback((Domain.Model.Payment p) => {
+                    paymentAdded = p;
+                    });
             var paymentService = new PaymentService(_paymentRepository.Object, _mapper, _orderService.Object, _customerService.Object, _currencyRateService.Object, _contextAccessor);
 
             paymentService.AddPayment(payment);
 
-            order.Cost.Should().BeLessThan(cost);
+            order.IsPaid.Should().BeTrue();
+            paymentAdded.Cost.Should().BeLessThan(cost);
+            paymentAdded.Cost.Should().Be(cost/rate.Rate);
+            paymentAdded.CurrencyId.Should().Be(currencyId);
             _paymentRepository.Verify(p => p.AddPayment(It.IsAny<Domain.Model.Payment>()), Times.Once);
             _orderService.Verify(p => p.Update(It.IsAny<OrderVm>()), Times.Once);
         }
