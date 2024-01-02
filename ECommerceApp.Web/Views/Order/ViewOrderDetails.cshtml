@@ -61,13 +61,16 @@
             Dane kontaktowe
         </dt>
         <dd class="col-sm-10">
-            @Html.ActionLink("Kliknij aby zobaczyć", "ViewCustomer", "Customer", new { id = @Model.CustomerId }, new { target = "_blank" })
+            @Html.ActionLink("Kliknij aby zobaczyć", "ViewCustomer", "Customer", new { id = Model.CustomerId }, new { target = "_blank" })
         </dd>
         <dt class = "col-sm-2">
-            @Html.DisplayNameFor(model => model.PaymentId)
+            Płatność
         </dt>
         <dd class = "col-sm-10">
-            @Html.DisplayFor(model => model.PaymentId)
+            @if (Model.PaymentId > 0)
+            {
+                @Html.ActionLink("Kliknij aby zobaczyć płatność", "ViewPayment", "Payment", new { id = Model.PaymentId }, new { target = "_blank" })
+            }
         </dd>
         <dt class = "col-sm-2">
             Zapłacono

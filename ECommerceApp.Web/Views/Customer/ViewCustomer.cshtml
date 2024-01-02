@@ -194,6 +194,9 @@
                         <th>
                             Id zwrotu
                         </th>
+                        <th>
+                            Szczegóły
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -227,6 +230,9 @@
                             <td>
                                 @Html.DisplayFor(model => order.RefundId)
                             </td>
+                            <td>
+                                @Html.ActionLink("Kliknij aby zobaczyć zamówienie", "ViewOrderDetails", "Order", new { id = order.Id }, new { target = "_blank" })
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -256,6 +262,9 @@
                         <th>
                             Id zamówienia
                         </th>
+                        <th>
+                            Szczegóły
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -276,6 +285,9 @@
                             </td>
                             <td>
                                 @Html.DisplayFor(model => payment.OrderId)
+                            </td>
+                            <td>
+                                @Html.ActionLink("Kliknij aby zobaczyć płatność", "ViewPayment", "Payment", new { id = payment.Id }, new { target = "_blank" })
                             </td>
                         </tr>
                     }
