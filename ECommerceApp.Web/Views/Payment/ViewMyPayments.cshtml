@@ -1,4 +1,4 @@
-﻿@model IEnumerable<ECommerceApp.Application.ViewModels.Payment.PaymentVm>
+﻿@model IEnumerable<ECommerceApp.Application.DTO.PaymentDto>
 
 <p>
     <a asp-controller="Order" asp-action="ShowMyOrders">Pokaż moje zamówienia</a> |
@@ -23,6 +23,15 @@
                 Id zamówienia
             </th>
             <th>
+                Koszt
+            </th>
+            <th>
+                Waluta
+            </th>
+            <th>
+                Status
+            </th>
+            <th>
                 Akcja
             </th>
         </tr>
@@ -45,6 +54,15 @@
                 </td>
                 <td>
                     @Html.DisplayFor(model => payment.OrderId)
+                </td>
+                <td>
+                    @Html.DisplayFor(model => payment.Cost)
+                </td>
+                <td>
+                    @Html.DisplayFor(model => payment.CurrencyName)
+                </td>
+                <td>
+                    @Html.DisplayFor(model => payment.State)
                 </td>
                 <td>
                     @Html.ActionLink("Szczegóły", "ViewPayment", new { id = payment.Id })

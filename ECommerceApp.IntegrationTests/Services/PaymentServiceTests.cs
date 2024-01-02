@@ -82,7 +82,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_expression_should_return_list_payment()
         {
-            var payments = _service.GetPayments(p => true);
+            var payments = _service.GetPayments();
 
             payments.Count().ShouldBeGreaterThan(0);
         }
@@ -92,7 +92,7 @@ namespace ECommerceApp.IntegrationTests.Services
         {
             var userId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e";
 
-            var payments = _service.GetPaymentsForUser(p => true, userId);
+            var payments = _service.GetUserPayments(userId);
 
             payments.Count().ShouldBeGreaterThan(0);
         }

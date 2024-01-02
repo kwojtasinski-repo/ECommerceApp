@@ -15,8 +15,8 @@ namespace ECommerceApp.Application.Services.Payments
         int PaidIssuedPayment(PaymentVm model);
         PaymentVm GetPaymentById(int id);
         void UpdatePayment(PaymentVm model);
-        IEnumerable<PaymentVm> GetPayments(Expression<Func<Payment, bool>> expression);
-        IEnumerable<PaymentVm> GetPaymentsForUser(Expression<Func<Payment, bool>> expression, string userId);
+        IEnumerable<PaymentDto> GetPayments();
+        IEnumerable<PaymentDto> GetUserPayments(string userId);
         ListForPaymentVm GetPayments(int pageSize, int pageNo, string searchString);
         bool PaymentExists(int id);
         void DeletePayment(int id);

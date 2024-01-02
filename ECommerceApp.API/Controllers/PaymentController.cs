@@ -24,11 +24,7 @@ namespace ECommerceApp.API.Controllers
         [HttpGet]
         public ActionResult<List<PaymentVm>> GetPayments()
         {
-            var payments = _paymentService.GetPayments(p => true);
-            if (payments.Count() == 0)
-            {
-                return NotFound();
-            }
+            var payments = _paymentService.GetPayments();
             return Ok(payments);
         }
 

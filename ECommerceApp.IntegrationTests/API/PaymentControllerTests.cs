@@ -69,7 +69,7 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_invalid_currency_when_pay_for_order_should_return_status_code_conflict()
+        public async Task given_invalid_currency_when_pay_for_order_should_return_status_code_bad_request()
         {
             var client = await _factory.GetAuthenticatedClient();
             var orderId = await AddOrder(1);
@@ -83,7 +83,7 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_paid_order_when_pay_for_order_should_return_status_code_conflict()
+        public async Task given_paid_order_when_pay_for_order_should_return_status_code_bad_request()
         {
             var client = await _factory.GetAuthenticatedClient();
             var payment = new AddPaymentDto() { OrderId = 1, CurrencyId = 1000 };
@@ -96,7 +96,7 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_invalid_order_when_pay_for_order_should_return_status_code_conflict()
+        public async Task given_invalid_order_when_pay_for_order_should_return_status_code_bad_request()
         {
             var client = await _factory.GetAuthenticatedClient();
             var payment = new AddPaymentDto() { OrderId = 1000 };

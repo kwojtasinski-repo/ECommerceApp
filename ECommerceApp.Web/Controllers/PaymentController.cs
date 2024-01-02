@@ -111,7 +111,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult ViewMyPayments()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var payments = _paymentService.GetPaymentsForUser(p => true, userId);
+            var payments = _paymentService.GetUserPayments(userId);
             return View(payments);
         }
     }
