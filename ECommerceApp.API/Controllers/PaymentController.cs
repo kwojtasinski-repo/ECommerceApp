@@ -22,7 +22,7 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}")]
         [HttpGet]
-        public ActionResult<List<PaymentVm>> GetPayments()
+        public ActionResult<List<PaymentDto>> GetPayments()
         {
             var payments = _paymentService.GetPayments();
             return Ok(payments);

@@ -1,11 +1,9 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Payments;
-using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.IntegrationTests.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
-using System;
 using System.Linq;
 using Xunit;
 

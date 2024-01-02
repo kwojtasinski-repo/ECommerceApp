@@ -116,7 +116,7 @@ namespace ECommerceApp.IntegrationTests.API
                 .AllowAnyHttpStatus()
                 .GetAsync();
             
-            var payments = JsonConvert.DeserializeObject<List<PaymentVm>>(await response.ResponseMessage.Content.ReadAsStringAsync());
+            var payments = JsonConvert.DeserializeObject<List<PaymentDto>>(await response.ResponseMessage.Content.ReadAsStringAsync());
             response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
             payments.Count.ShouldBeGreaterThan(0);
         }
