@@ -10,14 +10,14 @@ namespace ECommerceApp.Application.ViewModels.Payment
     {
         public string Number { get; set; }
         public DateTime DateOfOrderPayment { get; set; }
-        public int CustomerId { get; set; }  // 1:Many Customer Payment
-        public int OrderId { get; set; } // 1:1 Payment Order
+        public int CustomerId { get; set; }
+        public int OrderId { get; set; }
         public int OrderNumber { get; set; }
         public int CurrencyId { get; set; }
         [JsonIgnore]
         public string CustomerName { get; set; }
         [JsonIgnore]
-        public decimal OrderCost { get; set; }
+        public decimal Cost { get; set; }
         [JsonIgnore]
         public string CurrencyName { get; set; }
 
@@ -25,10 +25,9 @@ namespace ECommerceApp.Application.ViewModels.Payment
         {
             profile.CreateMap<PaymentVm, ECommerceApp.Domain.Model.Payment>().ReverseMap()
                 .ForMember(o => o.OrderNumber, opt => opt.MapFrom(o => o.Order.Number))
-                .ForMember(c => c.CustomerName, opt => opt.MapFrom(c => c.Customer.FirstName + " " +
-                               c.Customer.LastName + " " + c.Customer.NIP + " " + c.Customer.CompanyName))
-                //.ForMember(oc => oc.OrderCost, opt => opt.Ignore());
-                .ForMember(oc => oc.OrderCost, opt => opt.MapFrom(o => o.Order.Cost))
+                .ForMember(c => c.CustomerName, opt => opt.MapFrom(c => (c.Customer.NIP != null && c.Customer.CompanyName != null) ?
+                            c.Customer.FirstName + " " + c.Customer.LastName + " " + c.Customer.NIP + " " + c.Customer.CompanyName
+                            : c.Customer.FirstName + " " + c.Customer.LastName))
                 .ForMember(p => p.CurrencyName, opt => opt.MapFrom(c => c.Currency.Code));
         }
     }

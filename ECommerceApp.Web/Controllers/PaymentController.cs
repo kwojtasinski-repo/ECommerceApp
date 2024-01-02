@@ -77,6 +77,8 @@ namespace ECommerceApp.Web.Controllers
             {
                 return NotFound();
             }
+            var currencies = _currencyService.GetAll(cr => true);
+            ViewBag.Currencies = currencies;
             return View(payment);
         }
 

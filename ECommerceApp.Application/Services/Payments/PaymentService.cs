@@ -6,6 +6,7 @@ using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.Services.Orders;
+using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -98,9 +99,16 @@ namespace ECommerceApp.Application.Services.Payments
 
         public PaymentVm GetPaymentById(int id)
         {
-            var payment = _repo.GetAll().Include(p => p.Order).Include(c => c.Customer).Where(p => p.Id == id).FirstOrDefault();
-            var paymentVm = _mapper.Map<PaymentVm>(payment);
-            return paymentVm;
+            var payment = _repo.GetPaymentById(id);
+            if (payment is null)
+            {
+                return null;
+            }
+
+            var vm = _mapper.Map<PaymentVm>(payment);
+            vm.DateOfOrderPayment = SetFormat(DateTime.Now);
+
+            return vm;
         }
 
         public IEnumerable<PaymentDto> GetPayments()
@@ -253,19 +261,10 @@ namespace ECommerceApp.Application.Services.Payments
             var paymentExists = _repo.GetPaymentByOrderId(orderId);
             if (paymentExists is not null)
             {
-                var customerInformation = _customerService.GetCustomerInformationById(paymentExists.CustomerId);
-                return new PaymentVm()
-                {
-                    Id = paymentExists.Id,
-                    CurrencyId = paymentExists.CurrencyId,
-                    OrderId = paymentExists.OrderId,
-                    Number = paymentExists.Number,
-                    DateOfOrderPayment = SetFormat(DateTime.Now),
-                    CustomerId = paymentExists.CustomerId,
-                    OrderNumber = _orderService.GetOrderNumber(orderId),
-                    CustomerName = customerInformation.Information,
-                    OrderCost = paymentExists.Cost
-                };
+                var vm = _mapper.Map<PaymentVm>(paymentExists);
+                vm.DateOfOrderPayment = SetFormat(DateTime.Now);
+
+                return vm;
             }
 
             var order = _orderService.Get(orderId);
@@ -287,10 +286,11 @@ namespace ECommerceApp.Application.Services.Payments
                 OrderId = order.Id,
                 Number = payment.Number,
                 DateOfOrderPayment = SetFormat(payment.DateOfOrderPayment),
+                CurrencyId = order.CurrencyId,
                 CustomerId = order.CustomerId,
                 OrderNumber = order.Number,
                 CustomerName = customer.Information,
-                OrderCost = order.Cost
+                Cost = order.Cost
             };
 
             return paymentVm;

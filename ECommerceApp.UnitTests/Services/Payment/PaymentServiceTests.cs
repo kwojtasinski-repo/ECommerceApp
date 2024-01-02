@@ -120,7 +120,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
                 CustomerId = 1,
                 Number = "1234",
                 OrderNumber = 124,
-                OrderCost = new decimal(100)
+                Cost = new decimal(100)
             };
             return payment;
         }

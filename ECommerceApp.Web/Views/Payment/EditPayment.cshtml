@@ -33,9 +33,28 @@
                 <span asp-validation-for="OrderId" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="OrderCost" class="control-label">Koszt</label>
-                <input readonly asp-for="OrderCost" class="form-control" />
-                <span asp-validation-for="OrderCost" class="text-danger"></span>
+                <label asp-for="OrderNumber" class="control-label">Numer zamówienia</label>
+                <input readonly asp-for="OrderNumber" class="form-control" />
+                <span asp-validation-for="OrderNumber" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Cost" class="control-label">Koszt</label>
+                <input asp-for="Cost" class="form-control" />
+                <span asp-validation-for="Cost" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="CustomerName" class="control-label">Klient</label>
+                <input readonly asp-for="CustomerName" class="form-control" />
+                <span asp-validation-for="CustomerName" class="text-danger"></span>
+                <label style="display:none;" asp-for="CustomerId" class="control-label"></label>
+                <input type="hidden" asp-for="CustomerId" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label asp-for="CurrencyId" class="control-label">Waluta: </label>
+                <select asp-for="CurrencyId" asp-items="@(new SelectList(ViewBag.Currencies,"Id", "Code"))" class="custom-select"></select>
+                <span asp-validation-for="CurrencyId" class="text-danger"></span>
+                <label style="display:none;" asp-for="CurrencyName" class="control-label"></label>
+                <input type="hidden" asp-for="CurrencyName" class="form-control" />
             </div>
             <div class="form-group">
                 <input type="submit" value="Zatwierdź" class="btn btn-primary" />
