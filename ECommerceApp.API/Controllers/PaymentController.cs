@@ -1,11 +1,9 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Payments;
-using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ECommerceApp.API.Controllers
 {

@@ -34,7 +34,7 @@ namespace ECommerceApp.IntegrationTests.API
                 .AllowAnyHttpStatus()
                 .GetAsync();
 
-            var payment = JsonConvert.DeserializeObject<PaymentDetailsVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
+            var payment = JsonConvert.DeserializeObject<PaymentDetailsDto>(await response.ResponseMessage.Content.ReadAsStringAsync());
             response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
             payment.ShouldNotBeNull();
             payment.Id.ShouldBe(id);
