@@ -17,10 +17,10 @@
                 Data płatności
             </th>
             <th>
-                Id klienta
+                Dane kontaktowe
             </th>
             <th>
-                Id zamówienia
+                Zamówienie
             </th>
             <th>
                 Koszt
@@ -50,10 +50,10 @@
                     @Html.DisplayFor(model => payment.DateOfOrderPayment)
                 </td>
                 <td>
-                    @Html.DisplayFor(model => payment.CustomerId)
+                    @Html.ActionLink("Kliknij aby zobaczyć dane kontaktowe", "ViewCustomer", "Customer", new { id = payment.CustomerId }, new { target = "_blank" })
                 </td>
                 <td>
-                    @Html.DisplayFor(model => payment.OrderId)
+                    @Html.ActionLink("Kliknij aby zobaczyć zamówienie", "ViewOrderDetails", "Order", new { id = payment.OrderId }, new { target = "_blank" })
                 </td>
                 <td>
                     @Html.DisplayFor(model => payment.Cost)
@@ -62,7 +62,12 @@
                     @Html.DisplayFor(model => payment.CurrencyName)
                 </td>
                 <td>
-                    @Html.DisplayFor(model => payment.State)
+                    @(payment.State == "Paid"
+                            ? "Opłacone"
+                            : payment.State == "Issued"
+                                ? "Wystawione"
+                                : "Nieznany"
+                    )
                 </td>
                 <td>
                     @Html.ActionLink("Szczegóły", "ViewPayment", new { id = payment.Id })

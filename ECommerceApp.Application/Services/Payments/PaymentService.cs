@@ -14,7 +14,6 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Payments
 {
@@ -114,6 +113,7 @@ namespace ECommerceApp.Application.Services.Payments
                     DateOfOrderPayment = p.DateOfOrderPayment,
                     Number = p.Number,
                     Cost = p.Cost,
+                    State = p.State,
                     CurrencyId = p.CurrencyId,
                     CustomerId = p.CustomerId,
                     OrderId = p.OrderId,
@@ -137,6 +137,7 @@ namespace ECommerceApp.Application.Services.Payments
                     DateOfOrderPayment = p.DateOfOrderPayment,
                     Number = p.Number,
                     Cost = p.Cost,
+                    State = p.State,
                     CurrencyId = p.CurrencyId,
                     CustomerId = p.CustomerId,
                     OrderId = p.OrderId,
@@ -159,6 +160,7 @@ namespace ECommerceApp.Application.Services.Payments
                                 DateOfOrderPayment = p.DateOfOrderPayment,
                                 Number = p.Number,
                                 Cost = p.Cost,
+                                State = p.State,
                                 CurrencyId = p.CurrencyId,
                                 CustomerId = p.CustomerId,
                                 OrderId = p.OrderId,

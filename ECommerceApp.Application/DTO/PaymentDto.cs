@@ -21,7 +21,7 @@ namespace ECommerceApp.Application.DTO
         {
             profile.CreateMap<ECommerceApp.Domain.Model.Payment, PaymentDto>()
                 .ForMember(p => p.CurrencyName, src => src.MapFrom(p => p.Currency.Code))
-                .ForMember(p => p.State, src => src.MapFrom(p => p.State.ToString()));
+                .ForMember(p => p.State, src => src.MapFrom(p => Enum.GetName(p.State)));
         }
     }
 
