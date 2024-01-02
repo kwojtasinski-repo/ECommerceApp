@@ -3,9 +3,7 @@ using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Payments
 {
@@ -20,7 +18,7 @@ namespace ECommerceApp.Application.Services.Payments
         ListForPaymentVm GetPayments(int pageSize, int pageNo, string searchString);
         bool PaymentExists(int id);
         void DeletePayment(int id);
-        PaymentDetailsVm GetPaymentDetails(int id);
+        PaymentDetailsDto GetPaymentDetails(int id);
         PaymentVm InitPayment(int orderId);
     }
 }

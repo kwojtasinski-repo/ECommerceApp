@@ -209,13 +209,42 @@ namespace ECommerceApp.Application.Services.Payments
             }
         }
 
-        public PaymentDetailsVm GetPaymentDetails(int id)
+        public PaymentDetailsDto GetPaymentDetails(int id)
         {
             var userId = _httpContextAccessor.GetUserId();
-            var payment = _repo.GetAll().Include(c => c.Customer).ThenInclude(a => a.Addresses)
+            var payment = _repo.GetAll().Include(c => c.Customer)
                                         .Include(o => o.Order)
-                                        .Where(p => p.Customer.UserId == userId && p.Id == id).FirstOrDefault();
-            var paymentVm = _mapper.Map<PaymentDetailsVm>(payment);
+                                        .Include(c => c.Currency)
+                                        .Where(p => p.Customer.UserId == userId && p.Id == id)
+                                        .Select(p => new Payment
+                                        {
+                                            Id = p.Id,
+                                            Cost = p.Cost,
+                                            Number = p.Number,
+                                            State = p.State,
+                                            DateOfOrderPayment = p.DateOfOrderPayment,
+                                            CurrencyId = p.CurrencyId,
+                                            CustomerId = p.CustomerId,
+                                            OrderId = p.OrderId,
+                                            Customer = new Customer
+                                            {
+                                                Id = p.CustomerId,
+                                                FirstName = p.Customer.FirstName,
+                                                LastName = p.Customer.LastName,
+                                            },
+                                            Order = new Order
+                                            {
+                                                Id = p.OrderId,
+                                                Number = p.Order.Number
+                                            },
+                                            Currency = new Currency
+                                            {
+                                                Id = p.CurrencyId,
+                                                Code = p.Currency.Code
+                                            }
+                                        })
+                                        .FirstOrDefault();
+            var paymentVm = _mapper.Map<PaymentDetailsDto>(payment);
             return paymentVm;
         }
 

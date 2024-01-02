@@ -11,59 +11,65 @@
     <hr />
     <dl class="row">
         <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.Id)
+            @Html.DisplayNameFor(model => model.Payment.Id)
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Id)
+            @Html.DisplayFor(model => model.Payment.Id)
         </dd>
         <dt class="col-sm-2">
             Numer płatności
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Number)
+            @Html.DisplayFor(model => model.Payment.Number)
+        </dd>
+        <dt class="col-sm-2">
+            Koszt
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Payment.Cost)
+        </dd>
+        <dt class="col-sm-2">
+            Waluta
+        </dt>
+        <dd class="col-sm-10">
+            @Html.DisplayFor(model => model.Payment.CurrencyName)
         </dd>
         <dt class="col-sm-2">
             Data płatności
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.DateOfOrderPayment)
+            @Html.DisplayFor(model => model.Payment.DateOfOrderPayment)
         </dd>
         <dt class="col-sm-2">
             Dane kontaktowe
         </dt>
         <dd class="col-sm-10">
-            @Html.ActionLink("Kliknij aby zobaczyć", "ViewCustomer", "Customer", new { id = @Model.CustomerId }, new { target = "_blank" })
+            @Html.ActionLink("Kliknij aby zobaczyć", "ViewCustomer", "Customer", new { id = @Model.Payment.CustomerId }, new { target = "_blank" })
         </dd>
         <dt class="col-sm-2">
             Imię i nazwisko
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Customer.Customer.FirstName) @(' ') @Html.DisplayFor(model => model.Customer.Customer.LastName)
-        </dd>
-        <dt class="col-sm-2">
-            @Html.DisplayNameFor(model => model.OrderId)
-        </dt>
-        <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.OrderId)
+            @Html.DisplayFor(model => model.Payment.FirstName) @(' ') @Html.DisplayFor(model => model.Payment.LastName)
         </dd>
         <dt class="col-sm-2">
             Numer zamówienia
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Order.Number)
+            @Html.DisplayFor(model => model.Payment.OrderNumber)
         </dd>
         <dt class="col-sm-2">
-            Koszt zamówienia
+            Zamówienie
         </dt>
         <dd class="col-sm-10">
-            @Html.DisplayFor(model => model.Order.Cost)
+            @Html.ActionLink("Kliknij aby zobaczyć", "ViewOrderDetails", "Order", new { id = @Model.Payment.OrderId }, new { target = "_blank" })
         </dd>
     </dl>
 </div>
 <div>
     @if (User.IsInRole(UserPermissions.Roles.Administrator) || User.IsInRole(UserPermissions.Roles.Manager) || User.IsInRole(UserPermissions.Roles.Service))
     {
-        @Html.ActionLink("Edytuj", "EditPayment", new { id = Model.Id }) @(" | ")
+        @Html.ActionLink("Edytuj", "EditPayment", new { id = Model.Payment.Id }) @(" | ")
     }
     <a asp-controller="Order" asp-action="ShowMyOrders">Wróć do moich zamówień</a>
 </div>

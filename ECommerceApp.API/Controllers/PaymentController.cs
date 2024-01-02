@@ -30,7 +30,7 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet("{id}")]
-        public ActionResult<PaymentDetailsVm> GetPayment(int id)
+        public ActionResult<PaymentDetailsDto> GetPayment(int id)
         {
             var payment = _paymentService.GetPaymentDetails(id);
             if (payment == null)

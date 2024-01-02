@@ -97,7 +97,7 @@ namespace ECommerceApp.Web.Controllers
             {
                 return NotFound("Nie znaleziono płatności");
             }
-            return View(payment);
+            return View(new PaymentDetailsVm { Payment = payment });
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}")]
