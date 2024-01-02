@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Application.Services.Customers;
@@ -32,20 +33,20 @@ namespace ECommerceApp.Application.Services.Payments
             _httpContextAccessor = httpContextAccessor;
         }
 
-        public int AddPayment(PaymentVm model)
+        public int AddPayment(AddPaymentDto model)
         {
             if (model is null)
             {
-                throw new BusinessException($"{typeof(PaymentVm).Name} cannot be null");
-            }
-
-            if (model.Id != 0)
-            {
-                throw new BusinessException("When adding object Id should be equals 0");
+                throw new BusinessException($"{typeof(AddPaymentDto).Name} cannot be null");
             }
 
             var order = _orderService.Get(model.OrderId) ??
                 throw new BusinessException($"Order with id '{model.OrderId}' was not found");
+            if (order.IsPaid)
+            {
+                throw new BusinessException($"Order with id '{model.OrderId}' has alredy been paid");
+            }
+
             var payment = new Payment()
             {
                 Number = Guid.NewGuid().ToString(),

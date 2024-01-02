@@ -1,13 +1,15 @@
 ﻿using ECommerceApp.API;
+using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.ViewModels.Order;
+using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Application.ViewModels.Payment;
+using ECommerceApp.Domain.Model;
 using ECommerceApp.IntegrationTests.Common;
 using Flurl.Http;
 using Newtonsoft.Json;
 using Shouldly;
-using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -55,7 +57,7 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task given_valid_payment_should_add()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var payment = new CreatePayment() { Id = 0, CurrencyId = 1, OrderId = 3 };
+            var payment = new AddPaymentDto() { CurrencyId = 1, OrderId = 3 };
 
             var response = await client.Request("api/payments")
                 .AllowAnyHttpStatus()
@@ -67,16 +69,43 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_invalid_payment_should_return_status_code_conflict()
+        public async Task given_invalid_currency_when_pay_for_order_should_return_status_code_conflict()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var payment = new CreatePayment() { Id = 1 };
+            var orderId = await AddOrder(1);
+            var payment = new AddPaymentDto() { OrderId = orderId, CurrencyId = 1000 };
 
             var response = await client.Request("api/payments")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(payment);
 
-            response.StatusCode.ShouldBe((int) HttpStatusCode.Conflict);
+            response.StatusCode.ShouldBe((int) HttpStatusCode.BadRequest);
+        }
+
+        [Fact]
+        public async Task given_paid_order_when_pay_for_order_should_return_status_code_conflict()
+        {
+            var client = await _factory.GetAuthenticatedClient();
+            var payment = new AddPaymentDto() { OrderId = 1, CurrencyId = 1000 };
+
+            var response = await client.Request("api/payments")
+                .AllowAnyHttpStatus()
+                .PostJsonAsync(payment);
+
+            response.StatusCode.ShouldBe((int) HttpStatusCode.BadRequest);
+        }
+
+        [Fact]
+        public async Task given_invalid_order_when_pay_for_order_should_return_status_code_conflict()
+        {
+            var client = await _factory.GetAuthenticatedClient();
+            var payment = new AddPaymentDto() { OrderId = 1000 };
+
+            var response = await client.Request("api/payments")
+                .AllowAnyHttpStatus()
+                .PostJsonAsync(payment);
+
+            response.StatusCode.ShouldBe((int) HttpStatusCode.BadRequest);
         }
 
         [Fact]
@@ -90,6 +119,28 @@ namespace ECommerceApp.IntegrationTests.API
             var payments = JsonConvert.DeserializeObject<List<PaymentVm>>(await response.ResponseMessage.Content.ReadAsStringAsync());
             response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
             payments.Count.ShouldBeGreaterThan(0);
+        }
+
+        private async Task<int> AddOrder(int itemId)
+        {
+            var orderItem = new OrderItem
+            {
+                ItemId = itemId,
+                ItemOrderQuantity = 1
+            };
+            var client = await _factory.GetAuthenticatedClient();
+            var response = await client.Request("api/order-items")
+                .AllowAnyHttpStatus()
+                .PostJsonAsync(orderItem);
+            var orderItemId = JsonConvert.DeserializeObject<int>(await response.ResponseMessage.Content.ReadAsStringAsync());
+            orderItemId.ShouldBeGreaterThan(0);
+            response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
+            var order = new OrderDto { Id = 0, CurrencyId = 1, CustomerId = 1, OrderItems = new List<OrderItemsIdsVm> { new OrderItemsIdsVm { Id = orderItemId } } };
+            var responseAddOrder = await client.Request($"api/orders")
+                .AllowAnyHttpStatus()
+                .PostJsonAsync(order);
+            var id = JsonConvert.DeserializeObject<int>(await responseAddOrder.ResponseMessage.Content.ReadAsStringAsync());
+            return id;
         }
     }
 }

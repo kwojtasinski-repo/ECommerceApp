@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Interfaces;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -10,7 +11,7 @@ namespace ECommerceApp.Application.Services.Payments
 {
     public interface IPaymentService : IAbstractService<PaymentVm, IPaymentRepository, Payment>
     {
-        int AddPayment(PaymentVm model);
+        int AddPayment(AddPaymentDto model);
         int PaidIssuedPayment(PaymentVm model);
         PaymentVm GetPaymentById(int id);
         void UpdatePayment(PaymentVm model);

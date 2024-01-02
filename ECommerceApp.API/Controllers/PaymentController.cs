@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Services.Payments;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -45,17 +46,13 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
-        public ActionResult<int> AddPayment([FromBody] CreatePayment model)
+        public ActionResult<int> AddPayment([FromBody] AddPaymentDto model)
         {
-            if (!ModelState.IsValid || model.Id != 0)
+            if (!ModelState.IsValid)
             {
                 return Conflict(ModelState);
             }
-            var id = _paymentService.AddPayment(new PaymentVm
-            {
-                CurrencyId = model.CurrencyId,
-                OrderId = model.OrderId,
-            });
+            var id = _paymentService.AddPayment(model);
             return Ok(id);
         }
     }

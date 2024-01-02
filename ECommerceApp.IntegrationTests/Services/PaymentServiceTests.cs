@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Services.Payments;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.IntegrationTests.Common;
 using Microsoft.AspNetCore.Http;
@@ -109,7 +110,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_payment_id_should_delete()
         {
-            var payment = new PaymentVm() { Id = 0, DateOfOrderPayment = DateTime.Now, Number = "1235", CurrencyId = 1, CustomerId = 1, OrderCost = 100M, OrderId = 1, OrderNumber = 1242 };
+            var payment = new AddPaymentDto() { CurrencyId = 1, OrderId = 1 };
             var id = _service.AddPayment(payment);
 
             _service.DeletePayment(id);

@@ -35,12 +35,10 @@ namespace ECommerceApp.UnitTests.Services.Payment
         [Fact]
         public void given_valid_payment_should_add()
         {
-            var id = 1;
             var currencyId = 2;
             var orderId = 1;
-            var payment = CreatePaymentVm(id, currencyId, orderId);
-            var cost = payment.OrderCost;
-            payment.Id = 0;
+            var payment = new AddPaymentDto { CurrencyId = currencyId, OrderId = orderId };
+            var cost = 100M;
             var order = CreateOrder(orderId);
             _orderService.Setup(o => o.Get(orderId)).Returns(order);
             var rate = CreateCurrencyRate(currencyId);
@@ -60,20 +58,6 @@ namespace ECommerceApp.UnitTests.Services.Payment
             paymentAdded.CurrencyId.Should().Be(currencyId);
             _paymentRepository.Verify(p => p.AddPayment(It.IsAny<Domain.Model.Payment>()), Times.Once);
             _orderService.Verify(p => p.Update(It.IsAny<OrderVm>()), Times.Once);
-        }
-
-        [Fact]
-        public void given_invalid_payment_should_add()
-        {
-            var id = 1;
-            var currencyId = 2;
-            var orderId = 1;
-            var payment = CreatePaymentVm(id, currencyId, orderId);
-            var paymentService = new PaymentService(_paymentRepository.Object, _mapper, _orderService.Object, _customerService.Object, _currencyRateService.Object, _contextAccessor);
-
-            Action action = () => paymentService.AddPayment(payment);
-
-            action.Should().Throw<BusinessException>().WithMessage("When adding object Id should be equals 0");
         }
 
         [Fact]
