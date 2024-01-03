@@ -1,12 +1,10 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
-using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.Services.Orders;
-using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -18,15 +16,19 @@ using System.Linq;
 
 namespace ECommerceApp.Application.Services.Payments
 {
-    public class PaymentService : AbstractService<PaymentVm, IPaymentRepository, Payment>, IPaymentService
+    public class PaymentService : IPaymentService
     {
+        private readonly IMapper _mapper;
+        private readonly IPaymentRepository _repo;
         private readonly IOrderService _orderService;
         private readonly ICustomerService _customerService;
         private readonly ICurrencyRateService _currencyRateService;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public PaymentService(IPaymentRepository paymentRepository, IMapper mapper, IOrderService orderService, ICustomerService customerService, ICurrencyRateService currencyRateService, IHttpContextAccessor httpContextAccessor) : base(paymentRepository, mapper)
+        public PaymentService(IPaymentRepository paymentRepository, IMapper mapper, IOrderService orderService, ICustomerService customerService, ICurrencyRateService currencyRateService, IHttpContextAccessor httpContextAccessor)
         {
+            _mapper = mapper;
+            _repo = paymentRepository;
             _orderService = orderService;
             _customerService = customerService;
             _currencyRateService = currencyRateService;
