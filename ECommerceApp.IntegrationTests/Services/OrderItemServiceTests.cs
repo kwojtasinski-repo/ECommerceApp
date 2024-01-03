@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Services.Orders;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
@@ -120,8 +121,8 @@ namespace ECommerceApp.IntegrationTests.Services
         {
             var orderItem = CreateOrderItem(0);
             var id = _service.AddOrderItem(orderItem);
-            orderItem = _service.Get(id);
             var orderId = 1;
+            orderItem.Id = id;
             orderItem.OrderId = orderId;
 
             _service.UpdateOrderItem(orderItem);
@@ -144,9 +145,9 @@ namespace ECommerceApp.IntegrationTests.Services
             itemDeleted.ShouldBeNull();
         }
 
-        private OrderItemVm CreateOrderItem(int id)
+        private OrderItemDto CreateOrderItem(int id)
         {
-            var orderItem = new OrderItemVm
+            var orderItem = new OrderItemDto
             {
                 Id = id,
                 ItemId = 1,

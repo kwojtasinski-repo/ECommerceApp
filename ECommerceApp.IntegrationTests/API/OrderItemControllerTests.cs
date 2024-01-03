@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.API;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.IntegrationTests.Common;
 using Flurl.Http;
@@ -92,7 +93,7 @@ namespace ECommerceApp.IntegrationTests.API
             var quantity = 20;
             orderItem.ItemOrderQuantity = quantity;
 
-            var response = await client.Request("api/order-items")
+            var response = await client.Request($"api/order-items/{id}")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(orderItem);
 
@@ -109,7 +110,7 @@ namespace ECommerceApp.IntegrationTests.API
             var client = await _factory.GetAuthenticatedClient();
             var orderItem = CreateOrderItem(12452);
 
-            var response = await client.Request("api/order-items")
+            var response = await client.Request($"api/order-items/{orderItem.Id}")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(orderItem);
 

@@ -1,11 +1,4 @@
-﻿using ECommerceApp.Application.ViewModels;
-using ECommerceApp.Domain.Interface;
-using ECommerceApp.Domain.Model;
-using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ECommerceApp.Application.Interfaces
+﻿namespace ECommerceApp.Application.Interfaces
 {
     public interface IAbstractService<T, U, E>
     {
