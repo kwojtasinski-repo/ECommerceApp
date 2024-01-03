@@ -1,5 +1,5 @@
-﻿using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.ViewModels.Order;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -7,16 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace ECommerceApp.Application.Services.Orders
 {
     public interface IOrderItemService : IAbstractService<OrderItemVm, IOrderItemRepository, OrderItem>
     {
-        int AddOrderItem(OrderItemVm model);
-        OrderItemDetailsVm GetOrderItemDetails(int id);
-        OrderItemVm GetOrderItemById(int id);
-        void UpdateOrderItem(OrderItemVm model);
+        int AddOrderItem(OrderItemDto model);
+        OrderItemDto GetOrderItemDetails(int id);
+        void UpdateOrderItem(OrderItemDto model);
         IEnumerable<OrderItemVm> GetOrderItems(Expression<Func<OrderItem, bool>> expression);
         ListForOrderItemVm GetOrderItems(int pageSize, int pageNo, string searchString);
         bool OrderItemExists(int id);

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
@@ -10,7 +11,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace ECommerceApp.Application.Services.Orders
 {
@@ -20,11 +20,11 @@ namespace ECommerceApp.Application.Services.Orders
         {
         }
 
-        public int AddOrderItem(OrderItemVm model)
+        public int AddOrderItem(OrderItemDto model)
         {
             if (model is null)
             {
-                throw new BusinessException($"{typeof(OrderItemVm).Name} cannot be null");
+                throw new BusinessException($"{typeof(OrderItemDto).Name} cannot be null");
             }
 
             var orderItem = _mapper.Map<OrderItem>(model);
@@ -53,16 +53,10 @@ namespace ECommerceApp.Application.Services.Orders
             _repo.DeleteOrderItem(id);
         }
 
-        public OrderItemVm GetOrderItemById(int id)
-        {
-            var orderItem = Get(id);
-            return orderItem;
-        }
-
-        public OrderItemDetailsVm GetOrderItemDetails(int id)
+        public OrderItemDto GetOrderItemDetails(int id)
         {
             var orderItem = _repo.GetAll().Include(i => i.Item).Where(oi => oi.Id == id).AsNoTracking().FirstOrDefault();
-            var orderItemVm = _mapper.Map<OrderItemDetailsVm>(orderItem);
+            var orderItemVm = _mapper.Map<OrderItemDto>(orderItem);
             return orderItemVm;
         }
 
@@ -108,11 +102,11 @@ namespace ECommerceApp.Application.Services.Orders
             return exists;
         }
 
-        public void UpdateOrderItem(OrderItemVm model)
+        public void UpdateOrderItem(OrderItemDto model)
         {
             if (model is null)
             {
-                throw new BusinessException($"{typeof(OrderItemVm).Name} cannot be null");
+                throw new BusinessException($"{typeof(OrderItemDto).Name} cannot be null");
             }
 
             var orderItem = _repo.GetById(model.Id) ?? throw new BusinessException($"OrderItem with id '{model.Id}' was not found");

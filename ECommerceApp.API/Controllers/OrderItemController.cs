@@ -7,6 +7,7 @@ using System.Linq;
 using System.Security.Claims;
 using ECommerceApp.Infrastructure.Permissions;
 using ECommerceApp.Application.Services.Orders;
+using ECommerceApp.Application.DTO;
 
 namespace ECommerceApp.API.Controllers
 {
@@ -61,15 +62,16 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
-        [HttpPut]
-        public IActionResult EditOrderItem([FromBody] OrderItemDto model)
+        [HttpPut("{id:int}")]
+        public IActionResult EditOrderItem(int id, [FromBody] AddOrderItemDto model)
         {
+            model.Id = id;
             var modelExists = _orderItemService.OrderItemExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
             {
                 return Conflict(ModelState);
             }
-            var orderItem = model.AsVm();
+            var orderItem = model.AsOrderItemDto();
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             orderItem.UserId = userId;
             _orderItemService.UpdateOrderItem(orderItem);
@@ -78,13 +80,13 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
-        public IActionResult AddOrderItem([FromBody] OrderItemDto model)
+        public IActionResult AddOrderItem([FromBody] AddOrderItemDto model)
         {
             if (model.Id != 0)
             {
                 return Conflict(ModelState);
             }
-            var orderItem = model.AsVm();
+            var orderItem = model.AsOrderItemDto();
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             orderItem.UserId = userId;
             var id = _orderItemService.AddOrderItem(orderItem);

@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Security.Claims;
-using ECommerceApp.Application;
-using ECommerceApp.Application.ViewModels.OrderItem;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ECommerceApp.Infrastructure.Permissions;
 using ECommerceApp.Application.Services.Orders;
+using ECommerceApp.Application.DTO;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -88,7 +87,7 @@ namespace ECommerceApp.Web.Controllers
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPut]
-        public IActionResult UpdateOrderItem([FromQuery]int id, [FromBody]OrderItemVm model)
+        public IActionResult UpdateOrderItem([FromQuery]int id, [FromBody] OrderItemDto model)
         {
             model.Id = id;
             model.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -98,12 +97,11 @@ namespace ECommerceApp.Web.Controllers
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
-        public IActionResult AddToCart([FromBody]OrderItemDto model)
+        public IActionResult AddToCart([FromBody] OrderItemDto model)
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var dto = model.AsVm();
-            dto.UserId = userId;
-            var id = _orderItemService.AddOrderItem(dto);
+            model.UserId = userId;
+            var id = _orderItemService.AddOrderItem(model);
             return Json(new { itemId = id });
         }
 

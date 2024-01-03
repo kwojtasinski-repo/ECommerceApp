@@ -2,7 +2,6 @@
 using ECommerceApp.Application.Mapping;
 using FluentValidation;
 using System;
-using System.Text.Json.Serialization;
 
 namespace ECommerceApp.Application.ViewModels.Payment
 {
@@ -14,11 +13,8 @@ namespace ECommerceApp.Application.ViewModels.Payment
         public int OrderId { get; set; }
         public int OrderNumber { get; set; }
         public int CurrencyId { get; set; }
-        [JsonIgnore]
         public string CustomerName { get; set; }
-        [JsonIgnore]
         public decimal Cost { get; set; }
-        [JsonIgnore]
         public string CurrencyName { get; set; }
         public Domain.Model.PaymentState State { get; set; }
 

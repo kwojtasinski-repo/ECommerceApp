@@ -106,9 +106,9 @@ namespace ECommerceApp.Web.Controllers
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
-        public IActionResult AddOrderItemToCart(NewOrderItemVm model)
+        public IActionResult AddOrderItemToCart(OrderItemDto model)
         {
-            var id = _orderItemService.AddOrderItem(model.AsOrderItemVm());
+            var id = _orderItemService.AddOrderItem(model);
             return RedirectToAction("Index");
         }
 

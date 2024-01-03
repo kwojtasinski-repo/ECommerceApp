@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.Services.Customers;
@@ -300,7 +301,7 @@ namespace ECommerceApp.Application.Services.Orders
 
             foreach (var orderItem in orderItemsToAdd)
             {
-                var orderItemVm = new OrderItemVm { Id = 0, ItemId = orderItem.ItemId, ItemOrderQuantity = orderItem.ItemOrderQuantity, UserId = orderVm.UserId, OrderId = orderVm.Id };
+                var orderItemVm = new OrderItemDto { Id = 0, ItemId = orderItem.ItemId, ItemOrderQuantity = orderItem.ItemOrderQuantity, UserId = orderVm.UserId, OrderId = orderVm.Id };
                 var orderItemId = _orderItemService.AddOrderItem(orderItemVm);
                 orderItem.Id = orderItemId;
             }

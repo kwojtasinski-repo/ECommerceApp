@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.ViewModels.ContactDetail;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Application.ViewModels.OrderItem;
@@ -12,9 +13,9 @@ namespace ECommerceApp.Application
 {
     public static class Extension
     {
-        public static OrderItemVm AsVm(this OrderItemDto dto)
+        public static OrderItemDto AsOrderItemDto(this AddOrderItemDto dto)
         {
-            var orderItem = new OrderItemVm()
+            var orderItem = new OrderItemDto()
             {
                 Id = dto.Id,
                 ItemId = dto.ItemId,

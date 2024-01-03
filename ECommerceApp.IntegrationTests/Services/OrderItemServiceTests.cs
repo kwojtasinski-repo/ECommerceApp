@@ -34,27 +34,6 @@ namespace ECommerceApp.IntegrationTests.Services
         }
 
         [Fact]
-        public void given_valid_id_should_return_order_item()
-        {
-            var id = 1;
-
-            var item = _service.GetOrderItemById(id);
-
-            item.ShouldNotBeNull();
-            item.Id.ShouldBe(id);
-        }
-
-        [Fact]
-        public void given_invalid_id_should_return_null_order_item()
-        {
-            var id = 146373;
-
-            var item = _service.GetOrderItemById(id);
-
-            item.ShouldBeNull();
-        }
-
-        [Fact]
         public void given_order_items_should_return_list()
         {
             var orderItems = _service.GetOrderItems().ToList();
