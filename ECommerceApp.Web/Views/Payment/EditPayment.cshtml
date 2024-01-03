@@ -39,7 +39,7 @@
             </div>
             <div class="form-group">
                 <label asp-for="Cost" class="control-label">Koszt</label>
-                <input asp-for="Cost" class="form-control" />
+                <input id="PaymentCost" asp-for="Cost" class="form-control" />
                 <span asp-validation-for="Cost" class="text-danger"></span>
             </div>
             <div class="form-group">
@@ -48,6 +48,12 @@
                 <span asp-validation-for="CustomerName" class="text-danger"></span>
                 <label style="display:none;" asp-for="CustomerId" class="control-label"></label>
                 <input type="hidden" asp-for="CustomerId" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label asp-for="State" class="control-label">Status: </label>
+                <select asp-for="State" 
+                    asp-items="@(new SelectList(Enum.GetValues<ECommerceApp.Domain.Model.PaymentState>()))" class="custom-select"></select>
+                <span asp-validation-for="State" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="CurrencyId" class="control-label">Waluta: </label>
@@ -80,8 +86,6 @@
                 controlId: 'NumberInput',
                 rules: [
                     v => v && v.trim().length > 0 || 'Numer płatności jest wymagany',
-                    v => v && !isNaN(v) || 'Numer płatności zawiera niepoprawny format',
-                    v => v && Number(v) > 0 || 'Numer płatności powinien być większy niż 0',
                 ],
                 valid: false,
                 value: ''
@@ -94,6 +98,21 @@
                 ],
                 valid: false,
                 value: ''
+            },
+            paymentCost: {
+                controlId: 'PaymentCost',
+                rules: [
+                    v => {
+                        const value = v?.replace(',', '.');
+                        return v && !isNaN(value) || 'Wartość do zapłaty zawiera niepoprawny format'
+                    },
+                    v => {
+                        const value = v?.replace(',', '.');
+                        return v && Number(value) > 0 || 'Wartość do zapłaty powinna być większa niż 0'
+                    },
+                ],
+                valid: false,
+                value: ''
             }
         };
 
@@ -101,6 +120,7 @@
             forms.initFormValidator(paymentFormValidator);
             paymentFormValidator.paymentNumber.value = document.getElementById(paymentFormValidator.paymentNumber.controlId).value;
             paymentFormValidator.dateOfPayment.value = document.getElementById(paymentFormValidator.dateOfPayment.controlId).value;
+            paymentFormValidator.paymentCost.value = document.getElementById(paymentFormValidator.paymentCost.controlId).value;
         });
     </script>
 }

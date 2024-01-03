@@ -20,15 +20,23 @@ namespace ECommerceApp.Application.ViewModels.Payment
         public decimal Cost { get; set; }
         [JsonIgnore]
         public string CurrencyName { get; set; }
+        public Domain.Model.PaymentState State { get; set; }
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<PaymentVm, ECommerceApp.Domain.Model.Payment>().ReverseMap()
+            profile.CreateMap<PaymentVm, ECommerceApp.Domain.Model.Payment>()
+                .ForMember(p => p.DateOfOrderPayment, opt => opt.MapFrom(p => SetFormat(p.DateOfOrderPayment)))
+                .ReverseMap()
                 .ForMember(o => o.OrderNumber, opt => opt.MapFrom(o => o.Order.Number))
                 .ForMember(c => c.CustomerName, opt => opt.MapFrom(c => (c.Customer.NIP != null && c.Customer.CompanyName != null) ?
                             c.Customer.FirstName + " " + c.Customer.LastName + " " + c.Customer.NIP + " " + c.Customer.CompanyName
                             : c.Customer.FirstName + " " + c.Customer.LastName))
                 .ForMember(p => p.CurrencyName, opt => opt.MapFrom(c => c.Currency.Code));
+        }
+
+        private static DateTime SetFormat(DateTime dateTime)
+        {
+            return new DateTime(dateTime.Year, dateTime.Month, dateTime.Day, dateTime.Hour, dateTime.Minute, dateTime.Second);
         }
     }
 
