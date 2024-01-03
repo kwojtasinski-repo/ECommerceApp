@@ -16,6 +16,8 @@ namespace ECommerceApp.Application.Services.Orders
         OrderItemDto GetOrderItemDetails(int id);
         void UpdateOrderItem(OrderItemDto model);
         IEnumerable<OrderItemVm> GetOrderItems(Expression<Func<OrderItem, bool>> expression);
+        IEnumerable<OrderItemVm> GetOrderItemsNotOrderedByUserId(string userId);
+        IEnumerable<OrderItemVm> GetOrderItemsByItemId(int itemId);
         ListForOrderItemVm GetOrderItems(int pageSize, int pageNo, string searchString);
         bool OrderItemExists(int id);
         void DeleteOrderItem(int id);

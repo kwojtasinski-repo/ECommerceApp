@@ -96,10 +96,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public bool OrderItemExists(int id)
         {
-            var orderItem = _repo.GetAll().Where(oi => oi.Id == id).AsNoTracking().FirstOrDefault();
-            var exists = orderItem != null;
-
-            return exists;
+            return _repo.GetAll().AsNoTracking().Any(oi => oi.Id == id);
         }
 
         public void UpdateOrderItem(OrderItemDto model)
@@ -120,7 +117,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public void UpdateOrderItems(IEnumerable<OrderItemVm> orderItemsVm)
         {
-            if (orderItemsVm.Count() == 0)
+            if (!orderItemsVm.Any())
             {
                 return;
             }
@@ -131,11 +128,9 @@ namespace ECommerceApp.Application.Services.Orders
 
         public int OrderItemCount(string userId)
         {
-            var itemOrders = _repo.GetAllOrderItems().Where(oi => oi.UserId == userId && oi.OrderId == null)
-                            .ProjectTo<NewOrderItemVm>(_mapper.ConfigurationProvider)
-                            .ToList();
-
-            return itemOrders.Count;
+            return _repo.GetAllOrderItems()
+                        .Where(oi => oi.UserId == userId && oi.OrderId == null)
+                        .Count();
         }
 
         public int AddOrderItem(int itemId, string userId)
@@ -156,7 +151,7 @@ namespace ECommerceApp.Application.Services.Orders
             return id;
         }
 
-        private OrderItem CreateOrderItem(int itemId, string userId)
+        private static OrderItem CreateOrderItem(int itemId, string userId)
         {
             var orderItem = new OrderItem()
             {
@@ -210,6 +205,24 @@ namespace ECommerceApp.Application.Services.Orders
         {
             var orderItems = _repo.GetAll();
             return orderItems;
+        }
+
+        public IEnumerable<OrderItemVm> GetOrderItemsNotOrderedByUserId(string userId)
+        {
+            var orderItems = _repo.GetAll()
+                                  .Where(oi => oi.UserId == userId && oi.OrderId == null)
+                                  .AsNoTracking()
+                                  .ToList();
+            return _mapper.Map<List<OrderItemVm>>(orderItems);
+        }
+
+        public IEnumerable<OrderItemVm> GetOrderItemsByItemId(int itemId)
+        {
+            var orderItems = _repo.GetAll()
+                                  .Where(oi => oi.ItemId == itemId)
+                                  .AsNoTracking()
+                                  .ToList();
+            return _mapper.Map<List<OrderItemVm>>(orderItems);
         }
     }
 }

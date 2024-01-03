@@ -154,7 +154,7 @@ namespace ECommerceApp.API.Controllers
             model.OrderItems = new List<OrderItemsIdsVm>();
             var order = model.AsVm();
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
-            var orderItems = _orderItemService.GetOrderItems(oi => oi.UserId == userId && oi.OrderId == null).ToList();
+            var orderItems = _orderItemService.GetOrderItemsNotOrderedByUserId(userId).ToList();
             order.UserId = userId;
             order.OrderItems = orderItems;
             var id = _orderService.AddOrder(order);

@@ -53,7 +53,7 @@ namespace ECommerceApp.API.Controllers
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var userId2 = User.FindAll(ClaimTypes.NameIdentifier).ToList(); // 2 values in list
-            var orderItems = _orderItemService.GetOrderItems(oi => oi.UserId == userId && oi.OrderId == null);
+            var orderItems = _orderItemService.GetOrderItemsNotOrderedByUserId(userId);
             if (orderItems.Count() == 0)
             {
                 return NotFound();
@@ -97,11 +97,7 @@ namespace ECommerceApp.API.Controllers
         [HttpGet("by-items/{id}")]
         public ActionResult<List<OrderItemForListVm>> GetOrderItemsByItemId(int id)
         {
-            var orderItems = _orderItemService.GetOrderItems(oi => oi.ItemId == id);
-            if (orderItems.Count() == 0)
-            {
-                return NotFound();
-            }
+            var orderItems = _orderItemService.GetOrderItemsByItemId(id);
             return Ok(orderItems);
         }
     }
