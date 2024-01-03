@@ -234,7 +234,11 @@ namespace ECommerceApp.Application.Services.Orders
         public void UpdateOrder(OrderVm orderVm)
         {
             ValidateOrder(orderVm);
-            var order = _repo.GetAllOrders().Where(o => o.Id == orderVm.Id).Include(inc => inc.OrderItems).AsNoTracking().FirstOrDefault();
+            var order = _repo.GetAllOrders()
+                             .Where(o => o.Id == orderVm.Id)
+                             .Include(inc => inc.OrderItems).ThenInclude(inc => inc.Item)
+                             .AsNoTracking()
+                             .FirstOrDefault();
             orderVm.Number = order.Number;
             orderVm.Ordered = order.Ordered;
             orderVm.Cost = 0;
@@ -268,7 +272,7 @@ namespace ECommerceApp.Application.Services.Orders
         private void CalculateCost(OrderVm orderVm, ICollection<OrderItem> itemsFromDb)
         {
             var orderCost = decimal.Zero;
-            foreach (var orderItem in orderVm.OrderItems ?? new List<OrderItemVm>())
+            foreach (var orderItem in orderVm.OrderItems ?? new List<OrderItemDto>())
             {
                 var item = itemsFromDb.Where(i => i.Id == orderItem.Id).FirstOrDefault();
 
@@ -313,9 +317,9 @@ namespace ECommerceApp.Application.Services.Orders
 
         private void CheckOrderItemsOrderByUser(OrderVm orderVm, ICollection<OrderItem> itemsFromDb)
         {
-            StringBuilder errors = new StringBuilder();
+            StringBuilder errors = new();
 
-            foreach (var orderItem in orderVm.OrderItems ?? new List<OrderItemVm>())
+            foreach (var orderItem in orderVm.OrderItems ?? new List<OrderItemDto>())
             {
                 var item = itemsFromDb.Where(i => i.Id == orderItem.Id).FirstOrDefault();
 
@@ -614,7 +618,7 @@ namespace ECommerceApp.Application.Services.Orders
                 if (oi != null)
                 {
                     orderVm.OrderItems.Remove(oi);
-                    orderVm.OrderItems.Add(_mapper.Map<OrderItemVm>(orderItem));
+                    orderVm.OrderItems.Add(_mapper.Map<OrderItemDto>(orderItem));
                 }
             }
 

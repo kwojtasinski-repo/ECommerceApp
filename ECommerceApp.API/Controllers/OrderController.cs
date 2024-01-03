@@ -13,6 +13,7 @@ using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Infrastructure.Permissions;
 using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.Services.Orders;
+using ECommerceApp.Application.DTO;
 
 namespace ECommerceApp.API.Controllers
 {
@@ -106,11 +107,11 @@ namespace ECommerceApp.API.Controllers
             {
                 if (!vm.OrderItems.Any(o => o.Id == id.Id))
                 {
-                    vm.OrderItems.Add(new OrderItemVm { Id = id.Id });
+                    vm.OrderItems.Add(new OrderItemDto { Id = id.Id });
                 }
             }
 
-            var orderItemsToRemove = new List<OrderItemVm>();
+            var orderItemsToRemove = new List<OrderItemDto>();
             foreach (var orderItem in vm.OrderItems)
             {
                 var id = model.OrderItems.Where(oi => oi.Id == orderItem.Id).FirstOrDefault();
@@ -154,7 +155,7 @@ namespace ECommerceApp.API.Controllers
             model.OrderItems = new List<OrderItemsIdsVm>();
             var order = model.AsVm();
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
-            var orderItems = _orderItemService.GetOrderItemsNotOrderedByUserId(userId).ToList();
+            var orderItems = _orderItemService.GetOrderItemsForRealization(userId).ToList();
             order.UserId = userId;
             order.OrderItems = orderItems;
             var id = _orderService.AddOrder(order);

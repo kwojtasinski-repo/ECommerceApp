@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Customer;
@@ -53,16 +54,18 @@ namespace ECommerceApp.Application.ViewModels.Order
                 PaymentId = this.PaymentId,
                 IsPaid = this.IsPaid,
                 RefundId = this.RefundId,
-                OrderItems = new List<NewOrderItemVm>()
+                OrderItems = new List<OrderItemDto>()
             };
 
             if (OrderItems != null && OrderItems.Count > 0)
             {
-                var orderItems = new List<NewOrderItemVm>();
+                var orderItems = new List<OrderItemDto>();
                 foreach(var orderItem in OrderItems)
                 {
-                    var item = new NewOrderItemVm();
-                    item.Id = orderItem.Id;
+                    var item = new OrderItemDto
+                    {
+                        Id = orderItem.Id
+                    };
                     orderItems.Add(item);
                 }
 

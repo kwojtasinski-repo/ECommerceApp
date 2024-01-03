@@ -126,7 +126,7 @@ namespace ECommerceApp.IntegrationTests.Services
             var order = CreateOrder(0);
             var id = _service.AddOrder(order);
             order.Id = id;
-            order.OrderItems.Add(new Application.ViewModels.OrderItem.OrderItemVm { Id = 2, ItemId = 5, ItemOrderQuantity = 1, UserId = PROPER_CUSTOMER_ID });
+            order.OrderItems.Add(new Application.DTO.OrderItemDto { Id = 2, ItemId = 5, ItemOrderQuantity = 1, UserId = PROPER_CUSTOMER_ID });
 
             _service.UpdateOrderWithExistedOrderItemsIds(order);
 
@@ -230,9 +230,9 @@ namespace ECommerceApp.IntegrationTests.Services
                 Number = 112451,
                 Ordered = DateTime.Now,
                 UserId = PROPER_CUSTOMER_ID,
-                OrderItems = new List<Application.ViewModels.OrderItem.OrderItemVm>
+                OrderItems = new List<Application.DTO.OrderItemDto>
                 {
-                    new Application.ViewModels.OrderItem.OrderItemVm
+                    new Application.DTO.OrderItemDto
                     {
                         Id = 3, 
                         ItemId = 6, 

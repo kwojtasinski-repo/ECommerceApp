@@ -118,7 +118,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult OrderRealization()
         {
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var orderItems = _orderItemService.GetOrderItemsForRealization(oi => oi.UserId == userId && oi.OrderId == null).ToList();
+            var orderItems = _orderItemService.GetOrderItemsForRealization(userId).ToList();
             Random random = new Random();
             var orderDate = System.DateTime.Now;
             ViewBag.Date = orderDate;

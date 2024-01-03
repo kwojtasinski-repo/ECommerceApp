@@ -62,15 +62,15 @@ namespace ECommerceApp.Application.Services.Orders
 
         public IEnumerable<OrderItemVm> GetOrderItems(Expression<Func<OrderItem, bool>> expression)
         {
-            var orderItems = _repo.GetAll().Where(expression).AsNoTracking().ToList();
+            var orderItems = _repo.GetAll().Include(i => i.Item).Where(expression).AsNoTracking().ToList();
             var orderItemsToShow = _mapper.Map<List<OrderItemVm>>(orderItems);
             return orderItemsToShow;
         }
 
-        public IEnumerable<NewOrderItemVm> GetOrderItemsForRealization(Expression<Func<OrderItem, bool>> expression)
+        public IEnumerable<OrderItemDto> GetOrderItemsForRealization(string userId)
         {
-            var orderItems = _repo.GetAll().Include(i => i.Item).Where(expression).AsNoTracking().ToList();
-            var orderItemsToShow = _mapper.Map<List<NewOrderItemVm>>(orderItems);
+            var orderItems = _repo.GetAll().Include(i => i.Item).Where(oi => oi.UserId == userId && oi.OrderId == null).AsNoTracking().ToList();
+            var orderItemsToShow = _mapper.Map<List<OrderItemDto>>(orderItems);
             return orderItemsToShow;
         }
 
@@ -115,7 +115,7 @@ namespace ECommerceApp.Application.Services.Orders
             _repo.UpdateOrderItem(orderItem);
         }
 
-        public void UpdateOrderItems(IEnumerable<OrderItemVm> orderItemsVm)
+        public void UpdateOrderItems(IEnumerable<OrderItemDto> orderItemsVm)
         {
             if (!orderItemsVm.Any())
             {
@@ -205,15 +205,6 @@ namespace ECommerceApp.Application.Services.Orders
         {
             var orderItems = _repo.GetAll();
             return orderItems;
-        }
-
-        public IEnumerable<OrderItemVm> GetOrderItemsNotOrderedByUserId(string userId)
-        {
-            var orderItems = _repo.GetAll()
-                                  .Where(oi => oi.UserId == userId && oi.OrderId == null)
-                                  .AsNoTracking()
-                                  .ToList();
-            return _mapper.Map<List<OrderItemVm>>(orderItems);
         }
 
         public IEnumerable<OrderItemVm> GetOrderItemsByItemId(int itemId)

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using System;
@@ -24,7 +25,7 @@ namespace ECommerceApp.Application.ViewModels.Order
         public int? RefundId { get; set; } // 1:1 Order Refund
         public int CurrencyId { get; set; }
 
-        public List<OrderItemVm> OrderItems { get; set; } // 1:Many relation
+        public List<OrderItemDto> OrderItems { get; set; } // 1:Many relation
 
         public void Mapping(Profile profile)
         {

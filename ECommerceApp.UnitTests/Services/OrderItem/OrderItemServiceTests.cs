@@ -97,10 +97,10 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
         [Fact]
         public void given_valid_order_item_should_update()
         {
-            var orderItem = new OrderItemVm { Id = 1, ItemId = 1, UserId = "gs", ItemOrderQuantity = 1 };
+            var orderItem = new OrderItemDto { Id = 1, ItemId = 1, UserId = "gs", ItemOrderQuantity = 1 };
             var orderItemService = new OrderItemService(_orderItemRepository.Object, _mapper);
 
-            orderItemService.UpdateOrderItems(new List<OrderItemVm> { orderItem });
+            orderItemService.UpdateOrderItems(new List<OrderItemDto> { orderItem });
 
             _orderItemRepository.Verify(oi => oi.UpdateRange(It.IsAny<IEnumerable<Domain.Model.OrderItem>>()), Times.Once);
         }
@@ -110,7 +110,7 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
         {
             var orderItemService = new OrderItemService(_orderItemRepository.Object, _mapper);
 
-            orderItemService.UpdateOrderItems(new List<OrderItemVm> { });
+            orderItemService.UpdateOrderItems(new List<OrderItemDto> { });
 
             _orderItemRepository.Verify(oi => oi.UpdateRange(It.IsAny<IEnumerable<Domain.Model.OrderItem>>()), Times.Never);
         }

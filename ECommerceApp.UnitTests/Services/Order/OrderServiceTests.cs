@@ -652,13 +652,13 @@ namespace ECommerceApp.Tests.Services.Order
             return orderVm;
         }
 
-        private List<OrderItemVm> CreateDefaultOrderItemVm(OrderVm orderVm, int count = 3)
+        private List<OrderItemDto> CreateDefaultOrderItemVm(OrderVm orderVm, int count = 3)
         {
-            var orderItems = new List<OrderItemVm>();
+            var orderItems = new List<OrderItemDto>();
             
             for (int i = 1; i <= count; i++)
             {
-                var orderItem = new OrderItemVm()
+                var orderItem = new OrderItemDto()
                 {
                     Id = new Random().Next(1, 999),
                     ItemId = new Random().Next(1, 999),
@@ -672,7 +672,7 @@ namespace ECommerceApp.Tests.Services.Order
             return orderItems;
         }
 
-        private List<OrderItem> CreateDefaultOrderItems(List<OrderItemVm> orderItemsIn)
+        private List<OrderItem> CreateDefaultOrderItems(List<OrderItemDto> orderItemsIn)
         {
             var orderItems = new List<OrderItem>();
 

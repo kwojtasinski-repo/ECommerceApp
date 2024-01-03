@@ -34,7 +34,7 @@ namespace ECommerceApp.Application
                 Id = dto.Id,
                 CustomerId = dto.CustomerId,
                 CurrencyId = dto.CurrencyId,
-                OrderItems = dto.OrderItems.Select(oi => new OrderItemVm { Id = oi.Id }).ToList()
+                OrderItems = dto.OrderItems.Select(oi => new OrderItemDto { Id = oi.Id }).ToList()
             };
 
             return order;
@@ -89,7 +89,7 @@ namespace ECommerceApp.Application
                 IsPaid = newOrderVm.IsPaid,
                 Number = newOrderVm.Number,
                 Ordered = newOrderVm.Ordered,
-                OrderItems = newOrderVm.OrderItems.Select(oi => oi.AsOrderVm()).ToList()
+                OrderItems = newOrderVm.OrderItems.ToList()
             };
 
             return order;
@@ -112,7 +112,7 @@ namespace ECommerceApp.Application
                 Number = orderVm.Number,
                 Ordered = orderVm.Ordered,
                 CurrencyId = orderVm.CurrencyId,
-                OrderItems = orderVm.OrderItems.Select(oi => oi.AsNewOrderItemVm()).ToList()
+                OrderItems = orderVm.OrderItems.ToList()
             };
 
             return order;

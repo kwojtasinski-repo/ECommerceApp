@@ -1,12 +1,8 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Orders;
-using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Services
@@ -53,7 +49,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_order_items_should_return_list_for_realization()
         {
-            var orderItems = _service.GetOrderItemsForRealization(oi => true);
+            var orderItems = _service.GetOrderItemsForRealization(PROPER_CUSTOMER_ID);
 
             orderItems.Count().ShouldBeGreaterThan(0);
         }
