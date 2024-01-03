@@ -161,7 +161,7 @@ namespace ECommerceApp.Application.Services.Payments
         {
             var payments = _repo.GetAllPayments()
                             .Include(p => p.Currency)
-                            .Where(p => p.Number.ToString().StartsWith(searchString))
+                            .Where(p => p.Number.StartsWith(searchString))
                             .Select(p => new Payment
                             {
                                 Id = p.Id,
