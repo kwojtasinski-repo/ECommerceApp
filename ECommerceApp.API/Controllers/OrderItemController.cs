@@ -24,7 +24,7 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}")]
         [HttpGet]
-        public ActionResult<List<OrderItemVm>> GetAllOrderItems()
+        public ActionResult<List<OrderItemDto>> GetAllOrderItems()
         {
             var orderItems = _orderItemService.GetOrderItems(oi => true);
             if (orderItems.Count() == 0)
@@ -95,7 +95,7 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpGet("by-items/{id}")]
-        public ActionResult<List<OrderItemForListVm>> GetOrderItemsByItemId(int id)
+        public ActionResult<List<OrderItemDto>> GetOrderItemsByItemId(int id)
         {
             var orderItems = _orderItemService.GetOrderItemsByItemId(id);
             return Ok(orderItems);

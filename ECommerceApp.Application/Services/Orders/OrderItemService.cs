@@ -60,10 +60,10 @@ namespace ECommerceApp.Application.Services.Orders
             return orderItemVm;
         }
 
-        public IEnumerable<OrderItemVm> GetOrderItems(Expression<Func<OrderItem, bool>> expression)
+        public IEnumerable<OrderItemDto> GetOrderItems(Expression<Func<OrderItem, bool>> expression)
         {
             var orderItems = _repo.GetAll().Include(i => i.Item).Where(expression).AsNoTracking().ToList();
-            var orderItemsToShow = _mapper.Map<List<OrderItemVm>>(orderItems);
+            var orderItemsToShow = _mapper.Map<List<OrderItemDto>>(orderItems);
             return orderItemsToShow;
         }
 
@@ -207,13 +207,13 @@ namespace ECommerceApp.Application.Services.Orders
             return orderItems;
         }
 
-        public IEnumerable<OrderItemVm> GetOrderItemsByItemId(int itemId)
+        public IEnumerable<OrderItemDto> GetOrderItemsByItemId(int itemId)
         {
             var orderItems = _repo.GetAll()
                                   .Where(oi => oi.ItemId == itemId)
                                   .AsNoTracking()
                                   .ToList();
-            return _mapper.Map<List<OrderItemVm>>(orderItems);
+            return _mapper.Map<List<OrderItemDto>>(orderItems);
         }
     }
 }
