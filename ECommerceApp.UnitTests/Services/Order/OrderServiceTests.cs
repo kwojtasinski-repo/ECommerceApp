@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.Services.Customers;
@@ -353,14 +354,14 @@ namespace ECommerceApp.Tests.Services.Order
             _orderRepository.Setup(o => o.GetAllOrderItems()).Returns(orderItems.AsQueryable());
             _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
             _itemService.Setup(o => o.GetItems()).Returns(items.AsQueryable());
-            _orderItemService.Setup(o => o.AddOrderItem(It.IsAny<OrderItemVm>())).Verifiable();
+            _orderItemService.Setup(o => o.AddOrderItem(It.IsAny<OrderItemDto>())).Verifiable();
             var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object);
 
             orderService.UpdateOrder(orderVm);
 
             _orderRepository.Verify(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>()), Times.Once);
             orderVm.Cost.Should().BeGreaterThan(cost);
-            _orderItemService.Verify(oi => oi.AddOrderItem(It.IsAny<OrderItemVm>()), Times.Exactly(orderItems.Count));
+            _orderItemService.Verify(oi => oi.AddOrderItem(It.IsAny<OrderItemDto>()), Times.Exactly(orderItems.Count));
         }
 
         [Fact]

@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
@@ -28,7 +29,7 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
             var itemId = 1;
             var userId = Guid.NewGuid().ToString(); 
             var quantity = 1;
-            var orderItem = CreateOrderItemVm(id, itemId, userId, quantity);
+            var orderItem = CreateOrderItemDto(id, itemId, userId, quantity);
             var orderItemService = new OrderItemService(_orderItemRepository.Object, _mapper);
 
             orderItemService.AddOrderItem(orderItem);
@@ -43,7 +44,7 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
             var itemId = 1;
             var userId = Guid.NewGuid().ToString();
             var quantity = 1;
-            var orderItem = CreateOrderItemVm(id, itemId, userId, quantity);
+            var orderItem = CreateOrderItemDto(id, itemId, userId, quantity);
             var orderItemService = new OrderItemService(_orderItemRepository.Object, _mapper);
 
             Action action = () => orderItemService.AddOrderItem(orderItem);
@@ -58,7 +59,7 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
             var itemId = 1;
             var userId = Guid.NewGuid().ToString();
             var quantity = 1;
-            var orderItem = CreateOrderItemVm(id, itemId, userId, quantity);
+            var orderItem = CreateOrderItemDto(id, itemId, userId, quantity);
             var orderItemFromDb = CreateOrderItem(id, itemId, userId, quantity);
             _orderItemRepository.Setup(oi => oi.GetAllOrderItems()).Returns((new List<Domain.Model.OrderItem> { orderItemFromDb }).AsQueryable());
             var orderItemService = new OrderItemService(_orderItemRepository.Object, _mapper);
@@ -96,7 +97,7 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
         [Fact]
         public void given_valid_order_item_should_update()
         {
-            var orderItem = CreateOrderItemVm(1, 1, "gs", 1);
+            var orderItem = new OrderItemVm { Id = 1, ItemId = 1, UserId = "gs", ItemOrderQuantity = 1 };
             var orderItemService = new OrderItemService(_orderItemRepository.Object, _mapper);
 
             orderItemService.UpdateOrderItems(new List<OrderItemVm> { orderItem });
@@ -162,9 +163,9 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
-        private OrderItemVm CreateOrderItemVm(int id, int itemId, string userId, int quantity, int? orderId = null)
+        private static OrderItemDto CreateOrderItemDto(int id, int itemId, string userId, int quantity, int? orderId = null)
         {
-            var orderItem = new OrderItemVm
+            var orderItem = new OrderItemDto
             {
                 Id = id,
                 ItemId = itemId,
