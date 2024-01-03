@@ -105,8 +105,9 @@ namespace ECommerceApp.Web.Controllers
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}")]
         public IActionResult DeletePayment(int id)
         {
-            _paymentService.DeletePayment(id);
-            return Json("deleted");
+            return _paymentService.DeletePayment(id) 
+                ? Json("deleted")
+                : NotFound();
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]

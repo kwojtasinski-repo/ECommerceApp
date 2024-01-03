@@ -89,14 +89,14 @@ namespace ECommerceApp.Application.Services.Payments
             return payment.Id;
         }
 
-        public void DeletePayment(int id)
+        public bool DeletePayment(int id)
         {
             var payment = _repo.GetById(id);
             var order = _orderService.Get(payment.OrderId);
             order.IsPaid = false;
             order.PaymentId = null;
             _orderService.Update(order);
-            _repo.Delete(payment);
+            return _repo.Delete(payment);
         }
 
         public PaymentVm GetPaymentById(int id)
