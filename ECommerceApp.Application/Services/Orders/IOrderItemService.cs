@@ -1,7 +1,5 @@
 ﻿using ECommerceApp.Application.DTO;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.OrderItem;
-using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
@@ -10,7 +8,7 @@ using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Orders
 {
-    public interface IOrderItemService : IAbstractService<OrderItemVm, IOrderItemRepository, OrderItem>
+    public interface IOrderItemService
     {
         int AddOrderItem(OrderItemDto model);
         OrderItemDto GetOrderItemDetails(int id);

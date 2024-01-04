@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
-using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.OrderItem;
@@ -14,10 +13,15 @@ using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Orders
 {
-    public class OrderItemService : AbstractService<OrderItemVm, IOrderItemRepository, OrderItem>, IOrderItemService
+    public class OrderItemService : IOrderItemService
     {
-        public OrderItemService(IOrderItemRepository orderItemRepository, IMapper mapper) : base(orderItemRepository, mapper)
+        private readonly IMapper _mapper;
+        private readonly IOrderItemRepository _orderItemRepository;
+
+        public OrderItemService(IOrderItemRepository orderItemRepository, IMapper mapper)
         {
+            _mapper = mapper;
+            _orderItemRepository = orderItemRepository;
         }
 
         public int AddOrderItem(OrderItemDto model)
@@ -28,18 +32,18 @@ namespace ECommerceApp.Application.Services.Orders
             }
 
             var orderItem = _mapper.Map<OrderItem>(model);
-            var orderItemExist = _repo.GetAllOrderItems()
+            var orderItemExist = _orderItemRepository.GetAllOrderItems()
                                       .FirstOrDefault(oi => oi.ItemId == model.ItemId && oi.UserId == model.UserId && oi.OrderId == null);
             int id;
             if (orderItemExist != null)
             {
                 id = orderItemExist.Id;
                 orderItemExist.ItemOrderQuantity += 1;
-                _repo.UpdateOrderItem(orderItemExist);
+                _orderItemRepository.UpdateOrderItem(orderItemExist);
             }
             else if (model.Id == 0)
             {
-                id = _repo.AddOrderItem(orderItem);
+                id = _orderItemRepository.AddOrderItem(orderItem);
             }
             else
             {
@@ -50,33 +54,33 @@ namespace ECommerceApp.Application.Services.Orders
 
         public void DeleteOrderItem(int id)
         {
-            _repo.DeleteOrderItem(id);
+            _orderItemRepository.DeleteOrderItem(id);
         }
 
         public OrderItemDto GetOrderItemDetails(int id)
         {
-            var orderItem = _repo.GetAll().Include(i => i.Item).Where(oi => oi.Id == id).AsNoTracking().FirstOrDefault();
+            var orderItem = _orderItemRepository.GetAll().Include(i => i.Item).Where(oi => oi.Id == id).AsNoTracking().FirstOrDefault();
             var orderItemVm = _mapper.Map<OrderItemDto>(orderItem);
             return orderItemVm;
         }
 
         public IEnumerable<OrderItemDto> GetOrderItems(Expression<Func<OrderItem, bool>> expression)
         {
-            var orderItems = _repo.GetAll().Include(i => i.Item).Where(expression).AsNoTracking().ToList();
+            var orderItems = _orderItemRepository.GetAll().Include(i => i.Item).Where(expression).AsNoTracking().ToList();
             var orderItemsToShow = _mapper.Map<List<OrderItemDto>>(orderItems);
             return orderItemsToShow;
         }
 
         public IEnumerable<OrderItemDto> GetOrderItemsForRealization(string userId)
         {
-            var orderItems = _repo.GetAll().Include(i => i.Item).Where(oi => oi.UserId == userId && oi.OrderId == null).AsNoTracking().ToList();
+            var orderItems = _orderItemRepository.GetAll().Include(i => i.Item).Where(oi => oi.UserId == userId && oi.OrderId == null).AsNoTracking().ToList();
             var orderItemsToShow = _mapper.Map<List<OrderItemDto>>(orderItems);
             return orderItemsToShow;
         }
 
         public ListForOrderItemVm GetOrderItems(int pageSize, int pageNo, string searchString)
         {
-            var itemOrder = _repo.GetAllOrderItems().Where(oi => oi.Item.Name.StartsWith(searchString) ||
+            var itemOrder = _orderItemRepository.GetAllOrderItems().Where(oi => oi.Item.Name.StartsWith(searchString) ||
                             oi.Item.Brand.Name.StartsWith(searchString) || oi.Item.Type.Name.StartsWith(searchString))
                             .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
                             .ToList();
@@ -96,7 +100,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public bool OrderItemExists(int id)
         {
-            return _repo.GetAll().AsNoTracking().Any(oi => oi.Id == id);
+            return _orderItemRepository.GetAll().AsNoTracking().Any(oi => oi.Id == id);
         }
 
         public void UpdateOrderItem(OrderItemDto model)
@@ -106,13 +110,13 @@ namespace ECommerceApp.Application.Services.Orders
                 throw new BusinessException($"{typeof(OrderItemDto).Name} cannot be null");
             }
 
-            var orderItem = _repo.GetById(model.Id) ?? throw new BusinessException($"OrderItem with id '{model.Id}' was not found");
+            var orderItem = _orderItemRepository.GetById(model.Id) ?? throw new BusinessException($"OrderItem with id '{model.Id}' was not found");
             orderItem.ItemOrderQuantity = model.ItemOrderQuantity;
             if (model.OrderId.HasValue)
             {
                 orderItem.OrderId = model.OrderId.Value;
             }
-            _repo.UpdateOrderItem(orderItem);
+            _orderItemRepository.UpdateOrderItem(orderItem);
         }
 
         public void UpdateOrderItems(IEnumerable<OrderItemDto> orderItemsVm)
@@ -123,30 +127,30 @@ namespace ECommerceApp.Application.Services.Orders
             }
 
             var orderItems = _mapper.Map<List<OrderItem>>(orderItemsVm);
-            _repo.UpdateRange(orderItems);
+            _orderItemRepository.UpdateRange(orderItems);
         }
 
         public int OrderItemCount(string userId)
         {
-            return _repo.GetAllOrderItems()
+            return _orderItemRepository.GetAllOrderItems()
                         .Where(oi => oi.UserId == userId && oi.OrderId == null)
                         .Count();
         }
 
         public int AddOrderItem(int itemId, string userId)
         {
-            var orderItemExist = _repo.GetAll().Where(oi => oi.ItemId == itemId && oi.UserId == userId && oi.OrderId == null).FirstOrDefault();
+            var orderItemExist = _orderItemRepository.GetAll().Where(oi => oi.ItemId == itemId && oi.UserId == userId && oi.OrderId == null).FirstOrDefault();
             int id;
             if (orderItemExist != null)
             {
                 id = orderItemExist.Id;
                 orderItemExist.ItemOrderQuantity += 1;
-                _repo.UpdateOrderItem(orderItemExist);
+                _orderItemRepository.UpdateOrderItem(orderItemExist);
             }
             else
             {
                 var orderItem = CreateOrderItem(itemId, userId);
-                id = _repo.AddOrderItem(orderItem);
+                id = _orderItemRepository.AddOrderItem(orderItem);
             }
             return id;
         }
@@ -165,7 +169,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public ListForOrderItemVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo)
         {
-            var itemOrder = _repo.GetAllOrderItems().Where(oi => oi.ItemId == id)
+            var itemOrder = _orderItemRepository.GetAllOrderItems().Where(oi => oi.ItemId == id)
                             .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
                             .ToList();
             var itemOrderToShow = itemOrder.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
@@ -184,7 +188,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public ListForOrderItemVm GetOrderItemsNotOrderedByUserId(string userId, int pageSize, int pageNo)
         {
-            var itemOrders = _repo.GetAllOrderItems().Include(i => i.Item).Where(oi => oi.UserId == userId && oi.OrderId == null)
+            var itemOrders = _orderItemRepository.GetAllOrderItems().Include(i => i.Item).Where(oi => oi.UserId == userId && oi.OrderId == null)
                             .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider);
 
             var itemOrdersToShow = itemOrders.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
@@ -203,13 +207,13 @@ namespace ECommerceApp.Application.Services.Orders
 
         public IQueryable<OrderItem> GetOrderItems()
         {
-            var orderItems = _repo.GetAll();
+            var orderItems = _orderItemRepository.GetAll();
             return orderItems;
         }
 
         public IEnumerable<OrderItemDto> GetOrderItemsByItemId(int itemId)
         {
-            var orderItems = _repo.GetAll()
+            var orderItems = _orderItemRepository.GetAll()
                                   .Where(oi => oi.ItemId == itemId)
                                   .AsNoTracking()
                                   .ToList();
