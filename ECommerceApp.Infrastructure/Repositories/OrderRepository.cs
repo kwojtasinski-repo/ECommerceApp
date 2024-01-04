@@ -2,10 +2,7 @@
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
@@ -15,27 +12,49 @@ namespace ECommerceApp.Infrastructure.Repositories
         {
         }
 
-        public void DeleteOrder(int orderId)
+        public bool DeleteOrder(int orderId)
         {
             var order = _context.Orders
                 .Include(inc => inc.CouponUsed)
-                .Include(inc => inc.Customer)
-                .Include(inc => inc.Payment)
                 .Include(inc => inc.Refund)
+                .Include(p => p.OrderItems)
+                .Select(o => new Order
+                {
+                        Id = o.Id,
+                        CouponUsed = o.CouponUsed,
+                        Refund = o.Refund,
+                        OrderItems = o.OrderItems,
+                        Payment = _context.Payments.FirstOrDefault(p => p.OrderId == orderId)
+                })
                 .FirstOrDefault(o => o.Id == orderId);
 
-            if (order != null)
+            if (order == null)
             {
-                var orderWithItems = _context.Orders.Include(p => p.OrderItems)
-                                .SingleOrDefault(p => p.Id == orderId);
-
-                foreach (var orderItem in orderWithItems.OrderItems.ToList())
-                {
-                    _context.OrderItem.Remove(orderItem);
-                }
-                _context.Orders.Remove(order);
-                _context.SaveChanges();
+                return false;
             }
+
+            foreach (var orderItem in order.OrderItems)
+            {
+                _context.OrderItem.Remove(orderItem);
+            }
+
+            if (order.Payment is not null)
+            {
+                _context.Payments.Remove(order.Payment);
+            }
+
+            if (order.CouponUsed is not null)
+            {
+                _context.CouponUsed.Remove(order.CouponUsed);
+            }
+
+            if (order.Refund is not null)
+            {
+                _context.Refunds.Remove(order.Refund);
+            }
+
+            _context.Orders.Remove(order);
+            return _context.SaveChanges() > 0;
         }
 
         public int AddOrder(Order order)

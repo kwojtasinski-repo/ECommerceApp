@@ -328,8 +328,9 @@ namespace ECommerceApp.Web.Controllers
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         public IActionResult DeleteOrder(int id)
         {
-            _orderService.DeleteOrder(id);
-            return Json("deleted");
+            return _orderService.DeleteOrder(id)
+                ? Json("deleted")
+                : NotFound();
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]

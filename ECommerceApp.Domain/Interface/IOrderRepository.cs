@@ -5,7 +5,7 @@ namespace ECommerceApp.Domain.Interface
 {
     public interface IOrderRepository : IGenericRepository<Order>
     {
-        void DeleteOrder(int orderId);
+        bool DeleteOrder(int orderId);
         int AddOrder(Order order);
         Order GetOrderById(int id);
         IQueryable<Order> GetAllOrders();

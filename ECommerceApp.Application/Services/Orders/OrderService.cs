@@ -130,7 +130,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public bool DeleteOrder(int id)
         {
-            return Delete(new OrderDto { Id = id });
+            return _orderRepository.DeleteOrder(id);
         }
 
         public void DeleteRefundFromOrder(int id)
@@ -192,7 +192,7 @@ namespace ECommerceApp.Application.Services.Orders
         {
             ValidatePageSizeAndPageNo(pageSize, pageNo);
 
-            var orders = _orderRepository.GetAllOrders().Where(o => o.Number.ToString().StartsWith(searchString))
+            var orders = _orderRepository.GetAllOrders().Where(o => o.Number.StartsWith(searchString))
                             .Include(c => c.Currency)
                             .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
                             .ToList();
@@ -513,7 +513,7 @@ namespace ECommerceApp.Application.Services.Orders
             ValidatePageSizeAndPageNo(pageSize, pageNo);
 
             var orders = _orderRepository.GetAll().Where(o => o.IsPaid == true && o.IsDelivered == false)
-                            .Where(o => o.Number.ToString().StartsWith(searchString))
+                            .Where(o => o.Number.StartsWith(searchString))
                             .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider);
 
             var ordersToShow = orders.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
