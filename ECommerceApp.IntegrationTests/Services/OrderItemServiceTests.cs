@@ -123,7 +123,7 @@ namespace ECommerceApp.IntegrationTests.Services
 
             _service.UpdateOrderItem(orderItem);
 
-            var orderUpdated = _service.Get(id);
+            var orderUpdated = _service.GetOrderItemDetails(id);
             orderUpdated.ShouldNotBeNull();
             orderUpdated.OrderId.HasValue.ShouldBeTrue();
             orderUpdated.OrderId.Value.ShouldBe(orderId);
@@ -137,7 +137,7 @@ namespace ECommerceApp.IntegrationTests.Services
 
             _service.DeleteOrderItem(id);
 
-            var itemDeleted = _service.Get(id);
+            var itemDeleted = _service.GetOrderItemDetails(id);
             itemDeleted.ShouldBeNull();
         }
 
