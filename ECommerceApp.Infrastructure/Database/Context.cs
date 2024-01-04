@@ -143,11 +143,5 @@ namespace ECommerceApp.Infrastructure.Database
                 property.ValueGenerated = ValueGenerated.OnAdd;
             }
         }
-
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            base.OnConfiguring(optionsBuilder);
-            optionsBuilder.LogTo(System.Console.WriteLine);
-        }
     }
 }
