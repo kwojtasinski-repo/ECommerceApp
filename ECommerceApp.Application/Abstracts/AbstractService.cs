@@ -54,9 +54,9 @@ namespace ECommerceApp.Application.Abstracts
             _repo.Delete(entity);
         }
 
-        public virtual void Delete(int id)
+        public virtual bool Delete(int id)
         {
-            _repo.Delete(id);
+            return _repo.Delete(id);
         }
 
         public virtual T Get(int id)

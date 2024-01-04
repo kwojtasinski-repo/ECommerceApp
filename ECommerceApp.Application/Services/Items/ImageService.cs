@@ -86,14 +86,17 @@ namespace ECommerceApp.Application.Services.Items
             return id;
         }
 
-        public override void Delete(int id)
+        public override bool Delete(int id)
         {
             var image = _repo.GetById(id);
-            if (image != null)
+            if (image == null)
             {
-                _repo.Delete(image);
-                _fileStore.DeleteFile(image.SourcePath);
+                return false;
             }
+
+            var deleted = _repo.Delete(image);
+            _fileStore.DeleteFile(image.SourcePath);
+            return deleted;
         }
 
         public override ImageVm Get(int id)

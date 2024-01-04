@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using ECommerceApp.Application;
-using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Application.ViewModels.Refund;
 using Microsoft.AspNetCore.Authorization;
@@ -88,7 +87,13 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddOrder(OrderVm model)
         {
-            var id = _orderService.AddOrder(model);
+            var id = _orderService.AddOrder(new AddOrderDto
+            {
+                Id = model.Id,
+                CustomerId = model.CustomerId,
+                OrderItems = model.OrderItems?.Select(oi => new OrderItemsIdsDto { Id = oi.Id }).ToList() 
+                    ?? new List<OrderItemsIdsDto>(),
+            });
             return RedirectToAction("AddOrderDetails", new { orderId = id });
         }
 
@@ -133,15 +138,23 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult OrderRealization(NewOrderVm model)
         {
             int orderId;
+            var addOrderDto = new AddOrderDto
+            {
+                Id = model.Id,
+                CustomerId = model.CustomerId,
+                PromoCode = model.RefCode,
+                OrderItems = model.OrderItems?.Select(oi => new OrderItemsIdsDto { Id = oi.Id }).ToList()
+                    ?? new List<OrderItemsIdsDto>()
+            };
             if (model.CustomerData)
             {
-                orderId = _orderService.AddOrder(model.AsOrderVm());
+                orderId = _orderService.AddOrder(addOrderDto);
             }
             else
             {
                 var customerId = _customerService.AddCustomerDetails(model.NewCustomer);
-                model.CustomerId = customerId;
-                orderId = _orderService.AddOrder(model.AsOrderVm());
+                addOrderDto.CustomerId = customerId;
+                orderId = _orderService.AddOrder(addOrderDto);
             }
             model.Id = orderId;
             UseCouponIfEntered(model);
@@ -173,7 +186,7 @@ namespace ECommerceApp.Web.Controllers
                 {
                     oi.UserId = model.UserId;
                 });
-                _orderService.UpdateOrder(model.AsOrderVm());
+                _orderService.UpdateOrder(model.AsOrderDto());
             }
             else
             {
@@ -302,7 +315,7 @@ namespace ECommerceApp.Web.Controllers
                 {
                     oi.UserId = model.UserId;
                 });
-                _orderService.UpdateOrder(model.AsOrderVm());
+                _orderService.UpdateOrder(model.AsOrderDto());
             }
 
             UseCouponIfEntered(model);

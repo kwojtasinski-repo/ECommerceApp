@@ -7,7 +7,7 @@ using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Order
 {
-    public class OrderDto
+    public class OrderDto2
     {
         public int Id { get; set; }
         [Column(TypeName = "decimal(18,2)")]
@@ -17,7 +17,7 @@ namespace ECommerceApp.Application.ViewModels.Order
 
         public ICollection<OrderItemsIdsVm> OrderItems { get; set; } // 1:Many relation
 
-        public class OrderVmValidation : AbstractValidator<OrderDto>
+        public class OrderVmValidation : AbstractValidator<OrderDto2>
         {
             public OrderVmValidation()
             {

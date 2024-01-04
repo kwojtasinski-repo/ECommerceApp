@@ -10,6 +10,7 @@ using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -26,14 +27,17 @@ namespace ECommerceApp.Application.Services.Orders
         private readonly ICouponService _couponService;
         private readonly ICouponUsedRepository _couponUsedRepository;
         private readonly ICustomerService _customerService;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public OrderService(IOrderRepository orderRepo, IMapper mapper, IOrderItemService orderItemService, IItemService itemService, ICouponService couponService, ICouponUsedRepository couponUsedRepository, ICustomerService customerService) : base(orderRepo, mapper)
+        public OrderService(IOrderRepository orderRepo, IMapper mapper, IOrderItemService orderItemService, IItemService itemService, ICouponService couponService, ICouponUsedRepository couponUsedRepository, ICustomerService customerService,
+                IHttpContextAccessor httpContextAccessor) : base(orderRepo, mapper)
         {
             _orderItemService = orderItemService;
             _itemService = itemService;
             _couponService = couponService;
             _couponUsedRepository = couponUsedRepository;
             _customerService = customerService;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public override OrderVm Get(int id)
@@ -92,11 +96,11 @@ namespace ECommerceApp.Application.Services.Orders
             _repo.Update(order);
         }
 
-        public int AddOrder(OrderVm model)
+        public int AddOrder(AddOrderDto model)
         {
             if (model is null)
             {
-                throw new BusinessException($"{typeof(OrderVm).Name} cannot be null");
+                throw new BusinessException($"{typeof(AddOrderDto).Name} cannot be null");
             }
 
             if (model.Id != 0)
@@ -104,40 +108,16 @@ namespace ECommerceApp.Application.Services.Orders
                 throw new BusinessException("When adding object Id should be equals 0");
             }
 
-            model.CurrencyId = 1;
-            Random random = new Random();
-
-            if (model.Number == 0)
-            {
-                model.Number = random.Next(100, 10000);
-            }
-
-            var dateNotSet = new DateTime();
-
-            if (model.Ordered == dateNotSet)
-            {
-                model.Ordered = DateTime.Now;
-            }
-
-            var ids = model.OrderItems?.Select(oi => oi.Id)?.ToList() ?? new List<int>();
-            var orderItemsQueryable = _repo.GetAllOrderItems();
-            var orderItems = (from orderItemId in ids
-                              join orderItem in orderItemsQueryable
-                                 on orderItemId equals orderItem.Id
-                              select orderItem).AsQueryable().Include(i => i.Item).AsNoTracking().ToList();
-
-            CheckOrderItemsOrderByUser(model, orderItems);
-            CalculateCost(model, orderItems);
-
-            var order = _mapper.Map<Order>(model);
-            var id = _repo.AddOrder(order);
-
-            return id;
+            var dto = model.AsDto();
+            dto.CurrencyId = 1;
+            dto.UserId = _httpContextAccessor.GetUserId();
+            dto.OrderItems.ForEach(oi => oi.UserId = dto.UserId);
+            return AddOrder(dto);
         }
 
-        public void DeleteOrder(int id)
+        public bool DeleteOrder(int id)
         {
-            Delete(id);
+            return Delete(id);
         }
 
         public void DeleteRefundFromOrder(int id)
@@ -231,48 +211,43 @@ namespace ECommerceApp.Application.Services.Orders
             return orderDetailsVm;
         }
 
-        public void UpdateOrder(OrderVm orderVm)
+        public void UpdateOrder(OrderDto orderDto)
         {
-            ValidateOrder(orderVm);
+            ValidateOrder(orderDto);
             var order = _repo.GetAllOrders()
-                             .Where(o => o.Id == orderVm.Id)
+                             .Where(o => o.Id == orderDto.Id)
                              .Include(inc => inc.OrderItems).ThenInclude(inc => inc.Item)
                              .AsNoTracking()
                              .FirstOrDefault();
-            orderVm.Number = order.Number;
-            orderVm.Ordered = order.Ordered;
-            orderVm.Cost = 0;
+            orderDto.Number = order.Number;
+            orderDto.Ordered = order.Ordered;
+            orderDto.Cost = 0;
             var orderItems = order.OrderItems;
-            CheckOrderItemsOrderByUser(orderVm, orderItems);
-            AddNewOrderItemsIfNotExistAndCalculateCost(orderVm);
+            CheckOrderItemsOrderByUser(orderDto, orderItems);
+            AddNewOrderItemsIfNotExistAndCalculateCost(orderDto);
             orderItems = order.OrderItems;
-            CalculateCost(orderVm, orderItems);
-            var orderToUpdate = _mapper.Map<Order>(orderVm);
+            CalculateCost(orderDto, orderItems);
+            var orderToUpdate = _mapper.Map<Order>(orderDto);
             _repo.UpdatedOrder(orderToUpdate);
         }
 
-        private void ValidateOrder(OrderVm orderVm)
+        private static void ValidateOrder(OrderDto orderDto)
         {
-            if (orderVm is null)
+            if (orderDto is null)
             {
-                throw new BusinessException($"{typeof(OrderVm).Name} cannot be null");
+                throw new BusinessException($"{typeof(OrderDto).Name} cannot be null");
             }
 
-            if (orderVm.OrderItems is null)
-            {
-                throw new BusinessException("Items shouldnt be empty");
-            }
-
-            if (orderVm.OrderItems.Count == 0)
+            if (orderDto.OrderItems is null || orderDto.OrderItems.Count == 0)
             {
                 throw new BusinessException("Items shouldnt be empty");
             }
         }
 
-        private void CalculateCost(OrderVm orderVm, ICollection<OrderItem> itemsFromDb)
+        private static void CalculateCost(OrderDto orderDto, ICollection<OrderItem> itemsFromDb)
         {
             var orderCost = decimal.Zero;
-            foreach (var orderItem in orderVm.OrderItems ?? new List<OrderItemDto>())
+            foreach (var orderItem in orderDto.OrderItems ?? new List<OrderItemDto>())
             {
                 var item = itemsFromDb.Where(i => i.Id == orderItem.Id).FirstOrDefault();
 
@@ -285,12 +260,12 @@ namespace ECommerceApp.Application.Services.Orders
                     orderCost += item.Item.Cost * orderItem.ItemOrderQuantity;
                 }
             }
-            orderVm.Cost += orderCost;
+            orderDto.Cost += orderCost;
         }
 
-        private void AddNewOrderItemsIfNotExistAndCalculateCost(OrderVm orderVm)
+        private void AddNewOrderItemsIfNotExistAndCalculateCost(OrderDto orderDto)
         {
-            var orderItemsToAdd = orderVm.OrderItems.Where(oi => oi.Id == 0).ToList();
+            var orderItemsToAdd = orderDto.OrderItems.Where(oi => oi.Id == 0).ToList();
 
             if (orderItemsToAdd.Count == 0)
             {
@@ -305,17 +280,17 @@ namespace ECommerceApp.Application.Services.Orders
 
             foreach (var orderItem in orderItemsToAdd)
             {
-                var orderItemVm = new OrderItemDto { Id = 0, ItemId = orderItem.ItemId, ItemOrderQuantity = orderItem.ItemOrderQuantity, UserId = orderVm.UserId, OrderId = orderVm.Id };
+                var orderItemVm = new OrderItemDto { Id = 0, ItemId = orderItem.ItemId, ItemOrderQuantity = orderItem.ItemOrderQuantity, UserId = orderDto.UserId, OrderId = orderDto.Id };
                 var orderItemId = _orderItemService.AddOrderItem(orderItemVm);
                 orderItem.Id = orderItemId;
             }
 
             var orderItems = _mapper.Map<List<OrderItem>>(orderItemsToAdd);
             orderItems.ForEach(oi => oi.Item = _mapper.Map<Item>(items.Where(i => i.Id == oi.ItemId).FirstOrDefault()));
-            CalculateCost(orderVm, orderItems);
+            CalculateCost(orderDto, orderItems);
         }
 
-        private void CheckOrderItemsOrderByUser(OrderVm orderVm, ICollection<OrderItem> itemsFromDb)
+        private static void CheckOrderItemsOrderByUser(OrderDto orderVm, ICollection<OrderItem> itemsFromDb)
         {
             StringBuilder errors = new();
 
@@ -542,7 +517,7 @@ namespace ECommerceApp.Application.Services.Orders
             return ordersList;
         }
 
-        private void ValidatePageSizeAndPageNo(int pageSize, int pageNo)
+        private static void ValidatePageSizeAndPageNo(int pageSize, int pageNo)
         {
             if (pageSize <= 0)
             {
@@ -564,31 +539,31 @@ namespace ECommerceApp.Application.Services.Orders
             _repo.Update(order);
         }
 
-        public void UpdateOrderWithExistedOrderItemsIds(OrderVm orderVm)
+        public void UpdateOrderWithExistedOrderItemsIds(OrderDto orderDto)
         {
-            ValidateOrder(orderVm);
-            AddExistedOrderItemsToOrder(orderVm);
-            var order = _repo.GetAllOrders().Where(o => o.Id == orderVm.Id)
+            ValidateOrder(orderDto);
+            AddExistedOrderItemsToOrder(orderDto);
+            var order = _repo.GetAllOrders().Where(o => o.Id == orderDto.Id)
                 .Include(inc => inc.OrderItems)
                 .Include(inc => inc.OrderItems).ThenInclude(inc => inc.Item)
                 .FirstOrDefault();
-            orderVm.Number = order.Number;
-            orderVm.Ordered = order.Ordered;
-            orderVm.Cost = 0;
+            orderDto.Number = order.Number;
+            orderDto.Ordered = order.Ordered;
+            orderDto.Cost = 0;
             var orderItems = order.OrderItems;
-            CheckOrderItemsOrderByUser(orderVm, orderItems);
+            CheckOrderItemsOrderByUser(orderDto, orderItems);
             orderItems = order.OrderItems;
-            CalculateCost(orderVm, orderItems);
-            order.Cost = orderVm.Cost;
+            CalculateCost(orderDto, orderItems);
+            order.Cost = orderDto.Cost;
             _repo.UpdatedOrder(order);
         }
 
-        private void AddExistedOrderItemsToOrder(OrderVm orderVm)
+        private void AddExistedOrderItemsToOrder(OrderDto orderDto)
         {
-            var order = _repo.GetAllOrders().Where(o => o.Id == orderVm.Id)
+            var order = _repo.GetAllOrders().Where(o => o.Id == orderDto.Id)
                 .Include(inc => inc.OrderItems).FirstOrDefault();
 
-            var ids = orderVm.OrderItems.Where(oi => oi.Id > 0 && oi.OrderId == null).Select(i => i.Id);
+            var ids = orderDto.OrderItems.Where(oi => oi.Id > 0 && oi.OrderId == null).Select(i => i.Id);
             var items = (from id in ids
                          join orderItem in _orderItemService.GetOrderItems()
                          on id equals orderItem.Id
@@ -597,7 +572,7 @@ namespace ECommerceApp.Application.Services.Orders
             var errors = new StringBuilder();
             foreach (var orderItem in items)
             {
-                if (orderItem.UserId != orderVm.UserId)
+                if (orderItem.UserId != orderDto.UserId)
                 {
                     errors.AppendLine($"Order item with id: '{orderItem.Id}' is not order by this user");
                 }
@@ -611,24 +586,24 @@ namespace ECommerceApp.Application.Services.Orders
             order.OrderItems = new List<OrderItem>();
             foreach (var orderItem in items)
             {
-                orderItem.OrderId = orderVm.Id;
+                orderItem.OrderId = orderDto.Id;
                 order.OrderItems.Add(orderItem);
 
-                var oi = orderVm.OrderItems.Where(oi => oi.Id == orderItem.Id).FirstOrDefault();
+                var oi = orderDto.OrderItems.Where(oi => oi.Id == orderItem.Id).FirstOrDefault();
                 if (oi != null)
                 {
-                    orderVm.OrderItems.Remove(oi);
-                    orderVm.OrderItems.Add(_mapper.Map<OrderItemDto>(orderItem));
+                    orderDto.OrderItems.Remove(oi);
+                    orderDto.OrderItems.Add(_mapper.Map<OrderItemDto>(orderItem));
                 }
             }
 
             _repo.Update(order);
         }
 
-        public OrderVm GetOrderByIdReadOnly(int id)
+        public OrderDto GetOrderByIdReadOnly(int id)
         {
             var order = _repo.GetByIdReadOnly(id);
-            var orderVm = _mapper.Map<OrderVm>(order);
+            var orderVm = _mapper.Map<OrderDto>(order);
             return orderVm;
         }
 
@@ -638,6 +613,55 @@ namespace ECommerceApp.Application.Services.Orders
                 .Where(o => o.Id == orderId)
                 .Select(o => o.Number)
                 .FirstOrDefault();
+        }
+
+        public int AddOrderFromCart(AddOrderFromCartDto model)
+        {
+            var userId = _httpContextAccessor.GetUserId();
+            var dto = new OrderDto
+            {
+                CustomerId = model.CustomerId,
+                UserId = userId,
+                OrderItems = _orderItemService.GetOrderItemsForRealization(userId).ToList(),
+                CurrencyId = 1
+            };
+
+            var id = AddOrder(dto);
+            dto.OrderItems.ForEach(oi => oi.OrderId = id);
+            _orderItemService.UpdateOrderItems(dto.OrderItems);
+            return id;
+        }
+
+        private int AddOrder(OrderDto dto)
+        {
+            Random random = new();
+
+            if (dto.Number == 0)
+            {
+                dto.Number = random.Next(100, 10000);
+            }
+
+            var dateNotSet = new DateTime();
+
+            if (dto.Ordered == dateNotSet)
+            {
+                dto.Ordered = DateTime.Now;
+            }
+
+            var ids = dto.OrderItems?.Select(oi => oi.Id)?.ToList() ?? new List<int>();
+            var orderItemsQueryable = _repo.GetAllOrderItems();
+            var orderItems = (from orderItemId in ids
+                              join orderItem in orderItemsQueryable
+                                 on orderItemId equals orderItem.Id
+                              select orderItem).AsQueryable().Include(i => i.Item).AsNoTracking().ToList();
+
+            CheckOrderItemsOrderByUser(dto, orderItems);
+            CalculateCost(dto, orderItems);
+
+            var order = _mapper.Map<Order>(dto);
+            var id = _repo.AddOrder(order);
+
+            return id;
         }
     }
 }

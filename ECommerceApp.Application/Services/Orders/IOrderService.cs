@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Interfaces;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -10,9 +11,9 @@ namespace ECommerceApp.Application.Services.Orders
 {
     public interface IOrderService : IAbstractService<OrderVm, IOrderRepository, Order>
     {
-        int AddOrder(OrderVm order);
-        void UpdateOrder(OrderVm order);
-        void DeleteOrder(int id);
+        int AddOrder(AddOrderDto order);
+        void UpdateOrder(OrderDto order);
+        bool DeleteOrder(int id);
         ListForOrderVm GetAllOrders(int pageSize, int pageNo, string searchString);
         OrderDetailsVm GetOrderDetail(int id);
         List<OrderForListVm> GetAllOrders();
@@ -30,8 +31,9 @@ namespace ECommerceApp.Application.Services.Orders
         NewOrderVm GetOrderForRealization(int orderId);
         ListForOrderVm GetAllOrdersPaid(int pageSize, int pageNo, string searchString);
         void DispatchOrder(int orderId);
-        void UpdateOrderWithExistedOrderItemsIds(OrderVm vm);
-        OrderVm GetOrderByIdReadOnly(int id);
+        void UpdateOrderWithExistedOrderItemsIds(OrderDto dto);
+        OrderDto GetOrderByIdReadOnly(int id);
         int GetOrderNumber(int orderId);
+        int AddOrderFromCart(AddOrderFromCartDto model);
     }
 }

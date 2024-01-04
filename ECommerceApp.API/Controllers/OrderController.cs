@@ -86,9 +86,11 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
-        [HttpPut]
-        public IActionResult EditOrder([FromBody] OrderDto model)
+        [HttpPut("{id}")]
+        // TODO: Decide if user can edit order or not
+        public IActionResult EditOrder(int id, [FromBody] AddOrderDto model)
         {
+            model.Id = id;
             var vm = _orderService.GetOrderByIdReadOnly(model.Id);
             var modelExists = vm != null;
             if (!ModelState.IsValid || !modelExists)
@@ -103,20 +105,20 @@ namespace ECommerceApp.API.Controllers
             vm.UserId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             vm.OrderItems.ForEach(oi => oi.UserId = vm.UserId);
             
-            foreach(var id in model.OrderItems)
+            foreach(var orderItemId in model.OrderItems)
             {
-                if (!vm.OrderItems.Any(o => o.Id == id.Id))
+                if (!vm.OrderItems.Any(o => o.Id == orderItemId.Id))
                 {
-                    vm.OrderItems.Add(new OrderItemDto { Id = id.Id });
+                    vm.OrderItems.Add(new OrderItemDto { Id = orderItemId.Id });
                 }
             }
 
             var orderItemsToRemove = new List<OrderItemDto>();
             foreach (var orderItem in vm.OrderItems)
             {
-                var id = model.OrderItems.Where(oi => oi.Id == orderItem.Id).FirstOrDefault();
+                var orderItemId = model.OrderItems.Where(oi => oi.Id == orderItem.Id).FirstOrDefault();
 
-                if(id == null)
+                if(orderItemId == null)
                 {
                     orderItemsToRemove.Add(orderItem);
                 }
@@ -136,39 +138,24 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
-        public IActionResult AddOrder([FromBody] OrderDto model)
+        public IActionResult AddOrder([FromBody] AddOrderDto model)
         {
-            var order = model.AsVm();
-            order.UserId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
-            order.OrderItems.ForEach(oi => oi.UserId = order.UserId);
-            var id = _orderService.AddOrder(order);
+            var id = _orderService.AddOrder(model);
             model.Id = id;
             TryUseCoupon(model);
-
             return Ok(id);
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost("with-all-order-items")]
-        public IActionResult AddOrderFromOrderItems([FromBody] OrderDto model)
+        public IActionResult AddOrderFromOrderItems([FromBody] AddOrderFromCartDto model)
         {
-            model.OrderItems = new List<OrderItemsIdsVm>();
-            var order = model.AsVm();
-            var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
-            var orderItems = _orderItemService.GetOrderItemsForRealization(userId).ToList();
-            order.UserId = userId;
-            order.OrderItems = orderItems;
-            var id = _orderService.AddOrder(order);
-            order.OrderItems.ForEach(oi => oi.OrderId = id);
-            _orderItemService.UpdateOrderItems(order.OrderItems);
-            model.Id = id;
-            model.OrderItems = orderItems.Select(oi => new OrderItemsIdsVm { Id = oi.Id }).ToList();
-            TryUseCoupon(model);
-
+            var id = _orderService.AddOrderFromCart(model);
+            TryUseCoupon(new AddOrderDto { Id = id, PromoCode = model.PromoCode, OrderItems = new List<OrderItemsIdsDto>(), CustomerId = model.CustomerId });
             return Ok(id);
         }
 
-        private void TryUseCoupon(OrderDto model)
+        private void TryUseCoupon(AddOrderDto model)
         {
             if (!string.IsNullOrWhiteSpace(model.PromoCode))
             {

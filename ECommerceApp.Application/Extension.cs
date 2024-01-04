@@ -27,13 +27,12 @@ namespace ECommerceApp.Application
             return orderItem;
         }
 
-        public static OrderVm AsVm(this OrderDto dto)
+        public static OrderDto AsDto(this AddOrderDto dto)
         {
-            var order = new OrderVm
+            var order = new OrderDto
             {
                 Id = dto.Id,
                 CustomerId = dto.CustomerId,
-                CurrencyId = dto.CurrencyId,
                 OrderItems = dto.OrderItems.Select(oi => new OrderItemDto { Id = oi.Id }).ToList()
             };
 
@@ -72,9 +71,9 @@ namespace ECommerceApp.Application
             return orderItem;
         }
 
-        public static OrderVm AsOrderVm(this NewOrderVm newOrderVm)
+        public static OrderDto AsOrderDto(this NewOrderVm newOrderVm)
         {
-            var order = new OrderVm
+            var order = new OrderDto
             {
                 Id = newOrderVm.Id,
                 Cost = newOrderVm.Cost,
