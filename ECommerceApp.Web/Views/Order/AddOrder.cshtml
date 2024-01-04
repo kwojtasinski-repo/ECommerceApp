@@ -12,69 +12,64 @@
     <div class="col-md-4">
         <form asp-action="AddOrder">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" class="form-control" />
-            <input type="hidden" asp-for="UserId" class="form-control" />
-            <div class="form-group">
-                <label asp-for="Number" class="control-label">Numer zamówienia</label>
-                <input readonly asp-for="Number" class="form-control" />
-                <span asp-validation-for="Number" class="text-danger"></span>
-            </div>
+            <input type="hidden" asp-for="Order.Id" class="form-control" />
+            <input type="hidden" asp-for="Order.UserId" class="form-control" />
             <div style="display:none;" class="form-group">
-                <label asp-for="Cost" class="control-label">Koszt</label>
-                <input asp-for="Cost" value="0" class="form-control" />
-                <span asp-validation-for="Cost" class="text-danger"></span>
+                <label asp-for="Order.Cost" class="control-label">Koszt</label>
+                <input asp-for="Order.Cost" value="0" class="form-control" />
+                <span asp-validation-for="Order.Cost" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="Ordered" class="control-label">Zamówiono dnia o godzinie</label>
-                <input asp-for="Ordered" type="datetime" value="@Model.Ordered" class="form-control" readonly />
-                <span asp-validation-for="Ordered" class="text-danger"></span>
+                <label asp-for="Order.Ordered" class="control-label">Data zamówienia</label>
+                <input asp-for="Order.Ordered" type="datetime" value="@Model.Order.Ordered" class="form-control" readonly />
+                <span asp-validation-for="Order.Ordered" class="text-danger"></span>
             </div>
             <div style="display:none;" class="form-group">
-                <label asp-for="Delivered" class="control-label"></label>
-                <input type="hidden" asp-for="Delivered" class="form-control" />
-                <span asp-validation-for="Delivered" class="text-danger"></span>
+                <label asp-for="Order.Delivered" class="control-label"></label>
+                <input type="hidden" asp-for="Order.Delivered" class="form-control" />
+                <span asp-validation-for="Order.Delivered" class="text-danger"></span>
             </div>
             <div style="display:none;" class="form-group form-check">
                 <label class="form-check-label">
-                    <input type="hidden" class="form-check-input" asp-for="IsDelivered" /> @Html.DisplayNameFor(model => model.IsDelivered)
+                    <input type="hidden" class="form-check-input" asp-for="Order.IsDelivered" /> @Html.DisplayNameFor(model => model.Order.IsDelivered)
                 </label>
             </div>
             <div style="display:none;" class="form-group">
-                <label asp-for="CouponUsedId" class="control-label"></label>
-                <input type="hidden" asp-for="CouponUsedId" class="form-control" />
-                <span asp-validation-for="CouponUsedId" class="text-danger"></span>
+                <label asp-for="Order.CouponUsedId" class="control-label"></label>
+                <input type="hidden" asp-for="Order.CouponUsedId" class="form-control" />
+                <span asp-validation-for="Order.CouponUsedId" class="text-danger"></span>
             </div>
             @if (ViewBag.Customers.Count > 0)
             {
                 <div class="form-group">
-                    <label asp-for="CustomerId" class="control-label">Klient</label>
-                    <select asp-for="CustomerId" asp-items="@(new SelectList(ViewBag.Customers, "Id", "Information"))" class="custom-select"></select>
-                    <span asp-validation-for="CustomerId" class="text-danger"></span>
+                    <label asp-for="Order.CustomerId" class="control-label">Klient</label>
+                    <select asp-for="Order.CustomerId" asp-items="@(new SelectList(Model.Customers, "Id", "Information"))" class="custom-select"></select>
+                    <span asp-validation-for="Order.CustomerId" class="text-danger"></span>
                 </div>
                 <div>
-                    <a asp-controller="Customer" asp-action="AddCustomer">Dodaj dane</a>
+                    <a asp-controller="Customer" asp-action="AddCustomer" target="_blank">Dodaj dane</a>
                 </div>
             }
             else
             {
                 <div>
-                    <a asp-controller="Customer" asp-action="AddCustomer">Dodaj dane</a>
+                    <a asp-controller="Customer" asp-action="AddCustomer" target="_blank">Dodaj dane</a>
                 </div>
             }
             <div style="display:none;" class="form-group">
-                <label asp-for="PaymentId" class="control-label"></label>
-                <input type="hidden" asp-for="PaymentId" class="form-control" />
-                <span asp-validation-for="PaymentId" class="text-danger"></span>
+                <label asp-for="Order.PaymentId" class="control-label"></label>
+                <input type="hidden" asp-for="Order.PaymentId" class="form-control" />
+                <span asp-validation-for="Order.PaymentId" class="text-danger"></span>
             </div>
             <div style="display:none;" class="form-group form-check">
                 <label class="form-check-label">
-                    <input type="hidden" class="form-check-input" asp-for="IsPaid" /> @Html.DisplayNameFor(model => model.IsPaid)
+                    <input type="hidden" class="form-check-input" asp-for="Order.IsPaid" /> @Html.DisplayNameFor(model => model.Order.IsPaid)
                 </label>
             </div>
             <div style="display:none;" class="form-group">
-                <label asp-for="RefundId" class="control-label"></label>
-                <input type="hidden" asp-for="RefundId" class="form-control" />
-                <span asp-validation-for="RefundId" class="text-danger"></span>
+                <label asp-for="Order.RefundId" class="control-label"></label>
+                <input type="hidden" asp-for="Order.RefundId" class="form-control" />
+                <span asp-validation-for="Order.RefundId" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <input type="submit" value="Utwórz" class="btn btn-primary" />

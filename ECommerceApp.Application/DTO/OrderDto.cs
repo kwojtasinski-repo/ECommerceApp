@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 using System;
 
 namespace ECommerceApp.Application.DTO
@@ -10,7 +9,6 @@ namespace ECommerceApp.Application.DTO
     {
         public int Id { get; set; }
         public string Number { get; set; }
-        [Column(TypeName = "decimal(18,2)")]
         public decimal Cost { get; set; }
         public DateTime Ordered { get; set; }
         public DateTime? Delivered { get; set; }

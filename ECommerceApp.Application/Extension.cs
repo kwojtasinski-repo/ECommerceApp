@@ -98,20 +98,20 @@ namespace ECommerceApp.Application
         {
             var order = new NewOrderVm
             {
-                Id = orderVm.Id,
-                Cost = orderVm.Cost,
-                CouponUsedId = orderVm.CouponUsedId,
-                CustomerId = orderVm.CustomerId,
-                PaymentId = orderVm.PaymentId,
-                Delivered = orderVm.Delivered,
-                RefundId = orderVm.RefundId,
-                IsDelivered = orderVm.IsDelivered,
-                UserId = orderVm.UserId,
-                IsPaid = orderVm.IsPaid,
-                Number = orderVm.Number,
-                Ordered = orderVm.Ordered,
-                CurrencyId = orderVm.CurrencyId,
-                OrderItems = orderVm.OrderItems.ToList()
+                Id = orderVm.Order.Id,
+                Cost = orderVm.Order.Cost,
+                CouponUsedId = orderVm.Order.CouponUsedId,
+                CustomerId = orderVm.Order.CustomerId,
+                PaymentId = orderVm.Order.PaymentId,
+                Delivered = orderVm.Order.Delivered,
+                RefundId = orderVm.Order.RefundId,
+                IsDelivered = orderVm.Order.IsDelivered,
+                UserId = orderVm.Order.UserId,
+                IsPaid = orderVm.Order.IsPaid,
+                Number = orderVm.Order.Number,
+                Ordered = orderVm.Order.Ordered,
+                CurrencyId = orderVm.Order.CurrencyId,
+                OrderItems = orderVm.Order.OrderItems?.ToList() ?? new List<OrderItemDto>()
             };
 
             return order;

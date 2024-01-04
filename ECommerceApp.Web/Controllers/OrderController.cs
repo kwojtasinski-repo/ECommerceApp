@@ -71,16 +71,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult AddOrder()
         {
-            Random random = new Random();
-            var orderDate = System.DateTime.Now;
-            ViewBag.Date = orderDate;
-            var userId = GetUserId();
-            //var customers = _orderService.GetAllCustomers().ToList();
-            var customers = _customerService.GetCustomersInformationByUserId(userId).ToList();
-            ViewBag.Customers = customers;
-            var order = new OrderVm() { Number = random.Next(100, 10000).ToString(), Ordered = orderDate };
-            order.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            return View(order);
+            return View(_orderService.InitOrder());
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
@@ -89,9 +80,9 @@ namespace ECommerceApp.Web.Controllers
         {
             var id = _orderService.AddOrder(new AddOrderDto
             {
-                Id = model.Id,
-                CustomerId = model.CustomerId,
-                OrderItems = model.OrderItems?.Select(oi => new OrderItemsIdsDto { Id = oi.Id }).ToList() 
+                Id = model.Order.Id,
+                CustomerId = model.Order.CustomerId,
+                OrderItems = model.Order.OrderItems?.Select(oi => new OrderItemsIdsDto { Id = oi.Id }).ToList() 
                     ?? new List<OrderItemsIdsDto>(),
             });
             return RedirectToAction("AddOrderDetails", new { orderId = id });
@@ -117,33 +108,24 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
-
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet]
         public IActionResult OrderRealization()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var orderItems = _orderItemService.GetOrderItemsForRealization(userId).ToList();
-            Random random = new Random();
-            var orderDate = System.DateTime.Now;
-            ViewBag.Date = orderDate;
-            var customers = _customerService.GetCustomersInformationByUserId(userId).ToList();
-            ViewBag.Customers = customers;
-            var order = new NewOrderVm() { Number = random.Next(100, 10000).ToString(), OrderItems = orderItems, UserId = userId, NewCustomer = new CustomerDetailsDto { Addresses = new List<AddressDto> { new AddressDto() }, ContactDetails = new List<ContactDetailDto> { new ContactDetailDto() } } };
-            return View(order);
+            return View(_orderService.InitOrder());
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
-        public IActionResult OrderRealization(NewOrderVm model)
+        public IActionResult OrderRealization(OrderVm model)
         {
             int orderId;
             var addOrderDto = new AddOrderDto
             {
-                Id = model.Id,
-                CustomerId = model.CustomerId,
-                PromoCode = model.RefCode,
-                OrderItems = model.OrderItems?.Select(oi => new OrderItemsIdsDto { Id = oi.Id }).ToList()
+                Id = model.Order.Id,
+                CustomerId = model.Order.CustomerId,
+                PromoCode = model.PromoCode,
+                OrderItems = model.Order.OrderItems?.Select(oi => new OrderItemsIdsDto { Id = oi.Id }).ToList()
                     ?? new List<OrderItemsIdsDto>()
             };
             if (model.CustomerData)
@@ -156,8 +138,18 @@ namespace ECommerceApp.Web.Controllers
                 addOrderDto.CustomerId = customerId;
                 orderId = _orderService.AddOrder(addOrderDto);
             }
-            model.Id = orderId;
-            UseCouponIfEntered(model);
+            model.Order.Id = orderId;
+            UseCouponIfEntered(new NewOrderVm
+            {
+                Id = orderId,
+                Number = model.Order.Number,
+                RefCode = model.PromoCode,
+                Ordered = model.Order.Ordered,
+                CurrencyId = model.Order.CurrencyId,
+                CustomerId = model.Order.CustomerId,
+                Cost = model.Order.Cost,
+                UserId = model.Order.UserId,
+            });
             return RedirectToAction("AddOrderSummary", new { id = orderId });
         }
 

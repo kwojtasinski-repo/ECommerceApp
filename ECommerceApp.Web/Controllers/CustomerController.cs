@@ -79,7 +79,6 @@ namespace ECommerceApp.Web.Controllers
         [Authorize]
         public IActionResult AddCustomer()
         {
-
             var customer = new CustomerVm
             {
                 Customer = new CustomerDto { UserId = GetUserId() },
@@ -94,7 +93,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddCustomer(CustomerVm model)
         {
-            var id = _customerService.AddCustomerDetails(new CustomerDetailsDto
+            _customerService.AddCustomerDetails(new CustomerDetailsDto
             {
                 Id = model.Customer.Id,
                 FirstName = model.Customer.FirstName,

@@ -82,7 +82,7 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_invalid_customer_id_when_searching_by_customer_id_should_return_status_code_not_found()
+        public async Task given_invalid_customer_id_when_searching_by_customer_id_should_return_status_code_ok_with_empty_list()
         {
             var client = await _factory.GetAuthenticatedClient();
             var customerId = 1432;
@@ -91,7 +91,9 @@ namespace ECommerceApp.IntegrationTests.API
                 .AllowAnyHttpStatus()
                 .GetAsync();
 
-            response.StatusCode.ShouldBe((int) HttpStatusCode.NotFound);
+            response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
+            var list = JsonConvert.DeserializeObject<List<OrderForListVm>>(await response.ResponseMessage.Content.ReadAsStringAsync());
+            list.ShouldBeEmpty();
         }
 
         [Fact]

@@ -1,20 +1,14 @@
 ﻿using AutoMapper;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Mapping;
-using ECommerceApp.Application.ViewModels.Coupon;
-using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Order
 {
     public class OrderDetailsVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Order>
     {
-        public int Number { get; set; }
-        [Column(TypeName = "decimal(18,2)")]
+        public string Number { get; set; }
         public decimal Cost { get; set; }
         public DateTime Ordered { get; set; }
         public DateTime? Delivered { get; set; }
@@ -34,7 +28,8 @@ namespace ECommerceApp.Application.ViewModels.Order
         {
             profile.CreateMap<ECommerceApp.Domain.Model.Order, OrderDetailsVm>()
                 .ForMember(o => o.CurrencyCode, src => src.MapFrom(o => o.Currency.Code))
-                .ReverseMap();
+                .ReverseMap()
+                .ForMember(o => o.Currency, src => src.Ignore());
         }
     }
 }

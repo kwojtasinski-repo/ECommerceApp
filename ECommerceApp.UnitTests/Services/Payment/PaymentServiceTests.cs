@@ -57,7 +57,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
             paymentAdded.Cost.Should().Be(cost/rate.Rate);
             paymentAdded.CurrencyId.Should().Be(currencyId);
             _paymentRepository.Verify(p => p.AddPayment(It.IsAny<Domain.Model.Payment>()), Times.Once);
-            _orderService.Verify(p => p.Update(It.IsAny<OrderVm>()), Times.Once);
+            _orderService.Verify(p => p.Update(It.IsAny<OrderDto>()), Times.Once);
         }
 
         [Fact]
@@ -112,9 +112,9 @@ namespace ECommerceApp.UnitTests.Services.Payment
             return payment;
         }
 
-        private static OrderVm CreateOrder(int orderId)
+        private static OrderDto CreateOrder(int orderId)
         {
-            var order = new OrderVm
+            var order = new OrderDto
             {
                 Id = orderId,
                 IsPaid = false,

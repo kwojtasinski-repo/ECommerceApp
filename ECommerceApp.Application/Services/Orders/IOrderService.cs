@@ -1,7 +1,5 @@
 ﻿using ECommerceApp.Application.DTO;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Order;
-using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
@@ -9,8 +7,9 @@ using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Orders
 {
-    public interface IOrderService : IAbstractService<OrderVm, IOrderRepository, Order>
+    public interface IOrderService
     {
+        OrderDto Get(int id);
         int AddOrder(AddOrderDto order);
         void UpdateOrder(OrderDto order);
         bool DeleteOrder(int id);
@@ -34,5 +33,7 @@ namespace ECommerceApp.Application.Services.Orders
         void UpdateOrderWithExistedOrderItemsIds(OrderDto dto);
         OrderDto GetOrderByIdReadOnly(int id);
         int AddOrderFromCart(AddOrderFromCartDto model);
+        OrderVm InitOrder();
+        void Update(OrderDto order);
     }
 }

@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using System.Threading.Tasks;
-using ECommerceApp.Application;
 using ECommerceApp.Application.ViewModels.CouponUsed;
 using ECommerceApp.Application.ViewModels.Order;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Infrastructure.Permissions;
 using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.Services.Orders;
@@ -40,10 +35,6 @@ namespace ECommerceApp.API.Controllers
         public ActionResult<List<OrderForListVm>> GetOrders()
         {
             var orders = _orderService.GetAllOrders();
-            if (orders.Count == 0)
-            {
-                return NotFound();
-            }
             return Ok(orders);
         }
 
@@ -52,10 +43,6 @@ namespace ECommerceApp.API.Controllers
         public ActionResult<List<OrderForListVm>> GetOrdersByCustomerId(int customerId)
         {
             var orders = _orderService.GetAllOrdersByCustomerId(customerId);
-            if (orders.Count == 0)
-            {
-                return NotFound();
-            }
             return Ok(orders);
         }
 
