@@ -126,7 +126,7 @@ namespace ECommerceApp.Tests.Services.Order
             var pageNo = 1;
             var searchString = "253";
             var orders = CreateDefaultOrders(ordersCount, o => new Domain.Model.Order { Id = o.Id, Number = o.Number, Ordered = o.Ordered, Cost = o.Cost, CouponUsedId = o.CouponUsedId, CurrencyId = o.CurrencyId, CustomerId = o.CustomerId, Delivered = o.Delivered, IsDelivered = false, IsPaid = true, PaymentId = o.PaymentId, RefundId = o.RefundId, UserId = o.UserId, OrderItems = o.OrderItems, Currency = o.Currency, Customer = o.Customer, User = o.User });
-            orders.First().Number = 25362654;
+            orders.First().Number = "25362654";
             _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
             var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object, _httpContextAccessor);
 
@@ -508,7 +508,7 @@ namespace ECommerceApp.Tests.Services.Order
         {
             var order = new Domain.Model.Order();
             order.Id = new Random().Next(1, 9999);
-            order.Number = 12345;
+            order.Number = "1234557567";
             order.Cost = new decimal(100);
             order.Ordered = DateTime.Now;
             order.IsPaid = false;
@@ -583,7 +583,7 @@ namespace ECommerceApp.Tests.Services.Order
                 CurrencyId = 1,
                 CurrencyName = "PLN",
                 Ordered = DateTime.Now,
-                Number = new Random().Next(1, 200),
+                Number = Guid.NewGuid().ToString(),
                 UserId = Guid.NewGuid().ToString(),
                 CustomerId = new Random().Next(1, 200)
             };
@@ -650,7 +650,7 @@ namespace ECommerceApp.Tests.Services.Order
                 IsDelivered = false,
                 CurrencyId = 1,
                 Ordered = DateTime.Now,
-                Number = new Random().Next(1, 200),
+                Number = Guid.NewGuid().ToString(),
                 UserId = Guid.NewGuid().ToString(),
                 CustomerId = new Random().Next(1, 200)
             };

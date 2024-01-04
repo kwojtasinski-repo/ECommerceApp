@@ -1,15 +1,11 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Mapping;
-using ECommerceApp.Application.ViewModels.Coupon;
-using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Item;
-using ECommerceApp.Application.ViewModels.OrderItem;
 using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Order
 {
@@ -21,7 +17,7 @@ namespace ECommerceApp.Application.ViewModels.Order
             Items = new List<ItemVm>();
         }
 
-        public int Number { get; set; }
+        public string Number { get; set; }
         [Column(TypeName = "decimal(18,2)")]
         public decimal Cost { get; set; }
         public DateTime Ordered { get; set; }

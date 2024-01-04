@@ -1,17 +1,15 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Mapping;
-using ECommerceApp.Application.ViewModels.OrderItem;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Order
 {
     public class OrderVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Order>
     {
-        public int Number { get; set; }
+        public string Number { get; set; }
         [Column(TypeName = "decimal(18,2)")]
         public decimal Cost { get; set; }
         public DateTime Ordered { get; set; }

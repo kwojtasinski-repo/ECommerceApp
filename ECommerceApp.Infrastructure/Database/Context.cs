@@ -61,13 +61,6 @@ namespace ECommerceApp.Infrastructure.Database
             // -------------------- RELATION 1:1 --------------------
 
             // -------------------- RELATION 1:1 --------------------
-            builder.Entity<Order>()
-                .HasOne(o => o.CouponUsed)
-                .WithOne(c => c.Order)
-                .HasForeignKey<CouponUsed>(c => c.OrderId);
-            // -------------------- RELATION 1:1 --------------------
-
-            // -------------------- RELATION 1:1 --------------------
             builder.Entity<Refund>()
                 .HasOne(r => r.Order)
                 .WithOne(o => o.Refund)

@@ -9,7 +9,7 @@ namespace ECommerceApp.Application.DTO
     public class OrderDto : IMapFrom<Domain.Model.Order>
     {
         public int Id { get; set; }
-        public int Number { get; set; }
+        public string Number { get; set; }
         [Column(TypeName = "decimal(18,2)")]
         public decimal Cost { get; set; }
         public DateTime Ordered { get; set; }

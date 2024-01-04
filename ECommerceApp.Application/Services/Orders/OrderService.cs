@@ -606,14 +606,6 @@ namespace ECommerceApp.Application.Services.Orders
             return orderVm;
         }
 
-        public int GetOrderNumber(int orderId)
-        {
-            return _repo.GetAll()
-                .Where(o => o.Id == orderId)
-                .Select(o => o.Number)
-                .FirstOrDefault();
-        }
-
         public int AddOrderFromCart(AddOrderFromCartDto model)
         {
             var userId = _httpContextAccessor.GetUserId();
@@ -633,11 +625,9 @@ namespace ECommerceApp.Application.Services.Orders
 
         private int AddOrder(OrderDto dto)
         {
-            Random random = new();
-
-            if (dto.Number == 0)
+            if (string.IsNullOrWhiteSpace(dto.Number))
             {
-                dto.Number = random.Next(100, 10000);
+                dto.Number = Guid.NewGuid().ToString();
             }
 
             var dateNotSet = new DateTime();

@@ -11,7 +11,7 @@ namespace ECommerceApp.Application.ViewModels.Payment
         public DateTime DateOfOrderPayment { get; set; }
         public int CustomerId { get; set; }
         public int OrderId { get; set; }
-        public int OrderNumber { get; set; }
+        public string OrderNumber { get; set; }
         public int CurrencyId { get; set; }
         public string CustomerName { get; set; }
         public decimal Cost { get; set; }

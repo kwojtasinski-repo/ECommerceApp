@@ -126,24 +126,24 @@ namespace ECommerceApp.IntegrationTests.Common
             var orderItem3 = new Domain.Model.OrderItem { Id = 3, ItemId = 6, ItemOrderQuantity = 1, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e" };
             context.Add(orderItem3);
 
-            var order = new Domain.Model.Order { Id = 1, Cost = new decimal(2500), CurrencyId = 1, CustomerId = 1, Number = 12445, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now };
+            var order = new Domain.Model.Order { Id = 1, Cost = new decimal(2500), CurrencyId = 1, CustomerId = 1, Number = "12445", UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now };
             context.Add(order);
-            var order2 = new Domain.Model.Order { Id = 2, Cost = new decimal(1000), CurrencyId = 1, CustomerId = 1, Number = 153465, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now, IsPaid = true, PaymentId = 1 };
+            var order2 = new Domain.Model.Order { Id = 2, Cost = new decimal(1000), CurrencyId = 1, CustomerId = 1, Number = "153465", UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now, IsPaid = true, PaymentId = 1 };
             context.Add(order2);
-            var order3 = new Domain.Model.Order { Id = 3, Cost = new decimal(1000), CurrencyId = 1, CustomerId = 1, Number = 153465, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now };
+            var order3 = new Domain.Model.Order { Id = 3, Cost = new decimal(1000), CurrencyId = 1, CustomerId = 1, Number = "1534655", UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now };
             context.Add(order3);
 
             var payment = new Domain.Model.Payment { Id = 1, CurrencyId = 1, CustomerId = 1, DateOfOrderPayment = DateTime.Now, OrderId = 2, Number = "124521", State = PaymentState.Paid, Cost = order2.Cost };
             context.Add(payment);
 
-            var order4 = new Domain.Model.Order { Id = 4, Cost = new decimal(1000), CurrencyId = 1, CustomerId = 1, Number = 153465, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now, RefundId = 1, IsPaid = true, PaymentId = 2 };
+            var order4 = new Domain.Model.Order { Id = 4, Cost = new decimal(1000), CurrencyId = 1, CustomerId = 1, Number = "1534615", UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now, RefundId = 1, IsPaid = true, PaymentId = 2 };
             context.Add(order4);
             var payment2 = new Domain.Model.Payment { Id = 2, CurrencyId = 1, CustomerId = 1, DateOfOrderPayment = DateTime.Now, OrderId = 4, Number = "124522", Cost = order4.Cost, State = PaymentState.Issued };
             context.Add(payment2);
             var refund = new Domain.Model.Refund { Id = 1, CustomerId = 1, OnWarranty = true, OrderId = 4, Reason = "TestReason", RefundDate = DateTime.Now };
             context.Add(refund);
 
-            var order5 = new Domain.Model.Order { Id = 5, Cost = new decimal(1000), CurrencyId = 1, CustomerId = 1, Number = 153465, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now, IsPaid = true, PaymentId = 3, IsDelivered = true };
+            var order5 = new Domain.Model.Order { Id = 5, Cost = new decimal(1000), CurrencyId = 1, CustomerId = 1, Number = "1253465", UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now, IsPaid = true, PaymentId = 3, IsDelivered = true };
             context.Add(order5);
             var item7 = new Domain.Model.Item { Id = 7, BrandId = 1, Cost = new decimal(1000), CurrencyId = 1, Description = "ItemTestDescriptionABC", Name = "Nr6", Quantity = 50, Warranty = "365", TypeId = 1, Brand = brand, Type = type };
             context.Add(item7);

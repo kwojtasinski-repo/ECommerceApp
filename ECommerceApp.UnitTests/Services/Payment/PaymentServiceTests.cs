@@ -93,7 +93,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
                 OrderId = orderId,
                 CustomerId = 1,
                 Number = "1234",
-                OrderNumber = 124,
+                OrderNumber = Guid.NewGuid().ToString(),
                 Cost = new decimal(100)
             };
             return payment;

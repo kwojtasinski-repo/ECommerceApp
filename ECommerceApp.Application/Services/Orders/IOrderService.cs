@@ -33,7 +33,6 @@ namespace ECommerceApp.Application.Services.Orders
         void DispatchOrder(int orderId);
         void UpdateOrderWithExistedOrderItemsIds(OrderDto dto);
         OrderDto GetOrderByIdReadOnly(int id);
-        int GetOrderNumber(int orderId);
         int AddOrderFromCart(AddOrderFromCartDto model);
     }
 }
