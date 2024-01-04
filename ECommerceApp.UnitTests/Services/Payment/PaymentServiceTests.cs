@@ -61,32 +61,6 @@ namespace ECommerceApp.UnitTests.Services.Payment
         }
 
         [Fact]
-        public void given_valid_id_payment_should_exists()
-        {
-            var id = 1;
-            var currencyId = 1;
-            var orderId = 1;
-            var payment = CreatePayment(id, currencyId, orderId);
-            _paymentRepository.Setup(p => p.GetById(id)).Returns(payment);
-            var paymentService = new PaymentService(_paymentRepository.Object, _mapper, _orderService.Object, _customerService.Object, _currencyRateService.Object, _contextAccessor);
-
-            var exists = paymentService.PaymentExists(id);
-
-            exists.Should().BeTrue();
-        }
-
-        [Fact]
-        public void given_invalid_id_payment_shouldnt_exists()
-        {
-            var id = 1;
-            var paymentService = new PaymentService(_paymentRepository.Object, _mapper, _orderService.Object, _customerService.Object, _currencyRateService.Object, _contextAccessor);
-
-            var exists = paymentService.PaymentExists(id);
-
-            exists.Should().BeFalse();
-        }
-
-        [Fact]
         public void given_valid_payment_should_update()
         {
             int id = 1;

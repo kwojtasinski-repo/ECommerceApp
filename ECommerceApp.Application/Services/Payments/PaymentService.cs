@@ -192,19 +192,6 @@ namespace ECommerceApp.Application.Services.Payments
             return paymentsList;
         }
 
-        public bool PaymentExists(int id)
-        {
-            var payment = _repo.GetById(id);
-            var exists = payment != null;
-
-            if (exists)
-            {
-                _repo.DetachEntity(payment);
-            }
-
-            return exists;
-        }
-
         public void UpdatePayment(PaymentVm model)
         {
             if (model is null)
