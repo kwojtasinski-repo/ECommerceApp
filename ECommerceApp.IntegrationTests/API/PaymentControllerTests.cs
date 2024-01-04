@@ -135,7 +135,7 @@ namespace ECommerceApp.IntegrationTests.API
             var orderItemId = JsonConvert.DeserializeObject<int>(await response.ResponseMessage.Content.ReadAsStringAsync());
             orderItemId.ShouldBeGreaterThan(0);
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
-            var order = new OrderDto { Id = 0, CurrencyId = 1, CustomerId = 1, OrderItems = new List<OrderItemsIdsVm> { new OrderItemsIdsVm { Id = orderItemId } } };
+            var order = new OrderDto { Id = 0, CurrencyId = 1, CustomerId = 1, OrderItems = new List<OrderItemDto> { new OrderItemDto { Id = orderItemId } } };
             var responseAddOrder = await client.Request($"api/orders")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(order);

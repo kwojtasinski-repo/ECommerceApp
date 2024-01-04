@@ -386,10 +386,10 @@ namespace ECommerceApp.Application.Services.Orders
             return couponUsedId;
         }
 
-        public OrderVm GetOrderById(int orderId)
+        public OrderDto GetOrderById(int orderId)
         {
             var order = _repo.GetOrderById(orderId);
-            var orderVm = _mapper.Map<OrderVm>(order);
+            var orderVm = _mapper.Map<OrderDto>(order);
             return orderVm;
         }
 
@@ -583,7 +583,6 @@ namespace ECommerceApp.Application.Services.Orders
                 throw new BusinessException(errors.ToString());
             }
 
-            order.OrderItems = new List<OrderItem>();
             foreach (var orderItem in items)
             {
                 orderItem.OrderId = orderDto.Id;

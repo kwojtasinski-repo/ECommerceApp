@@ -1,6 +1,9 @@
-﻿using ECommerceApp.Application.Services.Orders;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.IntegrationTests.Common;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using System;
 using System.Collections.Generic;
@@ -13,13 +16,14 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_id_should_delete_order()
         {
-            var order = CreateOrder(0);
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
+            var order = CreateAddOrderDto(0);
             var id = _service.AddOrder(order);
 
             _service.DeleteOrder(id);
 
-            order = _service.Get(id);
-            order.ShouldBeNull();
+            var orderAdded = _service.Get(id);
+            orderAdded.ShouldBeNull();
         }
 
         [Fact]
@@ -123,10 +127,11 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_order_should_update_with_existed_order_items()
         {
-            var order = CreateOrder(0);
-            var id = _service.AddOrder(order);
-            order.Id = id;
-            order.OrderItems.Add(new Application.DTO.OrderItemDto { Id = 2, ItemId = 5, ItemOrderQuantity = 1, UserId = PROPER_CUSTOMER_ID });
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
+            var addOrder = CreateAddOrderDto(0);
+            var id = _service.AddOrder(addOrder);
+            var order = _service.GetOrderById(id);
+            order.OrderItems.Add(new OrderItemDto { Id = 2, ItemId = 5, ItemOrderQuantity = 1, UserId = PROPER_CUSTOMER_ID });
 
             _service.UpdateOrderWithExistedOrderItemsIds(order);
 
@@ -217,31 +222,23 @@ namespace ECommerceApp.IntegrationTests.Services
             orders.Count.ShouldBeGreaterThan(0);
         }
 
-        private OrderVm CreateOrder(int id)
+        private static AddOrderDto CreateAddOrderDto(int id)
         {
-            var order = new OrderVm
+            var order = new AddOrderDto
             {
                 Id = id,
-                Cost = 100M,
-                CurrencyId = 1,
-                CustomerId = 1,
-                IsDelivered = false,
-                IsPaid = false,
-                Number = 112451,
-                Ordered = DateTime.Now,
-                UserId = PROPER_CUSTOMER_ID,
-                OrderItems = new List<Application.DTO.OrderItemDto>
+                CustomerId = id,
+                OrderItems = new List<OrderItemsIdsDto>
                 {
-                    new Application.DTO.OrderItemDto
-                    {
-                        Id = 3, 
-                        ItemId = 6, 
-                        ItemOrderQuantity = 1,
-                        UserId = PROPER_CUSTOMER_ID
-                    }
+                    new OrderItemsIdsDto { Id = 3 }
                 }
             };
             return order;
         }
-}
+
+        protected override void OverrideServicesImplementation(IServiceCollection services)
+        {
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessorTest>();
+        }
+    }
 }

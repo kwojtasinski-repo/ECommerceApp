@@ -1,12 +1,10 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Addresses;
-using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.IntegrationTests.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
-using System.Linq;
 using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Services

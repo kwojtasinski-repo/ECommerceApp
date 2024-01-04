@@ -1,8 +1,5 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Customers;
-using ECommerceApp.Application.ViewModels.Address;
-using ECommerceApp.Application.ViewModels.ContactDetail;
-using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
 using System.Collections.Generic;

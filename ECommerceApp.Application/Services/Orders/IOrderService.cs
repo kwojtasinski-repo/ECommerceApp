@@ -21,7 +21,7 @@ namespace ECommerceApp.Application.Services.Orders
         void DeleteRefundFromOrder(int id);
         void DeleteCouponUsedFromOrder(int orderId, int couponUsedId);
         int AddCouponToOrder(int couponId, NewOrderVm order);
-        OrderVm GetOrderById(int orderId);
+        OrderDto GetOrderById(int orderId);
         ListForOrderVm GetAllOrdersByCustomerId(int customerId, int pageSize, int pageNo);
         ListForOrderVm GetAllOrdersByUserId(string userId, int pageSize, int pageNo);
         List<OrderForListVm> GetAllOrdersByCustomerId(int customerId);

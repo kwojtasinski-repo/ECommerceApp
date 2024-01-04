@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.API;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.IntegrationTests.Common;
@@ -111,7 +112,7 @@ namespace ECommerceApp.IntegrationTests.API
         {
             var client = await _factory.GetAuthenticatedClient();
             var cost = 4500;
-            var order = new OrderDto { Id = 0, CurrencyId = 1, CustomerId = 1, PromoCode = "AGEWEDSGFEW" };
+            var order = new AddOrderDto { Id = 0, CustomerId = 1, PromoCode = "AGEWEDSGFEW" };
 
             var response = await client.Request($"api/orders/with-all-order-items")
                 .AllowAnyHttpStatus()
@@ -132,7 +133,7 @@ namespace ECommerceApp.IntegrationTests.API
         {
             var client = await _factory.GetAuthenticatedClient();
             var cost = 5000;
-            var order = new OrderDto { Id = 0, CurrencyId = 1, CustomerId = 1, OrderItems = new List<OrderItemsIdsVm> { new OrderItemsIdsVm { Id = 2 }, new OrderItemsIdsVm { Id = 3 } } };
+            var order = new AddOrderDto { Id = 0, CustomerId = 1, OrderItems = new List<OrderItemsIdsDto> { new OrderItemsIdsDto { Id = 2 }, new OrderItemsIdsDto { Id = 3 } } };
 
             var response = await client.Request($"api/orders")
                 .AllowAnyHttpStatus()
@@ -153,7 +154,7 @@ namespace ECommerceApp.IntegrationTests.API
         {
             var client = await _factory.GetAuthenticatedClient();
             var cost = 4500;
-            var order = new OrderDto { Id = 0, CurrencyId = 1, CustomerId = 1, OrderItems = new List<OrderItemsIdsVm> { new OrderItemsIdsVm { Id = 2 }, new OrderItemsIdsVm { Id = 3 } }, PromoCode = "AGEWEDSGFEW" };
+            var order = new AddOrderDto { Id = 0, CustomerId = 1, OrderItems = new List<OrderItemsIdsDto> { new OrderItemsIdsDto { Id = 2 }, new OrderItemsIdsDto { Id = 3 } }, PromoCode = "AGEWEDSGFEW" };
 
             var response = await client.Request($"api/orders")
                 .AllowAnyHttpStatus()
@@ -174,9 +175,9 @@ namespace ECommerceApp.IntegrationTests.API
         {
             var client = await _factory.GetAuthenticatedClient();
             var cost = new decimal(2500);
-            var order = new OrderDto { Id = 1, CurrencyId = 1, CustomerId = 1, OrderItems = new List<OrderItemsIdsVm> { new OrderItemsIdsVm { Id = 1} , new OrderItemsIdsVm { Id = 2 }, new OrderItemsIdsVm { Id = 3 } }, PromoCode = "AGEWEDSGFEW" };
+            var order = new AddOrderDto { Id = 1, CustomerId = 1, OrderItems = new List<OrderItemsIdsDto> { new OrderItemsIdsDto { Id = 1} , new OrderItemsIdsDto { Id = 2 }, new OrderItemsIdsDto { Id = 3 } }, PromoCode = "AGEWEDSGFEW" };
 
-            var response = await client.Request($"api/orders")
+            var response = await client.Request($"api/orders/{order.Id}")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(order);
 
