@@ -685,5 +685,26 @@ namespace ECommerceApp.Application.Services.Orders
                 }
             };
         }
+
+        public int FulfillOrder(OrderVm model)
+        {
+            var addOrderDto = new AddOrderDto
+            {
+                Id = model.Order.Id,
+                CustomerId = model.Order.CustomerId,
+                PromoCode = model.PromoCode,
+                OrderItems = model.Order.OrderItems?.Select(oi => new OrderItemsIdsDto { Id = oi.Id }).ToList()
+                    ?? new List<OrderItemsIdsDto>()
+            };
+
+            if (model.CustomerData)
+            {
+                return AddOrder(addOrderDto);
+            }
+
+            var customerId = _customerService.AddCustomerDetails(model.NewCustomer);
+            addOrderDto.CustomerId = customerId;
+            return AddOrder(addOrderDto);
+        }
     }
 }

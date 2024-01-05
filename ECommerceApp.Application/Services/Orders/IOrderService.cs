@@ -35,5 +35,6 @@ namespace ECommerceApp.Application.Services.Orders
         int AddOrderFromCart(AddOrderFromCartDto model);
         OrderVm InitOrder();
         void Update(OrderDto order);
+        int FulfillOrder(OrderVm model);
     }
 }

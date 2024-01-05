@@ -118,29 +118,10 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult OrderRealization(OrderVm model)
         {
-            int orderId;
-            var addOrderDto = new AddOrderDto
-            {
-                Id = model.Order.Id,
-                CustomerId = model.Order.CustomerId,
-                PromoCode = model.PromoCode,
-                OrderItems = model.Order.OrderItems?.Select(oi => new OrderItemsIdsDto { Id = oi.Id }).ToList()
-                    ?? new List<OrderItemsIdsDto>()
-            };
-            if (model.CustomerData)
-            {
-                orderId = _orderService.AddOrder(addOrderDto);
-            }
-            else
-            {
-                var customerId = _customerService.AddCustomerDetails(model.NewCustomer);
-                addOrderDto.CustomerId = customerId;
-                orderId = _orderService.AddOrder(addOrderDto);
-            }
-            model.Order.Id = orderId;
+            model.Order.Id = _orderService.FulfillOrder(model);
             UseCouponIfEntered(new NewOrderVm
             {
-                Id = orderId,
+                Id = model.Order.Id,
                 Number = model.Order.Number,
                 RefCode = model.PromoCode,
                 Ordered = model.Order.Ordered,
@@ -149,7 +130,7 @@ namespace ECommerceApp.Web.Controllers
                 Cost = model.Order.Cost,
                 UserId = model.Order.UserId,
             });
-            return RedirectToAction("AddOrderSummary", new { id = orderId });
+            return RedirectToAction("AddOrderSummary", new { id = model.Order.Id });
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
