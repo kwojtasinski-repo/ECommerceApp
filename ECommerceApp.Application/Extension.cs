@@ -62,29 +62,6 @@ namespace ECommerceApp.Application
             return order;
         }
 
-        public static NewOrderVm AsNewOrderVm(this OrderVm orderVm)
-        {
-            var order = new NewOrderVm
-            {
-                Id = orderVm.Order.Id,
-                Cost = orderVm.Order.Cost,
-                CouponUsedId = orderVm.Order.CouponUsedId,
-                CustomerId = orderVm.Order.CustomerId,
-                PaymentId = orderVm.Order.PaymentId,
-                Delivered = orderVm.Order.Delivered,
-                RefundId = orderVm.Order.RefundId,
-                IsDelivered = orderVm.Order.IsDelivered,
-                UserId = orderVm.Order.UserId,
-                IsPaid = orderVm.Order.IsPaid,
-                Number = orderVm.Order.Number,
-                Ordered = orderVm.Order.Ordered,
-                CurrencyId = orderVm.Order.CurrencyId,
-                OrderItems = orderVm.Order.OrderItems?.ToList() ?? new List<OrderItemDto>()
-            };
-
-            return order;
-        }
-
         public static Domain.Model.Item MapToItem(this ItemVm itemVm)
         {
             var item = new Domain.Model.Item()

@@ -93,7 +93,7 @@ namespace ECommerceApp.Application.Services.Orders
         {
             if (dto is null)
             {
-                throw new BusinessException($"{typeof(NewOrderVm).Name} cannot be null");
+                throw new BusinessException($"{typeof(OrderDto).Name} cannot be null");
             }
 
             var order = _mapper.Map<Order>(dto);
@@ -262,7 +262,7 @@ namespace ECommerceApp.Application.Services.Orders
             {
                 orderCost += orderItem.ItemCost * orderItem.ItemOrderQuantity;
             }
-            orderDto.Cost += orderCost;
+            orderDto.Cost = orderCost;
         }
 
         private static void CalculateCost(OrderDto orderDto, ICollection<OrderItem> itemsFromDb)

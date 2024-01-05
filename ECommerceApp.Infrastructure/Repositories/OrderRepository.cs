@@ -103,6 +103,7 @@ namespace ECommerceApp.Infrastructure.Repositories
                 .Include(inc => inc.Refund)
                 .Include(inc => inc.Payment)
                 .Include(inc => inc.Currency)
+                .Include(inc => inc.CouponUsed).ThenInclude(inc => inc.Coupon)
                 .FirstOrDefault(o => o.Id == id && !o.IsPaid);
             return order;
         }

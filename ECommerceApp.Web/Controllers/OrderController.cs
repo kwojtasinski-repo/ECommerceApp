@@ -362,7 +362,7 @@ namespace ECommerceApp.Web.Controllers
 
         private void UseCouponIfEntered(NewOrderVm model)
         {
-            var id = _couponService.CheckPromoCode(model.RefCode);
+            var id = _couponService.CheckPromoCode(model.Discount);
             if (id != 0)
             {
                 _orderService.AddCouponToOrder(id, model);

@@ -29,7 +29,7 @@ namespace ECommerceApp.Application.ViewModels.Order
         public int? PaymentId { get; set; } // 1:1 Order Payment
         public bool IsPaid { get; set; }
         public int? RefundId { get; set; } // 1:1 Order Refund
-        public string RefCode { get; set; }
+        public string Discount { get; set; }
         public int CouponId { get; set; }
         public double CostToConvert { get; set; }
         public string ReasonRefund { get; set; }
@@ -50,7 +50,7 @@ namespace ECommerceApp.Application.ViewModels.Order
         public void Mapping(Profile profile)
         {
             profile.CreateMap<NewOrderVm, ECommerceApp.Domain.Model.Order>().ReverseMap()
-                .ForMember(r => r.RefCode, opt => opt.MapFrom(r => r.CouponUsed.Coupon))
+                .ForMember(r => r.Discount, opt => opt.MapFrom(r => r.CouponUsed.Coupon.Discount))
                 .ForMember(c => c.CouponId, opt => opt.Ignore())
                 .ForMember(i => i.Items, opt => opt.Ignore())
                 .ForMember(c => c.CostToConvert, opt => opt.Ignore())
