@@ -95,17 +95,16 @@ namespace ECommerceApp.Web.Controllers
             var orderItems = new NewOrderItemVm();
             var items = _itemService.GetItemsAddToCart();
             orderItems.Items = items;
-            orderItems.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            ViewBag.ItemsJson = Json(items);
+            orderItems.OrderItem.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             return View(orderItems);
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
-        public IActionResult AddOrderItemToCart(OrderItemDto model)
+        public IActionResult AddOrderItemToCart(NewOrderItemVm model)
         {
-            var id = _orderItemService.AddOrderItem(model);
-            return RedirectToAction("Index");
+            _orderItemService.AddOrderItem(model.OrderItem);
+            return RedirectToAction("Index", controllerName: "Item");
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]

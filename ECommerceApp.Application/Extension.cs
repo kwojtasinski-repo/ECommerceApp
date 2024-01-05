@@ -39,38 +39,6 @@ namespace ECommerceApp.Application
             return order;
         }
 
-        public static OrderItemVm AsOrderVm(this NewOrderItemVm newOrderItemVm)
-        {
-            var orderItem = new OrderItemVm
-            {
-                Id = newOrderItemVm.Id,
-                CouponUsedId = newOrderItemVm.CouponUsedId,
-                ItemId = newOrderItemVm.ItemId,
-                OrderId = newOrderItemVm.OrderId,
-                ItemOrderQuantity = newOrderItemVm.ItemOrderQuantity,
-                RefundId = newOrderItemVm.RefundId,
-                UserId = newOrderItemVm.UserId
-            };
-
-            return orderItem;
-        }
-
-        public static NewOrderItemVm AsNewOrderItemVm(this OrderItemVm orderItemVm)
-        {
-            var orderItem = new NewOrderItemVm
-            {
-                Id = orderItemVm.Id,
-                CouponUsedId = orderItemVm.CouponUsedId,
-                ItemId = orderItemVm.ItemId,
-                OrderId = orderItemVm.OrderId,
-                ItemOrderQuantity = orderItemVm.ItemOrderQuantity,
-                RefundId = orderItemVm.RefundId,
-                UserId = orderItemVm.UserId,
-            };
-
-            return orderItem;
-        }
-
         public static OrderDto AsOrderDto(this NewOrderVm newOrderVm)
         {
             var order = new OrderDto
@@ -115,22 +83,6 @@ namespace ECommerceApp.Application
             };
 
             return order;
-        }
-
-        public static OrderItemVm AsOrderItemVm(this NewOrderItemVm newOrderItemVm)
-        {
-            var orderItem = new OrderItemVm
-            {
-                Id = newOrderItemVm.Id,
-                CouponUsedId = newOrderItemVm.CouponUsedId,
-                ItemId = newOrderItemVm.ItemId,
-                ItemOrderQuantity = newOrderItemVm.ItemOrderQuantity,
-                OrderId = newOrderItemVm.OrderId,
-                RefundId = newOrderItemVm.RefundId,
-                UserId = newOrderItemVm.UserId
-            };
-
-            return orderItem;
         }
 
         public static Domain.Model.Item MapToItem(this ItemVm itemVm)

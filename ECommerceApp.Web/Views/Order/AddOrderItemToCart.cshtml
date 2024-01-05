@@ -2,42 +2,41 @@
 
 @{
     ViewData["Title"] = "AddOrderItemToCart";
-    ViewBag.ItemsJson = Newtonsoft.Json.JsonConvert.SerializeObject(ViewBag.ItemsJson);
 }
 
-<h1>AddOrderItemToCart</h1>
+<h1>Dodaj przedmiot do koszyka</h1>
 
 <hr />
 <div class="row">
     <div class="col-lg-6">
         <form asp-action="AddOrderItemToCart" method="post">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" class="form-control" />
+            <input type="hidden" asp-for="OrderItem.Id" class="form-control" />
             <div class="form-group">
-                <input type="hidden" asp-for="OrderId" class="form-control" />
+                <input type="hidden" asp-for="OrderItem.OrderId" class="form-control" />
             </div>
             <div class="form-group">
                 <label class="control-label">Email</label>
                 <input readonly class="form-control" asp-for="@User.Identity.Name" />
-                <input type="hidden" asp-for="UserId" class="form-control" />
+                <input type="hidden" name="Model.OrderItem.UserId" asp-for="OrderItem.UserId" value="@Model.OrderItem.UserId" class="form-control" />
             </div>
             <div class="form-group">
-                <input type="hidden" asp-for="CouponUsedId" class="form-control" />
+                <input type="hidden" asp-for="OrderItem.CouponUsedId" class="form-control" />
             </div>
             <div class="form-group">
-                <input type="hidden" asp-for="RefundId" class="form-control" />
+                <input type="hidden" asp-for="OrderItem.RefundId" class="form-control" />
             </div>
             <div>
                 <p>Przedmiot:</p>
                 <div>
                     <div class="mt-2 mb-2">
                         <select id="Items" asp-items="@(new SelectList(Model.Items,"Id", "Name"))" class="custom-select" data-val="true"></select>
-                        <input type="hidden" id="ItemId" name="ItemId" value="@Model.ItemId" style="width: 45px;" />
+                        <input type="hidden" id="ItemId" name="Model.OrderItem.ItemId" value="@Model.OrderItem.ItemId" style="width: 45px;" />
                     </div>
-                    <div class="col mt-2 mb-2">
-                        <input id="Cost" name="Cost" value="" readonly style="width: 125px;" />
-                        <a><i onclick="AddQuantity(this.id)" id="OrderItemAddQuantity" class="fas fa-plus-circle ml-2 fa_custom"></i></a>
-                        <input id="ItemQuantity" name="ItemOrderQuantity" value="@Model.ItemOrderQuantity" readonly style="width: 45px;" />
+                    <div class="col mt-2 mb-2 d-flex align-items-center">
+                        <input id="Cost" name="Cost" value="" readonly style="width: 25%;" class="form-control" />
+                        <a><i onclick="AddQuantity(this.id)" id="OrderItemAddQuantity" class="fas fa-plus-circle ml-2 fa_custom mr-2"></i></a>
+                        <input id="ItemQuantity" name="Model.OrderItem.ItemOrderQuantity" value="@Model.OrderItem.ItemOrderQuantity" readonly style="width: 15%;" class="form-control" />
                         <a><i onclick="RemoveQuantity(this.id)" class="fa fa-minus-circle ml-2 fa_custom" id="OrderItemRemoveQuantity"></i></a>
                     </div>
                 </div>
@@ -50,9 +49,9 @@
 </div>
 
 
-    <div>
-        <a asp-action="Index">Back to List</a>
-    </div>
+<div>
+    <a asp-action="Index" asp-controller="Item">Powrót do listy przedmiotów</a>
+</div>
 
     @section Scripts {
         <script type="text/javascript">
@@ -60,8 +59,7 @@
             var selectedValue;
             var costFromSelectList;
             var itemSelectList = document.getElementById('Items');
-            var itemList = '@Html.Raw(ViewBag.ItemsJson)';
-            itemList = JSON.parse(itemList);
+            var itemList = @Json.Serialize(Model.Items);
             const format = (num, decimals) => num.toLocaleString('pl-PL', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
@@ -69,10 +67,10 @@
 
             $(document).ready(function () {
                 selectedValue = itemSelectList.options[itemSelectList.selectedIndex].value;
-                costFromSelectList = GetItemCost(itemList.Value, selectedValue);
+                costFromSelectList = GetItemCost(itemList, selectedValue);
                 selectedValue = itemSelectList.options[itemSelectList.selectedIndex].value;
                 document.getElementById('ItemId').value = selectedValue;
-                document.getElementById('Cost').value = costFromSelectList;
+                document.getElementById('Cost').value = format(costFromSelectList);
                 document.getElementById('ItemQuantity').value = 1;
             });
 
@@ -87,9 +85,9 @@
 
                     }
                 }
-                costFromSelectList = GetItemCost(itemList.Value, selectedValue);
+                costFromSelectList = GetItemCost(itemList, selectedValue);
                 document.getElementById('ItemId').value = selectedValue;
-                document.getElementById('Cost').value = costFromSelectList;
+                document.getElementById('Cost').value = format(costFromSelectList);
                 document.getElementById('ItemQuantity').value = 1;
             });
 
@@ -132,14 +130,7 @@
             }
 
             function GetItemCost(array, itemId) {
-                var cost = 0;
-                array.forEach(a => {
-                    if (a.Id == itemId)
-                    {
-                        return a.Cost;
-                    }
-                });
-                return cost;
+                return array.find(a => a.id == itemId)?.cost ?? 0;
             }
         </script>
         <style type="text/css">
