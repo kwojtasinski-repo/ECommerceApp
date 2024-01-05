@@ -72,9 +72,8 @@ namespace ECommerceApp.API.Controllers
             return Ok(orders);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpPut("{id:int}")]
-        // TODO: Decide if user can edit order or not
         public IActionResult EditOrder(int id, [FromBody] AddOrderDto model)
         {
             model.Id = id;

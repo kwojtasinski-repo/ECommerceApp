@@ -6,7 +6,6 @@ using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Coupon;
-using ECommerceApp.Application.ViewModels.CouponUsed;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -217,7 +216,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public OrderDetailsVm GetOrderDetail(int id)
         {
-            var orderDetails = _orderRepository.GetOrderById(id);
+            var orderDetails = _orderRepository.GetOrderDetailsById(id);
             var orderDetailsVm = _mapper.Map<OrderDetailsVm>(orderDetails);
             return orderDetailsVm;
         }
@@ -406,6 +405,19 @@ namespace ECommerceApp.Application.Services.Orders
         {
             var order = _orderRepository.GetOrderForRealizationById(orderId);
             var orderVm = _mapper.Map<NewOrderVm>(order);
+            // TODO: in future fetch items from frontend
+            orderVm.Items = _itemService.GetAllItems(i => true).ToList();
+            orderVm.UserId = _httpContextAccessor.GetUserId();
+            return orderVm;
+        }
+
+        public NewOrderVm BuildVmForEdit(int orderId)
+        {
+            var order = _orderRepository.GetOrderDetailsById(orderId);
+            var orderVm = _mapper.Map<NewOrderVm>(order);
+            // TODO: in future fetch items from frontend
+            orderVm.Items = _itemService.GetAllItems(i => true).ToList();
+            orderVm.UserId = _httpContextAccessor.GetUserId();
             return orderVm;
         }
 
@@ -749,6 +761,13 @@ namespace ECommerceApp.Application.Services.Orders
             var customerId = _customerService.AddCustomerDetails(model.NewCustomer);
             addOrderDto.CustomerId = customerId;
             return AddOrder(addOrderDto);
+        }
+
+        public NewOrderVm GetOrderSummaryById(int orderId)
+        {
+            var order = _orderRepository.GetOrderSummaryById(orderId);
+            var orderVm = _mapper.Map<NewOrderVm>(order);
+            return orderVm;
         }
 
         private record OrderItemValidationModel(int Id, string UserId);

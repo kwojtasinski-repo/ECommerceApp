@@ -45,7 +45,7 @@
             </div>
             <div class="form-group">
                 <label asp-for="CustomerId" class="control-label">Klient</label>
-                <input value="@ViewBag.CustomerInformation" class="form-control" readonly />
+                <input value="@Model.CustomerInformation" class="form-control" readonly />
                 <span asp-validation-for="CustomerId" class="text-danger"></span>
             </div>
             <div style="display:none;" class="form-group">

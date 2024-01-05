@@ -31,7 +31,9 @@
             Dane kontaktowe
         </dt>
         <dd class="col-sm-10">
-            @Html.ActionLink("Kliknij aby zobaczyć", "ViewCustomer", "Customer", new { id = @Model.CustomerId }, new { target = "_blank" })
+            @Model.CustomerInformation
+            <br />
+            @Html.ActionLink("Kliknij aby zobaczyć szczegóły", "ViewCustomer", "Customer", new { id = @Model.CustomerId }, new { target = "_blank" })
         </dd>
         @if (Model.CouponUsedId != null)
         {

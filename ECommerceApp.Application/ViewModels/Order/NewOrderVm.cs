@@ -5,7 +5,6 @@ using ECommerceApp.Application.ViewModels.Item;
 using FluentValidation;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ECommerceApp.Application.ViewModels.Order
 {
@@ -18,7 +17,6 @@ namespace ECommerceApp.Application.ViewModels.Order
         }
 
         public string Number { get; set; }
-        [Column(TypeName = "decimal(18,2)")]
         public decimal Cost { get; set; }
         public DateTime Ordered { get; set; }
         public DateTime? Delivered { get; set; }
@@ -46,23 +44,33 @@ namespace ECommerceApp.Application.ViewModels.Order
         public List<ItemVm> Items { get; set; }
         public CustomerDetailsDto NewCustomer { get; set; }
         public bool CustomerData { get; set; }
+        public string CustomerInformation { get; set; }
+        public string PaymentNumber { get; set; }
 
         public void Mapping(Profile profile)
         {
             profile.CreateMap<NewOrderVm, ECommerceApp.Domain.Model.Order>().ReverseMap()
-                .ForMember(r => r.Discount, opt => opt.MapFrom(r => r.CouponUsed.Coupon.Discount))
-                .ForMember(c => c.CouponId, opt => opt.Ignore())
+                .ForMember(r => r.Discount, opt => opt.MapFrom(r => r.CouponUsed != null ? r.CouponUsed.Coupon.Discount : 0))
+                .ForMember(c => c.CouponId, opt => opt.MapFrom(r => r.CouponUsed != null ? r.CouponUsed.Coupon.Id : 0))
                 .ForMember(i => i.Items, opt => opt.Ignore())
                 .ForMember(c => c.CostToConvert, opt => opt.Ignore())
-                .ForMember(rf => rf.ReasonRefund, opt => opt.MapFrom(r => r.Refund.Reason))
-                .ForMember(af => af.AcceptedRefund, opt => opt.MapFrom(a => a.Refund.Accepted))
-                .ForMember(rd => rd.RefundDate, opt => opt.MapFrom(rd => rd.Refund.RefundDate))
-                .ForMember(ow => ow.OnWarranty, opt => opt.MapFrom(ow => ow.Refund.OnWarranty))
+                .ForMember(rf => rf.ReasonRefund, opt => opt.MapFrom(r => r.Refund != null ? r.Refund.Reason : ""))
+                .ForMember(af => af.AcceptedRefund, opt => opt.MapFrom(a => a.Refund != null && a.Refund.Accepted))
+                .ForMember(rd => rd.RefundDate, opt => opt.MapFrom(rd => rd.Refund != null ? rd.Refund.RefundDate : new DateTime()))
+                .ForMember(ow => ow.OnWarranty, opt => opt.MapFrom(ow => ow.Refund != null && ow.Refund.OnWarranty))
                 .ForMember(cc => cc.ChangedCode, opt => opt.Ignore())
                 .ForMember(cr => cr.ChangedRefund, opt => opt.Ignore())
                 .ForMember(c => c.NewCustomer, opt => opt.Ignore())
                 .ForMember(c => c.CustomerData, opt => opt.Ignore())
-                .ForMember(c => c.CurrencyName, opt => opt.MapFrom(c => c.Currency.Code));
+                .ForMember(c => c.CurrencyName, opt => opt.MapFrom(c => c.Currency.Code))
+                .ForMember(p => p.PaymentNumber, opt => opt.MapFrom(p => p.Payment != null ? p.Payment.Number : ""))
+                .ForMember(i => i.CustomerInformation, opt => opt.MapFrom(c => 
+                    c.Customer != null
+                    ? ((c.Customer.NIP != null && c.Customer.CompanyName != null)
+                         ? c.Customer.FirstName + " " + c.Customer.LastName + " " + c.Customer.NIP + " " + c.Customer.CompanyName
+                         : c.Customer.FirstName + " " + c.Customer.LastName)
+                    : "")
+                );
         }
     }
 

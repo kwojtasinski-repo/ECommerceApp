@@ -127,9 +127,10 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult AddOrderDetails(int orderId)
         {
             var order = _orderService.GetOrderForRealization(orderId);
-            var customer = _customerService.GetCustomerInformationById(order.CustomerId);
-            order.Items = _itemService.GetAllItems(i => true).ToList();
-            ViewBag.CustomerInformation = customer.Information;
+            if (order is null)
+            {
+                return NotFound();
+            }
             return View(order);
         }
 
@@ -162,7 +163,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult AddOrderSummary(int id)
         {
-            var order = _orderService.GetOrderForRealization(id);
+            var order = _orderService.GetOrderSummaryById(id);
             if (order is null)
             {
                 return NotFound();
@@ -218,27 +219,11 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult EditOrder(int id)
         {
-            var order = _orderService.GetOrderForRealization(id);
+            var order = _orderService.BuildVmForEdit(id);
             if (order is null)
             {
                 return NotFound();
             }
-            var items = _itemService.GetAllItems(i => true).ToList();
-            order.Items = items; 
-            var customer = _customerService.GetCustomerInformationById(order.CustomerId);
-            int paymentId = (int)(order.PaymentId == null ? 0 : order.PaymentId);
-            ViewBag.CustomerInformation = customer.Information;
-            var paymentNumer = _paymentService.GetPaymentById(paymentId);
-            if(paymentNumer != null)
-            {
-                ViewBag.PaymentNumber = paymentNumer.Number;
-            }
-            else
-            {
-                ViewBag.PaymentNumber = "";
-            }
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            order.UserId = userId;
             return View(order);
         }
 

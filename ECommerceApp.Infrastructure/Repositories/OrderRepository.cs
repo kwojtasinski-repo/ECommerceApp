@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-    public class OrderRepository : GenericRepository<Order>,  IOrderRepository
+    public class OrderRepository : GenericRepository<Order>, IOrderRepository
     {
         public OrderRepository(Context context) : base(context)
         {
@@ -100,10 +100,8 @@ namespace ECommerceApp.Infrastructure.Repositories
         {
             var order = _context.Orders
                 .Include(inc => inc.OrderItems).ThenInclude(inc => inc.Item)
-                .Include(inc => inc.Refund)
-                .Include(inc => inc.Payment)
                 .Include(inc => inc.Currency)
-                .Include(inc => inc.CouponUsed).ThenInclude(inc => inc.Coupon)
+                .Include(inc => inc.Customer)
                 .FirstOrDefault(o => o.Id == id && !o.IsPaid);
             return order;
         }
@@ -186,6 +184,29 @@ namespace ECommerceApp.Infrastructure.Repositories
                 .AsNoTracking()
                 .FirstOrDefault();
             return order;
+        }
+
+        public Order GetOrderSummaryById(int orderId)
+        {
+            var order = _context.Orders
+                .Include(inc => inc.OrderItems).ThenInclude(inc => inc.Item)
+                .Include(inc => inc.Currency)
+                .Include(inc => inc.Customer)
+                .Include(inc => inc.CouponUsed).ThenInclude(inc => inc.Coupon)
+                .FirstOrDefault(o => o.Id == orderId && !o.IsPaid);
+            return order;
+        }
+
+        public Order GetOrderDetailsById(int id)
+        {
+            return _context.Orders
+                .Include(inc => inc.OrderItems).ThenInclude(inc => inc.Item)
+                .Include(inc => inc.Refund)
+                .Include(inc => inc.Payment).ThenInclude(inc => inc.Currency)
+                .Include(inc => inc.Currency)
+                .Include(inc => inc.CouponUsed).ThenInclude(inc => inc.Coupon)
+                .Include(inc => inc.Customer)
+                .FirstOrDefault(o => o.Id == id);
         }
     }
 }

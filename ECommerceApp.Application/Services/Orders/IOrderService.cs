@@ -36,5 +36,7 @@ namespace ECommerceApp.Application.Services.Orders
         OrderVm InitOrder();
         void Update(OrderDto order);
         int FulfillOrder(OrderVm model);
+        NewOrderVm GetOrderSummaryById(int id);
+        NewOrderVm BuildVmForEdit(int orderId);
     }
 }

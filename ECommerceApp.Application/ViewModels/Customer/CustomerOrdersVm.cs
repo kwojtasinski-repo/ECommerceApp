@@ -1,14 +1,12 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
 using System;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ECommerceApp.Application.ViewModels.Customer
 {
     public class CustomerOrdersVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Order>
     {
-        public int Number { get; set; }
-        [Column(TypeName = "decimal(18,2)")]
+        public string Number { get; set; }
         public decimal Cost { get; set; }
         public DateTime Ordered { get; set; }
         public DateTime? Delivered { get; set; }
@@ -16,9 +14,9 @@ namespace ECommerceApp.Application.ViewModels.Customer
         public int? CouponUsedId { get; set; }
         public int CustomerId { get; set; }
         public string UserId { get; set; }
-        public int? PaymentId { get; set; } // 1:1 Order Payment
+        public int? PaymentId { get; set; }
         public bool IsPaid { get; set; }
-        public int? RefundId { get; set; } // 1:1 Order Refund
+        public int? RefundId { get; set; }
 
         public void Mapping(Profile profile)
         {

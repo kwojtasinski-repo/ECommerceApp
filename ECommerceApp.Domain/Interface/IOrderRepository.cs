@@ -13,5 +13,7 @@ namespace ECommerceApp.Domain.Interface
         void UpdatedOrder(Order order);
         Order GetByIdReadOnly(int id);
         Order GetOrderForRealizationById(int id);
+        Order GetOrderSummaryById(int orderId);
+        Order GetOrderDetailsById(int id);
     }
 }
