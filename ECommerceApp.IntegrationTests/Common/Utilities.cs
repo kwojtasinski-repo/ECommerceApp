@@ -95,6 +95,8 @@ namespace ECommerceApp.IntegrationTests.Common
 
             var coupon = new Domain.Model.Coupon { Id = 1, Code = "AGEWEDSGFEW", CouponTypeId = 1, Description = "DesciprtionText", Discount = 10 };
             context.Add(coupon);
+            var coupon2 = new Domain.Model.Coupon { Id = 2, Code = "AGEWEDSGFEWX", CouponTypeId = 1, Description = "DesciprtionText", Discount = 10 };
+            context.Add(coupon2);
 
             var image = new Domain.Model.Image { Id = 1, ItemId = 1, Name = "image1", SourcePath = "../src/image1.jpg" };
             context.Add(image);

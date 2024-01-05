@@ -39,7 +39,7 @@
                 <input type="hidden" asp-for="Order.CouponUsedId" class="form-control" />
                 <span asp-validation-for="Order.CouponUsedId" class="text-danger"></span>
             </div>
-            @if (ViewBag.Customers.Count > 0)
+            @if (Model.Customers.Count > 0)
             {
                 <div class="form-group">
                     <label asp-for="Order.CustomerId" class="control-label">Klient</label>

@@ -1,13 +1,10 @@
 ﻿using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Coupon;
-using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace ECommerceApp.Application.Services.Coupons
 {
@@ -24,6 +21,6 @@ namespace ECommerceApp.Application.Services.Coupons
         void DeleteCouponUsed(int couponId, int couponUsedId);
         void AddCouponUsed(int couponId, int couponUsedId);
         CouponVm GetCouponByCode(string promoCode);
-        int CheckPromoCode(string refCode);
+        int CheckPromoCode(string promoCode);
     }
 }

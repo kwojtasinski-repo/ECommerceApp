@@ -1,10 +1,9 @@
 ﻿using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
-using System;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
@@ -41,6 +40,15 @@ namespace ECommerceApp.Infrastructure.Repositories
         {
             var orderItem = _context.OrderItem.FirstOrDefault(o => o.Id == orderItemId);
             return orderItem;
+        }
+
+        public List<OrderItem> GetOrderItems(List<int> ids)
+        {
+            return GetDbSet()
+                .Where(oi => ids.Contains(oi.Id))
+                .Include(i => i.Item)
+                .ToList()
+                ?? new List<OrderItem>();
         }
 
         public void UpdateOrderItem(OrderItem orderItem)

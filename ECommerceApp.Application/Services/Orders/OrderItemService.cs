@@ -219,5 +219,19 @@ namespace ECommerceApp.Application.Services.Orders
                                   .ToList();
             return _mapper.Map<List<OrderItemDto>>(orderItems);
         }
+
+        public List<OrderItemDto> GetOrderItems(List<int> ids)
+        {
+            return _mapper.Map<List<OrderItemDto>>(_orderItemRepository.GetOrderItems(ids));
+        }
+
+        public IEnumerable<int> GetOrderItemsIdsForRealization(string userId)
+        {
+            return _orderItemRepository.GetAll()
+                .Where(oi => oi.UserId == userId && oi.OrderId == null)
+                .AsNoTracking()
+                .Select(oi => oi.Id)
+                .ToList();
+        }
     }
 }

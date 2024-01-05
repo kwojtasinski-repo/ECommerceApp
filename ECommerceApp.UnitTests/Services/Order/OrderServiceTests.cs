@@ -282,6 +282,9 @@ namespace ECommerceApp.Tests.Services.Order
             var couponUsedId = 1;
             _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
             _orderRepository.Setup(o => o.Update(It.IsAny<Domain.Model.Order>())).Verifiable();
+            var coupon = CreateDefaultCouponVm(null);
+            coupon.CouponUsedId = couponUsedId;
+            _couponService.Setup(cu => cu.GetCouponFirstOrDefault(It.IsAny<Expression<Func<Domain.Model.Coupon, bool>>>())).Returns(coupon);
             var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object, _httpContextAccessor);
             var expectedException = new BusinessException("Cannot add coupon to paid order");
 

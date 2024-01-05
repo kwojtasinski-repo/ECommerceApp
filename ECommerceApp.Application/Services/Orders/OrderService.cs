@@ -5,6 +5,8 @@ using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.Services.Items;
+using ECommerceApp.Application.ViewModels.Coupon;
+using ECommerceApp.Application.ViewModels.CouponUsed;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -121,11 +123,7 @@ namespace ECommerceApp.Application.Services.Orders
                 throw new BusinessException("When adding object Id should be equals 0");
             }
 
-            var dto = model.AsDto();
-            dto.CurrencyId = 1;
-            dto.UserId = _httpContextAccessor.GetUserId();
-            dto.OrderItems.ForEach(oi => oi.UserId = dto.UserId);
-            return AddOrder(dto);
+            return AddOrderInternal(model);
         }
 
         public bool DeleteOrder(int id)
@@ -257,6 +255,16 @@ namespace ECommerceApp.Application.Services.Orders
             }
         }
 
+        private static void CalculateCost(OrderDto orderDto)
+        {
+            var orderCost = decimal.Zero;
+            foreach (var orderItem in orderDto.OrderItems ?? new List<OrderItemDto>())
+            {
+                orderCost += orderItem.ItemCost * orderItem.ItemOrderQuantity;
+            }
+            orderDto.Cost += orderCost;
+        }
+
         private static void CalculateCost(OrderDto orderDto, ICollection<OrderItem> itemsFromDb)
         {
             var orderCost = decimal.Zero;
@@ -303,21 +311,34 @@ namespace ECommerceApp.Application.Services.Orders
             CalculateCost(orderDto, orderItems);
         }
 
-        private static void CheckOrderItemsOrderByUser(OrderDto orderVm, ICollection<OrderItem> itemsFromDb)
+        private static void CheckOrderItemsOrderByUser(OrderDto dto, ICollection<OrderItemDto> itemsFromDb)
+        {
+            CheckOrderItemsOrderByUser(dto, itemsFromDb?.Select(oi => new OrderItemValidationModel(oi.Id, oi.UserId))
+                    ?? new List<OrderItemValidationModel>());
+        }
+
+        private static void CheckOrderItemsOrderByUser(OrderDto dto, ICollection<OrderItem> itemsFromDb)
+        {
+            CheckOrderItemsOrderByUser(dto, itemsFromDb.Select(oi => new OrderItemValidationModel(oi.Id, oi.UserId))
+                    ?? new List<OrderItemValidationModel>());
+        }
+
+        private static void CheckOrderItemsOrderByUser(OrderDto orderVm, IEnumerable<OrderItemValidationModel> itemsFromDb)
         {
             StringBuilder errors = new();
 
             foreach (var orderItem in orderVm.OrderItems ?? new List<OrderItemDto>())
             {
                 var item = itemsFromDb.Where(i => i.Id == orderItem.Id).FirstOrDefault();
-
-                if (item != null)
+                if (item == default)
                 {
-                    if (orderItem.UserId != item.UserId)
-                    {
-                        errors.AppendLine($"This item {orderItem.Id} is not ordered by current user");
-                        continue;
-                    }
+                    continue;
+                }
+
+                if (orderItem.UserId != item.UserId)
+                {
+                    errors.AppendLine($"This item {orderItem.Id} is not ordered by current user");
+                    continue;
                 }
             }
 
@@ -329,38 +350,13 @@ namespace ECommerceApp.Application.Services.Orders
 
         public void AddCouponUsedToOrder(int orderId, int couponUsedId)
         {
-            var order = _orderRepository.GetAll().Include(oi => oi.OrderItems).Where(o => o.Id == orderId).FirstOrDefault();
+            var order = _orderRepository.GetAll().Include(oi => oi.OrderItems).Where(o => o.Id == orderId).FirstOrDefault()
+                ?? throw new BusinessException("Cannot add coupon if order not exists");
+            
+            var coupon = _couponService.GetCouponFirstOrDefault(c => c.CouponUsedId == couponUsedId)
+                ?? throw new BusinessException("Given invalid couponUsedId");
 
-            if (order is null)
-            {
-                throw new BusinessException("Cannot add coupon if order not exists");
-            }
-
-            _orderRepository.DetachEntity(order); // detach before update
-            _orderRepository.DetachEntity(order.OrderItems);
-
-            var orderVm = _mapper.Map<NewOrderVm>(order);
-
-            if (orderVm.IsPaid)
-            {
-                throw new BusinessException("Cannot add coupon to paid order");
-            }
-
-            var coupon = _couponService.GetCouponFirstOrDefault(c => c.CouponUsedId == couponUsedId);
-
-            if (coupon is null)
-            {
-                throw new BusinessException("Given invalid couponUsedId");
-            }
-
-            orderVm.CouponUsedId = couponUsedId;
-            foreach (var orderItem in orderVm.OrderItems)
-            {
-                orderItem.CouponUsedId = couponUsedId;
-            }
-
-            orderVm.Cost = (1 - (decimal)coupon.Discount / 100) * order.Cost;
-            Update(orderVm);
+            UseCoupon(coupon, order);
         }
 
         public int AddCouponToOrder(int couponId, NewOrderVm order)
@@ -408,7 +404,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public NewOrderVm GetOrderForRealization(int orderId)
         {
-            var order = _orderRepository.GetOrderById(orderId);
+            var order = _orderRepository.GetOrderForRealizationById(orderId);
             var orderVm = _mapper.Map<NewOrderVm>(order);
             return orderVm;
         }
@@ -622,48 +618,96 @@ namespace ECommerceApp.Application.Services.Orders
         public int AddOrderFromCart(AddOrderFromCartDto model)
         {
             var userId = _httpContextAccessor.GetUserId();
-            var dto = new OrderDto
+            var dto = new AddOrderDto
             {
                 CustomerId = model.CustomerId,
-                UserId = userId,
-                OrderItems = _orderItemService.GetOrderItemsForRealization(userId).ToList(),
-                CurrencyId = 1
+                PromoCode = model.PromoCode,
+                OrderItems = _orderItemService.GetOrderItemsIdsForRealization(_httpContextAccessor.GetUserId())
+                    .Select(id => new OrderItemsIdsDto { Id = id }).ToList()
             };
-
-            var id = AddOrder(dto);
-            dto.OrderItems.ForEach(oi => oi.OrderId = id);
-            _orderItemService.UpdateOrderItems(dto.OrderItems);
+            var id = AddOrderInternal(dto);
             return id;
         }
 
-        private int AddOrder(OrderDto dto)
+        private int AddOrderInternal(AddOrderDto model)
         {
-            if (string.IsNullOrWhiteSpace(dto.Number))
-            {
-                dto.Number = Guid.NewGuid().ToString();
-            }
+            var dto = model.AsDto();
+            dto.CurrencyId = 1;
+            dto.UserId = _httpContextAccessor.GetUserId();
+            dto.Number = Guid.NewGuid().ToString();
 
             var dateNotSet = new DateTime();
-
             if (dto.Ordered == dateNotSet)
             {
                 dto.Ordered = DateTime.Now;
             }
 
             var ids = dto.OrderItems?.Select(oi => oi.Id)?.ToList() ?? new List<int>();
-            var orderItemsQueryable = _orderRepository.GetAllOrderItems();
-            var orderItems = (from orderItemId in ids
-                              join orderItem in orderItemsQueryable
-                                 on orderItemId equals orderItem.Id
-                              select orderItem).AsQueryable().Include(i => i.Item).AsNoTracking().ToList();
-
-            CheckOrderItemsOrderByUser(dto, orderItems);
-            CalculateCost(dto, orderItems);
+            dto.OrderItems = _orderItemService.GetOrderItems(ids);
+            CheckOrderItemsOrderByUser(dto, dto.OrderItems);
+            CalculateCost(dto);
 
             var order = _mapper.Map<Order>(dto);
             var id = _orderRepository.AddOrder(order);
-
+            TryUseCoupon(model.PromoCode, order);
             return id;
+        }
+
+        private void TryUseCoupon(string promoCode, Order order)
+        {
+            if (string.IsNullOrWhiteSpace(promoCode))
+            {
+                return;
+            }
+
+            var id = _couponService.CheckPromoCode(promoCode);
+            if (id == 0)
+            {
+                return;
+            }
+
+            var coupon = _couponService.GetCoupon(id) 
+                ?? throw new BusinessException($"Coupon with id {id} doesnt exists");
+            UseCoupon(coupon, order);
+        }
+
+        private void UseCoupon(CouponVm coupon, Order order)
+        {
+            if (order.IsPaid)
+            {
+                throw new BusinessException("Cannot add coupon to paid order");
+            }
+
+            var couponUsed = new CouponUsed()
+            {
+                Id = 0,
+                CouponId = coupon.Id,
+                OrderId = order.Id
+            };
+
+            order.Cost = (1 - (decimal)coupon.Discount / 100) * order.Cost;
+
+            int couponUsedId;
+            if (!coupon.CouponUsedId.HasValue)
+            {
+                couponUsedId = _couponUsedRepository.AddCouponUsed(couponUsed);
+                coupon.CouponUsedId = couponUsedId;
+                _couponService.UpdateCoupon(coupon);
+            }
+            else
+            {
+                couponUsedId = coupon.CouponUsedId.Value;
+            }
+
+            if (order.OrderItems.Count > 0)
+            {
+                foreach (var orderItem in order.OrderItems ?? new List<OrderItem>())
+                {
+                    orderItem.CouponUsedId = couponUsedId;
+                }
+            }
+            order.CouponUsedId = couponUsedId;
+            _orderRepository.Update(order);
         }
 
         public OrderVm InitOrder()
@@ -706,5 +750,7 @@ namespace ECommerceApp.Application.Services.Orders
             addOrderDto.CustomerId = customerId;
             return AddOrder(addOrderDto);
         }
+
+        private record OrderItemValidationModel(int Id, string UserId);
     }
 }

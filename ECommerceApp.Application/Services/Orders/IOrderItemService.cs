@@ -20,10 +20,12 @@ namespace ECommerceApp.Application.Services.Orders
         void DeleteOrderItem(int id);
         void UpdateOrderItems(IEnumerable<OrderItemDto> orderItems);
         IEnumerable<OrderItemDto> GetOrderItemsForRealization(string userId);
+        IEnumerable<int> GetOrderItemsIdsForRealization(string userId);
         int OrderItemCount(string userId);
         int AddOrderItem(int id, string userId);
         ListForOrderItemVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo);
         ListForOrderItemVm GetOrderItemsNotOrderedByUserId(string userId, int pageSize, int pageNo);
         IQueryable<OrderItem> GetOrderItems();
+        List<OrderItemDto> GetOrderItems(List<int> ids);
     }
 }

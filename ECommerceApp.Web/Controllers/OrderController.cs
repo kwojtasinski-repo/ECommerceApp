@@ -119,17 +119,6 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult OrderRealization(OrderVm model)
         {
             model.Order.Id = _orderService.FulfillOrder(model);
-            UseCouponIfEntered(new NewOrderVm
-            {
-                Id = model.Order.Id,
-                Number = model.Order.Number,
-                RefCode = model.PromoCode,
-                Ordered = model.Order.Ordered,
-                CurrencyId = model.Order.CurrencyId,
-                CustomerId = model.Order.CustomerId,
-                Cost = model.Order.Cost,
-                UserId = model.Order.UserId,
-            });
             return RedirectToAction("AddOrderSummary", new { id = model.Order.Id });
         }
 
@@ -163,6 +152,7 @@ namespace ECommerceApp.Web.Controllers
             else
             {
                 DeleteOrder(model.Id);
+                return RedirectToAction("Index", controllerName: "Item");
             }
 
             return RedirectToAction("AddOrderSummary", new { id = model.Id });
@@ -173,6 +163,10 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult AddOrderSummary(int id)
         {
             var order = _orderService.GetOrderForRealization(id);
+            if (order is null)
+            {
+                return NotFound();
+            }
             return View(order);
         }
 
@@ -220,7 +214,7 @@ namespace ECommerceApp.Web.Controllers
             return View(orderItems);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpGet]
         public IActionResult EditOrder(int id)
         {
@@ -248,7 +242,7 @@ namespace ECommerceApp.Web.Controllers
             return View(order);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpPost]
         public IActionResult EditOrder(NewOrderVm model)
         {
@@ -305,7 +299,7 @@ namespace ECommerceApp.Web.Controllers
             return View(order);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         public IActionResult DeleteOrder(int id)
         {
             return _orderService.DeleteOrder(id)

@@ -156,7 +156,7 @@ namespace ECommerceApp.IntegrationTests.API
         {
             var client = await _factory.GetAuthenticatedClient();
             var cost = 4500;
-            var order = new AddOrderDto { Id = 0, CustomerId = 1, OrderItems = new List<OrderItemsIdsDto> { new OrderItemsIdsDto { Id = 2 }, new OrderItemsIdsDto { Id = 3 } }, PromoCode = "AGEWEDSGFEW" };
+            var order = new AddOrderDto { Id = 0, CustomerId = 1, OrderItems = new List<OrderItemsIdsDto> { new OrderItemsIdsDto { Id = 2 }, new OrderItemsIdsDto { Id = 3 } }, PromoCode = "AGEWEDSGFEWX" };
 
             var response = await client.Request($"api/orders")
                 .AllowAnyHttpStatus()

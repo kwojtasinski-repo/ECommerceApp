@@ -3,7 +3,6 @@ using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.Coupon;
-using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +10,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 
 namespace ECommerceApp.Application.Services.Coupons
 {
@@ -157,15 +155,17 @@ namespace ECommerceApp.Application.Services.Coupons
 
         public int CheckPromoCode(string code)
         {
-            var coupons = GetAllCoupons(c => true);
-            var coupon = coupons.FirstOrDefault(c => string.Equals(c.Code, code,
-                   StringComparison.Ordinal) && c.CouponUsedId == null);
-            var id = 0;
-            if (coupon != null)
-            {
-                id = coupon.Id;
-            }
-            return id;
+            return _repo.GetAllCoupons()
+                    .Where(c => string.Equals(c.Code, code) && c.CouponUsedId == null)
+                    .Select(c => c.Id)
+                    .FirstOrDefault();
+        }
+
+        public bool ValidatePromoCode(string promoCode)
+        {
+            return _repo.GetAllCoupons()
+                    .Any(c => string.Equals(c.Code, promoCode,
+                           StringComparison.Ordinal) && c.CouponUsedId == null);
         }
     }
 }

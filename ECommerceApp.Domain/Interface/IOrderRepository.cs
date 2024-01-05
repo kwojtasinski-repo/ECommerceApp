@@ -12,5 +12,6 @@ namespace ECommerceApp.Domain.Interface
         IQueryable<OrderItem> GetAllOrderItems();
         void UpdatedOrder(Order order);
         Order GetByIdReadOnly(int id);
+        Order GetOrderForRealizationById(int id);
     }
 }

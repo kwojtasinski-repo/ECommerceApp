@@ -127,10 +127,7 @@ namespace ECommerceApp.API.Controllers
         [HttpPost]
         public IActionResult AddOrder([FromBody] AddOrderDto model)
         {
-            var id = _orderService.AddOrder(model);
-            model.Id = id;
-            TryUseCoupon(model);
-            return Ok(id);
+            return Ok(_orderService.AddOrder(model));
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
@@ -138,7 +135,6 @@ namespace ECommerceApp.API.Controllers
         public IActionResult AddOrderFromOrderItems([FromBody] AddOrderFromCartDto model)
         {
             var id = _orderService.AddOrderFromCart(model);
-            TryUseCoupon(new AddOrderDto { Id = id, PromoCode = model.PromoCode, OrderItems = new List<OrderItemsIdsDto>(), CustomerId = model.CustomerId });
             return Ok(id);
         }
 

@@ -95,6 +95,17 @@ namespace ECommerceApp.Infrastructure.Repositories
                 .FirstOrDefault(o => o.Id == id);
             return order;
         }
+        
+        public Order GetOrderForRealizationById(int id)
+        {
+            var order = _context.Orders
+                .Include(inc => inc.OrderItems).ThenInclude(inc => inc.Item)
+                .Include(inc => inc.Refund)
+                .Include(inc => inc.Payment)
+                .Include(inc => inc.Currency)
+                .FirstOrDefault(o => o.Id == id && !o.IsPaid);
+            return order;
+        }
 
         public IQueryable<Order> GetAllOrders()
         {

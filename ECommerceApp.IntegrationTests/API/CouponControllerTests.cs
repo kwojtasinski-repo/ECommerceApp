@@ -169,8 +169,8 @@ namespace ECommerceApp.IntegrationTests.API
                 .GetAsync();
             var coupons = JsonConvert.DeserializeObject<ListForCouponVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
 
-            coupons.Count.ShouldBe(1);
-            coupons.Coupons.Count.ShouldBe(1);
+            coupons.Count.ShouldBeGreaterThan(0);
+            coupons.Coupons.Count.ShouldBeGreaterThan(0);
             coupons.Coupons.Where(c => c.Id == 1).FirstOrDefault().ShouldNotBeNull();
         }
 

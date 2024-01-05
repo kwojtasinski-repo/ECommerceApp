@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
-using ECommerceApp.Application.ViewModels.Order;
 using FluentValidation;
 
 namespace ECommerceApp.Application.ViewModels.CouponUsed
