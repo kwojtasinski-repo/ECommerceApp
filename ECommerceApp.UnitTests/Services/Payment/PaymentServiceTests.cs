@@ -18,19 +18,24 @@ namespace ECommerceApp.UnitTests.Services.Payment
     public class PaymentServiceTests : BaseTest
     {
         private readonly Mock<IPaymentRepository> _paymentRepository;
-        private readonly Mock<IOrderService> _orderService;
+        private readonly Mock<IOrderRepository> _orderRepository;
         private readonly Mock<ICustomerService> _customerService;
         private readonly Mock<ICurrencyRateService> _currencyRateService;
         private readonly HttpContextAccessorTest _contextAccessor;
+        private readonly IPaymentHandler _paymentHandler;
 
         public PaymentServiceTests()
         {
             _paymentRepository = new Mock<IPaymentRepository>();
-            _orderService = new Mock<IOrderService>();
+            _orderRepository = new Mock<IOrderRepository>();
             _customerService = new Mock<ICustomerService>();
             _currencyRateService = new Mock<ICurrencyRateService>();
             _contextAccessor = new HttpContextAccessorTest();
+            _paymentHandler = new PaymentHandler(_paymentRepository.Object, _currencyRateService.Object);
         }
+
+        private PaymentService CreateService() 
+            => new (_paymentRepository.Object, _mapper, _orderRepository.Object, _customerService.Object, _contextAccessor, _paymentHandler);
 
         [Fact]
         public void given_valid_payment_should_add()
@@ -40,7 +45,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
             var payment = new AddPaymentDto { CurrencyId = currencyId, OrderId = orderId };
             var cost = 100M;
             var order = CreateOrder(orderId);
-            _orderService.Setup(o => o.Get(orderId)).Returns(order);
+            _orderRepository.Setup(o => o.GetById(orderId)).Returns(_mapper.Map<Domain.Model.Order>(order));
             var rate = CreateCurrencyRate(currencyId);
             _currencyRateService.Setup(cr => cr.GetLatestRate(currencyId)).Returns(rate);
             Domain.Model.Payment paymentAdded = null;
@@ -48,16 +53,17 @@ namespace ECommerceApp.UnitTests.Services.Payment
                 .Callback((Domain.Model.Payment p) => {
                     paymentAdded = p;
                     });
-            var paymentService = new PaymentService(_paymentRepository.Object, _mapper, _orderService.Object, _customerService.Object, _currencyRateService.Object, _contextAccessor);
+            var paymentService = CreateService();
 
             paymentService.AddPayment(payment);
 
-            order.IsPaid.Should().BeTrue();
+            var orderUpdated = _orderRepository.Object.GetById(orderId);
+            orderUpdated.IsPaid.Should().BeTrue();
             paymentAdded.Cost.Should().BeLessThan(cost);
             paymentAdded.Cost.Should().Be(cost/rate.Rate);
             paymentAdded.CurrencyId.Should().Be(currencyId);
             _paymentRepository.Verify(p => p.AddPayment(It.IsAny<Domain.Model.Payment>()), Times.Once);
-            _orderService.Verify(p => p.Update(It.IsAny<OrderDto>()), Times.Once);
+            _orderRepository.Verify(p => p.Update(It.IsAny<Domain.Model.Order>()), Times.Once);
         }
 
         [Fact]
@@ -67,7 +73,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
             var currencyId = 1;
             var orderId = 1;
             var payment = CreatePaymentVm(id, currencyId, orderId);
-            var paymentService = new PaymentService(_paymentRepository.Object, _mapper, _orderService.Object, _customerService.Object, _currencyRateService.Object, _contextAccessor);
+            var paymentService = CreateService();
 
             paymentService.UpdatePayment(payment);
 
@@ -77,7 +83,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
         [Fact]
         public void given_null_payment_when_add_should_throw_an_exception()
         {
-            var paymentService = new PaymentService(_paymentRepository.Object, _mapper, _orderService.Object, _customerService.Object, _currencyRateService.Object, _contextAccessor);
+            var paymentService = CreateService();
 
             Action action = () => paymentService.AddPayment(null);
 

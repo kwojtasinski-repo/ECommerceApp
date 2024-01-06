@@ -1,9 +1,11 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Coupons;
+using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.Services.Orders;
+using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Order;
@@ -33,6 +35,10 @@ namespace ECommerceApp.Tests.Services.Order
         private readonly Mock<ICustomerService> _customerService;
         private readonly HttpContextAccessorTest _httpContextAccessor;
         private readonly Mock<IPaymentRepository> _paymentRepository;
+        private readonly Mock<ICurrencyRateService> _currencyRateService;
+        private readonly Mock<ICouponRepository> _couponRepository;
+        private readonly IPaymentHandler _paymentHandler;
+        private readonly ICouponHandler _couponHandler;
 
         public OrderServiceTests()
         {
@@ -44,11 +50,17 @@ namespace ECommerceApp.Tests.Services.Order
             _customerService = new Mock<ICustomerService>();
             _httpContextAccessor = new HttpContextAccessorTest();
             _paymentRepository = new Mock<IPaymentRepository>();
+            _currencyRateService = new Mock<ICurrencyRateService>();
+            _couponRepository = new Mock<ICouponRepository>();
+            _paymentHandler = new PaymentHandler(_paymentRepository.Object, _currencyRateService.Object);
+            _couponHandler = new CouponHandler(_couponRepository.Object, _couponUsedRepository.Object);
         }
 
         private OrderService CreateService()
         {
-            return new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object, _httpContextAccessor, _paymentRepository.Object);
+            return new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object, _httpContextAccessor,
+                    _paymentHandler, _couponHandler
+                );
         }
 
         [Fact]
@@ -538,7 +550,6 @@ namespace ECommerceApp.Tests.Services.Order
         {
             var orderService = CreateService();
             var order = CreateDefaultOrder();
-            AddOrder(order);
             var dto = new UpdateOrderDto { Id = order.Id, CustomerId = order.CustomerId };
 
             Action action = () => orderService.UpdateOrder(dto);
@@ -573,16 +584,16 @@ namespace ECommerceApp.Tests.Services.Order
         }
 
         [Fact]
-        public void given_different_payment_id_when_update_should_throw_exceptio_with_message_cannot_assign_existed_payment()
+        public void given_different_payment_id_when_update_should_throw_exception_with_message_cannot_assign_existed_payment()
         {
             var orderService = CreateService();
             var order = CreateDefaultOrder();
             AddOrder(order);
-            var dto = new UpdateOrderDto { Id = order.Id, CustomerId = order.CustomerId, PaymentId = 10 };
+            var dto = new UpdateOrderDto { Id = order.Id, CustomerId = order.CustomerId, Payment = new PaymentInfoDto { Id = 10 } };
 
             Action action = () => orderService.UpdateOrder(dto);
 
-            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains($"Cannot assign existed payment with id '{dto.PaymentId}'");
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains($"Cannot assign existed payment with id '{dto.Payment.Id}'");
         }
 
         [Fact]
@@ -1023,6 +1034,7 @@ namespace ECommerceApp.Tests.Services.Order
             AddCustomer(customer);
             var coupon = CreateDefaultCoupon();
             AddCoupon(coupon);
+            _couponUsedRepository.Setup(c => c.Delete(It.IsAny<int>())).Returns(true);
             var orderItemsInOrder = 3;
             _orderItemService.Setup(oi => oi.GetOrderItemsNotOrdered(It.IsAny<IEnumerable<int>>())).Returns(new List<OrderItemDto>());
             var items = GenerateAndAddItems();
@@ -1070,7 +1082,7 @@ namespace ECommerceApp.Tests.Services.Order
 
             var dtoUpdated = orderService.UpdateOrder(dto);
 
-            _orderRepository.Verify(o => o.Update(It.IsAny<Domain.Model.Order>()), times: Times.Exactly(2));
+            _orderRepository.Verify(o => o.Update(It.IsAny<Domain.Model.Order>()), times: Times.Exactly(1));
             _orderItemService.Verify(o => o.DeleteOrderItem(It.IsAny<int>()), times: Times.Exactly(2));
             var dateAfterUpdate = DateTime.Now;
             dtoUpdated.Should().NotBeNull();
@@ -1161,6 +1173,7 @@ namespace ECommerceApp.Tests.Services.Order
         private void AddCoupon(Domain.Model.Coupon coupon)
         {
             _couponService.Setup(c => c.GetCouponByCode(coupon.Code)).Returns(_mapper.Map<CouponVm>(coupon));
+            _couponRepository.Setup(c => c.GetById(coupon.Id)).Returns(coupon);
         }
 
         private List<NewItemVm> GenerateAndAddItems()

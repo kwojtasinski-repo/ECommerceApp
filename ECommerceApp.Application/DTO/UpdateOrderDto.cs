@@ -10,7 +10,7 @@ namespace ECommerceApp.Application.DTO
         public int Id { get; set; }
         public int CustomerId { get; set; }
         public int? CouponUsedId { get; set; }
-        public int? PaymentId { get; set; }
+        public PaymentInfoDto Payment { get; set; }
         public bool IsDelivered { get; set; }
 
         public ICollection<AddOrderItemDto> OrderItems { get; set; }
@@ -18,6 +18,12 @@ namespace ECommerceApp.Application.DTO
         public string OrderNumber { get; set; }
         public string PromoCode { get; set; }
         public DateTime? Ordered { get; set; }
+    }
+    
+    public class PaymentInfoDto
+    {
+        public int Id { get; set; }
+        public int CurrencyId { get; set; }
     }
 
     public class UpdateOrderDtoValidation : AbstractValidator<UpdateOrderDto>

@@ -11,7 +11,10 @@ using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.Services.Refunds;
 using ECommerceApp.Application.Services.Users;
 using Microsoft.Extensions.DependencyInjection;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("ECommerceApp.UnitTests")]
+[assembly: InternalsVisibleTo("ECommerceApp.IntegrationTests")]
 namespace ECommerceApp.Application.Services
 {
     internal static class Extensions

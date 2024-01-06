@@ -5,6 +5,7 @@ using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.Services.Items;
+using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Domain.Interface;
@@ -19,7 +20,7 @@ using System.Text;
 
 namespace ECommerceApp.Application.Services.Orders
 {
-    public class OrderService : IOrderService
+    internal class OrderService : IOrderService
     {
         private readonly IMapper _mapper;
         private readonly IOrderRepository _orderRepository;
@@ -29,10 +30,11 @@ namespace ECommerceApp.Application.Services.Orders
         private readonly ICouponUsedRepository _couponUsedRepository;
         private readonly ICustomerService _customerService;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IPaymentRepository _paymentRepository;
+        private readonly IPaymentHandler _paymentHandler;
+        private readonly ICouponHandler _couponHandler;
 
         public OrderService(IOrderRepository orderRepo, IMapper mapper, IOrderItemService orderItemService, IItemService itemService, ICouponService couponService, ICouponUsedRepository couponUsedRepository, ICustomerService customerService,
-                IHttpContextAccessor httpContextAccessor, IPaymentRepository paymentRepository)
+                IHttpContextAccessor httpContextAccessor, IPaymentHandler paymentHandler, ICouponHandler couponHandler)
         {
             _orderRepository = orderRepo;
             _mapper = mapper;
@@ -42,7 +44,8 @@ namespace ECommerceApp.Application.Services.Orders
             _couponUsedRepository = couponUsedRepository;
             _customerService = customerService;
             _httpContextAccessor = httpContextAccessor;
-            _paymentRepository = paymentRepository;
+            _paymentHandler = paymentHandler;
+            _couponHandler = couponHandler;
         }
 
         public OrderDto Get(int id)
@@ -815,18 +818,7 @@ namespace ECommerceApp.Application.Services.Orders
             }
 
             order.CustomerId = dto.CustomerId;
-
-            if (dto.PaymentId != order.PaymentId)
-            {
-                throw new BusinessException($"Cannot assign existed payment with id '{dto.PaymentId}'");
-            }
-
-            if (!dto.PaymentId.HasValue && order.PaymentId.HasValue)
-            {
-                _paymentRepository.Delete(order.PaymentId.Value);
-                order.PaymentId = null;
-                order.Payment = null;
-            }
+            _paymentHandler.HandlePaymentChangesOnOrder(dto.Payment, order);
 
             if (!order.IsDelivered && dto.IsDelivered)
             {
@@ -840,10 +832,10 @@ namespace ECommerceApp.Application.Services.Orders
                 order.Delivered = null;
             }
 
-            var itemsToAdd = dto.OrderItems.Where(oi => oi.Id == 0 && oi.ItemId > 0 && oi.ItemOrderQuantity > 0);
-            var orderItemsToModify = dto.OrderItems.Where(oi => oi.Id > 0);
+            var itemsToAdd = dto.OrderItems?.Where(oi => oi.Id == 0 && oi.ItemId > 0 && oi.ItemOrderQuantity > 0) ?? Enumerable.Empty<AddOrderItemDto>();
+            var orderItemsToModify = dto.OrderItems?.Where(oi => oi.Id > 0) ?? Enumerable.Empty<AddOrderItemDto>();
             var orderItemsToRemove = new List<OrderItem>();
-            var currentOrderItems = new List<OrderItem>(order.OrderItems);
+            var currentOrderItems = new List<OrderItem>(order.OrderItems ?? Enumerable.Empty<OrderItem>());
             foreach (var orderItem in currentOrderItems)
             {
                 var orderItemExists = orderItemsToModify.FirstOrDefault(oi => oi.Id == orderItem.Id);
@@ -887,6 +879,8 @@ namespace ECommerceApp.Application.Services.Orders
                 }
             }
 
+            _couponHandler.HandleCouponChangesOnUpdateOrder(coupon, order, dto);
+
             var cost = 0M;
             var discount = (1 - (order.CouponUsed?.Coupon.Discount/100M) ?? 1);
             foreach (var orderItem in order.OrderItems)
@@ -894,43 +888,9 @@ namespace ECommerceApp.Application.Services.Orders
                 cost += orderItem.Item.Cost * orderItem.ItemOrderQuantity * discount;
             }
             order.Cost = cost;
-
-            if (!dto.CouponUsedId.HasValue && order.CouponUsedId.HasValue)
-            {
-                cost = 0M;
-                foreach (var orderItem in order.OrderItems)
-                {
-                    cost += orderItem.Item.Cost * orderItem.ItemOrderQuantity;
-                    orderItem.CouponUsed = null;
-                    orderItem.CouponUsedId = null;
-                }
-                order.Cost = cost;
-                order.CouponUsed = null;
-                order.CouponUsedId = null;
-            }
-
-            if (!string.IsNullOrWhiteSpace(dto.PromoCode))
-            {
-                order.CouponUsedId = null;
-                order.CouponUsed = null;
-                cost = 0M;
-                foreach (var orderItem in order.OrderItems)
-                {
-                    orderItem.CouponUsedId = null;
-                    orderItem.CouponUsed = null;
-                    cost += orderItem.Item.Cost * orderItem.ItemOrderQuantity;
-                }
-                order.Cost = cost;
-            }
-
+            
             _orderRepository.Update(order);
             orderItemsToRemove.ForEach(oi => _orderItemService.DeleteOrderItem(oi.Id));
-
-            if (!string.IsNullOrWhiteSpace(dto.PromoCode))
-            {
-                _couponUsedRepository.Delete(coupon.Id);
-                UseCoupon(coupon, order);
-            }
             return _mapper.Map<OrderDetailsVm>(order);
         }
 

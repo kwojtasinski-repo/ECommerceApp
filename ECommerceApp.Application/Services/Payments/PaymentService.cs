@@ -4,7 +4,6 @@ using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Application.Services.Customers;
-using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -16,23 +15,23 @@ using System.Linq;
 
 namespace ECommerceApp.Application.Services.Payments
 {
-    public class PaymentService : IPaymentService
+    internal class PaymentService : IPaymentService
     {
         private readonly IMapper _mapper;
         private readonly IPaymentRepository _repo;
-        private readonly IOrderService _orderService;
+        private readonly IOrderRepository _orderRepository;
         private readonly ICustomerService _customerService;
-        private readonly ICurrencyRateService _currencyRateService;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IPaymentHandler _paymentHandler;
 
-        public PaymentService(IPaymentRepository paymentRepository, IMapper mapper, IOrderService orderService, ICustomerService customerService, ICurrencyRateService currencyRateService, IHttpContextAccessor httpContextAccessor)
+        public PaymentService(IPaymentRepository paymentRepository, IMapper mapper, IOrderRepository orderRepository, ICustomerService customerService, IHttpContextAccessor httpContextAccessor, IPaymentHandler paymentHandler)
         {
             _mapper = mapper;
             _repo = paymentRepository;
-            _orderService = orderService;
+            _orderRepository = orderRepository;
             _customerService = customerService;
-            _currencyRateService = currencyRateService;
             _httpContextAccessor = httpContextAccessor;
+            _paymentHandler = paymentHandler;
         }
 
         public int AddPayment(AddPaymentDto model)
@@ -41,29 +40,12 @@ namespace ECommerceApp.Application.Services.Payments
             {
                 throw new BusinessException($"{typeof(AddPaymentDto).Name} cannot be null");
             }
-
-            var order = _orderService.Get(model.OrderId) ??
-                throw new BusinessException($"Order with id '{model.OrderId}' was not found");
-            if (order.IsPaid)
-            {
-                throw new BusinessException($"Order with id '{model.OrderId}' has alredy been paid");
-            }
-
-            var payment = new Payment()
-            {
-                Number = Guid.NewGuid().ToString(),
-                State = PaymentState.Paid,
-                CurrencyId = model.CurrencyId,
-                DateOfOrderPayment = DateTime.Now,
-                Cost = CalculateCost(order.Cost, model.CurrencyId),
-                CustomerId = order.CustomerId,
-                OrderId = order.Id
-            };
-            _repo.AddPayment(payment);
+            var order = _orderRepository.GetById(model.OrderId);
+            var paymentId = _paymentHandler.CreatePayment(model, order);
             order.IsPaid = true;
-            order.PaymentId = payment.Id;
-            _orderService.Update(order);
-            return payment.Id;
+            order.PaymentId = paymentId;
+            _orderRepository.Update(order);
+            return paymentId;
         }
 
         public int PaidIssuedPayment(PaymentVm model)
@@ -73,29 +55,21 @@ namespace ECommerceApp.Application.Services.Payments
                 throw new BusinessException($"{typeof(PaymentVm).Name} cannot be null");
             }
 
-            var payment = _repo.GetById(model.Id)
-                ?? throw new BusinessException($"Payment with id '{model.Id}' was not found");
-            var order = _orderService.Get(payment.OrderId) ??
-                throw new BusinessException($"Order with id '{payment.Id}' was not found");
-            payment.State = PaymentState.Paid;
-            payment.CurrencyId = model.CurrencyId;
-            payment.Cost = CalculateCost(payment.Cost, model.CurrencyId);
-            payment.DateOfOrderPayment = DateTime.Now;
-            payment.CustomerId = order.CustomerId;
-            _repo.Update(payment);
-            order.IsPaid = true;
-            order.PaymentId = payment.Id;
-            _orderService.Update(order);
-            return payment.Id;
+            var order = _orderRepository.GetById(model.OrderId) ??
+                throw new BusinessException($"Order with id '{model.OrderId}' was not found");
+            var paymentId = _paymentHandler.PaidIssuedPayment(model, order);
+            _orderRepository.Update(order);
+            return paymentId;
         }
 
         public bool DeletePayment(int id)
         {
             var payment = _repo.GetById(id);
-            var order = _orderService.Get(payment.OrderId);
+            var order = _orderRepository.GetById(payment.OrderId) ??
+                throw new BusinessException($"Order with id '{payment.OrderId}' was not found"); ;
             order.IsPaid = false;
             order.PaymentId = null;
-            _orderService.Update(order);
+            _orderRepository.Update(order);
             return _repo.Delete(payment);
         }
 
@@ -256,7 +230,7 @@ namespace ECommerceApp.Application.Services.Payments
                 return vm;
             }
 
-            var order = _orderService.Get(orderId);
+            var order = _orderRepository.GetById(orderId);
             var customer = _customerService.GetCustomerInformationById(order.CustomerId);
             var payment = new Payment
             {
@@ -283,13 +257,6 @@ namespace ECommerceApp.Application.Services.Payments
             };
 
             return paymentVm;
-        }
-
-        private decimal CalculateCost(decimal cost, int currencyId)
-        {
-            var rate = _currencyRateService.GetLatestRate(currencyId);
-            var calculatedCost = cost / rate.Rate;
-            return calculatedCost;
         }
 
         private static DateTime SetFormat(DateTime dateTime)
