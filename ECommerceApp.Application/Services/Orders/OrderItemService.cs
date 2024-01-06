@@ -220,9 +220,9 @@ namespace ECommerceApp.Application.Services.Orders
             return _mapper.Map<List<OrderItemDto>>(orderItems);
         }
 
-        public List<OrderItemDto> GetOrderItems(List<int> ids)
+        public List<OrderItemDto> GetOrderItemsNotOrdered(IEnumerable<int> ids)
         {
-            return _mapper.Map<List<OrderItemDto>>(_orderItemRepository.GetOrderItems(ids));
+            return _mapper.Map<List<OrderItemDto>>(_orderItemRepository.GetOrderItemsNotOrdered(ids));
         }
 
         public IEnumerable<int> GetOrderItemsIdsForRealization(string userId)

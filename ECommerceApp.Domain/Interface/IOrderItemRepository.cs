@@ -11,6 +11,6 @@ namespace ECommerceApp.Domain.Interface
         OrderItem GetOrderItemById(int orderItemId);
         IQueryable<OrderItem> GetAllOrderItems();
         void UpdateOrderItem(OrderItem orderItem);
-        List<OrderItem> GetOrderItems(List<int> ids);
+        List<OrderItem> GetOrderItemsNotOrdered(IEnumerable<int> ids);
     }
 }

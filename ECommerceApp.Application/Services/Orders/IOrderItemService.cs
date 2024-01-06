@@ -26,6 +26,6 @@ namespace ECommerceApp.Application.Services.Orders
         ListForOrderItemVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo);
         ListForOrderItemVm GetOrderItemsNotOrderedByUserId(string userId, int pageSize, int pageNo);
         IQueryable<OrderItem> GetOrderItems();
-        List<OrderItemDto> GetOrderItems(List<int> ids);
+        List<OrderItemDto> GetOrderItemsNotOrdered(IEnumerable<int> ids);
     }
 }

@@ -29,9 +29,10 @@ namespace ECommerceApp.Application.Services.Orders
         private readonly ICouponUsedRepository _couponUsedRepository;
         private readonly ICustomerService _customerService;
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IPaymentRepository _paymentRepository;
 
         public OrderService(IOrderRepository orderRepo, IMapper mapper, IOrderItemService orderItemService, IItemService itemService, ICouponService couponService, ICouponUsedRepository couponUsedRepository, ICustomerService customerService,
-                IHttpContextAccessor httpContextAccessor)
+                IHttpContextAccessor httpContextAccessor, IPaymentRepository paymentRepository)
         {
             _orderRepository = orderRepo;
             _mapper = mapper;
@@ -41,6 +42,7 @@ namespace ECommerceApp.Application.Services.Orders
             _couponUsedRepository = couponUsedRepository;
             _customerService = customerService;
             _httpContextAccessor = httpContextAccessor;
+            _paymentRepository = paymentRepository;
         }
 
         public OrderDto Get(int id)
@@ -404,6 +406,11 @@ namespace ECommerceApp.Application.Services.Orders
         public NewOrderVm GetOrderForRealization(int orderId)
         {
             var order = _orderRepository.GetOrderForRealizationById(orderId);
+            if (order is null)
+            {
+                return null;
+            }
+
             var orderVm = _mapper.Map<NewOrderVm>(order);
             // TODO: in future fetch items from frontend
             orderVm.Items = _itemService.GetAllItems(i => true).ToList();
@@ -414,6 +421,11 @@ namespace ECommerceApp.Application.Services.Orders
         public NewOrderVm BuildVmForEdit(int orderId)
         {
             var order = _orderRepository.GetOrderDetailsById(orderId);
+            if (order is null)
+            {
+                return null;
+            }
+
             var orderVm = _mapper.Map<NewOrderVm>(order);
             // TODO: in future fetch items from frontend
             orderVm.Items = _itemService.GetAllItems(i => true).ToList();
@@ -655,7 +667,7 @@ namespace ECommerceApp.Application.Services.Orders
             }
 
             var ids = dto.OrderItems?.Select(oi => oi.Id)?.ToList() ?? new List<int>();
-            dto.OrderItems = _orderItemService.GetOrderItems(ids);
+            dto.OrderItems = _orderItemService.GetOrderItemsNotOrdered(ids);
             CheckOrderItemsOrderByUser(dto, dto.OrderItems);
             CalculateCost(dto);
 
@@ -768,6 +780,147 @@ namespace ECommerceApp.Application.Services.Orders
             var order = _orderRepository.GetOrderSummaryById(orderId);
             var orderVm = _mapper.Map<NewOrderVm>(order);
             return orderVm;
+        }
+
+        public OrderDetailsVm UpdateOrder(UpdateOrderDto dto)
+        {
+            if (dto is null)
+            {
+                throw new BusinessException($"{typeof(UpdateOrderDto).Name} cannot be null");
+            }
+
+            var order = _orderRepository.GetOrderDetailsById(dto.Id)
+                ?? throw new BusinessException($"Order with id '{dto.Id}' was not found");
+            var coupon = (CouponVm) null;
+            if (string.IsNullOrWhiteSpace(dto.PromoCode))
+            {
+                coupon = _couponService.GetCouponByCode(dto.PromoCode)
+                    ?? throw new BusinessException($"Coupon code '{dto.PromoCode}' was not found");
+            }
+            var customer = _customerService.GetCustomer(dto.CustomerId)
+                ?? throw new BusinessException($"Customer with id '{dto.CustomerId}' was not found");
+            if (dto.CouponUsedId.HasValue && dto.CouponUsedId.Value != order.CouponUsedId)
+            {
+                throw new BusinessException($"Cannot assign existed coupon with id '{dto.CouponUsedId}'");
+            }
+
+            if (!string.IsNullOrWhiteSpace(dto.OrderNumber))
+            {
+                order.Number = dto.OrderNumber;
+            }
+
+            if (dto.Ordered.HasValue)
+            {
+                order.Ordered = dto.Ordered.Value;
+            }
+
+            order.CustomerId = dto.CustomerId;
+
+            if (!dto.PaymentId.HasValue && order.PaymentId.HasValue)
+            {
+                _paymentRepository.Delete(order.PaymentId.Value);
+                order.PaymentId = null;
+                order.Payment = null;
+            }
+
+            if (dto.PaymentId != order.PaymentId)
+            {
+                throw new BusinessException($"Cannot assign existed payment with id '{dto.PaymentId}'");
+            }
+
+            if (order.IsDelivered)
+            {
+                order.IsDelivered = true;
+                order.Delivered = DateTime.Now;
+            }
+
+            var itemsToAdd = dto.OrderItems.Where(oi => oi.Id == 0 && oi.ItemId > 0 && oi.ItemOrderQuantity > 0);
+            var orderItems = _orderItemService.GetOrderItemsNotOrdered(dto.OrderItems.Where(oi => oi.Id > 0).Select(oi => oi.Id));
+            foreach (var orderItem in orderItems)
+            {
+                orderItem.OrderId = order.Id;
+                _orderItemService.UpdateOrderItem(orderItem);
+                var orderItemToAdd = dto.OrderItems.FirstOrDefault(oi => oi.Id == orderItem.Id);
+                if (orderItemToAdd != null)
+                {
+                    dto.OrderItems.Remove(orderItemToAdd);
+                }
+                var orderItemMapped = _mapper.Map<OrderItem>(orderItem);
+                orderItemMapped.Item = new Item { Id = orderItem.ItemId, Cost = orderItem.ItemCost, Name = orderItem.ItemName };
+                order.OrderItems.Add(orderItemMapped);
+            }
+
+            if (itemsToAdd.Any())
+            {
+                var items = _itemService.GetItems().Where(i => itemsToAdd.Select(it => it.Id).Contains(i.Id)).AsNoTracking().ToList();
+                foreach(var item in itemsToAdd)
+                {
+                    var itemExists = items.FirstOrDefault(i => item.Id == item.Id);
+                    if (itemExists is null)
+                    {
+                        continue;
+                    }
+                    var orderItemDto = new OrderItemDto { Id = 0, ItemId = itemExists.Id, ItemOrderQuantity = item.ItemOrderQuantity, ItemCost = itemExists.Cost, ItemName = itemExists.Name, UserId = order.UserId, OrderId = order.Id };
+                    _orderItemService.AddOrderItem(orderItemDto);
+                    var orderItemMapped = _mapper.Map<OrderItem>(orderItemDto);
+                    orderItemMapped.Item = new Item { Id = orderItemDto.ItemId, Cost = orderItemDto.ItemCost, Name = orderItemDto.ItemName };
+                    order.OrderItems.Add(orderItemMapped);
+                }
+            }
+
+            var orderItemsToModify = dto.OrderItems.Where(oi => oi.Id > 0);
+            var orderItemsToRemove = new List<OrderItem>();
+            foreach (var orderItem in order.OrderItems)
+            {
+                var orderItemExists = orderItemsToModify.FirstOrDefault(oi => oi.Id == orderItem.Id);
+                if (orderItemExists is null)
+                {
+                    order.OrderItems.Remove(orderItem);
+                    orderItemsToRemove.Add(orderItem);
+                    continue;
+                }
+
+                if (orderItem.ItemOrderQuantity != orderItemExists.ItemOrderQuantity)
+                {
+                    orderItem.ItemOrderQuantity = orderItemExists.ItemOrderQuantity;
+                }
+            }
+
+            var cost = 0M;
+            var discount = (1 - order.CouponUsed?.Coupon.Discount ?? 0);
+            foreach (var orderItem in order.OrderItems)
+            {
+                cost += orderItem.Item.Cost * orderItem.ItemOrderQuantity * discount;
+            }
+            order.Cost = cost;
+
+            if (string.IsNullOrWhiteSpace(dto.PromoCode))
+            {
+                cost = 0M;
+                discount = 1 - coupon.Discount;
+                foreach (var orderItem in order.OrderItems)
+                {
+                    cost += orderItem.Item.Cost * orderItem.ItemOrderQuantity * discount;
+                }
+                order.Cost = cost;
+            }
+            else if (!dto.CouponUsedId.HasValue)
+            {
+                cost = 0M;
+                foreach (var orderItem in order.OrderItems)
+                {
+                    cost += orderItem.Item.Cost * orderItem.ItemOrderQuantity;
+                    orderItem.CouponUsed = null;
+                    orderItem.CouponUsedId = null;
+                }
+                order.Cost = cost;
+                order.CouponUsed = null;
+                order.CouponUsedId = null;
+            }
+
+            _orderRepository.Update(order);
+            orderItemsToRemove.ForEach(oi => _orderItemService.DeleteOrderItem(oi.Id));
+            return _mapper.Map<OrderDetailsVm>(order);
         }
 
         private record OrderItemValidationModel(int Id, string UserId);

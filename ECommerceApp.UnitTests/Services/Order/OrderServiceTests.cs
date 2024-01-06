@@ -500,7 +500,7 @@ namespace ECommerceApp.Tests.Services.Order
         {
             var orderService = new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object, _httpContextAccessor);
 
-            Action action = () => orderService.UpdateOrder(null);
+            Action action = () => orderService.UpdateOrder((OrderDto) null);
 
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }

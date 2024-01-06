@@ -42,10 +42,10 @@ namespace ECommerceApp.Infrastructure.Repositories
             return orderItem;
         }
 
-        public List<OrderItem> GetOrderItems(List<int> ids)
+        public List<OrderItem> GetOrderItemsNotOrdered(IEnumerable<int> ids)
         {
             return GetDbSet()
-                .Where(oi => ids.Contains(oi.Id))
+                .Where(oi => ids.Contains(oi.Id) && oi.OrderId == null)
                 .Include(i => i.Item)
                 .ToList()
                 ?? new List<OrderItem>();
