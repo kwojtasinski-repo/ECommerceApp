@@ -113,7 +113,7 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task given_order_items_by_user_with_promo_code_should_add_order_with_order_items()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var cost = 4500;
+            var cost = 13500;
             var order = new AddOrderDto { Id = 0, CustomerId = 1, PromoCode = "AGEWEDSGFEW" };
 
             var response = await client.Request($"api/orders/with-all-order-items")
@@ -135,7 +135,9 @@ namespace ECommerceApp.IntegrationTests.API
         {
             var client = await _factory.GetAuthenticatedClient();
             var cost = 5000;
-            var order = new AddOrderDto { Id = 0, CustomerId = 1, OrderItems = new List<OrderItemsIdsDto> { new OrderItemsIdsDto { Id = 2 }, new OrderItemsIdsDto { Id = 3 } } };
+            var orderItem1 = await AddDefaultOrderItem();
+            var orderItem2 = await AddDefaultOrderItem();
+            var order = new AddOrderDto { Id = 0, CustomerId = 1, OrderItems = new List<OrderItemsIdsDto> { new OrderItemsIdsDto { Id = orderItem1 }, new OrderItemsIdsDto { Id = orderItem2 } } };
 
             var response = await client.Request($"api/orders")
                 .AllowAnyHttpStatus()
@@ -156,7 +158,9 @@ namespace ECommerceApp.IntegrationTests.API
         {
             var client = await _factory.GetAuthenticatedClient();
             var cost = 4500;
-            var order = new AddOrderDto { Id = 0, CustomerId = 1, OrderItems = new List<OrderItemsIdsDto> { new OrderItemsIdsDto { Id = 2 }, new OrderItemsIdsDto { Id = 3 } }, PromoCode = "AGEWEDSGFEWX" };
+            var orderItem1 = await AddDefaultOrderItem();
+            var orderItem2 = await AddDefaultOrderItem();
+            var order = new AddOrderDto { Id = 0, CustomerId = 1, OrderItems = new List<OrderItemsIdsDto> { new OrderItemsIdsDto { Id = orderItem2 }, new OrderItemsIdsDto { Id = orderItem1 } }, PromoCode = "AGEWEDSGFEWX" };
 
             var response = await client.Request($"api/orders")
                 .AllowAnyHttpStatus()
@@ -177,7 +181,7 @@ namespace ECommerceApp.IntegrationTests.API
         {
             var client = await _factory.GetAuthenticatedClient();
             var cost = new decimal(2500);
-            var order = new AddOrderDto { Id = 1, CustomerId = 1, OrderItems = new List<OrderItemsIdsDto> { new OrderItemsIdsDto { Id = 1} , new OrderItemsIdsDto { Id = 2 }, new OrderItemsIdsDto { Id = 3 } }, PromoCode = "AGEWEDSGFEW" };
+            var order = new AddOrderDto { Id = 1, CustomerId = 1, OrderItems = new List<OrderItemsIdsDto> { new OrderItemsIdsDto { Id = 1} , new OrderItemsIdsDto { Id = 7 }, new OrderItemsIdsDto { Id = 8 } }, PromoCode = "AGEWEDSGFEW" };
 
             var response = await client.Request($"api/orders/{order.Id}")
                 .AllowAnyHttpStatus()
@@ -190,6 +194,31 @@ namespace ECommerceApp.IntegrationTests.API
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
             orderAdded.ShouldNotBeNull();
             orderAdded.Cost.ShouldBeGreaterThan(cost);
+        }
+
+        private async Task<int> AddDefaultOrderItem()
+        {
+            var orderItem = CreateOrderItem(0);
+            var client = await _factory.GetAuthenticatedClient();
+            var response = await client.Request("api/order-items")
+                .AllowAnyHttpStatus()
+                .PostJsonAsync(orderItem);
+
+            var id = JsonConvert.DeserializeObject<int>(await response.ResponseMessage.Content.ReadAsStringAsync());
+            id.ShouldBeGreaterThan(0);
+            response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
+            return id;
+
+            static OrderItemDto CreateOrderItem(int id)
+            {
+                var orderItem = new OrderItemDto
+                {
+                    Id = id,
+                    ItemId = 1,
+                    ItemOrderQuantity = 1
+                };
+                return orderItem;
+            }
         }
     }
 }

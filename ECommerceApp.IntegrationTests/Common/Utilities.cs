@@ -127,6 +127,14 @@ namespace ECommerceApp.IntegrationTests.Common
             context.Add(orderItem2);
             var orderItem3 = new Domain.Model.OrderItem { Id = 3, ItemId = 6, ItemOrderQuantity = 1, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e" };
             context.Add(orderItem3);
+            var orderItem5 = new Domain.Model.OrderItem { Id = 5, ItemId = 5, ItemOrderQuantity = 1, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e" };
+            context.Add(orderItem5);
+            var orderItem6 = new Domain.Model.OrderItem { Id = 6, ItemId = 6, ItemOrderQuantity = 1, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e" };
+            context.Add(orderItem6);
+            var orderItem7 = new Domain.Model.OrderItem { Id = 7, ItemId = 5, ItemOrderQuantity = 1, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e" };
+            context.Add(orderItem7);
+            var orderItem8 = new Domain.Model.OrderItem { Id = 8, ItemId = 6, ItemOrderQuantity = 1, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e" };
+            context.Add(orderItem8);
 
             var order = new Domain.Model.Order { Id = 1, Cost = new decimal(2500), CurrencyId = 1, CustomerId = 1, Number = "12445", UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now };
             context.Add(order);

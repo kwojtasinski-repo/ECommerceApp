@@ -41,6 +41,8 @@ namespace ECommerceApp.Application.Services
             services.AddTransient<IPaymentService, PaymentService>();
             services.AddTransient<IOrderService, OrderService>();
             services.AddTransient<IOrderItemService, OrderItemService>();
+            services.AddTransient<IPaymentHandler, PaymentHandler>();
+            services.AddTransient<ICouponHandler, CouponHandler>();
             services.AddHttpContextAccessor();
             return services;
         }

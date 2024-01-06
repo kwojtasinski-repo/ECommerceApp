@@ -21,6 +21,11 @@ namespace ECommerceApp.Application.Services.Payments
 
         public int CreatePayment(AddPaymentDto addPaymentDto, Order order)
         {
+            if (order is null)
+            {
+                throw new BusinessException($"{typeof(Order).Name} cannot be null");
+            }
+
             if (addPaymentDto is null)
             {
                 throw new BusinessException($"{typeof(AddPaymentDto).Name} cannot be null");

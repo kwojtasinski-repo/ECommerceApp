@@ -40,7 +40,8 @@ namespace ECommerceApp.Application.Services.Payments
             {
                 throw new BusinessException($"{typeof(AddPaymentDto).Name} cannot be null");
             }
-            var order = _orderRepository.GetById(model.OrderId);
+            var order = _orderRepository.GetById(model.OrderId) ??
+                throw new BusinessException($"Order with id '{model.OrderId}' was not found"); ;
             var paymentId = _paymentHandler.CreatePayment(model, order);
             order.IsPaid = true;
             order.PaymentId = paymentId;
