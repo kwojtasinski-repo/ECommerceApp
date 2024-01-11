@@ -22,7 +22,7 @@ namespace ECommerceApp.Application.DTO
     
     public class PaymentInfoDto
     {
-        public int Id { get; set; }
+        public int? Id { get; set; }
         public int CurrencyId { get; set; }
     }
 

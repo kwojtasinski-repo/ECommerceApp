@@ -74,51 +74,10 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpPut("{id:int}")]
-        public IActionResult EditOrder(int id, [FromBody] AddOrderDto model)
+        public IActionResult EditOrder(int id, [FromBody] UpdateOrderDto model)
         {
             model.Id = id;
-            var vm = _orderService.GetOrderByIdReadOnly(model.Id);
-            var modelExists = vm != null;
-            if (!ModelState.IsValid || !modelExists)
-            {
-                return Conflict(ModelState);
-            }
-
-            if (vm.IsPaid)
-            {
-                return Conflict();
-            }
-            vm.UserId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
-            vm.OrderItems.ForEach(oi => oi.UserId = vm.UserId);
-            
-            foreach(var orderItemId in model.OrderItems)
-            {
-                if (!vm.OrderItems.Any(o => o.Id == orderItemId.Id))
-                {
-                    vm.OrderItems.Add(new OrderItemDto { Id = orderItemId.Id });
-                }
-            }
-
-            var orderItemsToRemove = new List<OrderItemDto>();
-            foreach (var orderItem in vm.OrderItems)
-            {
-                var orderItemId = model.OrderItems.Where(oi => oi.Id == orderItem.Id).FirstOrDefault();
-
-                if(orderItemId == null)
-                {
-                    orderItemsToRemove.Add(orderItem);
-                }
-            }
-
-            foreach(var orderItem in orderItemsToRemove)
-            {
-                vm.OrderItems.Remove(orderItem);
-            }
-
-            _orderService.UpdateOrderWithExistedOrderItemsIds(vm);
-            
-            TryUseCoupon(model);
-
+            _orderService.UpdateOrder(model);
             return Ok();
         }
 

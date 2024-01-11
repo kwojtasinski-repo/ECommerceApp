@@ -8,6 +8,7 @@ using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Order;
+using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using Microsoft.AspNetCore.Http;
@@ -32,9 +33,12 @@ namespace ECommerceApp.Application.Services.Orders
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IPaymentHandler _paymentHandler;
         private readonly ICouponHandler _couponHandler;
+        private readonly IOrderItemRepository _orderItemRepository;
+        private readonly IItemRepository _itemRepository;
 
         public OrderService(IOrderRepository orderRepo, IMapper mapper, IOrderItemService orderItemService, IItemService itemService, ICouponService couponService, ICouponUsedRepository couponUsedRepository, ICustomerService customerService,
-                IHttpContextAccessor httpContextAccessor, IPaymentHandler paymentHandler, ICouponHandler couponHandler)
+                IHttpContextAccessor httpContextAccessor, IPaymentHandler paymentHandler, ICouponHandler couponHandler,
+                IOrderItemRepository orderItemRepository, IItemRepository itemRepository)
         {
             _orderRepository = orderRepo;
             _mapper = mapper;
@@ -46,6 +50,8 @@ namespace ECommerceApp.Application.Services.Orders
             _httpContextAccessor = httpContextAccessor;
             _paymentHandler = paymentHandler;
             _couponHandler = couponHandler;
+            _orderItemRepository = orderItemRepository;
+            _itemRepository = itemRepository;
         }
 
         public OrderDto Get(int id)
@@ -794,7 +800,7 @@ namespace ECommerceApp.Application.Services.Orders
 
             var order = _orderRepository.GetOrderDetailsById(dto.Id)
                 ?? throw new BusinessException($"Order with id '{dto.Id}' was not found");
-            var coupon = (CouponVm) null;
+            var coupon = (CouponVm)null;
             if (!string.IsNullOrWhiteSpace(dto.PromoCode))
             {
                 coupon = _couponService.GetCouponByCode(dto.PromoCode)
@@ -818,7 +824,6 @@ namespace ECommerceApp.Application.Services.Orders
             }
 
             order.CustomerId = dto.CustomerId;
-            _paymentHandler.HandlePaymentChangesOnOrder(dto.Payment, order);
 
             if (!order.IsDelivered && dto.IsDelivered)
             {
@@ -832,8 +837,22 @@ namespace ECommerceApp.Application.Services.Orders
                 order.Delivered = null;
             }
 
-            var itemsToAdd = dto.OrderItems?.Where(oi => oi.Id == 0 && oi.ItemId > 0 && oi.ItemOrderQuantity > 0) ?? Enumerable.Empty<AddOrderItemDto>();
+            var orderItemsToAdd = dto.OrderItems?.Where(oi => oi.Id == 0 && oi.ItemId > 0 && oi.ItemOrderQuantity > 0) ?? Enumerable.Empty<AddOrderItemDto>();
             var orderItemsToModify = dto.OrderItems?.Where(oi => oi.Id > 0) ?? Enumerable.Empty<AddOrderItemDto>();
+            var errors = new StringBuilder();
+            foreach (var orderItemToModify in orderItemsToModify)
+            {
+                var orderItemExists = order.OrderItems?.FirstOrDefault(oi => oi.Id == orderItemToModify.Id);
+                if (orderItemExists is null)
+                {
+                    errors.Append($"Order doesn't have order item with id '{orderItemToModify.Id}'.");
+                }
+            }
+            if (errors.Length > 0)
+            {
+                throw new BusinessException(errors.ToString());
+            }
+
             var orderItemsToRemove = new List<OrderItem>();
             var currentOrderItems = new List<OrderItem>(order.OrderItems ?? Enumerable.Empty<OrderItem>());
             foreach (var orderItem in currentOrderItems)
@@ -852,30 +871,26 @@ namespace ECommerceApp.Application.Services.Orders
                 }
             }
 
-            if (itemsToAdd.Any())
+            if (orderItemsToAdd.Any())
             {
-                var items = _itemService.GetItems().Where(i => itemsToAdd.Select(it => it.ItemId).Contains(i.Id)).AsNoTracking().ToList();
-                foreach(var item in itemsToAdd)
+                var items = _itemRepository.GetAll().Where(i => orderItemsToAdd.Select(it => it.ItemId).Contains(i.Id)).ToList();
+                foreach(var item in orderItemsToAdd)
                 {
                     var itemExists = items.FirstOrDefault(i => i.Id == item.ItemId);
                     if (itemExists is null)
                     {
                         continue;
                     }
-                    var orderItemDto = new OrderItemDto { Id = 0, ItemId = itemExists.Id, ItemOrderQuantity = item.ItemOrderQuantity, ItemCost = itemExists.Cost, ItemName = itemExists.Name, UserId = order.UserId, OrderId = order.Id };
-                    var id = _orderItemService.AddOrderItem(orderItemDto);
-                    orderItemDto.Id = id;
-                    var orderItemMapped = _mapper.Map<OrderItem>(orderItemDto);
-                    orderItemMapped.Item = new Item { Id = orderItemDto.ItemId, Cost = orderItemDto.ItemCost, Name = orderItemDto.ItemName };
-                    var existedOrderItem = order.OrderItems.FirstOrDefault(oi => oi.Id == orderItemMapped.Id);
-                    if (existedOrderItem is null)
+                    var orderItem = new OrderItem
                     {
-                        order.OrderItems.Add(orderItemMapped);
-                        continue;
-                    }
-                    order.OrderItems.Remove(existedOrderItem);
-                    orderItemMapped.ItemOrderQuantity += existedOrderItem.ItemOrderQuantity;
-                    order.OrderItems.Add(orderItemMapped);
+                        Id = 0,
+                        ItemId = item.ItemId,
+                        ItemOrderQuantity = item.ItemOrderQuantity,
+                        OrderId = order.Id,
+                        Item = itemExists
+                    };
+                    _orderItemRepository.AddOrderItem(orderItem);
+                    order.OrderItems.Add(orderItem);
                 }
             }
 
@@ -888,7 +903,8 @@ namespace ECommerceApp.Application.Services.Orders
                 cost += orderItem.Item.Cost * orderItem.ItemOrderQuantity * discount;
             }
             order.Cost = cost;
-            
+
+            _paymentHandler.HandlePaymentChangesOnOrder(dto.Payment, order);
             _orderRepository.Update(order);
             orderItemsToRemove.ForEach(oi => _orderItemService.DeleteOrderItem(oi.Id));
             return _mapper.Map<OrderDetailsVm>(order);

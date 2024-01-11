@@ -1,15 +1,14 @@
 ﻿using ECommerceApp.API;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.ViewModels.Order;
-using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.IntegrationTests.Common;
 using Flurl.Http;
 using Newtonsoft.Json;
 using Shouldly;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -180,20 +179,72 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task given_valid_order_should_update()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var cost = new decimal(2500);
-            var order = new AddOrderDto { Id = 1, CustomerId = 1, OrderItems = new List<OrderItemsIdsDto> { new OrderItemsIdsDto { Id = 1} , new OrderItemsIdsDto { Id = 7 }, new OrderItemsIdsDto { Id = 8 } }, PromoCode = "AGEWEDSGFEW" };
+            var orderCost = 2500M;
+            var order = new UpdateOrderDto { 
+                Id = 1,
+                CustomerId = 1,
+                Ordered = DateTime.Now,
+                OrderNumber = "ZAM/11/01/2024/1",
+                PromoCode = "AGEWEDSGFEW",
+                Payment = new PaymentInfoDto { CurrencyId = 1 },
+                IsDelivered = true,
+                OrderItems = new List<AddOrderItemDto> {
+                    new AddOrderItemDto { Id = 1, ItemOrderQuantity = 1 },
+                    new AddOrderItemDto { ItemId = 5, ItemOrderQuantity = 1 },
+                    new AddOrderItemDto { ItemId = 6, ItemOrderQuantity = 1 },
+                    new AddOrderItemDto { ItemId = 1, ItemOrderQuantity = 2 },
+                },
+            };
+            var discount = 10;
+            var expectedCost = (1 - (discount/ 100M)) * 12500M;
+            var expectedOrderItems = 4;
 
             var response = await client.Request($"api/orders/{order.Id}")
-                .AllowAnyHttpStatus()
+                .AllowHttpStatus(HttpStatusCode.NoContent)
                 .PutJsonAsync(order);
 
             var orderAdded = await client.Request($"api/orders/{order.Id}")
-                .AllowAnyHttpStatus()
+                .AllowHttpStatus(HttpStatusCode.OK)
                 .GetAsync()
                 .ReceiveJson<OrderDetailsVm>();
-            response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
             orderAdded.ShouldNotBeNull();
-            orderAdded.Cost.ShouldBeGreaterThan(cost);
+            orderAdded.Number.ShouldBe(order.OrderNumber);
+            orderAdded.Ordered.ShouldBe(order.Ordered.Value);
+            orderAdded.Cost.ShouldBeGreaterThan(orderCost);
+            orderAdded.Cost.ShouldBe(expectedCost);
+            orderAdded.PaymentId.ShouldNotBeNull();
+            orderAdded.PaymentId.Value.ShouldBeGreaterThan(0);
+            orderAdded.CouponUsedId.HasValue.ShouldBeTrue();
+            orderAdded.CouponUsedId.Value.ShouldBeGreaterThan(0);
+            orderAdded.IsDelivered.ShouldBeTrue();
+            orderAdded.Delivered.HasValue.ShouldBeTrue();
+            orderAdded.Delivered.Value.ShouldBeGreaterThan(order.Ordered.Value);
+            orderAdded.Delivered.Value.ShouldBeLessThan(DateTime.Now);
+            orderAdded.OrderItems.ShouldNotBeEmpty();
+            orderAdded.OrderItems.Count.ShouldBe(expectedOrderItems);
+            orderAdded.OrderItems.ShouldContain(oi => oi.ItemId == 1);
+            orderAdded.OrderItems.ShouldContain(oi => oi.ItemId == 5);
+            orderAdded.OrderItems.ShouldContain(oi => oi.ItemId == 6);
+            var firstOrderItem = orderAdded.OrderItems.FirstOrDefault(oi => oi.Id == 1);
+            firstOrderItem.ShouldNotBeNull();
+            firstOrderItem.Id.ShouldBeGreaterThan(0);
+            firstOrderItem.ItemCost.ShouldBe(2500);
+            firstOrderItem.ItemOrderQuantity.ShouldBe(1);
+            var secondOrderItem = orderAdded.OrderItems.FirstOrDefault(oi => oi.ItemId == 5);
+            secondOrderItem.ShouldNotBeNull();
+            secondOrderItem.Id.ShouldBeGreaterThan(0);
+            secondOrderItem.ItemCost.ShouldBe(2500);
+            secondOrderItem.ItemOrderQuantity.ShouldBe(1);
+            var thirdOrderItem = orderAdded.OrderItems.FirstOrDefault(oi => oi.ItemId == 6);
+            thirdOrderItem.ShouldNotBeNull();
+            thirdOrderItem.Id.ShouldBeGreaterThan(0);
+            thirdOrderItem.ItemCost.ShouldBe(2500);
+            thirdOrderItem.ItemOrderQuantity.ShouldBe(1);
+            var fourthOrderItem = orderAdded.OrderItems.FirstOrDefault(oi => oi.Id != 1 && oi.ItemId == 1);
+            fourthOrderItem.ShouldNotBeNull();
+            fourthOrderItem.Id.ShouldBeGreaterThan(0);
+            fourthOrderItem.ItemCost.ShouldBe(2500);
+            fourthOrderItem.ItemOrderQuantity.ShouldBe(2);
         }
 
         private async Task<int> AddDefaultOrderItem()

@@ -33,7 +33,7 @@ namespace ECommerceApp.Application.Services.Coupons
                 return;
             }
 
-            if (dto.CouponUsedId == order.CouponUsedId)
+            if (dto.CouponUsedId == order.CouponUsedId && string.IsNullOrEmpty(dto.PromoCode))
             {
                 return;
             }
@@ -52,6 +52,11 @@ namespace ECommerceApp.Application.Services.Coupons
 
             var coupon = _couponRepository.GetById(couponVm.Id)
                 ?? throw new BusinessException($"Coupon with id '{couponVm.Id}' was not found");
+
+            if (coupon.CouponUsedId.HasValue)
+            {
+                throw new BusinessException("Cannot assign used coupon");
+            }
 
             if (order.CouponUsed is not null || order.CouponUsedId.HasValue)
             {
@@ -75,6 +80,12 @@ namespace ECommerceApp.Application.Services.Coupons
             _couponRepository.Update(coupon);
             order.CouponUsed = couponUsed;
             order.CouponUsedId = couponUsed.Id;
+
+            foreach (var orderItem in order.OrderItems)
+            {
+                orderItem.CouponUsed = couponUsed;
+                orderItem.CouponUsedId = couponUsed.Id;
+            }
         }
     }
 }

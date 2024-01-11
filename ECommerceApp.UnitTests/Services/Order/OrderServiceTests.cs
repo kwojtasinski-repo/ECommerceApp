@@ -39,6 +39,8 @@ namespace ECommerceApp.Tests.Services.Order
         private readonly Mock<ICouponRepository> _couponRepository;
         private readonly IPaymentHandler _paymentHandler;
         private readonly ICouponHandler _couponHandler;
+        private readonly Mock<IOrderItemRepository> _orderItemRepository;
+        private readonly Mock<IItemRepository> _itemRepository;
 
         public OrderServiceTests()
         {
@@ -54,12 +56,14 @@ namespace ECommerceApp.Tests.Services.Order
             _couponRepository = new Mock<ICouponRepository>();
             _paymentHandler = new PaymentHandler(_paymentRepository.Object, _currencyRateService.Object);
             _couponHandler = new CouponHandler(_couponRepository.Object, _couponUsedRepository.Object);
+            _orderItemRepository = new Mock<IOrderItemRepository>();
+            _itemRepository = new Mock<IItemRepository>();
         }
 
         private OrderService CreateService()
         {
             return new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object, _httpContextAccessor,
-                    _paymentHandler, _couponHandler
+                    _paymentHandler, _couponHandler, _orderItemRepository.Object, _itemRepository.Object
                 );
         }
 
@@ -604,7 +608,6 @@ namespace ECommerceApp.Tests.Services.Order
             var customer = CreateDefaultCustomer();
             AddOrder(order);
             AddCustomer(customer);
-            _orderItemService.Setup(oi => oi.GetOrderItemsNotOrdered(It.IsAny<IEnumerable<int>>())).Returns(new List<OrderItemDto>());
             var items = GenerateAndAddItems();
             GenerateIdsOnAddOrderItem();
             var dto = new UpdateOrderDto
@@ -646,56 +649,6 @@ namespace ECommerceApp.Tests.Services.Order
         }
 
         [Fact]
-        public void given_valid_update_order_dto_with_same_items_should_update_with_order_items_count_equals_1()
-        {
-            var orderService = CreateService();
-            var order = CreateDefaultOrder();
-            var customer = CreateDefaultCustomer();
-            AddOrder(order);
-            AddCustomer(customer);
-            _orderItemService.Setup(oi => oi.GetOrderItemsNotOrdered(It.IsAny<IEnumerable<int>>())).Returns(new List<OrderItemDto>());
-            var items = GenerateAndAddItems();
-            GenerateIdsOnAddOrderItem();
-            var dto = new UpdateOrderDto
-            {
-                Id = order.Id,
-                CustomerId = customer.Id,
-                OrderNumber = Guid.NewGuid().ToString(),
-                Ordered = DateTime.Now,
-                IsDelivered = true,
-                OrderItems = new List<AddOrderItemDto>()
-                {
-                    new AddOrderItemDto { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 1 },
-                    new AddOrderItemDto { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 1 },
-                    new AddOrderItemDto { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 10 },
-                }
-            };
-            var exepectedCost = dto.OrderItems
-                                    .Select(oi => new
-                                    {
-                                        Cost = (items.FirstOrDefault(i => oi.ItemId == i.Id)?.Cost ?? 0) * oi.ItemOrderQuantity,
-                                    })
-                                    .Sum(i => i.Cost);
-            var dateBeforeUpdate = DateTime.Now;
-
-            var dtoUpdated = orderService.UpdateOrder(dto);
-
-            _orderRepository.Verify(o => o.Update(It.IsAny<Domain.Model.Order>()), times: Times.Once);
-            var dateAfterUpdate = DateTime.Now;
-            dtoUpdated.Should().NotBeNull();
-            dtoUpdated.Cost.Should().Be(exepectedCost);
-            dtoUpdated.Number.Should().Be(dto.OrderNumber);
-            dtoUpdated.Ordered.Should().Be(dto.Ordered);
-            dtoUpdated.IsDelivered.Should().BeTrue();
-            dtoUpdated.Delivered.Should().NotBeNull();
-            dtoUpdated.Delivered.Value.Should().BeBefore(dateAfterUpdate);
-            dtoUpdated.Delivered.Value.Should().BeAfter(dateBeforeUpdate);
-            dtoUpdated.OrderItems.Should().NotBeEmpty();
-            dtoUpdated.OrderItems.Count.Should().Be(dto.OrderItems.DistinctBy(oi => oi.ItemId).Count());
-            dtoUpdated.OrderItems[0].ItemOrderQuantity.Should().Be(dto.OrderItems.Select(oi => oi.ItemOrderQuantity).Sum());
-        }
-
-        [Fact]
         public void given_valid_update_order_dto_with_existing_items_and_new_should_update_order_and_return_more_order_items()
         {
             var orderService = CreateService();
@@ -705,7 +658,6 @@ namespace ECommerceApp.Tests.Services.Order
             order.OrderItems = orderItems;
             AddOrder(order);
             AddCustomer(customer);
-            _orderItemService.Setup(oi => oi.GetOrderItemsNotOrdered(It.IsAny<IEnumerable<int>>())).Returns(new List<OrderItemDto>());
             var items = GenerateAndAddItems();
             GenerateIdsOnAddOrderItem();
             var dto = new UpdateOrderDto
@@ -734,7 +686,6 @@ namespace ECommerceApp.Tests.Services.Order
                                                     Cost = (oi.Item?.Cost ?? 0) * oi.ItemOrderQuantity,
                                                 })
                                                 .Sum(i => i.Cost);
-            var countBeforeAdded = order.OrderItems.Count;
             var dateBeforeUpdate = DateTime.Now;
 
             var dtoUpdated = orderService.UpdateOrder(dto);
@@ -750,7 +701,6 @@ namespace ECommerceApp.Tests.Services.Order
             dtoUpdated.Delivered.Value.Should().BeBefore(dateAfterUpdate);
             dtoUpdated.Delivered.Value.Should().BeAfter(dateBeforeUpdate);
             dtoUpdated.OrderItems.Should().NotBeEmpty();
-            dtoUpdated.OrderItems.Count.Should().BeGreaterThan(countBeforeAdded);
         }
 
         [Fact]
@@ -764,7 +714,6 @@ namespace ECommerceApp.Tests.Services.Order
             AddOrder(order);
             AddCustomer(customer);
             var orderItemsInOrder = 3;
-            _orderItemService.Setup(oi => oi.GetOrderItemsNotOrdered(It.IsAny<IEnumerable<int>>())).Returns(new List<OrderItemDto>());
             var items = GenerateAndAddItems();
             GenerateIdsOnAddOrderItem();
             var dto = new UpdateOrderDto
@@ -801,7 +750,6 @@ namespace ECommerceApp.Tests.Services.Order
                                                         : 0)
                                                 })
                                                 .Sum(i => i.Cost);
-            var countBeforeAdded = order.OrderItems.Count;
             var dateBeforeUpdate = DateTime.Now;
 
             var dtoUpdated = orderService.UpdateOrder(dto);
@@ -818,8 +766,7 @@ namespace ECommerceApp.Tests.Services.Order
             dtoUpdated.Delivered.Value.Should().BeBefore(dateAfterUpdate);
             dtoUpdated.Delivered.Value.Should().BeAfter(dateBeforeUpdate);
             dtoUpdated.OrderItems.Should().NotBeEmpty();
-            dtoUpdated.OrderItems.Count.Should().Be(dto.OrderItems.DistinctBy(oi => oi.ItemId).Count());
-            dtoUpdated.OrderItems.Count.Should().BeLessThanOrEqualTo(countBeforeAdded);
+            dtoUpdated.OrderItems.Count.Should().Be(dto.OrderItems.Count());
         }
 
         [Fact]
@@ -833,7 +780,6 @@ namespace ECommerceApp.Tests.Services.Order
             AddOrder(order);
             AddCustomer(customer);
             var orderItemsInOrder = 3;
-            _orderItemService.Setup(oi => oi.GetOrderItemsNotOrdered(It.IsAny<IEnumerable<int>>())).Returns(new List<OrderItemDto>());
             var items = GenerateAndAddItems();
             order.CouponUsed = CreateDefaultCouponUsed(order.Id);
             order.CouponUsedId = order.CouponUsed.Id;
@@ -874,7 +820,6 @@ namespace ECommerceApp.Tests.Services.Order
                                                 })
                                                 .Sum(i => i.Cost);
             exepectedCost = (1 - (order.CouponUsed.Coupon.Discount/100M)) * exepectedCost;
-            var countBeforeAdded = order.OrderItems.Count;
             var dateBeforeUpdate = DateTime.Now;
 
             var dtoUpdated = orderService.UpdateOrder(dto);
@@ -891,8 +836,7 @@ namespace ECommerceApp.Tests.Services.Order
             dtoUpdated.Delivered.Value.Should().BeBefore(dateAfterUpdate);
             dtoUpdated.Delivered.Value.Should().BeAfter(dateBeforeUpdate);
             dtoUpdated.OrderItems.Should().NotBeEmpty();
-            dtoUpdated.OrderItems.Count.Should().Be(dto.OrderItems.DistinctBy(oi => oi.ItemId).Count());
-            dtoUpdated.OrderItems.Count.Should().BeLessThanOrEqualTo(countBeforeAdded);
+            dtoUpdated.OrderItems.Count.Should().Be(dto.OrderItems.Count());
             dtoUpdated.CouponUsedId.Should().NotBeNull();
         }
         
@@ -907,7 +851,6 @@ namespace ECommerceApp.Tests.Services.Order
             AddOrder(order);
             AddCustomer(customer);
             var orderItemsInOrder = 3;
-            _orderItemService.Setup(oi => oi.GetOrderItemsNotOrdered(It.IsAny<IEnumerable<int>>())).Returns(new List<OrderItemDto>());
             var items = GenerateAndAddItems();
             order.CouponUsed = CreateDefaultCouponUsed(order.Id);
             order.CouponUsedId = order.CouponUsed.Id;
@@ -946,7 +889,6 @@ namespace ECommerceApp.Tests.Services.Order
                                                         : 0)
                                                 })
                                                 .Sum(i => i.Cost);
-            var countBeforeAdded = order.OrderItems.Count;
             var dateBeforeUpdate = DateTime.Now;
 
             var dtoUpdated = orderService.UpdateOrder(dto);
@@ -963,8 +905,7 @@ namespace ECommerceApp.Tests.Services.Order
             dtoUpdated.Delivered.Value.Should().BeBefore(dateAfterUpdate);
             dtoUpdated.Delivered.Value.Should().BeAfter(dateBeforeUpdate);
             dtoUpdated.OrderItems.Should().NotBeEmpty();
-            dtoUpdated.OrderItems.Count.Should().Be(dto.OrderItems.DistinctBy(oi => oi.ItemId).Count());
-            dtoUpdated.OrderItems.Count.Should().BeLessThanOrEqualTo(countBeforeAdded);
+            dtoUpdated.OrderItems.Count.Should().Be(dto.OrderItems.Count());
             dtoUpdated.CouponUsedId.Should().BeNull();
         }
         
@@ -980,7 +921,6 @@ namespace ECommerceApp.Tests.Services.Order
             order.Delivered = DateTime.Now;
             AddOrder(order);
             AddCustomer(customer);
-            _orderItemService.Setup(oi => oi.GetOrderItemsNotOrdered(It.IsAny<IEnumerable<int>>())).Returns(new List<OrderItemDto>());
             var items = GenerateAndAddItems();
             order.CouponUsed = CreateDefaultCouponUsed(order.Id);
             order.CouponUsedId = order.CouponUsed.Id;
@@ -1018,7 +958,7 @@ namespace ECommerceApp.Tests.Services.Order
             dtoUpdated.IsDelivered.Should().BeFalse();
             dtoUpdated.Delivered.HasValue.Should().BeFalse();
             dtoUpdated.OrderItems.Should().NotBeEmpty();
-            dtoUpdated.OrderItems.Count.Should().Be(dto.OrderItems.DistinctBy(oi => oi.ItemId).Count());
+            dtoUpdated.OrderItems.Count.Should().Be(dto.OrderItems.Count());
             dtoUpdated.CouponUsedId.Should().BeNull();
         }
 
@@ -1033,10 +973,11 @@ namespace ECommerceApp.Tests.Services.Order
             AddOrder(order);
             AddCustomer(customer);
             var coupon = CreateDefaultCoupon();
+            coupon.CouponUsedId = null;
+            coupon.CouponUsed = null;
             AddCoupon(coupon);
             _couponUsedRepository.Setup(c => c.Delete(It.IsAny<int>())).Returns(true);
             var orderItemsInOrder = 3;
-            _orderItemService.Setup(oi => oi.GetOrderItemsNotOrdered(It.IsAny<IEnumerable<int>>())).Returns(new List<OrderItemDto>());
             var items = GenerateAndAddItems();
             order.CouponUsed = CreateDefaultCouponUsed(order.Id);
             order.CouponUsedId = order.CouponUsed.Id;
@@ -1077,7 +1018,6 @@ namespace ECommerceApp.Tests.Services.Order
             })
              .Sum(i => i.Cost);
             exepectedCost = (1 - (coupon.Discount/100M)) * exepectedCost;
-            var countBeforeAdded = order.OrderItems.Count;
             var dateBeforeUpdate = DateTime.Now;
 
             var dtoUpdated = orderService.UpdateOrder(dto);
@@ -1094,9 +1034,78 @@ namespace ECommerceApp.Tests.Services.Order
             dtoUpdated.Delivered.Value.Should().BeBefore(dateAfterUpdate);
             dtoUpdated.Delivered.Value.Should().BeAfter(dateBeforeUpdate);
             dtoUpdated.OrderItems.Should().NotBeEmpty();
-            dtoUpdated.OrderItems.Count.Should().Be(dto.OrderItems.DistinctBy(oi => oi.ItemId).Count());
-            dtoUpdated.OrderItems.Count.Should().BeLessThanOrEqualTo(countBeforeAdded);
+            dtoUpdated.OrderItems.Count.Should().Be(dto.OrderItems.Count());
             dtoUpdated.CouponUsedId.Should().NotBeNull();
+        }
+
+        [Fact]
+        public void given_used_coupon_when_update_order_should_throw_an_exception()
+        {
+            var orderService = CreateService();
+            var order = CreateDefaultOrder();
+            var customer = CreateDefaultCustomer();
+            var orderItems = CreateDefaultOrderItems(order, 5);
+            order.OrderItems = orderItems;
+            AddOrder(order);
+            AddCustomer(customer);
+            _couponUsedRepository.Setup(c => c.Delete(It.IsAny<int>())).Returns(true);
+            _orderItemService.Setup(oi => oi.GetOrderItemsNotOrdered(It.IsAny<IEnumerable<int>>())).Returns(new List<OrderItemDto>());
+            var items = GenerateAndAddItems();
+            order.CouponUsed = CreateDefaultCouponUsed(order.Id);
+            order.CouponUsedId = order.CouponUsed.Id;
+            var coupon = CreateDefaultCoupon();
+            AddCoupon(coupon);
+            GenerateIdsOnAddOrderItem();
+            var dto = new UpdateOrderDto
+            {
+                Id = order.Id,
+                CustomerId = customer.Id,
+                OrderNumber = Guid.NewGuid().ToString(),
+                Ordered = DateTime.Now,
+                IsDelivered = true,
+                OrderItems = new List<AddOrderItemDto>()
+                {
+                    new AddOrderItemDto { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 1 },
+                    new AddOrderItemDto { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 1 },
+                    new AddOrderItemDto { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 10 },
+                },
+                PromoCode = coupon.Code,
+            };
+
+            Action action = () => orderService.UpdateOrder(dto);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("Cannot assign used coupon");
+        }
+
+        [Fact]
+        public void given_order_items_not_connected_with_current_when_update_order_should_throw_an_exception()
+        {
+            var orderService = CreateService();
+            var order = CreateDefaultOrder();
+            var customer = CreateDefaultCustomer();
+            var orderItems = CreateDefaultOrderItems(order, 5);
+            order.OrderItems = orderItems;
+            AddOrder(order);
+            AddCustomer(customer);
+            var items = GenerateItems();
+            var dto = new UpdateOrderDto
+            {
+                Id = order.Id,
+                CustomerId = customer.Id,
+                OrderNumber = Guid.NewGuid().ToString(),
+                Ordered = DateTime.Now,
+                IsDelivered = true,
+                OrderItems = new List<AddOrderItemDto>()
+                {
+                    new AddOrderItemDto { Id = 10, ItemId = items[0].Id, ItemOrderQuantity = 1 },
+                    new AddOrderItemDto { Id = 20, ItemId = items[0].Id, ItemOrderQuantity = 1 },
+                    new AddOrderItemDto { Id = 30, ItemId = items[0].Id, ItemOrderQuantity = 10 },
+                },
+            };
+
+            Action action = () => orderService.UpdateOrder(dto);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("Order doesn't have order item with id '30'");
         }
 
         #region DataInitial
@@ -1176,9 +1185,9 @@ namespace ECommerceApp.Tests.Services.Order
             _couponRepository.Setup(c => c.GetById(coupon.Id)).Returns(coupon);
         }
 
-        private List<NewItemVm> GenerateAndAddItems()
+        private static List<NewItemVm> GenerateItems()
         {
-            var items = new List<NewItemVm>()
+            return new List<NewItemVm>()
             {
                 new NewItemVm
                 {
@@ -1211,7 +1220,16 @@ namespace ECommerceApp.Tests.Services.Order
                     Cost = 500
                 }
             };
+        }
+
+        private List<NewItemVm> GenerateAndAddItems()
+        {
+            var items = GenerateItems();
             _itemService.Setup(i => i.GetItems()).Returns(items.AsQueryable());
+            items.ForEach(i => _itemRepository.Setup(service => service.GetById(i.Id)).Returns(_mapper.Map<Domain.Model.Item>(i)));
+            var currentItems = _itemRepository.Object.GetAll().ToList();
+            items.ForEach(i => currentItems.Add(_mapper.Map<Domain.Model.Item>(i)));
+            _itemRepository.Setup(i => i.GetAll()).Returns(currentItems.AsQueryable());
             return items;
         }
 

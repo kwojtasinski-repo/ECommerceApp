@@ -1,11 +1,9 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Orders;
-using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.IntegrationTests.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
-using System;
 using System.Collections.Generic;
 using Xunit;
 
