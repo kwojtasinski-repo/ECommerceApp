@@ -139,23 +139,24 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult AddOrderDetails(NewOrderVm model)
         {
             model.Cost = Convert.ToDecimal(model.CostToConvert);
-
-            UseCouponIfEntered(model);
-
-            if (model.OrderItems.Count > 0)
-            {
-                model.OrderItems.ForEach(oi =>
-                {
-                    oi.UserId = model.UserId;
-                });
-                _orderService.UpdateOrder(model.AsOrderDto());
-            }
-            else
+            if (!model.OrderItems.Any())
             {
                 DeleteOrder(model.Id);
                 return RedirectToAction("Index", controllerName: "Item");
             }
-
+            _orderService.UpdateOrder(new UpdateOrderDto
+            {
+                Id = model.Id,
+                CouponUsedId = model.CouponUsedId,
+                CustomerId = model.CustomerId,
+                IsDelivered = model.IsDelivered,
+                Ordered = model.Ordered,
+                OrderNumber = model.Number,
+                PromoCode = model.PromoCode,
+                OrderItems = model.OrderItems.Select(oi =>
+                    new AddOrderItemDto { Id = oi.Id, ItemId = oi.ItemId, ItemOrderQuantity = oi.ItemOrderQuantity }
+               ).ToList(),
+            });
             return RedirectToAction("AddOrderSummary", new { id = model.Id });
         }
 
@@ -232,44 +233,24 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult EditOrder(NewOrderVm model)
         {
             model.Cost = Convert.ToDecimal(model.CostToConvert);
-
-            if (model.AcceptedRefund)
+            _orderService.UpdateOrder(new UpdateOrderDto
             {
-                model.ChangedRefund = _refundService.SameReasonNotExists(model.ReasonRefund);
-                if(model.ChangedRefund)
+                Id = model.Id,
+                CouponUsedId = model.CouponUsedId,
+                CustomerId = model.CustomerId,
+                IsDelivered = model.IsDelivered,
+                Ordered = model.Ordered,
+                OrderNumber = model.Number,
+                PromoCode = model.PromoCode,
+                Payment = model.PaymentId.HasValue ? new PaymentInfoDto
                 {
-                    model.RefundDate = System.DateTime.Now;
-                    var refund = new RefundVm()
-                    {
-                        Reason = model.ReasonRefund,
-                        CustomerId = model.CustomerId,
-                        Accepted = model.AcceptedRefund,
-                        OnWarranty = model.OnWarranty,
-                        RefundDate = model.RefundDate,
-                        OrderId = model.Id
-                    };
-                    var refundId = _refundService.AddRefund(refund);
-                    model.RefundId = refundId;
-                    if (model.OrderItems.Count > 0)
-                    {
-                        model.OrderItems.ForEach(oi =>
-                        {
-                            oi.RefundId = refundId;
-                        });
-                    }
-                }
-            }
-
-            if (model.OrderItems.Count > 0)
-            {
-                model.OrderItems.ForEach(oi =>
-                {
-                    oi.UserId = model.UserId;
-                });
-                _orderService.UpdateOrder(model.AsOrderDto());
-            }
-
-            UseCouponIfEntered(model);
+                    Id = model.PaymentId,
+                    CurrencyId = model.CurrencyId,
+                } : null,
+                OrderItems = model.OrderItems.Select(oi =>
+                    new AddOrderItemDto { Id = oi.Id, ItemId = oi.ItemId, ItemOrderQuantity = oi.ItemOrderQuantity }
+                ).ToList(),
+            });
             return RedirectToAction("Index");
         }
 
@@ -347,7 +328,7 @@ namespace ECommerceApp.Web.Controllers
 
         private void UseCouponIfEntered(NewOrderVm model)
         {
-            var id = _couponService.CheckPromoCode(model.Discount);
+            var id = _couponService.CheckPromoCode(model.PromoCode);
             if (id != 0)
             {
                 _orderService.AddCouponToOrder(id, model);
