@@ -97,6 +97,8 @@ namespace ECommerceApp.IntegrationTests.Common
             context.Add(coupon);
             var coupon2 = new Domain.Model.Coupon { Id = 2, Code = "AGEWEDSGFEWX", CouponTypeId = 1, Description = "DesciprtionText", Discount = 10 };
             context.Add(coupon2);
+            var coupon3 = new Domain.Model.Coupon { Id = 3, Code = "IOHFUJGSD", CouponTypeId = 1, Description = "DesciprtionText", Discount = 10 };
+            context.Add(coupon3);
 
             var image = new Domain.Model.Image { Id = 1, ItemId = 1, Name = "image1", SourcePath = "../src/image1.jpg" };
             context.Add(image);
@@ -142,6 +144,11 @@ namespace ECommerceApp.IntegrationTests.Common
             context.Add(order2);
             var order3 = new Domain.Model.Order { Id = 3, Cost = new decimal(1000), CurrencyId = 1, CustomerId = 1, Number = "1534655", UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now };
             context.Add(order3);
+            var order6 = new Domain.Model.Order { Id = 6, Cost = new decimal(2500), CurrencyId = 1, CustomerId = 1, Number = "12445", UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", Ordered = DateTime.Now, OrderItems = new List<OrderItem>() };
+            context.Add(order6);
+            var orderItem9 = new Domain.Model.OrderItem { Id = 9, ItemId = 1, ItemOrderQuantity = 1, OrderId = 6, Order = order6, UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e" };
+            context.Add(orderItem9);
+            order6.OrderItems.Add(orderItem9);
 
             var payment = new Domain.Model.Payment { Id = 1, CurrencyId = 1, CustomerId = 1, DateOfOrderPayment = DateTime.Now, OrderId = 2, Number = "124521", State = PaymentState.Paid, Cost = order2.Cost };
             context.Add(payment);

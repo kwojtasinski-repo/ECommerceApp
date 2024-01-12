@@ -181,15 +181,15 @@ namespace ECommerceApp.IntegrationTests.API
             var client = await _factory.GetAuthenticatedClient();
             var orderCost = 2500M;
             var order = new UpdateOrderDto { 
-                Id = 1,
+                Id = 6,
                 CustomerId = 1,
                 Ordered = DateTime.Now,
                 OrderNumber = "ZAM/11/01/2024/1",
-                PromoCode = "AGEWEDSGFEW",
+                PromoCode = "IOHFUJGSD",
                 Payment = new PaymentInfoDto { CurrencyId = 1 },
                 IsDelivered = true,
                 OrderItems = new List<AddOrderItemDto> {
-                    new AddOrderItemDto { Id = 1, ItemOrderQuantity = 1 },
+                    new AddOrderItemDto { Id = 9, ItemOrderQuantity = 1 },
                     new AddOrderItemDto { ItemId = 5, ItemOrderQuantity = 1 },
                     new AddOrderItemDto { ItemId = 6, ItemOrderQuantity = 1 },
                     new AddOrderItemDto { ItemId = 1, ItemOrderQuantity = 2 },
@@ -225,7 +225,7 @@ namespace ECommerceApp.IntegrationTests.API
             orderAdded.OrderItems.ShouldContain(oi => oi.ItemId == 1);
             orderAdded.OrderItems.ShouldContain(oi => oi.ItemId == 5);
             orderAdded.OrderItems.ShouldContain(oi => oi.ItemId == 6);
-            var firstOrderItem = orderAdded.OrderItems.FirstOrDefault(oi => oi.Id == 1);
+            var firstOrderItem = orderAdded.OrderItems.FirstOrDefault(oi => oi.Id == 9);
             firstOrderItem.ShouldNotBeNull();
             firstOrderItem.Id.ShouldBeGreaterThan(0);
             firstOrderItem.ItemCost.ShouldBe(2500);
@@ -240,7 +240,7 @@ namespace ECommerceApp.IntegrationTests.API
             thirdOrderItem.Id.ShouldBeGreaterThan(0);
             thirdOrderItem.ItemCost.ShouldBe(2500);
             thirdOrderItem.ItemOrderQuantity.ShouldBe(1);
-            var fourthOrderItem = orderAdded.OrderItems.FirstOrDefault(oi => oi.Id != 1 && oi.ItemId == 1);
+            var fourthOrderItem = orderAdded.OrderItems.FirstOrDefault(oi => oi.Id != 9 && oi.ItemId == 1);
             fourthOrderItem.ShouldNotBeNull();
             fourthOrderItem.Id.ShouldBeGreaterThan(0);
             fourthOrderItem.ItemCost.ShouldBe(2500);
