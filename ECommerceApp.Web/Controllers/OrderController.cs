@@ -138,7 +138,6 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddOrderDetails(NewOrderVm model)
         {
-            model.Cost = Convert.ToDecimal(model.CostToConvert);
             if (!model.OrderItems.Any())
             {
                 DeleteOrder(model.Id);
@@ -232,7 +231,6 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult EditOrder(NewOrderVm model)
         {
-            model.Cost = Convert.ToDecimal(model.CostToConvert);
             _orderService.UpdateOrder(new UpdateOrderDto
             {
                 Id = model.Id,

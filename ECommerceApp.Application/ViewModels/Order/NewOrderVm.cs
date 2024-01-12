@@ -27,9 +27,8 @@ namespace ECommerceApp.Application.ViewModels.Order
         public int? PaymentId { get; set; } // 1:1 Order Payment
         public bool IsPaid { get; set; }
         public int? RefundId { get; set; } // 1:1 Order Refund
-        public string PromoCode { get; set; }
         public int CouponId { get; set; }
-        public double CostToConvert { get; set; }
+        public int Discount { get; set; }
         public string ReasonRefund { get; set; }
         public bool AcceptedRefund { get; set; }
         public DateTime RefundDate { get; set; }
@@ -46,14 +45,14 @@ namespace ECommerceApp.Application.ViewModels.Order
         public bool CustomerData { get; set; }
         public string CustomerInformation { get; set; }
         public string PaymentNumber { get; set; }
+        public string PromoCode { get; set; }
 
         public void Mapping(Profile profile)
         {
             profile.CreateMap<NewOrderVm, ECommerceApp.Domain.Model.Order>().ReverseMap()
-                .ForMember(r => r.PromoCode, opt => opt.MapFrom(r => r.CouponUsed != null ? r.CouponUsed.Coupon.Discount : 0))
+                .ForMember(r => r.Discount, opt => opt.MapFrom(r => r.CouponUsed != null ? r.CouponUsed.Coupon.Discount : 0))
                 .ForMember(c => c.CouponId, opt => opt.MapFrom(r => r.CouponUsed != null ? r.CouponUsed.Coupon.Id : 0))
                 .ForMember(i => i.Items, opt => opt.Ignore())
-                .ForMember(c => c.CostToConvert, opt => opt.Ignore())
                 .ForMember(rf => rf.ReasonRefund, opt => opt.MapFrom(r => r.Refund != null ? r.Refund.Reason : ""))
                 .ForMember(af => af.AcceptedRefund, opt => opt.MapFrom(a => a.Refund != null && a.Refund.Accepted))
                 .ForMember(rd => rd.RefundDate, opt => opt.MapFrom(rd => rd.Refund != null ? rd.Refund.RefundDate : new DateTime()))

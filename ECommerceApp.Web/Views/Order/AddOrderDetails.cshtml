@@ -99,7 +99,8 @@
                     @if (Model.CustomerId > 0)
                     {
                         <td>
-                            Cena <input id="CalcCost" name="CostToConvert" value="@Model.Cost" readonly style="width: 250px;position:static;" class="form-control" />
+                            Cena <input id="CalcCost" name="Cost" value="@Model.Cost" readonly style="width: 250px;position:static;" class="form-control" />
+                            <input type="hidden" id="Discount" name="Discount" value="@Model.Discount" />
                         </td>
                     }
                 </tr>
@@ -212,12 +213,23 @@
 
         function calculateCosts() {
             let cost = 0;
+            const discount = getDiscount();
             for (const orderItem of orderItems) {
                 const itemCost = itemCosts.find(i => i.itemId === orderItem.itemId);
-                cost += Number(itemCost?.cost ?? 0) * orderItem.quantity;
+                cost += Number(itemCost?.cost ?? 0) * orderItem.quantity * discount;
             }
             cost = format(cost);
             document.getElementById('CalcCost').value = cost;
+        }
+        
+        function getDiscount() {
+            let discount = Number(document.querySelector('#Discount')?.value ?? 0);
+            if (discount <= 0 || discount > 100) {
+                return 1;
+            }
+
+            discount = 1 - (discount / 100.0);
+            return discount;
         }
 
         function initItemCosts() {
