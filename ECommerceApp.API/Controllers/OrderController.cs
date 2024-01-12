@@ -1,12 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using ECommerceApp.Application.ViewModels.CouponUsed;
 using ECommerceApp.Application.ViewModels.Order;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ECommerceApp.Infrastructure.Permissions;
-using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.DTO;
 
@@ -18,16 +16,10 @@ namespace ECommerceApp.API.Controllers
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _orderService;
-        private readonly ICouponService _couponService;
-        private readonly ICouponUsedService _couponUsedService;
-        private readonly IOrderItemService _orderItemService;
 
-        public OrderController(IOrderService orderService, ICouponService couponService, ICouponUsedService couponUsedService, IOrderItemService orderItemService)
+        public OrderController(IOrderService orderService)
         {
             _orderService = orderService;
-            _couponService = couponService;
-            _couponUsedService = couponUsedService;
-            _orderItemService = orderItemService;
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
@@ -94,19 +86,6 @@ namespace ECommerceApp.API.Controllers
         {
             var id = _orderService.AddOrderFromCart(model);
             return Ok(id);
-        }
-
-        private void TryUseCoupon(AddOrderDto model)
-        {
-            if (!string.IsNullOrWhiteSpace(model.PromoCode))
-            {
-                var coupon = _couponService.GetCouponByCode(model.PromoCode);
-                if (coupon != null)
-                {
-                    var couponUsed = new CouponUsedVm { CouponId = coupon.Id, OrderId = model.Id };
-                    _couponUsedService.AddCouponUsed(couponUsed);
-                }
-            }
         }
     }
 }
