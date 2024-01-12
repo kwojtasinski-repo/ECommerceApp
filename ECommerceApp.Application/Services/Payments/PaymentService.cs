@@ -58,7 +58,7 @@ namespace ECommerceApp.Application.Services.Payments
 
             var order = _orderRepository.GetById(model.OrderId) ??
                 throw new BusinessException($"Order with id '{model.OrderId}' was not found");
-            var paymentId = _paymentHandler.PaidIssuedPayment(model, order);
+            var paymentId = _paymentHandler.PayIssuedPayment(model, order);
             _orderRepository.Update(order);
             return paymentId;
         }

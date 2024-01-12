@@ -2,7 +2,6 @@
 using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Application.Services.Customers;
-using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.UnitTests.Common;
@@ -10,7 +9,6 @@ using FluentAssertions;
 using Moq;
 using System;
 using Xunit;
-using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.DTO;
 
 namespace ECommerceApp.UnitTests.Services.Payment
@@ -101,19 +99,6 @@ namespace ECommerceApp.UnitTests.Services.Payment
                 Number = "1234",
                 OrderNumber = Guid.NewGuid().ToString(),
                 Cost = new decimal(100)
-            };
-            return payment;
-        }
-
-        private static Domain.Model.Payment CreatePayment(int id, int currencyId, int orderId)
-        {
-            var payment = new Domain.Model.Payment
-            {
-                Id = id,
-                CurrencyId = currencyId,
-                OrderId = orderId,
-                CustomerId = 1,
-                Number = "1234"
             };
             return payment;
         }

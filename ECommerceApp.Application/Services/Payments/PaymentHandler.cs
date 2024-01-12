@@ -64,17 +64,38 @@ namespace ECommerceApp.Application.Services.Payments
                 return;
             }
 
-            if (dto is not null && dto.Id != order.PaymentId)
-            {
-                throw new BusinessException($"Cannot assign existed payment with id '{dto.Id}'");
-            }
-
             if (dto is null && order.PaymentId.HasValue)
             {
                 _paymentRepository.Delete(order.PaymentId.Value);
                 order.PaymentId = null;
                 order.Payment = null;
+                order.IsPaid = false;
                 return;
+            }
+
+            if (dto is null)
+            {
+                throw new BusinessException($"{typeof(PaymentInfoDto).Name} cannot be null");
+            }
+
+            if (dto.Id.HasValue && order.PaymentId.HasValue && dto.Id == order.PaymentId.Value)
+            {
+                return;
+            }
+
+            if (!dto.Id.HasValue && order.PaymentId.HasValue)
+            {
+                throw new BusinessException($"Cannot pay for paid order with id '{order.Id}'");
+            }
+
+            if (dto.Id.HasValue && !order.PaymentId.HasValue)
+            {
+                throw new BusinessException($"Cannot assign existed payment with id '{dto.Id}'");
+            }
+
+            if (dto.Id.HasValue && order.PaymentId.HasValue && dto.Id != order.PaymentId)
+            {
+                throw new BusinessException("Overriding payment id on order is not allowed");
             }
 
             CreatePayment(new AddPaymentDto
@@ -84,11 +105,26 @@ namespace ECommerceApp.Application.Services.Payments
             }, order);
         }
 
-        public int PaidIssuedPayment(PaymentVm model, Order order)
+        public int PayIssuedPayment(PaymentVm model, Order order)
         {
             if (model is null)
             {
                 throw new BusinessException($"{typeof(PaymentVm).Name} cannot be null");
+            }
+
+            if (order is null)
+            {
+                throw new BusinessException($"{typeof(Order).Name} cannot be null");
+            }
+
+            if (order.IsPaid)
+            {
+                throw new BusinessException($"Order with id '{order.Id}' has alredy been paid");
+            }
+
+            if (model.State == PaymentState.Paid)
+            {
+                throw new BusinessException($"Payment with id '{model.Id}' was already paid");
             }
 
             var payment = _paymentRepository.GetById(model.Id)
