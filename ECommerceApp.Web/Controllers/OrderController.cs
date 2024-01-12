@@ -2,18 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using ECommerceApp.Application;
 using ECommerceApp.Application.ViewModels.Order;
-using ECommerceApp.Application.ViewModels.Refund;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Infrastructure.Permissions;
-using ECommerceApp.Application.Services.Coupons;
-using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.Services.Items;
-using ECommerceApp.Application.Services.Refunds;
-using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.DTO;
 
@@ -22,22 +16,14 @@ namespace ECommerceApp.Web.Controllers
     public class OrderController : BaseController
     {
         private readonly IOrderService _orderService;
-        private readonly IPaymentService _paymentService;
-        private readonly IRefundService _refundService;
         private readonly IOrderItemService _orderItemService;
         private readonly IItemService _itemService;
-        private readonly ICustomerService _customerService;
-        private readonly ICouponService _couponService;
 
-        public OrderController(IOrderService orderService, IPaymentService paymentService, IRefundService refundService, IOrderItemService orderItemService, IItemService itemService, ICustomerService customerService, ICouponService couponService)
+        public OrderController(IOrderService orderService, IOrderItemService orderItemService, IItemService itemService)
         {
             _orderService = orderService;
-            _paymentService = paymentService;
-            _refundService = refundService;
             _orderItemService = orderItemService;
             _itemService = itemService;
-            _customerService = customerService;
-            _couponService = couponService;
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
@@ -322,15 +308,6 @@ namespace ECommerceApp.Web.Controllers
         {
             _orderService.DispatchOrder(id);
             return Ok();
-        }
-
-        private void UseCouponIfEntered(NewOrderVm model)
-        {
-            var id = _couponService.CheckPromoCode(model.PromoCode);
-            if (id != 0)
-            {
-                _orderService.AddCouponToOrder(id, model);
-            }
         }
     }
 }
