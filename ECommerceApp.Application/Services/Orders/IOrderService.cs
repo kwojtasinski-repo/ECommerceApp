@@ -11,7 +11,6 @@ namespace ECommerceApp.Application.Services.Orders
     {
         OrderDto Get(int id);
         int AddOrder(AddOrderDto order);
-        void UpdateOrder(OrderDto order);
         bool DeleteOrder(int id);
         ListForOrderVm GetAllOrders(int pageSize, int pageNo, string searchString);
         OrderDetailsVm GetOrderDetail(int id);
@@ -30,11 +29,9 @@ namespace ECommerceApp.Application.Services.Orders
         NewOrderVm GetOrderForRealization(int orderId);
         ListForOrderVm GetAllOrdersPaid(int pageSize, int pageNo, string searchString);
         void DispatchOrder(int orderId);
-        void UpdateOrderWithExistedOrderItemsIds(OrderDto dto);
         OrderDto GetOrderByIdReadOnly(int id);
         int AddOrderFromCart(AddOrderFromCartDto model);
         OrderVm InitOrder();
-        void Update(OrderDto order);
         int FulfillOrder(OrderVm model);
         NewOrderVm GetOrderSummaryById(int id);
         NewOrderVm BuildVmForEdit(int orderId);

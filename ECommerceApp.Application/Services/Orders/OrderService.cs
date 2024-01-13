@@ -8,7 +8,6 @@ using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.Order;
-using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using Microsoft.AspNetCore.Http;
@@ -75,39 +74,6 @@ namespace ECommerceApp.Application.Services.Orders
             var order = _mapper.Map<Order>(dto);
             var id = _orderRepository.Add(order);
             return id;
-        }
-
-        public bool Delete(OrderDto dto)
-        {
-            if (dto is null)
-            {
-                throw new BusinessException($"{typeof(OrderDto).Name} cannot be null");
-            }
-
-            var order = _mapper.Map<Order>(dto);
-            return _orderRepository.Delete(order);
-        }
-
-        public void Update(OrderVm vm)
-        {
-            if (vm is null)
-            {
-                throw new BusinessException($"{typeof(OrderVm).Name} cannot be null");
-            }
-
-            var order = _mapper.Map<Order>(vm);
-            _orderRepository.Update(order);
-        }
-
-        public void Update(OrderDto dto)
-        {
-            if (dto is null)
-            {
-                throw new BusinessException($"{typeof(OrderDto).Name} cannot be null");
-            }
-
-            var order = _mapper.Map<Order>(dto);
-            _orderRepository.Update(order);
         }
 
         public void Update(NewOrderVm vm)
@@ -232,39 +198,6 @@ namespace ECommerceApp.Application.Services.Orders
             return orderDetailsVm;
         }
 
-        public void UpdateOrder(OrderDto orderDto)
-        {
-            ValidateOrder(orderDto);
-            var order = _orderRepository.GetAllOrders()
-                             .Where(o => o.Id == orderDto.Id)
-                             .Include(inc => inc.OrderItems).ThenInclude(inc => inc.Item)
-                             .AsNoTracking()
-                             .FirstOrDefault();
-            orderDto.Number = order.Number;
-            orderDto.Ordered = order.Ordered;
-            orderDto.Cost = 0;
-            var orderItems = order.OrderItems;
-            CheckOrderItemsOrderByUser(orderDto, orderItems);
-            AddNewOrderItemsIfNotExistAndCalculateCost(orderDto);
-            orderItems = order.OrderItems;
-            CalculateCost(orderDto, orderItems);
-            var orderToUpdate = _mapper.Map<Order>(orderDto);
-            _orderRepository.UpdatedOrder(orderToUpdate);
-        }
-
-        private static void ValidateOrder(OrderDto orderDto)
-        {
-            if (orderDto is null)
-            {
-                throw new BusinessException($"{typeof(OrderDto).Name} cannot be null");
-            }
-
-            if (orderDto.OrderItems is null || orderDto.OrderItems.Count == 0)
-            {
-                throw new BusinessException("Items shouldnt be empty");
-            }
-        }
-
         private static void CalculateCost(OrderDto orderDto)
         {
             var orderCost = decimal.Zero;
@@ -275,61 +208,9 @@ namespace ECommerceApp.Application.Services.Orders
             orderDto.Cost = orderCost;
         }
 
-        private static void CalculateCost(OrderDto orderDto, ICollection<OrderItem> itemsFromDb)
-        {
-            var orderCost = decimal.Zero;
-            foreach (var orderItem in orderDto.OrderItems ?? new List<OrderItemDto>())
-            {
-                var item = itemsFromDb.Where(i => i.Id == orderItem.Id).FirstOrDefault();
-
-                if (item != null)
-                {
-                    orderItem.ItemOrderQuantity = item.ItemOrderQuantity;
-                    orderItem.ItemId = item.ItemId;
-                    orderItem.CouponUsedId = item.CouponUsedId;
-
-                    orderCost += item.Item.Cost * orderItem.ItemOrderQuantity;
-                }
-            }
-            orderDto.Cost += orderCost;
-        }
-
-        private void AddNewOrderItemsIfNotExistAndCalculateCost(OrderDto orderDto)
-        {
-            var orderItemsToAdd = orderDto.OrderItems.Where(oi => oi.Id == 0).ToList();
-
-            if (orderItemsToAdd.Count == 0)
-            {
-                return;
-            }
-
-            var ids = orderItemsToAdd.Select(i => i.ItemId);
-            var items = (from id in ids
-                         join item in _itemService.GetItems()
-                         on id equals item.Id
-                         select item).AsQueryable().AsNoTracking().ToList();
-
-            foreach (var orderItem in orderItemsToAdd)
-            {
-                var orderItemVm = new OrderItemDto { Id = 0, ItemId = orderItem.ItemId, ItemOrderQuantity = orderItem.ItemOrderQuantity, UserId = orderDto.UserId, OrderId = orderDto.Id };
-                var id = _orderItemService.AddOrderItem(orderItemVm);
-                orderItem.Id = id;
-            }
-
-            var orderItems = _mapper.Map<List<OrderItem>>(orderItemsToAdd);
-            orderItems.ForEach(oi => oi.Item = _mapper.Map<Item>(items.Where(i => i.Id == oi.ItemId).FirstOrDefault()));
-            CalculateCost(orderDto, orderItems);
-        }
-
         private static void CheckOrderItemsOrderByUser(OrderDto dto, ICollection<OrderItemDto> itemsFromDb)
         {
             CheckOrderItemsOrderByUser(dto, itemsFromDb?.Select(oi => new OrderItemValidationModel(oi.Id, oi.UserId))
-                    ?? new List<OrderItemValidationModel>());
-        }
-
-        private static void CheckOrderItemsOrderByUser(OrderDto dto, ICollection<OrderItem> itemsFromDb)
-        {
-            CheckOrderItemsOrderByUser(dto, itemsFromDb.Select(oi => new OrderItemValidationModel(oi.Id, oi.UserId))
                     ?? new List<OrderItemValidationModel>());
         }
 
@@ -578,66 +459,6 @@ namespace ECommerceApp.Application.Services.Orders
                 ?? throw new BusinessException($"Order with id {orderId} not found, check your order if is not delivered and is paid");
             order.IsDelivered = true;
             order.Delivered = DateTime.Now;
-            _orderRepository.Update(order);
-        }
-
-        public void UpdateOrderWithExistedOrderItemsIds(OrderDto orderDto)
-        {
-            ValidateOrder(orderDto);
-            AddExistedOrderItemsToOrder(orderDto);
-            var order = _orderRepository.GetAllOrders().Where(o => o.Id == orderDto.Id)
-                .Include(inc => inc.OrderItems)
-                .Include(inc => inc.OrderItems).ThenInclude(inc => inc.Item)
-                .FirstOrDefault();
-            orderDto.Number = order.Number;
-            orderDto.Ordered = order.Ordered;
-            orderDto.Cost = 0;
-            var orderItems = order.OrderItems;
-            CheckOrderItemsOrderByUser(orderDto, orderItems);
-            orderItems = order.OrderItems;
-            CalculateCost(orderDto, orderItems);
-            order.Cost = orderDto.Cost;
-            _orderRepository.UpdatedOrder(order);
-        }
-
-        private void AddExistedOrderItemsToOrder(OrderDto orderDto)
-        {
-            var order = _orderRepository.GetAllOrders().Where(o => o.Id == orderDto.Id)
-                .Include(inc => inc.OrderItems).FirstOrDefault();
-
-            var ids = orderDto.OrderItems.Where(oi => oi.Id > 0 && oi.OrderId == null).Select(i => i.Id);
-            var items = (from id in ids
-                         join orderItem in _orderItemService.GetOrderItems()
-                         on id equals orderItem.Id
-                         select orderItem).AsQueryable().AsNoTracking().ToList();
-
-            var errors = new StringBuilder();
-            foreach (var orderItem in items)
-            {
-                if (orderItem.UserId != orderDto.UserId)
-                {
-                    errors.AppendLine($"Order item with id: '{orderItem.Id}' is not order by this user");
-                }
-            }
-
-            if (errors.Length > 0)
-            {
-                throw new BusinessException(errors.ToString());
-            }
-
-            foreach (var orderItem in items)
-            {
-                orderItem.OrderId = orderDto.Id;
-                order.OrderItems.Add(orderItem);
-
-                var oi = orderDto.OrderItems.Where(oi => oi.Id == orderItem.Id).FirstOrDefault();
-                if (oi != null)
-                {
-                    orderDto.OrderItems.Remove(oi);
-                    orderDto.OrderItems.Add(_mapper.Map<OrderItemDto>(orderItem));
-                }
-            }
-
             _orderRepository.Update(order);
         }
 
