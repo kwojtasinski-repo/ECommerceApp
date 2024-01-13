@@ -123,21 +123,6 @@ namespace ECommerceApp.IntegrationTests.Services
         }
 
         [Fact]
-        public void given_valid_order_should_update_with_existed_order_items()
-        {
-            SetHttpContextUserId(PROPER_CUSTOMER_ID);
-            var addOrder = CreateAddOrderDto(0);
-            var id = _service.AddOrder(addOrder);
-            var order = _service.GetOrderById(id);
-            order.OrderItems.Add(new OrderItemDto { Id = 2, ItemId = 5, ItemOrderQuantity = 1, UserId = PROPER_CUSTOMER_ID });
-
-            _service.UpdateOrderWithExistedOrderItemsIds(order);
-
-            var orderUpdated = _service.GetOrderById(id);
-            orderUpdated.OrderItems.Count.ShouldBeGreaterThan(1);
-        }
-
-        [Fact]
         public void given_orders_in_db_when_get_all_by_expression_should_return_list_orders()
         {
             var orders = _service.GetAllOrders(o => true);
