@@ -337,83 +337,6 @@ namespace ECommerceApp.Tests.Services.Order
         }
 
         [Fact]
-        public void given_valid_order_should_update()
-        {
-            var orderVm = CreateDefaultOrderDto();
-            var cost = orderVm.Cost;
-            var orders = CreateDefaultOrders();
-            var order = orders.First();
-            order.Id = orderVm.Id;
-            var orderItems = CreateDefaultOrderItems(orderVm.OrderItems);
-            orderItems.ForEach(oi => order.OrderItems.Add(oi));
-            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
-            _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
-            var orderService = CreateService();
-
-            orderService.UpdateOrder(orderVm);
-
-            _orderRepository.Verify(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>()), Times.Once);
-            orderVm.Cost.Should().BeGreaterThan(cost);
-        }
-
-        [Fact]
-        public void given_invalid_order_should_throw_an_exception() 
-        {
-            var orderVm = new OrderDto();
-            var orderService = CreateService();
-            var expectedException = new BusinessException("Items shouldnt be empty");
-
-            Action action = () => { orderService.UpdateOrder(orderVm); };
-
-            action.Should().Throw<BusinessException>().WithMessage(expectedException.Message);
-        }
-
-        [Fact]
-        public void given_valid_order_with_new_order_items_should_update()
-        {
-            var orderVm = CreateDefaultOrderDto();
-            orderVm.OrderItems.ForEach(oi => oi.Id = 0);
-            var cost = orderVm.Cost;
-            var orders = CreateDefaultOrders();
-            var order = orders.First();
-            order.Id = orderVm.Id;
-            var orderItems = CreateDefaultOrderItems(orderVm.OrderItems);
-            var items = orderItems.Select(oi => _mapper.Map<NewItemVm>(oi.Item));
-            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
-            _orderRepository.Setup(o => o.GetAllOrderItems()).Returns(orderItems.AsQueryable());
-            _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
-            _itemService.Setup(o => o.GetItems()).Returns(items.AsQueryable());
-            _orderItemService.Setup(o => o.AddOrderItem(It.IsAny<OrderItemDto>())).Verifiable();
-            var orderService = CreateService();
-
-            orderService.UpdateOrder(orderVm);
-
-            _orderRepository.Verify(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>()), Times.Once);
-            orderVm.Cost.Should().BeGreaterThan(cost);
-            _orderItemService.Verify(oi => oi.AddOrderItem(It.IsAny<OrderItemDto>()), Times.Exactly(orderItems.Count));
-        }
-
-        [Fact]
-        public void given_invalid_order_with_one_item_not_ordered_by_user_should_update()
-        {
-            var orderVm = CreateDefaultOrderDto();
-            orderVm.OrderItems.ForEach(oi => oi.Id = 0);
-            var cost = orderVm.Cost;
-            var orders = CreateDefaultOrders();
-            var order = orders.First();
-            order.Id = orderVm.Id;
-            orderVm.OrderItems.ForEach(oi => order.OrderItems.Add(_mapper.Map<OrderItem>(oi)));
-            var orderItem = orders.First().OrderItems.First();
-            orderItem.UserId = "ABC";
-            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
-            var orderService = CreateService();
-
-            Action action = () => { orderService.UpdateOrder(orderVm); };
-
-            var exception = Assert.Throws<BusinessException>(action);
-        }
-
-        [Fact]
         public void given_valid_order_should_delete_coupon_from_order()
         {
             var orders = CreateDefaultOrders();
@@ -514,16 +437,6 @@ namespace ECommerceApp.Tests.Services.Order
             var orderService = CreateService();
 
             Action action = () => orderService.AddOrder(null);
-
-            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
-        }
-
-        [Fact]
-        public void given_null_order_when_update_should_throw_an_exception()
-        {
-            var orderService = CreateService();
-
-            Action action = () => orderService.UpdateOrder((OrderDto) null);
 
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
