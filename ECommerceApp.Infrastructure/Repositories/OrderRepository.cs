@@ -27,6 +27,11 @@ namespace ECommerceApp.Infrastructure.Repositories
                         Payment = _context.Payments.FirstOrDefault(p => p.OrderId == orderId)
                 })
                 .FirstOrDefault(o => o.Id == orderId);
+            var localOrder = GetDbSet().Local.FirstOrDefault(o => o.Id == orderId);
+            if (localOrder is not null)
+            {
+                DetachEntity(localOrder);
+            }
 
             if (order == null)
             {
@@ -59,12 +64,12 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public int AddOrder(Order order)
         {
-            var orderItems = order.OrderItems.Select(oi => new OrderItem { Id = oi.Id, CouponUsedId = oi.CouponUsedId, ItemId = oi.ItemId, ItemOrderQuantity = oi.ItemOrderQuantity, OrderId = oi.OrderId, RefundId = oi.RefundId, UserId = oi.UserId }).ToList();
-            order.OrderItems = order.OrderItems.Where(oi => oi.Id == 0).ToList();
+           // var orderItems = order.OrderItems.Select(oi => new OrderItem { Id = oi.Id, CouponUsedId = oi.CouponUsedId, ItemId = oi.ItemId, ItemOrderQuantity = oi.ItemOrderQuantity, OrderId = oi.OrderId, RefundId = oi.RefundId, UserId = oi.UserId }).ToList();
+         //   order.OrderItems = order.OrderItems.Where(oi => oi.Id == 0).ToList();
             _context.Orders.Add(order);
             _context.SaveChanges();
             // zabezpieczenie przed "tracking"
-            orderItems.ForEach(oi =>
+            /*orderItems.ForEach(oi =>
             {
                 oi.OrderId = order.Id;
                 var local = _context.Set<OrderItem>()
@@ -81,7 +86,7 @@ namespace ECommerceApp.Infrastructure.Repositories
             _context.OrderItem.UpdateRange(orderItems);
             _context.SaveChanges();
             DetachEntity(order);
-            DetachEntity(order.OrderItems);
+            DetachEntity(order.OrderItems);*/
             return order.Id;
         }
 

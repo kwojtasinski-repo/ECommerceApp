@@ -222,7 +222,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public List<OrderItemDto> GetOrderItemsNotOrdered(IEnumerable<int> ids)
         {
-            return _mapper.Map<List<OrderItemDto>>(_orderItemRepository.GetOrderItems(ids));
+            return _mapper.Map<List<OrderItemDto>>(_orderItemRepository.GetOrderItemsToRealization(ids));
         }
 
         public IEnumerable<int> GetOrderItemsIdsForRealization(string userId)

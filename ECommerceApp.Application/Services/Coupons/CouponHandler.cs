@@ -16,7 +16,7 @@ namespace ECommerceApp.Application.Services.Coupons
             _couponUsedRepository = couponUsedRepository;
         }
 
-        public void HandleCouponChangesOnUpdateOrder(CouponVm couponVm, Order order, DTO.UpdateOrderDto dto)
+        public void HandleCouponChangesOnUpdateOrder(CouponVm couponVm, Order order, HandleCouponChangesDto dto)
         {
             if (order is null)
             {
@@ -28,17 +28,17 @@ namespace ECommerceApp.Application.Services.Coupons
                 throw new BusinessException($"{nameof(DTO.UpdateOrderDto)} cannot be null");
             }
 
-            if (couponVm is null && dto.CouponUsedId is null && order.CouponUsedId is null)
+            if (couponVm is null && dto.HasAnyCoupon() && order.CouponUsedId is null)
             {
                 return;
             }
 
-            if (dto.CouponUsedId == order.CouponUsedId && string.IsNullOrEmpty(dto.PromoCode))
+            if (dto.CouponUsedId == order.CouponUsedId && !dto.HasNewCouponCode())
             {
                 return;
             }
 
-            if (couponVm is null && dto.CouponUsedId is null && order.CouponUsedId is not null)
+            if (couponVm is null && !dto.HasAnyCoupon() && order.CouponUsedId is not null)
             {
                 foreach (var orderItem in order.OrderItems)
                 {

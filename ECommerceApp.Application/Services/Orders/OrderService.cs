@@ -198,27 +198,28 @@ namespace ECommerceApp.Application.Services.Orders
             return orderDetailsVm;
         }
 
-        private static void CalculateCost(OrderDto orderDto)
+        private static void CalculateCost(Order order)
         {
-            var orderCost = decimal.Zero;
-            foreach (var orderItem in orderDto.OrderItems ?? new List<OrderItemDto>())
+            var cost = 0M;
+            var discount = (1 - (order.CouponUsed?.Coupon.Discount / 100M) ?? 1);
+            foreach (var orderItem in order.OrderItems ?? new List<OrderItem>())
             {
-                orderCost += orderItem.ItemCost * orderItem.ItemOrderQuantity;
+                cost += orderItem.Item.Cost * orderItem.ItemOrderQuantity * discount;
             }
-            orderDto.Cost = orderCost;
+            order.Cost = cost;
         }
 
-        private static void CheckOrderItemsOrderByUser(OrderDto dto, ICollection<OrderItemDto> itemsFromDb)
+        private static void CheckOrderItemsOrderByUser(Order order, ICollection<OrderItem> itemsFromDb)
         {
-            CheckOrderItemsOrderByUser(dto, itemsFromDb?.Select(oi => new OrderItemValidationModel(oi.Id, oi.UserId))
+            CheckOrderItemsOrderByUser(order, itemsFromDb?.Select(oi => new OrderItemValidationModel(oi.Id, oi.UserId))
                     ?? new List<OrderItemValidationModel>());
         }
 
-        private static void CheckOrderItemsOrderByUser(OrderDto orderVm, IEnumerable<OrderItemValidationModel> itemsFromDb)
+        private static void CheckOrderItemsOrderByUser(Order order, IEnumerable<OrderItemValidationModel> itemsFromDb)
         {
             StringBuilder errors = new();
 
-            foreach (var orderItem in orderVm.OrderItems ?? new List<OrderItemDto>())
+            foreach (var orderItem in order.OrderItems ?? new List<OrderItem>())
             {
                 var item = itemsFromDb.Where(i => i.Id == orderItem.Id).FirstOrDefault();
                 if (item == default)
@@ -497,32 +498,19 @@ namespace ECommerceApp.Application.Services.Orders
             }
 
             var ids = dto.OrderItems?.Select(oi => oi.Id)?.ToList() ?? new List<int>();
-            dto.OrderItems = _orderItemService.GetOrderItemsNotOrdered(ids);
-            CheckOrderItemsOrderByUser(dto, dto.OrderItems);
-            CalculateCost(dto);
-
+            dto.OrderItems = new List<OrderItemDto>();
             var order = _mapper.Map<Order>(dto);
+            order.OrderItems = _orderItemRepository.GetOrderItemsToRealization(ids);
+            CheckOrderItemsOrderByUser(order, order.OrderItems);
+            CalculateCost(order);
             var id = _orderRepository.AddOrder(order);
-            TryUseCoupon(model.PromoCode, order);
+            _couponHandler.HandleCouponChangesOnUpdateOrder(_couponService.GetCouponByCode(model.PromoCode), order, HandleCouponChangesDto.Of(model.PromoCode));
+            if (order.CouponUsed is not null)
+            {
+                CalculateCost(order);
+                _orderRepository.UpdatedOrder(order);
+            }
             return id;
-        }
-
-        private void TryUseCoupon(string promoCode, Order order)
-        {
-            if (string.IsNullOrWhiteSpace(promoCode))
-            {
-                return;
-            }
-
-            var id = _couponService.CheckPromoCode(promoCode);
-            if (id == 0)
-            {
-                return;
-            }
-
-            var coupon = _couponService.GetCoupon(id) 
-                ?? throw new BusinessException($"Coupon with id {id} doesnt exists");
-            UseCoupon(coupon, order);
         }
 
         private void UseCoupon(CouponVm coupon, Order order)
@@ -715,16 +703,8 @@ namespace ECommerceApp.Application.Services.Orders
                 }
             }
 
-            _couponHandler.HandleCouponChangesOnUpdateOrder(coupon, order, dto);
-
-            var cost = 0M;
-            var discount = (1 - (order.CouponUsed?.Coupon.Discount/100M) ?? 1);
-            foreach (var orderItem in order.OrderItems)
-            {
-                cost += orderItem.Item.Cost * orderItem.ItemOrderQuantity * discount;
-            }
-            order.Cost = cost;
-
+            _couponHandler.HandleCouponChangesOnUpdateOrder(coupon, order, new HandleCouponChangesDto(dto));
+            CalculateCost(order);
             _paymentHandler.HandlePaymentChangesOnOrder(dto.Payment, order);
             _orderRepository.Update(order);
             orderItemsToRemove.ForEach(oi => _orderItemService.DeleteOrderItem(oi.Id));
