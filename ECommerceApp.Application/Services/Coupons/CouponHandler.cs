@@ -47,6 +47,7 @@ namespace ECommerceApp.Application.Services.Coupons
                 }
                 order.CouponUsed = null;
                 order.CouponUsedId = null;
+                order.CalculateCost();
                 return;
             }
 
@@ -64,6 +65,8 @@ namespace ECommerceApp.Application.Services.Coupons
                 {
                     throw new BusinessException($"Cannot delete coupon used with id '{order.CouponUsedId}'");
                 }
+                order.CouponUsed = null;
+                order.CalculateCost();
             }
 
             var couponUsed = new CouponUsed
@@ -74,18 +77,18 @@ namespace ECommerceApp.Application.Services.Coupons
                 Coupon = coupon,
                 Order = order,
             };
-            _couponUsedRepository.Add(couponUsed);
-            coupon.CouponUsed = couponUsed;
-            coupon.CouponUsedId = couponUsed.Id;
-            _couponRepository.Update(coupon);
             order.CouponUsed = couponUsed;
             order.CouponUsedId = couponUsed.Id;
-
             foreach (var orderItem in order.OrderItems)
             {
                 orderItem.CouponUsed = couponUsed;
                 orderItem.CouponUsedId = couponUsed.Id;
             }
+            order.CalculateCost();
+            _couponUsedRepository.Add(couponUsed);
+            coupon.CouponUsed = couponUsed;
+            coupon.CouponUsedId = couponUsed.Id;
+            _couponRepository.Update(coupon);
         }
     }
 }

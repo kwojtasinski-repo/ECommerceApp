@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ECommerceApp.Domain.Model
 {
@@ -25,5 +26,22 @@ namespace ECommerceApp.Domain.Model
         public Currency Currency { get; set; }
 
         public ICollection<OrderItem> OrderItems { get; set; }
+
+        public void CalculateCost()
+        {
+            if (OrderItems is null || !OrderItems.Any())
+            {
+                Cost = 0;
+                return;
+            }
+
+            var cost = 0M;
+            var discount = (1 - (CouponUsed?.Coupon?.Discount / 100M) ?? 1);
+            foreach (var orderItem in OrderItems)
+            {
+                cost += orderItem.Item.Cost * orderItem.ItemOrderQuantity * discount;
+            }
+            Cost = cost;
+        }
     }
 }

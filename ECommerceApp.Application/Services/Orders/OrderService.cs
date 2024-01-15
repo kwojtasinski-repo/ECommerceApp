@@ -198,17 +198,6 @@ namespace ECommerceApp.Application.Services.Orders
             return orderDetailsVm;
         }
 
-        private static void CalculateCost(Order order)
-        {
-            var cost = 0M;
-            var discount = (1 - (order.CouponUsed?.Coupon.Discount / 100M) ?? 1);
-            foreach (var orderItem in order.OrderItems ?? new List<OrderItem>())
-            {
-                cost += orderItem.Item.Cost * orderItem.ItemOrderQuantity * discount;
-            }
-            order.Cost = cost;
-        }
-
         private static void CheckOrderItemsOrderByUser(Order order, ICollection<OrderItem> itemsFromDb)
         {
             CheckOrderItemsOrderByUser(order, itemsFromDb?.Select(oi => new OrderItemValidationModel(oi.Id, oi.UserId))
@@ -258,13 +247,7 @@ namespace ECommerceApp.Application.Services.Orders
                 throw new BusinessException($"{typeof(NewOrderVm).Name} cannot be null");
             }
 
-            var coupon = _couponService.GetCoupon(couponId);
-
-            if (coupon == null)
-            {
-                throw new BusinessException($"Coupon with id {couponId} doesnt exists");
-            }
-
+            var coupon = _couponService.GetCoupon(couponId) ?? throw new BusinessException($"Coupon with id {couponId} doesnt exists");
             var couponUsed = new CouponUsed()
             {
                 Id = 0,
@@ -404,13 +387,8 @@ namespace ECommerceApp.Application.Services.Orders
         {
             var order = _orderRepository.GetAll()
                 .Include(oi => oi.OrderItems)
-                .Where(o => o.Id == orderId && o.IsPaid && o.IsDelivered).FirstOrDefault();
-
-            if (order is null)
-            {
-                throw new BusinessException($"Order with id {orderId} not exists");
-            }
-
+                .Where(o => o.Id == orderId && o.IsPaid && o.IsDelivered).FirstOrDefault() 
+                ?? throw new BusinessException($"Order with id {orderId} not exists");
             order.RefundId = refundId;
             foreach (var oi in order.OrderItems)
             {
@@ -502,14 +480,9 @@ namespace ECommerceApp.Application.Services.Orders
             var order = _mapper.Map<Order>(dto);
             order.OrderItems = _orderItemRepository.GetOrderItemsToRealization(ids);
             CheckOrderItemsOrderByUser(order, order.OrderItems);
-            CalculateCost(order);
+            order.CalculateCost();
             var id = _orderRepository.AddOrder(order);
             _couponHandler.HandleCouponChangesOnUpdateOrder(_couponService.GetCouponByCode(model.PromoCode), order, HandleCouponChangesDto.Of(model.PromoCode));
-            if (order.CouponUsed is not null)
-            {
-                CalculateCost(order);
-                _orderRepository.UpdatedOrder(order);
-            }
             return id;
         }
 
@@ -703,8 +676,8 @@ namespace ECommerceApp.Application.Services.Orders
                 }
             }
 
+            order.CalculateCost();
             _couponHandler.HandleCouponChangesOnUpdateOrder(coupon, order, new HandleCouponChangesDto(dto));
-            CalculateCost(order);
             _paymentHandler.HandlePaymentChangesOnOrder(dto.Payment, order);
             _orderRepository.Update(order);
             orderItemsToRemove.ForEach(oi => _orderItemService.DeleteOrderItem(oi.Id));
