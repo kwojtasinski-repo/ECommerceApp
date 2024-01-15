@@ -7,6 +7,7 @@ using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.ViewModels.Coupon;
+using ECommerceApp.Application.ViewModels.CouponUsed;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -237,7 +238,17 @@ namespace ECommerceApp.Application.Services.Orders
             var coupon = _couponService.GetCouponFirstOrDefault(c => c.CouponUsedId == couponUsedId)
                 ?? throw new BusinessException("Given invalid couponUsedId");
 
-            UseCoupon(coupon, order);
+           order.Cost = (1 - (decimal)coupon.Discount / 100) * order.Cost;
+
+            if (order.OrderItems.Count > 0)
+            {
+                foreach (var orderItem in order.OrderItems ?? new List<OrderItem>())
+                {
+                    orderItem.CouponUsedId = couponUsedId;
+                }
+            }
+            order.CouponUsedId = couponUsedId;
+            _orderRepository.Update(order);
         }
 
         public int AddCouponToOrder(int couponId, NewOrderVm order)
