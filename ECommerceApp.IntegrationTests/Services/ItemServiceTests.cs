@@ -78,14 +78,14 @@ namespace ECommerceApp.IntegrationTests.Services
         public void given_valid_item_should_update()
         {
             var id = 1;
-            var item = _service.Get(id);
+            var item = _service.GetItemById(id);
             var name = "NameItem1234";
             item.Name = name;
             var itemToUpdate = new NewItemVm { Id = item.Id, Description = item.Description, BrandId = item.BrandId, Cost = item.Cost, CurrencyId = item.CurrencyId, Name = item.Name, Quantity = item.Quantity, TypeId = item.TypeId, Warranty = item.Warranty, ItemTags = new List<ItemsWithTagsVm> { new ItemsWithTagsVm { ItemId = item.Id, TagId = 2 } } };
 
             _service.UpdateItem(itemToUpdate);
 
-            var itemUpdated = _service.Get(id);
+            var itemUpdated = _service.GetItemById(id);
             itemUpdated.Name.ShouldBe(name);
         }
 
@@ -145,7 +145,7 @@ namespace ECommerceApp.IntegrationTests.Services
 
             _service.DeleteItem(id);
 
-            var itemDeleted = _service.Get(id);
+            var itemDeleted = _service.GetItemById(id);
             itemDeleted.ShouldBeNull();
         }
 

@@ -58,6 +58,12 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public void UpdateItem(Item item)
         {
+            //temporary
+            if (_context.Items.Local.Any(i => i.Id == item.Id))
+            {
+                _context.Entry(_context.Items.Local.FirstOrDefault(i => i.Id == item.Id)).State = EntityState.Detached;
+            }
+
             //Backup new item collection tags before clearing 
             var newItemTags = item.ItemTags;
             item.ItemTags = new List<ItemTag>();
