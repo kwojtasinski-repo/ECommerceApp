@@ -1,7 +1,5 @@
-﻿using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.ViewModels.Item;
+﻿using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.OrderItem;
-using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
@@ -9,11 +7,13 @@ using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Items
 {
-    public interface IItemService : IAbstractService<ItemVm, IItemRepository, Item>
+    public interface IItemService
     {
         ListForItemVm GetAllItemsForList(int pageSize, int pageNo, string searchString);
+        int Add(ItemVm vm);
         int AddItem(NewItemVm model);
         NewItemVm GetItemById(int id);
+        void Update(ItemVm vm);
         void UpdateItem(NewItemVm model);
         List<NewItemVm> GetAllItems();
         IEnumerable<ItemVm> GetAllItems(Expression<Func<Item, bool>> expression);
