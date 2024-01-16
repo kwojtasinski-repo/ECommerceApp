@@ -109,41 +109,29 @@ namespace ECommerceApp.Application.Services.Orders
 
         public void DeleteRefundFromOrder(int id)
         {
-            var orders = _orderRepository.GetAll().Include(oi => oi.OrderItems).Where(r => r.RefundId == id).ToList();
+            var order = _orderRepository.GetAll()
+                                        .Include(oi => oi.OrderItems)
+                                        .Where(r => r.RefundId == id)
+                                        .FirstOrDefault()
+                                        ?? throw new BusinessException($"Refund with id '{id}' was not assigned to any order");
 
-            /*orders.ForEach(o =>
+            order.RefundId = null;
+            foreach (var oi in order.OrderItems)
             {
-                _repo.DetachEntity(o);
-                _repo.DetachEntity(o.OrderItems);
-            });*/
+                oi.RefundId = null;
+            }
 
-            orders.ForEach(o =>
-            {
-                o.RefundId = null;
-                foreach (var oi in o.OrderItems)
-                {
-                    oi.RefundId = null;
-                }
-            });
-            orders.ForEach(_orderRepository.Update);
+            _orderRepository.Update(order);
         }
 
         public void DeleteCouponUsedFromOrder(int orderId, int couponUsedId)
         {
-            var order = _orderRepository.GetAll().Include(oi => oi.OrderItems).Where(o => o.Id == orderId).FirstOrDefault();
-
-            if (order is null)
-            {
-                throw new BusinessException("Given invalid id");
-            }
-
+            var order = _orderRepository.GetAll().Include(oi => oi.OrderItems).Where(o => o.Id == orderId).FirstOrDefault()
+                ?? throw new BusinessException("Given invalid id");
             if (order.IsPaid)
             {
                 throw new BusinessException("Cannot delete coupon when order is paid");
             }
-
-            //_repo.DetachEntity(order);
-            //_repo.DetachEntity(order.OrderItems);
 
             order.CouponUsedId = null;
             foreach (var orderItem in order.OrderItems)
@@ -151,15 +139,10 @@ namespace ECommerceApp.Application.Services.Orders
                 orderItem.CouponUsedId = null;
             }
 
-            var coupon = _couponService.GetCouponFirstOrDefault(c => c.CouponUsedId == couponUsedId);
-
-            if (coupon is null)
-            {
-                throw new BusinessException("Given invalid couponUsedId");
-            }
-
-            order.Cost = order.Cost / (1 - (decimal)coupon.Discount / 100);
-            //_repo.Update(order);
+            var coupon = _couponService.GetCouponFirstOrDefault(c => c.CouponUsedId == couponUsedId)
+                ?? throw new BusinessException("Given invalid couponUsedId");
+            order.Cost /= (1 - (decimal)coupon.Discount / 100);
+            _orderRepository.Update(order);
         }
 
         public ListForOrderVm GetAllOrders(int pageSize, int pageNo, string searchString)
@@ -196,31 +179,6 @@ namespace ECommerceApp.Application.Services.Orders
             var orderDetails = _orderRepository.GetOrderDetailsById(id);
             var orderDetailsVm = _mapper.Map<OrderDetailsVm>(orderDetails);
             return orderDetailsVm;
-        }
-
-        private static void CheckOrderItemsOrderByUser(Order order, ICollection<OrderItem> itemsFromDb)
-        {
-            StringBuilder errors = new();
-
-            foreach (var orderItem in order.OrderItems ?? new List<OrderItem>())
-            {
-                var item = itemsFromDb.Where(i => i.Id == orderItem.Id).FirstOrDefault();
-                if (item == default)
-                {
-                    continue;
-                }
-
-                if (orderItem.UserId != item.UserId)
-                {
-                    errors.AppendLine($"This item {orderItem.Id} is not ordered by current user");
-                    continue;
-                }
-            }
-
-            if (errors.Length > 0)
-            {
-                throw new BusinessException(errors.ToString());
-            }
         }
 
         public void AddCouponUsedToOrder(int orderId, int couponUsedId)
@@ -428,19 +386,6 @@ namespace ECommerceApp.Application.Services.Orders
             return ordersList;
         }
 
-        private static void ValidatePageSizeAndPageNo(int pageSize, int pageNo)
-        {
-            if (pageSize <= 0)
-            {
-                throw new BusinessException("Page size should be positive and greater than 0");
-            }
-
-            if (pageNo <= 0)
-            {
-                throw new BusinessException("Page number should be positive and greater than 0");
-            }
-        }
-
         public void DispatchOrder(int orderId)
         {
             var order = _orderRepository.GetAll().Where(o => o.Id == orderId).FirstOrDefault(o => o.IsDelivered == false && o.IsPaid == true)
@@ -468,30 +413,6 @@ namespace ECommerceApp.Application.Services.Orders
                     .Select(id => new OrderItemsIdsDto { Id = id }).ToList()
             };
             var id = AddOrderInternal(dto);
-            return id;
-        }
-
-        private int AddOrderInternal(AddOrderDto model)
-        {
-            var dto = model.AsDto();
-            dto.CurrencyId = 1;
-            dto.UserId = _httpContextAccessor.GetUserId();
-            dto.Number = Guid.NewGuid().ToString();
-
-            var dateNotSet = new DateTime();
-            if (dto.Ordered == dateNotSet)
-            {
-                dto.Ordered = DateTime.Now;
-            }
-
-            var ids = dto.OrderItems?.Select(oi => oi.Id)?.ToList() ?? new List<int>();
-            dto.OrderItems = new List<OrderItemDto>();
-            var order = _mapper.Map<Order>(dto);
-            order.OrderItems = _orderItemRepository.GetOrderItemsToRealization(ids);
-            CheckOrderItemsOrderByUser(order, order.OrderItems);
-            order.CalculateCost();
-            var id = _orderRepository.AddOrder(order);
-            _couponHandler.HandleCouponChangesOnUpdateOrder(_couponService.GetCouponByCode(model.PromoCode), order, HandleCouponChangesDto.Of(model.PromoCode));
             return id;
         }
 
@@ -652,6 +573,68 @@ namespace ECommerceApp.Application.Services.Orders
             _orderRepository.Update(order);
             orderItemsToRemove.ForEach(oi => _orderItemService.DeleteOrderItem(oi.Id));
             return _mapper.Map<OrderDetailsVm>(order);
+        }
+
+        private static void ValidatePageSizeAndPageNo(int pageSize, int pageNo)
+        {
+            if (pageSize <= 0)
+            {
+                throw new BusinessException("Page size should be positive and greater than 0");
+            }
+
+            if (pageNo <= 0)
+            {
+                throw new BusinessException("Page number should be positive and greater than 0");
+            }
+        }
+
+        private int AddOrderInternal(AddOrderDto model)
+        {
+            var dto = model.AsDto();
+            dto.CurrencyId = 1;
+            dto.UserId = _httpContextAccessor.GetUserId();
+            dto.Number = Guid.NewGuid().ToString();
+
+            var dateNotSet = new DateTime();
+            if (dto.Ordered == dateNotSet)
+            {
+                dto.Ordered = DateTime.Now;
+            }
+
+            var ids = dto.OrderItems?.Select(oi => oi.Id)?.ToList() ?? new List<int>();
+            dto.OrderItems = new List<OrderItemDto>();
+            var order = _mapper.Map<Order>(dto);
+            order.OrderItems = _orderItemRepository.GetOrderItemsToRealization(ids);
+            CheckOrderItemsOrderByUser(order, order.OrderItems);
+            order.CalculateCost();
+            var id = _orderRepository.AddOrder(order);
+            _couponHandler.HandleCouponChangesOnUpdateOrder(_couponService.GetCouponByCode(model.PromoCode), order, HandleCouponChangesDto.Of(model.PromoCode));
+            return id;
+        }
+
+        private static void CheckOrderItemsOrderByUser(Order order, ICollection<OrderItem> itemsFromDb)
+        {
+            StringBuilder errors = new();
+
+            foreach (var orderItem in order.OrderItems ?? new List<OrderItem>())
+            {
+                var item = itemsFromDb.Where(i => i.Id == orderItem.Id).FirstOrDefault();
+                if (item == default)
+                {
+                    continue;
+                }
+
+                if (orderItem.UserId != item.UserId)
+                {
+                    errors.AppendLine($"This item {orderItem.Id} is not ordered by current user");
+                    continue;
+                }
+            }
+
+            if (errors.Length > 0)
+            {
+                throw new BusinessException(errors.ToString());
+            }
         }
     }
 }
