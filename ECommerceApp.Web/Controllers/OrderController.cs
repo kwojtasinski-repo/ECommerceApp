@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using ECommerceApp.Application.ViewModels.Order;
@@ -43,13 +42,8 @@ namespace ECommerceApp.Web.Controllers
                 pageNo = 1;
             }
 
-            if (searchString is null)
-            {
-                searchString = String.Empty;
-            }
-
+            searchString ??= string.Empty;
             var model = _orderService.GetAllOrders(pageSize, pageNo.Value, searchString);
-
             return View(model);
         }
 
@@ -292,13 +286,8 @@ namespace ECommerceApp.Web.Controllers
                 pageNo = 1;
             }
 
-            if (searchString is null)
-            {
-                searchString = String.Empty;
-            }
-
+            searchString ??= string.Empty;
             var model = _orderService.GetAllOrdersPaid(pageSize, pageNo.Value, searchString);
-
             return View(model);
         }
 
