@@ -1079,7 +1079,7 @@ namespace ECommerceApp.Tests.Services.Order
 
         private void AddItem(Domain.Model.Item item)
         {
-            _itemService.Setup(i => i.Get(item.Id)).Returns(_mapper.Map<ItemVm>(item));
+            _itemService.Setup(i => i.GetItemById(item.Id)).Returns(_mapper.Map<NewItemVm>(item));
             var allItems = _itemService.Object.GetAllItems() ?? new List<NewItemVm>();
             allItems.Add(_mapper.Map<NewItemVm>(item));
             _itemService.Setup(i => i.GetAllItems()).Returns(allItems);
