@@ -7,7 +7,6 @@ using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.ViewModels.Coupon;
-using ECommerceApp.Application.ViewModels.CouponUsed;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -126,7 +125,7 @@ namespace ECommerceApp.Application.Services.Orders
                     oi.RefundId = null;
                 }
             });
-            orders.ForEach(order => _orderRepository.Update(order));
+            orders.ForEach(_orderRepository.Update);
         }
 
         public void DeleteCouponUsedFromOrder(int orderId, int couponUsedId)
@@ -201,12 +200,6 @@ namespace ECommerceApp.Application.Services.Orders
 
         private static void CheckOrderItemsOrderByUser(Order order, ICollection<OrderItem> itemsFromDb)
         {
-            CheckOrderItemsOrderByUser(order, itemsFromDb?.Select(oi => new OrderItemValidationModel(oi.Id, oi.UserId))
-                    ?? new List<OrderItemValidationModel>());
-        }
-
-        private static void CheckOrderItemsOrderByUser(Order order, IEnumerable<OrderItemValidationModel> itemsFromDb)
-        {
             StringBuilder errors = new();
 
             foreach (var orderItem in order.OrderItems ?? new List<OrderItem>())
@@ -237,6 +230,11 @@ namespace ECommerceApp.Application.Services.Orders
             
             var coupon = _couponService.GetCouponFirstOrDefault(c => c.CouponUsedId == couponUsedId)
                 ?? throw new BusinessException("Given invalid couponUsedId");
+
+            if (order.IsPaid)
+            {
+                throw new BusinessException("Cannot add coupon to paid order");
+            }
 
            order.Cost = (1 - (decimal)coupon.Discount / 100) * order.Cost;
 
@@ -497,45 +495,6 @@ namespace ECommerceApp.Application.Services.Orders
             return id;
         }
 
-        private void UseCoupon(CouponVm coupon, Order order)
-        {
-            if (order.IsPaid)
-            {
-                throw new BusinessException("Cannot add coupon to paid order");
-            }
-
-            var couponUsed = new CouponUsed()
-            {
-                Id = 0,
-                CouponId = coupon.Id,
-                OrderId = order.Id
-            };
-
-            order.Cost = (1 - (decimal)coupon.Discount / 100) * order.Cost;
-
-            int couponUsedId;
-            if (!coupon.CouponUsedId.HasValue)
-            {
-                couponUsedId = _couponUsedRepository.AddCouponUsed(couponUsed);
-                coupon.CouponUsedId = couponUsedId;
-                _couponService.UpdateCoupon(coupon);
-            }
-            else
-            {
-                couponUsedId = coupon.CouponUsedId.Value;
-            }
-
-            if (order.OrderItems.Count > 0)
-            {
-                foreach (var orderItem in order.OrderItems ?? new List<OrderItem>())
-                {
-                    orderItem.CouponUsedId = couponUsedId;
-                }
-            }
-            order.CouponUsedId = couponUsedId;
-            _orderRepository.Update(order);
-        }
-
         public OrderVm InitOrder()
         {
             var userId = _httpContextAccessor.GetUserId();
@@ -694,7 +653,5 @@ namespace ECommerceApp.Application.Services.Orders
             orderItemsToRemove.ForEach(oi => _orderItemService.DeleteOrderItem(oi.Id));
             return _mapper.Map<OrderDetailsVm>(order);
         }
-
-        private record OrderItemValidationModel(int Id, string UserId);
     }
 }
