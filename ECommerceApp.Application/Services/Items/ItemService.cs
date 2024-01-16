@@ -183,10 +183,5 @@ namespace ECommerceApp.Application.Services.Items
             var exists = _repo.ItemExists(id);
             return exists;
         }
-
-        public IQueryable<NewItemVm> GetItems()
-        {
-            return _repo.GetAll().ProjectTo<NewItemVm>(_mapper.ConfigurationProvider);
-        }
     }
 }

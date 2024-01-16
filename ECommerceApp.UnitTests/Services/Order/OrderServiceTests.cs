@@ -1080,7 +1080,7 @@ namespace ECommerceApp.Tests.Services.Order
         private void AddItem(Domain.Model.Item item)
         {
             _itemService.Setup(i => i.Get(item.Id)).Returns(_mapper.Map<ItemVm>(item));
-            var allItems = _itemService.Object.GetItems().ToList();
+            var allItems = _itemService.Object.GetAllItems();
             allItems.Add(_mapper.Map<NewItemVm>(item));
             _itemService.Setup(i => i.GetAllItems()).Returns(allItems);
             _itemService.Setup(i => i.GetItemDetails(item.Id)).Returns(_mapper.Map<ItemDetailsVm>(item));
@@ -1138,7 +1138,7 @@ namespace ECommerceApp.Tests.Services.Order
         private List<NewItemVm> GenerateAndAddItems()
         {
             var items = GenerateItems();
-            _itemService.Setup(i => i.GetItems()).Returns(items.AsQueryable());
+            _itemService.Setup(i => i.GetAllItems()).Returns(items);
             items.ForEach(i => _itemRepository.Setup(service => service.GetById(i.Id)).Returns(_mapper.Map<Domain.Model.Item>(i)));
             var currentItems = _itemRepository.Object.GetAll().ToList();
             items.ForEach(i => currentItems.Add(_mapper.Map<Domain.Model.Item>(i)));

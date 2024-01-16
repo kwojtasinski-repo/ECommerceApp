@@ -5,7 +5,6 @@ using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Items
@@ -23,6 +22,5 @@ namespace ECommerceApp.Application.Services.Items
         ItemDetailsVm GetItemDetails(int id);
         ListForItemWithTagsVm GetAllItemsWithTags(int pageSize, int pageNo, string searchString);
         bool ItemExists(int id);
-        IQueryable<NewItemVm> GetItems();
     }
 }

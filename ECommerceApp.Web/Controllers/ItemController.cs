@@ -28,7 +28,6 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult Index()
         {
             var model = _itemService.GetAllItemsForList(20, 1, "");
-
             return View(model);
         }
 
@@ -41,9 +40,7 @@ namespace ECommerceApp.Web.Controllers
             }
 
             searchString ??= string.Empty;
-
             var model = _itemService.GetAllItemsForList(pageSize, pageNo.Value, searchString);
-
             return View(model);
         }
 
@@ -107,7 +104,6 @@ namespace ECommerceApp.Web.Controllers
             }
 
             searchString ??= string.Empty;
-
             var tag = _itemService.GetAllItemsWithTags(pageSize, pageNo.Value, searchString);
             return View(tag);
         }

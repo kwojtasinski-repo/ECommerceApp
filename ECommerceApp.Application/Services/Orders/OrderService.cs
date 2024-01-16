@@ -64,18 +64,6 @@ namespace ECommerceApp.Application.Services.Orders
             return orderVm;
         }
 
-        public int Add(OrderDto dto)
-        {
-            if (dto is null)
-            {
-                throw new BusinessException($"{typeof(OrderDto).Name} cannot be null");
-            }
-
-            var order = _mapper.Map<Order>(dto);
-            var id = _orderRepository.Add(order);
-            return id;
-        }
-
         public void Update(NewOrderVm vm)
         {
             if (vm is null)

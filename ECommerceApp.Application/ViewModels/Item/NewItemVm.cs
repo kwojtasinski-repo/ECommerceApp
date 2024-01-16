@@ -43,11 +43,11 @@ namespace ECommerceApp.Application.ViewModels.Item
         public NewItemValidation()
         {
             RuleFor(x => x.Id).NotNull();
-            RuleFor(x => x.Name).NotNull();
-            RuleFor(x => x.Cost).NotNull();
-            RuleFor(x => x.Description).NotNull();
+            RuleFor(x => x.Name).NotNull().MinimumLength(2).MaximumLength(100);
+            RuleFor(x => x.Cost).NotNull().GreaterThanOrEqualTo(0);
+            RuleFor(x => x.Description).NotNull().MinimumLength(2).MaximumLength(255);
             RuleFor(x => x.Warranty).NotNull();
-            RuleFor(x => x.Quantity).NotNull();
+            RuleFor(x => x.Quantity).NotNull().GreaterThan(0);
             RuleFor(x => x.BrandId).NotNull();
             RuleFor(x => x.TypeId).NotNull();
         }
