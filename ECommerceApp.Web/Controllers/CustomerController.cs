@@ -65,13 +65,8 @@ namespace ECommerceApp.Web.Controllers
                 pageNo = 1;
             }
 
-            if (searchString is null)
-            {
-                searchString = String.Empty;
-            }
-
+            searchString ??= string.Empty;
             var model = _customerService.GetAllCustomersForList(pageSize, pageNo.Value, searchString);
-
             return View(model);
         }
 

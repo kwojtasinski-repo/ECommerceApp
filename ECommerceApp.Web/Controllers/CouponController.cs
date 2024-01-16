@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Infrastructure.Permissions;
@@ -38,13 +37,8 @@ namespace ECommerceApp.Web.Controllers
                 pageNo = 1;
             }
 
-            if (searchString is null)
-            {
-                searchString = String.Empty;
-            }
-
+            searchString ??= string.Empty;
             var model = _couponService.GetAllCoupons(pageSize, pageNo.Value, searchString);
-
             return View(model);
         }
 
@@ -59,7 +53,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddCoupon(CouponVm model)
         {
-            var id = _couponService.AddCoupon(model);
+            _couponService.AddCoupon(model);
             return RedirectToAction("Index");
         }
 

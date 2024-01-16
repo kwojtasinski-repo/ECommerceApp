@@ -1,5 +1,4 @@
-﻿using System;
-using ECommerceApp.Application.Services.Coupons;
+﻿using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.ViewModels.CouponType;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -33,13 +32,8 @@ namespace ECommerceApp.Web.Controllers
                 pageNo = 1;
             }
 
-            if (searchString is null)
-            {
-                searchString = String.Empty;
-            }
-
+            searchString ??= string.Empty;
             var model = _couponService.GetAllCouponsTypes(pageSize, pageNo.Value, searchString);
-
             return View(model);
         }
 
@@ -52,7 +46,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddCouponType(CouponTypeVm model)
         {
-            var id = _couponService.AddCouponType(model);
+            _couponService.AddCouponType(model);
             return RedirectToAction("Index");
         }
 

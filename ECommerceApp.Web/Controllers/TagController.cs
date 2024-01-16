@@ -1,5 +1,4 @@
-﻿using System;
-using ECommerceApp.Application.DTO;
+﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Tag;
 using ECommerceApp.Infrastructure.Permissions;
@@ -11,6 +10,7 @@ namespace ECommerceApp.Web.Controllers
     public class TagController : Controller
     {
         private readonly ITagService _tagService;
+
         public TagController(ITagService tagService)
         {
             _tagService = tagService;
@@ -31,11 +31,7 @@ namespace ECommerceApp.Web.Controllers
                 pageNo = 1;
             }
 
-            if (searchString is null)
-            {
-                searchString = String.Empty;
-            }
-
+            searchString ??= string.Empty;
             var tag = _tagService.GetTags(pageSize, pageNo.Value, searchString);
             return View(tag);
         }
@@ -52,7 +48,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddTag(TagVm model)
         {
-            var id = _tagService.AddTag(model.Tag);
+            _tagService.AddTag(model.Tag);
             return RedirectToAction("Index");
         }
 

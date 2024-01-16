@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.ViewModels.CouponUsed;
@@ -42,13 +41,8 @@ namespace ECommerceApp.Web.Controllers
                 pageNo = 1;
             }
 
-            if (searchString is null)
-            {
-                searchString = String.Empty;
-            }
-
+            searchString ??= string.Empty;
             var model = _couponUsedService.GetAllCouponsUsed(pageSize, pageNo.Value, searchString);
-
             return View(model);
         }
 

@@ -1,5 +1,4 @@
-﻿using System;
-using ECommerceApp.Application.Services.Refunds;
+﻿using ECommerceApp.Application.Services.Refunds;
 using ECommerceApp.Application.ViewModels.Refund;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -33,13 +32,8 @@ namespace ECommerceApp.Web.Controllers
                 pageNo = 1;
             }
 
-            if (searchString is null)
-            {
-                searchString = String.Empty;
-            }
-
+            searchString ??= string.Empty;
             var refunds = _refundService.GetRefunds(pageSize, pageNo.Value, searchString);
-
             return View(refunds);
         }
 

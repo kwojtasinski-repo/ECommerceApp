@@ -27,10 +27,6 @@ namespace ECommerceApp.API.Controllers
         public ActionResult<List<OrderItemDto>> GetAllOrderItems()
         {
             var orderItems = _orderItemService.GetOrderItems(oi => true);
-            if (orderItems.Count() == 0)
-            {
-                return NotFound();
-            }
             return Ok(orderItems);
         }
 
@@ -39,7 +35,7 @@ namespace ECommerceApp.API.Controllers
         public ActionResult<OrderItemDetailsVm> GetOrderItem(int id)
         {
             var orderItem = _orderItemService.GetOrderItemDetails(id);
-            if (orderItem == null)
+            if (orderItem is null)
             {
                 return NotFound();
             }

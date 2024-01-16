@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Threading.Tasks;
 using ECommerceApp.Application.Services.Users;
 using ECommerceApp.Application.ViewModels.User;
@@ -34,13 +33,8 @@ namespace ECommerceApp.Web.Controllers
                 pageNo = 1;
             }
 
-            if (searchString is null)
-            {
-                searchString = String.Empty;
-            }
-
+            searchString ??= string.Empty;
             var model = _userService.GetAllUsers(pageSize, pageNo.Value, searchString);
-
             return View(model);
         }
 

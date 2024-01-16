@@ -1,5 +1,4 @@
-﻿using System;
-using ECommerceApp.Application.DTO;
+﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Brands;
 using ECommerceApp.Infrastructure.Permissions;
@@ -32,11 +31,7 @@ namespace ECommerceApp.Web.Controllers
                 pageNo = 1;
             }
 
-            if (searchString is null)
-            {
-                searchString = String.Empty;
-            }
-
+            searchString ??= string.Empty;
             var item = _brandService.GetAllBrands(pageSize, pageNo.Value, searchString);
             return View(item);
         }

@@ -1,13 +1,9 @@
 ﻿using ECommerceApp.Application.POCO;
-using ECommerceApp.Application.Services;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Image;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace ECommerceApp.API.Controllers
 {

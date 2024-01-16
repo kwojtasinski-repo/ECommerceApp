@@ -1,5 +1,4 @@
-﻿using System;
-using System.Security.Claims;
+﻿using System.Security.Claims;
 using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.Services.Payments;
@@ -40,13 +39,8 @@ namespace ECommerceApp.Web.Controllers
                 pageNo = 1;
             }
 
-            if (searchString is null)
-            {
-                searchString = String.Empty;
-            }
-
+            searchString ??= string.Empty;
             var model = _paymentService.GetPayments(pageSize, pageNo.Value, searchString);
-
             return View(model);
         }
 
@@ -64,7 +58,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddPayment(PaymentVm model)
         {
-            var id = _paymentService.PaidIssuedPayment(model);
+            _paymentService.PaidIssuedPayment(model);
             return RedirectToAction("Index", "Item");
         }
 
