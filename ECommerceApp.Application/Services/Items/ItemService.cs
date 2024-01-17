@@ -43,17 +43,6 @@ namespace ECommerceApp.Application.Services.Items
             return id;
         }
 
-        public ItemVm Get(int id)
-        {
-            var item = _itemRepository.GetById(id);
-            if (item != null)
-            {
-                _itemRepository.DetachEntity(item);
-            }
-            var itemVm = item.MapToItemVm();
-            return itemVm;
-        }
-
         public void Update(ItemVm vm)
         {
             if (vm is null)

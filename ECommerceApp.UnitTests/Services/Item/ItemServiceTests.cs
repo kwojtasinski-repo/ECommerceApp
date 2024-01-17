@@ -22,7 +22,7 @@ namespace ECommerceApp.Tests.Services.Item
         }
 
         public ItemService CreateItemService()
-            => new ItemService(_itemRepository.Object, _mapper, _tagRepository.Object);
+            => new (_itemRepository.Object, _mapper, _tagRepository.Object);
 
         [Fact]
         public void given_valid_item_should_add()
