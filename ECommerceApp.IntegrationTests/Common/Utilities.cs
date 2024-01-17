@@ -171,6 +171,10 @@ namespace ECommerceApp.IntegrationTests.Common
 
             var tag = new Domain.Model.Tag { Id = 1, Name = "Tag" };
             context.Add(tag);
+            var tag3 = new Domain.Model.Tag { Id = 3, Name = "Tag3" };
+            context.Add(tag3);
+            var tag4 = new Domain.Model.Tag { Id = 4, Name = "Tag4" };
+            context.Add(tag4);
 
             // ---------------------------------- Dane testowe ----------------------------------
 

@@ -58,48 +58,32 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public void UpdateItem(Item item)
         {
-            //temporary
-            if (_context.Items.Local.Any(i => i.Id == item.Id))
-            {
-                _context.Entry(_context.Items.Local.FirstOrDefault(i => i.Id == item.Id)).State = EntityState.Detached;
-            }
-
-            //Backup new item collection tags before clearing 
-            var newItemTags = item.ItemTags;
-            item.ItemTags = new List<ItemTag>();
-
-            _context.Entry(item).State = EntityState.Modified;
-
-            //Load item's current tags from DB and remove them
-            _context.Entry(item).Collection(i => i.ItemTags).Load();
-            var currentItems = item.ItemTags.ToList();
-            item.ItemTags.Clear();
+            var newItemTags = new List<ItemTag>(item.ItemTags);
+            var currentItemTags = _context.ItemTag.Where(it => it.ItemId == item.Id).ToList();
 
             foreach (var itemTag in newItemTags)
             {
-                var currentItem = currentItems.SingleOrDefault(it => it.TagId == itemTag.TagId);
-                if (currentItem != null)
+                if (currentItemTags.Any(it => it.TagId == itemTag.TagId))
                 {
-                    item.ItemTags.Add(currentItem);
+                    continue;
                 }
-                else
-                {
-                    _context.ItemTag.Add(itemTag);
-                    item.ItemTags.Add(itemTag);
-                }
+
+                var entry = _context.Entry(itemTag);
+                entry.State = EntityState.Added;
             }
 
-            _context.Attach(item);
-            _context.Entry(item).Property("Name").IsModified = true;
-            _context.Entry(item).Property("Cost").IsModified = true;
-            _context.Entry(item).Property("Description").IsModified = true;
-            _context.Entry(item).Property("Warranty").IsModified = true;
-            _context.Entry(item).Property("Quantity").IsModified = true;
-            _context.Entry(item).Property("BrandId").IsModified = true;
-            _context.Entry(item).Property("TypeId").IsModified = true;
-            _context.Entry(item).Collection("OrderItems").IsModified = true;
-           _context.Entry(item).Collection("ItemTags").IsModified = true;
+            foreach (var itemTag in currentItemTags)
+            {
+                if (newItemTags.Any(it => it.TagId == itemTag.TagId))
+                {
+                    continue;
+                }
 
+                var entry = _context.Entry(itemTag);
+                entry.State = EntityState.Deleted;
+            }
+
+            _context.Items.Update(item);
             _context.SaveChanges();
         }
 

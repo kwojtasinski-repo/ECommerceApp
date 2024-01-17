@@ -1,8 +1,6 @@
 ﻿using ECommerceApp.Domain.Model;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace ECommerceApp.Domain.Interface
 {
@@ -13,5 +11,6 @@ namespace ECommerceApp.Domain.Interface
         Tag GetTagById(int tagId);
         IQueryable<Tag> GetAllTags();
         void UpdateTag(Tag tag);
+        List<Tag> GetTagsByIds(IEnumerable<int> ids);
     }
 }

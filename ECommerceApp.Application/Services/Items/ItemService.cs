@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Text;
 
 namespace ECommerceApp.Application.Services.Items
 {
@@ -16,11 +17,13 @@ namespace ECommerceApp.Application.Services.Items
     {
         private readonly IMapper _mapper;
         private readonly IItemRepository _itemRepository;
+        private readonly ITagRepository tagRepository;
 
-        public ItemService(IItemRepository itemRepo, IMapper mapper)
+        public ItemService(IItemRepository itemRepo, IMapper mapper, ITagRepository tagRepository)
         {
             _mapper = mapper;
             _itemRepository = itemRepo;
+            this.tagRepository = tagRepository;
         }
 
         public int Add(ItemVm vm)
@@ -73,6 +76,22 @@ namespace ECommerceApp.Application.Services.Items
             if (model.Id != 0)
             {
                 throw new BusinessException("When adding object Id should be equals 0");
+            }
+
+            var tags = tagRepository.GetTagsByIds(model.ItemTags.Select(it => it.TagId));
+            var errors = new StringBuilder();
+            foreach(var itemTag in model.ItemTags)
+            {
+                var tag = tags.FirstOrDefault(t => t.Id == itemTag.TagId);
+                if (tag is null)
+                {
+                    errors.Append($"Tag with id '{itemTag.TagId}' was not found");
+                }                    
+            }
+
+            if (errors.Length > 0)
+            {
+                throw new BusinessException(errors.ToString());
             }
 
             var item = _mapper.Map<Item>(model);
@@ -136,7 +155,39 @@ namespace ECommerceApp.Application.Services.Items
                 throw new BusinessException($"{typeof(NewItemVm).Name} cannot be null");
             }
 
-            var item = _mapper.Map<Item>(model);
+            var item = _itemRepository.GetItemById(model.Id);
+            item.Name = model.Name;
+            item.Cost = model.Cost;
+            item.Warranty = model.Warranty;
+            item.Quantity = model.Quantity;
+            item.Description = model.Description;
+            item.BrandId = model.BrandId;
+            item.TypeId = model.TypeId;
+            item.CurrencyId = model.CurrencyId;
+            var currentTags = new List<ItemTag>(item.ItemTags);
+            foreach (var itemTag in currentTags)
+            {
+                var itemTagExists = model.ItemTags.FirstOrDefault(it => it.TagId == itemTag.TagId);
+                if (itemTagExists is null)
+                {
+                    item.ItemTags.Remove(itemTag);
+                }
+            }
+            var tags = tagRepository.GetTagsByIds(model.ItemTags.Select(it => it.TagId));
+
+            foreach (var itemTag in model.ItemTags)
+            {
+                var itemTagExists = item.ItemTags.FirstOrDefault(it => it.TagId == itemTag.TagId);
+                var tag = tags.FirstOrDefault(t => t.Id == itemTag.TagId) 
+                    ?? throw new BusinessException($"Tag with id '{itemTag.TagId}' was not found");
+                if (itemTagExists is null)
+                {
+                    var itemTagToAdd = new ItemTag { Item = item, ItemId = itemTag.ItemId, TagId = itemTag.TagId, Tag = tag };
+                    item.ItemTags.Add(itemTagToAdd);
+                    tag.ItemTags.Add(itemTagToAdd);
+                }
+            }
+
             _itemRepository.UpdateItem(item);
         }
 

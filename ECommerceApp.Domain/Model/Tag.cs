@@ -8,6 +8,6 @@ namespace ECommerceApp.Domain.Model
     {
         public string Name { get; set; }
 
-        public ICollection<ItemTag> ItemTags { get; set; }
+        public ICollection<ItemTag> ItemTags { get; set; } = new List<ItemTag>();
     }
 }

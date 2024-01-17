@@ -81,12 +81,13 @@ namespace ECommerceApp.IntegrationTests.Services
             var item = _service.GetItemById(id);
             var name = "NameItem1234";
             item.Name = name;
-            var itemToUpdate = new NewItemVm { Id = item.Id, Description = item.Description, BrandId = item.BrandId, Cost = item.Cost, CurrencyId = item.CurrencyId, Name = item.Name, Quantity = item.Quantity, TypeId = item.TypeId, Warranty = item.Warranty, ItemTags = new List<ItemsWithTagsVm> { new ItemsWithTagsVm { ItemId = item.Id, TagId = 2 } } };
+            var itemToUpdate = new NewItemVm { Id = item.Id, Description = item.Description, BrandId = item.BrandId, Cost = item.Cost, CurrencyId = item.CurrencyId, Name = item.Name, Quantity = item.Quantity, TypeId = item.TypeId, Warranty = item.Warranty, ItemTags = new List<ItemsWithTagsVm> { new ItemsWithTagsVm { ItemId = item.Id, TagId = 2 }, new ItemsWithTagsVm { ItemId = item.Id, TagId = 3 } }  };
 
             _service.UpdateItem(itemToUpdate);
 
             var itemUpdated = _service.GetItemById(id);
             itemUpdated.Name.ShouldBe(name);
+            itemUpdated.ItemTags.Count.ShouldBe(itemToUpdate.ItemTags.Count);
         }
 
         [Fact]
