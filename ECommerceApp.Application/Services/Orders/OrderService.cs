@@ -242,7 +242,7 @@ namespace ECommerceApp.Application.Services.Orders
 
             var orderVm = _mapper.Map<NewOrderVm>(order);
             // TODO: in future fetch items from frontend
-            orderVm.Items = _itemService.GetAllItems(i => true).ToList();
+            orderVm.Items = _itemService.GetAllItems();
             orderVm.UserId = _httpContextAccessor.GetUserId();
             return orderVm;
         }
@@ -257,7 +257,7 @@ namespace ECommerceApp.Application.Services.Orders
 
             var orderVm = _mapper.Map<NewOrderVm>(order);
             // TODO: in future fetch items from frontend
-            orderVm.Items = _itemService.GetAllItems(i => true).ToList();
+            orderVm.Items = _itemService.GetAllItems();
             orderVm.UserId = _httpContextAccessor.GetUserId();
             return orderVm;
         }

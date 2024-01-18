@@ -59,7 +59,7 @@ namespace ECommerceApp.Infrastructure.Repositories
         public void UpdateItem(Item item)
         {
             var newItemTags = new List<ItemTag>(item.ItemTags);
-            var currentItemTags = _context.ItemTag.Where(it => it.ItemId == item.Id).ToList();
+            var currentItemTags = _context.ItemTag.Where(it => it.ItemId == item.Id).AsNoTracking().ToList();
 
             foreach (var itemTag in newItemTags)
             {

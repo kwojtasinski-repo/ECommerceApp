@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Mapping;
-using ECommerceApp.Application.ViewModels.Item;
 using FluentValidation;
 using System;
 using System.Collections.Generic;
@@ -13,7 +12,7 @@ namespace ECommerceApp.Application.ViewModels.Order
         public NewOrderVm()
         {
             OrderItems = new List<OrderItemDto>();
-            Items = new List<ItemVm>();
+            Items = new List<ItemDto>();
         }
 
         public string Number { get; set; }
@@ -40,7 +39,7 @@ namespace ECommerceApp.Application.ViewModels.Order
 
 
         public List<OrderItemDto> OrderItems { get; set; } // 1:Many relation
-        public List<ItemVm> Items { get; set; }
+        public List<ItemDto> Items { get; set; }
         public CustomerDetailsDto NewCustomer { get; set; }
         public bool CustomerData { get; set; }
         public string CustomerInformation { get; set; }

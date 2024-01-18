@@ -9,7 +9,7 @@ namespace ECommerceApp.Application.ViewModels.OrderItem
     {
         public OrderItemDto OrderItem { get; set; } = new ();
 
-        public List<ItemsAddToCartVm> Items { get; set; } = new ();
+        public List<ItemInfoVm> Items { get; set; } = new ();
     }
 
     public class NewOrderItemValidation : AbstractValidator<NewOrderItemVm>

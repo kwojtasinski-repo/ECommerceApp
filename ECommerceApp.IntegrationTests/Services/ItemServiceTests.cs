@@ -99,14 +99,6 @@ namespace ECommerceApp.IntegrationTests.Services
         }
 
         [Fact]
-        public void given_valid_experession_should_return_list()
-        {
-            var items = _service.GetAllItems(i => true);
-
-            items.Count().ShouldBeGreaterThan(0);
-        }
-
-        [Fact]
         public void given_valid_page_size_page_no_search_string_should_return_list()
         {
             var pageSize = 20;

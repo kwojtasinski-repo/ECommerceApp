@@ -1080,8 +1080,8 @@ namespace ECommerceApp.Tests.Services.Order
         private void AddItem(Domain.Model.Item item)
         {
             _itemService.Setup(i => i.GetItemById(item.Id)).Returns(_mapper.Map<NewItemVm>(item));
-            var allItems = _itemService.Object.GetAllItems() ?? new List<NewItemVm>();
-            allItems.Add(_mapper.Map<NewItemVm>(item));
+            var allItems = _itemService.Object.GetAllItems() ?? new List<ItemDto>();
+            allItems.Add(_mapper.Map<ItemDto>(item));
             _itemService.Setup(i => i.GetAllItems()).Returns(allItems);
             _itemService.Setup(i => i.GetItemDetails(item.Id)).Returns(_mapper.Map<ItemDetailsVm>(item));
             _itemService.Setup(i => i.GetItemById(item.Id)).Returns(_mapper.Map<NewItemVm>(item));
@@ -1098,35 +1098,35 @@ namespace ECommerceApp.Tests.Services.Order
             _couponRepository.Setup(c => c.GetById(coupon.Id)).Returns(coupon);
         }
 
-        private static List<NewItemVm> GenerateItems()
+        private static List<ItemDto> GenerateItems()
         {
-            return new List<NewItemVm>()
+            return new List<ItemDto>()
             {
-                new NewItemVm
+                new ItemDto
                 {
                     Id = 1,
                     Name = Guid.NewGuid().ToString(),
                     Cost = 100
                 },
-                new NewItemVm
+                new ItemDto
                 {
                     Id = 2,
                     Name = Guid.NewGuid().ToString(),
                     Cost = 300
                 },
-                new NewItemVm
+                new ItemDto
                 {
                     Id = 3,
                     Name = Guid.NewGuid().ToString(),
                     Cost = 1000
                 },
-                new NewItemVm
+                new ItemDto
                 {
                     Id = 4,
                     Name = Guid.NewGuid().ToString(),
                     Cost = 100000
                 },
-                new NewItemVm
+                new ItemDto
                 {
                     Id = 5,
                     Name = Guid.NewGuid().ToString(),
@@ -1135,7 +1135,7 @@ namespace ECommerceApp.Tests.Services.Order
             };
         }
 
-        private List<NewItemVm> GenerateAndAddItems()
+        private List<ItemDto> GenerateAndAddItems()
         {
             var items = GenerateItems();
             _itemService.Setup(i => i.GetAllItems()).Returns(items);

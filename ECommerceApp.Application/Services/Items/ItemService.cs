@@ -1,14 +1,13 @@
 ﻿using AutoMapper;
 using AutoMapper.QueryableExtensions;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Text;
 
 namespace ECommerceApp.Application.Services.Items
@@ -108,25 +107,18 @@ namespace ECommerceApp.Application.Services.Items
             return itemsList;
         }
 
-        public List<NewItemVm> GetAllItems()
+        public List<ItemDto> GetAllItems()
         {
             var items = _itemRepository.GetAllItems()
-                .ProjectTo<NewItemVm>(_mapper.ConfigurationProvider)
+                .ProjectTo<ItemDto>(_mapper.ConfigurationProvider)
                 .ToList();
             return items;
         }
 
-        public IEnumerable<ItemVm> GetAllItems(Expression<Func<Item, bool>> expression)
-        {
-            var items = _itemRepository.GetAll().Where(expression).ToList();
-            var itemsVm = items.Select(i => i.MapToItemVm());
-            return itemsVm;
-        }
-
-        public List<ItemsAddToCartVm> GetItemsAddToCart()
+        public List<ItemInfoVm> GetItemsAddToCart()
         {
             var items = _itemRepository.GetAll();
-            var itemsVm = items.ProjectTo<ItemsAddToCartVm>(_mapper.ConfigurationProvider).ToList();
+            var itemsVm = items.ProjectTo<ItemInfoVm>(_mapper.ConfigurationProvider).ToList();
             return itemsVm;
         }
 
