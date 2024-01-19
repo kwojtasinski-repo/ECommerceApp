@@ -1,9 +1,11 @@
-﻿using ECommerceApp.Application.Services.Brands;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Services.Brands;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -11,14 +13,12 @@ namespace ECommerceApp.Web.Controllers
     {
         private readonly IItemService _itemService;
         private readonly IBrandService _brandService;
-        private readonly IImageService _imageService;
         private readonly ITypeService _typeService;
         private readonly ITagService _tagService;
 
-        public ItemController(IItemService itemService, IImageService imageService, IBrandService brandService, ITypeService typeService, ITagService tagService)
+        public ItemController(IItemService itemService, IBrandService brandService, ITypeService typeService, ITagService tagService)
         {
             _itemService = itemService;
-            _imageService = imageService;
             _brandService = brandService;
             _typeService = typeService;
             _tagService = tagService;
@@ -58,7 +58,20 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddItem(NewItemVm model)
         {
-            var id = _itemService.AddItem(model);
+            //var id = _itemService.AddItem(model);
+            var id = _itemService.AddItem(new AddItemDto
+            {
+                Name = model.Name,
+                Description = model.Description,
+                Cost = model.Cost,
+                Quantity = model.Quantity,
+                Warranty = model.Warranty,
+                BrandId = model.BrandId,
+                CurrencyId = model.CurrencyId,
+                TypeId = model.TypeId,
+                TagsId = model.ItemTags.Select(t => t.TagId).ToList(),
+                Images = model.Images.Select(i => new AddItemImageDto(i.Name, i.ImageSource))
+            });
             return RedirectToAction("EditItem", new { id });
         }
 
@@ -66,7 +79,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult EditItem(int id)
         {
-            var item = _itemService.GetItemById(id);
+            var item = _itemService.GetItemDetails(id);
             if (item is null)
             {
                 return NotFound();
@@ -74,15 +87,26 @@ namespace ECommerceApp.Web.Controllers
             ViewBag.ItemBrands = _brandService.GetAllBrands(b => true);
             ViewBag.ItemTypes = _typeService.GetTypes(t => true);
             ViewBag.ItemTags = _tagService.GetTags(t => true);
-            item.Images = _imageService.GetImagesByItemId(id);
             return View(item);
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpPost]
-        public IActionResult EditItem(NewItemVm model)
+        public IActionResult EditItem(ItemDetailsDto model)
         {
-            _itemService.UpdateItem(model);
+            _itemService.UpdateItem(new UpdateItemDto
+            {
+                Id = model.Id,
+                Name = model.Name,
+                Description = model.Description,
+                Cost = model.Cost,
+                Quantity = model.Quantity,
+                Warranty = model.Warranty,
+                BrandId = model.Brand.Id,
+                CurrencyId = model.Currency.Id,
+                TypeId = model.Type.Id,
+                TagsId = model.Tags.Select(t => t.Id).ToList()
+            });
             return RedirectToAction("Index");
         }
 
@@ -116,7 +140,6 @@ namespace ECommerceApp.Web.Controllers
             {
                 return NotFound();
             }
-            item.Images = _imageService.GetImagesByItemId(id);
             return View(item);
         }
 

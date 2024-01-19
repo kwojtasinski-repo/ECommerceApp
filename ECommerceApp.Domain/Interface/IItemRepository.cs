@@ -1,8 +1,5 @@
 ﻿using ECommerceApp.Domain.Model;
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace ECommerceApp.Domain.Interface
 {
@@ -12,6 +9,7 @@ namespace ECommerceApp.Domain.Interface
         int AddItem(Item item);
         IQueryable<Item> GetItemsByTypeId(int typeId);
         Item GetItemById(int itemId);
+        Item GetItemDetailsById(int itemId);
         IQueryable<Item> GetAllItems();
         void UpdateItem(Item item);
         IQueryable<ItemTag> GetAllItemsWithTags();

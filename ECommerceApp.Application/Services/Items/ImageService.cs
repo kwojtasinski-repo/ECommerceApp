@@ -267,7 +267,7 @@ namespace ECommerceApp.Application.Services.Items
                     Id = image.Id,
                     ItemId = image.ItemId,
                     Name = image.Name,
-                    ImageSource = _fileStore.ReadFile(image.SourcePath)
+                    ImageSource = Convert.ToBase64String(_fileStore.ReadFile(image.SourcePath))
                 };
                 imagesVm.Add(img);
             }

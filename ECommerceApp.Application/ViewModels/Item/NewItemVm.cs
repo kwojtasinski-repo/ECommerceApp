@@ -25,10 +25,10 @@ namespace ECommerceApp.Application.ViewModels.Item
         public int TypeId { get; set; }
         public int CurrencyId { get; set; }
 
-        public List<BrandDto> Brands { get; set; }
-        public List<TypeVm> Types { get; set; }
-        public List<ItemsWithTagsVm> ItemTags { get; set; }
-        public List<Image.GetImageVm> Images { get; set; }
+        public List<BrandDto> Brands { get; set; } = new List<BrandDto>();
+        public List<TypeVm> Types { get; set; } = new List<TypeVm>();
+        public List<ItemsWithTagsVm> ItemTags { get; set; } = new List<ItemsWithTagsVm>();
+        public List<Image.GetImageVm> Images { get; set; } = new List<Image.GetImageVm>();
 
         public void Mapping(Profile profile)
         {

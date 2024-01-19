@@ -84,11 +84,53 @@
                 <select id="Tags" name="Tags" asp-items="@(new SelectList(ViewBag.ItemTags,"Id", "Name"))" class="custom-select" data-val="true"></select>
                 <button type="button" id="add" class="btn btn-info">Wybierz tag</button>
             </div>
+            <div id="ImagesToAddToItem" style="display: none;"></div>
             <br />
             <div class="form-group">
                 <input type="submit" value="Utwórz" class="btn btn-primary" />
             </div>
         </form>
+    </div>
+    <div class="col-md-6 col-md-offset-2">
+        @if (Model.Images.Count() < 5)
+        {
+            <div>
+                <h4>Dodaj obrazki</h4>
+            </div>
+
+            <div>
+                <form id="UploadImages" enctype="multipart/form-data" onsubmit="return false" method="post">
+                    <dl>
+                        <dt>
+                            <label for="FileUpload_FormFile">Pliki</label>
+                        </dt>
+                        <dd>
+                            <input id="FileUpload_FormFile" multiple="multiple" type="file"
+                                    name="files" />
+                        </dd>
+                    </dl>
+
+                    <input class="btn-block" type="button" value="Wgraj" onclick="Upload(this)" />
+
+                    <div style="margin-top:15px">
+                        <output name="result"></output>
+                    </div>
+                </form>
+            </div>
+        }
+        <br />
+        <h4 id="ImagesToShow" style="display: none">Obrazki</h4>
+        @for (int i = 0; i < Model.Images.Count; i++)
+        {
+            <div data-name="ImageData" class="card" style="width:18rem;">
+                <div class="card-body">
+                    <button class="btn btn-sm btn-danger" style="margin-left: auto; margin-right: 0;" onclick="DeleteImage(@Model.Images[i].Id)">Usuń</button>
+                    <img src="data:image;base64,@Model.Images[i].ImageSource" style="display: block; width: auto; max-width: 15rem; height: auto; max-height: 300px" />
+                    <input type="hidden" name="Images[i].ImageSource" />
+                    <input type="hidden" name="Images[i].Name" />
+                </div>
+            </div>
+        }
     </div>
 </div>
 
@@ -310,5 +352,71 @@
                 value: ''
             }
         };
+
+        async function Upload(input) {
+            debugger
+            var uploadForm = document.getElementById("UploadImages");
+            var files = uploadForm[0].files;
+
+            if (parseInt(files.length) > 5) {
+                alert("You can only upload a maximum of 5 files");
+                return;
+            }
+
+            for (const file of files) {
+                const elements = document.querySelectorAll('[data-name="ImageData"]').length;
+                const data = await toBase64(file);
+                const imgToShow = document.getElementById('ImagesToShow');
+                if (imgToShow.style.display == 'none') {
+                    imgToShow.style.display = 'block';
+                }
+                const imageToAdd = { id: Number(elements), data, name: file.name };
+                imgToShow.appendChild(createImageDiv(imageToAdd));
+                appendFormWithImage(imageToAdd);
+            }
+        }
+
+        const toBase64 = file => new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+        });
+
+        function deleteImage(id)  {
+            debugger
+        }
+
+        function createImageDiv(image) {
+            const div = document.createElement('div');
+            div.className = 'card';
+            div.style = 'width: 18rem;';
+            const div2 = document.createElement('div');
+            div2.className = 'card-body'
+            const button = buttonTemplate.createButton('Usuń', 'btn btn-sm btn-danger', () => deleteImage(image.id), 'button');
+            button.style = 'margin-left: auto; margin-right: 0;';
+            const img = document.createElement('img');
+            img.style = 'display: block; width: auto; max-width: 15rem; height: auto; max-height: 300px';
+            img.src = image.data;
+            div2.appendChild(button);
+            div2.appendChild(img);
+            div.appendChild(div2);
+            div.setAttribute('data-name', 'ImageData');
+            return div;
+        }
+
+        function appendFormWithImage(image) {
+            const imageForm = document.getElementById('ImagesToAddToItem');
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = "Images[" + image.id + "].Base64String";
+            input.value = image.data.split('base64,')[1];
+            const input2 = document.createElement('input');
+            input2.type = 'hidden';
+            input2.name = "Images[" + image.id + "].Name";
+            input2.value = image.name;
+            imageForm.appendChild(input);
+            imageForm.appendChild(input2);
+        }
     </script>
 }

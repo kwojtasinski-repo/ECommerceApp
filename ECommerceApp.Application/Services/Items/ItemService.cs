@@ -6,7 +6,10 @@ using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
+using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -16,13 +19,22 @@ namespace ECommerceApp.Application.Services.Items
     {
         private readonly IMapper _mapper;
         private readonly IItemRepository _itemRepository;
-        private readonly ITagRepository tagRepository;
+        private readonly ITagRepository _tagRepository;
+        private readonly IImageService _imageService;
+        private readonly IBrandRepository _brandRepository;
+        private readonly ITypeRepository _typeRepository;
+        private readonly ICurrencyRepository _currencyRepository;
 
-        public ItemService(IItemRepository itemRepo, IMapper mapper, ITagRepository tagRepository)
+        public ItemService(IItemRepository itemRepo, IMapper mapper, ITagRepository tagRepository, IImageService imageService,
+            IBrandRepository brandRepository, ITypeRepository typeRepository, ICurrencyRepository currencyRepository)
         {
             _mapper = mapper;
             _itemRepository = itemRepo;
-            this.tagRepository = tagRepository;
+            _tagRepository = tagRepository;
+            _imageService = imageService;
+            _brandRepository = brandRepository;
+            _typeRepository = typeRepository;
+            _currencyRepository = currencyRepository;
         }
 
         public int Add(ItemVm vm)
@@ -66,7 +78,7 @@ namespace ECommerceApp.Application.Services.Items
                 throw new BusinessException("When adding object Id should be equals 0");
             }
 
-            var tags = tagRepository.GetTagsByIds(model.ItemTags.Select(it => it.TagId));
+            var tags = _tagRepository.GetTagsByIds(model.ItemTags.Select(it => it.TagId));
             var errors = new StringBuilder();
             foreach(var itemTag in model.ItemTags)
             {
@@ -154,7 +166,7 @@ namespace ECommerceApp.Application.Services.Items
                     item.ItemTags.Remove(itemTag);
                 }
             }
-            var tags = tagRepository.GetTagsByIds(model.ItemTags.Select(it => it.TagId));
+            var tags = _tagRepository.GetTagsByIds(model.ItemTags.Select(it => it.TagId));
 
             foreach (var itemTag in model.ItemTags)
             {
@@ -177,12 +189,23 @@ namespace ECommerceApp.Application.Services.Items
             _itemRepository.Delete(id);
         }
 
-        public ItemDetailsVm GetItemDetails(int id)
+        public ItemDetailsDto GetItemDetails(int id)
         {
-            var item = _itemRepository.GetItemById(id);
-            var itemVm = _mapper.Map<ItemDetailsVm>(item);
+            var item = _itemRepository.GetItemDetailsById(id);
+            if (item is null)
+            {
+                return null;
+            }
 
-            return itemVm;
+            var dto = _mapper.Map<ItemDetailsDto>(item);
+            var images = _imageService.GetImagesByItemId(dto.Id);
+            dto.Images = images?.Select(i => new ImageDto
+            {
+                Id = i.Id,
+                ImageSource = i.ImageSource,
+                ItemId = i.ItemId
+            })?.ToList() ?? new List<ImageDto>();
+            return dto;
         }
 
         public ListForItemWithTagsVm GetAllItemsWithTags(int pageSize, int pageNo, string searchString)
@@ -208,6 +231,123 @@ namespace ECommerceApp.Application.Services.Items
         {
             var exists = _itemRepository.ItemExists(id);
             return exists;
+        }
+
+        public int AddItem(AddItemDto dto)
+        {
+            var tags = _tagRepository.GetTagsByIds(dto.TagsId);
+            var errors = new StringBuilder();
+            foreach (var itemTagId in dto.TagsId)
+            {
+                var tag = tags.FirstOrDefault(t => t.Id == itemTagId);
+                if (tag is null)
+                {
+                    errors.Append($"Tag with id '{itemTagId}' was not found");
+                }
+            }
+
+            if (errors.Length > 0)
+            {
+                throw new BusinessException(errors.ToString());
+            }
+
+            var brand = _brandRepository.GetById(dto.BrandId)
+                ?? throw new BusinessException($"Brand with id '{dto.BrandId}' was not found");
+            var type = _typeRepository.GetById(dto.TypeId)
+                ?? throw new BusinessException($"Type with id '{dto.TypeId}' was not found");
+            var currency = _currencyRepository.GetById(dto.CurrencyId)
+                ?? throw new BusinessException($"Currency with id '{dto.CurrencyId}' was not found");
+            var item = new Item
+            {
+                Cost = dto.Cost,
+                Name = dto.Name,
+                Description = dto.Description,
+                Brand = brand,
+                BrandId = brand.Id,
+                Type = type,
+                TypeId = type.Id,
+                Quantity = dto.Quantity,
+                Currency = currency,
+                CurrencyId = currency.Id,
+                Warranty = dto.Warranty
+            };
+            item.ItemTags = tags.Select(t => new ItemTag { Item = item, Tag = t, TagId = t.Id }).ToList();
+            var id = _itemRepository.AddItem(item);
+
+            foreach (var addImg in dto.Images)
+            {
+                var bytes = addImg.ImageSource is not null ? Convert.FromBase64String(addImg.ImageSource) : Array.Empty<byte>();
+                _imageService.Add(new ViewModels.Image.ImageVm
+                {
+                    ItemId = id,
+                    Name = addImg.ImageName,
+                    Images = new List<IFormFile>()
+                    { 
+                        new FormFile(new MemoryStream(bytes), 0, bytes.Length, addImg.ImageName, addImg.ImageName) 
+                    }
+                });
+            }
+            return id;
+        }
+
+        public void UpdateItem(UpdateItemDto dto)
+        {
+            var item = _itemRepository.GetItemDetailsById(dto.Id)
+                ?? throw new BusinessException($"Item with id '{dto.Id}' was not found");
+            var tags = _tagRepository.GetTagsByIds(dto.TagsId);
+            var errors = new StringBuilder();
+            foreach (var tagId in dto.TagsId)
+            {
+                var tag = tags.FirstOrDefault(t => t.Id == tagId);
+                if (tag is null)
+                {
+                    errors.Append($"Tag with id '{tagId}' was not found");
+                }
+            }
+
+            if (errors.Length > 0)
+            {
+                throw new BusinessException(errors.ToString());
+            }
+
+            var brand = _brandRepository.GetById(dto.BrandId)
+                ?? throw new BusinessException($"Brand with id '{dto.BrandId}' was not found");
+            var type = _typeRepository.GetById(dto.TypeId)
+                ?? throw new BusinessException($"Type with id '{dto.TypeId}' was not found");
+            var currency = _currencyRepository.GetById(dto.CurrencyId)
+                ?? throw new BusinessException($"Currency with id '{dto.CurrencyId}' was not found");
+
+            item.Cost = dto.Cost;
+            item.Name = dto.Name;
+            item.Description = dto.Description;
+            item.Brand = brand;
+            item.BrandId = brand.Id;
+            item.Type = type;
+            item.TypeId = type.Id;
+            item.Quantity = dto.Quantity;
+            item.Currency = currency;
+            item.CurrencyId = currency.Id;
+            item.Warranty = dto.Warranty;
+            var currentTags = new List<ItemTag>(item.ItemTags);
+            
+            foreach (var itemTag in currentTags)
+            {
+                var tagExists = dto.TagsId.FirstOrDefault(t => t == itemTag.TagId);
+                if (tagExists == default)
+                {
+                    item.ItemTags.Remove(itemTag);
+                }
+            }
+
+            foreach(var tagId in dto.TagsId)
+            {
+                if (!item.ItemTags.Any(it => it.TagId == tagId))
+                {
+                    item.ItemTags.Add(new ItemTag { Item = item, TagId = tagId, Tag = tags.FirstOrDefault(t => t.Id == tagId) });
+                }
+            }
+            
+            _itemRepository.UpdateItem(item);
         }
     }
 }

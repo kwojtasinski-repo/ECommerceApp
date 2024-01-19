@@ -1,4 +1,6 @@
-﻿@model ECommerceApp.Application.ViewModels.Item.NewItemVm
+﻿@using System.Linq;
+@using ECommerceApp.Application.DTO;
+@model ECommerceApp.Application.DTO.ItemDetailsDto
 
 @{
     ViewData["Title"] = "EditItem";
@@ -38,20 +40,20 @@
                 <span asp-validation-for="Quantity" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="BrandId" class="control-label">Firma: </label>
-                <select asp-for="BrandId" asp-items="@(new SelectList(ViewBag.ItemBrands,"Id", "Name"))" class="custom-select"></select>
-                <span asp-validation-for="BrandId" class="text-danger"></span>
+                <label asp-for="Brand.Id" class="control-label">Firma: </label>
+                <select asp-for="Brand.Id" asp-items="@(new SelectList(ViewBag.ItemBrands,"Id", "Name"))" class="custom-select"></select>
+                <span asp-validation-for="Brand.Id" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="TypeId" class="control-label">Typ: </label>
-                <select asp-for="TypeId" asp-items="@(new SelectList(ViewBag.ItemTypes,"Id", "Name"))" class="custom-select"></select>
-                <span asp-validation-for="TypeId" class="text-danger"></span>
+                <label asp-for="Type.Id" class="control-label">Typ: </label>
+                <select asp-for="Type.Id" asp-items="@(new SelectList(ViewBag.ItemTypes,"Id", "Name"))" class="custom-select"></select>
+                <span asp-validation-for="Type.Id" class="text-danger"></span>
             </div>
             <div class="form-group">
-                <label asp-for="CurrencyId" class="control-label">Waluta: </label>
+                <label asp-for="Currency.Id" class="control-label">Waluta: </label>
                 <input readonly type="text" class="form-control" value="PLN" />
-                <input type="hidden" asp-for="CurrencyId" value="1" />
-                <span asp-validation-for="CurrencyId" class="text-danger"></span>
+                <input type="hidden" asp-for="Currency.Id" value="1" />
+                <span asp-validation-for="Currency.Id" class="text-danger"></span>
             </div>
             <div>
                 <table id="tagsWithJS">
@@ -59,13 +61,12 @@
                         List tagów:
                     </thead>
                     <tbody>
-                        @for (int i = 0; i < Model.ItemTags.Count; i++)
+                        @for (int i = 0; i < Model.Tags.Count; i++)
                         {
                             <tr id="@i">
                                 <td>
-                                    <input name="Tag" value="@ViewBag.ItemTags[Model.ItemTags[i].TagId-1].Name" class="form-control valid" readonly style="width: 250px;position:static; " />
-                                    <input id="tagId" type="hidden" name="ItemTags[@i].TagId" value="@Model.ItemTags[i].TagId" />
-                                    <input id="itemId" type="hidden" name="ItemTags[@i].ItemId" value="@Model.Id" />
+                                    <input name="Tag" value="@((ViewBag.ItemTags as List<TagDto>).FirstOrDefault(t => t.Id == Model.Tags[i].Id).Name)" class="form-control valid" readonly style="width: 250px;position:static; " />
+                                    <input id="tagId" type="hidden" name="Tags[@i].Id" value="@Model.Tags[i].Id" />
                                 </td>
                                 <td class="col-2">
                                     <button id="@i" type="button" class="btn btn-danger delete">Usuń</button>
@@ -85,7 +86,7 @@
         </form>
     </div>
     <div class="col-md-6 col-md-offset-2">
-        @if (Model.Images.Count < 5)
+        @if (Model.Images.Count() < 5)
         {
             <div>
                 <h4>Dodaj obrazki</h4>
@@ -114,7 +115,7 @@
             </div>
         }
 
-        @if (Model.Images.Count > 0) 
+        @if (Model.Images.Count() > 0) 
         { 
             <br />
             <h4>Obrazki</h4>
@@ -123,7 +124,7 @@
                 <div class="card" style="width:18rem;">
                     <div class="card-body">
                         <button class="btn btn-sm btn-danger" style="margin-left: auto; margin-right: 0;" onclick="DeleteImage(@image.Id)">Usuń</button>
-                        <img src="data:image;base64,@System.Convert.ToBase64String(image.ImageSource)" style="display: block; width: auto; max-width: 15rem; height: auto; max-height: 300px" />
+                        <img src="data:image;base64,@image.ImageSource" style="display: block; width: auto; max-width: 15rem; height: auto; max-height: 300px" />
                     </div>
                 </div>
             }

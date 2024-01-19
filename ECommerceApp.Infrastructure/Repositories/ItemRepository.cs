@@ -41,7 +41,7 @@ namespace ECommerceApp.Infrastructure.Repositories
             var item = _context.Items
                 .Include(inc => inc.Brand)
                 .Include(inc => inc.Type)
-                .Include(inc => inc.ItemTags).ThenInclude(inc => inc.Tag)
+                .Include(inc => inc.Currency)
                 .FirstOrDefault(it => it.Id == itemId);
             return item;
         }
@@ -91,6 +91,17 @@ namespace ECommerceApp.Infrastructure.Repositories
         {
             var item = _context.Items.Where(i => i.Id == id).AsNoTracking().FirstOrDefault();
             return item != null;
+        }
+
+        public Item GetItemDetailsById(int itemId)
+        {
+            var item = _context.Items
+                .Include(inc => inc.Brand)
+                .Include(inc => inc.Type)
+                .Include(inc => inc.ItemTags).ThenInclude(inc => inc.Tag)
+                .Include(inc => inc.Currency)
+                .FirstOrDefault(it => it.Id == itemId);
+            return item;
         }
     }
 }
