@@ -1083,7 +1083,7 @@ namespace ECommerceApp.Tests.Services.Order
             var allItems = _itemService.Object.GetAllItems() ?? new List<ItemDto>();
             allItems.Add(_mapper.Map<ItemDto>(item));
             _itemService.Setup(i => i.GetAllItems()).Returns(allItems);
-            _itemService.Setup(i => i.GetItemDetails(item.Id)).Returns(_mapper.Map<ItemDetailsVm>(item));
+            _itemService.Setup(i => i.GetItemDetails(item.Id)).Returns(_mapper.Map<ItemDetailsDto>(item));
             _itemService.Setup(i => i.GetItemById(item.Id)).Returns(_mapper.Map<NewItemVm>(item));
         }
 

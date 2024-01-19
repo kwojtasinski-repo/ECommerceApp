@@ -14,15 +14,24 @@ namespace ECommerceApp.Tests.Services.Item
     {
         private readonly Mock<IItemRepository> _itemRepository;
         private readonly Mock<ITagRepository> _tagRepository;
+        private readonly Mock<IImageService> _imageService;
+        private readonly Mock<IBrandRepository> _brandRepository;
+        private readonly Mock<ITypeRepository> _typeRepository;
+        private readonly Mock<ICurrencyRepository> _currencyRepository;
 
         public ItemServiceTests()
         {
             _itemRepository = new Mock<IItemRepository>();
             _tagRepository = new Mock<ITagRepository>();
+            _imageService = new Mock<IImageService>();
+            _brandRepository = new Mock<IBrandRepository>();
+            _typeRepository = new Mock<ITypeRepository>();
+            _currencyRepository = new Mock<ICurrencyRepository>();
         }
 
         public ItemService CreateItemService()
-            => new (_itemRepository.Object, _mapper, _tagRepository.Object);
+            => new (_itemRepository.Object, _mapper, _tagRepository.Object, _imageService.Object,
+                _brandRepository.Object, _typeRepository.Object, _currencyRepository.Object);
 
         [Fact]
         public void given_valid_item_should_add()
@@ -74,7 +83,7 @@ namespace ECommerceApp.Tests.Services.Item
         {
             var itemService = CreateItemService();
 
-            Action action = () => itemService.AddItem(null);
+            Action action = () => itemService.AddItem((NewItemVm) null);
 
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
@@ -84,7 +93,7 @@ namespace ECommerceApp.Tests.Services.Item
         {
             var itemService = CreateItemService();
 
-            Action action = () => itemService.UpdateItem(null);
+            Action action = () => itemService.UpdateItem((NewItemVm) null);
 
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
