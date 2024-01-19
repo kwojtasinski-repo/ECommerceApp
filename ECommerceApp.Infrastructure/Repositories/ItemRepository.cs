@@ -100,6 +100,7 @@ namespace ECommerceApp.Infrastructure.Repositories
                 .Include(inc => inc.Type)
                 .Include(inc => inc.ItemTags).ThenInclude(inc => inc.Tag)
                 .Include(inc => inc.Currency)
+                .Include(inc => inc.Images)
                 .FirstOrDefault(it => it.Id == itemId);
             return item;
         }

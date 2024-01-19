@@ -1,11 +1,14 @@
 ﻿using ECommerceApp.API;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.IntegrationTests.Common;
 using Flurl.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
 using Shouldly;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -54,7 +57,7 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task given_valid_item_should_add()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var item = CreateItem(0);
+            var item = CreateItemDto();
 
             var response = await client.Request("api/items")
                 .AllowAnyHttpStatus()
@@ -66,55 +69,84 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_invalid_item_should_return_status_code_conflict()
+        public async Task given_valid_item_with_images_should_add()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var item = CreateItem(1);
+            var item = CreateItemDto();
+            item.Images = new List<AddItemImageDto> { new AddItemImageDto("test.png", "SW1hZ2VTb3VyY2U="), new AddItemImageDto("test2.png", "SW1hZ2VTb3VyY2U=") };
 
             var response = await client.Request("api/items")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(item);
+            var id = JsonConvert.DeserializeObject<int>(await response.ResponseMessage.Content.ReadAsStringAsync());
 
-            response.StatusCode.ShouldBe((int)HttpStatusCode.Conflict);
+            response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
+            id.ShouldBeGreaterThan(0);
+            var imageService = _factory.Services.GetRequiredService<IImageService>();
+            var images = imageService.GetImagesByItemId(id);
+            images.ShouldNotBeNull();
+            images.ShouldNotBeEmpty();
+            images.Count.ShouldBe(item.Images.Count());
         }
 
         [Fact]
         public async Task given_valid_item_should_update()
         {
+            var id = await AddDefaultItem();
             var client = await _factory.GetAuthenticatedClient();
-            var item = CreateItem(0);
-            var response = await client.Request("api/items")
-                .AllowAnyHttpStatus()
-                .PostJsonAsync(item);
-            var id = JsonConvert.DeserializeObject<int>(await response.ResponseMessage.Content.ReadAsStringAsync());
+            var itemDetails = await client.Request($"api/items/{id}").GetJsonAsync<ItemDetailsDto>();
             var name = "NameChanged";
-            var cost = new decimal(199.99);
-            item.Name = name;
-            item.Cost = cost;
-            item.Id = id;
+            var cost = 199.99M;
+            var tagsId = itemDetails.Tags.Select(t => t.Id).ToList();
+            tagsId.Remove(5);
+            tagsId.Add(6);
+            tagsId.Add(7);
+            var images = itemDetails.Images.Select(i => new UpdateItemImageDto(i.Id, i.Name, i.ImageSource)).ToList();
+            images.Remove(images.LastOrDefault());
+            images.Add(new UpdateItemImageDto(0, "test3.png", "SW1hZ2VTb3VyY2U="));
+            var dto = new UpdateItemDto
+            {
+                Id = id,
+                Name = name,
+                Cost = cost,
+                Quantity = itemDetails.Quantity,
+                Description = itemDetails.Description,
+                BrandId = itemDetails.Brand.Id,
+                TypeId = itemDetails.Type.Id,
+                CurrencyId = itemDetails.Currency.Id,
+                Warranty = itemDetails.Warranty,
+                TagsId = tagsId,
+                Images = images,
+            };
 
-            response = await client.Request("api/items")
+            var response = await client.Request($"api/items/{id}")
                 .AllowAnyHttpStatus()
-                .PutJsonAsync(item);
+                .PutJsonAsync(dto);
 
             var itemUpdated = await client.Request($"api/items/{id}")
                 .AllowAnyHttpStatus()
                 .GetAsync()
-                .ReceiveJson<ItemDetailsVm>();
+                .ReceiveJson<ItemDetailsDto>();
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
             itemUpdated.Name.ShouldBe(name);
             itemUpdated.Cost.ShouldBe(cost);
+            itemUpdated.Tags.ShouldNotBeNull();
+            itemUpdated.Tags.ShouldNotBeEmpty();
+            itemUpdated.Tags.Count.ShouldBe(dto.TagsId.Count());
+            itemUpdated.Images.ShouldNotBeNull();
+            itemUpdated.Images.ShouldNotBeEmpty();
+            itemUpdated.Images.Count().ShouldBe(dto.Images.Count());
         }
 
         [Fact]
         public async Task given_invalid_item_when_update_should_return_status_code_conflict()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var customer = CreateItem(189);
+            var item = CreateItem(189);
 
-            var response = await client.Request("api/items")
+            var response = await client.Request($"api/items/{item.Id}")
                 .AllowAnyHttpStatus()
-                .PutJsonAsync(customer);
+                .PutJsonAsync(item);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.Conflict);
         }
@@ -171,6 +203,34 @@ namespace ECommerceApp.IntegrationTests.API
                 .GetAsync();
 
             response.StatusCode.ShouldBe((int) HttpStatusCode.NotFound);
+        }
+
+        private async Task<int> AddDefaultItem()
+        {
+            var client = await _factory.GetAuthenticatedClient();
+            var item = CreateItemDto();
+            item.Images = new List<AddItemImageDto> { new AddItemImageDto("test.png", "SW1hZ2VTb3VyY2U="), new AddItemImageDto("test2.png", "SW1hZ2VTb3VyY2U=") };
+            item.TagsId = new List<int> { 5 };
+
+            var response = await client.Request("api/items")
+                .AllowAnyHttpStatus()
+                .PostJsonAsync(item);
+            return JsonConvert.DeserializeObject<int>(await response.ResponseMessage.Content.ReadAsStringAsync());
+        }
+
+        private static AddItemDto CreateItemDto()
+        {
+            return new AddItemDto
+            {
+                BrandId = 1,
+                CurrencyId = 1,
+                TypeId = 1,
+                Warranty = "10",
+                Name = "Abc",
+                Cost = 100M,
+                Description = "This is description",
+                Quantity = 1,
+            };
         }
 
         private static ItemVm CreateItem(int id)

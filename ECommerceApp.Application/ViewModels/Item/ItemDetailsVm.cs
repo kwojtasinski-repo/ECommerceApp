@@ -24,7 +24,6 @@ namespace ECommerceApp.Application.ViewModels.Item
         public string CurrencyName { get; set; }
 
         public List<ItemTagForListVm> ItemTags { get; set; }
-        [JsonIgnore]
         public List<Image.GetImageVm> Images { get; set; }
 
         public void Mapping(Profile profile)

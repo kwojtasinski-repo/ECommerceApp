@@ -148,7 +148,7 @@ namespace ECommerceApp.Application.Services.Items
                 throw new BusinessException($"{typeof(NewItemVm).Name} cannot be null");
             }
 
-            var item = _itemRepository.GetItemById(model.Id);
+            var item = _itemRepository.GetItemDetailsById(model.Id);
             item.Name = model.Name;
             item.Cost = model.Cost;
             item.Warranty = model.Warranty;
@@ -203,6 +203,7 @@ namespace ECommerceApp.Application.Services.Items
             {
                 Id = i.Id,
                 ImageSource = i.ImageSource,
+                Name = i.Name,
                 ItemId = i.ItemId
             })?.ToList() ?? new List<ImageDto>();
             return dto;
@@ -248,6 +249,14 @@ namespace ECommerceApp.Application.Services.Items
                 if (tag is null)
                 {
                     errors.Append($"Tag with id '{itemTagId}' was not found");
+                }
+            }
+
+            foreach (var img in dto.Images ?? new List<AddItemImageDto>())
+            {
+                if (!IsBase64String(img.ImageSource))
+                {
+                    errors.AppendLine($"Image '{img.ImageName}' has invalid Base64 string");
                 }
             }
 
@@ -321,6 +330,14 @@ namespace ECommerceApp.Application.Services.Items
                 if (tag is null)
                 {
                     errors.Append($"Tag with id '{tagId}' was not found");
+                }
+            }
+
+            foreach (var img in dto.Images ?? new List<UpdateItemImageDto>())
+            {
+                if (img.ImageId == default && !IsBase64String(img.ImageSource))
+                {
+                    errors.AppendLine($"Image '{img.ImageName}' has invalid Base64 string");
                 }
             }
 
@@ -421,6 +438,12 @@ namespace ECommerceApp.Application.Services.Items
             }
 
             _itemRepository.UpdateItem(item);
+        }
+
+        public static bool IsBase64String(string base64)
+        {
+            Span<byte> buffer = new (new byte[base64.Length]);
+            return Convert.TryFromBase64String(base64, buffer, out int bytesParsed);
         }
     }
 }

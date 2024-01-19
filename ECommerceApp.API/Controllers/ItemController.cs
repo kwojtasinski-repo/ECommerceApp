@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Services.Items;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
@@ -30,7 +31,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpGet("{id}")]
-        public ActionResult<ItemDetailsVm> GetItem(int id)
+        public ActionResult<ItemDetailsDto> GetItem(int id)
         {
             var item = _itemService.GetItemDetails(id);
             if (item == null)
@@ -41,27 +42,28 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
-        [HttpPut]
-        public IActionResult EditItem(ItemVm model)
+        [HttpPut("{id:int}")]
+        public IActionResult EditItem(int id, UpdateItemDto model)
         {
+            model.Id = id;
             var modelExists = _itemService.ItemExists(model.Id);
             if (!ModelState.IsValid || !modelExists)
             {
                 return Conflict(ModelState);
             }
-            _itemService.Update(model);
+            _itemService.UpdateItem(model);
             return Ok();
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpPost]
-        public IActionResult AddItem(ItemVm model)
+        public IActionResult AddItem(AddItemDto model)
         {
-            if (!ModelState.IsValid || model.Id != 0)
+            if (!ModelState.IsValid)
             {
                 return Conflict(ModelState);
             }
-            var id = _itemService.Add(model);
+            var id = _itemService.AddItem(model);
             return Ok(id);
         }
 
