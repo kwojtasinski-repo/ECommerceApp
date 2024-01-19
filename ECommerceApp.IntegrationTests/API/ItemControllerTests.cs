@@ -1,20 +1,19 @@
 ﻿using ECommerceApp.API;
+using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.IntegrationTests.Common;
 using Flurl.Http;
 using Newtonsoft.Json;
 using Shouldly;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
 namespace ECommerceApp.IntegrationTests.API
 {
-    public class ItemControllerTests : IClassFixture<CustomWebApplicationFactory<Startup>>
+    public class ItemControllerTests : IClassFixture<CustomWebApplicationFactory<Startup>>, IDisposable
     {
         private readonly CustomWebApplicationFactory<Startup> _factory;
 
@@ -174,7 +173,7 @@ namespace ECommerceApp.IntegrationTests.API
             response.StatusCode.ShouldBe((int) HttpStatusCode.NotFound);
         }
 
-        private ItemVm CreateItem(int id)
+        private static ItemVm CreateItem(int id)
         {
             var item = new ItemVm
             {
@@ -188,6 +187,18 @@ namespace ECommerceApp.IntegrationTests.API
                 Quantity = 10
             };
             return item;
+        }
+
+        public void Dispose()
+        {
+            var imageService = _factory.Services.GetService(typeof(IImageService)) as IImageService;
+            var images = imageService.GetAll().Where(i => i.ItemId is not null);
+
+            foreach (var image in images)
+            {
+                imageService.Delete(image.Id);
+            }
+            GC.SuppressFinalize(this);
         }
     }
 }

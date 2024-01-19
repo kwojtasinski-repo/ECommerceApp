@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Interfaces;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.POCO;
 using ECommerceApp.Application.ViewModels.Image;
 using ECommerceApp.Domain.Interface;
@@ -14,5 +15,6 @@ namespace ECommerceApp.Application.Services.Items
         List<int> AddImages(AddImagesPOCO imageVm);
         void PartialUpdate(UpdateImagePOCO image);
         List<GetImageVm> GetImagesByItemId(int imageId);
+        List<ImageInfoDto> GetImages(IEnumerable<int> enumerable);
     }
 }

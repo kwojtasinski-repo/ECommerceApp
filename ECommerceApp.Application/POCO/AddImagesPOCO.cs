@@ -6,6 +6,6 @@ namespace ECommerceApp.Application.POCO
     public class AddImagesPOCO
     {
         public int? ItemId { get; set; }
-        public ICollection<IFormFile> Files { get; set; }
+        public ICollection<IFormFile> Files { get; set; } = new List<IFormFile>();
     }
 }

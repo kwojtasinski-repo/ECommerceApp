@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.Application.Abstracts;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.POCO;
@@ -306,6 +307,27 @@ namespace ECommerceApp.Application.Services.Items
             {
                 throw new BusinessException(errors.ToString());
             }
+        }
+
+        public List<ImageInfoDto> GetImages(IEnumerable<int> imagesId)
+        {
+            return _repo.GetAllImages()
+                        .Where(i => imagesId.Contains(i.Id))
+                        .AsNoTracking()
+                        .Select(i => new Image
+                        {
+                            Id = i.Id,
+                            Name = i.Name,
+                            ItemId = i.ItemId,
+                        })
+                        .ToList()
+                        .Select(i => new ImageInfoDto
+                        {
+                            Id = i.Id,
+                            Name = i.Name,
+                            ItemId = i.ItemId
+                        })
+                        .ToList();
         }
     }
 }

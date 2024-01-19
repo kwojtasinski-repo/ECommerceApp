@@ -235,6 +235,11 @@ namespace ECommerceApp.Application.Services.Items
 
         public int AddItem(AddItemDto dto)
         {
+            if (dto.Images.Count() > 5)
+            {
+                throw new BusinessException("Allowed only 5 images");
+            }
+
             var tags = _tagRepository.GetTagsByIds(dto.TagsId);
             var errors = new StringBuilder();
             foreach (var itemTagId in dto.TagsId)
@@ -273,25 +278,39 @@ namespace ECommerceApp.Application.Services.Items
             };
             item.ItemTags = tags.Select(t => new ItemTag { Item = item, Tag = t, TagId = t.Id }).ToList();
             var id = _itemRepository.AddItem(item);
+            if (!dto.Images.Any())
+            {
+                return id;
+            }
 
+            var addImages = new POCO.AddImagesPOCO();
             foreach (var addImg in dto.Images)
             {
-                var bytes = addImg.ImageSource is not null ? Convert.FromBase64String(addImg.ImageSource) : Array.Empty<byte>();
-                _imageService.Add(new ViewModels.Image.ImageVm
+                if (addImg is null || string.IsNullOrWhiteSpace(addImg.ImageSource))
                 {
-                    ItemId = id,
-                    Name = addImg.ImageName,
-                    Images = new List<IFormFile>()
-                    { 
-                        new FormFile(new MemoryStream(bytes), 0, bytes.Length, addImg.ImageName, addImg.ImageName) 
-                    }
-                });
+                    continue;
+                }
+
+                var bytes = Convert.FromBase64String(addImg.ImageSource);
+                addImages.Files.Add(new FormFile(new MemoryStream(bytes), 0, bytes.Length, addImg.ImageName, addImg.ImageName));
+                addImages.ItemId = item.Id;
             }
+
+            if (addImages.Files.Any())
+            {
+                _imageService.AddImages(addImages);
+            }
+
             return id;
         }
 
         public void UpdateItem(UpdateItemDto dto)
         {
+            if (dto.Images.Count() > 5)
+            {
+                throw new BusinessException("Allowed only 5 images");
+            }
+
             var item = _itemRepository.GetItemDetailsById(dto.Id)
                 ?? throw new BusinessException($"Item with id '{dto.Id}' was not found");
             var tags = _tagRepository.GetTagsByIds(dto.TagsId);
@@ -346,7 +365,61 @@ namespace ECommerceApp.Application.Services.Items
                     item.ItemTags.Add(new ItemTag { Item = item, TagId = tagId, Tag = tags.FirstOrDefault(t => t.Id == tagId) });
                 }
             }
-            
+
+            if (!dto.Images.Any())
+            {
+                _itemRepository.UpdateItem(item);
+                return;
+            }
+
+            var imgToAdd = dto.Images.Where(i => i.ImageId == default);
+            var imgToCheck = dto.Images.Where(i => i.ImageId != default);
+            var currentImages = new List<Image>(item.Images);
+            var imgs = _imageService.GetImages(imgToCheck.Select(i => i.ImageId));
+            var imgErrors = new StringBuilder();
+
+            foreach (var img in imgs)
+            {
+                if (!imgToCheck.Any(i => i.ImageId == img.Id))
+                {
+                    imgErrors.AppendLine($"Image with id '{img.Id}' was not found");
+                }
+            }
+
+            if (imgErrors.Length > 0)
+            {
+                throw new BusinessException(imgErrors.ToString());
+            }
+
+            foreach (var img in currentImages)
+            {
+                if (!imgToCheck.Any(i => i.ImageId == img.Id))
+                {
+                    item.Images.Remove(img);
+                }
+            }
+
+            if (imgToAdd.Any())
+            {
+                var addImages = new POCO.AddImagesPOCO();
+                foreach (var addImg in imgToAdd)
+                {
+                    if (addImg is null || string.IsNullOrWhiteSpace(addImg.ImageSource))
+                    {
+                        continue;
+                    }
+
+                    var bytes = Convert.FromBase64String(addImg.ImageSource);
+                    addImages.Files.Add(new FormFile(new MemoryStream(bytes), 0, bytes.Length, addImg.ImageName, addImg.ImageName));
+                    addImages.ItemId = item.Id;
+                }
+                
+                if (addImages.Files.Any())
+                {
+                    _imageService.AddImages(addImages);
+                }
+            }
+
             _itemRepository.UpdateItem(item);
         }
     }

@@ -15,5 +15,8 @@ namespace ECommerceApp.Application.DTO
         public int CurrencyId { get; set; }
 
         public IEnumerable<int> TagsId { get; set; } = new List<int>();
+        public IEnumerable<UpdateItemImageDto> Images { get; set; } = new List<UpdateItemImageDto>();
     }
+
+    public record UpdateItemImageDto(int ImageId, string ImageName, string ImageSource);
 }
