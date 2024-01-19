@@ -236,6 +236,11 @@ namespace ECommerceApp.Application.Services.Items
 
         public int AddItem(AddItemDto dto)
         {
+            if (dto is null)
+            {
+                throw new BusinessException($"Not accept null value {nameof(AddItemDto)}");
+            }
+
             if (dto.Images.Count() > 5)
             {
                 throw new BusinessException("Allowed only 5 images");
@@ -395,11 +400,11 @@ namespace ECommerceApp.Application.Services.Items
             var imgs = _imageService.GetImages(imgToCheck.Select(i => i.ImageId));
             var imgErrors = new StringBuilder();
 
-            foreach (var img in imgs)
+            foreach (var img in imgToCheck)
             {
-                if (!imgToCheck.Any(i => i.ImageId == img.Id))
+                if (!imgs.Any(i => i.Id == img.ImageId))
                 {
-                    imgErrors.AppendLine($"Image with id '{img.Id}' was not found");
+                    imgErrors.AppendLine($"Image with id '{img.ImageId}' was not found");
                 }
             }
 
