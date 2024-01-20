@@ -143,6 +143,7 @@
         const itemTagsElement = document.getElementById("Tags");
         var selectedIndex = 0;
         var selectedValue;
+        const fileUploadId = 'FileUpload_FormFile';
 
         $(document).ready(function () {
             initTags();
@@ -291,18 +292,19 @@
         }
 
         async function SendAddImageRequest(oFormElement) {
+            clearImageUploadValidationErrors();
             const imagesCount = getImageCount();
             var files = oFormElement[0].files;
 
             if (imagesCount + parseInt(files.length) > maxCountImages) {
-                alert("Możesz maksymalnie dodać " + maxCountImages + " obrazków");
+                document.getElementById(fileUploadId).parentElement.appendChild(forms.createErrorSpan("Możesz maksymalnie dodać " + maxCountImages + " obrazków"));
                 return;
             }
 
             for (const file of files) {
                 const extension = file.name.substring(file.name.lastIndexOf('.'), file.name.length);
                 if (!allowedExtensions.some(ext => ext == extension)) {
-                    alert('Niedozwolony format obrazka ' + extension + '. Dozwolone formaty ' + allowedExtensions.join(','));
+                    document.getElementById(fileUploadId).parentElement.appendChild(forms.createErrorSpan('Niedozwolony format obrazka ' + extension + '. Dozwolone formaty ' + allowedExtensions.join(',')));
                     return;
                 }
             }
@@ -363,6 +365,13 @@
             }
 
             return images.length;
+        }
+
+        function clearImageUploadValidationErrors() {
+            document.getElementById(fileUploadId)
+                .parentElement
+                .querySelectorAll('.field-validation-invalid')
+                .forEach((el) => el.remove());
         }
 
         const itemFormValidator = {
