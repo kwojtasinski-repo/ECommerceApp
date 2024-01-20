@@ -11,8 +11,6 @@ using ECommerceApp.Application.DTO;
 using System.Collections.Generic;
 using ECommerceApp.Domain.Model;
 using System.Linq;
-using Microsoft.AspNetCore.Http;
-using System.IO;
 using ECommerceApp.Application.POCO;
 
 namespace ECommerceApp.Tests.Services.Item

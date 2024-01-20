@@ -58,7 +58,6 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddItem(NewItemVm model)
         {
-            //var id = _itemService.AddItem(model);
             var id = _itemService.AddItem(new AddItemDto
             {
                 Name = model.Name,

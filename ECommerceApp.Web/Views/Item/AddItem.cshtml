@@ -96,6 +96,7 @@
         {
             <div>
                 <h4>Dodaj obrazki</h4>
+                <h5>Maksymalnie 5 obrazków</h5>
             </div>
 
             <div>
@@ -110,7 +111,7 @@
                         </dd>
                     </dl>
 
-                    <input class="btn-block" type="button" value="Wgraj" onclick="Upload(this)" />
+                    <input id="FileUpload_SubmitButton" class="btn-block" type="button" value="Wgraj" onclick="Upload(this)" />
 
                     <div style="margin-top:15px">
                         <output name="result"></output>
@@ -146,6 +147,14 @@
         const itemTagsElement = document.getElementById("Tags");
         var selectedIndex = 0;
         var selectedValue;
+        const imgDataTag = 'ImageData';
+        const imgAddToItemTag = 'ImagesToAddToItem';
+        const imgsToAddTag = 'ImgSourceToAdd';
+        const uploadId = 'FileUpload_FormFile';
+        const uploadSubmitButton = 'FileUpload_SubmitButton';
+        const maxCountImages = 5;
+        const allowedExtensions = ['.jpg', '.png'];
+        const indexAddedImage = 'ImageAdded';
 
         $(document).ready(function () {
             initTags();
@@ -350,29 +359,104 @@
                 ],
                 valid: false,
                 value: ''
+            },
+            images: {
+                controlId: 'FileUpload_FormFile',
+                rules: [
+                    v => !v || (v && v.length <= maxCountImages) || 'Dozwolone jest maksymalnie ' + maxCountImages + ' obrazków',
+                    v => {
+                        if (!v || v.length == 0) {
+                            return true;
+                        }
+
+                        const error = (extension) => 'Niedozwolony format obrazka ' + extension + '. Dozwolone formaty ' + allowedExtensions.join(',');
+                        for (const file of v) {
+                            const extension = file.name.substring(file.name.lastIndexOf('.'), file.name.length);
+                            if (!allowedExtensions.some(ext => ext == extension)) {
+                                return error(extension);
+                            }
+                        }
+                        return true;
+                    }
+                ],
+                onChange: function (event) {
+                    debugger
+                    const imagesAdded = this.value.length;
+                    if (imagesAdded >= maxCountImages) {
+                        forms.showValidationError(this.controlId, 'Dozwolone jest maksymalnie ' + maxCountImages + ' obrazków');
+                        deactivateUpload();
+                        return;
+                    }
+
+                    var uploadForm = document.getElementById("UploadImages");
+                    var files = uploadForm[0].files;
+
+                    const imagesToAdd = parseInt(files.length);
+                    if ((imagesAdded + imagesToAdd) > maxCountImages) {
+                        forms.showValidationError(this.controlId, 'Dozwolone jest maksymalnie ' + maxCountImages + ' obrazków');
+                        deactivateUpload();
+                        return;
+                    }
+
+                    for (const file of files) {
+                        const extension = file.name.substring(file.name.lastIndexOf('.'), file.name.length);
+                        if (!allowedExtensions.some(ext => ext == extension)) {
+                            forms.showValidationError(this.controlId, 'Niedozwolony format obrazka ' + extension + '. Dozwolone formaty ', allowedExtensions.join(','));
+                            deactivateUpload();
+                            return;
+                        }
+                    }
+
+                    forms.clearValidationError(this.controlId);
+                    activateUpload();
+                },
+                valid: false,
+                value: []
+            },
+            beforeSubmit: function() {
+                debugger
+                let index = 0;
+                for (const file of itemFormValidator.images.value) {
+                    appendFormWithImage({ id: index, name: file.name, data: file.data })
+                    index++;
+                }
             }
         };
 
         async function Upload(input) {
             debugger
+            const imagesAdded = itemFormValidator.images.value.length;
+            if (imagesAdded >= maxCountImages) {
+                alert("Możesz maksymalnie dodać " + maxCountImages + " obrazków");
+                return;
+            }
+
             var uploadForm = document.getElementById("UploadImages");
             var files = uploadForm[0].files;
 
-            if (parseInt(files.length) > 5) {
-                alert("You can only upload a maximum of 5 files");
+            const imagesToAdd = parseInt(files.length);
+            if ((imagesAdded + imagesToAdd) > maxCountImages) {
+                alert("Możesz maksymalnie dodać " + maxCountImages + " obrazków");
                 return;
             }
 
             for (const file of files) {
-                const elements = document.querySelectorAll('[data-name="ImageData"]').length;
+                const elements = document.querySelectorAll('[data-name="' + imgDataTag + '"]').length;
                 const data = await toBase64(file);
                 const imgToShow = document.getElementById('ImagesToShow');
                 if (imgToShow.style.display == 'none') {
                     imgToShow.style.display = 'block';
                 }
-                const imageToAdd = { id: Number(elements), data, name: file.name };
+                const imageId = (itemFormValidator.images.value.length > 0
+                    ? itemFormValidator.images.value[itemFormValidator.images.value.length - 1]?.id ?? 0 : 0) + 1;
+                // id is unique on page
+                const imageToAdd = { id: Number(imageId), data, name: file.name };
+                itemFormValidator.images.value.push(imageToAdd);
                 imgToShow.appendChild(createImageDiv(imageToAdd));
-                appendFormWithImage(imageToAdd);
+            }
+
+            if (imagesAdded + imagesToAdd >= maxCountImages) {
+                deactivateUpload();
             }
         }
 
@@ -383,12 +467,29 @@
             reader.onerror = reject;
         });
 
-        function deleteImage(id)  {
+        function deleteImage(id) {
             debugger
+            const imgIndex = itemFormValidator.images.value.findIndex(v => v.id === id);
+            if (imgIndex === -1) {
+                return;
+            }
+
+            const element = document.querySelector('#' + indexAddedImage + id);
+            if (!element) {
+                return;
+            }
+
+            element.remove();
+            itemFormValidator.images.value.splice(imgIndex, 1);
+            const imagesAdded = itemFormValidator.images.value.length;
+            if (imagesAdded <= 5) {
+                activateUpload();
+            }
         }
 
         function createImageDiv(image) {
             const div = document.createElement('div');
+            div.id = indexAddedImage + image.id;
             div.className = 'card';
             div.style = 'width: 18rem;';
             const div2 = document.createElement('div');
@@ -406,17 +507,30 @@
         }
 
         function appendFormWithImage(image) {
-            const imageForm = document.getElementById('ImagesToAddToItem');
+            const div = document.getElementById(imgAddToItemTag);
+            const div2 = document.createElement('div');
+            div2.setAttribute('data-name', imgsToAddTag);
             const input = document.createElement('input');
             input.type = 'hidden';
-            input.name = "Images[" + image.id + "].Base64String";
+            input.name = "Images[" + image.id + "].ImageSource";
             input.value = image.data.split('base64,')[1];
             const input2 = document.createElement('input');
             input2.type = 'hidden';
             input2.name = "Images[" + image.id + "].Name";
             input2.value = image.name;
-            imageForm.appendChild(input);
-            imageForm.appendChild(input2);
+            div2.appendChild(input);
+            div2.appendChild(input2);
+            div.appendChild(div2);
+        }
+
+        function deactivateUpload() {
+            const upload = document.getElementById(uploadSubmitButton);
+            upload.disabled = true;
+        }
+
+        function activateUpload() {
+            const upload = document.getElementById(uploadSubmitButton);
+            upload.disabled = false;
         }
     </script>
 }
