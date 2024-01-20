@@ -23,15 +23,14 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpGet]
-        public ActionResult<List<ImageVm>> GetAll()
+        public ActionResult<List<GetImageVm>> GetAll()
         {
             var images = _service.GetAll();
             return images;
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpGet("{id}")]
-        public ActionResult<ImageVm> Get(int id)
+        public ActionResult<GetImageVm> Get(int id)
         {
             var image = _service.Get(id);
             return image;
@@ -52,15 +51,6 @@ namespace ECommerceApp.API.Controllers
         {
             var ids = _service.AddImages(images);
             return ids;
-        }
-
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
-        [HttpPatch("{id}")]
-        public IActionResult PartialImageUpdate(int id, [FromBody] UpdateImagePOCO image)
-        {
-            image.Id = id;
-            _service.PartialUpdate(image);
-            return Ok();
         }
 
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]

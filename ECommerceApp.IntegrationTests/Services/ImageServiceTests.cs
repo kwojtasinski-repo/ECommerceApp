@@ -2,26 +2,12 @@
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Services
 {
     public class ImageServiceTests : BaseTest<IImageService>
     {
-        [Fact]
-        public void given_valid_image_id_item_id_and_name_should_update_image()
-        {
-            var image = new UpdateImagePOCO { Id = 1, ItemId = 1, Name = "TestImage1" };
-
-            _service.PartialUpdate(image);
-
-            var imageUpdated = _service.Get(image.Id);
-            imageUpdated.Name.ShouldBe(image.Name);
-        }
-
         [Fact]
         public void given_valid_item_id_should_return_images()
         {

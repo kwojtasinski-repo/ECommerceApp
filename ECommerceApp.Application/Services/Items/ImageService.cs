@@ -16,20 +16,22 @@ using System.Text;
 
 namespace ECommerceApp.Application.Services.Items
 {
-    public class ImageService : AbstractService<ImageVm, IImageRepository, Image>, IImageService
+    public class ImageService : IImageService
     {
         private readonly IFileStore _fileStore;
+        private readonly IImageRepository _imageRepository;
         private readonly int ALLOWED_SIZE = 10 * 1024 * 1024; // 10 mb
         private readonly List<string> IMAGE_EXTENSION_PARAMETERS = new List<string> { ".jpg", ".png" }; // extensions
         private readonly string FILE_DIR = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "Upload" + Path.DirectorySeparatorChar + "Files" + Path.DirectorySeparatorChar + Guid.NewGuid().ToString();
         private readonly int ALLOWED_IMAGES_COUNT = 5;
 
-        public ImageService(IImageRepository repo, IFileStore fileStore) : base(repo)
+        public ImageService(IImageRepository repo, IFileStore fileStore)
         {
+            _imageRepository = repo;
             _fileStore = fileStore;
         }
 
-        public override int Add(ImageVm objectVm)
+        public int Add(ImageVm objectVm)
         {
             if (objectVm is null)
             {
@@ -58,7 +60,7 @@ namespace ECommerceApp.Application.Services.Items
 
             if (objectVm.ItemId.HasValue)
             {
-                var imageCount = _repo.GetAll().Where(im => im.ItemId == objectVm.ItemId.Value).AsNoTracking().Select(i => i.Id).ToList().Count;
+                var imageCount = _imageRepository.GetAll().Where(im => im.ItemId == objectVm.ItemId.Value).AsNoTracking().Select(i => i.Id).ToList().Count;
                 var count = imageCount + 1;
 
                 if (count >= ALLOWED_IMAGES_COUNT)
@@ -82,60 +84,58 @@ namespace ECommerceApp.Application.Services.Items
                 image.SourcePath = fileDir.SourcePath;
             }
 
-            var id = _repo.Add(image);
+            var id = _imageRepository.Add(image);
 
             return id;
         }
 
-        public override bool Delete(int id)
+        public bool Delete(int id)
         {
-            var image = _repo.GetById(id);
+            var image = _imageRepository.GetById(id);
             if (image == null)
             {
                 return false;
             }
 
-            var deleted = _repo.Delete(image);
+            var deleted = _imageRepository.Delete(image);
             _fileStore.DeleteFile(image.SourcePath);
             return deleted;
         }
 
-        public override ImageVm Get(int id)
+        public GetImageVm Get(int id)
         {
-            var image = _repo.GetById(id);
+            var image = _imageRepository.GetById(id);
 
-            ImageVm imageVm = null;
+            GetImageVm imageVm = null;
 
             if (image != null)
             {
-                imageVm = new ImageVm()
+                imageVm = new GetImageVm()
                 {
                     Id = image.Id,
                     ItemId = image.ItemId,
                     Name = image.Name,
-                    SourcePath = image.SourcePath,
-                    ImageSource = _fileStore.ReadFile(image.SourcePath)
+                    ImageSource = Convert.ToBase64String(_fileStore.ReadFile(image.SourcePath))
                 };
             }
 
             return imageVm;
         }
 
-        public List<ImageVm> GetAll()
+        public List<GetImageVm> GetAll()
         {
-            var images = _repo.GetAll().ToList();
+            var images = _imageRepository.GetAll().ToList();
 
-            var imagesVm = new List<ImageVm>();
+            var imagesVm = new List<GetImageVm>();
 
             foreach (var image in images)
             {
-                var img = new ImageVm()
+                var img = new GetImageVm()
                 {
                     Id = image.Id,
                     ItemId = image.ItemId,
                     Name = image.Name,
-                    SourcePath = image.SourcePath,
-                    ImageSource = _fileStore.ReadFile(image.SourcePath)
+                    ImageSource = Convert.ToBase64String(_fileStore.ReadFile(image.SourcePath))
                 };
 
                 imagesVm.Add(img);
@@ -143,51 +143,25 @@ namespace ECommerceApp.Application.Services.Items
             return imagesVm;
         }
 
-        public List<ImageVm> GetAll(string searchName)
+        public List<GetImageVm> GetAll(string searchName)
         {
-            var images = _repo.GetAll().Where(i => i.Name.Contains(searchName)).ToList();
+            var images = _imageRepository.GetAll().Where(i => i.Name.Contains(searchName)).ToList();
 
-            var imagesVm = new List<ImageVm>();
+            var imagesVm = new List<GetImageVm>();
 
             foreach (var image in images)
             {
-                var img = new ImageVm()
+                var img = new GetImageVm()
                 {
                     Id = image.Id,
                     ItemId = image.ItemId,
                     Name = image.Name,
-                    SourcePath = image.SourcePath,
-                    ImageSource = _fileStore.ReadFile(image.SourcePath)
+                    ImageSource = Convert.ToBase64String(_fileStore.ReadFile(image.SourcePath))
                 };
 
                 imagesVm.Add(img);
             }
             return imagesVm;
-        }
-
-        public override void Update(ImageVm objectVm)
-        {
-            if (objectVm is null)
-            {
-                throw new BusinessException($"{typeof(ImageVm).Name} cannot be null");
-            }
-
-            var image = Get(objectVm.Id);
-
-            if (image.SourcePath != objectVm.SourcePath)
-            {
-                throw new BusinessException("Cannot update source path, contact with admin");
-            }
-
-            var img = new Image()
-            {
-                Id = objectVm.Id,
-                ItemId = objectVm.ItemId,
-                SourcePath = objectVm.SourcePath,
-                Name = objectVm.Name
-            };
-
-            _repo.Update(img);
         }
 
         public List<int> AddImages(AddImagesPOCO imageVm)
@@ -209,7 +183,7 @@ namespace ECommerceApp.Application.Services.Items
 
             if (imageVm.ItemId.HasValue)
             {
-                var imageCount = _repo.GetAll().Where(im => im.ItemId == imageVm.ItemId.Value).AsNoTracking().Select(i => i.Id).ToList().Count;
+                var imageCount = _imageRepository.GetAll().Where(im => im.ItemId == imageVm.ItemId.Value).AsNoTracking().Select(i => i.Id).ToList().Count;
                 var imagesToAddCount = imageVm.Files.Count;
                 var count = imagesToAddCount + imageCount;
 
@@ -236,29 +210,14 @@ namespace ECommerceApp.Application.Services.Items
                 images.Add(img);
             }
 
-            var ids = _repo.AddRange(images);
+            var ids = _imageRepository.AddRange(images);
 
             return ids;
         }
 
-        public void PartialUpdate(UpdateImagePOCO image)
-        {
-            if (image is null)
-            {
-                throw new BusinessException($"{typeof(UpdateImagePOCO).Name} cannot be null");
-            }
-
-            var img = _repo.GetById(image.Id);
-
-            img.ItemId = image.ItemId;
-            string name = _fileStore.ReplaceInvalidChars(image.Name);
-            img.Name = name;
-
-            _repo.Update(img);
-        }
         public List<GetImageVm> GetImagesByItemId(int itemId)
         {
-            var images = _repo.GetAll().Where(i => i.ItemId == itemId).ToList();
+            var images = _imageRepository.GetAll().Where(i => i.ItemId == itemId).ToList();
 
             var imagesVm = new List<GetImageVm>();
             foreach (var image in images)
@@ -311,7 +270,7 @@ namespace ECommerceApp.Application.Services.Items
 
         public List<ImageInfoDto> GetImages(IEnumerable<int> imagesId)
         {
-            return _repo.GetAllImages()
+            return _imageRepository.GetAllImages()
                         .Where(i => imagesId.Contains(i.Id))
                         .AsNoTracking()
                         .Select(i => new Image

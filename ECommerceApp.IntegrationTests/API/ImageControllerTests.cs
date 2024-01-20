@@ -1,7 +1,10 @@
 ﻿using ECommerceApp.API;
+using ECommerceApp.Application.FileManager;
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.POCO;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Image;
+using ECommerceApp.Domain.Interface;
 using ECommerceApp.IntegrationTests.Common;
 using Flurl.Http;
 using Microsoft.AspNetCore.Http;
@@ -39,7 +42,7 @@ namespace ECommerceApp.IntegrationTests.API
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .GetAsync();
-            var image = JsonConvert.DeserializeObject<ImageVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
+            var image = JsonConvert.DeserializeObject<GetImageVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
             image.ShouldNotBeNull();
@@ -51,7 +54,7 @@ namespace ECommerceApp.IntegrationTests.API
         {
             var client = await _factory.GetAuthenticatedClient();
             var filePath = _testData.GetFiles().Where(f => f.Name == "apple-iphone-13.jpg").FirstOrDefault().FullName;
-            var file = await Utilities.AddFileToIFormFile(filePath);
+            var file = await Utilities.CreateIFormFileFrom(filePath);
             var image = new AddImagePOCO { File = file, ItemId = 1 };
             var multiContent = Utilities.SerializeObjectWithImageToBytes<AddImagePOCO>(image);
 
@@ -71,7 +74,7 @@ namespace ECommerceApp.IntegrationTests.API
             var formFiles = new List<IFormFile>();
             foreach (var filePath in filePaths)
             {
-                var file = await Utilities.AddFileToIFormFile(filePath.FullName);
+                var file = await Utilities.CreateIFormFileFrom(filePath.FullName);
                 formFiles.Add(file);
             }
             var images = new AddImagesPOCO { ItemId = 1, Files = formFiles };
@@ -86,28 +89,11 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_valid_image_should_partial_update()
-        {
-            var client = await _factory.GetAuthenticatedClient();
-            var img = new UpdateImagePOCO { Id = 1, ItemId = 1, Name = "ChangedName" };
-
-            var response = await client.Request($"api/images/{img.Id}")
-                .AllowAnyHttpStatus()
-                .PatchJsonAsync(img);
-
-            var imageUpdated = await client.Request($"api/images/{img.Id}")
-                .AllowAnyHttpStatus()
-                .GetJsonAsync<ImageVm>();
-            response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
-            imageUpdated.Name.ShouldBe(img.Name);
-        }
-
-        [Fact]
         public async Task given_id_image_should_delete()
         {
             var client = await _factory.GetAuthenticatedClient();
             var filePath = _testData.GetFiles().Where(f => f.Name == "redmi-note-10.jpg").FirstOrDefault().FullName;
-            var file = await Utilities.AddFileToIFormFile(filePath);
+            var file = await Utilities.CreateIFormFileFrom(filePath);
             var image = new AddImagePOCO { File = file, ItemId = 1 };
             var multiContent = Utilities.SerializeObjectWithImageToBytes<AddImagePOCO>(image);
             var id = await client.Request($"api/images")
@@ -123,20 +109,23 @@ namespace ECommerceApp.IntegrationTests.API
                             .WithHeader("content-type", "application/json")
                             .AllowAnyHttpStatus()
                             .GetAsync()
-                            .ReceiveJson<ImageVm>();
+                            .ReceiveJson<GetImageVm>();
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
             imageDeleted.ShouldBeNull();
         }
 
         public void Dispose()
         {
-            var imageService = _factory.Services.GetService(typeof(IImageService)) as IImageService;
-            var images = imageService.GetAll().Where(i => !i.SourcePath.Contains(".."));
+            var imageRepository = _factory.Services.GetService(typeof(IImageRepository)) as IImageRepository;
+            var fileStore = _factory.Services.GetService(typeof(IFileStore)) as IFileStore;
+            var images = imageRepository.GetAll().Where(i => !i.SourcePath.Contains(".."));
             
             foreach (var image in images)
             {
-                imageService.Delete(image.Id);
+                fileStore.DeleteFile(image.SourcePath);
             }
+
+            GC.SuppressFinalize(this);
         }
     }
 }

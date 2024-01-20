@@ -187,7 +187,7 @@ namespace ECommerceApp.IntegrationTests.Common
             context.SaveChanges();
         }
 
-        public static async Task<IFormFile> AddFileToIFormFile(string filePath)
+        public static async Task<IFormFile> CreateIFormFileFrom(string filePath)
         {
             var fileName = Path.GetFileName(filePath);
             var extension = Path.GetExtension(fileName);

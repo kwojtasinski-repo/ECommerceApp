@@ -125,33 +125,6 @@ namespace ECommerceApp.Tests.Services.Image
         }
 
         [Fact]
-        public void given_valid_image_should_update()
-        {
-            var imageVm = CreateImageVm();
-            var image = CreateImage();
-            imageVm.SourcePath = image.SourcePath;
-            _imageRepository.Setup(i => i.GetById(It.IsAny<int>())).Returns(image);
-            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
-
-            imageService.Update(imageVm);
-
-            _imageRepository.Verify(i => i.Update(It.IsAny<Domain.Model.Image>()), Times.Once);
-        }
-
-        [Fact]
-        public void given_invalid_image_when_updating_should_throw_an_exception()
-        {
-            var imageVm = CreateImageVm();
-            var image = CreateImage();
-            _imageRepository.Setup(i => i.GetById(It.IsAny<int>())).Returns(image);
-            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
-
-            Action action = () => imageService.Update(imageVm);
-
-            action.Should().ThrowExactly<BusinessException>().WithMessage("Cannot update source path, contact with admin");
-        }
-
-        [Fact]
         public void given_valid_images_should_add()
         {
             int itemId = 1;
@@ -245,26 +218,6 @@ namespace ECommerceApp.Tests.Services.Image
             var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
 
             Action action = () => imageService.AddImages(null);
-
-            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
-        }
-
-        [Fact]
-        public void given_null_image_when_update_should_throw_an_exception()
-        {
-            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
-
-            Action action = () => imageService.Update(null);
-
-            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
-        }
-
-        [Fact]
-        public void given_null_image_when_partial_update_should_throw_an_exception()
-        {
-            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
-
-            Action action = () => imageService.Update(null);
 
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
