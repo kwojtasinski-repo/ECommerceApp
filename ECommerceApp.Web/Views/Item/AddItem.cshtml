@@ -308,6 +308,7 @@
                 rules: [
                     v => v && v.trim().length > 0 || 'Nazwa jest wymagana',
                     v => v && v.trim().length > 2 || 'Nazwa powinnna więcej niż 2 znaki',
+                    v => v && v.trim().length <= 100 || 'Nazwa nie może zawierać więcej niż 100 znaków',
                 ],
                 valid: false,
                 value: ''
@@ -333,7 +334,7 @@
                 rules: [
                     v => v && v.trim().length > 0 || 'Opis jest wymagany',
                     v => v && v.trim().length > 2 || 'Opis powinien zawierać więcej niż 2 znaki',
-                    v => v && v.trim().length <= 255 || 'Opis powinien nie może zawierać więcej niż 255 znaków',
+                    v => v && v.trim().length <= 255 || 'Opis nie może zawierać więcej niż 255 znaków',
                 ],
                 valid: false,
                 value: ''
