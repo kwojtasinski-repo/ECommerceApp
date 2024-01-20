@@ -113,7 +113,6 @@ namespace ECommerceApp.IntegrationTests.API
                 Description = itemDetails.Description,
                 BrandId = itemDetails.Brand.Id,
                 TypeId = itemDetails.Type.Id,
-                CurrencyId = itemDetails.Currency.Id,
                 Warranty = itemDetails.Warranty,
                 TagsId = tagsId,
                 Images = images,
@@ -223,7 +222,6 @@ namespace ECommerceApp.IntegrationTests.API
             return new AddItemDto
             {
                 BrandId = 1,
-                CurrencyId = 1,
                 TypeId = 1,
                 Warranty = "10",
                 Name = "Abc",

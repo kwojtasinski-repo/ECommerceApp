@@ -66,7 +66,6 @@ namespace ECommerceApp.Web.Controllers
                 Quantity = model.Quantity,
                 Warranty = model.Warranty,
                 BrandId = model.BrandId,
-                CurrencyId = model.CurrencyId,
                 TypeId = model.TypeId,
                 TagsId = model.ItemTags.Select(t => t.TagId).ToList(),
                 Images = model.Images.Select(i => new AddItemImageDto(i.Name, i.ImageSource))
@@ -102,7 +101,6 @@ namespace ECommerceApp.Web.Controllers
                 Quantity = model.Quantity,
                 Warranty = model.Warranty,
                 BrandId = model.Brand.Id,
-                CurrencyId = model.Currency.Id,
                 TypeId = model.Type.Id,
                 TagsId = model.Tags.Select(t => t.Id).ToList()
             });

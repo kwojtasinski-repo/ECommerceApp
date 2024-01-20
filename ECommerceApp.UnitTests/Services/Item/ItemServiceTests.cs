@@ -168,7 +168,6 @@ namespace ECommerceApp.Tests.Services.Item
                 TypeId = AddDefaultType(),
                 Cost = 2000M,
                 Name = nameof(AddItemDto),
-                CurrencyId = 1,
                 Description = nameof(AddItemDto),
                 Quantity = 1,
                 Warranty = "100",
@@ -194,7 +193,6 @@ namespace ECommerceApp.Tests.Services.Item
                 TypeId = AddDefaultType(),
                 Cost = 2000M,
                 Name = nameof(AddItemDto),
-                CurrencyId = 1,
                 Description = nameof(AddItemDto),
                 Quantity = 1,
                 Warranty = "100",
@@ -311,7 +309,6 @@ namespace ECommerceApp.Tests.Services.Item
                 Description = "Description",
                 BrandId = 1,
                 TypeId = 1,
-                CurrencyId = 1,
                 Quantity = 100,
                 Warranty = "200",
             };
@@ -336,7 +333,6 @@ namespace ECommerceApp.Tests.Services.Item
                 Description = "Description",
                 BrandId = 1,
                 TypeId = 1,
-                CurrencyId = 1,
                 Quantity = 100,
                 Warranty = "200",
                 Images = new List<UpdateItemImageDto>
@@ -368,7 +364,6 @@ namespace ECommerceApp.Tests.Services.Item
                 Description = "Description",
                 BrandId = 1,
                 TypeId = 1,
-                CurrencyId = 1,
                 Quantity = 100,
                 Warranty = "200",
                 Images = new List<UpdateItemImageDto>

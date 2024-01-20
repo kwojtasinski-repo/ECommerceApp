@@ -38,7 +38,7 @@ namespace ECommerceApp.IntegrationTests.Services
         {
             var item = CreateItem(0);
 
-            var id = _service.AddItem(new AddItemDto { Name = item.Name, Description = item.Description, CurrencyId = item.Currency.Id, Quantity = item.Quantity, Warranty = item.Warranty, BrandId = item.Brand.Id, Cost = item.Cost, TypeId = item.Type.Id });
+            var id = _service.AddItem(new AddItemDto { Name = item.Name, Description = item.Description, Quantity = item.Quantity, Warranty = item.Warranty, BrandId = item.Brand.Id, Cost = item.Cost, TypeId = item.Type.Id });
 
             id.ShouldBeGreaterThan(0);
         }
@@ -60,7 +60,7 @@ namespace ECommerceApp.IntegrationTests.Services
             var item = _service.GetItemDetails(id);
             var name = "NameItem1234";
             item.Name = name;
-            var itemToUpdate = new UpdateItemDto { Id = id, Name = item.Name, Description = item.Description, CurrencyId = item.Currency.Id, Quantity = item.Quantity, Warranty = item.Warranty, BrandId = item.Brand.Id, Cost = item.Cost, TypeId = item.Type.Id };
+            var itemToUpdate = new UpdateItemDto { Id = id, Name = item.Name, Description = item.Description, Quantity = item.Quantity, Warranty = item.Warranty, BrandId = item.Brand.Id, Cost = item.Cost, TypeId = item.Type.Id };
 
             _service.UpdateItem(itemToUpdate);
 
@@ -113,7 +113,7 @@ namespace ECommerceApp.IntegrationTests.Services
         public void given_valid_id_should_delete_item()
         {
             var item = CreateItem(0);
-            var id = _service.AddItem(new AddItemDto { Name = item.Name, Description = item.Description, CurrencyId = item.Currency.Id, Quantity = item.Quantity, Warranty = item.Warranty, BrandId = item.Brand.Id, Cost = item.Cost, TypeId = item.Type.Id });
+            var id = _service.AddItem(new AddItemDto { Name = item.Name, Description = item.Description, Quantity = item.Quantity, Warranty = item.Warranty, BrandId = item.Brand.Id, Cost = item.Cost, TypeId = item.Type.Id });
 
             _service.DeleteItem(id);
 

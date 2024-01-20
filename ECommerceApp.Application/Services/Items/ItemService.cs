@@ -169,8 +169,7 @@ namespace ECommerceApp.Application.Services.Items
                 ?? throw new BusinessException($"Brand with id '{dto.BrandId}' was not found");
             var type = _typeRepository.GetById(dto.TypeId)
                 ?? throw new BusinessException($"Type with id '{dto.TypeId}' was not found");
-            var currency = _currencyRepository.GetById(dto.CurrencyId)
-                ?? throw new BusinessException($"Currency with id '{dto.CurrencyId}' was not found");
+            var currency = _currencyRepository.GetById(1); //PLN
             var item = new Item
             {
                 Cost = dto.Cost,
@@ -233,8 +232,7 @@ namespace ECommerceApp.Application.Services.Items
                 ?? throw new BusinessException($"Brand with id '{dto.BrandId}' was not found");
             var type = _typeRepository.GetById(dto.TypeId)
                 ?? throw new BusinessException($"Type with id '{dto.TypeId}' was not found");
-            var currency = _currencyRepository.GetById(dto.CurrencyId)
-                ?? throw new BusinessException($"Currency with id '{dto.CurrencyId}' was not found");
+            var currency = _currencyRepository.GetById(1); //PLN
 
             item.Cost = dto.Cost;
             item.Name = dto.Name;

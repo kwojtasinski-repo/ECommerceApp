@@ -13,7 +13,6 @@ namespace ECommerceApp.Application.DTO
         public int Quantity { get; set; }
         public int BrandId { get; set; }
         public int TypeId { get; set; }
-        public int CurrencyId { get; set; }
 
         public IEnumerable<int> TagsId { get; set; } = new List<int>();
         public IEnumerable<AddItemImageDto> Images { get; set; } = new List<AddItemImageDto>();
