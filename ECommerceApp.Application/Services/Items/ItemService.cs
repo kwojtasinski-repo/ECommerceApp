@@ -37,68 +37,6 @@ namespace ECommerceApp.Application.Services.Items
             _currencyRepository = currencyRepository;
         }
 
-        public int Add(ItemVm vm)
-        {
-            if (vm is null)
-            {
-                throw new BusinessException($"{vm.GetType().Name} cannot be null");
-            }
-
-            if (vm.Id != 0)
-            {
-                throw new BusinessException("When adding object Id should be equals 0");
-            }
-
-            var item = vm.MapToItem();
-            var id = _itemRepository.Add(item);
-            return id;
-        }
-
-        public void Update(ItemVm vm)
-        {
-            if (vm is null)
-            {
-                throw new BusinessException($"{vm.GetType().Name} cannot be null");
-            }
-
-            var item = vm.MapToItem();
-            _itemRepository.Update(item);
-        }
-
-
-        public int AddItem(NewItemVm model)
-        {
-            if (model is null)
-            {
-                throw new BusinessException($"{typeof(NewItemVm).Name} cannot be null");
-            }
-
-            if (model.Id != 0)
-            {
-                throw new BusinessException("When adding object Id should be equals 0");
-            }
-
-            var tags = _tagRepository.GetTagsByIds(model.ItemTags.Select(it => it.TagId));
-            var errors = new StringBuilder();
-            foreach(var itemTag in model.ItemTags)
-            {
-                var tag = tags.FirstOrDefault(t => t.Id == itemTag.TagId);
-                if (tag is null)
-                {
-                    errors.Append($"Tag with id '{itemTag.TagId}' was not found");
-                }                    
-            }
-
-            if (errors.Length > 0)
-            {
-                throw new BusinessException(errors.ToString());
-            }
-
-            var item = _mapper.Map<Item>(model);
-            var id = _itemRepository.AddItem(item);
-            return id;
-        }
-
         public ListForItemVm GetAllItemsForList(int pageSize, int pageNo, string searchString)
         {
             var items = _itemRepository.GetAllItems()
@@ -139,49 +77,6 @@ namespace ECommerceApp.Application.Services.Items
             var item = _itemRepository.GetItemById(id);
             var itemVm = _mapper.Map<NewItemVm>(item);
             return itemVm;
-        }
-
-        public void UpdateItem(NewItemVm model)
-        {
-            if (model is null)
-            {
-                throw new BusinessException($"{typeof(NewItemVm).Name} cannot be null");
-            }
-
-            var item = _itemRepository.GetItemDetailsById(model.Id);
-            item.Name = model.Name;
-            item.Cost = model.Cost;
-            item.Warranty = model.Warranty;
-            item.Quantity = model.Quantity;
-            item.Description = model.Description;
-            item.BrandId = model.BrandId;
-            item.TypeId = model.TypeId;
-            item.CurrencyId = model.CurrencyId;
-            var currentTags = new List<ItemTag>(item.ItemTags);
-            foreach (var itemTag in currentTags)
-            {
-                var itemTagExists = model.ItemTags.FirstOrDefault(it => it.TagId == itemTag.TagId);
-                if (itemTagExists is null)
-                {
-                    item.ItemTags.Remove(itemTag);
-                }
-            }
-            var tags = _tagRepository.GetTagsByIds(model.ItemTags.Select(it => it.TagId));
-
-            foreach (var itemTag in model.ItemTags)
-            {
-                var itemTagExists = item.ItemTags.FirstOrDefault(it => it.TagId == itemTag.TagId);
-                var tag = tags.FirstOrDefault(t => t.Id == itemTag.TagId) 
-                    ?? throw new BusinessException($"Tag with id '{itemTag.TagId}' was not found");
-                if (itemTagExists is null)
-                {
-                    var itemTagToAdd = new ItemTag { Item = item, ItemId = itemTag.ItemId, TagId = itemTag.TagId, Tag = tag };
-                    item.ItemTags.Add(itemTagToAdd);
-                    tag.ItemTags.Add(itemTagToAdd);
-                }
-            }
-
-            _itemRepository.UpdateItem(item);
         }
 
         public void DeleteItem(int id)

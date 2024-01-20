@@ -1,8 +1,8 @@
-﻿using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.IntegrationTests.Common;
-using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,60 +34,39 @@ namespace ECommerceApp.IntegrationTests.Services
         }
 
         [Fact]
-        public void given_valid_id_should_return_item()
-        {
-            var id = 1;
-
-            var item = _service.GetItemById(id);
-
-            item.ShouldNotBeNull();
-            item.Id.ShouldBe(id);
-        }
-
-        [Fact]
-        public void given_invalid_id_should_return_null_item()
-        {
-            var id = 1457564456;
-
-            var item = _service.GetItemById(id);
-
-            item.ShouldBeNull();
-        }
-
-        [Fact]
         public void given_valid_item_should_add()
         {
             var item = CreateItem(0);
 
-            var id = _service.AddItem(item);
+            var id = _service.AddItem(new AddItemDto { Name = item.Name, Description = item.Description, CurrencyId = item.Currency.Id, Quantity = item.Quantity, Warranty = item.Warranty, BrandId = item.Brand.Id, Cost = item.Cost, TypeId = item.Type.Id });
 
             id.ShouldBeGreaterThan(0);
         }
 
         [Fact]
-        public void given_invalid_item_should_throw_an_exception()
+        public void given_null_item_when_add_item_should_throw_an_exception()
         {
             var item = CreateItem(1245);
 
-            var exception = Should.Throw<BusinessException>(() => _service.AddItem(item));
+            var exception = Should.Throw<BusinessException>(() => _service.AddItem(null));
 
-            exception.Message.ShouldBe("When adding object Id should be equals 0");
+            exception.Message.ShouldBe($"Not accept null value {nameof(AddItemDto)}");
         }
 
         [Fact]
         public void given_valid_item_should_update()
         {
             var id = 1;
-            var item = _service.GetItemById(id);
+            var item = _service.GetItemDetails(id);
             var name = "NameItem1234";
             item.Name = name;
-            var itemToUpdate = new NewItemVm { Id = item.Id, Description = item.Description, BrandId = item.BrandId, Cost = item.Cost, CurrencyId = item.CurrencyId, Name = item.Name, Quantity = item.Quantity, TypeId = item.TypeId, Warranty = item.Warranty, ItemTags = new List<ItemsWithTagsVm> { new ItemsWithTagsVm { ItemId = item.Id, TagId = 2 }, new ItemsWithTagsVm { ItemId = item.Id, TagId = 3 } }  };
+            var itemToUpdate = new UpdateItemDto { Id = id, Name = item.Name, Description = item.Description, CurrencyId = item.Currency.Id, Quantity = item.Quantity, Warranty = item.Warranty, BrandId = item.Brand.Id, Cost = item.Cost, TypeId = item.Type.Id };
 
             _service.UpdateItem(itemToUpdate);
 
-            var itemUpdated = _service.GetItemById(id);
+            var itemUpdated = _service.GetItemDetails(id);
             itemUpdated.Name.ShouldBe(name);
-            itemUpdated.ItemTags.Count.ShouldBe(itemToUpdate.ItemTags.Count);
+            itemUpdated.Tags.Count.ShouldBe(itemToUpdate.TagsId.Count());
         }
 
         [Fact]
@@ -134,11 +113,11 @@ namespace ECommerceApp.IntegrationTests.Services
         public void given_valid_id_should_delete_item()
         {
             var item = CreateItem(0);
-            var id = _service.AddItem(item);
+            var id = _service.AddItem(new AddItemDto { Name = item.Name, Description = item.Description, CurrencyId = item.Currency.Id, Quantity = item.Quantity, Warranty = item.Warranty, BrandId = item.Brand.Id, Cost = item.Cost, TypeId = item.Type.Id });
 
             _service.DeleteItem(id);
 
-            var itemDeleted = _service.GetItemById(id);
+            var itemDeleted = _service.GetItemDetails(id);
             itemDeleted.ShouldBeNull();
         }
 
@@ -150,18 +129,18 @@ namespace ECommerceApp.IntegrationTests.Services
             items.Count.ShouldBeGreaterThan(0);
         }
 
-        private NewItemVm CreateItem(int id)
+        private static ItemDto CreateItem(int id)
         {
-            var item = new NewItemVm
+            var item = new ItemDto
             {
                 Id = id,
-                BrandId = 1,
+                Brand = new BrandDto { Id = 1 },
                 Cost = 100M,
-                CurrencyId = 1,
+                Currency = new CurrencyDto { Id = 1 },
                 Name = "Img12",
                 Description = "This is description 123",
                 Quantity = 25,
-                TypeId = 1,
+                Type = new TypeDto { Id = 1 },
                 Warranty = "123"
             };
             return item;

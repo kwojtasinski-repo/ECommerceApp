@@ -40,28 +40,6 @@ namespace ECommerceApp.Tests.Services.Item
                 _brandRepository.Object, _typeRepository.Object, _currencyRepository.Object);
 
         [Fact]
-        public void given_valid_item_should_add()
-        {
-            var item = new ItemVm { Id = 0, Cost = decimal.One, BrandId = 1, CurrencyId = 1, Name = "Item 1", Quantity = 10, TypeId = 1, Warranty = "100", Description = "ABC" };
-            var itemService = CreateItemService();
-
-            itemService.Add(item);
-
-            _itemRepository.Verify(i => i.Add(It.IsAny<Domain.Model.Item>()), Times.Once);
-        }
-
-        [Fact]
-        public void given_invalid_item_should_throw_an_exception()
-        {
-            var item = new ItemVm { Id = 10 };
-            var itemService = CreateItemService();
-
-            Action action = () => { itemService.Add(item); };
-
-            Assert.Throws<BusinessException>(action);
-        }
-
-        [Fact]
         public void given_valid_item_id_should_exists()
         {
             int id = 1;
@@ -82,26 +60,6 @@ namespace ECommerceApp.Tests.Services.Item
             var exists = itemService.ItemExists(id);
 
             exists.Should().BeFalse();
-        }
-
-        [Fact]
-        public void given_null_item_when_add_should_throw_an_exception()
-        {
-            var itemService = CreateItemService();
-
-            Action action = () => itemService.AddItem((NewItemVm) null);
-
-            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
-        }
-
-        [Fact]
-        public void given_null_item_when_update_should_throw_an_exception()
-        {
-            var itemService = CreateItemService();
-
-            Action action = () => itemService.UpdateItem((NewItemVm) null);
-
-            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
         [Fact]
