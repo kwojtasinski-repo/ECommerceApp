@@ -84,3 +84,7 @@ body {
     color: #0056b3 !important;
     text-decoration: underline !important;
 }
+
+textarea {
+    resize: none;
+}
