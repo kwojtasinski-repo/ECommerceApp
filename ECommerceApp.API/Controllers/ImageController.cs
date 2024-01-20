@@ -1,6 +1,8 @@
 ﻿using ECommerceApp.Application.POCO;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Image;
+using ECommerceApp.Infrastructure.Permissions;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -8,6 +10,7 @@ using System.Collections.Generic;
 namespace ECommerceApp.API.Controllers
 {
     [Route("api/images")]
+    [Authorize]
     [ApiController]
     public class ImageController : ControllerBase
     {
@@ -18,6 +21,7 @@ namespace ECommerceApp.API.Controllers
             _service = service;
         }
 
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpGet]
         public ActionResult<List<ImageVm>> GetAll()
         {
@@ -25,6 +29,7 @@ namespace ECommerceApp.API.Controllers
             return images;
         }
 
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpGet("{id}")]
         public ActionResult<ImageVm> Get(int id)
         {
@@ -32,6 +37,7 @@ namespace ECommerceApp.API.Controllers
             return image;
         }
 
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpPost]
         public ActionResult<int> AddImage([FromForm] AddImagePOCO image)
         {
@@ -40,6 +46,7 @@ namespace ECommerceApp.API.Controllers
             return id;
         }
 
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpPost("multi-upload")]
         public ActionResult<List<int>> AddImages([FromForm] AddImagesPOCO images)
         {
@@ -47,6 +54,7 @@ namespace ECommerceApp.API.Controllers
             return ids;
         }
 
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpPatch("{id}")]
         public IActionResult PartialImageUpdate(int id, [FromBody] UpdateImagePOCO image)
         {
@@ -55,6 +63,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpDelete("{id}")]
         public IActionResult DeleteImage(int id)
         {
