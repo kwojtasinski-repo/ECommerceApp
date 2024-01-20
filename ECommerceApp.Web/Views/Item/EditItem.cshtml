@@ -331,10 +331,12 @@
         }
 
         async function DeleteImage(id) {
-            var result = confirm("Czy usunąć obrazek?");
-            if (result) {
-               await SendDeleteRequest(id);
+            const result = await modalService.showConfirmationModal('Usuń Obrazek', 'Czy na pewno chcesz usunąć obrazek?');
+            if (!result) {
+                return;
             }
+
+            await SendDeleteRequest(id);
         }
 
         async function SendDeleteRequest(id) {
