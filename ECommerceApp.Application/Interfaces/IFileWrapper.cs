@@ -1,7 +1,4 @@
 ﻿using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.Interfaces
@@ -12,5 +9,6 @@ namespace ECommerceApp.Application.Interfaces
         void WriteAllBytes(string outputFile, byte[] content);
         Task<string> WriteFileAsync(IFormFile file, string outputFile);
         void DeleteFile(string path);
+        void WriteFileAsync(byte[] file, string outputFile);
     }
 }

@@ -84,5 +84,19 @@ namespace ECommerceApp.Application.FileManager
                 throw new SaveFileIssueException($"There was an issues with saving file {outputFile}", ex);
             }
         }
+
+        public void WriteFileAsync(byte[] file, string outputFile)
+        {
+            try
+            {
+                using FileStream fileStream = File.Create(outputFile);
+                fileStream.Write(file);
+                fileStream.Flush();
+            }
+            catch (Exception ex)
+            {
+                throw new SaveFileIssueException($"There was an issues with saving file {outputFile}", ex);
+            }
+        }
     }
 }

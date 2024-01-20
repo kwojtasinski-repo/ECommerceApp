@@ -1,9 +1,6 @@
 ﻿using ECommerceApp.Application.POCO;
 using Microsoft.AspNetCore.Http;
-using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.Interfaces
 {
@@ -12,6 +9,7 @@ namespace ECommerceApp.Application.Interfaces
         string SafeWriteFile(byte[] content, string sourceFileName, string path);
         ICollection<FileDirectoryPOCO> WriteFiles(ICollection<IFormFile> files, string path);
         FileDirectoryPOCO WriteFile(IFormFile file, string path);
+        FileDirectoryPOCO WriteFile(string fileName, byte[] file, string path);
         byte[] ReadFile(string path);
         string GetFileExtenstion(string file);
         string ReplaceInvalidChars(string fileName);

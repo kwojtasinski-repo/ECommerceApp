@@ -59,7 +59,6 @@ namespace ECommerceApp.IntegrationTests.API
             var multiContent = Utilities.SerializeObjectWithImageToBytes<AddImagePOCO>(image);
 
             var id = await client.Request($"api/images")
-                .AllowAnyHttpStatus()
                 .PostAsync(multiContent)
                 .ReceiveJson<int>();
 
@@ -81,7 +80,6 @@ namespace ECommerceApp.IntegrationTests.API
             var multiContent = Utilities.SerializeObjectWithImageToBytes<AddImagesPOCO>(images);
 
             var ids = await client.Request($"api/images/multi-upload")
-                .AllowAnyHttpStatus()
                 .PostAsync(multiContent)
                 .ReceiveJson<List<int>>();
 

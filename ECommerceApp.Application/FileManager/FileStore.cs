@@ -6,8 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.FileManager
 {
@@ -67,7 +65,7 @@ namespace ECommerceApp.Application.FileManager
                 string uniqueFileName = Guid.NewGuid().ToString() + "_" + fileName + ext;
                 var fileDirectory = new FileDirectoryPOCO() { SourcePath = path + Path.DirectorySeparatorChar + uniqueFileName, Name = fileName };
                 var outputFile = Path.Combine(path, uniqueFileName);
-                _fileWrapper.WriteFileAsync(file, outputFile);
+                _fileWrapper.WriteFileAsync(file, outputFile).GetAwaiter().GetResult();
                 return fileDirectory;
             }
             else
@@ -129,6 +127,25 @@ namespace ECommerceApp.Application.FileManager
         public void DeleteFile(string path)
         {
             _fileWrapper.DeleteFile(path);
+        }
+
+        public FileDirectoryPOCO WriteFile(string fileName, byte[] file, string path)
+        {
+            _directoryWrapper.CreateDirectory(path);
+            if (file != null)
+            {
+                string ext = GetFileExtenstion(fileName);
+                var validFileName = ReplaceInvalidChars(fileName);
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + validFileName + ext;
+                var fileDirectory = new FileDirectoryPOCO() { SourcePath = path + Path.DirectorySeparatorChar + uniqueFileName, Name = validFileName };
+                var outputFile = Path.Combine(path, uniqueFileName);
+                _fileWrapper.WriteFileAsync(file, outputFile);
+                return fileDirectory;
+            }
+            else
+            {
+                throw new Exceptions.FileException("File not found");
+            }
         }
     }
 }

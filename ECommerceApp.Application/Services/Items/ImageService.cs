@@ -1,5 +1,4 @@
-﻿using ECommerceApp.Application.Abstracts;
-using ECommerceApp.Application.DTO;
+﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.POCO;
@@ -235,15 +234,94 @@ namespace ECommerceApp.Application.Services.Items
             return imagesVm;
         }
 
+        public List<ImageInfoDto> GetImages(IEnumerable<int> imagesId)
+        {
+            return _imageRepository.GetAllImages()
+                        .Where(i => imagesId.Contains(i.Id))
+                        .AsNoTracking()
+                        .Select(i => new Image
+                        {
+                            Id = i.Id,
+                            Name = i.Name,
+                            ItemId = i.ItemId,
+                        })
+                        .ToList()
+                        .Select(i => new ImageInfoDto
+                        {
+                            Id = i.Id,
+                            Name = i.Name,
+                            ItemId = i.ItemId
+                        })
+                        .ToList();
+        }
+
+        public List<int> AddImages(AddImagesWithBase64POCO dto)
+        {
+            if (dto is null)
+            {
+                throw new BusinessException($"{typeof(AddImagesPOCO).Name} cannot be null");
+            }
+
+            if (dto.FilesWithBase64Format == null || !dto.FilesWithBase64Format.Any())
+            {
+                throw new BusinessException("Adding image without source is not allowed");
+            }
+
+            var files = dto.FilesWithBase64Format.Select(f => new FileWithBytes(f.Name, Convert.FromBase64String(f.FileSource)));
+            ValidImages(files);
+            if (dto.ItemId.HasValue)
+            {
+                var imageCount = _imageRepository.GetAll().Where(im => im.ItemId == dto.ItemId.Value).AsNoTracking().Select(i => i.Id).ToList().Count;
+                var imagesToAddCount = files.Count();
+                var count = imagesToAddCount + imageCount;
+
+                if (count > ALLOWED_IMAGES_COUNT)
+                {
+                    throw new BusinessException($"Cannot add more than {ALLOWED_IMAGES_COUNT} images. There is already {imageCount} images for item id {dto.ItemId.Value}");
+                }
+            }
+
+            var images = new List<Image>();
+
+            foreach (var image in files)
+            {
+                var fileDir = _fileStore.WriteFile(image.Name, image.FileSource, FILE_DIR);
+
+                var img = new Image()
+                {
+                    Id = 0,
+                    ItemId = dto.ItemId,
+                    Name = fileDir.Name,
+                    SourcePath = fileDir.SourcePath
+                };
+
+                images.Add(img);
+            }
+
+            var ids = _imageRepository.AddRange(images);
+
+            return ids;
+        }
+
         private void ValidImages(ICollection<IFormFile> images)
+        {
+            ValidImages(images.Select(i => new ValidateFile(i.FileName, i.Length)));
+        }
+
+        private void ValidImages(IEnumerable<FileWithBytes> images)
+        {
+            ValidImages(images.Select(i => new ValidateFile(i.Name, i.FileSource.LongLength)));
+        }
+
+        private void ValidImages(IEnumerable<ValidateFile> images)
         {
             var errors = new StringBuilder();
 
             // FIRST VALIDATION
             foreach (var image in images)
             {
-                var size = image.Length;
-                var fileName = image.FileName;
+                var size = image.Size;
+                var fileName = image.Name;
 
                 if (size > ALLOWED_SIZE)
                 {
@@ -268,25 +346,7 @@ namespace ECommerceApp.Application.Services.Items
             }
         }
 
-        public List<ImageInfoDto> GetImages(IEnumerable<int> imagesId)
-        {
-            return _imageRepository.GetAllImages()
-                        .Where(i => imagesId.Contains(i.Id))
-                        .AsNoTracking()
-                        .Select(i => new Image
-                        {
-                            Id = i.Id,
-                            Name = i.Name,
-                            ItemId = i.ItemId,
-                        })
-                        .ToList()
-                        .Select(i => new ImageInfoDto
-                        {
-                            Id = i.Id,
-                            Name = i.Name,
-                            ItemId = i.ItemId
-                        })
-                        .ToList();
-        }
+        private record FileWithBytes(string Name, byte[] FileSource);
+        private record ValidateFile(string Name, long Size);
     }
 }

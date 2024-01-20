@@ -217,7 +217,7 @@ namespace ECommerceApp.Tests.Services.Image
         {
             var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
 
-            Action action = () => imageService.AddImages(null);
+            Action action = () => imageService.AddImages((AddImagesPOCO)null);
 
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }

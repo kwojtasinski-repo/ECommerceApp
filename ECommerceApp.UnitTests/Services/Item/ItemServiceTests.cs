@@ -181,7 +181,7 @@ namespace ECommerceApp.Tests.Services.Item
             itemService.AddItem(dto);
 
             _itemRepository.Verify(i => i.AddItem(It.IsAny<Domain.Model.Item>()), Times.Once);
-            _imageService.Verify(i => i.AddImages(It.IsAny<AddImagesPOCO>()), Times.Once);
+            _imageService.Verify(i => i.AddImages(It.IsAny<AddImagesWithBase64POCO>()), Times.Once);
         }
 
         [Fact]
@@ -322,7 +322,7 @@ namespace ECommerceApp.Tests.Services.Item
         }
 
         [Fact]
-        public void given_item_with_not_existing_image_when_update_item_dto_should_throw_an_excpetion()
+        public void given_item_with_not_existing_image_when_update_item_dto_should_throw_an_exception()
         {
             var itemService = CreateItemService();
             var id = AddDefaultItem();
@@ -350,7 +350,7 @@ namespace ECommerceApp.Tests.Services.Item
             itemService.UpdateItem(dto);
 
             _itemRepository.Verify(i => i.UpdateItem(It.IsAny<Domain.Model.Item>()), Times.Once);
-            _imageService.Verify(i => i.AddImages(It.IsAny<AddImagesPOCO>()), Times.Once);
+            _imageService.Verify(i => i.AddImages(It.IsAny<AddImagesWithBase64POCO>()), Times.Once);
         }
 
         [Fact]

@@ -192,24 +192,7 @@ namespace ECommerceApp.Application.Services.Items
                 return id;
             }
 
-            var addImages = new POCO.AddImagesPOCO();
-            foreach (var addImg in dto.Images)
-            {
-                if (addImg is null || string.IsNullOrWhiteSpace(addImg.ImageSource))
-                {
-                    continue;
-                }
-
-                var bytes = Convert.FromBase64String(addImg.ImageSource);
-                addImages.Files.Add(new FormFile(new MemoryStream(bytes), 0, bytes.Length, addImg.ImageName, addImg.ImageName));
-                addImages.ItemId = item.Id;
-            }
-
-            if (addImages.Files.Any())
-            {
-                _imageService.AddImages(addImages);
-            }
-
+            _imageService.AddImages(new POCO.AddImagesWithBase64POCO(id, dto.Images.Select(i => new POCO.FileWithBase64Format(i.ImageName, i.ImageSource))));
             return id;
         }
 
@@ -318,23 +301,7 @@ namespace ECommerceApp.Application.Services.Items
 
             if (imgToAdd.Any())
             {
-                var addImages = new POCO.AddImagesPOCO();
-                foreach (var addImg in imgToAdd)
-                {
-                    if (addImg is null || string.IsNullOrWhiteSpace(addImg.ImageSource))
-                    {
-                        continue;
-                    }
-
-                    var bytes = Convert.FromBase64String(addImg.ImageSource);
-                    addImages.Files.Add(new FormFile(new MemoryStream(bytes), 0, bytes.Length, addImg.ImageName, addImg.ImageName));
-                    addImages.ItemId = item.Id;
-                }
-                
-                if (addImages.Files.Any())
-                {
-                    _imageService.AddImages(addImages);
-                }
+                _imageService.AddImages(new POCO.AddImagesWithBase64POCO(item.Id, imgToAdd.Select(i => new POCO.FileWithBase64Format(i.ImageName, i.ImageSource))));
             }
 
             _itemRepository.UpdateItem(item);

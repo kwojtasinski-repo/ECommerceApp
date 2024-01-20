@@ -13,6 +13,7 @@ namespace ECommerceApp.Application.Services.Items
         List<GetImageVm> GetAll();
         List<GetImageVm> GetAll(string searchName);
         List<int> AddImages(AddImagesPOCO imageVm);
+        List<int> AddImages(AddImagesWithBase64POCO imageVm);
         List<GetImageVm> GetImagesByItemId(int imageId);
         List<ImageInfoDto> GetImages(IEnumerable<int> enumerable);
     }
