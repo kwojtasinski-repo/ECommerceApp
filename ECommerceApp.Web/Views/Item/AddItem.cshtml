@@ -152,8 +152,6 @@
         const imgsToAddTag = 'ImgSourceToAdd';
         const uploadId = 'FileUpload_FormFile';
         const uploadSubmitButton = 'FileUpload_SubmitButton';
-        const maxCountImages = 5;
-        const allowedExtensions = ['.jpg', '.png'];
         const indexAddedImage = 'ImageAdded';
 
         $(document).ready(function () {
@@ -380,7 +378,6 @@
                     }
                 ],
                 onChange: function (event) {
-                    debugger
                     const imagesAdded = this.value.length;
                     if (imagesAdded >= maxCountImages) {
                         forms.showValidationError(this.controlId, 'Dozwolone jest maksymalnie ' + maxCountImages + ' obrazków');
@@ -401,7 +398,7 @@
                     for (const file of files) {
                         const extension = file.name.substring(file.name.lastIndexOf('.'), file.name.length);
                         if (!allowedExtensions.some(ext => ext == extension)) {
-                            forms.showValidationError(this.controlId, 'Niedozwolony format obrazka ' + extension + '. Dozwolone formaty ', allowedExtensions.join(','));
+                            forms.showValidationError(this.controlId, 'Niedozwolony format obrazka ' + extension + '. Dozwolone formaty ' + allowedExtensions.join(','));
                             deactivateUpload();
                             return;
                         }
@@ -414,7 +411,6 @@
                 value: []
             },
             beforeSubmit: function() {
-                debugger
                 let index = 0;
                 for (const file of itemFormValidator.images.value) {
                     appendFormWithImage({ id: index, name: file.name, data: file.data })
@@ -424,7 +420,6 @@
         };
 
         async function Upload(input) {
-            debugger
             const imagesAdded = itemFormValidator.images.value.length;
             if (imagesAdded >= maxCountImages) {
                 alert("Możesz maksymalnie dodać " + maxCountImages + " obrazków");
@@ -468,7 +463,6 @@
         });
 
         function deleteImage(id) {
-            debugger
             const imgIndex = itemFormValidator.images.value.findIndex(v => v.id === id);
             if (imgIndex === -1) {
                 return;
