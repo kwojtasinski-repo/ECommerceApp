@@ -72,52 +72,56 @@
                     </div>
                     @if (Model.RefundId > 0)
                     {
-                        <p>Naciśnij przycisk, w celu zmiany zwrotu</p>
-
-                        <button type="button" class="btn btn-info" onclick="ToggleRefund()">Wprowadź/Anuluj</button>
-                        <div id="RefundEnter" style="top:50px;">
+                        <button type="button" class="btn btn-info" onclick="OpenRefundModal()">Edytuj zwrot</button>
+                        <div style="top:50px;">
                             <div class="form-group">
                                 <label asp-for="RefundId" class="control-label">Powód zwrotu</label>
-                                <input type="hidden" readonly asp-for="RefundId" class="form-control" />
-                                <input type="text" id="ReasonRefundText" asp-for="ReasonRefund" class="form-control" />
-                                <span asp-validation-for="ReasonRefund" class="text-danger"></span>
+                                <input type="hidden" readonly id="RefundId" asp-for="RefundId" class="form-control" />
+                                <input type="hidden" readonly id="RefundCustomerId" value="@Model.CustomerId" class="form-control" />
+                                <input type="hidden" readonly id="RefundOrderId" value="@Model.Id" class="form-control" />
+                                <input type="text" id="ReasonRefundText" value="@Model.ReasonRefund" class="form-control" readonly />
                             </div>
                             <div class="form-group form-check">
                                 <label class="form-check-label">
-                                    <input class="form-check-input" id="AcceptedRefundChoice" asp-for="AcceptedRefund" /> Akceptacja zwrotu
+                                    <input type="checkbox" class="form-check-input" id="AcceptedRefundChoice" checked="@Model.AcceptedRefund" onclick="return false;" readonly /> Akceptacja zwrotu
                                 </label>
                             </div>
                             <div class="form-group form-check">
                                 <label class="form-check-label">
-                                    <input class="form-check-input" id="OnWarrantyChoice" asp-for="OnWarranty" /> Na gwarancji
+                                    <input type="checkbox" class="form-check-input" id="OnWarrantyChoice" checked="@Model.OnWarranty" onclick="return false;" readonly /> Na gwarancji
                                 </label>
                             </div>
+                        </div>
+                        <div>
+                            <button class="btn btn-danger" type="button" onclick="DeleteRefund(@Model.RefundId.Value)">
+                                Usuń reklamację
+                            </button>
                         </div>
                     }
                     else
                     {
-                        <p>Naciśnij przycisk, w celu wprowadzenia zwrotu</p>
-
-                        <button type="button" class="btn btn-info" onclick="ToggleRefund()">Wprowadź/Anuluj</button>
-                        <div id="RefundEnter" style="display:none;top:50px;">
-                            <div class="form-group">
-                                <label asp-for="RefundId" class="control-label">Powód zwrotu</label>
-                                <input type="hidden" readonly asp-for="RefundId" class="form-control" />
-                                <input type="text" id="ReasonRefundText" asp-for="ReasonRefund" class="form-control" />
-                                <span asp-validation-for="RefundId" class="text-danger"></span>
-                            </div>
-                            <div class="form-group form-check">
-                                <label class="form-check-label">
-                                    <input class="form-check-input" id="AcceptedRefundChoice" asp-for="AcceptedRefund" /> Akceptacja zwrotu
-                                </label>
-                            </div>
-                            <div class="form-group form-check">
-                                <label class="form-check-label">
-                                    <input class="form-check-input" id="OnWarrantyChoice" asp-for="OnWarranty" /> Na gwarancji
-                                </label>
-                            </div>
-                        </div>
+                        <button type="button" class="btn btn-info" onclick="OpenRefundModal()">Dodaj zwrot</button>
                     }
+                    <div id="RefundEnter" style="display:none;top:50px;">
+                        <div class="form-group">
+                            <label asp-for="RefundId" class="control-label">Powód zwrotu</label>
+                            <input type="hidden" id="RefundId" readonly asp-for="RefundId" class="form-control" />
+                            <input type="hidden" readonly id="RefundCustomerId" value="@Model.CustomerId" class="form-control" />
+                            <input type="hidden" readonly id="RefundOrderId" value="@Model.Id" class="form-control" />
+                            <input type="text" id="ReasonRefundText" value="@Model.ReasonRefund" class="form-control" />
+                            <span asp-validation-for="RefundId" class="text-danger"></span>
+                        </div>
+                        <div class="form-group form-check">
+                            <label class="form-check-label">
+                                <input type="checkbox" class="form-check-input" id="AcceptedRefundChoice" checked="@Model.AcceptedRefund" onclick="SetCheckedValue(event)" /> Akceptacja zwrotu
+                            </label>
+                        </div>
+                        <div class="form-group form-check">
+                            <label class="form-check-label">
+                                <input type="checkbox" class="form-check-input" id="OnWarrantyChoice" checked="@Model.OnWarranty" onclick="SetCheckedValue(event)" /> Na gwarancji
+                            </label>
+                        </div>
+                    </div>
                 }
                 <div class="mt-2 mb-2">
                     <label>Kod promocyjny</label>
@@ -395,15 +399,68 @@
             }
         }
 
-        function ToggleRefund() {
-            var x = document.getElementById("RefundEnter");
-            if (x.style.display === "none") {
-                x.style.display = "block";
+        function SetCheckedValue(event) {
+            const value = event.target.getAttribute('checked') ?? event.target.value;
+            if (!value || value === "true" || value === "True" || value === 'checked') {
+                event.target.setAttribute('checked', false);
             } else {
-                x.style.display = "none";
-                document.getElementById("ReasonRefundText").value = "";
-                document.getElementById("AcceptedRefundChoice").checked = false;
-                document.getElementById("OnWarrantyChoice").checked = false;
+                event.target.setAttribute('checked', true);
+            }
+        }
+
+        function OpenRefundModal() {
+            const header = modalService.createHeader('Reklamacja');
+            const refundBody = document.getElementById("RefundEnter")?.cloneNode(true);
+            if (!refundBody) {
+                return;
+            }
+
+            refundBody.style.display = "block";
+            const body = dialogTeplate.createDialogBody(refundBody);
+            const confirmButton = buttonTemplate.createButton("Zatwierdź", "btn btn-danger", async () => { await SendRefund(); modalService.close(); }, "type");
+            const cancelButton = buttonTemplate.createButton("Anuluj", "btn btn-secondary", () => modalService.close(), "type");
+            const footer = dialogTeplate.createDialogFooter([confirmButton, cancelButton]);
+            modalService.showCustomModal(header, body, footer);
+        }
+
+        async function SendRefund() {
+            const modalBody = document.querySelector('.modal-body');
+            const form = {
+                Id: modalBody.querySelector('#RefundId').value,
+                Reason: modalBody.querySelector('#ReasonRefundText').value,
+                Accepted: modalBody.querySelector('#AcceptedRefundChoice').checked,
+                OnWarranty: modalBody.querySelector('#OnWarrantyChoice').checked,
+                CustomerId: modalBody.querySelector('#RefundCustomerId').value,
+                OrderId: modalBody.querySelector('#RefundOrderId').value
+            }
+            if (!form.Id) {
+                try {
+                    await ajaxRequest.send('/Refund/AddRefund', 'POST', form);
+                    window.location.reload();
+                } catch (error) {
+                    console.error(error);
+                }
+                return;
+            }
+
+            try {
+                await ajaxRequest.send('/Refund/UpdateRefund?id=' + form.Id, 'PUT', form);
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        async function DeleteRefund(id) {
+            if (!await modalService.showConfirmationModal('Usuwanie zwrotu', 'Czy na pewno chcesz usunąć zwrot?')) {
+                return;
+            }
+
+            try {
+                await ajaxRequest.send('/Refund/DeleteRefund/' + id, 'DELETE');
+                window.location.reload();
+            } catch (error) {
+                console.error(error);
             }
         }
 

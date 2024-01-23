@@ -1,7 +1,5 @@
 ﻿using ECommerceApp.Application.Services.Items;
-using ECommerceApp.Application.ViewModels.Item;
 using Moq;
-using System;
 using Xunit;
 using FluentAssertions;
 using ECommerceApp.Domain.Interface;

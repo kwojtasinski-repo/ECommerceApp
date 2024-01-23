@@ -323,8 +323,8 @@ const modalService = (function () {
         showConfirmationModal: function (headerText, bodyText) {
             const headerTemplate = createModalHeader(headerText);
             const bodyTemplate = createModalBody(bodyText);
-            const confirmButton = buttonTemplate.createButton("Yes", "btn btn-danger", () => { closeModal(); invokeActionAfterButtonClick(confirmAction); }, "type");
-            const cancelButton = buttonTemplate.createButton("No", "btn btn-secondary", this.close, "type");
+            const confirmButton = buttonTemplate.createButton("Tak", "btn btn-danger", () => { closeModal(); invokeActionAfterButtonClick(confirmAction); }, "type");
+            const cancelButton = buttonTemplate.createButton("Nie", "btn btn-secondary", this.close, "type");
             const footerTemplate = createModalFooter([confirmButton, cancelButton]);
             const modalTemplate = createModalTemplate(headerTemplate, bodyTemplate, footerTemplate);
             document.body.appendChild(modalTemplate);
@@ -353,6 +353,9 @@ const modalService = (function () {
          */
         close: function () {
             closeButtonHandler();
+        },
+        createHeader: function (title) {
+            return createModalHeader(title);
         }
     }
 })();

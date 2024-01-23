@@ -74,5 +74,22 @@ namespace ECommerceApp.Web.Controllers
             _refundService.DeleteRefund(id);
             return Json("deleted");
         }
+
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [HttpPost]
+        public IActionResult AddRefund(RefundVm refundVm)
+        {
+            _refundService.AddRefund(refundVm);
+            return Json("Added");
+        }
+
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [HttpPut]
+        public IActionResult UpdateRefund(int id, RefundVm refundVm)
+        {
+            refundVm.Id = id;
+            _refundService.UpdateRefund(refundVm);
+            return Json("Updated");
+        }
     }
 }
