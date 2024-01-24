@@ -88,3 +88,14 @@ body {
 textarea {
     resize: none;
 }
+
+.select-search-style {
+    color: #495057;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+}
+
+.select-search-style:focus {
+    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem rgba(0,123,255,.5);
+}
