@@ -5,6 +5,6 @@ namespace ECommerceApp.Application.Services.Coupons
 {
     internal interface ICouponHandler
     {
-        void HandleCouponChangesOnUpdateOrder(CouponVm coupon, Order order, HandleCouponChangesDto dto);
+        void HandleCouponChangesOnOrder(CouponVm coupon, Order order, HandleCouponChangesDto dto);
     }
 }

@@ -506,7 +506,7 @@ namespace ECommerceApp.Application.Services.Orders
                 var orderItemExists = order.OrderItems?.FirstOrDefault(oi => oi.Id == orderItemToModify.Id);
                 if (orderItemExists is null)
                 {
-                    errors.Append($"Order doesn't have order item with id '{orderItemToModify.Id}'.");
+                    errors.Append($"Order doesn't have item with id '{orderItemToModify.Id}'.");
                 }
             }
             if (errors.Length > 0)
@@ -556,7 +556,7 @@ namespace ECommerceApp.Application.Services.Orders
             }
 
             order.CalculateCost();
-            _couponHandler.HandleCouponChangesOnUpdateOrder(coupon, order, new HandleCouponChangesDto(dto));
+            _couponHandler.HandleCouponChangesOnOrder(coupon, order, new HandleCouponChangesDto(dto));
             _paymentHandler.HandlePaymentChangesOnOrder(dto.Payment, order);
             _orderRepository.Update(order);
             orderItemsToRemove.ForEach(oi => _orderItemService.DeleteOrderItem(oi.Id));
@@ -596,7 +596,7 @@ namespace ECommerceApp.Application.Services.Orders
             CheckOrderItemsOrderByUser(order, order.OrderItems);
             order.CalculateCost();
             var id = _orderRepository.AddOrder(order);
-            _couponHandler.HandleCouponChangesOnUpdateOrder(_couponService.GetCouponByCode(model.PromoCode), order, HandleCouponChangesDto.Of(model.PromoCode));
+            _couponHandler.HandleCouponChangesOnOrder(_couponService.GetCouponByCode(model.PromoCode), order, HandleCouponChangesDto.Of(model.PromoCode));
             return id;
         }
 

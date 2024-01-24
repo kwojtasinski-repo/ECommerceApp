@@ -16,7 +16,7 @@ namespace ECommerceApp.Application.Services.Coupons
             _couponUsedRepository = couponUsedRepository;
         }
 
-        public void HandleCouponChangesOnUpdateOrder(CouponVm couponVm, Order order, HandleCouponChangesDto dto)
+        public void HandleCouponChangesOnOrder(CouponVm couponVm, Order order, HandleCouponChangesDto dto)
         {
             if (order is null)
             {
@@ -71,8 +71,8 @@ namespace ECommerceApp.Application.Services.Coupons
 
             var couponUsed = new CouponUsed
             {
-                Id = couponVm.Id,
-                CouponId = couponVm.Id,
+                Id = coupon.Id,
+                CouponId = coupon.Id,
                 OrderId = order.Id,
                 Coupon = coupon,
                 Order = order,
