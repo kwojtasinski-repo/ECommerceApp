@@ -52,12 +52,12 @@
             <div class="form-group">
                 <label asp-for="State" class="control-label">Status: </label>
                 <select asp-for="State" 
-                    asp-items="@(new SelectList(Enum.GetValues<ECommerceApp.Domain.Model.PaymentState>()))" class="custom-select"></select>
+                    asp-items="@(new SelectList(Enum.GetValues<ECommerceApp.Domain.Model.PaymentState>()))" class="show-tick form-control data-search"></select>
                 <span asp-validation-for="State" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="CurrencyId" class="control-label">Waluta: </label>
-                <select asp-for="CurrencyId" asp-items="@(new SelectList(ViewBag.Currencies,"Id", "Code"))" class="custom-select"></select>
+                <select asp-for="CurrencyId" asp-items="@(new SelectList(ViewBag.Currencies,"Id", "Code"))" class="show-tick form-control data-search"></select>
                 <span asp-validation-for="CurrencyId" class="text-danger"></span>
                 <label style="display:none;" asp-for="CurrencyName" class="control-label"></label>
                 <input type="hidden" asp-for="CurrencyName" class="form-control" />

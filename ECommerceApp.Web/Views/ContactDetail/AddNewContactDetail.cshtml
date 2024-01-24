@@ -22,7 +22,7 @@
             </div>
             <div class="form-group">
                 <label asp-for="@Model.ContactDetail.ContactDetailTypeId" class="control-label">Rodzaj kontaktu</label>
-                <select id="ContactDetailType" asp-for="@Model.ContactDetail.ContactDetailTypeId" asp-items="@(new SelectList(Model.ContactDetailTypes,"Id", "Name"))" class="custom-select"></select>
+                <select id="ContactDetailType" asp-for="@Model.ContactDetail.ContactDetailTypeId" asp-items="@(new SelectList(Model.ContactDetailTypes,"Id", "Name"))" class="show-tick form-control data-search"></select>
                 <span asp-validation-for="@Model.ContactDetail.ContactDetailTypeId" class="text-danger"></span>
             </div>
             <input type="hidden" asp-for="@Model.ContactDetail.CustomerId" value="@Model.ContactDetail.CustomerId" />

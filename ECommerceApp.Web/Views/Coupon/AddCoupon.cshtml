@@ -30,7 +30,7 @@
             </div>
             <div class="form-group">
                 <label asp-for="CouponTypeId" class="control-label">Typ kuponu</label>
-                <select id="CouponType" asp-for="CouponTypeId" asp-items="@(new SelectList(ViewBag.CouponTypes,"Id", "Type"))" class="custom-select" data-val="true" value="@Model.CouponTypeId"></select>
+                <select id="CouponType" asp-for="CouponTypeId" asp-items="@(new SelectList(ViewBag.CouponTypes,"Id", "Type"))" class="show-tick form-control data-search" data-val="true" value="@Model.CouponTypeId"></select>
                 <span asp-validation-for="CouponTypeId" class="text-danger"></span>
             </div>
             <div class="form-group">
