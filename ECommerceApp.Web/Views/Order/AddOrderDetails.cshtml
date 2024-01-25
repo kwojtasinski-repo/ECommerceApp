@@ -63,9 +63,15 @@
                 <input asp-for="RefundId" class="form-control" />
                 <span asp-validation-for="RefundId" class="text-danger"></span>
             </div>
-            <div>
+            <div class="mt-2 mb-2" data-name="Promotion">
                 <label>Kod promocyjny</label>
-                <input type="text" asp-for="PromoCode" class="form-control" />
+                <input id="RefCode" type="text" asp-for="PromoCode" value="@Model.PromoCode" class="form-control" />
+                <span asp-validation-for="PromoCode" class="text-danger"></span>
+                <div>
+                    <button class="btn btn-primary mt-2 mb-2" type="button" onclick="getCouponByCode()">
+                        Użyj
+                    </button>
+                </div>
             </div>
             <div class="mt-2 mb-2">
                 <p>Przedmioty:</p>
@@ -327,6 +333,61 @@
             } else {
                 $('#' + context.attributes.id.value)[0].parentElement.appendChild(createErrorSpanInner(text));
             }
+        }
+
+        async function getCouponByCode() {
+            clearCoupons();
+            const couponCode = document.getElementById('RefCode');
+            if (!couponCode || !couponCode.value) {
+                const element = createCouponError('Wpisz kod kuponu');
+                couponCode.after(element);
+                return;
+            }
+
+            try {
+                const coupon = await ajaxRequest.send('/Coupon/GetByCode?couponCoude=' + couponCode.value, 'GET');
+                if (!coupon) {
+                    const element = createCouponError('Podano nieprawidłowy kupon');
+                    couponCode.after(element);
+                    return;
+                }
+                if (coupon.couponUsedId) {
+                    const element = createCouponError('Podano nieprawidłowy kupon');
+                    couponCode.after(element);
+                    return;
+                }
+                document.querySelector('#Discount').value = coupon.discount;
+                calculateCosts();
+                couponCode.after(createSuccessCouponText('Pomyślnie dodano kupon. Cena zmniejszona o ' + coupon.discount + '%'));
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        function clearCoupons() {
+            removeCouponError();
+            removeCouponSuccess();
+            document.querySelector('#Discount').value = 0;
+        }
+
+        function removeCouponError() {
+            const promoSection = document.querySelector('[data-name="Promotion"]');
+            const errorCode = promoSection.querySelector('#CouponCodeError');
+            errorCode?.remove();
+        }
+
+        function createSuccessCouponText(text) {
+            const span = document.createElement('span');
+            span.className = "text-success";
+            span.textContent = text;
+            span.id = 'CouponAddSuccess';
+            return span;
+        }
+
+        function removeCouponSuccess() {
+            const promoSection = document.querySelector('[data-name="Promotion"]');
+            const couponAddSuccess = promoSection.querySelector('#CouponAddSuccess');
+            couponAddSuccess?.remove();
         }
     </script>
     <style type="text/css">

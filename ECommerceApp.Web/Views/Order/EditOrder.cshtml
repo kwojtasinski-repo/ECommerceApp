@@ -468,7 +468,7 @@
                 console.error(error);
             }
         }
-
+        
         async function getCouponByCode() {
             clearCoupons();
             const couponCode = document.getElementById('RefCode');
@@ -508,6 +508,7 @@
         function clearCoupons() {
             removeCouponError();
             removeCouponSuccess();
+            document.querySelector('#Discount').value = 0;
         }
 
         function removeCouponError() {
@@ -529,7 +530,6 @@
             const couponAddSuccess = promoSection.querySelector('#CouponAddSuccess');
             couponAddSuccess?.remove();
         }
-
     </script>
     <style type="text/css">
         .fa_custom {

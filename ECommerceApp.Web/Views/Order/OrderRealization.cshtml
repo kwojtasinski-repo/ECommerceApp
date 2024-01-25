@@ -93,16 +93,22 @@
                     </table>
                 </div>
             </div>
-            <div class="form-group">
-                <label asp-for="PromoCode" class="control-label">Kod promocyjny</label>
-                <input asp-for="PromoCode" class="form-control" />
+            <div class="mt-2 mb-2" data-name="Promotion">
+                <label>Kod promocyjny</label>
+                <input id="RefCode" type="text" asp-for="PromoCode" value="@Model.PromoCode" class="form-control" />
                 <span asp-validation-for="PromoCode" class="text-danger"></span>
+                <div>
+                    <button class="btn btn-primary mt-2 mb-2" type="button" onclick="getCouponByCode()">
+                        Użyj
+                    </button>
+                </div>
             </div>
             <div class="form-row">
                 <div class="col-md-6 mb-4">
                     <label asp-for="Order.Cost" class="control-label">Koszt:</label>
                     <input id="CostCurrency" asp-for="Order.Cost" class="form-control" value="" readonly />
                     <span asp-validation-for="Order.Cost" class="text-danger"></span>
+                    <input type="hidden" id="Discount" name="Discount" value="" />
                 </div>
                 <div class="col-md-6 mb-2">
                     <label class="control-label">Waluta:</label>
@@ -526,13 +532,7 @@
         }
 
         $(document).ready(function () {
-            for (i = 0; i < costItems.length; i++) {
-                var quantity = Number(quantityItems[i].innerText);
-                var currency = costItems[i].children[0].textContent.replace(" zł", "").replace(",", ".");
-                var number = Number(currency.replace(/[^0-9.-]+/g, "")) * quantity;
-                cost += number;
-            }
-
+            const cost = calculateCosts();
             document.getElementById('Cost').value = Number(cost);
             document.getElementById('CostCurrency').value = format(cost);
             initModel();
@@ -599,6 +599,92 @@
                     break;
                 }
             }
+        }
+
+        async function getCouponByCode() {
+            clearCoupons();
+            const couponCode = document.getElementById('RefCode');
+            if (!couponCode || !couponCode.value) {
+                const element = createCouponError('Wpisz kod kuponu');
+                couponCode.after(element);
+                return;
+            }
+
+            try {
+                const coupon = await ajaxRequest.send('/Coupon/GetByCode?couponCoude=' + couponCode.value, 'GET');
+                if (!coupon) {
+                    const element = createCouponError('Podano nieprawidłowy kupon');
+                    couponCode.after(element);
+                    return;
+                }
+                if (coupon.couponUsedId) {
+                    const element = createCouponError('Podano nieprawidłowy kupon');
+                    couponCode.after(element);
+                    return;
+                }
+                document.querySelector('#Discount').value = coupon.discount;
+                const cost = calculateCosts();
+                document.getElementById('CostCurrency').value = cost;
+                document.getElementById('Cost').value = Number(cost);
+                couponCode.after(createSuccessCouponText('Pomyślnie dodano kupon. Cena zmniejszona o ' + coupon.discount + '%'));
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        function createCouponError(text) {
+            const element = forms.createErrorSpan(text);
+            element.id = 'CouponCodeError';
+            return element;
+        }
+
+        function clearCoupons() {
+            removeCouponError();
+            removeCouponSuccess();
+            document.querySelector('#Discount').value = 0;
+        }
+
+        function removeCouponError() {
+            const promoSection = document.querySelector('[data-name="Promotion"]');
+            const errorCode = promoSection.querySelector('#CouponCodeError');
+            errorCode?.remove();
+        }
+
+        function createSuccessCouponText(text) {
+            const span = document.createElement('span');
+            span.className = "text-success";
+            span.textContent = text;
+            span.id = 'CouponAddSuccess';
+            return span;
+        }
+
+        function removeCouponSuccess() {
+            const promoSection = document.querySelector('[data-name="Promotion"]');
+            const couponAddSuccess = promoSection.querySelector('#CouponAddSuccess');
+            couponAddSuccess?.remove();
+        }
+
+        function calculateCosts() {
+            let cost = 0;
+            const discount = getDiscount();
+            for (i = 0; i < costItems.length; i++) {
+                var quantity = Number(quantityItems[i].innerText);
+                var currency = costItems[i].children[0].textContent.replace(" zł", "").replace(",", ".");
+                var number = Number(currency.replace(/[^0-9.-]+/g, "")) * quantity;
+                cost += number * discount;
+            }
+            cost = format(cost);
+            return cost;
+        }
+
+        function getDiscount() {
+            let discount = Number(document.querySelector('#Discount')?.value ?? 0);
+            if (discount <= 0 || discount > 100) {
+                return 1;
+            }
+
+            discount = 1 - (discount / 100.0);
+            return discount;
         }
 
     </script>
