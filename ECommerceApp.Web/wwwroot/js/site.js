@@ -681,7 +681,11 @@ const forms = (function () {
 })();
 
 // enable tooltips
-$(document).ready(function () {
+$(document).ready(async function () {
+    if (typeof beforePageFullyLoaded === "function") {
+        await beforePageFullyLoaded();
+    }
+
     $('[data-toggle="tooltip"]').tooltip();
     $('.data-search').attr('data-live-search', true);
     $('.data-search').selectpicker({

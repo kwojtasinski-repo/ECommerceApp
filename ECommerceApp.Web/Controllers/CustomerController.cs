@@ -183,5 +183,12 @@ namespace ECommerceApp.Web.Controllers
             return _customerService.DeleteCustomer(id)
                 ? Json("deleted") : NotFound();
         }
+
+        [HttpGet]
+        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        public IActionResult GetContacts(string userId)
+        {
+            return Ok(_customerService.GetCustomersInformationByUserId(userId).ToList());
+        }
     }
 }

@@ -13,7 +13,7 @@
             <form id="EditOrderForm" asp-action="EditOrder">
                 <div asp-validation-summary="ModelOnly" class="text-danger"></div>
                 <input data-name="Id" type="hidden" asp-for="Id" class="form-control" />
-                <input type="hidden" asp-for="UserId" class="form-control" />
+                <input data-name="UserId" type="hidden" asp-for="UserId" class="form-control" />
                 <div class="form-group">
                     <label style="display:none;" asp-for="Number" class="control-label"></label>
                     <label class="control-label">Numer zamówienia</label>
@@ -52,8 +52,8 @@
                 <div class="form-group">
                     <label style="display:none;" asp-for="CustomerId" class="control-label"></label>
                     <label class="control-label">Klient:</label>
-                    <input value="@Model.CustomerInformation" class="form-control" readonly />
-                    <input type="hidden" asp-for="CustomerId" class="form-control" />
+                    <select id="CustomerInfoId" asp-for="CustomerId" class="show-tick form-control data-search"></select>
+                    <input id="CustomerIdValue" type="hidden" value="@Model.CustomerId" />
                     <span asp-validation-for="CustomerId" class="text-danger"></span>
                 </div>
                 @if (Model.PaymentId > 0)
@@ -201,7 +201,11 @@
         var selectedIndex;
         var selectedValue;
 
-        $(document).ready(function () {
+        async function beforePageFullyLoaded() {
+            await getUserContacts();
+        }
+
+        $(document).ready(async function () {
             initView();
         });
 
@@ -529,6 +533,28 @@
             const promoSection = document.querySelector('[data-name="Promotion"]');
             const couponAddSuccess = promoSection.querySelector('#CouponAddSuccess');
             couponAddSuccess?.remove();
+        }
+
+        async function getUserContacts() {
+            const userId = document.querySelector('[data-name="UserId"]').value;
+            const customerId = Number(document.querySelector('#CustomerIdValue').value);
+            try {
+                const contactsData = await ajaxRequest.send('/Customer/GetContacts?userId=' + userId, 'GET');
+                const customersSelect = document.getElementById('CustomerInfoId');
+                for (const contactData of contactsData) {
+                    const optionTag = document.createElement('option');
+                    optionTag.value = contactData.id;
+                    optionTag.text = contactData.information;
+                    
+                    if (contactData.id === customerId) {
+                        optionTag.setAttribute('selected', 'selected');
+                    }
+
+                    customersSelect.appendChild(optionTag);
+                }
+            } catch (error) {
+                console.error(error);
+            }
         }
     </script>
     <style type="text/css">
