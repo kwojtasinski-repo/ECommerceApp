@@ -89,10 +89,17 @@ namespace ECommerceApp.Web.Controllers
             return View(coupon);
         }
 
+        [HttpDelete]
         public IActionResult DeleteCoupon(int id)
         {
             _couponService.DeleteCoupon(id);
             return Json("deleted");
+        }
+
+        [HttpGet]
+        public IActionResult GetByCode(string couponCoude)
+        {
+            return Ok(_couponService.GetCouponByCode(couponCoude));
         }
     }
 }
