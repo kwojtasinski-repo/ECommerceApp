@@ -393,7 +393,6 @@ namespace ECommerceApp.Tests.Services.Item
                 ItemTags = new List<ItemTag>(),
                 Images = new List<Domain.Model.Image>()
             };
-            _itemRepository.Setup(i => i.GetById(item.Id)).Returns(item);
             _itemRepository.Setup(i => i.GetItemById(item.Id)).Returns(item);
             _itemRepository.Setup(i => i.GetItemDetailsById(item.Id)).Returns(item);
             return item.Id;
@@ -408,7 +407,6 @@ namespace ECommerceApp.Tests.Services.Item
                 Name = "Test",
             };
             _brandRepository.Setup(b => b.ExistsBrand(id)).Returns(true);
-            _brandRepository.Setup(b => b.GetById(id)).Returns(brand);
             _brandRepository.Setup(b => b.GetBrandById(id)).Returns(brand);
             return id;
         }
@@ -442,24 +440,23 @@ namespace ECommerceApp.Tests.Services.Item
                 Id = id,
                 Name = "Test",
             };
-            _typeRepository.Setup(t => t.GetById(id)).Returns(type);
             _typeRepository.Setup(t => t.GetTypeById(id)).Returns(type);
             return id;
         }
 
         private void InitSetup()
         {
-            _itemRepository.Setup(i => i.GetAll()).Returns(new List<Domain.Model.Item>().AsQueryable());
+            _itemRepository.Setup(i => i.GetAllItems()).Returns(new List<Domain.Model.Item>().AsQueryable());
             _itemRepository.Setup(i => i.GetAllItems()).Returns(new List<Domain.Model.Item>().AsQueryable());
             _itemRepository.Setup(i => i.GetAllItemsWithTags()).Returns(new List<ItemTag>().AsQueryable());
             _tagRepository.Setup(t => t.GetTagsByIds(It.IsAny<IEnumerable<int>>())).Returns(new List<Tag>());
             _tagRepository.Setup(t => t.GetAllTags()).Returns(new List<Tag>().AsQueryable());
             _currencyRepository.Setup(c => c.GetAll()).Returns(new List<Currency>().AsQueryable());
-            _brandRepository.Setup(b => b.GetAll()).Returns(new List<Brand>().AsQueryable());
             _brandRepository.Setup(b => b.GetAllBrands()).Returns(new List<Brand>().AsQueryable());
-            _tagRepository.Setup(t => t.GetAll()).Returns(new List<Tag>().AsQueryable());
+            _brandRepository.Setup(b => b.GetAllBrands()).Returns(new List<Brand>().AsQueryable());
             _tagRepository.Setup(t => t.GetAllTags()).Returns(new List<Tag>().AsQueryable());
-            _typeRepository.Setup(t => t.GetAll()).Returns(new List<Domain.Model.Type>().AsQueryable());
+            _tagRepository.Setup(t => t.GetAllTags()).Returns(new List<Tag>().AsQueryable());
+            _typeRepository.Setup(t => t.GetAllTypes()).Returns(new List<Domain.Model.Type>().AsQueryable());
             _typeRepository.Setup(t => t.GetAllTypes()).Returns(new List<Domain.Model.Type>().AsQueryable());
             _imageService.Setup(i => i.GetImages(It.IsAny<IEnumerable<int>>())).Returns(new List<ImageInfoDto>());
             _imageService.Setup(i => i.GetImagesByItemId(It.IsAny<int>())).Returns(new List<Application.ViewModels.Image.GetImageVm>());

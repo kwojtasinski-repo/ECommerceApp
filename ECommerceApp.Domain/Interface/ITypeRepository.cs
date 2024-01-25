@@ -1,16 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Linq;
 
 namespace ECommerceApp.Domain.Interface
 {
-    public interface ITypeRepository : IGenericRepository<Model.Type>
+    public interface ITypeRepository
     {
         void DeleteType(int typeId);
         int AddType(Model.Type type);
         Model.Type GetTypeById(int typeId);
         IQueryable<Model.Type> GetAllTypes();
         void UpdateType(Model.Type type);
+        bool ExistsById(int id);
     }
 }

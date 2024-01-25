@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 
 namespace ECommerceApp.Domain.Interface
 {
-    public interface IContactDetailRepository : IGenericRepository<ContactDetail>
+    public interface IContactDetailRepository
     {
         bool DeleteContactDetail(int contactDetailId);
         int AddContactDetail(ContactDetail contactDetail);

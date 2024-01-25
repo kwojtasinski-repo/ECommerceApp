@@ -1,18 +1,18 @@
 ﻿using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-    public class ContactDetailTypeRepository : GenericRepository<ContactDetailType>, IContactDetailTypeRepository
+    public class ContactDetailTypeRepository : IContactDetailTypeRepository
     {
-        public ContactDetailTypeRepository(Context context) : base(context)
+        private readonly Context _context;
+
+        public ContactDetailTypeRepository(Context context)
         {
+            _context = context;
         }
 
         public int AddContactDetailType(ContactDetailType contactDetailType)
@@ -24,7 +24,7 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public void DeleteContactDetailType(int contactDetailTypeId)
         {
-            var contactDetailType = GetById(contactDetailTypeId);
+            var contactDetailType = GetContactDetailTypeById(contactDetailTypeId);
 
             if (contactDetailType != null)
             {

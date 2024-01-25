@@ -7,10 +7,13 @@ using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-    public class CustomerRepository : GenericRepository<Customer>, ICustomerRepository
+    public class CustomerRepository : ICustomerRepository
     {
-        public CustomerRepository(Context context) : base(context)
+        private readonly Context _context;
+
+        public CustomerRepository(Context context)
         {
+            _context = context;
         }
 
         public bool DeleteCustomer(int customerId)
@@ -267,6 +270,12 @@ namespace ECommerceApp.Infrastructure.Repositories
                 .Include(inc => inc.Addresses)
                 .FirstOrDefault(c => c.Id == id && c.UserId == userId);
             return customer;
+        }
+
+        public Customer GetById(int customerId)
+        {
+            return _context.Customers
+                .FirstOrDefault(c => c.Id == customerId);
         }
     }
 }

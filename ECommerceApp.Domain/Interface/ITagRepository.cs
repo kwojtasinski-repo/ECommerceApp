@@ -4,13 +4,14 @@ using System.Linq;
 
 namespace ECommerceApp.Domain.Interface
 {
-    public interface ITagRepository : IGenericRepository<Tag>
+    public interface ITagRepository
     {
         void DeleteTag(int tagId);
         int AddTag(Tag tag);
-        Tag GetTagById(int tagId);
+        bool ExistsById(int tagId);
         IQueryable<Tag> GetAllTags();
         void UpdateTag(Tag tag);
         List<Tag> GetTagsByIds(IEnumerable<int> ids);
+        Tag GetTagById(int id);
     }
 }

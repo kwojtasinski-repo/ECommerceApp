@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace ECommerceApp.Domain.Interface
 {
-    public interface IOrderRepository : IGenericRepository<Order>
+    public interface IOrderRepository
     {
         bool DeleteOrder(int orderId);
         int AddOrder(Order order);

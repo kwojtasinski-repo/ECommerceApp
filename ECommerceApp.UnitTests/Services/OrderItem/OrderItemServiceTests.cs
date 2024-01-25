@@ -75,7 +75,7 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
         {
             var id = 1;
             var orderItem = CreateOrderItem(id, 1, "ab", 1);
-            _orderItemRepository.Setup(oi => oi.GetAll()).Returns(new List<Domain.Model.OrderItem> { orderItem }.AsQueryable());
+            _orderItemRepository.Setup(oi => oi.GetAllOrderItems()).Returns(new List<Domain.Model.OrderItem> { orderItem }.AsQueryable());
             var orderItemService = new OrderItemService(_orderItemRepository.Object, _mapper);
 
             var exists = orderItemService.OrderItemExists(id);
@@ -102,7 +102,7 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
 
             orderItemService.UpdateOrderItems(new List<OrderItemDto> { orderItem });
 
-            _orderItemRepository.Verify(oi => oi.UpdateRange(It.IsAny<IEnumerable<Domain.Model.OrderItem>>()), Times.Once);
+            _orderItemRepository.Verify(oi => oi.UpdateRange(It.IsAny<List<Domain.Model.OrderItem>>()), Times.Once);
         }
 
         [Fact]
@@ -112,7 +112,7 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
 
             orderItemService.UpdateOrderItems(new List<OrderItemDto> { });
 
-            _orderItemRepository.Verify(oi => oi.UpdateRange(It.IsAny<IEnumerable<Domain.Model.OrderItem>>()), Times.Never);
+            _orderItemRepository.Verify(oi => oi.UpdateRange(It.IsAny<List<Domain.Model.OrderItem>>()), Times.Never);
         }
 
         [Fact]
@@ -135,7 +135,7 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
             var userId = Guid.NewGuid().ToString();
             var quantity = 1;
             var orderItem = CreateOrderItem(id, itemId, userId, quantity);
-            _orderItemRepository.Setup(oi => oi.GetAll()).Returns(new List<Domain.Model.OrderItem> { orderItem }.AsQueryable());
+            _orderItemRepository.Setup(oi => oi.GetAllOrderItems()).Returns(new List<Domain.Model.OrderItem> { orderItem }.AsQueryable());
             var orderItemService = new OrderItemService(_orderItemRepository.Object, _mapper);
 
             orderItemService.AddOrderItem(itemId, userId);

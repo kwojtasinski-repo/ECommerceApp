@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace ECommerceApp.Domain.Interface
 {
-    public interface IItemRepository : IGenericRepository<Item>
+    public interface IItemRepository
     {
         void DeleteItem(int itemId);
         int AddItem(Item item);

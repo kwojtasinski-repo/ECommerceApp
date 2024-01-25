@@ -30,13 +30,13 @@ namespace ECommerceApp.Application.Services.ContactDetails
             }
 
             var entity = _mapper.Map<ContactDetailType>(model);
-            var id = _contactDetailTypeRepository.Add(entity);
+            var id = _contactDetailTypeRepository.AddContactDetailType(entity);
             return id;
         }
 
         public bool ContactDetailTypeExists(int id)
         {
-            var contactDetailType = _contactDetailTypeRepository.GetById(id);
+            var contactDetailType = _contactDetailTypeRepository.GetContactDetailTypeById(id);
             var exists = contactDetailType != null;
 
             if (exists)
@@ -49,13 +49,13 @@ namespace ECommerceApp.Application.Services.ContactDetails
 
         public ContactDetailTypeDto GetContactDetailType(int id)
         {
-            var contactDetailType = _contactDetailTypeRepository.GetById(id);
+            var contactDetailType = _contactDetailTypeRepository.GetContactDetailTypeById(id);
             return _mapper.Map<ContactDetailTypeDto>(contactDetailType);
         }
 
         public IEnumerable<ContactDetailTypeDto> GetContactDetailTypes(Expression<Func<ContactDetailType, bool>> expression)
         {
-            var contactDetailTypes = _contactDetailTypeRepository.GetAll().Where(expression);
+            var contactDetailTypes = _contactDetailTypeRepository.GetAllContactDetailTypes().Where(expression);
             var contactDetailTypesVm = contactDetailTypes.ProjectTo<ContactDetailTypeDto>(_mapper.ConfigurationProvider).ToList();
             return contactDetailTypesVm;
         }
@@ -67,7 +67,7 @@ namespace ECommerceApp.Application.Services.ContactDetails
                 throw new BusinessException($"{typeof(ContactDetailTypeDto).Name} cannot be null");
             }
 
-            var entity = _contactDetailTypeRepository.GetById(model.Id)
+            var entity = _contactDetailTypeRepository.GetContactDetailTypeById(model.Id)
                 ?? throw new BusinessException($"Contact detail with id '{model.Id}' was not found");
             entity.Name = model.Name;
             _contactDetailTypeRepository.UpdateContactDetailType(entity);

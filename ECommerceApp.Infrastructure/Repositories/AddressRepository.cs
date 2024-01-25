@@ -6,10 +6,13 @@ using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-    public class AddressRepository : GenericRepository<Address>, IAddressRepository
+    public class AddressRepository : IAddressRepository
     {
-        public AddressRepository(Context context) : base(context)
+        private readonly Context _context;
+
+        public AddressRepository(Context context)
         {
+            _context = context;
         }
 
         public int AddAddress(Address address)

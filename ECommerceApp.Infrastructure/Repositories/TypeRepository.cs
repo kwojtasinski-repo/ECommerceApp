@@ -1,16 +1,17 @@
 ﻿using ECommerceApp.Domain.Interface;
 using ECommerceApp.Infrastructure.Database;
-using System;
-using System.Collections.Generic;
+using Microsoft.EntityFrameworkCore;
 using System.Linq;
-using System.Text;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-    public class TypeRepository : GenericRepository<Domain.Model.Type>, ITypeRepository
+    public class TypeRepository : ITypeRepository
     {
-        public TypeRepository(Context context) : base(context)
+        private readonly Context _context;
+
+        public TypeRepository(Context context)
         {
+            _context = context;
         }
 
         public int AddType(Domain.Model.Type type)
@@ -29,6 +30,11 @@ namespace ECommerceApp.Infrastructure.Repositories
                 _context.Types.Remove(type);
                 _context.SaveChanges();
             }
+        }
+
+        public bool ExistsById(int id)
+        {
+            return _context.Types.AsNoTracking().Any(type => type.Id == id);
         }
 
         public IQueryable<Domain.Model.Type> GetAllTypes()

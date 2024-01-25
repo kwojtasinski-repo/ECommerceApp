@@ -36,7 +36,7 @@ namespace ECommerceApp.Application.Services.Brands
             }
 
             var entity = _mapper.Map<Brand>(brandDto);
-            var id = _brandRepository.Add(entity);
+            var id = _brandRepository.AddBrand(entity);
             return id;
         }
 
@@ -47,7 +47,7 @@ namespace ECommerceApp.Application.Services.Brands
                 return false;
             }
 
-            _brandRepository.Delete(id);
+            _brandRepository.DeleteBrand(id);
             return true;
         }
 
@@ -86,7 +86,7 @@ namespace ECommerceApp.Application.Services.Brands
 
             var entity = _brandRepository.GetBrandById(brandDto.Id);
             entity.Name = brandDto.Name;
-            _brandRepository.Update(entity);
+            _brandRepository.UpdateBrand(entity);
         }
 
         public IEnumerable<BrandDto> GetAllBrands(Expression<Func<Brand, bool>> expression)

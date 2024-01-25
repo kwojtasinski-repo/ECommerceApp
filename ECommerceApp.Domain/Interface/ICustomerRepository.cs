@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace ECommerceApp.Domain.Interface
 {
-    public interface ICustomerRepository : IGenericRepository<Customer>
+    public interface ICustomerRepository
     {
         bool DeleteCustomer(int customerId);
         int AddCustomer(Customer customer);
@@ -16,5 +16,6 @@ namespace ECommerceApp.Domain.Interface
         Customer GetCustomerById(int id, string userId);
         bool CustomerExists(int id, string userId);
         List<Customer> GetCustomersByUserId(string userId);
+        Customer GetById(int customerId);
     }
 }

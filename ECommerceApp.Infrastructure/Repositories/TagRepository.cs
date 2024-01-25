@@ -7,10 +7,13 @@ using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-    public class TagRepository : GenericRepository<Tag>, ITagRepository
+    public class TagRepository : ITagRepository
     {
-        public TagRepository(Context context) : base(context)
+        private readonly Context _context;
+
+        public TagRepository(Context context)
         {
+            _context = context;
         }
 
         public int AddTag(Tag tag)
@@ -37,10 +40,9 @@ namespace ECommerceApp.Infrastructure.Repositories
             return tags;
         }
 
-        public Tag GetTagById(int tagId)
+        public bool ExistsById(int tagId)
         {
-            var tag = _context.Tags.Where(t => t.Id == tagId).FirstOrDefault();
-            return tag;
+            return _context.Tags.AsNoTracking().Any(t => t.Id == tagId);
         }
 
         public List<Tag> GetTagsByIds(IEnumerable<int> ids)
@@ -54,6 +56,11 @@ namespace ECommerceApp.Infrastructure.Repositories
         {
             _context.Tags.Update(tag);
             _context.SaveChanges();
+        }
+
+        public Tag GetTagById(int id)
+        {
+            return _context.Tags.FirstOrDefault(t => t.Id == id);
         }
     }
 }

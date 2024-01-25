@@ -59,21 +59,21 @@ namespace ECommerceApp.Application.Services.Orders
 
         public OrderItemDto GetOrderItemDetails(int id)
         {
-            var orderItem = _orderItemRepository.GetAll().Include(i => i.Item).Where(oi => oi.Id == id).AsNoTracking().FirstOrDefault();
+            var orderItem = _orderItemRepository.GetAllOrderItems().Include(i => i.Item).Where(oi => oi.Id == id).AsNoTracking().FirstOrDefault();
             var orderItemVm = _mapper.Map<OrderItemDto>(orderItem);
             return orderItemVm;
         }
 
         public IEnumerable<OrderItemDto> GetOrderItems(Expression<Func<OrderItem, bool>> expression)
         {
-            var orderItems = _orderItemRepository.GetAll().Include(i => i.Item).Where(expression).AsNoTracking().ToList();
+            var orderItems = _orderItemRepository.GetAllOrderItems().Include(i => i.Item).Where(expression).AsNoTracking().ToList();
             var orderItemsToShow = _mapper.Map<List<OrderItemDto>>(orderItems);
             return orderItemsToShow;
         }
 
         public IEnumerable<OrderItemDto> GetOrderItemsForRealization(string userId)
         {
-            var orderItems = _orderItemRepository.GetAll().Include(i => i.Item).Where(oi => oi.UserId == userId && oi.OrderId == null).AsNoTracking().ToList();
+            var orderItems = _orderItemRepository.GetAllOrderItems().Include(i => i.Item).Where(oi => oi.UserId == userId && oi.OrderId == null).AsNoTracking().ToList();
             var orderItemsToShow = _mapper.Map<List<OrderItemDto>>(orderItems);
             return orderItemsToShow;
         }
@@ -100,7 +100,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public bool OrderItemExists(int id)
         {
-            return _orderItemRepository.GetAll().AsNoTracking().Any(oi => oi.Id == id);
+            return _orderItemRepository.GetAllOrderItems().AsNoTracking().Any(oi => oi.Id == id);
         }
 
         public void UpdateOrderItem(OrderItemDto model)
@@ -110,7 +110,7 @@ namespace ECommerceApp.Application.Services.Orders
                 throw new BusinessException($"{typeof(OrderItemDto).Name} cannot be null");
             }
 
-            var orderItem = _orderItemRepository.GetById(model.Id) ?? throw new BusinessException($"OrderItem with id '{model.Id}' was not found");
+            var orderItem = _orderItemRepository.GetOrderItemById(model.Id) ?? throw new BusinessException($"OrderItem with id '{model.Id}' was not found");
             orderItem.ItemOrderQuantity = model.ItemOrderQuantity;
             if (model.OrderId.HasValue)
             {
@@ -139,7 +139,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public int AddOrderItem(int itemId, string userId)
         {
-            var orderItemExist = _orderItemRepository.GetAll().Where(oi => oi.ItemId == itemId && oi.UserId == userId && oi.OrderId == null).FirstOrDefault();
+            var orderItemExist = _orderItemRepository.GetAllOrderItems().Where(oi => oi.ItemId == itemId && oi.UserId == userId && oi.OrderId == null).FirstOrDefault();
             int id;
             if (orderItemExist != null)
             {
@@ -207,13 +207,13 @@ namespace ECommerceApp.Application.Services.Orders
 
         public IQueryable<OrderItem> GetOrderItems()
         {
-            var orderItems = _orderItemRepository.GetAll();
+            var orderItems = _orderItemRepository.GetAllOrderItems();
             return orderItems;
         }
 
         public IEnumerable<OrderItemDto> GetOrderItemsByItemId(int itemId)
         {
-            var orderItems = _orderItemRepository.GetAll()
+            var orderItems = _orderItemRepository.GetAllOrderItems()
                                   .Where(oi => oi.ItemId == itemId)
                                   .AsNoTracking()
                                   .ToList();
@@ -227,7 +227,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public IEnumerable<int> GetOrderItemsIdsForRealization(string userId)
         {
-            return _orderItemRepository.GetAll()
+            return _orderItemRepository.GetAllOrderItems()
                 .Where(oi => oi.UserId == userId && oi.OrderId == null)
                 .AsNoTracking()
                 .Select(oi => oi.Id)

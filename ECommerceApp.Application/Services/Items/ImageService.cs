@@ -59,7 +59,7 @@ namespace ECommerceApp.Application.Services.Items
 
             if (objectVm.ItemId.HasValue)
             {
-                var imageCount = _imageRepository.GetAll().Where(im => im.ItemId == objectVm.ItemId.Value).AsNoTracking().Select(i => i.Id).ToList().Count;
+                var imageCount = _imageRepository.GetAllImages().Where(im => im.ItemId == objectVm.ItemId.Value).AsNoTracking().Select(i => i.Id).ToList().Count;
                 var count = imageCount + 1;
 
                 if (count >= ALLOWED_IMAGES_COUNT)
@@ -83,27 +83,27 @@ namespace ECommerceApp.Application.Services.Items
                 image.SourcePath = fileDir.SourcePath;
             }
 
-            var id = _imageRepository.Add(image);
+            var id = _imageRepository.AddImage(image).GetAwaiter().GetResult();
 
             return id;
         }
 
         public bool Delete(int id)
         {
-            var image = _imageRepository.GetById(id);
+            var image = _imageRepository.GetImageById(id).GetAwaiter().GetResult();
             if (image == null)
             {
                 return false;
             }
 
-            var deleted = _imageRepository.Delete(image);
+            var deleted = _imageRepository.DeleteImage(image);
             _fileStore.DeleteFile(image.SourcePath);
             return deleted;
         }
 
         public GetImageVm Get(int id)
         {
-            var image = _imageRepository.GetById(id);
+            var image = _imageRepository.GetImageById(id).GetAwaiter().GetResult();
 
             GetImageVm imageVm = null;
 
@@ -123,7 +123,7 @@ namespace ECommerceApp.Application.Services.Items
 
         public List<GetImageVm> GetAll()
         {
-            var images = _imageRepository.GetAll().ToList();
+            var images = _imageRepository.GetAllImages().ToList();
 
             var imagesVm = new List<GetImageVm>();
 
@@ -144,7 +144,7 @@ namespace ECommerceApp.Application.Services.Items
 
         public List<GetImageVm> GetAll(string searchName)
         {
-            var images = _imageRepository.GetAll().Where(i => i.Name.Contains(searchName)).ToList();
+            var images = _imageRepository.GetAllImages().Where(i => i.Name.Contains(searchName)).ToList();
 
             var imagesVm = new List<GetImageVm>();
 
@@ -182,7 +182,7 @@ namespace ECommerceApp.Application.Services.Items
 
             if (imageVm.ItemId.HasValue)
             {
-                var imageCount = _imageRepository.GetAll().Where(im => im.ItemId == imageVm.ItemId.Value).AsNoTracking().Select(i => i.Id).ToList().Count;
+                var imageCount = _imageRepository.GetAllImages().Where(im => im.ItemId == imageVm.ItemId.Value).AsNoTracking().Select(i => i.Id).ToList().Count;
                 var imagesToAddCount = imageVm.Files.Count;
                 var count = imagesToAddCount + imageCount;
 
@@ -209,14 +209,14 @@ namespace ECommerceApp.Application.Services.Items
                 images.Add(img);
             }
 
-            var ids = _imageRepository.AddRange(images);
+            var ids = _imageRepository.AddImages(images);
 
             return ids;
         }
 
         public List<GetImageVm> GetImagesByItemId(int itemId)
         {
-            var images = _imageRepository.GetAll().Where(i => i.ItemId == itemId).ToList();
+            var images = _imageRepository.GetAllImages().Where(i => i.ItemId == itemId).ToList();
 
             var imagesVm = new List<GetImageVm>();
             foreach (var image in images)
@@ -271,7 +271,7 @@ namespace ECommerceApp.Application.Services.Items
             ValidImages(files);
             if (dto.ItemId.HasValue)
             {
-                var imageCount = _imageRepository.GetAll().Where(im => im.ItemId == dto.ItemId.Value).AsNoTracking().Select(i => i.Id).ToList().Count;
+                var imageCount = _imageRepository.GetAllImages().Where(im => im.ItemId == dto.ItemId.Value).AsNoTracking().Select(i => i.Id).ToList().Count;
                 var imagesToAddCount = files.Count();
                 var count = imagesToAddCount + imageCount;
 
@@ -298,7 +298,7 @@ namespace ECommerceApp.Application.Services.Items
                 images.Add(img);
             }
 
-            var ids = _imageRepository.AddRange(images);
+            var ids = _imageRepository.AddImages(images);
 
             return ids;
         }

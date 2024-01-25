@@ -59,7 +59,6 @@ namespace ECommerceApp.IntegrationTests.API
             var refund = new CreateRefundVm() { OrderId = 5, Reason = "ReasonTest" };
 
             var response = await client.Request("api/refunds")
-                .AllowAnyHttpStatus()
                 .PostJsonAsync(refund);
 
             var id = JsonConvert.DeserializeObject<int>(await response.ResponseMessage.Content.ReadAsStringAsync());
@@ -86,7 +85,6 @@ namespace ECommerceApp.IntegrationTests.API
             var client = await _factory.GetAuthenticatedClient();
             var refund = new CreateRefundVm() { OrderId = 5, Reason = "ReasonTest" };
             var id = await client.Request("api/refunds")
-                .AllowAnyHttpStatus()
                 .PostJsonAsync(refund)
                 .ReceiveJson<int>();
             refund.Id = id;
@@ -94,11 +92,9 @@ namespace ECommerceApp.IntegrationTests.API
             refund.Reason = reason;
 
             var response = await client.Request("api/refunds")
-                .AllowAnyHttpStatus()
                 .PutJsonAsync(refund);
 
             var refundUpdated = await client.Request($"api/refunds/{id}")
-                .AllowAnyHttpStatus()
                 .GetJsonAsync<RefundDetailsVm>();
             response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
             refundUpdated.ShouldNotBeNull();

@@ -8,10 +8,13 @@ using System.Linq.Expressions;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-    public class ContactDetailRepository : GenericRepository<ContactDetail>, IContactDetailRepository
+    public class ContactDetailRepository : IContactDetailRepository
     {
-        public ContactDetailRepository(Context context) : base(context)
+        private readonly Context _context;
+
+        public ContactDetailRepository(Context context)
         {
+            _context = context;
         }
 
         public int AddContactDetail(ContactDetail contactDetail)

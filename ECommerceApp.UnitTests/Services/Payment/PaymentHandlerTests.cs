@@ -151,7 +151,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
 
             paymentHandler.PayIssuedPayment(paymentVm, order);
 
-            _paymentRepository.Verify(p => p.Update(payment), times: Times.Once);
+            _paymentRepository.Verify(p => p.UpdatePayment(payment), times: Times.Once);
         }
 
         [Fact]
@@ -192,7 +192,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
             paymentHandler.HandlePaymentChangesOnOrder(dto, order);
 
             _paymentRepository.Verify(p => p.AddPayment(It.IsAny<Domain.Model.Payment>()), times: Times.Never);
-            _paymentRepository.Verify(p => p.Delete(It.IsAny<int>()), times: Times.Never);
+            _paymentRepository.Verify(p => p.DeletePayment(It.IsAny<int>()), times: Times.Never);
         }
 
         [Fact]
@@ -204,7 +204,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
             paymentHandler.HandlePaymentChangesOnOrder(null, order);
 
             _paymentRepository.Verify(p => p.AddPayment(It.IsAny<Domain.Model.Payment>()), times: Times.Never);
-            _paymentRepository.Verify(p => p.Delete(It.IsAny<int>()), times: Times.Never);
+            _paymentRepository.Verify(p => p.DeletePayment(It.IsAny<int>()), times: Times.Never);
         }
 
         [Fact]
@@ -244,7 +244,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
 
             paymentHandler.HandlePaymentChangesOnOrder(null, order);
 
-            _paymentRepository.Verify(p => p.Delete(paymentId), times: Times.Once);
+            _paymentRepository.Verify(p => p.DeletePayment(paymentId), times: Times.Once);
             order.IsPaid.Should().BeFalse();
             order.Payment.Should().BeNull();
         }
@@ -292,7 +292,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
 
         private Domain.Model.Payment AddPayment(Domain.Model.Payment payment)
         {
-            _paymentRepository.Setup(p => p.GetById(payment.Id)).Returns(payment);
+            _paymentRepository.Setup(p => p.GetPaymentById(payment.Id)).Returns(payment);
             _paymentRepository.Setup(p => p.GetPaymentByOrderId(payment.OrderId)).Returns(payment);
             return payment;
         }

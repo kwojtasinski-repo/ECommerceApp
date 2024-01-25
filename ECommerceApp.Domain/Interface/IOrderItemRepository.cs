@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace ECommerceApp.Domain.Interface
 {
-    public interface IOrderItemRepository : IGenericRepository<OrderItem>
+    public interface IOrderItemRepository
     {
         void DeleteOrderItem(int orderItemId);
         int AddOrderItem(OrderItem orderItem);
@@ -12,5 +12,6 @@ namespace ECommerceApp.Domain.Interface
         IQueryable<OrderItem> GetAllOrderItems();
         void UpdateOrderItem(OrderItem orderItem);
         List<OrderItem> GetOrderItemsToRealization(IEnumerable<int> ids);
+        void UpdateRange(List<OrderItem> orderItems);
     }
 }

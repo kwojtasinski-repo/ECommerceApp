@@ -43,7 +43,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
             var payment = new AddPaymentDto { CurrencyId = currencyId, OrderId = orderId };
             var cost = 100M;
             var order = CreateOrder(orderId);
-            _orderRepository.Setup(o => o.GetById(orderId)).Returns(_mapper.Map<Domain.Model.Order>(order));
+            _orderRepository.Setup(o => o.GetOrderById(orderId)).Returns(_mapper.Map<Domain.Model.Order>(order));
             var rate = CreateCurrencyRate(currencyId);
             _currencyRateService.Setup(cr => cr.GetLatestRate(currencyId)).Returns(rate);
             Domain.Model.Payment paymentAdded = null;
@@ -55,13 +55,13 @@ namespace ECommerceApp.UnitTests.Services.Payment
 
             paymentService.AddPayment(payment);
 
-            var orderUpdated = _orderRepository.Object.GetById(orderId);
+            var orderUpdated = _orderRepository.Object.GetOrderById(orderId);
             orderUpdated.IsPaid.Should().BeTrue();
             paymentAdded.Cost.Should().BeLessThan(cost);
             paymentAdded.Cost.Should().Be(cost/rate.Rate);
             paymentAdded.CurrencyId.Should().Be(currencyId);
             _paymentRepository.Verify(p => p.AddPayment(It.IsAny<Domain.Model.Payment>()), Times.Once);
-            _orderRepository.Verify(p => p.Update(It.IsAny<Domain.Model.Order>()), Times.Once);
+            _orderRepository.Verify(p => p.UpdatedOrder(It.IsAny<Domain.Model.Order>()), Times.Once);
         }
 
         [Fact]

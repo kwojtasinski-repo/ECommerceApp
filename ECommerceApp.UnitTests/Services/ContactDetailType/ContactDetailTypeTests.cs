@@ -28,7 +28,7 @@ namespace ECommerceApp.UnitTests.Services.ContactDetailType
 
             contactDetailTypeService.AddContactDetailType(contactDetailType);
 
-            _contactDetailTypeRepository.Verify(cdt => cdt.Add(It.IsAny<Domain.Model.ContactDetailType>()), Times.Once);
+            _contactDetailTypeRepository.Verify(cdt => cdt.AddContactDetailType(It.IsAny<Domain.Model.ContactDetailType>()), Times.Once);
         }
 
         [Fact]
@@ -36,7 +36,7 @@ namespace ECommerceApp.UnitTests.Services.ContactDetailType
         {
             int id = 1;
             var contactDetailType = CreateContactDetailType(id);
-            _contactDetailTypeRepository.Setup(cdt => cdt.GetById(id)).Returns(contactDetailType);
+            _contactDetailTypeRepository.Setup(cdt => cdt.GetContactDetailTypeById(id)).Returns(contactDetailType);
             var contactDetailTypeService = new ContactDetailTypeService(_contactDetailTypeRepository.Object, _mapper);
             
             var exists = contactDetailTypeService.ContactDetailTypeExists(id);

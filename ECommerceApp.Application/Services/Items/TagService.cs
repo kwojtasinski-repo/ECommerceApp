@@ -48,13 +48,13 @@ namespace ECommerceApp.Application.Services.Items
 
         public TagDto GetTagById(int id)
         {
-            var tag = _tagRepository.GetById(id);
+            var tag = _tagRepository.GetTagById(id);
             return _mapper.Map<TagDto>(tag);
         }
 
         public TagDetailsVm GetTagDetails(int id)
         {
-            var tag = _tagRepository.GetAll().Include(it => it.ItemTags)
+            var tag = _tagRepository.GetAllTags().Include(it => it.ItemTags)
                 .ThenInclude(i => i.Item)
                 .Where(t => t.Id == id).FirstOrDefault();
             var tagVm = _mapper.Map<TagDetailsVm>(tag);
@@ -63,7 +63,7 @@ namespace ECommerceApp.Application.Services.Items
 
         public IEnumerable<TagDto> GetTags(Expression<Func<Tag, bool>> expression)
         {
-            var tags = _tagRepository.GetAll().Where(expression)
+            var tags = _tagRepository.GetAllTags().Where(expression)
                .ProjectTo<TagDto>(_mapper.ConfigurationProvider);
             var tagsToShow = tags.ToList();
 
@@ -91,15 +91,7 @@ namespace ECommerceApp.Application.Services.Items
 
         public bool TagExists(int id)
         {
-            var tag = _tagRepository.GetById(id);
-            var exists = tag != null;
-
-            if (exists)
-            {
-                _tagRepository.DetachEntity(tag);
-            }
-
-            return exists;
+            return _tagRepository.ExistsById(id);
         }
 
         public void UpdateTag(TagDto model)

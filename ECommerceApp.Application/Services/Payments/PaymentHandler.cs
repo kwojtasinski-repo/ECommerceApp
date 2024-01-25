@@ -66,7 +66,7 @@ namespace ECommerceApp.Application.Services.Payments
 
             if (dto is null && order.PaymentId.HasValue)
             {
-                _paymentRepository.Delete(order.PaymentId.Value);
+                _paymentRepository.DeletePayment(order.PaymentId.Value);
                 order.PaymentId = null;
                 order.Payment = null;
                 order.IsPaid = false;
@@ -127,14 +127,14 @@ namespace ECommerceApp.Application.Services.Payments
                 throw new BusinessException($"Payment with id '{model.Id}' was already paid");
             }
 
-            var payment = _paymentRepository.GetById(model.Id)
+            var payment = _paymentRepository.GetPaymentById(model.Id)
                 ?? throw new BusinessException($"Payment with id '{model.Id}' was not found");
             payment.State = PaymentState.Paid;
             payment.CurrencyId = model.CurrencyId;
             payment.Cost = CalculateCost(payment.Cost, model.CurrencyId);
             payment.DateOfOrderPayment = DateTime.Now;
             payment.CustomerId = order.CustomerId;
-            _paymentRepository.Update(payment);
+            _paymentRepository.UpdatePayment(payment);
             order.IsPaid = true;
             order.PaymentId = payment.Id;
             return payment.Id;

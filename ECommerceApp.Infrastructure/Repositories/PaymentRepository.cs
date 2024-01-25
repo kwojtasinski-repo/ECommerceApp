@@ -1,5 +1,4 @@
-﻿using ECommerceApp.Application.ViewModels.Order;
-using ECommerceApp.Domain.Interface;
+﻿using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
@@ -7,10 +6,13 @@ using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-    public class PaymentRepository : GenericRepository<Payment>, IPaymentRepository
+    public class PaymentRepository : IPaymentRepository
     {
-        public PaymentRepository(Context context) : base(context)
+        private readonly Context _context;
+
+        public PaymentRepository(Context context)
         {
+            _context = context;
         }
 
         public int AddPayment(Payment payment)
@@ -20,15 +22,28 @@ namespace ECommerceApp.Infrastructure.Repositories
             return payment.Id;
         }
 
-        public void DeletePayment(int paymentId)
+        public bool DeletePayment(int paymentId)
         {
             var payment = _context.Payments.Find(paymentId);
 
-            if (payment != null)
+            if (payment is null)
             {
-                _context.Payments.Remove(payment);
-                _context.SaveChanges();
+                return false;
             }
+
+            _context.Payments.Remove(payment);
+            return _context.SaveChanges() > 0;
+        }
+
+        public bool DeletePayment(Payment payment)
+        {
+            if (payment is null)
+            {
+                return false;
+            }
+
+            _context.Payments.Remove(payment);
+            return _context.SaveChanges() > 0;
         }
 
         public IQueryable<Payment> GetAllPayments()

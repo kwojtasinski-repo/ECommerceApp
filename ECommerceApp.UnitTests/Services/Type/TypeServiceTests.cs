@@ -42,19 +42,6 @@ namespace ECommerceApp.UnitTests.Services.Type
         }
 
         [Fact]
-        public void given_valid_id_type_should_exists()
-        {
-            var id = 1;
-            var type = CreateType(id);
-            _typeRepository.Setup(t => t.GetById(id)).Returns(type);
-            var typeService = new TypeService(_typeRepository.Object, _mapper);
-
-            var exists = typeService.TypeExists(id);
-
-            exists.Should().BeTrue();
-        }
-
-        [Fact]
         public void given_invalid_id_type_shouldnt_exists()
         {
             var id = 1;

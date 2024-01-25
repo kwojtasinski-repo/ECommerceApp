@@ -28,7 +28,7 @@ namespace ECommerceApp.UnitTests.Services.Brand
 
             brandService.AddBrand(brand);
 
-            _brandRepository.Verify(b => b.Add(It.IsAny<Domain.Model.Brand>()), Times.Once);
+            _brandRepository.Verify(b => b.AddBrand(It.IsAny<Domain.Model.Brand>()), Times.Once);
         }
 
         [Fact]

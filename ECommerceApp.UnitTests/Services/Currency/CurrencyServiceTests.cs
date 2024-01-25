@@ -89,7 +89,6 @@ namespace ECommerceApp.UnitTests.Services.Currency
         {
             var currency = new Domain.Model.Currency { Id = currencyDto.Id, Code = currencyDto.Code, Description = currencyDto.Description };
             _currencyRepository.Setup(c => c.GetById(currency.Id)).Returns(currency);
-            _currencyRepository.Setup(c => c.GetByIdAsync(currency.Id)).ReturnsAsync(currency);
             return currencyDto;
         }
 

@@ -60,7 +60,6 @@ namespace ECommerceApp.IntegrationTests.API
             var payment = new AddPaymentDto() { CurrencyId = 1, OrderId = 3 };
 
             var response = await client.Request("api/payments")
-                .AllowAnyHttpStatus()
                 .PostJsonAsync(payment);
 
             var id = JsonConvert.DeserializeObject<int>(await response.ResponseMessage.Content.ReadAsStringAsync());

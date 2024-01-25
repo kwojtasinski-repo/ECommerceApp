@@ -103,7 +103,7 @@ namespace ECommerceApp.UnitTests.Services.Address
             var userId = Guid.NewGuid().ToString();
             _contextAccessor.SetUserId(userId);
             var address = CreateAddress(id, customerId, userId);
-            _addressRepository.Setup(a => a.GetAll()).Returns(new List<Domain.Model.Address> { address }.AsQueryable());
+            _addressRepository.Setup(a => a.GetAllAddresses()).Returns(new List<Domain.Model.Address> { address }.AsQueryable());
             var addressService = new AddressService(_addressRepository.Object, _customerRepository.Object, _mapper, _contextAccessor);
 
             var exists = addressService.AddressExists(id);

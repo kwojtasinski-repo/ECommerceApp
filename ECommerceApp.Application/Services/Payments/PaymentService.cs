@@ -2,7 +2,6 @@
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.Domain.Interface;
@@ -40,12 +39,12 @@ namespace ECommerceApp.Application.Services.Payments
             {
                 throw new BusinessException($"{typeof(AddPaymentDto).Name} cannot be null");
             }
-            var order = _orderRepository.GetById(model.OrderId) ??
+            var order = _orderRepository.GetOrderById(model.OrderId) ??
                 throw new BusinessException($"Order with id '{model.OrderId}' was not found"); ;
             var paymentId = _paymentHandler.CreatePayment(model, order);
             order.IsPaid = true;
             order.PaymentId = paymentId;
-            _orderRepository.Update(order);
+            _orderRepository.UpdatedOrder(order);
             return paymentId;
         }
 
@@ -56,22 +55,22 @@ namespace ECommerceApp.Application.Services.Payments
                 throw new BusinessException($"{typeof(PaymentVm).Name} cannot be null");
             }
 
-            var order = _orderRepository.GetById(model.OrderId) ??
+            var order = _orderRepository.GetOrderById(model.OrderId) ??
                 throw new BusinessException($"Order with id '{model.OrderId}' was not found");
             var paymentId = _paymentHandler.PayIssuedPayment(model, order);
-            _orderRepository.Update(order);
+            _orderRepository.UpdatedOrder(order);
             return paymentId;
         }
 
         public bool DeletePayment(int id)
         {
-            var payment = _repo.GetById(id);
-            var order = _orderRepository.GetById(payment.OrderId) ??
+            var payment = _repo.GetPaymentById(id);
+            var order = _orderRepository.GetOrderById(payment.OrderId) ??
                 throw new BusinessException($"Order with id '{payment.OrderId}' was not found"); ;
             order.IsPaid = false;
             order.PaymentId = null;
-            _orderRepository.Update(order);
-            return _repo.Delete(payment);
+            _orderRepository.UpdatedOrder(order);
+            return _repo.DeletePayment(payment.Id);
         }
 
         public PaymentVm GetPaymentById(int id)
@@ -90,7 +89,7 @@ namespace ECommerceApp.Application.Services.Payments
 
         public IEnumerable<PaymentDto> GetPayments()
         {
-            var payments = _repo.GetAll()
+            var payments = _repo.GetAllPayments()
                 .Include(p => p.Currency)
                 .Select(p => new Payment
                 {
@@ -112,7 +111,7 @@ namespace ECommerceApp.Application.Services.Payments
 
         public IEnumerable<PaymentDto> GetUserPayments(string userId)
         {
-            var payments = _repo.GetAll()
+            var payments = _repo.GetAllPayments()
                 .Include(c => c.Customer)
                 .Include(p => p.Currency)
                 .Where(p => p.Customer.UserId == userId)
@@ -184,7 +183,7 @@ namespace ECommerceApp.Application.Services.Payments
         public PaymentDetailsDto GetPaymentDetails(int id)
         {
             var userId = _httpContextAccessor.GetUserId();
-            var payment = _repo.GetAll().Include(c => c.Customer)
+            var payment = _repo.GetAllPayments().Include(c => c.Customer)
                                         .Include(o => o.Order)
                                         .Include(c => c.Currency)
                                         .Where(p => p.Customer.UserId == userId && p.Id == id)
@@ -231,7 +230,7 @@ namespace ECommerceApp.Application.Services.Payments
                 return vm;
             }
 
-            var order = _orderRepository.GetById(orderId);
+            var order = _orderRepository.GetOrderById(orderId);
             var customer = _customerService.GetCustomerInformationById(order.CustomerId);
             var payment = new Payment
             {

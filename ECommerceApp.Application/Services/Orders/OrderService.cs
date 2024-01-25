@@ -55,11 +55,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public OrderDto Get(int id)
         {
-            var order = _orderRepository.GetById(id);
-            if (order != null)
-            {
-                _orderRepository.DetachEntity(order);
-            }
+            var order = _orderRepository.GetOrderById(id);
             var orderVm = _mapper.Map<OrderDto>(order);
             return orderVm;
         }
@@ -72,7 +68,7 @@ namespace ECommerceApp.Application.Services.Orders
             }
 
             var order = _mapper.Map<Order>(vm);
-            _orderRepository.Update(order);
+            _orderRepository.UpdatedOrder(order);
         }
 
         public int AddOrder(AddOrderDto model)
@@ -97,7 +93,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public void DeleteRefundFromOrder(int id)
         {
-            var order = _orderRepository.GetAll()
+            var order = _orderRepository.GetAllOrders()
                                         .Include(oi => oi.OrderItems)
                                         .Where(r => r.RefundId == id)
                                         .FirstOrDefault()
@@ -109,12 +105,12 @@ namespace ECommerceApp.Application.Services.Orders
                 oi.RefundId = null;
             }
 
-            _orderRepository.Update(order);
+            _orderRepository.UpdatedOrder(order);
         }
 
         public void DeleteCouponUsedFromOrder(int orderId, int couponUsedId)
         {
-            var order = _orderRepository.GetAll().Include(oi => oi.OrderItems).Where(o => o.Id == orderId).FirstOrDefault()
+            var order = _orderRepository.GetAllOrders().Include(oi => oi.OrderItems).Where(o => o.Id == orderId).FirstOrDefault()
                 ?? throw new BusinessException("Given invalid id");
             if (order.IsPaid)
             {
@@ -130,7 +126,7 @@ namespace ECommerceApp.Application.Services.Orders
             var coupon = _couponService.GetCouponFirstOrDefault(c => c.CouponUsedId == couponUsedId)
                 ?? throw new BusinessException("Given invalid couponUsedId");
             order.Cost /= (1 - (decimal)coupon.Discount / 100);
-            _orderRepository.Update(order);
+            _orderRepository.UpdatedOrder(order);
         }
 
         public ListForOrderVm GetAllOrders(int pageSize, int pageNo, string searchString)
@@ -171,7 +167,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public void AddCouponUsedToOrder(int orderId, int couponUsedId)
         {
-            var order = _orderRepository.GetAll().Include(oi => oi.OrderItems).Where(o => o.Id == orderId).FirstOrDefault()
+            var order = _orderRepository.GetAllOrders().Include(oi => oi.OrderItems).Where(o => o.Id == orderId).FirstOrDefault()
                 ?? throw new BusinessException("Cannot add coupon if order not exists");
             
             var coupon = _couponService.GetCouponFirstOrDefault(c => c.CouponUsedId == couponUsedId)
@@ -192,7 +188,7 @@ namespace ECommerceApp.Application.Services.Orders
                 }
             }
             order.CouponUsedId = couponUsedId;
-            _orderRepository.Update(order);
+            _orderRepository.UpdatedOrder(order);
         }
 
         public int AddCouponToOrder(int couponId, NewOrderVm order)
@@ -340,7 +336,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public void AddRefundToOrder(int orderId, int refundId)
         {
-            var order = _orderRepository.GetAll()
+            var order = _orderRepository.GetAllOrders()
                 .Include(oi => oi.OrderItems)
                 .Where(o => o.Id == orderId && o.IsPaid && o.IsDelivered).FirstOrDefault() 
                 ?? throw new BusinessException($"Order with id {orderId} not exists");
@@ -349,14 +345,14 @@ namespace ECommerceApp.Application.Services.Orders
             {
                 oi.RefundId = refundId;
             }
-            _orderRepository.Update(order);
+            _orderRepository.UpdatedOrder(order);
         }
 
         public ListForOrderVm GetAllOrdersPaid(int pageSize, int pageNo, string searchString)
         {
             ValidatePageSizeAndPageNo(pageSize, pageNo);
 
-            var orders = _orderRepository.GetAll().Where(o => o.IsPaid == true && o.IsDelivered == false)
+            var orders = _orderRepository.GetAllOrders().Where(o => o.IsPaid == true && o.IsDelivered == false)
                             .Where(o => o.Number.StartsWith(searchString))
                             .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider);
 
@@ -376,11 +372,11 @@ namespace ECommerceApp.Application.Services.Orders
 
         public void DispatchOrder(int orderId)
         {
-            var order = _orderRepository.GetAll().Where(o => o.Id == orderId).FirstOrDefault(o => o.IsDelivered == false && o.IsPaid == true)
+            var order = _orderRepository.GetAllOrders().Where(o => o.Id == orderId).FirstOrDefault(o => o.IsDelivered == false && o.IsPaid == true)
                 ?? throw new BusinessException($"Order with id {orderId} not found, check your order if is not delivered and is paid");
             order.IsDelivered = true;
             order.Delivered = DateTime.Now;
-            _orderRepository.Update(order);
+            _orderRepository.UpdatedOrder(order);
         }
 
         public OrderDto GetOrderByIdReadOnly(int id)
@@ -534,7 +530,7 @@ namespace ECommerceApp.Application.Services.Orders
 
             if (orderItemsToAdd.Any())
             {
-                var items = _itemRepository.GetAll().Where(i => orderItemsToAdd.Select(it => it.ItemId).Contains(i.Id)).ToList();
+                var items = _itemRepository.GetAllItems().Where(i => orderItemsToAdd.Select(it => it.ItemId).Contains(i.Id)).ToList();
                 foreach(var item in orderItemsToAdd)
                 {
                     var itemExists = items.FirstOrDefault(i => i.Id == item.ItemId);
@@ -558,7 +554,7 @@ namespace ECommerceApp.Application.Services.Orders
             order.CalculateCost();
             _couponHandler.HandleCouponChangesOnOrder(coupon, order, new HandleCouponChangesDto(dto));
             _paymentHandler.HandlePaymentChangesOnOrder(dto.Payment, order);
-            _orderRepository.Update(order);
+            _orderRepository.UpdatedOrder(order);
             orderItemsToRemove.ForEach(oi => _orderItemService.DeleteOrderItem(oi.Id));
             return _mapper.Map<OrderDetailsVm>(order);
         }

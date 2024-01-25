@@ -7,10 +7,15 @@ using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-    public class OrderItemRepository : GenericRepository<OrderItem>, IOrderItemRepository
+    public class OrderItemRepository : IOrderItemRepository
     {
-        public OrderItemRepository(Context context) : base(context)
+        private readonly Context _context;
+        private readonly IGenericRepository<OrderItem> _repository;
+
+        public OrderItemRepository(Context context, IGenericRepository<OrderItem> repository)
         {
+            _context = context;
+            _repository = repository;
         }
 
         public int AddOrderItem(OrderItem orderItem)
@@ -44,7 +49,7 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public List<OrderItem> GetOrderItemsToRealization(IEnumerable<int> ids)
         {
-            return GetDbSet()
+            return _context.OrderItem
                 .Where(oi => ids.Contains(oi.Id) && oi.OrderId == null)
                 .Include(i => i.Item)
                 .ToList()
@@ -55,6 +60,11 @@ namespace ECommerceApp.Infrastructure.Repositories
         {
             _context.OrderItem.Update(orderItem);
             _context.SaveChanges();
+        }
+
+        public void UpdateRange(List<OrderItem> orderItems)
+        {
+            _repository.UpdateRange(orderItems);
         }
     }
 }

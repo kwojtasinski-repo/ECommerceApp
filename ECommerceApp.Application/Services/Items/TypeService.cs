@@ -47,20 +47,20 @@ namespace ECommerceApp.Application.Services.Items
 
         public TypeDto GetTypeById(int id)
         {
-            var type = _typeRepository.GetById(id);
+            var type = _typeRepository.GetTypeById(id);
             return _mapper.Map<TypeDto>(type);
         }
 
         public TypeDetailsVm GetTypeDetails(int id)
         {
-            var type = _typeRepository.GetAll().Include(t => t.Items).Where(t => t.Id == id).FirstOrDefault();
+            var type = _typeRepository.GetAllTypes().Include(t => t.Items).Where(t => t.Id == id).FirstOrDefault();
             var typeVm = _mapper.Map<TypeDetailsVm>(type);
             return typeVm;
         }
 
         public IEnumerable<TypeDto> GetTypes(Expression<Func<Domain.Model.Type, bool>> expression)
         {
-            var types = _typeRepository.GetAll().Where(expression)
+            var types = _typeRepository.GetAllTypes().Where(expression)
                .ProjectTo<TypeDto>(_mapper.ConfigurationProvider);
             var typesToShow = types.ToList();
 
@@ -88,15 +88,7 @@ namespace ECommerceApp.Application.Services.Items
 
         public bool TypeExists(int id)
         {
-            var type = _typeRepository.GetById(id);
-            var exists = type != null;
-
-            if (exists)
-            {
-                _typeRepository.DetachEntity(type);
-            }
-
-            return exists;
+            return _typeRepository.ExistsById(id);
         }
 
         public void UpdateType(TypeDto model)

@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace ECommerceApp.Domain.Interface
 {
-    public interface IBrandRepository : IGenericRepository<Brand>
+    public interface IBrandRepository
     {
         void DeleteBrand(int brandId);
         int AddBrand(Brand brand);

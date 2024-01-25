@@ -30,7 +30,6 @@ namespace ECommerceApp.IntegrationTests.API
             var id = 1;
 
             var response = await client.Request($"api/tags/{id}")
-                .AllowAnyHttpStatus()
                 .GetAsync();
 
             var tag = JsonConvert.DeserializeObject<TagDetailsVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
@@ -46,7 +45,7 @@ namespace ECommerceApp.IntegrationTests.API
             var id = 13453;
 
             var response = await client.Request($"api/tags/{id}")
-                .AllowAnyHttpStatus()
+                .AllowHttpStatus(HttpStatusCode.OK, HttpStatusCode.NotFound)
                 .GetAsync();
 
             response.StatusCode.ShouldBe((int) HttpStatusCode.NotFound);
@@ -86,7 +85,6 @@ namespace ECommerceApp.IntegrationTests.API
             var client = await _factory.GetAuthenticatedClient();
             var tag = new TagDto { Id = 0, Name = "Tag2" };
             var id = await client.Request("api/tags")
-                .AllowAnyHttpStatus()
                 .PostJsonAsync(tag)
                 .ReceiveJson<int>();
             tag.Id = id;
@@ -94,11 +92,9 @@ namespace ECommerceApp.IntegrationTests.API
             tag.Name = name;
 
             var response = await client.Request("api/tags")
-                .AllowAnyHttpStatus()
                 .PutJsonAsync(tag);
 
             var tagUpdated = await client.Request($"api/tags/{id}")
-                .AllowAnyHttpStatus()
                 .GetJsonAsync<TagDetailsVm>();
             response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
             tagUpdated.ShouldNotBeNull();
@@ -124,16 +120,14 @@ namespace ECommerceApp.IntegrationTests.API
             var client = await _factory.GetAuthenticatedClient();
             var tag = new TagDto { Id = 0, Name = "Tag2" };
             var id = await client.Request("api/tags")
-                .AllowAnyHttpStatus()
                 .PostJsonAsync(tag)
                 .ReceiveJson<int>();
 
             var response = await client.Request($"api/tags/{id}")
-                .AllowAnyHttpStatus()
                 .DeleteAsync();
 
             var tagDeleted = await client.Request($"api/tags/{id}")
-                .AllowAnyHttpStatus()
+                .AllowHttpStatus(HttpStatusCode.OK, HttpStatusCode.NotFound)
                 .GetAsync();
             response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
             tagDeleted.StatusCode.ShouldBe((int)HttpStatusCode.NotFound);

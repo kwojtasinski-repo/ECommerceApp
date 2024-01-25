@@ -6,10 +6,13 @@ using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-    public class BrandRepository : GenericRepository<Brand>, IBrandRepository
+    public class BrandRepository : IBrandRepository
     {
-        public BrandRepository(Context context) : base(context)
+        private readonly Context _context;
+
+        public BrandRepository(Context context)
         {
+            _context = context;
         }
 
         public int AddBrand(Brand brand)

@@ -38,7 +38,7 @@ namespace ECommerceApp.Tests.Services.Customer
 
             customerService.AddCustomer(customer);
 
-            _customerRepository.Verify(c => c.Add(It.IsAny<Domain.Model.Customer>()), Times.Once);
+            _customerRepository.Verify(c => c.AddCustomer(It.IsAny<Domain.Model.Customer>()), Times.Once);
         }
 
         [Fact]

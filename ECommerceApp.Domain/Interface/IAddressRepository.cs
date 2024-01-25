@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace ECommerceApp.Domain.Interface
 {
-    public interface IAddressRepository : IGenericRepository<Address>
+    public interface IAddressRepository
     {
         bool DeleteAddress(int addressId);
         int AddAddress(Address address);

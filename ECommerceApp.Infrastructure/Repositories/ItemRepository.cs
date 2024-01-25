@@ -7,10 +7,13 @@ using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-    public class ItemRepository : GenericRepository<Item>, IItemRepository
+    public class ItemRepository : IItemRepository
     {
-        public ItemRepository(Context context) : base(context)
+        private readonly Context _context;
+
+        public ItemRepository(Context context)
         {
+            _context = context;
         }
 
         public void DeleteItem(int itemId)

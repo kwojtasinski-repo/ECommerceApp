@@ -6,10 +6,13 @@ using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-    public class OrderRepository : GenericRepository<Order>, IOrderRepository
+    public class OrderRepository : IOrderRepository
     {
-        public OrderRepository(Context context) : base(context)
+        private readonly Context _context;
+
+        public OrderRepository(Context context)
         {
+            _context = context;
         }
 
         public bool DeleteOrder(int orderId)
@@ -27,10 +30,10 @@ namespace ECommerceApp.Infrastructure.Repositories
                         Payment = _context.Payments.FirstOrDefault(p => p.OrderId == orderId)
                 })
                 .FirstOrDefault(o => o.Id == orderId);
-            var localOrder = GetDbSet().Local.FirstOrDefault(o => o.Id == orderId);
+            var localOrder = _context.Orders.Local.FirstOrDefault(o => o.Id == orderId);
             if (localOrder is not null)
             {
-                DetachEntity(localOrder);
+                _context.Orders.Entry(localOrder).State = EntityState.Detached;
             }
 
             if (order == null)
@@ -64,29 +67,8 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public int AddOrder(Order order)
         {
-           // var orderItems = order.OrderItems.Select(oi => new OrderItem { Id = oi.Id, CouponUsedId = oi.CouponUsedId, ItemId = oi.ItemId, ItemOrderQuantity = oi.ItemOrderQuantity, OrderId = oi.OrderId, RefundId = oi.RefundId, UserId = oi.UserId }).ToList();
-         //   order.OrderItems = order.OrderItems.Where(oi => oi.Id == 0).ToList();
             _context.Orders.Add(order);
             _context.SaveChanges();
-            // zabezpieczenie przed "tracking"
-            /*orderItems.ForEach(oi =>
-            {
-                oi.OrderId = order.Id;
-                var local = _context.Set<OrderItem>()
-                    .Local
-                    .FirstOrDefault(entry => entry.Id.Equals(oi.Id));
-
-                if (local != null)
-                {
-                    _context.Entry(local).State = EntityState.Detached;
-                }
-
-                _context.Entry(oi).State = EntityState.Modified;
-            });
-            _context.OrderItem.UpdateRange(orderItems);
-            _context.SaveChanges();
-            DetachEntity(order);
-            DetachEntity(order.OrderItems);*/
             return order.Id;
         }
 
@@ -168,7 +150,6 @@ namespace ECommerceApp.Infrastructure.Repositories
 
             _context.SaveChanges();
             _context.Entry(order).State = EntityState.Detached;
-            DetachEntity(order.OrderItems);
         }
 
         private int AddOrderItem(OrderItem orderItem)

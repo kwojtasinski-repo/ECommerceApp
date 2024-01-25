@@ -36,7 +36,7 @@ namespace ECommerceApp.Application.Services.Customers
             }
 
             var customer = _mapper.Map<Customer>(newCustomer);
-            var id = _customerRepository.Add(customer);
+            var id = _customerRepository.AddCustomer(customer);
             return id;
         }
 
@@ -53,7 +53,7 @@ namespace ECommerceApp.Application.Services.Customers
             }
 
             var customer = _mapper.Map<Customer>(newCustomer);
-            var id = _customerRepository.Add(customer);
+            var id = _customerRepository.AddCustomer(customer);
             return id;
         }
 
@@ -168,7 +168,7 @@ namespace ECommerceApp.Application.Services.Customers
             customer.IsCompany = model.IsCompany;
             customer.CompanyName = model.CompanyName;
             customer.NIP = model.NIP;
-            _customerRepository.Update(customer);
+            _customerRepository.UpdateCustomer(customer);
         }
 
         public bool CustomerExists(int id, string userId)
@@ -179,7 +179,7 @@ namespace ECommerceApp.Application.Services.Customers
 
         public IQueryable<CustomerInformationForOrdersVm> GetCustomersInformationByUserId(string userId)
         {
-            var customers = _customerRepository.GetAll().Where(c => c.UserId == userId)
+            var customers = _customerRepository.GetAllCustomers().Where(c => c.UserId == userId)
                             .ProjectTo<CustomerInformationForOrdersVm>(_mapper.ConfigurationProvider);
             return customers;
         }

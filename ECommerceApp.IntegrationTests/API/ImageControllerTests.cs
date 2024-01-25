@@ -116,7 +116,7 @@ namespace ECommerceApp.IntegrationTests.API
         {
             var imageRepository = _factory.Services.GetService(typeof(IImageRepository)) as IImageRepository;
             var fileStore = _factory.Services.GetService(typeof(IFileStore)) as IFileStore;
-            var images = imageRepository.GetAll().Where(i => !i.SourcePath.Contains(".."));
+            var images = imageRepository.GetAllImages().Where(i => !i.SourcePath.Contains(".."));
             
             foreach (var image in images)
             {

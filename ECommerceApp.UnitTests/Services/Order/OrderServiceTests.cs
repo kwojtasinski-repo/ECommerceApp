@@ -71,7 +71,7 @@ namespace ECommerceApp.Tests.Services.Order
         public void given_invalid_order_when_dispatching_order_should_throw_an_exception()
         {
             var orderId = 1;
-            _orderRepository.Setup(o => o.GetAll()).Returns(new List<Domain.Model.Order>().AsQueryable());
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(new List<Domain.Model.Order>().AsQueryable());
             var orderService = CreateService();
             var expectedException = new BusinessException($"Order with id {orderId} not found, check your order if is not delivered and is paid");
 
@@ -85,13 +85,13 @@ namespace ECommerceApp.Tests.Services.Order
         {
             var order = CreateDefaultOrder();
             order.IsPaid = true;
-            _orderRepository.Setup(o => o.GetAll()).Returns(new List<Domain.Model.Order>() { order }.AsQueryable());
-            _orderRepository.Setup(o => o.Update(It.IsAny<Domain.Model.Order>())).Verifiable();
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(new List<Domain.Model.Order>() { order }.AsQueryable());
+            _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
             var orderService = CreateService();
 
             orderService.DispatchOrder(order.Id);
 
-            _orderRepository.Verify(o => o.Update(It.IsAny<Domain.Model.Order>()), Times.Once);
+            _orderRepository.Verify(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>()), Times.Once);
         }
 
         [Fact]
@@ -101,7 +101,7 @@ namespace ECommerceApp.Tests.Services.Order
             var pageSize = 3;
             var pageNo = 1;
             var orders = CreateDefaultOrders(ordersCount, o => new Domain.Model.Order { Id = o.Id, Number = o.Number, Ordered = o.Ordered, Cost = o.Cost, CouponUsedId = o.CouponUsedId, CurrencyId = o.CurrencyId, CustomerId = o.CustomerId, Delivered = o.Delivered, IsDelivered = false, IsPaid = true, PaymentId = o.PaymentId, RefundId = o.RefundId, UserId = o.UserId, OrderItems = o.OrderItems, Currency = o.Currency, Customer = o.Customer, User = o.User });
-            _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
             var orderService = CreateService();
 
             var listOrders = orderService.GetAllOrdersPaid(pageSize, pageNo, "");
@@ -150,7 +150,7 @@ namespace ECommerceApp.Tests.Services.Order
             var searchString = "253";
             var orders = CreateDefaultOrders(ordersCount, o => new Domain.Model.Order { Id = o.Id, Number = o.Number, Ordered = o.Ordered, Cost = o.Cost, CouponUsedId = o.CouponUsedId, CurrencyId = o.CurrencyId, CustomerId = o.CustomerId, Delivered = o.Delivered, IsDelivered = false, IsPaid = true, PaymentId = o.PaymentId, RefundId = o.RefundId, UserId = o.UserId, OrderItems = o.OrderItems, Currency = o.Currency, Customer = o.Customer, User = o.User });
             orders.First().Number = "25362654";
-            _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
             var orderService = CreateService();
 
             var listOrders = orderService.GetAllOrdersPaid(pageSize, pageNo, searchString);
@@ -175,13 +175,13 @@ namespace ECommerceApp.Tests.Services.Order
             order.Delivered = DateTime.Now;
             order.IsDelivered = true;
             order.OrderItems = CreateDefaultOrderItems(order);
-            _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
-            _orderRepository.Setup(o => o.Update(It.IsAny<Domain.Model.Order>())).Verifiable();
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
             var orderService = CreateService();
 
             orderService.AddRefundToOrder(orderId, refundId);
 
-            _orderRepository.Verify(o => o.Update(It.IsAny<Domain.Model.Order>()), Times.Once);
+            _orderRepository.Verify(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>()), Times.Once);
         }
 
         [Fact]
@@ -189,7 +189,7 @@ namespace ECommerceApp.Tests.Services.Order
         {
             int orderId = 1;
             int refundId = 1;
-            _orderRepository.Setup(o => o.GetAll()).Returns(new List<Domain.Model.Order>().AsQueryable());
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(new List<Domain.Model.Order>().AsQueryable());
             var orderService = CreateService();
             var expectedException = new BusinessException($"Order with id {orderId} not exists");
 
@@ -236,14 +236,14 @@ namespace ECommerceApp.Tests.Services.Order
             _couponUsedRepository.Setup(c => c.AddCouponUsed(It.IsAny<CouponUsed>())).Verifiable();
             _couponService.Setup(c => c.GetCoupon(couponId)).Returns(coupon);
             _couponService.Setup(c => c.UpdateCoupon(It.IsAny<CouponVm>())).Verifiable();
-            _orderRepository.Setup(o => o.Update(It.IsAny<Domain.Model.Order>())).Verifiable();
+            _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
             var orderService = CreateService();
 
             orderService.AddCouponToOrder(couponId, order);
 
             order.Cost.Should().Be(expectedCost);
             _couponService.Verify(c => c.UpdateCoupon(It.IsAny<CouponVm>()), Times.Once);
-            _orderRepository.Verify(o => o.Update(It.IsAny<Domain.Model.Order>()), Times.Once);
+            _orderRepository.Verify(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>()), Times.Once);
         }
 
         [Fact]
@@ -268,17 +268,17 @@ namespace ECommerceApp.Tests.Services.Order
             var cost = order.Cost;
             var couponUsedId = 1;
             var coupon = CreateDefaultCouponVm(null);
-            _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
-            _orderRepository.Setup(o => o.Update(It.IsAny<Domain.Model.Order>())).Verifiable();
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
             Domain.Model.Order updatingOrder = null;
-            _orderRepository.Setup(o => o.Update(It.IsAny<Domain.Model.Order>())).Callback<Domain.Model.Order>(r => updatingOrder = r);
+            _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Callback<Domain.Model.Order>(r => updatingOrder = r);
             _couponService.Setup(cu => cu.GetCouponFirstOrDefault(It.IsAny<Expression<Func<Domain.Model.Coupon, bool>>>())).Returns(coupon);
             var orderService = CreateService();
 
             orderService.AddCouponUsedToOrder(orderId, couponUsedId);
 
             updatingOrder.Cost.Should().BeLessThan(cost);
-            _orderRepository.Verify(o => o.Update(It.IsAny<Domain.Model.Order>()), Times.Once);
+            _orderRepository.Verify(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>()), Times.Once);
         }
 
         [Fact]
@@ -303,8 +303,8 @@ namespace ECommerceApp.Tests.Services.Order
             order.IsPaid = true;
             var cost = order.Cost;
             var couponUsedId = 1;
-            _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
-            _orderRepository.Setup(o => o.Update(It.IsAny<Domain.Model.Order>())).Verifiable();
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
             var coupon = CreateDefaultCouponVm(null);
             coupon.CouponUsedId = couponUsedId;
             _couponService.Setup(cu => cu.GetCouponFirstOrDefault(It.IsAny<Expression<Func<Domain.Model.Coupon, bool>>>())).Returns(coupon);
@@ -325,8 +325,8 @@ namespace ECommerceApp.Tests.Services.Order
             var orderId = order.Id;
             var cost = order.Cost;
             var couponUsedId = 1;
-            _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
-            _orderRepository.Setup(o => o.Update(It.IsAny<Domain.Model.Order>())).Verifiable();
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
             var orderService = CreateService();
             var expectedException = new BusinessException("Given invalid couponUsedId");
 
@@ -348,7 +348,7 @@ namespace ECommerceApp.Tests.Services.Order
             var coupon = CreateDefaultCoupon();
             int couponUsedId = coupon.CouponUsedId.Value;
             order.CouponUsedId = couponUsedId;
-            _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
             _couponService.Setup(c => c.GetCouponFirstOrDefault(It.IsAny<Expression<Func<Domain.Model.Coupon, bool>>>())).Returns(_mapper.Map<CouponVm>(coupon));
             var orderService = CreateService();
 
@@ -378,7 +378,7 @@ namespace ECommerceApp.Tests.Services.Order
             order.IsPaid = false;
             order.OrderItems = CreateDefaultOrderItems(order);
             var couponUsedId = 1;
-            _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
             var orderService = CreateService();
 
             Action action = () => { orderService.DeleteCouponUsedFromOrder(orderId, couponUsedId); };
@@ -396,7 +396,7 @@ namespace ECommerceApp.Tests.Services.Order
             order.IsPaid = true;
             order.OrderItems = CreateDefaultOrderItems(order);
             var couponUsedId = 1;
-            _orderRepository.Setup(o => o.GetAll()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
             var orderService = CreateService();
 
             Action action = () => { orderService.DeleteCouponUsedFromOrder(orderId, couponUsedId); };
@@ -547,7 +547,7 @@ namespace ECommerceApp.Tests.Services.Order
 
             var dtoUpdated = orderService.UpdateOrder(dto);
 
-            _orderRepository.Verify(o => o.Update(It.IsAny<Domain.Model.Order>()), times: Times.Once);
+            _orderRepository.Verify(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>()), times: Times.Once);
             var dateAfterUpdate = DateTime.Now;
             dtoUpdated.Should().NotBeNull();
             dtoUpdated.Cost.Should().Be(exepectedCost);
@@ -603,7 +603,7 @@ namespace ECommerceApp.Tests.Services.Order
 
             var dtoUpdated = orderService.UpdateOrder(dto);
 
-            _orderRepository.Verify(o => o.Update(It.IsAny<Domain.Model.Order>()), times: Times.Once);
+            _orderRepository.Verify(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>()), times: Times.Once);
             var dateAfterUpdate = DateTime.Now;
             dtoUpdated.Should().NotBeNull();
             dtoUpdated.Cost.Should().Be(exepectedCost);
@@ -667,7 +667,7 @@ namespace ECommerceApp.Tests.Services.Order
 
             var dtoUpdated = orderService.UpdateOrder(dto);
 
-            _orderRepository.Verify(o => o.Update(It.IsAny<Domain.Model.Order>()), times: Times.Once);
+            _orderRepository.Verify(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>()), times: Times.Once);
             _orderItemService.Verify(o => o.DeleteOrderItem(It.IsAny<int>()), times: Times.Exactly(2));
             var dateAfterUpdate = DateTime.Now;
             dtoUpdated.Should().NotBeNull();
@@ -737,7 +737,7 @@ namespace ECommerceApp.Tests.Services.Order
 
             var dtoUpdated = orderService.UpdateOrder(dto);
 
-            _orderRepository.Verify(o => o.Update(It.IsAny<Domain.Model.Order>()), times: Times.Once);
+            _orderRepository.Verify(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>()), times: Times.Once);
             _orderItemService.Verify(o => o.DeleteOrderItem(It.IsAny<int>()), times: Times.Exactly(2));
             var dateAfterUpdate = DateTime.Now;
             dtoUpdated.Should().NotBeNull();
@@ -806,7 +806,7 @@ namespace ECommerceApp.Tests.Services.Order
 
             var dtoUpdated = orderService.UpdateOrder(dto);
 
-            _orderRepository.Verify(o => o.Update(It.IsAny<Domain.Model.Order>()), times: Times.Once);
+            _orderRepository.Verify(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>()), times: Times.Once);
             _orderItemService.Verify(o => o.DeleteOrderItem(It.IsAny<int>()), times: Times.Exactly(2));
             var dateAfterUpdate = DateTime.Now;
             dtoUpdated.Should().NotBeNull();
@@ -861,7 +861,7 @@ namespace ECommerceApp.Tests.Services.Order
 
             var dtoUpdated = orderService.UpdateOrder(dto);
 
-            _orderRepository.Verify(o => o.Update(It.IsAny<Domain.Model.Order>()), times: Times.Once);
+            _orderRepository.Verify(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>()), times: Times.Once);
             _orderItemService.Verify(o => o.DeleteOrderItem(It.IsAny<int>()), times: Times.Exactly(5));
             var dateAfterUpdate = DateTime.Now;
             dtoUpdated.Should().NotBeNull();
@@ -935,7 +935,7 @@ namespace ECommerceApp.Tests.Services.Order
 
             var dtoUpdated = orderService.UpdateOrder(dto);
 
-            _orderRepository.Verify(o => o.Update(It.IsAny<Domain.Model.Order>()), times: Times.Exactly(1));
+            _orderRepository.Verify(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>()), times: Times.Exactly(1));
             _orderItemService.Verify(o => o.DeleteOrderItem(It.IsAny<int>()), times: Times.Exactly(2));
             var dateAfterUpdate = DateTime.Now;
             dtoUpdated.Should().NotBeNull();
@@ -1087,7 +1087,7 @@ namespace ECommerceApp.Tests.Services.Order
 
         private void AddPayment(Payment payment)
         {
-            _paymentRepository.Setup(p => p.GetById(payment.Id)).Returns(payment);
+            _paymentRepository.Setup(p => p.GetPaymentById(payment.Id)).Returns(payment);
         }
 
         private void AddCoupon(Domain.Model.Coupon coupon)
@@ -1137,10 +1137,10 @@ namespace ECommerceApp.Tests.Services.Order
         {
             var items = GenerateItems();
             _itemService.Setup(i => i.GetAllItems()).Returns(items);
-            items.ForEach(i => _itemRepository.Setup(service => service.GetById(i.Id)).Returns(_mapper.Map<Domain.Model.Item>(i)));
-            var currentItems = _itemRepository.Object.GetAll().ToList();
+            items.ForEach(i => _itemRepository.Setup(service => service.GetItemById(i.Id)).Returns(_mapper.Map<Domain.Model.Item>(i)));
+            var currentItems = _itemRepository.Object.GetAllItems().ToList();
             items.ForEach(i => currentItems.Add(_mapper.Map<Domain.Model.Item>(i)));
-            _itemRepository.Setup(i => i.GetAll()).Returns(currentItems.AsQueryable());
+            _itemRepository.Setup(i => i.GetAllItems()).Returns(currentItems.AsQueryable());
             return items;
         }
 

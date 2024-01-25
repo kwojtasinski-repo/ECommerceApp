@@ -46,7 +46,7 @@ namespace ECommerceApp.UnitTests.Services.Tag
         {
             var id = 1;
             var tag = CreateTag(id);
-            _tagRepository.Setup(t => t.GetById(id)).Returns(tag);
+            _tagRepository.Setup(t => t.ExistsById(id)).Returns(true);
             var tagService = new TagService(_tagRepository.Object, _mapper);
 
             var exists = tagService.TagExists(id);

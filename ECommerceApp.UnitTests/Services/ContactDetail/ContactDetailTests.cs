@@ -102,7 +102,7 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
             var contactDetails = CreateContactDetails();
             var contact = contactDetails.Where(cd => cd.Id == id).FirstOrDefault();
             contact.Customer = CreateCustomer(contact.Id, userId);
-            _contactDetailRepository.Setup(cd => cd.GetAll()).Returns(contactDetails.AsQueryable());
+            _contactDetailRepository.Setup(cd => cd.GetAllContactDetails()).Returns(contactDetails.AsQueryable());
             var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
 
             var exists = contactDetailService.ContactDetailExists(id);
@@ -118,7 +118,7 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
             _contextAccessor.SetUserId(userId);
             var contactDetails = CreateContactDetails();
             contactDetails.ForEach(cd => cd.Customer = new Domain.Model.Customer { Id = ++id });
-            _contactDetailRepository.Setup(cd => cd.GetAll()).Returns(contactDetails.AsQueryable());
+            _contactDetailRepository.Setup(cd => cd.GetAllContactDetails()).Returns(contactDetails.AsQueryable());
             var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
 
             var exists = contactDetailService.ContactDetailExists(id);
@@ -143,7 +143,7 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
         {
             int id = 1;
             var contactDetails = CreateContactDetails();
-            _contactDetailRepository.Setup(cd => cd.GetAll()).Returns(contactDetails.AsQueryable());
+            _contactDetailRepository.Setup(cd => cd.GetAllContactDetails()).Returns(contactDetails.AsQueryable());
             var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
 
             var exists = contactDetailService.ContactDetailExists(cd => cd.Id == id);

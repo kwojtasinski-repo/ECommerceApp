@@ -51,7 +51,7 @@ namespace ECommerceApp.Application.Services.Items
                 SearchString = searchString,
                 Items = itemsToShow,
                 // TODO: Think about performance
-                Count = _itemRepository.GetAll().Count()
+                Count = _itemRepository.GetAllItems().Count()
             };
 
             return itemsList;
@@ -67,7 +67,7 @@ namespace ECommerceApp.Application.Services.Items
 
         public List<ItemInfoVm> GetItemsAddToCart()
         {
-            var items = _itemRepository.GetAll();
+            var items = _itemRepository.GetAllItems();
             var itemsVm = items.ProjectTo<ItemInfoVm>(_mapper.ConfigurationProvider).ToList();
             return itemsVm;
         }
@@ -81,7 +81,7 @@ namespace ECommerceApp.Application.Services.Items
 
         public void DeleteItem(int id)
         {
-            _itemRepository.Delete(id);
+            _itemRepository.DeleteItem(id);
         }
 
         public ItemDetailsDto GetItemDetails(int id)
@@ -165,9 +165,9 @@ namespace ECommerceApp.Application.Services.Items
                 throw new BusinessException(errors.ToString());
             }
 
-            var brand = _brandRepository.GetById(dto.BrandId)
+            var brand = _brandRepository.GetBrandById(dto.BrandId)
                 ?? throw new BusinessException($"Brand with id '{dto.BrandId}' was not found");
-            var type = _typeRepository.GetById(dto.TypeId)
+            var type = _typeRepository.GetTypeById(dto.TypeId)
                 ?? throw new BusinessException($"Type with id '{dto.TypeId}' was not found");
             var currency = _currencyRepository.GetById(1); //PLN
             var item = new Item
@@ -228,9 +228,9 @@ namespace ECommerceApp.Application.Services.Items
                 throw new BusinessException(errors.ToString());
             }
 
-            var brand = _brandRepository.GetById(dto.BrandId)
+            var brand = _brandRepository.GetBrandById(dto.BrandId)
                 ?? throw new BusinessException($"Brand with id '{dto.BrandId}' was not found");
-            var type = _typeRepository.GetById(dto.TypeId)
+            var type = _typeRepository.GetTypeById(dto.TypeId)
                 ?? throw new BusinessException($"Type with id '{dto.TypeId}' was not found");
             var currency = _currencyRepository.GetById(1); //PLN
 

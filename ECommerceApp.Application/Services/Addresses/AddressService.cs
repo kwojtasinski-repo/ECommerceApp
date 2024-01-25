@@ -56,7 +56,7 @@ namespace ECommerceApp.Application.Services.Addresses
         public bool AddressExists(int id)
         {
             var userId = _httpContextAccessor.GetUserId();
-            var address = _addressRepository.GetAll().Include(c => c.Customer).Where(a => a.Id == id && a.Customer.UserId == userId).AsNoTracking().FirstOrDefault();
+            var address = _addressRepository.GetAllAddresses().Include(c => c.Customer).Where(a => a.Id == id && a.Customer.UserId == userId).AsNoTracking().FirstOrDefault();
 
             if (address == null)
             {

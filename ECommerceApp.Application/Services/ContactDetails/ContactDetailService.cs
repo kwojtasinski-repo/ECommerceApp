@@ -61,7 +61,7 @@ namespace ECommerceApp.Application.Services.ContactDetails
 
         public IEnumerable<ContactDetailDto> GetAllContactDetails(Expression<Func<ContactDetail, bool>> expression)
         {
-            var contactDetailTypes = _contactDetailRepository.GetAll().Where(expression);
+            var contactDetailTypes = _contactDetailRepository.GetAllContactDetails().Where(expression);
             var contactDetailTypesVm = contactDetailTypes.ProjectTo<ContactDetailDto>(_mapper.ConfigurationProvider).ToList();
             return contactDetailTypesVm;
         }
@@ -69,7 +69,7 @@ namespace ECommerceApp.Application.Services.ContactDetails
         public ContactDetailDto GetContactDetailById(int id)
         {
             var userId = _httpContextAccessor.GetUserId();
-            var contactDetail = _contactDetailRepository.GetAll().Include(c => c.Customer).Where(cd => cd.Id == id && cd.Customer.UserId == userId).FirstOrDefault();
+            var contactDetail = _contactDetailRepository.GetAllContactDetails().Include(c => c.Customer).Where(cd => cd.Id == id && cd.Customer.UserId == userId).FirstOrDefault();
             var contactDetailVm = _mapper.Map<ContactDetailDto>(contactDetail);
             return contactDetailVm;
         }
@@ -87,7 +87,7 @@ namespace ECommerceApp.Application.Services.ContactDetails
                 return false;
             }
 
-            var contactDetailType = _contactDetailTypeRepository.GetById(contactDetailDto.ContactDetailTypeId)
+            var contactDetailType = _contactDetailTypeRepository.GetContactDetailTypeById(contactDetailDto.ContactDetailTypeId)
                 ?? throw new BusinessException($"Contact Detail with id '{contactDetailDto.ContactDetailTypeId}' was not found");
             contactDetail.ContactDetailInformation = contactDetailDto.ContactDetailInformation;
             contactDetail.ContactDetailType = contactDetailType;
@@ -98,7 +98,7 @@ namespace ECommerceApp.Application.Services.ContactDetails
 
         public bool ContactDetailExists(Expression<Func<ContactDetail, bool>> expression)
         {
-            var contactDetail = _contactDetailRepository.GetAll().Where(expression).FirstOrDefault();
+            var contactDetail = _contactDetailRepository.GetAllContactDetails().Where(expression).FirstOrDefault();
 
             if (contactDetail == null)
             {
@@ -111,7 +111,7 @@ namespace ECommerceApp.Application.Services.ContactDetails
         public bool ContactDetailExists(int id)
         {
             var userId = _httpContextAccessor.GetUserId();
-            var contactDetail = _contactDetailRepository.GetAll().Include(c => c.Customer).Where(cd => cd.Id == id && cd.Customer.UserId == userId).AsNoTracking().FirstOrDefault();
+            var contactDetail = _contactDetailRepository.GetAllContactDetails().Include(c => c.Customer).Where(cd => cd.Id == id && cd.Customer.UserId == userId).AsNoTracking().FirstOrDefault();
 
             if (contactDetail == null)
             {
