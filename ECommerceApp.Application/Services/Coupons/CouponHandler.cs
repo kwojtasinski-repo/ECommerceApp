@@ -71,12 +71,14 @@ namespace ECommerceApp.Application.Services.Coupons
 
             var couponUsed = new CouponUsed
             {
-                Id = coupon.Id,
                 CouponId = coupon.Id,
                 OrderId = order.Id,
                 Coupon = coupon,
                 Order = order,
             };
+            _couponUsedRepository.Add(couponUsed);
+            coupon.CouponUsed = couponUsed;
+            coupon.CouponUsedId = couponUsed.Id;
             order.CouponUsed = couponUsed;
             order.CouponUsedId = couponUsed.Id;
             foreach (var orderItem in order.OrderItems)
@@ -85,9 +87,6 @@ namespace ECommerceApp.Application.Services.Coupons
                 orderItem.CouponUsedId = couponUsed.Id;
             }
             order.CalculateCost();
-            _couponUsedRepository.Add(couponUsed);
-            coupon.CouponUsed = couponUsed;
-            coupon.CouponUsedId = couponUsed.Id;
             _couponRepository.Update(coupon);
         }
     }

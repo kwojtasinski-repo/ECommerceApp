@@ -17,15 +17,22 @@ namespace ECommerceApp.UnitTests.Services.Payment
     {
         private readonly Mock<IPaymentRepository> _paymentRepository;
         private readonly Mock<ICurrencyRateService> _currencyRateService;
+        private readonly Mock<ICurrencyRepository> _currencyRepository;
 
         public PaymentHandlerTests()
         {
             _paymentRepository = new Mock<IPaymentRepository>();
             _currencyRateService = new Mock<ICurrencyRateService>();
+            _currencyRepository = new Mock<ICurrencyRepository>();
+            _currencyRepository.Setup(c => c.GetById(It.IsAny<int>())).Returns(new Domain.Model.Currency
+            {
+                Id = 1,
+                Code = "PLN"
+            });
         }
 
         private PaymentHandler CreatePaymentHandler()
-            => new(_paymentRepository.Object, _currencyRateService.Object);
+            => new(_paymentRepository.Object, _currencyRateService.Object, _currencyRepository.Object);
 
         [Fact]
         public void given_null_order_when_create_payment_should_throw_an_exception()

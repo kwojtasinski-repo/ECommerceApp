@@ -12,11 +12,13 @@ namespace ECommerceApp.Application.Services.Payments
     {
         private readonly IPaymentRepository _paymentRepository;
         private readonly ICurrencyRateService _currencyRateService;
+        private readonly ICurrencyRepository _currencyRepository;
 
-        public PaymentHandler(IPaymentRepository paymentRepository, ICurrencyRateService currencyRateService)
+        public PaymentHandler(IPaymentRepository paymentRepository, ICurrencyRateService currencyRateService, ICurrencyRepository currencyRepository)
         {
             _paymentRepository = paymentRepository;
             _currencyRateService = currencyRateService;
+            _currencyRepository = currencyRepository;
         }
 
         public int CreatePayment(AddPaymentDto addPaymentDto, Order order)
@@ -131,9 +133,13 @@ namespace ECommerceApp.Application.Services.Payments
                 ?? throw new BusinessException($"Payment with id '{model.Id}' was not found");
             payment.State = PaymentState.Paid;
             payment.CurrencyId = model.CurrencyId;
+            payment.Currency = _currencyRepository.GetById(model.CurrencyId)
+                ?? throw new BusinessException($"Currency with id '{model.CurrencyId}' was not found");
             payment.Cost = CalculateCost(payment.Cost, model.CurrencyId);
             payment.DateOfOrderPayment = DateTime.Now;
             payment.CustomerId = order.CustomerId;
+            payment.Order = order;
+            payment.OrderId = order.Id;
             _paymentRepository.UpdatePayment(payment);
             order.IsPaid = true;
             order.PaymentId = payment.Id;

@@ -41,6 +41,7 @@ namespace ECommerceApp.Tests.Services.Order
         private readonly ICouponHandler _couponHandler;
         private readonly Mock<IOrderItemRepository> _orderItemRepository;
         private readonly Mock<IItemRepository> _itemRepository;
+        private readonly Mock<ICurrencyRepository> _currencyRepository;
 
         public OrderServiceTests()
         {
@@ -54,10 +55,16 @@ namespace ECommerceApp.Tests.Services.Order
             _paymentRepository = new Mock<IPaymentRepository>();
             _currencyRateService = new Mock<ICurrencyRateService>();
             _couponRepository = new Mock<ICouponRepository>();
-            _paymentHandler = new PaymentHandler(_paymentRepository.Object, _currencyRateService.Object);
+            _currencyRepository = new Mock<ICurrencyRepository>();
+            _paymentHandler = new PaymentHandler(_paymentRepository.Object, _currencyRateService.Object, _currencyRepository.Object);
             _couponHandler = new CouponHandler(_couponRepository.Object, _couponUsedRepository.Object);
             _orderItemRepository = new Mock<IOrderItemRepository>();
             _itemRepository = new Mock<IItemRepository>();
+            _currencyRepository.Setup(c => c.GetById(It.IsAny<int>())).Returns(new Currency
+            {
+                Id = 1,
+                Code = "PLN"
+            });
         }
 
         private OrderService CreateService()

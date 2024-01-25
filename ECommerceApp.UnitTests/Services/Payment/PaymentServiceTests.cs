@@ -19,6 +19,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
         private readonly Mock<IOrderRepository> _orderRepository;
         private readonly Mock<ICustomerService> _customerService;
         private readonly Mock<ICurrencyRateService> _currencyRateService;
+        private readonly Mock<ICurrencyRepository> _currencyRepository;
         private readonly HttpContextAccessorTest _contextAccessor;
         private readonly IPaymentHandler _paymentHandler;
 
@@ -28,8 +29,14 @@ namespace ECommerceApp.UnitTests.Services.Payment
             _orderRepository = new Mock<IOrderRepository>();
             _customerService = new Mock<ICustomerService>();
             _currencyRateService = new Mock<ICurrencyRateService>();
+            _currencyRepository = new Mock<ICurrencyRepository>();
             _contextAccessor = new HttpContextAccessorTest();
-            _paymentHandler = new PaymentHandler(_paymentRepository.Object, _currencyRateService.Object);
+            _paymentHandler = new PaymentHandler(_paymentRepository.Object, _currencyRateService.Object, _currencyRepository.Object);
+            _currencyRepository.Setup(c => c.GetById(It.IsAny<int>())).Returns(new Domain.Model.Currency
+            {
+                Id = 1,
+                Code = "PLN"
+            });
         }
 
         private PaymentService CreateService() 
