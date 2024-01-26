@@ -1,6 +1,7 @@
 ﻿using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Repositories
@@ -11,9 +12,9 @@ namespace ECommerceApp.Infrastructure.Repositories
         {
         }
 
-        public IQueryable<CouponUsed> GetAllCouponsUsed()
+        public List<CouponUsed> GetAllCouponsUsed()
         {
-            return _context.CouponUsed;
+            return _context.CouponUsed.ToList();
         }
 
         public CouponUsed GetCouponUsedById(int couponUsedId)
@@ -47,6 +48,19 @@ namespace ECommerceApp.Infrastructure.Repositories
             _context.Entry(couponUsed).Property("CouponId").IsModified = true;
             _context.Entry(couponUsed).Property("OrderId").IsModified = true;
             _context.SaveChanges();
+        }
+
+        public List<CouponUsed> GetAllCouponsUsed(int pageSize, int pageNo)
+        {
+            return _context.CouponUsed
+                           .Skip(pageSize * (pageNo - 1))
+                           .Take(pageSize)
+                           .ToList();
+        }
+
+        public int GetCount()
+        {
+            return _context.CouponUsed.Count();
         }
     }
 }

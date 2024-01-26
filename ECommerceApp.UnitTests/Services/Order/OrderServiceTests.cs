@@ -279,7 +279,7 @@ namespace ECommerceApp.Tests.Services.Order
             _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
             Domain.Model.Order updatingOrder = null;
             _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Callback<Domain.Model.Order>(r => updatingOrder = r);
-            _couponService.Setup(cu => cu.GetCouponFirstOrDefault(It.IsAny<Expression<Func<Domain.Model.Coupon, bool>>>())).Returns(coupon);
+            _couponService.Setup(cu => cu.GetByCouponUsed(It.IsAny<int>())).Returns(coupon);
             var orderService = CreateService();
 
             orderService.AddCouponUsedToOrder(orderId, couponUsedId);
@@ -314,7 +314,7 @@ namespace ECommerceApp.Tests.Services.Order
             _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
             var coupon = CreateDefaultCouponVm(null);
             coupon.CouponUsedId = couponUsedId;
-            _couponService.Setup(cu => cu.GetCouponFirstOrDefault(It.IsAny<Expression<Func<Domain.Model.Coupon, bool>>>())).Returns(coupon);
+            _couponService.Setup(cu => cu.GetByCouponUsed(It.IsAny<int>())).Returns(coupon);
             var orderService = CreateService();
             var expectedException = new BusinessException("Cannot add coupon to paid order");
 
@@ -356,7 +356,7 @@ namespace ECommerceApp.Tests.Services.Order
             int couponUsedId = coupon.CouponUsedId.Value;
             order.CouponUsedId = couponUsedId;
             _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
-            _couponService.Setup(c => c.GetCouponFirstOrDefault(It.IsAny<Expression<Func<Domain.Model.Coupon, bool>>>())).Returns(_mapper.Map<CouponVm>(coupon));
+            _couponService.Setup(cu => cu.GetByCouponUsed(It.IsAny<int>())).Returns(_mapper.Map<CouponVm>(coupon));
             var orderService = CreateService();
 
             orderService.DeleteCouponUsedFromOrder(orderId, couponUsedId);

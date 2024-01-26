@@ -45,7 +45,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult AddCoupon()
         {
-            var couponTypes = _couponTypeService.GetAllCouponsTypes(ct => true);
+            var couponTypes = _couponTypeService.GetAllCouponsTypes();
             ViewBag.CouponTypes = couponTypes;
             return View(new CouponVm());
         }
@@ -65,8 +65,8 @@ namespace ECommerceApp.Web.Controllers
             {
                 return NotFound();
             }
-            var couponTypes = _couponTypeService.GetAllCouponsTypes(ct => true).ToList();
-            var couponsUsed = _couponUsedService.GetAllCouponsUsed().ToList();
+            var couponTypes = _couponTypeService.GetAllCouponsTypes().ToList();
+            var couponsUsed = _couponUsedService.GetAllCouponsUsed();
             ViewBag.CouponTypes = couponTypes;
             return View(coupon);
         }

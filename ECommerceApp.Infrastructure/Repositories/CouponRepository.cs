@@ -2,6 +2,7 @@
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Repositories
@@ -30,11 +31,6 @@ namespace ECommerceApp.Infrastructure.Repositories
             return coupon.Id;
         }
 
-        public IQueryable<Coupon> GetCouponsByCouponTypeId(int couponTypeId)
-        {
-            return _context.Coupons.Where(c => c.CouponTypeId == couponTypeId);
-        }
-
         public Coupon GetCouponById(int couponId)
         {
             var coupon = _context.Coupons
@@ -44,11 +40,6 @@ namespace ECommerceApp.Infrastructure.Repositories
             return coupon;
         }
 
-        public IQueryable<Coupon> GetAllCoupons()
-        {
-            return _context.Coupons;
-        }
-
         public void UpdateCoupon(Coupon coupon)
         {
             _context.Attach(coupon);
@@ -56,6 +47,45 @@ namespace ECommerceApp.Infrastructure.Repositories
             _context.Entry(coupon).Property("Discount").IsModified = true;
             _context.Entry(coupon).Property("Description").IsModified = true;
             _context.SaveChanges();
+        }
+
+        public List<Coupon> GetAllCoupons(string searchString)
+        {
+            return _context.Coupons
+                        .Where(coupon => coupon.Code.StartsWith(searchString))
+                        .ToList();
+        }
+
+        public List<Coupon> GetAllCoupons(int pageSize, int pageNo, string searchString)
+        {
+            return _context.Coupons
+                    .Where(it => it.Code.StartsWith(searchString))
+                    .Skip(pageSize * (pageNo - 1))
+                    .Take(pageSize)
+                    .ToList();
+        }
+
+        public int GetCountBySearchString(string searchString)
+        {
+            return _context.Coupons
+                    .Where(it => it.Code.StartsWith(searchString))
+                    .Count();
+        }
+
+        public List<Coupon> GetNotUsedCoupons()
+        {
+            return _context.Coupons.Where(c => !c.CouponUsedId.HasValue).ToList();
+        }
+
+        public List<Coupon> GetAllCoupons()
+        {
+            return _context.Coupons.ToList();
+        }
+
+        public Coupon GetByCouponUsed(int couponUsedId)
+        {
+            return _context.Coupons
+                           .FirstOrDefault(c => c.CouponUsedId == couponUsedId);
         }
     }
 }

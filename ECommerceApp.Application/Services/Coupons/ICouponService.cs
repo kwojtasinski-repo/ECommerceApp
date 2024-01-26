@@ -2,9 +2,7 @@
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Coupons
 {
@@ -14,13 +12,13 @@ namespace ECommerceApp.Application.Services.Coupons
         void UpdateCoupon(CouponVm coupon);
         void DeleteCoupon(int id);
         ListForCouponVm GetAllCoupons(int pageSize, int pageNo, string searchString);
+        ListForCouponVm GetAllCoupons();
         CouponVm GetCoupon(int id);
-        CouponVm GetCouponFirstOrDefault(Expression<Func<Coupon, bool>> expression);
         CouponDetailsVm GetCouponDetail(int id);
-        IEnumerable<CouponVm> GetAllCoupons(Expression<Func<Coupon, bool>> expression);
         void DeleteCouponUsed(int couponId, int couponUsedId);
         void AddCouponUsed(int couponId, int couponUsedId);
         CouponVm GetCouponByCode(string promoCode);
-        int CheckPromoCode(string promoCode);
+        List<CouponVm> GetAllCouponsNotUsed();
+        CouponVm GetByCouponUsed(int couponUsedId);
     }
 }

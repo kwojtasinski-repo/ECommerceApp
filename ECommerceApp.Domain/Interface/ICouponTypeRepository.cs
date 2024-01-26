@@ -1,5 +1,5 @@
 ﻿using ECommerceApp.Domain.Model;
-using System.Linq;
+using System.Collections.Generic;
 
 namespace ECommerceApp.Domain.Interface
 {
@@ -8,7 +8,9 @@ namespace ECommerceApp.Domain.Interface
         void DeleteCouponType(int couponTypeId);
         int AddCouponType(CouponType couponType);
         CouponType GetCouponTypeById(int couponTypeId);
-        IQueryable<CouponType> GetAllCouponTypes();
+        List<CouponType> GetAllCouponTypes(int pageSize, int pageNo, string searchString);
         void UpdateCouponType(CouponType couponType);
+        int GetCountBySearchString(string searchString);
+        List<CouponType> GetAllCouponTypes();
     }
 }

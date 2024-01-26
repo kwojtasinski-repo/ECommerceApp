@@ -1,6 +1,7 @@
 ﻿using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Repositories
@@ -42,10 +43,24 @@ namespace ECommerceApp.Infrastructure.Repositories
             _context.SaveChanges();
         }
 
-        public IQueryable<CouponType> GetAllCouponTypes()
+        public List<CouponType> GetAllCouponTypes(int pageSize, int pageNo, string searchString)
         {
-            var couponTypes = _context.CouponTypes.AsQueryable();
-            return couponTypes;
+            return _context.CouponTypes
+                        .Where(coupon => coupon.Type.StartsWith(searchString))
+                        .Skip(pageSize * (pageNo - 1)).Take(pageSize)
+                        .ToList();
+        }
+
+        public int GetCountBySearchString(string searchString)
+        {
+            return _context.CouponTypes
+                        .Where(coupon => coupon.Type.StartsWith(searchString))
+                        .Count();
+        }
+
+        public List<CouponType> GetAllCouponTypes()
+        {
+            return _context.CouponTypes.ToList();
         }
     }
 }

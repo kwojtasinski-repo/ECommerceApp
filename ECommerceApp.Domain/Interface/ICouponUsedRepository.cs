@@ -1,5 +1,5 @@
 ﻿using ECommerceApp.Domain.Model;
-using System.Linq;
+using System.Collections.Generic;
 
 namespace ECommerceApp.Domain.Interface
 {
@@ -8,7 +8,9 @@ namespace ECommerceApp.Domain.Interface
         void DeleteCouponUsed(int couponUsedId);
         int AddCouponUsed(CouponUsed couponUsed);
         CouponUsed GetCouponUsedById(int couponUsedId);
-        IQueryable<CouponUsed> GetAllCouponsUsed();
+        List<CouponUsed> GetAllCouponsUsed();
         void UpdateCouponUsed(CouponUsed couponUsed);
+        List<CouponUsed> GetAllCouponsUsed(int pageSize, int pageNo);
+        int GetCount();
     }
 }

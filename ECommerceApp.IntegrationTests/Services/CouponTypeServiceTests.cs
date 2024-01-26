@@ -60,17 +60,9 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_expression_should_return_coupons()
         {
-            var coupons = _service.GetAllCouponsTypes(ct => true);
+            var coupons = _service.GetAllCouponsTypes();
 
             coupons.Count().ShouldBeGreaterThan(0);
-        }
-
-        [Fact]
-        public void given_invalid_expression_should_return_empty_coupons()
-        {
-            var coupons = _service.GetAllCouponsTypes(ct => ct.Type == "ABca535tged");
-
-            coupons.Count().ShouldBe(0);
         }
 
         [Fact]

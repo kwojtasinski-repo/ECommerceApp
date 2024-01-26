@@ -123,7 +123,7 @@ namespace ECommerceApp.Application.Services.Orders
                 orderItem.CouponUsedId = null;
             }
 
-            var coupon = _couponService.GetCouponFirstOrDefault(c => c.CouponUsedId == couponUsedId)
+            var coupon = _couponService.GetByCouponUsed(couponUsedId)
                 ?? throw new BusinessException("Given invalid couponUsedId");
             order.Cost /= (1 - (decimal)coupon.Discount / 100);
             _orderRepository.UpdatedOrder(order);
@@ -170,7 +170,7 @@ namespace ECommerceApp.Application.Services.Orders
             var order = _orderRepository.GetAllOrders().Include(oi => oi.OrderItems).Where(o => o.Id == orderId).FirstOrDefault()
                 ?? throw new BusinessException("Cannot add coupon if order not exists");
             
-            var coupon = _couponService.GetCouponFirstOrDefault(c => c.CouponUsedId == couponUsedId)
+            var coupon = _couponService.GetByCouponUsed(couponUsedId)
                 ?? throw new BusinessException("Given invalid couponUsedId");
 
             if (order.IsPaid)

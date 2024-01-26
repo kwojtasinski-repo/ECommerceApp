@@ -1,12 +1,8 @@
 ﻿using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.CouponType;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
-using System.Text;
 
 namespace ECommerceApp.Application.Services.Coupons
 {
@@ -18,6 +14,6 @@ namespace ECommerceApp.Application.Services.Coupons
         CouponTypeDetailsVm GetCouponTypeDetail(int id);
         CouponTypeVm GetCouponType(int id);
         void UpdateCouponType(CouponTypeVm couponTypeVm);
-        IEnumerable<CouponTypeVm> GetAllCouponsTypes(Expression<Func<CouponType, bool>> expression);
+        IEnumerable<CouponTypeVm> GetAllCouponsTypes();
     }
 }

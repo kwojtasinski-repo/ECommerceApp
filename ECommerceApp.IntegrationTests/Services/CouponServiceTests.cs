@@ -80,39 +80,11 @@ namespace ECommerceApp.IntegrationTests.Services
         }
 
         [Fact]
-        public void given_valid_code_should_return_id()
-        {
-            var code = "AGEWEDSGFEW";
-
-            var id = _service.CheckPromoCode(code);
-
-            id.ShouldBeGreaterThan(0);
-        }
-
-        [Fact]
-        public void given_invalid_code_shouldnt_return_id()
-        {
-            var code = "asf12W";
-
-            var id = _service.CheckPromoCode(code);
-
-            id.ShouldBe(0);
-        }
-
-        [Fact]
         public void given_valid_expression_should_return_cupons()
         {
-            var coupons = _service.GetAllCoupons(c => true);
+            var coupons = _service.GetAllCoupons();
 
-            coupons.Count().ShouldBeGreaterThan(0);
-        }
-
-        [Fact]
-        public void given_invalid_expression_should_return_empty_cupons()
-        {
-            var coupons = _service.GetAllCoupons(c => c.Code == "asdag2356363hhfdhsdgs");
-
-            coupons.Count().ShouldBe(0);
+            coupons.Count.ShouldBeGreaterThan(0);
         }
 
         [Fact]

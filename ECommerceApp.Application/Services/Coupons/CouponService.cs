@@ -1,15 +1,11 @@
 ﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Coupons
 {
@@ -49,26 +45,20 @@ namespace ECommerceApp.Application.Services.Coupons
 
         public List<CouponVm> GetAll(string searchString)
         {
-            var coupons = _repo.GetAllCoupons().Where(coupon => coupon.Code.StartsWith(searchString))
-                .ProjectTo<CouponVm>(_mapper.ConfigurationProvider)
-                .ToList();
-            return coupons;
+            return _mapper.Map<List<CouponVm>>(_repo.GetAllCoupons(searchString));
         }
 
         public ListForCouponVm GetAllCoupons(int pageSize, int pageNo, string searchString)
         {
-            var coupons = _repo.GetAllCoupons().Where(coupon => coupon.Code.StartsWith(searchString))
-                .Skip(pageSize * (pageNo - 1)).Take(pageSize)
-                .ProjectTo<CouponVm>(_mapper.ConfigurationProvider);
-            var couponsToShow = coupons.ToList();
+            var coupons = _mapper.Map<List<CouponVm>>(_repo.GetAllCoupons(pageSize, pageNo, searchString));
 
             var couponsList = new ListForCouponVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
-                Coupons = couponsToShow,
-                Count = couponsToShow.Count
+                Coupons = coupons,
+                Count = _repo.GetCountBySearchString(searchString)
             };
 
             return couponsList;
@@ -87,13 +77,6 @@ namespace ECommerceApp.Application.Services.Coupons
             return couponVm;
         }
 
-        public CouponVm GetCouponFirstOrDefault(Expression<Func<Coupon, bool>> expression)
-        {
-            var coupon = _repo.GetAll().Where(expression).AsNoTracking().FirstOrDefault();
-            var couponVm = _mapper.Map<CouponVm>(coupon);
-            return couponVm;
-        }
-
         public void UpdateCoupon(CouponVm couponVm)
         {
             if (couponVm is null)
@@ -109,24 +92,10 @@ namespace ECommerceApp.Application.Services.Coupons
             Update(couponVm);
         }
 
-        public IEnumerable<CouponVm> GetAllCoupons(Expression<Func<Coupon, bool>> expression)
-        {
-            var coupons = _repo.GetAllCoupons().Where(expression).AsNoTracking()
-                .ProjectTo<CouponVm>(_mapper.ConfigurationProvider);
-            var couponsToShow = coupons.ToList();
-
-            return couponsToShow;
-        }
-
         public void DeleteCouponUsed(int couponId, int couponUsedId)
         {
-            var coupon = _repo.GetAll().Where(c => c.Id == couponId && c.CouponUsedId == couponUsedId).FirstOrDefault();
-
-            if (coupon is null)
-            {
-                throw new BusinessException("Given invalid id");
-            }
-
+            var coupon = _repo.GetAll().Where(c => c.Id == couponId && c.CouponUsedId == couponUsedId).FirstOrDefault()
+                ?? throw new BusinessException("Given invalid id");
             _repo.DetachEntity(coupon);
             coupon.CouponUsedId = null;
             _repo.Update(coupon);
@@ -153,19 +122,27 @@ namespace ECommerceApp.Application.Services.Coupons
             return couponVm;
         }
 
-        public int CheckPromoCode(string code)
+        public List<CouponVm> GetAllCouponsNotUsed()
         {
-            return _repo.GetAllCoupons()
-                    .Where(c => string.Equals(c.Code, code) && c.CouponUsedId == null)
-                    .Select(c => c.Id)
-                    .FirstOrDefault();
+            return _mapper.Map<List<CouponVm>>(_repo.GetNotUsedCoupons());
         }
 
-        public bool ValidatePromoCode(string promoCode)
+        public ListForCouponVm GetAllCoupons()
         {
-            return _repo.GetAllCoupons()
-                    .Any(c => string.Equals(c.Code, promoCode,
-                           StringComparison.Ordinal) && c.CouponUsedId == null);
+            var coupons = _repo.GetAllCoupons();
+            return new ListForCouponVm
+            {
+                Count = coupons.Count,
+                Coupons = _mapper.Map<List<CouponVm>>(coupons),
+                CurrentPage = 1,
+                PageSize = coupons.Count,
+                SearchString = ""
+            };
+        }
+
+        public CouponVm GetByCouponUsed(int couponUsedId)
+        {
+            return _mapper.Map<CouponVm>(_repo.GetByCouponUsed(couponUsedId));
         }
     }
 }

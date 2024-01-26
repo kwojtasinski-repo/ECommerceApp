@@ -49,7 +49,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult AddCouponUsed()
         {
-            var coupons = _couponService.GetAllCoupons(c => !c.CouponUsedId.HasValue).ToList();
+            var coupons = _couponService.GetAllCouponsNotUsed();
             var orders = _orderService.GetAllOrders();
             ViewBag.Coupons = coupons;
             ViewBag.Orders = orders;
@@ -71,7 +71,7 @@ namespace ECommerceApp.Web.Controllers
             {
                 return NotFound();
             }
-            var coupons = _couponService.GetAllCoupons(c => !c.CouponUsedId.HasValue).ToList();
+            var coupons = _couponService.GetAllCouponsNotUsed();
             var orders = _orderService.GetAllOrders();
             ViewBag.Coupons = coupons;
             ViewBag.Orders = orders;

@@ -87,19 +87,9 @@ namespace ECommerceApp.IntegrationTests.Services
         {
             _service.AddCouponUsed(CreateCouponUsed(0));
 
-            var coupons = _service.GetAllCouponsUsed(cu => true);
+            var coupons = _service.GetAllCouponsUsed();
 
             coupons.Count().ShouldBeGreaterThan(0);
-        }
-
-        [Fact]
-        public void given_invalid_expression_should_return_empty_list_coupon_used()
-        {
-            _service.AddCouponUsed(CreateCouponUsed(0));
-
-            var coupons = _service.GetAllCouponsUsed(cu => cu.Id == 8998908);
-
-            coupons.Count().ShouldBe(0);
         }
 
         [Fact]

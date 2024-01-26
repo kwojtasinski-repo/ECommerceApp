@@ -1,14 +1,10 @@
 ﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.CouponType;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Coupons
 {
@@ -42,18 +38,15 @@ namespace ECommerceApp.Application.Services.Coupons
 
         public ListForCouponTypeVm GetAllCouponsTypes(int pageSize, int pageNo, string searchString)
         {
-            var couponTypes = _repo.GetAllCouponTypes().Where(coupon => coupon.Type.StartsWith(searchString))
-                .ProjectTo<CouponTypeVm>(_mapper.ConfigurationProvider)
-                .ToList();
-            var couponTypesToShow = couponTypes.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
-
+            var couponTypes = _mapper.Map<List<CouponTypeVm>>(_repo.GetAllCouponTypes(pageSize, pageNo, searchString));
+            
             var couponTypesList = new ListForCouponTypeVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
-                CouponTypes = couponTypesToShow,
-                Count = couponTypes.Count
+                CouponTypes = couponTypes,
+                Count = _repo.GetCountBySearchString(searchString)
             };
 
             return couponTypesList;
@@ -84,13 +77,9 @@ namespace ECommerceApp.Application.Services.Coupons
             _repo.UpdateCouponType(couponType);
         }
 
-        public IEnumerable<CouponTypeVm> GetAllCouponsTypes(Expression<Func<CouponType, bool>> expression)
+        public IEnumerable<CouponTypeVm> GetAllCouponsTypes()
         {
-            var coupons = _repo.GetAll().Where(expression)
-                .ProjectTo<CouponTypeVm>(_mapper.ConfigurationProvider);
-            var couponsToShow = coupons.ToList();
-
-            return couponsToShow;
+            return _mapper.Map<List<CouponTypeVm>>(_repo.GetAllCouponTypes());
         }
     }
 }

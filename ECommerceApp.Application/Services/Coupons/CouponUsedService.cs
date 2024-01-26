@@ -1,17 +1,13 @@
 ﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Orders;
-using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Application.ViewModels.CouponUsed;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Coupons
 {
@@ -63,28 +59,23 @@ namespace ECommerceApp.Application.Services.Coupons
 
         public ListForCouponUsedVm GetAllCouponsUsed(int pageSize, int pageNo, string searchString)
         {
-            var couponsUsed = _repo.GetAllCouponsUsed()//.Where(coupon => coupon..StartsWith(searchString))
-                .ProjectTo<CouponUsedVm>(_mapper.ConfigurationProvider)
-                .ToList();
-            var couponsUsedToShow = couponsUsed.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+            var couponsUsed = _mapper.Map<List<CouponUsedVm>>(_repo.GetAllCouponsUsed(pageSize, pageNo));
 
             var couponsUsedList = new ListForCouponUsedVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
-                CouponsUsed = couponsUsedToShow,
-                Count = couponsUsed.Count
+                CouponsUsed = couponsUsed,
+                Count = _repo.GetCount()
             };
 
             return couponsUsedList;
         }
 
-        public IQueryable<CouponUsedVm> GetAllCouponsUsed()
+        public List<CouponUsedVm> GetAllCouponsUsed()
         {
-            var couponsUsed = _repo.GetAllCouponsUsed();
-            var couponsUsedVm = couponsUsed.ProjectTo<CouponUsedVm>(_mapper.ConfigurationProvider);
-            return couponsUsedVm;
+            return _mapper.Map<List<CouponUsedVm>>(_repo.GetAllCouponsUsed());
         }
 
         public CouponUsedDetailsVm GetCouponUsedDetail(int id)
@@ -114,15 +105,6 @@ namespace ECommerceApp.Application.Services.Coupons
 
             var couponUsed = _mapper.Map<CouponUsed>(couponUsedVm);
             _repo.UpdateCouponUsed(couponUsed);
-        }
-
-        public IEnumerable<CouponUsedVm> GetAllCouponsUsed(Expression<Func<CouponUsed, bool>> expression)
-        {
-            var coupons = _repo.GetAll().Where(expression)
-                .ProjectTo<CouponUsedVm>(_mapper.ConfigurationProvider);
-            var couponsToShow = coupons.ToList();
-
-            return couponsToShow;
         }
     }
 }
