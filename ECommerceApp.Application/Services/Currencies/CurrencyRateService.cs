@@ -36,16 +36,11 @@ namespace ECommerceApp.Application.Services.Currencies
                 throw new BusinessException($"There is no rate for {dateTime}");
             }
 
-            var currency = _currencyRepository.GetAll().Where(c => c.Id == currencyId).FirstOrDefault();
-
-            if (currency is null)
-            {
-                throw new BusinessException($"Currency with id: {currencyId} not found");
-            }
-
-            CurrencyRateDto currencyRateVm = null;
+            var currency = _currencyRepository.GetById(currencyId)
+                ?? throw new BusinessException($"Currency with id: {currencyId} not found");
             var date = dateTime.Date;
 
+            CurrencyRateDto currencyRateVm;
             if (currencyId == 1)
             {
                 var currencyRatePLN = TryGetCurrencyRatePLN(currencyId, dateTime);
@@ -69,13 +64,8 @@ namespace ECommerceApp.Application.Services.Currencies
 
         public CurrencyRateDto GetLatestRate(int currencyId)
         {
-            var currency = _currencyRepository.GetAll().Where(c => c.Id == currencyId).FirstOrDefault();
-
-            if (currency is null)
-            {
-                throw new BusinessException($"Currency with id: {currencyId} not found");
-            }
-
+            var currency = _currencyRepository.GetById(currencyId)
+                ?? throw new BusinessException($"Currency with id: {currencyId} not found");
             var date = DateTime.Now.Date;
 
             if (currencyId == 1)

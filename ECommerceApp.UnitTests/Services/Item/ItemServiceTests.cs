@@ -451,7 +451,7 @@ namespace ECommerceApp.Tests.Services.Item
             _itemRepository.Setup(i => i.GetAllItemsWithTags()).Returns(new List<ItemTag>().AsQueryable());
             _tagRepository.Setup(t => t.GetTagsByIds(It.IsAny<IEnumerable<int>>())).Returns(new List<Tag>());
             _tagRepository.Setup(t => t.GetAllTags()).Returns(new List<Tag>().AsQueryable());
-            _currencyRepository.Setup(c => c.GetAll()).Returns(new List<Currency>().AsQueryable());
+            _currencyRepository.Setup(c => c.GetAll()).Returns(new List<Currency>());
             _brandRepository.Setup(b => b.GetAllBrands()).Returns(new List<Brand>());
             _tagRepository.Setup(t => t.GetAllTags()).Returns(new List<Tag>().AsQueryable());
             _tagRepository.Setup(t => t.GetAllTags()).Returns(new List<Tag>().AsQueryable());

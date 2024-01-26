@@ -60,9 +60,9 @@ namespace ECommerceApp.Application.Services.Currencies
             _currencyRepository.Update(currency);
         }
 
-        public List<CurrencyDto> GetAll(Expression<Func<Currency, bool>> expression)
+        public List<CurrencyDto> GetAll()
         {
-            List<Currency> currencies = _currencyRepository.GetAll(expression);
+            List<Currency> currencies = _currencyRepository.GetAll();
             List<CurrencyDto> currencyVms = new ();
 
             foreach (Currency currency in currencies)
@@ -76,11 +76,10 @@ namespace ECommerceApp.Application.Services.Currencies
 
         public ListCurrencyVm GetAllCurrencies(int pageSize, int pageNo, string searchString)
         {
-            var currencies = _currencyRepository.GetAll().Where(c => c.Code.StartsWith(searchString));
-            List<Currency> currenciesToShow = currencies.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+            var currencies = _currencyRepository.GetAll(pageSize, pageNo, searchString);
             List<CurrencyDto> currencyVms = new ();
 
-            foreach (Currency currency in currenciesToShow)
+            foreach (Currency currency in currencies)
             {
                 var currencyVm = _mapper.Map<CurrencyDto>(currency);
                 currencyVms.Add(currencyVm);
@@ -92,7 +91,7 @@ namespace ECommerceApp.Application.Services.Currencies
                 Currencies = currencyVms,
                 CurrentPage = pageNo,
                 SearchString = searchString,
-                Count = currencies.Count()
+                Count = _currencyRepository.GetCountBySearchString(searchString)
             };
 
             return listCurrency;

@@ -1,8 +1,6 @@
 ﻿using ECommerceApp.Domain.Model;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Domain.Interface
 {
@@ -10,9 +8,10 @@ namespace ECommerceApp.Domain.Interface
     {
         int Add(Currency currency);
         bool Delete(Currency currency);
-        List<Currency> GetAll(Expression<Func<Currency, bool>> expression);
-        IQueryable<Currency> GetAll();
+        List<Currency> GetAll();
+        List<Currency> GetAll(int pageSize, int pageNo, string searchString);
         Currency GetById(int id);
         void Update(Currency currency);
+        int GetCountBySearchString(string searchString);
     }
 }

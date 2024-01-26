@@ -49,7 +49,7 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult AddPayment(int id)
         {
             var payment = _paymentService.InitPayment(id);
-            var currencies = _currencyService.GetAll(cr => true);
+            var currencies = _currencyService.GetAll();
             ViewBag.Currencies = currencies;
             return View(payment);
         }
@@ -71,7 +71,7 @@ namespace ECommerceApp.Web.Controllers
             {
                 return NotFound();
             }
-            var currencies = _currencyService.GetAll(cr => true);
+            var currencies = _currencyService.GetAll();
             ViewBag.Currencies = currencies;
             return View(payment);
         }

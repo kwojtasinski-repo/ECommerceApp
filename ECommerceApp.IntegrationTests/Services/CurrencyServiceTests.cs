@@ -100,7 +100,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_currencies_in_db_should_return_currencies()
         {
-            var currencies = _service.GetAll(c => true);
+            var currencies = _service.GetAll();
 
             currencies.Count.ShouldBeGreaterThan(0);
         }
