@@ -1,7 +1,7 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Order;
-using System.Linq;
+using System.Collections.Generic;
 
 namespace ECommerceApp.Application.Services.Customers
 {
@@ -19,6 +19,6 @@ namespace ECommerceApp.Application.Services.Customers
         bool DeleteCustomer(int id);
         bool CustomerExists(int id, string userId);
         CustomerDetailsVm GetCustomerDetails(int id, string userId);
-        IQueryable<CustomerInformationForOrdersVm> GetCustomersInformationByUserId(string userId);
+        List<CustomerInformationForOrdersVm> GetCustomersInformationByUserId(string userId);
     }
 }

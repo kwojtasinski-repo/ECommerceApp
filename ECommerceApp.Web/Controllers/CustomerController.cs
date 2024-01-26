@@ -188,7 +188,7 @@ namespace ECommerceApp.Web.Controllers
         [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         public IActionResult GetContacts(string userId)
         {
-            return Ok(_customerService.GetCustomersInformationByUserId(userId).ToList());
+            return Ok(_customerService.GetCustomersInformationByUserId(userId));
         }
     }
 }

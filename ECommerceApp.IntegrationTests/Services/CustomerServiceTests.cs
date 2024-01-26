@@ -94,7 +94,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_invalid_user_id_should_return_empty_customers_informations()
         {
-            var customersInformation = _service.GetCustomersInformationByUserId("").ToList();
+            var customersInformation = _service.GetCustomersInformationByUserId("");
 
             customersInformation.Count.ShouldBe(0);
         }

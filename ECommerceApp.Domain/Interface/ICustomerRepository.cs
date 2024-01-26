@@ -1,6 +1,5 @@
 ﻿using ECommerceApp.Domain.Model;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ECommerceApp.Domain.Interface
 {
@@ -10,12 +9,16 @@ namespace ECommerceApp.Domain.Interface
         int AddCustomer(Customer customer);
         Customer GetCustomerDetailsById(int id);
         Customer GetCustomerById(int id);
-        IQueryable<Customer> GetAllCustomers();
         void UpdateCustomer(Customer customer);
         Customer GetCustomerDetailsById(int id, string userId);
         Customer GetCustomerById(int id, string userId);
         bool CustomerExists(int id, string userId);
         List<Customer> GetCustomersByUserId(string userId);
         Customer GetById(int customerId);
+        List<Customer> GetAllUserCustomers(string userId, int pageSize, int pageNo, string searchString);
+        int GetCountBySearchStringAndUserId(string searchString, string userId);
+        List<Customer> GetAllCustomers(int pageSize, int pageNo, string searchString);
+        int GetCountBySearchString(string searchString);
+        List<Customer> GetAllUserCustomers(string userId);
     }
 }

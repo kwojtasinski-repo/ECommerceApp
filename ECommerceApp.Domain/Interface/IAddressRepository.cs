@@ -1,5 +1,4 @@
 ﻿using ECommerceApp.Domain.Model;
-using System.Linq;
 
 namespace ECommerceApp.Domain.Interface
 {

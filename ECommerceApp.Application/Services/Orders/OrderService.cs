@@ -289,12 +289,6 @@ namespace ECommerceApp.Application.Services.Orders
             return orders;
         }
 
-        public IQueryable<CustomerInformationForOrdersVm> GetCustomersByUserId(string userId)
-        {
-            var customers = _customerService.GetCustomersInformationByUserId(userId);
-            return customers;
-        }
-
         public ListForOrderVm GetAllOrdersByUserId(string userId, int pageSize, int pageNo)
         {
             ValidatePageSizeAndPageNo(pageSize, pageNo);
@@ -405,7 +399,7 @@ namespace ECommerceApp.Application.Services.Orders
             var userId = _httpContextAccessor.GetUserId();
             return new OrderVm
             {
-                Customers = _customerService.GetCustomersInformationByUserId(userId).ToList(),
+                Customers = _customerService.GetCustomersInformationByUserId(userId),
                 Order = new OrderDto
                 {
                     Ordered = DateTime.Now,

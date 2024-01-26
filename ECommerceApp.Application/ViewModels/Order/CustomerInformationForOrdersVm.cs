@@ -1,8 +1,5 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Order
 {

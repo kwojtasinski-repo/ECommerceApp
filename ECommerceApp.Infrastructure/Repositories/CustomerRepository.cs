@@ -94,11 +94,6 @@ namespace ECommerceApp.Infrastructure.Repositories
             return customer;
         }
 
-        public IQueryable<Customer> GetAllCustomers()
-        {
-            return _context.Customers;
-        }
-
         public void UpdateCustomer(Customer customer)
         {
             _context.Attach(customer);
@@ -109,136 +104,6 @@ namespace ECommerceApp.Infrastructure.Repositories
             _context.Entry(customer).Property("CompanyName").IsModified = true;
             _context.Entry(customer).Collection("ContactDetails").IsModified = true;
             _context.Entry(customer).Collection("Addresses").IsModified = true;
-            _context.SaveChanges();
-        }
-
-        public IQueryable<ContactDetailType> GetAllDetailTypes()
-        {
-            return _context.ContactDetailTypes;
-        }
-
-        public int AddContactDetailType(ContactDetailType contactDetailType)
-        {
-            _context.ContactDetailTypes.Add(contactDetailType);
-            _context.SaveChanges();
-            return contactDetailType.Id;
-        }
-
-        public int AddNewContact(ContactDetail contactDetail)
-        {
-            _context.ContactDetails.Add(contactDetail);
-            _context.SaveChanges();
-            return contactDetail.Id;
-        }
-
-        public int AddNewAddress(Address address)
-        {
-            _context.Addresses.Add(address);
-            _context.SaveChanges();
-            return address.Id;
-        }
-
-        public Address GetAddressById(int id)
-        {
-            var address = _context.Addresses.FirstOrDefault(c => c.Id == id);
-            return address;
-        }
-
-        public Address GetAddressById(int id, string userId)
-        {
-            var customers = _context.Customers.Where(c => c.UserId == userId).ToList();
-            Address address = null;
-            foreach (var cust in customers)
-            {
-                address = _context.Addresses.FirstOrDefault(c => c.Id == id && c.CustomerId == cust.Id);
-                if (address != null)
-                    break;
-            }
-
-            return address;
-        }
-
-        public ContactDetail GetContactDetailById(int id)
-        {
-            var contactDetail = _context.ContactDetails
-                .Include(inc => inc.ContactDetailType)
-                .FirstOrDefault(c => c.Id == id);
-            return contactDetail;
-        }
-
-        public ContactDetail GetContactDetailById(int id, string userId)
-        {
-            var customers = _context.Customers.Where(c => c.UserId == userId).ToList();
-            ContactDetail contactDetail = null;
-            foreach (var cust in customers)
-            {
-                contactDetail = _context.ContactDetails
-                                    .Include(inc => inc.ContactDetailType)
-                                    .FirstOrDefault(c => c.Id == id && c.CustomerId == cust.Id);
-            }
-
-            return contactDetail;
-        }
-
-        public void UpdateAddress(Address address)
-        {
-            _context.Attach(address);
-            _context.Entry(address).Property("Street").IsModified = true;
-            _context.Entry(address).Property("BuildingNumber").IsModified = true;
-            _context.Entry(address).Property("FlatNumber").IsModified = true;
-            _context.Entry(address).Property("ZipCode").IsModified = true;
-            _context.Entry(address).Property("City").IsModified = true;
-            _context.Entry(address).Property("Country").IsModified = true;
-            _context.SaveChanges();
-        }
-
-        public void UpdateContactDetail(ContactDetail contactDetail)
-        {
-            _context.Attach(contactDetail);
-            _context.Entry(contactDetail).Property("ContactDetailInformation").IsModified = true;
-            _context.Entry(contactDetail).Property("ContactDetailTypeId").IsModified = true;
-            _context.SaveChanges();
-        }
-
-        public void DeleteAddress(int id)
-        {
-            var address = _context.Addresses.Find(id);
-
-            if (address != null)
-            {
-                _context.Addresses.Remove(address);
-                _context.SaveChanges();
-            }
-        }
-
-        public void DeleteContactDetail(int id)
-        {
-            var contactDetail = _context.ContactDetails.Find(id);
-
-            if (contactDetail != null)
-            {
-                _context.ContactDetails.Remove(contactDetail);
-                _context.SaveChanges();
-            }
-        }
-
-        public int AddNewContactDetailType(ContactDetailType contactDetailType)
-        {
-            _context.ContactDetailTypes.Add(contactDetailType);
-            _context.SaveChanges();
-            return contactDetailType.Id;
-        }
-
-        public ContactDetailType GetContactDetailTypeById(int id)
-        {
-            var contactDetailType = _context.ContactDetailTypes.Find(id);
-            return contactDetailType;
-        }
-
-        public void UpdateContactDetailType(ContactDetailType contactDetailType)
-        {
-            _context.Attach(contactDetailType);
-            _context.Entry(contactDetailType).Property("Name").IsModified = true;
             _context.SaveChanges();
         }
 
@@ -276,6 +141,54 @@ namespace ECommerceApp.Infrastructure.Repositories
         {
             return _context.Customers
                 .FirstOrDefault(c => c.Id == customerId);
+        }
+
+        public List<Customer> GetAllUserCustomers(string userId, int pageSize, int pageNo, string searchString)
+        {
+            return _context.Customers
+                           .Where(c => c.UserId == userId)
+                           .Where(p => p.FirstName.StartsWith(searchString) || p.LastName.StartsWith(searchString)
+                                || p.CompanyName.StartsWith(searchString) || p.NIP.StartsWith(searchString))
+                           .Skip(pageSize * (pageNo - 1))
+                           .Take(pageSize)
+                           .ToList();
+
+        }
+
+        public int GetCountBySearchStringAndUserId(string searchString, string userId)
+        {
+            return _context.Customers
+                           .Where(c => c.UserId == userId)
+                           .Where(p => p.FirstName.StartsWith(searchString) || p.LastName.StartsWith(searchString)
+                                || p.CompanyName.StartsWith(searchString) || p.NIP.StartsWith(searchString))
+                           .Count();
+
+        }
+
+        public List<Customer> GetAllCustomers(int pageSize, int pageNo, string searchString)
+        {
+            return _context.Customers
+                           .Where(p => p.FirstName.StartsWith(searchString) || p.LastName.StartsWith(searchString)
+                                || p.CompanyName.StartsWith(searchString) || p.NIP.StartsWith(searchString))
+                           .Skip(pageSize * (pageNo - 1))
+                           .Take(pageSize)
+                           .ToList();
+        }
+
+        public int GetCountBySearchString(string searchString)
+        {
+            return _context.Customers
+                           .Where(p => p.FirstName.StartsWith(searchString) || p.LastName.StartsWith(searchString)
+                                || p.CompanyName.StartsWith(searchString) || p.NIP.StartsWith(searchString))
+                           .Count();
+
+        }
+
+        public List<Customer> GetAllUserCustomers(string userId)
+        {
+            return _context.Customers
+                           .Where(c => c.UserId == userId)
+                           .ToList();
         }
     }
 }

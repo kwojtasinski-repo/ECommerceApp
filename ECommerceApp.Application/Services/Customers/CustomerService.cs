@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.Customer;
@@ -8,7 +7,6 @@ using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ECommerceApp.Application.Services.Customers
 {
@@ -64,21 +62,15 @@ namespace ECommerceApp.Application.Services.Customers
 
         public ListForCustomerVm GetAllCustomersForList(int pageSize, int pageNo, string searchString)
         {
-            var customers = _customerRepository.GetAllCustomers()
-                .Where(p => p.FirstName.StartsWith(searchString) || p.LastName.StartsWith(searchString)
-                || p.CompanyName.StartsWith(searchString) || p.NIP.StartsWith(searchString));
-
-            var customersToShow = customers.Skip(pageSize * (pageNo - 1)).Take(pageSize)
-                .ProjectTo<CustomerDto>(_mapper.ConfigurationProvider)
-                .ToList();
+            var customers = _mapper.Map<List<CustomerDto>>(_customerRepository.GetAllCustomers(pageSize, pageNo, searchString));
 
             var customersList = new ListForCustomerVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
-                Customers = customersToShow,
-                Count = customers.Count()
+                Customers = customers,
+                Count = _customerRepository.GetCountBySearchString(searchString)
             };
 
             return customersList;
@@ -86,32 +78,18 @@ namespace ECommerceApp.Application.Services.Customers
 
         public ListForCustomerVm GetAllCustomersForList(string userId, int pageSize, int pageNo, string searchString)
         {
-            var customers = _customerRepository.GetAllCustomers().Where(c => c.UserId == userId)
-                    .Where(p => p.FirstName.StartsWith(searchString) || p.LastName.StartsWith(searchString)
-                    || p.CompanyName.StartsWith(searchString) || p.NIP.StartsWith(searchString))
-                    .ProjectTo<CustomerDto>(_mapper.ConfigurationProvider);
-
-            var customersToShow = customers.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+            var customers = _mapper.Map<List<CustomerDto>>(_customerRepository.GetAllUserCustomers(userId, pageSize, pageNo, searchString));
 
             var customersList = new ListForCustomerVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
-                Customers = customersToShow,
-                Count = customers.Count()
+                Customers = customers,
+                Count = _customerRepository.GetCountBySearchStringAndUserId(searchString, userId)
             };
 
             return customersList;
-        }
-
-        public List<CustomerDetailsDto> GetAllCustomersForList()
-        {
-            var customers = _customerRepository.GetAllCustomers()
-                .ProjectTo<CustomerDetailsDto>(_mapper.ConfigurationProvider)
-                .ToList();
-
-            return customers;
         }
 
         public CustomerDetailsVm GetCustomerDetails(int customerId)
@@ -177,11 +155,9 @@ namespace ECommerceApp.Application.Services.Customers
             return exists;
         }
 
-        public IQueryable<CustomerInformationForOrdersVm> GetCustomersInformationByUserId(string userId)
+        public List<CustomerInformationForOrdersVm> GetCustomersInformationByUserId(string userId)
         {
-            var customers = _customerRepository.GetAllCustomers().Where(c => c.UserId == userId)
-                            .ProjectTo<CustomerInformationForOrdersVm>(_mapper.ConfigurationProvider);
-            return customers;
+            return _mapper.Map<List<CustomerInformationForOrdersVm>>(_customerRepository.GetAllUserCustomers(userId));
         }
 
         #region AnnonymousUser TODO In Future

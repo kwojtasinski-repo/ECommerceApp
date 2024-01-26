@@ -1,6 +1,5 @@
 ﻿using ECommerceApp.Domain.Model;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ECommerceApp.Domain.Interface
 {
