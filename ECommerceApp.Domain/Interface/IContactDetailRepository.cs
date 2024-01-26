@@ -1,7 +1,5 @@
 ﻿using ECommerceApp.Domain.Model;
-using System;
-using System.Linq;
-using System.Linq.Expressions;
+using System.Collections.Generic;
 
 namespace ECommerceApp.Domain.Interface
 {
@@ -10,10 +8,11 @@ namespace ECommerceApp.Domain.Interface
         bool DeleteContactDetail(int contactDetailId);
         int AddContactDetail(ContactDetail contactDetail);
         ContactDetail GetContactDetailById(int contactDetailId);
-        IQueryable<ContactDetail> GetAllContactDetails();
+        ContactDetail GetContactDetailByIdAndUserId(int contactDetailId, string userId);
+        List<ContactDetail> GetAllContactDetails();
         void UpdateContactDetail(ContactDetail contactDetail);
-        IQueryable<int> GetCustomersIds();
-        IQueryable<int> GetCustomersIds(Expression<Func<Customer,bool>> expression);
+        List<int> GetCustomersIds(string userId);
         ContactDetail GetContactDetailById(int id, string userId);
+        bool ExistsByIdAndUserId(int id, string userId);
     }
 }

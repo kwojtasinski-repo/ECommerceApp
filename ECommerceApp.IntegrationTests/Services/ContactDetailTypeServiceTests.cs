@@ -55,17 +55,9 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_expression_should_return_contact_detail_types()
         {
-            var contactDetails = _service.GetContactDetailTypes(b => true);
+            var contactDetails = _service.GetContactDetailTypes();
 
             contactDetails.Count().ShouldBeGreaterThan(0);
-        }
-
-        [Fact]
-        public void given_invalid_expression_should_return_empty_contact_detail_types()
-        {
-            var contactDetails = _service.GetContactDetailTypes(b => b.Name == "asf3525wewqeefw");
-
-            contactDetails.Count().ShouldBe(0);
         }
 
         [Fact]

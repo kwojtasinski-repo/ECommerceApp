@@ -1,5 +1,5 @@
 ﻿using ECommerceApp.Domain.Model;
-using System.Linq;
+using System.Collections.Generic;
 
 namespace ECommerceApp.Domain.Interface
 {
@@ -8,7 +8,7 @@ namespace ECommerceApp.Domain.Interface
         void DeleteContactDetailType(int contactDetailTypeId);
         int AddContactDetailType(ContactDetailType contactDetailType);
         ContactDetailType GetContactDetailTypeById(int contactDetailType);
-        IQueryable<ContactDetailType> GetAllContactDetailTypes();
+        List<ContactDetailType> GetAllContactDetailTypes();
         void UpdateContactDetailType(ContactDetailType contactDetailType);
     }
 }

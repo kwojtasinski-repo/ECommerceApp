@@ -66,8 +66,9 @@ namespace ECommerceApp.IntegrationTests.Services
         public void given_valid_expression_contact_detail_should_exists()
         {
             var id = 1;
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
 
-            var exists = _service.ContactDetailExists(cd => cd.Id == id);
+            var exists = _service.ContactDetailExists(id);
 
             exists.ShouldBeTrue();
         }
@@ -77,7 +78,7 @@ namespace ECommerceApp.IntegrationTests.Services
         {
             var id = 13252;
 
-            var exists = _service.ContactDetailExists(cd => cd.Id == id);
+            var exists = _service.ContactDetailExists(id);
 
             exists.ShouldBeFalse();
         }
@@ -107,17 +108,9 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_expression_should_return_contact_details()
         {
-            var contactDetails = _service.GetAllContactDetails(b => true);
+            var contactDetails = _service.GetAllContactDetails();
 
             contactDetails.Count().ShouldBeGreaterThan(0);
-        }
-
-        [Fact]
-        public void given_invalid_expression_should_return_empty_contact_details()
-        {
-            var contactDetails = _service.GetAllContactDetails(b => b.ContactDetailInformation == "asf3525wewqeefw");
-
-            contactDetails.Count().ShouldBe(0);
         }
 
         [Fact]

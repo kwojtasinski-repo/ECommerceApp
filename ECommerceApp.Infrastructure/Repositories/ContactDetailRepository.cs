@@ -2,9 +2,8 @@
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
-using System;
+using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
@@ -33,14 +32,12 @@ namespace ECommerceApp.Infrastructure.Repositories
             }
 
             _context.ContactDetails.Remove(contactDetail);
-            _context.SaveChanges();
-            return true;
+            return _context.SaveChanges() > 0;
         }
 
-        public IQueryable<ContactDetail> GetAllContactDetails()
+        public List<ContactDetail> GetAllContactDetails()
         {
-            var contactDetails = _context.ContactDetails.AsQueryable();
-            return contactDetails;
+            return _context.ContactDetails.ToList();
         }
 
         public ContactDetail GetContactDetailById(int contactDetailId)
@@ -59,16 +56,12 @@ namespace ECommerceApp.Infrastructure.Repositories
             _context.SaveChanges();
         }
 
-        public IQueryable<int> GetCustomersIds()
+        public List<int> GetCustomersIds(string userId)
         {
-            var customersIds = _context.Customers.AsQueryable().Select(c => c.Id);
-            return customersIds;
-        }
-
-        public IQueryable<int> GetCustomersIds(Expression<Func<Customer, bool>> expression)
-        {
-            var customerIds = _context.Customers.AsQueryable().Where(expression).Select(c => c.Id);
-            return customerIds;
+            return _context.Customers
+                        .Where(cd => cd.UserId == userId)
+                        .Select(c => c.Id)
+                        .ToList();
         }
 
         public ContactDetail GetContactDetailById(int id, string userId)
@@ -78,6 +71,18 @@ namespace ECommerceApp.Infrastructure.Repositories
                                     .Where(c => c.Id == id && c.Customer.UserId == userId).FirstOrDefault();
 
             return contactDetail;
+        }
+
+        public ContactDetail GetContactDetailByIdAndUserId(int contactDetailId, string userId)
+        {
+            return _context.ContactDetails.FirstOrDefault(cd => cd.Id == contactDetailId && cd.Customer.UserId == userId);
+        }
+
+        public bool ExistsByIdAndUserId(int id, string userId)
+        {
+            return _context.ContactDetails
+                .AsNoTracking()
+                .Any(cd => cd.Id == id && cd.Customer.UserId == userId);
         }
     }
 }

@@ -34,12 +34,7 @@ namespace ECommerceApp.API.Controllers
         [HttpGet]
         public ActionResult<List<ContactDetailTypeDto>> GetContactDetailTypes()
         {
-            var contactDetailTypes = _contactDetailTypeService.GetContactDetailTypes(c => true).ToList();
-            if (contactDetailTypes.Count == 0)
-            {
-                return NotFound();
-            }
-            return Ok(contactDetailTypes);
+            return _contactDetailTypeService.GetContactDetailTypes().ToList();
         }
 
         [HttpPut]

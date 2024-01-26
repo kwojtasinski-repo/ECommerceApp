@@ -26,7 +26,7 @@ namespace ECommerceApp.Web.Controllers
         {
             return View(new NewContactDetailVm { 
                 ContactDetail = new ContactDetailDto { CustomerId = id }, 
-                ContactDetailTypes = _contactDetailTypeService.GetContactDetailTypes(cdt => true).ToList() 
+                ContactDetailTypes = _contactDetailTypeService.GetContactDetailTypes().ToList()
             });
         }
 
@@ -53,7 +53,7 @@ namespace ECommerceApp.Web.Controllers
                 return NotFound();
             }
 
-            var vm = new NewContactDetailVm { ContactDetail = contactDetail, ContactDetailTypes = _contactDetailTypeService.GetContactDetailTypes(cdt => true).ToList() };
+            var vm = new NewContactDetailVm { ContactDetail = contactDetail, ContactDetailTypes = _contactDetailTypeService.GetContactDetailTypes().ToList() };
             return View(vm);
         }
 

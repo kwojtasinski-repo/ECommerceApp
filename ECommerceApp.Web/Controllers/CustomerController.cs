@@ -147,7 +147,7 @@ namespace ECommerceApp.Web.Controllers
                 },
                 Addresses = customer.Addresses,
                 ContactDetails = customer.ContactDetails,
-                ContactDetailTypes = _contactDetailTypeService.GetContactDetailTypes(_ => true).ToList()
+                ContactDetailTypes = _contactDetailTypeService.GetContactDetailTypes().ToList()
             };
             return View(vm);
         }

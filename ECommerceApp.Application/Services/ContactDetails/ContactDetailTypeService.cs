@@ -1,13 +1,9 @@
 ﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.ContactDetails
 {
@@ -53,11 +49,9 @@ namespace ECommerceApp.Application.Services.ContactDetails
             return _mapper.Map<ContactDetailTypeDto>(contactDetailType);
         }
 
-        public IEnumerable<ContactDetailTypeDto> GetContactDetailTypes(Expression<Func<ContactDetailType, bool>> expression)
+        public IEnumerable<ContactDetailTypeDto> GetContactDetailTypes()
         {
-            var contactDetailTypes = _contactDetailTypeRepository.GetAllContactDetailTypes().Where(expression);
-            var contactDetailTypesVm = contactDetailTypes.ProjectTo<ContactDetailTypeDto>(_mapper.ConfigurationProvider).ToList();
-            return contactDetailTypesVm;
+            return _mapper.Map<List<ContactDetailTypeDto>>(_contactDetailTypeRepository.GetAllContactDetailTypes());
         }
 
         public void UpdateContactDetailType(ContactDetailTypeDto model)

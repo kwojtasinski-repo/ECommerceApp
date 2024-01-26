@@ -33,10 +33,9 @@ namespace ECommerceApp.Infrastructure.Repositories
             }
         }
 
-        public IQueryable<ContactDetailType> GetAllContactDetailTypes()
+        public List<ContactDetailType> GetAllContactDetailTypes()
         {
-            var contactDetailTypes = _context.ContactDetailTypes.AsQueryable();
-            return contactDetailTypes;
+            return _context.ContactDetailTypes.ToList();
         }
 
         public ContactDetailType GetContactDetailTypeById(int contactDetailTypeId)

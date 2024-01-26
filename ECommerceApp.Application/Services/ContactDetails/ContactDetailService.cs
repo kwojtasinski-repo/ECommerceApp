@@ -1,16 +1,12 @@
 ﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.ContactDetails
 {
@@ -42,7 +38,7 @@ namespace ECommerceApp.Application.Services.ContactDetails
             }
 
             var userId = _httpContextAccessor.GetUserId();
-            var customerIds = _contactDetailRepository.GetCustomersIds(c => c.UserId == userId).ToList();
+            var customerIds = _contactDetailRepository.GetCustomersIds(userId);
 
             if (!customerIds.Any(c => c == contactDetailDto.CustomerId))
             {
@@ -59,19 +55,15 @@ namespace ECommerceApp.Application.Services.ContactDetails
             return _contactDetailRepository.DeleteContactDetail(id);
         }
 
-        public IEnumerable<ContactDetailDto> GetAllContactDetails(Expression<Func<ContactDetail, bool>> expression)
+        public IEnumerable<ContactDetailDto> GetAllContactDetails()
         {
-            var contactDetailTypes = _contactDetailRepository.GetAllContactDetails().Where(expression);
-            var contactDetailTypesVm = contactDetailTypes.ProjectTo<ContactDetailDto>(_mapper.ConfigurationProvider).ToList();
-            return contactDetailTypesVm;
+            return _mapper.Map<List<ContactDetailDto>>(_contactDetailRepository.GetAllContactDetails());
         }
 
         public ContactDetailDto GetContactDetailById(int id)
         {
             var userId = _httpContextAccessor.GetUserId();
-            var contactDetail = _contactDetailRepository.GetAllContactDetails().Include(c => c.Customer).Where(cd => cd.Id == id && cd.Customer.UserId == userId).FirstOrDefault();
-            var contactDetailVm = _mapper.Map<ContactDetailDto>(contactDetail);
-            return contactDetailVm;
+            return _mapper.Map<ContactDetailDto>(_contactDetailRepository.GetContactDetailByIdAndUserId(id, userId));
         }
 
         public bool UpdateContactDetail(ContactDetailDto contactDetailDto)
@@ -96,29 +88,10 @@ namespace ECommerceApp.Application.Services.ContactDetails
             return true;
         }
 
-        public bool ContactDetailExists(Expression<Func<ContactDetail, bool>> expression)
-        {
-            var contactDetail = _contactDetailRepository.GetAllContactDetails().Where(expression).FirstOrDefault();
-
-            if (contactDetail == null)
-            {
-                return false;
-            }
-
-            return true;
-        }
-
         public bool ContactDetailExists(int id)
         {
             var userId = _httpContextAccessor.GetUserId();
-            var contactDetail = _contactDetailRepository.GetAllContactDetails().Include(c => c.Customer).Where(cd => cd.Id == id && cd.Customer.UserId == userId).AsNoTracking().FirstOrDefault();
-
-            if (contactDetail == null)
-            {
-                return false;
-            }
-
-            return true;
+            return _contactDetailRepository.ExistsByIdAndUserId(id, userId);
         }
 
         public ContactDetailsForListVm GetContactDetails(int id)

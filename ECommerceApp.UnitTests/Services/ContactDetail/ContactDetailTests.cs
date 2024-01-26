@@ -30,7 +30,7 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
         [Fact]
         public void given_invalid_contact_detail_should_throw_an_exception()
         {
-            var contactDetail = CreateContactDetailVm();
+            var contactDetail = CreateContactDetailDto();
             var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
 
             Action action = () => contactDetailService.AddContactDetail(contactDetail);
@@ -41,8 +41,9 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
         [Fact]
         public void given_invalid_customer_id_should_throw_an_exception()
         {
-            var contactDetail = CreateContactDetailVm();
+            var contactDetail = CreateContactDetailDto();
             contactDetail.Id = 0;
+            _contactDetailRepository.Setup(c => c.GetCustomersIds(It.IsAny<string>())).Returns(new List<int>());
             var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
 
             Action action = () => contactDetailService.AddContactDetail(contactDetail);
@@ -53,12 +54,12 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
         [Fact]
         public void given_valid_contact_detail_and_valid_user_id_should_add()
         {
-            var contactDetail = CreateContactDetailVm();
+            var contactDetail = CreateContactDetailDto();
             contactDetail.Id = 0;
             var userId = Guid.NewGuid().ToString();
             _contextAccessor.SetUserId(userId);
             var customerIds = new List<int> { 1, 2, 3 };
-            _contactDetailRepository.Setup(cd => cd.GetCustomersIds(It.IsAny<Expression<Func<Domain.Model.Customer, bool>>>())).Returns(customerIds.AsQueryable());
+            _contactDetailRepository.Setup(cd => cd.GetCustomersIds(userId)).Returns(customerIds);
             var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
 
             contactDetailService.AddContactDetail(contactDetail);
@@ -69,7 +70,7 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
         [Fact]
         public void given_invalid_contact_detail_and_user_id_should_throw_an_exception()
         {
-            var contactDetail = CreateContactDetailVm();
+            var contactDetail = CreateContactDetailDto();
             var userId = Guid.NewGuid().ToString();
             _contextAccessor.SetUserId(userId);
             var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
@@ -82,32 +83,16 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
         [Fact]
         public void given_valid_contact_detail_and_invalid_user_id_should_throw_an_exception()
         {
-            var contactDetail = CreateContactDetailVm();
+            var contactDetail = CreateContactDetailDto();
             contactDetail.Id = 0;
             var userId = Guid.NewGuid().ToString();
             _contextAccessor.SetUserId(userId);
+            _contactDetailRepository.Setup(c => c.GetCustomersIds(It.IsAny<string>())).Returns(new List<int>());
             var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
 
             Action action = () => contactDetailService.AddContactDetail(contactDetail);
 
             action.Should().ThrowExactly<BusinessException>().WithMessage("Customer not exists check your id");
-        }
-
-        [Fact]
-        public void given_valid_contact_detail_should_return_true()
-        {
-            int id = 1;
-            string userId = Guid.NewGuid().ToString();
-            _contextAccessor.SetUserId(userId);
-            var contactDetails = CreateContactDetails();
-            var contact = contactDetails.Where(cd => cd.Id == id).FirstOrDefault();
-            contact.Customer = CreateCustomer(contact.Id, userId);
-            _contactDetailRepository.Setup(cd => cd.GetAllContactDetails()).Returns(contactDetails.AsQueryable());
-            var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
-
-            var exists = contactDetailService.ContactDetailExists(id);
-
-            exists.Should().BeTrue();
         }
 
         [Fact]
@@ -118,7 +103,7 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
             _contextAccessor.SetUserId(userId);
             var contactDetails = CreateContactDetails();
             contactDetails.ForEach(cd => cd.Customer = new Domain.Model.Customer { Id = ++id });
-            _contactDetailRepository.Setup(cd => cd.GetAllContactDetails()).Returns(contactDetails.AsQueryable());
+            _contactDetailRepository.Setup(cd => cd.GetAllContactDetails()).Returns(contactDetails);
             var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
 
             var exists = contactDetailService.ContactDetailExists(id);
@@ -139,25 +124,12 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
         }
 
         [Fact]
-        public void given_valid_contact_detail_id_should_exists()
-        {
-            int id = 1;
-            var contactDetails = CreateContactDetails();
-            _contactDetailRepository.Setup(cd => cd.GetAllContactDetails()).Returns(contactDetails.AsQueryable());
-            var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
-
-            var exists = contactDetailService.ContactDetailExists(cd => cd.Id == id);
-
-            exists.Should().BeTrue();
-        }
-
-        [Fact]
         public void given_valid_contact_detail_id_shouldnt_exists()
         {
             int id = 1;
             var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
 
-            var exists = contactDetailService.ContactDetailExists(cd => cd.Id == id);
+            var exists = contactDetailService.ContactDetailExists(id);
 
             exists.Should().BeFalse();
         }
@@ -182,7 +154,7 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
-        private ContactDetailDto CreateContactDetailVm()
+        private ContactDetailDto CreateContactDetailDto()
         {
             var contactDetail = new ContactDetailDto()
             {
