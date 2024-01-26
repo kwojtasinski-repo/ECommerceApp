@@ -1,9 +1,6 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.ViewModels.Brand;
-using ECommerceApp.Domain.Model;
-using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Brands
 {
@@ -14,7 +11,7 @@ namespace ECommerceApp.Application.Services.Brands
         ListForBrandVm GetAllBrands(int pageSize, int pageNo, string searchString);
         BrandDto GetBrand(int id);
         void UpdateBrand(BrandDto brandDto);
-        IEnumerable<BrandDto> GetAllBrands(Expression<Func<Brand, bool>> expression);
+        IEnumerable<BrandDto> GetAllBrands();
         bool BrandExists(int id);
     }
 }

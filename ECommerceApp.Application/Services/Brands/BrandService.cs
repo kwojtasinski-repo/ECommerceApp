@@ -1,14 +1,10 @@
 ﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.Brand;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Brands
 {
@@ -42,29 +38,21 @@ namespace ECommerceApp.Application.Services.Brands
 
         public bool DeleteBrand(int id)
         {
-            if (!_brandRepository.ExistsBrand(id))
-            {
-                return false;
-            }
-
-            _brandRepository.DeleteBrand(id);
-            return true;
+            return _brandRepository.DeleteBrand(id);
         }
 
         public ListForBrandVm GetAllBrands(int pageSize, int pageNo, string searchString)
         {
-            var brands = _brandRepository.GetAllBrands().Where(it => it.Name.StartsWith(searchString))
-                .ProjectTo<BrandDto>(_mapper.ConfigurationProvider)
-                .ToList();
-            var brandsToShow = brands.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+            var brands = _brandRepository.GetAllBrands(searchString, pageSize, pageNo);
+            var brandsCount = _brandRepository.GetCountBySearchString(searchString);
 
             var brandsList = new ListForBrandVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
-                Brands = brandsToShow,
-                Count = brands.Count
+                Brands = _mapper.Map<List<BrandDto>>(brands),
+                Count = brandsCount
             };
 
             return brandsList;
@@ -89,13 +77,9 @@ namespace ECommerceApp.Application.Services.Brands
             _brandRepository.UpdateBrand(entity);
         }
 
-        public IEnumerable<BrandDto> GetAllBrands(Expression<Func<Brand, bool>> expression)
+        public IEnumerable<BrandDto> GetAllBrands()
         {
-            var brands = _brandRepository.GetAllBrands().Where(expression)
-                .ProjectTo<BrandDto>(_mapper.ConfigurationProvider);
-            var brandsToShow = brands.ToList();
-
-            return brandsToShow;
+            return _mapper.Map<List<BrandDto>>(_brandRepository.GetAllBrands());
         }
 
         public bool BrandExists(int id)

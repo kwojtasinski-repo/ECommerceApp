@@ -56,17 +56,9 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_expression_should_return_brands()
         {
-            var brands = _service.GetAllBrands(b => true);
+            var brands = _service.GetAllBrands();
 
             brands.Count().ShouldBeGreaterThan(0);
-        }
-
-        [Fact]
-        public void given_invalid_expression_should_return_empty_brands()
-        {
-            var brands = _service.GetAllBrands(b => b.Name == "asfwewqeefw");
-
-            brands.Count().ShouldBe(0);
         }
 
         [Fact]

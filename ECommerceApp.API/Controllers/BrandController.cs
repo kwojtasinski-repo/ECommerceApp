@@ -22,7 +22,7 @@ namespace ECommerceApp.API.Controllers
         [HttpGet]
         public ActionResult<List<BrandDto>> GetItemBrands()
         {
-            var brands = _brandService.GetAllBrands(b => true);
+            var brands = _brandService.GetAllBrands();
             if (!brands.Any())
             {
                 return NotFound();

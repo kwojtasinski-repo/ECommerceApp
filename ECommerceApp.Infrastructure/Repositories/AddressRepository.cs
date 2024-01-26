@@ -36,6 +36,13 @@ namespace ECommerceApp.Infrastructure.Repositories
             return true;
         }
 
+        public bool ExistsByIdAndUserId(int id, string userId)
+        {
+            return _context.Addresses
+                .AsNoTracking()
+                .Any(a => a.Id == id && a.Customer.UserId == userId);
+        }
+
         public Address GetAddressById(int addressId)
         {
             var address = _context.Addresses.FirstOrDefault(c => c.Id == addressId);
@@ -46,12 +53,6 @@ namespace ECommerceApp.Infrastructure.Repositories
         {
             var address = _context.Addresses.Include(c => c.Customer).Where(a => a.Id == id && a.Customer.UserId == userId).FirstOrDefault();
             return address;
-        }
-
-        public IQueryable<Address> GetAllAddresses()
-        {
-            var addresses = _context.Addresses.AsQueryable();
-            return addresses;
         }
 
         public void UpdateAddress(Address address)

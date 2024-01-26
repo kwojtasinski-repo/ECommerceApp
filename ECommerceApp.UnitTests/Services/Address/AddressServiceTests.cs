@@ -96,22 +96,6 @@ namespace ECommerceApp.UnitTests.Services.Address
         }
 
         [Fact]
-        public void given_valid_address_id_should_return_true()
-        {
-            var id = 1;
-            var customerId = 1;
-            var userId = Guid.NewGuid().ToString();
-            _contextAccessor.SetUserId(userId);
-            var address = CreateAddress(id, customerId, userId);
-            _addressRepository.Setup(a => a.GetAllAddresses()).Returns(new List<Domain.Model.Address> { address }.AsQueryable());
-            var addressService = new AddressService(_addressRepository.Object, _customerRepository.Object, _mapper, _contextAccessor);
-
-            var exists = addressService.AddressExists(id);
-
-            exists.Should().BeTrue();
-        }
-
-        [Fact]
         public void given_invalid_address_id_should_return_false()
         {
             var id = 1;

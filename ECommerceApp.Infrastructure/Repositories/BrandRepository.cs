@@ -2,6 +2,7 @@
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Repositories
@@ -22,15 +23,16 @@ namespace ECommerceApp.Infrastructure.Repositories
             return brand.Id;
         }
 
-        public void DeleteBrand(int brandId)
+        public bool DeleteBrand(int brandId)
         {
             var brand = _context.Brands.Find(brandId);
-
-            if (brand != null)
+            if (brand is null)
             {
-                _context.Brands.Remove(brand);
-                _context.SaveChanges();
+                return false;
             }
+
+            _context.Brands.Remove(brand);
+            return _context.SaveChanges() > 0;
         }
 
         public bool ExistsBrand(int id)
@@ -40,16 +42,31 @@ namespace ECommerceApp.Infrastructure.Repositories
                 .Any(b => b.Id == id);
         }
 
-        public IQueryable<Brand> GetAllBrands()
+        public List<Brand> GetAllBrands()
         {
-            var brands = _context.Brands.AsQueryable();
-            return brands;
+            return _context.Brands.ToList();
+        }
+
+        public List<Brand> GetAllBrands(string searchString, int pageSize, int pageNo)
+        {
+            return _context.Brands
+                    .Where(it => it.Name.StartsWith(searchString))
+                    .Skip(pageSize * (pageNo - 1))
+                    .Take(pageSize)
+                    .ToList();
         }
 
         public Brand GetBrandById(int brandId)
         {
             var brand = _context.Brands.FirstOrDefault(b => b.Id == brandId);
             return brand;
+        }
+
+        public int GetCountBySearchString(string searchString)
+        {
+            return _context.Brands
+                    .Where(it => it.Name.StartsWith(searchString))
+                    .Count();
         }
 
         public void UpdateBrand(Brand brand)
