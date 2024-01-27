@@ -127,7 +127,6 @@ namespace ECommerceApp.UnitTests.Services.Refund
             string reason = "This is text";
             var refund = CreateRefund(1, 1, 1);
             refund.Reason = reason;
-            _refundRepository.Setup(r => r.GetAllRefunds()).Returns(new List<Domain.Model.Refund> { refund }.AsQueryable());
             var refundService = new RefundService(_refundRepository.Object, _mapper, _orderService.Object);
 
             var sameReasonExists = refundService.SameReasonNotExists(reason);
@@ -139,6 +138,7 @@ namespace ECommerceApp.UnitTests.Services.Refund
         public void given_proper_reason_when_compare_refund_should_return_false()
         {
             string reason = "abc";
+            _refundRepository.Setup(r => r.ExistsByReason(reason)).Returns(true);
             var refundService = new RefundService(_refundRepository.Object, _mapper, _orderService.Object);
 
             var sameReasonExists = refundService.SameReasonNotExists(reason);

@@ -6,7 +6,6 @@ using ECommerceApp.Application.ViewModels.Image;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -20,7 +19,7 @@ namespace ECommerceApp.Application.Services.Items
         private readonly IFileStore _fileStore;
         private readonly IImageRepository _imageRepository;
         private readonly int ALLOWED_SIZE = 10 * 1024 * 1024; // 10 mb
-        private readonly List<string> IMAGE_EXTENSION_PARAMETERS = new List<string> { ".jpg", ".png" }; // extensions
+        private readonly List<string> IMAGE_EXTENSION_PARAMETERS = new () { ".jpg", ".png" }; // extensions
         private readonly string FILE_DIR = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "Upload" + Path.DirectorySeparatorChar + "Files" + Path.DirectorySeparatorChar + Guid.NewGuid().ToString();
         private readonly int ALLOWED_IMAGES_COUNT = 5;
 
@@ -42,56 +41,32 @@ namespace ECommerceApp.Application.Services.Items
                 throw new BusinessException("When adding object Id should be equals 0");
             }
 
-            if (objectVm.Images == null || objectVm.Images != null && objectVm.Images.Count == 0)
+            if (objectVm.Images == null || objectVm.Images.Count == 0)
             {
                 throw new BusinessException("Adding image without source is not allowed");
             }
 
-            if (objectVm != null && objectVm.Images.Count > 1)
+            if (objectVm.Images.Count > 1)
             {
                 throw new BusinessException("Cannot add more than one images use another method");
             }
 
-            if (objectVm.Images != null && objectVm.Images.Count > 0)
-            {
-                ValidImages(objectVm.Images);
-            }
-
+            ValidImages(objectVm.Images);
             if (objectVm.ItemId.HasValue)
             {
-                var imageCount = _imageRepository.GetAllImages().Where(im => im.ItemId == objectVm.ItemId.Value).AsNoTracking().Select(i => i.Id).ToList().Count;
-                var count = imageCount + 1;
-
-                if (count >= ALLOWED_IMAGES_COUNT)
-                {
-                    throw new BusinessException($"Cannot add more than {ALLOWED_IMAGES_COUNT} images. There is already {imageCount} images for item id {objectVm.ItemId.Value}");
-                }
+                ValidImageCount(objectVm.ItemId.Value, 1);
             }
 
             var imageSrc = objectVm.Images.FirstOrDefault();
-
-            var image = new Image()
-            {
-                Id = objectVm.Id,
-                ItemId = objectVm.ItemId,
-            };
-
-            if (imageSrc != null)
-            {
-                var fileDir = _fileStore.WriteFile(imageSrc, FILE_DIR);
-                image.Name = fileDir.Name;
-                image.SourcePath = fileDir.SourcePath;
-            }
-
+            var image = CreateImage(imageSrc, objectVm.ItemId);
             var id = _imageRepository.AddImage(image).GetAwaiter().GetResult();
-
             return id;
         }
 
         public bool Delete(int id)
         {
             var image = _imageRepository.GetImageById(id).GetAwaiter().GetResult();
-            if (image == null)
+            if (image is null)
             {
                 return false;
             }
@@ -123,7 +98,7 @@ namespace ECommerceApp.Application.Services.Items
 
         public List<GetImageVm> GetAll()
         {
-            var images = _imageRepository.GetAllImages().ToList();
+            var images = _imageRepository.GetAllImages();
 
             var imagesVm = new List<GetImageVm>();
 
@@ -170,43 +145,22 @@ namespace ECommerceApp.Application.Services.Items
                 throw new BusinessException($"{typeof(AddImagesPOCO).Name} cannot be null");
             }
 
-            if (imageVm.Files == null || imageVm.Files != null && imageVm.Files.Count == 0)
+            if (imageVm.Files == null || imageVm.Files.Count == 0)
             {
                 throw new BusinessException("Adding image without source is not allowed");
             }
 
-            if (imageVm.Files != null && imageVm.Files.Count > 0)
-            {
-                ValidImages(imageVm.Files);
-            }
-
+            ValidImages(imageVm.Files);
             if (imageVm.ItemId.HasValue)
             {
-                var imageCount = _imageRepository.GetAllImages().Where(im => im.ItemId == imageVm.ItemId.Value).AsNoTracking().Select(i => i.Id).ToList().Count;
-                var imagesToAddCount = imageVm.Files.Count;
-                var count = imagesToAddCount + imageCount;
-
-                if (count > ALLOWED_IMAGES_COUNT)
-                {
-                    throw new BusinessException($"Cannot add more than {ALLOWED_IMAGES_COUNT} images. There is already {imageCount} images for item id {imageVm.ItemId.Value}");
-                }
+                ValidImageCount(imageVm.ItemId.Value, imageVm.Files.Count);
             }
 
             var images = new List<Image>();
 
             foreach (var image in imageVm.Files)
             {
-                var fileDir = _fileStore.WriteFile(image, FILE_DIR);
-
-                var img = new Image()
-                {
-                    Id = 0,
-                    ItemId = imageVm.ItemId,
-                    Name = fileDir.Name,
-                    SourcePath = fileDir.SourcePath
-                };
-
-                images.Add(img);
+                images.Add(CreateImage(image, imageVm.ItemId));
             }
 
             var ids = _imageRepository.AddImages(images);
@@ -216,7 +170,7 @@ namespace ECommerceApp.Application.Services.Items
 
         public List<GetImageVm> GetImagesByItemId(int itemId)
         {
-            var images = _imageRepository.GetAllImages().Where(i => i.ItemId == itemId).ToList();
+            var images = _imageRepository.GetItemImages(itemId);
 
             var imagesVm = new List<GetImageVm>();
             foreach (var image in images)
@@ -236,23 +190,14 @@ namespace ECommerceApp.Application.Services.Items
 
         public List<ImageInfoDto> GetImages(IEnumerable<int> imagesId)
         {
-            return _imageRepository.GetAllImages()
-                        .Where(i => imagesId.Contains(i.Id))
-                        .AsNoTracking()
-                        .Select(i => new Image
-                        {
-                            Id = i.Id,
-                            Name = i.Name,
-                            ItemId = i.ItemId,
-                        })
-                        .ToList()
-                        .Select(i => new ImageInfoDto
-                        {
-                            Id = i.Id,
-                            Name = i.Name,
-                            ItemId = i.ItemId
-                        })
-                        .ToList();
+            return _imageRepository.GetImagesByItemsId(imagesId)
+                                   .Select(i => new ImageInfoDto
+                                   {
+                                       Id = i.Id,
+                                       Name = i.Name,
+                                       ItemId = i.ItemId
+                                   })
+                                   .ToList();
         }
 
         public List<int> AddImages(AddImagesWithBase64POCO dto)
@@ -271,14 +216,7 @@ namespace ECommerceApp.Application.Services.Items
             ValidImages(files);
             if (dto.ItemId.HasValue)
             {
-                var imageCount = _imageRepository.GetAllImages().Where(im => im.ItemId == dto.ItemId.Value).AsNoTracking().Select(i => i.Id).ToList().Count;
-                var imagesToAddCount = files.Count();
-                var count = imagesToAddCount + imageCount;
-
-                if (count > ALLOWED_IMAGES_COUNT)
-                {
-                    throw new BusinessException($"Cannot add more than {ALLOWED_IMAGES_COUNT} images. There is already {imageCount} images for item id {dto.ItemId.Value}");
-                }
+                ValidImageCount(dto.ItemId.Value, files.Count());
             }
 
             var images = new List<Image>();
@@ -344,6 +282,30 @@ namespace ECommerceApp.Application.Services.Items
             {
                 throw new BusinessException(errors.ToString());
             }
+        }
+
+        private void ValidImageCount(int itemId, int imagesToAdd)
+        {
+            var imageCount = _imageRepository.GetCountByItemId(itemId);
+            var count = imageCount + imagesToAdd;
+
+            if (count >= ALLOWED_IMAGES_COUNT)
+            {
+                throw new BusinessException($"Cannot add more than {ALLOWED_IMAGES_COUNT} images. There are already '{imagesToAdd}' images for item with id '{itemId}'");
+            }
+        }
+
+        private Image CreateImage(IFormFile image, int? itemId)
+        {
+            var fileDir = _fileStore.WriteFile(image, FILE_DIR);
+
+            return new Image()
+            {
+                Id = 0,
+                ItemId = itemId,
+                Name = fileDir.Name,
+                SourcePath = fileDir.SourcePath
+            };
         }
 
         private record FileWithBytes(string Name, byte[] FileSource);

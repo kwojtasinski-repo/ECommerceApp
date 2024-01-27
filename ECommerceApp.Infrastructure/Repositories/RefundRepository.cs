@@ -1,6 +1,9 @@
 ﻿using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Repositories
@@ -18,17 +21,6 @@ namespace ECommerceApp.Infrastructure.Repositories
             return refund.Id;
         }
 
-        public void DeletePayment(int paymentId)
-        {
-            var payment = _context.Payments.Find(paymentId);
-
-            if (payment != null)
-            {
-                _context.Payments.Remove(payment);
-                _context.SaveChanges();
-            }
-        }
-
         public void DeleteRefund(int refundId)
         {
             var refund = _context.Refunds.Find(refundId);
@@ -40,10 +32,35 @@ namespace ECommerceApp.Infrastructure.Repositories
             }
         }
 
-        public IQueryable<Refund> GetAllRefunds()
+        public bool ExistsByReason(string reasonRefund)
         {
-            var refunds = _context.Refunds.AsQueryable();
-            return refunds;
+            return _context.Refunds
+                           .AsNoTracking()
+                           .Any(r => string.Equals(r.Reason, reasonRefund,
+                                StringComparison.OrdinalIgnoreCase));
+        }
+
+        public List<Refund> GetAllRefunds()
+        {
+            return _context.Refunds.ToList();
+        }
+
+        public List<Refund> GetAllRefunds(int pageSize, int pageNo, string searchString)
+        {
+            return _context.Refunds
+                           .Where(r => r.Reason.StartsWith(searchString)
+                                || r.RefundDate.ToString().StartsWith(searchString))
+                           .Skip(pageSize * (pageNo - 1))
+                           .Take(pageSize)
+                           .ToList();
+        }
+
+        public int GetCountBySearchString(string searchString)
+        {
+            return _context.Refunds
+                           .Where(r => r.Reason.StartsWith(searchString)
+                                || r.RefundDate.ToString().StartsWith(searchString))
+                           .Count();
         }
 
         public Refund GetRefundById(int refundId)

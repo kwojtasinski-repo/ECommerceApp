@@ -57,7 +57,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_expression_should_return_refunds()
         {
-            var refunds = _service.GetRefunds(r => true);
+            var refunds = _service.GetRefunds();
 
             refunds.Count().ShouldBeGreaterThan(0);
         }

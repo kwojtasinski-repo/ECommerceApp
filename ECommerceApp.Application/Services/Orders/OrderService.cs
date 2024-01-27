@@ -133,19 +133,15 @@ namespace ECommerceApp.Application.Services.Orders
         {
             ValidatePageSizeAndPageNo(pageSize, pageNo);
 
-            var orders = _orderRepository.GetAllOrders().Where(o => o.Number.StartsWith(searchString))
-                            .Include(c => c.Currency)
-                            .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
-                            .ToList();
-            var ordersToShow = orders.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+            var orders = _mapper.Map<List<OrderForListVm>>(_orderRepository.GetAllOrders(pageSize, pageNo, searchString));
 
             var ordersList = new ListForOrderVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
-                Orders = ordersToShow,
-                Count = orders.Count
+                Orders = orders,
+                Count = _orderRepository.GetCountBySearchString(searchString)
             };
 
             return ordersList;

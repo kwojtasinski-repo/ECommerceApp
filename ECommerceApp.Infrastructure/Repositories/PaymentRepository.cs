@@ -2,6 +2,7 @@
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Repositories
@@ -46,10 +47,73 @@ namespace ECommerceApp.Infrastructure.Repositories
             return _context.SaveChanges() > 0;
         }
 
-        public IQueryable<Payment> GetAllPayments()
+        public List<Payment> GetAllPayments()
         {
-            var payments = _context.Payments.AsQueryable();
-            return payments;
+            return _context.Payments
+                           .Include(p => p.Currency)
+                           .Select(p => new Payment
+                           {
+                               Id = p.Id,
+                               DateOfOrderPayment = p.DateOfOrderPayment,
+                               Number = p.Number,
+                               Cost = p.Cost,
+                               State = p.State,
+                               CurrencyId = p.CurrencyId,
+                               CustomerId = p.CustomerId,
+                               OrderId = p.OrderId,
+                               Currency = new Currency { Id = p.CurrencyId, Code = p.Currency.Code },
+                           })
+                           .ToList();
+        }
+
+        public List<Payment> GetAllPayments(int pageSize, int pageNo, string searchString)
+        {
+            return _context.Payments
+                           .Include(p => p.Currency)
+                           .Where(p => p.Number.StartsWith(searchString))
+                           .Skip(pageSize * (pageNo - 1)).Take(pageSize)
+                           .Select(p => new Payment
+                           {
+                               Id = p.Id,
+                               DateOfOrderPayment = p.DateOfOrderPayment,
+                               Number = p.Number,
+                               Cost = p.Cost,
+                               State = p.State,
+                               CurrencyId = p.CurrencyId,
+                               CustomerId = p.CustomerId,
+                               OrderId = p.OrderId,
+                               Currency = new Currency { Id = p.CurrencyId, Code = p.Currency.Code },
+                           })
+                            .ToList();
+        }
+
+        public List<Payment> GetAllUserPayments(string userId)
+        {
+            return _context.Payments
+                           .Include(c => c.Customer)
+                           .Include(p => p.Currency)
+                           .Where(p => p.Customer.UserId == userId)
+                           .Select(p => new Payment
+                           {
+                               Id = p.Id,
+                               DateOfOrderPayment = p.DateOfOrderPayment,
+                               Number = p.Number,
+                               Cost = p.Cost,
+                               State = p.State,
+                               CurrencyId = p.CurrencyId,
+                               CustomerId = p.CustomerId,
+                               OrderId = p.OrderId,
+                               Currency = new Currency { Id = p.CurrencyId, Code = p.Currency.Code },
+                           })
+                           .ToList();
+        }
+
+        public int GetCountBySearchString(string searchString)
+        {
+            return _context.Payments
+                           .Include(p => p.Currency)
+                           .Where(p => p.Number.StartsWith(searchString))
+                           .Count();
         }
 
         public Payment GetPaymentById(int paymentId)
@@ -134,6 +198,43 @@ namespace ECommerceApp.Infrastructure.Repositories
                     }
                 })
                 .FirstOrDefault();
+        }
+
+        public Payment GetPaymentDetailsByIdAndUserId(int paymentId, string userId)
+        {
+            return _context.Payments
+                           .Include(c => c.Customer)
+                           .Include(o => o.Order)
+                           .Include(c => c.Currency)
+                           .Where(p => p.Customer.UserId == userId && p.Id == paymentId)
+                           .Select(p => new Payment
+                           {
+                               Id = p.Id,
+                               Cost = p.Cost,
+                               Number = p.Number,
+                               State = p.State,
+                               DateOfOrderPayment = p.DateOfOrderPayment,
+                               CurrencyId = p.CurrencyId,
+                               CustomerId = p.CustomerId,
+                               OrderId = p.OrderId,
+                               Customer = new Customer
+                               {
+                                   Id = p.CustomerId,
+                                   FirstName = p.Customer.FirstName,
+                                   LastName = p.Customer.LastName,
+                               },
+                               Order = new Order
+                               {
+                                   Id = p.OrderId,
+                                   Number = p.Order.Number
+                               },
+                               Currency = new Currency
+                               {
+                                   Id = p.CurrencyId,
+                                   Code = p.Currency.Code
+                               }
+                           })
+                           .FirstOrDefault();
         }
 
         public void UpdatePayment(Payment payment)

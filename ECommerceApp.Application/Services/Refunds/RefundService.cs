@@ -1,9 +1,7 @@
 ﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Abstracts;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Orders;
-using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Application.ViewModels.Refund;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -11,8 +9,6 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
 
 namespace ECommerceApp.Application.Services.Refunds
 {
@@ -79,31 +75,23 @@ namespace ECommerceApp.Application.Services.Refunds
 
         public ListForRefundVm GetRefunds(int pageSize, int pageNo, string searchString)
         {
-            var refunds = _repo.GetAllRefunds().Where(r => r.Reason.StartsWith(searchString)
-                           || r.RefundDate.ToString().StartsWith(searchString))
-                           .ProjectTo<RefundVm>(_mapper.ConfigurationProvider)
-                           .ToList();
-            var refundsToShow = refunds.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+            var refunds = _mapper.Map<List<RefundVm>>(_repo.GetAllRefunds(pageSize, pageNo, searchString));
 
             var refundsList = new ListForRefundVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
-                Refunds = refundsToShow,
-                Count = refunds.Count
+                Refunds = refunds,
+                Count = _repo.GetCountBySearchString(searchString)
             };
 
             return refundsList;
         }
 
-        public IEnumerable<RefundVm> GetRefunds(Expression<Func<Refund, bool>> expression)
+        public IEnumerable<RefundVm> GetRefunds()
         {
-            var refunds = _repo.GetAll().Where(expression)
-               .ProjectTo<RefundVm>(_mapper.ConfigurationProvider);
-            var refundsToShow = refunds.ToList();
-
-            return refundsToShow;
+            return _mapper.Map<List<RefundVm>>(_repo.GetAllRefunds());
         }
 
         public bool RefundExists(int id)
@@ -140,17 +128,7 @@ namespace ECommerceApp.Application.Services.Refunds
                 throw new BusinessException("Check your reason if is not null");
             }
 
-            var refunds = _repo.GetAllRefunds();
-            var refund = refunds.Where(r => string.Equals(r.Reason, reasonRefund,
-                   StringComparison.OrdinalIgnoreCase)).FirstOrDefault();
-            if (refund != null)
-            {
-                return false;
-            }
-            else
-            {
-                return true;
-            }
+            return _repo.ExistsByReason(reasonRefund);
         }
     }
 }

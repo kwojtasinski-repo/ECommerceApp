@@ -1,6 +1,5 @@
 ﻿using ECommerceApp.Domain.Model;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Domain.Interface
@@ -11,7 +10,10 @@ namespace ECommerceApp.Domain.Interface
         bool DeleteImage(Image image);
         Task<int> AddImage(Image image);
         Task<Image> GetImageById(int imageId);
-        IQueryable<Image> GetAllImages();
+        List<Image> GetAllImages();
+        List<Image> GetItemImages(int itemId);
+        List<Image> GetImagesByItemsId(IEnumerable<int> imagesId);
         List<int> AddImages(List<Image> images);
+        int GetCountByItemId(int? itemId);
     }
 }

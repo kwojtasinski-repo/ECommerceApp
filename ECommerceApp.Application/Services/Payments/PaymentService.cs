@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Customers;
@@ -7,10 +6,8 @@ using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ECommerceApp.Application.Services.Payments
 {
@@ -89,78 +86,25 @@ namespace ECommerceApp.Application.Services.Payments
 
         public IEnumerable<PaymentDto> GetPayments()
         {
-            var payments = _repo.GetAllPayments()
-                .Include(p => p.Currency)
-                .Select(p => new Payment
-                {
-                    Id = p.Id,
-                    DateOfOrderPayment = p.DateOfOrderPayment,
-                    Number = p.Number,
-                    Cost = p.Cost,
-                    State = p.State,
-                    CurrencyId = p.CurrencyId,
-                    CustomerId = p.CustomerId,
-                    OrderId = p.OrderId,
-                    Currency = new Currency { Id = p.CurrencyId, Code = p.Currency.Code },
-                })
-               .ProjectTo<PaymentDto>(_mapper.ConfigurationProvider);
-            var paymentsToShow = payments.ToList();
-
-            return paymentsToShow;
+            return _mapper.Map<List<PaymentDto>>(_repo.GetAllPayments());
         }
 
         public IEnumerable<PaymentDto> GetUserPayments(string userId)
         {
-            var payments = _repo.GetAllPayments()
-                .Include(c => c.Customer)
-                .Include(p => p.Currency)
-                .Where(p => p.Customer.UserId == userId)
-                .Select(p => new Payment
-                {
-                    Id = p.Id,
-                    DateOfOrderPayment = p.DateOfOrderPayment,
-                    Number = p.Number,
-                    Cost = p.Cost,
-                    State = p.State,
-                    CurrencyId = p.CurrencyId,
-                    CustomerId = p.CustomerId,
-                    OrderId = p.OrderId,
-                    Currency = new Currency { Id = p.CurrencyId, Code = p.Currency.Code },
-                })
-                .ProjectTo<PaymentDto>(_mapper.ConfigurationProvider);
-            var paymentsToShow = payments.ToList();
-
-            return paymentsToShow;
+            return _mapper.Map<List<PaymentDto>>(_repo.GetAllUserPayments(userId));
         }
 
         public ListForPaymentVm GetPayments(int pageSize, int pageNo, string searchString)
         {
-            var payments = _repo.GetAllPayments()
-                            .Include(p => p.Currency)
-                            .Where(p => p.Number.StartsWith(searchString))
-                            .Select(p => new Payment
-                            {
-                                Id = p.Id,
-                                DateOfOrderPayment = p.DateOfOrderPayment,
-                                Number = p.Number,
-                                Cost = p.Cost,
-                                State = p.State,
-                                CurrencyId = p.CurrencyId,
-                                CustomerId = p.CustomerId,
-                                OrderId = p.OrderId,
-                                Currency = new Currency { Id = p.CurrencyId, Code = p.Currency.Code },
-                            })
-                            .ProjectTo<PaymentDto>(_mapper.ConfigurationProvider)
-                            .ToList();
-            var paymentsToShow = payments.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+            var payments = _mapper.Map<List<PaymentDto>>(_repo.GetAllPayments(pageSize, pageNo, searchString));
 
             var paymentsList = new ListForPaymentVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
-                Payments = paymentsToShow,
-                Count = payments.Count
+                Payments = payments,
+                Count = _repo.GetCountBySearchString(searchString)
             };
 
             return paymentsList;
@@ -183,40 +127,7 @@ namespace ECommerceApp.Application.Services.Payments
         public PaymentDetailsDto GetPaymentDetails(int id)
         {
             var userId = _httpContextAccessor.GetUserId();
-            var payment = _repo.GetAllPayments().Include(c => c.Customer)
-                                        .Include(o => o.Order)
-                                        .Include(c => c.Currency)
-                                        .Where(p => p.Customer.UserId == userId && p.Id == id)
-                                        .Select(p => new Payment
-                                        {
-                                            Id = p.Id,
-                                            Cost = p.Cost,
-                                            Number = p.Number,
-                                            State = p.State,
-                                            DateOfOrderPayment = p.DateOfOrderPayment,
-                                            CurrencyId = p.CurrencyId,
-                                            CustomerId = p.CustomerId,
-                                            OrderId = p.OrderId,
-                                            Customer = new Customer
-                                            {
-                                                Id = p.CustomerId,
-                                                FirstName = p.Customer.FirstName,
-                                                LastName = p.Customer.LastName,
-                                            },
-                                            Order = new Order
-                                            {
-                                                Id = p.OrderId,
-                                                Number = p.Order.Number
-                                            },
-                                            Currency = new Currency
-                                            {
-                                                Id = p.CurrencyId,
-                                                Code = p.Currency.Code
-                                            }
-                                        })
-                                        .FirstOrDefault();
-            var paymentVm = _mapper.Map<PaymentDetailsDto>(payment);
-            return paymentVm;
+            return _mapper.Map<PaymentDetailsDto>(_repo.GetPaymentDetailsByIdAndUserId(id, userId));
         }
 
         public PaymentVm InitPayment(int orderId)

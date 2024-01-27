@@ -2,6 +2,7 @@
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Repositories
@@ -193,6 +194,23 @@ namespace ECommerceApp.Infrastructure.Repositories
                 .Include(inc => inc.CouponUsed).ThenInclude(inc => inc.Coupon)
                 .Include(inc => inc.Customer)
                 .FirstOrDefault(o => o.Id == id);
+        }
+
+        public List<Order> GetAllOrders(int pageSize, int pageNo, string searchString)
+        {
+            return _context.Orders
+                           .Where(o => o.Number.StartsWith(searchString))
+                           .Include(c => c.Currency)
+                           .Skip(pageSize * (pageNo - 1))
+                           .Take(pageSize).ToList();
+        }
+
+        public int GetCountBySearchString(string searchString)
+        {
+            return _context.Orders
+                           .Include(c => c.Currency)
+                           .Where(o => o.Number.StartsWith(searchString))
+                           .Count();
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.Domain.Model;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace ECommerceApp.Domain.Interface
@@ -8,9 +9,13 @@ namespace ECommerceApp.Domain.Interface
         bool DeletePayment(int paymentId);
         int AddPayment(Payment payment);
         Payment GetPaymentById(int paymentId);
-        IQueryable<Payment> GetAllPayments();
+        List<Payment> GetAllPayments();
         void UpdatePayment(Payment payment);
         Payment GetPaymentByOrderId(int orderId);
         bool DeletePayment(Payment payment);
+        Payment GetPaymentDetailsByIdAndUserId(int paymentId, string userId);
+        List<Payment> GetAllPayments(int pageSize, int pageNo, string searchString);
+        List<Payment> GetAllUserPayments(string userId);
+        int GetCountBySearchString(string searchString);
     }
 }

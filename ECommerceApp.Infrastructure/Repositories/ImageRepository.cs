@@ -1,5 +1,6 @@
 ﻿using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -36,16 +37,45 @@ namespace ECommerceApp.Infrastructure.Repositories
             await _genericRepository.DeleteAsync(imageId);
         }
 
-        public IQueryable<Image> GetAllImages()
+        public List<Image> GetAllImages()
         {
-            var query = _genericRepository.GetAll();
-            return query;
+            return _genericRepository.GetAll().ToList();
+        }
+
+        public int GetCountByItemId(int? itemId)
+        {
+            return _genericRepository.GetAll()
+                                     .AsNoTracking()
+                                     .Where(im => itemId.HasValue && im.ItemId == itemId.Value)
+                                     .Select(i => i.Id)
+                                     .Count();
         }
 
         public async Task<Image> GetImageById(int imageId)
         {
             var image = await _genericRepository.GetByIdAsync(imageId);
             return image;
+        }
+
+        public List<Image> GetImagesByItemsId(IEnumerable<int> imagesId)
+        {
+            return _genericRepository.GetAll()
+                        .Where(i => imagesId.Contains(i.Id))
+                        .AsNoTracking()
+                        .Select(i => new Image
+                        {
+                            Id = i.Id,
+                            Name = i.Name,
+                            ItemId = i.ItemId,
+                        })
+                        .ToList();
+        }
+
+        public List<Image> GetItemImages(int itemId)
+        {
+            return _genericRepository.GetAll()
+                              .Where(i => i.ItemId == itemId)
+                              .ToList();
         }
     }
 }

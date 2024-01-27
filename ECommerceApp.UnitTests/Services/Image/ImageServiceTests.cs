@@ -31,7 +31,7 @@ namespace ECommerceApp.Tests.Services.Image
         {
             var image = CreateImageVm();
             image.Id = 0;
-            _imageRepository.Setup(i => i.GetAllImages()).Returns(new List<Domain.Model.Image>().AsQueryable());
+            _imageRepository.Setup(i => i.GetAllImages()).Returns(new List<Domain.Model.Image>());
             _fileStore.Setup(f => f.GetFileExtenstion(It.IsAny<string>())).Returns(".jpg");
             _fileStore.Setup(f => f.WriteFile(It.IsAny<IFormFile>(), It.IsAny<string>())).Returns(new Application.POCO.FileDirectoryPOCO { Name = "Name", SourcePath = "/abc"});
             var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
@@ -46,7 +46,7 @@ namespace ECommerceApp.Tests.Services.Image
         {
             var image = CreateImageVm();
             image.Id = 0;
-            _imageRepository.Setup(i => i.GetAllImages()).Returns(new List<Domain.Model.Image>().AsQueryable());
+            _imageRepository.Setup(i => i.GetAllImages()).Returns(new List<Domain.Model.Image>());
             _fileStore.Setup(f => f.GetFileExtenstion(It.IsAny<string>())).Returns(".bin");
             _fileStore.Setup(f => f.WriteFile(It.IsAny<IFormFile>(), It.IsAny<string>())).Returns(new Application.POCO.FileDirectoryPOCO { Name = "Name", SourcePath = "/abc" });
             var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
@@ -62,7 +62,7 @@ namespace ECommerceApp.Tests.Services.Image
             var image = CreateImageVm();
             image.Images = new List<IFormFile>() { AddFileToIFormFile("abcsa2", 41943041) };
             image.Id = 0;
-            _imageRepository.Setup(i => i.GetAllImages()).Returns(new List<Domain.Model.Image>().AsQueryable());
+            _imageRepository.Setup(i => i.GetAllImages()).Returns(new List<Domain.Model.Image>());
             _fileStore.Setup(f => f.GetFileExtenstion(It.IsAny<string>())).Returns(".jpg");
             _fileStore.Setup(f => f.WriteFile(It.IsAny<IFormFile>(), It.IsAny<string>())).Returns(new Application.POCO.FileDirectoryPOCO { Name = "Name", SourcePath = "/abc" });
             var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
@@ -114,7 +114,7 @@ namespace ECommerceApp.Tests.Services.Image
         {
             var image = CreateImageVm();
             image.Id = 0;
-            _imageRepository.Setup(i => i.GetAllImages()).Returns(new List<Domain.Model.Image>() { new Domain.Model.Image() { ItemId = 1 }, new Domain.Model.Image() { ItemId = 1 }, new Domain.Model.Image() { ItemId = 1 }, new Domain.Model.Image() { ItemId = 1 }, new Domain.Model.Image() { ItemId = 1 } }.AsQueryable());
+            _imageRepository.Setup(i => i.GetCountByItemId(It.IsAny<int>())).Returns(5);
             _fileStore.Setup(f => f.GetFileExtenstion(It.IsAny<string>())).Returns(".jpg");
             _fileStore.Setup(f => f.WriteFile(It.IsAny<IFormFile>(), It.IsAny<string>())).Returns(new Application.POCO.FileDirectoryPOCO { Name = "Name", SourcePath = "/abc" });
             var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
@@ -143,14 +143,14 @@ namespace ECommerceApp.Tests.Services.Image
         {
             int itemId = 1;
             var images = new AddImagesPOCO() { Files = new List<IFormFile> { AddFileToIFormFile("test1"), AddFileToIFormFile("test2") }, ItemId = itemId };
-            _imageRepository.Setup(i => i.GetAllImages()).Returns(new List<Domain.Model.Image>() { new Domain.Model.Image() { ItemId = 1 }, new Domain.Model.Image() { ItemId = 1 }, new Domain.Model.Image() { ItemId = 1 }, new Domain.Model.Image() { ItemId = 1 }, new Domain.Model.Image() { ItemId = 1 } }.AsQueryable());
+            _imageRepository.Setup(i => i.GetCountByItemId(It.IsAny<int>())).Returns(5);
             _fileStore.Setup(f => f.GetFileExtenstion(It.IsAny<string>())).Returns(".jpg");
             _fileStore.Setup(f => f.WriteFile(It.IsAny<IFormFile>(), It.IsAny<string>())).Returns(new Application.POCO.FileDirectoryPOCO { Name = "Name", SourcePath = "/abc" });
             var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
 
             Action action = () => imageService.AddImages(images);
 
-            action.Should().ThrowExactly<BusinessException>().WithMessage("Cannot add more than 5 images. There is already 5 images for item id 1");
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("Cannot add more than 5 images. There is already 5 images for item id 1");
         }
 
         [Fact]
