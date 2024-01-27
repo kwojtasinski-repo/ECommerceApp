@@ -1,6 +1,5 @@
 ﻿using ECommerceApp.Domain.Model;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ECommerceApp.Domain.Interface
 {
@@ -9,14 +8,22 @@ namespace ECommerceApp.Domain.Interface
         bool DeleteOrder(int orderId);
         int AddOrder(Order order);
         Order GetOrderById(int id);
-        IQueryable<Order> GetAllOrders();
+        Order GetOrderByRefundId(int refundId);
+        List<Order> GetAllOrders();
+        List<Order> GetAllOrders(int customerId);
+        List<Order> GetAllOrders(string userId);
         List<Order> GetAllOrders(int pageSize, int pageNo, string searchString);
-        IQueryable<OrderItem> GetAllOrderItems();
+        List<Order> GetAllOrders(int customerId, int pageSize, int pageNo);
+        List<Order> GetAllOrders(string userId, int pageSize, int pageNo);
         void UpdatedOrder(Order order);
-        Order GetByIdReadOnly(int id);
         Order GetOrderForRealizationById(int id);
         Order GetOrderSummaryById(int orderId);
         Order GetOrderDetailsById(int id);
+        Order GetOrderPaidAndDeliveredById(int id);
         int GetCountBySearchString(string searchString);
+        int GetCountByCustomerId(int customerId);
+        int GetCountByUserId(string userId);
+        List<Order> GetAllPaidOrders(int pageSize, int pageNo, string searchString);
+        int GetCountPaidOrdersBySearchString(string searchString);
     }
 }

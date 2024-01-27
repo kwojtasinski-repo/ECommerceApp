@@ -20,7 +20,7 @@ namespace ECommerceApp.IntegrationTests.Services
 
             _service.DeleteOrder(id);
 
-            var orderAdded = _service.Get(id);
+            var orderAdded = _service.GetOrderById(id);
             orderAdded.ShouldBeNull();
         }
 
@@ -32,7 +32,7 @@ namespace ECommerceApp.IntegrationTests.Services
 
             _service.DeleteRefundFromOrder(refundId);
 
-            var order = _service.Get(orderId);
+            var order = _service.GetOrderById(orderId);
             order.ShouldNotBeNull();
             order.RefundId.ShouldBeNull();
         }
@@ -102,40 +102,11 @@ namespace ECommerceApp.IntegrationTests.Services
         }
 
         [Fact]
-        public void given_valid_order_id_should_return_readonly_order()
-        {
-            var id = 1;
-
-            var order = _service.GetOrderByIdReadOnly(id);
-
-            order.ShouldNotBeNull();
-            order.Id.ShouldBe(id);
-        }
-
-        [Fact]
-        public void given_invalid_order_id_should_return_null_readonly_order()
-        {
-            var id = 13523565;
-
-            var order = _service.GetOrderByIdReadOnly(id);
-
-            order.ShouldBeNull();
-        }
-
-        [Fact]
         public void given_orders_in_db_when_get_all_by_expression_should_return_list_orders()
         {
-            var orders = _service.GetAllOrders(o => true);
+            var orders = _service.GetAllOrders();
 
             orders.Count.ShouldBeGreaterThan(0);
-        }
-
-        [Fact]
-        public void given_orders_in_db_when_get_all_by_invalid_expression_should_return_empty_list_orders()
-        {
-            var orders = _service.GetAllOrders(o => o.Id == 3235646);
-
-            orders.Count.ShouldBe(0);
         }
 
         [Fact]

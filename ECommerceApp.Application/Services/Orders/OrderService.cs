@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Coupons;
@@ -11,11 +10,9 @@ using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Text;
 
 namespace ECommerceApp.Application.Services.Orders
@@ -53,13 +50,6 @@ namespace ECommerceApp.Application.Services.Orders
             _itemRepository = itemRepository;
         }
 
-        public OrderDto Get(int id)
-        {
-            var order = _orderRepository.GetOrderById(id);
-            var orderVm = _mapper.Map<OrderDto>(order);
-            return orderVm;
-        }
-
         public void Update(NewOrderVm vm)
         {
             if (vm is null)
@@ -91,13 +81,10 @@ namespace ECommerceApp.Application.Services.Orders
             return _orderRepository.DeleteOrder(id);
         }
 
-        public void DeleteRefundFromOrder(int id)
+        public void DeleteRefundFromOrder(int refundId)
         {
-            var order = _orderRepository.GetAllOrders()
-                                        .Include(oi => oi.OrderItems)
-                                        .Where(r => r.RefundId == id)
-                                        .FirstOrDefault()
-                                        ?? throw new BusinessException($"Refund with id '{id}' was not assigned to any order");
+            var order = _orderRepository.GetOrderByRefundId(refundId)
+                   ?? throw new BusinessException($"Refund with id '{refundId}' was not assigned to any order");
 
             order.RefundId = null;
             foreach (var oi in order.OrderItems)
@@ -110,7 +97,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public void DeleteCouponUsedFromOrder(int orderId, int couponUsedId)
         {
-            var order = _orderRepository.GetAllOrders().Include(oi => oi.OrderItems).Where(o => o.Id == orderId).FirstOrDefault()
+            var order = _orderRepository.GetOrderById(orderId)
                 ?? throw new BusinessException("Given invalid id");
             if (order.IsPaid)
             {
@@ -149,9 +136,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public List<OrderForListVm> GetAllOrders()
         {
-            return _orderRepository.GetAllOrders()
-                            .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
-                            .ToList();
+            return _mapper.Map<List<OrderForListVm>>(_orderRepository.GetAllOrders());
         }
 
         public OrderDetailsVm GetOrderDetail(int id)
@@ -163,7 +148,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public void AddCouponUsedToOrder(int orderId, int couponUsedId)
         {
-            var order = _orderRepository.GetAllOrders().Include(oi => oi.OrderItems).Where(o => o.Id == orderId).FirstOrDefault()
+            var order = _orderRepository.GetOrderById(orderId)
                 ?? throw new BusinessException("Cannot add coupon if order not exists");
             
             var coupon = _couponService.GetByCouponUsed(couponUsedId)
@@ -219,9 +204,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public OrderDto GetOrderById(int orderId)
         {
-            var order = _orderRepository.GetOrderById(orderId);
-            var orderVm = _mapper.Map<OrderDto>(order);
-            return orderVm;
+            return _mapper.Map<OrderDto>(_orderRepository.GetOrderById(orderId));
         }
 
         public NewOrderVm GetOrderForRealization(int orderId)
@@ -258,19 +241,15 @@ namespace ECommerceApp.Application.Services.Orders
         {
             ValidatePageSizeAndPageNo(pageSize, pageNo);
 
-            var orders = _orderRepository.GetAllOrders().Where(o => o.CustomerId == customerId)
-                            .Include(c => c.Currency)
-                            .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
-                            .ToList();
-            var ordersToShow = orders.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+            var orders = _mapper.Map<List<OrderForListVm>>(_orderRepository.GetAllOrders(customerId, pageSize, pageNo));
 
             var ordersList = new ListForOrderVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = "",
-                Orders = ordersToShow,
-                Count = orders.Count
+                Orders = orders,
+                Count = _orderRepository.GetCountByCustomerId(customerId)
             };
 
             return ordersList;
@@ -278,31 +257,22 @@ namespace ECommerceApp.Application.Services.Orders
 
         public List<OrderForListVm> GetAllOrdersByCustomerId(int customerId)
         {
-            var orders = _orderRepository.GetAllOrders().Where(o => o.CustomerId == customerId)
-                            .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
-                            .ToList();
-
-            return orders;
+            return _mapper.Map<List<OrderForListVm>>(_orderRepository.GetAllOrders(customerId));
         }
 
         public ListForOrderVm GetAllOrdersByUserId(string userId, int pageSize, int pageNo)
         {
             ValidatePageSizeAndPageNo(pageSize, pageNo);
 
-            var orders = _orderRepository.GetAllOrders().Where(o => o.UserId == userId)
-                            .Include(c => c.Currency)
-                            .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
-                            .ToList();
-
-            var ordersToShow = orders.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+            var orders = _mapper.Map<List<OrderForListVm>>(_orderRepository.GetAllOrders(userId, pageSize, pageNo));
 
             var ordersList = new ListForOrderVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = "",
-                Orders = ordersToShow,
-                Count = orders.Count
+                Orders = orders,
+                Count = _orderRepository.GetCountByUserId(userId)
             };
 
             return ordersList;
@@ -310,25 +280,12 @@ namespace ECommerceApp.Application.Services.Orders
 
         public List<OrderForListVm> GetAllOrdersByUserId(string userId)
         {
-            var orders = _orderRepository.GetAllOrders().Where(o => o.UserId == userId)
-                            .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
-                            .ToList();
-
-            return orders;
-        }
-
-        public List<OrderForListVm> GetAllOrders(Expression<Func<Order, bool>> expression)
-        {
-            return _orderRepository.GetAllOrders().Where(expression)
-                            .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider)
-                            .ToList();
+            return _mapper.Map<List<OrderForListVm>>(_orderRepository.GetAllOrders(userId));
         }
 
         public void AddRefundToOrder(int orderId, int refundId)
         {
-            var order = _orderRepository.GetAllOrders()
-                .Include(oi => oi.OrderItems)
-                .Where(o => o.Id == orderId && o.IsPaid && o.IsDelivered).FirstOrDefault() 
+            var order = _orderRepository.GetOrderPaidAndDeliveredById(orderId)
                 ?? throw new BusinessException($"Order with id {orderId} not exists");
             order.RefundId = refundId;
             foreach (var oi in order.OrderItems)
@@ -342,19 +299,15 @@ namespace ECommerceApp.Application.Services.Orders
         {
             ValidatePageSizeAndPageNo(pageSize, pageNo);
 
-            var orders = _orderRepository.GetAllOrders().Where(o => o.IsPaid == true && o.IsDelivered == false)
-                            .Where(o => o.Number.StartsWith(searchString))
-                            .ProjectTo<OrderForListVm>(_mapper.ConfigurationProvider);
-
-            var ordersToShow = orders.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+            var orders = _mapper.Map<List<OrderForListVm>>(_orderRepository.GetAllPaidOrders(pageSize, pageNo, searchString));
 
             var ordersList = new ListForOrderVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
-                Orders = ordersToShow,
-                Count = orders.Count()
+                Orders = orders,
+                Count = _orderRepository.GetCountPaidOrdersBySearchString(searchString)
             };
 
             return ordersList;
@@ -367,13 +320,6 @@ namespace ECommerceApp.Application.Services.Orders
             order.IsDelivered = true;
             order.Delivered = DateTime.Now;
             _orderRepository.UpdatedOrder(order);
-        }
-
-        public OrderDto GetOrderByIdReadOnly(int id)
-        {
-            var order = _orderRepository.GetByIdReadOnly(id);
-            var orderVm = _mapper.Map<OrderDto>(order);
-            return orderVm;
         }
 
         public int AddOrderFromCart(AddOrderFromCartDto model)
@@ -520,7 +466,7 @@ namespace ECommerceApp.Application.Services.Orders
 
             if (orderItemsToAdd.Any())
             {
-                var items = _itemRepository.GetAllItems().Where(i => orderItemsToAdd.Select(it => it.ItemId).Contains(i.Id)).ToList();
+                var items = _itemRepository.GetItemsByIds(orderItemsToAdd.Select(it => it.ItemId));
                 foreach(var item in orderItemsToAdd)
                 {
                     var itemExists = items.FirstOrDefault(i => i.Id == item.ItemId);

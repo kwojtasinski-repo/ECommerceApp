@@ -6,10 +6,8 @@ using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 
@@ -39,19 +37,15 @@ namespace ECommerceApp.Application.Services.Items
 
         public ListForItemVm GetAllItemsForList(int pageSize, int pageNo, string searchString)
         {
-            var items = _itemRepository.GetAllItems()
-                .Where(i => i.Name.StartsWith(searchString))
-                .Skip(pageSize * (pageNo - 1)).Take(pageSize);
-            var itemsToShow = items.ProjectTo<ItemDetailsVm>(_mapper.ConfigurationProvider).ToList();
+            var items = _mapper.Map<List<ItemDetailsVm>>(_itemRepository.GetAllItems(pageSize, pageNo, searchString));
 
             var itemsList = new ListForItemVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
-                Items = itemsToShow,
-                // TODO: Think about performance
-                Count = _itemRepository.GetAllItems().Count()
+                Items = items,
+                Count = _itemRepository.GetCountBySearchString(searchString)
             };
 
             return itemsList;
@@ -59,17 +53,12 @@ namespace ECommerceApp.Application.Services.Items
 
         public List<ItemDto> GetAllItems()
         {
-            var items = _itemRepository.GetAllItems()
-                .ProjectTo<ItemDto>(_mapper.ConfigurationProvider)
-                .ToList();
-            return items;
+            return _mapper.Map<List<ItemDto>>(_itemRepository.GetAllItems());
         }
 
         public List<ItemInfoVm> GetItemsAddToCart()
         {
-            var items = _itemRepository.GetAllItems();
-            var itemsVm = items.ProjectTo<ItemInfoVm>(_mapper.ConfigurationProvider).ToList();
-            return itemsVm;
+            return _mapper.Map<List<ItemInfoVm>>(_itemRepository.GetItemInfos());
         }
 
         public NewItemVm GetItemById(int id)
@@ -106,18 +95,15 @@ namespace ECommerceApp.Application.Services.Items
 
         public ListForItemWithTagsVm GetAllItemsWithTags(int pageSize, int pageNo, string searchString)
         {
-            var itemsWithTags = _itemRepository.GetAllItemsWithTags()//.Where(it => it.Item.Name.StartsWith(searchString))
-                .ProjectTo<ItemsTagsVm>(_mapper.ConfigurationProvider)
-                .ToList();
-            var itemsWithTagsToShow = itemsWithTags.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+            var itemsWithTags = _mapper.Map<List<ItemsTagsVm>>(_itemRepository.GetAllItemsWithTags(pageSize, pageNo, searchString));
 
             var itemsWithTagsList = new ListForItemWithTagsVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
-                ItemTags = itemsWithTagsToShow,
-                Count = itemsWithTags.Count
+                ItemTags = itemsWithTags,
+                Count = _itemRepository.GetCountItemTagsBySearchString(searchString)
             };
 
             return itemsWithTagsList;

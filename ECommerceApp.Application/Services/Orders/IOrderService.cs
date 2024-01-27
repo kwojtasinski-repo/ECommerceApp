@@ -1,15 +1,11 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.ViewModels.Order;
-using ECommerceApp.Domain.Model;
-using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Orders
 {
     public interface IOrderService
     {
-        OrderDto Get(int id);
         int AddOrder(AddOrderDto order);
         bool DeleteOrder(int id);
         ListForOrderVm GetAllOrders(int pageSize, int pageNo, string searchString);
@@ -24,12 +20,10 @@ namespace ECommerceApp.Application.Services.Orders
         ListForOrderVm GetAllOrdersByUserId(string userId, int pageSize, int pageNo);
         List<OrderForListVm> GetAllOrdersByCustomerId(int customerId);
         List<OrderForListVm> GetAllOrdersByUserId(string userId);
-        List<OrderForListVm> GetAllOrders(Expression<Func<Order, bool>> expression);
         void AddRefundToOrder(int orderId, int refundId);
         NewOrderVm GetOrderForRealization(int orderId);
         ListForOrderVm GetAllOrdersPaid(int pageSize, int pageNo, string searchString);
         void DispatchOrder(int orderId);
-        OrderDto GetOrderByIdReadOnly(int id);
         int AddOrderFromCart(AddOrderFromCartDto model);
         OrderVm InitOrder();
         int FulfillOrder(OrderVm model);

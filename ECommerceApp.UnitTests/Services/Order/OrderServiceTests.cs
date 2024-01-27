@@ -7,20 +7,15 @@ using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.ViewModels.Coupon;
-using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Order;
-using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using ECommerceApp.Infrastructure.Repositories;
 using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using Xunit;
 
 namespace ECommerceApp.Tests.Services.Order
@@ -65,6 +60,8 @@ namespace ECommerceApp.Tests.Services.Order
                 Id = 1,
                 Code = "PLN"
             });
+            _itemRepository.Setup(i => i.GetAllItems()).Returns(new List<Domain.Model.Item>());
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(new List<Domain.Model.Order>());
         }
 
         private OrderService CreateService()
@@ -78,7 +75,7 @@ namespace ECommerceApp.Tests.Services.Order
         public void given_invalid_order_when_dispatching_order_should_throw_an_exception()
         {
             var orderId = 1;
-            _orderRepository.Setup(o => o.GetAllOrders()).Returns(new List<Domain.Model.Order>().AsQueryable());
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(new List<Domain.Model.Order>());
             var orderService = CreateService();
             var expectedException = new BusinessException($"Order with id {orderId} not found, check your order if is not delivered and is paid");
 
@@ -92,34 +89,13 @@ namespace ECommerceApp.Tests.Services.Order
         {
             var order = CreateDefaultOrder();
             order.IsPaid = true;
-            _orderRepository.Setup(o => o.GetAllOrders()).Returns(new List<Domain.Model.Order>() { order }.AsQueryable());
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(new List<Domain.Model.Order>() { order });
             _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
             var orderService = CreateService();
 
             orderService.DispatchOrder(order.Id);
 
             _orderRepository.Verify(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>()), Times.Once);
-        }
-
-        [Fact]
-        public void given_proper_arguments_when_getting_all_orders_paid_should_return_orders()
-        {
-            var ordersCount = 3;
-            var pageSize = 3;
-            var pageNo = 1;
-            var orders = CreateDefaultOrders(ordersCount, o => new Domain.Model.Order { Id = o.Id, Number = o.Number, Ordered = o.Ordered, Cost = o.Cost, CouponUsedId = o.CouponUsedId, CurrencyId = o.CurrencyId, CustomerId = o.CustomerId, Delivered = o.Delivered, IsDelivered = false, IsPaid = true, PaymentId = o.PaymentId, RefundId = o.RefundId, UserId = o.UserId, OrderItems = o.OrderItems, Currency = o.Currency, Customer = o.Customer, User = o.User });
-            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
-            var orderService = CreateService();
-
-            var listOrders = orderService.GetAllOrdersPaid(pageSize, pageNo, "");
-
-            listOrders.Should().NotBeNull();
-            listOrders.SearchString.Should().BeEmpty();
-            listOrders.PageSize.Should().Be(pageSize);
-            listOrders.CurrentPage.Should().Be(pageNo);
-            listOrders.Orders.Should().NotBeNull();
-            listOrders.Orders.Count.Should().Be(orders.Count);
-            listOrders.Count.Should().Be(orders.Count);
         }
 
         [Fact]
@@ -149,29 +125,6 @@ namespace ECommerceApp.Tests.Services.Order
         }
 
         [Fact]
-        public void given_special_search_string_when_getting_all_orders_paid_should_return_orders()
-        {
-            var ordersCount = 3;
-            var pageSize = 3;
-            var pageNo = 1;
-            var searchString = "253";
-            var orders = CreateDefaultOrders(ordersCount, o => new Domain.Model.Order { Id = o.Id, Number = o.Number, Ordered = o.Ordered, Cost = o.Cost, CouponUsedId = o.CouponUsedId, CurrencyId = o.CurrencyId, CustomerId = o.CustomerId, Delivered = o.Delivered, IsDelivered = false, IsPaid = true, PaymentId = o.PaymentId, RefundId = o.RefundId, UserId = o.UserId, OrderItems = o.OrderItems, Currency = o.Currency, Customer = o.Customer, User = o.User });
-            orders.First().Number = "25362654";
-            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
-            var orderService = CreateService();
-
-            var listOrders = orderService.GetAllOrdersPaid(pageSize, pageNo, searchString);
-
-            listOrders.Should().NotBeNull();
-            listOrders.SearchString.Should().Be(searchString);
-            listOrders.PageSize.Should().Be(pageSize);
-            listOrders.CurrentPage.Should().Be(pageNo);
-            listOrders.Orders.Should().NotBeNull();
-            listOrders.Orders.Count.Should().Be(1);
-            listOrders.Count.Should().Be(1);
-        }
-
-        [Fact]
         public void given_valid_parameters_when_adding_refun_to_order_should_update_order()
         {
             int orderId = 1;
@@ -182,7 +135,7 @@ namespace ECommerceApp.Tests.Services.Order
             order.Delivered = DateTime.Now;
             order.IsDelivered = true;
             order.OrderItems = CreateDefaultOrderItems(order);
-            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.GetOrderPaidAndDeliveredById(order.Id)).Returns(order);
             _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
             var orderService = CreateService();
 
@@ -196,7 +149,7 @@ namespace ECommerceApp.Tests.Services.Order
         {
             int orderId = 1;
             int refundId = 1;
-            _orderRepository.Setup(o => o.GetAllOrders()).Returns(new List<Domain.Model.Order>().AsQueryable());
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(new List<Domain.Model.Order>());
             var orderService = CreateService();
             var expectedException = new BusinessException($"Order with id {orderId} not exists");
 
@@ -275,7 +228,7 @@ namespace ECommerceApp.Tests.Services.Order
             var cost = order.Cost;
             var couponUsedId = 1;
             var coupon = CreateDefaultCouponVm(null);
-            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.GetOrderById(order.Id)).Returns(order);
             _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
             Domain.Model.Order updatingOrder = null;
             _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Callback<Domain.Model.Order>(r => updatingOrder = r);
@@ -310,7 +263,7 @@ namespace ECommerceApp.Tests.Services.Order
             order.IsPaid = true;
             var cost = order.Cost;
             var couponUsedId = 1;
-            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.GetOrderById(orderId)).Returns(order);
             _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
             var coupon = CreateDefaultCouponVm(null);
             coupon.CouponUsedId = couponUsedId;
@@ -332,7 +285,7 @@ namespace ECommerceApp.Tests.Services.Order
             var orderId = order.Id;
             var cost = order.Cost;
             var couponUsedId = 1;
-            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.GetOrderById(order.Id)).Returns(order);
             _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
             var orderService = CreateService();
             var expectedException = new BusinessException("Given invalid couponUsedId");
@@ -355,7 +308,7 @@ namespace ECommerceApp.Tests.Services.Order
             var coupon = CreateDefaultCoupon();
             int couponUsedId = coupon.CouponUsedId.Value;
             order.CouponUsedId = couponUsedId;
-            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.GetOrderById(orderId)).Returns(order);
             _couponService.Setup(cu => cu.GetByCouponUsed(It.IsAny<int>())).Returns(_mapper.Map<CouponVm>(coupon));
             var orderService = CreateService();
 
@@ -385,7 +338,7 @@ namespace ECommerceApp.Tests.Services.Order
             order.IsPaid = false;
             order.OrderItems = CreateDefaultOrderItems(order);
             var couponUsedId = 1;
-            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders);
             var orderService = CreateService();
 
             Action action = () => { orderService.DeleteCouponUsedFromOrder(orderId, couponUsedId); };
@@ -403,7 +356,7 @@ namespace ECommerceApp.Tests.Services.Order
             order.IsPaid = true;
             order.OrderItems = CreateDefaultOrderItems(order);
             var couponUsedId = 1;
-            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders.AsQueryable());
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(orders);
             var orderService = CreateService();
 
             Action action = () => { orderService.DeleteCouponUsedFromOrder(orderId, couponUsedId); };
@@ -1053,7 +1006,7 @@ namespace ECommerceApp.Tests.Services.Order
             var orders = _orderRepository.Object.GetAllOrders();
             var ordersList = orders.ToList();
             ordersList.Add(order);
-            _orderRepository.Setup(o => o.GetAllOrders()).Returns(ordersList.AsQueryable());
+            _orderRepository.Setup(o => o.GetAllOrders()).Returns(ordersList);
             _orderRepository.Setup(o => o.GetOrderDetailsById(order.Id)).Returns(order);
             if (order.Customer is not null)
             {
@@ -1063,7 +1016,7 @@ namespace ECommerceApp.Tests.Services.Order
             {
                 AddPayment(order.Payment);
             }
-            if(order.OrderItems is not null && order.OrderItems.Any())
+            if (order.OrderItems is not null && order.OrderItems.Any())
             {
                 AddOrderItems(order.OrderItems);
             }
@@ -1076,7 +1029,6 @@ namespace ECommerceApp.Tests.Services.Order
 
         private void AddOrderItems(IEnumerable<OrderItem> items)
         {
-            _orderRepository.Setup(o => o.GetAllOrderItems()).Returns(items.AsQueryable());
             var itemsToAdd = items.Where(oi => oi.Item is not null)?.Select(oi => oi.Item) ?? Enumerable.Empty<Domain.Model.Item>();
             foreach(var it in itemsToAdd)
             {
@@ -1145,9 +1097,11 @@ namespace ECommerceApp.Tests.Services.Order
             var items = GenerateItems();
             _itemService.Setup(i => i.GetAllItems()).Returns(items);
             items.ForEach(i => _itemRepository.Setup(service => service.GetItemById(i.Id)).Returns(_mapper.Map<Domain.Model.Item>(i)));
-            var currentItems = _itemRepository.Object.GetAllItems().ToList();
+            var currentItems = _itemRepository.Object.GetAllItems();
             items.ForEach(i => currentItems.Add(_mapper.Map<Domain.Model.Item>(i)));
-            _itemRepository.Setup(i => i.GetAllItems()).Returns(currentItems.AsQueryable());
+            _itemRepository.Setup(i => i.GetItemsByIds(It.Is<IEnumerable<int>>(
+                ids => ids.Any(id => currentItems.Any(c => c.Id == id))
+            ))).Returns(currentItems);
             return items;
         }
 

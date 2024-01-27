@@ -1,5 +1,5 @@
 ﻿using ECommerceApp.Domain.Model;
-using System.Linq;
+using System.Collections.Generic;
 
 namespace ECommerceApp.Domain.Interface
 {
@@ -7,12 +7,16 @@ namespace ECommerceApp.Domain.Interface
     {
         void DeleteItem(int itemId);
         int AddItem(Item item);
-        IQueryable<Item> GetItemsByTypeId(int typeId);
         Item GetItemById(int itemId);
         Item GetItemDetailsById(int itemId);
-        IQueryable<Item> GetAllItems();
+        List<Item> GetAllItems();
+        List<Item> GetAllItems(int pageSize, int pageNo, string searchString);
+        List<Item> GetItemInfos();
         void UpdateItem(Item item);
-        IQueryable<ItemTag> GetAllItemsWithTags();
+        List<ItemTag> GetAllItemsWithTags(int pageSize, int pageNo, string searchString);
         bool ItemExists(int id);
+        int GetCountItemTagsBySearchString(string searchString);
+        int GetCountBySearchString(string searchString);
+        List<Item> GetItemsByIds(IEnumerable<int> enumerable);
     }
 }

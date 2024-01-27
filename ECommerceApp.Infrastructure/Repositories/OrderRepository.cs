@@ -77,9 +77,6 @@ namespace ECommerceApp.Infrastructure.Repositories
         {
             var order = _context.Orders
                 .Include(inc => inc.OrderItems).ThenInclude(inc => inc.Item)
-                .Include(inc => inc.Refund)
-                .Include(inc => inc.Payment)
-                .Include(inc => inc.Currency)
                 .FirstOrDefault(o => o.Id == id);
             return order;
         }
@@ -94,16 +91,9 @@ namespace ECommerceApp.Infrastructure.Repositories
             return order;
         }
 
-        public IQueryable<Order> GetAllOrders()
+        public List<Order> GetAllOrders()
         {
-            return _context.Orders;
-        }
-
-        public IQueryable<OrderItem> GetAllOrderItems()
-        {
-            return _context.OrderItem
-                .Include(inc => inc.Item).ThenInclude(inc => inc.Type)
-                .Include(inc => inc.Item).ThenInclude(inc => inc.Brand);
+            return _context.Orders.ToList();
         }
 
         public void UpdatedOrder(Order order)
@@ -160,19 +150,6 @@ namespace ECommerceApp.Infrastructure.Repositories
             return orderItem.Id;
         }
 
-        public Order GetByIdReadOnly(int id)
-        {
-            var order = _context.Orders
-                .Include(inc => inc.OrderItems).ThenInclude(inc => inc.Item)
-                .Include(inc => inc.Refund)
-                .Include(inc => inc.Payment)
-                .Include(inc => inc.Currency)
-                .Where(o => o.Id == id)
-                .AsNoTracking()
-                .FirstOrDefault();
-            return order;
-        }
-
         public Order GetOrderSummaryById(int orderId)
         {
             var order = _context.Orders
@@ -209,6 +186,88 @@ namespace ECommerceApp.Infrastructure.Repositories
         {
             return _context.Orders
                            .Include(c => c.Currency)
+                           .Where(o => o.Number.StartsWith(searchString))
+                           .Count();
+        }
+
+        public Order GetOrderByRefundId(int refundId)
+        {
+            return _context.Orders
+                           .Include(oi => oi.OrderItems)
+                           .FirstOrDefault(r => r.RefundId == refundId);
+        }
+
+        public List<Order> GetAllOrders(int customerId, int pageSize, int pageNo)
+        {
+            return _context.Orders
+                           .Where(o => o.CustomerId == customerId)
+                           .Include(c => c.Currency)
+                           .Skip(pageSize * (pageNo - 1))
+                           .Take(pageSize)
+                           .ToList();
+        }
+
+        public int GetCountByCustomerId(int customerId)
+        {
+            return _context.Orders
+                           .Where(o => o.CustomerId == customerId)
+                           .Include(c => c.Currency)
+                           .Count();
+        }
+
+        public List<Order> GetAllOrders(int customerId)
+        {
+            return _context.Orders
+                           .Where(o => o.CustomerId == customerId)
+                           .ToList();
+        }
+
+        public List<Order> GetAllOrders(string userId, int pageSize, int pageNo)
+        {
+            return _context.Orders
+                           .Where(o => o.UserId == userId)
+                           .Include(c => c.Currency)
+                           .Skip(pageSize * (pageNo - 1))
+                           .Take(pageSize)
+                           .ToList();
+        }
+
+        public int GetCountByUserId(string userId)
+        {
+            return _context.Orders
+                           .Where(o => o.UserId == userId)
+                           .Include(c => c.Currency)
+                           .Count();
+        }
+
+        public List<Order> GetAllOrders(string userId)
+        {
+            return _context.Orders
+                           .Where(o => o.UserId == userId)
+                           .ToList();
+        }
+
+        public Order GetOrderPaidAndDeliveredById(int id)
+        {
+            return _context.Orders
+                           .Include(oi => oi.OrderItems)
+                           .FirstOrDefault(o => o.Id == id && o.IsPaid && o.IsDelivered);
+        }
+
+        public List<Order> GetAllPaidOrders(int pageSize, int pageNo, string searchString)
+        {
+            return _context.Orders
+                           .Where(o => o.IsPaid == true && o.IsDelivered == false)
+                           .Where(o => o.Number.StartsWith(searchString))
+                           .Skip(pageSize * (pageNo - 1))
+                           .Take(pageSize)
+                           .ToList();
+        }
+
+        public int GetCountPaidOrdersBySearchString(string searchString)
+        {
+            return _context.Orders
+                           .Where(o => o.IsPaid == true && o.IsDelivered == false)
                            .Where(o => o.Number.StartsWith(searchString))
                            .Count();
         }

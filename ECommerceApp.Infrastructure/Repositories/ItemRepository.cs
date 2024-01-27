@@ -34,11 +34,6 @@ namespace ECommerceApp.Infrastructure.Repositories
             return item.Id;
         }
 
-        public IQueryable<Item> GetItemsByTypeId(int typeId)
-        {
-            return _context.Items.Where(it => it.TypeId == typeId);
-        }
-
         public Item GetItemById(int itemId)
         {
             var item = _context.Items
@@ -49,14 +44,20 @@ namespace ECommerceApp.Infrastructure.Repositories
             return item;
         }
 
-        public IQueryable<ItemTag> GetAllItemsWithTags()
+        public List<ItemTag> GetAllItemsWithTags(int pageSize, int pageNo, string searchString)
         {
-            return _context.ItemTag.Include(inc => inc.Item);
+            return _context.ItemTag
+                           .Include(inc => inc.Item)
+                           .Include(inc => inc.Tag)
+                           .Where(it => it.Item.Name.StartsWith(searchString))
+                           .Skip(pageSize * (pageNo - 1))
+                           .Take(pageSize)
+                           .ToList();
         }
 
-        public IQueryable<Item> GetAllItems()
+        public List<Item> GetAllItems()
         {
-            return _context.Items;
+            return _context.Items.ToList();
         }
 
         public void UpdateItem(Item item)
@@ -106,6 +107,50 @@ namespace ECommerceApp.Infrastructure.Repositories
                 .Include(inc => inc.Images)
                 .FirstOrDefault(it => it.Id == itemId);
             return item;
+        }
+
+        public int GetCountItemTagsBySearchString(string searchString)
+        {
+            return _context.ItemTag
+                           .Include(inc => inc.Item)
+                           .Include(inc => inc.Tag)
+                           .Where(it => it.Item.Name.StartsWith(searchString))
+                           .Count();
+        }
+
+        public List<Item> GetItemInfos()
+        {
+            return _context.Items
+                           .Select(i => new Item
+                           {
+                               Id = i.Id,
+                               Name = i.Name,
+                               Cost = i.Cost
+                           })
+                           .ToList();
+        }
+
+        public List<Item> GetAllItems(int pageSize, int pageNo, string searchString)
+        {
+            return _context.Items
+                           .Where(i => i.Name.StartsWith(searchString))
+                           .Skip(pageSize * (pageNo - 1))
+                           .Take(pageSize)
+                           .ToList();
+        }
+
+        public int GetCountBySearchString(string searchString)
+        {
+            return _context.Items
+                           .Where(i => i.Name.StartsWith(searchString))
+                           .Count();
+        }
+
+        public List<Item> GetItemsByIds(IEnumerable<int> ids)
+        {
+            return _context.Items
+                            .Where(i => ids.Contains(i.Id))
+                            .ToList();
         }
     }
 }
