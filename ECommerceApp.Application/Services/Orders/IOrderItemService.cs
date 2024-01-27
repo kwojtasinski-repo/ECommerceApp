@@ -1,10 +1,6 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.ViewModels.OrderItem;
-using ECommerceApp.Domain.Model;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Orders
 {
@@ -13,7 +9,7 @@ namespace ECommerceApp.Application.Services.Orders
         int AddOrderItem(OrderItemDto model);
         OrderItemDto GetOrderItemDetails(int id);
         void UpdateOrderItem(OrderItemDto model);
-        IEnumerable<OrderItemDto> GetOrderItems(Expression<Func<OrderItem, bool>> expression);
+        IEnumerable<OrderItemDto> GetOrderItems();
         IEnumerable<OrderItemDto> GetOrderItemsByItemId(int itemId);
         ListForOrderItemVm GetOrderItems(int pageSize, int pageNo, string searchString);
         bool OrderItemExists(int id);
@@ -25,7 +21,6 @@ namespace ECommerceApp.Application.Services.Orders
         int AddOrderItem(int id, string userId);
         ListForOrderItemVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo);
         ListForOrderItemVm GetOrderItemsNotOrderedByUserId(string userId, int pageSize, int pageNo);
-        IQueryable<OrderItem> GetOrderItems();
         List<OrderItemDto> GetOrderItemsNotOrdered(IEnumerable<int> ids);
     }
 }

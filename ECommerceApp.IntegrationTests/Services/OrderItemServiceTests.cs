@@ -31,17 +31,9 @@ namespace ECommerceApp.IntegrationTests.Services
         }
 
         [Fact]
-        public void given_order_items_should_return_list()
-        {
-            var orderItems = _service.GetOrderItems().ToList();
-
-            orderItems.Count.ShouldBeGreaterThan(0);
-        }
-
-        [Fact]
         public void given_valid_expression_should_return_list_order_item()
         {
-            var orderItems = _service.GetOrderItems(oi => true);
+            var orderItems = _service.GetOrderItems();
 
             orderItems.Count().ShouldBeGreaterThan(0);
         }

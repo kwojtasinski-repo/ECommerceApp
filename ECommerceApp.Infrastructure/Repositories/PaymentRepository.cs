@@ -71,7 +71,6 @@ namespace ECommerceApp.Infrastructure.Repositories
             return _context.Payments
                            .Include(p => p.Currency)
                            .Where(p => p.Number.StartsWith(searchString))
-                           .Skip(pageSize * (pageNo - 1)).Take(pageSize)
                            .Select(p => new Payment
                            {
                                Id = p.Id,
@@ -84,7 +83,8 @@ namespace ECommerceApp.Infrastructure.Repositories
                                OrderId = p.OrderId,
                                Currency = new Currency { Id = p.CurrencyId, Code = p.Currency.Code },
                            })
-                            .ToList();
+                           .Skip(pageSize * (pageNo - 1)).Take(pageSize)
+                           .ToList();
         }
 
         public List<Payment> GetAllUserPayments(string userId)

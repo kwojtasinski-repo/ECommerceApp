@@ -1,15 +1,11 @@
 ﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Orders
 {
@@ -32,8 +28,7 @@ namespace ECommerceApp.Application.Services.Orders
             }
 
             var orderItem = _mapper.Map<OrderItem>(model);
-            var orderItemExist = _orderItemRepository.GetAllOrderItems()
-                                      .FirstOrDefault(oi => oi.ItemId == model.ItemId && oi.UserId == model.UserId && oi.OrderId == null);
+            var orderItemExist = _orderItemRepository.GetUserOrderItemNotOrdered(model.UserId, model.ItemId);
             int id;
             if (orderItemExist != null)
             {
@@ -59,40 +54,32 @@ namespace ECommerceApp.Application.Services.Orders
 
         public OrderItemDto GetOrderItemDetails(int id)
         {
-            var orderItem = _orderItemRepository.GetAllOrderItems().Include(i => i.Item).Where(oi => oi.Id == id).AsNoTracking().FirstOrDefault();
-            var orderItemVm = _mapper.Map<OrderItemDto>(orderItem);
-            return orderItemVm;
+            return _mapper.Map<OrderItemDto>(_orderItemRepository.GetOrderItemDetailsById(id));
         }
 
-        public IEnumerable<OrderItemDto> GetOrderItems(Expression<Func<OrderItem, bool>> expression)
+        public IEnumerable<OrderItemDto> GetOrderItems()
         {
-            var orderItems = _orderItemRepository.GetAllOrderItems().Include(i => i.Item).Where(expression).AsNoTracking().ToList();
+            var orderItems = _orderItemRepository.GetAllOrderItems();
             var orderItemsToShow = _mapper.Map<List<OrderItemDto>>(orderItems);
             return orderItemsToShow;
         }
 
         public IEnumerable<OrderItemDto> GetOrderItemsForRealization(string userId)
         {
-            var orderItems = _orderItemRepository.GetAllOrderItems().Include(i => i.Item).Where(oi => oi.UserId == userId && oi.OrderId == null).AsNoTracking().ToList();
-            var orderItemsToShow = _mapper.Map<List<OrderItemDto>>(orderItems);
-            return orderItemsToShow;
+            return _mapper.Map<List<OrderItemDto>>(_orderItemRepository.GetUserOrderItemsNotOrdered(userId));
         }
 
         public ListForOrderItemVm GetOrderItems(int pageSize, int pageNo, string searchString)
         {
-            var itemOrder = _orderItemRepository.GetAllOrderItems().Where(oi => oi.Item.Name.StartsWith(searchString) ||
-                            oi.Item.Brand.Name.StartsWith(searchString) || oi.Item.Type.Name.StartsWith(searchString))
-                            .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
-                            .ToList();
-            var itemOrderToShow = itemOrder.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+            var itemOrders = _mapper.Map<List<OrderItemForListVm>>(_orderItemRepository.GetOrderItems(searchString, pageSize, pageNo));
 
             var itemOrderList = new ListForOrderItemVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
-                ItemOrders = itemOrderToShow,
-                Count = itemOrder.Count
+                ItemOrders = itemOrders,
+                Count = _orderItemRepository.GetCountBySearchString(searchString)
             };
 
             return itemOrderList;
@@ -100,7 +87,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public bool OrderItemExists(int id)
         {
-            return _orderItemRepository.GetAllOrderItems().AsNoTracking().Any(oi => oi.Id == id);
+            return _orderItemRepository.ExistsById(id);
         }
 
         public void UpdateOrderItem(OrderItemDto model)
@@ -132,14 +119,12 @@ namespace ECommerceApp.Application.Services.Orders
 
         public int OrderItemCount(string userId)
         {
-            return _orderItemRepository.GetAllOrderItems()
-                        .Where(oi => oi.UserId == userId && oi.OrderId == null)
-                        .Count();
+            return _orderItemRepository.GetCountNotOrderedByUserId(userId);
         }
 
         public int AddOrderItem(int itemId, string userId)
         {
-            var orderItemExist = _orderItemRepository.GetAllOrderItems().Where(oi => oi.ItemId == itemId && oi.UserId == userId && oi.OrderId == null).FirstOrDefault();
+            var orderItemExist = _orderItemRepository.GetUserOrderItemNotOrdered(userId, itemId);
             int id;
             if (orderItemExist != null)
             {
@@ -169,18 +154,15 @@ namespace ECommerceApp.Application.Services.Orders
 
         public ListForOrderItemVm GetAllItemsOrderedByItemId(int id, int pageSize, int pageNo)
         {
-            var itemOrder = _orderItemRepository.GetAllOrderItems().Where(oi => oi.ItemId == id)
-                            .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider)
-                            .ToList();
-            var itemOrderToShow = itemOrder.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+            var itemOrders = _mapper.Map<List<OrderItemForListVm>>(_orderItemRepository.GetOrderItemsByItemId(id, pageSize, pageNo));
 
             var itemOrderList = new ListForOrderItemVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = "",
-                ItemOrders = itemOrderToShow,
-                Count = itemOrder.Count
+                ItemOrders = itemOrders,
+                Count = _orderItemRepository.GetCountByItemId(id)
             };
 
             return itemOrderList;
@@ -188,36 +170,23 @@ namespace ECommerceApp.Application.Services.Orders
 
         public ListForOrderItemVm GetOrderItemsNotOrderedByUserId(string userId, int pageSize, int pageNo)
         {
-            var itemOrders = _orderItemRepository.GetAllOrderItems().Include(i => i.Item).Where(oi => oi.UserId == userId && oi.OrderId == null)
-                            .ProjectTo<OrderItemForListVm>(_mapper.ConfigurationProvider);
-
-            var itemOrdersToShow = itemOrders.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+            var itemOrders = _mapper.Map<List<OrderItemForListVm>>(_orderItemRepository.GetUserOrderItemsNotOrdered(userId, pageSize, pageNo));
 
             var ordersList = new ListForOrderItemVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = "",
-                ItemOrders = itemOrdersToShow,
-                Count = itemOrders.Count()
+                ItemOrders = itemOrders,
+                Count = _orderItemRepository.GetCountNotOrderedByUserId(userId)
             };
 
             return ordersList;
         }
 
-        public IQueryable<OrderItem> GetOrderItems()
-        {
-            var orderItems = _orderItemRepository.GetAllOrderItems();
-            return orderItems;
-        }
-
         public IEnumerable<OrderItemDto> GetOrderItemsByItemId(int itemId)
         {
-            var orderItems = _orderItemRepository.GetAllOrderItems()
-                                  .Where(oi => oi.ItemId == itemId)
-                                  .AsNoTracking()
-                                  .ToList();
-            return _mapper.Map<List<OrderItemDto>>(orderItems);
+            return _mapper.Map<List<OrderItemDto>>(_orderItemRepository.GetOrderItemsByItemId(itemId));
         }
 
         public List<OrderItemDto> GetOrderItemsNotOrdered(IEnumerable<int> ids)
@@ -227,11 +196,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public IEnumerable<int> GetOrderItemsIdsForRealization(string userId)
         {
-            return _orderItemRepository.GetAllOrderItems()
-                .Where(oi => oi.UserId == userId && oi.OrderId == null)
-                .AsNoTracking()
-                .Select(oi => oi.Id)
-                .ToList();
+            return _orderItemRepository.GetUserOrderItemsId(userId);
         }
     }
 }

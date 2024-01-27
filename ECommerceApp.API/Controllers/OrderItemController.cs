@@ -26,7 +26,7 @@ namespace ECommerceApp.API.Controllers
         [HttpGet]
         public ActionResult<List<OrderItemDto>> GetAllOrderItems()
         {
-            var orderItems = _orderItemService.GetOrderItems(oi => true);
+            var orderItems = _orderItemService.GetOrderItems();
             return Ok(orderItems);
         }
 
