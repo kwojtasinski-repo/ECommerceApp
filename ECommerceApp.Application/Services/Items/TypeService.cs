@@ -1,14 +1,9 @@
 ﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.Type;
 using ECommerceApp.Domain.Interface;
-using Microsoft.EntityFrameworkCore;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Items
 {
@@ -53,34 +48,25 @@ namespace ECommerceApp.Application.Services.Items
 
         public TypeDetailsVm GetTypeDetails(int id)
         {
-            var type = _typeRepository.GetAllTypes().Include(t => t.Items).Where(t => t.Id == id).FirstOrDefault();
-            var typeVm = _mapper.Map<TypeDetailsVm>(type);
-            return typeVm;
+            return _mapper.Map<TypeDetailsVm>(_typeRepository.GetTypeDetailsById(id));
         }
 
-        public IEnumerable<TypeDto> GetTypes(Expression<Func<Domain.Model.Type, bool>> expression)
+        public IEnumerable<TypeDto> GetTypes()
         {
-            var types = _typeRepository.GetAllTypes().Where(expression)
-               .ProjectTo<TypeDto>(_mapper.ConfigurationProvider);
-            var typesToShow = types.ToList();
-
-            return typesToShow;
+            return _mapper.Map<List<TypeDto>>(_typeRepository.GetAllTypes());
         }
 
         public ListForTypeVm GetTypes(int pageSize, int pageNo, string searchString)
         {
-            var types = _typeRepository.GetAllTypes().Where(it => it.Name.StartsWith(searchString))
-                .ProjectTo<TypeDto>(_mapper.ConfigurationProvider)
-                .ToList();
-            var typesToShow = types.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+            var types = _mapper.Map<List<TypeDto>>(_typeRepository.GetAllTypes(pageSize, pageNo, searchString));
 
             var typesList = new ListForTypeVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
-                Types = typesToShow,
-                Count = types.Count
+                Types = types,
+                Count = _typeRepository.GetCountBySearchString(searchString)
             };
 
             return typesList;

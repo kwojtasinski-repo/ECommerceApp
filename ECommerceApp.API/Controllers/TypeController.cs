@@ -22,12 +22,7 @@ namespace ECommerceApp.API.Controllers
         [HttpGet]
         public ActionResult<List<TypeDto>> GetItemTypes()
         {
-            var types = _typeService.GetTypes(t => true);
-            if (types.Count() == 0)
-            {
-                return NotFound();
-            }
-            return Ok(types);
+            return Ok(_typeService.GetTypes());
         }
 
         [HttpGet("{id}")]

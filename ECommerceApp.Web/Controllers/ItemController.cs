@@ -49,8 +49,8 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult AddItem()
         {
             ViewBag.ItemBrands = _brandService.GetAllBrands();
-            ViewBag.ItemTypes = _typeService.GetTypes(t => true);
-            ViewBag.ItemTags = _tagService.GetTags(t => true);
+            ViewBag.ItemTypes = _typeService.GetTypes();
+            ViewBag.ItemTags = _tagService.GetTags();
             return View(new NewItemVm());
         }
 
@@ -83,8 +83,8 @@ namespace ECommerceApp.Web.Controllers
                 return NotFound();
             }
             ViewBag.ItemBrands = _brandService.GetAllBrands();
-            ViewBag.ItemTypes = _typeService.GetTypes(t => true);
-            ViewBag.ItemTags = _tagService.GetTags(t => true);
+            ViewBag.ItemTypes = _typeService.GetTypes();
+            ViewBag.ItemTags = _tagService.GetTags();
             return View(item);
         }
 

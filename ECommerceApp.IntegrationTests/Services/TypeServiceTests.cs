@@ -53,7 +53,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_expression_should_return_list_types()
         {
-            var types = _service.GetTypes(t => true);
+            var types = _service.GetTypes();
 
             types.ShouldNotBeEmpty();
         }

@@ -450,13 +450,10 @@ namespace ECommerceApp.Tests.Services.Item
             _itemRepository.Setup(i => i.GetAllItems()).Returns(new List<Domain.Model.Item>().AsQueryable());
             _itemRepository.Setup(i => i.GetAllItemsWithTags()).Returns(new List<ItemTag>().AsQueryable());
             _tagRepository.Setup(t => t.GetTagsByIds(It.IsAny<IEnumerable<int>>())).Returns(new List<Tag>());
-            _tagRepository.Setup(t => t.GetAllTags()).Returns(new List<Tag>().AsQueryable());
             _currencyRepository.Setup(c => c.GetAll()).Returns(new List<Currency>());
             _brandRepository.Setup(b => b.GetAllBrands()).Returns(new List<Brand>());
-            _tagRepository.Setup(t => t.GetAllTags()).Returns(new List<Tag>().AsQueryable());
-            _tagRepository.Setup(t => t.GetAllTags()).Returns(new List<Tag>().AsQueryable());
-            _typeRepository.Setup(t => t.GetAllTypes()).Returns(new List<Domain.Model.Type>().AsQueryable());
-            _typeRepository.Setup(t => t.GetAllTypes()).Returns(new List<Domain.Model.Type>().AsQueryable());
+            _tagRepository.Setup(t => t.GetAllTags()).Returns(new List<Tag>());
+            _typeRepository.Setup(t => t.GetAllTypes()).Returns(new List<Domain.Model.Type>());
             _imageService.Setup(i => i.GetImages(It.IsAny<IEnumerable<int>>())).Returns(new List<ImageInfoDto>());
             _imageService.Setup(i => i.GetImagesByItemId(It.IsAny<int>())).Returns(new List<Application.ViewModels.Image.GetImageVm>());
             _currencyRepository.Setup(c => c.GetById(1)).Returns(new Currency

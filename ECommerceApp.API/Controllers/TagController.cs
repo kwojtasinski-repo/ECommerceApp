@@ -24,12 +24,7 @@ namespace ECommerceApp.API.Controllers
         [HttpGet]
         public ActionResult<List<TagDto>> GetItemTags()
         {
-            var tags = _tagService.GetTags(t => true);
-            if (!tags.Any())
-            {
-                return NotFound();
-            }
-            return Ok(tags);
+            return Ok(_tagService.GetTags());
         }
 
         [HttpGet("{id}")]

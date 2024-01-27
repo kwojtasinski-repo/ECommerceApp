@@ -54,7 +54,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_expression_should_return_tags()
         {
-            var tags = _service.GetTags(t => true);
+            var tags = _service.GetTags();
 
             tags.Count().ShouldBeGreaterThan(0);
         }

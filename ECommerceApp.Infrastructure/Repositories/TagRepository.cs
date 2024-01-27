@@ -34,10 +34,9 @@ namespace ECommerceApp.Infrastructure.Repositories
             }
         }
 
-        public IQueryable<Tag> GetAllTags()
+        public List<Tag> GetAllTags()
         {
-            var tags = _context.Tags.AsQueryable();
-            return tags;
+            return _context.Tags.ToList();
         }
 
         public bool ExistsById(int tagId)
@@ -61,6 +60,30 @@ namespace ECommerceApp.Infrastructure.Repositories
         public Tag GetTagById(int id)
         {
             return _context.Tags.FirstOrDefault(t => t.Id == id);
+        }
+
+        public List<Tag> GetAllTags(int pageSize, int pageNo, string searchString)
+        {
+            return _context.Tags
+                           .Where(it => it.Name.StartsWith(searchString))
+                           .Skip(pageSize * (pageNo - 1))
+                           .Take(pageSize)
+                           .ToList();
+        }
+
+        public int GetCountBySearchString(string searchString)
+        {
+            return _context.Tags
+                           .Where(it => it.Name.StartsWith(searchString))
+                           .Count();
+        }
+
+        public Tag GetTagDetailsById(int id)
+        {
+            return _context.Tags
+                           .Include(it => it.ItemTags)
+                           .ThenInclude(i => i.Item)
+                           .FirstOrDefault(t => t.Id == id);
         }
     }
 }

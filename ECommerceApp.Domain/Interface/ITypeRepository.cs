@@ -1,4 +1,4 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
 
 namespace ECommerceApp.Domain.Interface
 {
@@ -7,8 +7,11 @@ namespace ECommerceApp.Domain.Interface
         void DeleteType(int typeId);
         int AddType(Model.Type type);
         Model.Type GetTypeById(int typeId);
-        IQueryable<Model.Type> GetAllTypes();
+        Model.Type GetTypeDetailsById(int typeId);
+        List<Model.Type> GetAllTypes();
+        List<Model.Type> GetAllTypes(int pageSize, int pageNo, string searchString);
         void UpdateType(Model.Type type);
         bool ExistsById(int id);
+        int GetCountBySearchString(string searchString);
     }
 }
