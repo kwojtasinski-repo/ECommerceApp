@@ -4,6 +4,7 @@ using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.User;
 using ECommerceApp.Domain.Model;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -44,26 +45,27 @@ namespace ECommerceApp.Application.Services.Users
             }
         }
 
-        public ListUsersVm GetAllUsers(int pageSize, int pageNo, string searchString)
+        public async Task<ListUsersVm> GetAllUsers(int pageSize, int pageNo, string searchString)
         {
-            var users = _userManager.Users.Where(user => user.UserName.StartsWith(searchString))
-                .ProjectTo<UserForListVm>(_mapper.ConfigurationProvider).ToList();
-
-            var usersToShow = users.Skip(pageSize * (pageNo - 1)).Take(pageSize).ToList();
+            var query = _userManager.Users.Where(user => user.UserName.StartsWith(searchString));
+            var users = await query.ProjectTo<UserForListVm>(_mapper.ConfigurationProvider)
+                                   .Skip(pageSize * (pageNo - 1))
+                                   .Take(pageSize)
+                                   .ToListAsync();
 
             var usersList = new ListUsersVm()
             {
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
-                Users = usersToShow,
-                Count = users.Count
+                Users = users,
+                Count = await query.CountAsync()
             };
 
             return usersList;
         }
 
-        public NewUserVm GetUserById(string id)
+        public async Task<NewUserVm> GetUserById(string id)
         {
             var user = _userManager.FindByIdAsync(id).Result;
             var userVm = _mapper.Map<NewUserVm>(user);
@@ -73,32 +75,33 @@ namespace ECommerceApp.Application.Services.Users
                 return null;
             }
 
-            userVm.UserRoles = GetRolesByUser(user.Id).ToList();
-            userVm.Roles = GetAllRoles().ToList();
+            userVm.UserRoles = await GetRolesByUser(user.Id) as List<string>;
+            userVm.Roles = await GetAllRoles();
             return userVm;
         }
 
-        public IQueryable<string> GetRolesByUser(string id)
+        public async Task<IList<string>> GetRolesByUser(string id)
         {
-            var user = _userManager.FindByIdAsync(id).Result;
-            var roles = _userManager.GetRolesAsync(user).Result.AsQueryable();
-            return roles;
+            var user = await _userManager.FindByIdAsync(id)
+                ?? throw new BusinessException($"User with id '{id}' was not found");
+            return (await _userManager.GetRolesAsync(user)) ?? new List<string>();
         }
 
-        public IQueryable<RoleVm> GetAllRoles()
+        public async Task<List<RoleVm>> GetAllRoles()
         {
-            var rolesVm = _roleManager.Roles?.ProjectTo<RoleVm>(_mapper.ConfigurationProvider);
-            return rolesVm;
+            return _mapper.Map<List<RoleVm>>(await _roleManager.Roles?.ToListAsync());
         }
 
-        public void RemoveRoleFromUser(string id, string role)
+        public async Task RemoveRoleFromUser(string id, string role)
         {
-            var user = _userManager.FindByIdAsync(id).Result;
+            var user = await _userManager.FindByIdAsync(id);
+
             if (user == null)
             {
                 return;
             }
-            _userManager.RemoveFromRoleAsync(user, role);
+
+            await _userManager.RemoveFromRoleAsync(user, role);
         }
 
         public async Task<IdentityResult> DeleteUserAsync(string id)

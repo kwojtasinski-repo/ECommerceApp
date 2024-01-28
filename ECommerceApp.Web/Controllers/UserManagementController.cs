@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using ECommerceApp.Application.Services.Users;
 using ECommerceApp.Application.ViewModels.User;
 using ECommerceApp.Infrastructure.Permissions;
@@ -19,14 +18,14 @@ namespace ECommerceApp.Web.Controllers
         }
 
         [HttpGet]
-        public IActionResult Index()
+        public async Task<IActionResult> Index()
         {
-            var model = _userService.GetAllUsers(20, 1, "");
+            var model = await _userService.GetAllUsers(20, 1, "");
             return View(model);
         }
 
         [HttpPost]
-        public IActionResult Index(int pageSize, int? pageNo, string searchString)
+        public async Task<IActionResult> Index(int pageSize, int? pageNo, string searchString)
         {
             if (!pageNo.HasValue)
             {
@@ -34,14 +33,14 @@ namespace ECommerceApp.Web.Controllers
             }
 
             searchString ??= string.Empty;
-            var model = _userService.GetAllUsers(pageSize, pageNo.Value, searchString);
+            var model = await _userService.GetAllUsers(pageSize, pageNo.Value, searchString);
             return View(model);
         }
 
         [HttpGet]
-        public IActionResult AddRolesToUser(string id)
+        public async Task<IActionResult> AddRolesToUser(string id)
         {
-            var userVm = _userService.GetUserById(id);
+            var userVm = await _userService.GetUserById(id);
             if (userVm is null)
             {
                 return NotFound();
@@ -63,9 +62,9 @@ namespace ECommerceApp.Web.Controllers
         }
 
         [HttpGet]
-        public IActionResult EditUser(string id)
+        public async Task<IActionResult> EditUser(string id)
         {
-            var user = _userService.GetUserById(id);
+            var user = await _userService.GetUserById(id);
             if (user is null)
             {
                 return NotFound();
@@ -81,11 +80,11 @@ namespace ECommerceApp.Web.Controllers
         }
 
         [HttpGet]
-        public IActionResult AddUser()
+        public async Task<IActionResult> AddUser()
         {
             var newUser = new NewUserToAddVm
             {
-                Roles = _userService.GetAllRoles().ToList()
+                Roles = await _userService.GetAllRoles()
             };
             return View(newUser);
         }
@@ -103,9 +102,9 @@ namespace ECommerceApp.Web.Controllers
         }
 
         [HttpGet]
-        public IActionResult ChangeUserPassword(string id)
+        public async Task<IActionResult> ChangeUserPassword(string id)
         {
-            var user = _userService.GetUserById(id);
+            var user = await _userService.GetUserById(id);
             return View(user);
         }
 

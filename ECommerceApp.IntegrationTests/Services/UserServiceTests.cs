@@ -7,10 +7,8 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -19,13 +17,13 @@ namespace ECommerceApp.IntegrationTests.Services
     public class UserServiceTests : BaseTest<IUserService>
     {
         [Fact]
-        public void given_users_in_db_should_retrun_users()
+        public async Task given_users_in_db_should_retrun_users()
         {
             var pageSize = 20;
             var pageNo = 1;
             var searchString = "";
 
-            var users = _service.GetAllUsers(pageSize, pageNo, searchString);
+            var users = await _service.GetAllUsers(pageSize, pageNo, searchString);
 
             users.Count.ShouldBeGreaterThan(0);
             users.Users.Count.ShouldBeGreaterThan(0);
@@ -35,13 +33,13 @@ namespace ECommerceApp.IntegrationTests.Services
         }
 
         [Fact]
-        public void given_invalid_search_string_should_retrun_empty_users()
+        public async Task given_invalid_search_string_should_retrun_empty_users()
         {
             var pageSize = 20;
             var pageNo = 1;
             var searchString = "sadgsgyey654745u7hrf";
 
-            var users = _service.GetAllUsers(pageSize, pageNo, searchString);
+            var users = await _service.GetAllUsers(pageSize, pageNo, searchString);
 
             users.Count.ShouldBe(0);
             users.Users.Count.ShouldBe(0);
@@ -51,23 +49,23 @@ namespace ECommerceApp.IntegrationTests.Services
         }
 
         [Fact]
-        public void given_valid_id_should_return_user()
+        public async Task given_valid_id_should_return_user()
         {
             var id = "e4fc1feb-7d08-4207-bd52-3f3464a01564";
             var email = "test2@test2";
 
-            var user = _service.GetUserById(id);
+            var user = await _service.GetUserById(id);
 
             user.ShouldNotBeNull();
             user.Email.ShouldBe(email);
         }
 
         [Fact]
-        public void given_invalid_id_should_return_user()
+        public async Task given_invalid_id_should_return_user()
         {
             var id = "";
 
-            var user = _service.GetUserById(id);
+            var user = await _service.GetUserById(id);
 
             user.ShouldBeNull();
         }
@@ -80,24 +78,24 @@ namespace ECommerceApp.IntegrationTests.Services
 
             await _service.ChangeRoleAsync(id, new List<string> { role });
 
-            var user = _service.GetUserById(id);
+            var user = await _service.GetUserById(id);
             user.UserRoles.Where(r => r == role).FirstOrDefault().ShouldNotBeNull();
         }
 
         [Fact]
-        public void when_get_all_roles_should_return_list()
+        public async Task when_get_all_roles_should_return_list()
         {
-            var roles = _service.GetAllRoles().ToList();
+            var roles = await _service.GetAllRoles();
 
             roles.ShouldNotBeEmpty();
         }
 
         [Fact]
-        public void given_valid_id_when_get_all_roles_by_user_should_return_list()
+        public async Task given_valid_id_when_get_all_roles_by_user_should_return_list()
         {
             var id = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e";
 
-            var roles = _service.GetRolesByUser(id).ToList();
+            var roles = await _service.GetRolesByUser(id);
 
             roles.ShouldNotBeEmpty();
         }
@@ -109,9 +107,9 @@ namespace ECommerceApp.IntegrationTests.Services
             var role = UserPermissions.Roles.Administrator;
             await _service.ChangeRoleAsync(id, new List<string> { role });
 
-            _service.RemoveRoleFromUser(id, role);
+            await _service.RemoveRoleFromUser(id, role);
 
-            var user = _service.GetUserById(id);
+            var user = await _service.GetUserById(id);
             user.UserRoles.Where(r => r.Contains(role)).FirstOrDefault().ShouldBeNull();
         }
 
@@ -122,7 +120,7 @@ namespace ECommerceApp.IntegrationTests.Services
 
             var result = await _service.AddUser(user);
 
-            var users = _service.GetAllUsers(20, 1, "");
+            var users = await _service.GetAllUsers(20, 1, "");
             result.Succeeded.ShouldBeTrue();
             users.Users.Where(u => u.UserName == user.UserName).FirstOrDefault().ShouldNotBeNull();
         }
@@ -135,7 +133,7 @@ namespace ECommerceApp.IntegrationTests.Services
 
             var result = await _service.AddUser(user);
 
-            var users = _service.GetAllUsers(20, 1, "");
+            var users = await _service.GetAllUsers(20, 1, "");
             result.Succeeded.ShouldBeFalse();
             result.Errors.Where(e => e.Code.Contains("PasswordTooShort")).FirstOrDefault().ShouldNotBeNull();
             users.Users.Where(u => u.UserName == user.UserName).FirstOrDefault().ShouldBeNull();
@@ -168,11 +166,11 @@ namespace ECommerceApp.IntegrationTests.Services
             var result = await _service.EditUser(user);
 
             result.Succeeded.ShouldBeTrue();
-            var userUpdated = _service.GetUserById(user.Id);
+            var userUpdated = await _service.GetUserById(user.Id);
             userUpdated.EmailConfirmed.ShouldBeFalse();
         }
 
-        private NewUserToAddVm CreateUser()
+        private static NewUserToAddVm CreateUser()
         {
             var user = new NewUserToAddVm
             {
@@ -184,7 +182,7 @@ namespace ECommerceApp.IntegrationTests.Services
             return user;
         }
 
-        private NewUserVm CreateSampleUser()
+        private static NewUserVm CreateSampleUser()
         {
             var user = new NewUserVm
             {
