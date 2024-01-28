@@ -4,7 +4,6 @@ using System;
 using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Domain.Interface;
 using Moq;
-using ECommerceApp.Application.ViewModels.Coupon;
 using Xunit;
 using ECommerceApp.Application.Exceptions;
 using FluentAssertions;
@@ -31,7 +30,7 @@ namespace ECommerceApp.UnitTests.Services.Coupon
         {
             var handler = CreateCouponHandler();
 
-            Action action = () => handler.HandleCouponChangesOnOrder(null, null, null);
+            Action action = () => handler.HandleCouponChangesOnOrder(null, null);
 
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("order cannot be null");
         }
@@ -41,34 +40,19 @@ namespace ECommerceApp.UnitTests.Services.Coupon
         {
             var handler = CreateCouponHandler();
 
-            Action action = () => handler.HandleCouponChangesOnOrder(null, CreateDefaultOrder(), null);
+            Action action = () => handler.HandleCouponChangesOnOrder(CreateDefaultOrder(), null);
             
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("dto cannot be null");
         }
 
         [Fact]
-        public void given_order_without_coupon_empty_dto_and_null_coupon_when_handle_changes_on_order_should_not_do_anything()
+        public void given_order_without_coupon_and_empty_dto_when_handle_changes_on_order_should_not_do_anything()
         {
             var order = CreateDefaultOrder();
             var dto = HandleCouponChangesDto.Of();
             var handler = CreateCouponHandler();
 
-            handler.HandleCouponChangesOnOrder(null, order, dto);
-
-            couponUsedRepository.Verify(c => c.Delete(It.IsAny<int>()), Times.Never);
-            couponUsedRepository.Verify(c => c.Add(It.IsAny<Domain.Model.CouponUsed>()), Times.Never);
-            couponUsedRepository.Verify(c => c.Update(It.IsAny<Domain.Model.CouponUsed>()), Times.Never);
-        }
-
-        //TODO: Consider change logic in handler, should take I think only 2 objects order and dto, condition is probably invalid with those values
-        [Fact]
-        public void given_order_without_coupon_dto_with_coupon_and_null_coupon_when_handle_changes_on_order_should_not_do_anything()
-        {
-            var order = CreateDefaultOrder();
-            var dto = HandleCouponChangesDto.Of(1);
-            var handler = CreateCouponHandler();
-
-            handler.HandleCouponChangesOnOrder(null, order, dto);
+            handler.HandleCouponChangesOnOrder(order, dto);
 
             couponUsedRepository.Verify(c => c.Delete(It.IsAny<int>()), Times.Never);
             couponUsedRepository.Verify(c => c.Add(It.IsAny<Domain.Model.CouponUsed>()), Times.Never);
@@ -76,22 +60,7 @@ namespace ECommerceApp.UnitTests.Services.Coupon
         }
 
         [Fact]
-        public void given_order_without_coupon_empty_dto_and_coupon_with_values_when_handle_changes_on_order_should_not_do_anything()
-        {
-            var order = CreateDefaultOrder();
-            var coupon = CreateCoupon();
-            var dto = HandleCouponChangesDto.Of();
-            var handler = CreateCouponHandler();
-
-            handler.HandleCouponChangesOnOrder(coupon, order, dto);
-
-            couponUsedRepository.Verify(c => c.Delete(It.IsAny<int>()), Times.Never);
-            couponUsedRepository.Verify(c => c.Add(It.IsAny<Domain.Model.CouponUsed>()), Times.Never);
-            couponUsedRepository.Verify(c => c.Update(It.IsAny<Domain.Model.CouponUsed>()), Times.Never);
-        }
-
-        [Fact]
-        public void given_order_with_coupon_empty_dto_and_null_coupon_when_handle_changes_on_order_should_delete_coupon_from_order()
+        public void given_order_with_coupon_and_empty_dto_when_handle_changes_on_order_should_delete_coupon_from_order()
         {
             var order = CreateDefaultOrder();
             order.CouponUsed = CreateDefaultCouponUsed();
@@ -99,14 +68,14 @@ namespace ECommerceApp.UnitTests.Services.Coupon
             var dto = HandleCouponChangesDto.Of();
             var handler = CreateCouponHandler();
 
-            handler.HandleCouponChangesOnOrder(null, order, dto);
+            handler.HandleCouponChangesOnOrder(order, dto);
 
             order.CouponUsedId.Should().BeNull();
             order.CouponUsed.Should().BeNull();
         }
 
         [Fact]
-        public void given_order_with_coupon_and_order_items_empty_dto_and_null_coupon_when_handle_changes_on_order_should_delete_coupon_from_order_and_order_items()
+        public void given_order_with_order_items_with_coupon_and_empty_dto_when_handle_changes_on_order_should_delete_coupon_from_order_and_order_items()
         {
             var order = CreateDefaultOrder();
             order.CouponUsed = CreateDefaultCouponUsed();
@@ -117,7 +86,7 @@ namespace ECommerceApp.UnitTests.Services.Coupon
             var dto = HandleCouponChangesDto.Of();
             var handler = CreateCouponHandler();
 
-            handler.HandleCouponChangesOnOrder(null, order, dto);
+            handler.HandleCouponChangesOnOrder(order, dto);
 
             order.CouponUsedId.Should().BeNull();
             order.CouponUsed.Should().BeNull();
@@ -132,39 +101,40 @@ namespace ECommerceApp.UnitTests.Services.Coupon
             var coupon = CreateCoupon();
             var handler = CreateCouponHandler();
 
-            Action action = () => handler.HandleCouponChangesOnOrder(coupon, order, dto);
+            Action action = () => handler.HandleCouponChangesOnOrder(order, dto);
 
-            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains($"Coupon with id '{coupon.Id}' was not found");
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains($"Coupon with code '{dto.PromoCode}' was not found");
         }
 
         [Fact]
         public void given_coupon_used_when_handle_changes_on_order_should_throw_an_exception()
         {
             var order = CreateDefaultOrder();
-            var dto = HandleCouponChangesDto.Of("abc");
             var coupon = CreateCoupon();
-            AddCoupon(new Domain.Model.Coupon { Id = coupon.Id, CouponUsedId = 1 });
+            coupon.CouponUsedId = 1;
+            var dto = HandleCouponChangesDto.Of(coupon.Code);
+            AddCoupon(coupon);
             var handler = CreateCouponHandler();
 
-            Action action = () => handler.HandleCouponChangesOnOrder(coupon, order, dto);
+            Action action = () => handler.HandleCouponChangesOnOrder(order, dto);
 
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("Cannot assign used coupon");
         }
 
         [Fact]
-        public void given_order_with_order_items_without_coupon_dto_with_new_coupon_when_handle_changes_on_order_should_add_coupon_to_order()
+        public void given_order_with_order_items_without_coupon_and_dto_with_new_coupon_when_handle_changes_on_order_should_add_coupon_to_order()
         {
             var order = CreateDefaultOrder();
             var orderItems = new List<Domain.Model.OrderItem> { CreateDefaultOrderItem(), CreateDefaultOrderItem() };
             orderItems.ForEach(oi => { oi.CouponUsed = order.CouponUsed; oi.CouponUsedId = order.CouponUsedId; });
             order.OrderItems = orderItems;
-            var dto = HandleCouponChangesDto.Of("abc");
             var coupon = CreateCoupon();
-            AddCoupon(new Domain.Model.Coupon { Id = coupon.Id, Discount = coupon.Discount });
+            var dto = HandleCouponChangesDto.Of(coupon.Code);
+            AddCoupon(coupon);
             var handler = CreateCouponHandler();
             var currentCost = 200M;
 
-            handler.HandleCouponChangesOnOrder(coupon, order, dto);
+            handler.HandleCouponChangesOnOrder(order, dto);
 
             order.CouponUsedId.Should().NotBeNull();
             order.CouponUsed.Should().NotBeNull();
@@ -175,7 +145,7 @@ namespace ECommerceApp.UnitTests.Services.Coupon
         }
 
         [Fact]
-        public void given_order_with_order_items_and_coupon_dto_with_new_coupon_when_handle_changes_on_order_should_add_coupon_to_order()
+        public void given_order_with_order_items_with_coupon_used_and_dto_with_new_coupon_when_handle_changes_on_order_should_delete_old_coupon_add_new_coupon_to_order()
         {
             var order = CreateDefaultOrder();
             order.CouponUsed = CreateDefaultCouponUsed();
@@ -183,14 +153,14 @@ namespace ECommerceApp.UnitTests.Services.Coupon
             var orderItems = new List<Domain.Model.OrderItem> { CreateDefaultOrderItem(), CreateDefaultOrderItem() };
             orderItems.ForEach(oi => { oi.CouponUsed = order.CouponUsed; oi.CouponUsedId = order.CouponUsedId; });
             order.OrderItems = orderItems;
-            var dto = HandleCouponChangesDto.Of("abc");
             var coupon = CreateCoupon();
-            AddCoupon(new Domain.Model.Coupon { Id = coupon.Id, Discount = coupon.Discount });
+            var dto = HandleCouponChangesDto.Of(coupon.Code);
+            AddCoupon(coupon);
             var handler = CreateCouponHandler();
             couponUsedRepository.Setup(c => c.Delete(order.CouponUsedId.Value)).Returns(true);
             var currentCost = 200M;
 
-            handler.HandleCouponChangesOnOrder(coupon, order, dto);
+            handler.HandleCouponChangesOnOrder(order, dto);
 
             order.CouponUsedId.Should().NotBeNull();
             order.CouponUsed.Should().NotBeNull();
@@ -201,9 +171,9 @@ namespace ECommerceApp.UnitTests.Services.Coupon
             couponRepository.Verify(c => c.Update(It.IsAny<Domain.Model.Coupon>()), Times.Once);
         }
 
-        private static CouponVm CreateCoupon()
+        private static Domain.Model.Coupon CreateCoupon()
         {
-            return new CouponVm
+            return new Domain.Model.Coupon
             {
                 Id = new Random().Next(1, 9999),
                 Code = "123",
@@ -216,6 +186,7 @@ namespace ECommerceApp.UnitTests.Services.Coupon
         private void AddCoupon(Domain.Model.Coupon coupon)
         {
             couponRepository.Setup(c => c.GetById(coupon.Id)).Returns(coupon);
+            couponRepository.Setup(c => c.GetByCode(coupon.Code)).Returns(coupon);
             couponRepository.Setup(c => c.GetCouponById(coupon.Id)).Returns(coupon);
         }
 

@@ -181,7 +181,7 @@ namespace ECommerceApp.IntegrationTests.Services
             var order = new AddOrderDto
             {
                 Id = id,
-                CustomerId = id,
+                CustomerId = 1,
                 OrderItems = new List<OrderItemsIdsDto>
                 {
                     new OrderItemsIdsDto { Id = 3 }

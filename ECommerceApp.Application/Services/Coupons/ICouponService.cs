@@ -20,5 +20,6 @@ namespace ECommerceApp.Application.Services.Coupons
         CouponVm GetCouponByCode(string promoCode);
         List<CouponVm> GetAllCouponsNotUsed();
         CouponVm GetByCouponUsed(int couponUsedId);
+        bool ExistsByCode(string code);
     }
 }

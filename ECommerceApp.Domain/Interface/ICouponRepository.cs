@@ -15,5 +15,7 @@ namespace ECommerceApp.Domain.Interface
         int GetCountBySearchString(string searchString);
         List<Coupon> GetNotUsedCoupons();
         Coupon GetByCouponUsed(int couponUsedId);
+        bool ExistsByCode(string code);
+        Coupon GetByCode(string promoCode);
     }
 }

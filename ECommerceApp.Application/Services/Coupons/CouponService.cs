@@ -34,6 +34,11 @@ namespace ECommerceApp.Application.Services.Coupons
                 throw new BusinessException("Discount should be inclusive between 1 and 99");
             }
 
+            if (_repo.ExistsByCode(couponVm.Code))
+            {
+                throw new BusinessException($"Coupon with name '{couponVm.Code}' already exists");
+            }
+
             var id = Add(couponVm);
             return id;
         }
@@ -89,6 +94,11 @@ namespace ECommerceApp.Application.Services.Coupons
                 throw new BusinessException("Discount should be inclusive between 1 and 99");
             }
 
+            if (_repo.ExistsByCode(couponVm.Code))
+            {
+                throw new BusinessException($"Coupon with name '{couponVm.Code}' already exists");
+            }
+
             Update(couponVm);
         }
 
@@ -117,7 +127,7 @@ namespace ECommerceApp.Application.Services.Coupons
 
         public CouponVm GetCouponByCode(string promoCode)
         {
-            var coupon = _repo.GetAll().Where(c => c.Code == promoCode).FirstOrDefault();
+            var coupon = _repo.GetByCode(promoCode);
             var couponVm = _mapper.Map<CouponVm>(coupon);
             return couponVm;
         }
@@ -143,6 +153,11 @@ namespace ECommerceApp.Application.Services.Coupons
         public CouponVm GetByCouponUsed(int couponUsedId)
         {
             return _mapper.Map<CouponVm>(_repo.GetByCouponUsed(couponUsedId));
+        }
+
+        public bool ExistsByCode(string code)
+        {
+            return _repo.ExistsByCode(code);
         }
     }
 }

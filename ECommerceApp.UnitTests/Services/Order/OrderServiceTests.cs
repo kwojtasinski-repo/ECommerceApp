@@ -369,6 +369,7 @@ namespace ECommerceApp.Tests.Services.Order
         {
             var order = CreateDefaultOrderDto();
             order.Id = 0;
+            _customerService.Setup(c => c.ExistsById(order.CustomerId)).Returns(true);
             _orderRepository.Setup(o => o.AddOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
             var orderService = CreateService();
 
@@ -378,7 +379,7 @@ namespace ECommerceApp.Tests.Services.Order
         }
 
         [Fact]
-        public void given_invalid_order_should_add_order()
+        public void given_invalid_order_when_add_order_should_throw_an_exception()
         {
             var order = CreateDefaultOrderDto();
             var orderService = CreateService();
@@ -399,6 +400,35 @@ namespace ECommerceApp.Tests.Services.Order
             Action action = () => orderService.AddOrder(null);
 
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+        }
+
+        [Fact]
+        public void given_not_existing_customer_when_add_order_should_throw_an_exception()
+        {
+            var orderService = CreateService();
+            _orderRepository.Setup(o => o.AddOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
+            var customerId = 1;
+
+            Action action = () => orderService.AddOrder(new AddOrderDto { CustomerId = customerId });
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains($"Customer with id '{customerId}' was not found");
+
+        }
+
+        [Fact]
+        public void given_order_items_not_ordered_by_current_user_when_add_order_should_throw_an_exception()
+        {
+            var order = CreateDefaultOrderDto();
+            order.Id = 0;
+            _customerService.Setup(c => c.ExistsById(order.CustomerId)).Returns(true);
+            var orderService = CreateService();
+            var dto = new AddOrderDto { CustomerId = order.CustomerId, OrderItems = order.OrderItems.Select(oi => new OrderItemsIdsDto { Id = oi.Id }).ToList() };
+            _orderItemRepository.Setup(oi => oi.GetOrderItemsToRealization(It.IsAny<IEnumerable<int>>())).Returns(new List<OrderItem>() { new() { Id = dto.OrderItems.First().Id, UserId = "userId" } });
+
+            Action action = () => orderService.AddOrder(dto);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("is not ordered by current user");
+
         }
 
         [Fact]
@@ -1052,6 +1082,9 @@ namespace ECommerceApp.Tests.Services.Order
         private void AddCoupon(Domain.Model.Coupon coupon)
         {
             _couponService.Setup(c => c.GetCouponByCode(coupon.Code)).Returns(_mapper.Map<CouponVm>(coupon));
+            _couponService.Setup(c => c.ExistsByCode(coupon.Code)).Returns(true);
+            _couponRepository.Setup(c => c.GetByCode(coupon.Code)).Returns(coupon);
+            _couponRepository.Setup(c => c.ExistsByCode(coupon.Code)).Returns(true);
             _couponRepository.Setup(c => c.GetById(coupon.Id)).Returns(coupon);
         }
 

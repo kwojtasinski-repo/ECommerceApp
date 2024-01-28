@@ -20,5 +20,6 @@ namespace ECommerceApp.Domain.Interface
         List<Customer> GetAllCustomers(int pageSize, int pageNo, string searchString);
         int GetCountBySearchString(string searchString);
         List<Customer> GetAllUserCustomers(string userId);
+        bool ExistsById(int customerId);
     }
 }

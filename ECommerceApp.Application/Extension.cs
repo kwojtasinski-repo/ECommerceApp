@@ -33,7 +33,9 @@ namespace ECommerceApp.Application
             {
                 Id = dto.Id,
                 CustomerId = dto.CustomerId,
-                OrderItems = dto.OrderItems.Select(oi => new OrderItemDto { Id = oi.Id }).ToList()
+                OrderItems = dto.OrderItems?
+                                .Select(oi => new OrderItemDto { Id = oi.Id })?
+                                .ToList() ?? new List<OrderItemDto>()
             };
 
             return order;

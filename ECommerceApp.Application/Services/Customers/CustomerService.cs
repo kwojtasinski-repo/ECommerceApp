@@ -160,6 +160,11 @@ namespace ECommerceApp.Application.Services.Customers
             return _mapper.Map<List<CustomerInformationForOrdersVm>>(_customerRepository.GetAllUserCustomers(userId));
         }
 
+        public bool ExistsById(int customerId)
+        {
+            return _customerRepository.ExistsById(customerId);
+        }
+
         #region AnnonymousUser TODO In Future
 
         private static string CreateRandomUser(int length = 10)

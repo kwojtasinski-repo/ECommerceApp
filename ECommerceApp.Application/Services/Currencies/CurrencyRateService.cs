@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ECommerceApp.Application.Constants;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.External.Client;
@@ -41,7 +42,7 @@ namespace ECommerceApp.Application.Services.Currencies
             var date = dateTime.Date;
 
             CurrencyRateDto currencyRateVm;
-            if (currencyId == 1)
+            if (currencyId == CurrencyConstants.PlnId)
             {
                 var currencyRatePLN = TryGetCurrencyRatePLN(currencyId, dateTime);
                 currencyRateVm = _mapper.Map<CurrencyRateDto>(currencyRatePLN);
@@ -68,7 +69,7 @@ namespace ECommerceApp.Application.Services.Currencies
                 ?? throw new BusinessException($"Currency with id: {currencyId} not found");
             var date = DateTime.Now.Date;
 
-            if (currencyId == 1)
+            if (currencyId == CurrencyConstants.PlnId)
             {
                 var currencyRatePLN = TryGetCurrencyRatePLN(currencyId, date);
                 var currencyRatePLNVm = _mapper.Map<CurrencyRateDto>(currencyRatePLN);

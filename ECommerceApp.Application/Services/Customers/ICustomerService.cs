@@ -20,5 +20,6 @@ namespace ECommerceApp.Application.Services.Customers
         bool CustomerExists(int id, string userId);
         CustomerDetailsVm GetCustomerDetails(int id, string userId);
         List<CustomerInformationForOrdersVm> GetCustomersInformationByUserId(string userId);
+        bool ExistsById(int customerId);
     }
 }

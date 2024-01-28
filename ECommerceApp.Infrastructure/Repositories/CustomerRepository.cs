@@ -190,5 +190,12 @@ namespace ECommerceApp.Infrastructure.Repositories
                            .Where(c => c.UserId == userId)
                            .ToList();
         }
+
+        public bool ExistsById(int customerId)
+        {
+            return _context.Customers
+                           .AsNoTracking()
+                           .Any(c => c.Id == customerId);
+        }
     }
 }

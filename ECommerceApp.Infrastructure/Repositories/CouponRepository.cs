@@ -87,5 +87,18 @@ namespace ECommerceApp.Infrastructure.Repositories
             return _context.Coupons
                            .FirstOrDefault(c => c.CouponUsedId == couponUsedId);
         }
+
+        public bool ExistsByCode(string code)
+        {
+            return _context.Coupons
+                           .AsNoTracking()
+                           .Any(c => c.Code.ToLower() ==  code.ToLower());
+        }
+
+        public Coupon GetByCode(string promoCode)
+        {
+            return _context.Coupons
+                           .FirstOrDefault(c => c.Code.ToLower() == promoCode.ToLower());
+        }
     }
 }

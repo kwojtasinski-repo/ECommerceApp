@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Domain.Model;
+﻿using ECommerceApp.Application.Constants;
+using ECommerceApp.Domain.Model;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -118,7 +119,7 @@ namespace ECommerceApp.Infrastructure.Database
             // -------------------- CONTACT DETAIL TYPE SEED DATA ----------------------
 
             // -------------------- CURRENCY SEED DATA ----------------------
-            builder.Entity<Currency>().HasData(new Currency { Id = 1, Code = "PLN", Description = "Polski złoty" });
+            builder.Entity<Currency>().HasData(new Currency { Id = CurrencyConstants.PlnId, Code = "PLN", Description = "Polski złoty" });
             // -------------------- CURRENCY SEED DATA ----------------------
 
             // -------------------- SET PROPERTY --------------------

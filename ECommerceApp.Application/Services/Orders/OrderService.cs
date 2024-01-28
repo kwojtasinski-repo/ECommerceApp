@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ECommerceApp.Application.Constants;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Coupons;
@@ -393,12 +394,12 @@ namespace ECommerceApp.Application.Services.Orders
 
             var order = _orderRepository.GetOrderDetailsById(dto.Id)
                 ?? throw new BusinessException($"Order with id '{dto.Id}' was not found");
-            var coupon = (CouponVm)null;
-            if (!string.IsNullOrWhiteSpace(dto.PromoCode))
+
+            if (!string.IsNullOrWhiteSpace(dto.PromoCode) && !_couponService.ExistsByCode(dto.PromoCode))
             {
-                coupon = _couponService.GetCouponByCode(dto.PromoCode)
-                    ?? throw new BusinessException($"Coupon code '{dto.PromoCode}' was not found");
+                throw new BusinessException($"Coupon code '{dto.PromoCode}' was not found");
             }
+
             var customer = _customerService.GetCustomer(dto.CustomerId)
                 ?? throw new BusinessException($"Customer with id '{dto.CustomerId}' was not found");
             if (dto.CouponUsedId.HasValue && dto.CouponUsedId.Value != order.CouponUsedId)
@@ -406,15 +407,23 @@ namespace ECommerceApp.Application.Services.Orders
                 throw new BusinessException($"Cannot assign existed coupon with id '{dto.CouponUsedId}'");
             }
 
+            UpdateOrderFields(order, dto);
+            var orderItemsToRemove = HandleUpdateOrderItems(order, dto);
+            order.CalculateCost();
+            _couponHandler.HandleCouponChangesOnOrder(order, new HandleCouponChangesDto(dto));
+            _paymentHandler.HandlePaymentChangesOnOrder(dto.Payment, order);
+            _orderRepository.UpdatedOrder(order);
+            orderItemsToRemove.ForEach(oi => _orderItemService.DeleteOrderItem(oi.Id));
+            return _mapper.Map<OrderDetailsVm>(order);
+        }
+
+        private void UpdateOrderFields(Order order, UpdateOrderDto dto)
+        {
             if (!string.IsNullOrWhiteSpace(dto.OrderNumber))
-            {
                 order.Number = dto.OrderNumber;
-            }
 
             if (dto.Ordered.HasValue)
-            {
                 order.Ordered = dto.Ordered.Value;
-            }
 
             order.CustomerId = dto.CustomerId;
 
@@ -429,70 +438,6 @@ namespace ECommerceApp.Application.Services.Orders
                 order.IsDelivered = false;
                 order.Delivered = null;
             }
-
-            var orderItemsToAdd = dto.OrderItems?.Where(oi => oi.Id == 0 && oi.ItemId > 0 && oi.ItemOrderQuantity > 0) ?? Enumerable.Empty<AddOrderItemDto>();
-            var orderItemsToModify = dto.OrderItems?.Where(oi => oi.Id > 0) ?? Enumerable.Empty<AddOrderItemDto>();
-            var errors = new StringBuilder();
-            foreach (var orderItemToModify in orderItemsToModify)
-            {
-                var orderItemExists = order.OrderItems?.FirstOrDefault(oi => oi.Id == orderItemToModify.Id);
-                if (orderItemExists is null)
-                {
-                    errors.Append($"Order doesn't have item with id '{orderItemToModify.Id}'.");
-                }
-            }
-            if (errors.Length > 0)
-            {
-                throw new BusinessException(errors.ToString());
-            }
-
-            var orderItemsToRemove = new List<OrderItem>();
-            var currentOrderItems = new List<OrderItem>(order.OrderItems ?? Enumerable.Empty<OrderItem>());
-            foreach (var orderItem in currentOrderItems)
-            {
-                var orderItemExists = orderItemsToModify.FirstOrDefault(oi => oi.Id == orderItem.Id);
-                if (orderItemExists is null)
-                {
-                    order.OrderItems.Remove(orderItem);
-                    orderItemsToRemove.Add(orderItem);
-                    continue;
-                }
-
-                if (orderItem.ItemOrderQuantity != orderItemExists.ItemOrderQuantity)
-                {
-                    orderItem.ItemOrderQuantity = orderItemExists.ItemOrderQuantity;
-                }
-            }
-
-            if (orderItemsToAdd.Any())
-            {
-                var items = _itemRepository.GetItemsByIds(orderItemsToAdd.Select(it => it.ItemId));
-                foreach(var item in orderItemsToAdd)
-                {
-                    var itemExists = items.FirstOrDefault(i => i.Id == item.ItemId);
-                    if (itemExists is null)
-                    {
-                        continue;
-                    }
-                    var orderItem = new OrderItem
-                    {
-                        Id = 0,
-                        ItemId = item.ItemId,
-                        ItemOrderQuantity = item.ItemOrderQuantity,
-                        OrderId = order.Id,
-                        Item = itemExists
-                    };
-                    _orderItemRepository.AddOrderItem(orderItem);
-                    order.OrderItems.Add(orderItem);
-                }
-            }
-
-            order.CalculateCost();
-            _couponHandler.HandleCouponChangesOnOrder(coupon, order, new HandleCouponChangesDto(dto));
-            _paymentHandler.HandlePaymentChangesOnOrder(dto.Payment, order);
-            _orderRepository.UpdatedOrder(order);
-            orderItemsToRemove.ForEach(oi => _orderItemService.DeleteOrderItem(oi.Id));
-            return _mapper.Map<OrderDetailsVm>(order);
         }
 
         private static void ValidatePageSizeAndPageNo(int pageSize, int pageNo)
@@ -511,7 +456,12 @@ namespace ECommerceApp.Application.Services.Orders
         private int AddOrderInternal(AddOrderDto model)
         {
             var dto = model.AsDto();
-            dto.CurrencyId = 1;
+            if (!_customerService.ExistsById(dto.CustomerId))
+            {
+                throw new BusinessException($"Customer with id '{dto.CustomerId}' was not found");
+            }
+
+            dto.CurrencyId = CurrencyConstants.PlnId;
             dto.UserId = _httpContextAccessor.GetUserId();
             dto.Number = Guid.NewGuid().ToString();
 
@@ -525,14 +475,14 @@ namespace ECommerceApp.Application.Services.Orders
             dto.OrderItems = new List<OrderItemDto>();
             var order = _mapper.Map<Order>(dto);
             order.OrderItems = _orderItemRepository.GetOrderItemsToRealization(ids);
-            CheckOrderItemsOrderByUser(order, order.OrderItems);
+            ValidUserOrderItems(order, order.OrderItems);
             order.CalculateCost();
             var id = _orderRepository.AddOrder(order);
-            _couponHandler.HandleCouponChangesOnOrder(_couponService.GetCouponByCode(model.PromoCode), order, HandleCouponChangesDto.Of(model.PromoCode));
+            _couponHandler.HandleCouponChangesOnOrder(order, HandleCouponChangesDto.Of(model.PromoCode));
             return id;
         }
 
-        private static void CheckOrderItemsOrderByUser(Order order, ICollection<OrderItem> itemsFromDb)
+        private static void ValidUserOrderItems(Order order, ICollection<OrderItem> itemsFromDb)
         {
             StringBuilder errors = new();
 
@@ -544,7 +494,7 @@ namespace ECommerceApp.Application.Services.Orders
                     continue;
                 }
 
-                if (orderItem.UserId != item.UserId)
+                if (order.UserId != item.UserId)
                 {
                     errors.AppendLine($"This item {orderItem.Id} is not ordered by current user");
                     continue;
@@ -554,6 +504,97 @@ namespace ECommerceApp.Application.Services.Orders
             if (errors.Length > 0)
             {
                 throw new BusinessException(errors.ToString());
+            }
+        }
+
+        private List<OrderItem> HandleUpdateOrderItems(Order order, UpdateOrderDto dto)
+        {
+            var orderItemsToAdd = dto.OrderItems?.Where(oi => oi.Id == 0 && oi.ItemId > 0 && oi.ItemOrderQuantity > 0) ?? Enumerable.Empty<AddOrderItemDto>();
+            var orderItemsToModify = dto.OrderItems?.Where(oi => oi.Id > 0) ?? Enumerable.Empty<AddOrderItemDto>();
+            ValidateOrderItems(order, orderItemsToModify);
+            var orderItemsToRemove = DeleteOrderItemsFromOrder(order, orderItemsToModify);
+            UpdateOrderItemsOnOrder(order, orderItemsToModify);
+            if (!orderItemsToAdd.Any())
+            {
+                return orderItemsToRemove;
+            }
+
+            AddOrderItemsToOrder(order, orderItemsToAdd);
+            return orderItemsToRemove;
+        }
+
+        private static void ValidateOrderItems(Order order, IEnumerable<AddOrderItemDto> orderItems)
+        {
+            var errors = new StringBuilder();
+            foreach (var orderItemToModify in orderItems)
+            {
+                var orderItemExists = order.OrderItems?.FirstOrDefault(oi => oi.Id == orderItemToModify.Id);
+                if (orderItemExists is null)
+                {
+                    errors.Append($"Order doesn't have item with id '{orderItemToModify.Id}'.");
+                }
+            }
+            if (errors.Length > 0)
+            {
+                throw new BusinessException(errors.ToString());
+            }
+        }
+
+        private static List<OrderItem> DeleteOrderItemsFromOrder(Order order, IEnumerable<AddOrderItemDto> orderItemsToModify)
+        {
+            var orderItemsToRemove = new List<OrderItem>();
+            var currentOrderItems = new List<OrderItem>(order.OrderItems ?? Enumerable.Empty<OrderItem>());
+
+            foreach (var orderItem in currentOrderItems)
+            {
+                var orderItemExists = orderItemsToModify.FirstOrDefault(oi => oi.Id == orderItem.Id);
+                if (orderItemExists is null)
+                {
+                    order.OrderItems.Remove(orderItem);
+                    orderItemsToRemove.Add(orderItem);
+                    continue;
+                }
+            }
+            return orderItemsToRemove;
+        }
+
+        private static void UpdateOrderItemsOnOrder(Order order, IEnumerable<AddOrderItemDto> orderItemsToModify)
+        {
+            foreach (var orderItem in order.OrderItems)
+            {
+                var orderItemExists = orderItemsToModify.FirstOrDefault(oi => oi.Id == orderItem.Id);
+                if (orderItemExists is null)
+                {
+                    continue;
+                }
+
+                if (orderItem.ItemOrderQuantity != orderItemExists.ItemOrderQuantity)
+                {
+                    orderItem.ItemOrderQuantity = orderItemExists.ItemOrderQuantity;
+                }
+            }
+        }
+
+        private void AddOrderItemsToOrder(Order order, IEnumerable<AddOrderItemDto> orderItemsToAdd)
+        {
+            var items = _itemRepository.GetItemsByIds(orderItemsToAdd.Select(it => it.ItemId));
+            foreach (var item in orderItemsToAdd)
+            {
+                var itemExists = items.FirstOrDefault(i => i.Id == item.ItemId);
+                if (itemExists is null)
+                {
+                    continue;
+                }
+                var orderItem = new OrderItem
+                {
+                    Id = 0,
+                    ItemId = item.ItemId,
+                    ItemOrderQuantity = item.ItemOrderQuantity,
+                    OrderId = order.Id,
+                    Item = itemExists
+                };
+                _orderItemRepository.AddOrderItem(orderItem);
+                order.OrderItems.Add(orderItem);
             }
         }
     }

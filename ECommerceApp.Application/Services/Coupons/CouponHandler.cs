@@ -1,5 +1,4 @@
 ﻿using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 
@@ -16,7 +15,7 @@ namespace ECommerceApp.Application.Services.Coupons
             _couponUsedRepository = couponUsedRepository;
         }
 
-        public void HandleCouponChangesOnOrder(CouponVm couponVm, Order order, HandleCouponChangesDto dto)
+        public void HandleCouponChangesOnOrder(Order order, HandleCouponChangesDto dto)
         {
             if (order is null)
             {
@@ -28,7 +27,7 @@ namespace ECommerceApp.Application.Services.Coupons
                 throw new BusinessException($"{nameof(DTO.UpdateOrderDto)} cannot be null");
             }
 
-            if (couponVm is null && dto.HasAnyCoupon() && order.CouponUsedId is null)
+            if (dto.HasAnyCoupon() && order.CouponUsedId is null)
             {
                 return;
             }
@@ -38,7 +37,7 @@ namespace ECommerceApp.Application.Services.Coupons
                 return;
             }
 
-            if (couponVm is null && !dto.HasAnyCoupon() && order.CouponUsedId is not null)
+            if (!dto.HasNewCouponCode() && !dto.HasAnyCoupon() && order.CouponUsedId is not null)
             {
                 foreach (var orderItem in order.OrderItems)
                 {
@@ -51,8 +50,8 @@ namespace ECommerceApp.Application.Services.Coupons
                 return;
             }
 
-            var coupon = _couponRepository.GetById(couponVm.Id)
-                ?? throw new BusinessException($"Coupon with id '{couponVm.Id}' was not found");
+            var coupon = _couponRepository.GetByCode(dto.PromoCode)
+                ?? throw new BusinessException($"Coupon with code '{dto.PromoCode}' was not found");
 
             if (coupon.CouponUsedId.HasValue)
             {
