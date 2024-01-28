@@ -16,5 +16,6 @@ namespace ECommerceApp.Application.Services.Items
         List<int> AddImages(AddImagesWithBase64POCO imageVm);
         List<GetImageVm> GetImagesByItemId(int imageId);
         List<ImageInfoDto> GetImages(IEnumerable<int> enumerable);
+        string ValidBase64File(IEnumerable<ValidBase64File> base64Files);
     }
 }

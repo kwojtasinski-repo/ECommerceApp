@@ -1,12 +1,12 @@
 ﻿using AutoMapper;
-using AutoMapper.QueryableExtensions;
+using ECommerceApp.Application.Constants;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.POCO;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -111,7 +111,7 @@ namespace ECommerceApp.Application.Services.Items
 
         public bool ItemExists(int id)
         {
-            var exists = _itemRepository.ItemExists(id);
+            var exists = _itemRepository.ExistsById(id);
             return exists;
         }
 
@@ -128,23 +128,10 @@ namespace ECommerceApp.Application.Services.Items
             }
 
             var tags = _tagRepository.GetTagsByIds(dto.TagsId);
-            var errors = new StringBuilder();
-            foreach (var itemTagId in dto.TagsId)
-            {
-                var tag = tags.FirstOrDefault(t => t.Id == itemTagId);
-                if (tag is null)
-                {
-                    errors.Append($"Tag with id '{itemTagId}' was not found");
-                }
-            }
-
-            foreach (var img in dto.Images ?? new List<AddItemImageDto>())
-            {
-                if (!IsBase64String(img.ImageSource))
-                {
-                    errors.AppendLine($"Image '{img.ImageName}' has invalid Base64 string");
-                }
-            }
+            var errors = new StringBuilder(ValidTags(tags, dto.TagsId));
+            errors.Append(_imageService.ValidBase64File(dto.Images?.Select(i =>
+                new ValidBase64File(i.ImageName, i.ImageSource)
+            )));
 
             if (errors.Length > 0)
             {
@@ -155,7 +142,7 @@ namespace ECommerceApp.Application.Services.Items
                 ?? throw new BusinessException($"Brand with id '{dto.BrandId}' was not found");
             var type = _typeRepository.GetTypeById(dto.TypeId)
                 ?? throw new BusinessException($"Type with id '{dto.TypeId}' was not found");
-            var currency = _currencyRepository.GetById(1); //PLN
+            var currency = _currencyRepository.GetById(CurrencyConstants.PlnId);
             var item = new Item
             {
                 Cost = dto.Cost,
@@ -191,23 +178,10 @@ namespace ECommerceApp.Application.Services.Items
             var item = _itemRepository.GetItemDetailsById(dto.Id)
                 ?? throw new BusinessException($"Item with id '{dto.Id}' was not found");
             var tags = _tagRepository.GetTagsByIds(dto.TagsId);
-            var errors = new StringBuilder();
-            foreach (var tagId in dto.TagsId)
-            {
-                var tag = tags.FirstOrDefault(t => t.Id == tagId);
-                if (tag is null)
-                {
-                    errors.Append($"Tag with id '{tagId}' was not found");
-                }
-            }
-
-            foreach (var img in dto.Images ?? new List<UpdateItemImageDto>())
-            {
-                if (img.ImageId == default && !IsBase64String(img.ImageSource))
-                {
-                    errors.AppendLine($"Image '{img.ImageName}' has invalid Base64 string");
-                }
-            }
+            var errors = new StringBuilder(ValidTags(tags, dto.TagsId));
+            errors.Append(_imageService.ValidBase64File(dto.Images?.Select(i =>
+                new ValidBase64File(i.ImageName, i.ImageSource)
+            )));
 
             if (errors.Length > 0)
             {
@@ -218,7 +192,7 @@ namespace ECommerceApp.Application.Services.Items
                 ?? throw new BusinessException($"Brand with id '{dto.BrandId}' was not found");
             var type = _typeRepository.GetTypeById(dto.TypeId)
                 ?? throw new BusinessException($"Type with id '{dto.TypeId}' was not found");
-            var currency = _currencyRepository.GetById(1); //PLN
+            var currency = _currencyRepository.GetById(CurrencyConstants.PlnId);
 
             item.Cost = dto.Cost;
             item.Name = dto.Name;
@@ -231,24 +205,7 @@ namespace ECommerceApp.Application.Services.Items
             item.Currency = currency;
             item.CurrencyId = currency.Id;
             item.Warranty = dto.Warranty;
-            var currentTags = new List<ItemTag>(item.ItemTags);
-            
-            foreach (var itemTag in currentTags)
-            {
-                var tagExists = dto.TagsId.FirstOrDefault(t => t == itemTag.TagId);
-                if (tagExists == default)
-                {
-                    item.ItemTags.Remove(itemTag);
-                }
-            }
-
-            foreach(var tagId in dto.TagsId)
-            {
-                if (!item.ItemTags.Any(it => it.TagId == tagId))
-                {
-                    item.ItemTags.Add(new ItemTag { Item = item, TagId = tagId, Tag = tags.FirstOrDefault(t => t.Id == tagId) });
-                }
-            }
+            HandleUpdateTags(item, dto.TagsId, tags);
 
             if (!dto.Images.Any())
             {
@@ -256,13 +213,75 @@ namespace ECommerceApp.Application.Services.Items
                 return;
             }
 
-            var imgToAdd = dto.Images.Where(i => i.ImageId == default);
-            var imgToCheck = dto.Images.Where(i => i.ImageId != default);
+            var imgsToAdd = dto.Images.Where(i => i.ImageId == default);
+            var imgsToCheck = dto.Images.Where(i => i.ImageId != default);
             var currentImages = new List<Image>(item.Images);
-            var imgs = _imageService.GetImages(imgToCheck.Select(i => i.ImageId));
+            var imgs = _imageService.GetImages(imgsToCheck.Select(i => i.ImageId));
+            var imgErrors = ValidImages(imgsToCheck, imgs);
+
+            if (imgErrors.Any())
+            {
+                throw new BusinessException(imgErrors);
+            }
+
+            foreach (var img in currentImages)
+            {
+                if (!imgsToCheck.Any(i => i.ImageId == img.Id))
+                {
+                    item.Images.Remove(img);
+                }
+            }
+
+            if (imgsToAdd.Any())
+            {
+                _imageService.AddImages(new POCO.AddImagesWithBase64POCO(item.Id, imgsToAdd.Select(i => new POCO.FileWithBase64Format(i.ImageName, i.ImageSource))));
+            }
+
+            _itemRepository.UpdateItem(item);
+        }
+
+        private static string ValidTags(List<Tag> tags, IEnumerable<int> tagsId)
+        {
+            var errors = new StringBuilder();
+            foreach (var itemTagId in tagsId)
+            {
+                var tag = tags.FirstOrDefault(t => t.Id == itemTagId);
+                if (tag is null)
+                {
+                    errors.Append($"Tag with id '{itemTagId}' was not found");
+                }
+            }
+
+            return errors.ToString();
+        }
+
+        private static void HandleUpdateTags(Item item, IEnumerable<int> tagsId, List<Tag> tags)
+        {
+            var currentTags = new List<ItemTag>(item.ItemTags);
+
+            foreach (var itemTag in currentTags)
+            {
+                var tagExists = tagsId.FirstOrDefault(t => t == itemTag.TagId);
+                if (tagExists == default)
+                {
+                    item.ItemTags.Remove(itemTag);
+                }
+            }
+
+            foreach (var tagId in tagsId)
+            {
+                if (!item.ItemTags.Any(it => it.TagId == tagId))
+                {
+                    item.ItemTags.Add(new ItemTag { Item = item, TagId = tagId, Tag = tags.FirstOrDefault(t => t.Id == tagId) });
+                }
+            }
+        }
+
+        private static string ValidImages(IEnumerable<UpdateItemImageDto> imgsToCheck, List<ImageInfoDto> imgs)
+        {
             var imgErrors = new StringBuilder();
 
-            foreach (var img in imgToCheck)
+            foreach (var img in imgsToCheck)
             {
                 if (!imgs.Any(i => i.Id == img.ImageId))
                 {
@@ -275,26 +294,7 @@ namespace ECommerceApp.Application.Services.Items
                 throw new BusinessException(imgErrors.ToString());
             }
 
-            foreach (var img in currentImages)
-            {
-                if (!imgToCheck.Any(i => i.ImageId == img.Id))
-                {
-                    item.Images.Remove(img);
-                }
-            }
-
-            if (imgToAdd.Any())
-            {
-                _imageService.AddImages(new POCO.AddImagesWithBase64POCO(item.Id, imgToAdd.Select(i => new POCO.FileWithBase64Format(i.ImageName, i.ImageSource))));
-            }
-
-            _itemRepository.UpdateItem(item);
-        }
-
-        public static bool IsBase64String(string base64)
-        {
-            Span<byte> buffer = new (new byte[base64.Length]);
-            return Convert.TryFromBase64String(base64, buffer, out int bytesParsed);
+            return imgErrors.ToString();
         }
     }
 }

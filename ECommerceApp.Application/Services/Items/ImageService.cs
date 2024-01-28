@@ -241,6 +241,24 @@ namespace ECommerceApp.Application.Services.Items
             return ids;
         }
 
+        public string ValidBase64File(IEnumerable<ValidBase64File> base64Files)
+        {
+            if (base64Files is null || !base64Files.Any())
+            {
+                return string.Empty;
+            }
+
+            var errors = new StringBuilder();
+            foreach (var file in base64Files)
+            {
+                if (!IsBase64String(file.FileSource))
+                {
+                    errors.AppendLine($"Image '{file.Name}' has invalid Base64 string");
+                }
+            }
+            return errors.ToString();
+        }
+
         private void ValidImages(ICollection<IFormFile> images)
         {
             ValidImages(images.Select(i => new ValidateFile(i.FileName, i.Length)));
@@ -306,6 +324,12 @@ namespace ECommerceApp.Application.Services.Items
                 Name = fileDir.Name,
                 SourcePath = fileDir.SourcePath
             };
+        }
+
+        private static bool IsBase64String(string base64)
+        {
+            Span<byte> buffer = new(new byte[base64.Length]);
+            return Convert.TryFromBase64String(base64, buffer, out int bytesParsed);
         }
 
         private record FileWithBytes(string Name, byte[] FileSource);

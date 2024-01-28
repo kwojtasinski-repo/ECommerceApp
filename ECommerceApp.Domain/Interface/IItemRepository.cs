@@ -14,7 +14,7 @@ namespace ECommerceApp.Domain.Interface
         List<Item> GetItemInfos();
         void UpdateItem(Item item);
         List<ItemTag> GetAllItemsWithTags(int pageSize, int pageNo, string searchString);
-        bool ItemExists(int id);
+        bool ExistsById(int id);
         int GetCountItemTagsBySearchString(string searchString);
         int GetCountBySearchString(string searchString);
         List<Item> GetItemsByIds(IEnumerable<int> enumerable);

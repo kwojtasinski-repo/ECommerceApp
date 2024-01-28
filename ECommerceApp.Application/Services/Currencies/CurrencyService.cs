@@ -4,10 +4,7 @@ using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.ViewModels.Currency;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Application.Services.Currencies
 {

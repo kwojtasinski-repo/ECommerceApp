@@ -41,7 +41,7 @@ namespace ECommerceApp.Tests.Services.Item
         public void given_valid_item_id_should_exists()
         {
             int id = 1;
-            _itemRepository.Setup(i => i.ItemExists(id)).Returns(true);
+            _itemRepository.Setup(i => i.ExistsById(id)).Returns(true);
             var itemService = CreateItemService();
 
             var exists = itemService.ItemExists(id);
