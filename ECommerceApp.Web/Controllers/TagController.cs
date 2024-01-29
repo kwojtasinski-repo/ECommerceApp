@@ -1,13 +1,13 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Tag;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.Web.Controllers
 {
-    public class TagController : Controller
+    [Authorize]
+    public class TagController : BaseController
     {
         private readonly ITagService _tagService;
 
@@ -36,7 +36,7 @@ namespace ECommerceApp.Web.Controllers
             return View(tag);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet]
         public IActionResult AddTag()
         {
@@ -44,7 +44,7 @@ namespace ECommerceApp.Web.Controllers
             return View(tag);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public IActionResult AddTag(TagVm model)
         {
@@ -52,7 +52,7 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet]
         public IActionResult EditTag(int id)
         {
@@ -64,7 +64,7 @@ namespace ECommerceApp.Web.Controllers
             return View(new TagVm { Tag = tag });
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public IActionResult EditTag(TagVm model)
         {
@@ -72,7 +72,7 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet]
         public IActionResult ViewTag(int id)
         {
@@ -84,7 +84,7 @@ namespace ECommerceApp.Web.Controllers
             return View(tag);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         public IActionResult DeleteTag(int id)
         {
             _tagService.DeleteTag(id);

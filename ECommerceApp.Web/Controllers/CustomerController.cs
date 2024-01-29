@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using ECommerceApp.Application.DTO;
@@ -12,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.Web.Controllers
 {
+    [Authorize]
     public class CustomerController : BaseController
     {
         private readonly ICustomerService _customerService;
@@ -23,7 +23,6 @@ namespace ECommerceApp.Web.Controllers
             _contactDetailTypeService = contactDetailTypeService;
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet]
         public IActionResult Index()
         {
@@ -33,7 +32,6 @@ namespace ECommerceApp.Web.Controllers
             return View(model);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
         public IActionResult Index(int pageSize, int? pageNo, string searchString)
         {
@@ -48,7 +46,7 @@ namespace ECommerceApp.Web.Controllers
             return View(model);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet]
         public IActionResult All()
         {
@@ -56,7 +54,7 @@ namespace ECommerceApp.Web.Controllers
             return View(model);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public IActionResult All(int pageSize, int? pageNo, string searchString)
         {
@@ -71,7 +69,6 @@ namespace ECommerceApp.Web.Controllers
         }
 
         [HttpGet]
-        [Authorize]
         public IActionResult AddCustomer()
         {
             var customer = new CustomerVm
@@ -84,7 +81,6 @@ namespace ECommerceApp.Web.Controllers
             return View(customer);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
         public IActionResult AddCustomer(CustomerVm model)
         {
@@ -103,7 +99,6 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        [Authorize]
         public IActionResult AddCustomerPartialView()
         {
             var customer = new CustomerVm
@@ -116,7 +111,6 @@ namespace ECommerceApp.Web.Controllers
             return PartialView(customer);
         }
 
-        [Authorize]
         [HttpGet]
         public IActionResult EditCustomer(int id)
         {
@@ -152,7 +146,6 @@ namespace ECommerceApp.Web.Controllers
             return View(vm);
         }
 
-        [Authorize]
         [HttpPost]
         public IActionResult EditCustomer(CustomerVm model)
         {
@@ -168,7 +161,6 @@ namespace ECommerceApp.Web.Controllers
         }
 
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         public IActionResult ViewCustomer(int id)
         {
             // TODO check if user has rights on backend to this customer
@@ -176,7 +168,6 @@ namespace ECommerceApp.Web.Controllers
             return View(customer);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         public IActionResult Delete(int id)
         {
             // TODO check if user has rights on backend to this customer

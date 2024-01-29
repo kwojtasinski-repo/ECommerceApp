@@ -8,8 +8,10 @@ namespace ECommerceApp.Web.Controllers
 {
     public class BaseController : Controller
     {
-        public readonly string[] ManagingPermissions = new string[] { UserPermissions.Roles.Administrator, UserPermissions.Roles.Manager };
-        public readonly string[] MaintenancePermissions = new string[] { UserPermissions.Roles.Administrator, UserPermissions.Roles.Manager, UserPermissions.Roles.Service };
+        public readonly string[] ManagingRoles = new string[] { UserPermissions.Roles.Administrator, UserPermissions.Roles.Manager };
+        public readonly string[] MaintenanceRoles = new string[] { UserPermissions.Roles.Administrator, UserPermissions.Roles.Manager, UserPermissions.Roles.Service };
+        public const string ManagingRole = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}";
+        public const string MaintenanceRole = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}";
 
         protected string GetUserId()
         {

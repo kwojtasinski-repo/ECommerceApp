@@ -12,6 +12,7 @@ using ECommerceApp.Application.DTO;
 
 namespace ECommerceApp.Web.Controllers
 {
+    [Authorize]
     public class OrderController : BaseController
     {
         private readonly IOrderService _orderService;
@@ -25,7 +26,7 @@ namespace ECommerceApp.Web.Controllers
             _itemService = itemService;
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet]
         public IActionResult Index()
         {
@@ -47,14 +48,12 @@ namespace ECommerceApp.Web.Controllers
             return View(model);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet]
         public IActionResult AddOrder()
         {
             return View(_orderService.InitOrder());
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
         public IActionResult AddOrder(OrderVm model)
         {
@@ -68,7 +67,6 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("AddOrderDetails", new { orderId = id });
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet]
         public IActionResult AddOrderItemToCart()
         {
@@ -79,7 +77,6 @@ namespace ECommerceApp.Web.Controllers
             return View(orderItems);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
         public IActionResult AddOrderItemToCart(NewOrderItemVm model)
         {
@@ -87,14 +84,12 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index", controllerName: "Item");
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet]
         public IActionResult OrderRealization()
         {
             return View(_orderService.InitOrder());
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
         public IActionResult OrderRealization(OrderVm model)
         {
@@ -102,7 +97,6 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("AddOrderSummary", new { id = model.Order.Id });
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet]
         public IActionResult AddOrderDetails(int orderId)
         {
@@ -114,7 +108,6 @@ namespace ECommerceApp.Web.Controllers
             return View(order);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
         public IActionResult AddOrderDetails(NewOrderVm model)
         {
@@ -139,7 +132,6 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("AddOrderSummary", new { id = model.Id });
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet]
         public IActionResult AddOrderSummary(int id)
         {
@@ -151,7 +143,6 @@ namespace ECommerceApp.Web.Controllers
             return View(order);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet]
         public IActionResult ShowMyCart()
         {
@@ -160,7 +151,6 @@ namespace ECommerceApp.Web.Controllers
             return View(orderItems);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
         public IActionResult ShowMyCart(int pageSize, int? pageNo)
         {
@@ -173,7 +163,6 @@ namespace ECommerceApp.Web.Controllers
             return View(orderItems);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet]
         public IActionResult ShowOrdersByCustomerId(int customerId)
         {
@@ -182,7 +171,6 @@ namespace ECommerceApp.Web.Controllers
             return View(orderItems);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
         public IActionResult ShowOrdersByCustomerId(int customerId, int pageSize, int? pageNo)
         {
@@ -195,7 +183,6 @@ namespace ECommerceApp.Web.Controllers
             return View(orderItems);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
         [HttpGet]
         public IActionResult EditOrder(int id)
         {
@@ -207,7 +194,7 @@ namespace ECommerceApp.Web.Controllers
             return View(order);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public IActionResult EditOrder(NewOrderVm model)
         {
@@ -232,7 +219,6 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         public IActionResult ViewOrderDetails(int id)
         {
             var order = _orderService.GetOrderDetail(id);
@@ -243,7 +229,7 @@ namespace ECommerceApp.Web.Controllers
             return View(order);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         public IActionResult DeleteOrder(int id)
         {
             return _orderService.DeleteOrder(id)
@@ -251,7 +237,6 @@ namespace ECommerceApp.Web.Controllers
                 : NotFound();
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         public IActionResult ShowMyOrders()
         {
             var userId = GetUserId();
@@ -259,7 +244,6 @@ namespace ECommerceApp.Web.Controllers
             return View(orders);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
         public IActionResult ShowMyOrders(int pageSize, int pageNo)
         {
@@ -268,7 +252,7 @@ namespace ECommerceApp.Web.Controllers
             return View(orders);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet]
         public IActionResult ShowOrdersPaid()
         {
@@ -277,7 +261,7 @@ namespace ECommerceApp.Web.Controllers
             return View(model);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public IActionResult ShowOrdersPaid(int pageSize, int? pageNo, string searchString)
         {
@@ -291,7 +275,7 @@ namespace ECommerceApp.Web.Controllers
             return View(model);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPatch]
         public IActionResult DispatchOrder(int id)
         {

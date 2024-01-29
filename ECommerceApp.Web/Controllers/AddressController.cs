@@ -2,14 +2,13 @@
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Addresses;
 using ECommerceApp.Application.ViewModels.Address;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.Web.Controllers
 {
-    [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
-    public class AddressController : Controller
+    [Authorize]
+    public class AddressController : BaseController
     {
         private readonly IAddressService _addressService;
 

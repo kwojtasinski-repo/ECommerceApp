@@ -1,13 +1,12 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Brands;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.Web.Controllers
 {
-    public class BrandController : Controller
+    public class BrandController : BaseController
     {
         private readonly IBrandService _brandService;
 
@@ -36,14 +35,14 @@ namespace ECommerceApp.Web.Controllers
             return View(item);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet]
         public IActionResult AddBrand()
         {
             return View(new BrandDto());
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public IActionResult AddBrand(BrandDto model)
         {
@@ -58,7 +57,7 @@ namespace ECommerceApp.Web.Controllers
             }
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet]
         public IActionResult EditBrand(int id)
         {
@@ -70,7 +69,7 @@ namespace ECommerceApp.Web.Controllers
             return View(brand);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public IActionResult EditBrand(BrandDto model)
         {
@@ -96,7 +95,7 @@ namespace ECommerceApp.Web.Controllers
             return View(brand);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         public IActionResult DeleteBrand(int id)
         {
             return _brandService.DeleteBrand(id)

@@ -1,13 +1,12 @@
-﻿using System.Security.Claims;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using ECommerceApp.Infrastructure.Permissions;
 using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.DTO;
 
 namespace ECommerceApp.Web.Controllers
 {
-    public class OrderItemController : Controller
+    [Authorize]
+    public class OrderItemController : BaseController
     {
         private readonly IOrderItemService _orderItemService;
 
@@ -16,7 +15,7 @@ namespace ECommerceApp.Web.Controllers
             _orderItemService = orderItemService;
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet]
         public IActionResult Index()
         {
@@ -24,7 +23,7 @@ namespace ECommerceApp.Web.Controllers
             return View(orderItems);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public IActionResult Index(int pageSize, int? pageNo, string searchString)
         {
@@ -38,7 +37,7 @@ namespace ECommerceApp.Web.Controllers
             return View(orderItems);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet]
         public IActionResult ShowOrderItemsByItemId(int itemId)
         {
@@ -47,7 +46,7 @@ namespace ECommerceApp.Web.Controllers
             return View(orderItems);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public IActionResult ShowOrderItemsByItemId(int itemId, int pageSize, int? pageNo)
         {
@@ -60,7 +59,7 @@ namespace ECommerceApp.Web.Controllers
             return View(orderItems);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         public IActionResult ViewOrderItemDetails(int id)
         {
             var orderItem = _orderItemService.GetOrderItemDetails(id);
@@ -71,36 +70,32 @@ namespace ECommerceApp.Web.Controllers
             return View(orderItem);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet]
         public IActionResult OrderItemCount()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = GetUserId();
             var value = _orderItemService.OrderItemCount(userId);
             return Json(new { count = value});
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPut]
         public IActionResult UpdateOrderItem([FromQuery]int id, [FromBody] OrderItemDto model)
         {
             model.Id = id;
-            model.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            model.UserId = GetUserId();
             _orderItemService.UpdateOrderItem(model);
             return Json(new { Status = "Updated" });
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
         public IActionResult AddToCart([FromBody] OrderItemDto model)
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = GetUserId();
             model.UserId = userId;
             var id = _orderItemService.AddOrderItem(model);
             return Json(new { itemId = id });
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         public IActionResult DeleteOrderItem(int id)
         {
             _orderItemService.DeleteOrderItem(id);

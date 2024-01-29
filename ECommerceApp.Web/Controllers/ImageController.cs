@@ -1,7 +1,6 @@
 ﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.POCO;
 using ECommerceApp.Application.Services.Items;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -9,8 +8,8 @@ using System.Collections.Generic;
 
 namespace ECommerceApp.Web.Controllers
 {
-    [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
-    public class ImageController : Controller
+    [Authorize(Roles = $"{MaintenanceRole}")]
+    public class ImageController : BaseController
     {
         private readonly IImageService _service;
 

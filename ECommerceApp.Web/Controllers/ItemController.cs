@@ -2,14 +2,13 @@
 using ECommerceApp.Application.Services.Brands;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Item;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 
 namespace ECommerceApp.Web.Controllers
 {
-    public class ItemController : Controller
+    public class ItemController : BaseController
     {
         private readonly IItemService _itemService;
         private readonly IBrandService _brandService;
@@ -44,7 +43,7 @@ namespace ECommerceApp.Web.Controllers
             return View(model);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet]
         public IActionResult AddItem()
         {
@@ -54,7 +53,7 @@ namespace ECommerceApp.Web.Controllers
             return View(new NewItemVm());
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public IActionResult AddItem(NewItemVm model)
         {
@@ -73,7 +72,7 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("EditItem", new { id });
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet]
         public IActionResult EditItem(int id)
         {
@@ -88,7 +87,7 @@ namespace ECommerceApp.Web.Controllers
             return View(item);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public IActionResult EditItem(ItemDetailsDto model)
         {
@@ -107,7 +106,7 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet]
         public IActionResult ShowItemConnectedWithTags()
         {
@@ -115,7 +114,7 @@ namespace ECommerceApp.Web.Controllers
             return View(tag);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public IActionResult ShowItemConnectedWithTags(int pageSize, int? pageNo, string searchString)
         {
@@ -140,7 +139,7 @@ namespace ECommerceApp.Web.Controllers
             return View(item);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         public IActionResult DeleteItem(int id)
         {
             _itemService.DeleteItem(id);

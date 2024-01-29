@@ -1,14 +1,13 @@
 ﻿using System.Threading.Tasks;
 using ECommerceApp.Application.Services.Users;
 using ECommerceApp.Application.ViewModels.User;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.Web.Controllers
 {
-    [Authorize(Roles = $"{UserPermissions.Roles.Administrator}")]
-    public class UserManagementController : Controller
+    [Authorize(Roles = $"{ManagingRole}")]
+    public class UserManagementController : BaseController
     {
         private readonly IUserService _userService;
 

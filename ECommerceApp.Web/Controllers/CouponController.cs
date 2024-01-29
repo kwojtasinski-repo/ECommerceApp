@@ -1,14 +1,13 @@
 ﻿using System.Linq;
 using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.ViewModels.Coupon;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.Web.Controllers
 {
-    [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
-    public class CouponController : Controller
+    [Authorize(Roles = $"{MaintenanceRole}")]
+    public class CouponController : BaseController
     {
         private readonly ICouponService _couponService;
         private readonly ICouponTypeService _couponTypeService;

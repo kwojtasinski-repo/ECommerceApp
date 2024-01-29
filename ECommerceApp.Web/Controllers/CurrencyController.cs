@@ -1,14 +1,13 @@
 ﻿using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Application.ViewModels.Currency;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 
 namespace ECommerceApp.Web.Controllers
 {
-    [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
-    public class CurrencyController : Controller
+    [Authorize(Roles = $"{MaintenanceRole}")]
+    public class CurrencyController : BaseController
     {
         private readonly ICurrencyService _currencyService;
         

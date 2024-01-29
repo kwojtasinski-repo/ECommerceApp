@@ -2,15 +2,14 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
-using ECommerceApp.Infrastructure.Permissions;
 using ECommerceApp.Application.Services.ContactDetails;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.DTO;
 
 namespace ECommerceApp.Web.Controllers
 {
-    [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
-    public class ContactDetailController : Controller
+    [Authorize]
+    public class ContactDetailController : BaseController
     {
         private readonly IContactDetailService _contactDetailService;
         private readonly IContactDetailTypeService _contactDetailTypeService;

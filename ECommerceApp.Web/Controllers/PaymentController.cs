@@ -1,15 +1,14 @@
-﻿using System.Security.Claims;
-using ECommerceApp.Application.Services.Currencies;
+﻿using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.ViewModels.Payment;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.Web.Controllers
 {
-    public class PaymentController : Controller
+    [Authorize]
+    public class PaymentController : BaseController
     {
         private readonly IOrderService _orderService;
         private readonly IPaymentService _paymentService;
@@ -22,7 +21,7 @@ namespace ECommerceApp.Web.Controllers
             _currencyService = currencyService;
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet]
         public IActionResult Index()
         {
@@ -30,7 +29,7 @@ namespace ECommerceApp.Web.Controllers
             return View(model);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public IActionResult Index(int pageSize, int? pageNo, string searchString)
         {
@@ -44,7 +43,6 @@ namespace ECommerceApp.Web.Controllers
             return View(model);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet]       
         public IActionResult AddPayment(int id)
         {
@@ -54,7 +52,6 @@ namespace ECommerceApp.Web.Controllers
             return View(payment);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
         public IActionResult AddPayment(PaymentVm model)
         {
@@ -62,7 +59,7 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index", "Item");
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet] 
         public IActionResult EditPayment(int id)
         {
@@ -76,7 +73,7 @@ namespace ECommerceApp.Web.Controllers
             return View(payment);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost] 
         public IActionResult EditPayment(PaymentVm model)
         {
@@ -84,7 +81,6 @@ namespace ECommerceApp.Web.Controllers
             return RedirectToAction("Index");
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet]
         public IActionResult ViewPayment(int id)
         {
@@ -96,7 +92,7 @@ namespace ECommerceApp.Web.Controllers
             return View(new PaymentDetailsVm { Payment = payment });
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         public IActionResult DeletePayment(int id)
         {
             return _paymentService.DeletePayment(id) 
@@ -104,10 +100,9 @@ namespace ECommerceApp.Web.Controllers
                 : NotFound();
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         public IActionResult ViewMyPayments()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = GetUserId();
             var payments = _paymentService.GetUserPayments(userId);
             return View(payments);
         }
