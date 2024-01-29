@@ -1,10 +1,7 @@
 ﻿using ECommerceApp.Application.DTO;
-using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Application.ViewModels.Item;
 using ECommerceApp.Application.ViewModels.Order;
-using ECommerceApp.Application.ViewModels.OrderItem;
 using Microsoft.AspNetCore.Http;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
@@ -146,6 +143,12 @@ namespace ECommerceApp.Application
         {
             return httpContextAccessor.HttpContext?.User?.Claims?
                         .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+        }
+
+        public static string GetUserRole(this IHttpContextAccessor httpContextAccessor)
+        {
+            return httpContextAccessor.HttpContext?.User?.Claims?
+                        .FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
         }
     }
 }

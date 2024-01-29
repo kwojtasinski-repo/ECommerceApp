@@ -12,7 +12,8 @@ namespace ECommerceApp.Infrastructure.Auth
                 .AddScoped(typeof(ISignInManager<>), typeof(SignInManagerInternal<>))
                 .AddScoped(typeof(IUserManager<>), typeof(UserManagerInternal<>))
                 .Configure<AuthOptions>(configuration.GetSection("Jwt"))
-                .AddSingleton<IJwtManager, JwtManager>();
+                .AddSingleton<IJwtManager, JwtManager>()
+                .AddScoped<IUserContext, UserContext>();
         }
     }
 }
