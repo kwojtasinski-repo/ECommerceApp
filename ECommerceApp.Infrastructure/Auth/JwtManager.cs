@@ -28,7 +28,7 @@ namespace ECommerceApp.Infrastructure.Auth
         {
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, applicationUser.Email),
+                new Claim(JwtRegisteredClaimNames.Sub, applicationUser.Id),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.NameIdentifier, applicationUser.Id),
                 new Claim(ClaimTypes.Name, applicationUser.Email)

@@ -1,16 +1,14 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Addresses;
 using ECommerceApp.Application.ViewModels.Address;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.API.Controllers
 {
-    [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
+    [Authorize]
     [Route("api/addresses")]
-    [ApiController]
-    public class AddressController : ControllerBase
+    public class AddressController : BaseController
     {
         private readonly IAddressService _addressService;
 
@@ -55,7 +53,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(id);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpDelete("{id:int}")]
         public IActionResult DeleteAddress(int id)
         {

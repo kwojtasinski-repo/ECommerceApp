@@ -1,6 +1,5 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Brands;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -9,8 +8,7 @@ using System.Linq;
 namespace ECommerceApp.API.Controllers
 {
     [Route("api/brands")]
-    [ApiController]
-    public class BrandController : ControllerBase
+    public class BrandController : BaseController
     {
         private readonly IBrandService _brandService;
 
@@ -41,7 +39,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(brand);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPut]
         public IActionResult EditBrand(BrandDto model)
         {
@@ -54,7 +52,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public IActionResult AddBrand(BrandDto model)
         {
@@ -66,7 +64,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(id);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpDelete("{id}")]
         public IActionResult DeleteBrand(int id)
         {

@@ -1,15 +1,13 @@
 ﻿using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.ViewModels.Coupon;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.API.Controllers
 {
-    [Route("api/coupons")]
     [Authorize]
-    [ApiController]
-    public class CouponController : ControllerBase
+    [Route("api/coupons")]
+    public class CouponController : BaseController
     {
         private readonly ICouponService _couponService;
 
@@ -18,7 +16,7 @@ namespace ECommerceApp.API.Controllers
             _couponService = couponService;
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet]
         public ActionResult<ListForCouponVm> Index([FromQuery] int pageSize = 20, int pageNo = 1, string searchString = "")
         {
@@ -31,7 +29,7 @@ namespace ECommerceApp.API.Controllers
             return coupons;
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public ActionResult<int> AddCoupon(CouponVm couponVm)
         {
@@ -39,7 +37,7 @@ namespace ECommerceApp.API.Controllers
             return id;            
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPut]
         public IActionResult EditCoupon(CouponVm model)
         {
@@ -68,7 +66,7 @@ namespace ECommerceApp.API.Controllers
             return coupon;
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpDelete("{id}")]
         public IActionResult DeleteCoupon(int id)
         {

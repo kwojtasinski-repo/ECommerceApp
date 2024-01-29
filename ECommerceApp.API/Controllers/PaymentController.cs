@@ -1,15 +1,14 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Payments;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 
 namespace ECommerceApp.API.Controllers
 {
+    [Authorize]
     [Route("api/payments")]
-    [ApiController]
-    public class PaymentController : ControllerBase
+    public class PaymentController : BaseController
     {
         private readonly IPaymentService _paymentService;
 
@@ -18,7 +17,7 @@ namespace ECommerceApp.API.Controllers
             _paymentService = paymentService;
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}")]
+        [Authorize(Roles = $"{ManagingRole}")]
         [HttpGet]
         public ActionResult<List<PaymentDto>> GetPayments()
         {
@@ -26,7 +25,6 @@ namespace ECommerceApp.API.Controllers
             return Ok(payments);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet("{id}")]
         public ActionResult<PaymentDetailsDto> GetPayment(int id)
         {
@@ -38,7 +36,6 @@ namespace ECommerceApp.API.Controllers
             return Ok(payment);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
         public ActionResult<int> AddPayment([FromBody] AddPaymentDto model)
         {

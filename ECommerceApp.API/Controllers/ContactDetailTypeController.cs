@@ -1,6 +1,5 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.ContactDetails;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
@@ -8,10 +7,9 @@ using System.Linq;
 
 namespace ECommerceApp.API.Controllers
 {
-    [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+    [Authorize(Roles = $"{MaintenanceRole}")]
     [Route("api/contact-detail-types")]
-    [ApiController]
-    public class ContactDetailTypeController : ControllerBase
+    public class ContactDetailTypeController : BaseController
     {
         private readonly IContactDetailTypeService _contactDetailTypeService;
 

@@ -3,16 +3,14 @@ using System.Security.Claims;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.ViewModels.Customer;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.API.Controllers
 {
-    [Route("api/customers")]
     [Authorize]
-    [ApiController]
-    public class CustomerController : ControllerBase
+    [Route("api/customers")]
+    public class CustomerController : BaseController
     {
         private readonly ICustomerService _customerService;
 
@@ -21,7 +19,7 @@ namespace ECommerceApp.API.Controllers
             _customerService = customerService;
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet]
         public ActionResult<ListForCustomerVm> GetCustomers([FromQuery] int pageSize = 10, int pageNo = 1, string searchString = "")
         {
@@ -34,12 +32,11 @@ namespace ECommerceApp.API.Controllers
             return Ok(customers);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet("{id}")]
         public ActionResult<CustomerDetailsVm> GetCustomer(int id)
         {
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
-            //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
             var customer = _customerService.GetCustomerDetails(id, userId);
             if (customer == null)
             {
@@ -48,12 +45,10 @@ namespace ECommerceApp.API.Controllers
             return Ok(customer);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPut]
         public IActionResult EditCustomer(CustomerDto model)
         {
-            var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
-            //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = GetUserId();
             var modelExists = _customerService.CustomerExists(model.Id, userId);
             if (!ModelState.IsValid || !modelExists)
             {
@@ -63,7 +58,6 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
         public IActionResult AddCustomer([FromBody] CustomerDto model)
         {

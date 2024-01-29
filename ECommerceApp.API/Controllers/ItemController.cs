@@ -1,16 +1,14 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Item;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.API.Controllers
 {
-    [Route("api/items")]
     [Authorize]
-    [ApiController]
-    public class ItemController : ControllerBase
+    [Route("api/items")]
+    public class ItemController : BaseController
     {
         private readonly IItemService _itemService;
 
@@ -41,7 +39,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(item);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPut("{id:int}")]
         public IActionResult EditItem(int id, UpdateItemDto model)
         {
@@ -55,7 +53,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public IActionResult AddItem(AddItemDto model)
         {
@@ -67,7 +65,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(id);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpDelete("{id}")]
         public IActionResult DeleteItem(int id)
         {

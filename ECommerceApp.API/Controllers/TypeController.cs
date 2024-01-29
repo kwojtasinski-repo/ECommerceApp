@@ -1,16 +1,13 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Items;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ECommerceApp.API.Controllers
 {
     [Route("api/types")]
-    [ApiController]
-    public class TypeController : ControllerBase
+    public class TypeController : BaseController
     {
         private readonly ITypeService _typeService;
 
@@ -36,7 +33,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(type);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPut]
         public IActionResult EditItemType(TypeDto model)
         {
@@ -49,7 +46,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public IActionResult AddItemType(TypeDto model)
         {
@@ -61,7 +58,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(id);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpDelete("{id}")]
         public IActionResult DeleteItemType(int id)
         {

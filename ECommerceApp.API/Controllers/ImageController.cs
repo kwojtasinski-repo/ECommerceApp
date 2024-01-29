@@ -1,7 +1,6 @@
 ﻿using ECommerceApp.Application.POCO;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Image;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -9,10 +8,9 @@ using System.Collections.Generic;
 
 namespace ECommerceApp.API.Controllers
 {
-    [Route("api/images")]
     [Authorize]
-    [ApiController]
-    public class ImageController : ControllerBase
+    [Route("api/images")]
+    public class ImageController : BaseController
     {
         private readonly IImageService _service;
 
@@ -21,7 +19,7 @@ namespace ECommerceApp.API.Controllers
             _service = service;
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet]
         public ActionResult<List<GetImageVm>> GetAll()
         {
@@ -36,7 +34,7 @@ namespace ECommerceApp.API.Controllers
             return image;
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public ActionResult<int> AddImage([FromForm] AddImagePOCO image)
         {
@@ -45,7 +43,7 @@ namespace ECommerceApp.API.Controllers
             return id;
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost("multi-upload")]
         public ActionResult<List<int>> AddImages([FromForm] AddImagesPOCO images)
         {
@@ -53,7 +51,7 @@ namespace ECommerceApp.API.Controllers
             return ids;
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpDelete("{id}")]
         public IActionResult DeleteImage(int id)
         {

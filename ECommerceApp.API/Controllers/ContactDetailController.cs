@@ -1,16 +1,14 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.ContactDetails;
 using ECommerceApp.Application.ViewModels.ContactDetail;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.API.Controllers
 {
-    [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
+    [Authorize]
     [Route("api/contact-details")]
-    [ApiController]
-    public class ContactDetailController : ControllerBase
+    public class ContactDetailController : BaseController
     {
         private readonly IContactDetailService _contactDetailService;
 

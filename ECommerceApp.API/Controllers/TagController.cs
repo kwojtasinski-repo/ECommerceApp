@@ -1,18 +1,15 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Tag;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ECommerceApp.API.Controllers
 {
-    [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+    [Authorize(Roles = $"{MaintenanceRole}")]
     [Route("api/tags")]
-    [ApiController]
-    public class TagController : ControllerBase
+    public class TagController : BaseController
     {
         private readonly ITagService _tagService;
 

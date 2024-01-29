@@ -5,15 +5,14 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using ECommerceApp.Infrastructure.Permissions;
 using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.DTO;
 
 namespace ECommerceApp.API.Controllers
 {
+    [Authorize]
     [Route("api/order-items")]
-    [ApiController]
-    public class OrderItemController : ControllerBase
+    public class OrderItemController : BaseController
     {
         private readonly IOrderItemService _orderItemService;
 
@@ -22,7 +21,7 @@ namespace ECommerceApp.API.Controllers
             _orderItemService = orderItemService;
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}")]
+        [Authorize(Roles = $"{ManagingRole}")]
         [HttpGet]
         public ActionResult<List<OrderItemDto>> GetAllOrderItems()
         {
@@ -30,7 +29,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(orderItems);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}")]
+        [Authorize(Roles = $"{ManagingRole}")]
         [HttpGet("{id}")]
         public ActionResult<OrderItemDetailsVm> GetOrderItem(int id)
         {
@@ -42,13 +41,10 @@ namespace ECommerceApp.API.Controllers
             return Ok(orderItem);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet("by-user")]
         public ActionResult<List<OrderItemVm>> ShowMyCart()
         {
-            var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
-            //var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var userId2 = User.FindAll(ClaimTypes.NameIdentifier).ToList(); // 2 values in list
+            var userId = GetUserId();
             var orderItems = _orderItemService.GetOrderItemsForRealization(userId);
             if (orderItems.Count() == 0)
             {
@@ -57,7 +53,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(orderItems);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPut("{id:int}")]
         public IActionResult EditOrderItem(int id, [FromBody] AddOrderItemDto model)
         {
@@ -74,7 +70,6 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpPost]
         public IActionResult AddOrderItem([FromBody] AddOrderItemDto model)
         {
@@ -89,7 +84,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(id);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet("by-items/{id}")]
         public ActionResult<List<OrderItemDto>> GetOrderItemsByItemId(int id)
         {

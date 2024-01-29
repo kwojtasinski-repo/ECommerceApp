@@ -1,14 +1,13 @@
 ﻿using ECommerceApp.Application.Services.Refunds;
 using ECommerceApp.Application.ViewModels.Refund;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.API.Controllers
 {
+    [Authorize]
     [Route("api/refunds")]
-    [ApiController]
-    public class RefundController : ControllerBase
+    public class RefundController : BaseController
     {
         private readonly IRefundService _refundService;
 
@@ -17,7 +16,7 @@ namespace ECommerceApp.API.Controllers
             _refundService = refundService;
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet]
         public ActionResult<ListForRefundVm> GetRefunds([FromQuery] int pageSize = 20, int pageNo = 1, string searchString = "")
         {
@@ -29,7 +28,6 @@ namespace ECommerceApp.API.Controllers
             return Ok(refunds);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
         [HttpGet("{id}")]
         public ActionResult<RefundDetailsVm> GetRefund(int id)
         {
@@ -41,7 +39,7 @@ namespace ECommerceApp.API.Controllers
             return Ok(refund);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPut]
         public IActionResult EditRefund([FromBody] CreateRefundVm model)
         {
@@ -55,7 +53,7 @@ namespace ECommerceApp.API.Controllers
             return Ok();
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}, {UserPermissions.Roles.User}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public ActionResult<int> AddRefund([FromBody] CreateRefundVm model)
         {

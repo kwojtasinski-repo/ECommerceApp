@@ -5,9 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.API.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
-    [ApiController]
-    public class LoginController : ControllerBase
+    public class LoginController : BaseController
     {
         private readonly IAuthenticationService _authenticationService;
 
