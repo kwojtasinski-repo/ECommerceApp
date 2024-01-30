@@ -1,15 +1,13 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services.ContactDetails;
-using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
 using Moq;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 using Xunit;
 
 namespace ECommerceApp.UnitTests.Services.ContactDetail
@@ -18,20 +16,23 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
     {
         private readonly Mock<IContactDetailRepository> _contactDetailRepository;
         private readonly Mock<IContactDetailTypeRepository> _contactDetailTypeRepository;
-        private readonly HttpContextAccessorTest _contextAccessor;
+        private readonly UserContextTest _userContext;
 
         public ContactDetailTests()
         {
             _contactDetailRepository = new Mock<IContactDetailRepository>();
-            _contextAccessor = new HttpContextAccessorTest();
             _contactDetailTypeRepository = new Mock<IContactDetailTypeRepository>();
+            _userContext = new UserContextTest();
         }
+
+        private ContactDetailService CreateContactDetailService()
+            => new (_contactDetailRepository.Object, _mapper, _userContext, _contactDetailTypeRepository.Object);
 
         [Fact]
         public void given_invalid_contact_detail_should_throw_an_exception()
         {
             var contactDetail = CreateContactDetailDto();
-            var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
+            var contactDetailService = CreateContactDetailService();
 
             Action action = () => contactDetailService.AddContactDetail(contactDetail);
 
@@ -44,7 +45,7 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
             var contactDetail = CreateContactDetailDto();
             contactDetail.Id = 0;
             _contactDetailRepository.Setup(c => c.GetCustomersIds(It.IsAny<string>())).Returns(new List<int>());
-            var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
+            var contactDetailService = CreateContactDetailService();
 
             Action action = () => contactDetailService.AddContactDetail(contactDetail);
 
@@ -57,10 +58,10 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
             var contactDetail = CreateContactDetailDto();
             contactDetail.Id = 0;
             var userId = Guid.NewGuid().ToString();
-            _contextAccessor.SetUserId(userId);
+            _userContext.UserId = userId;
             var customerIds = new List<int> { 1, 2, 3 };
             _contactDetailRepository.Setup(cd => cd.GetCustomersIds(userId)).Returns(customerIds);
-            var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
+            var contactDetailService = CreateContactDetailService();
 
             contactDetailService.AddContactDetail(contactDetail);
 
@@ -72,8 +73,8 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
         {
             var contactDetail = CreateContactDetailDto();
             var userId = Guid.NewGuid().ToString();
-            _contextAccessor.SetUserId(userId);
-            var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
+            _userContext.UserId = userId;
+            var contactDetailService = CreateContactDetailService();
 
             Action action = () => contactDetailService.AddContactDetail(contactDetail);
 
@@ -86,9 +87,9 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
             var contactDetail = CreateContactDetailDto();
             contactDetail.Id = 0;
             var userId = Guid.NewGuid().ToString();
-            _contextAccessor.SetUserId(userId);
+            _userContext.UserId = userId;
             _contactDetailRepository.Setup(c => c.GetCustomersIds(It.IsAny<string>())).Returns(new List<int>());
-            var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
+            var contactDetailService = CreateContactDetailService();
 
             Action action = () => contactDetailService.AddContactDetail(contactDetail);
 
@@ -100,11 +101,11 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
         {
             int id = 1;
             string userId = Guid.NewGuid().ToString();
-            _contextAccessor.SetUserId(userId);
+            _userContext.UserId = userId;
             var contactDetails = CreateContactDetails();
             contactDetails.ForEach(cd => cd.Customer = new Domain.Model.Customer { Id = ++id });
             _contactDetailRepository.Setup(cd => cd.GetAllContactDetails()).Returns(contactDetails);
-            var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
+            var contactDetailService = CreateContactDetailService();
 
             var exists = contactDetailService.ContactDetailExists(id);
 
@@ -115,8 +116,8 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
         public void given_invalid_contact_detail_and_invalid_user_id_should_return_false()
         {
             int id = 1;
-            _contextAccessor.SetUserId(Guid.NewGuid().ToString());
-            var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
+            _userContext.UserId = Guid.NewGuid().ToString();
+            var contactDetailService = CreateContactDetailService();
 
             var exists = contactDetailService.ContactDetailExists(id);
 
@@ -127,7 +128,7 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
         public void given_valid_contact_detail_id_shouldnt_exists()
         {
             int id = 1;
-            var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
+            var contactDetailService = CreateContactDetailService();
 
             var exists = contactDetailService.ContactDetailExists(id);
 
@@ -137,7 +138,7 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
         [Fact]
         public void given_null_contact_detail_when_add_should_throw_an_exception()
         {
-            var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
+            var contactDetailService = CreateContactDetailService();
 
             Action action = () => contactDetailService.AddContactDetail(null);
 
@@ -147,7 +148,7 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
         [Fact]
         public void given_null_contact_detail_when_update_should_throw_an_exception()
         {
-            var contactDetailService = new ContactDetailService(_contactDetailRepository.Object, _mapper, _contextAccessor, _contactDetailTypeRepository.Object);
+            var contactDetailService = CreateContactDetailService();
 
             Action action = () => contactDetailService.UpdateContactDetail(null);
 

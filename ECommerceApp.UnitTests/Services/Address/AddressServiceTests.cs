@@ -1,8 +1,7 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services.Addresses;
-using ECommerceApp.Application.Services.Customers;
-using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
@@ -10,7 +9,6 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using Xunit;
 
 namespace ECommerceApp.UnitTests.Services.Address
@@ -20,19 +18,24 @@ namespace ECommerceApp.UnitTests.Services.Address
         private readonly Mock<IAddressRepository> _addressRepository;
         private readonly Mock<ICustomerRepository> _customerRepository;
         private readonly HttpContextAccessorTest _contextAccessor;
+        private readonly IUserContext _userContext;
 
         public AddressServiceTests()
         {
             _addressRepository = new Mock<IAddressRepository>();
             _customerRepository = new Mock<ICustomerRepository>();
             _contextAccessor = new HttpContextAccessorTest();
+            _userContext = new UserContextTest(_contextAccessor);
         }
+
+        private AddressService CreateAddressService()
+            => new (_addressRepository.Object, _customerRepository.Object, _mapper, _userContext);
 
         [Fact]
         public void given_invalid_address_when_adding_should_throw_an_exception()
         {
             var address = CreateAddressDto();
-            var addressService = new AddressService(_addressRepository.Object, _customerRepository.Object, _mapper, _contextAccessor);
+            var addressService = CreateAddressService();
 
             Action action = () => addressService.AddAddress(address);
 
@@ -45,7 +48,7 @@ namespace ECommerceApp.UnitTests.Services.Address
             var address = CreateAddressDto();
             address.Id = 0;
             address.CustomerId = 0;
-            var addressService = new AddressService(_addressRepository.Object, _customerRepository.Object, _mapper, _contextAccessor);
+            var addressService = CreateAddressService();
 
             Action action = () => addressService.AddAddress(address);
 
@@ -63,7 +66,7 @@ namespace ECommerceApp.UnitTests.Services.Address
             var customer = customers.Where(c => c.Id == address.CustomerId).FirstOrDefault();
             customer.UserId = userId;
             _customerRepository.Setup(c => c.CustomerExists(It.IsAny<int>(), It.IsAny<string>())).Returns(true);
-            var addressService = new AddressService(_addressRepository.Object, _customerRepository.Object, _mapper, _contextAccessor);
+            var addressService = CreateAddressService();
 
             addressService.AddAddress(address);
 
@@ -75,7 +78,7 @@ namespace ECommerceApp.UnitTests.Services.Address
         {
             var address = CreateAddressDto();
             _contextAccessor.SetUserId(Guid.NewGuid().ToString());
-            var addressService = new AddressService(_addressRepository.Object, _customerRepository.Object, _mapper, _contextAccessor);
+            var addressService = CreateAddressService();
 
             Action action = () => addressService.AddAddress(address);
 
@@ -88,7 +91,7 @@ namespace ECommerceApp.UnitTests.Services.Address
             var address = CreateAddressDto();
             address.Id = 0;
             _contextAccessor.SetUserId(Guid.NewGuid().ToString());
-            var addressService = new AddressService(_addressRepository.Object, _customerRepository.Object, _mapper, _contextAccessor);
+            var addressService = CreateAddressService();
 
             Action action = () => addressService.AddAddress(address);
 
@@ -99,7 +102,7 @@ namespace ECommerceApp.UnitTests.Services.Address
         public void given_invalid_address_id_should_return_false()
         {
             var id = 1;
-            var addressService = new AddressService(_addressRepository.Object, _customerRepository.Object, _mapper, _contextAccessor);
+            var addressService = CreateAddressService();
 
             var exists = addressService.AddressExists(id);
 
@@ -109,7 +112,7 @@ namespace ECommerceApp.UnitTests.Services.Address
         [Fact]
         public void given_null_address_when_add_should_throw_an_exception()
         {
-            var addressService = new AddressService(_addressRepository.Object, _customerRepository.Object, _mapper, _contextAccessor);
+            var addressService = CreateAddressService();
 
             Action action = () => addressService.AddAddress(null);
 
@@ -120,7 +123,7 @@ namespace ECommerceApp.UnitTests.Services.Address
         public void given_null_address_when_add_with_user_id_should_throw_an_exception()
         {
             _contextAccessor.SetUserId("");
-            var addressService = new AddressService(_addressRepository.Object, _customerRepository.Object, _mapper, _contextAccessor);
+            var addressService = CreateAddressService();
 
             Action action = () => addressService.AddAddress(null);
 
@@ -130,7 +133,7 @@ namespace ECommerceApp.UnitTests.Services.Address
         [Fact]
         public void given_null_address_when_update_should_throw_an_exception()
         {
-            var addressService = new AddressService(_addressRepository.Object, _customerRepository.Object, _mapper, _contextAccessor);
+            var addressService = CreateAddressService();
 
             Action action = () => addressService.UpdateAddress(null);
 
