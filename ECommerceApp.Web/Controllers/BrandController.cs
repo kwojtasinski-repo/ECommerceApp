@@ -53,7 +53,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException ex)
             {
-                return RedirectToAction(actionName: "AddBrand", controllerName: "Brand", new { Error = ex.Message });
+                return RedirectToAction(actionName: "AddBrand", controllerName: "Brand", MapExceptionAsRouteValues(ex));
             }
         }
 
@@ -80,7 +80,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException ex)
             {
-                return RedirectToAction(actionName: "EditBrand", controllerName: "Brand", new { model.Id, Error = ex.Message });
+                return RedirectToAction(actionName: "EditBrand", controllerName: "Brand", MapExceptionAsRouteValues(ex));
             }
         }
 

@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using System.Text;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -50,6 +51,33 @@ namespace ECommerceApp.Web.Controllers
             }
 
             return new Dictionary<string, object> { { "Error", exception.Message } };
+        }
+
+        protected object MapExceptionAsRouteValues(Exception exception)
+        {
+            if (exception is null)
+            {
+                throw new ArgumentNullException($"{nameof(exception)} is null");
+            }
+
+            if (exception is BusinessException businessException)
+            {
+                var paramsString = new StringBuilder();
+
+                foreach (var arg in businessException.Arguments)
+                {
+                    paramsString.Append($"{arg.Key}={arg.Value},");
+                }
+                
+                if (paramsString.Length > 0)
+                {
+                    paramsString.Remove(paramsString.Length - 1, 1);
+                }
+
+                return new { Error = businessException.ErrorCode, Params = paramsString.ToString() };
+            }
+
+            return new { Error = exception.Message };
         }
     }
 }

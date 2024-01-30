@@ -86,7 +86,7 @@ namespace ECommerceApp.Application.Services.ContactDetails
             }
 
             var contactDetailType = _contactDetailTypeRepository.GetContactDetailTypeById(contactDetailDto.ContactDetailTypeId)
-                ?? throw new BusinessException($"Contact Detail with id '{contactDetailDto.ContactDetailTypeId}' was not found");
+                ?? throw new BusinessException($"Contact Detail with id '{contactDetailDto.ContactDetailTypeId}' was not found", "contactDetailTypeNotFound", new Dictionary<string, string> { { "id", $"{contactDetailDto.ContactDetailTypeId}" } });
             contactDetail.ContactDetailInformation = contactDetailDto.ContactDetailInformation;
             contactDetail.ContactDetailType = contactDetailType;
             contactDetail.ContactDetailTypeId = contactDetailDto.ContactDetailTypeId;

@@ -1,6 +1,7 @@
 ﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
+using System.Collections.Generic;
 
 namespace ECommerceApp.Application.Services.Coupons
 {
@@ -51,18 +52,18 @@ namespace ECommerceApp.Application.Services.Coupons
             }
 
             var coupon = _couponRepository.GetByCode(dto.PromoCode)
-                ?? throw new BusinessException($"Coupon with code '{dto.PromoCode}' was not found");
+                ?? throw new BusinessException($"Coupon with code '{dto.PromoCode}' was not found", "couponNotFoundByPromo", new Dictionary<string, string> { { "promoCode", dto.PromoCode } });
 
             if (coupon.CouponUsedId.HasValue)
             {
-                throw new BusinessException("Cannot assign used coupon");
+                throw new BusinessException("Cannot assign used coupon", "couponWasAssigned");
             }
 
             if (order.CouponUsed is not null || order.CouponUsedId.HasValue)
             {
                 if (!_couponUsedRepository.Delete(order.CouponUsedId.Value))
                 {
-                    throw new BusinessException($"Cannot delete coupon used with id '{order.CouponUsedId}'");
+                    throw new BusinessException($"Cannot delete coupon used with id '{order.CouponUsedId}'", "couponCannotBeDeleted", new Dictionary<string, string> { { "id", $"{order.CouponUsedId.Value}" } });
                 }
                 order.CouponUsed = null;
                 order.CalculateCost();

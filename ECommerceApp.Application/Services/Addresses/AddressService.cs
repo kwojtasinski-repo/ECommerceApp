@@ -5,7 +5,6 @@ using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using System.Collections.Generic;
 
 namespace ECommerceApp.Application.Services.Addresses
 {
@@ -44,7 +43,7 @@ namespace ECommerceApp.Application.Services.Addresses
             var userId = _userContext.UserId;
             if (!_customerRepository.CustomerExists(addressDto.CustomerId, userId))
             {
-                throw new BusinessException("Cannot add address check your customer id");
+                throw new BusinessException("Cannot add address check your customer id", "customerNotExists");
             }
 
             var address = _mapper.Map<Address>(addressDto);
