@@ -261,11 +261,11 @@
                 } catch (error) {
                     console.error(error);
                     if (error.status === 404) {
-                        redirectToError('Nie znaleziono adresu o id ' + id);
+                        redirectToError(addressNotFound, 1);
                         return;
                     }
 
-                    redirectToError(getError(error));
+                    redirectToError(getErrorText(error), error.responseJSON.Params);
                 }
             }
 
@@ -281,11 +281,11 @@
                 } catch (error) {
                     console.error(error);
                     if (error.status === 404) {
-                        redirectToError('Nie znaleziono danych kontaktowych o id ' + id);
+                        redirectToError(errors.contactDetailNotFound(id));
                         return;
                     }
 
-                    redirectToError(getError(error));
+                    redirectToError(getErrorText(error), error.responseJSON.Params);
                 }
             }
 

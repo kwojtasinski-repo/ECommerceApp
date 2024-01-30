@@ -702,29 +702,115 @@ const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\x21-\x2F\x3A-\x40\x
 const maxCountImages = 5;
 const allowedExtensions = ['.jpg', '.png'];
 
-function getError(error) {
+function getErrorText(error) {
     if (error.status === 400) {
         if (!error.responseJSON.ErrorCode) {
             return error.responseJSON.Error;
         }
 
-        return errors[error.responseJSON.ErrorCode] ?? error.responseJSON.ErrorCode;
+        return error.responseJSON.ErrorCode;
     } else if (response.status === 404) {
-        return errors[resourceNotFound];
+        return resourceNotFound;
     } else {
-        return errors[generalError];
+        return generalError;
     }
 }
 
-function redirectToError(errorText) {
+function redirectToError(errorText, ...args) {
     const urlParams = new URLSearchParams(window.location.search);
     urlParams.set('Error', errorText);
+    if (!args) {
+        window.location.href = window.location.origin + window.location.pathname + '?' + urlParams.toString();
+        return;
+    }
+
+    let params = '';
+    for (const arg of args) {
+        for (const a in arg) {
+            params += a + '=' + arg[a] + ',';
+        }
+    }
+
+    if (!params) {
+        window.location.href = window.location.origin + window.location.pathname + '?' + urlParams.toString();
+        return;
+    }
+
+    params = params.substring(params.lastIndexOf(','), 0);
+    urlParams.set('Params', params);
     window.location.href = window.location.origin + window.location.pathname + '?' + urlParams.toString();
 }
 
-const errors = {
-    generalError: 'Przepraszamy, ale coś poszło nie tak. Spróbuj ponownie później',
-    resourceNotFound: 'Nie znaleziono zasobu',
-    addressDeletePolicy: 'Nie możesz usunąć adresu, jeśli masz tylko 1',
-    contactDetailDeletePolicy: 'Nie możesz usunąć informacji kontaktowych, jeśli masz tylko 1'
-}
+const errors = (function () {
+    const values = {
+        generalError: 'Przepraszamy, ale coś poszło nie tak. Spróbuj ponownie później',
+        resourceNotFound: 'Nie znaleziono zasobu',
+        addressDeletePolicy: 'Nie możesz usunąć adresu, jeśli masz tylko 1',
+        addressNotFound: 'Nie znaleziono adresu o id {id}',
+        contactDetailDeletePolicy: 'Nie możesz usunąć informacji kontaktowych, jeśli masz tylko 1',
+        contactDetailNotFound: 'Nie znaleziono danych kontaktowych o id {id}'
+    }
+
+
+    function containsParams(value) {
+        return /[^{[]+(?=\})/.test(value);
+    }
+
+    function buildParamsObject(args) {
+        if (!args) {
+            return null;
+        }
+
+        const paramsString = args.split(',');
+        if (paramsString.length == 0) {
+            return null;
+        }
+
+        const params = {};
+        for (const param of paramsString) {
+            const splited = param.split('=');
+            if (splited.length < 2) {
+                continue;
+            }
+            const name = splited[0];
+            const value = splited[1];
+            params[name] = value;
+        }
+        return params;
+    }
+
+    return {
+        getError: function (key, args) {
+            if (!key) {
+                return '';
+            }
+
+            let value = values[key] ?? key;
+            if (!args) {
+                return value;
+            }
+
+            if (value === key) {
+                return value;
+            }
+
+            if (!containsParams(value)) {
+                return value;
+            }
+
+            const params = buildParamsObject(args);
+            if (!params) {
+                return value;
+            }
+
+            for (const paramName in params) {
+                const regexPattern = new RegExp('\{' + paramName + '\}');
+                if (!regexPattern.test(value)) {
+                    continue;
+                }
+                value = value.replace(regexPattern, params[paramName]);
+            }
+            return value;
+        }
+    }
+})();

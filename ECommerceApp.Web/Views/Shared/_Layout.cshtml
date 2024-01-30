@@ -153,16 +153,12 @@
     </header>
     <div class="container">
         <main role="main" class="pb-3">
-            @if (!string.IsNullOrWhiteSpace(Context.Request.Query["Error"]))
-            {
-                <div>
-                    <div class="alert alert-danger w-100">
-                        <span>
-                            @Context.Request.Query["Error"]
-                        </span>
-                    </div>
+            <div id="ErrorContainer" style="display: none;">
+                <div class="alert alert-danger w-100">
+                    <span id="ErrorValue">
+                    </span>
                 </div>
-            }
+            </div>
             @RenderBody()
         </main>
     </div>
@@ -199,7 +195,26 @@
                                 itemCount.innerHTML = response.count;
                             }
                         });
+
+            setGlobalError('@Context.Request.Query["Error"]', '@Context.Request.Query["Params"]');
         });
+
+        function setGlobalError(errorCode, params) {
+            const errorContainer = document.querySelector('#ErrorContainer');
+            const errorValue = document.querySelector('#ErrorValue');
+            if (!errorContainer || !errorValue) {
+                return;
+            }
+
+            if (!errorCode) {
+                errorContainer.style.display = 'none';
+                errorValue.textContent = '';
+                return;
+            }
+
+            errorContainer.style.display = 'block';
+            errorValue.textContent = errors.getError(errorCode, params);
+        }
     </script>
     <style type="text/css">
         .badge.badge-light {

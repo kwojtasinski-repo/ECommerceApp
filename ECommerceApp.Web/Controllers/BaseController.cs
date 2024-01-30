@@ -37,7 +37,7 @@ namespace ECommerceApp.Web.Controllers
             return role?.Value ?? "";
         }
 
-        protected Dictionary<string, string> MapExceptionToResponseStatus(Exception exception)
+        protected Dictionary<string, object> MapExceptionToResponseStatus(Exception exception)
         {
             if (exception is null)
             {
@@ -46,10 +46,10 @@ namespace ECommerceApp.Web.Controllers
 
             if (exception is BusinessException businessException)
             {
-                return new Dictionary<string, string> { { "Error", businessException.Message }, { "ErrorCode", businessException.ErrorCode } };
+                return new Dictionary<string, object> { { "Error", businessException.Message }, { "ErrorCode", businessException.ErrorCode }, { "Params", businessException.Arguments } };
             }
 
-            return new Dictionary<string, string> { { "Error", exception.Message } };
+            return new Dictionary<string, object> { { "Error", exception.Message } };
         }
     }
 }
