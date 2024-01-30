@@ -701,3 +701,30 @@ const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\x21-\x2F\x3A-\x40\x
 
 const maxCountImages = 5;
 const allowedExtensions = ['.jpg', '.png'];
+
+function getError(error) {
+    if (error.status === 400) {
+        if (!error.responseJSON.ErrorCode) {
+            return error.responseJSON.Error;
+        }
+
+        return errors[error.responseJSON.ErrorCode] ?? error.responseJSON.ErrorCode;
+    } else if (response.status === 404) {
+        return errors[resourceNotFound];
+    } else {
+        return errors[generalError];
+    }
+}
+
+function redirectToError(errorText) {
+    const urlParams = new URLSearchParams(window.location.search);
+    urlParams.set('Error', errorText);
+    window.location.href = window.location.origin + window.location.pathname + '?' + urlParams.toString();
+}
+
+const errors = {
+    generalError: 'Przepraszamy, ale coś poszło nie tak. Spróbuj ponownie później',
+    resourceNotFound: 'Nie znaleziono zasobu',
+    addressDeletePolicy: 'Nie możesz usunąć adresu, jeśli masz tylko 1',
+    contactDetailDeletePolicy: 'Nie możesz usunąć informacji kontaktowych, jeśli masz tylko 1'
+}

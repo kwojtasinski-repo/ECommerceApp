@@ -4,6 +4,7 @@ using ECommerceApp.Application.Services.Addresses;
 using ECommerceApp.Application.ViewModels.Address;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -70,9 +71,16 @@ namespace ECommerceApp.Web.Controllers
 
         public IActionResult DeleteAddress(int id)
         {
-            return _addressService.DeleteAddress(id)
-                ? Json(new { Success = true })
-                : NotFound();
+            try
+            {
+                return _addressService.DeleteAddress(id)
+                    ? Json(new { Success = true })
+                    : NotFound();
+            }
+            catch (BusinessException exception)
+            {
+                return BadRequest(MapExceptionToResponseStatus(exception));
+            }
         }
     }
 }

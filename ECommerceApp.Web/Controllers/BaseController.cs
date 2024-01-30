@@ -1,6 +1,8 @@
-﻿using ECommerceApp.Infrastructure.Permissions;
+﻿using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 
@@ -33,6 +35,21 @@ namespace ECommerceApp.Web.Controllers
             }
 
             return role?.Value ?? "";
+        }
+
+        protected Dictionary<string, string> MapExceptionToResponseStatus(Exception exception)
+        {
+            if (exception is null)
+            {
+                throw new ArgumentNullException($"{nameof(exception)} is null");
+            }
+
+            if (exception is BusinessException businessException)
+            {
+                return new Dictionary<string, string> { { "Error", businessException.Message }, { "ErrorCode", businessException.ErrorCode } };
+            }
+
+            return new Dictionary<string, string> { { "Error", exception.Message } };
         }
     }
 }

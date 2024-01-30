@@ -10,5 +10,6 @@ namespace ECommerceApp.Domain.Interface
         void UpdateAddress(Address address);
         Address GetAddressById(int id, string userId);
         bool ExistsByIdAndUserId(int id, string userId);
+        int GetCountByUserId(string userId);
     }
 }

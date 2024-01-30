@@ -5,6 +5,7 @@ using System.Linq;
 using ECommerceApp.Application.Services.ContactDetails;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.DTO;
+using System.Collections.Generic;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -87,12 +88,19 @@ namespace ECommerceApp.Web.Controllers
 
         public IActionResult DeleteContactDetail(int id)
         {
-            if (!_contactDetailService.DeleteContactDetail(id))
+            try
             {
-                return NotFound();
-            }
+                if (!_contactDetailService.DeleteContactDetail(id))
+                {
+                    return NotFound();
+                }
 
-            return Json(new { Success = true });
+                return Json(new { Success = true });
+            }
+            catch (BusinessException exception)
+            {
+                return BadRequest(MapExceptionToResponseStatus(exception));
+            }
         }
     }
 }

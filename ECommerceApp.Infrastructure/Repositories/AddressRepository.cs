@@ -55,6 +55,14 @@ namespace ECommerceApp.Infrastructure.Repositories
             return address;
         }
 
+        public int GetCountByUserId(string userId)
+        {
+            return _context.Addresses
+                           .AsNoTracking()
+                           .Where(a => a.Customer.UserId == userId)
+                           .Count();
+        }
+
         public void UpdateAddress(Address address)
         {
             _context.Attach(address);

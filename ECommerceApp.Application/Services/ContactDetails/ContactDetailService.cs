@@ -1,10 +1,10 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -12,14 +12,14 @@ namespace ECommerceApp.Application.Services.ContactDetails
 {
     public class ContactDetailService : IContactDetailService
     {
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IUserContext _userContext;
         private readonly IMapper _mapper;
         private readonly IContactDetailRepository _contactDetailRepository;
         private readonly IContactDetailTypeRepository _contactDetailTypeRepository;
 
-        public ContactDetailService(IContactDetailRepository contactDetailRepository, IMapper mapper, IHttpContextAccessor httpContextAccessor, IContactDetailTypeRepository contactDetailTypeRepository)
+        public ContactDetailService(IContactDetailRepository contactDetailRepository, IMapper mapper, IUserContext userContext, IContactDetailTypeRepository contactDetailTypeRepository)
         {
-            _httpContextAccessor = httpContextAccessor;
+            _userContext = userContext;
             _contactDetailRepository = contactDetailRepository;
             _mapper = mapper;
             _contactDetailTypeRepository = contactDetailTypeRepository;
@@ -37,7 +37,7 @@ namespace ECommerceApp.Application.Services.ContactDetails
                 throw new BusinessException("When adding object Id should be equals 0");
             }
 
-            var userId = _httpContextAccessor.GetUserId();
+            var userId = _userContext.UserId;
             var customerIds = _contactDetailRepository.GetCustomersIds(userId);
 
             if (!customerIds.Any(c => c == contactDetailDto.CustomerId))
@@ -52,6 +52,12 @@ namespace ECommerceApp.Application.Services.ContactDetails
 
         public bool DeleteContactDetail(int id)
         {
+            var contacts = _contactDetailRepository.GetCountByUserId(_userContext.UserId);
+            if (contacts < 2)
+            {
+                throw new BusinessException("Cannot delete contact information if you only have 1", "contactDetailDeletePolicy");
+            }
+
             return _contactDetailRepository.DeleteContactDetail(id);
         }
 
@@ -62,7 +68,7 @@ namespace ECommerceApp.Application.Services.ContactDetails
 
         public ContactDetailDto GetContactDetailById(int id)
         {
-            var userId = _httpContextAccessor.GetUserId();
+            var userId = _userContext.UserId;
             return _mapper.Map<ContactDetailDto>(_contactDetailRepository.GetContactDetailByIdAndUserId(id, userId));
         }
 
@@ -90,13 +96,13 @@ namespace ECommerceApp.Application.Services.ContactDetails
 
         public bool ContactDetailExists(int id)
         {
-            var userId = _httpContextAccessor.GetUserId();
+            var userId = _userContext.UserId;
             return _contactDetailRepository.ExistsByIdAndUserId(id, userId);
         }
 
         public ContactDetailsForListVm GetContactDetails(int id)
         {
-            var userId = _httpContextAccessor.GetUserId();
+            var userId = _userContext.UserId;
             var contactDetail = _contactDetailRepository.GetContactDetailById(id, userId);
             var contactDetailVm = _mapper.Map<ContactDetailsForListVm>(contactDetail);
             return contactDetailVm;

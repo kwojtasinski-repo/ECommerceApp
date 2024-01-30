@@ -14,5 +14,6 @@ namespace ECommerceApp.Domain.Interface
         List<int> GetCustomersIds(string userId);
         ContactDetail GetContactDetailById(int id, string userId);
         bool ExistsByIdAndUserId(int id, string userId);
+        int GetCountByUserId(string userId);
     }
 }

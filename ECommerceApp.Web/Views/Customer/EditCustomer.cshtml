@@ -260,6 +260,12 @@
                     window.location.reload();
                 } catch (error) {
                     console.error(error);
+                    if (error.status === 404) {
+                        redirectToError('Nie znaleziono adresu o id ' + id);
+                        return;
+                    }
+
+                    redirectToError(getError(error));
                 }
             }
 
@@ -274,6 +280,12 @@
                     window.location.reload();
                 } catch (error) {
                     console.error(error);
+                    if (error.status === 404) {
+                        redirectToError('Nie znaleziono danych kontaktowych o id ' + id);
+                        return;
+                    }
+
+                    redirectToError(getError(error));
                 }
             }
 

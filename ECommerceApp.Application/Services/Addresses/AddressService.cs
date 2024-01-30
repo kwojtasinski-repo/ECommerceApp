@@ -1,10 +1,10 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using Microsoft.AspNetCore.Http;
 
 namespace ECommerceApp.Application.Services.Addresses
 {
@@ -13,14 +13,14 @@ namespace ECommerceApp.Application.Services.Addresses
         private readonly IAddressRepository _addressRepository;
         private readonly ICustomerRepository _customerRepository;
         private readonly IMapper _mapper;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IUserContext _userContext;
 
-        public AddressService(IAddressRepository addressRepository, ICustomerRepository customerRepository, IMapper mapper, IHttpContextAccessor httpContextAccessor)
+        public AddressService(IAddressRepository addressRepository, ICustomerRepository customerRepository, IMapper mapper, IUserContext userContext)
         {
             _addressRepository = addressRepository;
             _customerRepository = customerRepository;
             _mapper = mapper;
-            _httpContextAccessor = httpContextAccessor;
+            _userContext = userContext;
         }
 
         public int AddAddress(AddressDto addressDto)
@@ -40,7 +40,7 @@ namespace ECommerceApp.Application.Services.Addresses
                 throw new BusinessException("Given ivalid customer id");
             }
 
-            var userId = _httpContextAccessor.GetUserId();
+            var userId = _userContext.UserId;
             if (!_customerRepository.CustomerExists(addressDto.CustomerId, userId))
             {
                 throw new BusinessException("Cannot add address check your customer id");
@@ -53,13 +53,18 @@ namespace ECommerceApp.Application.Services.Addresses
 
         public bool AddressExists(int id)
         {
-            var userId = _httpContextAccessor.GetUserId();
+            var userId = _userContext.UserId;
             return _addressRepository.ExistsByIdAndUserId(id, userId);
         }
 
         public bool DeleteAddress(int id)
         {
-            // TODO: don't let delete address when only one is existing
+            var addresses = _addressRepository.GetCountByUserId(_userContext.UserId);
+            if (addresses < 2)
+            {
+                throw new BusinessException("You cannot delete address if you only have 1", "addressDeletePolicy");
+            }
+
             return !_addressRepository.DeleteAddress(id);
         }
 
@@ -72,7 +77,7 @@ namespace ECommerceApp.Application.Services.Addresses
 
         public AddressDto GetAddressDetail(int id)
         {
-            var userId = _httpContextAccessor.GetUserId();
+            var userId = _userContext.UserId;
             var adress = _addressRepository.GetAddressById(id, userId);
             var adressDto = _mapper.Map<AddressDto>(adress);
             return adressDto;
@@ -85,7 +90,7 @@ namespace ECommerceApp.Application.Services.Addresses
                 throw new BusinessException($"{typeof(AddressVm).Name} cannot be null");
             }
 
-            var userId = _httpContextAccessor.GetUserId();
+            var userId = _userContext.UserId;
             var address = _addressRepository.GetAddressById(addressDto.Id ?? 0, userId);
             if (address == null)
             {
