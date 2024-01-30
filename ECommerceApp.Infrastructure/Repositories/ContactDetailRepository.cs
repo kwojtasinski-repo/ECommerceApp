@@ -85,11 +85,13 @@ namespace ECommerceApp.Infrastructure.Repositories
                 .Any(cd => cd.Id == id && cd.Customer.UserId == userId);
         }
 
-        public int GetCountByUserId(string userId)
+        public int GetCountByIdAndUserId(int id, string userId)
         {
             return _context.ContactDetails
                            .AsNoTracking()
-                           .Where(cd => cd.Customer.UserId == userId)
+                           .Where(cd => cd.Customer.UserId == userId
+                                && cd.CustomerId == _context.ContactDetails.AsNoTracking().Where(c => c.Id == id).Select(c => c.CustomerId).FirstOrDefault()
+                            )
                            .Count();
         }
     }

@@ -59,7 +59,7 @@ namespace ECommerceApp.Application.Services.Addresses
 
         public bool DeleteAddress(int id)
         {
-            var addresses = _addressRepository.GetCountByUserId(_userContext.UserId);
+            var addresses = _addressRepository.GetCountByIdAndUserId(id, _userContext.UserId);
             if (addresses < 2)
             {
                 throw new BusinessException("You cannot delete address if you only have 1", "addressDeletePolicy");

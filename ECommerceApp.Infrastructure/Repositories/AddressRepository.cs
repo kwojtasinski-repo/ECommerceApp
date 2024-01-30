@@ -55,11 +55,13 @@ namespace ECommerceApp.Infrastructure.Repositories
             return address;
         }
 
-        public int GetCountByUserId(string userId)
+        public int GetCountByIdAndUserId(int id, string userId)
         {
             return _context.Addresses
                            .AsNoTracking()
-                           .Where(a => a.Customer.UserId == userId)
+                           .Where(a => a.Customer.UserId == userId
+                                && a.CustomerId == _context.Addresses.AsNoTracking().Where(a => a.Id == id).Select(a => a.CustomerId).FirstOrDefault()
+                            )
                            .Count();
         }
 

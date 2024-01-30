@@ -52,7 +52,7 @@ namespace ECommerceApp.Application.Services.ContactDetails
 
         public bool DeleteContactDetail(int id)
         {
-            var contacts = _contactDetailRepository.GetCountByUserId(_userContext.UserId);
+            var contacts = _contactDetailRepository.GetCountByIdAndUserId(id, _userContext.UserId);
             if (contacts < 2)
             {
                 throw new BusinessException("Cannot delete contact information if you only have 1", "contactDetailDeletePolicy");
