@@ -10,6 +10,7 @@ using Moq;
 using System;
 using Xunit;
 using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Interfaces;
 
 namespace ECommerceApp.UnitTests.Services.Payment
 {
@@ -20,7 +21,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
         private readonly Mock<ICustomerService> _customerService;
         private readonly Mock<ICurrencyRateService> _currencyRateService;
         private readonly Mock<ICurrencyRepository> _currencyRepository;
-        private readonly HttpContextAccessorTest _contextAccessor;
+        private readonly UserContextTest _userContext;
         private readonly IPaymentHandler _paymentHandler;
 
         public PaymentServiceTests()
@@ -30,7 +31,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
             _customerService = new Mock<ICustomerService>();
             _currencyRateService = new Mock<ICurrencyRateService>();
             _currencyRepository = new Mock<ICurrencyRepository>();
-            _contextAccessor = new HttpContextAccessorTest();
+            _userContext = new UserContextTest();
             _paymentHandler = new PaymentHandler(_paymentRepository.Object, _currencyRateService.Object, _currencyRepository.Object);
             _currencyRepository.Setup(c => c.GetById(It.IsAny<int>())).Returns(new Domain.Model.Currency
             {
@@ -40,7 +41,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
         }
 
         private PaymentService CreateService() 
-            => new (_paymentRepository.Object, _mapper, _orderRepository.Object, _customerService.Object, _contextAccessor, _paymentHandler);
+            => new (_paymentRepository.Object, _mapper, _orderRepository.Object, _customerService.Object, _userContext, _paymentHandler);
 
         [Fact]
         public void given_valid_payment_should_add()

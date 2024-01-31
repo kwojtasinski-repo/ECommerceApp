@@ -13,6 +13,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_id_should_return_customer_for_edit()
         {
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var customerId = 1;
 
             var customer = _service.GetCustomer(customerId);
@@ -23,6 +24,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_customer_should_update()
         {
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var customer = GetSampleCustomer();
             var firstName = "Stanley";
             customer.FirstName = firstName;
@@ -39,6 +41,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_id_when_delete_should_delete_and_return_true()
         {
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var customer = GetSampleCustomer();
             customer.Id = 0;
             customer.Addresses = new List<AddressDto>();
@@ -133,6 +136,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_id_should_return_customer()
         {
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var id = 1;
 
             var customer = _service.GetCustomerDetails(id);

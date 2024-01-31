@@ -2,10 +2,11 @@
 using AutoMapper.Internal;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.Services.Customers;
-using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Domain.Interface;
+using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
 using Moq;
 using System;
@@ -17,6 +18,8 @@ namespace ECommerceApp.Tests.Services.Customer
     {
         private readonly IMapper _mapper;
         private readonly Mock<ICustomerRepository> _customerRepository;
+        private readonly IUserContext _userContext;
+        private readonly CustomerService _customerService;
 
         public CustomerServiceTests()
         {
@@ -28,15 +31,16 @@ namespace ECommerceApp.Tests.Services.Customer
 
             _mapper = configurationProvider.CreateMapper();
             _customerRepository = new Mock<ICustomerRepository>();
+            _userContext = new UserContextTest();
+            _customerService = new CustomerService(_customerRepository.Object, _mapper, _userContext);
         }
 
         [Fact]
         public void given_valid_customer_should_add()
         {
             var customer = CreateNewCustomerVm(0, Guid.NewGuid().ToString());
-            var customerService = new CustomerService(_customerRepository.Object, _mapper);
 
-            customerService.AddCustomer(customer);
+            _customerService.AddCustomer(customer);
 
             _customerRepository.Verify(c => c.AddCustomer(It.IsAny<Domain.Model.Customer>()), Times.Once);
         }
@@ -45,9 +49,8 @@ namespace ECommerceApp.Tests.Services.Customer
         public void given_invalid_customer_should_throw_an_exception()
         {
             var customer = CreateNewCustomerVm(1, Guid.NewGuid().ToString());
-            var customerService = new CustomerService(_customerRepository.Object, _mapper);
 
-            Action action = () => customerService.AddCustomer(customer);
+            Action action = () => _customerService.AddCustomer(customer);
 
             action.Should().Throw<BusinessException>().WithMessage("When adding object Id should be equals 0");
         }
@@ -55,9 +58,7 @@ namespace ECommerceApp.Tests.Services.Customer
         [Fact]
         public void given_null_customer_when_update_should_throw_an_exception()
         {
-            var customerService = new CustomerService(_customerRepository.Object, _mapper);
-
-            Action action = () => customerService.UpdateCustomer(null);
+            Action action = () => _customerService.UpdateCustomer(null);
 
             action.Should().Throw<BusinessException>().Which.Message.Contains("cannot be null");
         }
@@ -69,9 +70,8 @@ namespace ECommerceApp.Tests.Services.Customer
             var userId = Guid.NewGuid().ToString();
             var customer = CreateCustomer(id, userId);
             _customerRepository.Setup(c => c.CustomerExists(id, userId)).Returns(true);
-            var customerService = new CustomerService(_customerRepository.Object, _mapper);
 
-            var exists = customerService.CustomerExists(id, userId);
+            var exists = _customerService.CustomerExists(id, userId);
 
             exists.Should().BeTrue();
         }
@@ -81,9 +81,8 @@ namespace ECommerceApp.Tests.Services.Customer
         {
             var id = 1;
             var userId = Guid.NewGuid().ToString();
-            var customerService = new CustomerService(_customerRepository.Object, _mapper);
 
-            var exists = customerService.CustomerExists(id, userId);
+            var exists = _customerService.CustomerExists(id, userId);
 
             exists.Should().BeFalse();
         }
@@ -91,9 +90,7 @@ namespace ECommerceApp.Tests.Services.Customer
         [Fact]
         public void given_null_customer_when_add_should_throw_an_exception()
         {
-            var customerService = new CustomerService(_customerRepository.Object, _mapper);
-
-            Action action = () => customerService.AddCustomer(null);
+            Action action = () => _customerService.AddCustomer(null);
 
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }

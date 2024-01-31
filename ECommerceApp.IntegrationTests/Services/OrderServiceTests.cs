@@ -62,6 +62,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_order_id_should_return_order_details()
         {
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var id = 1;
 
             var order = _service.GetOrderDetail(id);
@@ -83,6 +84,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_order_id_should_return_order_for_realization()
         {
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var id = 1;
 
             var order = _service.GetOrderForRealization(id);
@@ -128,6 +130,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_orders_in_db_when_get_all_by_customer_id_should_return_list_orders()
         {
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var id = 1;
 
             var orders = _service.GetAllOrdersByCustomerId(id);
@@ -188,11 +191,6 @@ namespace ECommerceApp.IntegrationTests.Services
                 }
             };
             return order;
-        }
-
-        protected override void OverrideServicesImplementation(IServiceCollection services)
-        {
-            services.AddSingleton<IHttpContextAccessor, HttpContextAccessorTest>();
         }
     }
 }

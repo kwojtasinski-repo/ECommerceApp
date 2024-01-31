@@ -1,14 +1,10 @@
 ﻿using ECommerceApp.API;
 using ECommerceApp.Application.DTO;
-using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.IntegrationTests.Common;
 using Flurl.Http;
 using Newtonsoft.Json;
 using Shouldly;
-using System;
-using System.Collections.Generic;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 

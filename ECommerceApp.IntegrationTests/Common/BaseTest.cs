@@ -1,6 +1,7 @@
 ﻿using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Web;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -62,6 +63,11 @@ namespace ECommerceApp.IntegrationTests.Common
                 claims.Add(new Claim(claim.Type, claim.Value));
             }
             return claims;
+        }
+
+        protected override void OverrideServicesImplementation(IServiceCollection services)
+        {
+            services.AddSingleton<IHttpContextAccessor, HttpContextAccessorTest>();
         }
     }
 }

@@ -116,10 +116,5 @@ namespace ECommerceApp.IntegrationTests.Services
             var paymentDeleted = _service.GetPaymentById(id);
             paymentDeleted.ShouldBeNull();
         }
-
-        protected override void OverrideServicesImplementation(IServiceCollection services)
-        {
-            services.AddSingleton<IHttpContextAccessor, HttpContextAccessorTest>();
-        }
     }
 }

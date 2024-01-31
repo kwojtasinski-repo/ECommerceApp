@@ -15,6 +15,7 @@ namespace ECommerceApp.IntegrationTests.Services
         [Fact]
         public void given_valid_id_should_return_address()
         {
+            SetHttpContextUserId(PROPER_CUSTOMER_ID);
             var id = 1;
             var zipCode = 67100;
 
@@ -192,11 +193,6 @@ namespace ECommerceApp.IntegrationTests.Services
                 CustomerId = 1
             };
             return address;
-        }
-
-        protected override void OverrideServicesImplementation(IServiceCollection services)
-        {
-           services.AddSingleton<IHttpContextAccessor, HttpContextAccessorTest>();
         }
     }
 }

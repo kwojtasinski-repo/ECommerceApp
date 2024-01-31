@@ -187,10 +187,5 @@ namespace ECommerceApp.IntegrationTests.Services
             };
             return brand;
         }
-
-        protected override void OverrideServicesImplementation(IServiceCollection services)
-        {
-            services.AddSingleton<IHttpContextAccessor, HttpContextAccessorTest>();
-        }
     }
 }
