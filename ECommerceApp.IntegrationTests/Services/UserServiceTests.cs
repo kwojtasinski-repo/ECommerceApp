@@ -1,7 +1,7 @@
 ﻿using ECommerceApp.Application.Services.Users;
 using ECommerceApp.Application.ViewModels.User;
 using ECommerceApp.Domain.Model;
-using ECommerceApp.Infrastructure.Permissions;
+using ECommerceApp.Application.Permissions;
 using ECommerceApp.IntegrationTests.Common;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;

@@ -1,4 +1,4 @@
-﻿using ECommerceApp.Infrastructure.Permissions;
+﻿using ECommerceApp.Application.Permissions;
 using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 using System;
@@ -9,8 +9,6 @@ namespace ECommerceApp.API.Controllers
     [ApiController]
     public class BaseController : ControllerBase
     {
-        public readonly string[] ManagingRoles = new string[] { UserPermissions.Roles.Administrator, UserPermissions.Roles.Manager };
-        public readonly string[] MaintenanceRoles = new string[] { UserPermissions.Roles.Administrator, UserPermissions.Roles.Manager, UserPermissions.Roles.Service };
         public const string ManagingRole = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}";
         public const string MaintenanceRole = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}";
 

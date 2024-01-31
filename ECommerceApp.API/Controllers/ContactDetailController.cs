@@ -20,7 +20,7 @@ namespace ECommerceApp.API.Controllers
         [HttpGet("{id}")]
         public ActionResult<ContactDetailsForListVm> GetContactDetail(int id)
         {
-            var contactDetail = _contactDetailService.GetContactDetails(id);
+            var contactDetail = _contactDetailService.GetContactDetail(id);
             if (contactDetail == null)
             {
                 return NotFound();
@@ -31,13 +31,13 @@ namespace ECommerceApp.API.Controllers
         [HttpPut]
         public IActionResult EditContactDetail(ContactDetailDto model)
         {
-            var modelExists = _contactDetailService.ContactDetailExists(model.Id);
-            if (!ModelState.IsValid || !modelExists)
+            if (!ModelState.IsValid)
             {
                 return Conflict(ModelState);
             }
-            _contactDetailService.UpdateContactDetail(model);
-            return Ok();
+            return _contactDetailService.UpdateContactDetail(model) 
+                ? Ok()
+                : NotFound();
         }
 
         [HttpPost]

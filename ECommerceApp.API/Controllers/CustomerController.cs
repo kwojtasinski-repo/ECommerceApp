@@ -32,7 +32,6 @@ namespace ECommerceApp.API.Controllers
             return Ok(customers);
         }
 
-        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet("{id}")]
         public ActionResult<CustomerDetailsVm> GetCustomer(int id)
         {
@@ -49,8 +48,12 @@ namespace ECommerceApp.API.Controllers
         public IActionResult EditCustomer(CustomerDto model)
         {
             var userId = GetUserId();
-            var modelExists = _customerService.CustomerExists(model.Id, userId);
-            if (!ModelState.IsValid || !modelExists)
+            if (!_customerService.CustomerExists(model.Id, userId))
+            {
+                return NotFound();
+            }
+
+            if (!ModelState.IsValid)
             {
                 return Conflict(ModelState);
             }

@@ -28,7 +28,7 @@ namespace ECommerceApp.Tests.Services.Order
         private readonly Mock<ICouponService> _couponService;
         private readonly Mock<ICouponUsedRepository> _couponUsedRepository;
         private readonly Mock<ICustomerService> _customerService;
-        private readonly HttpContextAccessorTest _httpContextAccessor;
+        private readonly UserContextTest _userContext;
         private readonly Mock<IPaymentRepository> _paymentRepository;
         private readonly Mock<ICurrencyRateService> _currencyRateService;
         private readonly Mock<ICouponRepository> _couponRepository;
@@ -46,7 +46,7 @@ namespace ECommerceApp.Tests.Services.Order
             _couponService = new Mock<ICouponService>();
             _couponUsedRepository = new Mock<ICouponUsedRepository>();
             _customerService = new Mock<ICustomerService>();
-            _httpContextAccessor = new HttpContextAccessorTest();
+            _userContext = new UserContextTest();
             _paymentRepository = new Mock<IPaymentRepository>();
             _currencyRateService = new Mock<ICurrencyRateService>();
             _couponRepository = new Mock<ICouponRepository>();
@@ -66,7 +66,7 @@ namespace ECommerceApp.Tests.Services.Order
 
         private OrderService CreateService()
         {
-            return new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object, _httpContextAccessor,
+            return new OrderService(_orderRepository.Object, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object, _userContext,
                     _paymentHandler, _couponHandler, _orderItemRepository.Object, _itemRepository.Object
                 );
         }

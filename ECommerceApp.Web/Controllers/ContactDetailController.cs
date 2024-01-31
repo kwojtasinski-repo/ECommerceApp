@@ -40,7 +40,8 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException ex)
             {
-                return RedirectToAction(actionName: "AddNewContactDetail", controllerName: "ContactDetail", new { newContact.ContactDetail.CustomerId, Error = ex.Message });
+                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
+                return RedirectToAction(actionName: "AddNewContactDetail", controllerName: "ContactDetail", new { newContact.ContactDetail.CustomerId, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
             }
         }
 
@@ -50,7 +51,9 @@ namespace ECommerceApp.Web.Controllers
             var contactDetail = _contactDetailService.GetContactDetailById(id);
             if (contactDetail is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("contactDetailNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new NewContactDetailVm { ContactDetail = new ContactDetailDto() });
             }
 
             var vm = new NewContactDetailVm { ContactDetail = contactDetail, ContactDetailTypes = _contactDetailTypeService.GetContactDetailTypes().ToList() };
@@ -64,23 +67,28 @@ namespace ECommerceApp.Web.Controllers
             {
                 if (!_contactDetailService.UpdateContactDetail(model.ContactDetail))
                 {
-                    return NotFound();
+                    var errorModel = BuildErrorModel("contactDetailNotFound", new Dictionary<string, string> { { "id", $"{model.ContactDetail.CustomerId}" } });
+                    HttpContext.Request.Query = errorModel.AsQueryCollection();
+                    return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = model.ContactDetail.CustomerId, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
                 }
 
                 return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = model.ContactDetail.CustomerId });
             }
             catch (BusinessException ex)
             {
-                return RedirectToAction(actionName: "EditContactDetail", controllerName: "ContactDetail", new { model.ContactDetail.Id, Error = ex.Message });
+                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
+                return RedirectToAction(actionName: "EditContactDetail", controllerName: "ContactDetail", new { model.ContactDetail.Id, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
             }
         }
 
         public IActionResult ViewContactDetail(int id)
         {
-            var contactDetail = _contactDetailService.GetContactDetails(id);
+            var contactDetail = _contactDetailService.GetContactDetail(id);
             if (contactDetail is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("contactDetailNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new ContactDetailsForListVm());
             }
 
             return View(contactDetail);

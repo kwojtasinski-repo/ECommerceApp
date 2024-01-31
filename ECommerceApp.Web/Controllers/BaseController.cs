@@ -1,6 +1,8 @@
 ﻿using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Infrastructure.Permissions;
+using ECommerceApp.Application.Permissions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Primitives;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -47,7 +49,8 @@ namespace ECommerceApp.Web.Controllers
 
             if (exception is BusinessException businessException)
             {
-                return new Dictionary<string, object> { { "Error", businessException.Message }, { "ErrorCode", businessException.ErrorCode }, { "Params", businessException.Arguments } };
+                var errorModel = BuildErrorModel(businessException.ErrorCode, businessException.Arguments);
+                return errorModel.AsDictionaryObject();
             }
 
             return new Dictionary<string, object> { { "Error", exception.Message } };
@@ -62,22 +65,97 @@ namespace ECommerceApp.Web.Controllers
 
             if (exception is BusinessException businessException)
             {
+                var errorModel = BuildErrorModel(businessException.ErrorCode, businessException.Arguments);
+                return errorModel.AsOject();
+            }
+
+            return new { Error = exception.Message };
+        }
+
+        protected ErrorModel BuildErrorModel(string errorCode, IDictionary<string, string> paramsValues = null)
+        {
+            return new ErrorModel(errorCode, paramsValues);
+        }
+
+        protected ErrorModel BuildErrorModel(string error, string errorCode, IDictionary<string, string> paramsValues = null)
+        {
+            return new ErrorModel(error, errorCode, paramsValues);
+        }
+
+        protected class ErrorModel
+        {
+            public string Error { get; set; }
+            public string ErrorCode { get; set; }
+            public IDictionary<string, string> Params = new Dictionary<string, string>();
+
+            public ErrorModel(string errorCode, IDictionary<string, string> paramsValues = null)
+            {
+                ErrorCode = errorCode;
+                Params = paramsValues;
+            }
+
+            public ErrorModel(string error, string errorCode, IDictionary<string, string> paramsValues = null)
+            {
+                ErrorCode = error;
+                ErrorCode = errorCode;
+                Params = paramsValues;
+            }
+
+            public string GenerateParamsString()
+            {
                 var paramsString = new StringBuilder();
 
-                foreach (var arg in businessException.Arguments)
+                foreach (var arg in Params)
                 {
                     paramsString.Append($"{arg.Key}={arg.Value},");
                 }
-                
+
                 if (paramsString.Length > 0)
                 {
                     paramsString.Remove(paramsString.Length - 1, 1);
                 }
 
-                return new { Error = businessException.ErrorCode, Params = paramsString.ToString() };
+                return paramsString.ToString();
             }
 
-            return new { Error = exception.Message };
+            public string AsErrorCodeString()
+            {
+                return $"Error={ErrorCode}&Params={GenerateParamsString()}";
+            }
+
+            public object AsOject()
+            {
+                if (string.IsNullOrWhiteSpace(ErrorCode))
+                {
+                    return new { Error };
+                }
+
+                return new { Error = ErrorCode, Params = GenerateParamsString() };
+            }
+
+            public Dictionary<string, object> AsDictionaryObject()
+            {
+                if (string.IsNullOrWhiteSpace(ErrorCode))
+                {
+                    return new Dictionary<string, object> { { "Error", Error } };
+                }
+
+                if (Params is null || !Params.Any())
+                {
+                    return new Dictionary<string, object> { { "Error", Error }, { "ErrorCode", ErrorCode } };
+                }
+
+                return new Dictionary<string, object> { { "Error", Error ?? string.Empty }, { "ErrorCode", ErrorCode }, { "Params", Params } };
+            }
+
+            public QueryCollection AsQueryCollection()
+            {
+                return new QueryCollection(new Dictionary<string, StringValues>
+                {
+                    { "Error", new StringValues(ErrorCode ?? string.Empty) },
+                    { "Params", new StringValues(GenerateParamsString()) }
+                });
+            }
         }
     }
 }

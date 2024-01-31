@@ -25,5 +25,7 @@ namespace ECommerceApp.Domain.Interface
         int GetCountByUserId(string userId);
         List<Order> GetAllPaidOrders(int pageSize, int pageNo, string searchString);
         int GetCountPaidOrdersBySearchString(string searchString);
+        bool ExistsByIdAndUserId(int id, string userId);
+        bool ExistsByCustomerIdAndUserId(int customerId, string userId);
     }
 }

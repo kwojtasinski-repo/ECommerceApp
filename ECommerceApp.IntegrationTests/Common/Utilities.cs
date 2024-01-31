@@ -1,6 +1,6 @@
 ﻿using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
-using ECommerceApp.Infrastructure.Permissions;
+using ECommerceApp.Application.Permissions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using MimeTypes;

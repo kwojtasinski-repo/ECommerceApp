@@ -2,6 +2,8 @@
 using ECommerceApp.Application.Constants;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Permissions;
 using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.Services.Items;
@@ -27,14 +29,14 @@ namespace ECommerceApp.Application.Services.Orders
         private readonly ICouponService _couponService;
         private readonly ICouponUsedRepository _couponUsedRepository;
         private readonly ICustomerService _customerService;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IUserContext _userContext;
         private readonly IPaymentHandler _paymentHandler;
         private readonly ICouponHandler _couponHandler;
         private readonly IOrderItemRepository _orderItemRepository;
         private readonly IItemRepository _itemRepository;
 
         public OrderService(IOrderRepository orderRepo, IMapper mapper, IOrderItemService orderItemService, IItemService itemService, ICouponService couponService, ICouponUsedRepository couponUsedRepository, ICustomerService customerService,
-                IHttpContextAccessor httpContextAccessor, IPaymentHandler paymentHandler, ICouponHandler couponHandler,
+                IUserContext userContext, IPaymentHandler paymentHandler, ICouponHandler couponHandler,
                 IOrderItemRepository orderItemRepository, IItemRepository itemRepository)
         {
             _orderRepository = orderRepo;
@@ -44,7 +46,7 @@ namespace ECommerceApp.Application.Services.Orders
             _couponService = couponService;
             _couponUsedRepository = couponUsedRepository;
             _customerService = customerService;
-            _httpContextAccessor = httpContextAccessor;
+            _userContext = userContext;
             _paymentHandler = paymentHandler;
             _couponHandler = couponHandler;
             _orderItemRepository = orderItemRepository;
@@ -142,6 +144,11 @@ namespace ECommerceApp.Application.Services.Orders
 
         public OrderDetailsVm GetOrderDetail(int id)
         {
+            if (!UserPermissions.Roles.MaintenanceRoles.Contains(_userContext.Role) 
+                && _orderRepository.ExistsByIdAndUserId(id, _userContext.UserId))
+            {
+                return null;
+            }
             var orderDetails = _orderRepository.GetOrderDetailsById(id);
             var orderDetailsVm = _mapper.Map<OrderDetailsVm>(orderDetails);
             return orderDetailsVm;
@@ -219,7 +226,7 @@ namespace ECommerceApp.Application.Services.Orders
             var orderVm = _mapper.Map<NewOrderVm>(order);
             // TODO: in future fetch items from frontend
             orderVm.Items = _itemService.GetAllItems();
-            orderVm.UserId = _httpContextAccessor.GetUserId();
+            orderVm.UserId = _userContext.UserId;
             return orderVm;
         }
 
@@ -234,7 +241,7 @@ namespace ECommerceApp.Application.Services.Orders
             var orderVm = _mapper.Map<NewOrderVm>(order);
             // TODO: in future fetch items from frontend
             orderVm.Items = _itemService.GetAllItems();
-            orderVm.UserId = _httpContextAccessor.GetUserId();
+            orderVm.UserId = _userContext.UserId;
             return orderVm;
         }
 
@@ -258,6 +265,11 @@ namespace ECommerceApp.Application.Services.Orders
 
         public List<OrderForListVm> GetAllOrdersByCustomerId(int customerId)
         {
+            if (!UserPermissions.Roles.MaintenanceRoles.Contains(_userContext.Role)
+                && _orderRepository.ExistsByCustomerIdAndUserId(customerId, _userContext.UserId))
+            {
+                return new List<OrderForListVm>();
+            }
             return _mapper.Map<List<OrderForListVm>>(_orderRepository.GetAllOrders(customerId));
         }
 
@@ -325,12 +337,12 @@ namespace ECommerceApp.Application.Services.Orders
 
         public int AddOrderFromCart(AddOrderFromCartDto model)
         {
-            var userId = _httpContextAccessor.GetUserId();
+            var userId = _userContext.UserId;
             var dto = new AddOrderDto
             {
                 CustomerId = model.CustomerId,
                 PromoCode = model.PromoCode,
-                OrderItems = _orderItemService.GetOrderItemsIdsForRealization(_httpContextAccessor.GetUserId())
+                OrderItems = _orderItemService.GetOrderItemsIdsForRealization(_userContext.UserId)
                     .Select(id => new OrderItemsIdsDto { Id = id }).ToList()
             };
             var id = AddOrderInternal(dto);
@@ -339,7 +351,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         public OrderVm InitOrder()
         {
-            var userId = _httpContextAccessor.GetUserId();
+            var userId = _userContext.UserId;
             return new OrderVm
             {
                 Customers = _customerService.GetCustomersInformationByUserId(userId),
@@ -462,7 +474,7 @@ namespace ECommerceApp.Application.Services.Orders
             }
 
             dto.CurrencyId = CurrencyConstants.PlnId;
-            dto.UserId = _httpContextAccessor.GetUserId();
+            dto.UserId = _userContext.UserId;
             dto.Number = Guid.NewGuid().ToString();
 
             var dateNotSet = new DateTime();

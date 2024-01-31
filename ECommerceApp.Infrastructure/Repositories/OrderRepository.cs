@@ -267,9 +267,24 @@ namespace ECommerceApp.Infrastructure.Repositories
         public int GetCountPaidOrdersBySearchString(string searchString)
         {
             return _context.Orders
+                           .AsNoTracking()
                            .Where(o => o.IsPaid == true && o.IsDelivered == false)
                            .Where(o => o.Number.StartsWith(searchString))
                            .Count();
+        }
+
+        public bool ExistsByIdAndUserId(int id, string userId)
+        {
+            return _context.Orders
+                           .AsNoTracking()
+                           .Any(o => o.Id == id && o.UserId == userId);
+        }
+
+        public bool ExistsByCustomerIdAndUserId(int customerId, string userId)
+        {
+            return _context.Orders
+                           .AsNoTracking()
+                           .Any(o => o.CustomerId == customerId && o.UserId == userId);
         }
     }
 }

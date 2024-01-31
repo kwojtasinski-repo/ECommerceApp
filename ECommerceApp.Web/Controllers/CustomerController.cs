@@ -2,10 +2,10 @@
 using System.Linq;
 using System.Security.Claims;
 using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Permissions;
 using ECommerceApp.Application.Services.ContactDetails;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.ViewModels.Customer;
-using ECommerceApp.Infrastructure.Permissions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -176,7 +176,7 @@ namespace ECommerceApp.Web.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         public IActionResult GetContacts(string userId)
         {
             return Ok(_customerService.GetCustomersInformationByUserId(userId));

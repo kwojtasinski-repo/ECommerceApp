@@ -5,7 +5,7 @@ using ECommerceApp.Application.ViewModels.Order;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ECommerceApp.Application.ViewModels.OrderItem;
-using ECommerceApp.Infrastructure.Permissions;
+using ECommerceApp.Application.Permissions;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.DTO;

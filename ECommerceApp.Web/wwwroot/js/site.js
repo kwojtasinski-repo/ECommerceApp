@@ -746,7 +746,7 @@ const errors = (function () {
         generalError: 'Przepraszamy, ale coś poszło nie tak. Spróbuj ponownie później',
         resourceNotFound: 'Nie znaleziono zasobu',
         addressDeletePolicy: 'Nie możesz usunąć adresu, jeśli masz tylko 1',
-        addressNotFound: 'Nie znaleziono adresu o id {id}',
+        addressNotFound: 'Nie znaleziono adres o id {id}',
         contactDetailDeletePolicy: 'Nie możesz usunąć informacji kontaktowych, jeśli masz tylko 1',
         contactDetailNotFound: 'Nie znaleziono danych kontaktowych o id {id}'
     }

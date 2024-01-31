@@ -3,6 +3,7 @@ using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Addresses;
 using ECommerceApp.Application.ViewModels.Address;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 
@@ -34,7 +35,8 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException ex)
             {
-                return RedirectToAction(actionName: "AddAddress", controllerName: "Address", new { Id = addressVm.Address.CustomerId, Error = ex.Message });
+                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
+                return RedirectToAction(actionName: "AddAddress", controllerName: "Address", new { Id = addressVm.Address.CustomerId, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
             }
         }
 
@@ -42,9 +44,13 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult EditAddress(int id)
         {
             var address = _addressService.GetAddress(id);
-            return address is null
-                ? NotFound()
-                : View(address);
+            if (address is null)
+            {
+                var errorModel = BuildErrorModel("addressNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new AddressVm { Id = id, Address = new AddressDto() });
+            }
+            return View(new AddressVm { Id = id, Address = address });
         }
 
         [HttpPost]
@@ -52,21 +58,31 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             { 
-                _addressService.UpdateAddress(model.Address);
+                if (!_addressService.UpdateAddress(model.Address))
+                {
+                    var errorModel = BuildErrorModel("addressNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
+                    return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = model.Address.CustomerId, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                }
                 return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = model.Address.CustomerId });
             }
             catch (BusinessException ex)
             {
-                return RedirectToAction(actionName: "EditAddress", controllerName: "Address", new { Id = model.Address.CustomerId, Error = ex.Message });
+                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
+                return RedirectToAction(actionName: "EditAddress", controllerName: "Address", new { Id = model.Address.CustomerId, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
             }
         }
 
         public IActionResult ViewAddress(int id)
         {
             var address = _addressService.GetAddress(id);
-            return address is null
-                ? NotFound()
-                : View(address);
+            if (address is null)
+            {
+                var errorModel = BuildErrorModel("addressNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new AddressVm { Id = id, Address = new AddressDto() });
+            }
+
+            return View(new AddressVm { Id = id, Address = address });
         }
 
         public IActionResult DeleteAddress(int id)

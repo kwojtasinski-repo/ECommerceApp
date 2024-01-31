@@ -8,7 +8,7 @@ namespace ECommerceApp.Application.Services.ContactDetails
     {
         int AddContactDetail(ContactDetailDto contactDetailDto);
         bool DeleteContactDetail(int id);
-        ContactDetailsForListVm GetContactDetails(int id);
+        ContactDetailsForListVm GetContactDetail(int id);
         ContactDetailDto GetContactDetailById(int id);
         bool UpdateContactDetail(ContactDetailDto contactDetailDto);
         IEnumerable<ContactDetailDto> GetAllContactDetails();

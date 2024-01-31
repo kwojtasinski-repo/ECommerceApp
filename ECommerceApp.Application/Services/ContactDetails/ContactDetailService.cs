@@ -53,7 +53,12 @@ namespace ECommerceApp.Application.Services.ContactDetails
         public bool DeleteContactDetail(int id)
         {
             var contacts = _contactDetailRepository.GetCountByIdAndUserId(id, _userContext.UserId);
-            if (contacts < 2)
+            if (contacts == 0)
+            {
+                return false;
+            }
+
+            if (contacts == 1)
             {
                 throw new BusinessException("Cannot delete contact information if you only have 1", "contactDetailDeletePolicy");
             }
@@ -100,7 +105,7 @@ namespace ECommerceApp.Application.Services.ContactDetails
             return _contactDetailRepository.ExistsByIdAndUserId(id, userId);
         }
 
-        public ContactDetailsForListVm GetContactDetails(int id)
+        public ContactDetailsForListVm GetContactDetail(int id)
         {
             var userId = _userContext.UserId;
             var contactDetail = _contactDetailRepository.GetContactDetailById(id, userId);

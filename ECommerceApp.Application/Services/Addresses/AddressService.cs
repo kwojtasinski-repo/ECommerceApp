@@ -2,9 +2,11 @@
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Permissions;
 using ECommerceApp.Application.ViewModels.Address;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
+using System.Linq;
 
 namespace ECommerceApp.Application.Services.Addresses
 {
@@ -60,7 +62,12 @@ namespace ECommerceApp.Application.Services.Addresses
         public bool DeleteAddress(int id)
         {
             var addresses = _addressRepository.GetCountByIdAndUserId(id, _userContext.UserId);
-            if (addresses < 2)
+            if (addresses == 0)
+            {
+                return false;
+            }
+
+            if (addresses == 1)
             {
                 throw new BusinessException("You cannot delete address if you only have 1", "addressDeletePolicy");
             }
@@ -70,6 +77,12 @@ namespace ECommerceApp.Application.Services.Addresses
 
         public AddressDto GetAddress(int id)
         {
+            if (!UserPermissions.Roles.MaintenanceRoles.Contains(_userContext.Role)
+                && _addressRepository.ExistsByIdAndUserId(id, _userContext.UserId))
+            {
+                return null;
+            }
+
             var adress = _addressRepository.GetAddressById(id);
             var adressDto = _mapper.Map<AddressDto>(adress);
             return adressDto;
