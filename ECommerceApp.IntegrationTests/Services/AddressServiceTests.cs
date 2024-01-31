@@ -1,5 +1,6 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.Permissions;
 using ECommerceApp.Application.Services.Addresses;
 using ECommerceApp.IntegrationTests.Common;
 using Microsoft.AspNetCore.Http;
@@ -150,6 +151,7 @@ namespace ECommerceApp.IntegrationTests.Services
         public void given_valid_address_should_update()
         {
             SetHttpContextUserId(PROPER_CUSTOMER_ID);
+            SetUserRole(UserPermissions.Roles.Administrator);
             var address = CreateAddress(0);
             var id = _service.AddAddress(address);
             address = _service.GetAddress(id);

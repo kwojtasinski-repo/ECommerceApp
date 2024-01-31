@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.Permissions;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Domain.Interface;
@@ -118,6 +119,12 @@ namespace ECommerceApp.Application.Services.Customers
 
         public CustomerDetailsDto GetCustomer(int id)
         {
+            /*if (!UserPermissions.Roles.MaintenanceRoles.Contains(_userContext.Role)
+                && _addressRepository.ExistsByIdAndUserId(id, _userContext.UserId))
+            {
+                return null;
+            }*/
+
             var customer = _customerRepository.GetCustomerById(id);
             var customerVm = _mapper.Map<CustomerDetailsDto>(customer);
 

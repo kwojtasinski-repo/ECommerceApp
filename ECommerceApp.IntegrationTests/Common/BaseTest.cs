@@ -3,6 +3,7 @@ using ECommerceApp.Web;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Security.Claims;
 
 namespace ECommerceApp.IntegrationTests.Common
@@ -28,10 +29,39 @@ namespace ECommerceApp.IntegrationTests.Common
         protected void SetHttpContextUserId(string userId)
         {
             var httpContextAccessor = Services.GetService(typeof(IHttpContextAccessor)) as IHttpContextAccessor;
-            httpContextAccessor.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new List<Claim>
+            var claims = GetUserClaims(httpContextAccessor.HttpContext.User);
+            var userIdClaim = httpContextAccessor.HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier);
+            if (userIdClaim != null)
             {
-                new Claim(ClaimTypes.NameIdentifier, userId)
-            }));
+                claims.Remove(userIdClaim);
+            }
+
+            claims.Add(new Claim(ClaimTypes.NameIdentifier, userId));
+            httpContextAccessor.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
+        }
+
+        protected void SetUserRole(string role)
+        {
+            var httpContextAccessor = Services.GetService(typeof(IHttpContextAccessor)) as IHttpContextAccessor;
+            var claims = GetUserClaims(httpContextAccessor.HttpContext.User);
+            var userIdClaim = httpContextAccessor.HttpContext.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role);
+            if (userIdClaim != null)
+            {
+                claims.Remove(userIdClaim);
+            }
+
+            claims.Add(new Claim(ClaimTypes.Role, role));
+            httpContextAccessor.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(claims));
+        }
+
+        private static List<Claim> GetUserClaims(ClaimsPrincipal user)
+        {
+            var claims = new List<Claim>();
+            foreach (var claim in user.Claims)
+            {
+                claims.Add(new Claim(claim.Type, claim.Value));
+            }
+            return claims;
         }
     }
 }

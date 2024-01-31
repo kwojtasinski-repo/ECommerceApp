@@ -83,7 +83,7 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_invalid_contact_detail_when_update_should_return_status_code_conflict()
+        public async Task given_invalid_contact_detail_when_update_should_return_status_code_not_found()
         {
             var client = await _factory.GetAuthenticatedClient();
             var contactDetail = CreateContactDetail(100);
@@ -93,7 +93,7 @@ namespace ECommerceApp.IntegrationTests.API
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(contactDetail);
 
-            response.StatusCode.ShouldBe((int)HttpStatusCode.Conflict);
+            response.StatusCode.ShouldBe((int)HttpStatusCode.NotFound);
         }
 
         [Fact]
