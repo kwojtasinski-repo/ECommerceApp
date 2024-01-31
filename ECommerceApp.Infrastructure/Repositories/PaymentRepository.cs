@@ -47,6 +47,13 @@ namespace ECommerceApp.Infrastructure.Repositories
             return _context.SaveChanges() > 0;
         }
 
+        public bool ExistsByIdAndUserId(int id, string userId)
+        {
+            return _context.Payments
+                           .AsNoTracking()
+                           .Any(p => p.Id == id && p.Customer.UserId == userId);
+        }
+
         public List<Payment> GetAllPayments()
         {
             return _context.Payments

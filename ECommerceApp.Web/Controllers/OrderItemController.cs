@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Exceptions;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -98,8 +99,15 @@ namespace ECommerceApp.Web.Controllers
 
         public IActionResult DeleteOrderItem(int id)
         {
-            _orderItemService.DeleteOrderItem(id);
-            return Json(new { });
+            try
+            {
+                _orderItemService.DeleteOrderItem(id);
+                return Json(new { });
+            }
+            catch (BusinessException exception)
+            {
+                return BadRequest(MapExceptionToResponseStatus(exception));
+            }
         }
     }
 }

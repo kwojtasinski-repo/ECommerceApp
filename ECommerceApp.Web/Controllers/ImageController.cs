@@ -36,8 +36,15 @@ namespace ECommerceApp.Web.Controllers
         [HttpDelete]
         public IActionResult DeleteImage(int id)
         {
-            _service.Delete(id);
-            return Ok();
+            try
+            {
+                _service.Delete(id);
+                return Ok();
+            }
+            catch (BusinessException exception)
+            {
+                return BadRequest(MapExceptionToResponseStatus(exception));
+            }
         }
     }
 }

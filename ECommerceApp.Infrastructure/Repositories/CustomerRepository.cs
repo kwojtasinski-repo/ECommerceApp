@@ -197,5 +197,12 @@ namespace ECommerceApp.Infrastructure.Repositories
                            .AsNoTracking()
                            .Any(c => c.Id == customerId);
         }
+
+        public bool ExistsByIdAndUserId(int id, string userId)
+        {
+            return _context.Customers
+                           .AsNoTracking()
+                           .Any(c => c.Id == id && c.UserId == userId);
+        }
     }
 }

@@ -78,7 +78,7 @@ namespace ECommerceApp.Application.Services.Addresses
         public AddressDto GetAddress(int id)
         {
             if (!UserPermissions.Roles.MaintenanceRoles.Contains(_userContext.Role)
-                && _addressRepository.ExistsByIdAndUserId(id, _userContext.UserId))
+                && !_addressRepository.ExistsByIdAndUserId(id, _userContext.UserId))
             {
                 return null;
             }

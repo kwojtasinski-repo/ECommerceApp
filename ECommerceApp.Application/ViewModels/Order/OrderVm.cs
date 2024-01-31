@@ -6,7 +6,7 @@ namespace ECommerceApp.Application.ViewModels.Order
     public class OrderVm
     {
         public OrderDto Order { get; set; }
-        public List<CustomerInformationForOrdersVm> Customers { get; set; }
+        public List<CustomerInformationForOrdersVm> Customers { get; set; } = new List<CustomerInformationForOrdersVm>();
         public CustomerDetailsDto NewCustomer { get; internal set; }
         public bool CustomerData { get; set; }
         public string PromoCode { get; set; }

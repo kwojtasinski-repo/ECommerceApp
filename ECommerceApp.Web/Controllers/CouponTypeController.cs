@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Services.Coupons;
+﻿using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.ViewModels.CouponType;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -80,8 +81,15 @@ namespace ECommerceApp.Web.Controllers
 
         public IActionResult DeleteCouponType(int id)
         {
-            _couponService.DeleteCouponType(id);
-            return Json("deleted");
+            try
+            {
+                _couponService.DeleteCouponType(id);
+                return Json("deleted");
+            }
+            catch (BusinessException exception)
+            {
+                return BadRequest(MapExceptionToResponseStatus(exception));
+            }
         }
     }
 }

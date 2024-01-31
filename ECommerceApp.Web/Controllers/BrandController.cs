@@ -98,9 +98,16 @@ namespace ECommerceApp.Web.Controllers
         [Authorize(Roles = $"{MaintenanceRole}")]
         public IActionResult DeleteBrand(int id)
         {
-            return _brandService.DeleteBrand(id)
-                ? Json(new { Success = true })
-                : NotFound();
+            try
+            {
+                return _brandService.DeleteBrand(id)
+                    ? Json(new { Success = true })
+                    : NotFound();
+            }
+            catch (BusinessException exception)
+            {
+                return BadRequest(MapExceptionToResponseStatus(exception));
+            }
         }
     }
 }

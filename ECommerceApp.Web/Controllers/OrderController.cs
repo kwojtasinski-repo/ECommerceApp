@@ -1,14 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using ECommerceApp.Application.ViewModels.Order;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ECommerceApp.Application.ViewModels.OrderItem;
-using ECommerceApp.Application.Permissions;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Exceptions;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -34,7 +33,7 @@ namespace ECommerceApp.Web.Controllers
             return View(model);
         }
 
-        [Authorize(Roles = $"{UserPermissions.Roles.Administrator}, {UserPermissions.Roles.Manager}, {UserPermissions.Roles.Service}")]
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public IActionResult Index(int pageSize, int? pageNo, string searchString)
         {
@@ -57,14 +56,22 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddOrder(OrderVm model)
         {
-            var id = _orderService.AddOrder(new AddOrderDto
+            try
             {
-                Id = model.Order.Id,
-                CustomerId = model.Order.CustomerId,
-                OrderItems = model.Order.OrderItems?.Select(oi => new OrderItemsIdsDto { Id = oi.Id }).ToList() 
-                    ?? new List<OrderItemsIdsDto>(),
-            });
-            return RedirectToAction("AddOrderDetails", new { orderId = id });
+                var id = _orderService.AddOrder(new AddOrderDto
+                {
+                    Id = model.Order.Id,
+                    CustomerId = model.Order.CustomerId,
+                    OrderItems = model.Order.OrderItems?.Select(oi => new OrderItemsIdsDto { Id = oi.Id }).ToList()
+                        ?? new List<OrderItemsIdsDto>(),
+                });
+                return RedirectToAction("AddOrderDetails", new { orderId = id });
+            }
+            catch(BusinessException exception)
+            {
+                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
+                return RedirectToAction("Index", controllerName: "Item", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         [HttpGet]
@@ -73,7 +80,7 @@ namespace ECommerceApp.Web.Controllers
             var orderItems = new NewOrderItemVm();
             var items = _itemService.GetItemsAddToCart();
             orderItems.Items = items;
-            orderItems.OrderItem.UserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            orderItems.OrderItem.UserId = GetUserId();
             return View(orderItems);
         }
 
@@ -93,8 +100,16 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult OrderRealization(OrderVm model)
         {
-            model.Order.Id = _orderService.FulfillOrder(model);
-            return RedirectToAction("AddOrderSummary", new { id = model.Order.Id });
+            try
+            {
+                model.Order.Id = _orderService.FulfillOrder(model);
+                return RedirectToAction("AddOrderSummary", new { id = model.Order.Id });
+            }
+            catch(BusinessException exception)
+            {
+                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
+                return RedirectToAction("Index", controllerName: "Item", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         [HttpGet]
@@ -103,7 +118,9 @@ namespace ECommerceApp.Web.Controllers
             var order = _orderService.GetOrderForRealization(orderId);
             if (order is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("contactDetailNotFound", new Dictionary<string, string> { { "id", $"{orderId}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new NewOrderVm());
             }
             return View(order);
         }
@@ -111,25 +128,34 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddOrderDetails(NewOrderVm model)
         {
-            if (!model.OrderItems.Any())
+            try
             {
-                DeleteOrder(model.Id);
-                return RedirectToAction("Index", controllerName: "Item");
+                if (!model.OrderItems.Any())
+                {
+                    DeleteOrder(model.Id);
+                    return RedirectToAction("Index", controllerName: "Item");
+                }
+
+                _orderService.UpdateOrder(new UpdateOrderDto
+                {
+                    Id = model.Id,
+                    CouponUsedId = model.CouponUsedId,
+                    CustomerId = model.CustomerId,
+                    IsDelivered = model.IsDelivered,
+                    Ordered = model.Ordered,
+                    OrderNumber = model.Number,
+                    PromoCode = model.PromoCode,
+                    OrderItems = model.OrderItems.Select(oi =>
+                        new AddOrderItemDto { Id = oi.Id, ItemId = oi.ItemId, ItemOrderQuantity = oi.ItemOrderQuantity }
+                   ).ToList(),
+                });
+                return RedirectToAction("AddOrderSummary", new { id = model.Id });
             }
-            _orderService.UpdateOrder(new UpdateOrderDto
+            catch (BusinessException exception)
             {
-                Id = model.Id,
-                CouponUsedId = model.CouponUsedId,
-                CustomerId = model.CustomerId,
-                IsDelivered = model.IsDelivered,
-                Ordered = model.Ordered,
-                OrderNumber = model.Number,
-                PromoCode = model.PromoCode,
-                OrderItems = model.OrderItems.Select(oi =>
-                    new AddOrderItemDto { Id = oi.Id, ItemId = oi.ItemId, ItemOrderQuantity = oi.ItemOrderQuantity }
-               ).ToList(),
-            });
-            return RedirectToAction("AddOrderSummary", new { id = model.Id });
+                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
+                return RedirectToAction("Index", controllerName: "Item", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         [HttpGet]
@@ -138,7 +164,9 @@ namespace ECommerceApp.Web.Controllers
             var order = _orderService.GetOrderSummaryById(id);
             if (order is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("orderNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new OrderVm());
             }
             return View(order);
         }
@@ -146,7 +174,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult ShowMyCart()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = GetUserId();
             var orderItems = _orderItemService.GetOrderItemsNotOrderedByUserId(userId, 20, 1);
             return View(orderItems);
         }
@@ -158,7 +186,7 @@ namespace ECommerceApp.Web.Controllers
             {
                 pageNo = 1;
             }
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = GetUserId();
             var orderItems = _orderItemService.GetOrderItemsNotOrderedByUserId(userId, pageSize, pageNo.Value);
             return View(orderItems);
         }
@@ -183,13 +211,16 @@ namespace ECommerceApp.Web.Controllers
             return View(orderItems);
         }
 
+        [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet]
         public IActionResult EditOrder(int id)
         {
             var order = _orderService.BuildVmForEdit(id);
             if (order is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("orderNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new NewOrderVm());
             }
             return View(order);
         }
@@ -198,25 +229,33 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult EditOrder(NewOrderVm model)
         {
-            _orderService.UpdateOrder(new UpdateOrderDto
+            try
             {
-                Id = model.Id,
-                CouponUsedId = model.CouponUsedId,
-                CustomerId = model.CustomerId,
-                IsDelivered = model.IsDelivered,
-                Ordered = model.Ordered,
-                OrderNumber = model.Number,
-                PromoCode = model.PromoCode,
-                Payment = model.PaymentId.HasValue ? new PaymentInfoDto
+                _orderService.UpdateOrder(new UpdateOrderDto
                 {
-                    Id = model.PaymentId,
-                    CurrencyId = model.CurrencyId,
-                } : null,
-                OrderItems = model.OrderItems.Select(oi =>
-                    new AddOrderItemDto { Id = oi.Id, ItemId = oi.ItemId, ItemOrderQuantity = oi.ItemOrderQuantity }
-                ).ToList(),
-            });
-            return RedirectToAction("Index");
+                    Id = model.Id,
+                    CouponUsedId = model.CouponUsedId,
+                    CustomerId = model.CustomerId,
+                    IsDelivered = model.IsDelivered,
+                    Ordered = model.Ordered,
+                    OrderNumber = model.Number,
+                    PromoCode = model.PromoCode,
+                    Payment = model.PaymentId.HasValue ? new PaymentInfoDto
+                    {
+                        Id = model.PaymentId,
+                        CurrencyId = model.CurrencyId,
+                    } : null,
+                    OrderItems = model.OrderItems.Select(oi =>
+                        new AddOrderItemDto { Id = oi.Id, ItemId = oi.ItemId, ItemOrderQuantity = oi.ItemOrderQuantity }
+                    ).ToList(),
+                });
+                return RedirectToAction("Index");
+            }
+            catch (BusinessException exception)
+            {
+                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
+                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         public IActionResult ViewOrderDetails(int id)
@@ -224,7 +263,9 @@ namespace ECommerceApp.Web.Controllers
             var order = _orderService.GetOrderDetail(id);
             if (order is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("orderNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new OrderDetailsVm());
             }
             return View(order);
         }
@@ -232,9 +273,16 @@ namespace ECommerceApp.Web.Controllers
         [Authorize(Roles = $"{MaintenanceRole}")]
         public IActionResult DeleteOrder(int id)
         {
-            return _orderService.DeleteOrder(id)
-                ? Json("deleted")
-                : NotFound();
+            try
+            {
+                return _orderService.DeleteOrder(id)
+                    ? Json("deleted")
+                    : NotFound();
+            }
+            catch (BusinessException exception)
+            {
+                return BadRequest(MapExceptionToResponseStatus(exception));
+            }
         }
 
         public IActionResult ShowMyOrders()
@@ -279,8 +327,15 @@ namespace ECommerceApp.Web.Controllers
         [HttpPatch]
         public IActionResult DispatchOrder(int id)
         {
-            _orderService.DispatchOrder(id);
-            return Ok();
+            try
+            {
+                _orderService.DispatchOrder(id);
+                return Ok();
+            }
+            catch (BusinessException exception)
+            {
+                return BadRequest(MapExceptionToResponseStatus(exception));
+            }
         }
     }
 }

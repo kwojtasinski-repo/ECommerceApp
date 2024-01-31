@@ -21,5 +21,6 @@ namespace ECommerceApp.Domain.Interface
         int GetCountBySearchString(string searchString);
         List<Customer> GetAllUserCustomers(string userId);
         bool ExistsById(int customerId);
+        bool ExistsByIdAndUserId(int id, string userId);
     }
 }

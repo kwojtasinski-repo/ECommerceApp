@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Security.Claims;
 using ECommerceApp.Application.DTO;
-using ECommerceApp.Application.Permissions;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.ContactDetails;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.ViewModels.Customer;
@@ -114,19 +114,14 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult EditCustomer(int id)
         {
-            // TODO return null from backend
             var customer = _customerService.GetCustomer(id);
             if (customer is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("customerNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new CustomerVm() { Customer = new CustomerDto() });
             }
 
-            var userId = GetUserId();
-            var role = GetUserRole();
-            if (userId != customer.UserId && role == UserPermissions.Roles.User)
-            {
-                return Forbid();
-            }
             var vm = new CustomerVm
             {
                 Customer = new CustomerDto
@@ -149,30 +144,49 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult EditCustomer(CustomerVm model)
         {
-            // TODO check if user has rights on backend to this customer
-            var userId = GetUserId();
-            var role = GetUserRole();
-            if (userId != model.Customer.UserId && role == UserPermissions.Roles.User)
+            try
             {
-                return Forbid();
+                if (!_customerService.CustomerExists(model.Customer.Id, GetUserId()))
+                {
+                    var errorModel = BuildErrorModel("customerNotFound", new Dictionary<string, string> { { "id", $"{model.Customer.Id}" } });
+                    HttpContext.Request.Query = errorModel.AsQueryCollection();
+                    return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                }
+
+                _customerService.UpdateCustomer(model.Customer);
+                return RedirectToAction("Index");
             }
-            _customerService.UpdateCustomer(model.Customer);
-            return RedirectToAction("Index");
+            catch (BusinessException exception)
+            {
+                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
+                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
 
         public IActionResult ViewCustomer(int id)
         {
-            // TODO check if user has rights on backend to this customer
             var customer = _customerService.GetCustomerDetails(id);
+            if (customer is null)
+            {
+                var errorModel = BuildErrorModel("customerNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new CustomerDetailsVm() { Customer = new CustomerDto() });
+            }
             return View(customer);
         }
 
         public IActionResult Delete(int id)
         {
-            // TODO check if user has rights on backend to this customer
-            return _customerService.DeleteCustomer(id)
-                ? Json("deleted") : NotFound();
+            try
+            {
+                return _customerService.DeleteCustomer(id)
+                    ? Json("deleted") : NotFound();
+            }
+            catch (BusinessException exception)
+            {
+                return BadRequest(MapExceptionToResponseStatus(exception));
+            }
         }
 
         [HttpGet]

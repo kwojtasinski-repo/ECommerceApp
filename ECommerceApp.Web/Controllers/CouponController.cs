@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.ViewModels.Coupon;
 using Microsoft.AspNetCore.Authorization;
@@ -91,8 +92,15 @@ namespace ECommerceApp.Web.Controllers
         [HttpDelete]
         public IActionResult DeleteCoupon(int id)
         {
-            _couponService.DeleteCoupon(id);
-            return Json("deleted");
+            try
+            {
+                _couponService.DeleteCoupon(id);
+                return Json("deleted");
+            }
+            catch (BusinessException exception)
+            {
+                return BadRequest(MapExceptionToResponseStatus(exception));
+            }
         }
 
         [HttpGet]

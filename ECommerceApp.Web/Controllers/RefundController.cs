@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Services.Refunds;
+﻿using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.Services.Refunds;
 using ECommerceApp.Application.ViewModels.Refund;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -70,25 +71,46 @@ namespace ECommerceApp.Web.Controllers
         [Authorize(Roles = $"{MaintenanceRole}")]
         public IActionResult DeleteRefund(int id)
         {
-            _refundService.DeleteRefund(id);
-            return Json("deleted");
+            try
+            {
+                _refundService.DeleteRefund(id);
+                return Json("deleted");
+            }
+            catch (BusinessException exception)
+            {
+                return BadRequest(MapExceptionToResponseStatus(exception));
+            }
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
         public IActionResult AddRefund(RefundVm refundVm)
         {
-            _refundService.AddRefund(refundVm);
-            return Json("Added");
+            try
+            {
+                _refundService.AddRefund(refundVm);
+                return Json("Added");
+            }
+            catch (BusinessException exception)
+            {
+                return BadRequest(MapExceptionToResponseStatus(exception));
+            }
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPut]
         public IActionResult UpdateRefund(int id, RefundVm refundVm)
         {
-            refundVm.Id = id;
-            _refundService.UpdateRefund(refundVm);
-            return Json("Updated");
+            try
+            {
+                refundVm.Id = id;
+                _refundService.UpdateRefund(refundVm);
+                return Json("Updated");
+            }
+            catch (BusinessException exception)
+            {
+                return BadRequest(MapExceptionToResponseStatus(exception));
+            }
         }
     }
 }

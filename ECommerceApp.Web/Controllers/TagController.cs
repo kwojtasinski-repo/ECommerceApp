@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Tag;
 using Microsoft.AspNetCore.Authorization;
@@ -87,8 +88,15 @@ namespace ECommerceApp.Web.Controllers
         [Authorize(Roles = $"{MaintenanceRole}")]
         public IActionResult DeleteTag(int id)
         {
-            _tagService.DeleteTag(id);
-            return Json("deleted");
+            try
+            {
+                _tagService.DeleteTag(id);
+                return Json("deleted");
+            }
+            catch (BusinessException exception)
+            {
+                return BadRequest(MapExceptionToResponseStatus(exception));
+            }
         }
     }
 }

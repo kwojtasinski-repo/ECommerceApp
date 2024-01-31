@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Type;
 using Microsoft.AspNetCore.Authorization;
@@ -85,8 +86,15 @@ namespace ECommerceApp.Web.Controllers
         [Authorize(Roles = $"{MaintenanceRole}")]
         public IActionResult DeleteType(int id)
         {
-            _typeService.DeleteType(id);
-            return Json("deleted");
+            try
+            {
+                _typeService.DeleteType(id);
+                return Json("deleted");
+            }
+            catch (BusinessException exception)
+            {
+                return BadRequest(MapExceptionToResponseStatus(exception));
+            }
         }
     }
 }

@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Permissions;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.Domain.Interface;
@@ -8,6 +10,7 @@ using ECommerceApp.Domain.Model;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ECommerceApp.Application.Services.Payments
 {
@@ -17,16 +20,16 @@ namespace ECommerceApp.Application.Services.Payments
         private readonly IPaymentRepository _repo;
         private readonly IOrderRepository _orderRepository;
         private readonly ICustomerService _customerService;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IUserContext _userContext;
         private readonly IPaymentHandler _paymentHandler;
 
-        public PaymentService(IPaymentRepository paymentRepository, IMapper mapper, IOrderRepository orderRepository, ICustomerService customerService, IHttpContextAccessor httpContextAccessor, IPaymentHandler paymentHandler)
+        public PaymentService(IPaymentRepository paymentRepository, IMapper mapper, IOrderRepository orderRepository, ICustomerService customerService, IUserContext userContext, IPaymentHandler paymentHandler)
         {
             _mapper = mapper;
             _repo = paymentRepository;
             _orderRepository = orderRepository;
             _customerService = customerService;
-            _httpContextAccessor = httpContextAccessor;
+            _userContext = userContext;
             _paymentHandler = paymentHandler;
         }
 
@@ -126,8 +129,12 @@ namespace ECommerceApp.Application.Services.Payments
 
         public PaymentDetailsDto GetPaymentDetails(int id)
         {
-            var userId = _httpContextAccessor.GetUserId();
-            return _mapper.Map<PaymentDetailsDto>(_repo.GetPaymentDetailsByIdAndUserId(id, userId));
+            if (!UserPermissions.Roles.MaintenanceRoles.Contains(_userContext.Role)
+                && !_repo.ExistsByIdAndUserId(id, _userContext.UserId))
+            {
+                return null;
+            }
+            return _mapper.Map<PaymentDetailsDto>(_repo.GetPaymentDetailsByIdAndUserId(id, _userContext.UserId));
         }
 
         public PaymentVm InitPayment(int orderId)

@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Brands;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Item;
@@ -142,8 +143,15 @@ namespace ECommerceApp.Web.Controllers
         [Authorize(Roles = $"{MaintenanceRole}")]
         public IActionResult DeleteItem(int id)
         {
-            _itemService.DeleteItem(id);
-            return Json("deleted");
+            try
+            {
+                _itemService.DeleteItem(id);
+                return Json("deleted");
+            }
+            catch (BusinessException exception)
+            {
+                return BadRequest(MapExceptionToResponseStatus(exception));
+            }
         }
     }
 }

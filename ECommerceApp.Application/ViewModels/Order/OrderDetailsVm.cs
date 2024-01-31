@@ -31,7 +31,7 @@ namespace ECommerceApp.Application.ViewModels.Order
         public bool OnWarranty { get; set; }
         public string CustomerInformation { get; set; }
 
-        public List<OrderItemDetailsVm> OrderItems { get; set; }
+        public List<OrderItemDetailsVm> OrderItems { get; set; } = new List<OrderItemDetailsVm>();
 
         public void Mapping(Profile profile)
         {

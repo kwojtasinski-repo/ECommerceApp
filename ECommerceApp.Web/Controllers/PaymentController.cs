@@ -1,9 +1,11 @@
-﻿using ECommerceApp.Application.Services.Currencies;
+﻿using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.ViewModels.Payment;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -55,8 +57,16 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddPayment(PaymentVm model)
         {
-            _paymentService.PaidIssuedPayment(model);
-            return RedirectToAction("Index", "Item");
+            try
+            {
+                _paymentService.PaidIssuedPayment(model);
+                return RedirectToAction("Index", "Item");
+            }
+            catch (BusinessException ex)
+            {
+                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
+                return RedirectToAction("Index", "Item", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]
@@ -77,8 +87,16 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost] 
         public IActionResult EditPayment(PaymentVm model)
         {
-            _paymentService.UpdatePayment(model);
-            return RedirectToAction("Index");
+            try
+            {
+                _paymentService.UpdatePayment(model);
+                return RedirectToAction("Index");
+            }
+            catch (BusinessException ex)
+            {
+                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
+                return RedirectToAction("Index", "Item", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         [HttpGet]
@@ -87,7 +105,9 @@ namespace ECommerceApp.Web.Controllers
             var payment = _paymentService.GetPaymentDetails(id);
             if (payment is null)
             {
-                return NotFound("Nie znaleziono płatności");
+                var errorModel = BuildErrorModel("paymentNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new PaymentDetailsVm { Payment = new Application.DTO.PaymentDetailsDto() });
             }
             return View(new PaymentDetailsVm { Payment = payment });
         }
@@ -95,9 +115,16 @@ namespace ECommerceApp.Web.Controllers
         [Authorize(Roles = $"{MaintenanceRole}")]
         public IActionResult DeletePayment(int id)
         {
-            return _paymentService.DeletePayment(id) 
-                ? Json("deleted")
-                : NotFound();
+            try
+            {
+                return _paymentService.DeletePayment(id)
+                    ? Json("deleted")
+                    : NotFound();
+            }
+            catch (BusinessException exception)
+            {
+                return BadRequest(MapExceptionToResponseStatus(exception));
+            }
         }
 
         public IActionResult ViewMyPayments()

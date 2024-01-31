@@ -9,9 +9,9 @@ namespace ECommerceApp.Application.ViewModels.Customer
     public class CustomerVm : IMapFrom<Domain.Model.Customer>
     {
         public CustomerDto Customer { get; set; }
-        public List<ContactDetailDto> ContactDetails { get; set; }
-        public List<ContactDetailTypeDto> ContactDetailTypes { get; set; }
-        public virtual List<AddressDto> Addresses { get; set; }
+        public List<ContactDetailDto> ContactDetails { get; set; } = new List<ContactDetailDto>();
+        public List<ContactDetailTypeDto> ContactDetailTypes { get; set; } = new List<ContactDetailTypeDto>();
+        public virtual List<AddressDto> Addresses { get; set; } = new List<AddressDto>();
 
         public void Mapping(Profile profile)
         {

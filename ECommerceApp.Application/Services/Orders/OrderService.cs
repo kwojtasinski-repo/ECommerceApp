@@ -9,6 +9,7 @@ using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.ViewModels.Coupon;
+using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -145,7 +146,7 @@ namespace ECommerceApp.Application.Services.Orders
         public OrderDetailsVm GetOrderDetail(int id)
         {
             if (!UserPermissions.Roles.MaintenanceRoles.Contains(_userContext.Role) 
-                && _orderRepository.ExistsByIdAndUserId(id, _userContext.UserId))
+                && !_orderRepository.ExistsByIdAndUserId(id, _userContext.UserId))
             {
                 return null;
             }
@@ -217,6 +218,12 @@ namespace ECommerceApp.Application.Services.Orders
 
         public NewOrderVm GetOrderForRealization(int orderId)
         {
+            if (!UserPermissions.Roles.MaintenanceRoles.Contains(_userContext.Role)
+                && !_orderRepository.ExistsByIdAndUserId(orderId, _userContext.UserId))
+            {
+                return null;
+            }
+
             var order = _orderRepository.GetOrderForRealizationById(orderId);
             if (order is null)
             {
@@ -248,6 +255,10 @@ namespace ECommerceApp.Application.Services.Orders
         public ListForOrderVm GetAllOrdersByCustomerId(int customerId, int pageSize, int pageNo)
         {
             ValidatePageSizeAndPageNo(pageSize, pageNo);
+            if (_orderRepository.ExistsByCustomerIdAndUserId(customerId, _userContext.UserId))
+            {
+                return new ListForOrderVm { Orders = new List<OrderForListVm>() };
+            }
 
             var orders = _mapper.Map<List<OrderForListVm>>(_orderRepository.GetAllOrders(customerId, pageSize, pageNo));
 
@@ -266,7 +277,7 @@ namespace ECommerceApp.Application.Services.Orders
         public List<OrderForListVm> GetAllOrdersByCustomerId(int customerId)
         {
             if (!UserPermissions.Roles.MaintenanceRoles.Contains(_userContext.Role)
-                && _orderRepository.ExistsByCustomerIdAndUserId(customerId, _userContext.UserId))
+                && !_orderRepository.ExistsByCustomerIdAndUserId(customerId, _userContext.UserId))
             {
                 return new List<OrderForListVm>();
             }
@@ -392,6 +403,11 @@ namespace ECommerceApp.Application.Services.Orders
 
         public NewOrderVm GetOrderSummaryById(int orderId)
         {
+            if (!UserPermissions.Roles.MaintenanceRoles.Contains(_userContext.Role)
+                && !_orderRepository.ExistsByIdAndUserId(orderId, _userContext.UserId))
+            {
+                return null;
+            }
             var order = _orderRepository.GetOrderSummaryById(orderId);
             var orderVm = _mapper.Map<NewOrderVm>(order);
             return orderVm;

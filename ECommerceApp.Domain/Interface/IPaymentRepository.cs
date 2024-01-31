@@ -1,6 +1,5 @@
 ﻿using ECommerceApp.Domain.Model;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ECommerceApp.Domain.Interface
 {
@@ -17,5 +16,6 @@ namespace ECommerceApp.Domain.Interface
         List<Payment> GetAllPayments(int pageSize, int pageNo, string searchString);
         List<Payment> GetAllUserPayments(string userId);
         int GetCountBySearchString(string searchString);
+        bool ExistsByIdAndUserId(int id, string userId);
     }
 }

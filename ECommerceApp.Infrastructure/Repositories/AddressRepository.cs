@@ -39,8 +39,8 @@ namespace ECommerceApp.Infrastructure.Repositories
         public bool ExistsByIdAndUserId(int id, string userId)
         {
             return _context.Addresses
-                .AsNoTracking()
-                .Any(a => a.Id == id && a.Customer.UserId == userId);
+                           .AsNoTracking()
+                           .Any(a => a.Id == id && a.Customer.UserId == userId);
         }
 
         public Address GetAddressById(int addressId)

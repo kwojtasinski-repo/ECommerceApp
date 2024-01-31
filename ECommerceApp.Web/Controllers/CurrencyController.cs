@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Application.Services.Currencies;
+﻿using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Application.ViewModels.Currency;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -79,8 +80,15 @@ namespace ECommerceApp.Web.Controllers
 
         public IActionResult DeleteCurrency(int id)
         {
-            _currencyService.Delete(id);
-            return Json("deleted");
+            try
+            {
+                _currencyService.Delete(id);
+                return Json("deleted");
+            }
+            catch (BusinessException exception)
+            {
+                return BadRequest(MapExceptionToResponseStatus(exception));
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Permissions;
 using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Order;
@@ -8,17 +9,20 @@ using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ECommerceApp.Application.Services.Customers
 {
     public class CustomerService : ICustomerService
     {
         private readonly IMapper _mapper;
+        private readonly IUserContext _userContext;
         private readonly ICustomerRepository _customerRepository;
 
-        public CustomerService(ICustomerRepository custRepo, IMapper mapper)
+        public CustomerService(ICustomerRepository custRepo, IMapper mapper, IUserContext userContext)
         {
             _mapper = mapper;
+            _userContext = userContext;
             _customerRepository = custRepo;
         }
 
@@ -58,6 +62,12 @@ namespace ECommerceApp.Application.Services.Customers
 
         public bool DeleteCustomer(int id)
         {
+            if (!UserPermissions.Roles.MaintenanceRoles.Contains(_userContext.Role) 
+                && !_customerRepository.ExistsByIdAndUserId(id, _userContext.UserId))
+            {
+                return false;
+            }
+
             return _customerRepository.DeleteCustomer(id);
         }
 
@@ -95,6 +105,12 @@ namespace ECommerceApp.Application.Services.Customers
 
         public CustomerDetailsVm GetCustomerDetails(int customerId)
         {
+            if (!UserPermissions.Roles.MaintenanceRoles.Contains(_userContext.Role)
+                && !_customerRepository.ExistsByIdAndUserId(customerId, _userContext.UserId))
+            {
+                return null;
+            }
+
             var customer = _customerRepository.GetCustomerDetailsById(customerId);
             var customerVm = _mapper.Map<CustomerDetailsVm>(customer);
 
@@ -119,11 +135,11 @@ namespace ECommerceApp.Application.Services.Customers
 
         public CustomerDetailsDto GetCustomer(int id)
         {
-            /*if (!UserPermissions.Roles.MaintenanceRoles.Contains(_userContext.Role)
-                && _addressRepository.ExistsByIdAndUserId(id, _userContext.UserId))
+            if (!UserPermissions.Roles.MaintenanceRoles.Contains(_userContext.Role)
+                && !_customerRepository.ExistsByIdAndUserId(id, _userContext.UserId))
             {
                 return null;
-            }*/
+            }
 
             var customer = _customerRepository.GetCustomerById(id);
             var customerVm = _mapper.Map<CustomerDetailsDto>(customer);
