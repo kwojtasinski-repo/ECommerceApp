@@ -5,6 +5,7 @@ using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Item;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace ECommerceApp.Web.Controllers
@@ -58,19 +59,27 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddItem(NewItemVm model)
         {
-            var id = _itemService.AddItem(new AddItemDto
+            try
             {
-                Name = model.Name,
-                Description = model.Description,
-                Cost = model.Cost,
-                Quantity = model.Quantity,
-                Warranty = model.Warranty,
-                BrandId = model.BrandId,
-                TypeId = model.TypeId,
-                TagsId = model.ItemTags.Select(t => t.TagId).ToList(),
-                Images = model.Images.Select(i => new AddItemImageDto(i.Name, i.ImageSource))
-            });
-            return RedirectToAction("EditItem", new { id });
+                var id = _itemService.AddItem(new AddItemDto
+                {
+                    Name = model.Name,
+                    Description = model.Description,
+                    Cost = model.Cost,
+                    Quantity = model.Quantity,
+                    Warranty = model.Warranty,
+                    BrandId = model.BrandId,
+                    TypeId = model.TypeId,
+                    TagsId = model.ItemTags.Select(t => t.TagId).ToList(),
+                    Images = model.Images.Select(i => new AddItemImageDto(i.Name, i.ImageSource))
+                });
+                return RedirectToAction("EditItem", new { id });
+            }
+            catch (BusinessException ex)
+            {
+                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
+                return RedirectToAction(actionName: "Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]
@@ -80,7 +89,9 @@ namespace ECommerceApp.Web.Controllers
             var item = _itemService.GetItemDetails(id);
             if (item is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("itemNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new ItemDetailsDto());
             }
             ViewBag.ItemBrands = _brandService.GetAllBrands();
             ViewBag.ItemTypes = _typeService.GetTypes();
@@ -92,19 +103,27 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult EditItem(ItemDetailsDto model)
         {
-            _itemService.UpdateItem(new UpdateItemDto
+            try
             {
-                Id = model.Id,
-                Name = model.Name,
-                Description = model.Description,
-                Cost = model.Cost,
-                Quantity = model.Quantity,
-                Warranty = model.Warranty,
-                BrandId = model.Brand.Id,
-                TypeId = model.Type.Id,
-                TagsId = model.Tags.Select(t => t.Id).ToList()
-            });
-            return RedirectToAction("Index");
+                _itemService.UpdateItem(new UpdateItemDto
+                {
+                    Id = model.Id,
+                    Name = model.Name,
+                    Description = model.Description,
+                    Cost = model.Cost,
+                    Quantity = model.Quantity,
+                    Warranty = model.Warranty,
+                    BrandId = model.Brand.Id,
+                    TypeId = model.Type.Id,
+                    TagsId = model.Tags.Select(t => t.Id).ToList()
+                });
+                return RedirectToAction("Index");
+            }
+            catch (BusinessException ex)
+            {
+                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
+                return RedirectToAction(actionName: "Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]
@@ -135,7 +154,9 @@ namespace ECommerceApp.Web.Controllers
             var item = _itemService.GetItemDetails(id);
             if (item is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("itemNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new ItemDetailsDto());
             }
             return View(item);
         }

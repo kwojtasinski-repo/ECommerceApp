@@ -4,6 +4,7 @@ using ECommerceApp.Application.Services.Items;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 
 namespace ECommerceApp.Web.Controllers
@@ -26,9 +27,9 @@ namespace ECommerceApp.Web.Controllers
             {
                 _service.AddImages(addImages);
             }
-            catch(BusinessException ex)
+            catch(BusinessException exception)
             {
-                return Conflict(ex.Message);
+                return BadRequest(MapExceptionToResponseStatus(exception));
             }
             return Ok();
         }

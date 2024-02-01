@@ -76,7 +76,9 @@ namespace ECommerceApp.Web.Controllers
             var payment = _paymentService.GetPaymentById(id);
             if (payment is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("paymentNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new PaymentVm { });
             }
             var currencies = _currencyService.GetAll();
             ViewBag.Currencies = currencies;
