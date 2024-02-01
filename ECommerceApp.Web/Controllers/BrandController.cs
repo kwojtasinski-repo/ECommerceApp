@@ -3,6 +3,7 @@ using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Brands;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -53,7 +54,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException ex)
             {
-                return RedirectToAction(actionName: "AddBrand", controllerName: "Brand", MapExceptionAsRouteValues(ex));
+                return RedirectToAction(actionName: "Index", controllerName: "Brand", MapExceptionAsRouteValues(ex));
             }
         }
 
@@ -64,7 +65,9 @@ namespace ECommerceApp.Web.Controllers
             var brand = _brandService.GetBrand(id);
             if (brand is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("brandNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new BrandDto());
             }
             return View(brand);
         }
@@ -80,7 +83,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException ex)
             {
-                return RedirectToAction(actionName: "EditBrand", controllerName: "Brand", MapExceptionAsRouteValues(ex));
+                return RedirectToAction(actionName: "Index", controllerName: "Brand", MapExceptionAsRouteValues(ex));
             }
         }
 
@@ -90,7 +93,9 @@ namespace ECommerceApp.Web.Controllers
             var brand = _brandService.GetBrand(id);
             if (brand is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("brandNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new BrandDto());
             }
             return View(brand);
         }

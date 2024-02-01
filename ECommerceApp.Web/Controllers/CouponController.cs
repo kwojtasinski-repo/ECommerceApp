@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.ViewModels.Coupon;
@@ -53,8 +54,16 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddCoupon(CouponVm model)
         {
-            _couponService.AddCoupon(model);
-            return RedirectToAction("Index");
+            try
+            {
+                _couponService.AddCoupon(model);
+                return RedirectToAction("Index");
+            }
+            catch (BusinessException ex)
+            {
+                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
+                return RedirectToAction(actionName: "Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         [HttpGet]
@@ -63,10 +72,11 @@ namespace ECommerceApp.Web.Controllers
             var coupon = _couponService.GetCoupon(id);
             if (coupon is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("couponNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new CouponDetailsVm());
             }
             var couponTypes = _couponTypeService.GetAllCouponsTypes().ToList();
-            var couponsUsed = _couponUsedService.GetAllCouponsUsed();
             ViewBag.CouponTypes = couponTypes;
             return View(coupon);
         }
@@ -74,8 +84,16 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult EditCoupon(CouponVm model)
         {
-            _couponService.UpdateCoupon(model);
-            return RedirectToAction("Index");
+            try
+            {
+                _couponService.UpdateCoupon(model);
+                return RedirectToAction("Index");
+            }
+            catch (BusinessException ex)
+            {
+                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
+                return RedirectToAction(actionName: "Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         [HttpGet]
@@ -84,7 +102,9 @@ namespace ECommerceApp.Web.Controllers
             var coupon = _couponService.GetCouponDetail(id);
             if (coupon is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("couponNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new CouponDetailsVm());
             }
             return View(coupon);
         }

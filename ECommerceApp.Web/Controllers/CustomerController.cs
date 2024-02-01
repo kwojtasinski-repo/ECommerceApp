@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using System.Security.Claims;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.ContactDetails;
@@ -26,7 +25,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var userId = GetUserId();
             var model = _customerService.GetAllCustomersForList(userId, 10, 1, "");
 
             return View(model);
@@ -84,19 +83,27 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddCustomer(CustomerVm model)
         {
-            _customerService.AddCustomerDetails(new CustomerDetailsDto
+            try
             {
-                Id = model.Customer.Id,
-                FirstName = model.Customer.FirstName,
-                LastName = model.Customer.LastName,
-                IsCompany = model.Customer.IsCompany,
-                CompanyName = model.Customer.CompanyName,
-                NIP = model.Customer.NIP,
-                UserId = model.Customer.UserId,
-                Addresses = model.Addresses,
-                ContactDetails = model.ContactDetails
-            });
-            return RedirectToAction("Index");
+                _customerService.AddCustomerDetails(new CustomerDetailsDto
+                {
+                    Id = model.Customer.Id,
+                    FirstName = model.Customer.FirstName,
+                    LastName = model.Customer.LastName,
+                    IsCompany = model.Customer.IsCompany,
+                    CompanyName = model.Customer.CompanyName,
+                    NIP = model.Customer.NIP,
+                    UserId = model.Customer.UserId,
+                    Addresses = model.Addresses,
+                    ContactDetails = model.ContactDetails
+                });
+                return RedirectToAction("Index");
+            }
+            catch (BusinessException ex)
+            {
+                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
+                return RedirectToAction(actionName: "Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         public IActionResult AddCustomerPartialView()
@@ -149,7 +156,6 @@ namespace ECommerceApp.Web.Controllers
                 if (!_customerService.CustomerExists(model.Customer.Id, GetUserId()))
                 {
                     var errorModel = BuildErrorModel("customerNotFound", new Dictionary<string, string> { { "id", $"{model.Customer.Id}" } });
-                    HttpContext.Request.Query = errorModel.AsQueryCollection();
                     return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
                 }
 

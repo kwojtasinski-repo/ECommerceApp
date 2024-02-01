@@ -1,9 +1,11 @@
-﻿using ECommerceApp.Application.Exceptions;
+﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Currencies;
 using ECommerceApp.Application.ViewModels.Currency;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Collections.Generic;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -53,28 +55,56 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddCurrency(CurrencyVm model)
         {
-            _currencyService.Add(model.Currency);
-            return RedirectToAction("Index");
+            try
+            {
+                _currencyService.Add(model.Currency);
+                return RedirectToAction("Index");
+            }
+            catch (BusinessException ex)
+            {
+                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
+                return RedirectToAction(actionName: "Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         [HttpGet]
         public IActionResult EditCurrency(int id)
         {
             var currency = _currencyService.GetById(id);
+            if (currency is null)
+            {
+                var errorModel = BuildErrorModel("currencyNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new CurrencyVm());
+            }
             return View(new CurrencyVm { Currency = currency });
         }
 
         [HttpPost]
         public IActionResult EditCurrency(CurrencyVm model)
         {
-            _currencyService.Update(model.Currency);
-            return RedirectToAction("Index");
+            try
+            {
+                _currencyService.Update(model.Currency);
+                return RedirectToAction("Index");
+            }
+            catch (BusinessException ex)
+            {
+                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
+                return RedirectToAction(actionName: "Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         [HttpGet]
         public IActionResult ViewCurrency(int id)
         {
             var currency = _currencyService.GetById(id);
+            if (currency is null)
+            {
+                var errorModel = BuildErrorModel("currencyNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new CurrencyDto());
+            }
             return View(new CurrencyVm { Currency = currency });
         }
 

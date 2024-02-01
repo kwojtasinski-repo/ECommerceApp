@@ -36,7 +36,7 @@ namespace ECommerceApp.Web.Controllers
             catch (BusinessException ex)
             {
                 var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
-                return RedirectToAction(actionName: "AddAddress", controllerName: "Address", new { Id = addressVm.Address.CustomerId, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = addressVm.Address.CustomerId, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
             }
         }
 
@@ -68,7 +68,7 @@ namespace ECommerceApp.Web.Controllers
             catch (BusinessException ex)
             {
                 var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
-                return RedirectToAction(actionName: "EditAddress", controllerName: "Address", new { Id = model.Address.CustomerId, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = model.Address.CustomerId, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
             }
         }
 
