@@ -4,6 +4,7 @@ using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Middlewares;
 using ECommerceApp.Application.Services;
 using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
@@ -19,6 +20,7 @@ namespace ECommerceApp.Application
             services.AddNbpClient();
             services.AddServices();
             services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+            services.AddFluentValidationAutoValidation();
             return services;
         }
     }

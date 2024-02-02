@@ -36,7 +36,6 @@ namespace ECommerceApp.Web
                 options.Filters.Add(new ModelStateFilter());
             });
             services.AddRazorPages();
-            services.AddFluentValidationAutoValidation();
 
             services.Configure<IdentityOptions>(opt =>
             {
