@@ -62,7 +62,6 @@ namespace ECommerceApp.IntegrationTests.API
             var address = CreateAddress(0);
             var id = await client.Request($"api/addresses")
                 .WithHeader("content-type", "application/json")
-                .AllowAnyHttpStatus()
                 .PostJsonAsync(address)
                 .ReceiveJson<int>();
             address.Id = id;
@@ -70,12 +69,10 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request($"api/addresses")
                 .WithHeader("content-type", "application/json")
-                .AllowAnyHttpStatus()
                 .PutJsonAsync(address);
 
             var addressUpdated = await client.Request($"api/addresses/{address.Id}")
                 .WithHeader("content-type", "application/json")
-                .AllowAnyHttpStatus()
                 .GetJsonAsync<AddressDto>();
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
             addressUpdated.ShouldNotBeNull();
@@ -113,7 +110,7 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_invalid_when_add_address_should_return_status_code_conflict()
+        public async Task given_invalid_dto_when_add_address_should_return_status_code_conflict()
         {
             var client = await _factory.GetAuthenticatedClient();
             var address = CreateAddress(1);
@@ -133,7 +130,7 @@ namespace ECommerceApp.IntegrationTests.API
                 Id = id,
                 BuildingNumber = "1",
                 City = "ZG",
-                Country = "PL",
+                Country = "Polska",
                 CustomerId = 1,
                 FlatNumber = 10,
                 Street = "Testowa",

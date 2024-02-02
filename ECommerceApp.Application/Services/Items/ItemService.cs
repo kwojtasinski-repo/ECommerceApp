@@ -179,7 +179,7 @@ namespace ECommerceApp.Application.Services.Items
                 ?? throw new BusinessException($"Item with id '{dto.Id}' was not found", "itemNotFound", new Dictionary<string, string> { { "id", $"{dto.Id}" } });
             var tags = _tagRepository.GetTagsByIds(dto.TagsId);
             var errors = new StringBuilder(ValidTags(tags, dto.TagsId));
-            errors.Append(_imageService.ValidBase64File(dto.Images?.Select(i =>
+            errors.Append(_imageService.ValidBase64File(dto.Images?.Where(i => i.ImageId == default).Select(i =>
                 new ValidBase64File(i.ImageName, i.ImageSource)
             )));
 

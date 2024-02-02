@@ -76,7 +76,7 @@ namespace ECommerceApp.IntegrationTests.API
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(tag);
 
-            response.StatusCode.ShouldBe((int) HttpStatusCode.Conflict);
+            response.StatusCode.ShouldBe((int) HttpStatusCode.BadRequest);
         }
 
         [Fact]
@@ -111,7 +111,7 @@ namespace ECommerceApp.IntegrationTests.API
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(tag);
 
-            response.StatusCode.ShouldBe((int) HttpStatusCode.Conflict);
+            response.StatusCode.ShouldBe((int) HttpStatusCode.BadRequest);
         }
 
         [Fact]

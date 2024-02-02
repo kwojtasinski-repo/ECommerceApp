@@ -32,7 +32,6 @@ namespace ECommerceApp.Application.DTO
         {
             RuleFor(x => x.Id).NotNull().GreaterThan(0);
             RuleFor(x => x.CustomerId).NotNull().GreaterThan(0);
-            RuleFor(x => x.CouponUsedId).NotNull().GreaterThan(0);
 
             When(x => x.OrderItems != null && x.OrderItems.Any(), () =>
             {

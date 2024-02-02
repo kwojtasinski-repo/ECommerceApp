@@ -101,7 +101,7 @@ namespace ECommerceApp.IntegrationTests.API
             tagsId.Remove(5);
             tagsId.Add(6);
             tagsId.Add(7);
-            var images = itemDetails.Images.Select(i => new UpdateItemImageDto(i.Id, i.Name, i.ImageSource)).ToList();
+            var images = itemDetails.Images.Select(i => new UpdateItemImageDto(i.Id, null, null)).ToList();
             images.Remove(images.LastOrDefault());
             images.Add(new UpdateItemImageDto(0, "test3.png", "SW1hZ2VTb3VyY2U="));
             var dto = new UpdateItemDto
@@ -119,11 +119,9 @@ namespace ECommerceApp.IntegrationTests.API
             };
 
             var response = await client.Request($"api/items/{id}")
-                .AllowAnyHttpStatus()
                 .PutJsonAsync(dto);
 
             var itemUpdated = await client.Request($"api/items/{id}")
-                .AllowAnyHttpStatus()
                 .GetAsync()
                 .ReceiveJson<ItemDetailsDto>();
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
@@ -156,12 +154,10 @@ namespace ECommerceApp.IntegrationTests.API
             var client = await _factory.GetAuthenticatedClient();
             var item = CreateItem(0);
             var id = await client.Request("api/items")
-                .AllowAnyHttpStatus()
                 .PostJsonAsync(item)
                 .ReceiveJson<int>();
 
             var response = await client.Request($"api/items/{id}")
-                .AllowAnyHttpStatus()
                 .DeleteAsync();
 
             var responseAfterDelete = await client.Request($"api/items/{id}")
@@ -242,7 +238,8 @@ namespace ECommerceApp.IntegrationTests.API
                 Cost = new decimal(100),
                 Name = "ItemFirst",
                 TypeId = 1,
-                Quantity = 10
+                Quantity = 10,
+                Warranty = "10"
             };
             return item;
         }

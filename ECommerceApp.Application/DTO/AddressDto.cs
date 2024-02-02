@@ -41,13 +41,13 @@ namespace ECommerceApp.Application.DTO
     {
         public AddressDtoValidation()
         {
-            When(x => x.Id is not null,
+            When(x => x.Id is not null && x.Id != 0,
                 () => RuleFor(x => x.Id).GreaterThan(0));
             RuleFor(x => x.Street).NotNull().MinimumLength(2).MaximumLength(255);
             RuleFor(x => x.BuildingNumber).NotNull().MinimumLength(1).MaximumLength(100);
             When(x => x.FlatNumber is not null && x.FlatNumber.Value <= 0,
                 () => RuleFor(x => x.FlatNumber).GreaterThan(0));
-            RuleFor(x => x.ZipCode).NotNull().Length(5).Matches("\\d{2}-\\d{3}");
+            RuleFor(x => x.ZipCode).NotNull().Length(6).Matches("\\d{2}-\\d{3}");
             RuleFor(x => x.City).NotNull().MinimumLength(1).MaximumLength(255);
             RuleFor(x => x.Country).NotNull().MinimumLength(3).MaximumLength(255);
             RuleFor(x => x.CustomerId).NotNull();
