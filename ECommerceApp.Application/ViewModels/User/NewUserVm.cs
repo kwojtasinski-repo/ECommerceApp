@@ -12,8 +12,8 @@ namespace ECommerceApp.Application.ViewModels.User
         public string UserName { get; set; }
         public string Email { get; set; }
         public bool EmailConfirmed { get; set; }
-        public List<string> UserRoles { get; set; }
-        public List<RoleVm> Roles { get; set; }
+        public List<string> UserRoles { get; set; } = new List<string>();
+        public List<RoleVm> Roles { get; set; } = new List<RoleVm>();
 
         public string PasswordToChange { get; set; }
 

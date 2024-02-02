@@ -3,6 +3,7 @@ using ECommerceApp.Application.Services.Refunds;
 using ECommerceApp.Application.ViewModels.Refund;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -45,7 +46,9 @@ namespace ECommerceApp.Web.Controllers
             var refund = _refundService.Get(id);
             if(refund is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("refundNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new RefundVm());
             }
             return View(refund);
         }
@@ -54,8 +57,16 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult EditRefund(RefundVm refund)
         {
-            _refundService.UpdateRefund(refund);
-            return RedirectToAction("Index");
+            try
+            {
+                _refundService.UpdateRefund(refund);
+                return RedirectToAction("Index");
+            }
+            catch (BusinessException exception)
+            {
+                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
+                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         public IActionResult ViewRefundDetails(int id)
@@ -63,7 +74,9 @@ namespace ECommerceApp.Web.Controllers
             var refund = _refundService.GetRefundDetails(id);
             if(refund is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("refundNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new RefundDetailsVm());
             }
             return View(refund);
         }

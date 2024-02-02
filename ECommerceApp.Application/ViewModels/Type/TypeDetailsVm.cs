@@ -1,8 +1,6 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Type
 {
@@ -10,7 +8,7 @@ namespace ECommerceApp.Application.ViewModels.Type
     {
         public string Name { get; set; }
 
-        public List<ECommerceApp.Domain.Model.Item> Items { get; set; }
+        public List<ECommerceApp.Domain.Model.Item> Items { get; set; } = new List<Domain.Model.Item>();
 
         public void Mapping(Profile profile)
         {

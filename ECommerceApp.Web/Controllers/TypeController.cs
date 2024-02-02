@@ -4,6 +4,7 @@ using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Type;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -48,8 +49,16 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddType(TypeVm model)
         {
-            _typeService.AddType(model.Type);
-            return RedirectToAction("Index");
+            try
+            {
+                _typeService.AddType(model.Type);
+                return RedirectToAction("Index");
+            }
+            catch (BusinessException exception)
+            {
+                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
+                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]
@@ -59,7 +68,9 @@ namespace ECommerceApp.Web.Controllers
             var type = _typeService.GetTypeById(id);
             if (type is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("typeNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new TypeVm() { Type = new TypeDto() });
             }
             return View(new TypeVm { Type = type });
         }
@@ -68,8 +79,16 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult EditType(TypeVm model)
         {
-            _typeService.UpdateType(model.Type);
-            return RedirectToAction("Index");
+            try
+            {
+                _typeService.UpdateType(model.Type);
+                return RedirectToAction("Index");
+            }
+            catch (BusinessException exception)
+            {
+                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
+                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         [HttpGet] 
@@ -78,7 +97,9 @@ namespace ECommerceApp.Web.Controllers
             var item = _typeService.GetTypeDetails(id);
             if (item is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("typeNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new TypeDetailsVm());
             }
             return View(item);
         }

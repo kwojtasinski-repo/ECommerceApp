@@ -4,6 +4,7 @@ using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Tag;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -49,8 +50,16 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult AddTag(TagVm model)
         {
-            _tagService.AddTag(model.Tag);
-            return RedirectToAction("Index");
+            try
+            {
+                _tagService.AddTag(model.Tag);
+                return RedirectToAction("Index");
+            }
+            catch (BusinessException exception)
+            {
+                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
+                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]
@@ -60,7 +69,9 @@ namespace ECommerceApp.Web.Controllers
             var tag = _tagService.GetTagById(id);
             if (tag is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("tagNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new TagVm() { Tag = new TagDto() });
             }
             return View(new TagVm { Tag = tag });
         }
@@ -69,8 +80,16 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public IActionResult EditTag(TagVm model)
         {
-            _tagService.UpdateTag(model.Tag);
-            return RedirectToAction("Index");
+            try
+            {
+                _tagService.UpdateTag(model.Tag);
+                return RedirectToAction("Index");
+            }
+            catch (BusinessException exception)
+            {
+                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
+                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]
@@ -80,7 +99,9 @@ namespace ECommerceApp.Web.Controllers
             var tag = _tagService.GetTagDetails(id);
             if (tag is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("tagNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new TagDetailsVm());
             }
             return View(tag);
         }

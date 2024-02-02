@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Users;
 using ECommerceApp.Application.ViewModels.User;
 using Microsoft.AspNetCore.Authorization;
@@ -42,7 +44,9 @@ namespace ECommerceApp.Web.Controllers
             var userVm = await _userService.GetUserById(id);
             if (userVm is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("userNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new NewUserVm());
             }
             return View(userVm);
         }
@@ -50,14 +54,29 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> AddRolesToUser(NewUserVm user)
         {
-            await _userService.ChangeRoleAsync(user.Id, user.UserRoles);
-            return RedirectToAction("Index");
+            try
+            {
+                await _userService.ChangeRoleAsync(user.Id, user.UserRoles);
+                return RedirectToAction("Index");
+            }
+            catch (BusinessException exception)
+            {
+                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
+                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         public async Task<IActionResult> DeleteUser(string id)
         {
-            await _userService.DeleteUserAsync(id);
-            return Json("deleted");
+            try
+            {
+                await _userService.DeleteUserAsync(id);
+                return Json("deleted");
+            }
+            catch (BusinessException exception)
+            {
+                return BadRequest(MapExceptionToResponseStatus(exception));
+            }
         }
 
         [HttpGet]
@@ -66,7 +85,9 @@ namespace ECommerceApp.Web.Controllers
             var user = await _userService.GetUserById(id);
             if (user is null)
             {
-                return NotFound();
+                var errorModel = BuildErrorModel("userNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new NewUserVm());
             }
             return View(user);
         }
@@ -74,8 +95,16 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> EditUser(NewUserVm model)
         {
-            await _userService.EditUser(model);
-            return RedirectToAction("Index");
+            try
+            {
+                await _userService.EditUser(model);
+                return RedirectToAction("Index");
+            }
+            catch (BusinessException exception)
+            {
+                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
+                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         [HttpGet]
@@ -91,27 +120,49 @@ namespace ECommerceApp.Web.Controllers
         [HttpPost]
         public async Task<IActionResult> AddUser(NewUserToAddVm model)
         {
-            await _userService.AddUser(model);
-            if (model.Id != null)
+            try
             {
-                model.UserName = model.Email;
-                await _userService.ChangeRoleAsync(model.Id, model.UserRoles);
+                await _userService.AddUser(model);
+                if (model.Id != null)
+                {
+                    model.UserName = model.Email;
+                    await _userService.ChangeRoleAsync(model.Id, model.UserRoles);
+                }
+                return RedirectToAction("Index");
             }
-            return RedirectToAction("Index");
+            catch (BusinessException exception)
+            {
+                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
+                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
 
         [HttpGet]
         public async Task<IActionResult> ChangeUserPassword(string id)
         {
             var user = await _userService.GetUserById(id);
+            if (user is null)
+            {
+                var errorModel = BuildErrorModel("userNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(new NewUserVm());
+            }
             return View(user);
         }
 
         [HttpPost]
         public async Task<IActionResult> ChangeUserPassword(NewUserVm model)
         {
-            await _userService.ChangeUserPassword(model);
-            return RedirectToAction("Index");
+            try
+            {
+                await _userService.ChangeUserPassword(model);
+                return RedirectToAction("Index");
+            }
+            catch (BusinessException exception)
+            {
+                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
+                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+            }
         }
     }
 }

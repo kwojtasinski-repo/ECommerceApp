@@ -60,12 +60,12 @@ namespace ECommerceApp.Web.Controllers
             try
             {
                 _paymentService.PaidIssuedPayment(model);
-                return RedirectToAction("Index", "Item");
+                return RedirectToAction("ViewMyPayments");
             }
             catch (BusinessException ex)
             {
                 var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
-                return RedirectToAction("Index", "Item", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction("ViewMyPayments", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
             }
         }
 
@@ -97,7 +97,7 @@ namespace ECommerceApp.Web.Controllers
             catch (BusinessException ex)
             {
                 var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
-                return RedirectToAction("Index", "Item", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
             }
         }
 
