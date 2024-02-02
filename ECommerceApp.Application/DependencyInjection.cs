@@ -3,6 +3,7 @@ using ECommerceApp.Application.External;
 using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Middlewares;
 using ECommerceApp.Application.Services;
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
@@ -17,6 +18,7 @@ namespace ECommerceApp.Application
             services.AddErrorHandling();
             services.AddNbpClient();
             services.AddServices();
+            services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
             return services;
         }
     }

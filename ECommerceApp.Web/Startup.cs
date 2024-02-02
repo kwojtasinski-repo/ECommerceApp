@@ -9,7 +9,8 @@ using ECommerceApp.Infrastructure;
 using ECommerceApp.Application;
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
-using ECommerceApp.Application.Middlewares;
+using ECommerceApp.Web.Filters;
+using FluentValidation.AspNetCore;
 
 namespace ECommerceApp.Web
 {
@@ -30,8 +31,12 @@ namespace ECommerceApp.Web
             services.AddApplication();
             services.AddInfrastructure(Configuration);
 
-            services.AddControllersWithViews();
+            services.AddControllersWithViews(options =>
+            {
+                options.Filters.Add(new ModelStateFilter());
+            });
             services.AddRazorPages();
+            services.AddFluentValidationAutoValidation();
 
             services.Configure<IdentityOptions>(opt =>
             {

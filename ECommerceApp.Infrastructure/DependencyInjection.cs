@@ -1,5 +1,4 @@
-﻿using ECommerceApp.Domain.Interface;
-using ECommerceApp.Infrastructure.Auth;
+﻿using ECommerceApp.Infrastructure.Auth;
 using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Repositories;
 using Microsoft.Extensions.Configuration;
