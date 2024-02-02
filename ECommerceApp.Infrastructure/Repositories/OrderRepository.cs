@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Domain.Interface;
+﻿using ECommerceApp.Application.ViewModels.Refund;
+using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
@@ -285,6 +286,20 @@ namespace ECommerceApp.Infrastructure.Repositories
             return _context.Orders
                            .AsNoTracking()
                            .Any(o => o.CustomerId == customerId && o.UserId == userId);
+        }
+
+        public Order GetOrderPaidAndNotDelivered(int orderId)
+        {
+            return _context.Orders
+                    .FirstOrDefault(o => o.Id == orderId && o.IsDelivered == false && o.IsPaid == true);
+        }
+
+        public int GetCustomerFromOrder(int orderId)
+        {
+            return _context.Orders
+                           .Where(o => o.Id == orderId)
+                           .Select(or => or.CustomerId)
+                           .FirstOrDefault();
         }
     }
 }

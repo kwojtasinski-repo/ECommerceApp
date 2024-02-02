@@ -42,7 +42,7 @@ namespace ECommerceApp.Application.Services.Orders
             }
             else
             {
-                throw new BusinessException("Given invalid orderItem");
+                throw new BusinessException($"Check if your position with id '{model.Id}' with item with id '{model.ItemId}' is in cart", "positionNotFoundInCart", new Dictionary<string, string> { { "id", $"{model.Id}" }, { "itemId", $"{model.ItemId}" });
             }
             return id;
         }
@@ -97,7 +97,7 @@ namespace ECommerceApp.Application.Services.Orders
                 throw new BusinessException($"{typeof(OrderItemDto).Name} cannot be null");
             }
 
-            var orderItem = _orderItemRepository.GetOrderItemById(model.Id) ?? throw new BusinessException($"OrderItem with id '{model.Id}' was not found");
+            var orderItem = _orderItemRepository.GetOrderItemById(model.Id) ?? throw new BusinessException($"OrderItem with id '{model.Id}' was not found", "positionInCartNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
             orderItem.ItemOrderQuantity = model.ItemOrderQuantity;
             if (model.OrderId.HasValue)
             {

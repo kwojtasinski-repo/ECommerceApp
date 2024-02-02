@@ -8,12 +8,9 @@ using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.Services.Payments;
-using ECommerceApp.Application.ViewModels.Coupon;
-using ECommerceApp.Application.ViewModels.Customer;
 using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -88,7 +85,7 @@ namespace ECommerceApp.Application.Services.Orders
         public void DeleteRefundFromOrder(int refundId)
         {
             var order = _orderRepository.GetOrderByRefundId(refundId)
-                   ?? throw new BusinessException($"Refund with id '{refundId}' was not assigned to any order");
+                   ?? throw new BusinessException($"Refund with id '{refundId}' was not assigned to any order", "refundNotAssignedToAnyOrder", new Dictionary<string, string> { { "id", $"{refundId}" } });
 
             order.RefundId = null;
             foreach (var oi in order.OrderItems)
@@ -102,10 +99,10 @@ namespace ECommerceApp.Application.Services.Orders
         public void DeleteCouponUsedFromOrder(int orderId, int couponUsedId)
         {
             var order = _orderRepository.GetOrderById(orderId)
-                ?? throw new BusinessException("Given invalid id");
+                ?? throw new BusinessException($"Order with id '{orderId}' was not found", "orderNotFound", new Dictionary<string, string> { { "id", $"{orderId}"} });
             if (order.IsPaid)
             {
-                throw new BusinessException("Cannot delete coupon when order is paid");
+                throw new BusinessException("Cannot delete coupon when order is paid", "cannotDeleteCouponFromPaidOrder");
             }
 
             order.CouponUsedId = null;
@@ -115,7 +112,7 @@ namespace ECommerceApp.Application.Services.Orders
             }
 
             var coupon = _couponService.GetByCouponUsed(couponUsedId)
-                ?? throw new BusinessException("Given invalid couponUsedId");
+                ?? throw new BusinessException($"Coupon with id '{couponUsedId}' connected with order was not found", "couponConnectWithOrderNotFound", new Dictionary<string, string> { { "id", $"{couponUsedId}"} });
             order.Cost /= (1 - (decimal)coupon.Discount / 100);
             _orderRepository.UpdatedOrder(order);
         }
@@ -158,14 +155,14 @@ namespace ECommerceApp.Application.Services.Orders
         public void AddCouponUsedToOrder(int orderId, int couponUsedId)
         {
             var order = _orderRepository.GetOrderById(orderId)
-                ?? throw new BusinessException("Cannot add coupon if order not exists");
+                ?? throw new BusinessException("Cannot add coupon if order not exists", "orderNotExistsWhileAddCoupon");
             
             var coupon = _couponService.GetByCouponUsed(couponUsedId)
-                ?? throw new BusinessException("Given invalid couponUsedId");
+                ?? throw new BusinessException($"Coupon used with id '{couponUsedId}' was not found", "couponUsedNotFound", new Dictionary<string, string> { { "id", $"{couponUsedId}"} });
 
             if (order.IsPaid)
             {
-                throw new BusinessException("Cannot add coupon to paid order");
+                throw new BusinessException("Cannot add coupon to paid order", "addCouponToPaidOrderNotAllowed");
             }
 
            order.Cost = (1 - (decimal)coupon.Discount / 100) * order.Cost;
@@ -188,7 +185,7 @@ namespace ECommerceApp.Application.Services.Orders
                 throw new BusinessException($"{typeof(NewOrderVm).Name} cannot be null");
             }
 
-            var coupon = _couponService.GetCoupon(couponId) ?? throw new BusinessException($"Coupon with id {couponId} doesnt exists");
+            var coupon = _couponService.GetCoupon(couponId) ?? throw new BusinessException($"Coupon with id {couponId} doesnt exists", "couponWasNotFound", new Dictionary<string, string> { { "id", $"{couponId}"} });
             var couponUsed = new CouponUsed()
             {
                 Id = 0,
@@ -310,7 +307,7 @@ namespace ECommerceApp.Application.Services.Orders
         public void AddRefundToOrder(int orderId, int refundId)
         {
             var order = _orderRepository.GetOrderPaidAndDeliveredById(orderId)
-                ?? throw new BusinessException($"Order with id {orderId} not exists");
+                ?? throw new BusinessException($"Order with id {orderId} not exists", "orderNotFound", new Dictionary<string, string> { { "id", $"{orderId}"} });
             order.RefundId = refundId;
             foreach (var oi in order.OrderItems)
             {
@@ -339,8 +336,8 @@ namespace ECommerceApp.Application.Services.Orders
 
         public void DispatchOrder(int orderId)
         {
-            var order = _orderRepository.GetAllOrders().Where(o => o.Id == orderId).FirstOrDefault(o => o.IsDelivered == false && o.IsPaid == true)
-                ?? throw new BusinessException($"Order with id {orderId} not found, check your order if is not delivered and is paid");
+            var order = _orderRepository.GetOrderPaidAndNotDelivered(orderId)
+                ?? throw new BusinessException($"Order with id {orderId} not found, check your order if is not delivered and is paid", "orderNotFoundCheckIfPaidDelivered", new Dictionary<string, string> { { "id", $"{orderId}" } });
             order.IsDelivered = true;
             order.Delivered = DateTime.Now;
             _orderRepository.UpdatedOrder(order);
@@ -421,18 +418,18 @@ namespace ECommerceApp.Application.Services.Orders
             }
 
             var order = _orderRepository.GetOrderDetailsById(dto.Id)
-                ?? throw new BusinessException($"Order with id '{dto.Id}' was not found");
+                ?? throw new BusinessException($"Order with id '{dto.Id}' was not found", "orderNotFound", new Dictionary<string, string> { { "id", $"{dto.Id}" } });
 
             if (!string.IsNullOrWhiteSpace(dto.PromoCode) && !_couponService.ExistsByCode(dto.PromoCode))
             {
-                throw new BusinessException($"Coupon code '{dto.PromoCode}' was not found");
+                throw new BusinessException($"Coupon code '{dto.PromoCode}' was not found", "couponWithCodeNotFound", new Dictionary<string, string> { { "code", dto.PromoCode } });
             }
 
             var customer = _customerService.GetCustomer(dto.CustomerId)
-                ?? throw new BusinessException($"Customer with id '{dto.CustomerId}' was not found");
+                ?? throw new BusinessException($"Customer with id '{dto.CustomerId}' was not found", "customerNotFound", new Dictionary<string, string> { { "id", $"{dto.CustomerId}"} });
             if (dto.CouponUsedId.HasValue && dto.CouponUsedId.Value != order.CouponUsedId)
             {
-                throw new BusinessException($"Cannot assign existed coupon with id '{dto.CouponUsedId}'");
+                throw new BusinessException($"Cannot assign existed coupon with id '{dto.CouponUsedId}'", "existedCouponAssignNotAllowed", new Dictionary<string, string> { { "id", $"{dto.CouponUsedId}" } });
             }
 
             UpdateOrderFields(order, dto);
@@ -486,7 +483,7 @@ namespace ECommerceApp.Application.Services.Orders
             var dto = model.AsDto();
             if (!_customerService.ExistsById(dto.CustomerId))
             {
-                throw new BusinessException($"Customer with id '{dto.CustomerId}' was not found");
+                throw new BusinessException($"Customer with id '{dto.CustomerId}' was not found", "customerNotFound", new Dictionary<string, string> { { "id", $"{dto.CustomerId}" } });
             }
 
             dto.CurrencyId = CurrencyConstants.PlnId;
@@ -624,6 +621,11 @@ namespace ECommerceApp.Application.Services.Orders
                 _orderItemRepository.AddOrderItem(orderItem);
                 order.OrderItems.Add(orderItem);
             }
+        }
+
+        public int GetCustomerFromOrder(int orderId)
+        {
+            return _orderRepository.GetCustomerFromOrder(orderId);
         }
     }
 }

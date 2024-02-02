@@ -139,9 +139,9 @@ namespace ECommerceApp.Application.Services.Items
             }
 
             var brand = _brandRepository.GetBrandById(dto.BrandId)
-                ?? throw new BusinessException($"Brand with id '{dto.BrandId}' was not found");
+                ?? throw new BusinessException($"Brand with id '{dto.BrandId}' was not found", "brandNotFound", new Dictionary<string, string> { { "id", $"{dto.BrandId}"} });
             var type = _typeRepository.GetTypeById(dto.TypeId)
-                ?? throw new BusinessException($"Type with id '{dto.TypeId}' was not found");
+                ?? throw new BusinessException($"Type with id '{dto.TypeId}' was not found", "typeNotFound", new Dictionary<string, string> { { "id", $"{dto.TypeId}"} });
             var currency = _currencyRepository.GetById(CurrencyConstants.PlnId);
             var item = new Item
             {
@@ -176,7 +176,7 @@ namespace ECommerceApp.Application.Services.Items
             }
 
             var item = _itemRepository.GetItemDetailsById(dto.Id)
-                ?? throw new BusinessException($"Item with id '{dto.Id}' was not found");
+                ?? throw new BusinessException($"Item with id '{dto.Id}' was not found", "itemNotFound", new Dictionary<string, string> { { "id", $"{dto.Id}" } });
             var tags = _tagRepository.GetTagsByIds(dto.TagsId);
             var errors = new StringBuilder(ValidTags(tags, dto.TagsId));
             errors.Append(_imageService.ValidBase64File(dto.Images?.Select(i =>
@@ -189,9 +189,9 @@ namespace ECommerceApp.Application.Services.Items
             }
 
             var brand = _brandRepository.GetBrandById(dto.BrandId)
-                ?? throw new BusinessException($"Brand with id '{dto.BrandId}' was not found");
+                ?? throw new BusinessException($"Brand with id '{dto.BrandId}' was not found", "brandNotFound", new Dictionary<string, string> { { "id", $"{dto.BrandId}" } });
             var type = _typeRepository.GetTypeById(dto.TypeId)
-                ?? throw new BusinessException($"Type with id '{dto.TypeId}' was not found");
+                ?? throw new BusinessException($"Type with id '{dto.TypeId}' was not found", "typeNotFound", new Dictionary<string, string> { { "id", $"{dto.TypeId}" } });
             var currency = _currencyRepository.GetById(CurrencyConstants.PlnId);
 
             item.Cost = dto.Cost;

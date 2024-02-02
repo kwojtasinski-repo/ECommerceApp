@@ -62,7 +62,7 @@ namespace ECommerceApp.Application.Services.ContactDetails
             }
 
             var entity = _contactDetailTypeRepository.GetContactDetailTypeById(model.Id)
-                ?? throw new BusinessException($"Contact detail with id '{model.Id}' was not found");
+                ?? throw new BusinessException($"Contact detail type with id '{model.Id}' was not found", "contactDetailTypeNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
             entity.Name = model.Name;
             _contactDetailTypeRepository.UpdateContactDetailType(entity);
         }

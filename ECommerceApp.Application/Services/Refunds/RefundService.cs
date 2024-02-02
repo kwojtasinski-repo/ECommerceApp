@@ -5,10 +5,8 @@ using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.ViewModels.Refund;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ECommerceApp.Application.Services.Refunds
 {
@@ -38,12 +36,12 @@ namespace ECommerceApp.Application.Services.Refunds
                 refundVm.RefundDate = DateTime.Now;
             }
 
-            if (refundVm.CustomerId == 0)
+            if (refundVm.CustomerId == default)
             {
-                var customerId = _orderService.GetAllOrders().Where(o => o.Id == refundVm.OrderId).Select(or => or.CustomerId).FirstOrDefault();
-                if (customerId == 0)
+                var customerId = _orderService.GetCustomerFromOrder(refundVm.OrderId);
+                if (customerId == default)
                 {
-                    throw new BusinessException($"There is no order with id = {refundVm.OrderId}");
+                    throw new BusinessException($"There is no customer that is related with order with id = {refundVm.OrderId}", "customerNotRelatedWithOrder", new Dictionary<string, string> { { "id", $"{refundVm.OrderId}" } });
                 }
                 refundVm.CustomerId = customerId;
             }
@@ -68,7 +66,7 @@ namespace ECommerceApp.Application.Services.Refunds
 
         public RefundDetailsVm GetRefundDetails(int id)
         {
-            var refund = _repo.GetAll().Include(oi => oi.OrderItems).ThenInclude(i => i.Item).Where(r => r.Id == id).FirstOrDefault();
+            var refund = _repo.GetDetailsById(id);
             var refundVm = _mapper.Map<RefundDetailsVm>(refund);
             return refundVm;
         }

@@ -27,5 +27,6 @@ namespace ECommerceApp.Domain.Interface
         int GetCountPaidOrdersBySearchString(string searchString);
         bool ExistsByIdAndUserId(int id, string userId);
         bool ExistsByCustomerIdAndUserId(int customerId, string userId);
+        Order GetOrderPaidAndNotDelivered(int orderId);
     }
 }

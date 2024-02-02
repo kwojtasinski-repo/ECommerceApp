@@ -28,7 +28,7 @@ namespace ECommerceApp.Application.Services.Currencies
 
             if (string.IsNullOrWhiteSpace(dto.Code))
             {
-                throw new BusinessException("Code shouldnt be empty");
+                throw new BusinessException("Code shouldnt be empty", "currencyCodeEmpty");
             }
 
             dto.Code = dto.Code.ToUpper();
@@ -46,12 +46,12 @@ namespace ECommerceApp.Application.Services.Currencies
 
             if (string.IsNullOrWhiteSpace(dto.Code))
             {
-                throw new BusinessException("Code shouldnt be empty");
+                throw new BusinessException("Code shouldnt be empty", "currencyCodeEmpty");
             }
 
             dto.Code = dto.Code.ToUpper();
             var currency = _currencyRepository.GetById(dto.Id)
-                ?? throw new BusinessException($"Currency with id '{dto.Id}' not found");
+                ?? throw new BusinessException($"Currency with id '{dto.Id}' not found", "currencyNotFound", new Dictionary<string, string> { { "id", $"{dto.Id}" } });
             currency.Code = dto.Code;
             currency.Description = dto.Description;
             _currencyRepository.Update(currency);
@@ -103,7 +103,7 @@ namespace ECommerceApp.Application.Services.Currencies
         public void Delete(int id)
         {
             var currency = _currencyRepository.GetById(id)
-                ?? throw new BusinessException($"Currency with id '{id}' was not found");
+                ?? throw new BusinessException($"Currency with id '{id}' was not found", "currencyNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
             _currencyRepository.Delete(currency);
         }
     }

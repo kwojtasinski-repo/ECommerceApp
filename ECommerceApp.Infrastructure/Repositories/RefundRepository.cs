@@ -63,6 +63,15 @@ namespace ECommerceApp.Infrastructure.Repositories
                            .Count();
         }
 
+        public Refund GetDetailsById(int id)
+        {
+            return _context.Refunds
+                           .Include(oi => oi.OrderItems)
+                           .ThenInclude(i => i.Item)
+                           .Where(r => r.Id == id)
+                           .FirstOrDefault();
+        }
+
         public Refund GetRefundById(int refundId)
         {
             var refund = _context.Refunds.Where(p => p.Id == refundId).FirstOrDefault();

@@ -30,5 +30,6 @@ namespace ECommerceApp.Application.Services.Orders
         NewOrderVm GetOrderSummaryById(int id);
         NewOrderVm BuildVmForEdit(int orderId);
         OrderDetailsVm UpdateOrder(UpdateOrderDto dto);
+        int GetCustomerFromOrder(int orderId);
     }
 }

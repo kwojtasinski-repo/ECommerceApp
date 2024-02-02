@@ -13,5 +13,6 @@ namespace ECommerceApp.Domain.Interface
         void UpdateRefund(Refund refund);
         bool ExistsByReason(string reasonRefund);
         int GetCountBySearchString(string searchString);
+        Refund GetDetailsById(int id);
     }
 }

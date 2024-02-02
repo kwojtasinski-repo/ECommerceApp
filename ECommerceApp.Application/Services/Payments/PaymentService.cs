@@ -7,7 +7,6 @@ using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
-using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -40,7 +39,7 @@ namespace ECommerceApp.Application.Services.Payments
                 throw new BusinessException($"{typeof(AddPaymentDto).Name} cannot be null");
             }
             var order = _orderRepository.GetOrderById(model.OrderId) ??
-                throw new BusinessException($"Order with id '{model.OrderId}' was not found");
+                throw new BusinessException($"Order with id '{model.OrderId}' was not found", "orderNotFound", new Dictionary<string, string> { { "id", $"{model.OrderId}" } });
             var paymentId = _paymentHandler.CreatePayment(model, order);
             order.IsPaid = true;
             order.PaymentId = paymentId;
@@ -56,7 +55,7 @@ namespace ECommerceApp.Application.Services.Payments
             }
 
             var order = _orderRepository.GetOrderById(model.OrderId) ??
-                throw new BusinessException($"Order with id '{model.OrderId}' was not found");
+                throw new BusinessException($"Order with id '{model.OrderId}' was not found", "orderNotFound", new Dictionary<string, string> { { "id", $"{model.OrderId}" } });
             var paymentId = _paymentHandler.PayIssuedPayment(model, order);
             _orderRepository.UpdatedOrder(order);
             return paymentId;
@@ -65,8 +64,13 @@ namespace ECommerceApp.Application.Services.Payments
         public bool DeletePayment(int id)
         {
             var payment = _repo.GetPaymentById(id);
+            if (payment is null)
+            {
+                return false;
+            }
+
             var order = _orderRepository.GetOrderById(payment.OrderId) ??
-                throw new BusinessException($"Order with id '{payment.OrderId}' was not found");
+                throw new BusinessException($"Order with id '{payment.OrderId}' was not found", "orderNotFound", new Dictionary<string, string> { { "id", $"{payment.OrderId}" } });
             order.IsPaid = false;
             order.PaymentId = null;
             _orderRepository.UpdatedOrder(order);

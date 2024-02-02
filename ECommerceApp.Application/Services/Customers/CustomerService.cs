@@ -163,7 +163,7 @@ namespace ECommerceApp.Application.Services.Customers
             }
 
             var customer = _customerRepository.GetById(model.Id)
-                ?? throw new BusinessException($"Customer with id '{model.Id}' was not found");
+                ?? throw new BusinessException($"Customer with id '{model.Id}' was not found", "customerNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
             customer.FirstName = model.FirstName;
             customer.LastName = model.LastName;
             customer.IsCompany = model.IsCompany;
