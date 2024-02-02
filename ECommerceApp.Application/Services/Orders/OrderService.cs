@@ -112,7 +112,12 @@ namespace ECommerceApp.Application.Services.Orders
             }
 
             var coupon = _couponService.GetByCouponUsed(couponUsedId)
-                ?? throw new BusinessException($"Coupon with id '{couponUsedId}' connected with order was not found", "couponConnectWithOrderNotFound", new Dictionary<string, string> { { "id", $"{couponUsedId}"} });
+                ?? throw new BusinessException($"Coupon with id '{couponUsedId}' was not found", "couponUsedNotFound", new Dictionary<string, string> { { "id", $"{couponUsedId}" } });
+            if (coupon.Id != order.CouponUsedId)
+            {
+                throw new BusinessException($"Coupon with id '{couponUsedId}' connected with order with id '{order.Id}' was not found", "couponConnectWithOrderNotFound", new Dictionary<string, string> { { "id", $"{couponUsedId}" }, { "orderId", $"{order.Id}" } });
+            }
+
             order.Cost /= (1 - (decimal)coupon.Discount / 100);
             _orderRepository.UpdatedOrder(order);
         }

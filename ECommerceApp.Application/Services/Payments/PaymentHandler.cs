@@ -98,7 +98,7 @@ namespace ECommerceApp.Application.Services.Payments
 
             if (dto.Id.HasValue && order.PaymentId.HasValue && dto.Id != order.PaymentId)
             {
-                throw new BusinessException("Overriding payment id on order is not allowed", "changePaymentOnNotAllowed");
+                throw new BusinessException("Overriding payment id on order is not allowed", "changePaymentOnOrderNotAllowed");
             }
 
             CreatePayment(new AddPaymentDto

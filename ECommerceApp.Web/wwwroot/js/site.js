@@ -748,10 +748,43 @@ const errors = (function () {
         addressDeletePolicy: 'Nie możesz usunąć adresu, jeśli masz tylko 1',
         addressNotFound: 'Nie znaleziono adres o id {id}',
         contactDetailDeletePolicy: 'Nie możesz usunąć informacji kontaktowych, jeśli masz tylko 1',
-        contactDetailNotFound: 'Nie znaleziono danych kontaktowych o id {id}'
+        contactDetailNotFound: 'Nie znaleziono danych kontaktowych o id {id}',
+        customerNotExists: 'Dane kontaktowe nie istnieją, sprawdź czy używasz poprawnych',
+        contactDetailTypeNotFound: 'Nie znaleziono typu danych kontaktowych o id {id}',
+        couponNotFoundByPromo: 'Kupon o nazwie {promoCode} nie został znaleziony',
+        couponWasAssigned: 'Kupon został już przypisany',
+        couponCannotBeDeleted: 'Nie można usunąć użytego kuponu o id {id}',
+        couponInvalidDiscount: 'Obniżka jest niepoprawna. Wartość powinna być w przedziale od 1 do 99',
+        couponCodeAlreadyExists: 'Kupon o naziwe {code} już istnieje',
+        currencyCodeEmpty: 'Kod waluty nie może być pusty',
+        cannotDeleteCouponFromPaidOrder: 'Nie można usunąć kupon z zapłaconego zamówienia',
+        orderNotExistsWhileAddCoupon: 'Nie można dodać kupon do nieistniejącego zamówienia',
+        addCouponToPaidOrderNotAllowed: 'Nie można dodać kuponu do zapłaconego zamówienia',
+        changePaymentOnOrderNotAllowed: 'Nie można zmienić płatności na zamówieniu, na początek odepnij aktualną płatność a potem dodaj nową',
+        currencyNotFound: 'Nie znaleziono waluty o id {id}',
+        customerNotFound: 'Nie znaleziono danych o id {id}',
+        brandNotFound: 'Nie znaleziono firmy o id {id}',
+        typeNotFound: 'Nie znaleziono typu o id {id}',
+        itemNotFound: 'Nie znaleziono przedmiotu o id {id}',
+        positionNotFoundInCart: 'Sprawdź czy pozycja o id {id} jest w koszyku',
+        positionInCartNotFound: 'Pozycja o id {id} nie została znaleziona',
+        refundNotAssignedToAnyOrder: 'Zwrot o id {id} nie został przypisany do jakiegokolwiek zamówienia',
+        orderNotFound: 'Zamówienie o id {id} nie zostało znalezione',
+        couponUsedNotFound: 'Kupon użyty o id {id} nie został znaleziony',
+        couponConnectWithOrderNotFound: 'Kupon użyty o id {id} połączony z zamówieniem o id {orderId} nie został znaleziony',
+        couponWasNotFound: 'Kupon o id {id} nie został znaleziony',
+        orderNotFoundCheckIfPaidDelivered: 'Opłacone zamówienie o id {id} nie zostało znalezione, sprawdź czy zostało lub czy nie zostało już dostarczone',
+        couponWithCodeNotFound: 'Kupon z kodem {code} nie został znaleziony',
+        existedCouponAssignNotAllowed: 'Nie można przypisać użyty kupon o id {id}',
+        orderAlreadyPaid: 'Zamówienie o id {id} zostało już opłacone',
+        payForOrderPaymentNotAllowed: 'Nie można zapłacić za już zapłacone zamówienie o id {id}',
+        assignExistedPaymentNotAllowed: 'Nie można przypisać istniejącą już płatność o id {id}',
+        paymentAlreadyPaid: 'Płatność o id {id} została już opłacona',
+        paymentNotFound: 'Nie znaleziono płatności o id {id}',
+        customerNotRelatedWithOrder: 'Żadne dane kontaktowe nie zostały powiązane z zamówieniem o id {id}',
+        userNotFound: 'Użytkownik o id {id} nie został znaleziony'
     }
-
-
+    
     function containsParams(value) {
         return /[^{[]+(?=\})/.test(value);
     }
