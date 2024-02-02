@@ -77,7 +77,7 @@ namespace ECommerceApp.UnitTests.Services.Refund
             var orderId = 1;
             var refund = CreateRefundVm(id, customerId, orderId);
             var order = CreateOrder(orderId);
-            _orderService.Setup(o => o.GetAllOrders()).Returns(new List<OrderForListVm>() { order });
+            _orderService.Setup(o => o.GetCustomerFromOrder(orderId)).Returns(order.CustomerId);
             var refundService = new RefundService(_refundRepository.Object, _mapper, _orderService.Object);
 
             refundService.AddRefund(refund);

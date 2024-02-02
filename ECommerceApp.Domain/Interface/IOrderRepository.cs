@@ -28,5 +28,6 @@ namespace ECommerceApp.Domain.Interface
         bool ExistsByIdAndUserId(int id, string userId);
         bool ExistsByCustomerIdAndUserId(int customerId, string userId);
         Order GetOrderPaidAndNotDelivered(int orderId);
+        int GetCustomerFromOrder(int orderId);
     }
 }

@@ -83,7 +83,7 @@ namespace ECommerceApp.Application.Services.Users
         public async Task<IList<string>> GetRolesByUser(string id)
         {
             var user = await _userManager.FindByIdAsync(id)
-                ?? throw new BusinessException($"User with id '{id}' was not found", "userNotFound", new Dictionary<string, string> { { "id", id });
+                ?? throw new BusinessException($"User with id '{id}' was not found", "userNotFound", new Dictionary<string, string> { { "id", id } });
             return (await _userManager.GetRolesAsync(user)) ?? new List<string>();
         }
 

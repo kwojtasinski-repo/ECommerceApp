@@ -122,6 +122,7 @@ namespace ECommerceApp.Infrastructure.Repositories
             _context.Entry(order).Property("Ordered").IsModified = true;
             _context.Entry(order).Property("Delivered").IsModified = true;
             _context.Entry(order).Property("IsDelivered").IsModified = true;
+            _context.Entry(order).Property("CouponUsedId").IsModified = true;
             _context.Entry(order).Property("RefundId").IsModified = true;
             _context.Entry(order).Property("PaymentId").IsModified = true;
             _context.Entry(order).Property("IsPaid").IsModified = true;

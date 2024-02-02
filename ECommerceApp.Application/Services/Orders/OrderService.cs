@@ -105,17 +105,17 @@ namespace ECommerceApp.Application.Services.Orders
                 throw new BusinessException("Cannot delete coupon when order is paid", "cannotDeleteCouponFromPaidOrder");
             }
 
+            var coupon = _couponService.GetByCouponUsed(couponUsedId)
+                ?? throw new BusinessException($"Coupon with id '{couponUsedId}' was not found", "couponNotFound", new Dictionary<string, string> { { "id", $"{couponUsedId}" } });
+            if (coupon.CouponUsedId != order.CouponUsedId)
+            {
+                throw new BusinessException($"Coupon with id '{couponUsedId}' connected with order with id '{order.Id}' was not found", "couponConnectWithOrderNotFound", new Dictionary<string, string> { { "id", $"{couponUsedId}" }, { "orderId", $"{order.Id}" } });
+            }
+
             order.CouponUsedId = null;
             foreach (var orderItem in order.OrderItems)
             {
                 orderItem.CouponUsedId = null;
-            }
-
-            var coupon = _couponService.GetByCouponUsed(couponUsedId)
-                ?? throw new BusinessException($"Coupon with id '{couponUsedId}' was not found", "couponUsedNotFound", new Dictionary<string, string> { { "id", $"{couponUsedId}" } });
-            if (coupon.Id != order.CouponUsedId)
-            {
-                throw new BusinessException($"Coupon with id '{couponUsedId}' connected with order with id '{order.Id}' was not found", "couponConnectWithOrderNotFound", new Dictionary<string, string> { { "id", $"{couponUsedId}" }, { "orderId", $"{order.Id}" } });
             }
 
             order.Cost /= (1 - (decimal)coupon.Discount / 100);
@@ -190,7 +190,7 @@ namespace ECommerceApp.Application.Services.Orders
                 throw new BusinessException($"{typeof(NewOrderVm).Name} cannot be null");
             }
 
-            var coupon = _couponService.GetCoupon(couponId) ?? throw new BusinessException($"Coupon with id {couponId} doesnt exists", "couponWasNotFound", new Dictionary<string, string> { { "id", $"{couponId}"} });
+            var coupon = _couponService.GetCoupon(couponId) ?? throw new BusinessException($"Coupon with id {couponId} doesnt exists", "couponNotFound", new Dictionary<string, string> { { "id", $"{couponId}"} });
             var couponUsed = new CouponUsed()
             {
                 Id = 0,

@@ -49,7 +49,7 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
 
             Action action = () => orderItemService.AddOrderItem(orderItem);
 
-            action.Should().Throw<BusinessException>().WithMessage("Given invalid orderItem");
+            action.Should().Throw<BusinessException>().WithMessage($"Check if your position with id '{orderItem.Id}' with item with id '{orderItem.ItemId}' is in cart");
         }
 
         [Fact]

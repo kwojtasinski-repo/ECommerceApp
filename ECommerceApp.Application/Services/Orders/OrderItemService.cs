@@ -42,7 +42,7 @@ namespace ECommerceApp.Application.Services.Orders
             }
             else
             {
-                throw new BusinessException($"Check if your position with id '{model.Id}' with item with id '{model.ItemId}' is in cart", "positionNotFoundInCart", new Dictionary<string, string> { { "id", $"{model.Id}" }, { "itemId", $"{model.ItemId}" });
+                throw new BusinessException($"Check if your position with id '{model.Id}' with item with id '{model.ItemId}' is in cart", "positionNotFoundInCart", new Dictionary<string, string> { { "id", $"{model.Id}" }, { "itemId", $"{model.ItemId}" } });
             }
             return id;
         }

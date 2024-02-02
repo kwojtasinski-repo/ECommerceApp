@@ -772,7 +772,7 @@ const errors = (function () {
         orderNotFound: 'Zamówienie o id {id} nie zostało znalezione',
         couponUsedNotFound: 'Kupon użyty o id {id} nie został znaleziony',
         couponConnectWithOrderNotFound: 'Kupon użyty o id {id} połączony z zamówieniem o id {orderId} nie został znaleziony',
-        couponWasNotFound: 'Kupon o id {id} nie został znaleziony',
+        couponNotFound: 'Kupon o id {id} nie został znaleziony',
         orderNotFoundCheckIfPaidDelivered: 'Opłacone zamówienie o id {id} nie zostało znalezione, sprawdź czy zostało lub czy nie zostało już dostarczone',
         couponWithCodeNotFound: 'Kupon z kodem {code} nie został znaleziony',
         existedCouponAssignNotAllowed: 'Nie można przypisać użyty kupon o id {id}',

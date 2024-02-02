@@ -89,7 +89,7 @@ namespace ECommerceApp.Tests.Services.Order
         {
             var order = CreateDefaultOrder();
             order.IsPaid = true;
-            _orderRepository.Setup(o => o.GetAllOrders()).Returns(new List<Domain.Model.Order>() { order });
+            _orderRepository.Setup(o => o.GetOrderPaidAndNotDelivered(order.Id)).Returns(order);
             _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
             var orderService = CreateService();
 
@@ -288,7 +288,7 @@ namespace ECommerceApp.Tests.Services.Order
             _orderRepository.Setup(o => o.GetOrderById(order.Id)).Returns(order);
             _orderRepository.Setup(o => o.UpdatedOrder(It.IsAny<Domain.Model.Order>())).Verifiable();
             var orderService = CreateService();
-            var expectedException = new BusinessException("Given invalid couponUsedId");
+            var expectedException = new BusinessException($"Coupon used with id '{couponUsedId}' was not found");
 
             Action action = () => { orderService.AddCouponUsedToOrder(orderId, couponUsedId); };
 
