@@ -91,7 +91,7 @@ namespace ECommerceApp.IntegrationTests.API
             var code = "TestBrand";
             coupon.Code = code;
 
-            var response = await client.Request("api/coupons")
+            var response = await client.Request($"api/coupons/{coupon.Id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(coupon);
@@ -105,18 +105,18 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_not_existed_coupon_should_return_status_code_conflict()
+        public async Task given_not_existed_coupon_when_update_should_return_status_code_not_found()
         {
             var client = await _factory.GetAuthenticatedClient();
             var id = 223;
             var brand = CreateDefaultCouponVm(id);
 
-            var response = await client.Request("api/coupons")
+            var response = await client.Request($"api/coupons/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(brand);
 
-            response.StatusCode.ShouldBe((int)HttpStatusCode.Conflict);
+            response.StatusCode.ShouldBe((int)HttpStatusCode.NotFound);
         }
 
         [Fact]

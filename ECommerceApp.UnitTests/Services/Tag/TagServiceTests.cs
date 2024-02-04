@@ -69,6 +69,7 @@ namespace ECommerceApp.UnitTests.Services.Tag
         public void given_valid_tag_should_update()
         {
             var tag = CreateTagDto(1);
+            _tagRepository.Setup(t => t.ExistsById(tag.Id)).Returns(true);
             var tagService = new TagService(_tagRepository.Object, _mapper);
             
             tagService.UpdateTag(tag);

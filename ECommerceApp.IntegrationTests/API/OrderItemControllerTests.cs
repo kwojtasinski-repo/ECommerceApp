@@ -105,7 +105,7 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_invalid_order_item_should_return_status_code_conflict()
+        public async Task given_invalid_order_item_when_update_should_return_status_code_not_found()
         {
             var client = await _factory.GetAuthenticatedClient();
             var orderItem = CreateOrderItem(12452);
@@ -114,7 +114,7 @@ namespace ECommerceApp.IntegrationTests.API
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(orderItem);
 
-            response.StatusCode.ShouldBe((int) HttpStatusCode.Conflict);
+            response.StatusCode.ShouldBe((int) HttpStatusCode.NotFound);
         }
 
         [Fact]

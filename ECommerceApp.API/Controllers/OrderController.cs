@@ -57,7 +57,7 @@ namespace ECommerceApp.API.Controllers
         public IActionResult EditOrder(int id, [FromBody] UpdateOrderDto model)
         {
             model.Id = id;
-            return _orderService.UpdateOrder(model) is null
+            return _orderService.UpdateOrder(model) is not null
                 ? Ok()
                 : NotFound();
         }

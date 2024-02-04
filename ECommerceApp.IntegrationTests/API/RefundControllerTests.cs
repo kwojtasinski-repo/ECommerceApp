@@ -4,11 +4,8 @@ using ECommerceApp.IntegrationTests.Common;
 using Flurl.Http;
 using Newtonsoft.Json;
 using Shouldly;
-using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -53,7 +50,7 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_valid_payment_should_add()
+        public async Task given_valid_refund_should_add()
         {
             var client = await _factory.GetAuthenticatedClient();
             var refund = new CreateRefundVm() { OrderId = 5, Reason = "ReasonTest" };
@@ -67,7 +64,7 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_invalid_payment_should_return_status_code_conflict()
+        public async Task given_invalid_refund_should_return_status_code_conflict()
         {
             var client = await _factory.GetAuthenticatedClient();
             var refund = new CreateRefundVm() { Id = 1, OrderId = 5, Reason = "ReasonTest" };
@@ -80,7 +77,7 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_valid_payment_should_update()
+        public async Task given_valid_refund_should_update()
         {
             var client = await _factory.GetAuthenticatedClient();
             var refund = new CreateRefundVm() { OrderId = 5, Reason = "ReasonTest" };
@@ -91,7 +88,7 @@ namespace ECommerceApp.IntegrationTests.API
             string reason = "This is reason";
             refund.Reason = reason;
 
-            var response = await client.Request("api/refunds")
+            var response = await client.Request($"api/refunds/{id}")
                 .PutJsonAsync(refund);
 
             var refundUpdated = await client.Request($"api/refunds/{id}")
@@ -102,16 +99,16 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_invalid_payment_when_update_should_return_status_code_conflict()
+        public async Task given_invalid_refund_when_update_should_return_status_code_not_found()
         {
             var client = await _factory.GetAuthenticatedClient();
             var refund = new CreateRefundVm() { Id = 20423423 };
 
-            var response = await client.Request("api/refunds")
+            var response = await client.Request($"api/refunds/{refund.Id}")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(refund);
 
-            response.StatusCode.ShouldBe((int) HttpStatusCode.Conflict);
+            response.StatusCode.ShouldBe((int) HttpStatusCode.NotFound);
         }
 
         [Fact]

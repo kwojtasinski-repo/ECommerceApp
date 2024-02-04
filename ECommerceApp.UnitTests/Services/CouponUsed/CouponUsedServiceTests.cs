@@ -76,20 +76,21 @@ namespace ECommerceApp.UnitTests.Services.CouponUsed
         }
 
         [Fact]
-        public void given_invalid_coupon_id_should_throw_an_exception()
+        public void given_not_existing_coupon_id_when_delete_should_return_false()
         {
             var couponId = 1;
             var couponUsedService = new CouponUsedService(_couponUsedRepository.Object, _mapper, _orderService.Object, _couponService.Object);
 
-            Action action = () => couponUsedService.DeleteCouponUsed(couponId);
+            var deleted = couponUsedService.DeleteCouponUsed(couponId);
 
-            action.Should().ThrowExactly<BusinessException>().WithMessage("Given invalid id");
+            deleted.Should().BeFalse();
         }
 
         [Fact]
         public void given_valid_coupon_should_update()
         {
             var coupon = CreateCouponUsedVm(1, 1, 1);
+            _couponUsedRepository.Setup(c => c.ExistsById(coupon.Id)).Returns(true);
             var couponUsedService = new CouponUsedService(_couponUsedRepository.Object, _mapper, _orderService.Object, _couponService.Object);
 
             couponUsedService.UpdateCouponUsed(coupon);

@@ -112,7 +112,7 @@ namespace ECommerceApp.Application.Services.Refunds
                 throw new BusinessException($"{typeof(RefundVm).Name} cannot be null");
             }
 
-            if (_repo.ExistsById(refundVm.Id))
+            if (!_repo.ExistsById(refundVm.Id))
             {
                 return false;
             }

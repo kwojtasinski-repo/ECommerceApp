@@ -91,7 +91,7 @@ namespace ECommerceApp.IntegrationTests.API
             var name = "Tag25";
             tag.Name = name;
 
-            var response = await client.Request("api/tags")
+            var response = await client.Request($"api/tags/{id}")
                 .PutJsonAsync(tag);
 
             var tagUpdated = await client.Request($"api/tags/{id}")
@@ -102,16 +102,16 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_invalid_tag_when_update_should_return_status_code_conflict()
+        public async Task given_invalid_tag_when_update_should_return_status_code_not_found()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var tag = new TagDto { Id = 234235 };
+            var tag = new TagDto { Id = 234235, Name = "Testowa" };
 
-            var response = await client.Request("api/tags")
+            var response = await client.Request($"api/tags/{tag.Id}")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(tag);
 
-            response.StatusCode.ShouldBe((int) HttpStatusCode.BadRequest);
+            response.StatusCode.ShouldBe((int) HttpStatusCode.NotFound);
         }
 
         [Fact]

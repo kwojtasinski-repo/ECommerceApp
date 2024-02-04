@@ -91,7 +91,7 @@ namespace ECommerceApp.IntegrationTests.API
             var name = "Type25";
             tag.Name = name;
 
-            var response = await client.Request("api/types")
+            var response = await client.Request($"api/types/{id}")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(tag);
 
@@ -104,12 +104,12 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_invalid_type_when_update_should_return_status_code_conflict()
+        public async Task given_invalid_type_when_update_should_return_status_code_not_found()
         {
             var client = await _factory.GetAuthenticatedClient();
             var tag = new TypeDto { Id = 234235 };
 
-            var response = await client.Request("api/types")
+            var response = await client.Request($"api/types/{tag.Id}")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(tag);
 

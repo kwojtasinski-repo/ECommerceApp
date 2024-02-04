@@ -114,6 +114,7 @@ namespace ECommerceApp.UnitTests.Services.Refund
         public void given_valid_refund_should_update()
         {
             var refund = CreateRefundVm(1, 1, 1);
+            _refundRepository.Setup(r => r.ExistsById(refund.Id)).Returns(true);
             var refundService = new RefundService(_refundRepository.Object, _mapper, _orderService.Object);
 
             refundService.UpdateRefund(refund);

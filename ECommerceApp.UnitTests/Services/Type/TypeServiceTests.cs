@@ -34,9 +34,9 @@ namespace ECommerceApp.UnitTests.Services.Type
         public void given_invalid_type_should_throw_an_exception()
         {
             var type = CreateTypeDto(1);
-            var tagService = new TypeService(_typeRepository.Object, _mapper);
+            var typeService = new TypeService(_typeRepository.Object, _mapper);
 
-            Action action = () => tagService.AddType(type);
+            Action action = () => typeService.AddType(type);
 
             action.Should().ThrowExactly<BusinessException>().WithMessage("When adding object Id should be equals 0");
         }
@@ -55,10 +55,11 @@ namespace ECommerceApp.UnitTests.Services.Type
         [Fact]
         public void given_valid_type_should_update()
         {
-            var tag = CreateTypeDto(1);
+            var type = CreateTypeDto(1);
+            _typeRepository.Setup(t => t.ExistsById(type.Id)).Returns(true);
             var typeService = new TypeService(_typeRepository.Object, _mapper);
 
-            typeService.UpdateType(tag);
+            typeService.UpdateType(type);
 
             _typeRepository.Verify(t => t.UpdateType(It.IsAny<Domain.Model.Type>()), Times.Once);
         }

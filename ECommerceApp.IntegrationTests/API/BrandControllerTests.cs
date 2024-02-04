@@ -92,7 +92,7 @@ namespace ECommerceApp.IntegrationTests.API
                 .GetJsonAsync<BrandDto>();
             brand.Name = name;
 
-            var response = await client.Request("api/brands")
+            var response = await client.Request($"api/brands/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(brand);
@@ -106,18 +106,18 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_not_existed_brand_should_return_status_code_conflict()
+        public async Task given_not_existed_brand_should_return_status_code_not_found()
         {
             var client = await _factory.GetAuthenticatedClient();
             var id = 223;
             var brand = CreateDefaultBrandVm(id);
 
-            var response = await client.Request("api/brands")
+            var response = await client.Request($"api/brands/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(brand);
 
-            response.StatusCode.ShouldBe((int) HttpStatusCode.Conflict);
+            response.StatusCode.ShouldBe((int) HttpStatusCode.NotFound);
         }
 
         [Fact]

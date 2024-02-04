@@ -61,7 +61,7 @@ namespace ECommerceApp.Tests.Services.Item
         }
 
         [Fact]
-        public void given_null_item_when_add_item_dto_show_throw_an_exception()
+        public void given_null_item_when_add_item_dto_should_throw_an_exception()
         {
             var itemService = CreateItemService();
 
@@ -71,7 +71,7 @@ namespace ECommerceApp.Tests.Services.Item
         }
 
         [Fact]
-        public void given_item_with_more_than_5_images_when_add_item_dto_show_throw_an_exception()
+        public void given_item_with_more_than_5_images_when_add_item_dto_should_throw_an_exception()
         {
             var itemService = CreateItemService();
             var dto = new AddItemDto
@@ -94,7 +94,7 @@ namespace ECommerceApp.Tests.Services.Item
         }
 
         [Fact]
-        public void given_item_with_not_existing_tags_when_add_item_dto_show_throw_an_exception()
+        public void given_item_with_not_existing_tags_when_add_item_dto_should_throw_an_exception()
         {
             var itemService = CreateItemService();
             var dto = new AddItemDto
@@ -111,7 +111,7 @@ namespace ECommerceApp.Tests.Services.Item
         }
 
         [Fact]
-        public void given_item_with_invalid_image_base64_format_when_add_item_dto_show_throw_an_exception()
+        public void given_item_with_invalid_image_base64_format_when_add_item_dto_should_throw_an_exception()
         {
             var itemService = CreateItemService();
             var dto = new AddItemDto
@@ -128,7 +128,7 @@ namespace ECommerceApp.Tests.Services.Item
         }
 
         [Fact]
-        public void given_item_with_not_existing_brand_when_add_item_dto_show_throw_an_exception()
+        public void given_item_with_not_existing_brand_when_add_item_dto_should_throw_an_exception()
         {
             var itemService = CreateItemService();
             var dto = new AddItemDto
@@ -142,7 +142,7 @@ namespace ECommerceApp.Tests.Services.Item
         }
 
         [Fact]
-        public void given_item_with_not_existing_type_when_add_item_dto_show_throw_an_exception()
+        public void given_item_with_not_existing_type_when_add_item_dto_should_throw_an_exception()
         {
             var itemService = CreateItemService();
             var dto = new AddItemDto
@@ -204,7 +204,7 @@ namespace ECommerceApp.Tests.Services.Item
         }
 
         [Fact]
-        public void given_item_with_more_than_5_images_when_update_item_dto_show_throw_an_exception()
+        public void given_item_with_more_than_5_images_when_update_item_dto_should_throw_an_exception()
         {
             var itemService = CreateItemService();
             var dto = new UpdateItemDto
@@ -227,7 +227,7 @@ namespace ECommerceApp.Tests.Services.Item
         }
 
         [Fact]
-        public void given_not_existing_item_when_update_item_dto_show_throw_an_exception()
+        public void given_not_existing_item_when_update_item_dto_should_return_false()
         {
             var itemService = CreateItemService();
             var dto = new UpdateItemDto
@@ -235,9 +235,9 @@ namespace ECommerceApp.Tests.Services.Item
                 Id = 100
             };
 
-            var action = () => itemService.UpdateItem(dto);
+            var updated = itemService.UpdateItem(dto);
 
-            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains($"Item with id '{dto.Id}' was not found");
+            updated.Should().BeFalse();
         }
 
         [Fact]

@@ -61,6 +61,7 @@ namespace ECommerceApp.Tests.Services.Coupon
         public void given_valid_coupon_should_update()
         {
             var coupon = CreateCoupon();
+            _couponRepository.Setup(c => c.ExistsById(coupon.Id)).Returns(true);
             var couponService = new CouponService(_couponRepository.Object, _mapper);
 
             couponService.UpdateCoupon(coupon);

@@ -60,7 +60,7 @@ namespace ECommerceApp.IntegrationTests.API
         {
             var client = await _factory.GetAuthenticatedClient();
             var contactDetail = CreateContactDetail(0);
-            var id = await client.Request($"api/contact-details")
+            var id = await client.Request("api/contact-details")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(contactDetail)
@@ -68,7 +68,7 @@ namespace ECommerceApp.IntegrationTests.API
             contactDetail.Id = id;
             contactDetail.ContactDetailInformation = "895423143";
 
-            var response = await client.Request($"api/contact-details")
+            var response = await client.Request($"api/contact-details/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(contactDetail);
@@ -88,7 +88,7 @@ namespace ECommerceApp.IntegrationTests.API
             var client = await _factory.GetAuthenticatedClient();
             var contactDetail = CreateContactDetail(100);
 
-            var response = await client.Request($"api/contact-details")
+            var response = await client.Request($"api/contact-details/{contactDetail.Id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(contactDetail);

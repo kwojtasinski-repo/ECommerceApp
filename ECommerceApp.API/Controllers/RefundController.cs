@@ -48,13 +48,10 @@ namespace ECommerceApp.API.Controllers
             {
                 return Conflict(ModelState);
             }
-            if (!_refundService.RefundExists(model.Id))
-            {
-                return NotFound();
-            }
             var refund = model.MapToNewRefund();
-            _refundService.UpdateRefund(refund);
-            return Ok();
+            return _refundService.UpdateRefund(refund)
+                    ? Ok()
+                    : NotFound();
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]

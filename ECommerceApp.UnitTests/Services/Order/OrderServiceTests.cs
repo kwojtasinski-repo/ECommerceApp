@@ -442,24 +442,25 @@ namespace ECommerceApp.Tests.Services.Order
         }
 
         [Fact]
-        public void given_not_existed_order_when_update_should_throw_exceptio_with_message_not_found()
+        public void given_not_existed_order_when_update_should_return_null()
         {
             var orderService = CreateService();
             var dto = new UpdateOrderDto { Id = 1 };
 
-            Action action = () => orderService.UpdateOrder(dto);
+            var value = orderService.UpdateOrder(dto);
 
-            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains($"Order with id '{dto.Id}' was not found");
+            value.Should().BeNull();
         }
 
         [Fact]
-        public void given_not_existed_customer_when_update_should_throw_exceptio_with_message_not_found()
+        public void given_not_existed_customer_when_update_should_return_null()
         {
             var orderService = CreateService();
             var order = CreateDefaultOrder();
-            var dto = new UpdateOrderDto { Id = order.Id, CustomerId = order.CustomerId };
+            AddOrder(order);
+            var dto = new UpdateOrderDto { Id = order.Id, CustomerId = 13123123 };
 
-            Action action = () => orderService.UpdateOrder(dto);
+            var action = () => orderService.UpdateOrder(dto);
 
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains($"Order with id '{dto.Id}' was not found");
         }

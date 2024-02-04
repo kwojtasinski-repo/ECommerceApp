@@ -105,7 +105,7 @@ namespace ECommerceApp.IntegrationTests.API
             customer.LastName = lastName;
             customer.Id = id;
 
-            response = await client.Request("api/customers")
+            response = await client.Request($"api/customers/{customer.Id}")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(customer);
 
@@ -124,7 +124,7 @@ namespace ECommerceApp.IntegrationTests.API
             var client = await _factory.GetAuthenticatedClient();
             var customer = CreateCustomer(189);
 
-            var response = await client.Request("api/customers")
+            var response = await client.Request($"api/customers/{customer.Id}")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(customer);
 

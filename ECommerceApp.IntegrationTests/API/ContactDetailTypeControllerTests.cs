@@ -92,7 +92,7 @@ namespace ECommerceApp.IntegrationTests.API
                 .GetJsonAsync<ContactDetailTypeDto>();
             contactDetailType.Name = name;
 
-            var response = await client.Request("api/contact-detail-types")
+            var response = await client.Request($"api/contact-detail-types/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(contactDetailType);
@@ -106,18 +106,18 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_not_existed_contact_detail_type_should_return_status_code_conflict()
+        public async Task given_not_existed_contact_detail_type_should_return_status_code_not_found()
         {
             var client = await _factory.GetAuthenticatedClient();
             var id = 223;
             var contactDetailType = CreateDefaultContactDetailTypeVm(id);
 
-            var response = await client.Request("api/contact-detail-types")
+            var response = await client.Request($"api/contact-detail-types/{id}")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PutJsonAsync(contactDetailType);
 
-            response.StatusCode.ShouldBe((int)HttpStatusCode.Conflict);
+            response.StatusCode.ShouldBe((int)HttpStatusCode.NotFound);
         }
 
         [Fact]
