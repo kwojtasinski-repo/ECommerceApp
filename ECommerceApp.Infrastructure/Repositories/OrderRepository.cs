@@ -99,7 +99,7 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public void UpdatedOrder(Order order)
         {
-            var orderItems = order.OrderItems.ToList();
+            var orderItems = order.OrderItems?.ToList() ?? new List<OrderItem>();
             // zabezpieczenie przed "tracking"
             orderItems.ForEach(oi =>
             {
@@ -126,8 +126,11 @@ namespace ECommerceApp.Infrastructure.Repositories
             _context.Entry(order).Property("RefundId").IsModified = true;
             _context.Entry(order).Property("PaymentId").IsModified = true;
             _context.Entry(order).Property("IsPaid").IsModified = true;
-            _context.Entry(order).Collection("OrderItems").IsModified = true;
-            foreach (var orderItem in order.OrderItems)
+            if (order.OrderItems is not null && order.OrderItems.Any())
+            {
+                _context.Entry(order).Collection("OrderItems").IsModified = true;
+            }
+            foreach (var orderItem in order?.OrderItems ?? new List<OrderItem>())
             {
                 if (orderItem.Id == 0)
                 {

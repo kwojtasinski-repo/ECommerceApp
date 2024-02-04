@@ -12,6 +12,7 @@
         <form id="orderForm" asp-action="OrderRealization">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <input type="hidden" asp-for="Order.Id" class="form-control" />
+            <input type="hidden" asp-for="Order.Number" class="form-control" />
             <div class="form-group">
                 <label asp-for="Order.Ordered" class="control-label">Data Zamówienia:</label>
                 <input type="text" asp-for="Order.Ordered" class="form-control" readonly/>
@@ -105,9 +106,8 @@
             </div>
             <div class="form-row">
                 <div class="col-md-6 mb-4">
-                    <label asp-for="Order.Cost" class="control-label">Koszt:</label>
-                    <input id="CostCurrency" asp-for="Order.Cost" class="form-control" value="" readonly />
-                    <span asp-validation-for="Order.Cost" class="text-danger"></span>
+                    <label class="control-label">Koszt:</label>
+                    <input id="CostCurrency" class="form-control" value="" readonly />
                     <input type="hidden" id="Discount" name="Discount" value="" />
                 </div>
                 <div class="col-md-6 mb-2">
@@ -119,6 +119,7 @@
             </div>
             <div class="form-group" style="display:none;">
                 <input id="Cost" asp-for="Order.Cost" class="form-control" readonly />
+                <span asp-validation-for="Order.Cost" class="text-danger"></span>
             </div>
             <div class="form-group">
                 @if (Model.Customers.Count > 0)
@@ -181,11 +182,11 @@
                                     <input id="typeId" type="hidden" asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" class="form-control" value="" />
                                     <div id="ContactDetailType">
                                         <div class="custom-control custom-radio custom-control-inline">
-                                            <input asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" type="radio" id="1" value='{ "i": "1", "v": "PhoneNumber" }' name="ContactDetailType" class="custom-control-input" />
+                                            <input type="radio" id="1" value='{ "i": "1", "v": "PhoneNumber" }' name="ContactDetailType" class="custom-control-input" />
                                             <label class="custom-control-label" for="1">Telefon</label>
                                         </div>
                                         <div class="custom-control custom-radio custom-control-inline">
-                                            <input asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" type="radio" id="2" value='{ "i": "2", "v": "Email" }' name="ContactDetailType" class="custom-control-input" />
+                                            <input type="radio" id="2" value='{ "i": "2", "v": "Email" }' name="ContactDetailType" class="custom-control-input" />
                                             <label class="custom-control-label" for="2">E-mail</label>
                                         </div>
                                     </div>
@@ -201,6 +202,7 @@
                         <br />
                         <div class="form-row">
                             <div class="col-xs-6 w-100" id="Adresses">
+                                <input type="hidden" asp-for="NewCustomer.Addresses[0].Id" class="form-control" />
                                 <div>
                                     <h4>Adres</h4><br />
                                     <div>
@@ -525,9 +527,13 @@
                     value: ''
                 }
             },
-            beforeSubmit: function() {
+            beforeSubmit: function () {
                 const typeId = document.getElementById('typeId');
-                typeId.value = this.customer.contactDetailType.value;
+                typeId.value = this.customer.contactDetailType.value ? this.customer.contactDetailType.value : "0";
+                const customerId = document.getElementById('SelectListCustomer');
+                if (!customerId.value || customerId.value.length == 0) {
+                    customerId.value = "0";
+                }
             }
         }
 
@@ -624,7 +630,7 @@
                 }
                 document.querySelector('#Discount').value = coupon.discount;
                 const cost = calculateCosts();
-                document.getElementById('CostCurrency').value = cost;
+                document.getElementById('CostCurrency').value = format(cost);
                 document.getElementById('Cost').value = Number(cost);
                 couponCode.after(createSuccessCouponText('Pomyślnie dodano kupon. Cena zmniejszona o ' + coupon.discount + '%'));
             } catch (error) {
@@ -673,7 +679,6 @@
                 var number = Number(currency.replace(/[^0-9.-]+/g, "")) * quantity;
                 cost += number * discount;
             }
-            cost = format(cost);
             return cost;
         }
 

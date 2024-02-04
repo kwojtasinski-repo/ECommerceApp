@@ -1,5 +1,6 @@
 ﻿@using ECommerceApp.Application.Permissions;
 @model ECommerceApp.Application.ViewModels.Item.ListForItemVm
+@using ECommerceApp.Application;
 
 @{
     ViewData["Title"] = "Index";
@@ -139,7 +140,8 @@
             try {
                 await ajaxRequest.send("/OrderItem/AddToCart", "POST", JSON.stringify({
                         "ItemId": itemId,
-                        "ItemOrderQuantity": 1
+                        "ItemOrderQuantity": 1,
+                        "UserId": "@User.GetUserId()"
                     }), "application/json");
                 location.reload();
             } catch (error) {

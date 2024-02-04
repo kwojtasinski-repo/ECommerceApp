@@ -307,7 +307,7 @@ namespace ECommerceApp.Application.Services.Items
             var imageCount = _imageRepository.GetCountByItemId(itemId);
             var count = imageCount + imagesToAdd;
 
-            if (count >= ALLOWED_IMAGES_COUNT)
+            if (count > ALLOWED_IMAGES_COUNT)
             {
                 throw new BusinessException($"Cannot add more than {ALLOWED_IMAGES_COUNT} images. There are already '{imagesToAdd}' images for item with id '{itemId}'");
             }

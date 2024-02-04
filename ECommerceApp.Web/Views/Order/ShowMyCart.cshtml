@@ -1,4 +1,5 @@
-﻿@model ECommerceApp.Application.ViewModels.OrderItem.ListForOrderItemVm
+﻿@using ECommerceApp.Application
+@model ECommerceApp.Application.ViewModels.OrderItem.ListForOrderItemVm
 
 @{
     ViewData["Title"] = "ShowMyCard";
@@ -114,7 +115,10 @@ else
     <script>
         async function AddQuantity(id, itemId, quantity) {
             const objectJson = JSON.stringify({
-                "itemOrderQuantity": quantity + 1
+                "id": id,
+                "itemId": itemId,
+                "itemOrderQuantity": quantity + 1,
+                "userId": "@User.GetUserId()"
             })
             await ajaxRequest.send("/OrderItem/UpdateOrderItem/?id=" + id, "PUT", objectJson, "application/json", "json");
             location.reload();
@@ -126,7 +130,10 @@ else
             }
 
             const objectJson = JSON.stringify({
-                "itemOrderQuantity": quantity - 1
+                "id": id,
+                "itemId": itemId,
+                "itemOrderQuantity": quantity - 1,
+                "userId": "@User.GetUserId()"
             })
             await ajaxRequest.send("/OrderItem/UpdateOrderItem/?id=" + id, "PUT", objectJson, "application/json", "json");
             location.reload();

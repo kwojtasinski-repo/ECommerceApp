@@ -166,7 +166,7 @@ namespace ECommerceApp.Web.Controllers
             {
                 var errorModel = BuildErrorModel("orderNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
                 HttpContext.Request.Query = errorModel.AsQueryCollection();
-                return View(new OrderVm());
+                return View(new NewOrderVm());
             }
             return View(order);
         }

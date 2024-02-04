@@ -484,7 +484,6 @@
 
             try {
                 const coupon = await ajaxRequest.send('/Coupon/GetByCode?couponCoude=' + couponCode.value, 'GET');
-                debugger
                 if (!coupon) {
                     const element = createCouponError('Podano nieprawidłowy kupon');
                     couponCode.after(element);
