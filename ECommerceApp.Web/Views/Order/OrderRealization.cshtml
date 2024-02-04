@@ -28,11 +28,6 @@
                     <input class="form-check-input" asp-for="Order.IsDelivered" /> @Html.DisplayNameFor(model => model.Order.IsDelivered)
                 </label>
             </div>
-            <div class="form-group" style="display:none;">
-                <label asp-for="Order.CouponUsedId" class="control-label"></label>
-                <input asp-for="Order.CouponUsedId" class="form-control" />
-                <span asp-validation-for="Order.CouponUsedId" class="text-danger"></span>
-            </div>
             <div class="form-group">
                 <label class="control-label">Użytkownik</label>
                 <input value="@User.Identity.Name" class="form-control" readonly />
@@ -400,6 +395,7 @@
                     controlId: 'NIPInput',
                     rules: [
                         (v) => (!(!orderFormValidator.customer.useExistingData && orderFormValidator.customer.hasCompany)) || (v && v.trim().length > 0) || 'NIP jest wymagany',
+                        (v) => (!(!orderFormValidator.customer.useExistingData && orderFormValidator.customer.hasCompany)) || (v && v.trim().length === 9) || 'NIP wymaga 9 znaków',
                     ],
                     valid: false,
                     value: ''

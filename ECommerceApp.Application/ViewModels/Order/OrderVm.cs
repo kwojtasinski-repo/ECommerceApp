@@ -9,7 +9,7 @@ namespace ECommerceApp.Application.ViewModels.Order
     {
         public OrderDto Order { get; set; }
         public List<CustomerInformationForOrdersVm> Customers { get; set; } = new List<CustomerInformationForOrdersVm>();
-        public CustomerDetailsDto NewCustomer { get; internal set; }
+        public CustomerDetailsDto NewCustomer { get; set; }
         public bool CustomerData { get; set; }
         public string PromoCode { get; set; }
     }
@@ -22,16 +22,6 @@ namespace ECommerceApp.Application.ViewModels.Order
             {
                 RuleFor(c => c.NewCustomer).NotNull().SetValidator(new CustomerDetailsDtoValidator());
             });
-            When(o => o.CustomerData, () =>
-            {
-                RuleFor(c => c.NewCustomer).Null();
-            });
-        }
-
-        public override ValidationResult Validate(ValidationContext<OrderVm> context)
-        {
-            var result = base.Validate(context);
-            return result;
         }
     }
 }
