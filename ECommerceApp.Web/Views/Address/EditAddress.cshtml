@@ -12,7 +12,8 @@
     <div class="col-md-4">
         <form id="addressForm" asp-action="EditAddress">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-                <input type="hidden" asp-for="Id" class="form-control" />
+             <input type="hidden" asp-for="Id" class="form-control" />
+            <input type="hidden" asp-for="Address.Id" class="form-control" />
             <div class="form-group">
                 <label asp-for="Address.Street" class="control-label">Ulica</label>
                 <input id="StreetName" asp-for="Address.Street" class="form-control" />

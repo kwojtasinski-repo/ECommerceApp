@@ -2,6 +2,7 @@
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Permissions;
 using ECommerceApp.Application.ViewModels.ContactDetail;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
@@ -84,7 +85,16 @@ namespace ECommerceApp.Application.Services.ContactDetails
                 throw new BusinessException($"{typeof(ContactDetailVm).Name} cannot be null");
             }
 
-            var contactDetail = _contactDetailRepository.GetContactDetailById(contactDetailDto.Id);
+            ContactDetail contactDetail;
+            if (!UserPermissions.Roles.MaintenanceRoles.Contains(_userContext.Role))
+            {
+                contactDetail = _contactDetailRepository.GetContactDetailById(contactDetailDto.Id, _userContext.UserId);
+            }
+            else
+            {
+                contactDetail = _contactDetailRepository.GetContactDetailById(contactDetailDto.Id);
+            }
+
             if (contactDetail is null)
             {
                 return false;

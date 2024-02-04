@@ -104,7 +104,16 @@ namespace ECommerceApp.Application.Services.Addresses
             }
 
             var userId = _userContext.UserId;
-            var address = _addressRepository.GetAddressById(addressDto.Id ?? 0, userId);
+            Address address;
+            if (!UserPermissions.Roles.MaintenanceRoles.Contains(_userContext.Role))
+            {
+                address = _addressRepository.GetAddressById(addressDto.Id ?? 0, userId);
+            }
+            else
+            {
+                address = _addressRepository.GetAddressById(addressDto.Id ?? 0);
+            }
+
             if (address == null)
             {
                 return false;

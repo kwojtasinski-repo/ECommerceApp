@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Permissions;
 using ECommerceApp.Application.Services.Customers;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
@@ -25,6 +26,7 @@ namespace ECommerceApp.IntegrationTests.Services
         public void given_valid_customer_should_update()
         {
             SetHttpContextUserId(PROPER_CUSTOMER_ID);
+            SetUserRole(UserPermissions.Roles.Administrator);
             var customer = GetSampleCustomer();
             var firstName = "Stanley";
             customer.FirstName = firstName;

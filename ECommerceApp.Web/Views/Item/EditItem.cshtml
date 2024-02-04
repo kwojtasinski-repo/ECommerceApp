@@ -41,12 +41,12 @@
             </div>
             <div class="form-group">
                 <label asp-for="Brand.Id" class="control-label">Firma: </label>
-                <select asp-for="Brand.Id" asp-items="@(new SelectList(ViewBag.ItemBrands,"Id", "Name"))" class="show-tick form-control data-search"></select>
+                <select id="ItemBrand" asp-for="Brand.Id" asp-items="@(new SelectList(ViewBag.ItemBrands,"Id", "Name"))" class="show-tick form-control data-search"></select>
                 <span asp-validation-for="Brand.Id" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <label asp-for="Type.Id" class="control-label">Typ: </label>
-                <select asp-for="Type.Id" asp-items="@(new SelectList(ViewBag.ItemTypes,"Id", "Name"))" class="show-tick form-control data-search"></select>
+                <select id="ItemType" asp-for="Type.Id" asp-items="@(new SelectList(ViewBag.ItemTypes,"Id", "Name"))" class="show-tick form-control data-search"></select>
                 <span asp-validation-for="Type.Id" class="text-danger"></span>
             </div>
             <div class="form-group">
@@ -433,6 +433,24 @@
                 ],
                 valid: false,
                 value: ''
+            },
+            brandId: {
+                controlId: 'ItemBrand',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Firma jest wymagana',
+                    v => v && Number(v) > 0 || 'Firma posiada niepoprawną wartość',
+                ],
+                valid: false,
+                value: ''
+            },
+            typeId: {
+                controlId: 'ItemType',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Typ jest wymagany',
+                    v => v && Number(v) > 0 || 'Typ posiada niepoprawną wartość',
+                ],
+                valid: false,
+                value: ''
             }
         };
 
@@ -442,6 +460,8 @@
             itemFormValidator.description.value = document.getElementById(itemFormValidator.description.controlId).value;
             itemFormValidator.quantity.value = document.getElementById(itemFormValidator.quantity.controlId).value;
             itemFormValidator.warranty.value = document.getElementById(itemFormValidator.warranty.controlId).value;
+            itemFormValidator.brandId.value = document.getElementById(itemFormValidator.brandId.controlId).value;
+            itemFormValidator.typeId.value = document.getElementById(itemFormValidator.typeId.controlId).value;
         }
     </script>
 }

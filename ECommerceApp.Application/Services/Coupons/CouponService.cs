@@ -94,7 +94,7 @@ namespace ECommerceApp.Application.Services.Coupons
                 throw new BusinessException("Discount should be inclusive between 1 and 99", "couponInvalidDiscount");
             }
 
-            if (_repo.ExistsByCode(couponVm.Code))
+            if (_repo.IsUnique(couponVm.Id, couponVm.Code))
             {
                 throw new BusinessException($"Coupon with code '{couponVm.Code}' already exists", "couponCodeAlreadyExists", new Dictionary<string, string> { { "code", couponVm.Code } });
             }

@@ -100,5 +100,12 @@ namespace ECommerceApp.Infrastructure.Repositories
             return _context.Coupons
                            .FirstOrDefault(c => c.Code.ToLower() == promoCode.ToLower());
         }
+
+        public bool IsUnique(int id, string code)
+        {
+            return _context.Coupons
+                           .AsNoTracking()
+                           .Any(c => c.Id != id && c.Code.ToLower() == code.ToLower());
+        }
     }
 }

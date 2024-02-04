@@ -162,6 +162,12 @@ namespace ECommerceApp.Application.Services.Customers
                 throw new BusinessException($"{typeof(CustomerDto).Name} cannot be null");
             }
 
+            if (!UserPermissions.Roles.MaintenanceRoles.Contains(_userContext.Role)
+                && CustomerExists(model.Id, _userContext.UserId))
+            {
+                return;
+            }
+
             var customer = _customerRepository.GetById(model.Id)
                 ?? throw new BusinessException($"Customer with id '{model.Id}' was not found", "customerNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
             customer.FirstName = model.FirstName;
