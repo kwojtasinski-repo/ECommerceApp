@@ -136,7 +136,7 @@ namespace ECommerceApp.Web.Controllers
                     return RedirectToAction("Index", controllerName: "Item");
                 }
 
-                _orderService.UpdateOrder(new UpdateOrderDto
+                if (_orderService.UpdateOrder(new UpdateOrderDto
                 {
                     Id = model.Id,
                     CouponUsedId = model.CouponUsedId,
@@ -148,7 +148,11 @@ namespace ECommerceApp.Web.Controllers
                     OrderItems = model.OrderItems.Select(oi =>
                         new AddOrderItemDto { Id = oi.Id, ItemId = oi.ItemId, ItemOrderQuantity = oi.ItemOrderQuantity }
                    ).ToList(),
-                });
+                }) is null)
+                {
+                    var errorModel = BuildErrorModel("orderNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
+                    return RedirectToAction("Index", controllerName: "Item", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                }
                 return RedirectToAction("AddOrderSummary", new { id = model.Id });
             }
             catch (BusinessException exception)
@@ -231,7 +235,7 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                _orderService.UpdateOrder(new UpdateOrderDto
+                if (_orderService.UpdateOrder(new UpdateOrderDto
                 {
                     Id = model.Id,
                     CouponUsedId = model.CouponUsedId,
@@ -248,7 +252,11 @@ namespace ECommerceApp.Web.Controllers
                     OrderItems = model.OrderItems.Select(oi =>
                         new AddOrderItemDto { Id = oi.Id, ItemId = oi.ItemId, ItemOrderQuantity = oi.ItemOrderQuantity }
                     ).ToList(),
-                });
+                }) is null)
+                {
+                    var errorModel = BuildErrorModel("orderNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
+                    return RedirectToAction("Index", controllerName: "Item", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                }
                 return RedirectToAction("Index");
             }
             catch (BusinessException exception)

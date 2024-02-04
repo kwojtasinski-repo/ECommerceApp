@@ -25,14 +25,16 @@ namespace ECommerceApp.Infrastructure.Repositories
             return orderItem.Id;
         }
 
-        public void DeleteOrderItem(int orderItemId)
+        public bool DeleteOrderItem(int orderItemId)
         {
             var orderItem = _context.OrderItem.Find(orderItemId);
-            if (orderItem != null)
+            if (orderItem is null)
             {
-                _context.OrderItem.Remove(orderItem);
-                _context.SaveChanges();
+                return false;
             }
+
+            _context.OrderItem.Remove(orderItem);
+            return _context.SaveChanges() > 0;
         }
 
         public List<OrderItem> GetAllOrderItems()

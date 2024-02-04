@@ -82,7 +82,11 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                _tagService.UpdateTag(model.Tag);
+                if (!_tagService.UpdateTag(model.Tag))
+                {
+                    var errorModel = BuildErrorModel("tagNotFound", new Dictionary<string, string> { { "id", $"{model.Tag.Id}" } });
+                    return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                }
                 return RedirectToAction("Index");
             }
             catch (BusinessException exception)
@@ -111,8 +115,9 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                _tagService.DeleteTag(id);
-                return Json("deleted");
+                return _tagService.DeleteTag(id)
+                    ? Json("deleted")
+                    : NotFound();
             }
             catch (BusinessException exception)
             {

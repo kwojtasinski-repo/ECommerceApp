@@ -35,16 +35,13 @@ namespace ECommerceApp.API.Controllers
             return _contactDetailTypeService.GetContactDetailTypes().ToList();
         }
 
-        [HttpPut]
-        public IActionResult EditContactDetailType(ContactDetailTypeDto model)
+        [HttpPut("{id:int}")]
+        public IActionResult EditContactDetailType(int id, ContactDetailTypeDto model)
         {
-            var modelExists = _contactDetailTypeService.ContactDetailTypeExists(model.Id);
-            if (!ModelState.IsValid || !modelExists)
-            {
-                return Conflict(ModelState);
-            }
-            _contactDetailTypeService.UpdateContactDetailType(model);
-            return Ok();
+            model.Id = id;
+            return _contactDetailTypeService.UpdateContactDetailType(model)
+                ? Ok()
+                : NotFound();
         }
 
         [HttpPost]

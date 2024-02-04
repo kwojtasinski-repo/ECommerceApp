@@ -4,7 +4,7 @@ namespace ECommerceApp.Domain.Interface
 {
     public interface ITypeRepository
     {
-        void DeleteType(int typeId);
+        bool DeleteType(int typeId);
         int AddType(Model.Type type);
         Model.Type GetTypeById(int typeId);
         Model.Type GetTypeDetailsById(int typeId);

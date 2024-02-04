@@ -9,8 +9,8 @@ namespace ECommerceApp.Application.Services.Coupons
     public interface ICouponService : IAbstractService<CouponVm, ICouponRepository, Coupon>
     {
         int AddCoupon(CouponVm coupon);
-        void UpdateCoupon(CouponVm coupon);
-        void DeleteCoupon(int id);
+        bool UpdateCoupon(CouponVm coupon);
+        bool DeleteCoupon(int id);
         ListForCouponVm GetAllCoupons(int pageSize, int pageNo, string searchString);
         ListForCouponVm GetAllCoupons();
         CouponVm GetCoupon(int id);

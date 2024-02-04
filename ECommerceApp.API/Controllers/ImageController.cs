@@ -55,8 +55,9 @@ namespace ECommerceApp.API.Controllers
         [HttpDelete("{id}")]
         public IActionResult DeleteImage(int id)
         {
-            _service.Delete(id);
-            return Ok();
+            return _service.Delete(id)
+                ? Ok()
+                : NotFound();
         }
     }
 }

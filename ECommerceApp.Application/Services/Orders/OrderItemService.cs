@@ -47,9 +47,9 @@ namespace ECommerceApp.Application.Services.Orders
             return id;
         }
 
-        public void DeleteOrderItem(int id)
+        public bool DeleteOrderItem(int id)
         {
-            _orderItemRepository.DeleteOrderItem(id);
+            return _orderItemRepository.DeleteOrderItem(id);
         }
 
         public OrderItemDto GetOrderItemDetails(int id)
@@ -90,20 +90,26 @@ namespace ECommerceApp.Application.Services.Orders
             return _orderItemRepository.ExistsById(id);
         }
 
-        public void UpdateOrderItem(OrderItemDto model)
+        public bool UpdateOrderItem(OrderItemDto model)
         {
             if (model is null)
             {
                 throw new BusinessException($"{typeof(OrderItemDto).Name} cannot be null");
             }
 
-            var orderItem = _orderItemRepository.GetOrderItemById(model.Id) ?? throw new BusinessException($"OrderItem with id '{model.Id}' was not found", "positionInCartNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
+            var orderItem = _orderItemRepository.GetOrderItemById(model.Id);
+            if (orderItem is null)
+            {
+                return false;
+            }
+
             orderItem.ItemOrderQuantity = model.ItemOrderQuantity;
             if (model.OrderId.HasValue)
             {
                 orderItem.OrderId = model.OrderId.Value;
             }
             _orderItemRepository.UpdateOrderItem(orderItem);
+            return true;
         }
 
         public void UpdateOrderItems(IEnumerable<OrderItemDto> orderItemsVm)

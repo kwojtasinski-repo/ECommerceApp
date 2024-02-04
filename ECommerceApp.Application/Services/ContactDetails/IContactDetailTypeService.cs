@@ -9,6 +9,6 @@ namespace ECommerceApp.Application.Services.ContactDetails
         bool ContactDetailTypeExists(int id);
         int AddContactDetailType(ContactDetailTypeDto model);
         ContactDetailTypeDto GetContactDetailType(int id);
-        void UpdateContactDetailType(ContactDetailTypeDto model);
+        bool UpdateContactDetailType(ContactDetailTypeDto model);
     }
 }

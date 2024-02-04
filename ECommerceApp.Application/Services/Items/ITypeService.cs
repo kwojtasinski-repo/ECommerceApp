@@ -9,10 +9,10 @@ namespace ECommerceApp.Application.Services.Items
         int AddType(TypeDto model);
         TypeDetailsVm GetTypeDetails(int id);
         TypeDto GetTypeById(int id);
-        void UpdateType(TypeDto model);
+        bool UpdateType(TypeDto model);
         IEnumerable<TypeDto> GetTypes();
         ListForTypeVm GetTypes(int pageSize, int pageNo, string searchString);
         bool TypeExists(int id);
-        void DeleteType(int id);
+        bool DeleteType(int id);
     }
 }

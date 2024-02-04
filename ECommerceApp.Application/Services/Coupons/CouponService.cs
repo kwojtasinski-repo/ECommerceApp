@@ -43,9 +43,9 @@ namespace ECommerceApp.Application.Services.Coupons
             return id;
         }
 
-        public void DeleteCoupon(int id)
+        public bool DeleteCoupon(int id)
         {
-            Delete(id);
+            return Delete(id);
         }
 
         public List<CouponVm> GetAll(string searchString)
@@ -82,7 +82,7 @@ namespace ECommerceApp.Application.Services.Coupons
             return couponVm;
         }
 
-        public void UpdateCoupon(CouponVm couponVm)
+        public bool UpdateCoupon(CouponVm couponVm)
         {
             if (couponVm is null)
             {
@@ -94,12 +94,17 @@ namespace ECommerceApp.Application.Services.Coupons
                 throw new BusinessException("Discount should be inclusive between 1 and 99", "couponInvalidDiscount");
             }
 
+            if (!_repo.ExistsById(couponVm.Id))
+            {
+                return false;
+            }
+
             if (_repo.IsUnique(couponVm.Id, couponVm.Code))
             {
                 throw new BusinessException($"Coupon with code '{couponVm.Code}' already exists", "couponCodeAlreadyExists", new Dictionary<string, string> { { "code", couponVm.Code } });
             }
-
             Update(couponVm);
+            return true;
         }
 
         public void DeleteCouponUsed(int couponId, int couponUsedId)

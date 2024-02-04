@@ -40,13 +40,17 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]
-        [HttpPut]
-        public IActionResult EditRefund([FromBody] CreateRefundVm model)
+        [HttpPut("{id:int}")]
+        public IActionResult EditRefund(int id, [FromBody] CreateRefundVm model)
         {
-            var modelExists = _refundService.RefundExists(model.Id);
-            if (!ModelState.IsValid || !modelExists)
+            model.Id = id;
+            if (!ModelState.IsValid)
             {
                 return Conflict(ModelState);
+            }
+            if (!_refundService.RefundExists(model.Id))
+            {
+                return NotFound();
             }
             var refund = model.MapToNewRefund();
             _refundService.UpdateRefund(refund);

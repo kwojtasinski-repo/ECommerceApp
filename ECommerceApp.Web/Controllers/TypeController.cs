@@ -81,7 +81,11 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                _typeService.UpdateType(model.Type);
+                if (!_typeService.UpdateType(model.Type))
+                {
+                    var errorModel = BuildErrorModel("typeNotFound", new Dictionary<string, string> { { "id", $"{model.Type.Id}" } });
+                    return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                }
                 return RedirectToAction("Index");
             }
             catch (BusinessException exception)
@@ -109,8 +113,9 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                _typeService.DeleteType(id);
-                return Json("deleted");
+                return _typeService.DeleteType(id)
+                       ? Json("deleted")
+                       : NotFound();
             }
             catch (BusinessException exception)
             {

@@ -11,11 +11,11 @@ namespace ECommerceApp.Application.Services.Refunds
         int AddRefund(RefundVm refund);
         RefundDetailsVm GetRefundDetails(int id);
         RefundVm GetRefundById(int id);
-        void UpdateRefund(RefundVm refundVm);
+        bool UpdateRefund(RefundVm refundVm);
         IEnumerable<RefundVm> GetRefunds();
         ListForRefundVm GetRefunds(int pageSize, int pageNo, string searchString);
         bool RefundExists(int id);
-        void DeleteRefund(int id);
+        bool DeleteRefund(int id);
         bool SameReasonNotExists(string reasonRefund);
     }
 }

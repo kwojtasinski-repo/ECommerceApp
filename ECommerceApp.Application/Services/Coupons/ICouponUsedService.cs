@@ -9,11 +9,11 @@ namespace ECommerceApp.Application.Services.Coupons
     public interface ICouponUsedService : IAbstractService<CouponUsedVm, ICouponUsedRepository, CouponUsed>
     {
         int AddCouponUsed(CouponUsedVm couponUsedVm);
-        void DeleteCouponUsed(int id);
+        bool DeleteCouponUsed(int id);
         ListForCouponUsedVm GetAllCouponsUsed(int pageSize, int pageNo, string searchString);
         List<CouponUsedVm> GetAllCouponsUsed();
         CouponUsedDetailsVm GetCouponUsedDetail(int id);
         CouponUsedVm GetCouponUsed(int id);
-        void UpdateCouponUsed(CouponUsedVm couponUsedVm);
+        bool UpdateCouponUsed(CouponUsedVm couponUsedVm);
     }
 }

@@ -155,7 +155,7 @@ namespace ECommerceApp.Application.Services.Customers
             return customerVm;
         }
 
-        public void UpdateCustomer(CustomerDto model)
+        public bool UpdateCustomer(CustomerDto model)
         {
             if (model is null)
             {
@@ -165,7 +165,7 @@ namespace ECommerceApp.Application.Services.Customers
             if (!UserPermissions.Roles.MaintenanceRoles.Contains(_userContext.Role)
                 && CustomerExists(model.Id, _userContext.UserId))
             {
-                return;
+                return false;
             }
 
             var customer = _customerRepository.GetById(model.Id)
@@ -176,6 +176,7 @@ namespace ECommerceApp.Application.Services.Customers
             customer.CompanyName = model.CompanyName;
             customer.NIP = model.NIP;
             _customerRepository.UpdateCustomer(customer);
+            return true;
         }
 
         public bool CustomerExists(int id, string userId)

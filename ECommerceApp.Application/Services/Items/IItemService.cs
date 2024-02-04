@@ -9,10 +9,10 @@ namespace ECommerceApp.Application.Services.Items
     {
         ListForItemVm GetAllItemsForList(int pageSize, int pageNo, string searchString);
         int AddItem(AddItemDto dto);
-        void UpdateItem(UpdateItemDto dto);
+        bool UpdateItem(UpdateItemDto dto);
         List<ItemDto> GetAllItems();
         List<ItemInfoVm> GetItemsAddToCart();
-        void DeleteItem(int id);
+        bool DeleteItem(int id);
         ItemDetailsDto GetItemDetails(int id);
         ListForItemWithTagsVm GetAllItemsWithTags(int pageSize, int pageNo, string searchString);
         bool ItemExists(int id);

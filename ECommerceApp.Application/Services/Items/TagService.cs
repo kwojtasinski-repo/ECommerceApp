@@ -36,9 +36,9 @@ namespace ECommerceApp.Application.Services.Items
             return id;
         }
 
-        public void DeleteTag(int id)
+        public bool DeleteTag(int id)
         {
-            _tagRepository.DeleteTag(id);
+            return _tagRepository.DeleteTag(id);
         }
 
         public TagDto GetTagById(int id)
@@ -78,18 +78,20 @@ namespace ECommerceApp.Application.Services.Items
             return _tagRepository.ExistsById(id);
         }
 
-        public void UpdateTag(TagDto model)
+        public bool UpdateTag(TagDto model)
         {
             if (model is null)
             {
                 throw new BusinessException($"{typeof(TagDto).Name} cannot be null");
             }
+            if (!TagExists(model.Id))
+            {
+                return false;
+            }
 
             var tag = _mapper.Map<Tag>(model);
-            if (tag != null)
-            {
-                _tagRepository.UpdateTag(tag);
-            }
+            _tagRepository.UpdateTag(tag);
+            return true;
         }
     }
 }

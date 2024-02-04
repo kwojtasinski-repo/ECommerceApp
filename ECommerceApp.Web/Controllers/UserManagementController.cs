@@ -56,7 +56,11 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                await _userService.ChangeRoleAsync(user.Id, user.UserRoles);
+                if ((await _userService.ChangeRoleAsync(user.Id, user.UserRoles)) is null)
+                {
+                    var errorModel = BuildErrorModel("userNotFound", new Dictionary<string, string> { { "id", $"{user.Id}" } });
+                    return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                }
                 return RedirectToAction("Index");
             }
             catch (BusinessException exception)
@@ -70,8 +74,9 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                await _userService.DeleteUserAsync(id);
-                return Json("deleted");
+                return (await _userService.DeleteUserAsync(id)) is not null
+                    ? Json("deleted")
+                    : NotFound();
             }
             catch (BusinessException exception)
             {
@@ -97,7 +102,11 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                await _userService.EditUser(model);
+                if ((await _userService.EditUser(model)) is null)
+                {
+                    var errorModel = BuildErrorModel("userNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
+                    return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                }
                 return RedirectToAction("Index");
             }
             catch (BusinessException exception)
@@ -155,7 +164,11 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                await _userService.ChangeUserPassword(model);
+                if ((await _userService.ChangeUserPassword(model)) is null)
+                {
+                    var errorModel = BuildErrorModel("userNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
+                    return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                }
                 return RedirectToAction("Index");
             }
             catch (BusinessException exception)

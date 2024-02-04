@@ -44,13 +44,13 @@ namespace ECommerceApp.API.Controllers
         public IActionResult EditItem(int id, UpdateItemDto model)
         {
             model.Id = id;
-            var modelExists = _itemService.ItemExists(model.Id);
-            if (!ModelState.IsValid || !modelExists)
+            if (!ModelState.IsValid)
             {
                 return Conflict(ModelState);
             }
-            _itemService.UpdateItem(model);
-            return Ok();
+            return _itemService.UpdateItem(model)
+                ? Ok()
+                : NotFound();
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]
@@ -69,8 +69,9 @@ namespace ECommerceApp.API.Controllers
         [HttpDelete("{id}")]
         public IActionResult DeleteItem(int id)
         {
-            _itemService.DeleteItem(id);
-            return Ok();
+            return _itemService.DeleteItem(id)
+                ? Ok()
+                : NotFound();
         }
     }
 }

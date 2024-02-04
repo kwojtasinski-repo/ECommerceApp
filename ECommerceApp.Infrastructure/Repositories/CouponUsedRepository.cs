@@ -1,6 +1,7 @@
 ﻿using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -61,6 +62,13 @@ namespace ECommerceApp.Infrastructure.Repositories
         public int GetCount()
         {
             return _context.CouponUsed.Count();
+        }
+
+        public bool ExistsById(int id)
+        {
+            return _context.CouponUsed
+                           .AsNoTracking()
+                           .Any(c =>  c.Id == id);
         }
     }
 }

@@ -21,15 +21,24 @@ namespace ECommerceApp.Infrastructure.Repositories
             return refund.Id;
         }
 
-        public void DeleteRefund(int refundId)
+        public bool DeleteRefund(int refundId)
         {
             var refund = _context.Refunds.Find(refundId);
 
-            if (refund != null)
+            if (refund is null)
             {
-                _context.Refunds.Remove(refund);
-                _context.SaveChanges();
+                return false;
             }
+
+            _context.Refunds.Remove(refund);
+            return _context.SaveChanges() > 0;
+        }
+
+        public bool ExistsById(int id)
+        {
+            return _context.Refunds
+                           .AsNoTracking()
+                           .Any(r => r.Id == id);
         }
 
         public bool ExistsByReason(string reasonRefund)

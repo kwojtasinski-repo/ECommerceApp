@@ -27,6 +27,11 @@ namespace ECommerceApp.Infrastructure.Repositories
             return _currencyRepository.Delete(currency);
         }
 
+        public bool Delete(int id)
+        {
+            return _currencyRepository.Delete(id);
+        }
+
         public List<Currency> GetAll()
         {
             return _currencyRepository.GetAll().ToList();

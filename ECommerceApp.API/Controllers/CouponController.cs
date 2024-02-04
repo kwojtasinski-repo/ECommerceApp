@@ -38,18 +38,13 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]
-        [HttpPut]
-        public IActionResult EditCoupon(CouponVm model)
+        [HttpPut("{id:int}")]
+        public IActionResult EditCoupon(int id, CouponVm model)
         {
-            var coupon = _couponService.Get(model.Id);
-            
-            if(coupon == null)
-            {
-                return Conflict();
-            }
-
-            _couponService.UpdateCoupon(model);
-            return Ok();
+            model.Id = id;
+            return _couponService.UpdateCoupon(model)
+                ? Ok()
+                : NotFound();
         }
 
 
@@ -58,7 +53,7 @@ namespace ECommerceApp.API.Controllers
         {
             var coupon = _couponService.GetCouponDetail(id);
             
-            if(coupon == null)
+            if (coupon is null)
             {
                 return NotFound();
             }
@@ -70,8 +65,9 @@ namespace ECommerceApp.API.Controllers
         [HttpDelete("{id}")]
         public IActionResult DeleteCoupon(int id)
         {
-            _couponService.DeleteCoupon(id);
-            return Ok();
+            return _couponService.DeleteCoupon(id)
+                ? Ok()
+                : NotFound();
         }
     }
 }

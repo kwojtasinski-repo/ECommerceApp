@@ -18,5 +18,6 @@ namespace ECommerceApp.Domain.Interface
         bool ExistsByCode(string code);
         Coupon GetByCode(string promoCode);
         bool IsUnique(int id, string code);
+        bool ExistsById(int id);
     }
 }

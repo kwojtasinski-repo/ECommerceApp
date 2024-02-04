@@ -37,7 +37,7 @@ namespace ECommerceApp.Application.Services.Currencies
             return currency.Id;
         }
 
-        public void Update(CurrencyDto dto)
+        public bool Update(CurrencyDto dto)
         {
             if (dto is null)
             {
@@ -50,11 +50,16 @@ namespace ECommerceApp.Application.Services.Currencies
             }
 
             dto.Code = dto.Code.ToUpper();
-            var currency = _currencyRepository.GetById(dto.Id)
-                ?? throw new BusinessException($"Currency with id '{dto.Id}' not found", "currencyNotFound", new Dictionary<string, string> { { "id", $"{dto.Id}" } });
+            var currency = _currencyRepository.GetById(dto.Id);
+            if (currency is null)
+            {
+                return false;
+            }
+
             currency.Code = dto.Code;
             currency.Description = dto.Description;
             _currencyRepository.Update(currency);
+            return true;
         }
 
         public List<CurrencyDto> GetAll()
@@ -100,11 +105,9 @@ namespace ECommerceApp.Application.Services.Currencies
             return _mapper.Map<CurrencyDto>(currency);
         }
 
-        public void Delete(int id)
+        public bool Delete(int id)
         {
-            var currency = _currencyRepository.GetById(id)
-                ?? throw new BusinessException($"Currency with id '{id}' was not found", "currencyNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-            _currencyRepository.Delete(currency);
+            return _currencyRepository.Delete(id);
         }
     }
 }

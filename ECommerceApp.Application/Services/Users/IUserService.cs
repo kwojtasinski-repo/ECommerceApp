@@ -16,6 +16,6 @@ namespace ECommerceApp.Application.Services.Users
         Task<IdentityResult> DeleteUserAsync(string id);
         Task<IdentityResult> EditUser(NewUserVm userToEdit);
         Task<IdentityResult> AddUser(NewUserToAddVm newUser);
-        Task ChangeUserPassword(NewUserVm model);
+        Task<IdentityResult> ChangeUserPassword(NewUserVm model);
     }
 }

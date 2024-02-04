@@ -105,7 +105,7 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                _itemService.UpdateItem(new UpdateItemDto
+                if (!_itemService.UpdateItem(new UpdateItemDto
                 {
                     Id = model.Id,
                     Name = model.Name,
@@ -116,7 +116,11 @@ namespace ECommerceApp.Web.Controllers
                     BrandId = model.Brand.Id,
                     TypeId = model.Type.Id,
                     TagsId = model.Tags.Select(t => t.Id).ToList()
-                });
+                }))
+                {
+                    var errorModel = BuildErrorModel("itemNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
+                    return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                }
                 return RedirectToAction("Index");
             }
             catch (BusinessException ex)
@@ -166,8 +170,9 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                _itemService.DeleteItem(id);
-                return Json("deleted");
+                return _itemService.DeleteItem(id)
+                       ? Json("deleted")
+                       : NotFound();
             }
             catch (BusinessException exception)
             {

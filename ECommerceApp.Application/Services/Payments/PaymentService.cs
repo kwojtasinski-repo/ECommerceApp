@@ -54,8 +54,12 @@ namespace ECommerceApp.Application.Services.Payments
                 throw new BusinessException($"{typeof(PaymentVm).Name} cannot be null");
             }
 
-            var order = _orderRepository.GetOrderById(model.OrderId) ??
-                throw new BusinessException($"Order with id '{model.OrderId}' was not found", "orderNotFound", new Dictionary<string, string> { { "id", $"{model.OrderId}" } });
+            var order = _orderRepository.GetOrderById(model.OrderId);
+            if (order is null)
+            {
+                return default;
+            }
+
             var paymentId = _paymentHandler.PayIssuedPayment(model, order);
             _orderRepository.UpdatedOrder(order);
             return paymentId;
@@ -117,18 +121,21 @@ namespace ECommerceApp.Application.Services.Payments
             return paymentsList;
         }
 
-        public void UpdatePayment(PaymentVm model)
+        public bool UpdatePayment(PaymentVm model)
         {
             if (model is null)
             {
                 throw new BusinessException($"{typeof(PaymentVm).Name} cannot be null");
             }
 
-            var payment = _mapper.Map<Payment>(model);
-            if (payment != null)
+            if (_repo.ExistsBydId(model.Id))
             {
-                _repo.UpdatePayment(payment);
+                return false;
             }
+
+            var payment = _mapper.Map<Payment>(model);
+            _repo.UpdatePayment(payment);
+            return true;
         }
 
         public PaymentDetailsDto GetPaymentDetails(int id)

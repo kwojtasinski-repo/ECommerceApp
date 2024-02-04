@@ -9,8 +9,8 @@ namespace ECommerceApp.Application.Services.Currencies
         List<CurrencyDto> GetAll();
         CurrencyDto GetById(int id);
         int Add(CurrencyDto dto);
-        void Update(CurrencyDto dto);
-        void Delete(int id);
+        bool Update(CurrencyDto dto);
+        bool Delete(int id);
         ListCurrencyVm GetAllCurrencies(int pageSize, int pageNo, string searchString);
     }
 }

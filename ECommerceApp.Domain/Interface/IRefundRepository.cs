@@ -5,7 +5,7 @@ namespace ECommerceApp.Domain.Interface
 {
     public interface IRefundRepository : IGenericRepository<Refund>
     {
-        void DeleteRefund(int refundId);
+        bool DeleteRefund(int refundId);
         int AddRefund(Refund refund);
         Refund GetRefundById(int refundId);
         List<Refund> GetAllRefunds();
@@ -14,5 +14,6 @@ namespace ECommerceApp.Domain.Interface
         bool ExistsByReason(string reasonRefund);
         int GetCountBySearchString(string searchString);
         Refund GetDetailsById(int id);
+        bool ExistsById(int id);
     }
 }

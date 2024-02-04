@@ -40,13 +40,13 @@ namespace ECommerceApp.Application.Services.Coupons
             _orderService.AddCouponUsedToOrder(couponUsed.OrderId, id);
             return id;
         }
-        public void DeleteCouponUsed(int id)
+        public bool DeleteCouponUsed(int id)
         {
             var coupon = _repo.GetAll().Where(cu => cu.Id == id).FirstOrDefault();
 
             if (coupon is null)
             {
-                throw new BusinessException("Given invalid id");
+                return false;
             }
 
             _repo.DetachEntity(coupon);
@@ -54,7 +54,7 @@ namespace ECommerceApp.Application.Services.Coupons
             _orderService.DeleteCouponUsedFromOrder(coupon.OrderId, coupon.Id);
             _couponService.DeleteCouponUsed(coupon.CouponId, coupon.Id);
 
-            _repo.Delete(id);
+            return _repo.Delete(id);
         }
 
         public ListForCouponUsedVm GetAllCouponsUsed(int pageSize, int pageNo, string searchString)
@@ -96,15 +96,21 @@ namespace ECommerceApp.Application.Services.Coupons
             return couponUsedVm;
         }
 
-        public void UpdateCouponUsed(CouponUsedVm couponUsedVm)
+        public bool UpdateCouponUsed(CouponUsedVm couponUsedVm)
         {
             if (couponUsedVm is null)
             {
                 throw new BusinessException($"{typeof(CouponUsedVm).Name} cannot be null");
             }
 
+            if (!_repo.ExistsById(couponUsedVm.Id))
+            {
+                return false;
+            }
+
             var couponUsed = _mapper.Map<CouponUsed>(couponUsedVm);
             _repo.UpdateCouponUsed(couponUsed);
+            return true;
         }
     }
 }

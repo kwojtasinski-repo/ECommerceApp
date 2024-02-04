@@ -17,5 +17,6 @@ namespace ECommerceApp.Domain.Interface
         List<Payment> GetAllUserPayments(string userId);
         int GetCountBySearchString(string searchString);
         bool ExistsByIdAndUserId(int id, string userId);
+        bool ExistsBydId(int id);
     }
 }

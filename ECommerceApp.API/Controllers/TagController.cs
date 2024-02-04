@@ -35,16 +35,17 @@ namespace ECommerceApp.API.Controllers
             return Ok(tag);
         }
 
-        [HttpPut]
-        public IActionResult EditItemTag(TagDto model)
+        [HttpPut("{id:int}")]
+        public IActionResult EditItemTag(int id, TagDto model)
         {
-            var modelExists = _tagService.TagExists(model.Id);
-            if (!ModelState.IsValid || !modelExists)
+            model.Id = id;
+            if (!ModelState.IsValid)
             {
                 return Conflict(ModelState);
             }
-            _tagService.UpdateTag(model);
-            return Ok();
+            return _tagService.UpdateTag(model)
+                ? Ok()
+                : NotFound();
         }
 
         [HttpPost]
@@ -58,11 +59,12 @@ namespace ECommerceApp.API.Controllers
             return Ok(id);
         }
 
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public IActionResult DeleteItemTag(int id)
         {
-            _tagService.DeleteTag(id);
-            return Ok();
+            return _tagService.DeleteTag(id) 
+                ? Ok()
+                : NotFound();
         }
     }
 }

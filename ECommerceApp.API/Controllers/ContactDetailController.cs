@@ -28,13 +28,10 @@ namespace ECommerceApp.API.Controllers
             return Ok(contactDetail);
         }
 
-        [HttpPut]
-        public IActionResult EditContactDetail(ContactDetailDto model)
+        [HttpPut("{id:int}")]
+        public IActionResult EditContactDetail(int id, ContactDetailDto model)
         {
-            if (!ModelState.IsValid)
-            {
-                return Conflict(ModelState);
-            }
+            model.Id = id;
             return _contactDetailService.UpdateContactDetail(model) 
                 ? Ok()
                 : NotFound();

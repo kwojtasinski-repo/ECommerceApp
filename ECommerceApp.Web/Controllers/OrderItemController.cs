@@ -89,8 +89,9 @@ namespace ECommerceApp.Web.Controllers
             {
                 model.Id = id;
                 model.UserId = GetUserId();
-                _orderItemService.UpdateOrderItem(model);
-                return Json(new { Status = "Updated" });
+                return _orderItemService.UpdateOrderItem(model)
+                    ? Json(new { Status = "Updated" })
+                    : NotFound();
             }
             catch (BusinessException exception)
             {
@@ -118,8 +119,9 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                _orderItemService.DeleteOrderItem(id);
-                return Json(new { });
+                return _orderItemService.DeleteOrderItem(id) 
+                    ? Json("deleted")
+                    : NotFound();
             }
             catch (BusinessException exception)
             {

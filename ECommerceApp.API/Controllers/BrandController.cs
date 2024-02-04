@@ -3,7 +3,6 @@ using ECommerceApp.Application.Services.Brands;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ECommerceApp.API.Controllers
 {
@@ -21,10 +20,6 @@ namespace ECommerceApp.API.Controllers
         public ActionResult<List<BrandDto>> GetItemBrands()
         {
             var brands = _brandService.GetAllBrands();
-            if (!brands.Any())
-            {
-                return NotFound();
-            }
             return Ok(brands);
         }
 
@@ -40,16 +35,13 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]
-        [HttpPut]
-        public IActionResult EditBrand(BrandDto model)
+        [HttpPut("{id:int}")]
+        public IActionResult EditBrand(int id, BrandDto model)
         {
-            var modelExists = _brandService.BrandExists(model.Id);
-            if (!ModelState.IsValid || !modelExists)
-            {
-                return Conflict(ModelState);
-            }
-            _brandService.UpdateBrand(model);
-            return Ok();
+            model.Id = id;
+            return _brandService.UpdateBrand(model)
+                ? Ok()
+                : NotFound();
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]

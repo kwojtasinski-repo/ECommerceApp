@@ -65,7 +65,7 @@ namespace ECommerceApp.Application.Services.Brands
             return brandDto;
         }
 
-        public void UpdateBrand(BrandDto brandDto)
+        public bool UpdateBrand(BrandDto brandDto)
         {
             if (brandDto is null)
             {
@@ -73,8 +73,14 @@ namespace ECommerceApp.Application.Services.Brands
             }
 
             var entity = _brandRepository.GetBrandById(brandDto.Id);
+            if (entity is null)
+            {
+                return false;
+            }
+
             entity.Name = brandDto.Name;
             _brandRepository.UpdateBrand(entity);
+            return true;
         }
 
         public IEnumerable<BrandDto> GetAllBrands()

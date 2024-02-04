@@ -16,15 +16,16 @@ namespace ECommerceApp.Infrastructure.Repositories
             _context = context;
         }
 
-        public void DeleteItem(int itemId)
+        public bool DeleteItem(int itemId)
         {
             var item = _context.Items.Find(itemId);
-
-            if (item != null)
+            if (item is null)
             {
-                _context.Items.Remove(item);
-                _context.SaveChanges();
+                return false;
             }
+
+            _context.Items.Remove(item);
+            return _context.SaveChanges() > 0;
         }
 
         public int AddItem(Item item)

@@ -31,9 +31,9 @@ namespace ECommerceApp.Application.Services.Coupons
             return id;
         }
 
-        public void DeleteCouponType(int id)
+        public bool DeleteCouponType(int id)
         {
-            _repo.DeleteCouponType(id);
+            return _repo.DeleteCouponType(id);
         }
 
         public ListForCouponTypeVm GetAllCouponsTypes(int pageSize, int pageNo, string searchString)
@@ -66,15 +66,21 @@ namespace ECommerceApp.Application.Services.Coupons
             return couponTypeVm;
         }
 
-        public void UpdateCouponType(CouponTypeVm couponTypeVm)
+        public bool UpdateCouponType(CouponTypeVm couponTypeVm)
         {
             if (couponTypeVm is null)
             {
                 throw new BusinessException($"{typeof(CouponTypeVm).Name} cannot be null");
             }
 
+            if (!_repo.ExistsById(couponTypeVm.Id))
+            {
+                return false;
+            }
+
             var couponType = _mapper.Map<CouponType>(couponTypeVm);
             _repo.UpdateCouponType(couponType);
+            return true;
         }
 
         public IEnumerable<CouponTypeVm> GetAllCouponsTypes()

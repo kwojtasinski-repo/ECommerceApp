@@ -8,12 +8,12 @@ namespace ECommerceApp.Application.Services.Orders
     {
         int AddOrderItem(OrderItemDto model);
         OrderItemDto GetOrderItemDetails(int id);
-        void UpdateOrderItem(OrderItemDto model);
+        bool UpdateOrderItem(OrderItemDto model);
         IEnumerable<OrderItemDto> GetOrderItems();
         IEnumerable<OrderItemDto> GetOrderItemsByItemId(int itemId);
         ListForOrderItemVm GetOrderItems(int pageSize, int pageNo, string searchString);
         bool OrderItemExists(int id);
-        void DeleteOrderItem(int id);
+        bool DeleteOrderItem(int id);
         void UpdateOrderItems(IEnumerable<OrderItemDto> orderItems);
         IEnumerable<OrderItemDto> GetOrderItemsForRealization(string userId);
         IEnumerable<int> GetOrderItemsIdsForRealization(string userId);

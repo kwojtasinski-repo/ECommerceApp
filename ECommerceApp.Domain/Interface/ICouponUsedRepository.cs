@@ -12,5 +12,6 @@ namespace ECommerceApp.Domain.Interface
         void UpdateCouponUsed(CouponUsed couponUsed);
         List<CouponUsed> GetAllCouponsUsed(int pageSize, int pageNo);
         int GetCount();
+        bool ExistsById(int id);
     }
 }

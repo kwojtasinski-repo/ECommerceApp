@@ -44,21 +44,17 @@ namespace ECommerceApp.API.Controllers
             return Ok(customer);
         }
 
-        [HttpPut]
-        public IActionResult EditCustomer(CustomerDto model)
+        [HttpPut("{id:int}")]
+        public IActionResult EditCustomer(int id, CustomerDto model)
         {
-            var userId = GetUserId();
-            if (!_customerService.CustomerExists(model.Id, userId))
-            {
-                return NotFound();
-            }
-
+            model.Id = id;
             if (!ModelState.IsValid)
             {
                 return Conflict(ModelState);
             }
-            _customerService.UpdateCustomer(model);
-            return Ok();
+            return _customerService.UpdateCustomer(model)
+                ? Ok()
+                : NotFound();
         }
 
         [HttpPost]

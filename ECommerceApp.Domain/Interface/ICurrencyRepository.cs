@@ -7,6 +7,7 @@ namespace ECommerceApp.Domain.Interface
     {
         int Add(Currency currency);
         bool Delete(Currency currency);
+        bool Delete(int id);
         List<Currency> GetAll();
         List<Currency> GetAll(int pageSize, int pageNo, string searchString);
         Currency GetById(int id);

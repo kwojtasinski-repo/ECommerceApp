@@ -46,10 +46,6 @@ namespace ECommerceApp.API.Controllers
         {
             var userId = GetUserId();
             var orderItems = _orderItemService.GetOrderItemsForRealization(userId);
-            if (orderItems.Count() == 0)
-            {
-                return NotFound();
-            }
             return Ok(orderItems);
         }
 
@@ -58,16 +54,16 @@ namespace ECommerceApp.API.Controllers
         public IActionResult EditOrderItem(int id, [FromBody] AddOrderItemDto model)
         {
             model.Id = id;
-            var modelExists = _orderItemService.OrderItemExists(model.Id);
-            if (!ModelState.IsValid || !modelExists)
+            if (!ModelState.IsValid)
             {
                 return Conflict(ModelState);
             }
             var orderItem = model.AsOrderItemDto();
             var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
             orderItem.UserId = userId;
-            _orderItemService.UpdateOrderItem(orderItem);
-            return Ok();
+            return _orderItemService.UpdateOrderItem(orderItem)
+                ? Ok()
+                : NotFound();
         }
 
         [HttpPost]

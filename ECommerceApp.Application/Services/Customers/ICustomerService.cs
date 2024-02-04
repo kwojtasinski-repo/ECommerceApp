@@ -15,7 +15,7 @@ namespace ECommerceApp.Application.Services.Customers
         CustomerInformationForOrdersVm GetCustomerInformationById(int customerId);
         CustomerDetailsDto GetCustomer(int id);
         CustomerDetailsDto GetCustomer(int id, string userId);
-        void UpdateCustomer(CustomerDto model);
+        bool UpdateCustomer(CustomerDto model);
         bool DeleteCustomer(int id);
         bool CustomerExists(int id, string userId);
         CustomerDetailsVm GetCustomerDetails(int id, string userId);

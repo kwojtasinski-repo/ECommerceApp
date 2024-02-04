@@ -34,16 +34,17 @@ namespace ECommerceApp.API.Controllers
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]
-        [HttpPut]
-        public IActionResult EditItemType(TypeDto model)
+        [HttpPut("{id:int}")]
+        public IActionResult EditItemType(int id, TypeDto model)
         {
-            var modelExists = _typeService.TypeExists(model.Id);
-            if (!ModelState.IsValid || !modelExists)
+            model.Id = id;
+            if (!ModelState.IsValid)
             {
                 return Conflict(ModelState);
             }
-            _typeService.UpdateType(model);
-            return Ok();
+            return _typeService.UpdateType(model)
+                ? Ok()
+                : NotFound();
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]
@@ -62,8 +63,9 @@ namespace ECommerceApp.API.Controllers
         [HttpDelete("{id}")]
         public IActionResult DeleteItemType(int id)
         {
-            _typeService.DeleteType(id);
-            return Ok();
+            return _typeService.DeleteType(id)
+                ? Ok()
+                : NotFound();
         }
     }
 }

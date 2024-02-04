@@ -35,9 +35,9 @@ namespace ECommerceApp.Application.Services.Items
             return id;
         }
 
-        public void DeleteType(int id)
+        public bool DeleteType(int id)
         {
-            _typeRepository.DeleteType(id);
+            return _typeRepository.DeleteType(id);
         }
 
         public TypeDto GetTypeById(int id)
@@ -77,18 +77,21 @@ namespace ECommerceApp.Application.Services.Items
             return _typeRepository.ExistsById(id);
         }
 
-        public void UpdateType(TypeDto model)
+        public bool UpdateType(TypeDto model)
         {
             if (model is null)
             {
                 throw new BusinessException($"{typeof(TypeDto).Name} cannot be null");
             }
 
-            var type = _mapper.Map<Domain.Model.Type>(model);
-            if (type != null)
+            if (!TypeExists(model.Id))
             {
-                _typeRepository.UpdateType(type);
+                return false;
             }
+
+            var type = _mapper.Map<Domain.Model.Type>(model);
+            _typeRepository.UpdateType(type);
+            return true;
         }
     }
 }

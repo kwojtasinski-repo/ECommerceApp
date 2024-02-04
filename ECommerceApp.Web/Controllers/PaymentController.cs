@@ -59,7 +59,11 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                _paymentService.PaidIssuedPayment(model);
+                if (_paymentService.PaidIssuedPayment(model) == default)
+                {
+                    var errorModel = BuildErrorModel("paymentNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
+                    return RedirectToAction("ViewMyPayments", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                }
                 return RedirectToAction("ViewMyPayments");
             }
             catch (BusinessException ex)
@@ -91,7 +95,11 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                _paymentService.UpdatePayment(model);
+                if (!_paymentService.UpdatePayment(model))
+                {
+                    var errorModel = BuildErrorModel("paymentNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
+                    return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                }
                 return RedirectToAction("Index");
             }
             catch (BusinessException ex)

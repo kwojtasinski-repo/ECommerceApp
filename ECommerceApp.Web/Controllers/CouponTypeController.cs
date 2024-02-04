@@ -77,7 +77,11 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                _couponService.UpdateCouponType(model);
+                if (!_couponService.UpdateCouponType(model))
+                {
+                    var errorModel = BuildErrorModel("couponTypeNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
+                    return RedirectToAction(actionName: "Index", new { model.Id, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                }
                 return RedirectToAction("Index");
             }
             catch (BusinessException ex)
@@ -104,8 +108,9 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                _couponService.DeleteCouponType(id);
-                return Json("deleted");
+                return _couponService.DeleteCouponType(id)
+                    ? Json("deleted")
+                    : NotFound();
             }
             catch (BusinessException exception)
             {

@@ -5,7 +5,7 @@ namespace ECommerceApp.Domain.Interface
 {
     public interface ITagRepository
     {
-        void DeleteTag(int tagId);
+        bool DeleteTag(int tagId);
         int AddTag(Tag tag);
         bool ExistsById(int tagId);
         void UpdateTag(Tag tag);

@@ -5,7 +5,7 @@ namespace ECommerceApp.Domain.Interface
 {
     public interface IItemRepository
     {
-        void DeleteItem(int itemId);
+        bool DeleteItem(int itemId);
         int AddItem(Item item);
         Item GetItemById(int itemId);
         Item GetItemDetailsById(int itemId);

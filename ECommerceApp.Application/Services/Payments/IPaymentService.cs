@@ -9,7 +9,7 @@ namespace ECommerceApp.Application.Services.Payments
         int AddPayment(AddPaymentDto model);
         int PaidIssuedPayment(PaymentVm model);
         PaymentVm GetPaymentById(int id);
-        void UpdatePayment(PaymentVm model);
+        bool UpdatePayment(PaymentVm model);
         IEnumerable<PaymentDto> GetPayments();
         IEnumerable<PaymentDto> GetUserPayments(string userId);
         ListForPaymentVm GetPayments(int pageSize, int pageNo, string searchString);

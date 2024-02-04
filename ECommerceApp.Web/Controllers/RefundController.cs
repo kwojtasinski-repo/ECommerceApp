@@ -59,7 +59,11 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                _refundService.UpdateRefund(refund);
+                if (!_refundService.UpdateRefund(refund))
+                {
+                    var errorModel = BuildErrorModel("refundNotFound", new Dictionary<string, string> { { "id", $"{refund.Id}" } });
+                    return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                }
                 return RedirectToAction("Index");
             }
             catch (BusinessException exception)
@@ -86,8 +90,9 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                _refundService.DeleteRefund(id);
-                return Json("deleted");
+                return _refundService.DeleteRefund(id)
+                        ? Json("deleted")
+                        : NotFound();
             }
             catch (BusinessException exception)
             {
@@ -117,8 +122,9 @@ namespace ECommerceApp.Web.Controllers
             try
             {
                 refundVm.Id = id;
-                _refundService.UpdateRefund(refundVm);
-                return Json("Updated");
+                return _refundService.UpdateRefund(refundVm)
+                    ? Json("Updated")
+                    : NotFound();
             }
             catch (BusinessException exception)
             {

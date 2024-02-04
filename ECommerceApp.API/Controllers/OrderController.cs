@@ -49,10 +49,6 @@ namespace ECommerceApp.API.Controllers
         {
             var userId = GetUserId();
             var orders = _orderService.GetAllOrdersByUserId(userId);
-            if (orders == null)
-            {
-                return NotFound();
-            }
             return Ok(orders);
         }
 
@@ -61,8 +57,9 @@ namespace ECommerceApp.API.Controllers
         public IActionResult EditOrder(int id, [FromBody] UpdateOrderDto model)
         {
             model.Id = id;
-            _orderService.UpdateOrder(model);
-            return Ok();
+            return _orderService.UpdateOrder(model) is null
+                ? Ok()
+                : NotFound();
         }
 
         [HttpPost]

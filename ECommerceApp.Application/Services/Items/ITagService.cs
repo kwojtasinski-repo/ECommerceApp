@@ -9,10 +9,10 @@ namespace ECommerceApp.Application.Services.Items
         int AddTag(TagDto model);
         TagDetailsVm GetTagDetails(int id);
         TagDto GetTagById(int id);
-        void UpdateTag(TagDto model);
+        bool UpdateTag(TagDto model);
         IEnumerable<TagDto> GetTags();
         ListForTagsVm GetTags(int pageSize, int pageNo, string searchString);
         bool TagExists(int id);
-        void DeleteTag(int id);
+        bool DeleteTag(int id);
     }
 }

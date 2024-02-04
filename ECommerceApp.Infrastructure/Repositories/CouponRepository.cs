@@ -107,5 +107,12 @@ namespace ECommerceApp.Infrastructure.Repositories
                            .AsNoTracking()
                            .Any(c => c.Id != id && c.Code.ToLower() == code.ToLower());
         }
+
+        public bool ExistsById(int id)
+        {
+            return _context.Coupons
+                           .AsNoTracking()
+                           .Any(c => c.Id == id);
+        }
     }
 }

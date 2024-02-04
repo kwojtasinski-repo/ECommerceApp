@@ -85,7 +85,11 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                _currencyService.Update(model.Currency);
+                if (!_currencyService.Update(model.Currency))
+                {
+                    var errorModel = BuildErrorModel("currencyNotFound", new Dictionary<string, string> { { "id", $"{model.Currency.Id}" } });
+                    return RedirectToAction(actionName: "Index", new { model.Currency.Id, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                }
                 return RedirectToAction("Index");
             }
             catch (BusinessException ex)
@@ -112,8 +116,9 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                _currencyService.Delete(id);
-                return Json("deleted");
+                return _currencyService.Delete(id)
+                        ? Json("deleted")
+                        : NotFound();
             }
             catch (BusinessException exception)
             {

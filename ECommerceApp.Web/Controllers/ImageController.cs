@@ -4,7 +4,6 @@ using ECommerceApp.Application.Services.Items;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
 using System.Collections.Generic;
 
 namespace ECommerceApp.Web.Controllers
@@ -39,8 +38,9 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                _service.Delete(id);
-                return Ok();
+                return _service.Delete(id)
+                        ? Ok()
+                        : NotFound();
             }
             catch (BusinessException exception)
             {

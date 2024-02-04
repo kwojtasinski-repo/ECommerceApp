@@ -122,6 +122,10 @@ namespace ECommerceApp.Application.Services.Users
             }
 
             var currentUser = await _userManager.FindByIdAsync(userToEdit.Id);
+            if (currentUser is null)
+            {
+                return null;
+            }
             CheckChangesInCurrentUser(currentUser, userToEdit); // allowed only change email and verification
             // TODO check if username is same as email if yes it should be changed too
             return await _userManager.UpdateAsync(currentUser);
@@ -182,7 +186,7 @@ namespace ECommerceApp.Application.Services.Users
 
         }
 
-        public async Task ChangeUserPassword(NewUserVm model)
+        public async Task<IdentityResult> ChangeUserPassword(NewUserVm model)
         {
             if (model is null)
             {
@@ -190,8 +194,12 @@ namespace ECommerceApp.Application.Services.Users
             }
 
             var user = await _userManager.FindByIdAsync(model.Id);
+            if (user == null)
+            {
+                return null;
+            }
             await _userManager.RemovePasswordAsync(user);
-            var result = await _userManager.AddPasswordAsync(user, model.PasswordToChange);
+            return await _userManager.AddPasswordAsync(user, model.PasswordToChange);
         }
     }
 }

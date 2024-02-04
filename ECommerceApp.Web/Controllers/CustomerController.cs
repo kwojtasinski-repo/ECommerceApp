@@ -153,13 +153,12 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                if (!_customerService.CustomerExists(model.Customer.Id, GetUserId()))
+                if (!_customerService.UpdateCustomer(model.Customer))
                 {
                     var errorModel = BuildErrorModel("customerNotFound", new Dictionary<string, string> { { "id", $"{model.Customer.Id}" } });
                     return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
                 }
 
-                _customerService.UpdateCustomer(model.Customer);
                 return RedirectToAction("Index");
             }
             catch (BusinessException exception)

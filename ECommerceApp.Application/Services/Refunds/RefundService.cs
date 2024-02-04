@@ -52,10 +52,10 @@ namespace ECommerceApp.Application.Services.Refunds
             return id;
         }
 
-        public void DeleteRefund(int id)
+        public bool DeleteRefund(int id)
         {
             _orderService.DeleteRefundFromOrder(id);
-            _repo.DeleteRefund(id);
+            return _repo.DeleteRefund(id);
         }
 
         public RefundVm GetRefundById(int id)
@@ -105,18 +105,21 @@ namespace ECommerceApp.Application.Services.Refunds
             return exists;
         }
 
-        public void UpdateRefund(RefundVm refundVm)
+        public bool UpdateRefund(RefundVm refundVm)
         {
             if (refundVm is null)
             {
                 throw new BusinessException($"{typeof(RefundVm).Name} cannot be null");
             }
 
-            var refund = _mapper.Map<Refund>(refundVm);
-            if (refund != null)
+            if (_repo.ExistsById(refundVm.Id))
             {
-                _repo.UpdateRefund(refund);
+                return false;
             }
+
+            var refund = _mapper.Map<Refund>(refundVm);
+            _repo.UpdateRefund(refund);
+            return true;
         }
 
         public bool SameReasonNotExists(string reasonRefund)

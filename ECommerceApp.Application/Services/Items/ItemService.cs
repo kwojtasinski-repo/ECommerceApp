@@ -68,9 +68,9 @@ namespace ECommerceApp.Application.Services.Items
             return itemVm;
         }
 
-        public void DeleteItem(int id)
+        public bool DeleteItem(int id)
         {
-            _itemRepository.DeleteItem(id);
+            return _itemRepository.DeleteItem(id);
         }
 
         public ItemDetailsDto GetItemDetails(int id)
@@ -168,15 +168,19 @@ namespace ECommerceApp.Application.Services.Items
             return id;
         }
 
-        public void UpdateItem(UpdateItemDto dto)
+        public bool UpdateItem(UpdateItemDto dto)
         {
             if (dto.Images.Count() > 5)
             {
                 throw new BusinessException("Allowed only 5 images");
             }
 
-            var item = _itemRepository.GetItemDetailsById(dto.Id)
-                ?? throw new BusinessException($"Item with id '{dto.Id}' was not found", "itemNotFound", new Dictionary<string, string> { { "id", $"{dto.Id}" } });
+            var item = _itemRepository.GetItemDetailsById(dto.Id);
+            if (item is null)
+            {
+                return false;
+            }
+
             var tags = _tagRepository.GetTagsByIds(dto.TagsId);
             var errors = new StringBuilder(ValidTags(tags, dto.TagsId));
             errors.Append(_imageService.ValidBase64File(dto.Images?.Where(i => i.ImageId == default).Select(i =>
@@ -210,7 +214,7 @@ namespace ECommerceApp.Application.Services.Items
             if (!dto.Images.Any())
             {
                 _itemRepository.UpdateItem(item);
-                return;
+                return true;
             }
 
             var imgsToAdd = dto.Images.Where(i => i.ImageId == default);
@@ -238,6 +242,7 @@ namespace ECommerceApp.Application.Services.Items
             }
 
             _itemRepository.UpdateItem(item);
+            return true;
         }
 
         private static string ValidTags(List<Tag> tags, IEnumerable<int> tagsId)

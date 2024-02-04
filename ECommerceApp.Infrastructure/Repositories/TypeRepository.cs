@@ -23,15 +23,16 @@ namespace ECommerceApp.Infrastructure.Repositories
             return type.Id;
         }
 
-        public void DeleteType(int typeId)
+        public bool DeleteType(int typeId)
         {
             var type = _context.Types.Find(typeId);
-
-            if (type != null)
+            if (type is null)
             {
-                _context.Types.Remove(type);
-                _context.SaveChanges();
+                return false;
             }
+
+            _context.Types.Remove(type);
+            return _context.SaveChanges() > 0;
         }
 
         public bool ExistsById(int id)

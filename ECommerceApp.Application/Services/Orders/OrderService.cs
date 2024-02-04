@@ -422,8 +422,11 @@ namespace ECommerceApp.Application.Services.Orders
                 throw new BusinessException($"{typeof(UpdateOrderDto).Name} cannot be null");
             }
 
-            var order = _orderRepository.GetOrderDetailsById(dto.Id)
-                ?? throw new BusinessException($"Order with id '{dto.Id}' was not found", "orderNotFound", new Dictionary<string, string> { { "id", $"{dto.Id}" } });
+            var order = _orderRepository.GetOrderDetailsById(dto.Id);
+            if (order is null )
+            {
+                return null;
+            }
 
             if (!string.IsNullOrWhiteSpace(dto.PromoCode) && !_couponService.ExistsByCode(dto.PromoCode))
             {

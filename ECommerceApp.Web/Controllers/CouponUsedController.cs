@@ -93,7 +93,11 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                _couponUsedService.UpdateCouponUsed(model);
+                if (!_couponUsedService.UpdateCouponUsed(model))
+                {
+                    var errorModel = BuildErrorModel("couponUsedNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
+                    return RedirectToAction(actionName: "Index", new { model.Id, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                }
                 return RedirectToAction("Index");
             }
             catch (BusinessException ex)
@@ -120,8 +124,9 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                _couponUsedService.DeleteCouponUsed(id);
-                return Json("deleted");
+                return _couponUsedService.DeleteCouponUsed(id)
+                    ? Json("deleted")
+                    : NotFound();
             }
             catch (BusinessException exception)
             {

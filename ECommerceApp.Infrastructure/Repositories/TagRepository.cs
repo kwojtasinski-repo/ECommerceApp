@@ -23,15 +23,16 @@ namespace ECommerceApp.Infrastructure.Repositories
             return tag.Id;
         }
 
-        public void DeleteTag(int tagId)
+        public bool DeleteTag(int tagId)
         {
             var tag = _context.Tags.Find(tagId);
-
-            if (tag != null)
+            if (tag is null)
             {
-                _context.Tags.Remove(tag);
-                _context.SaveChanges();
+                return false;
             }
+
+            _context.Tags.Remove(tag);
+            return _context.SaveChanges() > 0;
         }
 
         public List<Tag> GetAllTags()

@@ -54,17 +54,22 @@ namespace ECommerceApp.Application.Services.ContactDetails
             return _mapper.Map<List<ContactDetailTypeDto>>(_contactDetailTypeRepository.GetAllContactDetailTypes());
         }
 
-        public void UpdateContactDetailType(ContactDetailTypeDto model)
+        public bool UpdateContactDetailType(ContactDetailTypeDto model)
         {
             if (model is null)
             {
                 throw new BusinessException($"{typeof(ContactDetailTypeDto).Name} cannot be null");
             }
 
-            var entity = _contactDetailTypeRepository.GetContactDetailTypeById(model.Id)
-                ?? throw new BusinessException($"Contact detail type with id '{model.Id}' was not found", "contactDetailTypeNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
+            var entity = _contactDetailTypeRepository.GetContactDetailTypeById(model.Id);
+            if (entity is null)
+            {
+                return false;
+            }
+
             entity.Name = model.Name;
             _contactDetailTypeRepository.UpdateContactDetailType(entity);
+            return true;
         }
     }
 }
