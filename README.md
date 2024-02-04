@@ -8,7 +8,7 @@
 # Problems with start
 1. Update database using command Update-Database (apply all migration)
 2. Add account google credentials, first navigate console to ECommerceApp.Web directory then
-use this command 
+use this command or you can change it in appsettings.json section Authentication and Google
 * dotnet user-secrets set "Authentication:Google:ClientId" "ClientIdFromGoogle"
 * dotnet user-secrets set "Authentication:Google:ClientSecret" "ClientSecretFromGoogle"
 
@@ -27,11 +27,12 @@ CREATE LOGIN docker WITH PASSWORD=N'docker',
 EXEC sp_addsrvrolemember 'docker', 'sysadmin'
 CREATE USER docker FOR LOGIN docker WITH DEFAULT_SCHEMA=[dbo]
 ```
+Make sure that option "SQL Server and Windows Authentication mode" is configured in MSSQL. 
 Next in ECommerceApp root directory in powershell or cmd run this command:
 > Docker compose up
 
 ## Technologies
-* .NET Core 3.1
+* .NET 7
 * ASP.NET, HTML5, CSS3, JS, MSSQL
 * WebAPI
 * Depedency Injection
