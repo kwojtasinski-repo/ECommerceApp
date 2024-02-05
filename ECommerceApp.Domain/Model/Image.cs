@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ECommerceApp.Domain.Model
+﻿namespace ECommerceApp.Domain.Model
 {
     public class Image : BaseEntity
     {

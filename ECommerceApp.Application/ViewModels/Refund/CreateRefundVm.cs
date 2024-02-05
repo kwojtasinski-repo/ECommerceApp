@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using FluentValidation;
 
 namespace ECommerceApp.Application.ViewModels.Refund
 {
@@ -19,6 +17,16 @@ namespace ECommerceApp.Application.ViewModels.Refund
             };
 
             return refund;
+        }
+    }
+
+    public class CreateRefundVmValidation : AbstractValidator<CreateRefundVm>
+    {
+        public CreateRefundVmValidation()
+        {
+            RuleFor(x => x.Id).NotNull();
+            RuleFor(x => x.Reason).MaximumLength(255);
+            RuleFor(x => x.OrderId).NotNull();
         }
     }
 }

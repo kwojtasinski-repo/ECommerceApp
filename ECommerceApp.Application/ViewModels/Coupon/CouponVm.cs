@@ -1,9 +1,6 @@
-﻿  using AutoMapper;
+﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
 using FluentValidation;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Coupon
 {
@@ -33,7 +30,7 @@ namespace ECommerceApp.Application.ViewModels.Coupon
             public CouponVmValidation()
             {
                 RuleFor(x => x.Id).NotNull();
-                RuleFor(x => x.Code).NotNull();
+                RuleFor(x => x.Code).NotNull().MaximumLength(100);
                 RuleFor(x => x.Discount).ExclusiveBetween(0, 99);
                 RuleFor(x => x.Description).MaximumLength(255);
                 RuleFor(x => x.CouponTypeId).NotNull();

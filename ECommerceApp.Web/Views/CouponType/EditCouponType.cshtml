@@ -36,8 +36,9 @@
             type: {
                 controlId: 'CouponTypeInput',
                 rules: [
-                    v => v && v.trim().length > 0 || 'Nazwa jest wymagana',
-                    v => v && v.trim().length > 2 || 'Nazwa powinna zawierać więcej niż 2 znaki',
+                    v => v && v.trim().length > 0 || 'Typu kuponu jest wymagany',
+                    v => v && v.trim().length > 2 || 'Typ kuponu powinien zawierać więcej niż 2 znaki',
+                    v => v && v.trim().length <= 255 || 'Typ kuponu nie może być dłuższy niż 255 znaków',
                 ],
                 valid: false,
                 value: ''

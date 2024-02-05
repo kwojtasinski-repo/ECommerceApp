@@ -1,15 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
+﻿using System.Collections.Generic;
 
 namespace ECommerceApp.Domain.Model
 {
     public class Item : BaseEntity
     {
         public string Name { get; set; }
-        [Column(TypeName = "decimal(18,2)")]
         public decimal Cost { get; set; }
         public string Description { get; set; }
         public string Warranty { get; set; }

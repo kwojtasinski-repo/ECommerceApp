@@ -49,7 +49,8 @@
             code: {
                 controlId: 'CodeInput',
                 rules: [
-                    v => v && v.trim().length > 0 || 'Nazwa kodu jest wymagana',
+                    v => v && v.trim().length > 0 || 'Kod kuponu jest wymagana',
+                    v => v && v.trim().length <= 100 || 'Kod kuponu nie może być dłuższy niż 100 znaków'
                 ],
                 valid: false,
                 value: ''

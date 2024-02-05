@@ -1,9 +1,7 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
-using ECommerceApp.Application.ViewModels.Customer;
 using FluentValidation;
 using System;
-using System.Collections.Generic;
 
 namespace ECommerceApp.Application.ViewModels.Refund
 {
@@ -27,7 +25,7 @@ namespace ECommerceApp.Application.ViewModels.Refund
         public NewRefundValidation()
         {
             RuleFor(x => x.Id).NotNull();
-            RuleFor(x => x.Reason).Length(255);
+            RuleFor(x => x.Reason).MaximumLength(255);
             RuleFor(x => x.Accepted).NotNull();
             RuleFor(x => x.CustomerId).NotNull();
             RuleFor(x => x.OnWarranty).NotNull();

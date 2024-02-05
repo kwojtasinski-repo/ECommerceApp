@@ -39,49 +39,13 @@ namespace ECommerceApp.Infrastructure.Database
             base.OnModelCreating(builder);
             builder.ApplyConfigurationsFromAssembly(GetType().Assembly);
 
-            // -------------------- RELATION N:N --------------------
-            builder.Entity<ItemTag>()
-                .HasKey(it => new { it.ItemId, it.TagId });
-
-            builder.Entity<ItemTag>()
-                .HasOne(it => it.Item)
-                .WithMany(i => i.ItemTags)
-                .HasForeignKey(it => it.ItemId);
-
-            builder.Entity<ItemTag>()
-                .HasOne(it => it.Tag)
-                .WithMany(t => t.ItemTags)
-                .HasForeignKey(it => it.TagId);
-            // -------------------- RELATION N:N --------------------
-
-            // -------------------- RELATION 1:1 --------------------
-            builder.Entity<Coupon>()
-                .HasOne(c => c.CouponUsed)
-                .WithOne(c => c.Coupon)
-                .HasForeignKey<CouponUsed>(c => c.CouponId);
-            // -------------------- RELATION 1:1 --------------------
-
-            // -------------------- RELATION 1:1 --------------------
-            builder.Entity<Refund>()
-                .HasOne(r => r.Order)
-                .WithOne(o => o.Refund)
-                .HasForeignKey<Order>(o => o.RefundId);
-            // -------------------- RELATION 1:1 --------------------
-
-            // -------------------- DELETE BEHAVIOUR --------------------
-            builder.Entity<Item>()
-                .HasMany(i => i.Images)
-                .WithOne(it => it.Item)
-                .OnDelete(DeleteBehavior.SetNull);
-            // -------------------- DELETE BEHAVIOUR --------------------
-
             // -------------------- USER SEED DATA ----------------------
             //Seeding a  'Administrator' role to AspNetRoles table
-            builder.Entity<IdentityRole>().HasData(new IdentityRole { Id = "Administrator", Name = "Administrator", NormalizedName = "ADMINISTRATOR".ToUpper() });
-            builder.Entity<IdentityRole>().HasData(new IdentityRole { Id = "Manager", Name = "Manager", NormalizedName = "MANAGER".ToUpper() });
-            builder.Entity<IdentityRole>().HasData(new IdentityRole { Id = "Service", Name = "Service", NormalizedName = "SERVICE".ToUpper() });
-            builder.Entity<IdentityRole>().HasData(new IdentityRole { Id = "User", Name = "User", NormalizedName = "USER".ToUpper() });
-            builder.Entity<IdentityRole>().HasData(new IdentityRole { Id = "NotRegister", Name = "NotRegister", NormalizedName = "NOTREGISTER".ToUpper() });
+            builder.Entity<IdentityRole>().HasData(new IdentityRole { Id = "Administrator", Name = "Administrator", NormalizedName = "ADMINISTRATOR" });
+            builder.Entity<IdentityRole>().HasData(new IdentityRole { Id = "Manager", Name = "Manager", NormalizedName = "MANAGER" });
+            builder.Entity<IdentityRole>().HasData(new IdentityRole { Id = "Service", Name = "Service", NormalizedName = "SERVICE" });
+            builder.Entity<IdentityRole>().HasData(new IdentityRole { Id = "User", Name = "User", NormalizedName = "USER" });
+            builder.Entity<IdentityRole>().HasData(new IdentityRole { Id = "NotRegister", Name = "NotRegister", NormalizedName = "NOTREGISTER" });
 
 
             //a hasher to hash the password before seeding the user to the db
@@ -121,15 +85,6 @@ namespace ECommerceApp.Infrastructure.Database
             // -------------------- CURRENCY SEED DATA ----------------------
             builder.Entity<Currency>().HasData(new Currency { Id = CurrencyConstants.PlnId, Code = "PLN", Description = "Polski złoty" });
             // -------------------- CURRENCY SEED DATA ----------------------
-
-            // -------------------- SET PROPERTY --------------------
-            builder.Entity<Currency>().Property(c => c.Code).IsRequired().HasMaxLength(3);
-            builder.Entity<CurrencyRate>().Property(cr => cr.Rate).HasColumnType("decimal(18,4)").IsRequired();
-            // -------------------- SET PEROPERTY --------------------
-
-            // -------------------- ADD INDEX --------------------
-            builder.Entity<Currency>().HasIndex(c => new { c.Code }).IsUnique(true);
-            // -------------------- ADD INDEX --------------------
 
             var keysProperties = builder.Model.GetEntityTypes().Select(x => x.FindPrimaryKey()).SelectMany(x => x.Properties);
             foreach (var property in keysProperties)

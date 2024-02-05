@@ -4,23 +4,19 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ECommerceApp.Infrastructure.Database.Configurations
 {
-    internal class OrderConfigurations : IEntityTypeConfiguration<Order>
+    internal sealed class PaymentConfiguration : IEntityTypeConfiguration<Payment>
     {
-        public void Configure(EntityTypeBuilder<Order> builder)
+        public void Configure(EntityTypeBuilder<Payment> builder)
         {
             builder.HasKey(p => p.Id);
 
-            builder.Property(p => p.Ordered)
+            builder.Property(p => p.DateOfOrderPayment)
                 .IsRequired();
 
-            builder.Property(p => p.CustomerId)
-                .IsRequired();
-
-            builder.Property(p => p.CurrencyId)
-                .IsRequired();
-
-            builder.Property(p => p.UserId)
-                .IsRequired();
+            builder.Property(p => p.State)
+                .IsRequired()
+                .HasMaxLength(50)
+                .HasConversion<string>();
 
             builder.Property(p => p.Cost)
                 .IsRequired()
@@ -34,9 +30,9 @@ namespace ECommerceApp.Infrastructure.Database.Configurations
             builder.HasIndex(p => p.Number).IsUnique();
 
             builder
-                .HasOne(o => o.CouponUsed)
-                .WithOne(c => c.Order)
-                .HasForeignKey<CouponUsed>(c => c.OrderId);
+                .HasOne(p => p.Order)
+                .WithOne(o => o.Payment)
+                .HasForeignKey<Order>(o => o.PaymentId);
         }
     }
 }
