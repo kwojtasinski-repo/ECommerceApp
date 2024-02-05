@@ -1,11 +1,9 @@
-﻿using ECommerceApp.Application.Constants;
-using ECommerceApp.Domain.Model;
+﻿using ECommerceApp.Domain.Model;
+using ECommerceApp.Infrastructure.Database.Configurations;
 using ECommerceApp.Infrastructure.Database.SeedData;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Metadata;
-using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Database
 {
@@ -40,12 +38,7 @@ namespace ECommerceApp.Infrastructure.Database
             base.OnModelCreating(builder);
             builder.ApplyConfigurationsFromAssembly(GetType().Assembly);
             builder.ApplySeed();
-
-            var keysProperties = builder.Model.GetEntityTypes().Select(x => x.FindPrimaryKey()).SelectMany(x => x.Properties);
-            foreach (var property in keysProperties)
-            {
-                property.ValueGenerated = ValueGenerated.OnAdd;
-            }
+            builder.ApplyPrimaryKeyGeneration();
         }
     }
 }
