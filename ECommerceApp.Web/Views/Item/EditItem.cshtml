@@ -162,6 +162,7 @@ else
                     method: 'POST',
                     body: formData
                 });
+                clearImageUploadInput();
 
                 if (response.ok) {
                    window.location.reload();
@@ -203,6 +204,8 @@ else
             } catch (error) {
                 console.error('Error:', error);
             }
+
+            clearImageUploadValidationErrors();
         }
 
         function getImageCount() {
@@ -307,6 +310,10 @@ else
             itemFormValidator.warranty.value = document.getElementById(itemFormValidator.warranty.controlId).value;
             itemFormValidator.brandId.value = document.getElementById(itemFormValidator.brandId.controlId).value;
             itemFormValidator.typeId.value = document.getElementById(itemFormValidator.typeId.controlId).value;
+        }
+
+        function clearImageUploadInput() {
+            document.getElementById(fileUploadId).value = null;
         }
     </script>
 }
