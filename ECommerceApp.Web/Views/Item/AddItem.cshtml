@@ -128,6 +128,7 @@
         const imgAddToItemTag = 'ImagesToAddToItem';
         const imgsToAddTag = 'ImgSourceToAdd';
         const uploadId = 'FileUpload_FormFile';
+        const uploadFormId = 'UploadImages';
         const uploadSubmitButton = 'FileUpload_SubmitButton';
         const indexAddedImage = 'ImageAdded';
 
@@ -222,7 +223,7 @@
                 value: ''
             },
             images: {
-                controlId: 'FileUpload_FormFile',
+                controlId: uploadId,
                 rules: [
                     v => !v || (v && v.length <= maxCountImages) || 'Dozwolone jest maksymalnie ' + maxCountImages + ' obrazków',
                     v => {
@@ -248,7 +249,7 @@
                         return;
                     }
 
-                    var uploadForm = document.getElementById("UploadImages");
+                    var uploadForm = document.getElementById(uploadFormId);
                     var files = uploadForm[0].files;
 
                     const imagesToAdd = parseInt(files.length);
@@ -267,7 +268,7 @@
                         }
                     }
 
-                    forms.clearValidationError(this.controlId);
+                    clearImageError();
                     activateUpload();
                 },
                 valid: false,
@@ -289,7 +290,7 @@
                 return;
             }
 
-            var uploadForm = document.getElementById("UploadImages");
+            var uploadForm = document.getElementById(uploadFormId);
             var files = uploadForm[0].files;
 
             const imagesToAdd = parseInt(files.length);
@@ -316,6 +317,8 @@
             if (imagesAdded + imagesToAdd >= maxCountImages) {
                 deactivateUpload();
             }
+
+            clearImageUploadInput();
         }
 
         const toBase64 = file => new Promise((resolve, reject) => {
@@ -326,6 +329,7 @@
         });
 
         function deleteImage(id) {
+            clearImageError();
             const imgIndex = itemFormValidator.images.value.findIndex(v => v.id === id);
             if (imgIndex === -1) {
                 return;
@@ -388,6 +392,14 @@
         function activateUpload() {
             const upload = document.getElementById(uploadSubmitButton);
             upload.disabled = false;
+        }
+
+        function clearImageUploadInput() {
+            document.getElementById(uploadId).value = null;
+        }
+
+        function clearImageError() {
+            forms.clearValidationError(itemFormValidator.images.controlId);
         }
     </script>
 }
