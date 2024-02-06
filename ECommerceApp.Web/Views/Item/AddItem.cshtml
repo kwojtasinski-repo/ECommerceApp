@@ -136,16 +136,6 @@
             forms.initFormValidator(itemFormValidator);
         });
 
-        function containsValue(array, value) {
-            for (const element of array) {
-                if (element.value === value) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
         const itemFormValidator = {
             formId: "itemForm",
             name: {

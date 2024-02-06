@@ -6,7 +6,9 @@ namespace ECommerceApp.Application.ViewModels.Item
 {
     public class EditItemVm
     {
-        public ItemDetailsDto Item { get; private set; }
+        public ItemDetailsDto Item { get; set; }
+
+        public EditItemVm() { }
 
         public EditItemVm(ItemDetailsDto itemDetailsDto)
         {
