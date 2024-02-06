@@ -1,4 +1,6 @@
-﻿@model ECommerceApp.Application.ViewModels.Item.NewItemVm
+﻿@using ECommerceApp.Application.DTO
+@using ECommerceApp.Application.ViewModels.Item
+@model ECommerceApp.Application.ViewModels.Item.NewItemVm
 
 @{
     ViewData["Title"] = "AddItem";
@@ -60,31 +62,9 @@
                 <input type="hidden" asp-for="CurrencyId" value="1" />
                 <span asp-validation-for="CurrencyId" class="text-danger"></span>
             </div>
-            <table id="tagsWithJS">
-                <thead>
-                    List tagów:
-                </thead>
-                <tbody>
-                    @for (int i = 0; i < Model.ItemTags.Count; i++)
-                    {
-                        <tr id="@i">
-                            <td>
-                                <input name="Tag" value="@ViewBag.ItemTags[Model.ItemTags[i].TagId-1].Name" class="form-control valid" readonly style="width: 250px;position:static; " />
-                                <input id="tagId" type="hidden" name="ItemTags[@i].TagId" value="@Model.ItemTags[i].TagId" class="col-sm-2 col-form-label" />
-                                <input id="itemId" type="hidden" name="ItemTags[@i].ItemId" class="form-control" value="@Model.Id" />
-                            </td>
-                            <td class="col-2">
-                                <button id="@i" type="button" class="btn btn-danger delete">Usuń</button>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
             <div>
-                <select id="Tags" name="Tags" asp-items="@(new SelectList(ViewBag.ItemTags,"Id", "Name"))" class="custom-select" data-val="true"></select>
-                <button type="button" id="add" class="btn btn-info">Wybierz tag</button>
+                <select multiple asp-for="ItemTags" asp-items="@(new SelectList(((ViewBag.ItemTags as IEnumerable<TagDto>)  ?? Enumerable.Empty<TagDto>()), "Id", "Name"))" class="show-tick form-control data-search"></select>
             </div>
-            <div id="ImagesToAddToItem" style="display: none;"></div>
             <br />
             <div class="form-group">
                 <input type="submit" value="Utwórz" class="btn btn-primary" />
@@ -144,9 +124,6 @@
 
     <script type="text/javascript">
         let tags = [];
-        const itemTagsElement = document.getElementById("Tags");
-        var selectedIndex = 0;
-        var selectedValue;
         const imgDataTag = 'ImageData';
         const imgAddToItemTag = 'ImagesToAddToItem';
         const imgsToAddTag = 'ImgSourceToAdd';
@@ -155,55 +132,7 @@
         const indexAddedImage = 'ImageAdded';
 
         $(document).ready(function () {
-            initTags();
-            selectedValue = itemTagsElement?.options[itemTagsElement?.selectedIndex ?? 0]?.value ?? 0;
             forms.initFormValidator(itemFormValidator);
-        });
-
-        $('#add').click(function () {
-            if (selectedIndex < 0) {
-                return;
-            }
-
-            const tagValue = itemTagsElement.value;
-            const selectedText = itemTagsElement.options[itemTagsElement.selectedIndex].text;
-            tags.push({ name: selectedText, value: tagValue });
-
-            fillTableWithTags(tags);
-            removeUsedTags();
-            selectedIndex = 0;
-        });
-
-        $(document).on('change', 'select', function () {
-            selectedIndex = (this).index;
-            selectedValue = (this).value;
-            var collectionInSelectList = this.children;
-
-            for (i = 0; i < collectionInSelectList.length; i++) {
-                if (collectionInSelectList[i].value == selectedValue) {
-                    selectedIndex = i;
-                }
-            }
-        });
-
-        $('#tagsWithJS').on('click', '.delete', function () {
-            const tagIndexToDelete = (this).attributes.id.value;
-            const rowToDelete = document.querySelectorAll('#tagsWithJS > tbody > tr')[tagIndexToDelete];
-
-            if (!rowToDelete) {
-                return;
-            }
-
-            const tagId = rowToDelete.querySelector('#tagId');
-
-            if (!tagId) {
-                return;
-            }
-
-            const tagToAdd = tags.find(t => t.value === tagId.value);
-            addDeletedTag(tagToAdd);
-            tags = tags.filter(t => t.value !== tagId.value);
-            fillTableWithTags(tags);
         });
 
         function containsValue(array, value) {
@@ -214,91 +143,6 @@
             }
 
             return false;
-        }
-
-        function fillTableWithTags(tags) {
-            $('#tagsWithJS > tbody').empty();
-
-            for (let i = 0; i < tags.length; i++) {
-                const row = createTagRow(tags[i], i.toString());
-                const table = $('#tagsWithJS');
-                table.append(row);
-            }
-        }
-
-        function createTagRow(tag, index) {
-            const row = document.createElement('tr');
-            const dataTag = document.createElement('td');
-
-            const tagNameInput = document.createElement('input');
-            tagNameInput.name = "Tag";
-            tagNameInput.value = tag.name;
-            tagNameInput.className = "form-control valid";
-            tagNameInput.readOnly = true;
-            tagNameInput.style = "width: 250px;position:static;";
-            dataTag.appendChild(tagNameInput);
-
-            const tagIdInput = document.createElement('input');
-            tagIdInput.value = tag.value;
-            tagIdInput.setAttribute("id", "tagId");
-            tagIdInput.type = "hidden";
-            tagIdInput.name = "ItemTags[" + index + "].TagId";
-            dataTag.appendChild(tagIdInput);
-
-            const itemIdInput = document.createElement('input');
-            itemIdInput.value = document.querySelector('[data-name="itemId"]')?.value ?? 0;
-            itemIdInput.setAttribute("id", "itemId");
-            itemIdInput.type = "hidden";
-            itemIdInput.name = "ItemTags[" + index + "].ItemId";
-            dataTag.appendChild(itemIdInput);
-
-
-            const dataButton = document.createElement('td');
-            const button = buttonTemplate.createButton('Usuń', 'btn btn-danger delete', undefined, 'button', [{ key: "id", value: index }]);
-            dataButton.className = "col-2";
-            dataButton.appendChild(button);
-
-            row.appendChild(dataTag);
-            row.appendChild(dataButton);
-            return row;
-        }
-
-        function initTags() {
-            tags = initUsedTags();
-            removeUsedTags();
-        }
-
-        function initUsedTags() {
-            const tableRows = $('#tagsWithJS tr');
-            const usedTags = [];
-
-            if (!tableRows) {
-                return usedTags;
-            }
-
-            for (let i = 0; i < tableRows.length; i++) {
-                const name = tableRows[i].querySelector('[name="Tag"]');
-                const id = tableRows[i].querySelector('#tagId');
-                if (!name) {
-                    continue;
-                }
-                usedTags.push({ name: name.value, value: id.value });
-            }
-
-            return usedTags;
-        }
-
-        function removeUsedTags() {
-            const tagsSelector = document.querySelector('#Tags');
-            for (let i = tagsSelector.length - 1; i >= 0; i--) {
-                if (containsValue(tags, tagsSelector[i].value)) {
-                    tagsSelector[i].remove();
-                }
-            }
-        }
-
-        function addDeletedTag(tag) {
-            $('#Tags').append($("<option></option>").attr("value", tag.value).text(tag.name));
         }
 
         const itemFormValidator = {

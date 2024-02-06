@@ -10,11 +10,6 @@ namespace ECommerceApp.Application.ViewModels.Item
 {
     public class NewItemVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Item>
     {
-        public NewItemVm()
-        {
-            ItemTags = new List<ItemsWithTagsVm>();
-        }
-
         public string Name { get; set; }
         [DataType(DataType.Currency)]
         public decimal Cost { get; set; }
@@ -27,7 +22,7 @@ namespace ECommerceApp.Application.ViewModels.Item
 
         public List<BrandDto> Brands { get; set; } = new List<BrandDto>();
         public List<TypeVm> Types { get; set; } = new List<TypeVm>();
-        public List<ItemsWithTagsVm> ItemTags { get; set; } = new List<ItemsWithTagsVm>();
+        public List<int> ItemTags { get; set; } = new List<int>();
         public List<Image.GetImageVm> Images { get; set; } = new List<Image.GetImageVm>();
 
         public void Mapping(Profile profile)

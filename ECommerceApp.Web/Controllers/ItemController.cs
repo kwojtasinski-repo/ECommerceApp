@@ -70,7 +70,7 @@ namespace ECommerceApp.Web.Controllers
                     Warranty = model.Warranty,
                     BrandId = model.BrandId,
                     TypeId = model.TypeId,
-                    TagsId = model.ItemTags.Select(t => t.TagId).ToList(),
+                    TagsId = model.ItemTags,
                     Images = model.Images.Select(i => new AddItemImageDto(i.Name, i.ImageSource))
                 });
                 return RedirectToAction("EditItem", new { id });
