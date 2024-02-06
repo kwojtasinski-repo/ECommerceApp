@@ -42,7 +42,7 @@
             </div>
             <div class="form-group">
                 <label asp-for="BrandId" class="control-label">Firma: </label>
-                <select id="ItemBrand" asp-for="BrandId" asp-items="@(new SelectList(ViewBag.ItemBrands,"Id", "Name"))" class="show-tick form-control data-search"></select>
+                <select id="ItemBrand" asp-for="BrandId" asp-items="@(new SelectList(Model.Brands,"Id", "Name"))" class="show-tick form-control data-search"></select>
                 <span asp-validation-for="BrandId" class="text-danger"></span>
             </div>
             <p>
@@ -50,7 +50,7 @@
             </p>
             <div class="form-group">
                 <label asp-for="TypeId" class="control-label">Typ: </label>
-                <select id="ItemType" asp-for="TypeId" asp-items="@(new SelectList(ViewBag.ItemTypes,"Id", "Name"))" class="show-tick form-control data-search"></select>
+                <select id="ItemType" asp-for="TypeId" asp-items="@(new SelectList(Model.Types,"Id", "Name"))" class="show-tick form-control data-search"></select>
                 <span asp-validation-for="TypeId" class="text-danger"></span>
             </div>
             <p>
@@ -63,7 +63,7 @@
                 <span asp-validation-for="CurrencyId" class="text-danger"></span>
             </div>
             <div>
-                <select multiple asp-for="ItemTags" asp-items="@(new SelectList(((ViewBag.ItemTags as IEnumerable<TagDto>)  ?? Enumerable.Empty<TagDto>()), "Id", "Name"))" class="show-tick form-control data-search"></select>
+                <select multiple asp-for="ItemTags" asp-items="@(new SelectList(Model.Tags, "Id", "Name"))" class="show-tick form-control data-search"></select>
             </div>
             <br />
             <div class="form-group">

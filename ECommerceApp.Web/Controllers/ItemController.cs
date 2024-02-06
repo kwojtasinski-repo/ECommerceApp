@@ -49,10 +49,12 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult AddItem()
         {
-            ViewBag.ItemBrands = _brandService.GetAllBrands();
-            ViewBag.ItemTypes = _typeService.GetTypes();
-            ViewBag.ItemTags = _tagService.GetTags();
-            return View(new NewItemVm());
+            return View(new NewItemVm()
+            {
+                Brands = _brandService.GetAllBrands().ToList(),
+                Types = _typeService.GetTypes().ToList(),
+                Tags = _tagService.GetTags().ToList()
+            });
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]
@@ -91,34 +93,36 @@ namespace ECommerceApp.Web.Controllers
             {
                 var errorModel = BuildErrorModel("itemNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
                 HttpContext.Request.Query = errorModel.AsQueryCollection();
-                return View(new ItemDetailsDto());
+                return View(new EditItemVm(new ItemDetailsDto()));
             }
-            ViewBag.ItemBrands = _brandService.GetAllBrands();
-            ViewBag.ItemTypes = _typeService.GetTypes();
-            ViewBag.ItemTags = _tagService.GetTags();
-            return View(item);
+            return View(new EditItemVm(item)
+            {
+                Brands = _brandService.GetAllBrands().ToList(),
+                Types = _typeService.GetTypes().ToList(),
+                Tags = _tagService.GetTags().ToList()
+            });
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPost]
-        public IActionResult EditItem(ItemDetailsDto model)
+        public IActionResult EditItem(EditItemVm model)
         {
             try
             {
                 if (!_itemService.UpdateItem(new UpdateItemDto
                 {
-                    Id = model.Id,
-                    Name = model.Name,
-                    Description = model.Description,
-                    Cost = model.Cost,
-                    Quantity = model.Quantity,
-                    Warranty = model.Warranty,
-                    BrandId = model.Brand.Id,
-                    TypeId = model.Type.Id,
-                    TagsId = model.Tags.Select(t => t.Id).ToList()
+                    Id = model.Item.Id,
+                    Name = model.Item.Name,
+                    Description = model.Item.Description,
+                    Cost = model.Item.Cost,
+                    Quantity = model.Item.Quantity,
+                    Warranty = model.Item.Warranty,
+                    BrandId = model.Item.Brand.Id,
+                    TypeId = model.Item.Type.Id,
+                    TagsId = model.ItemTags
                 }))
                 {
-                    var errorModel = BuildErrorModel("itemNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
+                    var errorModel = BuildErrorModel("itemNotFound", new Dictionary<string, string> { { "id", $"{model.Item.Id}" } });
                     return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
                 }
                 return RedirectToAction("Index");
