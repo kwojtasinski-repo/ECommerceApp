@@ -425,10 +425,10 @@
             }
 
             refundBody.style.display = "block";
-            const body = dialogTeplate.createDialogBody(refundBody);
+            const body = dialogTemplate.createDialogBody(refundBody);
             const confirmButton = buttonTemplate.createButton("Zatwierdź", "btn btn-danger", async () => { await SendRefund(); modalService.close(); }, "type");
             const cancelButton = buttonTemplate.createButton("Anuluj", "btn btn-secondary", () => modalService.close(), "type");
-            const footer = dialogTeplate.createDialogFooter([confirmButton, cancelButton]);
+            const footer = dialogTemplate.createDialogFooter([confirmButton, cancelButton]);
             modalService.showCustomModal(header, body, footer);
         }
 

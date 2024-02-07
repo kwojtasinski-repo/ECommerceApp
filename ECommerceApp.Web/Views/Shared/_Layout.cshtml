@@ -180,27 +180,25 @@
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/lib/bootstrap-select/js/bootstrap-select.min.js"></script>
     <script src="~/lib/require-js/require.js"></script>
+    <script src="~/js/config.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
 
         $(document).ready(function () {
-            var itemCount = document.getElementById("itemCount");
+            require(["ajaxRequest", "errors"], function (request, err) {
 
-            if (!itemCount) {
-                return;
-            }
+                request.ajaxRequest.send("/OrderItem/OrderItemCount", "GET", undefined, "application/json", "json")
+                    .then(response => {
+                        if (response.count > 0) {
+                            itemCount.innerHTML = response.count;
+                        }
+                    });
 
-            ajaxRequest.send("/OrderItem/OrderItemCount", "GET", undefined, "application/json", "json")
-                        .then(response => { 
-                            if (response.count > 0) {
-                                itemCount.innerHTML = response.count;
-                            }
-                        });
-
-            setGlobalError('@Context.Request.Query["Error"]', '@Context.Request.Query["Params"]');
+                setGlobalError('@Context.Request.Query["Error"]', '@Context.Request.Query["Params"]', err.errors);
+            });
         });
 
-        function setGlobalError(errorCode, params) {
+        function setGlobalError(errorCode, params, errors) {
             const errorContainer = document.querySelector('#ErrorContainer');
             const errorValue = document.querySelector('#ErrorValue');
             if (!errorContainer || !errorValue) {
