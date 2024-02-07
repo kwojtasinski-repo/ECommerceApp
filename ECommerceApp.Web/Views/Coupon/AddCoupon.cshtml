@@ -78,7 +78,7 @@
             },
         };
 
-        $(document).ready(function () {
+        $(document).on('DOMInitialized', function () {
             forms.initFormValidator(couponFormValidator);
         });
     </script>

@@ -116,7 +116,7 @@
             }
         };
 
-        $(document).ready(function () {
+        $(document).on('DOMInitialized', function () {
             forms.initFormValidator(paymentFormValidator);
             paymentFormValidator.paymentNumber.value = document.getElementById(paymentFormValidator.paymentNumber.controlId).value;
             paymentFormValidator.dateOfPayment.value = document.getElementById(paymentFormValidator.dateOfPayment.controlId).value;

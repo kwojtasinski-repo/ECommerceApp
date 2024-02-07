@@ -184,21 +184,24 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
 
-        $(document).ready(function () {
-            require(["ajaxRequest", "errors"], function (request, err) {
+        $(document).on('DOMInitialized', function () {
+            var itemCount = document.getElementById("itemCount");
 
-                request.ajaxRequest.send("/OrderItem/OrderItemCount", "GET", undefined, "application/json", "json")
-                    .then(response => {
-                        if (response.count > 0) {
-                            itemCount.innerHTML = response.count;
-                        }
-                    });
+            if (!itemCount) {
+                return;
+            }
 
-                setGlobalError('@Context.Request.Query["Error"]', '@Context.Request.Query["Params"]', err.errors);
-            });
+            ajaxRequest.send("/OrderItem/OrderItemCount", "GET", undefined, "application/json", "json")
+                        .then(response => { 
+                            if (response.count > 0) {
+                                itemCount.innerHTML = response.count;
+                            }
+                        });
+
+            setGlobalError('@Context.Request.Query["Error"]', '@Context.Request.Query["Params"]');
         });
 
-        function setGlobalError(errorCode, params, errors) {
+        function setGlobalError(errorCode, params) {
             const errorContainer = document.querySelector('#ErrorContainer');
             const errorValue = document.querySelector('#ErrorValue');
             if (!errorContainer || !errorValue) {

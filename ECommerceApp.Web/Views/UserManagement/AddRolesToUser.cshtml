@@ -97,7 +97,7 @@
         };
 
 
-        $(document).ready(function () {
+        $(document).on('DOMInitialized', function () {
             forms.initFormValidator(addRolesToUserFormValidator);
             for (const userRole of $('input[name="UserRoles"]')) {
                 addRolesToUserFormValidator.userRoles.value.push({

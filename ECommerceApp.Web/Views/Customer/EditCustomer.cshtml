@@ -225,7 +225,7 @@
                 }
             }
 
-            $(document).ready(function () {
+            $(document).on('DOMInitialized', function () {
                 forms.initFormValidator(customerFormValidator);
                 customerFormValidator.hasCompany = document.getElementById('CompanyEnter').checked;
                 customerFormValidator.firstName.value = document.getElementById(customerFormValidator.firstName.controlId).value;

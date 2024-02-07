@@ -17,6 +17,8 @@
                 addObjectPropertiesToGlobal(ajaxRequest);
                 addObjectPropertiesToGlobal(modalService);
 
+                $(document).trigger('DOMInitialized');
+
                 function addObjectPropertiesToGlobal(obj) {
                     for (const prop in obj) {
                         window[prop] = obj[prop];

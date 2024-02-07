@@ -154,7 +154,7 @@
 
             try {
                 await ajaxRequest.send('/Order/DeleteOrder/' + id, 'DELETE', undefined);
-                window.location.reload();
+                PagerClick(1, "search-form");
             } catch (error) {
                 console.error(error);
             }

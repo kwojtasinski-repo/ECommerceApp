@@ -44,7 +44,7 @@
             }
         };
 
-        $(document).ready(function () {
+        $(document).on('DOMInitialized', function () {
             forms.initFormValidator(typeFormValidator);
         });
     </script>

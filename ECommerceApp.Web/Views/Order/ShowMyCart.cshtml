@@ -151,8 +151,12 @@ else
          }
 
 
-        $(document).ready(function () {
+        $(document).on('DOMInitialized', function () {
             const summaryCost = document.querySelector('[id="SummaryCost"]');
+            if (!summaryCost) {
+                return;
+            }
+
             const elements = $('.item-info');
             let value = 0.0;
             for (const element of elements) {

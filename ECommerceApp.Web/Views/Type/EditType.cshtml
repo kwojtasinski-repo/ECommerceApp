@@ -45,7 +45,7 @@
             }
         };
 
-        $(document).ready(function () {
+        $(document).on('DOMInitialized', function () {
             forms.initFormValidator(typeFormValidator);
             typeFormValidator.name.value = document.getElementById(typeFormValidator.name.controlId).value;
         });

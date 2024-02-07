@@ -125,7 +125,7 @@ else
     <script>
         const fileUploadId = 'FileUpload_FormFile';
 
-        $(document).ready(function () {
+        $(document).on('DOMInitialized', function () {
             forms.initFormValidator(itemFormValidator);
             initItemForm();
         });

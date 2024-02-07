@@ -533,7 +533,7 @@
             }
         }
 
-        $(document).ready(function () {
+        $(document).on('DOMInitialized', function () {
             const cost = calculateCosts();
             document.getElementById('Cost').value = Number(cost);
             document.getElementById('CostCurrency').value = format(cost);
@@ -568,20 +568,6 @@
                 orderFormValidator.customer.useExistingData = false;
             }
         }
-
-        $(document).on('change', 'select', function () {
-            selectedIndex = (this).index;
-            selectedValue = (this).value;
-            var collectionInSelectList = this.children;
-
-            for (i = 0; i < collectionInSelectList.length; i++) {
-                console.log("jestem w forze");
-                if (collectionInSelectList[i].value == selectedValue) {
-                    selectedIndex = i;
-                }
-            }
-            document.getElementById("CustId") = selectedValue;
-        });
 
         function initModel() {
             orderFormValidator.customer.firstName.value = document.getElementById('CustomerFirstNameInput').value;

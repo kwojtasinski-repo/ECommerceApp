@@ -55,7 +55,7 @@
             }
         };
 
-        $(document).ready(function () {
+        $(document).on('DOMInitialized', function () {
             forms.initFormValidator(currencyFormValidator);
             currencyFormValidator.code.value = document.getElementById(currencyFormValidator.code.controlId).value;
             currencyFormValidator.description.value = document.getElementById(currencyFormValidator.description.controlId).value;

@@ -45,7 +45,7 @@
             }
         };
 
-        $(document).ready(function () {
+        $(document).on('DOMInitialized', function () {
             forms.initFormValidator(brandFormValidator);
             brandFormValidator.name.value = document.getElementById(brandFormValidator.name.controlId).value;
         });

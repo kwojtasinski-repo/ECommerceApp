@@ -1,8 +1,8 @@
 ﻿config.setup();
 config.init();
 
-// initliaze, enable tooltips
-$(document).ready(async function () {
+// initialize, enable tooltips
+$(document).on('DOMInitialized', async function () {
     if (typeof beforePageFullyLoaded === "function") {
         await beforePageFullyLoaded();
     }

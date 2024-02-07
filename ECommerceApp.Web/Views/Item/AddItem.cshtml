@@ -132,7 +132,7 @@
         const uploadSubmitButton = 'FileUpload_SubmitButton';
         const indexAddedImage = 'ImageAdded';
 
-        $(document).ready(function () {
+        $(document).on('DOMInitialized', function () {
             forms.initFormValidator(itemFormValidator);
         });
 

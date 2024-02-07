@@ -91,7 +91,7 @@
             }
         };
 
-        $(document).ready(function () {
+        $(document).on('DOMInitialized', function () {
             forms.initFormValidator(contactDetailFormValidator);
             contactDetailFormValidator.contactDetailType.value = $('#' + contactDetailFormValidator.contactDetailType.controlId).val();
             contactDetailFormValidator.contactDetailInformation.value = document.querySelector('#' + contactDetailFormValidator.contactDetailInformation.controlId).value;

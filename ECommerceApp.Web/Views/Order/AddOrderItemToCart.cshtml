@@ -65,7 +65,7 @@
                 maximumFractionDigits: 2,
             });
 
-            $(document).ready(function () {
+            $(document).on('DOMInitialized', function () {
                 selectedValue = itemSelectList.options[itemSelectList.selectedIndex].value;
                 costFromSelectList = GetItemCost(itemList, selectedValue);
                 selectedValue = itemSelectList.options[itemSelectList.selectedIndex].value;
