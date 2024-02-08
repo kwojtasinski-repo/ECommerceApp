@@ -128,7 +128,7 @@ namespace ECommerceApp.Application.Services.Payments
                 throw new BusinessException($"{typeof(PaymentVm).Name} cannot be null");
             }
 
-            if (_repo.ExistsBydId(model.Id))
+            if (!_repo.ExistsBydId(model.Id))
             {
                 return false;
             }

@@ -63,7 +63,7 @@ namespace ECommerceApp.UnitTests.Services.CouponType
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
-        private CouponTypeVm CreateCouponTypeVm(int id)
+        private static CouponTypeVm CreateCouponTypeVm(int id)
         {
             var couponType = new CouponTypeVm
             {

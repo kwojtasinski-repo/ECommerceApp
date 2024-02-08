@@ -1,5 +1,4 @@
 ﻿using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Services;
 using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.ViewModels.CouponUsed;
@@ -118,7 +117,7 @@ namespace ECommerceApp.UnitTests.Services.CouponUsed
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
-        private CouponUsedVm CreateCouponUsedVm(int id, int couponId, int orderId)
+        private static CouponUsedVm CreateCouponUsedVm(int id, int couponId, int orderId)
         {
             var couponUsed = new CouponUsedVm
             {
@@ -129,7 +128,7 @@ namespace ECommerceApp.UnitTests.Services.CouponUsed
             return couponUsed;
         }
 
-        private List<Domain.Model.CouponUsed> CreateCouponsUsed()
+        private static List<Domain.Model.CouponUsed> CreateCouponsUsed()
         {
             var couponsUsed = new List<Domain.Model.CouponUsed>
             {
@@ -140,7 +139,7 @@ namespace ECommerceApp.UnitTests.Services.CouponUsed
             return couponsUsed;
         }
 
-        private Domain.Model.CouponUsed CreateCouponUsed(int id, int couponId, int orderId)
+        private static Domain.Model.CouponUsed CreateCouponUsed(int id, int couponId, int orderId)
         {
             var couponUsed = new Domain.Model.CouponUsed
             {

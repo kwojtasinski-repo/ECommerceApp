@@ -8,7 +8,6 @@ using ECommerceApp.UnitTests.Common;
 using ECommerceApp.Application.DTO;
 using System.Collections.Generic;
 using ECommerceApp.Domain.Model;
-using System.Linq;
 using ECommerceApp.Application.POCO;
 
 namespace ECommerceApp.Tests.Services.Item
@@ -78,13 +77,13 @@ namespace ECommerceApp.Tests.Services.Item
             {
                 Images = new List<AddItemImageDto>
                 {
-                    new AddItemImageDto("abc", ""),
-                    new AddItemImageDto("abc", ""),
-                    new AddItemImageDto("abc", ""),
-                    new AddItemImageDto("abc", ""),
-                    new AddItemImageDto("abc", ""),
-                    new AddItemImageDto("abc", ""),
-                    new AddItemImageDto("abc", "")
+                    new ("abc", ""),
+                    new ("abc", ""),
+                    new ("abc", ""),
+                    new ("abc", ""),
+                    new ("abc", ""),
+                    new ("abc", ""),
+                    new ("abc", "")
                 }
             };
 
@@ -118,7 +117,7 @@ namespace ECommerceApp.Tests.Services.Item
             {
                 Images = new List<AddItemImageDto>
                 {
-                    new AddItemImageDto("abc", "12312412fsddvzxcvs"),
+                    new ("abc", "12312412fsddvzxcvs"),
                 }
             };
 
@@ -171,7 +170,7 @@ namespace ECommerceApp.Tests.Services.Item
                 Warranty = "100",
                 Images = new List<AddItemImageDto>
                 {
-                    new AddItemImageDto("img1.png", "SW1hZ2VTb3VyY2U=")
+                    new ("img1.png", "SW1hZ2VTb3VyY2U=")
                 }
             };
 
@@ -211,13 +210,13 @@ namespace ECommerceApp.Tests.Services.Item
             {
                 Images = new List<UpdateItemImageDto>
                 {
-                    new UpdateItemImageDto(0, "abc", ""),
-                    new UpdateItemImageDto(0, "abc", ""),
-                    new UpdateItemImageDto(0, "abc", ""),
-                    new UpdateItemImageDto(0, "abc", ""),
-                    new UpdateItemImageDto(0, "abc", ""),
-                    new UpdateItemImageDto(0, "abc", ""),
-                    new UpdateItemImageDto(0, "abc", "")
+                    new (0, "abc", ""),
+                    new (0, "abc", ""),
+                    new (0, "abc", ""),
+                    new (0, "abc", ""),
+                    new (0, "abc", ""),
+                    new (0, "abc", ""),
+                    new (0, "abc", "")
                 }
             };
 
@@ -335,9 +334,9 @@ namespace ECommerceApp.Tests.Services.Item
                 Warranty = "200",
                 Images = new List<UpdateItemImageDto>
                 {
-                    new UpdateItemImageDto(AddDefaultImage(id), null, null),
-                    new UpdateItemImageDto(0, "img1.png", "SW1hZ2VTb3VyY2U="),
-                    new UpdateItemImageDto(0, "img1.png", "SW1hZ2VTb3VyY2U=")
+                    new (AddDefaultImage(id), null, null),
+                    new (0, "img1.png", "SW1hZ2VTb3VyY2U="),
+                    new (0, "img1.png", "SW1hZ2VTb3VyY2U=")
                 }
             };
 
@@ -366,7 +365,7 @@ namespace ECommerceApp.Tests.Services.Item
                 Warranty = "200",
                 Images = new List<UpdateItemImageDto>
                 {
-                    new UpdateItemImageDto(100, null, null)
+                    new (100, null, null)
                 }
             };
 
@@ -423,11 +422,11 @@ namespace ECommerceApp.Tests.Services.Item
             };
             _imageService.Setup(i => i.GetImages(It.IsAny<IEnumerable<int>>())).Returns(new List<ImageInfoDto>
             {
-                new ImageInfoDto { Id = id, Name = "Test", ItemId = itemId ?? id }
+                new () { Id = id, Name = "Test", ItemId = itemId ?? id }
             });
             _imageService.Setup(i => i.GetImagesByItemId(itemId ?? id)).Returns(new List<Application.ViewModels.Image.GetImageVm>
             {
-                new Application.ViewModels.Image.GetImageVm { Id = id }
+                new () { Id = id }
             });
             return id;
         }

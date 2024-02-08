@@ -95,7 +95,7 @@ namespace ECommerceApp.Tests.Services.Customer
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
-        private Domain.Model.Customer CreateCustomer(int id, string userId)
+        private static Domain.Model.Customer CreateCustomer(int id, string userId)
         {
             var customer = new Domain.Model.Customer
             {

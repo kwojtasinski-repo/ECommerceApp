@@ -9,7 +9,6 @@ using FluentAssertions;
 using Moq;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Xunit;
 
 namespace ECommerceApp.UnitTests.Services.Refund
@@ -178,7 +177,7 @@ namespace ECommerceApp.UnitTests.Services.Refund
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
-        private RefundVm CreateRefundVm(int id, int customerId, int orderId)
+        private static RefundVm CreateRefundVm(int id, int customerId, int orderId)
         {
             var refund = new RefundVm
             {
@@ -194,7 +193,7 @@ namespace ECommerceApp.UnitTests.Services.Refund
             return refund;
         }
 
-        private Domain.Model.Refund CreateRefund(int id, int customerId, int orderId)
+        private static Domain.Model.Refund CreateRefund(int id, int customerId, int orderId)
         {
             var refund = new Domain.Model.Refund
             {
@@ -210,7 +209,7 @@ namespace ECommerceApp.UnitTests.Services.Refund
             return refund;
         }
 
-        private OrderForListVm CreateOrder(int orderId)
+        private static OrderForListVm CreateOrder(int orderId)
         {
             var order = new OrderForListVm
             {

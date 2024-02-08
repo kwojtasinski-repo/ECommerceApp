@@ -1,14 +1,14 @@
 ﻿using ECommerceApp.Domain.Model;
 using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Domain.Interface
 {
     public interface ICurrencyRateRepository
     {
         CurrencyRate GetById(int id);
-        List<CurrencyRate> GetAll(Expression<Func<CurrencyRate, bool>> expression);
+        List<CurrencyRate> GetAll();
+        CurrencyRate GetRateForDate(int currencyId, DateTime date);
         void Update(CurrencyRate currencyRate);
         void Delete(CurrencyRate currencyRate);
         void Delete(int id);

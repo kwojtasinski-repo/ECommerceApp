@@ -163,7 +163,7 @@ namespace ECommerceApp.Tests.Services.Coupon
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
-        private CouponVm CreateCoupon()
+        private static CouponVm CreateCoupon()
         {
             var coupon = new CouponVm
             {
@@ -176,10 +176,10 @@ namespace ECommerceApp.Tests.Services.Coupon
             return coupon;
         }
 
-        private List<Domain.Model.Coupon> CreateCoupons()
+        private static List<Domain.Model.Coupon> CreateCoupons()
         {
             var coupons = new List<Domain.Model.Coupon>();
-            Random random = new Random();
+            Random random = new ();
 
             for (int i = 0; i < 3; i++)
             {

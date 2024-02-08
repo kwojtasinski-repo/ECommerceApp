@@ -1,7 +1,6 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.ContactDetails;
-using ECommerceApp.Application.ViewModels.ContactDetailType;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
@@ -85,7 +84,7 @@ namespace ECommerceApp.UnitTests.Services.ContactDetailType
             return contactDetailType;
         }
 
-        private Domain.Model.ContactDetailType CreateContactDetailType(int id)
+        private static Domain.Model.ContactDetailType CreateContactDetailType(int id)
         {
             var contactDetailType = new Domain.Model.ContactDetailType 
             { 

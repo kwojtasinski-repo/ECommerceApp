@@ -466,7 +466,7 @@ namespace ECommerceApp.Tests.Services.Order
         }
 
         [Fact]
-        public void given_not_existed_promo_code_when_update_should_throw_exceptio_with_message_not_found()
+        public void given_not_existed_promo_code_when_update_should_throw_exception_with_message_not_found()
         {
             var orderService = CreateService();
             var order = CreateDefaultOrder();
@@ -479,7 +479,7 @@ namespace ECommerceApp.Tests.Services.Order
         }
 
         [Fact]
-        public void given_different_coupon_used_id_when_update_should_throw_exceptio_with_message_cannot_assign_existed_coupon()
+        public void given_different_coupon_used_id_when_update_should_throw_exception_with_message_cannot_assign_existed_coupon()
         {
             var orderService = CreateService();
             var order = CreateDefaultOrder();

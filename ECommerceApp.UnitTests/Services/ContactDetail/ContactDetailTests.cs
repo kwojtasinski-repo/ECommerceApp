@@ -1,6 +1,5 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Services.ContactDetails;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.UnitTests.Common;
@@ -188,16 +187,6 @@ namespace ECommerceApp.UnitTests.Services.ContactDetail
                 ContactDetailInformation = "123456789"
             };
             return contactDetail;
-        }
-
-        private static Domain.Model.Customer CreateCustomer(int id, string userId)
-        {
-            var customer = new Domain.Model.Customer
-            {
-                Id = id,
-                UserId = userId
-            };
-            return customer;
         }
     }
 }

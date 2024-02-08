@@ -62,7 +62,7 @@ namespace ECommerceApp.UnitTests.Services.Brand
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
-        private BrandDto CreateBrand()
+        private static BrandDto CreateBrand()
         {
             var brand = new BrandDto
             {

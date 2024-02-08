@@ -1,14 +1,12 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Orders;
-using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
 using Moq;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Xunit;
 
 namespace ECommerceApp.UnitTests.Services.OrderItem
@@ -159,7 +157,7 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
             return orderItem;
         }
 
-        private Domain.Model.OrderItem CreateOrderItem(int id, int itemId, string userId, int quantity, int? orderId = null)
+        private static Domain.Model.OrderItem CreateOrderItem(int id, int itemId, string userId, int quantity, int? orderId = null)
         {
             var orderItem = new Domain.Model.OrderItem
             {

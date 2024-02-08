@@ -77,8 +77,7 @@ namespace ECommerceApp.Application.Services.Currencies
             }
 
             var currencyRate = GetCurrencyRate(currency, date);
-            CurrencyRateDto currencyRateVm = null;
-
+            CurrencyRateDto currencyRateVm;
             if (currencyRate.Id != 0)
             {
                 currencyRateVm = _mapper.Map<CurrencyRateDto>(currencyRate);
@@ -93,7 +92,7 @@ namespace ECommerceApp.Application.Services.Currencies
 
         private CurrencyRate TryGetCurrencyRatePLN(int currencyId, DateTime date)
         {
-            var rate = _currencyRateRepository.GetAll(cr => cr.CurrencyId == currencyId && cr.CurrencyDate == date).FirstOrDefault();
+            var rate = _currencyRateRepository.GetRateForDate(currencyId, date);
 
             if (rate != null)
             {
@@ -120,7 +119,7 @@ namespace ECommerceApp.Application.Services.Currencies
 
             while (exchangeRate is null)
             {
-                var rate = _currencyRateRepository.GetAll(cr => cr.CurrencyId == currency.Id && cr.CurrencyDate == date).FirstOrDefault();
+                var rate = _currencyRateRepository.GetRateForDate(currency.Id, date);
 
                 if (rate != null)
                 {

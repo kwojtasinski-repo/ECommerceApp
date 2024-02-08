@@ -10,13 +10,12 @@ using Moq;
 using System;
 using Xunit;
 using ECommerceApp.Application.DTO;
-using ECommerceApp.Application.Interfaces;
 
 namespace ECommerceApp.UnitTests.Services.Payment
 {
     public class PaymentServiceTests : BaseTest
     {
-        private readonly Mock<IPaymentRepository> _paymentRepository;
+        private readonly PaymentInMemoryRepository _paymentRepository;
         private readonly Mock<IOrderRepository> _orderRepository;
         private readonly Mock<ICustomerService> _customerService;
         private readonly Mock<ICurrencyRateService> _currencyRateService;
@@ -26,13 +25,13 @@ namespace ECommerceApp.UnitTests.Services.Payment
 
         public PaymentServiceTests()
         {
-            _paymentRepository = new Mock<IPaymentRepository>();
+            _paymentRepository = new PaymentInMemoryRepository();
             _orderRepository = new Mock<IOrderRepository>();
             _customerService = new Mock<ICustomerService>();
             _currencyRateService = new Mock<ICurrencyRateService>();
             _currencyRepository = new Mock<ICurrencyRepository>();
             _userContext = new UserContextTest();
-            _paymentHandler = new PaymentHandler(_paymentRepository.Object, _currencyRateService.Object, _currencyRepository.Object);
+            _paymentHandler = new PaymentHandler(_paymentRepository, _currencyRateService.Object, _currencyRepository.Object);
             _currencyRepository.Setup(c => c.GetById(It.IsAny<int>())).Returns(new Domain.Model.Currency
             {
                 Id = 1,
@@ -41,7 +40,7 @@ namespace ECommerceApp.UnitTests.Services.Payment
         }
 
         private PaymentService CreateService() 
-            => new (_paymentRepository.Object, _mapper, _orderRepository.Object, _customerService.Object, _userContext, _paymentHandler);
+            => new (_paymentRepository, _mapper, _orderRepository.Object, _customerService.Object, _userContext, _paymentHandler);
 
         [Fact]
         public void given_valid_payment_should_add()
@@ -50,40 +49,36 @@ namespace ECommerceApp.UnitTests.Services.Payment
             var orderId = 1;
             var payment = new AddPaymentDto { CurrencyId = currencyId, OrderId = orderId };
             var cost = 100M;
-            var order = CreateOrder(orderId);
-            _orderRepository.Setup(o => o.GetOrderById(orderId)).Returns(_mapper.Map<Domain.Model.Order>(order));
-            var rate = CreateCurrencyRate(currencyId);
-            _currencyRateService.Setup(cr => cr.GetLatestRate(currencyId)).Returns(rate);
-            Domain.Model.Payment paymentAdded = null;
-            _paymentRepository.Setup(p => p.AddPayment(It.IsAny<Domain.Model.Payment>()))
-                .Callback((Domain.Model.Payment p) => {
-                    paymentAdded = p;
-                    });
+            var order = AddOrder(orderId);
+            var rate = AddRate(currencyId);
             var paymentService = CreateService();
 
-            paymentService.AddPayment(payment);
+            var id = paymentService.AddPayment(payment);
 
             var orderUpdated = _orderRepository.Object.GetOrderById(orderId);
             orderUpdated.IsPaid.Should().BeTrue();
+            var paymentAdded = _paymentRepository.GetPaymentById(id);
             paymentAdded.Cost.Should().BeLessThan(cost);
             paymentAdded.Cost.Should().Be(cost/rate.Rate);
             paymentAdded.CurrencyId.Should().Be(currencyId);
-            _paymentRepository.Verify(p => p.AddPayment(It.IsAny<Domain.Model.Payment>()), Times.Once);
             _orderRepository.Verify(p => p.UpdatedOrder(It.IsAny<Domain.Model.Order>()), Times.Once);
         }
 
         [Fact]
         public void given_valid_payment_should_update()
         {
-            int id = 1;
             var currencyId = 1;
             var orderId = 1;
-            var payment = CreatePaymentVm(id, currencyId, orderId);
+            var payment = CreatePayment(currencyId, orderId);
+            var id = _paymentRepository.AddPayment(payment);
+            var vm = new PaymentVm { Id = id, CurrencyId = 2, OrderId = orderId, Number = payment.Number, Cost = payment.Cost, CustomerId = payment.CustomerId, DateOfOrderPayment = payment.DateOfOrderPayment, State = payment.State };
             var paymentService = CreateService();
 
-            paymentService.UpdatePayment(payment);
+            paymentService.UpdatePayment(vm);
 
-            _paymentRepository.Verify(p => p.UpdatePayment(It.IsAny<Domain.Model.Payment>()), Times.Once);
+            var paymentUpdated = _paymentRepository.GetPaymentById(id);
+            paymentUpdated.Should().NotBeNull();
+            paymentUpdated.CurrencyId.Should().Be(vm.CurrencyId);
         }
 
         [Fact]
@@ -96,19 +91,24 @@ namespace ECommerceApp.UnitTests.Services.Payment
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
-        private static PaymentVm CreatePaymentVm(int id, int currencyId, int orderId)
+        private static Domain.Model.Payment CreatePayment(int currencyId, int orderId)
         {
-            var payment = new PaymentVm
+            var payment = new Domain.Model.Payment
             {
-                Id = id,
                 CurrencyId = currencyId,
                 OrderId = orderId,
                 CustomerId = 1,
                 Number = "1234",
-                OrderNumber = Guid.NewGuid().ToString(),
-                Cost = new decimal(100)
+                Cost = new decimal(100),
             };
             return payment;
+        }
+
+        private OrderDto AddOrder(int orderId)
+        {
+            var order = CreateOrder(orderId);
+            _orderRepository.Setup(o => o.GetOrderById(orderId)).Returns(_mapper.Map<Domain.Model.Order>(order));
+            return order;
         }
 
         private static OrderDto CreateOrder(int orderId)
@@ -120,6 +120,13 @@ namespace ECommerceApp.UnitTests.Services.Payment
                 Cost = new decimal(100)
             };
             return order;
+        }
+
+        private CurrencyRateDto AddRate(int currencyId)
+        {
+            var rate = CreateCurrencyRate(currencyId);
+            _currencyRateService.Setup(cr => cr.GetLatestRate(currencyId)).Returns(rate);
+            return rate;
         }
 
         private static CurrencyRateDto CreateCurrencyRate(int currencyId)

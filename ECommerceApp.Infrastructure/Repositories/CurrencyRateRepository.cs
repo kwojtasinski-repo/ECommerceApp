@@ -4,7 +4,6 @@ using ECommerceApp.Infrastructure.Database;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
@@ -23,10 +22,10 @@ namespace ECommerceApp.Infrastructure.Repositories
             return rate;
         }
 
-        public List<CurrencyRate> GetAll(Expression<Func<CurrencyRate, bool>> expression)
+        public List<CurrencyRate> GetAll()
         {
-            var rate = _context.CurrencyRates.Where(expression).ToList();
-            return rate;
+            return _context.CurrencyRates
+                           .ToList();
         }
 
         public void Update(CurrencyRate currencyRate)
@@ -63,6 +62,13 @@ namespace ECommerceApp.Infrastructure.Repositories
             _context.CurrencyRates.Add(currencyRate);
             _context.SaveChanges();
             return currencyRate.Id;
+        }
+
+        public CurrencyRate GetRateForDate(int currencyId, DateTime date)
+        {
+            return _context.CurrencyRates
+                           .Where(cr => cr.CurrencyId == currencyId && cr.CurrencyDate == date)
+                           .FirstOrDefault();
         }
     }
 }

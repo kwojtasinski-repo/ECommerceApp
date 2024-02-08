@@ -10,7 +10,6 @@ using Moq;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Xunit;
 
 namespace ECommerceApp.Tests.Services.Image
@@ -222,9 +221,9 @@ namespace ECommerceApp.Tests.Services.Image
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
-        private ImageVm CreateImageVm()
+        private static ImageVm CreateImageVm()
         {
-            Random random = new Random();
+            Random random = new ();
             var name = $"Name {random.Next(1, 10)}";
 
             var image = new ImageVm
@@ -239,7 +238,7 @@ namespace ECommerceApp.Tests.Services.Image
             return image;
         }
 
-        private IFormFile AddFileToIFormFile(string fileName, int size = 0)
+        private static IFormFile AddFileToIFormFile(string fileName, int size = 0)
         {
             var bytes = size == 0 ? Array.Empty<byte>() : new byte[size]; 
             var stream = new MemoryStream(bytes);
@@ -248,18 +247,6 @@ namespace ECommerceApp.Tests.Services.Image
                 Headers = new HeaderDictionary()
             };
             return formFile;
-        }
-
-        private Domain.Model.Image CreateImage()
-        {
-            var image = new Domain.Model.Image
-            {
-                Id = 1,
-                ItemId = 1,
-                Name = "img",
-                SourcePath = "../src"
-            };
-            return image;
         }
     }
 }

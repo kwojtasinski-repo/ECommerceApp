@@ -94,15 +94,5 @@ namespace ECommerceApp.UnitTests.Services.Type
             };
             return type;
         }
-
-        private static Domain.Model.Type CreateType(int id)
-        {
-            var type = new Domain.Model.Type
-            {
-                Id = id,
-                Name = "Type"
-            };
-            return type;
-        }
     }
 }

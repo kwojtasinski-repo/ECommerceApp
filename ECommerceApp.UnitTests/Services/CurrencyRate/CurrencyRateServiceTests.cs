@@ -6,9 +6,6 @@ using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
 using Moq;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Threading;
 using Xunit;
 
@@ -34,8 +31,6 @@ namespace ECommerceApp.UnitTests.Services.CurrencyRate
             var date = DateTime.Now;
             var currency = GetDefaultCurrency(currencyId);
             _currencyRepository.Setup(c => c.GetById(currencyId)).Returns(currency);
-            _currencyRateRepository.Setup(c => c.GetAll(It.IsAny<Expression<Func<Domain.Model.CurrencyRate, bool>>>())).Returns(new List<Domain.Model.CurrencyRate>());
-            _currencyRateRepository.Setup(c => c.Add(It.IsAny<Domain.Model.CurrencyRate>())).Verifiable();
             var currencyRateService = new CurrencyRateService(_currencyRateRepository.Object, _currencyRepository.Object, _mapper, _NBPClient.Object);
 
             var currencyRate = currencyRateService.GetRateForDay(currencyId, date);
@@ -53,8 +48,6 @@ namespace ECommerceApp.UnitTests.Services.CurrencyRate
             var date = DateTime.Now;
             var currency = GetCurrency(currencyId, code);
             _currencyRepository.Setup(c => c.GetById(currencyId)).Returns(currency);
-            _currencyRateRepository.Setup(c => c.GetAll(It.IsAny<Expression<Func<Domain.Model.CurrencyRate, bool>>>())).Returns(new List<Domain.Model.CurrencyRate>());
-            _currencyRateRepository.Setup(c => c.Add(It.IsAny<Domain.Model.CurrencyRate>())).Verifiable();
             _NBPClient.Setup(n => n.GetCurrencyRateOnDate(code, date.Date, CancellationToken.None)).ReturnsAsync(GetDefaultContentMessage());
             var currencyRateService = new CurrencyRateService(_currencyRateRepository.Object, _currencyRepository.Object, _mapper, _NBPClient.Object);
 
@@ -80,13 +73,12 @@ namespace ECommerceApp.UnitTests.Services.CurrencyRate
         }
 
         [Fact]
-        public void given_valid_currency_and_proper_date_and_invalid_address_when_getting_rate_for_day_should_throw_an_exception()
+        public void given_valid_currency_and_proper_date_and_invalid_url_when_getting_rate_for_day_should_throw_an_exception()
         {
             int currencyId = 10;
             var date = DateTime.Now;
             var currency = GetDefaultCurrency(currencyId);
             _currencyRepository.Setup(c => c.GetById(currencyId)).Returns(currency);
-            _currencyRateRepository.Setup(c => c.GetAll(It.IsAny<Expression<Func<Domain.Model.CurrencyRate, bool>>>())).Returns(new List<Domain.Model.CurrencyRate>());
             var currencyRateService = new CurrencyRateService(_currencyRateRepository.Object, _currencyRepository.Object, _mapper, _NBPClient.Object);
             var expectedException = new BusinessException($"Check currency code {currency.Code} if is valid");
 
@@ -128,15 +120,13 @@ namespace ECommerceApp.UnitTests.Services.CurrencyRate
             var date = DateTime.Now;
             var currency = GetDefaultCurrency(currencyId);
             _currencyRepository.Setup(c => c.GetById(currencyId)).Returns(currency);
-            _currencyRateRepository.Setup(c => c.GetAll(It.IsAny<Expression<Func<Domain.Model.CurrencyRate, bool>>>())).Returns(new List<Domain.Model.CurrencyRate>());
-            _currencyRateRepository.Setup(c => c.Add(It.IsAny<Domain.Model.CurrencyRate>())).Verifiable();
+            _currencyRateRepository.Setup(c => c.GetRateForDate(It.IsAny<int>(), It.IsAny<DateTime>())).Returns(new Domain.Model.CurrencyRate() { CurrencyId = currencyId, Rate = 1 });
             var currencyRateService = new CurrencyRateService(_currencyRateRepository.Object, _currencyRepository.Object, _mapper, _NBPClient.Object);
 
             var currencyRate = currencyRateService.GetLatestRate(currencyId);
 
             currencyRate.Should().NotBeNull();
             currencyRate.CurrencyId.Should().Be(currencyId);
-            _currencyRateRepository.Verify(cr => cr.Add(It.IsAny<Domain.Model.CurrencyRate>()), Times.Once);
         }
 
         [Fact]
@@ -147,26 +137,22 @@ namespace ECommerceApp.UnitTests.Services.CurrencyRate
             var date = DateTime.Now;
             var currency = GetCurrency(currencyId, code);
             _currencyRepository.Setup(c => c.GetById(currencyId)).Returns(currency);
-            _currencyRateRepository.Setup(c => c.GetAll(It.IsAny<Expression<Func<Domain.Model.CurrencyRate, bool>>>())).Returns(new List<Domain.Model.CurrencyRate>());
-            _currencyRateRepository.Setup(c => c.Add(It.IsAny<Domain.Model.CurrencyRate>())).Verifiable();
-            _NBPClient.Setup(n => n.GetCurrencyRateOnDate(code, date.Date, CancellationToken.None)).ReturnsAsync(GetDefaultContentMessage());
+            _currencyRateRepository.Setup(c => c.GetRateForDate(It.IsAny<int>(), It.IsAny<DateTime>())).Returns(new Domain.Model.CurrencyRate() { Id = 1, CurrencyId = currencyId, Rate = 0.5M });
             var currencyRateService = new CurrencyRateService(_currencyRateRepository.Object, _currencyRepository.Object, _mapper, _NBPClient.Object);
 
             var currencyRate = currencyRateService.GetLatestRate(currencyId);
 
             currencyRate.Should().NotBeNull();
             currencyRate.CurrencyId.Should().Be(currencyId);
-            _currencyRateRepository.Verify(cr => cr.Add(It.IsAny<Domain.Model.CurrencyRate>()), Times.Once);
         }
 
         [Fact]
-        public void given_valid_currency_and_proper_date_and_invalid_address_when_getting_latest_rate_should_throw_an_exception()
+        public void given_valid_currency_and_proper_date_and_invalid_url_when_getting_latest_rate_should_throw_an_exception()
         {
             int currencyId = 10;
             var date = DateTime.Now;
             var currency = GetDefaultCurrency(currencyId);
             _currencyRepository.Setup(c => c.GetById(currencyId)).Returns(currency);
-            _currencyRateRepository.Setup(c => c.GetAll(It.IsAny<Expression<Func<Domain.Model.CurrencyRate, bool>>>())).Returns(new List<Domain.Model.CurrencyRate>());
             var currencyRateService = new CurrencyRateService(_currencyRateRepository.Object, _currencyRepository.Object, _mapper, _NBPClient.Object);
             var expectedException = new BusinessException($"Check currency code {currency.Code} if is valid");
 
@@ -175,25 +161,29 @@ namespace ECommerceApp.UnitTests.Services.CurrencyRate
             action.Should().Throw<BusinessException>().WithMessage(expectedException.Message);
         }
 
-        private Domain.Model.Currency GetDefaultCurrency(int currencyId)
+        private static Domain.Model.Currency GetDefaultCurrency(int currencyId)
         {
-            var currency = new Domain.Model.Currency();
-            currency.Id = currencyId;
-            currency.Code = "PLN";
-            currency.Description = "Polski złoty";
+            var currency = new Domain.Model.Currency
+            {
+                Id = currencyId,
+                Code = "PLN",
+                Description = "Polski złoty"
+            };
             return currency;
         }
 
-        private Domain.Model.Currency GetCurrency(int currencyId, string code)
+        private static Domain.Model.Currency GetCurrency(int currencyId, string code)
         {
-            var currency = new Domain.Model.Currency();
-            currency.Id = currencyId;
-            currency.Code = code.ToUpper();
-            currency.Description = "";
+            var currency = new Domain.Model.Currency
+            {
+                Id = currencyId,
+                Code = code.ToUpper(),
+                Description = ""
+            };
             return currency;
         }
 
-        private string GetDefaultContentMessage()
+        private static string GetDefaultContentMessage()
         {
             return "{\"table\":\"A\",\"currency\":\"euro\",\"code\":\"EUR\",\"rates\":[{\"no\":\"243/A/NBP/2021\",\"effectiveDate\":\"2021-12-16\",\"mid\":4.6315}]}";
         }
