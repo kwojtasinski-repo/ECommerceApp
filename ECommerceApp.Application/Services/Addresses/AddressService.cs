@@ -114,7 +114,7 @@ namespace ECommerceApp.Application.Services.Addresses
                 address = _addressRepository.GetAddressById(addressDto.Id ?? 0);
             }
 
-            if (address == null)
+            if (address is null)
             {
                 return false;
             }

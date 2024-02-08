@@ -1,6 +1,7 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Permissions;
 using ECommerceApp.Application.Services.Addresses;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.UnitTests.Common;
@@ -18,18 +19,16 @@ namespace ECommerceApp.UnitTests.Services.Address
         private readonly Mock<IAddressRepository> _addressRepository;
         private readonly Mock<ICustomerRepository> _customerRepository;
         private readonly HttpContextAccessorTest _contextAccessor;
-        private readonly IUserContext _userContext;
 
         public AddressServiceTests()
         {
             _addressRepository = new Mock<IAddressRepository>();
             _customerRepository = new Mock<ICustomerRepository>();
             _contextAccessor = new HttpContextAccessorTest();
-            _userContext = new UserContextTest(_contextAccessor);
         }
 
         private AddressService CreateAddressService()
-            => new (_addressRepository.Object, _customerRepository.Object, _mapper, _userContext);
+            => new(_addressRepository.Object, _customerRepository.Object, _mapper, new UserContextTest(_contextAccessor));
 
         [Fact]
         public void given_invalid_address_when_adding_should_throw_an_exception()
@@ -86,7 +85,7 @@ namespace ECommerceApp.UnitTests.Services.Address
         }
 
         [Fact]
-        public void given_valid_address_and_invalid_user_id_when_adding_should_add()
+        public void given_valid_address_and_not_existing_customer_when_adding_should_throw_an_exception()
         {
             var address = CreateAddressDto();
             address.Id = 0;
@@ -140,21 +139,95 @@ namespace ECommerceApp.UnitTests.Services.Address
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
-        private AddressDto CreateAddressDto()
+        [Fact]
+        public void given_valid_dto_with_existing_address_when_update_should_return_true()
         {
-            var dto = new AddressDto();
-            dto.Id = 1;
-            dto.Street = "Long";
-            dto.BuildingNumber = "2";
-            dto.FlatNumber = 1;
-            dto.ZipCode = "11-241";
-            dto.City = "Gistok";
-            dto.Country = "Poland";
-            dto.CustomerId = 1;
-            return dto;
+            var dto = CreateAddressDto();
+            _contextAccessor.SetUserRole(UserPermissions.Roles.Administrator);
+            var addressService = CreateAddressService();
+            var address = CreateAddress(dto.Id.Value, dto.CustomerId);
+            _addressRepository.Setup(a => a.GetAddressById(address.Id)).Returns(address);
+
+            var result = addressService.UpdateAddress(dto);
+
+            result.Should().BeTrue();
+            _addressRepository.Verify(a => a.UpdateAddress(It.IsAny<Domain.Model.Address>()), Times.Once);
         }
 
-        private Domain.Model.Address CreateAddress(int id, int customerId, string userId = null)
+        [Fact]
+        public void given_valid_dto_with_not_existing_address_when_update_should_return_true()
+        {
+            var dto = CreateAddressDto();
+            _contextAccessor.SetUserRole(UserPermissions.Roles.Administrator);
+            var addressService = CreateAddressService();
+
+            var result = addressService.UpdateAddress(dto);
+
+            result.Should().BeFalse();
+            _addressRepository.Verify(a => a.GetAddressById(It.IsAny<int>()), Times.Once);
+        }
+
+        [Fact]
+        public void given_valid_dto_and_not_existing_address_for_current_user_should_return_false()
+        {
+            var dto = CreateAddressDto();
+            var addressService = CreateAddressService();
+
+            var result = addressService.UpdateAddress(dto);
+
+            result.Should().BeFalse();
+            _addressRepository.Verify(a => a.GetAddressById(It.IsAny<int>(), It.IsAny<string>()), Times.Once);
+        }
+
+        [Fact]
+        public void given_not_existing_address_when_delete_should_return_false()
+        {
+            var addressService = CreateAddressService();
+
+            var result = addressService.DeleteAddress(1);
+
+            result.Should().BeFalse();
+            _addressRepository.Verify(a => a.GetCountByIdAndUserId(It.IsAny<int>(), It.IsAny<string>()), Times.Once);
+        }
+
+        [Fact]
+        public void given_only_one_address_for_current_user_when_delete_should_throw_an_exception()
+        {
+            _addressRepository.Setup(a => a.GetCountByIdAndUserId(It.IsAny<int>(), It.IsAny<string>())).Returns(1);
+            var addressService = CreateAddressService();
+
+            var action = () => addressService.DeleteAddress(1);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("You cannot delete address if you only have 1");
+        }
+
+        [Fact]
+        public void given_valid_address_when_delete_should_delete()
+        {
+            _addressRepository.Setup(a => a.GetCountByIdAndUserId(It.IsAny<int>(), It.IsAny<string>())).Returns(2);
+            var addressService = CreateAddressService();
+
+            addressService.DeleteAddress(1);
+
+            _addressRepository.Verify(a => a.DeleteAddress(It.IsAny<int>()), Times.Once);
+        }
+
+        private static AddressDto CreateAddressDto()
+        {
+            return new AddressDto
+            {
+                Id = 1,
+                Street = "Long",
+                BuildingNumber = "2",
+                FlatNumber = 1,
+                ZipCode = "11-241",
+                City = "Gistok",
+                Country = "Poland",
+                CustomerId = 1
+            };
+        }
+
+        private static Domain.Model.Address CreateAddress(int id, int customerId, string userId = null)
         {
             var address = new Domain.Model.Address
             {

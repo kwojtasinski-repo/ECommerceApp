@@ -13,12 +13,35 @@ namespace ECommerceApp.UnitTests.Common
 
         public void SetUserId(string userId)
         {
-            HttpContext.User = new ClaimsPrincipal(new List<ClaimsIdentity>()
+            HttpContext.User = AddClaimToUser(HttpContext.User, new(ClaimTypes.NameIdentifier, userId));
+        }
+
+        public void SetUserRole(string userRole)
+        {
+            HttpContext.User = AddClaimToUser(HttpContext.User, new Claim(ClaimTypes.Role, userRole));
+        }
+
+        private static ClaimsPrincipal AddClaimToUser(ClaimsPrincipal user, Claim claim)
+        {
+            if (user is null)
             {
-                new ClaimsIdentity(new List<Claim>
-                {
-                    new Claim(ClaimTypes.NameIdentifier, userId)
-                })
+                return new ClaimsPrincipal(new List<ClaimsIdentity>()
+                    {
+                        new (new List<Claim>
+                        {
+                            new (claim.Type, claim.Value)
+                        })
+                    });
+            }
+
+            var claims = new List<Claim>
+            {
+                new (claim.Type, claim.Value)
+            };
+            claims.AddRange(user.Claims);
+            return new ClaimsPrincipal(new List<ClaimsIdentity>()
+            {
+                new (claims)
             });
         }
     }
