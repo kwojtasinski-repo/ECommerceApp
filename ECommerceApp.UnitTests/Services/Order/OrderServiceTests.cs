@@ -524,12 +524,7 @@ namespace ECommerceApp.Tests.Services.Order
                     new () { Id = 0, ItemId = items[3].Id, ItemOrderQuantity = 10 },
                 }
             };
-            var exepectedCost = dto.OrderItems
-                                    .Select(oi => new
-                                    {
-                                        Cost = (items.FirstOrDefault(i => oi.ItemId == i.Id)?.Cost ?? 0) * oi.ItemOrderQuantity,
-                                    })
-                                    .Sum(i => i.Cost);
+            var exepectedCost = GetCost(dto.OrderItems);
             var dateBeforeUpdate = DateTime.Now;
 
             var dtoUpdated = orderService.UpdateOrder(dto);
@@ -553,7 +548,7 @@ namespace ECommerceApp.Tests.Services.Order
             var orderService = CreateService();
             var order = CreateDefaultOrder();
             var customer = CreateDefaultCustomer();
-            var orderItems = CreateDefaultOrderItems(order);
+            var orderItems = AddOrderItems(CreateDefaultOrderItems(order));
             order.OrderItems = orderItems;
             AddOrder(order);
             AddCustomer(customer);
@@ -573,17 +568,7 @@ namespace ECommerceApp.Tests.Services.Order
                 }
             };
             orderItems.ForEach(oi => dto.OrderItems.Add(new AddOrderItemDto { Id = oi.Id, ItemId = oi.ItemId, ItemOrderQuantity = oi.ItemOrderQuantity }));
-            var exepectedCost = dto.OrderItems
-                                    .Select(oi => new
-                                    {
-                                        Cost = (items.FirstOrDefault(i => oi.ItemId == i.Id)?.Cost ?? 0) * oi.ItemOrderQuantity,
-                                    })
-                                    .Sum(i => i.Cost);
-            exepectedCost += orderItems.Select(oi => new
-                                                {
-                                                    Cost = (oi.Item?.Cost ?? 0) * oi.ItemOrderQuantity,
-                                                })
-                                                .Sum(i => i.Cost);
+            var exepectedCost = GetCost(dto.OrderItems);
             var dateBeforeUpdate = DateTime.Now;
 
             var dtoUpdated = orderService.UpdateOrder(dto);
@@ -610,7 +595,6 @@ namespace ECommerceApp.Tests.Services.Order
             order.OrderItems = orderItems;
             AddOrder(order);
             AddCustomer(customer);
-            var orderItemsInOrder = 3;
             var items = GenerateAndAddItems();
             var dto = new UpdateOrderDto
             {
@@ -624,28 +608,12 @@ namespace ECommerceApp.Tests.Services.Order
                     new () { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 1 },
                     new () { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 1 },
                     new () { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 10 },
+                    new () { Id = orderItems[0].Id, ItemId = orderItems[0].ItemId, ItemOrderQuantity = orderItems[0].ItemOrderQuantity + 2 },
+                    new () { Id = orderItems[1].Id, ItemId = orderItems[1].ItemId, ItemOrderQuantity = orderItems[1].ItemOrderQuantity + 2 },
+                    new () { Id = orderItems[2].Id, ItemId = orderItems[2].ItemId, ItemOrderQuantity = orderItems[2].ItemOrderQuantity + 2 }
                 }
             };
-            var index = 0;
-            orderItems.ForEach(oi => {
-                if (index == orderItemsInOrder) { return; }
-                dto.OrderItems.Add(new AddOrderItemDto { Id = oi.Id, ItemId = oi.ItemId, ItemOrderQuantity = oi.ItemOrderQuantity + 2 });
-                index++;
-            });
-            var exepectedCost = dto.OrderItems
-                                    .Select(oi => new
-                                    {
-                                        Cost = (items.FirstOrDefault(i => oi.ItemId == i.Id)?.Cost ?? 0) * oi.ItemOrderQuantity,
-                                    })
-                                    .Sum(i => i.Cost);
-            exepectedCost += dto.OrderItems.Select(oi => new
-                                                {
-                                                    Cost = (
-                                                        (orderItems.Any(oiInner => oiInner.Id == oi.Id))
-                                                        ? (orderItems.FirstOrDefault(oiInner => oiInner.Id == oi.Id).Item?.Cost ?? 0) * oi.ItemOrderQuantity
-                                                        : 0)
-                                                })
-                                                .Sum(i => i.Cost);
+            var exepectedCost = GetCost(dto.OrderItems);
             var dateBeforeUpdate = DateTime.Now;
 
             var dtoUpdated = orderService.UpdateOrder(dto);
@@ -674,7 +642,6 @@ namespace ECommerceApp.Tests.Services.Order
             order.OrderItems = orderItems;
             AddOrder(order);
             AddCustomer(customer);
-            var orderItemsInOrder = 3;
             var items = GenerateAndAddItems();
             order.CouponUsed = CreateDefaultCouponUsed(order.Id);
             order.CouponUsedId = order.CouponUsed.Id;
@@ -690,30 +657,13 @@ namespace ECommerceApp.Tests.Services.Order
                     new () { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 1 },
                     new () { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 1 },
                     new () { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 10 },
+                    new () { Id = orderItems[0].Id, ItemId = orderItems[0].ItemId, ItemOrderQuantity = orderItems[0].ItemOrderQuantity + 2 },
+                    new () { Id = orderItems[1].Id, ItemId = orderItems[1].ItemId, ItemOrderQuantity = orderItems[1].ItemOrderQuantity + 2 },
+                    new () { Id = orderItems[2].Id, ItemId = orderItems[2].ItemId, ItemOrderQuantity = orderItems[2].ItemOrderQuantity + 2 }
                 },
                 CouponUsedId = order.CouponUsedId,
             };
-            var index = 0;
-            orderItems.ForEach(oi => {
-                if (index == orderItemsInOrder) { return; }
-                dto.OrderItems.Add(new AddOrderItemDto { Id = oi.Id, ItemId = oi.ItemId, ItemOrderQuantity = oi.ItemOrderQuantity + 2 });
-                index++;
-            });
-            var exepectedCost = dto.OrderItems
-                                    .Select(oi => new
-                                    {
-                                        Cost = (items.FirstOrDefault(i => oi.ItemId == i.Id)?.Cost ?? 0) * oi.ItemOrderQuantity,
-                                    })
-                                    .Sum(i => i.Cost);
-            exepectedCost += dto.OrderItems.Select(oi => new
-                                                {
-                                                    Cost = (
-                                                        (orderItems.Any(oiInner => oiInner.Id == oi.Id))
-                                                        ? (orderItems.FirstOrDefault(oiInner => oiInner.Id == oi.Id).Item?.Cost ?? 0) * oi.ItemOrderQuantity
-                                                        : 0)
-                                                })
-                                                .Sum(i => i.Cost);
-            exepectedCost = (1 - (order.CouponUsed.Coupon.Discount/100M)) * exepectedCost;
+            var exepectedCost = (1 - (order.CouponUsed.Coupon.Discount/100M)) * GetCost(dto.OrderItems);
             var dateBeforeUpdate = DateTime.Now;
 
             var dtoUpdated = orderService.UpdateOrder(dto);
@@ -743,7 +693,6 @@ namespace ECommerceApp.Tests.Services.Order
             order.OrderItems = orderItems;
             AddOrder(order);
             AddCustomer(customer);
-            var orderItemsInOrder = 3;
             var items = GenerateAndAddItems();
             order.CouponUsed = CreateDefaultCouponUsed(order.Id);
             order.CouponUsedId = order.CouponUsed.Id;
@@ -759,28 +708,12 @@ namespace ECommerceApp.Tests.Services.Order
                     new () { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 1 },
                     new () { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 1 },
                     new () { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 10 },
+                    new () { Id = orderItems[0].Id, ItemId = orderItems[0].ItemId, ItemOrderQuantity = orderItems[0].ItemOrderQuantity + 2 },
+                    new () { Id = orderItems[1].Id, ItemId = orderItems[1].ItemId, ItemOrderQuantity = orderItems[1].ItemOrderQuantity + 2 },
+                    new () { Id = orderItems[2].Id, ItemId = orderItems[2].ItemId, ItemOrderQuantity = orderItems[2].ItemOrderQuantity + 2 }
                 }
             };
-            var index = 0;
-            orderItems.ForEach(oi => {
-                if (index == orderItemsInOrder) { return; }
-                dto.OrderItems.Add(new AddOrderItemDto { Id = oi.Id, ItemId = oi.ItemId, ItemOrderQuantity = oi.ItemOrderQuantity + 2 });
-                index++;
-            });
-            var exepectedCost = dto.OrderItems
-                                    .Select(oi => new
-                                    {
-                                        Cost = (items.FirstOrDefault(i => oi.ItemId == i.Id)?.Cost ?? 0) * oi.ItemOrderQuantity,
-                                    })
-                                    .Sum(i => i.Cost);
-            exepectedCost += dto.OrderItems.Select(oi => new
-                                                {
-                                                    Cost = (
-                                                        (orderItems.Any(oiInner => oiInner.Id == oi.Id))
-                                                        ? (orderItems.FirstOrDefault(oiInner => oiInner.Id == oi.Id).Item?.Cost ?? 0) * oi.ItemOrderQuantity
-                                                        : 0)
-                                                })
-                                                .Sum(i => i.Cost);
+            var exepectedCost = GetCost(dto.OrderItems);
             var dateBeforeUpdate = DateTime.Now;
 
             var dtoUpdated = orderService.UpdateOrder(dto);
@@ -829,12 +762,7 @@ namespace ECommerceApp.Tests.Services.Order
                     new () { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 10 },
                 }
             };
-            var exepectedCost = dto.OrderItems
-                                    .Select(oi => new
-                                    {
-                                        Cost = (items.FirstOrDefault(i => oi.ItemId == i.Id)?.Cost ?? 0) * oi.ItemOrderQuantity,
-                                    })
-                                    .Sum(i => i.Cost);
+            var exepectedCost = GetCost(dto.OrderItems);
 
             var dtoUpdated = orderService.UpdateOrder(dto);
 
@@ -891,21 +819,7 @@ namespace ECommerceApp.Tests.Services.Order
                 dto.OrderItems.Add(new AddOrderItemDto { Id = oi.Id, ItemId = oi.ItemId, ItemOrderQuantity = oi.ItemOrderQuantity + 2 });
                 index++;
             });
-            var exepectedCost = dto.OrderItems
-                                    .Select(oi => new
-                                    {
-                                        Cost = (items.FirstOrDefault(i => oi.ItemId == i.Id)?.Cost ?? 0) * oi.ItemOrderQuantity,
-                                    })
-                                    .Sum(i => i.Cost);
-            exepectedCost += dto.OrderItems.Select(oi => new
-            {
-                Cost = (
-                        (orderItems.Any(oiInner => oiInner.Id == oi.Id))
-                        ? (orderItems.FirstOrDefault(oiInner => oiInner.Id == oi.Id).Item?.Cost ?? 0) * oi.ItemOrderQuantity
-                        : 0)
-            })
-             .Sum(i => i.Cost);
-            exepectedCost = (1 - (coupon.Discount/100M)) * exepectedCost;
+            var exepectedCost = (1 - (coupon.Discount / 100M)) * GetCost(dto.OrderItems);
             var dateBeforeUpdate = DateTime.Now;
 
             var dtoUpdated = orderService.UpdateOrder(dto);
@@ -951,9 +865,9 @@ namespace ECommerceApp.Tests.Services.Order
                 IsDelivered = true,
                 OrderItems = new List<AddOrderItemDto>()
                 {
-                    new AddOrderItemDto { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 1 },
-                    new AddOrderItemDto { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 1 },
-                    new AddOrderItemDto { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 10 },
+                    new () { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 1 },
+                    new () { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 1 },
+                    new () { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 10 },
                 },
                 PromoCode = coupon.Code,
             };
@@ -996,6 +910,23 @@ namespace ECommerceApp.Tests.Services.Order
 
         #region DataInitial
 
+        private decimal GetCost(IEnumerable<AddOrderItemDto> addOrderItemDtos)
+        {
+            var items = _itemRepository.Object.GetAllItems();
+            var cost = 0M;
+            foreach (var addOrderItem in addOrderItemDtos)
+            {
+                var item = items.FirstOrDefault(i => addOrderItem.ItemId == i.Id);
+                if (item is null)
+                {
+                    continue;
+                }
+
+                cost += item.Cost * addOrderItem.ItemOrderQuantity;
+            }
+            return cost;
+        }
+
         private void AddOrder(Domain.Model.Order order)
         {
             _orderRepository.AddOrder(order);
@@ -1018,7 +949,7 @@ namespace ECommerceApp.Tests.Services.Order
             _customerService.Setup(c => c.GetCustomer(customer.Id)).Returns(_mapper.Map<CustomerDetailsDto>(customer));
         }
 
-        private void AddOrderItems(IEnumerable<OrderItem> items)
+        private List<OrderItem> AddOrderItems(IEnumerable<OrderItem> items)
         {
             foreach (var oi in items)
             {
@@ -1029,6 +960,7 @@ namespace ECommerceApp.Tests.Services.Order
             {
                 AddItem(it);
             }
+            return items.ToList();
         }
 
         private void AddItem(Domain.Model.Item item)
@@ -1057,31 +989,31 @@ namespace ECommerceApp.Tests.Services.Order
         {
             return new List<ItemDto>()
             {
-                new ItemDto
+                new ()
                 {
                     Id = 1,
                     Name = Guid.NewGuid().ToString(),
                     Cost = 100
                 },
-                new ItemDto
+                new ()
                 {
                     Id = 2,
                     Name = Guid.NewGuid().ToString(),
                     Cost = 300
                 },
-                new ItemDto
+                new ()
                 {
                     Id = 3,
                     Name = Guid.NewGuid().ToString(),
                     Cost = 1000
                 },
-                new ItemDto
+                new ()
                 {
                     Id = 4,
                     Name = Guid.NewGuid().ToString(),
                     Cost = 100000
                 },
-                new ItemDto
+                new ()
                 {
                     Id = 5,
                     Name = Guid.NewGuid().ToString(),
@@ -1093,10 +1025,12 @@ namespace ECommerceApp.Tests.Services.Order
         private List<ItemDto> GenerateAndAddItems()
         {
             var items = GenerateItems();
-            _itemService.Setup(i => i.GetAllItems()).Returns(items);
-            items.ForEach(i => _itemRepository.Setup(service => service.GetItemById(i.Id)).Returns(_mapper.Map<Domain.Model.Item>(i)));
+            var allItems = _itemService.Object.GetAllItems() ?? new List<ItemDto>();
+            allItems.AddRange(items);
+            _itemService.Setup(i => i.GetAllItems()).Returns(allItems);
+            allItems.ForEach(i => _itemRepository.Setup(service => service.GetItemById(i.Id)).Returns(_mapper.Map<Domain.Model.Item>(i)));
             var currentItems = _itemRepository.Object.GetAllItems();
-            items.ForEach(i => currentItems.Add(_mapper.Map<Domain.Model.Item>(i)));
+            allItems.ForEach(i => currentItems.Add(_mapper.Map<Domain.Model.Item>(i)));
             _itemRepository.Setup(i => i.GetItemsByIds(It.Is<IEnumerable<int>>(
                 ids => ids.Any(id => currentItems.Any(c => c.Id == id))
             ))).Returns(currentItems);

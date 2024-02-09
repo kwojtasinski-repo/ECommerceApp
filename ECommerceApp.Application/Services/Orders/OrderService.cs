@@ -447,8 +447,7 @@ namespace ECommerceApp.Application.Services.Orders
             _paymentHandler.HandlePaymentChangesOnOrder(dto.Payment, order);
             _orderRepository.UpdatedOrder(order);
             orderItemsToRemove.ForEach(oi => _orderItemService.DeleteOrderItem(oi.Id));
-            var dto2 = _mapper.Map<OrderDetailsVm>(order);
-            return dto2;
+            return _mapper.Map<OrderDetailsVm>(order);
         }
 
         private void UpdateOrderFields(Order order, UpdateOrderDto dto)
