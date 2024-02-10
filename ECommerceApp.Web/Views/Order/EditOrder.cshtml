@@ -146,9 +146,9 @@
                                     <input id="orderItemId" type="hidden" name="OrderItems[@i].Id" class="form-control" value="@Model.OrderItems[i].Id" />
                                 </td>
                                 <td>
-                                    <a><i id="OrderItems[@i].ItemOrderQuantity" class="fas fa-plus-circle ml-2 fa_custom add-quantity"></i></a>
+                                    <a><i id="OrderItems[@i].ItemOrderQuantity" class="fas fa-plus-circle ml-2 fa-custom add-quantity"></i></a>
                                     <input id="ItemQuantity[@i]" name="OrderItems[@i].ItemOrderQuantity" value="@Model.OrderItems[i].ItemOrderQuantity" readonly style="width: 45px; display: inline !important; margin-left: 4px; margin-right: 4px;" class="form-control" />
-                                    <a><i class="fa fa-minus-circle fa_custom remove-quantity" style="margin-right: 4px" id="OrderItems[@i].ItemOrderQuantity"></i></a>
+                                    <a><i class="fa fa-minus-circle fa-custom remove-quantity" style="margin-right: 4px" id="OrderItems[@i].ItemOrderQuantity"></i></a>
                                     <button id="@i" type="button" class="btn btn-danger delete">Usuń</button>
                                 </td>
                             </tr>
@@ -359,7 +359,7 @@
             const addQuantityAnchor = document.createElement('a');
             const addIcon = document.createElement('i');
             addIcon.setAttribute("id", "OrderItems[" + index + "].ItemOrderQuantity");
-            addIcon.className = "fas fa-plus-circle ml-2 fa_custom add-quantity";
+            addIcon.className = "fas fa-plus-circle ml-2 fa-custom add-quantity";
             addQuantityAnchor.appendChild(addIcon);
             const inputQuantity = document.createElement('input');
             inputQuantity.setAttribute("id", "ItemQuantity[" + index + "]");
@@ -371,7 +371,7 @@
             const deleteQuantityAnchor = document.createElement('a');
             const deleteIcon = document.createElement('i');
             deleteIcon.setAttribute("id", "OrderItems[" + index + "].ItemOrderQuantity");
-            deleteIcon.className = "fas fa-minus-circle mr-2 fa_custom remove-quantity";
+            deleteIcon.className = "fas fa-minus-circle mr-2 fa-custom remove-quantity";
             deleteQuantityAnchor.appendChild(deleteIcon);
             const button = buttonTemplate.createButton('Usuń', 'btn btn-danger delete', undefined, 'button', [{ key: "id", value: index }]);
             button.id = index;
@@ -556,10 +556,4 @@
             }
         }
     </script>
-    <style type="text/css">
-        .fa_custom {
-            color: #0077cc;
-            cursor: pointer;
-        }
-    </style>
 }

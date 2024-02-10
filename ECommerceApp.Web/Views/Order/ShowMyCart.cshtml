@@ -55,10 +55,10 @@ else
                     </td>
                     <td style="width:100px;">
                         <div class="row item-info">
-                            <a><i style="margin-right:5px;" onclick="AddQuantity(@orderItem.Id, @orderItem.ItemId, @orderItem.ItemOrderQuantity)" id="OrderItemAddQuantity" class="fas fa-plus-circle ml-2 fa_custom"></i></a>
+                            <a><i style="margin-right:5px;" onclick="AddQuantity(@orderItem.Id, @orderItem.ItemId, @orderItem.ItemOrderQuantity)" id="OrderItemAddQuantity" class="fas fa-plus-circle ml-2 fa-custom"></i></a>
                             <span id="ItemQuantity">@Html.DisplayFor(model => orderItem.ItemOrderQuantity)</span>
                             <input type="hidden" id="ItemCost" value="@(orderItem.ItemCost)" />
-                            <a><i onclick="RemoveQuantity(@orderItem.Id, @orderItem.ItemId, @orderItem.ItemOrderQuantity)" class="fa fa-minus-circle ml-2 fa_custom" id="OrderItemRemoveQuantity"></i></a>
+                            <a><i onclick="RemoveQuantity(@orderItem.Id, @orderItem.ItemId, @orderItem.ItemOrderQuantity)" class="fa fa-minus-circle ml-2 fa-custom" id="OrderItemRemoveQuantity"></i></a>
                         </div>
                     </td>
                     <td>
@@ -169,9 +169,3 @@ else
 
     </script>
 }
-<style type="text/css">
-    .fa_custom {
-        color: #0077cc;
-        cursor: pointer;
-    }
-</style>

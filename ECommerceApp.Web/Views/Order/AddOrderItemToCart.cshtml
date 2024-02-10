@@ -35,9 +35,9 @@
                     </div>
                     <div class="col mt-2 mb-2 d-flex align-items-center">
                         <input id="Cost" name="Cost" value="" readonly style="width: 25%;" class="form-control" />
-                        <a><i onclick="AddQuantity(this.id)" id="OrderItemAddQuantity" class="fas fa-plus-circle ml-2 fa_custom mr-2"></i></a>
+                        <a><i onclick="AddQuantity(this.id)" id="OrderItemAddQuantity" class="fas fa-plus-circle ml-2 fa-custom mr-2"></i></a>
                         <input id="ItemQuantity" name="Model.OrderItem.ItemOrderQuantity" value="@Model.OrderItem.ItemOrderQuantity" readonly style="width: 15%;" class="form-control" />
-                        <a><i onclick="RemoveQuantity(this.id)" class="fa fa-minus-circle ml-2 fa_custom" id="OrderItemRemoveQuantity"></i></a>
+                        <a><i onclick="RemoveQuantity(this.id)" class="fa fa-minus-circle ml-2 fa-custom" id="OrderItemRemoveQuantity"></i></a>
                     </div>
                 </div>
             </div>
@@ -133,10 +133,4 @@
                 return array.find(a => a.id == itemId)?.cost ?? 0;
             }
         </script>
-        <style type="text/css">
-            .fa_custom {
-                color: #0077cc;
-                cursor: pointer;
-            }
-        </style>
     }
