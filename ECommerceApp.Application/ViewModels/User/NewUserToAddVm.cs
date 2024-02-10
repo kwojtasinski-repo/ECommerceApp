@@ -2,11 +2,7 @@
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Domain.Model;
 using FluentValidation;
-using Microsoft.AspNetCore.Identity;
-using System;
 using System.Collections.Generic;
-using System.Text;
-using System.Text.RegularExpressions;
 
 namespace ECommerceApp.Application.ViewModels.User
 {
@@ -38,6 +34,8 @@ namespace ECommerceApp.Application.ViewModels.User
                                   .Matches("^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$")
                                   .WithMessage("Hasło musi zawierać przynajmniej jedną dużą i małą literę oraz jeden specjalny znak" +
                                   ", a także nie może być krótsze niż 8 znaków");
+            RuleFor(x => x.UserRoles).NotNull().NotEmpty();
+            RuleForEach(x => x.UserRoles).NotNull().NotEmpty();
         }
     }
 }

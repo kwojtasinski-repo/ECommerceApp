@@ -2,6 +2,8 @@
 using ECommerceApp.Application.Mapping;
 using FluentValidation;
 using System.Collections.Generic;
+using System.Linq;
+using static ECommerceApp.Application.DTO.ContactDetailDto;
 
 namespace ECommerceApp.Application.DTO
 {
@@ -38,6 +40,14 @@ namespace ECommerceApp.Application.DTO
             {
                 RuleFor(x => x.NIP).NotNull().Length(9);
                 RuleFor(x => x.CompanyName).NotNull().MinimumLength(3).MaximumLength(255);
+            });
+            When(x => x.ContactDetails is not null && x.ContactDetails.Any(), () =>
+            {
+                RuleForEach(x => x.ContactDetails).SetValidator(new ContactDetailDtoValidation());
+            });
+            When(x => x.Addresses is not null && x.Addresses.Any(), () =>
+            {
+                RuleForEach(x => x.Addresses).SetValidator(new AddressDtoValidation());
             });
         }
     }

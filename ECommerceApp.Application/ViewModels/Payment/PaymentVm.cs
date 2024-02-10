@@ -45,6 +45,7 @@ namespace ECommerceApp.Application.ViewModels.Payment
             RuleFor(x => x.DateOfOrderPayment).NotNull();
             RuleFor(x => x.CustomerId).NotNull();
             RuleFor(x => x.OrderId).NotNull();
+            RuleFor(x => x.Cost).GreaterThan(0);
         }
     }
 }

@@ -34,10 +34,7 @@
                     {
                         <div class="checkbox">
                             <label>
-                                <input type="checkbox"
-                                       name="UserRoles"
-                                       value="@role.Name"
-                                       @if (Model.UserRoles.Contains(role.Name)) { <text> checked </text> } /> @role.Name
+                                <input type="checkbox" name="UserRoles" value="@role.Name" @if (Model.UserRoles.Contains(role.Name)) { <text> checked </text> } /> @role.Name
                             </label>
                         </div>
                     }

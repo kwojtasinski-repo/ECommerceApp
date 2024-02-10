@@ -3,6 +3,7 @@ using ECommerceApp.Application.Mapping;
 using ECommerceApp.Domain.Model;
 using FluentValidation;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ECommerceApp.Application.ViewModels.User
 {
@@ -30,6 +31,10 @@ namespace ECommerceApp.Application.ViewModels.User
                                     .EmailAddress().WithMessage("Proszę podać email");
             RuleFor(x => x.Email).NotNull().WithMessage("Email nie może być pusty")
                                  .EmailAddress().WithMessage("Proszę podać email");
+            When(x => x.UserRoles is not null && x.UserRoles.Any(), () =>
+            {
+                RuleForEach(x => x.UserRoles).NotNull().NotEmpty();
+            });
         }
     }
 }
