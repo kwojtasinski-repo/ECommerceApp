@@ -78,9 +78,6 @@
 
         $(document).on('DOMInitialized', function () {
             forms.initFormValidator(couponFormValidator);
-            couponFormValidator.code.value = document.getElementById(couponFormValidator.code.controlId).value;
-            couponFormValidator.discount.value = document.getElementById(couponFormValidator.discount.controlId).value;
-            couponFormValidator.description.value = document.getElementById(couponFormValidator.description.controlId).value;
         });
     </script>
 }

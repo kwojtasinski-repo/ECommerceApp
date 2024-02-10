@@ -127,10 +127,8 @@ else
 
         $(document).on('DOMInitialized', function () {
             forms.initFormValidator(itemFormValidator);
-            initItemForm();
         });
 
-        // --------------------------- SEND IMAGE ---------------------------
         async function Upload(input) {
             var uploadForm = document.getElementById("UploadImages");
             await SendAddImageRequest(uploadForm);
@@ -301,16 +299,6 @@ else
                 value: ''
             }
         };
-
-        function initItemForm() {
-            itemFormValidator.name.value = document.getElementById(itemFormValidator.name.controlId).value;
-            itemFormValidator.cost.value = document.getElementById(itemFormValidator.cost.controlId).value;
-            itemFormValidator.description.value = document.getElementById(itemFormValidator.description.controlId).value;
-            itemFormValidator.quantity.value = document.getElementById(itemFormValidator.quantity.controlId).value;
-            itemFormValidator.warranty.value = document.getElementById(itemFormValidator.warranty.controlId).value;
-            itemFormValidator.brandId.value = document.getElementById(itemFormValidator.brandId.controlId).value;
-            itemFormValidator.typeId.value = document.getElementById(itemFormValidator.typeId.controlId).value;
-        }
 
         function clearImageUploadInput() {
             document.getElementById(fileUploadId).value = null;

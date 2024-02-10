@@ -120,16 +120,6 @@
 
         $(document).on('DOMInitialized', function () {
             forms.initFormValidator(addressFormValidator);
-            initForm();
         });
-
-        function initForm() {
-            addressFormValidator.streetName.value = document.querySelector('#' + addressFormValidator.streetName.controlId).value;
-            addressFormValidator.buildingNumber.value = document.querySelector('#' + addressFormValidator.buildingNumber.controlId).value;
-            addressFormValidator.flatNumber.value = document.querySelector('#' + addressFormValidator.flatNumber.controlId).value;
-            addressFormValidator.zipCode.value = document.querySelector('#' + addressFormValidator.zipCode.controlId).value;
-            addressFormValidator.city.value = document.querySelector('#' + addressFormValidator.city.controlId).value;
-            addressFormValidator.country.value = document.querySelector('#' + addressFormValidator.country.controlId).value;
-        }
     </script>
 }

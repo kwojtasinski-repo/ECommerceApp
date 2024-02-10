@@ -65,6 +65,7 @@
             <div>
                 <select multiple asp-for="ItemTags" asp-items="@(new SelectList(Model.Tags, "Id", "Name"))" class="show-tick form-control data-search"></select>
             </div>
+            <div id="ImagesToAddToItem" style="display: none;"></div>
             <br />
             <div class="form-group">
                 <input type="submit" value="Utwórz" class="btn btn-primary" />
@@ -103,7 +104,7 @@
         <h4 id="ImagesToShow" style="display: none">Obrazki</h4>
         @for (int i = 0; i < Model.Images.Count; i++)
         {
-            <div data-name="ImageData" class="card" style="width:18rem;">
+            <div data-name="ImageData" data-image-name="@Model.Images[i].Name" class="card" style="width:18rem;">
                 <div class="card-body">
                     <button class="btn btn-sm btn-danger" style="margin-left: auto; margin-right: 0;" onclick="DeleteImage(@Model.Images[i].Id)">Usuń</button>
                     <img src="data:image;base64,@Model.Images[i].ImageSource" style="display: block; width: auto; max-width: 15rem; height: auto; max-height: 300px" />
@@ -262,7 +263,19 @@
                     activateUpload();
                 },
                 valid: false,
-                value: []
+                value: [],
+                onInitializeField: function (field) {
+                    const imagesAdded = $('[data-name="' + imgDataTag + '"]');
+                    if (!imagesAdded) {
+                        return;
+                    }
+                    for (const img of imagesAdded) {
+                        const id = $(img).attr('id');
+                        const name = $(img).attr('data-image-name');
+                        const data = $(img).find('img[src]').attr('src');
+                        field.value.push({ id, name, data });
+                    }
+                }
             },
             beforeSubmit: function() {
                 let index = 0;
@@ -354,6 +367,7 @@
             div2.appendChild(img);
             div.appendChild(div2);
             div.setAttribute('data-name', 'ImageData');
+            div.setAttribute('data-image-name', image.name);
             return div;
         }
 

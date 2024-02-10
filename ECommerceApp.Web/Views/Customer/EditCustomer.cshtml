@@ -185,6 +185,9 @@
             const customerFormValidator = {
                 formId: "customerForm",
                 hasCompany: false,
+                beforeInitializeFields: function () {
+                    customerFormValidator.hasCompany = document.getElementById('CompanyEnter').checked;
+                },
                 firstName: {
                     controlId: 'FirstName',
                     rules: [
@@ -226,13 +229,8 @@
                 }
             }
 
-        $(document).on('DOMInitialized', function () {
+            $(document).on('DOMInitialized', function () {
                 forms.initFormValidator(customerFormValidator);
-                customerFormValidator.hasCompany = document.getElementById('CompanyEnter').checked;
-                customerFormValidator.firstName.value = document.getElementById(customerFormValidator.firstName.controlId).value;
-                customerFormValidator.lastName.value = document.getElementById(customerFormValidator.lastName.controlId).value;
-                customerFormValidator.nip.value = document.getElementById(customerFormValidator.nip.controlId).value;
-                customerFormValidator.company.value = document.getElementById(customerFormValidator.company.controlId).value;
             });
 
             $('#CompanyEnter').on('click', function () {

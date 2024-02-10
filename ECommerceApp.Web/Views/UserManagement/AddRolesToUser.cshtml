@@ -89,18 +89,24 @@
                     forms.showValidationError(this.controlId, 'Wymagane jest przypisanie przynajmniej 1 roli użytkownikowi');
                 },
                 valid: false,
-                value: []
+                value: [],
+                onInitializeField: function (field) {
+                    for (const userRole of $('input[name="UserRoles"]')) {
+                        if (!userRole.checked) {
+                            continue;
+                        }
+                        field.value.push({
+                            name: userRole.value, checked: userRole.checked
+                        });
+                    }
+                }
             },
         };
 
 
         $(document).on('DOMInitialized', function () {
             forms.initFormValidator(addRolesToUserFormValidator);
-            for (const userRole of $('input[name="UserRoles"]')) {
-                addRolesToUserFormValidator.userRoles.value.push({
-                    name: userRole.value, checked: userRole.checked
-                });
-            }
+            debugger
         });
     </script>
 }

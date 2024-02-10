@@ -179,6 +179,13 @@
                         forms.showValidationError(this.controlId, text && text.length > 0 && text.trim().length > 0 ? text : '');
                         forms.clearValidationError(customerFormValidator.customer.contactDetailInformation.controlId);
                         forms.validControl(customerFormValidator.customer.contactDetailInformation);
+                    },
+                    onInitializeField: function (field) {
+                        const value = $('input[name="ContactDetailType"]:checked').val();
+                        if (!value) {
+                            return;
+                        }
+                        field.value = value;
                     }
                 },
                 contactDetailInformation: {

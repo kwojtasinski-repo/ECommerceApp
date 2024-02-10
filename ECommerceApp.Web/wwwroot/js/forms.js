@@ -20,7 +20,7 @@
             *
             */
             function iterateThroughObjectAndSetRulesListeners(obj) {
-                iterateThroughObjectAndRunCallbackOnRules(obj, setRulesListeners);
+                iterateThroughObjectAndRunCallbackOnField(obj, setRulesListeners);
             }
 
             /**
@@ -106,9 +106,9 @@
             *
             */
             function validAllFields(obj) {
-                iterateThroughObjectAndRunCallbackOnRules(obj, validField);
+                iterateThroughObjectAndRunCallbackOnField(obj, validField);
                 try {
-                    iterateThroughObjectAndRunCallbackOnRules(obj, throwIfFieldIsInvalidAndScrollToControl);
+                    iterateThroughObjectAndRunCallbackOnField(obj, throwIfFieldIsInvalidAndScrollToControl);
                     return true;
                 } catch {
                     return false;
@@ -150,7 +150,7 @@
             *
             */
             function clearValidationMessagesForAllFields(obj) {
-                iterateThroughObjectAndRunCallbackOnRules(obj, clearValidationMessageForField);
+                iterateThroughObjectAndRunCallbackOnField(obj, clearValidationMessageForField);
             }
 
             /**
@@ -162,14 +162,36 @@
                 field.valid = true;
                 forms.showValidationError(field.controlId, '');
             }
+            /**
+             * Initialize form fields
+             * @param {any} form FormValidator
+             */
+            function initializeFormFields(form) {
+                if (typeof form.beforeInitializeFields === 'function') {
+                    form.beforeInitializeFields();
+                }
+                iterateThroughObjectAndRunCallbackOnField(form, getValueFromHtml);
+                function getValueFromHtml(field) {
+                    if (typeof field.onInitializeField === 'function') {
+                        field.onInitializeField(field);
+                        return;
+                    }
+                    const value = $('#' + field.controlId).val();
+                    if (!value) {
+                        return;
+                    }
+
+                    field.value = value;
+                }
+            }
 
             /**
-            * Iterate through object and run callback if object contains rules field
+            * Iterate through object and run callback if object contains form field
             * @param obj Validator.
             * @param callback method to invoke with field argument.
             *
             */
-            function iterateThroughObjectAndRunCallbackOnRules(obj, callback) {
+            function iterateThroughObjectAndRunCallbackOnField(obj, callback) {
                 for (const field in obj) {
                     if (typeof obj[field] !== 'object' || obj[field] === null) {
                         continue;
@@ -180,7 +202,7 @@
                         continue;
                     }
 
-                    iterateThroughObjectAndRunCallbackOnRules(obj[field], callback);
+                    iterateThroughObjectAndRunCallbackOnField(obj[field], callback);
                 }
             }
 
@@ -195,7 +217,7 @@
                         return;
                     }
                     iterateThroughObjectAndSetRulesListeners(formValidator);
-
+                    initializeFormFields(formValidator);
                     $('#' + formValidator.formId).submit(function (event) {
                         event.preventDefault();
                         clearValidationMessagesForAllFields(formValidator);

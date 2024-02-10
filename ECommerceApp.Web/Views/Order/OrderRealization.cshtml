@@ -368,6 +368,9 @@
         });
         const orderFormValidator = {
             formId: "orderForm",
+            beforeInitializeFields: function () {
+                orderFormValidator.customer.hasCompany = document.getElementById('CompanyEnter').checked;
+            },
             customer: {
                 useExistingData: false,
                 hasCompany: false,
