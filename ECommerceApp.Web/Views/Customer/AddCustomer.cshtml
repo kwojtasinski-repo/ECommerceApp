@@ -150,6 +150,7 @@
                     controlId: 'NIPInput',
                     rules: [
                         (v) => !customerFormValidator.customer.hasCompany || (v && v.trim().length > 0) || 'NIP jest wymagany',
+                        (v) => !customerFormValidator.customer.hasCompany || (v && v.trim().length === 9) || 'NIP wymaga 9 znaków'
                     ],
                     valid: false,
                     value: ''

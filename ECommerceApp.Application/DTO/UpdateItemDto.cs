@@ -42,7 +42,7 @@ namespace ECommerceApp.Application.DTO
                         t.RuleFor(id => id).GreaterThan(0);
                     });
                 });
-            When(u => u.TagsId is not null && u.Images.Any(), () =>
+            When(u => u.Images is not null && u.Images.Any(), () =>
             {
                 RuleForEach(i => i.Images).SetValidator(new UpdateItemImageDtoValidator());
             });

@@ -205,7 +205,7 @@
             await getUserContacts();
         }
 
-        $(document).ready(async function () {
+        $(document).on('DOMInitialized', function () {
             initView();
         });
 

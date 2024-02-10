@@ -41,7 +41,7 @@ namespace ECommerceApp.Application.DTO
                         t.RuleFor(id => id).GreaterThan(0);
                     });
                 });
-            When(a => a.TagsId is not null && a.Images.Any(), () =>
+            When(a => a.Images is not null && a.Images.Any(), () =>
             {
                 RuleForEach(i => i.Images).ChildRules(i =>
                 {

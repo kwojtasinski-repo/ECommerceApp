@@ -48,6 +48,7 @@
                 controlId: 'CurrencyDescriptionInput',
                 rules: [
                     v => v && v.trim().length > 0 || 'Opis jest wymagany',
+                    v => v && v.trim().length > 3 || 'Opis powinien zawierać więcej niż 2 znaki',
                     v => v && v.trim().length < 255 || 'Opis powinien zawierać maksymalnie 255 znaków',
                 ],
                 valid: false,
