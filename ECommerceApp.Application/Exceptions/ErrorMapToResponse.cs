@@ -1,8 +1,6 @@
 ﻿using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.ViewModels;
 using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ECommerceApp.Application.Exceptions
 {

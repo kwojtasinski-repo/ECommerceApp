@@ -12,7 +12,7 @@ namespace ECommerceApp.Application.ViewModels.Refund
         public DateTime RefundDate { get; set; }
         public bool OnWarranty { get; set; }
         public int CustomerId { get; set; }
-        public int OrderId { get; set; } // 1:1 Only one Order can be refund
+        public int OrderId { get; set; }
 
         public void Mapping(Profile profile)
         {

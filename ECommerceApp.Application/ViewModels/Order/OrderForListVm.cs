@@ -2,17 +2,14 @@
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.OrderItem;
-using FluentValidation;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ECommerceApp.Application.ViewModels.Order
 {
     public class OrderForListVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Order>
     {
         public string Number { get; set; }
-        [Column(TypeName = "decimal(18,2)")]
         public decimal Cost { get; set; }
         public DateTime Ordered { get; set; }
         public DateTime? Delivered { get; set; }
@@ -20,13 +17,13 @@ namespace ECommerceApp.Application.ViewModels.Order
         public string UserId { get; set; }
         public int? CouponUsedId { get; set; }
         public int CustomerId { get; set; }
-        public int? PaymentId { get; set; } // 1:1 Order Payment
+        public int? PaymentId { get; set; }
         public bool IsPaid { get; set; }
-        public int? RefundId { get; set; } // 1:1 Order Refund
+        public int? RefundId { get; set; }
         public int CurrencyId { get; set; }
         public string CurrencyCode { get; set; }
 
-        public ICollection<OrderItemForListVm> OrderItems { get; set; } // 1:Many relation
+        public ICollection<OrderItemForListVm> OrderItems { get; set; }
 
         public void Mapping(Profile profile)
         {
@@ -70,18 +67,6 @@ namespace ECommerceApp.Application.ViewModels.Order
             }
 
             return order;
-        }
-    }
-
-    public class OrderForListValidation : AbstractValidator<OrderForListVm>
-    {
-        public OrderForListValidation()
-        {
-            RuleFor(x => x.Id).NotNull();
-            RuleFor(x => x.Number).NotNull();
-            RuleFor(x => x.Cost).NotNull();
-            RuleFor(x => x.Ordered).NotNull();
-            RuleFor(x => x.CustomerId).NotNull();
         }
     }
 }

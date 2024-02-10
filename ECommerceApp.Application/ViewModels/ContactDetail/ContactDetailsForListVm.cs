@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
-using FluentValidation;
 
 namespace ECommerceApp.Application.ViewModels.ContactDetail
 {
@@ -19,16 +18,6 @@ namespace ECommerceApp.Application.ViewModels.ContactDetail
                 .ForMember(c => c.ContactDetailTypeName, opt => opt.MapFrom(c => c.ContactDetailType.Name))
                 .ForMember(c => c.ContactDetailTypeId, opt => opt.MapFrom(c => c.ContactDetailTypeId))
                 .ForMember(c => c.CustomerId, opt => opt.MapFrom(c => c.CustomerId));
-        }
-    }
-
-    public class ContactDetailsForListValidation : AbstractValidator<ContactDetailsForListVm>
-    {
-        public ContactDetailsForListValidation()
-        {
-            RuleFor(x => x.Id).NotNull();
-            RuleFor(x => x.ContactDetailInformation).NotNull();
-            RuleFor(x => x.ContactDetailTypeId).NotNull();
         }
     }
 }

@@ -8,8 +8,8 @@ namespace ECommerceApp.Application.ViewModels.Customer
     {
         public string Number { get; set; }
         public DateTime DateOfOrderPayment { get; set; }
-        public int CustomerId { get; set; }  // 1:Many Customer Payment
-        public int OrderId { get; set; } // 1:1 Payment Order
+        public int CustomerId { get; set; }
+        public int OrderId { get; set; }
 
         public void Mapping(Profile profile)
         {

@@ -1,17 +1,12 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
-using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.Item
 {
     public class ItemDetailsVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Item>
     {
         public string Name { get; set; }
-        [Column(TypeName = "decimal(18,2)")]
         public decimal Cost { get; set; }
         public string Description { get; set; }
         public string Warranty { get; set; }

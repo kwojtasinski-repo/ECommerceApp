@@ -7,7 +7,7 @@ namespace ECommerceApp.Application.ViewModels.CouponUsed
     public class CouponUsedVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.CouponUsed>
     {
         public int CouponId { get; set; }
-        public int OrderId { get; set; } // OrderId for order discount relation 1:1
+        public int OrderId { get; set; }
 
 
         public void Mapping(Profile profile)

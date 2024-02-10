@@ -2,17 +2,15 @@
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.Coupon;
 using FluentValidation;
-using System;
 using System.Collections.Generic;
-using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.CouponType
 {
     public class CouponTypeDetailsVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.CouponType>
     {
-        public string Type { get; set; } // Type Coupon for only one Order; for only one Item
+        public string Type { get; set; }
 
-        public ICollection<CouponDetailsVm> Coupons { get; set; } // 1:Many CouponType Coupon
+        public ICollection<CouponDetailsVm> Coupons { get; set; }
 
         public void Mapping(Profile profile)
         {

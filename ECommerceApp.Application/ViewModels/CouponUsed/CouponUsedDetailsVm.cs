@@ -1,9 +1,5 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
-using ECommerceApp.Application.ViewModels.Order;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
 namespace ECommerceApp.Application.ViewModels.CouponUsed
 {
@@ -11,7 +7,7 @@ namespace ECommerceApp.Application.ViewModels.CouponUsed
     {
         public int CouponId { get; set; }
         public string Code { get; set; }
-        public int OrderId { get; set; } // OrderId for order discount relation 1:1
+        public int OrderId { get; set; }
         public int Number { get; set; }
 
         public void Mapping(Profile profile)

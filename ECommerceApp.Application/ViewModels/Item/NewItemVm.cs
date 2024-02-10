@@ -3,14 +3,12 @@ using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Mapping;
 using FluentValidation;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 
 namespace ECommerceApp.Application.ViewModels.Item
 {
     public class NewItemVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Item>
     {
         public string Name { get; set; }
-        [DataType(DataType.Currency)]
         public decimal Cost { get; set; }
         public string Description { get; set; }
         public string Warranty { get; set; }

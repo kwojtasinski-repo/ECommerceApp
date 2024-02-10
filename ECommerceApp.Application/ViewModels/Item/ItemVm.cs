@@ -1,6 +1,5 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
-using FluentValidation;
 using System.Collections.Generic;
 
 namespace ECommerceApp.Application.ViewModels.Item
@@ -30,35 +29,6 @@ namespace ECommerceApp.Application.ViewModels.Item
                 .ForMember(t => t.TypeId, map => map.MapFrom(src => src.TypeId))
                 .ForMember(t => t.CurrencyId, map => map.MapFrom(src => src.CurrencyId))
                 .ForMember(t => t.ItemTags, map => map.MapFrom(src => src.ItemTags));
-        }
-
-        public class ItemVmValidation : AbstractValidator<ItemVm>
-        {
-            public ItemVmValidation()
-            {
-                RuleFor(x => x.Id).NotNull();
-                RuleFor(x => x.Name).NotNull();
-                RuleFor(x => x.Cost).NotNull();
-                RuleFor(x => x.Description).NotNull();
-                RuleFor(x => x.Warranty).NotNull();
-                RuleFor(x => x.Quantity).NotNull();
-                RuleFor(x => x.BrandId).NotNull();
-                RuleFor(x => x.TypeId).NotNull();
-                RuleFor(x => x.CurrencyId).NotNull();
-
-                When(x => x.ItemTags != null && x.ItemTags.Count > 0, () =>
-                {
-                    RuleForEach(it => it.ItemTags).SetValidator(new ItemTagVmValidator());
-                });
-            }
-        }
-
-        public class ItemTagVmValidator : AbstractValidator<ItemTagVm>
-        {
-            public ItemTagVmValidator()
-            {
-                RuleFor(it => it.TagId).GreaterThan(0);
-            }
         }
     }
 }

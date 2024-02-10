@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.Item;
-using FluentValidation;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -54,15 +53,6 @@ namespace ECommerceApp.Application.ViewModels.Tag
                 });
             }
             return items;
-        }
-    }
-
-    public class TagDetailsValidation : AbstractValidator<TagDetailsVm>
-    {
-        public TagDetailsValidation()
-        {
-            RuleFor(x => x.Id).NotNull();
-            RuleFor(x => x.Name).NotNull();
         }
     }
 }

@@ -168,7 +168,6 @@ namespace ECommerceApp.Web.Controllers
             }
         }
 
-
         public IActionResult ViewCustomer(int id)
         {
             var customer = _customerService.GetCustomerDetails(id);

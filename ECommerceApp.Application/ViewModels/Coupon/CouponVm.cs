@@ -9,8 +9,8 @@ namespace ECommerceApp.Application.ViewModels.Coupon
         public string Code { get; set; }
         public int Discount { get; set; }
         public string Description { get; set; }
-        public int CouponTypeId { get; set; } // 1:Many CouponType Coupon
-        public int? CouponUsedId { get; set; } // 1:1 Coupon CouponUsed can be null
+        public int CouponTypeId { get; set; }
+        public int? CouponUsedId { get; set; }
 
         public void Mapping(Profile profile)
         {
