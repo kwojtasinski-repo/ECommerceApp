@@ -1,6 +1,5 @@
 ﻿using ECommerceApp.Application.DTO;
 using FluentValidation;
-using FluentValidation.Results;
 using System.Collections.Generic;
 
 namespace ECommerceApp.Application.ViewModels.Order

@@ -44,6 +44,7 @@
                 <span asp-validation-for="CouponUsedId" class="text-danger"></span>
             </div>
             <div class="form-group">
+                <input type="hidden" asp-for="CustomerId" value="@Model.CustomerId" class="control-label" />
                 <label asp-for="CustomerId" class="control-label">Klient</label>
                 <input value="@Model.CustomerInformation" class="form-control" readonly />
                 <span asp-validation-for="CustomerId" class="text-danger"></span>
@@ -288,7 +289,7 @@
             dataTag.appendChild(orderIdInput);
 
             const idInput = document.createElement('input');
-            idInput.value = document.querySelector('[data-name="Id"]')?.value ?? 0;
+            idInput.value = 0;
             idInput.setAttribute("id", "orderItemId");
             idInput.type = "hidden";
             idInput.name = "OrderItems[" + index + "].Id";

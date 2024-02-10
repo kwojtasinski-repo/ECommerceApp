@@ -11,6 +11,7 @@
     <div class="col-md-4">
         <form id="userForm" asp-action="AddUser">
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" id="LoginName" asp-for="UserName" class="form-control" />
             <div class="form-group">
                 <label asp-for="Email" class="control-label">Email</label>
                 <input id="LoginInput" asp-for="Email" class="form-control" />
@@ -108,6 +109,10 @@
                 valid: false,
                 value: []
             },
+            beforeSubmit: function () {
+                var loginName = document.querySelector('#LoginName');
+                loginName.value = this.login.value;
+            }
         };
 
 
