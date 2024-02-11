@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using System;
 
 namespace ECommerceApp.IntegrationTests.Services
 {
@@ -177,7 +178,8 @@ namespace ECommerceApp.IntegrationTests.Services
                 Email = "testtest@testtest",
                 EmailConfirmed = true,
                 Password = "Test123456789!@",
-                UserName = "testtest@testtest"
+                UserName = "testtest@testtest",
+                UserRoles = new List<string> { "User" }
             };
             return user;
         }
@@ -187,7 +189,7 @@ namespace ECommerceApp.IntegrationTests.Services
             var user = new NewUserVm
             {
                 Id = "e4fc1feb-7d08-4207-bd52-3f3464a01564",
-                Email = "test@test",
+                Email = $"test{Guid.NewGuid():N}@test",
                 UserName = "test@test",
                 EmailConfirmed = true
             };

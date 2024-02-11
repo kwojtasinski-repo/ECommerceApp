@@ -150,8 +150,11 @@ namespace ECommerceApp.Application.Services.Users
             {
                 return null;
             }
-            currentUser.Email = userToEdit.Email;
-            currentUser.UserName = userToEdit.Email; // login is same as email
+            if (currentUser.Email != userToEdit.Email)
+            {
+                currentUser.Email = userToEdit.Email;
+                currentUser.UserName = userToEdit.Email; // login is same as email
+            }
             currentUser.EmailConfirmed = userToEdit.EmailConfirmed;
             return await _userManager.UpdateAsync(currentUser);
         }
@@ -170,7 +173,11 @@ namespace ECommerceApp.Application.Services.Users
                 EmailConfirmed = newUser.EmailConfirmed
             };
             var result = await _userManager.CreateAsync(user, newUser.Password);
-            await AddRolesToUserAsync(user, newUser.UserRoles);
+            if (!result.Succeeded)
+            {
+                return result;
+            }
+            result = await AddRolesToUserAsync(user, newUser.UserRoles);
             newUser.Id = user.Id;
             return result;
         }
