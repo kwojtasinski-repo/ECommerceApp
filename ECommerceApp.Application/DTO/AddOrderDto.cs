@@ -1,13 +1,11 @@
 ﻿using FluentValidation;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ECommerceApp.Application.DTO
 {
     public class AddOrderDto
     {
         public int Id { get; set; }
-        [Column(TypeName = "decimal(18,2)")]
         public string PromoCode { get; set; }
         public int CustomerId { get; set; }
 

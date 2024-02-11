@@ -129,10 +129,6 @@
         let orderItems = [];
         const orderId = document.querySelector('[data-name="Id"]').value;
         const itemCosts = [];
-        const format = (num, decimals) => num.toLocaleString('pl-PL', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        });
 
         var table = $('#itemWithJS');
         var itemsSelector = document.getElementById("Items");
@@ -225,7 +221,7 @@
                 const itemCost = itemCosts.find(i => i.itemId === orderItem.itemId);
                 cost += Number(itemCost?.cost ?? 0) * orderItem.quantity * discount;
             }
-            cost = format(cost);
+            cost = formatPln(cost);
             document.getElementById('CalcCost').value = cost;
         }
         

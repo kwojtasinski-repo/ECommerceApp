@@ -60,17 +60,13 @@
             var costFromSelectList;
             var itemSelectList = document.getElementById('Items');
             var itemList = @Json.Serialize(Model.Items);
-            const format = (num, decimals) => num.toLocaleString('pl-PL', {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2,
-            });
 
             $(document).on('DOMInitialized', function () {
                 selectedValue = itemSelectList.options[itemSelectList.selectedIndex].value;
                 costFromSelectList = GetItemCost(itemList, selectedValue);
                 selectedValue = itemSelectList.options[itemSelectList.selectedIndex].value;
                 document.getElementById('ItemId').value = selectedValue;
-                document.getElementById('Cost').value = format(costFromSelectList);
+                document.getElementById('Cost').value = formatPln(costFromSelectList);
                 document.getElementById('ItemQuantity').value = 1;
             });
 
@@ -87,7 +83,7 @@
                 }
                 costFromSelectList = GetItemCost(itemList, selectedValue);
                 document.getElementById('ItemId').value = selectedValue;
-                document.getElementById('Cost').value = format(costFromSelectList);
+                document.getElementById('Cost').value = formatPln(costFromSelectList);
                 document.getElementById('ItemQuantity').value = 1;
             });
 
@@ -116,7 +112,7 @@
                 var itemCost = Number(costFromSelectList);
                 var cost = 0;
                 cost = itemCost * valueInQuantity;
-                cost = format(cost);
+                cost = formatPln(cost);
                 document.getElementById('Cost').value = cost.toString();
             }
 
@@ -125,7 +121,7 @@
                 var itemCost = Number(costFromSelectList);
                 var cost = 0;
                 cost = itemCost * Number(valueInQuantity);
-                cost = format(cost);
+                cost = formatPln(cost);
                 document.getElementById('Cost').value = cost;
             }
 

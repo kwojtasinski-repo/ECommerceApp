@@ -31,9 +31,21 @@
             }
         })();
 
+        /**
+         * Format number to currency local PL
+         * @param {number} num
+         * @param {number} minimumFractionDigits default 2
+         * @param {number} maximumFractionDigits default 2
+         * @returns
+         */
+        const formatPln = (num, minimumFractionDigits = 2, maximumFractionDigits = 2) => num.toLocaleString('pl-PL', {
+            minimumFractionDigits, maximumFractionDigits
+        });
+
         return {
             PagerClick,
-            statusCodes
+            statusCodes,
+            formatPln
         }
     }
 );

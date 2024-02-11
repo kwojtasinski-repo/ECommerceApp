@@ -361,11 +361,6 @@
         var costItems = document.getElementsByClassName('CostOfItem');
         var quantityItems = document.getElementsByClassName('QuantiyOfItem');
         var cost = 0.0;
-        var token = $('input[name="__RequestVerificationToken"]').val();
-        const format = (num, decimals) => num.toLocaleString('pl-PL', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        });
         const orderFormValidator = {
             formId: "orderForm",
             beforeInitializeFields: function () {
@@ -427,7 +422,14 @@
                         forms.showValidationError(this.controlId, text && text.length > 0 && text.trim().length > 0 ? text : '');
                         forms.clearValidationError(orderFormValidator.customer.contactDetailInformation.controlId);
                         forms.validControl(orderFormValidator.customer.contactDetailInformation);
-                    }
+                    },
+                    onInitializeField: function (field) {
+                        const value = $('input[name="ContactDetailType"]:checked').val();
+                        if (!value) {
+                            return;
+                        }
+                        field.value = value;
+                     }
                 },
                 contactDetailInformation: {
                     controlId: "ContactDetailInformationInput",
@@ -539,8 +541,7 @@
         $(document).on('DOMInitialized', function () {
             const cost = calculateCosts();
             document.getElementById('Cost').value = Number(cost);
-            document.getElementById('CostCurrency').value = format(cost);
-            initModel();
+            document.getElementById('CostCurrency').value = formatPln(cost);
             forms.initFormValidator(orderFormValidator);
         });
 
@@ -572,26 +573,6 @@
             }
         }
 
-        function initModel() {
-            orderFormValidator.customer.firstName.value = document.getElementById('CustomerFirstNameInput').value;
-            orderFormValidator.customer.lastName.value = document.getElementById('CustomerLastNameInput').value;
-            orderFormValidator.customer.nip.value = document.getElementById('NIPInput').value;
-            orderFormValidator.customer.companyName.value = document.getElementById('CompanyInput').value;
-            orderFormValidator.customer.contactDetailInformation.value = document.getElementById('ContactDetailInformationInput').value;
-            orderFormValidator.customer.addressStreet.value = document.getElementById('AddressStreetInput').value;
-            orderFormValidator.customer.addressBuildingNumber.value = document.getElementById('AddressBuildingNumberInput').value;
-            orderFormValidator.customer.addressFlatNumber.value = document.getElementById('AddressFlatNumberInput').value;
-            orderFormValidator.customer.addressZipCode.value = document.getElementById('AddressZipCodeInput').value;
-            orderFormValidator.customer.addressCity.value = document.getElementById('AddressCityInput').value;
-            orderFormValidator.customer.addressCountry.value = document.getElementById('AddressCountryInput').value;
-            for (const radioButton of $('[name="ContactDetailType"]')) {
-                if (radioButton.checked) {
-                    orderFormValidator.customer.contactDetailType.value = JSON.parse(radioButton.value)?.i ?? '';
-                    break;
-                }
-            }
-        }
-
         async function getCouponByCode() {
             clearCoupons();
             const couponCode = document.getElementById('RefCode');
@@ -615,7 +596,7 @@
                 }
                 document.querySelector('#Discount').value = coupon.discount;
                 const cost = calculateCosts();
-                document.getElementById('CostCurrency').value = format(cost);
+                document.getElementById('CostCurrency').value = formatPln(cost);
                 document.getElementById('Cost').value = Number(cost);
                 couponCode.after(createSuccessCouponText('Pomyślnie dodano kupon. Cena zmniejszona o ' + coupon.discount + '%'));
             } catch (error) {
