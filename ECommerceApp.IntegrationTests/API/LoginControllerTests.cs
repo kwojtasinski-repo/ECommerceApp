@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.API;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.IntegrationTests.Common;
 using Flurl.Http;
 using Shouldly;
@@ -24,7 +25,7 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_credentials_should_return_token()
         {
-            var testUser = new UserModel { Email = "test@test", Password = "Test@test12" };
+            var testUser = new SignInDto("test@test", "Test@test12");
 
             var jsonToken = await _client.Request("api/login")
                 .WithHeader("content-type", "application/json")
@@ -43,7 +44,7 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_invalid_credentials_should_return_bad_request()
         {
-            var testUser = new UserModel { Email = "123", Password = "123" };
+            var testUser = new SignInDto("123", "123");
 
             var response = await _client.Request("api/login")
                 .WithHeader("content-type", "application/json")

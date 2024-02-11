@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.API;
+using ECommerceApp.Application.DTO;
 using ECommerceApp.Infrastructure.Database;
 using Flurl.Http;
 using Microsoft.AspNetCore.Hosting;
@@ -92,7 +93,7 @@ namespace ECommerceApp.IntegrationTests.Common
 
         private async Task<string> GetTokenAsync(FlurlClient client)
         {
-            var testUser = new UserModel { Email = "test@test", Password = "Test@test12" };
+            var testUser = new SignInDto("test@test", "Test@test12");
             var jsonToken = await client.Request("api/login")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
