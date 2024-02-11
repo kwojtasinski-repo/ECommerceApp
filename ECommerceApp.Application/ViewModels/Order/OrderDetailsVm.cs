@@ -21,7 +21,7 @@ namespace ECommerceApp.Application.ViewModels.Order
         public int? RefundId { get; set; }
         public int CurrencyId { get; set; }
         public string CurrencyCode { get; set; }
-        public string Discount { get; set; }
+        public int Discount { get; set; }
         public string PaymentNumber { get; set; }
         public int PaymentCurrencyId { get; set; }
         public string PaymentCurrencyCode { get; set; }

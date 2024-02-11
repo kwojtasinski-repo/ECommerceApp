@@ -123,8 +123,15 @@
                         </div>
                     </div>
                 }
+                @if (!string.IsNullOrWhiteSpace(Model.PromoCodeUsed))
+                {
+                    <div class="mt-2 mb-2">
+                        <label>Użyty kod promocyjny</label>
+                        <input readonly type="text" asp-for="PromoCodeUsed" value="@Model.PromoCodeUsed" class="form-control" />
+                    </div>
+                }
                 <div class="mt-2 mb-2" data-name="Promotion">
-                    <label>Kod promocyjny</label>
+                    <label>@((!string.IsNullOrWhiteSpace(Model.PromoCodeUsed)) ? "Nowy kod promocyjny" : "Kod promocyjny")</label>
                     <input id="RefCode" type="text" asp-for="PromoCode" value="@Model.PromoCode" class="form-control" />
                     <span asp-validation-for="PromoCode" class="text-danger"></span>
                     <div>
