@@ -75,7 +75,7 @@ namespace ECommerceApp.IntegrationTests.API
             var payment = new AddPaymentDto() { OrderId = orderId, CurrencyId = 1000 };
 
             var response = await client.Request("api/payments")
-                .AllowAnyHttpStatus()
+                .AllowHttpStatus(HttpStatusCode.BadRequest)
                 .PostJsonAsync(payment);
 
             response.StatusCode.ShouldBe((int) HttpStatusCode.BadRequest);

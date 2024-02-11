@@ -32,10 +32,11 @@ namespace ECommerceApp.Application.Services.Orders
         private readonly ICouponHandler _couponHandler;
         private readonly IOrderItemRepository _orderItemRepository;
         private readonly IItemRepository _itemRepository;
+        private readonly IItemHandler _itemHandler;
 
         public OrderService(IOrderRepository orderRepo, IMapper mapper, IOrderItemService orderItemService, IItemService itemService, ICouponService couponService, ICouponUsedRepository couponUsedRepository, ICustomerService customerService,
                 IUserContext userContext, IPaymentHandler paymentHandler, ICouponHandler couponHandler,
-                IOrderItemRepository orderItemRepository, IItemRepository itemRepository)
+                IOrderItemRepository orderItemRepository, IItemRepository itemRepository, IItemHandler itemHandler)
         {
             _orderRepository = orderRepo;
             _mapper = mapper;
@@ -49,6 +50,7 @@ namespace ECommerceApp.Application.Services.Orders
             _couponHandler = couponHandler;
             _orderItemRepository = orderItemRepository;
             _itemRepository = itemRepository;
+            _itemHandler = itemHandler;
         }
 
         public void Update(NewOrderVm vm)
@@ -427,6 +429,7 @@ namespace ECommerceApp.Application.Services.Orders
             {
                 return null;
             }
+            var orderBeforeUpdate = order.Copy();
 
             if (!string.IsNullOrWhiteSpace(dto.PromoCode) && !_couponService.ExistsByCode(dto.PromoCode))
             {
@@ -442,6 +445,7 @@ namespace ECommerceApp.Application.Services.Orders
 
             UpdateOrderFields(order, dto);
             var orderItemsToRemove = HandleUpdateOrderItems(order, dto);
+            _itemHandler.HandleItemsChangesOnOrder(orderBeforeUpdate, order);
             order.CalculateCost();
             _couponHandler.HandleCouponChangesOnOrder(order, new HandleCouponChangesDto(dto));
             _paymentHandler.HandlePaymentChangesOnOrder(dto.Payment, order);
@@ -450,7 +454,7 @@ namespace ECommerceApp.Application.Services.Orders
             return _mapper.Map<OrderDetailsVm>(order);
         }
 
-        private void UpdateOrderFields(Order order, UpdateOrderDto dto)
+        private static void UpdateOrderFields(Order order, UpdateOrderDto dto)
         {
             if (!string.IsNullOrWhiteSpace(dto.OrderNumber))
                 order.Number = dto.OrderNumber;
@@ -509,6 +513,7 @@ namespace ECommerceApp.Application.Services.Orders
             var order = _mapper.Map<Order>(dto);
             order.OrderItems = _orderItemRepository.GetOrderItemsToRealization(ids);
             ValidUserOrderItems(order, order.OrderItems);
+            _itemHandler.HandleItemsChangesOnOrder(null, order);
             order.CalculateCost();
             var id = _orderRepository.AddOrder(order);
             _couponHandler.HandleCouponChangesOnOrder(order, HandleCouponChangesDto.Of(model.PromoCode));

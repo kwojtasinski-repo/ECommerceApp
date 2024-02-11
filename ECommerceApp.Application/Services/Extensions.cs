@@ -43,6 +43,7 @@ namespace ECommerceApp.Application.Services
             services.AddTransient<IOrderItemService, OrderItemService>();
             services.AddTransient<IPaymentHandler, PaymentHandler>();
             services.AddTransient<ICouponHandler, CouponHandler>();
+            services.AddTransient<IItemHandler, ItemHandler>();
             services.AddHttpContextAccessor();
             return services;
         }

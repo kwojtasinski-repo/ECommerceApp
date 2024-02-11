@@ -12,6 +12,7 @@ using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -37,6 +38,7 @@ namespace ECommerceApp.Tests.Services.Order
         private readonly IOrderItemRepository _orderItemRepository;
         private readonly Mock<IItemRepository> _itemRepository;
         private readonly Mock<ICurrencyRepository> _currencyRepository;
+        private readonly IItemHandler _itemHandler;
 
         public OrderServiceTests()
         {
@@ -61,12 +63,13 @@ namespace ECommerceApp.Tests.Services.Order
                 Code = "PLN"
             });
             _itemRepository.Setup(i => i.GetAllItems()).Returns(new List<Domain.Model.Item>());
+            _itemHandler = new ItemHandler(_itemRepository.Object, Mock.Of<ILogger<ItemHandler>>());
         }
 
         private OrderService CreateService()
         {
             return new OrderService(_orderRepository, _mapper, _orderItemService.Object, _itemService.Object, _couponService.Object, _couponUsedRepository.Object, _customerService.Object, _userContext,
-                    _paymentHandler, _couponHandler, _orderItemRepository, _itemRepository.Object
+                    _paymentHandler, _couponHandler, _orderItemRepository, _itemRepository.Object, _itemHandler
                 );
         }
 
@@ -993,31 +996,36 @@ namespace ECommerceApp.Tests.Services.Order
                 {
                     Id = 1,
                     Name = Guid.NewGuid().ToString(),
-                    Cost = 100
+                    Cost = 100,
+                    Quantity = 200
                 },
                 new ()
                 {
                     Id = 2,
                     Name = Guid.NewGuid().ToString(),
-                    Cost = 300
+                    Cost = 300,
+                    Quantity = 200
                 },
                 new ()
                 {
                     Id = 3,
                     Name = Guid.NewGuid().ToString(),
-                    Cost = 1000
+                    Cost = 1000,
+                    Quantity = 200
                 },
                 new ()
                 {
                     Id = 4,
                     Name = Guid.NewGuid().ToString(),
-                    Cost = 100000
+                    Cost = 100000,
+                    Quantity = 200
                 },
                 new ()
                 {
                     Id = 5,
                     Name = Guid.NewGuid().ToString(),
-                    Cost = 500
+                    Cost = 500,
+                    Quantity = 200
                 }
             };
         }
@@ -1148,11 +1156,11 @@ namespace ECommerceApp.Tests.Services.Order
                 UserId = order.UserId,
                 User = order.User,
                 OrderId = order.Id,
-                Order = order
+                Order = order,
             };
             var itemId = new Random().Next(1, 9999);
             orderItem.ItemId = itemId;
-            orderItem.Item = new Domain.Model.Item { Id = itemId, Cost = new Random().Next(1, 9999) };
+            orderItem.Item = new Domain.Model.Item { Id = itemId, Cost = new Random().Next(1, 9999), Quantity = 20 };
             orderItem.ItemOrderQuantity = 1;
             return orderItem;
         }

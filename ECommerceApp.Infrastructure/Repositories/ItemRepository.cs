@@ -63,29 +63,32 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public void UpdateItem(Item item)
         {
-            var newItemTags = new List<ItemTag>(item.ItemTags);
-            var currentItemTags = _context.ItemTag.Where(it => it.ItemId == item.Id).AsNoTracking().ToList();
-
-            foreach (var itemTag in newItemTags)
+            if (item.ItemTags is not null && item.ItemTags.Any())
             {
-                if (currentItemTags.Any(it => it.TagId == itemTag.TagId))
+                var newItemTags = new List<ItemTag>(item.ItemTags);
+                var currentItemTags = _context.ItemTag.Where(it => it.ItemId == item.Id).AsNoTracking().ToList();
+
+                foreach (var itemTag in newItemTags)
                 {
-                    continue;
+                    if (currentItemTags.Any(it => it.TagId == itemTag.TagId))
+                    {
+                        continue;
+                    }
+
+                    var entry = _context.Entry(itemTag);
+                    entry.State = EntityState.Added;
                 }
 
-                var entry = _context.Entry(itemTag);
-                entry.State = EntityState.Added;
-            }
-
-            foreach (var itemTag in currentItemTags)
-            {
-                if (newItemTags.Any(it => it.TagId == itemTag.TagId))
+                foreach (var itemTag in currentItemTags)
                 {
-                    continue;
-                }
+                    if (newItemTags.Any(it => it.TagId == itemTag.TagId))
+                    {
+                        continue;
+                    }
 
-                var entry = _context.Entry(itemTag);
-                entry.State = EntityState.Deleted;
+                    var entry = _context.Entry(itemTag);
+                    entry.State = EntityState.Deleted;
+                }
             }
 
             _context.Items.Update(item);

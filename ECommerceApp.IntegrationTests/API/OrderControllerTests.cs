@@ -116,12 +116,10 @@ namespace ECommerceApp.IntegrationTests.API
             var order = new AddOrderDto { Id = 0, CustomerId = 1, PromoCode = "AGEWEDSGFEW" };
 
             var response = await client.Request($"api/orders/with-all-order-items")
-                .AllowAnyHttpStatus()
                 .PostJsonAsync(order);
             var id = JsonConvert.DeserializeObject<int>(await response.ResponseMessage.Content.ReadAsStringAsync());
 
             var orderAdded = await client.Request($"api/orders/{id}")
-                .AllowAnyHttpStatus()
                 .GetAsync()
                 .ReceiveJson<OrderDetailsVm>();
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
@@ -162,12 +160,10 @@ namespace ECommerceApp.IntegrationTests.API
             var order = new AddOrderDto { Id = 0, CustomerId = 1, OrderItems = new List<OrderItemsIdsDto> { new OrderItemsIdsDto { Id = orderItem2 }, new OrderItemsIdsDto { Id = orderItem1 } }, PromoCode = "AGEWEDSGFEWX" };
 
             var response = await client.Request($"api/orders")
-                .AllowAnyHttpStatus()
                 .PostJsonAsync(order);
             var id = JsonConvert.DeserializeObject<int>(await response.ResponseMessage.Content.ReadAsStringAsync());
 
             var orderAdded = await client.Request($"api/orders/{id}")
-                .AllowAnyHttpStatus()
                 .GetAsync()
                 .ReceiveJson<OrderDetailsVm>();
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
