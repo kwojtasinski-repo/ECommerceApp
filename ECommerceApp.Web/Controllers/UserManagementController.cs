@@ -132,11 +132,6 @@ namespace ECommerceApp.Web.Controllers
             try
             {
                 await _userService.AddUser(model);
-                if (model.Id != null)
-                {
-                    model.UserName = model.Email;
-                    await _userService.ChangeRoleAsync(model.Id, model.UserRoles);
-                }
                 return RedirectToAction("Index");
             }
             catch (BusinessException exception)

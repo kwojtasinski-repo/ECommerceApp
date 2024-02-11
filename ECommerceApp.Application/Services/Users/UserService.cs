@@ -24,7 +24,7 @@ namespace ECommerceApp.Application.Services.Users
             _mapper = mapper;
         }
 
-        public async Task<IdentityResult> ChangeRoleAsync(string id, IEnumerable<string> role)
+        public async Task<IdentityResult> ChangeRoleAsync(string id, IEnumerable<string> roles)
         {
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
@@ -33,16 +33,40 @@ namespace ECommerceApp.Application.Services.Users
             }
             var userRoles = await _userManager.GetRolesAsync(user);
 
-            // if roles are more than current roles add new roles but firstly check if there will be duplicate
-            // else if new roles are less than current roles then delete all and add new roles
-            if (role.ToList().Count > userRoles.Count)
+            var rolesToAdd = new List<string>();
+            var rolesToDelete = new List<string>();
+            foreach (var role in userRoles)
             {
-                return await AddRolesToUserAsync(user, role);
+                if (roles.Any(r => r == role))
+                {
+                    continue;
+                }
+
+                rolesToDelete.Add(role);
             }
-            else
+
+            foreach (var role in roles)
             {
-                return await RemoveRolesFromUserAsync(user, role);
+                if (userRoles.Any(r => r == role))
+                {
+                    continue;
+                }
+
+                rolesToAdd.Add(role);
             }
+
+            var removeResult = await _userManager.RemoveFromRolesAsync(user, rolesToDelete);
+            if (!removeResult.Succeeded)
+            {
+                return removeResult;
+            }
+            var addResult = await _userManager.AddToRolesAsync(user, rolesToAdd);
+            if (!addResult.Succeeded)
+            {
+                return addResult;
+            }
+
+            return IdentityResult.Success;
         }
 
         public async Task<ListUsersVm> GetAllUsers(int pageSize, int pageNo, string searchString)
@@ -109,7 +133,7 @@ namespace ECommerceApp.Application.Services.Users
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
             {
-                return await Task.FromResult<IdentityResult>(null);
+                return null;
             }
             return await _userManager.DeleteAsync(user);
         }
@@ -126,8 +150,9 @@ namespace ECommerceApp.Application.Services.Users
             {
                 return null;
             }
-            CheckChangesInCurrentUser(currentUser, userToEdit); // allowed only change email and verification
-            // TODO check if username is same as email if yes it should be changed too
+            currentUser.Email = userToEdit.Email;
+            currentUser.UserName = userToEdit.Email; // login is same as email
+            currentUser.EmailConfirmed = userToEdit.EmailConfirmed;
             return await _userManager.UpdateAsync(currentUser);
         }
 
@@ -138,7 +163,6 @@ namespace ECommerceApp.Application.Services.Users
                 throw new BusinessException($"{typeof(NewUserToAddVm).Name} cannot be null");
             }
 
-            //var user = _mapper.Map<IdentityUser>(newUser);
             var user = new ApplicationUser()
             {
                 UserName = newUser.UserName,
@@ -146,44 +170,24 @@ namespace ECommerceApp.Application.Services.Users
                 EmailConfirmed = newUser.EmailConfirmed
             };
             var result = await _userManager.CreateAsync(user, newUser.Password);
+            await AddRolesToUserAsync(user, newUser.UserRoles);
             newUser.Id = user.Id;
             return result;
-        }
-
-        private void CheckChangesInCurrentUser(ApplicationUser currentUser, NewUserVm userToEdit)
-        {
-            if (currentUser.Email != userToEdit.Email)
-            {
-                currentUser.Email = userToEdit.Email;
-            }
-
-            if (currentUser.EmailConfirmed != userToEdit.EmailConfirmed)
-            {
-                currentUser.EmailConfirmed = userToEdit.EmailConfirmed;
-            }
         }
 
         private async Task<IdentityResult> AddRolesToUserAsync(ApplicationUser user, IEnumerable<string> roles)
         {
             IdentityResult result;
-            roles = RemoveDuplicateRoles(user, roles);
+            roles = await RemoveDuplicateRoles(user, roles);
             result = await _userManager.AddToRolesAsync(user, roles);
             return result;
         }
 
-        private List<string> RemoveDuplicateRoles(ApplicationUser user, IEnumerable<string> roles)
+        private async Task<List<string>> RemoveDuplicateRoles(ApplicationUser user, IEnumerable<string> roles)
         {
-            var userRoles = _userManager.GetRolesAsync(user).Result.ToList();
+            var userRoles = (await _userManager.GetRolesAsync(user)).ToList();
             var rolesToAdd = roles.Where(r => !userRoles.Contains(r)).ToList();
             return rolesToAdd;
-        }
-
-        private async Task<IdentityResult> RemoveRolesFromUserAsync(ApplicationUser user, IEnumerable<string> roles)
-        {
-            var currentUserRoles = await _userManager.GetRolesAsync(user);
-            await _userManager.RemoveFromRolesAsync(user, currentUserRoles);
-            return await AddRolesToUserAsync(user, roles);
-
         }
 
         public async Task<IdentityResult> ChangeUserPassword(NewUserVm model)
