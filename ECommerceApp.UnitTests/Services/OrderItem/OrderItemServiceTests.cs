@@ -1,7 +1,9 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Orders;
+using ECommerceApp.Application.ViewModels.OrderItem;
 using ECommerceApp.Domain.Interface;
+using ECommerceApp.Domain.Model;
 using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
 using Moq;
@@ -21,7 +23,7 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
         {
             _orderItemRepository = new Mock<IOrderItemRepository>();
             _itemRepository = new Mock<IItemRepository>();
-            AddItem(ItemId);
+            AddItem(new Item { Id = ItemId, Quantity = 20 });
         }
 
         private OrderItemService CreateService()
@@ -151,6 +153,53 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
         }
 
+        [Fact]
+        public void given_not_existing_item_when_add_order_item_should_throw_an_exception()
+        {
+            var service = CreateService();
+
+            var action = () => service.AddOrderItem(new OrderItemDto { ItemId = 100 });
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("was not found");
+        }
+
+        [Fact]
+        public void given_item_not_available_item_when_add_order_item_should_throw_an_exception()
+        {
+            var id = 2;
+            AddItem(new Item { Id = id, Quantity = 0 });
+            var service = CreateService();
+
+            var action = () => service.AddOrderItem(new OrderItemDto { ItemId = id, ItemOrderQuantity = 1 });
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains(" is not available");
+        }
+
+        [Fact]
+        public void given_quantity_more_than_in_stock_when_add_order_item_should_throw_an_exception()
+        {
+            var id = 2;
+            AddItem(new Item { Id = id, Quantity = 1 });
+            var service = CreateService();
+            
+            var action = () => service.AddOrderItem(new OrderItemDto { ItemId = id, ItemOrderQuantity = 2 });
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be ordered with quantity of");
+
+        }
+
+        [Fact]
+        public void given_not_existing_order_item_when_update_should_throw_an_exception()
+        {
+            var id = 2;
+            var service = CreateService();
+
+            var result = service.UpdateOrderItem(new OrderItemDto { ItemId = id, ItemOrderQuantity = 2 });
+
+            result.Should().Be(false);
+            _orderItemRepository.Verify(oi => oi.UpdateOrderItem(It.IsAny<Domain.Model.OrderItem>()), Times.Never);
+        }
+
         private static OrderItemDto CreateOrderItemDto(int id, int itemId, string userId, int quantity, int? orderId = null)
         {
             var orderItem = new OrderItemDto
@@ -177,14 +226,9 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
             return orderItem;
         }
 
-        private void AddItem(int id)
+        private void AddItem(Item item)
         {
-            var item = new Domain.Model.Item 
-            { 
-                Id = id,
-                Quantity = 20
-            };
-            _itemRepository.Setup(i => i.GetItemById(id)).Returns(item);
+            _itemRepository.Setup(i => i.GetItemById(item.Id)).Returns(item);
         }
     }
 }
