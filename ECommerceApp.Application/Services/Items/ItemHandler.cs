@@ -101,7 +101,7 @@ namespace ECommerceApp.Application.Services.Items
                     if (item.Quantity - totalQuantity < 0)
                     {
                         _logger.LogWarning($"Order with id '{orderBeforeChange.Id}' added with item with id '{item.Id}' that has 0 quantity");
-                        throw new BusinessException($"Order with id '{orderBeforeChange.Id}' added with item with id '{item.Id}' that has 0 quantity", "itemNotInStock", new Dictionary<string, string> { { "id", $"{item.Id}" } });
+                        throw new BusinessException($"Order with id '{orderBeforeChange.Id}' has item with id '{item.Id}' that cannot be ordered with quantity of '{quantityAfter}', available '{item.Quantity}'", "tooManyItemsQuantityInCart", new Dictionary<string, string> { { "id", $"{item.Id}" }, { "name", item.Name }, { "availableQuantity", $"{item.Quantity}" } });
                     }
                     item.Quantity -= totalQuantity;
                     continue;
@@ -135,13 +135,12 @@ namespace ECommerceApp.Application.Services.Items
             if (item.Quantity - quantiyToDelete < 0)
             {
                 _logger.LogWarning($"Order with id '{orderId}' added with item with id '{item.Id}' that has 0 quantity");
-                throw new BusinessException($"Order with id '{orderId}' added with item with id '{item.Id}' that has 0 quantity", "itemNotInStock", new Dictionary<string, string> { { "id", $"{item.Id}" } });
+                throw new BusinessException($"Order with id '{orderId}' has item with id '{item.Id}' that cannot be ordered with quantity of '{quantiyToDelete}', available '{item.Quantity}'", "tooManyItemsQuantityInCart", new Dictionary<string, string> { { "id", $"{item.Id}" }, { "name", item.Name }, { "availableQuantity", $"{item.Quantity}" } });
             }
 
             item.Quantity -= quantiyToDelete;
-           _itemRepository.UpdateItem(item);
+            _itemRepository.UpdateItem(item);
         }
-
         private void HandleDeleteItem(KeyValuePair<int, IEnumerable<OrderItem>> itemsAssociatedWithOrderItems, Item item)
         {
             if (item is null)
@@ -153,21 +152,18 @@ namespace ECommerceApp.Application.Services.Items
             item.Quantity += quantiyToAdd;
             _itemRepository.UpdateItem(item);
         }
-
         private static int GetItemQuantity(KeyValuePair<int, IEnumerable<OrderItem>> itemsAssociatedWithOrderItems)
         {
             return itemsAssociatedWithOrderItems.Value.Sum(i => i.ItemOrderQuantity);
         }
-
         private static Dictionary<int, IEnumerable<OrderItem>> GetItemDictionary(Order order)
         {
             if (order.OrderItems is null || !order.OrderItems.Any())
             {
                 return new Dictionary<int, IEnumerable<OrderItem>>();
             }
-
             return order.OrderItems
-                .ToLookup(item => item.ItemId, item => item)
+            .ToLookup(item => item.ItemId, item => item)
                 .ToDictionary(group => group.Key, group => group.AsEnumerable());
         }
     }

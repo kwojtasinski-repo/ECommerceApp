@@ -301,5 +301,21 @@ namespace ECommerceApp.Application.Services.Items
 
             return imgErrors.ToString();
         }
+
+        public ListForItemVm GetAllAvailableItemsForList(int pageSize, int pageNo, string searchString)
+        {
+            var items = _mapper.Map<List<ItemDetailsVm>>(_itemRepository.GetAllAvailableItems(pageSize, pageNo, searchString));
+
+            var itemsList = new ListForItemVm()
+            {
+                PageSize = pageSize,
+                CurrentPage = pageNo,
+                SearchString = searchString,
+                Items = items,
+                Count = _itemRepository.GetAvailableItemsCountBySearchString(searchString)
+            };
+
+            return itemsList;
+        }
     }
 }

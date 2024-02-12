@@ -3,8 +3,6 @@ using ECommerceApp.Application.ViewModels.OrderItem;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
-using System.Linq;
-using System.Security.Claims;
 using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.DTO;
 
@@ -59,8 +57,7 @@ namespace ECommerceApp.API.Controllers
                 return Conflict(ModelState);
             }
             var orderItem = model.AsOrderItemDto();
-            var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
-            orderItem.UserId = userId;
+            orderItem.UserId = GetUserId();
             return _orderItemService.UpdateOrderItem(orderItem)
                 ? Ok()
                 : NotFound();
@@ -74,8 +71,7 @@ namespace ECommerceApp.API.Controllers
                 return Conflict(ModelState);
             }
             var orderItem = model.AsOrderItemDto();
-            var userId = User.FindAll(ClaimTypes.NameIdentifier).SingleOrDefault(c => c.Value != User.Identity.Name).Value;
-            orderItem.UserId = userId;
+            orderItem.UserId = GetUserId();
             var id = _orderItemService.AddOrderItem(orderItem);
             return Ok(id);
         }

@@ -9,7 +9,6 @@
 
 <h1>Lista przedmiotów</h1>
 
-
 <p>
     @if (User.IsInRole("Administrator") || User.IsInRole("Manager") || User.IsInRole("Service") || User.IsInRole("Admin"))
     {
@@ -147,6 +146,12 @@
             } catch (error) {
                 if (error.status === statusCodes.Unauthorized) {
                     window.location.href = "Identity/Account/Login";
+                }
+                if (error.status === statusCodes.InternalErrorServer) {
+                    redirectToError('generalError', error.responseJSON.Params);
+                }
+                if (error.status === statusCodes.BadRequest) {
+                    redirectToError(getErrorText(error), error.responseJSON.Params);
                 }
             }
         }

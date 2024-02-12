@@ -43,7 +43,9 @@
                 paymentAlreadyPaid: 'Płatność o id {id} została już opłacona',
                 paymentNotFound: 'Nie znaleziono płatności o id {id}',
                 customerNotRelatedWithOrder: 'Żadne dane kontaktowe nie zostały powiązane z zamówieniem o id {id}',
-                userNotFound: 'Użytkownik o id {id} nie został znaleziony'
+                userNotFound: 'Użytkownik o id {id} nie został znaleziony',
+                itemNotInStock: 'Przedmiot o id {id} i nazwie {name} nie jest dostępny',
+                tooManyItemsQuantityInCart: 'Ilość sztuk przedmiotu o id {id} i nazwie {name} została przekroczona, maksymalnie można zamówić {availableQuantity}'
             }
 
             function containsParams(value) {

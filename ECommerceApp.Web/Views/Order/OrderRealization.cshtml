@@ -7,349 +7,356 @@
 <h1>Realizacja zamówienia</h1>
 
 <hr />
-<div class="row">
-    <div class="col-lg-6">
-        <form id="orderForm" asp-action="OrderRealization">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Order.Id" class="form-control" />
-            <input type="hidden" asp-for="Order.Number" class="form-control" />
-            <div class="form-group">
-                <label asp-for="Order.Ordered" class="control-label">Data Zamówienia:</label>
-                <input type="text" asp-for="Order.Ordered" class="form-control" readonly/>
-                <span asp-validation-for="Order.Ordered" class="text-danger"></span>
-            </div>
-            <div class="form-group" style="display:none;">
-                <label asp-for="Order.Delivered" class="control-label"></label>
-                <input asp-for="Order.Delivered" class="form-control" />
-                <span asp-validation-for="Order.Delivered" class="text-danger"></span>
-            </div>
-            <div class="form-group form-check" style="display:none;">
-                <label class="form-check-label">
-                    <input class="form-check-input" asp-for="Order.IsDelivered" /> @Html.DisplayNameFor(model => model.Order.IsDelivered)
-                </label>
-            </div>
-            <div class="form-group">
-                <label class="control-label">Użytkownik</label>
-                <input value="@User.Identity.Name" class="form-control" readonly />
-                <input type="hidden" asp-for="Order.UserId" class="form-control" />
-                <span asp-validation-for="Order.UserId" class="text-danger"></span>
-            </div>
-            <div class="form-group" style="display:none;">
-                <label asp-for="Order.PaymentId" class="control-label"></label>
-                <input asp-for="Order.PaymentId" class="form-control" />
-                <span asp-validation-for="Order.PaymentId" class="text-danger"></span>
-            </div>
-            <div class="form-group form-check" style="display:none;">
-                <label class="form-check-label">
-                    <input class="form-check-input" asp-for="Order.IsPaid" /> @Html.DisplayNameFor(model => model.Order.IsPaid)
-                </label>
-            </div>
-            <div class="form-group" style="display:none;">
-                <label asp-for="Order.RefundId" class="control-label"></label>
-                <input asp-for="Order.RefundId" class="form-control" />
-                <span asp-validation-for="Order.RefundId" class="text-danger"></span>
-            </div>
-            <p>Zamówione przedmioty</p>
-            <div class="form-row">
-                <div class="col">
-                    <table class="table table-bordered">
-                        <thead class="thead-dark">
-                            <tr>
-                                <th>
-                                    Nazwa
-                                </th>
-                                <th>
-                                    Ilość
-                                </th>
-                                <th>
-                                    Cena
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @for (int i = 0; i < Model.Order.OrderItems.Count; i++)
-                            {
+@if (Model is not null)
+{
+    <div class="row">
+        <div class="col-lg-6">
+            <form id="orderForm" asp-action="OrderRealization">
+                <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                <input type="hidden" asp-for="Order.Id" class="form-control" />
+                <input type="hidden" asp-for="Order.Number" class="form-control" />
+                <div class="form-group">
+                    <label asp-for="Order.Ordered" class="control-label">Data Zamówienia:</label>
+                    <input type="text" asp-for="Order.Ordered" class="form-control" readonly/>
+                    <span asp-validation-for="Order.Ordered" class="text-danger"></span>
+                </div>
+                <div class="form-group" style="display:none;">
+                    <label asp-for="Order.Delivered" class="control-label"></label>
+                    <input asp-for="Order.Delivered" class="form-control" />
+                    <span asp-validation-for="Order.Delivered" class="text-danger"></span>
+                </div>
+                <div class="form-group form-check" style="display:none;">
+                    <label class="form-check-label">
+                        <input class="form-check-input" asp-for="Order.IsDelivered" /> @Html.DisplayNameFor(model => model.Order.IsDelivered)
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label class="control-label">Użytkownik</label>
+                    <input value="@User.Identity.Name" class="form-control" readonly />
+                    <input type="hidden" asp-for="Order.UserId" class="form-control" />
+                    <span asp-validation-for="Order.UserId" class="text-danger"></span>
+                </div>
+                <div class="form-group" style="display:none;">
+                    <label asp-for="Order.PaymentId" class="control-label"></label>
+                    <input asp-for="Order.PaymentId" class="form-control" />
+                    <span asp-validation-for="Order.PaymentId" class="text-danger"></span>
+                </div>
+                <div class="form-group form-check" style="display:none;">
+                    <label class="form-check-label">
+                        <input class="form-check-input" asp-for="Order.IsPaid" /> @Html.DisplayNameFor(model => model.Order.IsPaid)
+                    </label>
+                </div>
+                <div class="form-group" style="display:none;">
+                    <label asp-for="Order.RefundId" class="control-label"></label>
+                    <input asp-for="Order.RefundId" class="form-control" />
+                    <span asp-validation-for="Order.RefundId" class="text-danger"></span>
+                </div>
+                <p>Zamówione przedmioty</p>
+                <div class="form-row">
+                    <div class="col">
+                        <table class="table table-bordered">
+                            <thead class="thead-dark">
                                 <tr>
-                                    <td>
-                                        @Html.DisplayFor(model => Model.Order.OrderItems[i].ItemName)
-                                        <input type="hidden" asp-for="Order.OrderItems[i].Id" value="@Model.Order.OrderItems[i].Id" class="form-control" />
-                                        <input type="hidden" asp-for="Order.OrderItems[i].ItemId" value="@Model.Order.OrderItems[i].ItemId" class="form-control" />
-                                        <input type="hidden" asp-for="Order.OrderItems[i].ItemOrderQuantity" value="@Model.Order.OrderItems[i].ItemOrderQuantity" class="form-control" />
-                                        <input type="hidden" asp-for="Order.OrderItems[i].UserId" value="@Model.Order.OrderItems[i].UserId" class="form-control" />
-                                    </td>
-                                    <td class="QuantiyOfItem">
-                                        @Html.DisplayFor(model => Model.Order.OrderItems[i].ItemOrderQuantity)
-                                    </td>
-                                    <td class="CostOfItem">
-                                        @Html.DisplayFor(model => Model.Order.OrderItems[i].ItemCost)
-                                    </td>
+                                    <th>
+                                        Nazwa
+                                    </th>
+                                    <th>
+                                        Ilość
+                                    </th>
+                                    <th>
+                                        Cena
+                                    </th>
                                 </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            <div class="mt-2 mb-2" data-name="Promotion">
-                <label>Kod promocyjny</label>
-                <input id="RefCode" type="text" asp-for="PromoCode" value="@Model.PromoCode" class="form-control" />
-                <span asp-validation-for="PromoCode" class="text-danger"></span>
-                <div>
-                    <button class="btn btn-primary mt-2 mb-2" type="button" onclick="getCouponByCode()">
-                        Użyj
-                    </button>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="col-md-6 mb-4">
-                    <label class="control-label">Koszt:</label>
-                    <input id="CostCurrency" class="form-control" value="" readonly />
-                    <input type="hidden" id="Discount" name="Discount" value="" />
-                </div>
-                <div class="col-md-6 mb-2">
-                    <label class="control-label">Waluta:</label>
-                    <input type="text" id="CurrencyName" class="form-control" value="PLN" readonly />
-                    <input type="hidden" id="Currency" asp-for="Order.CurrencyId" class="form-control" value="1" readonly />
-                    <span asp-validation-for="Order.CurrencyId" class="text-danger"></span>
-                </div>
-            </div>
-            <div class="form-group" style="display:none;">
-                <input id="Cost" asp-for="Order.Cost" class="form-control" readonly />
-                <span asp-validation-for="Order.Cost" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                @if (Model.Customers.Count > 0)
-                {
-                    <label>Czy chcesz zamówić z istniejącymi już danymi?</label>
-                    <input type="checkbox" id="ChosenOption" asp-for="CustomerData" class="yes-no-check-text:before" onchange="dataCheckbox(this)" />
-                    <div id="ExistingData" style="display:none;">
-                        <p>Wybierz istniejące dane:</p>
-                        <label asp-for="Order.CustomerId" class="control-label">Klient</label>
-                        <select id="SelectListCustomer" asp-for="Order.CustomerId" asp-items="@(new SelectList(Model.Customers, "Id", "Information"))" class="show-tick form-control data-search"></select>
-                        <span asp-validation-for="Order.CustomerId" class="text-danger"></span>
+                            </thead>
+                            <tbody>
+                                @for (int i = 0; i < Model.Order.OrderItems.Count; i++)
+                                {
+                                    <tr>
+                                        <td>
+                                            @Html.DisplayFor(model => Model.Order.OrderItems[i].ItemName)
+                                            <input type="hidden" asp-for="Order.OrderItems[i].Id" value="@Model.Order.OrderItems[i].Id" class="form-control" />
+                                            <input type="hidden" asp-for="Order.OrderItems[i].ItemId" value="@Model.Order.OrderItems[i].ItemId" class="form-control" />
+                                            <input type="hidden" asp-for="Order.OrderItems[i].ItemOrderQuantity" value="@Model.Order.OrderItems[i].ItemOrderQuantity" class="form-control" />
+                                            <input type="hidden" asp-for="Order.OrderItems[i].UserId" value="@Model.Order.OrderItems[i].UserId" class="form-control" />
+                                        </td>
+                                        <td class="QuantiyOfItem">
+                                            @Html.DisplayFor(model => Model.Order.OrderItems[i].ItemOrderQuantity)
+                                        </td>
+                                        <td class="CostOfItem">
+                                            @Html.DisplayFor(model => Model.Order.OrderItems[i].ItemCost)
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
                     </div>
-                    <div id="NewData">
-                        <div class="form-row">
-                            <div class="w-100">
-                                <div class="form-row">
-                                    <h4>Dane osobowe</h4>
-                                </div>
-                                <div class="form-row">
-                                    <input type="hidden" asp-for="NewCustomer.Id" class="form-control" />
-                                    <input type="hidden" asp-for="NewCustomer.UserId" value="@Model.Order.UserId" class="form-control" />
-                                    <div style="width: 48%; margin-right: 4%;">
-                                        <label asp-for="NewCustomer.FirstName" class="control-label">Imię</label>
-                                        <input id="CustomerFirstNameInput" asp-for="NewCustomer.FirstName" class="form-control" />
-                                        <span asp-validation-for="NewCustomer.FirstName" class="text-danger"></span>
+                </div>
+                <div class="mt-2 mb-2" data-name="Promotion">
+                    <label>Kod promocyjny</label>
+                    <input id="RefCode" type="text" asp-for="PromoCode" value="@Model.PromoCode" class="form-control" />
+                    <span asp-validation-for="PromoCode" class="text-danger"></span>
+                    <div>
+                        <button class="btn btn-primary mt-2 mb-2" type="button" onclick="getCouponByCode()">
+                            Użyj
+                        </button>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="col-md-6 mb-4">
+                        <label class="control-label">Koszt:</label>
+                        <input id="CostCurrency" class="form-control" value="" readonly />
+                        <input type="hidden" id="Discount" name="Discount" value="" />
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <label class="control-label">Waluta:</label>
+                        <input type="text" id="CurrencyName" class="form-control" value="PLN" readonly />
+                        <input type="hidden" id="Currency" asp-for="Order.CurrencyId" class="form-control" value="1" readonly />
+                        <span asp-validation-for="Order.CurrencyId" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="form-group" style="display:none;">
+                    <input id="Cost" asp-for="Order.Cost" class="form-control" readonly />
+                    <span asp-validation-for="Order.Cost" class="text-danger"></span>
+                </div>
+                <div class="form-group">
+                    @if (Model.Customers.Count > 0)
+                    {
+                        <label>Czy chcesz zamówić z istniejącymi już danymi?</label>
+                        <input type="checkbox" id="ChosenOption" asp-for="CustomerData" class="yes-no-check-text:before" onchange="dataCheckbox(this)" />
+                        <div id="ExistingData" style="display:none;">
+                            <p>Wybierz istniejące dane:</p>
+                            <label asp-for="Order.CustomerId" class="control-label">Klient</label>
+                            <select id="SelectListCustomer" asp-for="Order.CustomerId" asp-items="@(new SelectList(Model.Customers, "Id", "Information"))" class="show-tick form-control data-search"></select>
+                            <span asp-validation-for="Order.CustomerId" class="text-danger"></span>
+                        </div>
+                        <div id="NewData">
+                            <div class="form-row">
+                                <div class="w-100">
+                                    <div class="form-row">
+                                        <h4>Dane osobowe</h4>
                                     </div>
-                                    <div style="width: 48%;">
-                                        <label asp-for="NewCustomer.LastName" class="control-label">Nazwisko</label>
-                                        <input id="CustomerLastNameInput" asp-for="NewCustomer.LastName" class="form-control" />
-                                        <span asp-validation-for="NewCustomer.LastName" class="text-danger"></span>
+                                    <div class="form-row">
+                                        <input type="hidden" asp-for="NewCustomer.Id" class="form-control" />
+                                        <input type="hidden" asp-for="NewCustomer.UserId" value="@Model.Order.UserId" class="form-control" />
+                                        <div style="width: 48%; margin-right: 4%;">
+                                            <label asp-for="NewCustomer.FirstName" class="control-label">Imię</label>
+                                            <input id="CustomerFirstNameInput" asp-for="NewCustomer.FirstName" class="form-control" />
+                                            <span asp-validation-for="NewCustomer.FirstName" class="text-danger"></span>
+                                        </div>
+                                        <div style="width: 48%;">
+                                            <label asp-for="NewCustomer.LastName" class="control-label">Nazwisko</label>
+                                            <input id="CustomerLastNameInput" asp-for="NewCustomer.LastName" class="form-control" />
+                                            <span asp-validation-for="NewCustomer.LastName" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group form-check">
+                                        <label class="form-check-label">
+                                            <input id="CompanyEnter" class="form-check-input" asp-for="NewCustomer.IsCompany" onchange="toggleCheckbox(this)" /> Firma
+                                        </label>
+                                    </div>
+                                    <div id="CompanyData" class="form-row" style="display:none;">
+                                        <div class="mb-3 w-100">
+                                            <label asp-for="NewCustomer.NIP" class="control-label"></label>
+                                            <input id="NIPInput" asp-for="NewCustomer.NIP" class="form-control" />
+                                            <span asp-validation-for="NewCustomer.NIP" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-3 mb-3"></div>
+                                        <div class="mb-3 w-100">
+                                            <label asp-for="NewCustomer.CompanyName" class="control-label">Nazwa firmy</label>
+                                            <input id="CompanyInput" asp-for="NewCustomer.CompanyName" class="form-control" />
+                                            <span asp-validation-for="NewCustomer.CompanyName" class="text-danger"></span>
+                                        </div>
                                     </div>
                                 </div>
-                                <div class="form-group form-check">
-                                    <label class="form-check-label">
-                                        <input id="CompanyEnter" class="form-check-input" asp-for="NewCustomer.IsCompany" onchange="toggleCheckbox(this)" /> Firma
-                                    </label>
-                                </div>
-                                <div id="CompanyData" class="form-row" style="display:none;">
-                                    <div class="mb-3 w-100">
-                                        <label asp-for="NewCustomer.NIP" class="control-label"></label>
-                                        <input id="NIPInput" asp-for="NewCustomer.NIP" class="form-control" />
-                                        <span asp-validation-for="NewCustomer.NIP" class="text-danger"></span>
+                            </div>
+                            <br />
+                            <div class="form-row">
+                                <div class="col-xs-10 w-100" id="ContactDetails">
+                                    <h4>Dane kontaktowe</h4><br />
+                                    <div class="row col-8 w-100">
+                                        <input type="hidden" asp-for="NewCustomer.ContactDetails[0].CustomerId" />
+                                        <label class="col-form-label col-sm-10 pt-0">Rodzaj kontaktu</label>
+                                        <input id="typeId" type="hidden" asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" class="form-control" value="" />
+                                        <div id="ContactDetailType">
+                                            <div class="custom-control custom-radio custom-control-inline">
+                                                <input type="radio" id="1" value='{ "i": "1", "v": "PhoneNumber" }' name="ContactDetailType" class="custom-control-input" />
+                                                <label class="custom-control-label" for="1">Telefon</label>
+                                            </div>
+                                            <div class="custom-control custom-radio custom-control-inline">
+                                                <input type="radio" id="2" value='{ "i": "2", "v": "Email" }' name="ContactDetailType" class="custom-control-input" />
+                                                <label class="custom-control-label" for="2">E-mail</label>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <div class="col-md-3 mb-3"></div>
-                                    <div class="mb-3 w-100">
-                                        <label asp-for="NewCustomer.CompanyName" class="control-label">Nazwa firmy</label>
-                                        <input id="CompanyInput" asp-for="NewCustomer.CompanyName" class="form-control" />
-                                        <span asp-validation-for="NewCustomer.CompanyName" class="text-danger"></span>
+                                    <br />
+                                    <div class="col-xs-6 mb-3">
+                                        <label class="control-label">Dane kontaktowe</label>
+                                        <input id="ContactDetailInformationInput" asp-for="NewCustomer.ContactDetails[0].ContactDetailInformation" class="form-control" />
+                                        <span asp-validation-for="NewCustomer.ContactDetails[0].ContactDetailInformation" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <br />
+                            <div class="form-row">
+                                <div class="col-xs-6 w-100" id="Adresses">
+                                    <input type="hidden" asp-for="NewCustomer.Addresses[0].Id" class="form-control" />
+                                    <div>
+                                        <h4>Adres</h4><br />
+                                        <div>
+                                            <label asp-for="NewCustomer.Addresses[0].Street" class="control-label">Ulica</label>
+                                            <input id="AddressStreetInput" asp-for="NewCustomer.Addresses[0].Street" class="form-control" />
+                                            <span asp-validation-for="NewCustomer.Addresses[0].Street" class="text-danger"></span>
+                                        </div>
+                                        <div>
+                                            <label asp-for="NewCustomer.Addresses[0].BuildingNumber" class="control-label">Numer budynku</label>
+                                            <input id="AddressBuildingNumberInput" asp-for="NewCustomer.Addresses[0].BuildingNumber" class="form-control" />
+                                            <span asp-validation-for="NewCustomer.Addresses[0].BuildingNumber" class="text-danger"></span>
+                                        </div>
+                                        <div>
+                                            <label asp-for="NewCustomer.Addresses[0].FlatNumber" class="control-label">Numer mieszkania</label>
+                                            <input id="AddressFlatNumberInput" asp-for="NewCustomer.Addresses[0].FlatNumber" class="form-control" />
+                                            <span asp-validation-for="NewCustomer.Addresses[0].FlatNumber" class="text-danger"></span>
+                                        </div>
+                                        <div>
+                                            <label asp-for="NewCustomer.Addresses[0].ZipCode" class="control-label">Kod pocztowy</label>
+                                            <input id="AddressZipCodeInput" type="text" asp-for="NewCustomer.Addresses[0].ZipCode" class="form-control" />
+                                            <span asp-validation-for="NewCustomer.Addresses[0].ZipCode" class="text-danger"></span>
+                                        </div>
+                                        <div>
+                                            <label asp-for="NewCustomer.Addresses[0].City" class="control-label">Miasto</label>
+                                            <input id="AddressCityInput" asp-for="NewCustomer.Addresses[0].City" class="form-control" />
+                                            <span asp-validation-for="NewCustomer.Addresses[0].City" class="text-danger"></span>
+                                        </div>
+                                        <div>
+                                            <label asp-for="NewCustomer.Addresses[0].Country" class="control-label">Województwo</label>
+                                            <input id="AddressCountryInput" asp-for="NewCustomer.Addresses[0].Country" class="form-control" />
+                                            <span asp-validation-for="NewCustomer.Addresses[0].Country" class="text-danger"></span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <br />
-                        <div class="form-row">
-                            <div class="col-xs-10 w-100" id="ContactDetails">
-                                <h4>Dane kontaktowe</h4><br />
-                                <div class="row col-8 w-100">
-                                    <input type="hidden" asp-for="NewCustomer.ContactDetails[0].CustomerId" />
-                                    <label class="col-form-label col-sm-10 pt-0">Rodzaj kontaktu</label>
-                                    <input id="typeId" type="hidden" asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" class="form-control" value="" />
-                                    <div id="ContactDetailType">
+                    }
+                    else
+                    {
+                        <div id="NewData">
+                            <div class="form-row">
+                                <div class="w-100">
+                                    <div class="form-row">
+                                        <h4>Dane osobowe</h4>
+                                    </div>
+                                    <div class="form-row">
+                                        <input type="hidden" asp-for="NewCustomer.Id" class="form-control" />
+                                        <input type="hidden" asp-for="NewCustomer.UserId" value="@Model.Order.UserId" class="form-control" />
+                                        <div style="width: 48%; margin-right: 4%;">
+                                            <label asp-for="NewCustomer.FirstName" class="control-label">Imię</label>
+                                            <input id="CustomerFirstNameInput" asp-for="NewCustomer.FirstName" name="FirstName" class="form-control" />
+                                            <span asp-validation-for="NewCustomer.FirstName" class="text-danger"></span>
+                                        </div>
+                                        <div style="width: 48%;">
+                                            <label asp-for="NewCustomer.LastName" class="control-label">Nazwisko</label>
+                                            <input id="CustomerLastNameInput" asp-for="NewCustomer.LastName" class="form-control" />
+                                            <span asp-validation-for="NewCustomer.LastName" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="form-group form-check">
+                                        <label class="form-check-label">
+                                            <input id="CompanyEnter" class="form-check-input" asp-for="NewCustomer.IsCompany" onchange="toggleCheckbox(this)" /> Firma
+                                        </label>
+                                    </div>
+                                    <div id="CompanyData" class="form-row" style="display:none;">
+                                        <div class="mb-3 w-100"></div>
+                                        <div>
+                                            <label asp-for="NewCustomer.NIP" class="control-label"></label>
+                                            <input id="NIPInput" asp-for="NewCustomer.NIP" class="form-control" />
+                                            <span asp-validation-for="NewCustomer.NIP" class="text-danger"></span>
+                                        </div>
+                                        <div class="col-md-3 mb-3"></div>
+                                        <div class="mb-3 w-100">
+                                            <label asp-for="NewCustomer.CompanyName" class="control-label">Nazwa firmy</label>
+                                            <input id="CompanyInput" asp-for="NewCustomer.CompanyName" class="form-control" />
+                                            <span asp-validation-for="NewCustomer.CompanyName" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <br />
+                            <div class="form-row">
+                                <div class="col-xs-10 w-100" id="ContactDetailType">
+                                    <h4>Dane kontaktowe</h4><br />
+                                    <div class="row col-8">
+                                        <input type="hidden" asp-for="NewCustomer.ContactDetails[0].CustomerId" />
+                                        <label class="col-form-label col-sm-10 pt-0">Rodzaj kontaktu</label>
+                                        <input id="typeId" type="hidden" asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" class="form-control" value="" />
                                         <div class="custom-control custom-radio custom-control-inline">
-                                            <input type="radio" id="1" value='{ "i": "1", "v": "PhoneNumber" }' name="ContactDetailType" class="custom-control-input" />
+                                            <input asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" type="radio" id="1" value='{ "i": "1", "v": "PhoneNumber" }' name="ContactDetailType" class="custom-control-input" />
                                             <label class="custom-control-label" for="1">Telefon</label>
                                         </div>
                                         <div class="custom-control custom-radio custom-control-inline">
-                                            <input type="radio" id="2" value='{ "i": "2", "v": "Email" }' name="ContactDetailType" class="custom-control-input" />
+                                            <input asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" type="radio" id="2" value='{ "i": "2", "v": "Email" }' name="ContactDetailType" class="custom-control-input" />
                                             <label class="custom-control-label" for="2">E-mail</label>
                                         </div>
                                     </div>
-                                </div>
-                                <br />
-                                <div class="col-xs-6 mb-3">
-                                    <label class="control-label">Dane kontaktowe</label>
-                                    <input id="ContactDetailInformationInput" asp-for="NewCustomer.ContactDetails[0].ContactDetailInformation" class="form-control" />
-                                    <span asp-validation-for="NewCustomer.ContactDetails[0].ContactDetailInformation" class="text-danger"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <br />
-                        <div class="form-row">
-                            <div class="col-xs-6 w-100" id="Adresses">
-                                <input type="hidden" asp-for="NewCustomer.Addresses[0].Id" class="form-control" />
-                                <div>
-                                    <h4>Adres</h4><br />
-                                    <div>
-                                        <label asp-for="NewCustomer.Addresses[0].Street" class="control-label">Ulica</label>
-                                        <input id="AddressStreetInput" asp-for="NewCustomer.Addresses[0].Street" class="form-control" />
-                                        <span asp-validation-for="NewCustomer.Addresses[0].Street" class="text-danger"></span>
-                                    </div>
-                                    <div>
-                                        <label asp-for="NewCustomer.Addresses[0].BuildingNumber" class="control-label">Numer budynku</label>
-                                        <input id="AddressBuildingNumberInput" asp-for="NewCustomer.Addresses[0].BuildingNumber" class="form-control" />
-                                        <span asp-validation-for="NewCustomer.Addresses[0].BuildingNumber" class="text-danger"></span>
-                                    </div>
-                                    <div>
-                                        <label asp-for="NewCustomer.Addresses[0].FlatNumber" class="control-label">Numer mieszkania</label>
-                                        <input id="AddressFlatNumberInput" asp-for="NewCustomer.Addresses[0].FlatNumber" class="form-control" />
-                                        <span asp-validation-for="NewCustomer.Addresses[0].FlatNumber" class="text-danger"></span>
-                                    </div>
-                                    <div>
-                                        <label asp-for="NewCustomer.Addresses[0].ZipCode" class="control-label">Kod pocztowy</label>
-                                        <input id="AddressZipCodeInput" type="text" asp-for="NewCustomer.Addresses[0].ZipCode" class="form-control" />
-                                        <span asp-validation-for="NewCustomer.Addresses[0].ZipCode" class="text-danger"></span>
-                                    </div>
-                                    <div>
-                                        <label asp-for="NewCustomer.Addresses[0].City" class="control-label">Miasto</label>
-                                        <input id="AddressCityInput" asp-for="NewCustomer.Addresses[0].City" class="form-control" />
-                                        <span asp-validation-for="NewCustomer.Addresses[0].City" class="text-danger"></span>
-                                    </div>
-                                    <div>
-                                        <label asp-for="NewCustomer.Addresses[0].Country" class="control-label">Województwo</label>
-                                        <input id="AddressCountryInput" asp-for="NewCustomer.Addresses[0].Country" class="form-control" />
-                                        <span asp-validation-for="NewCustomer.Addresses[0].Country" class="text-danger"></span>
+                                    <br />
+                                    <div class="col-xs-6 mb-3">
+                                        <label class="control-label">Dane kontaktowe</label>
+                                        <input id="ContactDetailInformationInput" asp-for="NewCustomer.ContactDetails[0].ContactDetailInformation" name="ContactDetailInformation" class="form-control" />
+                                        <span asp-validation-for="NewCustomer.ContactDetails[0].ContactDetailInformation" class="text-danger"></span>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-                }
-                else
-                {
-                    <div id="NewData">
-                        <div class="form-row">
-                            <div class="w-100">
-                                <div class="form-row">
-                                    <h4>Dane osobowe</h4>
-                                </div>
-                                <div class="form-row">
-                                    <input type="hidden" asp-for="NewCustomer.Id" class="form-control" />
-                                    <input type="hidden" asp-for="NewCustomer.UserId" value="@Model.Order.UserId" class="form-control" />
-                                    <div style="width: 48%; margin-right: 4%;">
-                                        <label asp-for="NewCustomer.FirstName" class="control-label">Imię</label>
-                                        <input id="CustomerFirstNameInput" asp-for="NewCustomer.FirstName" name="FirstName" class="form-control" />
-                                        <span asp-validation-for="NewCustomer.FirstName" class="text-danger"></span>
-                                    </div>
-                                    <div style="width: 48%;">
-                                        <label asp-for="NewCustomer.LastName" class="control-label">Nazwisko</label>
-                                        <input id="CustomerLastNameInput" asp-for="NewCustomer.LastName" class="form-control" />
-                                        <span asp-validation-for="NewCustomer.LastName" class="text-danger"></span>
-                                    </div>
-                                </div>
-                                <div class="form-group form-check">
-                                    <label class="form-check-label">
-                                        <input id="CompanyEnter" class="form-check-input" asp-for="NewCustomer.IsCompany" onchange="toggleCheckbox(this)" /> Firma
-                                    </label>
-                                </div>
-                                <div id="CompanyData" class="form-row" style="display:none;">
-                                    <div class="mb-3 w-100"></div>
+                            <br />
+                            <div class="form-row">
+                                <div class="col-xs-6 w-100" id="Adresses">
                                     <div>
-                                        <label asp-for="NewCustomer.NIP" class="control-label"></label>
-                                        <input id="NIPInput" asp-for="NewCustomer.NIP" class="form-control" />
-                                        <span asp-validation-for="NewCustomer.NIP" class="text-danger"></span>
-                                    </div>
-                                    <div class="col-md-3 mb-3"></div>
-                                    <div class="mb-3 w-100">
-                                        <label asp-for="NewCustomer.CompanyName" class="control-label">Nazwa firmy</label>
-                                        <input id="CompanyInput" asp-for="NewCustomer.CompanyName" class="form-control" />
-                                        <span asp-validation-for="NewCustomer.CompanyName" class="text-danger"></span>
+                                        <h4>Adres</h4><br />
+                                        <div>
+                                            <label asp-for="NewCustomer.Addresses[0].Street" class="control-label">Ulica</label>
+                                            <input id="AddressStreetInput" asp-for="NewCustomer.Addresses[0].Street" class="form-control" />
+                                            <span asp-validation-for="NewCustomer.Addresses[0].Street" class="text-danger"></span>
+                                        </div>
+                                        <div>
+                                            <label asp-for="NewCustomer.Addresses[0].BuildingNumber" class="control-label">Numer budynku</label>
+                                            <input id="AddressBuildingNumberInput" asp-for="NewCustomer.Addresses[0].BuildingNumber" class="form-control" />
+                                            <span asp-validation-for="NewCustomer.Addresses[0].BuildingNumber" class="text-danger"></span>
+                                        </div>
+                                        <div>
+                                            <label asp-for="NewCustomer.Addresses[0].FlatNumber" class="control-label">Numer mieszkania</label>
+                                            <input id="AddressFlatNumberInput" asp-for="NewCustomer.Addresses[0].FlatNumber" class="form-control" />
+                                            <span asp-validation-for="NewCustomer.Addresses[0].FlatNumber" class="text-danger"></span>
+                                        </div>
+                                        <div>
+                                            <label asp-for="NewCustomer.Addresses[0].ZipCode" class="control-label">Kod pocztowy</label>
+                                            <input id="AddressZipCodeInput" type="text" asp-for="NewCustomer.Addresses[0].ZipCode" class="form-control" />
+                                            <span asp-validation-for="NewCustomer.Addresses[0].ZipCode" class="text-danger"></span>
+                                        </div>
+                                        <div>
+                                            <label asp-for="NewCustomer.Addresses[0].City" class="control-label">Miasto</label>
+                                            <input id="AddressCityInput" asp-for="NewCustomer.Addresses[0].City" class="form-control" />
+                                            <span asp-validation-for="NewCustomer.Addresses[0].City" class="text-danger"></span>
+                                        </div>
+                                        <div>
+                                            <label asp-for="NewCustomer.Addresses[0].Country" class="control-label">Województwo</label>
+                                            <input id="AddressCountryInput" asp-for="NewCustomer.Addresses[0].Country" class="form-control" />
+                                            <span asp-validation-for="NewCustomer.Addresses[0].Country" class="text-danger"></span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <br />
-                        <div class="form-row">
-                            <div class="col-xs-10 w-100" id="ContactDetailType">
-                                <h4>Dane kontaktowe</h4><br />
-                                <div class="row col-8">
-                                    <input type="hidden" asp-for="NewCustomer.ContactDetails[0].CustomerId" />
-                                    <label class="col-form-label col-sm-10 pt-0">Rodzaj kontaktu</label>
-                                    <input id="typeId" type="hidden" asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" class="form-control" value="" />
-                                    <div class="custom-control custom-radio custom-control-inline">
-                                        <input asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" type="radio" id="1" value='{ "i": "1", "v": "PhoneNumber" }' name="ContactDetailType" class="custom-control-input" />
-                                        <label class="custom-control-label" for="1">Telefon</label>
-                                    </div>
-                                    <div class="custom-control custom-radio custom-control-inline">
-                                        <input asp-for="NewCustomer.ContactDetails[0].ContactDetailTypeId" type="radio" id="2" value='{ "i": "2", "v": "Email" }' name="ContactDetailType" class="custom-control-input" />
-                                        <label class="custom-control-label" for="2">E-mail</label>
-                                    </div>
-                                </div>
-                                <br />
-                                <div class="col-xs-6 mb-3">
-                                    <label class="control-label">Dane kontaktowe</label>
-                                    <input id="ContactDetailInformationInput" asp-for="NewCustomer.ContactDetails[0].ContactDetailInformation" name="ContactDetailInformation" class="form-control" />
-                                    <span asp-validation-for="NewCustomer.ContactDetails[0].ContactDetailInformation" class="text-danger"></span>
-                                </div>
-                            </div>
-                        </div>
-                        <br />
-                        <div class="form-row">
-                            <div class="col-xs-6 w-100" id="Adresses">
-                                <div>
-                                    <h4>Adres</h4><br />
-                                    <div>
-                                        <label asp-for="NewCustomer.Addresses[0].Street" class="control-label">Ulica</label>
-                                        <input id="AddressStreetInput" asp-for="NewCustomer.Addresses[0].Street" class="form-control" />
-                                        <span asp-validation-for="NewCustomer.Addresses[0].Street" class="text-danger"></span>
-                                    </div>
-                                    <div>
-                                        <label asp-for="NewCustomer.Addresses[0].BuildingNumber" class="control-label">Numer budynku</label>
-                                        <input id="AddressBuildingNumberInput" asp-for="NewCustomer.Addresses[0].BuildingNumber" class="form-control" />
-                                        <span asp-validation-for="NewCustomer.Addresses[0].BuildingNumber" class="text-danger"></span>
-                                    </div>
-                                    <div>
-                                        <label asp-for="NewCustomer.Addresses[0].FlatNumber" class="control-label">Numer mieszkania</label>
-                                        <input id="AddressFlatNumberInput" asp-for="NewCustomer.Addresses[0].FlatNumber" class="form-control" />
-                                        <span asp-validation-for="NewCustomer.Addresses[0].FlatNumber" class="text-danger"></span>
-                                    </div>
-                                    <div>
-                                        <label asp-for="NewCustomer.Addresses[0].ZipCode" class="control-label">Kod pocztowy</label>
-                                        <input id="AddressZipCodeInput" type="text" asp-for="NewCustomer.Addresses[0].ZipCode" class="form-control" />
-                                        <span asp-validation-for="NewCustomer.Addresses[0].ZipCode" class="text-danger"></span>
-                                    </div>
-                                    <div>
-                                        <label asp-for="NewCustomer.Addresses[0].City" class="control-label">Miasto</label>
-                                        <input id="AddressCityInput" asp-for="NewCustomer.Addresses[0].City" class="form-control" />
-                                        <span asp-validation-for="NewCustomer.Addresses[0].City" class="text-danger"></span>
-                                    </div>
-                                    <div>
-                                        <label asp-for="NewCustomer.Addresses[0].Country" class="control-label">Województwo</label>
-                                        <input id="AddressCountryInput" asp-for="NewCustomer.Addresses[0].Country" class="form-control" />
-                                        <span asp-validation-for="NewCustomer.Addresses[0].Country" class="text-danger"></span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Utwórz" class="btn btn-primary" style="top:50px;" />
-            </div>
-        </form>
+                    }
+                </div>
+                <div class="form-group">
+                    <input type="submit" value="Utwórz" class="btn btn-primary" style="top:50px;" />
+                </div>
+            </form>
+        </div>
     </div>
-</div>
+}
+else
+{
+    <p><em>Aktualnie nie masz zamówionych przedmiotów lub w koszyku znajdują się przedmioty niedostępne</em></p>
+}
 
 <div>
     <a asp-action="Index" asp-controller="Item">Wróć do przedmiotów</a>
@@ -539,6 +546,10 @@
         }
 
         $(document).on('DOMInitialized', function () {
+            if ($('#orderForm').length === 0) {
+                return;
+            }
+
             const cost = calculateCosts();
             document.getElementById('Cost').value = Number(cost);
             document.getElementById('CostCurrency').value = formatPln(cost);

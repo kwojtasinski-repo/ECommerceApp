@@ -155,5 +155,21 @@ namespace ECommerceApp.Infrastructure.Repositories
                             .Where(i => ids.Contains(i.Id))
                             .ToList();
         }
+
+        public List<Item> GetAllAvailableItems(int pageSize, int pageNo, string searchString)
+        {
+            return _context.Items
+                           .Where(i => i.Name.StartsWith(searchString) && i.Quantity > 0)
+                           .Skip(pageSize * (pageNo - 1))
+                           .Take(pageSize)
+                           .ToList();
+        }
+
+        public int GetAvailableItemsCountBySearchString(string searchString)
+        {
+            return _context.Items
+                           .Where(i => i.Name.StartsWith(searchString) && i.Quantity > 0)
+                           .Count();
+        }
     }
 }

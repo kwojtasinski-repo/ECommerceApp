@@ -13,11 +13,13 @@ namespace ECommerceApp.Application.Services.Orders
     {
         private readonly IMapper _mapper;
         private readonly IOrderItemRepository _orderItemRepository;
+        private readonly IItemRepository _itemRepository;
 
-        public OrderItemService(IOrderItemRepository orderItemRepository, IMapper mapper)
+        public OrderItemService(IOrderItemRepository orderItemRepository, IMapper mapper, IItemRepository itemRepository)
         {
             _mapper = mapper;
             _orderItemRepository = orderItemRepository;
+            _itemRepository = itemRepository;
         }
 
         public int AddOrderItem(OrderItemDto model)
@@ -25,6 +27,18 @@ namespace ECommerceApp.Application.Services.Orders
             if (model is null)
             {
                 throw new BusinessException($"{typeof(OrderItemDto).Name} cannot be null");
+            }
+
+            var item = _itemRepository.GetItemById(model.ItemId)
+                ?? throw new BusinessException($"Item with id '{model.ItemId}' was not found", "itemNotFound", new Dictionary<string, string> { { "id", $"{model.ItemId}"} });
+            if (item.Quantity <= 0)
+            {
+                throw new BusinessException($"Item with id '{item.Id}' is not available", "itemNotInStock", new Dictionary<string, string> { { "id", $"{item.Id}" }, { "name", item.Name } });
+            }
+
+            if (item.Quantity < model.ItemOrderQuantity)
+            {
+                throw new BusinessException($"Item with id '{item.Id}' cannot be ordered with quantity of '{model.ItemOrderQuantity}', available '{item.Quantity}'", "tooManyItemsQuantityInCart", new Dictionary<string, string> { { "id", $"{item.Id}" }, { "name", item.Name }, { "availableQuantity", $"{item.Quantity}" } });
             }
 
             var orderItem = _mapper.Map<OrderItem>(model);
@@ -66,7 +80,22 @@ namespace ECommerceApp.Application.Services.Orders
 
         public IEnumerable<OrderItemDto> GetOrderItemsForRealization(string userId)
         {
-            return _mapper.Map<List<OrderItemDto>>(_orderItemRepository.GetUserOrderItemsNotOrdered(userId));
+            // TODO: Think about return more than one error
+            var orderItems = _orderItemRepository.GetUserOrderItemsNotOrdered(userId);
+            foreach (var orderItem in orderItems)
+            {
+                if (orderItem.Item.Quantity <= 0)
+                {
+                    throw new BusinessException($"Item with id '{orderItem.ItemId}' is not available", "itemNotInStock", new Dictionary<string, string> { { "id", $"{orderItem.ItemId}" }, { "name", orderItem.Item.Name } });
+                }
+
+                if (orderItem.Item.Quantity < orderItem.ItemOrderQuantity)
+                {
+                    throw new BusinessException($"Item with id '{orderItem.ItemId}' cannot be ordered with quantity of '{orderItem.ItemOrderQuantity}', available '{orderItem.Item.Quantity}'", "tooManyItemsQuantityInCart", new Dictionary<string, string> { { "id", $"{orderItem.ItemId}" }, { "name", orderItem.Item.Name }, { "availableQuantity", $"{orderItem.Item.Quantity}" } });
+                }
+            }
+
+            return _mapper.Map<List<OrderItemDto>>(orderItems);
         }
 
         public ListForOrderItemVm GetOrderItems(int pageSize, int pageNo, string searchString)

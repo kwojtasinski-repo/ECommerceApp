@@ -8,6 +8,7 @@ namespace ECommerceApp.Application.Services.Items
     public interface IItemService
     {
         ListForItemVm GetAllItemsForList(int pageSize, int pageNo, string searchString);
+        ListForItemVm GetAllAvailableItemsForList(int pageSize, int pageNo, string searchString);
         int AddItem(AddItemDto dto);
         bool UpdateItem(UpdateItemDto dto);
         List<ItemDto> GetAllItems();

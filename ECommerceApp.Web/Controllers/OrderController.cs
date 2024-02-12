@@ -94,7 +94,16 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult OrderRealization()
         {
-            return View(_orderService.InitOrder());
+            try
+            {
+                return View(_orderService.InitOrder());
+            }
+            catch (BusinessException exception)
+            {
+                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
+                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                return View(null);
+            }
         }
 
         [HttpPost]

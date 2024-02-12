@@ -215,7 +215,7 @@
             }
 
             errorContainer.style.display = 'block';
-            errorValue.textContent = errors.getError(errorCode, params);
+            errorValue.textContent = he.decode(errors.getError(errorCode, params));
         }
     </script>
     <style type="text/css">

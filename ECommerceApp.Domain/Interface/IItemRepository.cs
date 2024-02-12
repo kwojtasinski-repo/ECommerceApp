@@ -18,5 +18,7 @@ namespace ECommerceApp.Domain.Interface
         int GetCountItemTagsBySearchString(string searchString);
         int GetCountBySearchString(string searchString);
         List<Item> GetItemsByIds(IEnumerable<int> enumerable);
+        List<Item> GetAllAvailableItems(int pageSize, int pageNo, string searchString);
+        int GetAvailableItemsCountBySearchString(string searchString);
     }
 }

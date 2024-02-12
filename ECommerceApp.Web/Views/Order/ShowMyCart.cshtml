@@ -16,6 +16,23 @@
 }
 else
 {
+    @if (Model.ItemOrders.Any(oi => oi.ItemQuantityAvailable <= 0 || oi.ItemQuantityAvailable < oi.ItemOrderQuantity))
+    {
+        <div class="alert alert-danger">
+            @foreach (var orderItem in Model.ItemOrders.Where(oi => oi.ItemQuantityAvailable <= 0 || oi.ItemQuantityAvailable < oi.ItemOrderQuantity))
+            {
+                @if (orderItem.ItemQuantityAvailable <= 0)
+                {
+                    <p><em>Przedmiot <b>@orderItem.ItemName</b> nie może zostać użyty podczas zamawiania, gdyż nie jest dostępny</em></p>
+                }
+                else if (orderItem.ItemQuantityAvailable < orderItem.ItemOrderQuantity)
+                {
+                    <p><em>Przedmiot o nazwie <b>@orderItem.ItemName</b> można maksymalnie można zamówić w ilości <b>@orderItem.ItemQuantityAvailable</b></em></p>
+                }
+            }
+        </div>
+    }
+
     <table id="search-form" class="table">
         <thead>
             <tr>
@@ -105,7 +122,18 @@ else
     <input type="hidden" name="pageNo" id="pageNo" />
     <input type="hidden" name="pageSize" id="pageSize" value="20" />
     <div class="form-group">
-        <a asp-controller="Order" asp-action="OrderRealization"><input type="button" readonly value="Zrealizuj zamówienie" class="btn btn-primary" /></a>
+        @if (Model.ItemOrders.Any(oi => oi.ItemQuantityAvailable <= 0))
+        {
+            <input type="button" readonly value="Zrealizuj zamówienie" class="btn btn-primary" disabled="disabled"/>
+        }
+        else if (Model.ItemOrders.Any(oi => oi.ItemQuantityAvailable < oi.ItemOrderQuantity))
+        {
+            <input type="button" readonly value="Zrealizuj zamówienie" class="btn btn-primary" disabled="disabled" />
+        }
+        else 
+        {
+            <a asp-controller="Order" asp-action="OrderRealization"><input type="button" readonly value="Zrealizuj zamówienie" class="btn btn-primary" /></a>
+        }
         <a asp-controller="Item" asp-action="Index"><input type="button" readonly value="Zrealizuj później" class="btn btn-primary" /></a>
     </div>
 }

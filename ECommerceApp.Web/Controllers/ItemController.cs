@@ -28,7 +28,7 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet]
         public IActionResult Index()
         {
-            var model = _itemService.GetAllItemsForList(20, 1, "");
+            var model = _itemService.GetAllAvailableItemsForList(20, 1, "");
             return View(model);
         }
 
@@ -41,7 +41,7 @@ namespace ECommerceApp.Web.Controllers
             }
 
             searchString ??= string.Empty;
-            var model = _itemService.GetAllItemsForList(pageSize, pageNo.Value, searchString);
+            var model = _itemService.GetAllAvailableItemsForList(pageSize, pageNo.Value, searchString);
             return View(model);
         }
 

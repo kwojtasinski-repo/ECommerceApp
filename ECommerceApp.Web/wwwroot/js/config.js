@@ -1,13 +1,16 @@
 ﻿const config = (function () {
     function setup() {
         require.config({
-            baseUrl: '/js'
+            baseUrl: '/js',
+            'paths': {
+                'he': '../lib/he'
+            }
         });
     }
 
     function init() {
-        require(["validations", "common", "buttonTemplate", "dialogTemplate", "errors", "forms", "ajaxRequest", "modalService"],
-            function (validations, common, buttonTemplate, dialogTemplate, errors, forms, ajaxRequest, modalService) {
+        require(["validations", "common", "buttonTemplate", "dialogTemplate", "errors", "forms", "ajaxRequest", "modalService", "he"],
+            function (validations, common, buttonTemplate, dialogTemplate, errors, forms, ajaxRequest, modalService, he) {
                 addObjectPropertiesToGlobal(validations);
                 addObjectPropertiesToGlobal(common);
                 addObjectPropertiesToGlobal(buttonTemplate);
@@ -16,7 +19,7 @@
                 addObjectPropertiesToGlobal(forms);
                 addObjectPropertiesToGlobal(ajaxRequest);
                 addObjectPropertiesToGlobal(modalService);
-
+                window.he = he;
                 $(document).trigger('DOMInitialized');
 
                 function addObjectPropertiesToGlobal(obj) {
