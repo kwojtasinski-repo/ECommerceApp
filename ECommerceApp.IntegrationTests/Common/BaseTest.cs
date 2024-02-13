@@ -70,9 +70,9 @@ namespace ECommerceApp.IntegrationTests.Common
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessorTest>();
         }
 
-        protected T GetRequiredService<T>()
+        protected TService GetRequiredService<TService>()
         {
-            return Services.GetRequiredService<T>();
+            return Services.GetRequiredService<TService>();
         }
     }
 }

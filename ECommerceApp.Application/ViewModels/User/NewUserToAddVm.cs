@@ -13,7 +13,7 @@ namespace ECommerceApp.Application.ViewModels.User
         public string Email { get; set; }
         public bool EmailConfirmed { get; set; }
         public string Password { get; set; }
-        public List<string> UserRoles { get; set; }
+        public string UserRole { get; set; }
         public List<RoleVm> Roles { get; set; }
 
         public void Mapping(Profile profile)
@@ -34,8 +34,7 @@ namespace ECommerceApp.Application.ViewModels.User
                                   .Matches("^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$")
                                   .WithMessage("Hasło musi zawierać przynajmniej jedną dużą i małą literę oraz jeden specjalny znak" +
                                   ", a także nie może być krótsze niż 8 znaków");
-            RuleFor(x => x.UserRoles).NotNull().NotEmpty();
-            RuleForEach(x => x.UserRoles).NotNull().NotEmpty();
+            RuleFor(x => x.UserRole).NotNull().NotEmpty();
         }
     }
 }

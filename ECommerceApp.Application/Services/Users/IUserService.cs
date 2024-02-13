@@ -9,8 +9,8 @@ namespace ECommerceApp.Application.Services.Users
     {
         Task<ListUsersVm> GetAllUsers(int pageSize, int pageNo, string searchString);
         Task<NewUserVm> GetUserById(string id);
-        Task<IdentityResult> ChangeRoleAsync(string id, IEnumerable<string> role);
-        Task<IList<string>> GetRolesByUser(string id);
+        Task<IdentityResult> ChangeRoleAsync(string id, string role);
+        Task<string> GetRoleByUser(string id);
         Task<List<RoleVm>> GetAllRoles();
         Task RemoveRoleFromUser(string id, string role);
         Task<IdentityResult> DeleteUserAsync(string id);

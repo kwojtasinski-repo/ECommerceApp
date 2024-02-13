@@ -24,43 +24,26 @@ namespace ECommerceApp.Application.Services.Users
             _mapper = mapper;
         }
 
-        public async Task<IdentityResult> ChangeRoleAsync(string id, IEnumerable<string> roles)
+        public async Task<IdentityResult> ChangeRoleAsync(string id, string role)
         {
             var user = await _userManager.FindByIdAsync(id);
             if (user == null)
             {
                 return null;
             }
+            var roles = await GetAllRoles();
+            if (!roles.Any(ur => ur.Id == role))
+            {
+                return IdentityResult.Failed(new IdentityError { Code = "roleNotFound", Description = "Role not found" });
+            }
+
             var userRoles = await _userManager.GetRolesAsync(user);
-
-            var rolesToAdd = new List<string>();
-            var rolesToDelete = new List<string>();
-            foreach (var role in userRoles)
-            {
-                if (roles.Any(r => r == role))
-                {
-                    continue;
-                }
-
-                rolesToDelete.Add(role);
-            }
-
-            foreach (var role in roles)
-            {
-                if (userRoles.Any(r => r == role))
-                {
-                    continue;
-                }
-
-                rolesToAdd.Add(role);
-            }
-
-            var removeResult = await _userManager.RemoveFromRolesAsync(user, rolesToDelete);
+            var removeResult = await _userManager.RemoveFromRolesAsync(user, userRoles);
             if (!removeResult.Succeeded)
             {
                 return removeResult;
             }
-            var addResult = await _userManager.AddToRolesAsync(user, rolesToAdd);
+            var addResult = await _userManager.AddToRolesAsync(user, new string[] { role });
             if (!addResult.Succeeded)
             {
                 return addResult;
@@ -99,16 +82,16 @@ namespace ECommerceApp.Application.Services.Users
                 return null;
             }
 
-            userVm.UserRoles = await GetRolesByUser(user.Id) as List<string>;
+            userVm.UserRole = await GetRoleByUser(user.Id);
             userVm.Roles = await GetAllRoles();
             return userVm;
         }
 
-        public async Task<IList<string>> GetRolesByUser(string id)
+        public async Task<string> GetRoleByUser(string id)
         {
             var user = await _userManager.FindByIdAsync(id)
                 ?? throw new BusinessException($"User with id '{id}' was not found", "userNotFound", new Dictionary<string, string> { { "id", id } });
-            return (await _userManager.GetRolesAsync(user)) ?? new List<string>();
+            return ((await _userManager.GetRolesAsync(user)) ?? new List<string>()).FirstOrDefault();
         }
 
         public async Task<List<RoleVm>> GetAllRoles()
@@ -177,24 +160,16 @@ namespace ECommerceApp.Application.Services.Users
             {
                 return result;
             }
-            result = await AddRolesToUserAsync(user, newUser.UserRoles);
+            result = await AddRoleToUserAsync(user, newUser.UserRole);
             newUser.Id = user.Id;
             return result;
         }
 
-        private async Task<IdentityResult> AddRolesToUserAsync(ApplicationUser user, IEnumerable<string> roles)
+        private async Task<IdentityResult> AddRoleToUserAsync(ApplicationUser user, string role)
         {
             IdentityResult result;
-            roles = await RemoveDuplicateRoles(user, roles);
-            result = await _userManager.AddToRolesAsync(user, roles);
+            result = await _userManager.AddToRolesAsync(user, new string[] { role });
             return result;
-        }
-
-        private async Task<List<string>> RemoveDuplicateRoles(ApplicationUser user, IEnumerable<string> roles)
-        {
-            var userRoles = (await _userManager.GetRolesAsync(user)).ToList();
-            var rolesToAdd = roles.Where(r => !userRoles.Contains(r)).ToList();
-            return rolesToAdd;
         }
 
         public async Task<IdentityResult> ChangeUserPassword(NewUserVm model)

@@ -80,7 +80,7 @@ namespace ECommerceApp.IntegrationTests.Services
             await _service.ChangeRoleAsync(id, new List<string> { role });
 
             var user = await _service.GetUserById(id);
-            user.UserRoles.Where(r => r == role).FirstOrDefault().ShouldNotBeNull();
+            user.UserRole.Where(r => r == role).FirstOrDefault().ShouldNotBeNull();
         }
 
         [Fact]
@@ -96,7 +96,7 @@ namespace ECommerceApp.IntegrationTests.Services
         {
             var id = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e";
 
-            var roles = await _service.GetRolesByUser(id);
+            var roles = await _service.GetRoleByUser(id);
 
             roles.ShouldNotBeEmpty();
         }
@@ -111,7 +111,7 @@ namespace ECommerceApp.IntegrationTests.Services
             await _service.RemoveRoleFromUser(id, role);
 
             var user = await _service.GetUserById(id);
-            user.UserRoles.Where(r => r.Contains(role)).FirstOrDefault().ShouldBeNull();
+            user.UserRole.Where(r => r.Contains(role)).FirstOrDefault().ShouldBeNull();
         }
 
         [Fact]
@@ -179,7 +179,7 @@ namespace ECommerceApp.IntegrationTests.Services
                 EmailConfirmed = true,
                 Password = "Test123456789!@",
                 UserName = "testtest@testtest",
-                UserRoles = new List<string> { "User" }
+                UserRole = new List<string> { "User" }
             };
             return user;
         }

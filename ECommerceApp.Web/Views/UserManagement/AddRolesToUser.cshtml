@@ -27,18 +27,10 @@
                     <input onclick="return false;" class="form-check-input" asp-for="EmailConfirmed" /> Potwierdzony email
                 </label>
             </div>
-            <div class="col-sm-6">
-                <h4>Nadane prawa:</h4>
-                <div id="roles" class="mt-2 mb-2">
-                    @foreach (var role in Model.Roles)
-                    {
-                        <div class="checkbox">
-                            <label>
-                                <input type="checkbox" name="UserRoles" value="@role.Name" @if (Model.UserRoles.Contains(role.Name)) { <text> checked </text> } /> @role.Name
-                            </label>
-                        </div>
-                    }
-                </div>
+            <div class="form-group mt-2 mb-2">
+                <label asp-for="UserRole" class="control-label">Rola: </label>
+                <select id="UserRole" asp-for="UserRole" asp-items="@(new SelectList(Model.Roles, "Id", "Name"))" class="show-tick form-control data-search"></select>
+                <span asp-validation-for="UserRole" class="text-danger"></span>
             </div>
             <div class="form-group">
                 <input type="submit" value="Utwórz" class="btn btn-primary" />
@@ -55,52 +47,14 @@
     <script>
         const addRolesToUserFormValidator = {
             formId: "addRolesToUserForm",
-            userRoles: {
-                controlId: 'roles',
-                controlName: 'UserRoles',
+            userRole: {
+                controlId: 'UserRole',
                 rules: [
-                    v => v && v.length > 0 || 'Wymagane jest przypisanie przynajmniej 1 roli użytkownikowi',
-                    v => v && v.some(v => v.checked) > 0 || 'Wymagane jest przypisanie przynajmniej 1 roli użytkownikowi',
+                    v => v && v.trim().length > 0 || 'Wymagane jest przypisanie przynajmniej 1 roli użytkownikowi'
                 ],
-                onChange: function (event) {
-                    if (this.value.some(v => v.name === event.value)) {
-                        const role = this.value.find(v => v.name === event.value);
-                        role.checked = event.checked;
-                    } else {
-                        this.value.push({ name: event.value, checked: event.checked });
-                    }
-
-                    if (event.checked) {
-                        forms.showValidationError(this.controlId, '');
-                        return;
-                    }
-
-                    let checkedOption = false;
-                    for (const userRole of $('input[name="UserRoles"]')) {
-                        if (userRole.checked) {
-                            checkedOption = true;
-                        }
-                    }
-
-                    if (checkedOption) {
-                        return;
-                    }
-
-                    forms.showValidationError(this.controlId, 'Wymagane jest przypisanie przynajmniej 1 roli użytkownikowi');
-                },
                 valid: false,
-                value: [],
-                onInitializeField: function (field) {
-                    for (const userRole of $('input[name="UserRoles"]')) {
-                        if (!userRole.checked) {
-                            continue;
-                        }
-                        field.value.push({
-                            name: userRole.value, checked: userRole.checked
-                        });
-                    }
-                }
-            },
+                value: []
+            }
         };
 
 

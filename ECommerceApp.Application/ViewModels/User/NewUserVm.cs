@@ -13,7 +13,7 @@ namespace ECommerceApp.Application.ViewModels.User
         public string UserName { get; set; }
         public string Email { get; set; }
         public bool EmailConfirmed { get; set; }
-        public List<string> UserRoles { get; set; } = new List<string>();
+        public string UserRole { get; set; } = "";
         public List<RoleVm> Roles { get; set; } = new List<RoleVm>();
 
         public string PasswordToChange { get; set; }
@@ -31,9 +31,9 @@ namespace ECommerceApp.Application.ViewModels.User
                                     .EmailAddress().WithMessage("Proszę podać email");
             RuleFor(x => x.Email).NotNull().WithMessage("Email nie może być pusty")
                                  .EmailAddress().WithMessage("Proszę podać email");
-            When(x => x.UserRoles is not null && x.UserRoles.Any(), () =>
+            When(x => x.UserRole is not null && x.UserRole.Any(), () =>
             {
-                RuleForEach(x => x.UserRoles).NotNull().NotEmpty();
+                RuleForEach(x => x.UserRole).NotNull().NotEmpty();
             });
         }
     }

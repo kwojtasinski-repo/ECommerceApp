@@ -56,7 +56,7 @@ namespace ECommerceApp.Web.Controllers
         {
             try
             {
-                if ((await _userService.ChangeRoleAsync(user.Id, user.UserRoles)) is null)
+                if ((await _userService.ChangeRoleAsync(user.Id, user.UserRole)) is null)
                 {
                     var errorModel = BuildErrorModel("userNotFound", new Dictionary<string, string> { { "id", $"{user.Id}" } });
                     return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
