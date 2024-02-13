@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.DependencyInjection;
 using Shouldly;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
@@ -77,10 +76,10 @@ namespace ECommerceApp.IntegrationTests.Services
             var id = "e4fc1feb-7d08-4207-bd52-3f3464a01564";
             var role = UserPermissions.Roles.Administrator;
 
-            await _service.ChangeRoleAsync(id, new List<string> { role });
+            await _service.ChangeRoleAsync(id, role);
 
             var user = await _service.GetUserById(id);
-            user.UserRole.Where(r => r == role).FirstOrDefault().ShouldNotBeNull();
+            user.UserRole.ShouldBe(role);
         }
 
         [Fact]
@@ -106,12 +105,12 @@ namespace ECommerceApp.IntegrationTests.Services
         {
             var id = "e4fc1feb-7d08-4207-bd52-3f3464a01564";
             var role = UserPermissions.Roles.Administrator;
-            await _service.ChangeRoleAsync(id, new List<string> { role });
+            await _service.ChangeRoleAsync(id, role);
 
             await _service.RemoveRoleFromUser(id, role);
 
             var user = await _service.GetUserById(id);
-            user.UserRole.Where(r => r.Contains(role)).FirstOrDefault().ShouldBeNull();
+            user.UserRole.ShouldBeNull();
         }
 
         [Fact]
@@ -179,7 +178,7 @@ namespace ECommerceApp.IntegrationTests.Services
                 EmailConfirmed = true,
                 Password = "Test123456789!@",
                 UserName = "testtest@testtest",
-                UserRole = new List<string> { "User" }
+                UserRole = "User"
             };
             return user;
         }
