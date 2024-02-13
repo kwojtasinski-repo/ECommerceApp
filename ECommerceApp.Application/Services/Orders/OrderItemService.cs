@@ -41,6 +41,7 @@ namespace ECommerceApp.Application.Services.Orders
                 throw new BusinessException($"Item with id '{item.Id}' cannot be ordered with quantity of '{model.ItemOrderQuantity}', available '{item.Quantity}'", "tooManyItemsQuantityInCart", new Dictionary<string, string> { { "id", $"{item.Id}" }, { "name", item.Name }, { "availableQuantity", $"{item.Quantity}" } });
             }
 
+            item.Quantity -= model.ItemOrderQuantity;
             var orderItem = _mapper.Map<OrderItem>(model);
             var orderItemExist = _orderItemRepository.GetUserOrderItemNotOrdered(model.UserId, model.ItemId);
             int id;
@@ -132,6 +133,13 @@ namespace ECommerceApp.Application.Services.Orders
                 return false;
             }
 
+            var totalItemQuantity = model.ItemOrderQuantity - orderItem.ItemOrderQuantity;
+            if (orderItem.Item.Quantity < totalItemQuantity)
+            {
+                throw new BusinessException($"Item with id '{orderItem.ItemId}' cannot be ordered with quantity of '{orderItem.ItemOrderQuantity}', available '{orderItem.Item.Quantity}'", "tooManyItemsQuantityInCart", new Dictionary<string, string> { { "id", $"{orderItem.ItemId}" }, { "name", orderItem.Item.Name }, { "availableQuantity", $"{orderItem.Item.Quantity}" } });
+            }
+
+            orderItem.Item.Quantity -= totalItemQuantity;
             orderItem.ItemOrderQuantity = model.ItemOrderQuantity;
             if (model.OrderId.HasValue)
             {

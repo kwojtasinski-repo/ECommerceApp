@@ -96,26 +96,18 @@ namespace ECommerceApp.Application.Services.Items
                     continue;
                 }
 
-                if (totalQuantity > 0)
+                if (item.Quantity - totalQuantity < 0)
                 {
-                    if (item.Quantity - totalQuantity < 0)
-                    {
-                        _logger.LogWarning($"Order with id '{orderBeforeChange.Id}' added with item with id '{item.Id}' that has 0 quantity");
-                        throw new BusinessException($"Order with id '{orderBeforeChange.Id}' has item with id '{item.Id}' that cannot be ordered with quantity of '{quantityAfter}', available '{item.Quantity}'", "tooManyItemsQuantityInCart", new Dictionary<string, string> { { "id", $"{item.Id}" }, { "name", item.Name }, { "availableQuantity", $"{item.Quantity}" } });
-                    }
-                    item.Quantity -= totalQuantity;
-                    continue;
+                    _logger.LogWarning($"Order with id '{orderBeforeChange.Id}' added with item with id '{item.Id}' that has 0 quantity");
+                    throw new BusinessException($"Order with id '{orderBeforeChange.Id}' has item with id '{item.Id}' that cannot be ordered with quantity of '{quantityAfter}', available '{item.Quantity}'", "tooManyItemsQuantityInCart", new Dictionary<string, string> { { "id", $"{item.Id}" }, { "name", item.Name }, { "availableQuantity", $"{item.Quantity}" } });
                 }
-
-                if (totalQuantity < 0)
-                {
-                    item.Quantity += totalQuantity * -1;
-                }
+                item.Quantity -= totalQuantity;
+                _itemRepository.UpdateItem(item);
             }
 
             foreach(var itemsAfter in itemsOnOrderAfter)
             {
-                var itemBefore = itemsOnOrderAfter[itemsAfter.Key];
+                itemsOnOrderBefore.TryGetValue(itemsAfter.Key, out var itemBefore);
                 var item = items.FirstOrDefault(i => i.Id == itemsAfter.Key);
                 if (itemBefore is null)
                 {
@@ -163,8 +155,8 @@ namespace ECommerceApp.Application.Services.Items
                 return new Dictionary<int, IEnumerable<OrderItem>>();
             }
             return order.OrderItems
-            .ToLookup(item => item.ItemId, item => item)
-                .ToDictionary(group => group.Key, group => group.AsEnumerable());
+                        .ToLookup(item => item.ItemId, item => item)
+                        .ToDictionary(group => group.Key, group => group.AsEnumerable());
         }
     }
 }

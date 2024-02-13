@@ -69,5 +69,10 @@ namespace ECommerceApp.IntegrationTests.Common
         {
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessorTest>();
         }
+
+        protected T GetRequiredService<T>()
+        {
+            return Services.GetRequiredService<T>();
+        }
     }
 }

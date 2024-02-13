@@ -53,8 +53,9 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public OrderItem GetOrderItemById(int orderItemId)
         {
-            var orderItem = _context.OrderItem.FirstOrDefault(o => o.Id == orderItemId);
-            return orderItem;
+            return _context.OrderItem
+                           .Include(oi => oi.Item)
+                           .FirstOrDefault(o => o.Id == orderItemId);
         }
 
         public List<OrderItem> GetOrderItemsToRealization(IEnumerable<int> ids)

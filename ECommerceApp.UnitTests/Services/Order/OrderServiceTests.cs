@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;
+using static System.Collections.Specialized.BitVector32;
 
 namespace ECommerceApp.Tests.Services.Order
 {
@@ -911,9 +912,54 @@ namespace ECommerceApp.Tests.Services.Order
             action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("Order doesn't have order item with id '30'");
         }
 
-        #region DataInitial
+        [Fact]
+        public void given_order_items_with_more_quantity_than_in_stock_when_add_order_should_throw_an_exception()
+        {
+            var order = CreateDefaultOrderDto();
+            var orderItem = order.OrderItems.First();
+            orderItem.ItemOrderQuantity = 200000;
+            order.Id = 0;
+            _customerService.Setup(c => c.ExistsById(order.CustomerId)).Returns(true);
+            var orderItemsAdded = AddOrderItems(order.OrderItems.Select(oi => new OrderItem { Id = oi.Id, ItemOrderQuantity = oi.ItemOrderQuantity, ItemId = oi.ItemId, Item = new Domain.Model.Item { Id = oi.ItemId, Quantity = 10 } }).ToList());
+            var orderService = CreateService();
 
-        private decimal GetCost(IEnumerable<AddOrderItemDto> addOrderItemDtos)
+            var action = () => orderService.AddOrder(new AddOrderDto { CustomerId = order.CustomerId, OrderItems = orderItemsAdded.Select(oi => new OrderItemsIdsDto { Id = oi.Id }).ToList() });
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Should().Contain("that cannot be ordered with quantity of");
+        }
+
+        [Fact]
+        public void given_valid_update_order_with_order_items_quantity_more_than_in_stock_should_throw_an_exception()
+        {
+            var orderService = CreateService();
+            var order = CreateDefaultOrder();
+            var customer = CreateDefaultCustomer();
+            AddOrder(order);
+            AddCustomer(customer);
+            var items = GenerateAndAddItems();
+            var dto = new UpdateOrderDto
+            {
+                Id = order.Id,
+                CustomerId = customer.Id,
+                OrderNumber = Guid.NewGuid().ToString(),
+                Ordered = DateTime.Now,
+                IsDelivered = true,
+                OrderItems = new List<AddOrderItemDto>()
+                {
+                    new () { Id = 0, ItemId = items[0].Id, ItemOrderQuantity = 1 },
+                    new () { Id = 0, ItemId = items[1].Id, ItemOrderQuantity = 1 },
+                    new () { Id = 0, ItemId = items[3].Id, ItemOrderQuantity = 100000 },
+                }
+            };
+            
+            var action = () => orderService.UpdateOrder(dto);
+
+            action.Should().ThrowExactly<BusinessException>().Which.Message.Should().Contain("that cannot be ordered with quantity of");
+        }
+
+            #region DataInitial
+
+            private decimal GetCost(IEnumerable<AddOrderItemDto> addOrderItemDtos)
         {
             var items = _itemRepository.Object.GetAllItems();
             var cost = 0M;
@@ -956,7 +1002,7 @@ namespace ECommerceApp.Tests.Services.Order
         {
             foreach (var oi in items)
             {
-                _orderItemRepository.AddOrderItem(oi);
+                oi.Id = _orderItemRepository.AddOrderItem(oi);
             }
             var itemsToAdd = items.Where(oi => oi.Item is not null)?.Select(oi => oi.Item) ?? Enumerable.Empty<Domain.Model.Item>();
             foreach(var it in itemsToAdd)
@@ -968,10 +1014,16 @@ namespace ECommerceApp.Tests.Services.Order
 
         private void AddItem(Domain.Model.Item item)
         {
-            var allItems = _itemService.Object.GetAllItems() ?? new List<ItemDto>();
-            allItems.Add(_mapper.Map<ItemDto>(item));
-            _itemService.Setup(i => i.GetAllItems()).Returns(allItems);
+            var allItemsDto = _itemService.Object.GetAllItems() ?? new List<ItemDto>();
+            allItemsDto.Add(_mapper.Map<ItemDto>(item));
+            _itemService.Setup(i => i.GetAllItems()).Returns(allItemsDto);
             _itemService.Setup(i => i.GetItemDetails(item.Id)).Returns(_mapper.Map<ItemDetailsDto>(item));
+            _itemRepository.Setup(i => i.GetItemById(item.Id)).Returns(item);
+            _itemRepository.Setup(i => i.GetItemDetailsById(item.Id)).Returns(item);
+            var allItems = _itemRepository.Object.GetAllItems() ?? new List<Domain.Model.Item>();
+            allItems.Add(item);
+            _itemRepository.Setup(i => i.GetAllItems()).Returns(allItems);
+            _itemRepository.Setup(i => i.GetItemsByIds(It.IsAny<IEnumerable<int>>())).Returns((IEnumerable<int> ids) => allItems.Where(i => ids.Any(id => i.Id == id)).ToList());
         }
 
         private void AddPayment(Payment payment)
@@ -1058,7 +1110,7 @@ namespace ECommerceApp.Tests.Services.Order
                 UserId = Guid.NewGuid().ToString(),
                 Addresses = new List<Address>
                 {
-                    new Address
+                    new ()
                     {
                         Id = new Random().Next(1, 9999),
                         City = "NS",
@@ -1071,7 +1123,7 @@ namespace ECommerceApp.Tests.Services.Order
                 },
                 ContactDetails = new List<ContactDetail>
                 {
-                    new ContactDetail
+                    new ()
                     {
                         Id = new Random().Next(1, 9999),
                         ContactDetailInformation = new Random().Next(111111111, 999999999).ToString(),
@@ -1183,7 +1235,7 @@ namespace ECommerceApp.Tests.Services.Order
             return order;
         }
 
-        private CouponVm CreateDefaultCouponVm(int? couponIdIn)
+        private static CouponVm CreateDefaultCouponVm(int? couponIdIn)
         {
             var type = CreateDefaultCouponType();
             var couponId = new Random().Next(1, 9999);

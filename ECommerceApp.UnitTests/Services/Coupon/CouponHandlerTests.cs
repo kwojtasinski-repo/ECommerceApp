@@ -237,7 +237,7 @@ namespace ECommerceApp.UnitTests.Services.Coupon
             {
                 Id = new Random().Next(1, 999),
                 ItemId = 1,
-                Item = new Item
+                Item = new Domain.Model.Item
                 {
                     Id = 1,
                     Cost = 100M

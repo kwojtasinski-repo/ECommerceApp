@@ -1,5 +1,6 @@
 ﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Services.Orders;
+using ECommerceApp.Domain.Interface;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
 using System.Linq;
@@ -133,7 +134,24 @@ namespace ECommerceApp.IntegrationTests.Services
             itemDeleted.ShouldBeNull();
         }
 
-        private OrderItemDto CreateOrderItem(int id)
+        [Fact]
+        public void given_valid_item_when_add_order_item_should_decrease_quantity()
+        {
+            var orderItem = CreateOrderItem(0);
+            var itemRepository = GetRequiredService<IItemRepository>();
+            var item = itemRepository.GetItemById(orderItem.ItemId);
+            var quantityBeforeAdd = item.Quantity;
+
+            var id = _service.AddOrderItem(orderItem);
+
+            var orderUpdated = _service.GetOrderItemDetails(id);
+            orderUpdated.ShouldNotBeNull();
+            var itemAfterUpdate = itemRepository.GetItemById(item.Id);
+            itemAfterUpdate.ShouldNotBeNull();
+            itemAfterUpdate.Quantity.ShouldBeLessThan(quantityBeforeAdd);
+        }
+
+        private static OrderItemDto CreateOrderItem(int id)
         {
             var orderItem = new OrderItemDto
             {
