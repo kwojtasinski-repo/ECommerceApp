@@ -9,7 +9,6 @@ using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace ECommerceApp.Application.Services.Items
 {
@@ -124,24 +123,24 @@ namespace ECommerceApp.Application.Services.Items
 
             if (dto.Images.Count() > 5)
             {
-                throw new BusinessException("Allowed only 5 images");
+                throw new BusinessException("Allowed only 5 images", ErrorCode.Create("allowedNumberImagesExceeded"));
             }
 
             var tags = _tagRepository.GetTagsByIds(dto.TagsId);
-            var errors = new StringBuilder(ValidTags(tags, dto.TagsId));
-            errors.Append(_imageService.ValidBase64File(dto.Images?.Select(i =>
+            var errors = ValidTags(tags, dto.TagsId);
+            errors.Add(_imageService.ValidBase64File(dto.Images?.Select(i =>
                 new ValidBase64File(i.ImageName, i.ImageSource)
             )));
 
-            if (errors.Length > 0)
+            if (errors.HasErrors())
             {
-                throw new BusinessException(errors.ToString());
+                throw new BusinessException(errors.Message.ToString(), errors.ErrorCodes);
             }
 
             var brand = _brandRepository.GetBrandById(dto.BrandId)
-                ?? throw new BusinessException($"Brand with id '{dto.BrandId}' was not found", "brandNotFound", new Dictionary<string, string> { { "id", $"{dto.BrandId}"} });
+                ?? throw new BusinessException($"Brand with id '{dto.BrandId}' was not found", ErrorCode.Create("brandNotFound", ErrorParameter.Create("id", dto.BrandId)));
             var type = _typeRepository.GetTypeById(dto.TypeId)
-                ?? throw new BusinessException($"Type with id '{dto.TypeId}' was not found", "typeNotFound", new Dictionary<string, string> { { "id", $"{dto.TypeId}"} });
+                ?? throw new BusinessException($"Type with id '{dto.TypeId}' was not found", ErrorCode.Create("typeNotFound", ErrorParameter.Create("id", dto.TypeId)));
             var currency = _currencyRepository.GetById(CurrencyConstants.PlnId);
             var item = new Item
             {
@@ -172,7 +171,7 @@ namespace ECommerceApp.Application.Services.Items
         {
             if (dto.Images.Count() > 5)
             {
-                throw new BusinessException("Allowed only 5 images");
+                throw new BusinessException("Allowed only 5 images", ErrorCode.Create("allowedNumberImagesExceeded"));
             }
 
             var item = _itemRepository.GetItemDetailsById(dto.Id);
@@ -182,20 +181,20 @@ namespace ECommerceApp.Application.Services.Items
             }
 
             var tags = _tagRepository.GetTagsByIds(dto.TagsId);
-            var errors = new StringBuilder(ValidTags(tags, dto.TagsId));
-            errors.Append(_imageService.ValidBase64File(dto.Images?.Where(i => i.ImageId == default).Select(i =>
+            var errorMessage = ValidTags(tags, dto.TagsId);
+            errorMessage.Add(_imageService.ValidBase64File(dto.Images?.Where(i => i.ImageId == default).Select(i =>
                 new ValidBase64File(i.ImageName, i.ImageSource)
             )));
 
-            if (errors.Length > 0)
+            if (!errorMessage.IsEmpty())
             {
-                throw new BusinessException(errors.ToString());
+                throw new BusinessException(errorMessage.Message.ToString(), errorMessage.ErrorCodes);
             }
 
             var brand = _brandRepository.GetBrandById(dto.BrandId)
-                ?? throw new BusinessException($"Brand with id '{dto.BrandId}' was not found", "brandNotFound", new Dictionary<string, string> { { "id", $"{dto.BrandId}" } });
+                ?? throw new BusinessException($"Brand with id '{dto.BrandId}' was not found", ErrorCode.Create("brandNotFound", ErrorParameter.Create("id", dto.BrandId)));
             var type = _typeRepository.GetTypeById(dto.TypeId)
-                ?? throw new BusinessException($"Type with id '{dto.TypeId}' was not found", "typeNotFound", new Dictionary<string, string> { { "id", $"{dto.TypeId}" } });
+                ?? throw new BusinessException($"Type with id '{dto.TypeId}' was not found", ErrorCode.Create("typeNotFound", ErrorParameter.Create("id", dto.TypeId)));
             var currency = _currencyRepository.GetById(CurrencyConstants.PlnId);
 
             item.Cost = dto.Cost;
@@ -223,9 +222,9 @@ namespace ECommerceApp.Application.Services.Items
             var imgs = _imageService.GetImages(imgsToCheck.Select(i => i.ImageId));
             var imgErrors = ValidImages(imgsToCheck, imgs);
 
-            if (imgErrors.Any())
+            if (imgErrors.HasErrors())
             {
-                throw new BusinessException(imgErrors);
+                throw new BusinessException(imgErrors.Message.ToString(), imgErrors.ErrorCodes);
             }
 
             foreach (var img in currentImages)
@@ -245,19 +244,20 @@ namespace ECommerceApp.Application.Services.Items
             return true;
         }
 
-        private static string ValidTags(List<Tag> tags, IEnumerable<int> tagsId)
+        private static ErrorMessage ValidTags(List<Tag> tags, IEnumerable<int> tagsId)
         {
-            var errors = new StringBuilder();
+            var errorMessage = new ErrorMessage();
             foreach (var itemTagId in tagsId)
             {
                 var tag = tags.FirstOrDefault(t => t.Id == itemTagId);
                 if (tag is null)
                 {
-                    errors.Append($"Tag with id '{itemTagId}' was not found");
+                    errorMessage.Message.Append($"Tag with id '{itemTagId}' was not found");                    
+                    errorMessage.ErrorCodes.Add(ErrorCode.Create("tagNotFound", ErrorParameter.Create("id", itemTagId)));
                 }
             }
 
-            return errors.ToString();
+            return errorMessage;
         }
 
         private static void HandleUpdateTags(Item item, IEnumerable<int> tagsId, List<Tag> tags)
@@ -282,24 +282,20 @@ namespace ECommerceApp.Application.Services.Items
             }
         }
 
-        private static string ValidImages(IEnumerable<UpdateItemImageDto> imgsToCheck, List<ImageInfoDto> imgs)
+        private static ErrorMessage ValidImages(IEnumerable<UpdateItemImageDto> imgsToCheck, List<ImageInfoDto> imgs)
         {
-            var imgErrors = new StringBuilder();
+            var imgErrors = new ErrorMessage();
 
             foreach (var img in imgsToCheck)
             {
                 if (!imgs.Any(i => i.Id == img.ImageId))
                 {
-                    imgErrors.AppendLine($"Image with id '{img.ImageId}' was not found");
+                    imgErrors.Message.AppendLine($"Image with id '{img.ImageId}' was not found");
+                    imgErrors.ErrorCodes.Add(ErrorCode.Create("imageNotFound", ErrorParameter.Create("id", img.ImageId)));
                 }
             }
 
-            if (imgErrors.Length > 0)
-            {
-                throw new BusinessException(imgErrors.ToString());
-            }
-
-            return imgErrors.ToString();
+            return imgErrors;
         }
 
         public ListForItemVm GetAllAvailableItemsForList(int pageSize, int pageNo, string searchString)

@@ -155,7 +155,7 @@
         <main role="main" class="pb-3">
             <div id="ErrorContainer" style="display: none;">
                 <div class="alert alert-danger w-100">
-                    <span id="ErrorValue">
+                    <span id="ErrorValue" style="white-space: pre-line;">
                     </span>
                 </div>
             </div>
@@ -199,6 +199,7 @@
                         });
 
             setGlobalError('@Context.Request.Query["Error"]', '@Context.Request.Query["Params"]');
+            setGlobalError2('@Context.Request.Query["Error"]', '@Context.Request.Query["Params"]');
         });
 
         function setGlobalError(errorCode, params) {
@@ -216,6 +217,29 @@
 
             errorContainer.style.display = 'block';
             errorValue.textContent = he.decode(errors.getError(errorCode, params));
+        }
+
+        function setGlobalError2(error) {
+            const errorContainer = document.querySelector('#ErrorContainer');
+            const errorValue = document.querySelector('#ErrorValue');
+            if (!errorContainer || !errorValue) {
+                return;
+            }
+
+            if (!error) {
+                errorContainer.style.display = 'none';
+                errorValue.textContent = '';
+                return;
+            }
+
+            errorContainer.style.display = 'block';
+            const errorParsed = JSON.parse(he.decode(error));
+            let text = '';
+            debugger
+            for (const err of errorParsed) {
+                text += errors.getErrorNew(err.Code, err.Parameters) + '\n';
+            }
+            errorValue.textContent = text;
         }
     </script>
     <style type="text/css">

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -77,9 +78,42 @@ namespace ECommerceApp.Web.Controllers
             return new ErrorModel(errorCode, paramsValues);
         }
 
+        protected NewErrorModel BuildErrorModel(BusinessException businessException)
+        {
+            return new NewErrorModel(businessException.Codes);
+        }
+
         protected ErrorModel BuildErrorModel(string error, string errorCode, IDictionary<string, string> paramsValues = null)
         {
             return new ErrorModel(error, errorCode, paramsValues);
+        }
+
+        protected class NewErrorModel
+        {
+            public IEnumerable<ErrorCode> Codes { get; set; } = new List<ErrorCode>();
+
+            public NewErrorModel(IEnumerable<ErrorCode> codes)
+            {
+                Codes = codes;
+            }
+
+            public string GenerateParamsString()
+            {
+                return JsonSerializer.Serialize(Codes);
+            }
+
+            public object AsOjectRoute()
+            {
+                if (!Codes.Any())
+                {
+                    return new { };
+                }
+
+                return new
+                {
+                    Error = GenerateParamsString()
+                };
+            }
         }
 
         protected class ErrorModel

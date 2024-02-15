@@ -45,7 +45,8 @@
                 customerNotRelatedWithOrder: 'Żadne dane kontaktowe nie zostały powiązane z zamówieniem o id {id}',
                 userNotFound: 'Użytkownik o id {id} nie został znaleziony',
                 itemNotInStock: 'Przedmiot o id {id} i nazwie {name} nie jest dostępny',
-                tooManyItemsQuantityInCart: 'Ilość sztuk przedmiotu o id {id} i nazwie {name} została przekroczona, maksymalnie można zamówić {availableQuantity}'
+                tooManyItemsQuantityInCart: 'Ilość sztuk przedmiotu o id {id} i nazwie {name} została przekroczona, maksymalnie można zamówić {availableQuantity}',
+                tagNotFound: 'Nie znaleziono taga o id {id}',
             }
 
             function containsParams(value) {
@@ -105,6 +106,38 @@
                             continue;
                         }
                         value = value.replace(regexPattern, params[paramName]);
+                    }
+                    return value;
+                },
+                getErrorNew: function (key, args) {
+                    if (!key) {
+                        return '';
+                    }
+
+                    let value = values[key] ?? key;
+                    if (!args) {
+                        return value;
+                    }
+
+                    if (value === key) {
+                        return value;
+                    }
+
+                    if (!containsParams(value)) {
+                        return value;
+                    }
+                    
+                    if (args.length == 0) {
+                        return value;
+                    }
+
+                    for (const param of args) {
+                        debugger
+                        const regexPattern = new RegExp('\{' + param.Name + '\}');
+                        if (!regexPattern.test(value)) {
+                            continue;
+                        }
+                        value = value.replace(regexPattern, param.Value);
                     }
                     return value;
                 }

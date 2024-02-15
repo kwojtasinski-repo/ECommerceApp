@@ -79,8 +79,8 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException ex)
             {
-                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
-                return RedirectToAction(actionName: "AddItem", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                var errorModel = BuildErrorModel(ex);
+                return RedirectToAction(actionName: "AddItem", errorModel.AsOjectRoute());
             }
         }
 

@@ -241,22 +241,23 @@ namespace ECommerceApp.Application.Services.Items
             return ids;
         }
 
-        public string ValidBase64File(IEnumerable<ValidBase64File> base64Files)
+        public ErrorMessage ValidBase64File(IEnumerable<ValidBase64File> base64Files)
         {
+            var errorMessage = new ErrorMessage();
             if (base64Files is null || !base64Files.Any())
             {
-                return string.Empty;
+                return errorMessage;
             }
 
-            var errors = new StringBuilder();
             foreach (var file in base64Files)
             {
                 if (!IsBase64String(file.FileSource))
                 {
-                    errors.AppendLine($"Image '{file.Name}' has invalid Base64 string");
+                    errorMessage.Message.AppendLine($"Image '{file.Name}' has invalid Base64 string");
+                    errorMessage.ErrorCodes.Add(ErrorCode.Create("invalidImageFormat", ErrorParameter.Create("name", file.Name)));
                 }
             }
-            return errors.ToString();
+            return errorMessage;
         }
 
         private void ValidImages(ICollection<IFormFile> images)
