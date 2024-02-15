@@ -235,7 +235,6 @@
             errorContainer.style.display = 'block';
             const errorParsed = JSON.parse(he.decode(error));
             let text = '';
-            debugger
             for (const err of errorParsed) {
                 text += errors.getErrorNew(err.Code, err.Parameters) + '\n';
             }

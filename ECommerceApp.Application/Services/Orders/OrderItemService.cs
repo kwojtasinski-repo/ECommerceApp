@@ -30,15 +30,15 @@ namespace ECommerceApp.Application.Services.Orders
             }
 
             var item = _itemRepository.GetItemById(model.ItemId)
-                ?? throw new BusinessException($"Item with id '{model.ItemId}' was not found", "itemNotFound", new Dictionary<string, string> { { "id", $"{model.ItemId}"} });
+                ?? throw new BusinessException($"Item with id '{model.ItemId}' was not found", ErrorCode.Create("itemNotFound", ErrorParameter.Create("id", model.ItemId)));
             if (item.Quantity <= 0)
             {
-                throw new BusinessException($"Item with id '{item.Id}' is not available", "itemNotInStock", new Dictionary<string, string> { { "id", $"{item.Id}" }, { "name", item.Name } });
+                throw new BusinessException($"Item with id '{item.Id}' is not available", ErrorCode.Create("itemNotInStock", new List<ErrorParameter> { ErrorParameter.Create("id", item.Id), ErrorParameter.Create("name", item.Name) }));
             }
 
             if (item.Quantity < model.ItemOrderQuantity)
             {
-                throw new BusinessException($"Item with id '{item.Id}' cannot be ordered with quantity of '{model.ItemOrderQuantity}', available '{item.Quantity}'", "tooManyItemsQuantityInCart", new Dictionary<string, string> { { "id", $"{item.Id}" }, { "name", item.Name }, { "availableQuantity", $"{item.Quantity}" } });
+                throw new BusinessException($"Item with id '{item.Id}' cannot be ordered with quantity of '{model.ItemOrderQuantity}', available '{item.Quantity}'", ErrorCode.Create("itemNotInStock", new List<ErrorParameter> { ErrorParameter.Create("id", item.Id), ErrorParameter.Create("name", item.Name), ErrorParameter.Create("availableQuantity", item.Quantity) }));
             }
 
             item.Quantity -= model.ItemOrderQuantity;
@@ -57,7 +57,7 @@ namespace ECommerceApp.Application.Services.Orders
             }
             else
             {
-                throw new BusinessException($"Check if your position with id '{model.Id}' with item with id '{model.ItemId}' is in cart", "positionNotFoundInCart", new Dictionary<string, string> { { "id", $"{model.Id}" }, { "itemId", $"{model.ItemId}" } });
+                throw new BusinessException($"Check if your position with id '{model.Id}' with item with id '{model.ItemId}' is in cart", ErrorCode.Create("positionNotFoundInCart", new List<ErrorParameter> { ErrorParameter.Create("id", model.Id), ErrorParameter.Create("itemId", model.ItemId) }));
             }
             return id;
         }
@@ -82,18 +82,27 @@ namespace ECommerceApp.Application.Services.Orders
         public IEnumerable<OrderItemDto> GetOrderItemsForRealization(string userId)
         {
             // TODO: Think about return more than one error
+            var errorMessage = new ErrorMessage();
             var orderItems = _orderItemRepository.GetUserOrderItemsNotOrdered(userId);
             foreach (var orderItem in orderItems)
             {
                 if (orderItem.Item.Quantity <= 0)
                 {
-                    throw new BusinessException($"Item with id '{orderItem.ItemId}' is not available", "itemNotInStock", new Dictionary<string, string> { { "id", $"{orderItem.ItemId}" }, { "name", orderItem.Item.Name } });
+                    errorMessage.Message.Append($"Item with id '{orderItem.Id}' is not available");
+                    errorMessage.ErrorCodes.Add(ErrorCode.Create("itemNotInStock", new List<ErrorParameter> { ErrorParameter.Create("id", orderItem.Id), ErrorParameter.Create("name", orderItem.Item.Name) }));
+                    continue;
                 }
 
                 if (orderItem.Item.Quantity < orderItem.ItemOrderQuantity)
                 {
-                    throw new BusinessException($"Item with id '{orderItem.ItemId}' cannot be ordered with quantity of '{orderItem.ItemOrderQuantity}', available '{orderItem.Item.Quantity}'", "tooManyItemsQuantityInCart", new Dictionary<string, string> { { "id", $"{orderItem.ItemId}" }, { "name", orderItem.Item.Name }, { "availableQuantity", $"{orderItem.Item.Quantity}" } });
+                    errorMessage.Message.Append($"Item with id '{orderItem.ItemId}' cannot be ordered with quantity of '{orderItem.ItemOrderQuantity}', available '{orderItem.Item.Quantity}'");
+                    errorMessage.ErrorCodes.Add(ErrorCode.Create("tooManyItemsQuantityInCart", new List<ErrorParameter> { ErrorParameter.Create("id", orderItem.ItemId), ErrorParameter.Create("name", orderItem.Item.Name), ErrorParameter.Create("availableQuantity", orderItem.Item.Quantity) } ));
                 }
+            }
+
+            if (errorMessage.HasErrors())
+            {
+                throw new BusinessException(errorMessage);
             }
 
             return _mapper.Map<List<OrderItemDto>>(orderItems);
@@ -136,7 +145,7 @@ namespace ECommerceApp.Application.Services.Orders
             var totalItemQuantity = model.ItemOrderQuantity - orderItem.ItemOrderQuantity;
             if (orderItem.Item.Quantity < totalItemQuantity)
             {
-                throw new BusinessException($"Item with id '{orderItem.ItemId}' cannot be ordered with quantity of '{orderItem.ItemOrderQuantity}', available '{orderItem.Item.Quantity}'", "tooManyItemsQuantityInCart", new Dictionary<string, string> { { "id", $"{orderItem.ItemId}" }, { "name", orderItem.Item.Name }, { "availableQuantity", $"{orderItem.Item.Quantity}" } });
+                throw new BusinessException($"Item with id '{orderItem.ItemId}' cannot be ordered with quantity of '{orderItem.ItemOrderQuantity}', available '{orderItem.Item.Quantity}'", ErrorCode.Create("tooManyItemsQuantityInCart", new List<ErrorParameter> { ErrorParameter.Create("id", orderItem.ItemId), ErrorParameter.Create("name", orderItem.Item.Name), ErrorParameter.Create("availableQuantity", orderItem.Item.Quantity) }));
             }
 
             orderItem.Item.Quantity -= totalItemQuantity;

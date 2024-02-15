@@ -60,6 +60,11 @@ namespace ECommerceApp.Application.Exceptions
 
         }
 
+        public BusinessException(ErrorMessage errorMessage) : base(errorMessage.Message.ToString())
+        {
+            _codes = errorMessage.ErrorCodes ?? new List<ErrorCode>();
+        }
+
         public BusinessException AddCode(string code)
         {
             _codes.Add(Exceptions.ErrorCode.Create(code));
@@ -89,6 +94,16 @@ namespace ECommerceApp.Application.Exceptions
 
         public ErrorMessage Add(ErrorMessage error)
         {
+            if (error is null)
+            {
+                throw new ArgumentNullException(nameof (error));
+            }
+
+            if (error.IsEmpty())
+            {
+                return this;
+            }
+
             Message.Append(error.Message);
             ErrorCodes.AddRange(error.ErrorCodes);
             return this;

@@ -87,7 +87,7 @@ namespace ECommerceApp.Application.Services.Orders
         public void DeleteRefundFromOrder(int refundId)
         {
             var order = _orderRepository.GetOrderByRefundId(refundId)
-                   ?? throw new BusinessException($"Refund with id '{refundId}' was not assigned to any order", "refundNotAssignedToAnyOrder", new Dictionary<string, string> { { "id", $"{refundId}" } });
+                   ?? throw new BusinessException($"Refund with id '{refundId}' was not assigned to any order", ErrorCode.Create("refundNotAssignedToAnyOrder", ErrorParameter.Create("id", refundId)));
 
             order.RefundId = null;
             foreach (var oi in order.OrderItems)
@@ -101,17 +101,17 @@ namespace ECommerceApp.Application.Services.Orders
         public void DeleteCouponUsedFromOrder(int orderId, int couponUsedId)
         {
             var order = _orderRepository.GetOrderById(orderId)
-                ?? throw new BusinessException($"Order with id '{orderId}' was not found", "orderNotFound", new Dictionary<string, string> { { "id", $"{orderId}"} });
+                ?? throw new BusinessException($"Order with id '{orderId}' was not found", ErrorCode.Create("orderNotFound", ErrorParameter.Create("id", orderId)));
             if (order.IsPaid)
             {
-                throw new BusinessException("Cannot delete coupon when order is paid", "cannotDeleteCouponFromPaidOrder");
+                throw new BusinessException("Cannot delete coupon when order is paid", ErrorCode.Create("cannotDeleteCouponFromPaidOrder"));
             }
 
             var coupon = _couponService.GetByCouponUsed(couponUsedId)
-                ?? throw new BusinessException($"Coupon with id '{couponUsedId}' was not found", "couponNotFound", new Dictionary<string, string> { { "id", $"{couponUsedId}" } });
+                ?? throw new BusinessException($"Coupon with id '{couponUsedId}' was not found", ErrorCode.Create("couponNotFound", ErrorParameter.Create("id", couponUsedId)));
             if (coupon.CouponUsedId != order.CouponUsedId)
             {
-                throw new BusinessException($"Coupon with id '{couponUsedId}' connected with order with id '{order.Id}' was not found", "couponConnectWithOrderNotFound", new Dictionary<string, string> { { "id", $"{couponUsedId}" }, { "orderId", $"{order.Id}" } });
+                throw new BusinessException($"Coupon with id '{couponUsedId}' connected with order with id '{order.Id}' was not found", ErrorCode.Create("couponConnectWithOrderNotFound", new List<ErrorParameter> { ErrorParameter.Create("id", couponUsedId), ErrorParameter.Create("orderId", order.Id) }));
             }
 
             order.CouponUsedId = null;
@@ -162,14 +162,14 @@ namespace ECommerceApp.Application.Services.Orders
         public void AddCouponUsedToOrder(int orderId, int couponUsedId)
         {
             var order = _orderRepository.GetOrderById(orderId)
-                ?? throw new BusinessException("Cannot add coupon if order not exists", "orderNotExistsWhileAddCoupon");
-            
+                ?? throw new BusinessException("Cannot add coupon if order not exists", ErrorCode.Create("orderNotExistsWhileAddCoupon"));
+
             var coupon = _couponService.GetByCouponUsed(couponUsedId)
-                ?? throw new BusinessException($"Coupon used with id '{couponUsedId}' was not found", "couponUsedNotFound", new Dictionary<string, string> { { "id", $"{couponUsedId}"} });
+                ?? throw new BusinessException($"Coupon used with id '{couponUsedId}' was not found", ErrorCode.Create("couponUsedNotFound", ErrorParameter.Create("id", couponUsedId)));
 
             if (order.IsPaid)
             {
-                throw new BusinessException("Cannot add coupon to paid order", "addCouponToPaidOrderNotAllowed");
+                throw new BusinessException("Cannot add coupon to paid order", ErrorCode.Create("addCouponToPaidOrderNotAllowed"));
             }
 
            order.Cost = (1 - (decimal)coupon.Discount / 100) * order.Cost;
@@ -192,7 +192,8 @@ namespace ECommerceApp.Application.Services.Orders
                 throw new BusinessException($"{typeof(NewOrderVm).Name} cannot be null");
             }
 
-            var coupon = _couponService.GetCoupon(couponId) ?? throw new BusinessException($"Coupon with id {couponId} doesnt exists", "couponNotFound", new Dictionary<string, string> { { "id", $"{couponId}"} });
+            var coupon = _couponService.GetCoupon(couponId) 
+                ?? throw new BusinessException($"Coupon with id {couponId} doesnt exists", ErrorCode.Create("couponNotFound", ErrorParameter.Create("id", couponId)));
             var couponUsed = new CouponUsed()
             {
                 Id = 0,
@@ -314,7 +315,7 @@ namespace ECommerceApp.Application.Services.Orders
         public void AddRefundToOrder(int orderId, int refundId)
         {
             var order = _orderRepository.GetOrderPaidAndDeliveredById(orderId)
-                ?? throw new BusinessException($"Order with id {orderId} not exists", "orderNotFound", new Dictionary<string, string> { { "id", $"{orderId}"} });
+                ?? throw new BusinessException($"Order with id {orderId} not exists", ErrorCode.Create("orderNotFound", ErrorParameter.Create("id", orderId)));
             order.RefundId = refundId;
             foreach (var oi in order.OrderItems)
             {
@@ -344,7 +345,7 @@ namespace ECommerceApp.Application.Services.Orders
         public void DispatchOrder(int orderId)
         {
             var order = _orderRepository.GetOrderPaidAndNotDelivered(orderId)
-                ?? throw new BusinessException($"Order with id {orderId} not found, check your order if is not delivered and is paid", "orderNotFoundCheckIfPaidDelivered", new Dictionary<string, string> { { "id", $"{orderId}" } });
+                ?? throw new BusinessException($"Order with id {orderId} not found, check your order if is not delivered and is paid", ErrorCode.Create("orderNotFoundCheckIfPaidDelivered", ErrorParameter.Create("id", orderId)));
             order.IsDelivered = true;
             order.Delivered = DateTime.Now;
             _orderRepository.UpdatedOrder(order);
@@ -433,14 +434,14 @@ namespace ECommerceApp.Application.Services.Orders
 
             if (!string.IsNullOrWhiteSpace(dto.PromoCode) && !_couponService.ExistsByCode(dto.PromoCode))
             {
-                throw new BusinessException($"Coupon code '{dto.PromoCode}' was not found", "couponWithCodeNotFound", new Dictionary<string, string> { { "code", dto.PromoCode } });
+                throw new BusinessException($"Coupon code '{dto.PromoCode}' was not found", ErrorCode.Create("couponWithCodeNotFound", ErrorParameter.Create("code", dto.PromoCode)));
             }
 
             var customer = _customerService.GetCustomer(dto.CustomerId)
-                ?? throw new BusinessException($"Customer with id '{dto.CustomerId}' was not found", "customerNotFound", new Dictionary<string, string> { { "id", $"{dto.CustomerId}"} });
+                ?? throw new BusinessException($"Customer with id '{dto.CustomerId}' was not found", ErrorCode.Create("customerNotFound", ErrorParameter.Create("id", dto.CustomerId)));
             if (dto.CouponUsedId.HasValue && dto.CouponUsedId.Value != order.CouponUsedId)
             {
-                throw new BusinessException($"Cannot assign existed coupon with id '{dto.CouponUsedId}'", "existedCouponAssignNotAllowed", new Dictionary<string, string> { { "id", $"{dto.CouponUsedId}" } });
+                throw new BusinessException($"Cannot assign existed coupon with id '{dto.CouponUsedId}'", ErrorCode.Create("existedCouponAssignNotAllowed", ErrorParameter.Create("id", dto.CouponUsedId)));
             }
 
             UpdateOrderFields(order, dto);
@@ -495,7 +496,7 @@ namespace ECommerceApp.Application.Services.Orders
             var dto = model.AsDto();
             if (!_customerService.ExistsById(dto.CustomerId))
             {
-                throw new BusinessException($"Customer with id '{dto.CustomerId}' was not found", "customerNotFound", new Dictionary<string, string> { { "id", $"{dto.CustomerId}" } });
+                throw new BusinessException($"Customer with id '{dto.CustomerId}' was not found", ErrorCode.Create("customerNotFound", ErrorParameter.Create("id", dto.CustomerId)));
             }
 
             dto.CurrencyId = CurrencyConstants.PlnId;
@@ -522,7 +523,7 @@ namespace ECommerceApp.Application.Services.Orders
 
         private static void ValidUserOrderItems(Order order, ICollection<OrderItem> itemsFromDb)
         {
-            StringBuilder errors = new();
+            var errorMessage = new ErrorMessage();
 
             foreach (var orderItem in order.OrderItems ?? new List<OrderItem>())
             {
@@ -534,14 +535,15 @@ namespace ECommerceApp.Application.Services.Orders
 
                 if (order.UserId != item.UserId)
                 {
-                    errors.AppendLine($"This item {orderItem.Id} is not ordered by current user");
+                    errorMessage.Message.AppendLine($"This item {orderItem.Id} is not ordered by current user");
+                    errorMessage.ErrorCodes.Add(ErrorCode.Create("orderNotOrderedByCurrentUser", ErrorParameter.Create("id", orderItem.Id)));
                     continue;
                 }
             }
 
-            if (errors.Length > 0)
+            if (errorMessage.HasErrors())
             {
-                throw new BusinessException(errors.ToString());
+                throw new BusinessException(errorMessage);
             }
         }
 
@@ -563,18 +565,19 @@ namespace ECommerceApp.Application.Services.Orders
 
         private static void ValidateOrderItems(Order order, IEnumerable<AddOrderItemDto> orderItems)
         {
-            var errors = new StringBuilder();
+            var errorMessage = new ErrorMessage();
             foreach (var orderItemToModify in orderItems)
             {
                 var orderItemExists = order.OrderItems?.FirstOrDefault(oi => oi.Id == orderItemToModify.Id);
                 if (orderItemExists is null)
                 {
-                    errors.Append($"Order doesn't have item with id '{orderItemToModify.Id}'.");
+                    errorMessage.Message.Append($"Order doesn't have item with id '{orderItemToModify.Id}'.");
+                    errorMessage.ErrorCodes.Add(ErrorCode.Create("orderItemNotFoundOnOrder", ErrorParameter.Create("id", orderItemToModify.Id)));
                 }
             }
-            if (errors.Length > 0)
+            if (errorMessage.HasErrors())
             {
-                throw new BusinessException(errors.ToString());
+                throw new BusinessException(errorMessage);
             }
         }
 

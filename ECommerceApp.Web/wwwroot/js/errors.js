@@ -47,6 +47,11 @@
                 itemNotInStock: 'Przedmiot o id {id} i nazwie {name} nie jest dostępny',
                 tooManyItemsQuantityInCart: 'Ilość sztuk przedmiotu o id {id} i nazwie {name} została przekroczona, maksymalnie można zamówić {availableQuantity}',
                 tagNotFound: 'Nie znaleziono taga o id {id}',
+                invalidImageFormat: 'Niepoprawny format obrazka o nazwie {name}',
+                imageNotFound: 'Obrazek o id {id} nie został znaleziony',
+                allowedNumberImagesExceeded: 'Liczba obrazków nie może przekroczyć 5',
+                orderNotOrderedByCurrentUser: 'Przedmiot o id {id} nie został zamówiony przez aktualnego użytkownika',
+                orderItemNotFoundOnOrder: 'Pozycja o id {id} nie została znaleziona na zamówieniu'
             }
 
             function containsParams(value) {
@@ -132,7 +137,6 @@
                     }
 
                     for (const param of args) {
-                        debugger
                         const regexPattern = new RegExp('\{' + param.Name + '\}');
                         if (!regexPattern.test(value)) {
                             continue;

@@ -45,11 +45,16 @@ namespace ECommerceApp.Application.Services.Items
         {
             var itemsAdded = GetItemDictionary(orderAfterChange);
             var items = _itemRepository.GetItemsByIds(itemsAdded.Keys);
+            var errorMessage = new ErrorMessage();
             foreach (var itemAdded in itemsAdded)
             {
                 var item = items.FirstOrDefault(i => i.Id == itemAdded.Key);
-                // TODO: multiple errors on front
-                HandleAddItem(itemAdded, item, orderAfterChange.Id);
+                errorMessage.Add(HandleAddItem(itemAdded, item, orderAfterChange.Id));
+            }
+
+            if (errorMessage.HasErrors())
+            {
+                throw new BusinessException(errorMessage);
             }
         }
 
@@ -71,6 +76,7 @@ namespace ECommerceApp.Application.Services.Items
             var itemsModifiedKeys = new List<int>(itemsOnOrderBefore.Keys);
             itemsModifiedKeys.AddRange(itemsOnOrderAfter.Keys);
             var items = _itemRepository.GetItemsByIds(itemsModifiedKeys);
+            var errorMessage = new ErrorMessage();
 
             foreach (var itemsBefore in itemsOnOrderBefore)
             {
@@ -99,8 +105,16 @@ namespace ECommerceApp.Application.Services.Items
                 if (item.Quantity - totalQuantity < 0)
                 {
                     _logger.LogWarning($"Order with id '{orderBeforeChange.Id}' added with item with id '{item.Id}' that has 0 quantity");
-                    throw new BusinessException($"Order with id '{orderBeforeChange.Id}' has item with id '{item.Id}' that cannot be ordered with quantity of '{quantityAfter}', available '{item.Quantity}'", "tooManyItemsQuantityInCart", new Dictionary<string, string> { { "id", $"{item.Id}" }, { "name", item.Name }, { "availableQuantity", $"{item.Quantity}" } });
+                    errorMessage.Message.Append($"Order with id '{orderBeforeChange.Id}' added with item with id '{item.Id}' that has 0 quantity");
+                    errorMessage.ErrorCodes.Add(ErrorCode.Create("tooManyItemsQuantityInCart", new List<ErrorParameter> { ErrorParameter.Create("id", item.Id), ErrorParameter.Create("name", item.Name), ErrorParameter.Create("availableQuantity", item.Quantity) }));
+                    continue;
                 }
+
+                if (errorMessage.HasErrors()) // skip if errors, think about transaction here, can cause problems if first update will be success
+                {
+                    continue;
+                }
+
                 item.Quantity -= totalQuantity;
                 _itemRepository.UpdateItem(item);
             }
@@ -111,32 +125,43 @@ namespace ECommerceApp.Application.Services.Items
                 var item = items.FirstOrDefault(i => i.Id == itemsAfter.Key);
                 if (itemBefore is null)
                 {
-                    HandleAddItem(itemsAfter, item, orderAfterChange.Id);
+                    errorMessage.Add(HandleAddItem(itemsAfter, item, orderAfterChange.Id));
                 }
+            }
+
+            if (errorMessage.HasErrors() )
+            {
+                throw new BusinessException(errorMessage);
             }
         }
 
-        private void HandleAddItem(KeyValuePair<int, IEnumerable<OrderItem>> itemsAssociatedWithOrderItems, Item item, int orderId)
+        private ErrorMessage HandleAddItem(KeyValuePair<int, IEnumerable<OrderItem>> itemsAssociatedWithOrderItems, Item item, int orderId)
         {
+            var errorMessage = new ErrorMessage();
             if (item is null)
             {
                 _logger.LogWarning($"Item with id '{itemsAssociatedWithOrderItems.Key}' was not found");
-                return;
+                return errorMessage;
             }
             var quantiyToDelete = GetItemQuantity(itemsAssociatedWithOrderItems);
             if (item.Quantity - quantiyToDelete < 0)
             {
                 _logger.LogWarning($"Order with id '{orderId}' added with item with id '{item.Id}' that has 0 quantity");
-                throw new BusinessException($"Order with id '{orderId}' has item with id '{item.Id}' that cannot be ordered with quantity of '{quantiyToDelete}', available '{item.Quantity}'", "tooManyItemsQuantityInCart", new Dictionary<string, string> { { "id", $"{item.Id}" }, { "name", item.Name }, { "availableQuantity", $"{item.Quantity}" } });
+                errorMessage.Message.Append($"Order with id '{orderId}' has item with id '{item.Id}' that cannot be ordered with quantity of '{quantiyToDelete}', available '{item.Quantity}'");
+                errorMessage.ErrorCodes.Add(ErrorCode.Create("tooManyItemsQuantityInCart", new List<ErrorParameter> { ErrorParameter.Create("id", item.Id), ErrorParameter.Create("name", item.Name), ErrorParameter.Create("availableQuantity", item.Quantity) }));
+                return errorMessage;
             }
 
             item.Quantity -= quantiyToDelete;
             _itemRepository.UpdateItem(item);
+            return errorMessage;
         }
+
         private void HandleDeleteItem(KeyValuePair<int, IEnumerable<OrderItem>> itemsAssociatedWithOrderItems, Item item)
         {
             if (item is null)
             {
+                // now accept that not found any item but think in future
                 _logger.LogWarning($"Item with id '{itemsAssociatedWithOrderItems.Key}' was not found");
                 return;
             }
@@ -144,10 +169,12 @@ namespace ECommerceApp.Application.Services.Items
             item.Quantity += quantiyToAdd;
             _itemRepository.UpdateItem(item);
         }
+
         private static int GetItemQuantity(KeyValuePair<int, IEnumerable<OrderItem>> itemsAssociatedWithOrderItems)
         {
             return itemsAssociatedWithOrderItems.Value.Sum(i => i.ItemOrderQuantity);
         }
+
         private static Dictionary<int, IEnumerable<OrderItem>> GetItemDictionary(Order order)
         {
             if (order.OrderItems is null || !order.OrderItems.Any())
