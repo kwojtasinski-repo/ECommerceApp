@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.ViewModels.Order;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using Microsoft.Extensions.Logging;
@@ -105,7 +106,7 @@ namespace ECommerceApp.Application.Services.Items
                 if (item.Quantity - totalQuantity < 0)
                 {
                     _logger.LogWarning($"Order with id '{orderBeforeChange.Id}' added with item with id '{item.Id}' that has 0 quantity");
-                    errorMessage.Message.Append($"Order with id '{orderBeforeChange.Id}' added with item with id '{item.Id}' that has 0 quantity");
+                    errorMessage.Message.Append($"Order with id '{orderBeforeChange.Id}' has item with id '{item.Id}' that cannot be ordered with quantity of '{totalQuantity}', available '{item.Quantity}'");
                     errorMessage.ErrorCodes.Add(ErrorCode.Create("tooManyItemsQuantityInCart", new List<ErrorParameter> { ErrorParameter.Create("id", item.Id), ErrorParameter.Create("name", item.Name), ErrorParameter.Create("availableQuantity", item.Quantity) }));
                     continue;
                 }

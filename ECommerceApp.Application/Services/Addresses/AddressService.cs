@@ -45,7 +45,7 @@ namespace ECommerceApp.Application.Services.Addresses
             var userId = _userContext.UserId;
             if (!_customerRepository.CustomerExists(addressDto.CustomerId, userId))
             {
-                throw new BusinessException("Cannot add address check your customer id", "customerNotExists");
+                throw new BusinessException("Cannot add address check your customer id", ErrorCode.Create("customerNotExists"));
             }
 
             var address = _mapper.Map<Address>(addressDto);
@@ -69,7 +69,7 @@ namespace ECommerceApp.Application.Services.Addresses
 
             if (addresses == 1)
             {
-                throw new BusinessException("You cannot delete address if you only have 1", "addressDeletePolicy");
+                throw new BusinessException("You cannot delete address if you only have 1", ErrorCode.Create("addressDeletePolicy"));
             }
 
             return !_addressRepository.DeleteAddress(id);

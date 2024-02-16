@@ -188,7 +188,7 @@ namespace ECommerceApp.Application.Services.Items
 
             if (!errorMessage.IsEmpty())
             {
-                throw new BusinessException(errorMessage.Message.ToString(), errorMessage.ErrorCodes);
+                throw new BusinessException(errorMessage);
             }
 
             var brand = _brandRepository.GetBrandById(dto.BrandId)
@@ -224,7 +224,7 @@ namespace ECommerceApp.Application.Services.Items
 
             if (imgErrors.HasErrors())
             {
-                throw new BusinessException(imgErrors.Message.ToString(), imgErrors.ErrorCodes);
+                throw new BusinessException(imgErrors);
             }
 
             foreach (var img in currentImages)

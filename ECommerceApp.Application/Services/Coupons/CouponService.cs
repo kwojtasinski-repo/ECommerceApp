@@ -31,12 +31,12 @@ namespace ECommerceApp.Application.Services.Coupons
 
             if (couponVm.Discount < 1 || couponVm.Discount > 99)
             {
-                throw new BusinessException("Discount should be inclusive between 1 and 99", "couponInvalidDiscount");
+                throw new BusinessException("Discount should be inclusive between 1 and 99", ErrorCode.Create("couponInvalidDiscount"));
             }
 
             if (_repo.ExistsByCode(couponVm.Code))
             {
-                throw new BusinessException($"Coupon with code '{couponVm.Code}' already exists", "couponCodeAlreadyExists", new Dictionary<string, string> { { "code", couponVm.Code } });
+                throw new BusinessException($"Coupon with code '{couponVm.Code}' already exists", ErrorCode.Create("couponCodeAlreadyExists", ErrorParameter.Create("code", couponVm.Code)));
             }
 
             var id = Add(couponVm);
@@ -91,7 +91,7 @@ namespace ECommerceApp.Application.Services.Coupons
 
             if (couponVm.Discount < 1 || couponVm.Discount > 99)
             {
-                throw new BusinessException("Discount should be inclusive between 1 and 99", "couponInvalidDiscount");
+                throw new BusinessException("Discount should be inclusive between 1 and 99", ErrorCode.Create("couponInvalidDiscount"));
             }
 
             if (!_repo.ExistsById(couponVm.Id))
@@ -101,7 +101,7 @@ namespace ECommerceApp.Application.Services.Coupons
 
             if (_repo.IsUnique(couponVm.Id, couponVm.Code))
             {
-                throw new BusinessException($"Coupon with code '{couponVm.Code}' already exists", "couponCodeAlreadyExists", new Dictionary<string, string> { { "code", couponVm.Code } });
+                throw new BusinessException($"Coupon with code '{couponVm.Code}' already exists", ErrorCode.Create("couponCodeAlreadyExists", ErrorParameter.Create("code", couponVm.Code)));
             }
             Update(couponVm);
             return true;

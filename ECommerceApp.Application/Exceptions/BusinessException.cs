@@ -23,17 +23,6 @@ namespace ECommerceApp.Application.Exceptions
         
         }
 
-        public BusinessException(string message, string errorCode) : base(message)
-        {
-            ErrorCode = errorCode;
-        }
-
-        public BusinessException(string message, string errorCode, IDictionary<string, string> arguments) : base(message)
-        {
-            ErrorCode = errorCode;
-            Arguments = arguments;
-        }
-
         public BusinessException(string message, ErrorCode code) : base(message)
         {
             ValidateCode(code);
@@ -118,6 +107,9 @@ namespace ECommerceApp.Application.Exceptions
         {
             return !IsEmpty();
         }
+
+        public static ErrorMessage WithoutErrors
+            => new();
     }
 
     public class ErrorCode 

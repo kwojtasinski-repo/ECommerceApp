@@ -167,7 +167,8 @@ namespace ECommerceApp.UnitTests.Services.Item
             return new Domain.Model.Item
             {
                 Id = 1,
-                Quantity = 2
+                Quantity = 2,
+                Name = "123"
             };
         }
     }

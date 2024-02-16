@@ -39,7 +39,7 @@ namespace ECommerceApp.Application.Services.Payments
                 throw new BusinessException($"{typeof(AddPaymentDto).Name} cannot be null");
             }
             var order = _orderRepository.GetOrderById(model.OrderId) ??
-                throw new BusinessException($"Order with id '{model.OrderId}' was not found", "orderNotFound", new Dictionary<string, string> { { "id", $"{model.OrderId}" } });
+                throw new BusinessException($"Order with id '{model.OrderId}' was not found", ErrorCode.Create("orderNotFound", ErrorParameter.Create("id", model.OrderId)));
             var paymentId = _paymentHandler.CreatePayment(model, order);
             order.IsPaid = true;
             order.PaymentId = paymentId;
@@ -74,7 +74,7 @@ namespace ECommerceApp.Application.Services.Payments
             }
 
             var order = _orderRepository.GetOrderById(payment.OrderId) ??
-                throw new BusinessException($"Order with id '{payment.OrderId}' was not found", "orderNotFound", new Dictionary<string, string> { { "id", $"{payment.OrderId}" } });
+                throw new BusinessException($"Order with id '{payment.OrderId}' was not found", ErrorCode.Create("orderNotFound", ErrorParameter.Create("id", payment.OrderId)));
             order.IsPaid = false;
             order.PaymentId = null;
             _orderRepository.UpdatedOrder(order);

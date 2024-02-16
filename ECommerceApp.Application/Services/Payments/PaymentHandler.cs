@@ -5,7 +5,6 @@ using ECommerceApp.Application.ViewModels.Payment;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.Domain.Model;
 using System;
-using System.Collections.Generic;
 
 namespace ECommerceApp.Application.Services.Payments
 {
@@ -36,7 +35,7 @@ namespace ECommerceApp.Application.Services.Payments
 
             if (order.IsPaid)
             {
-                throw new BusinessException($"Order with id '{order.Id}' has alredy been paid", "orderAlreadyPaid", new Dictionary<string, string> { { "id", $"{order.Id}" } });
+                throw new BusinessException($"Order with id '{order.Id}' has alredy been paid", ErrorCode.Create("orderAlreadyPaid", ErrorParameter.Create("id", order.Id)));
             }
 
             var payment = new Payment()
@@ -88,17 +87,17 @@ namespace ECommerceApp.Application.Services.Payments
 
             if (!dto.Id.HasValue && order.PaymentId.HasValue)
             {
-                throw new BusinessException($"Cannot pay for paid order with id '{order.Id}'", "payForOrderPaymentNotAllowed", new Dictionary<string, string> { { "id", $"{order.Id}" } });
+                throw new BusinessException($"Cannot pay for paid order with id '{order.Id}'", ErrorCode.Create("payForOrderPaymentNotAllowed", ErrorParameter.Create("id", order.Id)));
             }
 
             if (dto.Id.HasValue && !order.PaymentId.HasValue)
             {
-                throw new BusinessException($"Cannot assign existed payment with id '{dto.Id}'", "assignExistedPaymentNotAllowed", new Dictionary<string, string> { { "id", $"{dto.Id}" } });
+                throw new BusinessException($"Cannot assign existed payment with id '{dto.Id}'", ErrorCode.Create("assignExistedPaymentNotAllowed", ErrorParameter.Create("id", dto.Id)));
             }
 
             if (dto.Id.HasValue && order.PaymentId.HasValue && dto.Id != order.PaymentId)
             {
-                throw new BusinessException("Overriding payment id on order is not allowed", "changePaymentOnOrderNotAllowed");
+                throw new BusinessException("Overriding payment id on order is not allowed", ErrorCode.Create("changePaymentOnOrderNotAllowed"));
             }
 
             CreatePayment(new AddPaymentDto
@@ -122,20 +121,20 @@ namespace ECommerceApp.Application.Services.Payments
 
             if (order.IsPaid)
             {
-                throw new BusinessException($"Order with id '{order.Id}' has already been paid", "orderAlreadyPaid", new Dictionary<string, string> { { "id", $"{order.Id}" } });
+                throw new BusinessException($"Order with id '{order.Id}' has already been paid", ErrorCode.Create("orderAlreadyPaid", ErrorParameter.Create("id", order.Id)));
             }
 
             if (model.State == PaymentState.Paid)
             {
-                throw new BusinessException($"Payment with id '{model.Id}' was already paid", "paymentAlreadyPaid", new Dictionary<string, string> { { "id", $"{model.Id}" } });
+                throw new BusinessException($"Payment with id '{model.Id}' was already paid", ErrorCode.Create("paymentAlreadyPaid", ErrorParameter.Create("id", model.Id)));
             }
 
             var payment = _paymentRepository.GetPaymentById(model.Id)
-                ?? throw new BusinessException($"Payment with id '{model.Id}' was not found", "paymentNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
+                ?? throw new BusinessException($"Payment with id '{model.Id}' was not found", ErrorCode.Create("paymentNotFound", ErrorParameter.Create("id", model.Id)));
             payment.State = PaymentState.Paid;
             payment.CurrencyId = model.CurrencyId;
             payment.Currency = _currencyRepository.GetById(model.CurrencyId)
-                ?? throw new BusinessException($"Currency with id '{model.CurrencyId}' was not found", "currencyNotFound", new Dictionary<string, string> { { "id", $"{model.CurrencyId}" } });
+                ?? throw new BusinessException($"Currency with id '{model.CurrencyId}' was not found", ErrorCode.Create("currencyNotFound", ErrorParameter.Create("id", model.CurrencyId)));
             payment.Cost = CalculateCost(payment.Cost, model.CurrencyId);
             payment.DateOfOrderPayment = DateTime.Now;
             payment.CustomerId = order.CustomerId;

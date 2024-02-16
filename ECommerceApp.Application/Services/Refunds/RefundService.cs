@@ -41,7 +41,7 @@ namespace ECommerceApp.Application.Services.Refunds
                 var customerId = _orderService.GetCustomerFromOrder(refundVm.OrderId);
                 if (customerId == default)
                 {
-                    throw new BusinessException($"There is no customer that is related with order with id = {refundVm.OrderId}", "customerNotRelatedWithOrder", new Dictionary<string, string> { { "id", $"{refundVm.OrderId}" } });
+                    throw new BusinessException($"There is no customer that is related with order with id = {refundVm.OrderId}", ErrorCode.Create("customerNotRelatedWithOrder", ErrorParameter.Create("id", refundVm.OrderId)));
                 }
                 refundVm.CustomerId = customerId;
             }

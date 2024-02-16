@@ -51,7 +51,10 @@
                 imageNotFound: 'Obrazek o id {id} nie został znaleziony',
                 allowedNumberImagesExceeded: 'Liczba obrazków nie może przekroczyć 5',
                 orderNotOrderedByCurrentUser: 'Przedmiot o id {id} nie został zamówiony przez aktualnego użytkownika',
-                orderItemNotFoundOnOrder: 'Pozycja o id {id} nie została znaleziona na zamówieniu'
+                orderItemNotFoundOnOrder: 'Pozycja o id {id} nie została znaleziona na zamówieniu',
+                fileSizeTooBig: 'Rozmiar {size} pliku {name} jest za duży, dozwolony rozmiar {allowedSize} bajtów',
+                fileExtensionNotAllowed: 'Niepoprawne rozszerzenie {extension} pliku {name}, dozwolone rozszerzenia {extensions}',
+                tooManyImages: 'Nie można dodać więcej niż {allowedImagesCount} obrazków. Aktualnie dodano {imageCount} dla przedmiotu o id {id}'
             }
 
             function containsParams(value) {

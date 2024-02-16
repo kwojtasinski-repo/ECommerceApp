@@ -22,7 +22,7 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
         {
             _orderItemRepository = new Mock<IOrderItemRepository>();
             _itemRepository = new Mock<IItemRepository>();
-            AddItem(new Domain.Model.Item { Id = ItemId, Quantity = 20 });
+            AddItem(new Domain.Model.Item { Id = ItemId, Quantity = 20, Name = "test" });
         }
 
         private OrderItemService CreateService()
@@ -166,7 +166,7 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
         public void given_item_not_available_item_when_add_order_item_should_throw_an_exception()
         {
             var id = 2;
-            AddItem(new Domain.Model.Item { Id = id, Quantity = 0 });
+            AddItem(new Domain.Model.Item { Id = id, Quantity = 0, Name = "Error#1" });
             var service = CreateService();
 
             var action = () => service.AddOrderItem(new OrderItemDto { ItemId = id, ItemOrderQuantity = 1 });
@@ -178,7 +178,7 @@ namespace ECommerceApp.UnitTests.Services.OrderItem
         public void given_quantity_more_than_in_stock_when_add_order_item_should_throw_an_exception()
         {
             var id = 2;
-            AddItem(new Domain.Model.Item { Id = id, Quantity = 1 });
+            AddItem(new Domain.Model.Item { Id = id, Quantity = 1, Name = "Error#2" });
             var service = CreateService();
             
             var action = () => service.AddOrderItem(new OrderItemDto { ItemId = id, ItemOrderQuantity = 2 });

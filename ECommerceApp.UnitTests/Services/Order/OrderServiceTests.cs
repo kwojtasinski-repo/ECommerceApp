@@ -920,7 +920,7 @@ namespace ECommerceApp.Tests.Services.Order
             orderItem.ItemOrderQuantity = 200000;
             order.Id = 0;
             _customerService.Setup(c => c.ExistsById(order.CustomerId)).Returns(true);
-            var orderItemsAdded = AddOrderItems(order.OrderItems.Select(oi => new OrderItem { Id = oi.Id, ItemOrderQuantity = oi.ItemOrderQuantity, ItemId = oi.ItemId, Item = new Domain.Model.Item { Id = oi.ItemId, Quantity = 10 } }).ToList());
+            var orderItemsAdded = AddOrderItems(order.OrderItems.Select(oi => new OrderItem { Id = oi.Id, ItemOrderQuantity = oi.ItemOrderQuantity, ItemId = oi.ItemId, Item = new Domain.Model.Item { Id = oi.ItemId, Quantity = 10, Name = "abc" } }).ToList());
             var orderService = CreateService();
 
             var action = () => orderService.AddOrder(new AddOrderDto { CustomerId = order.CustomerId, OrderItems = orderItemsAdded.Select(oi => new OrderItemsIdsDto { Id = oi.Id }).ToList() });

@@ -61,7 +61,7 @@ namespace ECommerceApp.Application.Services.ContactDetails
 
             if (contacts == 1)
             {
-                throw new BusinessException("Cannot delete contact information if you only have 1", "contactDetailDeletePolicy");
+                throw new BusinessException("Cannot delete contact information if you only have 1", ErrorCode.Create("contactDetailDeletePolicy"));
             }
 
             return _contactDetailRepository.DeleteContactDetail(id);
@@ -101,7 +101,7 @@ namespace ECommerceApp.Application.Services.ContactDetails
             }
 
             var contactDetailType = _contactDetailTypeRepository.GetContactDetailTypeById(contactDetailDto.ContactDetailTypeId)
-                ?? throw new BusinessException($"Contact Detail Type with id '{contactDetailDto.ContactDetailTypeId}' was not found", "contactDetailTypeNotFound", new Dictionary<string, string> { { "id", $"{contactDetailDto.ContactDetailTypeId}" } });
+                ?? throw new BusinessException($"Contact Detail Type with id '{contactDetailDto.ContactDetailTypeId}' was not found", ErrorCode.Create("contactDetailTypeNotFound", ErrorParameter.Create("id", contactDetailDto.ContactDetailTypeId)));
             contactDetail.ContactDetailInformation = contactDetailDto.ContactDetailInformation;
             contactDetail.ContactDetailType = contactDetailType;
             contactDetail.ContactDetailTypeId = contactDetailDto.ContactDetailTypeId;

@@ -459,6 +459,7 @@ namespace ECommerceApp.Tests.Services.Item
                 Code = "PLN",
                 Description = "Polski złoty",
             });
+            _imageService.Setup(i => i.ValidBase64File(It.IsAny<IEnumerable<ValidBase64File>>())).Returns(ErrorMessage.WithoutErrors);
         }
     }
 }

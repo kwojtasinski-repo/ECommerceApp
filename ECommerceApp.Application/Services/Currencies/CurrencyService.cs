@@ -28,7 +28,7 @@ namespace ECommerceApp.Application.Services.Currencies
 
             if (string.IsNullOrWhiteSpace(dto.Code))
             {
-                throw new BusinessException("Code shouldnt be empty", "currencyCodeEmpty");
+                throw new BusinessException("Code shouldnt be empty", ErrorCode.Create("currencyCodeEmpty"));
             }
 
             dto.Code = dto.Code.ToUpper();
@@ -46,7 +46,7 @@ namespace ECommerceApp.Application.Services.Currencies
 
             if (string.IsNullOrWhiteSpace(dto.Code))
             {
-                throw new BusinessException("Code shouldnt be empty", "currencyCodeEmpty");
+                throw new BusinessException("Code shouldnt be empty", ErrorCode.Create("currencyCodeEmpty"));
             }
 
             dto.Code = dto.Code.ToUpper();

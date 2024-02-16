@@ -272,7 +272,7 @@ namespace ECommerceApp.Application.Services.Items
 
         private void ValidImages(IEnumerable<ValidateFile> images)
         {
-            var errors = new StringBuilder();
+            var errorMessage = new ErrorMessage();
 
             // FIRST VALIDATION
             foreach (var image in images)
@@ -282,24 +282,25 @@ namespace ECommerceApp.Application.Services.Items
 
                 if (size > ALLOWED_SIZE)
                 {
-                    errors.Append("Image ").Append(fileName).Append(" is too big (").Append(size).Append(" bytes). Allowed ").Append(ALLOWED_SIZE).Append("bytes\r\n");
+                    errorMessage.Message.Append("Image ").Append(fileName).Append(" is too big (").Append(size).Append(" bytes). Allowed ").Append(ALLOWED_SIZE).Append("bytes\r\n");
+                    errorMessage.ErrorCodes.Add(ErrorCode.Create("fileSizeTooBig", new List<ErrorParameter> { ErrorParameter.Create("name", fileName), ErrorParameter.Create("size", size), ErrorParameter.Create("allowedSize", ALLOWED_SIZE) }));
                 }
 
-                var extension = _fileStore.GetFileExtenstion(fileName);
+                var extension = _fileStore.GetFileExtenstion(fileName) ?? string.Empty;
                 var containsExtension = IMAGE_EXTENSION_PARAMETERS.Contains(extension);
 
                 if (!containsExtension)
                 {
                     var sb = new StringBuilder();
                     IMAGE_EXTENSION_PARAMETERS.ForEach(i => sb.AppendLine(i));
-                    errors.AppendLine($"Image {fileName} extension {extension} is not allowed. Allowed extensions {sb}");
+                    errorMessage.Message.AppendLine($"Image {fileName} extension {extension} is not allowed. Allowed extensions {sb}");
+                    errorMessage.ErrorCodes.Add(ErrorCode.Create("fileExtensionNotAllowed", new List<ErrorParameter> { ErrorParameter.Create("name", fileName), ErrorParameter.Create("extension", extension), ErrorParameter.Create("extensions", sb.ToString()) }));
                 }
             }
 
-            // ERRORS OCCUERD
-            if (errors.Length > 0)
+            if (errorMessage.HasErrors())
             {
-                throw new BusinessException(errors.ToString());
+                throw new BusinessException(errorMessage);
             }
         }
 
@@ -310,7 +311,7 @@ namespace ECommerceApp.Application.Services.Items
 
             if (count > ALLOWED_IMAGES_COUNT)
             {
-                throw new BusinessException($"Cannot add more than {ALLOWED_IMAGES_COUNT} images. There are already '{imagesToAdd}' images for item with id '{itemId}'");
+                throw new BusinessException($"Cannot add more than {ALLOWED_IMAGES_COUNT} images. There are already '{imagesToAdd}' images for item with id '{itemId}'", ErrorCode.Create("tooManyImages", new List<ErrorParameter> { ErrorParameter.Create("allowedImagesCount", ALLOWED_IMAGES_COUNT), ErrorParameter.Create("imageCount", imagesToAdd), ErrorParameter.Create("id", itemId) }));
             }
         }
 
