@@ -140,18 +140,17 @@
                     }
 
                     for (const param of args) {
-                        const regexPattern = new RegExp('\{' + param.Name + '\}');
+                        const regexPattern = new RegExp('\{' + (param.Name ?? param.name) + '\}');
                         if (!regexPattern.test(value)) {
                             continue;
                         }
-                        value = value.replace(regexPattern, param.Value);
+                        value = value.replace(regexPattern, param.Value ?? param.value);
                     }
                     return value;
                 }
             }
         })();
-
-
+        
         function getErrorText(error) {
             if (error.status === 400) {
                 if (!error.responseJSON.ErrorCode) {
@@ -164,6 +163,35 @@
             } else {
                 return generalError;
             }
+        }
+
+        function showErrorFromResponse(error) {
+            if (!error.responseJSON) {
+                return;
+            }
+
+            showError(error.responseJSON);
+        }
+
+        function showError(errorsArray) {
+            const errorContainer = document.querySelector('#ErrorContainer');
+            const errorValue = document.querySelector('#ErrorValue');
+            if (!errorContainer || !errorValue) {
+                return;
+            }
+
+            if (!errorsArray || !errorsArray.length || errorsArray.length === 0) {
+                errorContainer.style.display = 'none';
+                errorValue.textContent = '';
+                return;
+            }
+
+            errorContainer.style.display = 'block';
+            let text = '';
+            for (const error of errorsArray) {
+                text += errors.getErrorNew(error.Code ?? error.code, error.Parameters ?? error.parameters) + '\n';
+            }
+            errorValue.textContent = text;
         }
 
         function redirectToError(errorText, ...args) {
@@ -194,7 +222,9 @@
         return {
             errors,
             getErrorText,
-            redirectToError
+            redirectToError,
+            showErrorFromResponse,
+            showError
         };
     }
 );

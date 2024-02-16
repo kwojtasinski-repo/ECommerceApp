@@ -5,7 +5,6 @@ using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Item;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 using System.Linq;
 
 namespace ECommerceApp.Web.Controllers
@@ -91,8 +90,7 @@ namespace ECommerceApp.Web.Controllers
             var item = _itemService.GetItemDetails(id);
             if (item is null)
             {
-                var errorModel = BuildErrorModel("itemNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("itemNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new EditItemVm(new ItemDetailsDto()));
             }
             return View(new EditItemVm(item)
@@ -122,15 +120,15 @@ namespace ECommerceApp.Web.Controllers
                     TagsId = model.ItemTags
                 }))
                 {
-                    var errorModel = BuildErrorModel("itemNotFound", new Dictionary<string, string> { { "id", $"{model.Item.Id}" } });
-                    return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                    var errorModel = BuildErrorModel(ErrorCode.Create("itemNotFound", ErrorParameter.Create("id", model.Item.Id)));
+                    return RedirectToAction("Index", errorModel.AsOjectRoute());
                 }
                 return RedirectToAction("Index");
             }
             catch (BusinessException ex)
             {
-                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
-                return RedirectToAction(actionName: "Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                var errorModel = BuildErrorModel(ex);
+                return RedirectToAction(actionName: "Index", errorModel.AsOjectRoute());
             }
         }
 
@@ -162,8 +160,7 @@ namespace ECommerceApp.Web.Controllers
             var item = _itemService.GetItemDetails(id);
             if (item is null)
             {
-                var errorModel = BuildErrorModel("itemNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("itemNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new ItemDetailsDto());
             }
             return View(item);
@@ -180,7 +177,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                return BadRequest(MapExceptionToResponseStatus(exception));
+                return BadRequest(BuildErrorModel(exception).Codes);
             }
         }
     }

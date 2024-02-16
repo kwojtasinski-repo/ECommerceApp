@@ -80,7 +80,24 @@ namespace ECommerceApp.Web.Controllers
 
         protected NewErrorModel BuildErrorModel(BusinessException businessException)
         {
-            return new NewErrorModel(businessException.Codes);
+            return new NewErrorModel(businessException.Codes ?? Enumerable.Empty<ErrorCode>());
+        }
+
+        protected NewErrorModel BuildErrorModel(IEnumerable<ErrorCode> codes)
+        {
+            return new NewErrorModel(codes ?? Enumerable.Empty<ErrorCode>());
+        }
+
+        protected NewErrorModel BuildErrorModel(ErrorCode code)
+        {
+            var errorCodes = new List<ErrorCode>();
+            if (code is null)
+            {
+                return new NewErrorModel(Enumerable.Empty<ErrorCode>());
+            }
+
+            errorCodes.Add(code);
+            return new NewErrorModel(errorCodes);
         }
 
         protected ErrorModel BuildErrorModel(string error, string errorCode, IDictionary<string, string> paramsValues = null)
@@ -97,11 +114,6 @@ namespace ECommerceApp.Web.Controllers
                 Codes = codes;
             }
 
-            public string GenerateParamsString()
-            {
-                return JsonSerializer.Serialize(Codes);
-            }
-
             public object AsOjectRoute()
             {
                 if (!Codes.Any())
@@ -111,8 +123,21 @@ namespace ECommerceApp.Web.Controllers
 
                 return new
                 {
-                    Error = GenerateParamsString()
+                    Error = Serialize()
                 };
+            }
+
+            public QueryCollection AsQueryCollection()
+            {
+                return new QueryCollection(new Dictionary<string, StringValues>
+                {
+                    { "Error", new StringValues(Serialize()) }
+                });
+            }
+
+            public string Serialize()
+            {
+                return JsonSerializer.Serialize(Codes);
             }
         }
 

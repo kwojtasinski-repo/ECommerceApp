@@ -69,6 +69,7 @@ namespace ECommerceApp.Application.Services.Items
 
         public bool DeleteItem(int id)
         {
+            throw new BusinessException("item not found", ErrorCode.Create("itemNotFound", ErrorParameter.Create("id", id)));
             return _itemRepository.DeleteItem(id);
         }
 
@@ -134,7 +135,7 @@ namespace ECommerceApp.Application.Services.Items
 
             if (errors.HasErrors())
             {
-                throw new BusinessException(errors.Message.ToString(), errors.ErrorCodes);
+                throw new BusinessException(errors);
             }
 
             var brand = _brandRepository.GetBrandById(dto.BrandId)

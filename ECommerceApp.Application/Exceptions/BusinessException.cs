@@ -29,16 +29,6 @@ namespace ECommerceApp.Application.Exceptions
             _codes.Add(code);
         }
 
-        public BusinessException(string message, IEnumerable<ErrorCode> codes) : base(message)
-        {
-            foreach (var code in codes)
-            {
-                ValidateCode(code);
-            }
-
-            _codes.AddRange(codes);
-        }
-
         public BusinessException(string message, System.Exception exception) : base(message, exception)
         {
 
