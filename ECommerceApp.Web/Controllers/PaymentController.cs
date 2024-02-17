@@ -5,7 +5,6 @@ using ECommerceApp.Application.Services.Payments;
 using ECommerceApp.Application.ViewModels.Payment;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -61,15 +60,14 @@ namespace ECommerceApp.Web.Controllers
             {
                 if (_paymentService.PaidIssuedPayment(model) == default)
                 {
-                    var errorModel = BuildErrorModel("paymentNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
-                    return RedirectToAction("ViewMyPayments", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                    var errorModel = BuildErrorModel(ErrorCode.Create("paymentNotFound", ErrorParameter.Create("id", model.Id)));
+                    return RedirectToAction("ViewMyPayments", errorModel.AsOjectRoute());
                 }
                 return RedirectToAction("ViewMyPayments");
             }
             catch (BusinessException ex)
             {
-                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
-                return RedirectToAction("ViewMyPayments", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction("ViewMyPayments", MapExceptionAsRouteValues(ex));
             }
         }
 
@@ -80,8 +78,7 @@ namespace ECommerceApp.Web.Controllers
             var payment = _paymentService.GetPaymentById(id);
             if (payment is null)
             {
-                var errorModel = BuildErrorModel("paymentNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("paymentNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new PaymentVm { });
             }
             var currencies = _currencyService.GetAll();
@@ -97,15 +94,14 @@ namespace ECommerceApp.Web.Controllers
             {
                 if (!_paymentService.UpdatePayment(model))
                 {
-                    var errorModel = BuildErrorModel("paymentNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
-                    return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                    var errorModel = BuildErrorModel(ErrorCode.Create("paymentNotFound", ErrorParameter.Create("id", model.Id)));
+                        return RedirectToAction("Index", errorModel.AsOjectRoute());
                 }
                 return RedirectToAction("Index");
             }
             catch (BusinessException ex)
             {
-                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
-                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction("Index", MapExceptionAsRouteValues(ex));
             }
         }
 
@@ -115,8 +111,7 @@ namespace ECommerceApp.Web.Controllers
             var payment = _paymentService.GetPaymentDetails(id);
             if (payment is null)
             {
-                var errorModel = BuildErrorModel("paymentNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("paymentNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new PaymentDetailsVm { Payment = new Application.DTO.PaymentDetailsDto() });
             }
             return View(new PaymentDetailsVm { Payment = payment });
@@ -133,7 +128,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                return BadRequest(MapExceptionToResponseStatus(exception));
+                return BadRequest(BuildErrorModel(exception).Codes);
             }
         }
 

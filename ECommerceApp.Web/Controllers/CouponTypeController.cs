@@ -3,7 +3,6 @@ using ECommerceApp.Application.Services.Coupons;
 using ECommerceApp.Application.ViewModels.CouponType;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -54,8 +53,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException ex)
             {
-                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
-                return RedirectToAction(actionName: "Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction(actionName: "Index", MapExceptionAsRouteValues(ex));
             }
         }
 
@@ -65,8 +63,7 @@ namespace ECommerceApp.Web.Controllers
             var couponType = _couponService.GetCouponType(id);
             if (couponType is null)
             {
-                var errorModel = BuildErrorModel("couponTypeNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("couponTypeNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new CouponTypeVm());
             }
             return View(couponType);
@@ -79,15 +76,13 @@ namespace ECommerceApp.Web.Controllers
             {
                 if (!_couponService.UpdateCouponType(model))
                 {
-                    var errorModel = BuildErrorModel("couponTypeNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
-                    return RedirectToAction(actionName: "Index", new { model.Id, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                    return RedirectToAction(actionName: "Index", BuildErrorModel(ErrorCode.Create("couponTypeNotFound", ErrorParameter.Create("id", model.Id))).AsOjectRoute());
                 }
                 return RedirectToAction("Index");
             }
             catch (BusinessException ex)
             {
-                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
-                return RedirectToAction(actionName: "Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction(actionName: "Index", MapExceptionAsRouteValues(ex));
             }
         }
 
@@ -97,8 +92,7 @@ namespace ECommerceApp.Web.Controllers
             var couponType = _couponService.GetCouponTypeDetail(id);
             if (couponType is null)
             {
-                var errorModel = BuildErrorModel("couponTypeNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("couponTypeNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new CouponTypeDetailsVm());
             }
             return View(couponType);
@@ -114,7 +108,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                return BadRequest(MapExceptionToResponseStatus(exception));
+                return BadRequest(BuildErrorModel(exception).Codes);
             }
         }
     }

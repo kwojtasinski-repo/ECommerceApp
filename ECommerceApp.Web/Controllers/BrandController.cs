@@ -3,7 +3,6 @@ using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Brands;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -65,8 +64,7 @@ namespace ECommerceApp.Web.Controllers
             var brand = _brandService.GetBrand(id);
             if (brand is null)
             {
-                var errorModel = BuildErrorModel("brandNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("brandNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new BrandDto());
             }
             return View(brand);
@@ -93,8 +91,7 @@ namespace ECommerceApp.Web.Controllers
             var brand = _brandService.GetBrand(id);
             if (brand is null)
             {
-                var errorModel = BuildErrorModel("brandNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("brandNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new BrandDto());
             }
             return View(brand);
@@ -111,7 +108,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                return BadRequest(MapExceptionToResponseStatus(exception));
+                return BadRequest(BuildErrorModel(exception).Codes);
             }
         }
     }

@@ -69,7 +69,6 @@ namespace ECommerceApp.Application.Services.Items
 
         public bool DeleteItem(int id)
         {
-            throw new BusinessException("item not found", ErrorCode.Create("itemNotFound", ErrorParameter.Create("id", id)));
             return _itemRepository.DeleteItem(id);
         }
 

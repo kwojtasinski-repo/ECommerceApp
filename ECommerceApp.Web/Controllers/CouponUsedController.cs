@@ -4,7 +4,6 @@ using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.ViewModels.CouponUsed;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -66,8 +65,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException ex)
             {
-                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
-                return RedirectToAction(actionName: "Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction(actionName: "Index", MapExceptionAsRouteValues(ex));
             }
         }
 
@@ -77,8 +75,7 @@ namespace ECommerceApp.Web.Controllers
             var couponUsed = _couponUsedService.GetCouponUsed(id);
             if (couponUsed is null)
             {
-                var errorModel = BuildErrorModel("couponUsedNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("couponUsedNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new CouponUsedVm());
             }
             var coupons = _couponService.GetAllCouponsNotUsed();
@@ -95,15 +92,14 @@ namespace ECommerceApp.Web.Controllers
             {
                 if (!_couponUsedService.UpdateCouponUsed(model))
                 {
-                    var errorModel = BuildErrorModel("couponUsedNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
-                    return RedirectToAction(actionName: "Index", new { model.Id, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                    var errorModel = BuildErrorModel(ErrorCode.Create("couponUsedNotFound", ErrorParameter.Create("id", model.Id)));
+                    return RedirectToAction(actionName: "Index", errorModel.AsOjectRoute());
                 }
                 return RedirectToAction("Index");
             }
             catch (BusinessException ex)
             {
-                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
-                return RedirectToAction(actionName: "Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction(actionName: "Index", MapExceptionAsRouteValues(ex));
             }
         }
 
@@ -113,8 +109,7 @@ namespace ECommerceApp.Web.Controllers
             var couponUsed = _couponUsedService.GetCouponUsedDetail(id);
             if (couponUsed is null)
             {
-                var errorModel = BuildErrorModel("couponUsedNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("couponUsedNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new CouponUsedDetailsVm());
             }
             return View(couponUsed);
@@ -130,7 +125,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                return BadRequest(MapExceptionToResponseStatus(exception));
+                return BadRequest(BuildErrorModel(exception).Codes);
             }
         }
     }

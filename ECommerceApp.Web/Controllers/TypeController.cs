@@ -4,7 +4,6 @@ using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Type;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -56,8 +55,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
-                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction("Index", MapExceptionAsRouteValues(exception));
             }
         }
 
@@ -68,8 +66,7 @@ namespace ECommerceApp.Web.Controllers
             var type = _typeService.GetTypeById(id);
             if (type is null)
             {
-                var errorModel = BuildErrorModel("typeNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("typeNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new TypeVm() { Type = new TypeDto() });
             }
             return View(new TypeVm { Type = type });
@@ -83,15 +80,14 @@ namespace ECommerceApp.Web.Controllers
             {
                 if (!_typeService.UpdateType(model.Type))
                 {
-                    var errorModel = BuildErrorModel("typeNotFound", new Dictionary<string, string> { { "id", $"{model.Type.Id}" } });
-                    return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                    var errorModel = BuildErrorModel(ErrorCode.Create("typeNotFound", ErrorParameter.Create("id", model.Type.Id)));
+                    return RedirectToAction("Index", errorModel.AsOjectRoute());
                 }
                 return RedirectToAction("Index");
             }
             catch (BusinessException exception)
             {
-                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
-                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction("Index", MapExceptionAsRouteValues(exception));
             }
         }
 
@@ -101,8 +97,7 @@ namespace ECommerceApp.Web.Controllers
             var item = _typeService.GetTypeDetails(id);
             if (item is null)
             {
-                var errorModel = BuildErrorModel("typeNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("typeNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new TypeDetailsVm());
             }
             return View(item);
@@ -119,7 +114,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                return BadRequest(MapExceptionToResponseStatus(exception));
+                return BadRequest(BuildErrorModel(exception).Codes);
             }
         }
     }

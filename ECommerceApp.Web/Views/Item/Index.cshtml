@@ -137,6 +137,7 @@
         async function AddItemToCart(itemId)
         {
             try {
+                showError('');
                 await ajaxRequest.send("/OrderItem/AddToCart", "POST", JSON.stringify({
                         "ItemId": itemId,
                         "ItemOrderQuantity": 1,
@@ -163,6 +164,7 @@
             }
 
             try {
+                showError();
                 await ajaxRequest.send('/Item/DeleteItem/' + id, 'DELETE', undefined);
                 window.location.reload();
             } catch (error) {

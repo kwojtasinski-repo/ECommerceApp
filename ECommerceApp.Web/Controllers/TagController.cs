@@ -4,7 +4,6 @@ using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Tag;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -57,8 +56,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
-                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction("Index", MapExceptionAsRouteValues(exception));
             }
         }
 
@@ -69,8 +67,7 @@ namespace ECommerceApp.Web.Controllers
             var tag = _tagService.GetTagById(id);
             if (tag is null)
             {
-                var errorModel = BuildErrorModel("tagNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("tagNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new TagVm() { Tag = new TagDto() });
             }
             return View(new TagVm { Tag = tag });
@@ -84,15 +81,14 @@ namespace ECommerceApp.Web.Controllers
             {
                 if (!_tagService.UpdateTag(model.Tag))
                 {
-                    var errorModel = BuildErrorModel("tagNotFound", new Dictionary<string, string> { { "id", $"{model.Tag.Id}" } });
-                    return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                    var errorModel = BuildErrorModel(ErrorCode.Create("tagNotFound", ErrorParameter.Create("id", model.Tag.Id)));
+                    return RedirectToAction("Index", errorModel.AsOjectRoute());
                 }
                 return RedirectToAction("Index");
             }
             catch (BusinessException exception)
             {
-                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
-                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction("Index", MapExceptionAsRouteValues(exception));
             }
         }
 
@@ -103,8 +99,7 @@ namespace ECommerceApp.Web.Controllers
             var tag = _tagService.GetTagDetails(id);
             if (tag is null)
             {
-                var errorModel = BuildErrorModel("tagNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("tagNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new TagDetailsVm());
             }
             return View(tag);
@@ -121,7 +116,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                return BadRequest(MapExceptionToResponseStatus(exception));
+                return BadRequest(BuildErrorModel(exception).Codes);
             }
         }
     }

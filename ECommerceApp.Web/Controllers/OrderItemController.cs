@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using ECommerceApp.Application.Services.Orders;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
-using System.Collections.Generic;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -67,8 +66,7 @@ namespace ECommerceApp.Web.Controllers
             var orderItem = _orderItemService.GetOrderItemDetails(id);
             if (orderItem is null)
             {
-                var errorModel = BuildErrorModel("orderItemNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("orderItemNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new OrderItemDto());
             }
             return View(orderItem);
@@ -95,7 +93,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                return BadRequest(MapExceptionToResponseStatus(exception));
+                return BadRequest(BuildErrorModel(exception).Codes);
             }
         }
 
@@ -111,7 +109,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                return BadRequest(MapExceptionToResponseStatus(exception));
+                return BadRequest(BuildErrorModel(exception).Codes);
             }
         }
 
@@ -125,7 +123,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                return BadRequest(MapExceptionToResponseStatus(exception));
+                return BadRequest(BuildErrorModel(exception).Codes);
             }
         }
     }

@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
@@ -66,8 +68,24 @@ namespace ECommerceApp.Web.Controllers
 
             if (exception is BusinessException businessException)
             {
-                var errorModel = BuildErrorModel(businessException.ErrorCode, businessException.Arguments);
-                return errorModel.AsOject();
+                var errorModel = BuildErrorModel(businessException);
+                return errorModel.AsOjectRoute();
+            }
+
+            return new { Error = exception.Message };
+        }
+
+        protected object MapExceptionAsRouteValues(Exception exception, Dictionary<string, object> parameters)
+        {
+            if (exception is null)
+            {
+                throw new ArgumentNullException($"{nameof(exception)} is null");
+            }
+
+            if (exception is BusinessException businessException)
+            {
+                var errorModel = BuildErrorModel(businessException);
+                return errorModel.AsOjectRoute(parameters);
             }
 
             return new { Error = exception.Message };
@@ -125,6 +143,28 @@ namespace ECommerceApp.Web.Controllers
                 {
                     Error = Serialize()
                 };
+            }
+
+            public object AsOjectRoute(Dictionary<string, object> parameters)
+            {
+                if (parameters is null || !parameters.Any() || parameters.Any(p => string.IsNullOrWhiteSpace(p.Key) || p.Value is null))
+                {
+                    return AsOjectRoute();
+                }
+
+                if (Codes.Any())
+                {
+                    parameters.Add("Error", Serialize());
+                }
+
+                var expandoObj = new ExpandoObject();
+                var expandoObjCollection = (ICollection<KeyValuePair<string, object>>)expandoObj;
+                foreach (var keyValuePair in parameters)
+                {
+                    expandoObjCollection.Add(keyValuePair);
+                }
+
+                return expandoObj;
             }
 
             public QueryCollection AsQueryCollection()

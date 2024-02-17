@@ -101,8 +101,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException ex)
             {
-                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
-                return RedirectToAction(actionName: "Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction(actionName: "Index", MapExceptionAsRouteValues(ex));
             }
         }
 
@@ -124,8 +123,7 @@ namespace ECommerceApp.Web.Controllers
             var customer = _customerService.GetCustomer(id);
             if (customer is null)
             {
-                var errorModel = BuildErrorModel("customerNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("customerNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new CustomerVm() { Customer = new CustomerDto() });
             }
 
@@ -155,16 +153,15 @@ namespace ECommerceApp.Web.Controllers
             {
                 if (!_customerService.UpdateCustomer(model.Customer))
                 {
-                    var errorModel = BuildErrorModel("customerNotFound", new Dictionary<string, string> { { "id", $"{model.Customer.Id}" } });
-                    return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                    var errorModel = BuildErrorModel(ErrorCode.Create("customerNotFound", ErrorParameter.Create("id", model.Customer.Id)));
+                    return RedirectToAction("Index", errorModel.AsOjectRoute());
                 }
 
                 return RedirectToAction("Index");
             }
             catch (BusinessException exception)
             {
-                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
-                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction("Index", MapExceptionAsRouteValues(exception));
             }
         }
 
@@ -173,8 +170,7 @@ namespace ECommerceApp.Web.Controllers
             var customer = _customerService.GetCustomerDetails(id);
             if (customer is null)
             {
-                var errorModel = BuildErrorModel("customerNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("customerNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new CustomerDetailsVm() { Customer = new CustomerDto() });
             }
             return View(customer);
@@ -189,7 +185,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                return BadRequest(MapExceptionToResponseStatus(exception));
+                return BadRequest(BuildErrorModel(exception).Codes);
             }
         }
 

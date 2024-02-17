@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Services.Users;
 using ECommerceApp.Application.ViewModels.User;
@@ -44,8 +43,7 @@ namespace ECommerceApp.Web.Controllers
             var userVm = await _userService.GetUserById(id);
             if (userVm is null)
             {
-                var errorModel = BuildErrorModel("userNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("userNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new NewUserVm());
             }
             return View(userVm);
@@ -58,15 +56,14 @@ namespace ECommerceApp.Web.Controllers
             {
                 if ((await _userService.ChangeRoleAsync(user.Id, user.UserRole)) is null)
                 {
-                    var errorModel = BuildErrorModel("userNotFound", new Dictionary<string, string> { { "id", $"{user.Id}" } });
-                    return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                    var errorModel = BuildErrorModel(ErrorCode.Create("userNotFound", ErrorParameter.Create("id", user.Id)));
+                    return RedirectToAction("Index", errorModel.AsOjectRoute());
                 }
                 return RedirectToAction("Index");
             }
             catch (BusinessException exception)
             {
-                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
-                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction("Index", MapExceptionAsRouteValues(exception));
             }
         }
 
@@ -80,7 +77,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                return BadRequest(MapExceptionToResponseStatus(exception));
+                return BadRequest(BuildErrorModel(exception).Codes);
             }
         }
 
@@ -90,8 +87,7 @@ namespace ECommerceApp.Web.Controllers
             var user = await _userService.GetUserById(id);
             if (user is null)
             {
-                var errorModel = BuildErrorModel("userNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("userNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new NewUserVm());
             }
             return View(user);
@@ -104,15 +100,14 @@ namespace ECommerceApp.Web.Controllers
             {
                 if ((await _userService.EditUser(model)) is null)
                 {
-                    var errorModel = BuildErrorModel("userNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
-                    return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                    var errorModel = BuildErrorModel(ErrorCode.Create("userNotFound", ErrorParameter.Create("id", model.Id)));
+                    return RedirectToAction("Index", errorModel.AsOjectRoute());
                 }
                 return RedirectToAction("Index");
             }
             catch (BusinessException exception)
             {
-                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
-                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction("Index", MapExceptionAsRouteValues(exception));
             }
         }
 
@@ -136,8 +131,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
-                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction("Index", MapExceptionAsRouteValues(exception));
             }
         }
 
@@ -147,8 +141,7 @@ namespace ECommerceApp.Web.Controllers
             var user = await _userService.GetUserById(id);
             if (user is null)
             {
-                var errorModel = BuildErrorModel("userNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("userNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new NewUserVm());
             }
             return View(user);
@@ -161,15 +154,14 @@ namespace ECommerceApp.Web.Controllers
             {
                 if ((await _userService.ChangeUserPassword(model)) is null)
                 {
-                    var errorModel = BuildErrorModel("userNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
-                    return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                    var errorModel = BuildErrorModel(ErrorCode.Create("userNotFound", ErrorParameter.Create("id", model.Id)));
+                    return RedirectToAction("Index", errorModel.AsOjectRoute());
                 }
                 return RedirectToAction("Index");
             }
             catch (BusinessException exception)
             {
-                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
-                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction("Index", MapExceptionAsRouteValues(exception));
             }
         }
     }

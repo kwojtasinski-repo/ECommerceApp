@@ -5,7 +5,6 @@ using ECommerceApp.Application.ViewModels.Currency;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
-using System.Collections.Generic;
 
 namespace ECommerceApp.Web.Controllers
 {
@@ -62,8 +61,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException ex)
             {
-                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
-                return RedirectToAction(actionName: "Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction(actionName: "Index", MapExceptionAsRouteValues(ex));
             }
         }
 
@@ -73,8 +71,7 @@ namespace ECommerceApp.Web.Controllers
             var currency = _currencyService.GetById(id);
             if (currency is null)
             {
-                var errorModel = BuildErrorModel("currencyNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("currencyNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new CurrencyVm());
             }
             return View(new CurrencyVm { Currency = currency });
@@ -87,15 +84,14 @@ namespace ECommerceApp.Web.Controllers
             {
                 if (!_currencyService.Update(model.Currency))
                 {
-                    var errorModel = BuildErrorModel("currencyNotFound", new Dictionary<string, string> { { "id", $"{model.Currency.Id}" } });
-                    return RedirectToAction(actionName: "Index", new { model.Currency.Id, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                    var errorModel = BuildErrorModel(ErrorCode.Create("currencyNotFound", ErrorParameter.Create("id", model.Currency.Id)));
+                    return RedirectToAction(actionName: "Index", errorModel.AsOjectRoute());
                 }
                 return RedirectToAction("Index");
             }
             catch (BusinessException ex)
             {
-                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
-                return RedirectToAction(actionName: "Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction(actionName: "Index", MapExceptionAsRouteValues(ex));
             }
         }
 
@@ -105,8 +101,7 @@ namespace ECommerceApp.Web.Controllers
             var currency = _currencyService.GetById(id);
             if (currency is null)
             {
-                var errorModel = BuildErrorModel("currencyNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("currencyNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new CurrencyDto());
             }
             return View(new CurrencyVm { Currency = currency });
@@ -122,7 +117,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                return BadRequest(MapExceptionToResponseStatus(exception));
+                return BadRequest(BuildErrorModel(exception).Codes);
             }
         }
     }

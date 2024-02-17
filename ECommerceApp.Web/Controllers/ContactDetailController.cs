@@ -40,8 +40,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException ex)
             {
-                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
-                return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { newContact.ContactDetail.CustomerId, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", MapExceptionAsRouteValues(ex, new Dictionary<string, object> { { "Id", newContact.ContactDetail.CustomerId } } ));
             }
         }
 
@@ -67,17 +66,15 @@ namespace ECommerceApp.Web.Controllers
             {
                 if (!_contactDetailService.UpdateContactDetail(model.ContactDetail))
                 {
-                    var errorModel = BuildErrorModel("contactDetailNotFound", new Dictionary<string, string> { { "id", $"{model.ContactDetail.CustomerId}" } });
-                    HttpContext.Request.Query = errorModel.AsQueryCollection();
-                    return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = model.ContactDetail.CustomerId, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                    var errorModel = BuildErrorModel(ErrorCode.Create("contactDetailNotFound", ErrorParameter.Create("id", model.ContactDetail.CustomerId)));
+                    return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", errorModel.AsOjectRoute(new Dictionary<string, object> { { "Id", model.ContactDetail.CustomerId } }));
                 }
 
                 return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = model.ContactDetail.CustomerId });
             }
             catch (BusinessException ex)
             {
-                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
-                return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { model.ContactDetail.Id, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", MapExceptionAsRouteValues(ex, new Dictionary<string, object> { { "Id", model.ContactDetail.Id } }));
             }
         }
 
@@ -86,8 +83,7 @@ namespace ECommerceApp.Web.Controllers
             var contactDetail = _contactDetailService.GetContactDetail(id);
             if (contactDetail is null)
             {
-                var errorModel = BuildErrorModel("contactDetailNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("contactDetailNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new ContactDetailsForListVm());
             }
 
@@ -107,7 +103,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                return BadRequest(MapExceptionToResponseStatus(exception));
+                return BadRequest(BuildErrorModel(exception).Codes);
             }
         }
     }

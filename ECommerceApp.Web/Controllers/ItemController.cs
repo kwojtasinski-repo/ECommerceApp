@@ -78,8 +78,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException ex)
             {
-                var errorModel = BuildErrorModel(ex);
-                return RedirectToAction(actionName: "AddItem", errorModel.AsOjectRoute());
+                return RedirectToAction(actionName: "AddItem", MapExceptionAsRouteValues(ex));
             }
         }
 
@@ -127,8 +126,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException ex)
             {
-                var errorModel = BuildErrorModel(ex);
-                return RedirectToAction(actionName: "Index", errorModel.AsOjectRoute());
+                return RedirectToAction(actionName: "Index", MapExceptionAsRouteValues(ex));
             }
         }
 

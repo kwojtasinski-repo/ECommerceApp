@@ -35,8 +35,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException ex)
             {
-                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
-                return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = addressVm.Address.CustomerId, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", MapExceptionAsRouteValues(ex, new Dictionary<string, object>() { { "Id", addressVm.Address.CustomerId } }));
             }
         }
 
@@ -46,8 +45,7 @@ namespace ECommerceApp.Web.Controllers
             var address = _addressService.GetAddress(id);
             if (address is null)
             {
-                var errorModel = BuildErrorModel("addressNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("addressNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new AddressVm { Id = id, Address = new AddressDto() });
             }
             return View(new AddressVm { Id = id, Address = address });
@@ -57,18 +55,17 @@ namespace ECommerceApp.Web.Controllers
         public IActionResult EditAddress(AddressVm model)
         {
             try
-            { 
+            {
                 if (!_addressService.UpdateAddress(model.Address))
                 {
-                    var errorModel = BuildErrorModel("addressNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
-                    return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = model.Address.CustomerId, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                    var errorModel = BuildErrorModel(ErrorCode.Create("addressNotFound", ErrorParameter.Create("id", model.Id)));
+                    return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", errorModel.AsOjectRoute(new Dictionary<string, object>() { { "Id", model.Address.CustomerId } }));
                 }
                 return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = model.Address.CustomerId });
             }
             catch (BusinessException ex)
             {
-                var errorModel = BuildErrorModel(ex.ErrorCode, ex.Arguments);
-                return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", new { Id = model.Address.CustomerId, Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction(actionName: "EditCustomer", controllerName: "Customer", MapExceptionAsRouteValues(ex, new Dictionary<string, object>() { { "Id", model.Address.CustomerId } }));
             }
         }
 
@@ -77,8 +74,7 @@ namespace ECommerceApp.Web.Controllers
             var address = _addressService.GetAddress(id);
             if (address is null)
             {
-                var errorModel = BuildErrorModel("addressNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("addressNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new AddressVm { Id = id, Address = new AddressDto() });
             }
 
@@ -95,7 +91,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                return BadRequest(MapExceptionToResponseStatus(exception));
+                return BadRequest(BuildErrorModel(exception).Codes);
             }
         }
     }

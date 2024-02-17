@@ -199,46 +199,19 @@
                         });
 
             setGlobalError('@Context.Request.Query["Error"]', '@Context.Request.Query["Params"]');
-            setGlobalError2('@Context.Request.Query["Error"]', '@Context.Request.Query["Params"]');
         });
 
-        function setGlobalError(errorCode, params) {
-            const errorContainer = document.querySelector('#ErrorContainer');
-            const errorValue = document.querySelector('#ErrorValue');
-            if (!errorContainer || !errorValue) {
-                return;
-            }
-
-            if (!errorCode) {
-                errorContainer.style.display = 'none';
-                errorValue.textContent = '';
-                return;
-            }
-
-            errorContainer.style.display = 'block';
-            errorValue.textContent = he.decode(errors.getError(errorCode, params));
-        }
-
-        function setGlobalError2(error) {
-            const errorContainer = document.querySelector('#ErrorContainer');
-            const errorValue = document.querySelector('#ErrorValue');
-            if (!errorContainer || !errorValue) {
-                return;
-            }
-
+        function setGlobalError(error) {
             if (!error) {
-                errorContainer.style.display = 'none';
-                errorValue.textContent = '';
-                return;
+                showError();
             }
-
-            errorContainer.style.display = 'block';
-            const errorParsed = JSON.parse(he.decode(error));
-            let text = '';
-            for (const err of errorParsed) {
-                text += errors.getErrorNew(err.Code, err.Parameters) + '\n';
+            
+            try {
+                const errorParsed = JSON.parse(he.decode(error));
+                showError(errorParsed);
+            } catch {
+                showError();
             }
-            errorValue.textContent = text;
         }
     </script>
     <style type="text/css">

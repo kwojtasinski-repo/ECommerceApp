@@ -69,8 +69,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch(BusinessException exception)
             {
-                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
-                return RedirectToAction("Index", controllerName: "Item", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction("Index", controllerName: "Item", MapExceptionAsRouteValues(exception));
             }
         }
 
@@ -100,8 +99,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(exception).AsQueryCollection();
                 return View(null);
             }
         }
@@ -116,8 +114,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch(BusinessException exception)
             {
-                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
-                return RedirectToAction("Index", controllerName: "Item", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction("Index", controllerName: "Item", MapExceptionAsRouteValues(exception));
             }
         }
 
@@ -127,8 +124,7 @@ namespace ECommerceApp.Web.Controllers
             var order = _orderService.GetOrderForRealization(orderId);
             if (order is null)
             {
-                var errorModel = BuildErrorModel("contactDetailNotFound", new Dictionary<string, string> { { "id", $"{orderId}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("contactDetailNotFound", ErrorParameter.Create("id", orderId))).AsQueryCollection();
                 return View(new NewOrderVm());
             }
             return View(order);
@@ -159,15 +155,14 @@ namespace ECommerceApp.Web.Controllers
                    ).ToList(),
                 }) is null)
                 {
-                    var errorModel = BuildErrorModel("orderNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
-                    return RedirectToAction("Index", controllerName: "Item", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                    var errorModel = BuildErrorModel(ErrorCode.Create("orderNotFound", ErrorParameter.Create("id", model.Id)));
+                    return RedirectToAction("Index", controllerName: "Item", errorModel.AsOjectRoute());
                 }
                 return RedirectToAction("AddOrderSummary", new { id = model.Id });
             }
             catch (BusinessException exception)
             {
-                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
-                return RedirectToAction("Index", controllerName: "Item", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction("Index", controllerName: "Item", MapExceptionAsRouteValues(exception));
             }
         }
 
@@ -177,8 +172,7 @@ namespace ECommerceApp.Web.Controllers
             var order = _orderService.GetOrderSummaryById(id);
             if (order is null)
             {
-                var errorModel = BuildErrorModel("orderNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("orderNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new NewOrderVm());
             }
             return View(order);
@@ -231,8 +225,7 @@ namespace ECommerceApp.Web.Controllers
             var order = _orderService.BuildVmForEdit(id);
             if (order is null)
             {
-                var errorModel = BuildErrorModel("orderNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("orderNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new NewOrderVm());
             }
             return View(order);
@@ -263,15 +256,14 @@ namespace ECommerceApp.Web.Controllers
                     ).ToList(),
                 }) is null)
                 {
-                    var errorModel = BuildErrorModel("orderNotFound", new Dictionary<string, string> { { "id", $"{model.Id}" } });
-                    return RedirectToAction("Index", controllerName: "Item", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                    var errorModel = BuildErrorModel(ErrorCode.Create("orderNotFound", ErrorParameter.Create("id", model.Id)));
+                    return RedirectToAction("Index", controllerName: "Item", errorModel.AsOjectRoute());
                 }
                 return RedirectToAction("Index");
             }
             catch (BusinessException exception)
             {
-                var errorModel = BuildErrorModel(exception.ErrorCode, exception.Arguments);
-                return RedirectToAction("Index", new { Error = errorModel.ErrorCode, Params = errorModel.GenerateParamsString() });
+                return RedirectToAction("Index", MapExceptionAsRouteValues(exception));
             }
         }
 
@@ -280,8 +272,7 @@ namespace ECommerceApp.Web.Controllers
             var order = _orderService.GetOrderDetail(id);
             if (order is null)
             {
-                var errorModel = BuildErrorModel("orderNotFound", new Dictionary<string, string> { { "id", $"{id}" } });
-                HttpContext.Request.Query = errorModel.AsQueryCollection();
+                HttpContext.Request.Query = BuildErrorModel(ErrorCode.Create("orderNotFound", ErrorParameter.Create("id", id))).AsQueryCollection();
                 return View(new OrderDetailsVm());
             }
             return View(order);
@@ -298,7 +289,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                return BadRequest(MapExceptionToResponseStatus(exception));
+                return BadRequest(BuildErrorModel(exception).Codes);
             }
         }
 
@@ -351,7 +342,7 @@ namespace ECommerceApp.Web.Controllers
             }
             catch (BusinessException exception)
             {
-                return BadRequest(MapExceptionToResponseStatus(exception));
+                return BadRequest(BuildErrorModel(exception).Codes);
             }
         }
     }
