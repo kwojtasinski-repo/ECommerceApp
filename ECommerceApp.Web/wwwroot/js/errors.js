@@ -54,7 +54,8 @@
                 orderItemNotFoundOnOrder: 'Pozycja o id {id} nie została znaleziona na zamówieniu',
                 fileSizeTooBig: 'Rozmiar {size} pliku {name} jest za duży, dozwolony rozmiar {allowedSize} bajtów',
                 fileExtensionNotAllowed: 'Niepoprawne rozszerzenie {extension} pliku {name}, dozwolone rozszerzenia {extensions}',
-                tooManyImages: 'Nie można dodać więcej niż {allowedImagesCount} obrazków. Aktualnie dodano {imageCount} dla przedmiotu o id {id}'
+                tooManyImages: 'Nie można dodać więcej niż {allowedImagesCount} obrazków. Aktualnie dodano {imageCount} dla przedmiotu o id {id}',
+                couponTypeNotFound: 'Nie znaleziono użytego kuponu o id {id}'
             }
 
             function containsParams(value) {
