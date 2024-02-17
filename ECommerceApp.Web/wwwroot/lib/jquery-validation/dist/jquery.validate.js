@@ -6,9 +6,9 @@
  * Copyright (c) 2017 Jörn Zaefferer
  * Released under the MIT license
  */
-(function( factory ) {
-	if ( typeof define === "function" && define.amd ) {
-		define( ["jquery"], factory );
+(function (factory) {
+	if (typeof define === "function" && define.amd) {
+		define("jquery", factory );
 	} else if (typeof module === "object" && module.exports) {
 		module.exports = factory( require( "jquery" ) );
 	} else {
@@ -19,7 +19,7 @@
 $.extend( $.fn, {
 
 	// https://jqueryvalidation.org/validate/
-	validate: function( options ) {
+	validate: function (options) {
 
 		// If nothing is selected, return nothing; can't chain anyway
 		if ( !this.length ) {

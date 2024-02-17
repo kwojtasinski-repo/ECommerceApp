@@ -2,8 +2,8 @@
     function setup() {
         require.config({
             baseUrl: '/js',
-            'paths': {
-                'he': '../lib/he'
+            paths: {
+                he: '../lib/he'
             }
         });
     }
