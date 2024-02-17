@@ -255,16 +255,17 @@
                 }
 
                 try {
+                    showError();
                     await ajaxRequest.send('/Address/DeleteAddress/' + id, 'DELETE', undefined);
                     window.location.reload();
                 } catch (error) {
                     console.error(error);
                     if (error.status === 404) {
-                        redirectToError(addressNotFound, 1);
+                        showError([{ code: 'addressNotFound', parameters: [{ name: 'id', value: id }] }]);
                         return;
                     }
 
-                    redirectToError(getErrorText(error), error.responseJSON.Params);
+                    showErrorFromResponse(error);
                 }
             }
 
@@ -275,16 +276,17 @@
                 }
 
                 try {
+                    showError();
                     await ajaxRequest.send('/ContactDetail/DeleteContactDetail/' + id, 'DELETE', undefined);
                     window.location.reload();
                 } catch (error) {
                     console.error(error);
                     if (error.status === 404) {
-                        redirectToError(errors.contactDetailNotFound(id));
+                        showError([{ code: 'contactDetailNotFound', parameters: [{ name: 'id', value: id }] }]);
                         return;
                     }
 
-                    redirectToError(getErrorText(error), error.responseJSON.Params);
+                    showErrorFromResponse(error);
                 }
             }
 

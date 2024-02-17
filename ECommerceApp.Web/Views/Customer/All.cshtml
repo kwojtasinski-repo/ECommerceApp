@@ -101,10 +101,19 @@
             }
 
             try {
+                showError();
                 await ajaxRequest.send('/Customer/Delete/' + id, 'DELETE', undefined);
                 window.location.reload();
             } catch (error) {
-                console.error(error);
+                console.error(error); if (error.status === statusCodes.Unauthorized) {
+                    window.location.href = "Identity/Account/Login";
+                }
+                if (error.status === statusCodes.InternalErrorServer) {
+                    showError([{ code: 'generalError' }]);
+                }
+                if (error.status === statusCodes.BadRequest) {
+                    showErrorFromResponse(error);
+                }
             }
         }
     </script>

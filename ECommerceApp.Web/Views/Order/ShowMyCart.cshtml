@@ -142,14 +142,26 @@ else
 {
     <script>
         async function AddQuantity(id, itemId, quantity) {
-            const objectJson = JSON.stringify({
-                "id": id,
-                "itemId": itemId,
-                "itemOrderQuantity": quantity + 1,
-                "userId": "@User.GetUserId()"
-            })
-            await ajaxRequest.send("/OrderItem/UpdateOrderItem/?id=" + id, "PUT", objectJson, "application/json", "json");
-            location.reload();
+            try {
+                const objectJson = JSON.stringify({
+                    "id": id,
+                    "itemId": itemId,
+                    "itemOrderQuantity": quantity + 1,
+                    "userId": "@User.GetUserId()"
+                })
+                await ajaxRequest.send("/OrderItem/UpdateOrderItem/?id=" + id, "PUT", objectJson, "application/json", "json");
+                location.reload();
+            } catch (error) {
+                if (error.status === statusCodes.Unauthorized) {
+                    window.location.href = "Identity/Account/Login";
+                }
+                if (error.status === statusCodes.InternalErrorServer) {
+                    showError([{ code: 'generalError' }]);
+                }
+                if (error.status === statusCodes.BadRequest) {
+                    showErrorFromResponse(error);
+                }
+            }
         }
 
         async function RemoveQuantity(id, itemId, quantity) {
@@ -157,14 +169,26 @@ else
                 return;
             }
 
-            const objectJson = JSON.stringify({
-                "id": id,
-                "itemId": itemId,
-                "itemOrderQuantity": quantity - 1,
-                "userId": "@User.GetUserId()"
-            })
-            await ajaxRequest.send("/OrderItem/UpdateOrderItem/?id=" + id, "PUT", objectJson, "application/json", "json");
-            location.reload();
+            try {
+                const objectJson = JSON.stringify({
+                    "id": id,
+                    "itemId": itemId,
+                    "itemOrderQuantity": quantity - 1,
+                    "userId": "@User.GetUserId()"
+                })
+                await ajaxRequest.send("/OrderItem/UpdateOrderItem/?id=" + id, "PUT", objectJson, "application/json", "json");
+                location.reload();
+            } catch (error) {
+                if (error.status === statusCodes.Unauthorized) {
+                    window.location.href = "Identity/Account/Login";
+                }
+                if (error.status === statusCodes.InternalErrorServer) {
+                    showError([{ code: 'generalError' }]);
+                }
+                if (error.status === statusCodes.BadRequest) {
+                    showErrorFromResponse(error);
+                }
+            }
         }
 
         async function RemoveItemFromCart(itemId) {
@@ -174,6 +198,12 @@ else
             } catch (error) {
                 if (error.status === statusCodes.Unauthorized) {
                     window.location.href = "Identity/Account/Login";
+                }
+                if (error.status === statusCodes.InternalErrorServer) {
+                    showError([{ code: 'generalError' }]);
+                }
+                if (error.status === statusCodes.BadRequest) {
+                    showErrorFromResponse(error);
                 }
             }
          }

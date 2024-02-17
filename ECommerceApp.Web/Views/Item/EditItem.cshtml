@@ -156,9 +156,8 @@ else
             const formData = new FormData(oFormElement);
 
             try {
-                const response = await fetch(oFormElement.action, {
-                    method: 'POST',
-                    body: formData
+                const response = await ajaxRequest.send(oFormElement.action, 'POST', {
+                    formData
                 });
                 clearImageUploadInput();
 
@@ -170,7 +169,15 @@ else
                 resultElement.value = 'Result: ' + response.status + ' ' +
                     response.statusText + ' ' + responseText;
             } catch (error) {
-                console.error('Error:', error);
+                if (error.status === statusCodes.Unauthorized) {
+                    window.location.href = "Identity/Account/Login";
+                }
+                if (error.status === statusCodes.InternalErrorServer) {
+                    showError([{ code: 'generalError' }]);
+                }
+                if (error.status === statusCodes.BadRequest) {
+                    showErrorFromResponse(error);
+                }
             }
         }
 
@@ -188,9 +195,7 @@ else
             var url = '/Image/DeleteImage/' + imageId;
 
             try {
-                const response = await fetch(url, {
-                    method: 'DELETE',
-                });
+                const response = await ajaxRequest.send(url, 'DELETE');
                 
                 if (response.ok) {
                     window.location.reload();
@@ -200,7 +205,15 @@ else
                 resultElement.value = 'Result: ' + response.status + ' ' +
                     response.statusText + ' ' + responseText;
             } catch (error) {
-                console.error('Error:', error);
+                if (error.status === statusCodes.Unauthorized) {
+                    window.location.href = "Identity/Account/Login";
+                }
+                if (error.status === statusCodes.InternalErrorServer) {
+                    showError([{ code: 'generalError' }]);
+                }
+                if (error.status === statusCodes.BadRequest) {
+                    showErrorFromResponse(error);
+                }
             }
 
             clearImageUploadValidationErrors();

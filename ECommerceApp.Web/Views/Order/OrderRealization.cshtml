@@ -611,7 +611,15 @@ else
                 document.getElementById('Cost').value = Number(cost);
                 couponCode.after(createSuccessCouponText('Pomyślnie dodano kupon. Cena zmniejszona o ' + coupon.discount + '%'));
             } catch (error) {
-                console.error(error);
+                if (error.status === statusCodes.Unauthorized) {
+                    window.location.href = "Identity/Account/Login";
+                }
+                if (error.status === statusCodes.InternalErrorServer) {
+                    showError([{ code: 'generalError' }]);
+                }
+                if (error.status === statusCodes.BadRequest) {
+                    showErrorFromResponse(error);
+                }
             }
         }
 

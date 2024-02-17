@@ -150,6 +150,12 @@
                 if (error.status === statusCodes.Unauthorized) {
                     window.location.href = "Identity/Account/Login";
                 }
+                if (error.status === statusCodes.InternalErrorServer) {
+                    showError([{ code: 'generalError' }]);
+                }
+                if (error.status === statusCodes.BadRequest) {
+                    showErrorFromResponse(error);
+                }
             }
         }
     </script>

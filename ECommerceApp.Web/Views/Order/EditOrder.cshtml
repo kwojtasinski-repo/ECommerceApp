@@ -394,20 +394,18 @@
             var orderItemId = parseInt(id);
             var url = '/OrderItem/DeleteOrderItem/' + orderItemId;
             try {
-                const response = await fetch(url, {
-                    method: 'DELETE',
-                });
-
-                if (response.ok) {
-                    window.location.reload();
-                }
-                let responseText = await response.text();
-
-                resultElement.value = 'Result: ' + response.status + ' ' +
-                    response.statusText + ' ' + responseText;
-                console.log(responseText);
+                const response = await ajaxRequest.send(url, 'DELETE');
+                window.location.reload();
             } catch (error) {
-                console.error('Error:', error);
+                if (error.status === statusCodes.Unauthorized) {
+                    window.location.href = "Identity/Account/Login";
+                }
+                if (error.status === statusCodes.InternalErrorServer) {
+                    showError([{ code: 'generalError' }]);
+                }
+                if (error.status === statusCodes.BadRequest) {
+                    showErrorFromResponse(error);
+                }
             }
         }
 
@@ -450,7 +448,15 @@
                     await ajaxRequest.send('/Refund/AddRefund', 'POST', form);
                     window.location.reload();
                 } catch (error) {
-                    console.error(error);
+                    if (error.status === statusCodes.Unauthorized) {
+                        window.location.href = "Identity/Account/Login";
+                    }
+                    if (error.status === statusCodes.InternalErrorServer) {
+                        showError([{ code: 'generalError' }]);
+                    }
+                    if (error.status === statusCodes.BadRequest) {
+                        showErrorFromResponse(error);
+                    }
                 }
                 return;
             }
@@ -459,7 +465,15 @@
                 await ajaxRequest.send('/Refund/UpdateRefund?id=' + form.Id, 'PUT', form);
                 window.location.reload();
             } catch (error) {
-                console.error(error);
+                if (error.status === statusCodes.Unauthorized) {
+                    window.location.href = "Identity/Account/Login";
+                }
+                if (error.status === statusCodes.InternalErrorServer) {
+                    showError([{ code: 'generalError' }]);
+                }
+                if (error.status === statusCodes.BadRequest) {
+                    showErrorFromResponse(error);
+                }
             }
         }
 
@@ -472,7 +486,15 @@
                 await ajaxRequest.send('/Refund/DeleteRefund/' + id, 'DELETE');
                 window.location.reload();
             } catch (error) {
-                console.error(error);
+                if (error.status === statusCodes.Unauthorized) {
+                    window.location.href = "Identity/Account/Login";
+                }
+                if (error.status === statusCodes.InternalErrorServer) {
+                    showError([{ code: 'generalError' }]);
+                }
+                if (error.status === statusCodes.BadRequest) {
+                    showErrorFromResponse(error);
+                }
             }
         }
         
@@ -501,7 +523,15 @@
                 calculateCosts();
                 couponCode.after(createSuccessCouponText('Pomyślnie dodano kupon. Cena zmniejszona o ' + coupon.discount + '%'));
             } catch (error) {
-                console.error(error);
+                if (error.status === statusCodes.Unauthorized) {
+                    window.location.href = "Identity/Account/Login";
+                }
+                if (error.status === statusCodes.InternalErrorServer) {
+                    showError([{ code: 'generalError' }]);
+                }
+                if (error.status === statusCodes.BadRequest) {
+                    showErrorFromResponse(error);
+                }
             }
         }
 
@@ -555,7 +585,15 @@
                     customersSelect.appendChild(optionTag);
                 }
             } catch (error) {
-                console.error(error);
+                if (error.status === statusCodes.Unauthorized) {
+                    window.location.href = "Identity/Account/Login";
+                }
+                if (error.status === statusCodes.InternalErrorServer) {
+                    showError([{ code: 'generalError' }]);
+                }
+                if (error.status === statusCodes.BadRequest) {
+                    showErrorFromResponse(error);
+                }
             }
         }
     </script>
