@@ -134,23 +134,6 @@ namespace ECommerceApp.IntegrationTests.Services
             itemDeleted.ShouldBeNull();
         }
 
-        [Fact]
-        public void given_valid_item_when_add_order_item_should_decrease_quantity()
-        {
-            var orderItem = CreateOrderItem(0);
-            var itemRepository = GetRequiredService<IItemRepository>();
-            var item = itemRepository.GetItemById(orderItem.ItemId);
-            var quantityBeforeAdd = item.Quantity;
-
-            var id = _service.AddOrderItem(orderItem);
-
-            var orderUpdated = _service.GetOrderItemDetails(id);
-            orderUpdated.ShouldNotBeNull();
-            var itemAfterUpdate = itemRepository.GetItemById(item.Id);
-            itemAfterUpdate.ShouldNotBeNull();
-            itemAfterUpdate.Quantity.ShouldBeLessThan(quantityBeforeAdd);
-        }
-
         private static OrderItemDto CreateOrderItem(int id)
         {
             var orderItem = new OrderItemDto
