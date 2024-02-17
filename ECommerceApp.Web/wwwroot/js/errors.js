@@ -61,63 +61,8 @@
                 return /[^{[]+(?=\})/.test(value);
             }
 
-            function buildParamsObject(args) {
-                if (!args) {
-                    return null;
-                }
-
-                const paramsString = args.split(',');
-                if (paramsString.length == 0) {
-                    return null;
-                }
-
-                const params = {};
-                for (const param of paramsString) {
-                    const splited = param.split('=');
-                    if (splited.length < 2) {
-                        continue;
-                    }
-                    const name = splited[0];
-                    const value = splited[1];
-                    params[name] = value;
-                }
-                return params;
-            }
-
             return {
                 getError: function (key, args) {
-                    if (!key) {
-                        return '';
-                    }
-
-                    let value = values[key] ?? key;
-                    if (!args) {
-                        return value;
-                    }
-
-                    if (value === key) {
-                        return value;
-                    }
-
-                    if (!containsParams(value)) {
-                        return value;
-                    }
-
-                    const params = buildParamsObject(args);
-                    if (!params) {
-                        return value;
-                    }
-
-                    for (const paramName in params) {
-                        const regexPattern = new RegExp('\{' + paramName + '\}');
-                        if (!regexPattern.test(value)) {
-                            continue;
-                        }
-                        value = value.replace(regexPattern, params[paramName]);
-                    }
-                    return value;
-                },
-                getErrorNew: function (key, args) {
                     if (!key) {
                         return '';
                     }
@@ -150,20 +95,6 @@
                 }
             }
         })();
-        
-        function getErrorText(error) {
-            if (error.status === 400) {
-                if (!error.responseJSON.ErrorCode) {
-                    return error.responseJSON.Error;
-                }
-
-                return error.responseJSON.ErrorCode;
-            } else if (response.status === 404) {
-                return resourceNotFound;
-            } else {
-                return generalError;
-            }
-        }
 
         function showErrorFromResponse(error) {
             if (!error.responseJSON) {
@@ -189,40 +120,13 @@
             errorContainer.style.display = 'block';
             let text = '';
             for (const error of errorsArray) {
-                text += errors.getErrorNew(error.Code ?? error.code, error.Parameters ?? error.parameters) + '\n';
+                text += errors.getError(error.Code ?? error.code, error.Parameters ?? error.parameters) + '\n';
             }
             errorValue.textContent = text;
         }
-
-        function redirectToError(errorText, ...args) {
-            const urlParams = new URLSearchParams(window.location.search);
-            urlParams.set('Error', errorText);
-            if (!args) {
-                window.location.href = window.location.origin + window.location.pathname + '?' + urlParams.toString();
-                return;
-            }
-
-            let params = '';
-            for (const arg of args) {
-                for (const a in arg) {
-                    params += a + '=' + arg[a] + ',';
-                }
-            }
-
-            if (!params) {
-                window.location.href = window.location.origin + window.location.pathname + '?' + urlParams.toString();
-                return;
-            }
-
-            params = params.substring(params.lastIndexOf(','), 0);
-            urlParams.set('Params', params);
-            window.location.href = window.location.origin + window.location.pathname + '?' + urlParams.toString();
-        }
-
+        
         return {
             errors,
-            getErrorText,
-            redirectToError,
             showErrorFromResponse,
             showError
         };
