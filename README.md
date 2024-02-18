@@ -43,13 +43,15 @@ Next in ECommerceApp root directory in powershell or cmd run this command:
 * XUnit
 * Moq 
 * Fluent Assertions 
+* jQuery
 * Bootstrap
+* RequireJS
 
 ## General info
 ECommerceApp is a web application written using MVC pattern. Application is made using clean and onion architecture. This application also includes a simple login system.
 
 ## Project
-Application divided into repositories and services. The main purpose of this split was not to use entities directly. Services used ViewModels to modify, add, delete values to the database. Service had to map ViewModel into Entity. After that entity was sent to repositories, which modify data in the database. If the data was provided from database, service had to map Entity into ViewModel. 
+Application divided into repositories and services. 
 Database scheme is shown on the figure below:
 
 ![Database scheme](schemat_bazy.png)
@@ -129,6 +131,39 @@ Screen 24
 
 Screen 25
 ![screen_25](screen_25.PNG)
+
+Screen 26
+![screen_26](screen_26.PNG)
+
+Screen 27
+![screen_27](screen_27.PNG)
+
+Screen 28
+![screen_28](screen_28.PNG)
+
+Screen 29
+![screen_29](screen_29.PNG)
+
+Screen 30
+![screen_30](screen_30.PNG)
+
+Screen 31
+![screen_31](screen_31.PNG)
+
+Screen 32
+![screen_32](screen_32.PNG)
+
+Screen 33
+![screen_33](screen_33.PNG)
+
+Screen 34
+![screen_34](screen_34.PNG)
+
+Screen 35
+![screen_35](screen_35.PNG)
+
+Screen 36
+![screen_36](screen_36.PNG)
 
 ## Status
 Project is finished, but not closed. In the future, it is possible to expand the application in additional functionalities.
