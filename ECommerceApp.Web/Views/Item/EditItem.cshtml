@@ -196,14 +196,7 @@ else
 
             try {
                 const response = await ajaxRequest.send(url, 'DELETE');
-                
-                if (response.ok) {
-                    window.location.reload();
-                }
-                let responseText = await response.text();
-
-                resultElement.value = 'Result: ' + response.status + ' ' +
-                    response.statusText + ' ' + responseText;
+                window.location.reload();
             } catch (error) {
                 if (error.status === statusCodes.Unauthorized) {
                     window.location.href = "Identity/Account/Login";
@@ -229,10 +222,7 @@ else
         }
 
         function clearImageUploadValidationErrors() {
-            document.getElementById(fileUploadId)
-                .parentElement
-                .querySelectorAll('.field-validation-invalid')
-                .forEach((el) => el.remove());
+            document.getElementById(fileUploadId)?.parentElement?.querySelectorAll('.field-validation-invalid')?.forEach((el) => el.remove());
         }
 
         const itemFormValidator = {
