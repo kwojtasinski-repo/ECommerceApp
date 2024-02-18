@@ -74,8 +74,8 @@ namespace ECommerceApp.Web.Controllers
             {
                 Customer = new CustomerDto { UserId = GetUserId() },
                 ContactDetailTypes = new List<ContactDetailTypeDto>(),
-                ContactDetails = new List<ContactDetailDto>(),
-                Addresses = new List<AddressDto>()
+                ContactDetails = new List<ContactDetailDto>() { new () },
+                Addresses = new List<AddressDto>() { new () },
             };
             return View(customer);
         }

@@ -163,7 +163,7 @@ namespace ECommerceApp.Application.Services.Customers
             }
 
             if (!UserPermissions.Roles.MaintenanceRoles.Contains(_userContext.Role)
-                && CustomerExists(model.Id, _userContext.UserId))
+                && !CustomerExists(model.Id, _userContext.UserId))
             {
                 return false;
             }
