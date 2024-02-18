@@ -165,5 +165,14 @@ Screen 35
 Screen 36
 ![screen_36](screen_36.PNG)
 
+Screen 37
+![screen_37](screen_37.PNG)
+
+Screen 38
+![screen_38](screen_38.PNG)
+
+Screen 39
+![screen_39](screen_39.PNG)
+
 ## Status
 Project is finished, but not closed. In the future, it is possible to expand the application in additional functionalities.
