@@ -65,7 +65,7 @@ This file sets repository-level rules for automation agents, Copilot, and contri
 - Always read applicable per-stack instructions under `.github/instructions/` (if they exist) before writing code for that stack.
 - Never assume or hard-code framework or package versions. If a change requires a specific SDK/package version, ask the human for confirmation.
 - Do not perform destructive actions or operations against production systems.
-- All services must inherit from `AbstractService` base class — do not create standalone service classes that bypass it.
+- Services for reference/lookup domains (`Brand`, `Tag`, `Type`, `Currency`, `Coupon`, `Address`, `ContactDetail`, etc.) must inherit from `AbstractService` base class. For behavioral aggregates (`Order`, `Payment`, `Refund`, `OrderItem`), apply rich domain model patterns per `dotnet-instructions.md` § 16 — state transitions belong on the aggregate, not in standalone service classes. See [ADR-0002](../docs/adr/0002-post-event-storming-architectural-evolution-strategy.md).
 - Complex domain operations use the **Handler pattern** (`CouponHandler`, `PaymentHandler`, `ItemHandler`) — do not duplicate this logic in controllers or plain services.
 - All exceptions must flow through `ExceptionMiddleware` + `BusinessException` pipeline — do not add raw try/catch blocks in controllers.
 - File operations (images) must use `IFileStore` / `IFileWrapper` abstractions — do not use raw `System.IO` directly.

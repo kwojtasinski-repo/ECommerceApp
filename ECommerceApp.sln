@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.0.31912.275
+# Visual Studio Version 18
+VisualStudioVersion = 18.2.11415.280 d18.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ECommerceApp.Web", "ECommerceApp.Web\ECommerceApp.Web.csproj", "{37AFE261-8798-4F38-AB9E-E24F319C7BE7}"
 EndProject
@@ -58,6 +58,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "adr", "adr", "{25B91C37-ECC3-46DC-8502-C91F85A1F7BC}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0001-project-overview-and-technology-stack.md = docs\adr\0001-project-overview-and-technology-stack.md
+		docs\adr\0002-post-event-storming-architectural-evolution-strategy.md = docs\adr\0002-post-event-storming-architectural-evolution-strategy.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ECommerce", "ECommerce", "{049E647F-D15D-4AFB-8AE6-DB2363C9F4D4}"

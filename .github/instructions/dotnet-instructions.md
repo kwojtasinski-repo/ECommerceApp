@@ -181,3 +181,82 @@ public void given_valid_item_with_images_when_add_item_dto_should_add()
 - Use C# features available in the project — follow existing file style (no file-scoped namespaces are used; do not introduce them).
 - Do NOT add comments unless requested — prefer self-documenting code.
 - Do NOT add `sealed` to classes unless specifically required.
+
+## 16. Domain model richness policy
+
+> Strategic rationale: [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](../../docs/adr/0002-post-event-storming-architectural-evolution-strategy.md)
+
+The codebase is evolving incrementally from an anemic domain model toward a rich OOP domain model.
+Apply the rules below whenever touching or creating domain models in `ECommerceApp.Domain/Model/`.
+
+**Behavioral aggregates** (enforce richness rules): `Order`, `Payment`, `Refund`, `OrderItem`.
+**Reference / lookup domains** (CRUD with `AbstractService` remains acceptable): `Brand`, `Tag`, `Type`,
+`Currency`, `CurrencyRate`, `ContactDetailType`, `Address`, `Coupon`, `CouponType`.
+
+### Rules for behavioral aggregates
+
+- **Private setters** — all properties must use `private set`. Never expose public setters on behavioral aggregates.
+  ```csharp
+  // Correct
+  public PaymentState State { get; private set; }
+
+  // Wrong
+  public PaymentState State { get; set; }
+  ```
+
+- **State transitions as methods** — state changes must go through named domain methods on the aggregate.
+  Never mutate state from outside (handlers, services, controllers).
+  ```csharp
+  // Correct — Order owns its transition
+  public void MarkAsPaid(int paymentId)
+  {
+      if (IsPaid) throw new BusinessException("Order already paid");
+      IsPaid = true;
+      PaymentId = paymentId;
+  }
+
+  // Wrong — external mutation from PaymentHandler
+  order.IsPaid = true;
+  order.PaymentId = paymentId;
+  ```
+
+- **Factory methods** — use static factory methods for creation when construction requires invariant checks.
+  ```csharp
+  public static Payment Create(int orderId, int customerId, int currencyId, decimal cost)
+  {
+      if (cost <= 0) throw new BusinessException("Payment cost must be positive");
+      return new Payment { ... };
+  }
+  ```
+
+- **No `ApplicationUser` navigation properties** — domain models must not reference `ApplicationUser`.
+  Use `string UserId` only. `ApplicationUser` belongs exclusively to the Identity BC.
+  ```csharp
+  // Correct
+  public string UserId { get; private set; }
+
+  // Wrong
+  public ApplicationUser User { get; set; }
+  ```
+
+- **No Law of Demeter violations** — do not chain through navigation properties to reach values.
+  Pass required values as parameters or use a dedicated value object.
+  ```csharp
+  // Wrong — chains through CouponUsed → Coupon → Discount
+  var discount = (1 - (CouponUsed?.Coupon?.Discount / 100M) ?? 1);
+
+  // Correct — pass the resolved discount as a parameter
+  public void CalculateCost(decimal discountRate) { ... }
+  ```
+
+- **Invariant checks belong in the aggregate** — never duplicate domain rule checks in handlers or services
+  if they logically belong to the aggregate. Handlers only coordinate; aggregates enforce.
+
+### EF Core compatibility note
+
+EF Core requires a parameterless constructor for entity materialization. Add a `private` or `protected`
+parameterless constructor alongside factory methods when introducing them:
+```csharp
+private Payment() { } // for EF Core
+public static Payment Create(...) { return new Payment { ... }; }
+```
