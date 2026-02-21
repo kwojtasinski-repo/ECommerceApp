@@ -27,6 +27,24 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ECommerceApp.API", "ECommer
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerceApp.IntegrationTests", "ECommerceApp.IntegrationTests\ECommerceApp.IntegrationTests.csproj", "{270EE226-CC66-4548-9BD1-469091FE8580}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Copilot", "Copilot", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
+	ProjectSection(SolutionItems) = preProject
+		.github\copilot-instructions.md = .github\copilot-instructions.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "instructions", "instructions", "{38F19132-871F-4C11-806B-B6FE77611219}"
+	ProjectSection(SolutionItems) = preProject
+		.github\instructions\dotnet-instructions.md = .github\instructions\dotnet-instructions.md
+		.github\instructions\efcore-instructions.md = .github\instructions\efcore-instructions.md
+		.github\instructions\frontend-instructions.md = .github\instructions\frontend-instructions.md
+		.github\instructions\migration-policy.md = .github\instructions\migration-policy.md
+		.github\instructions\razorpages-instructions.md = .github\instructions\razorpages-instructions.md
+		.github\instructions\testing-instructions.md = .github\instructions\testing-instructions.md
+		.github\instructions\web-api-instructions.md = .github\instructions\web-api-instructions.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "templates", "templates", "{6E1A68B1-6E1A-4C59-BBC0-26FE3199BB75}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -73,6 +91,8 @@ Global
 		{D0D6AAB7-0B70-467C-9952-F2D15EABC772} = {10D50F1A-6B65-4B28-B3E1-B064B6EBF967}
 		{ED508D6F-6EE1-4ECC-A115-9F145645B377} = {79A3F79E-4649-412E-8C1D-CEDBBFCA3148}
 		{270EE226-CC66-4548-9BD1-469091FE8580} = {10D50F1A-6B65-4B28-B3E1-B064B6EBF967}
+		{38F19132-871F-4C11-806B-B6FE77611219} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{6E1A68B1-6E1A-4C59-BBC0-26FE3199BB75} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C833E166-660D-4E9D-85E1-0ED811E2828E}
