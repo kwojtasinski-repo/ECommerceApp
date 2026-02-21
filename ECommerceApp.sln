@@ -44,6 +44,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "instructions", "instruction
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "templates", "templates", "{6E1A68B1-6E1A-4C59-BBC0-26FE3199BB75}"
+	ProjectSection(SolutionItems) = preProject
+		.github\templates\adr.template.md = .github\templates\adr.template.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
