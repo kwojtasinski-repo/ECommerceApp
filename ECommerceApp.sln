@@ -59,9 +59,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "adr", "adr", "{25B91C37-ECC
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0001-project-overview-and-technology-stack.md = docs\adr\0001-project-overview-and-technology-stack.md
 		docs\adr\0002-post-event-storming-architectural-evolution-strategy.md = docs\adr\0002-post-event-storming-architectural-evolution-strategy.md
+		docs\adr\0003-feature-folder-organization-for-new-bounded-context-code.md = docs\adr\0003-feature-folder-organization-for-new-bounded-context-code.md
+		docs\adr\0004-module-taxonomy-and-bounded-context-grouping.md = docs\adr\0004-module-taxonomy-and-bounded-context-grouping.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ECommerce", "ECommerce", "{049E647F-D15D-4AFB-8AE6-DB2363C9F4D4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "architecture", "architecture", "{5EC11768-8E47-4C89-9EBC-78E600311851}"
+	ProjectSection(SolutionItems) = preProject
+		docs\architecture\bounded-context-map.md = docs\architecture\bounded-context-map.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -118,6 +125,7 @@ Global
 		{6E1A68B1-6E1A-4C59-BBC0-26FE3199BB75} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{D2867909-022A-479A-A6F9-3CF92C8F518C} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{25B91C37-ECC3-46DC-8502-C91F85A1F7BC} = {908C6C00-47A3-455F-82C8-5BBECB045911}
+		{5EC11768-8E47-4C89-9EBC-78E600311851} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C833E166-660D-4E9D-85E1-0ED811E2828E}

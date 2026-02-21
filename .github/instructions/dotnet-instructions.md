@@ -260,3 +260,75 @@ parameterless constructor alongside factory methods when introducing them:
 private Payment() { } // for EF Core
 public static Payment Create(...) { return new Payment { ... }; }
 ```
+
+## 17. Folder and namespace organization — new vs existing code
+
+> Decision record: [ADR-0003 — Feature-Folder Organization for New Bounded Context Code](../../docs/adr/0003-feature-folder-organization-for-new-bounded-context-code.md)
+
+**Two structures coexist during the transition. The rule is simple:**
+- **Existing code** — stays in its current horizontal structure. Do NOT move existing files for structural reasons alone.
+- **New code** — always use feature-folder (BC-first) structure.
+
+### Canonical module taxonomy (ADR-0004)
+
+BCs are grouped by domain area. Always place new code under the correct group:
+
+```
+Sales/Orders        Sales/Payments      Sales/Coupons       Sales/Fulfillment
+Inventory/Availability
+Presale/Checkout
+Catalog/Products
+Customer/CustomerProfile
+Identity/IAM
+Supporting/Currencies   Supporting/TimeManagement   Supporting/Communication
+Backoffice
+```
+
+### New code folder convention
+
+```
+ECommerceApp.Domain/<Group>/<BcName>/
+  <Aggregate>.cs
+  I<Aggregate>Repository.cs
+
+ECommerceApp.Application/<Group>/<BcName>/
+  Services/
+    <Service>.cs
+    I<Service>.cs
+  ViewModels/
+    <Name>Vm.cs
+  DTOs/
+    <Name>Dto.cs
+
+ECommerceApp.Infrastructure/<Group>/<BcName>/
+  Repositories/
+    <Aggregate>Repository.cs
+  Configurations/
+    <Aggregate>Configuration.cs
+```
+
+### Namespace convention for new code
+
+```csharp
+namespace ECommerceApp.Domain.Sales.Orders;
+namespace ECommerceApp.Application.Sales.Orders.Services;
+namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories;
+
+namespace ECommerceApp.Domain.Inventory.Availability;
+namespace ECommerceApp.Application.Supporting.Currencies.Services;
+```
+
+### Existing code namespaces (do not change)
+
+```csharp
+namespace ECommerceApp.Domain.Model;           // Domain/Model/*.cs
+namespace ECommerceApp.Application.Services.Orders;  // Application/Services/Orders/*.cs
+namespace ECommerceApp.Infrastructure.Repositories;  // Infrastructure/Repositories/*.cs
+```
+
+### Rules
+
+- When creating a **new BC** (Availability, Fulfillment, Communication, etc.) — use feature-folder structure from the start.
+- When adding a **new service or entity to an existing BC** that is not yet migrated — discuss with the team; prefer the new structure for greenfield additions.
+- When **migrating an existing BC** under a follow-up ADR — move all its files to the new structure as part of that ADR's migration plan.
+- DI registrations in `DependencyInjection.cs` must be updated for each new BC.

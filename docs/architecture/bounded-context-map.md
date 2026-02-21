@@ -1,52 +1,89 @@
-# Bounded Context Map � ECommerceApp
+﻿# Bounded Context Map — ECommerceApp
 
 > **Living document.** Update this map when BC boundaries change or new ADRs are accepted.
-> Strategic direction: [ADR-0002 � Post-Event-Storming Architectural Evolution Strategy](../adr/0002-post-event-storming-architectural-evolution-strategy.md)
+> Strategic direction: [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](../adr/0002-post-event-storming-architectural-evolution-strategy.md)
+> Module taxonomy: [ADR-0004 — Module Taxonomy and Bounded Context Grouping](../adr/0004-module-taxonomy-and-bounded-context-grouping.md)
+> Folder organization: [ADR-0003 — Feature-Folder Organization for New Bounded Context Code](../adr/0003-feature-folder-organization-for-new-bounded-context-code.md)
+
+---
+
+## Module taxonomy (target folder hierarchy)
+
+```
+CORE BUSINESS
+├── Sales
+│   ├── Orders          → Domain.Sales.Orders
+│   ├── Payments        → Domain.Sales.Payments
+│   ├── Coupons         → Domain.Sales.Coupons
+│   └── Fulfillment     → Domain.Sales.Fulfillment     [greenfield]
+│
+├── Inventory
+│   └── Availability    → Domain.Inventory.Availability [greenfield]
+│
+├── Presale
+│   └── Checkout        → Domain.Presale.Checkout       [greenfield]
+│
+├── Catalog
+│   └── Products        → Domain.Catalog.Products
+│
+├── Customer
+│   └── CustomerProfile → Domain.Customer.CustomerProfile
+│
+├── Identity
+│   └── IAM             → Domain.Identity.IAM
+│
+├── Supporting
+│   ├── Currencies      → Domain.Supporting.Currencies
+│   ├── TimeManagement  → Domain.Supporting.TimeManagement [greenfield]
+│   └── Communication   → Domain.Supporting.Communication  [greenfield]
+│
+└── Backoffice          → Application.Backoffice (no domain model)
+```
 
 ---
 
 ## Current state (as-is)
 
 All bounded contexts share a **single EF Core `Context`** and a **single MSSQL database**.
-BC boundaries are logical only � not enforced at the infrastructure level.
+BC boundaries are logical only — not enforced at the infrastructure level.
 
 ```
-???????????????????????????????????????????????????????????????????????
-?                     Single shared Context                           ?
-?                                                                     ?
-?  ???????????????  ????????????????  ????????????????????????????   ?
-?  ?   Catalog   ?  ?    Orders    ?  ?        Payments          ?   ?
-?  ?             ?  ?              ?  ?                          ?   ?
-?  ? Item        ?  ? Order        ?  ? Payment                  ?   ?
-?  ? Image       ?  ? OrderItem    ?  ? PaymentState (enum)       ?   ?
-?  ? Brand       ?  ?              ?  ?                          ?   ?
-?  ? Tag         ?  ????????????????  ????????????????????????????   ?
-?  ? Type        ?         ? direct svc call      ? direct svc call   ?
-?  ???????????????         ?                      ?                   ?
-?                   ????????????????  ????????????????????????????   ?
-?                   ?   Refunds    ?  ?        Coupons           ?   ?
-?                   ?              ?  ?                          ?   ?
-?                   ? Refund       ?  ? Coupon                   ?   ?
-?                   ?              ?  ? CouponType               ?   ?
-?                   ????????????????  ? CouponUsed               ?   ?
-?                                     ????????????????????????????   ?
-?  ???????????????  ????????????????  ????????????????????????????   ?
-?  ?  Customers  ?  ?  Currencies  ?  ?   Identity / IAM         ?   ?
-?  ?             ?  ?              ?  ?                          ?   ?
-?  ? Customer    ?  ? Currency     ?  ? ApplicationUser ??        ?   ?
-?  ? Address     ?  ? CurrencyRate ?  ? (leaks into Order.User)  ?   ?
-?  ? ContactDetail?  ? (NBP API)   ?  ?                          ?   ?
-?  ???????????????  ????????????????  ????????????????????????????   ?
-???????????????????????????????????????????????????????????????????????
+┌─────────────────────────────────────────────────────────────────────┐
+│                     Single shared Context                           │
+│                                                                     │
+│  ┌─────────────┐  ┌──────────────┐  ┌──────────────────────────┐   │
+│  │   Catalog   │  │    Orders    │  │        Payments          │   │
+│  │             │  │              │  │                          │   │
+│  │ Item        │  │ Order        │  │ Payment                  │   │
+│  │ Image       │  │ OrderItem    │  │ PaymentState (enum)       │   │
+│  │ Brand       │  │              │  │                          │   │
+│  │ Tag         │  └──────┬───────┘  └──────────┬───────────────┘   │
+│  │ Type        │         │ direct svc call      │ direct svc call   │
+│  └─────────────┘         ▼                      ▼                   │
+│                   ┌──────────────┐  ┌──────────────────────────┐   │
+│                   │   Refunds    │  │        Coupons           │   │
+│                   │              │  │                          │   │
+│                   │ Refund       │  │ Coupon                   │   │
+│                   │              │  │ CouponType               │   │
+│                   └──────────────┘  │ CouponUsed               │   │
+│                                     └──────────────────────────┘   │
+│  ┌─────────────┐  ┌──────────────┐  ┌──────────────────────────┐   │
+│  │  Customers  │  │  Currencies  │  │   Identity / IAM         │   │
+│  │             │  │              │  │                          │   │
+│  │ Customer    │  │ Currency     │  │ ApplicationUser ⚠️        │   │
+│  │ Address     │  │ CurrencyRate │  │ (leaks into Order.User)  │   │
+│  │ ContactDetail│  │ (NBP API)   │  │                          │   │
+│  └─────────────┘  └──────────────┘  └──────────────────────────┘   │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Current coupling hotspots
 
 | Coupling | Location | Problem |
 |---|---|---|
-| `PaymentHandler` calls `OrderService` | `Application/Services/Payments/PaymentHandler.cs` | Cross-BC synchronous call � Payment controls Order state |
-| `Order.User` navigation ? `ApplicationUser` | `Domain/Model/Order.cs` | IAM concept leaks into Orders BC |
-| `Order.IsPaid = true` set externally | `Application/Services/Payments/PaymentHandler.cs` | Order state mutated from outside � no encapsulation |
+| `PaymentHandler` calls `OrderService` | `Application/Services/Payments/PaymentHandler.cs` | Cross-BC synchronous call — Payment controls Order state |
+| `Order.User` navigation → `ApplicationUser` | `Domain/Model/Order.cs` | IAM concept leaks into Orders BC |
+| `Order.IsPaid = true` set externally | `Application/Services/Payments/PaymentHandler.cs` | Order state mutated from outside — no encapsulation |
 | All aggregates in one `Context` | `Infrastructure/Database/Context.cs` | No persistence-level BC boundary |
 | `CouponHandler` reaches into `Order.Cost` | `Application/Services/Coupons/CouponHandler.cs` | Coupons BC writes directly to Orders aggregate |
 
@@ -58,38 +95,38 @@ BC boundaries enforced via **per-BC DbContext interfaces** (logical separation, 
 Aggregates own their state transitions. Cross-BC communication via domain events.
 
 ```
-?????????????????     events      ?????????????????     events     ????????????????
-?    Catalog    ? ?????????????? ?     Orders    ? ????????????? ?   Payments   ?
-?               ?                 ?               ?                ?              ?
-? IItemDbContext?                 ? IOrderDbCtx   ?                ? IPaymentDbCtx?
-?               ?                 ?               ?                ?              ?
-? Item (rich)   ?                 ? Order (rich)  ?                ? Payment      ?
-? Brand/Tag/Type?                 ? OrderItem     ?                ? (state mach.)?
-?????????????????                 ?????????????????                ????????????????
-                                          ? events                         ? events
-                                          ?                                ?
-                                  ?????????????????                ????????????????
-                                  ?    Refunds    ?                ?   Coupons    ?
-                                  ?               ?                ?              ?
-                                  ? IRefundDbCtx  ?                ? ICouponDbCtx ?
-                                  ? Refund        ?                ? Coupon       ?
-                                  ?????????????????                ????????????????
+┌───────────────┐     events      ┌───────────────┐     events     ┌──────────────┐
+│    Catalog    │ ─────────────► │     Orders    │ ────────────► │   Payments   │
+│               │                 │               │                │              │
+│ IItemDbContext│                 │ IOrderDbCtx   │                │ IPaymentDbCtx│
+│               │                 │               │                │              │
+│ Item (rich)   │                 │ Order (rich)  │                │ Payment      │
+│ Brand/Tag/Type│                 │ OrderItem     │                │ (state mach.)│
+└───────────────┘                 └───────┬───────┘                └──────┬───────┘
+                                          │ events                         │ events
+                                          ▼                                ▼
+                                  ┌───────────────┐                ┌──────────────┐
+                                  │    Refunds    │                │   Coupons    │
+                                  │               │                │              │
+                                  │ IRefundDbCtx  │                │ ICouponDbCtx │
+                                  │ Refund        │                │ Coupon       │
+                                  └───────────────┘                └──────────────┘
 
-?????????????????  ????????????????????  ????????????????????????????????????????
-?   Customers   ?  ?   Currencies     ?  ?           Identity / IAM             ?
-?               ?  ?                  ?  ?                                      ?
-? ICustomerDbCtx?  ? ICurrencyDbCtx   ?  ? No navigation props in domain models ?
-? Customer      ?  ? Currency         ?  ? Only string UserId references        ?
-? Address       ?  ? CurrencyRate     ?  ?                                      ?
-?????????????????  ????????????????????  ????????????????????????????????????????
+┌───────────────┐  ┌──────────────────┐  ┌──────────────────────────────────────┐
+│   Customers   │  │   Currencies     │  │           Identity / IAM             │
+│               │  │                  │  │                                      │
+│ ICustomerDbCtx│  │ ICurrencyDbCtx   │  │ No navigation props in domain models │
+│ Customer      │  │ Currency         │  │ Only string UserId references        │
+│ Address       │  │ CurrencyRate     │  │                                      │
+└───────────────┘  └──────────────────┘  └──────────────────────────────────────┘
 ```
 
-### Target rules (per ADR-0002 � 8)
+### Target rules (per ADR-0002 § 8)
 
-- Each BC owns its `DbContext` interface � no cross-BC `DbSet` access
+- Each BC owns its `DbContext` interface — no cross-BC `DbSet` access
 - Cross-BC integration only via domain events or well-defined API contracts
 - `ApplicationUser` never appears as a navigation property in any domain model
-- `Payment` never controls `Order` lifecycle � events only
+- `Payment` never controls `Order` lifecycle — events only
 - `Availability` / inventory is an explicit domain participant, never a side effect
 
 ---
@@ -98,14 +135,14 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 
 | Bounded Context | Type | Pattern | Status |
 |---|---|---|---|
-| **Orders** | Behavioral aggregate | Rich domain model ? target | ?? Currently anemic |
-| **Payments** | Behavioral aggregate | Rich domain model + state machine ? target | ?? Currently anemic |
-| **Refunds** | Behavioral aggregate | Rich domain model ? target | ?? Currently anemic |
-| **Catalog** (`Item`) | Mixed | Handler pattern for complex ops | ?? Partially rich (`Item` has some methods) |
-| **Coupons** | Reference + behavior | `AbstractService` + `CouponHandler` | ?? Acceptable for now |
-| **Customers** | Reference | `AbstractService` | ? Acceptable |
-| **Currencies** | Reference + external | `AbstractService` + NBP integration | ? Acceptable |
-| **Identity / IAM** | Infrastructure | ASP.NET Core Identity | ? Keep isolated |
+| **Orders** | Behavioral aggregate | Rich domain model → target | 🔴 Currently anemic |
+| **Payments** | Behavioral aggregate | Rich domain model + state machine → target | 🔴 Currently anemic |
+| **Refunds** | Behavioral aggregate | Rich domain model → target | 🔴 Currently anemic |
+| **Catalog** (`Item`) | Mixed | Handler pattern for complex ops | 🟡 Partially rich (`Item` has some methods) |
+| **Coupons** | Reference + behavior | `AbstractService` + `CouponHandler` | 🟡 Acceptable for now |
+| **Customers** | Reference | `AbstractService` | ✅ Acceptable |
+| **Currencies** | Reference + external | `AbstractService` + NBP integration | ✅ Acceptable |
+| **Identity / IAM** | Infrastructure | ASP.NET Core Identity | ✅ Keep isolated |
 
 ---
 
@@ -113,18 +150,17 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 
 | Task | Target ADR | Status |
 |---|---|---|
-| Remove `ApplicationUser` nav from `Order` | ADR-0002 � 8 | ? Not started |
-| `Order.MarkAsPaid()` � own state transition | ADR-0008 | ? Not started |
-| `Payment` factory + private setters | ADR-0008 | ? Not started |
-| Per-BC `DbContext` interfaces | ADR-0009 | ? Not started |
-| `PaymentHandler` ? event-based coordination | ADR-0004 | ? Not started |
-| `CouponHandler` ? no direct `Order.Cost` write | ADR-0002 � 9 | ? Not started |
+| Remove `ApplicationUser` nav from `Order` | ADR-0002 § 8 | ⬜ Not started |
+| `Order.MarkAsPaid()` — own state transition | ADR-0008 | ⬜ Not started |
+| `Payment` factory + private setters | ADR-0008 | ⬜ Not started |
+| Per-BC `DbContext` interfaces | ADR-0009 | ⬜ Not started |
+| `PaymentHandler` → event-based coordination | ADR-0004 | ⬜ Not started |
+| `CouponHandler` → no direct `Order.Cost` write | ADR-0002 § 9 | ⬜ Not started |
 
 ---
 
 ## References
 
-- [ADR-0001 � Project Overview and Technology Stack](../adr/0001-project-overview-and-technology-stack.md)
-- [ADR-0002 � Post-Event-Storming Architectural Evolution Strategy](../adr/0002-post-event-storming-architectural-evolution-strategy.md)
-- [`.github/instructions/dotnet-instructions.md`](../../.github/instructions/dotnet-instructions.md) � 16
-- Reference implementation: [DomainDrivers/dd-csharp](https://github.com/DomainDrivers/dd-csharp) � per-module DbContext interfaces, BC facade pattern
+- [ADR-0001 — Project Overview and Technology Stack](../adr/0001-project-overview-and-technology-stack.md)
+- [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](../adr/0002-post-event-storming-architectural-evolution-strategy.md)
+- [`.github/instructions/dotnet-instructions.md`](../../.github/instructions/dotnet-instructions.md) § 16
