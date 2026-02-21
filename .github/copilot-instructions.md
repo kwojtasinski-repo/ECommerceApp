@@ -43,7 +43,14 @@ Frontend notes (important for agents):
 This file sets repository-level rules for automation agents, Copilot, and contributors.
 - Purpose: ensure safe, consistent, and reviewable changes performed by humans or automation.
 - Scope: guidance for code changes, CI, tests, ADRs, and upgrade procedures relevant to this .NET MVC project.
-- Per-stack detailed instructions (if present) live under `.github/instructions/` (example: `.github/instructions/dotnet-instructions.md`, `.github/instructions/razorpages-instructions.md`).
+- Per-stack detailed instructions live under `.github/instructions/`. Current files (always check for new additions):
+- `.github/instructions/dotnet-instructions.md` — .NET architecture, services, handlers, testing, DI, auth.
+- `.github/instructions/web-api-instructions.md` — Web API controllers, DTOs, error handling, integration tests.
+- `.github/instructions/razorpages-instructions.md` — MVC controllers, Views, Razor Pages (Identity area), forms.
+- `.github/instructions/frontend-instructions.md` — LibMan, JS modules, require.js, UI text rules.
+- `.github/instructions/efcore-instructions.md` — EF Core tracking, transactions, migrations, seeding.
+- `.github/instructions/migration-policy.md` — DB migration approval process and checklist.
+- `.github/instructions/testing-instructions.md` — Unit and integration test patterns, BaseTest, Flurl, Shouldly.
 
 ## 3. AI developer profile (expected behavior)
 - Act as a senior .NET developer experienced with DDD, SOLID, and pragmatic TDD.
@@ -54,6 +61,7 @@ This file sets repository-level rules for automation agents, Copilot, and contri
 
 ## 4. Key authoritative rules (do not bypass)
 - Always read and follow applicable ADRs in `/docs/adr` before making design or architecture changes.
+- When creating a new ADR, always copy and fill `.github/templates/adr.template.md` — never create ADRs from scratch. Save to `/docs/adr/XXXX-short-title.md`.
 - Always read applicable per-stack instructions under `.github/instructions/` (if they exist) before writing code for that stack.
 - Never assume or hard-code framework or package versions. If a change requires a specific SDK/package version, ask the human for confirmation.
 - Do not perform destructive actions or operations against production systems.
