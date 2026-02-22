@@ -1,11 +1,11 @@
-﻿using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 
-namespace ECommerceApp.Infrastructure.Auth
+namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
 {
     internal sealed class UserManagerInternal<TUser> : UserManager<TUser>, IUserManager<TUser>
         where TUser : class

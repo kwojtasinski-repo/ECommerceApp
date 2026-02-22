@@ -1,4 +1,4 @@
-﻿namespace ECommerceApp.Infrastructure.Auth
+namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
 {
     internal sealed class AuthOptions
     {

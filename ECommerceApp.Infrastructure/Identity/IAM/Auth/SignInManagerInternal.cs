@@ -1,11 +1,11 @@
-﻿using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Interfaces;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace ECommerceApp.Infrastructure.Auth
+namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
 {
     internal sealed class SignInManagerInternal<TUser> : SignInManager<TUser>, ISignInManager<TUser>
         where TUser : class

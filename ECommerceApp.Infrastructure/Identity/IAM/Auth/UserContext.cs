@@ -1,8 +1,8 @@
-﻿using ECommerceApp.Application;
+using ECommerceApp.Application;
 using ECommerceApp.Application.Interfaces;
 using Microsoft.AspNetCore.Http;
 
-namespace ECommerceApp.Infrastructure.Auth
+namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
 {
     internal sealed class UserContext : IUserContext
     {

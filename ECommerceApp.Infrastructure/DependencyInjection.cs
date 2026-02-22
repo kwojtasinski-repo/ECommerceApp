@@ -1,5 +1,5 @@
-﻿using ECommerceApp.Infrastructure.Auth;
-using ECommerceApp.Infrastructure.Database;
+﻿using ECommerceApp.Infrastructure.Database;
+using ECommerceApp.Infrastructure.Identity.IAM.Auth;
 using ECommerceApp.Infrastructure.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,7 +12,7 @@ namespace ECommerceApp.Infrastructure
         {
             services.AddDatabase(configuration);
             services.AddRepositories();
-            services.AddAuth(configuration);
+            services.AddIamInfrastructure(configuration);
             return services;
         }
     }

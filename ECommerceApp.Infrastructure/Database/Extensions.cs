@@ -1,6 +1,4 @@
-﻿using ECommerceApp.Domain.Model;
-using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,10 +20,6 @@ namespace ECommerceApp.Infrastructure.Database
                                                    || eventId == RelationalEventId.ConnectionClosed)
                        .EnableSensitiveDataLogging()
                 );
-
-            services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-                     .AddRoles<IdentityRole>()
-                     .AddEntityFrameworkStores<Context>();
 
             services.AddHostedService<DbInitializer>();
             services.AddScoped<IDatabaseInitializer, DatabaseInitalizer>();

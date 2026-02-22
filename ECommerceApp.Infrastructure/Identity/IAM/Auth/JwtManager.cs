@@ -1,4 +1,4 @@
-﻿using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Domain.Model;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -9,7 +9,7 @@ using System;
 using System.Text;
 using System.Linq;
 
-namespace ECommerceApp.Infrastructure.Auth
+namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
 {
     internal class JwtManager : IJwtManager
     {
