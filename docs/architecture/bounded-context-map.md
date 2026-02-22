@@ -154,6 +154,20 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 
 | Task | Target ADR | Status |
 |---|---|---|
+| `IamDbContext` + `iam.*` schema | ADR-0002 § 8 | ✅ Done |
+| Feature flag `UseIamStore` (parallel change switch) | ADR-0002 § 8 | ✅ Done |
+| Application services: `IAuthenticationService`, `IUserManagementService` | ADR-0002 § 8 | ✅ Done |
+| Infrastructure: JWT, UserManager, UserContext | ADR-0002 § 8 | ✅ Done |
+| Unit tests: `AuthenticationServiceTests`, `UserManagementServiceTests` | ADR-0002 § 8 | ✅ Done |
+| New `ApplicationUser` in `Domain/Identity/IAM/` | ADR-0002 § 8 | ✅ Done |
+| Migrate `LoginController` (API) → new `IAuthenticationService` | ADR-0002 § 8 | ⬜ Not started |
+| Migrate `UserManagementController` (Web) → `IUserManagementService` | ADR-0002 § 8 | ⬜ Not started |
+| Flip `UseIamStore: true` — atomic switch | ADR-0002 § 8 | ⬜ Not started |
+| Remove old `IUserService` / `UserService` | ADR-0002 § 8 | ⬜ After switch |
+| Remove old `IAuthenticationService` / `AuthenticationService` | ADR-0002 § 8 | ⬜ After switch |
+| Retire `Domain/Model/ApplicationUser.cs` | ADR-0002 § 8 | ⬜ After switch |
+| IAM integration tests | ADR-0002 § 8 | ⬜ Not started |
+| Refresh token implementation | 🔵 Deferred — separate ADR | |
 | Remove `ApplicationUser` nav from `Order` | ADR-0002 § 8 — part of Sales/Orders migration | ⬜ Not started |
 | `Order.MarkAsPaid()` — own state transition | ADR-0008 | ⬜ Not started |
 | `Payment` factory + private setters | ADR-0008 | ⬜ Not started |
