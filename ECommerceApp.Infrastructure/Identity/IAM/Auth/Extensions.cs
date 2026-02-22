@@ -2,6 +2,7 @@ using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -11,9 +12,22 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
     {
         public static IServiceCollection AddIamInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-                    .AddRoles<IdentityRole>()
-                    .AddEntityFrameworkStores<Context>();
+            var iamFeatureOptions = configuration.GetSection("Iam").Get<IamFeatureOptions>() ?? new IamFeatureOptions();
+
+            services.AddDbContext<IamDbContext>(options =>
+                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+
+            var identityBuilder = services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+                    .AddRoles<IdentityRole>();
+
+            if (iamFeatureOptions.UseIamStore)
+            {
+                identityBuilder.AddEntityFrameworkStores<IamDbContext>();
+            }
+            else
+            {
+                identityBuilder.AddEntityFrameworkStores<Context>();
+            }
 
             return services
                 .AddScoped(typeof(ISignInManager<>), typeof(SignInManagerInternal<>))

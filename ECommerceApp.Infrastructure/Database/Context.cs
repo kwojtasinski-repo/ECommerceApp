@@ -36,7 +36,9 @@ namespace ECommerceApp.Infrastructure.Database
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-            builder.ApplyConfigurationsFromAssembly(GetType().Assembly);
+            builder.ApplyConfigurationsFromAssembly(
+                GetType().Assembly,
+                t => !t.Namespace.StartsWith("ECommerceApp.Infrastructure.Identity.IAM"));
             builder.ApplySeed();
             builder.ApplyPrimaryKeyGeneration();
         }
