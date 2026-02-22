@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
-VisualStudioVersion = 18.2.11415.280 d18.0
+VisualStudioVersion = 18.2.11415.280
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ECommerceApp.Web", "ECommerceApp.Web\ECommerceApp.Web.csproj", "{37AFE261-8798-4F38-AB9E-E24F319C7BE7}"
 EndProject
@@ -70,6 +70,17 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "architecture", "architectur
 		docs\architecture\bounded-context-map.md = docs\architecture\bounded-context-map.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "prompts", "prompts", "{BAC45AC5-6905-4FAF-956C-CD73D03DB4BD}"
+	ProjectSection(SolutionItems) = preProject
+		.github\prompts\bc-analysis.md = .github\prompts\bc-analysis.md
+		.github\prompts\bc-implementation.md = .github\prompts\bc-implementation.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "patterns", "patterns", "{DB95CC21-7869-4EAC-8EB3-F5706D958E0A}"
+	ProjectSection(SolutionItems) = preProject
+		docs\patterns\implementation-patterns.md = docs\patterns\implementation-patterns.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -126,6 +137,8 @@ Global
 		{D2867909-022A-479A-A6F9-3CF92C8F518C} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{25B91C37-ECC3-46DC-8502-C91F85A1F7BC} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 		{5EC11768-8E47-4C89-9EBC-78E600311851} = {908C6C00-47A3-455F-82C8-5BBECB045911}
+		{BAC45AC5-6905-4FAF-956C-CD73D03DB4BD} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{DB95CC21-7869-4EAC-8EB3-F5706D958E0A} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C833E166-660D-4E9D-85E1-0ED811E2828E}

@@ -148,13 +148,17 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 
 ## Refactoring progress tracker
 
+> **Strategy: Parallel Change** — new BC built alongside old, existing behavior never broken.
+> Switch happens atomically per BC only when new implementation is complete and all tests pass.
+> Cross-BC issues (e.g. `ApplicationUser` in `Order.cs`) resolved as part of owning BC's migration — not as standalone fixes.
+
 | Task | Target ADR | Status |
 |---|---|---|
-| Remove `ApplicationUser` nav from `Order` | ADR-0002 § 8 | ⬜ Not started |
+| Remove `ApplicationUser` nav from `Order` | ADR-0002 § 8 — part of Sales/Orders migration | ⬜ Not started |
 | `Order.MarkAsPaid()` — own state transition | ADR-0008 | ⬜ Not started |
 | `Payment` factory + private setters | ADR-0008 | ⬜ Not started |
 | Per-BC `DbContext` interfaces | ADR-0009 | ⬜ Not started |
-| `PaymentHandler` → event-based coordination | ADR-0004 | ⬜ Not started |
+| `PaymentHandler` → event-based coordination | Planned ADR-0004 (Saga) | ⬜ Not started |
 | `CouponHandler` → no direct `Order.Cost` write | ADR-0002 § 9 | ⬜ Not started |
 
 ---

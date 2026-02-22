@@ -10,7 +10,20 @@ Purpose
 
 Unit tests
 - Use `xUnit`, `Moq`, and `FluentAssertions`.
-- Name tests using the `given_<context>_when_<action>_should_<expected_result>` pattern.
+- Name tests using the `Method_Conditions_ExpectedResult` pattern (PascalCase, underscores as separators between the three parts):
+  ```
+  Method          — the method or operation under test
+  Conditions      — the scenario or input state (concise, no spaces)
+  ExpectedResult  — what should happen
+  ```
+  Examples:
+  ```csharp
+  public void Login_InvalidPassword_ShouldReturnInvalidCredentials()
+  public void PlaceOrder_EmptyCart_ShouldThrowBusinessException()
+  public void MarkAsPaid_AlreadyPaidOrder_ShouldThrowBusinessException()
+  public void CalculateCost_WithActiveDiscount_ShouldApplyDiscountRate()
+  ```
+- **Existing tests** use the legacy `given_<context>_when_<action>_should_<result>` pattern — do NOT rename them. New tests always use `Method_Conditions_ExpectedResult`.
 - Keep unit tests fast and deterministic — avoid I/O and external services.
 - Use in-memory repositories from `UnitTests/Common/` for data-layer mocking.
 - Use `BaseTest` for shared AutoMapper configuration.
@@ -28,7 +41,7 @@ Pattern 2: API controller integration tests
 - Use `_factory.GetAuthenticatedClient()` to get an authenticated **Flurl** HTTP client.
 - Use **Shouldly** for assertions (`ShouldBe`, `ShouldNotBeNull`, `ShouldBeGreaterThan`, etc.).
 - Tests hit real HTTP endpoints and verify full request/response pipeline.
-- Test naming follows the same `given_<context>_when_<action>_should_<expected_result>` pattern.
+- Test naming follows the same `Method_Conditions_ExpectedResult` pattern.
 
 CI
 - CI must run unit and integration tests on PRs.
