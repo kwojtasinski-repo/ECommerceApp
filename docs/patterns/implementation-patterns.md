@@ -116,50 +116,92 @@ internal sealed class OrderService : IOrderService
 ## 3. Value Object
 
 **When**: a concept defined entirely by its data, with no identity and immutable state.
-Examples: `Money`, `TimeSlot`, `Address`, `Discount`.
+Examples: `Street`, `ZipCode`, `Email`, `Money`, `Discount`. See **ADR-0006**.
 
 ```csharp
-// Domain/<Group>/<BcName>/Money.cs
-public record Money(decimal Amount, string Currency)
+// Domain/<Group>/<BcName>/ValueObjects/Street.cs
+public sealed record Street
 {
-    public static Money Zero(string currency) => new(0, currency);
+    public string Value { get; }
 
-    public Money Add(Money other)
+    public Street(string value)
     {
-        if (Currency != other.Currency)
-            throw new BusinessException("Currency mismatch");
-        return new Money(Amount + other.Amount, Currency);
+        var trimmed = value?.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+            throw new DomainException("Street is required.");
+        if (trimmed.Length > 200)
+            throw new DomainException("Street must not exceed 200 characters.");
+        Value = trimmed;
     }
+
+    public override string ToString() => Value;
 }
 ```
 
+EF Core `HasConversion` in the owned-type or entity configuration:
+```csharp
+builder.Property(x => x.Street)
+       .HasConversion(x => x.Value, v => new Street(v))
+       .HasMaxLength(200)
+       .IsRequired();
+```
+
+AutoMapper global converter (register once in `MappingProfile`):
+```csharp
+CreateMap<Street, string>().ConvertUsing(x => x.Value);
+```
+
 **Rules:**
-- Always `record` — never `class`.
-- No setters — produce new instances on change.
-- Self-validating: throw `BusinessException` in factory/constructor for invalid state.
-- For value objects with collections, override `Equals` and `GetHashCode` manually
-  (record equality does not handle `ISet<T>` / `IList<T>` correctly).
+- Always `sealed record` — never `class` or non-sealed record.
+- No public setters — immutable after construction.
+- Throw `DomainException` (not `ArgumentException` or `BusinessException`) for invariant violations.
+  Each BC defines its own `DomainException`; move to `ECommerceApp.Domain.Shared` when shared by two or more BCs.
+- Trim and normalise string input in the constructor (e.g. `Trim()`, `ToUpperInvariant()`).
+- Override `ToString()` to return the human-readable value.
+- For VOs with collections, override `Equals` / `GetHashCode` manually (record equality does not handle `ISet<T>` / `IList<T>` correctly).
 
 ---
 
 ## 4. Strongly-Typed ID
 
-**When**: to prevent mixing IDs from different aggregates at compile time.
+**When**: to prevent mixing IDs from different aggregates at compile time. See **ADR-0006**.
+
+All typed IDs inherit from the shared base in `ECommerceApp.Domain.Shared`:
+
+```csharp
+// Domain/Shared/TypedId.cs  (shared — do not copy per BC)
+public abstract record TypedId<T>(T Value)
+{
+    public static implicit operator T(TypedId<T> typedId) => typedId.Value;
+    public override string ToString() => Value?.ToString() ?? string.Empty;
+}
+```
+
+Each aggregate root defines its own sealed record:
 
 ```csharp
 // Domain/<Group>/<BcName>/OrderId.cs
-public record OrderId(int Value)
-{
-    public static OrderId Of(int value) => new(value);
-}
+using ECommerceApp.Domain.Shared;
+
+public sealed record OrderId(int Value) : TypedId<int>(Value);
 ```
 
 EF Core value converter in `IEntityTypeConfiguration<T>`:
 ```csharp
 builder.Property(x => x.Id)
-    .HasConversion(id => id.Value, raw => new OrderId(raw));
+       .HasConversion(x => x.Value, v => new OrderId(v))
+       .ValueGeneratedOnAdd();
 builder.HasKey(x => x.Id);
 ```
+
+AutoMapper global converter (register once in `MappingProfile`):
+```csharp
+CreateMap<OrderId, int>().ConvertUsing(x => x.Value);
+```
+
+> **Id property on aggregate**: use `{ get; private set; }` — NOT `{ get; }` (init-only).
+> EF Core needs to assign the database-generated value via reflection after `INSERT`.
+> `{ get; }` breaks `ValueGeneratedOnAdd`.
 
 > **Note for .NET 7 / MSSQL**: `int` IDs remain preferred over `Guid`
 > to align with the existing `BaseEntity` pattern and MSSQL identity columns.

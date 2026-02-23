@@ -61,6 +61,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "adr", "adr", "{25B91C37-ECC
 		docs\adr\0002-post-event-storming-architectural-evolution-strategy.md = docs\adr\0002-post-event-storming-architectural-evolution-strategy.md
 		docs\adr\0003-feature-folder-organization-for-new-bounded-context-code.md = docs\adr\0003-feature-folder-organization-for-new-bounded-context-code.md
 		docs\adr\0004-module-taxonomy-and-bounded-context-grouping.md = docs\adr\0004-module-taxonomy-and-bounded-context-grouping.md
+		docs\adr\0005-accountprofile-bc-userprofile-aggregate-design.md = docs\adr\0005-accountprofile-bc-userprofile-aggregate-design.md
+		docs\adr\0006-typedid-and-value-objects-as-shared-domain-primitives.md = docs\adr\0006-typedid-and-value-objects-as-shared-domain-primitives.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ECommerce", "ECommerce", "{049E647F-D15D-4AFB-8AE6-DB2363C9F4D4}"

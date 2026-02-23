@@ -1,4 +1,4 @@
-namespace ECommerceApp.Domain.AccountProfile
+namespace ECommerceApp.Domain.Shared
 {
     public abstract record TypedId<T>(T Value)
     {
