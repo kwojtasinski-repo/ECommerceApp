@@ -1,20 +1,20 @@
+using ECommerceApp.Domain.AccountProfile.ValueObjects;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace ECommerceApp.Domain.AccountProfile
 {
     public class UserProfile
     {
-        public int Id { get; private set; }
+        public UserProfileId Id { get; private set; } = new UserProfileId(0);
         public string UserId { get; private set; } = default!;
         public string FirstName { get; private set; } = default!;
         public string LastName { get; private set; } = default!;
         public bool IsCompany { get; private set; }
-        public string? NIP { get; private set; }
-        public string? CompanyName { get; private set; }
-        public string Email { get; private set; } = default!;
-        public string PhoneNumber { get; private set; } = default!;
+        public Nip? NIP { get; private set; }
+        public CompanyName? CompanyName { get; private set; }
+        public Email Email { get; private set; } = default!;
+        public PhoneNumber PhoneNumber { get; private set; } = default!;
 
         private readonly List<Address> _addresses = new();
         public IReadOnlyList<Address> Addresses => _addresses.AsReadOnly();
@@ -50,13 +50,13 @@ namespace ECommerceApp.Domain.AccountProfile
                 FirstName = firstName,
                 LastName = lastName,
                 IsCompany = isCompany,
-                NIP = nip,
-                CompanyName = companyName,
-                Email = email,
-                PhoneNumber = phoneNumber
+                NIP = nip != null ? new Nip(nip) : null,
+                CompanyName = companyName != null ? new CompanyName(companyName) : null,
+                Email = new Email(email),
+                PhoneNumber = new PhoneNumber(phoneNumber)
             };
 
-            var @event = new UserProfileCreated(profile.Id, userId, DateTime.UtcNow);
+            var @event = new UserProfileCreated(profile.Id.Value, userId, DateTime.UtcNow);
             return (profile, @event);
         }
 
@@ -77,8 +77,8 @@ namespace ECommerceApp.Domain.AccountProfile
             FirstName = firstName;
             LastName = lastName;
             IsCompany = isCompany;
-            NIP = nip;
-            CompanyName = companyName;
+            NIP = nip != null ? new Nip(nip) : null;
+            CompanyName = companyName != null ? new CompanyName(companyName) : null;
         }
 
         public void UpdateContactInfo(string email, string phoneNumber)
@@ -88,20 +88,19 @@ namespace ECommerceApp.Domain.AccountProfile
             if (string.IsNullOrWhiteSpace(phoneNumber))
                 throw new ArgumentException("PhoneNumber cannot be empty", nameof(phoneNumber));
 
-            Email = email;
-            PhoneNumber = phoneNumber;
+            Email = new Email(email);
+            PhoneNumber = new PhoneNumber(phoneNumber);
         }
 
         public void AddAddress(
             string street,
             string buildingNumber,
             int? flatNumber,
-            int zipCode,
+            string zipCode,
             string city,
             string country)
         {
-            var address = Address.Create(street, buildingNumber, flatNumber, zipCode, city, country);
-            _addresses.Add(address);
+            _addresses.Add(new Address(street, buildingNumber, flatNumber, zipCode, city, country));
         }
 
         public bool UpdateAddress(
@@ -109,25 +108,25 @@ namespace ECommerceApp.Domain.AccountProfile
             string street,
             string buildingNumber,
             int? flatNumber,
-            int zipCode,
+            string zipCode,
             string city,
             string country)
         {
-            var address = _addresses.FirstOrDefault(a => a.Id == addressId);
-            if (address is null)
+            var idx = _addresses.FindIndex(a => a.Id == new AddressId(addressId));
+            if (idx < 0)
                 return false;
 
-            address.Update(street, buildingNumber, flatNumber, zipCode, city, country);
+            _addresses[idx] = new Address(new AddressId(addressId), street, buildingNumber, flatNumber, zipCode, city, country);
             return true;
         }
 
         public bool RemoveAddress(int addressId)
         {
-            var address = _addresses.FirstOrDefault(a => a.Id == addressId);
-            if (address is null)
+            var idx = _addresses.FindIndex(a => a.Id == new AddressId(addressId));
+            if (idx < 0)
                 return false;
 
-            _addresses.Remove(address);
+            _addresses.RemoveAt(idx);
             return true;
         }
     }

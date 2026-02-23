@@ -1,74 +1,44 @@
-using System;
+using ECommerceApp.Domain.AccountProfile.ValueObjects;
 
 namespace ECommerceApp.Domain.AccountProfile
 {
-    public class Address
+    public sealed record Address
     {
-        public int Id { get; private set; }
-        public string Street { get; private set; } = default!;
-        public string BuildingNumber { get; private set; } = default!;
-        public int? FlatNumber { get; private set; }
-        public int ZipCode { get; private set; }
-        public string City { get; private set; } = default!;
-        public string Country { get; private set; } = default!;
+        public AddressId Id { get; private set; } = new AddressId(0);
+        public Street Street { get; }
+        public BuildingNumber BuildingNumber { get; }
+        public FlatNumber? FlatNumber { get; }
+        public ZipCode ZipCode { get; }
+        public City City { get; }
+        public Country Country { get; }
 
-        private Address() { }
-
-        internal static Address Create(
-            string street,
-            string buildingNumber,
-            int? flatNumber,
-            int zipCode,
-            string city,
-            string country)
+        // Used by EF Core constructor injection (parameters match property names/types after value converters)
+        private Address(AddressId id, Street street, BuildingNumber buildingNumber, FlatNumber? flatNumber, ZipCode zipCode, City city, Country country)
         {
-            if (string.IsNullOrWhiteSpace(street))
-                throw new ArgumentException("Street cannot be empty", nameof(street));
-            if (string.IsNullOrWhiteSpace(buildingNumber))
-                throw new ArgumentException("BuildingNumber cannot be empty", nameof(buildingNumber));
-            if (zipCode <= 0)
-                throw new ArgumentException("ZipCode must be positive", nameof(zipCode));
-            if (string.IsNullOrWhiteSpace(city))
-                throw new ArgumentException("City cannot be empty", nameof(city));
-            if (string.IsNullOrWhiteSpace(country))
-                throw new ArgumentException("Country cannot be empty", nameof(country));
-
-            return new Address
-            {
-                Street = street,
-                BuildingNumber = buildingNumber,
-                FlatNumber = flatNumber,
-                ZipCode = zipCode,
-                City = city,
-                Country = country
-            };
-        }
-
-        internal void Update(
-            string street,
-            string buildingNumber,
-            int? flatNumber,
-            int zipCode,
-            string city,
-            string country)
-        {
-            if (string.IsNullOrWhiteSpace(street))
-                throw new ArgumentException("Street cannot be empty", nameof(street));
-            if (string.IsNullOrWhiteSpace(buildingNumber))
-                throw new ArgumentException("BuildingNumber cannot be empty", nameof(buildingNumber));
-            if (zipCode <= 0)
-                throw new ArgumentException("ZipCode must be positive", nameof(zipCode));
-            if (string.IsNullOrWhiteSpace(city))
-                throw new ArgumentException("City cannot be empty", nameof(city));
-            if (string.IsNullOrWhiteSpace(country))
-                throw new ArgumentException("Country cannot be empty", nameof(country));
-
+            Id = id;
             Street = street;
             BuildingNumber = buildingNumber;
             FlatNumber = flatNumber;
             ZipCode = zipCode;
             City = city;
             Country = country;
+        }
+
+        // Used by aggregate UpdateAddress to preserve AddressId — EF Core issues UPDATE not DELETE+INSERT
+        internal Address(AddressId id, string street, string buildingNumber, int? flatNumber, string zipCode, string city, string country)
+            : this(street, buildingNumber, flatNumber, zipCode, city, country)
+        {
+            Id = id;
+        }
+
+        public Address(string street, string buildingNumber, int? flatNumber, string zipCode, string city, string country)
+        {
+            Street = new Street(street);
+            BuildingNumber = new BuildingNumber(buildingNumber);
+            FlatNumber = flatNumber.HasValue ? new FlatNumber(flatNumber.Value) : null;
+            ZipCode = new ZipCode(zipCode);
+            City = new City(city);
+            Country = new Country(country);
         }
     }
 }

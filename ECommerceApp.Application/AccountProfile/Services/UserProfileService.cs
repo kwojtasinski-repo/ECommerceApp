@@ -31,12 +31,12 @@ namespace ECommerceApp.Application.AccountProfile.Services
                 dto.Email,
                 dto.PhoneNumber);
 
-            return await _repository.AddAsync(profile);
+            return (await _repository.AddAsync(profile)).Value;
         }
 
         public async Task<bool> UpdatePersonalInfoAsync(UpdateUserProfileDto dto)
         {
-            var profile = await _repository.GetByIdAsync(dto.Id);
+            var profile = await _repository.GetByIdAsync(new UserProfileId(dto.Id));
             if (profile is null)
                 throw new BusinessException($"UserProfile with id {dto.Id} was not found");
 
@@ -47,7 +47,7 @@ namespace ECommerceApp.Application.AccountProfile.Services
 
         public async Task<bool> UpdateContactInfoAsync(UpdateContactInfoDto dto)
         {
-            var profile = await _repository.GetByIdAsync(dto.Id);
+            var profile = await _repository.GetByIdAsync(new UserProfileId(dto.Id));
             if (profile is null)
                 throw new BusinessException($"UserProfile with id {dto.Id} was not found");
 
@@ -57,11 +57,11 @@ namespace ECommerceApp.Application.AccountProfile.Services
         }
 
         public async Task<bool> DeleteAsync(int id)
-            => await _repository.DeleteAsync(id);
+            => await _repository.DeleteAsync(new UserProfileId(id));
 
         public async Task<UserProfileDetailsVm?> GetDetailsAsync(int id)
         {
-            var profile = await _repository.GetByIdAsync(id);
+            var profile = await _repository.GetByIdAsync(new UserProfileId(id));
             return profile is null ? null : _mapper.Map<UserProfileDetailsVm>(profile);
         }
 
@@ -73,7 +73,7 @@ namespace ECommerceApp.Application.AccountProfile.Services
 
         public async Task<UserProfileVm?> GetAsync(int id, string userId)
         {
-            var profile = await _repository.GetByIdAndUserIdAsync(id, userId);
+            var profile = await _repository.GetByIdAndUserIdAsync(new UserProfileId(id), userId);
             return profile is null ? null : _mapper.Map<UserProfileVm>(profile);
         }
 
@@ -110,11 +110,11 @@ namespace ECommerceApp.Application.AccountProfile.Services
         }
 
         public async Task<bool> ExistsAsync(int id, string userId)
-            => await _repository.ExistsByIdAndUserIdAsync(id, userId);
+            => await _repository.ExistsByIdAndUserIdAsync(new UserProfileId(id), userId);
 
         public async Task<bool> AddAddressAsync(int userProfileId, string userId, AddAddressDto dto)
         {
-            var profile = await _repository.GetByIdAndUserIdAsync(userProfileId, userId);
+            var profile = await _repository.GetByIdAndUserIdAsync(new UserProfileId(userProfileId), userId);
             if (profile is null)
                 throw new BusinessException($"UserProfile with id {userProfileId} was not found");
 
@@ -125,7 +125,7 @@ namespace ECommerceApp.Application.AccountProfile.Services
 
         public async Task<bool> UpdateAddressAsync(int userProfileId, string userId, UpdateAddressDto dto)
         {
-            var profile = await _repository.GetByIdAndUserIdAsync(userProfileId, userId);
+            var profile = await _repository.GetByIdAndUserIdAsync(new UserProfileId(userProfileId), userId);
             if (profile is null)
                 throw new BusinessException($"UserProfile with id {userProfileId} was not found");
 
@@ -138,7 +138,7 @@ namespace ECommerceApp.Application.AccountProfile.Services
 
         public async Task<bool> RemoveAddressAsync(int userProfileId, int addressId, string userId)
         {
-            var profile = await _repository.GetByIdAndUserIdAsync(userProfileId, userId);
+            var profile = await _repository.GetByIdAndUserIdAsync(new UserProfileId(userProfileId), userId);
             if (profile is null)
                 throw new BusinessException($"UserProfile with id {userProfileId} was not found");
 

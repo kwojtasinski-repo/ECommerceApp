@@ -18,8 +18,8 @@ namespace ECommerceApp.UnitTests.AccountProfile
             profile.FirstName.Should().Be("Jan");
             profile.LastName.Should().Be("Kowalski");
             profile.IsCompany.Should().BeFalse();
-            profile.Email.Should().Be("jan@test.com");
-            profile.PhoneNumber.Should().Be("123456789");
+            profile.Email.Value.Should().Be("jan@test.com");
+            profile.PhoneNumber.Value.Should().Be("123456789");
             @event.UserId.Should().Be("user-1");
             @event.OccurredAt.Should().BeCloseTo(DateTime.UtcNow, precision: TimeSpan.FromSeconds(5));
         }
@@ -59,10 +59,10 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public void Create_CompanyProfileWithAllFields_ShouldReturnProfile()
         {
-            var (profile, _) = UserProfile.Create("user-1", "Jan", "Kowalski", true, "12345678901", "Firma XYZ", "firma@test.com", "123456789");
+            var (profile, _) = UserProfile.Create("user-1", "Jan", "Kowalski", true, "1111111111", "Firma XYZ", "firma@test.com", "123456789");
 
             profile.IsCompany.Should().BeTrue();
-            profile.CompanyName.Should().Be("Firma XYZ");
+            profile.CompanyName!.Value.Should().Be("Firma XYZ");
         }
 
         // UpdatePersonalInfo
@@ -75,7 +75,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
             profile.UpdatePersonalInfo("Anna", "Nowak", false, null, null);
 
             profile.FirstName.Should().Be("Anna");
-            profile.LastName.Should().Be("Nowak");
+            profile.LastName.Should().Be("Nowak"); // string — no .Value needed
         }
 
         [Fact]
@@ -97,8 +97,8 @@ namespace ECommerceApp.UnitTests.AccountProfile
 
             profile.UpdateContactInfo("new@test.com", "999");
 
-            profile.Email.Should().Be("new@test.com");
-            profile.PhoneNumber.Should().Be("999");
+            profile.Email.Value.Should().Be("new@test.com");
+            profile.PhoneNumber.Value.Should().Be("999");
         }
 
         [Fact]
@@ -118,20 +118,20 @@ namespace ECommerceApp.UnitTests.AccountProfile
         {
             var (profile, _) = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
 
-            profile.AddAddress("Testowa", "5", null, 12345, "Warszawa", "Polska");
+            profile.AddAddress("Testowa", "5", null, "12-345", "Warszawa", "PL");
 
             profile.Addresses.Should().HaveCount(1);
-            profile.Addresses[0].Street.Should().Be("Testowa");
+            profile.Addresses[0].Street.Value.Should().Be("Testowa");
         }
 
         [Fact]
-        public void AddAddress_EmptyStreet_ShouldThrowArgumentException()
+        public void AddAddress_EmptyStreet_ShouldThrowDomainException()
         {
             var (profile, _) = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
 
-            Action act = () => profile.AddAddress("", "5", null, 12345, "Warszawa", "Polska");
+            Action act = () => profile.AddAddress("", "5", null, "12-345", "Warszawa", "PL");
 
-            act.Should().Throw<ArgumentException>().WithMessage("*Street*");
+            act.Should().Throw<DomainException>().WithMessage("*Street*");
         }
 
         // UpdateAddress
@@ -141,7 +141,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         {
             var (profile, _) = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
 
-            var result = profile.UpdateAddress(99, "Nowa", "1", null, 10000, "Kraków", "Polska");
+            var result = profile.UpdateAddress(99, "Nowa", "1", null, "10000", "Kraków", "PL");
 
             result.Should().BeFalse();
         }
@@ -161,13 +161,13 @@ namespace ECommerceApp.UnitTests.AccountProfile
         // Address.Create (internal — tested via UserProfile.AddAddress)
 
         [Fact]
-        public void AddAddress_InvalidZipCode_ShouldThrowArgumentException()
+        public void AddAddress_InvalidZipCode_ShouldThrowDomainException()
         {
             var (profile, _) = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
 
-            Action act = () => profile.AddAddress("Testowa", "5", null, 0, "Warszawa", "Polska");
+            Action act = () => profile.AddAddress("Testowa", "5", null, "1", "Warszawa", "PL");
 
-            act.Should().Throw<ArgumentException>().WithMessage("*ZipCode*");
+            act.Should().Throw<DomainException>().WithMessage("*ZIP*");
         }
     }
 }

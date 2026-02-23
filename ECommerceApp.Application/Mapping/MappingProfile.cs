@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using ECommerceApp.Domain.AccountProfile;
+using ECommerceApp.Domain.AccountProfile.ValueObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,6 +13,19 @@ namespace ECommerceApp.Application.Mapping
     {
         public MappingProfile()
         {
+            CreateMap<Email, string>().ConvertUsing(x => x.Value);
+            CreateMap<PhoneNumber, string>().ConvertUsing(x => x.Value);
+            CreateMap<Nip, string>().ConvertUsing((src, dest, ctx) => src == null ? null! : src.Value);
+            CreateMap<CompanyName, string>().ConvertUsing((src, dest, ctx) => src == null ? null! : src.Value);
+            CreateMap<UserProfileId, int>().ConvertUsing(x => x.Value);
+            CreateMap<AddressId, int>().ConvertUsing(x => x.Value);
+            CreateMap<Street, string>().ConvertUsing(x => x.Value);
+            CreateMap<BuildingNumber, string>().ConvertUsing(x => x.Value);
+            CreateMap<FlatNumber, int>().ConvertUsing(x => x.Value);
+            CreateMap<ZipCode, string>().ConvertUsing(x => x.Value);
+            CreateMap<City, string>().ConvertUsing(x => x.Value);
+            CreateMap<Country, string>().ConvertUsing(x => x.Value);
+
             ApplyMappingFromAssembly(Assembly.GetExecutingAssembly());
         }
 

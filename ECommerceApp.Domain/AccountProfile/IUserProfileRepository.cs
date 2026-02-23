@@ -5,14 +5,14 @@ namespace ECommerceApp.Domain.AccountProfile
 {
     public interface IUserProfileRepository
     {
-        Task<int> AddAsync(UserProfile profile);
-        Task<UserProfile?> GetByIdAsync(int id);
-        Task<UserProfile?> GetByIdAndUserIdAsync(int id, string userId);
+        Task<UserProfileId> AddAsync(UserProfile profile);
+        Task<UserProfile?> GetByIdAsync(UserProfileId id);
+        Task<UserProfile?> GetByIdAndUserIdAsync(UserProfileId id, string userId);
         Task<UserProfile?> GetByUserIdAsync(string userId);
         Task UpdateAsync(UserProfile profile);
-        Task<bool> DeleteAsync(int id);
-        Task<bool> ExistsByIdAsync(int id);
-        Task<bool> ExistsByIdAndUserIdAsync(int id, string userId);
+        Task<bool> DeleteAsync(UserProfileId id);
+        Task<bool> ExistsByIdAsync(UserProfileId id);
+        Task<bool> ExistsByIdAndUserIdAsync(UserProfileId id, string userId);
         Task<List<UserProfile>> GetAllAsync(int pageSize, int pageNo, string searchString);
         Task<int> CountAllAsync(string searchString);
         Task<List<UserProfile>> GetAllByUserIdAsync(string userId, int pageSize, int pageNo, string searchString);

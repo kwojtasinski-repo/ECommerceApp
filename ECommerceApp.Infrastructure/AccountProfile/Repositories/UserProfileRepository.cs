@@ -15,17 +15,17 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Repositories
             _context = context;
         }
 
-        public async Task<int> AddAsync(UserProfile profile)
+        public async Task<UserProfileId> AddAsync(UserProfile profile)
         {
             _context.UserProfiles.Add(profile);
             await _context.SaveChangesAsync();
             return profile.Id;
         }
 
-        public async Task<UserProfile?> GetByIdAsync(int id)
+        public async Task<UserProfile?> GetByIdAsync(UserProfileId id)
             => await _context.UserProfiles.FirstOrDefaultAsync(p => p.Id == id);
 
-        public async Task<UserProfile?> GetByIdAndUserIdAsync(int id, string userId)
+        public async Task<UserProfile?> GetByIdAndUserIdAsync(UserProfileId id, string userId)
             => await _context.UserProfiles.FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
 
         public async Task<UserProfile?> GetByUserIdAsync(string userId)
@@ -34,7 +34,7 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Repositories
         public async Task UpdateAsync(UserProfile profile)
             => await _context.SaveChangesAsync();
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(UserProfileId id)
         {
             var profile = await _context.UserProfiles.FirstOrDefaultAsync(p => p.Id == id);
             if (profile is null)
@@ -44,10 +44,10 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Repositories
             return true;
         }
 
-        public async Task<bool> ExistsByIdAsync(int id)
+        public async Task<bool> ExistsByIdAsync(UserProfileId id)
             => await _context.UserProfiles.AnyAsync(p => p.Id == id);
 
-        public async Task<bool> ExistsByIdAndUserIdAsync(int id, string userId)
+        public async Task<bool> ExistsByIdAndUserIdAsync(UserProfileId id, string userId)
             => await _context.UserProfiles.AnyAsync(p => p.Id == id && p.UserId == userId);
 
         public async Task<List<UserProfile>> GetAllAsync(int pageSize, int pageNo, string searchString)

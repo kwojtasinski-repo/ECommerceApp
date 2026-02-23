@@ -7,7 +7,7 @@ namespace ECommerceApp.Application.AccountProfile.DTOs
         string Street,
         string BuildingNumber,
         int? FlatNumber,
-        int ZipCode,
+        string ZipCode,
         string City,
         string Country);
 
@@ -16,7 +16,7 @@ namespace ECommerceApp.Application.AccountProfile.DTOs
         string Street,
         string BuildingNumber,
         int? FlatNumber,
-        int ZipCode,
+        string ZipCode,
         string City,
         string Country);
 
@@ -25,11 +25,11 @@ namespace ECommerceApp.Application.AccountProfile.DTOs
         public AddAddressDtoValidator()
         {
             RuleFor(x => x.UserProfileId).GreaterThan(0);
-            RuleFor(x => x.Street).NotEmpty().MaximumLength(300);
-            RuleFor(x => x.BuildingNumber).NotEmpty().MaximumLength(150);
-            RuleFor(x => x.ZipCode).GreaterThan(0);
-            RuleFor(x => x.City).NotEmpty().MaximumLength(300);
-            RuleFor(x => x.Country).NotEmpty().MaximumLength(300);
+            RuleFor(x => x.Street).NotEmpty().MaximumLength(200);
+            RuleFor(x => x.BuildingNumber).NotEmpty().MaximumLength(20);
+            RuleFor(x => x.ZipCode).NotEmpty().MinimumLength(2).MaximumLength(12);
+            RuleFor(x => x.City).NotEmpty().MaximumLength(100);
+            RuleFor(x => x.Country).NotEmpty().Length(2);
         }
     }
 
@@ -38,11 +38,11 @@ namespace ECommerceApp.Application.AccountProfile.DTOs
         public UpdateAddressDtoValidator()
         {
             RuleFor(x => x.AddressId).GreaterThan(0);
-            RuleFor(x => x.Street).NotEmpty().MaximumLength(300);
-            RuleFor(x => x.BuildingNumber).NotEmpty().MaximumLength(150);
-            RuleFor(x => x.ZipCode).GreaterThan(0);
-            RuleFor(x => x.City).NotEmpty().MaximumLength(300);
-            RuleFor(x => x.Country).NotEmpty().MaximumLength(300);
+            RuleFor(x => x.Street).NotEmpty().MaximumLength(200);
+            RuleFor(x => x.BuildingNumber).NotEmpty().MaximumLength(20);
+            RuleFor(x => x.ZipCode).NotEmpty().MinimumLength(2).MaximumLength(12);
+            RuleFor(x => x.City).NotEmpty().MaximumLength(100);
+            RuleFor(x => x.Country).NotEmpty().Length(2);
         }
     }
 }
