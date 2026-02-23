@@ -32,7 +32,10 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Repositories
             => await _context.UserProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
 
         public async Task UpdateAsync(UserProfile profile)
-            => await _context.SaveChangesAsync();
+        {
+            _context.UserProfiles.Update(profile);
+            await _context.SaveChangesAsync();
+        }
 
         public async Task<bool> DeleteAsync(UserProfileId id)
         {
@@ -51,7 +54,13 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Repositories
             => await _context.UserProfiles.AnyAsync(p => p.Id == id && p.UserId == userId);
 
         public async Task<List<UserProfile>> GetAllAsync(int pageSize, int pageNo, string searchString)
-            => await _context.UserProfiles
+        {
+            if (pageNo < 1)
+            {
+                pageNo = 1;
+            }
+
+            return await _context.UserProfiles
                 .AsNoTracking()
                 .IgnoreAutoIncludes()
                 .Where(p => string.IsNullOrEmpty(searchString) ||
@@ -61,6 +70,7 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Repositories
                 .Skip((pageNo - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
+        }
 
         public async Task<int> CountAllAsync(string searchString)
             => await _context.UserProfiles
@@ -71,7 +81,13 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Repositories
                                  p.LastName.Contains(searchString));
 
         public async Task<List<UserProfile>> GetAllByUserIdAsync(string userId, int pageSize, int pageNo, string searchString)
-            => await _context.UserProfiles
+        {
+            if (pageNo < 1)
+            {
+                pageNo = 1;
+            }
+
+            return await _context.UserProfiles
                 .AsNoTracking()
                 .IgnoreAutoIncludes()
                 .Where(p => p.UserId == userId &&
@@ -82,6 +98,7 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Repositories
                 .Skip((pageNo - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
+        }
 
         public async Task<int> CountByUserIdAsync(string userId, string searchString)
             => await _context.UserProfiles
@@ -97,6 +114,7 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Repositories
                 .AsNoTracking()
                 .IgnoreAutoIncludes()
                 .Where(p => p.UserId == userId)
+                .Take(UserProfileConstants.MaxUnpaginatedResults)
                 .ToListAsync();
     }
 }
