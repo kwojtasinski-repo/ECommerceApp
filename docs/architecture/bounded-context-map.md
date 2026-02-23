@@ -26,8 +26,7 @@ CORE BUSINESS
 ├── Catalog
 │   └── Products        → Domain.Catalog.Products
 │
-├── Customer
-│   └── CustomerProfile → Domain.Customer.CustomerProfile
+├── AccountProfile → Domain.AccountProfile (UserProfile aggregate)
 │
 ├── Identity
 │   └── IAM             → Domain.Identity.IAM
@@ -112,13 +111,13 @@ Aggregates own their state transitions. Cross-BC communication via domain events
                                   │ Refund        │                │ Coupon       │
                                   └───────────────┘                └──────────────┘
 
-┌───────────────┐  ┌──────────────────┐  ┌──────────────────────────────────────┐
-│   Customers   │  │   Currencies     │  │           Identity / IAM             │
-│               │  │                  │  │                                      │
-│ ICustomerDbCtx│  │ ICurrencyDbCtx   │  │ No navigation props in domain models │
-│ Customer      │  │ Currency         │  │ Only string UserId references        │
-│ Address       │  │ CurrencyRate     │  │                                      │
-└───────────────┘  └──────────────────┘  └──────────────────────────────────────┘
+┌───────────────────────┐  ┌──────────────────┐  ┌──────────────────────────────────────┐
+│   AccountProfile      │  │   Currencies     │  │           Identity / IAM             │
+│                       │  │                  │  │                                      │
+│ IUserProfileDbContext │  │ ICurrencyDbCtx   │  │ No navigation props in domain models │
+│ UserProfile (rich)    │  │ Currency         │  │ Only string UserId references        │
+│ Address (owned VO)    │  │ CurrencyRate     │  │                                      │
+└───────────────────────┘  └──────────────────┘  └──────────────────────────────────────┘
 ```
 
 ### Target rules (per ADR-0002 § 8)
@@ -140,7 +139,8 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | **Refunds** | Behavioral aggregate | Rich domain model → target | 🔴 Currently anemic |
 | **Catalog** (`Item`) | Mixed | Handler pattern for complex ops | 🟡 Partially rich (`Item` has some methods) |
 | **Coupons** | Reference + behavior | `AbstractService` + `CouponHandler` | 🟡 Acceptable for now |
-| **Customers** | Reference | `AbstractService` | ✅ Acceptable |
+| **AccountProfile** (`UserProfile`) | Behavioral aggregate | Rich domain model, owned `Address`, own `UserProfileDbContext` | ✅ New implementation ready |
+| **Customers** (legacy) | Reference | `AbstractService` | ⚠️ To be replaced by AccountProfile BC |
 | **Currencies** | Reference + external | `AbstractService` + NBP integration | ✅ Acceptable |
 | **Identity / IAM** | Infrastructure | ASP.NET Core Identity | ✅ Keep isolated |
 
@@ -168,14 +168,14 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | Retire `Domain/Model/ApplicationUser.cs` | ADR-0002 § 8 | ⬜ After switch |
 | IAM integration tests | ADR-0002 § 8 | ⬜ Not started |
 | Refresh token implementation | 🔵 Deferred — separate ADR | |
-| **AccountProfile BC — Domain layer** (`ContactDetailType`, `Address`, `ContactDetail`, `AccountProfile`, `AccountProfileCreated`, repository interfaces) | ADR-0002 § 8 | ✅ Done |
-| **AccountProfile BC — Infrastructure layer** (`AccountProfileDbContext`, `profile.*` schema, configs, repositories, DI) | ADR-0002 § 8 | ✅ Done |
-| **AccountProfile BC — Application layer** (DTOs, ViewModels, `IAccountProfileService`, `IAccountAddressService`, `IAccountContactDetailService`, `IAccountContactDetailTypeService`, validators, DI) | ADR-0002 § 8 | ✅ Done |
-| **AccountProfile BC — Unit tests** (`AccountProfileAggregateTests`, `AccountProfileServiceTests`) | ADR-0002 § 8 | ✅ Done |
-| **AccountProfile BC — DB migration** (`profile` schema) | ADR-0002 § 8 — requires migration approval | ⬜ Pending approval |
-| AccountProfile BC — Integration tests | ADR-0002 § 8 | ⬜ Not started |
-| Migrate `CustomerController` / `AddressController` / `ContactDetailController` (Web + API) → new services | ADR-0002 § 8 | ⬜ Not started |
-| Atomic switch — remove old Customer/Address/ContactDetail registrations | ADR-0002 § 8 | ⬜ After integration tests pass |
+| **AccountProfile BC — Domain layer** (`UserProfile` aggregate, owned `Address`, `UserProfileCreated` event, `IUserProfileRepository`) | ADR-0005 | ✅ Done |
+| **AccountProfile BC — Infrastructure layer** (`UserProfileDbContext`, `profile.*` schema, `OwnsMany` Address config, `UserProfileRepository`, DI) | ADR-0005 | ✅ Done |
+| **AccountProfile BC — Application layer** (DTOs, ViewModels, `IUserProfileService` incl. address ops, validators, DI) | ADR-0005 | ✅ Done |
+| **AccountProfile BC — Unit tests** (`UserProfileAggregateTests`, `UserProfileServiceTests`) | ADR-0005 | ✅ Done |
+| **AccountProfile BC — DB migration** (`profile` schema, `UserProfiles` + `Addresses` tables) | ADR-0005 — requires migration approval | ⬜ Pending approval |
+| AccountProfile BC — Integration tests | ADR-0005 | ⬜ Not started |
+| Migrate `CustomerController` / `AddressController` / `ContactDetailController` (Web + API) → `IUserProfileService` | ADR-0005 | ⬜ Not started |
+| Atomic switch — remove old Customer/Address/ContactDetail registrations | ADR-0005 | ⬜ After integration tests pass |
 | Remove `ApplicationUser` nav from `Order` | ADR-0002 § 8 — part of Sales/Orders migration | ⬜ Not started |
 | `Order.MarkAsPaid()` — own state transition | ADR-0008 | ⬜ Not started |
 | `Payment` factory + private setters | ADR-0008 | ⬜ Not started |
@@ -189,4 +189,5 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 
 - [ADR-0001 — Project Overview and Technology Stack](../adr/0001-project-overview-and-technology-stack.md)
 - [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](../adr/0002-post-event-storming-architectural-evolution-strategy.md)
+- [ADR-0005 — AccountProfile BC: UserProfile Aggregate Design](../adr/0005-accountprofile-bc-userprofile-aggregate-design.md)
 - [`.github/instructions/dotnet-instructions.md`](../../.github/instructions/dotnet-instructions.md) § 16

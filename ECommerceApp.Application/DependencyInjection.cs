@@ -1,9 +1,9 @@
 ﻿using AutoMapper.Internal;
+using ECommerceApp.Application.AccountProfile.Services;
 using ECommerceApp.Application.External;
 using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Identity.IAM.Services;
 using ECommerceApp.Application.Middlewares;
-using ECommerceApp.Application.Profiles.AccountProfile.Services;
 using ECommerceApp.Application.Services;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -24,7 +24,7 @@ namespace ECommerceApp.Application
             services.AddNbpClient();
             services.AddServices();
             services.AddIamServices();
-            services.AddAccountProfileServices();
+            services.AddUserProfileServices();
             services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
             services.AddFluentValidationAutoValidation();
             return services;
