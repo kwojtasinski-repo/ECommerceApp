@@ -8,7 +8,7 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Configurations
     {
         public void Configure(EntityTypeBuilder<UserProfile> builder)
         {
-            builder.ToTable("UserProfiles", UserProfileConstants.Schema);
+            builder.ToTable("UserProfiles");
 
             builder.HasKey(p => p.Id);
 
@@ -46,7 +46,7 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Configurations
 
             builder.OwnsMany(p => p.Addresses, ab =>
             {
-                ab.ToTable("Addresses", UserProfileConstants.Schema);
+                ab.ToTable("Addresses");
                 ab.HasKey(a => a.Id);
                 ab.Property(a => a.Street).HasMaxLength(300).IsRequired();
                 ab.Property(a => a.BuildingNumber).HasMaxLength(150).IsRequired();

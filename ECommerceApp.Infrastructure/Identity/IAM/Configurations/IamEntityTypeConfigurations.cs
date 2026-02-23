@@ -9,7 +9,7 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Configurations
     {
         public void Configure(EntityTypeBuilder<ApplicationUser> builder)
         {
-            builder.ToTable("Users", IamConstants.Schema);
+            builder.ToTable("Users");
         }
     }
 
@@ -17,7 +17,7 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Configurations
     {
         public void Configure(EntityTypeBuilder<IdentityRole> builder)
         {
-            builder.ToTable("Roles", IamConstants.Schema);
+            builder.ToTable("Roles");
         }
     }
 
@@ -25,7 +25,7 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Configurations
     {
         public void Configure(EntityTypeBuilder<IdentityUserRole<string>> builder)
         {
-            builder.ToTable("UserRoles", IamConstants.Schema);
+            builder.ToTable("UserRoles");
         }
     }
 
@@ -33,7 +33,7 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Configurations
     {
         public void Configure(EntityTypeBuilder<IdentityUserClaim<string>> builder)
         {
-            builder.ToTable("UserClaims", IamConstants.Schema);
+            builder.ToTable("UserClaims");
         }
     }
 
@@ -41,7 +41,7 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Configurations
     {
         public void Configure(EntityTypeBuilder<IdentityUserLogin<string>> builder)
         {
-            builder.ToTable("UserLogins", IamConstants.Schema);
+            builder.ToTable("UserLogins");
         }
     }
 
@@ -49,7 +49,7 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Configurations
     {
         public void Configure(EntityTypeBuilder<IdentityUserToken<string>> builder)
         {
-            builder.ToTable("UserTokens", IamConstants.Schema);
+            builder.ToTable("UserTokens");
         }
     }
 
@@ -57,7 +57,7 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Configurations
     {
         public void Configure(EntityTypeBuilder<IdentityRoleClaim<string>> builder)
         {
-            builder.ToTable("RoleClaims", IamConstants.Schema);
+            builder.ToTable("RoleClaims");
         }
     }
 }

@@ -14,6 +14,7 @@ namespace ECommerceApp.Infrastructure.Identity.IAM
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
+            builder.HasDefaultSchema(IamConstants.Schema);
             builder.ApplyConfigurationsFromAssembly(
                 GetType().Assembly,
                 t => t.Namespace == "ECommerceApp.Infrastructure.Identity.IAM.Configurations");
