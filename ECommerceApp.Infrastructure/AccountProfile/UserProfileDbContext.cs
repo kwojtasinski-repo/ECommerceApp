@@ -13,8 +13,8 @@ namespace ECommerceApp.Infrastructure.AccountProfile
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
-            builder.HasDefaultSchema(UserProfileConstants.Schema);
             base.OnModelCreating(builder);
+            builder.HasDefaultSchema(UserProfileConstants.Schema);
             builder.ApplyConfigurationsFromAssembly(
                 GetType().Assembly,
                 t => t.Namespace == "ECommerceApp.Infrastructure.AccountProfile.Configurations");
