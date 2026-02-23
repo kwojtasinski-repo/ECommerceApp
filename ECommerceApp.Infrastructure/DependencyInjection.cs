@@ -1,5 +1,6 @@
 ﻿using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Identity.IAM.Auth;
+using ECommerceApp.Infrastructure.Profiles.AccountProfile;
 using ECommerceApp.Infrastructure.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,6 +14,7 @@ namespace ECommerceApp.Infrastructure
             services.AddDatabase(configuration);
             services.AddRepositories();
             services.AddIamInfrastructure(configuration);
+            services.AddAccountProfileInfrastructure(configuration);
             return services;
         }
     }

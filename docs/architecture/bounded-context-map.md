@@ -168,6 +168,14 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | Retire `Domain/Model/ApplicationUser.cs` | ADR-0002 § 8 | ⬜ After switch |
 | IAM integration tests | ADR-0002 § 8 | ⬜ Not started |
 | Refresh token implementation | 🔵 Deferred — separate ADR | |
+| **AccountProfile BC — Domain layer** (`ContactDetailType`, `Address`, `ContactDetail`, `AccountProfile`, `AccountProfileCreated`, repository interfaces) | ADR-0002 § 8 | ✅ Done |
+| **AccountProfile BC — Infrastructure layer** (`AccountProfileDbContext`, `profile.*` schema, configs, repositories, DI) | ADR-0002 § 8 | ✅ Done |
+| **AccountProfile BC — Application layer** (DTOs, ViewModels, `IAccountProfileService`, `IAccountAddressService`, `IAccountContactDetailService`, `IAccountContactDetailTypeService`, validators, DI) | ADR-0002 § 8 | ✅ Done |
+| **AccountProfile BC — Unit tests** (`AccountProfileAggregateTests`, `AccountProfileServiceTests`) | ADR-0002 § 8 | ✅ Done |
+| **AccountProfile BC — DB migration** (`profile` schema) | ADR-0002 § 8 — requires migration approval | ⬜ Pending approval |
+| AccountProfile BC — Integration tests | ADR-0002 § 8 | ⬜ Not started |
+| Migrate `CustomerController` / `AddressController` / `ContactDetailController` (Web + API) → new services | ADR-0002 § 8 | ⬜ Not started |
+| Atomic switch — remove old Customer/Address/ContactDetail registrations | ADR-0002 § 8 | ⬜ After integration tests pass |
 | Remove `ApplicationUser` nav from `Order` | ADR-0002 § 8 — part of Sales/Orders migration | ⬜ Not started |
 | `Order.MarkAsPaid()` — own state transition | ADR-0008 | ⬜ Not started |
 | `Payment` factory + private setters | ADR-0008 | ⬜ Not started |
