@@ -210,20 +210,66 @@ namespace ECommerceApp.UnitTests.Catalog.Products
         }
 
         [Fact]
+        public void CategorySlug_ValidValue_ShouldCreate()
+        {
+            var slug = new CategorySlug("electronics");
+
+            slug.Value.Should().Be("electronics");
+        }
+
+        [Fact]
+        public void CategorySlug_TooLong_ShouldThrowDomainException()
+        {
+            var act = () => new CategorySlug(new string('a', 50) + "-" + new string('b', 50));
+
+            act.Should().Throw<DomainException>().WithMessage("*100*");
+        }
+
+        [Fact]
+        public void CategorySlug_FromName_ShouldGenerateCorrectSlug()
+        {
+            var slug = CategorySlug.FromName("Home Appliances");
+
+            slug.Value.Should().Be("home-appliances");
+        }
+
+        [Fact]
+        public void TagSlug_ValidValue_ShouldCreate()
+        {
+            var slug = new TagSlug("sale");
+
+            slug.Value.Should().Be("sale");
+        }
+
+        [Fact]
+        public void TagSlug_TooLong_ShouldThrowDomainException()
+        {
+            var act = () => new TagSlug("abcdefghij-abcdefghij-abcdefghi");
+
+            act.Should().Throw<DomainException>().WithMessage("*30*");
+        }
+
+        [Fact]
+        public void TagSlug_FromName_ShouldGenerateCorrectSlug()
+        {
+            var slug = TagSlug.FromName("Nowy");
+
+            slug.Value.Should().Be("nowy");
+        }
+
+        [Fact]
         public void Tag_Create_ValidParameters_ShouldCreate()
         {
-            var tag = Tag.Create("czerwony", "#ff0000", true);
+            var tag = Tag.Create("czerwony");
 
             tag.Name.Value.Should().Be("czerwony");
             tag.Slug.Value.Should().Be("czerwony");
-            tag.Color.Should().Be("#ff0000");
-            tag.IsVisible.Should().BeTrue();
         }
 
         [Fact]
         public void Tag_Create_EmptyName_ShouldThrowDomainException()
         {
-            var act = () => Tag.Create("", null, true);
+            var act = () => Tag.Create("");
 
             act.Should().Throw<DomainException>().WithMessage("*required*");
         }
@@ -234,6 +280,30 @@ namespace ECommerceApp.UnitTests.Catalog.Products
             var act = () => Tag.Create(new string('a', 51));
 
             act.Should().Throw<DomainException>().WithMessage("*50*");
+        }
+
+        [Fact]
+        public void ImageFileName_ValidValue_ShouldCreate()
+        {
+            var fn = new ImageFileName("items/1/photo.jpg");
+
+            fn.Value.Should().Be("items/1/photo.jpg");
+        }
+
+        [Fact]
+        public void ImageFileName_EmptyString_ShouldThrowDomainException()
+        {
+            var act = () => new ImageFileName("");
+
+            act.Should().Throw<DomainException>().WithMessage("*required*");
+        }
+
+        [Fact]
+        public void ImageFileName_TooLong_ShouldThrowDomainException()
+        {
+            var act = () => new ImageFileName(new string('a', 501));
+
+            act.Should().Throw<DomainException>().WithMessage("*500*");
         }
 
         [Fact]

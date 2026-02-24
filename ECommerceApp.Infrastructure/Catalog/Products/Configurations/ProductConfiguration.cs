@@ -6,65 +6,64 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ECommerceApp.Infrastructure.Catalog.Products.Configurations
 {
-    internal sealed class ItemConfiguration : IEntityTypeConfiguration<Item>
+    internal sealed class ProductConfiguration : IEntityTypeConfiguration<Product>
     {
-        public void Configure(EntityTypeBuilder<Item> builder)
+        public void Configure(EntityTypeBuilder<Product> builder)
         {
-            builder.ToTable("Items");
+            builder.ToTable("Products");
 
-            builder.HasKey(i => i.Id);
-            builder.Property(i => i.Id)
-                   .HasConversion(x => x.Value, v => new ItemId(v))
+            builder.HasKey(p => p.Id);
+            builder.Property(p => p.Id)
+                   .HasConversion(x => x.Value, v => new ProductId(v))
                    .ValueGeneratedOnAdd();
 
-            builder.Property(i => i.Name)
+            builder.Property(p => p.Name)
                    .HasConversion(x => x.Value, v => new ProductName(v))
                    .HasMaxLength(150)
                    .IsRequired();
 
-            builder.Property(i => i.Cost)
+            builder.Property(p => p.Cost)
                    .HasConversion(x => x.Amount, v => new Price(v))
                    .HasPrecision(18, 4)
                    .IsRequired();
 
-            builder.Property(i => i.Description)
+            builder.Property(p => p.Description)
                    .HasConversion(x => x.Value, v => new ProductDescription(v))
                    .HasMaxLength(300)
-                   .IsRequired()
-                   .HasDefaultValue("");
+                   .IsRequired();
 
-            builder.Property(i => i.Quantity)
+            builder.Property(p => p.Quantity)
                    .HasConversion(x => x.Value, v => new ProductQuantity(v))
                    .IsRequired();
 
-            builder.Property(i => i.Status)
+            builder.Property(p => p.Status)
                    .IsRequired()
                    .HasDefaultValue(ProductStatus.Draft);
 
-            builder.Property(i => i.CategoryId)
+            builder.Property(p => p.CategoryId)
                    .HasConversion(x => x.Value, v => new CategoryId(v))
                    .IsRequired();
 
-            builder.HasMany(i => i.Images)
+            builder.HasMany(p => p.Images)
                    .WithOne()
-                   .HasForeignKey(img => img.ItemId)
+                   .HasForeignKey(img => img.ProductId)
                    .OnDelete(DeleteBehavior.Cascade);
 
-            builder.HasMany(i => i.ItemTags)
+            builder.HasMany(p => p.ProductTags)
                    .WithOne()
-                   .HasForeignKey(it => it.ItemId)
+                   .HasForeignKey(pt => pt.ProductId)
                    .OnDelete(DeleteBehavior.Cascade);
 
-            builder.Navigation(i => i.Images)
+            builder.Navigation(p => p.Images)
                    .HasField("_images")
                    .UsePropertyAccessMode(PropertyAccessMode.Field);
 
-            builder.Navigation(i => i.ItemTags)
-                   .HasField("_itemTags")
+            builder.Navigation(p => p.ProductTags)
+                   .HasField("_productTags")
                    .UsePropertyAccessMode(PropertyAccessMode.Field);
 
-            builder.HasIndex(i => i.CategoryId);
-            builder.HasIndex(i => i.Status);
+            builder.HasIndex(p => p.CategoryId);
+            builder.HasIndex(p => p.Status);
         }
     }
 }

@@ -42,17 +42,15 @@ namespace ECommerceApp.Application.Catalog.Products.Services
                     $"Category with id '{dto.CategoryId}' was not found",
                     ErrorCode.Create("categoryNotFound", ErrorParameter.Create("id", dto.CategoryId)));
 
-            var (item, _) = Item.Create(dto.Name, dto.Cost, dto.Quantity, dto.Description, dto.CategoryId);
+            var (product, _) = Product.Create(dto.Name, dto.Cost, dto.Quantity, dto.Description, dto.CategoryId);
 
             if (dto.TagIds is not null)
             {
                 foreach (var tagId in dto.TagIds)
-                {
-                    item.AddTag(new TagId(tagId));
-                }
+                    product.AddTag(new TagId(tagId));
             }
 
-            var id = await _productRepo.AddAsync(item);
+            var id = await _productRepo.AddAsync(product);
             return id.Value;
         }
 
@@ -61,8 +59,8 @@ namespace ECommerceApp.Application.Catalog.Products.Services
             if (dto is null)
                 throw new BusinessException($"{nameof(UpdateProductDto)} cannot be null");
 
-            var item = await _productRepo.GetByIdWithDetailsAsync(new ItemId(dto.Id));
-            if (item is null)
+            var product = await _productRepo.GetByIdWithDetailsAsync(new ProductId(dto.Id));
+            if (product is null)
                 return false;
 
             if (!await _categoryRepo.ExistsByIdAsync(new CategoryId(dto.CategoryId)))
@@ -70,49 +68,51 @@ namespace ECommerceApp.Application.Catalog.Products.Services
                     $"Category with id '{dto.CategoryId}' was not found",
                     ErrorCode.Create("categoryNotFound", ErrorParameter.Create("id", dto.CategoryId)));
 
-            item.UpdateDetails(dto.Name, dto.Cost, dto.Description, dto.CategoryId);
+            product.UpdateDetails(dto.Name, dto.Cost, dto.Description, dto.CategoryId);
 
             if (dto.TagIds is not null)
-            {
-                item.ReplaceTags(dto.TagIds.Select(id => new TagId(id)));
-            }
+                product.ReplaceTags(dto.TagIds.Select(id => new TagId(id)));
 
-            await _productRepo.UpdateAsync(item);
+            await _productRepo.UpdateAsync(product);
             return true;
         }
 
         public async Task<bool> DeleteProduct(int id)
         {
-            return await _productRepo.DeleteAsync(new ItemId(id));
+            return await _productRepo.DeleteAsync(new ProductId(id));
         }
 
         public async Task<ProductDetailsVm> GetProductDetails(int id)
         {
-            var item = await _productRepo.GetByIdWithDetailsAsync(new ItemId(id));
-            if (item is null)
+            var product = await _productRepo.GetByIdWithDetailsAsync(new ProductId(id));
+            if (product is null)
                 return null;
 
-            var vm = _mapper.Map<ProductDetailsVm>(item);
-            vm.Images = item.Images
+            var vm = _mapper.Map<ProductDetailsVm>(product);
+            vm.Images = product.Images
                 .OrderBy(i => i.SortOrder)
                 .Select(i => new ProductImageVm
                 {
                     Id = i.Id.Value,
-                    Url = _urlBuilder.Build(i.FileName),
+                    Url = _urlBuilder.Build(i.FileName.Value),
                     IsMain = i.IsMain,
                     SortOrder = i.SortOrder
                 })
                 .ToList();
+
+            var category = await _categoryRepo.GetByIdAsync(new CategoryId(product.CategoryId.Value));
+            vm.CategoryName = category?.Name.Value ?? string.Empty;
+
             return vm;
         }
 
         public async Task<ProductListVm> GetAllProducts(int pageSize, int pageNo, string searchString)
         {
-            var items = await _productRepo.GetAllAsync(pageSize, pageNo, searchString);
+            var products = await _productRepo.GetAllAsync(pageSize, pageNo, searchString);
             var count = await _productRepo.CountAsync(searchString);
             return new ProductListVm
             {
-                Items = _mapper.Map<List<ProductForListVm>>(items),
+                Items = _mapper.Map<List<ProductForListVm>>(products),
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
@@ -122,11 +122,11 @@ namespace ECommerceApp.Application.Catalog.Products.Services
 
         public async Task<ProductListVm> GetPublishedProducts(int pageSize, int pageNo, string searchString)
         {
-            var items = await _productRepo.GetPublishedAsync(pageSize, pageNo, searchString);
+            var products = await _productRepo.GetPublishedAsync(pageSize, pageNo, searchString);
             var count = await _productRepo.CountPublishedAsync(searchString);
             return new ProductListVm
             {
-                Items = _mapper.Map<List<ProductForListVm>>(items),
+                Items = _mapper.Map<List<ProductForListVm>>(products),
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
@@ -136,31 +136,31 @@ namespace ECommerceApp.Application.Catalog.Products.Services
 
         public async Task PublishProduct(int id)
         {
-            var item = await _productRepo.GetByIdAsync(new ItemId(id));
-            if (item is null)
+            var product = await _productRepo.GetByIdAsync(new ProductId(id));
+            if (product is null)
                 throw new BusinessException(
                     $"Product with id '{id}' was not found",
                     ErrorCode.Create("productNotFound", ErrorParameter.Create("id", id)));
 
-            item.Publish();
-            await _productRepo.UpdateAsync(item);
+            product.Publish();
+            await _productRepo.UpdateAsync(product);
         }
 
         public async Task UnpublishProduct(int id)
         {
-            var item = await _productRepo.GetByIdAsync(new ItemId(id));
-            if (item is null)
+            var product = await _productRepo.GetByIdAsync(new ProductId(id));
+            if (product is null)
                 throw new BusinessException(
                     $"Product with id '{id}' was not found",
                     ErrorCode.Create("productNotFound", ErrorParameter.Create("id", id)));
 
-            item.Unpublish();
-            await _productRepo.UpdateAsync(item);
+            product.Unpublish();
+            await _productRepo.UpdateAsync(product);
         }
 
         public async Task<bool> ProductExists(int id)
         {
-            return await _productRepo.ExistsByIdAsync(new ItemId(id));
+            return await _productRepo.ExistsByIdAsync(new ProductId(id));
         }
     }
 }

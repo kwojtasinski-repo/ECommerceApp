@@ -12,7 +12,6 @@ namespace ECommerceApp.Application.Catalog.Products.Services
         Task<bool> DeleteTag(int id);
         Task<ProductTagVm> GetTag(int id);
         Task<List<ProductTagVm>> GetAllTags();
-        Task<List<ProductTagVm>> GetVisibleTags();
         Task<List<ProductTagVm>> SearchTags(string query, int maxResults = 10);
         Task<ProductTagVm> GetOrCreateTag(string name);
     }

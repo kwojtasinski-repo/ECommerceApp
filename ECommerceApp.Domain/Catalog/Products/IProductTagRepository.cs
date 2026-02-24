@@ -8,11 +8,10 @@ namespace ECommerceApp.Domain.Catalog.Products
     {
         Task<TagId> AddAsync(Tag tag);
         Task<Tag> GetByIdAsync(TagId id);
-        Task<Tag> GetBySlugAsync(Slug slug);
+        Task<Tag> GetBySlugAsync(TagSlug slug);
         Task UpdateAsync(Tag tag);
         Task<bool> DeleteAsync(TagId id);
         Task<List<Tag>> GetAllAsync();
-        Task<List<Tag>> GetAllVisibleAsync();
         Task<List<Tag>> SearchByNameAsync(string query, int maxResults);
         Task<List<Tag>> GetByIdsAsync(IEnumerable<int> ids);
         Task<Tag> GetOrCreateAsync(string name);

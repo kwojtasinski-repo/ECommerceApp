@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace ECommerceApp.Application.Catalog.Products.ViewModels
 {
-    public class ProductDetailsVm : IMapFrom<Domain.Catalog.Products.Item>
+    public class ProductDetailsVm : IMapFrom<Domain.Catalog.Products.Product>
     {
         public int Id { get; set; }
         public string Name { get; set; }
@@ -14,18 +14,22 @@ namespace ECommerceApp.Application.Catalog.Products.ViewModels
         public string Description { get; set; }
         public string Status { get; set; }
         public int CategoryId { get; set; }
+        public string CategoryName { get; set; }
         public List<ProductImageVm> Images { get; set; } = new();
         public List<int> TagIds { get; set; } = new();
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<Domain.Catalog.Products.Item, ProductDetailsVm>()
+            profile.CreateMap<Domain.Catalog.Products.Product, ProductDetailsVm>()
                 .ForMember(d => d.Name, opt => opt.MapFrom(s => s.Name.Value))
                 .ForMember(d => d.Cost, opt => opt.MapFrom(s => s.Cost.Amount))
+                .ForMember(d => d.Quantity, opt => opt.MapFrom(s => s.Quantity.Value))
+                .ForMember(d => d.Description, opt => opt.MapFrom(s => s.Description.Value))
                 .ForMember(d => d.CategoryId, opt => opt.MapFrom(s => s.CategoryId.Value))
                 .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()))
                 .ForMember(d => d.Images, opt => opt.Ignore())
-                .ForMember(d => d.TagIds, opt => opt.MapFrom(s => s.ItemTags.Select(t => t.TagId.Value).ToList()));
+                .ForMember(d => d.CategoryName, opt => opt.Ignore())
+                .ForMember(d => d.TagIds, opt => opt.MapFrom(s => s.ProductTags.Select(t => t.TagId.Value).ToList()));
         }
     }
 

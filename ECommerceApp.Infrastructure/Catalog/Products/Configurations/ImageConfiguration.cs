@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Catalog.Products;
+using ECommerceApp.Domain.Catalog.Products.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,6 +17,7 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Configurations
                    .ValueGeneratedOnAdd();
 
             builder.Property(i => i.FileName)
+                   .HasConversion(x => x.Value, v => new ImageFileName(v))
                    .HasMaxLength(500)
                    .IsRequired();
 
@@ -27,11 +29,11 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Configurations
                    .IsRequired()
                    .HasDefaultValue(0);
 
-            builder.Property(i => i.ItemId)
-                   .HasConversion(x => x.Value, v => new ItemId(v))
+            builder.Property(i => i.ProductId)
+                   .HasConversion(x => x.Value, v => new ProductId(v))
                    .IsRequired();
 
-            builder.HasIndex(i => i.ItemId);
+            builder.HasIndex(i => i.ProductId);
         }
     }
 }

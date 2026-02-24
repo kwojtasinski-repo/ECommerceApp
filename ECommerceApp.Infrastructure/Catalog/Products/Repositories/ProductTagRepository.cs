@@ -26,7 +26,7 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
         public async Task<Tag> GetByIdAsync(TagId id)
             => await _context.Tags.FirstOrDefaultAsync(t => t.Id == id);
 
-        public async Task<Tag> GetBySlugAsync(Slug slug)
+        public async Task<Tag> GetBySlugAsync(TagSlug slug)
             => await _context.Tags
                 .AsNoTracking()
                 .FirstOrDefaultAsync(t => t.Slug == slug);
@@ -49,21 +49,14 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
         public async Task<List<Tag>> GetAllAsync()
             => await _context.Tags
                 .AsNoTracking()
-                .OrderBy(t => t.Name)
-                .ToListAsync();
-
-        public async Task<List<Tag>> GetAllVisibleAsync()
-            => await _context.Tags
-                .AsNoTracking()
-                .Where(t => t.IsVisible)
-                .OrderBy(t => t.Name)
+                .OrderBy(t => t.Name.Value)
                 .ToListAsync();
 
         public async Task<List<Tag>> SearchByNameAsync(string query, int maxResults)
             => await _context.Tags
                 .AsNoTracking()
-                .Where(t => t.IsVisible && t.Name.Value.StartsWith(query))
-                .OrderBy(t => t.Name)
+                .Where(t => t.Name.Value.StartsWith(query))
+                .OrderBy(t => t.Name.Value)
                 .Take(maxResults)
                 .ToListAsync();
 
@@ -74,7 +67,7 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
 
         public async Task<Tag> GetOrCreateAsync(string name)
         {
-            var slug = Slug.FromName(name);
+            var slug = TagSlug.FromName(name);
             var existing = await _context.Tags.FirstOrDefaultAsync(t => t.Slug == slug);
             if (existing is not null)
                 return existing;

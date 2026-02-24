@@ -27,17 +27,20 @@ namespace ECommerceApp.Application.Mapping
             CreateMap<City, string>().ConvertUsing(x => x.Value);
             CreateMap<Country, string>().ConvertUsing(x => x.Value);
 
-            CreateMap<ItemId, int>().ConvertUsing(x => x.Value);
+            CreateMap<ProductId, int>().ConvertUsing(x => x.Value);
             CreateMap<CategoryId, int>().ConvertUsing(x => x.Value);
             CreateMap<TagId, int>().ConvertUsing(x => x.Value);
             CreateMap<ImageId, int>().ConvertUsing(x => x.Value);
             CreateMap<ProductName, string>().ConvertUsing(x => x.Value);
             CreateMap<Slug, string>().ConvertUsing(x => x.Value);
+            CreateMap<CategorySlug, string>().ConvertUsing(x => x.Value);
+            CreateMap<TagSlug, string>().ConvertUsing(x => x.Value);
             CreateMap<Price, decimal>().ConvertUsing(x => x.Amount);
             CreateMap<TagName, string>().ConvertUsing(x => x.Value);
             CreateMap<CategoryName, string>().ConvertUsing(x => x.Value);
             CreateMap<ProductDescription, string>().ConvertUsing(x => x.Value);
             CreateMap<ProductQuantity, int>().ConvertUsing(x => x.Value);
+            CreateMap<ImageFileName, string>().ConvertUsing(x => x.Value);
 
             ApplyMappingFromAssembly(Assembly.GetExecutingAssembly());
         }

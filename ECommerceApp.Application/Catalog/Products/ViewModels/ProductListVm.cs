@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace ECommerceApp.Application.Catalog.Products.ViewModels
 {
-    public class ProductForListVm : IMapFrom<Domain.Catalog.Products.Item>
+    public class ProductForListVm : IMapFrom<Domain.Catalog.Products.Product>
     {
         public int Id { get; set; }
         public string Name { get; set; }
@@ -15,9 +15,10 @@ namespace ECommerceApp.Application.Catalog.Products.ViewModels
 
         public void Mapping(Profile profile)
         {
-            profile.CreateMap<Domain.Catalog.Products.Item, ProductForListVm>()
+            profile.CreateMap<Domain.Catalog.Products.Product, ProductForListVm>()
                 .ForMember(d => d.Name, opt => opt.MapFrom(s => s.Name.Value))
                 .ForMember(d => d.Cost, opt => opt.MapFrom(s => s.Cost.Amount))
+                .ForMember(d => d.Quantity, opt => opt.MapFrom(s => s.Quantity.Value))
                 .ForMember(d => d.CategoryId, opt => opt.MapFrom(s => s.CategoryId.Value))
                 .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()));
         }

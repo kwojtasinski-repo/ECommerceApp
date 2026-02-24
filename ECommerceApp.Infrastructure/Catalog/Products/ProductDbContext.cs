@@ -5,11 +5,11 @@ namespace ECommerceApp.Infrastructure.Catalog.Products
 {
     public class ProductDbContext : DbContext
     {
-        public DbSet<Item> Items { get; set; }
+        public DbSet<Product> Products { get; set; }
         public DbSet<Category> Categories { get; set; }
         public DbSet<Tag> Tags { get; set; }
         public DbSet<Image> Images { get; set; }
-        public DbSet<ItemTag> ItemTags { get; set; }
+        public DbSet<ProductTag> ProductTags { get; set; }
 
         public ProductDbContext(DbContextOptions<ProductDbContext> options) : base(options)
         {

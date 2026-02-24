@@ -24,7 +24,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
             if (dto is null)
                 throw new BusinessException($"{nameof(CreateTagDto)} cannot be null");
 
-            var tag = Tag.Create(dto.Name, dto.Color, dto.IsVisible);
+            var tag = Tag.Create(dto.Name);
             var id = await _repo.AddAsync(tag);
             return id.Value;
         }
@@ -38,7 +38,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
             if (tag is null)
                 return false;
 
-            tag.Update(dto.Name, dto.Color, dto.IsVisible);
+            tag.Update(dto.Name);
             await _repo.UpdateAsync(tag);
             return true;
         }
@@ -57,12 +57,6 @@ namespace ECommerceApp.Application.Catalog.Products.Services
         public async Task<List<ProductTagVm>> GetAllTags()
         {
             var tags = await _repo.GetAllAsync();
-            return _mapper.Map<List<ProductTagVm>>(tags);
-        }
-
-        public async Task<List<ProductTagVm>> GetVisibleTags()
-        {
-            var tags = await _repo.GetAllVisibleAsync();
             return _mapper.Map<List<ProductTagVm>>(tags);
         }
 

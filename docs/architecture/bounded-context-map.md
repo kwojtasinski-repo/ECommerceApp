@@ -4,6 +4,7 @@
 > Strategic direction: [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](../adr/0002-post-event-storming-architectural-evolution-strategy.md)
 > Module taxonomy: [ADR-0004 — Module Taxonomy and Bounded Context Grouping](../adr/0004-module-taxonomy-and-bounded-context-grouping.md)
 > Folder organization: [ADR-0003 — Feature-Folder Organization for New Bounded Context Code](../adr/0003-feature-folder-organization-for-new-bounded-context-code.md)
+> Catalog BC design: [ADR-0007 — Catalog BC — Product, Category and Tag Aggregate Design](../adr/0007-catalog-bc-product-category-tag-aggregate-design.md)
 
 ---
 
@@ -52,27 +53,37 @@ BC boundaries are logical only — not enforced at the infrastructure level.
 │                                                                     │
 │  ┌─────────────┐  ┌──────────────┐  ┌──────────────────────────┐   │
 │  │   Catalog   │  │    Orders    │  │        Payments          │   │
-│  │             │  │              │  │                          │   │
-│  │ Item        │  │ Order        │  │ Payment                  │   │
+│  │  (legacy)   │  │              │  │                          │   │
+│  │ Item ⚠️      │  │ Order        │  │ Payment                  │   │
 │  │ Image       │  │ OrderItem    │  │ PaymentState (enum)       │   │
 │  │ Brand       │  │              │  │                          │   │
 │  │ Tag         │  └──────┬───────┘  └──────────┬───────────────┘   │
 │  │ Type        │         │ direct svc call      │ direct svc call   │
-│  └─────────────┘         ▼                      ▼                   │
-│                   ┌──────────────┐  ┌──────────────────────────┐   │
-│                   │   Refunds    │  │        Coupons           │   │
+│  └──────┬──────┘         ▼                      ▼                   │
+│         │ parallel  ┌──────────────┐  ┌──────────────────────────┐ │
+│         │ impl ✅   │   Refunds    │  │        Coupons           │ │
+│  ┌──────▼──────┐    │              │  │                          │ │
+│  │   Catalog   │    │ Refund       │  │ Coupon                   │ │
+│  │ (new, own   │    │              │  │ CouponType               │ │
+│  │ DbContext)  │    └──────────────┘  │ CouponUsed               │ │
+│  │ Product     │                      └──────────────────────────┘ │
+│  │ Category    │                                                    │
+│  │ Tag / Image │  ┌──────────────┐  ┌──────────────────────────┐   │
+│  └─────────────┘  │  Currencies  │  │   Identity / IAM         │   │
 │                   │              │  │                          │   │
-│                   │ Refund       │  │ Coupon                   │   │
-│                   │              │  │ CouponType               │   │
-│                   └──────────────┘  │ CouponUsed               │   │
-│                                     └──────────────────────────┘   │
-│  ┌─────────────┐  ┌──────────────┐  ┌──────────────────────────┐   │
-│  │  Customers  │  │  Currencies  │  │   Identity / IAM         │   │
-│  │             │  │              │  │                          │   │
-│  │ Customer    │  │ Currency     │  │ ApplicationUser ⚠️        │   │
-│  │ Address     │  │ CurrencyRate │  │ (leaks into Order.User)  │   │
-│  │ ContactDetail│  │ (NBP API)   │  │                          │   │
-│  └─────────────┘  └──────────────┘  └──────────────────────────┘   │
+│  ┌─────────────┐  │ Currency     │  │ ApplicationUser ⚠️        │   │
+│  │  Customers  │  │ CurrencyRate │  │ (leaks into Order.User)  │   │
+│  │  (legacy)   │  │ (NBP API)   │  │                          │   │
+│  │ Customer ⚠️  │  └──────────────┘  └──────────────────────────┘   │
+│  │ Address     │                                                     │
+│  └──────┬──────┘                                                     │
+│         │ parallel                                                   │
+│         │ impl ✅                                                     │
+│  ┌──────▼──────────────────┐                                        │
+│  │  AccountProfile (new,   │                                        │
+│  │  own UserProfileDbCtx)  │                                        │
+│  │  UserProfile aggregate  │                                        │
+│  └─────────────────────────┘                                        │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -137,9 +148,9 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | **Orders** | Behavioral aggregate | Rich domain model → target | 🔴 Currently anemic |
 | **Payments** | Behavioral aggregate | Rich domain model + state machine → target | 🔴 Currently anemic |
 | **Refunds** | Behavioral aggregate | Rich domain model → target | 🔴 Currently anemic |
-| **Catalog** (`Item`) | Mixed | Rich domain model with `ProductStatus` state machine, `ProductDbContext`, feature-folder structure | ✅ New implementation ready (parallel) |
+| **Catalog** (`Product`) | Mixed | Rich domain model, `ProductStatus` state machine, owned `Image`, `ProductDbContext`, feature-folder — see ADR-0007 | ✅ New implementation ready (parallel) |
 | **Coupons** | Reference + behavior | `AbstractService` + `CouponHandler` | 🟡 Acceptable for now |
-| **AccountProfile** (`UserProfile`) | Behavioral aggregate | Rich domain model, owned `Address`, own `UserProfileDbContext` | ✅ New implementation ready |
+| **AccountProfile** (`UserProfile`) | Behavioral aggregate | Rich domain model, owned `Address`, own `UserProfileDbContext` — see ADR-0005 | ✅ New implementation ready (parallel) |
 | **Customers** (legacy) | Reference | `AbstractService` | ⚠️ To be replaced by AccountProfile BC |
 | **Currencies** | Reference + external | `AbstractService` + NBP integration | ✅ Acceptable |
 | **Identity / IAM** | Infrastructure | ASP.NET Core Identity | ✅ Keep isolated |
@@ -178,6 +189,19 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | Atomic switch — remove old Customer/Address/ContactDetail registrations | ADR-0005 | ⬜ After integration tests pass |
 | **Shared `DomainException`** in `Domain.Shared` | ADR-0006 § Migration plan | ✅ Done |
 | **Shared `Price` VO** in `Domain.Shared` (PLN-only, Catalog + Orders) | ADR-0006 § Migration plan | ✅ Done |
+| **Shared `Money` VO** in `Domain.Shared` (transactional amount with rate) | ADR-0006 § Migration plan | ✅ Done |
+| **Catalog BC — Domain layer** (`Product` aggregate, `Category`, `Tag`, `Image` owned entity, `ProductStatus` state machine, domain events `ProductCreated`/`ProductPublished`/`ProductUnpublished`, typed IDs `ProductId`/`CategoryId`/`TagId`/`ImageId`, `ProductTag` join entity) | ADR-0007 | ✅ Done |
+| **Catalog BC — Value Objects** (`ProductName`, `ProductDescription`, `ProductQuantity`, `CategoryName`, `CategorySlug` max 100, `TagName`, `TagSlug` max 30, `ImageFileName`) | ADR-0007 | ✅ Done |
+| **Catalog BC — Image invariant** (`SetAsMain`/`ClearMain` internal, `Product.SetMainImage`, `Product.ReorderImages`, auto sort-order on add) | ADR-0007 | ✅ Done |
+| **Catalog BC — Infrastructure layer** (`ProductDbContext`, `catalog.*` schema, EF configs with explicit `HasMaxLength` on all string columns, `ProductRepository`, `CategoryRepository`, `ProductTagRepository`, DI) | ADR-0007 | ✅ Done |
+| **Catalog BC — Application layer** (DTOs with FluentValidation, ViewModels with AutoMapper, `IProductService`/`ProductService`, `ICategoryService`/`CategoryService`, `IProductTagService`/`ProductTagService`, `CategoryName` in `ProductDetailsVm`, global VO converters in `MappingProfile`) | ADR-0007 | ✅ Done |
+| **Catalog BC — Unit tests** (`ProductAggregateTests`, `ValueObjectTests`) | ADR-0007 | ✅ Done |
+| **Catalog BC — DB migration** (`InitCatalogSchema`, `catalog.*` tables) | ADR-0007 — requires migration approval | ⬜ Migration generated, pending apply |
+| Catalog BC — Regenerate migration after category hierarchy / tag color features | ADR-0007 | ⬜ Deferred |
+| **Catalog BC: Category** — add `ParentId` + `IsVisible` (hierarchy / filtering) | ADR-0007 § 8 | ⬜ Separate ADR required |
+| **Catalog BC: Tag** — add `Color` + `IsVisible` | ADR-0007 § 9 | ⬜ Deferred |
+| Migrate `ItemController` / `ImageController` / `TagController` (Web + API) → new `IProductService` / `ICategoryService` / `IProductTagService` | ADR-0007 | ⬜ Not started |
+| Atomic switch — flip Catalog to new BC, remove legacy `Domain.Model.Item`, `Image`, `Tag`, `Brand`, `Type` | ADR-0007 | ⬜ After integration tests pass |
 | **Shared `Money` VO** in `Domain.Shared` (Amount + CurrencyCode + Rate, Payments) | ADR-0006 § Migration plan | ✅ Done |
 | **Catalog/Products BC — Domain layer** (`Item` aggregate, `Category`, `Tag`, `Image`, `ItemTag`, typed IDs, VOs, domain events, repository interfaces) | ADR-0003/0004 | ✅ Done |
 | **Catalog/Products BC — Infrastructure layer** (`ProductDbContext`, `catalog.*` schema, EF configurations, repositories, DI) | ADR-0003/0004 | ✅ Done |

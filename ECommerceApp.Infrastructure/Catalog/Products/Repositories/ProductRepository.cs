@@ -15,83 +15,83 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
             _context = context;
         }
 
-        public async Task<ItemId> AddAsync(Item item)
+        public async Task<ProductId> AddAsync(Product product)
         {
-            _context.Items.Add(item);
+            _context.Products.Add(product);
             await _context.SaveChangesAsync();
-            return item.Id;
+            return product.Id;
         }
 
-        public async Task<Item> GetByIdAsync(ItemId id)
-            => await _context.Items.FirstOrDefaultAsync(i => i.Id == id);
+        public async Task<Product> GetByIdAsync(ProductId id)
+            => await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
 
-        public async Task<Item> GetByIdWithDetailsAsync(ItemId id)
-            => await _context.Items
-                .Include(i => i.Images)
-                .Include(i => i.ItemTags)
-                .FirstOrDefaultAsync(i => i.Id == id);
+        public async Task<Product> GetByIdWithDetailsAsync(ProductId id)
+            => await _context.Products
+                .Include(p => p.Images)
+                .Include(p => p.ProductTags)
+                .FirstOrDefaultAsync(p => p.Id == id);
 
-        public async Task UpdateAsync(Item item)
+        public async Task UpdateAsync(Product product)
         {
-            _context.Items.Update(item);
+            _context.Products.Update(product);
             await _context.SaveChangesAsync();
         }
 
-        public async Task<bool> DeleteAsync(ItemId id)
+        public async Task<bool> DeleteAsync(ProductId id)
         {
-            var item = await _context.Items.FirstOrDefaultAsync(i => i.Id == id);
-            if (item is null)
+            var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
+            if (product is null)
                 return false;
-            _context.Items.Remove(item);
+            _context.Products.Remove(product);
             return (await _context.SaveChangesAsync()) > 0;
         }
 
-        public async Task<bool> ExistsByIdAsync(ItemId id)
-            => await _context.Items.AnyAsync(i => i.Id == id);
+        public async Task<bool> ExistsByIdAsync(ProductId id)
+            => await _context.Products.AnyAsync(p => p.Id == id);
 
-        public async Task<List<Item>> GetAllAsync(int pageSize, int pageNo, string searchString)
+        public async Task<List<Product>> GetAllAsync(int pageSize, int pageNo, string searchString)
         {
             if (pageNo < 1) pageNo = 1;
 
-            return await _context.Items
+            return await _context.Products
                 .AsNoTracking()
-                .Where(i => string.IsNullOrEmpty(searchString) || i.Description.Value.Contains(searchString))
-                .OrderBy(i => i.Id)
+                .Where(p => string.IsNullOrEmpty(searchString) || p.Description.Value.Contains(searchString))
+                .OrderBy(p => p.Id)
                 .Skip((pageNo - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
         }
 
         public async Task<int> CountAsync(string searchString)
-            => await _context.Items
+            => await _context.Products
                 .AsNoTracking()
-                .CountAsync(i => string.IsNullOrEmpty(searchString) || i.Description.Value.Contains(searchString));
+                .CountAsync(p => string.IsNullOrEmpty(searchString) || p.Description.Value.Contains(searchString));
 
-        public async Task<List<Item>> GetPublishedAsync(int pageSize, int pageNo, string searchString)
+        public async Task<List<Product>> GetPublishedAsync(int pageSize, int pageNo, string searchString)
         {
             if (pageNo < 1) pageNo = 1;
 
-            return await _context.Items
+            return await _context.Products
                 .AsNoTracking()
-                .Where(i => i.Status == ProductStatus.Published
-                         && i.Quantity.Value > 0
-                         && (string.IsNullOrEmpty(searchString) || i.Description.Value.Contains(searchString)))
-                .OrderBy(i => i.Id)
+                .Where(p => p.Status == ProductStatus.Published
+                         && p.Quantity.Value > 0
+                         && (string.IsNullOrEmpty(searchString) || p.Description.Value.Contains(searchString)))
+                .OrderBy(p => p.Id)
                 .Skip((pageNo - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
         }
 
         public async Task<int> CountPublishedAsync(string searchString)
-            => await _context.Items
+            => await _context.Products
                 .AsNoTracking()
-                .CountAsync(i => i.Status == ProductStatus.Published
-                              && i.Quantity.Value > 0
-                              && (string.IsNullOrEmpty(searchString) || i.Description.Value.Contains(searchString)));
+                .CountAsync(p => p.Status == ProductStatus.Published
+                              && p.Quantity.Value > 0
+                              && (string.IsNullOrEmpty(searchString) || p.Description.Value.Contains(searchString)));
 
-        public async Task<List<Item>> GetByIdsAsync(IEnumerable<int> ids)
-            => await _context.Items
-                .Where(i => ids.Contains(i.Id.Value))
+        public async Task<List<Product>> GetByIdsAsync(IEnumerable<int> ids)
+            => await _context.Products
+                .Where(p => ids.Contains(p.Id.Value))
                 .ToListAsync();
     }
 }

@@ -160,6 +160,42 @@ CreateMap<Street, string>().ConvertUsing(x => x.Value);
 - Override `ToString()` to return the human-readable value.
 - For VOs with collections, override `Equals` / `GetHashCode` manually (record equality does not handle `ISet<T>` / `IList<T>` correctly).
 
+### BC-specific slug VOs — `CategorySlug` and `TagSlug`
+
+When a shared `Slug` VO is reused by entities with **different length constraints**, create
+a BC-specific slug record that delegates format validation to `Slug` and adds its own length rule.
+This removes the need for manual guards inside entity factory methods.
+
+```csharp
+// Domain/Catalog/Products/ValueObjects/CategorySlug.cs
+public sealed record CategorySlug
+{
+    public string Value { get; }
+    public CategorySlug(string value)
+    {
+        var slug = new Slug(value);          // validates lowercase/hyphens format
+        if (slug.Value.Length > 100)
+            throw new DomainException("Category slug must not exceed 100 characters.");
+        Value = slug.Value;
+    }
+    public static CategorySlug FromName(string name)
+    {
+        var slug = Slug.FromName(name);
+        if (slug.Value.Length > 100)
+            throw new DomainException("Category slug exceeds 100 characters. Use a shorter name.");
+        return new CategorySlug(slug.Value);
+    }
+    public override string ToString() => Value;
+}
+```
+
+Length limits by entity (Catalog BC):
+
+| VO | Max length |
+|---|---|
+| `CategorySlug` | 100 |
+| `TagSlug` | 30 |
+
 ### Shared monetary Value Objects — `Price` and `Money`
 
 Two monetary VOs live in `ECommerceApp.Domain.Shared` (see ADR-0006 § Migration plan):

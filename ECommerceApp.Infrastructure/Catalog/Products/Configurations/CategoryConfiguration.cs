@@ -22,7 +22,7 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Configurations
                    .IsRequired();
 
             builder.Property(c => c.Slug)
-                   .HasConversion(x => x.Value, v => new Slug(v))
+                   .HasConversion(x => x.Value, v => new CategorySlug(v))
                    .HasMaxLength(100)
                    .IsRequired();
 

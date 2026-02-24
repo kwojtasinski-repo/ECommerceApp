@@ -8,7 +8,7 @@ namespace ECommerceApp.Domain.Catalog.Products
     {
         Task<CategoryId> AddAsync(Category category);
         Task<Category> GetByIdAsync(CategoryId id);
-        Task<Category> GetBySlugAsync(Slug slug);
+        Task<Category> GetBySlugAsync(CategorySlug slug);
         Task UpdateAsync(Category category);
         Task<bool> DeleteAsync(CategoryId id);
         Task<bool> ExistsByIdAsync(CategoryId id);

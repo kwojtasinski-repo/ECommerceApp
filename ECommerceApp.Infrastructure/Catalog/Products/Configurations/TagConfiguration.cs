@@ -22,16 +22,9 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Configurations
                    .IsRequired();
 
             builder.Property(t => t.Slug)
-                   .HasConversion(x => x.Value, v => new Slug(v))
+                   .HasConversion(x => x.Value, v => new TagSlug(v))
                    .HasMaxLength(30)
                    .IsRequired();
-
-            builder.Property(t => t.Color)
-                   .HasMaxLength(30);
-
-            builder.Property(t => t.IsVisible)
-                   .IsRequired()
-                   .HasDefaultValue(true);
 
             builder.HasIndex(t => t.Slug).IsUnique();
         }

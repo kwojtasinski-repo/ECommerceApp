@@ -26,7 +26,7 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
         public async Task<Category> GetByIdAsync(CategoryId id)
             => await _context.Categories.FirstOrDefaultAsync(c => c.Id == id);
 
-        public async Task<Category> GetBySlugAsync(Slug slug)
+        public async Task<Category> GetBySlugAsync(CategorySlug slug)
             => await _context.Categories
                 .AsNoTracking()
                 .FirstOrDefaultAsync(c => c.Slug == slug);
