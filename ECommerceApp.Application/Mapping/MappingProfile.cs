@@ -1,11 +1,12 @@
 ﻿using AutoMapper;
 using ECommerceApp.Domain.AccountProfile;
 using ECommerceApp.Domain.AccountProfile.ValueObjects;
+using ECommerceApp.Domain.Catalog.Products;
+using ECommerceApp.Domain.Catalog.Products.ValueObjects;
+using ECommerceApp.Domain.Shared;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 
 namespace ECommerceApp.Application.Mapping
 {
@@ -25,6 +26,18 @@ namespace ECommerceApp.Application.Mapping
             CreateMap<ZipCode, string>().ConvertUsing(x => x.Value);
             CreateMap<City, string>().ConvertUsing(x => x.Value);
             CreateMap<Country, string>().ConvertUsing(x => x.Value);
+
+            CreateMap<ItemId, int>().ConvertUsing(x => x.Value);
+            CreateMap<CategoryId, int>().ConvertUsing(x => x.Value);
+            CreateMap<TagId, int>().ConvertUsing(x => x.Value);
+            CreateMap<ImageId, int>().ConvertUsing(x => x.Value);
+            CreateMap<ProductName, string>().ConvertUsing(x => x.Value);
+            CreateMap<Slug, string>().ConvertUsing(x => x.Value);
+            CreateMap<Price, decimal>().ConvertUsing(x => x.Amount);
+            CreateMap<TagName, string>().ConvertUsing(x => x.Value);
+            CreateMap<CategoryName, string>().ConvertUsing(x => x.Value);
+            CreateMap<ProductDescription, string>().ConvertUsing(x => x.Value);
+            CreateMap<ProductQuantity, int>().ConvertUsing(x => x.Value);
 
             ApplyMappingFromAssembly(Assembly.GetExecutingAssembly());
         }

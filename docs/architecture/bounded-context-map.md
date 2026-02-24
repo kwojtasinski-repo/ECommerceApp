@@ -137,7 +137,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | **Orders** | Behavioral aggregate | Rich domain model → target | 🔴 Currently anemic |
 | **Payments** | Behavioral aggregate | Rich domain model + state machine → target | 🔴 Currently anemic |
 | **Refunds** | Behavioral aggregate | Rich domain model → target | 🔴 Currently anemic |
-| **Catalog** (`Item`) | Mixed | Handler pattern for complex ops | 🟡 Partially rich (`Item` has some methods) |
+| **Catalog** (`Item`) | Mixed | Rich domain model with `ProductStatus` state machine, `ProductDbContext`, feature-folder structure | ✅ New implementation ready (parallel) |
 | **Coupons** | Reference + behavior | `AbstractService` + `CouponHandler` | 🟡 Acceptable for now |
 | **AccountProfile** (`UserProfile`) | Behavioral aggregate | Rich domain model, owned `Address`, own `UserProfileDbContext` | ✅ New implementation ready |
 | **Customers** (legacy) | Reference | `AbstractService` | ⚠️ To be replaced by AccountProfile BC |
@@ -176,6 +176,17 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | AccountProfile BC — Integration tests | ADR-0005 | ⬜ Not started |
 | Migrate `CustomerController` / `AddressController` / `ContactDetailController` (Web + API) → `IUserProfileService` | ADR-0005 | ⬜ Not started |
 | Atomic switch — remove old Customer/Address/ContactDetail registrations | ADR-0005 | ⬜ After integration tests pass |
+| **Shared `DomainException`** in `Domain.Shared` | ADR-0006 § Migration plan | ✅ Done |
+| **Shared `Price` VO** in `Domain.Shared` (PLN-only, Catalog + Orders) | ADR-0006 § Migration plan | ✅ Done |
+| **Shared `Money` VO** in `Domain.Shared` (Amount + CurrencyCode + Rate, Payments) | ADR-0006 § Migration plan | ✅ Done |
+| **Catalog/Products BC — Domain layer** (`Item` aggregate, `Category`, `Tag`, `Image`, `ItemTag`, typed IDs, VOs, domain events, repository interfaces) | ADR-0003/0004 | ✅ Done |
+| **Catalog/Products BC — Infrastructure layer** (`ProductDbContext`, `catalog.*` schema, EF configurations, repositories, DI) | ADR-0003/0004 | ✅ Done |
+| **Catalog/Products BC — Application layer** (DTOs, ViewModels, `IProductService`, `ICategoryService`, `IProductTagService`, `IImageUrlBuilder`, validators, DI) | ADR-0003/0004 | ✅ Done |
+| **Catalog/Products BC — Unit tests** (`ItemAggregateTests`, `ValueObjectTests`) | ADR-0003/0004 | ✅ Done |
+| **Catalog/Products BC — DB migration** (`catalog` schema, `Items` + `Categories` + `Tags` + `Images` + `ItemTags` tables) | Requires migration approval | ⬜ Pending approval |
+| Catalog/Products BC — Integration tests | ADR-0003/0004 | ⬜ Not started |
+| Migrate `ItemController` / `BrandController` / `TypeController` / `TagController` (Web + API) → new Catalog services | ADR-0003/0004 | ⬜ Not started |
+| Atomic switch — remove old Item/Brand/Type/Tag registrations | ADR-0003/0004 | ⬜ After integration tests pass |
 | Remove `ApplicationUser` nav from `Order` | ADR-0002 § 8 — part of Sales/Orders migration | ⬜ Not started |
 | `Order.MarkAsPaid()` — own state transition | ADR-0008 | ⬜ Not started |
 | `Payment` factory + private setters | ADR-0008 | ⬜ Not started |

@@ -155,10 +155,62 @@ CreateMap<Street, string>().ConvertUsing(x => x.Value);
 - Always `sealed record` — never `class` or non-sealed record.
 - No public setters — immutable after construction.
 - Throw `DomainException` (not `ArgumentException` or `BusinessException`) for invariant violations.
-  Each BC defines its own `DomainException`; move to `ECommerceApp.Domain.Shared` when shared by two or more BCs.
+  `DomainException` lives in `ECommerceApp.Domain.Shared` — use it from all BCs.
 - Trim and normalise string input in the constructor (e.g. `Trim()`, `ToUpperInvariant()`).
 - Override `ToString()` to return the human-readable value.
 - For VOs with collections, override `Equals` / `GetHashCode` manually (record equality does not handle `ISet<T>` / `IList<T>` correctly).
+
+### Shared monetary Value Objects — `Price` and `Money`
+
+Two monetary VOs live in `ECommerceApp.Domain.Shared` (see ADR-0006 § Migration plan):
+
+**`Price`** — PLN-only catalog/order value. No currency field.
+```csharp
+// Domain/Shared/Price.cs
+public sealed record Price
+{
+    public decimal Amount { get; }
+    public Price(decimal amount)
+    {
+        if (amount <= 0) throw new DomainException("Price must be positive.");
+        Amount = amount;
+    }
+    public Money ToMoney(decimal rate = 1m) => new Money(Amount, "PLN", rate);
+}
+```
+Used by: `Item.Cost` (Catalog), `Order.TotalCost` (Orders).
+
+**`Money`** — transactional amount with currency and exchange rate.
+```csharp
+// Domain/Shared/Money.cs
+public sealed record Money
+{
+    public decimal Amount { get; }
+    public string CurrencyCode { get; }
+    public decimal Rate { get; }          // NBP rate at transaction time; PLN = 1
+    public Money(decimal amount, string currencyCode, decimal rate) { ... }
+    public static Money Pln(decimal amount) => new(amount, "PLN", 1m);
+    public decimal ToBaseCurrency() => Amount * Rate;  // → PLN equivalent
+}
+```
+Used by: `Payment.Amount` (Payments). Rate captures the NBP conversion fact at payment time.
+
+EF Core mapping for `Price` (single column):
+```csharp
+builder.Property(i => i.Cost)
+       .HasConversion(x => x.Amount, v => new Price(v))
+       .HasPrecision(18, 4).IsRequired();
+```
+
+EF Core mapping for `Money` (owned type, three columns):
+```csharp
+builder.OwnsOne(p => p.Amount, m =>
+{
+    m.Property(x => x.Amount).HasColumnName("Amount").HasPrecision(18, 4);
+    m.Property(x => x.CurrencyCode).HasColumnName("CurrencyCode").HasMaxLength(3);
+    m.Property(x => x.Rate).HasColumnName("Rate").HasPrecision(18, 6);
+});
+```
 
 ---
 

@@ -1,5 +1,6 @@
 ﻿using AutoMapper.Internal;
 using ECommerceApp.Application.AccountProfile.Services;
+using ECommerceApp.Application.Catalog.Products.Services;
 using ECommerceApp.Application.External;
 using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Identity.IAM.Services;
@@ -25,6 +26,7 @@ namespace ECommerceApp.Application
             services.AddServices();
             services.AddIamServices();
             services.AddUserProfileServices();
+            services.AddCatalogServices();
             services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
             services.AddFluentValidationAutoValidation();
             return services;

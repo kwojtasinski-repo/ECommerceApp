@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.Infrastructure.AccountProfile;
+using ECommerceApp.Infrastructure.Catalog.Products;
 using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Identity.IAM.Auth;
 using ECommerceApp.Infrastructure.Repositories;
@@ -15,6 +16,7 @@ namespace ECommerceApp.Infrastructure
             services.AddRepositories();
             services.AddIamInfrastructure(configuration);
             services.AddUserProfileInfrastructure(configuration);
+            services.AddCatalogInfrastructure(configuration);
             return services;
         }
     }

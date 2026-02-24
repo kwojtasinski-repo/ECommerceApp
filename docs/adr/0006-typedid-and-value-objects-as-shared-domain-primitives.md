@@ -171,9 +171,16 @@ CreateMap<UserProfileId, int>().ConvertUsing(x => x.Value);
    modernisation sprint. Priority order (most benefit / least risk first):
    `Customer` → `Order` → `Payment` → `Refund` → `Coupon`.
 
-3. **Shared `DomainException`** — `DomainException` currently lives in
-   `ECommerceApp.Domain.AccountProfile`. Move it to `ECommerceApp.Domain.Shared` when the
-   second BC adopts the VO pattern, so it is available without a cross-BC namespace reference.
+3. **Shared `DomainException`** — `DomainException` was moved to `ECommerceApp.Domain.Shared`
+   when the Catalog/Products BC adopted the VO pattern alongside AccountProfile.
+   `ECommerceApp.Domain.AccountProfile.DomainException` still exists for backward compatibility
+   and will be consolidated when AccountProfile is updated to use the shared one.
 
-4. **`implementation-patterns.md`** — sections 3 (Value Object) and 4 (Strongly-Typed ID)
+4. **Shared monetary VOs** — `Price` and `Money` live in `ECommerceApp.Domain.Shared`:
+   - `Price` (PLN-only, no currency field) — used by Catalog (`Item.Cost`) and Orders (`Order.TotalCost`).
+   - `Money` (Amount + CurrencyCode + Rate) — used by Payments (`Payment.Amount`).
+     Rate captures the NBP exchange rate at transaction time for audit and PLN conversion.
+   - `Price.ToMoney()` bridges Catalog/Orders to the Payment BC at checkout time.
+
+5. **`implementation-patterns.md`** — sections 3 (Value Object) and 4 (Strongly-Typed ID)
    updated to reflect this decision (done alongside this ADR).
