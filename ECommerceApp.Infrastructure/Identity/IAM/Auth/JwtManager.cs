@@ -1,5 +1,4 @@
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Domain.Model;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.Collections.Generic;
@@ -24,14 +23,14 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
                 SecurityAlgorithms.HmacSha256);
         }
 
-        public string IssueToken(ApplicationUser applicationUser, IEnumerable<string> roles)
+        public string IssueToken(string userId, string email, IEnumerable<string> roles)
         {
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, applicationUser.Id),
+                new Claim(JwtRegisteredClaimNames.Sub, userId),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim(ClaimTypes.NameIdentifier, applicationUser.Id),
-                new Claim(ClaimTypes.Name, applicationUser.Email)
+                new Claim(ClaimTypes.NameIdentifier, userId),
+                new Claim(ClaimTypes.Name, email)
             };
 
             claims.AddRange(roles.Select(role => new Claim(ClaimsIdentity.DefaultRoleClaimType, role)));

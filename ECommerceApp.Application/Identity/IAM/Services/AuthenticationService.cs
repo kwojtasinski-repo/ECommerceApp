@@ -1,7 +1,7 @@
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Identity.IAM.DTOs;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Domain.Model;
+using ECommerceApp.Domain.Identity.IAM;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.Identity.IAM.Services
@@ -30,7 +30,7 @@ namespace ECommerceApp.Application.Identity.IAM.Services
             var user = await _userManager.FindByNameAsync(dto.Email)
                 ?? throw new BusinessException("Invalid credentials");
             var roles = await _userManager.GetRolesAsync(user);
-            var jwtToken = _jwtManager.IssueToken(user, roles);
+            var jwtToken = _jwtManager.IssueToken(user.Id, user.Email, roles);
             return new SignInResponseDto(jwtToken, "");
         }
     }

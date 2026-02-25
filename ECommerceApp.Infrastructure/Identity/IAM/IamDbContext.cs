@@ -1,4 +1,4 @@
-using ECommerceApp.Domain.Model;
+using ECommerceApp.Domain.Identity.IAM;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;

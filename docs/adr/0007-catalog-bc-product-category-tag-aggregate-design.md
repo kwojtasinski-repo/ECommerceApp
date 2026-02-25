@@ -223,7 +223,7 @@ CreateMap<ImageFileName, string>().ConvertUsing(x => x.Value);
 
 ## Conformance checklist
 
-- [ ] All `Product`, `Category`
+- [ ] All `Product`, `Category`, `Tag`, `Image` properties use `private set`
 - [ ] `Product.Create(...)` is `static`, returns `(Product, ProductCreated)`
 - [ ] `Product.cs` has a `private Product()` parameterless constructor for EF Core
 - [ ] `Product.cs`, `Category.cs`, `Tag.cs` live under `Domain/Catalog/Products/`

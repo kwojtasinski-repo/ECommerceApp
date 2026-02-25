@@ -111,7 +111,7 @@ Tables: `profile.UserProfiles`, `profile.Addresses`.
 
 ## Conformance checklist
 
-- [ ] All `UserProfile`
+- [ ] All `UserProfile` and `Address` properties use `private set` (record: init-only via constructor)
 - [ ] `UserProfile.Create(...)` is `static`, returns `(UserProfile, UserProfileCreated)`
 - [ ] `UserProfile.cs` has a `private UserProfile()` parameterless constructor for EF Core
 - [ ] `UserProfile.cs` lives under `Domain/AccountProfile/` (no group subfolder)

@@ -2,7 +2,7 @@ using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Identity.IAM.DTOs;
 using ECommerceApp.Application.Identity.IAM.Services;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Domain.Model;
+using ECommerceApp.Domain.Identity.IAM;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
 using Moq;
@@ -73,7 +73,7 @@ namespace ECommerceApp.UnitTests.Identity.IAM
                         .ReturnsAsync(user);
             _userManager.Setup(u => u.GetRolesAsync(user))
                         .ReturnsAsync(roles);
-            _jwtManager.Setup(j => j.IssueToken(user, roles))
+            _jwtManager.Setup(j => j.IssueToken(user.Id, user.Email, roles))
                        .Returns(expectedToken);
 
             var service = CreateService();

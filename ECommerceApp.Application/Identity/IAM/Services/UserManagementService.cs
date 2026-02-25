@@ -2,7 +2,7 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Identity.IAM.ViewModels;
-using ECommerceApp.Domain.Model;
+using ECommerceApp.Domain.Identity.IAM;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;

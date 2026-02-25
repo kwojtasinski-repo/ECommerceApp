@@ -1,7 +1,7 @@
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Identity.IAM.Services;
 using ECommerceApp.Application.Identity.IAM.ViewModels;
-using ECommerceApp.Domain.Model;
+using ECommerceApp.Domain.Identity.IAM;
 using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
 using Microsoft.AspNetCore.Identity;
