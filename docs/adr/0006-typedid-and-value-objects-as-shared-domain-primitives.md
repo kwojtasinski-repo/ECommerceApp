@@ -184,3 +184,29 @@ CreateMap<UserProfileId, int>().ConvertUsing(x => x.Value);
 
 5. **`implementation-patterns.md`** — sections 3 (Value Object) and 4 (Strongly-Typed ID)
    updated to reflect this decision (done alongside this ADR).
+
+## Conformance checklist
+
+- [ ] Every aggregate ID
+- [ ] Every value object is a `sealed record` with validation in the constructor
+- [ ] `DomainException` used for VO validation failures (not `ArgumentException`)
+- [ ] Shared VOs (`Price`, `Money`, `Slug`, `DomainException`) live in `Domain/Shared/`
+- [ ] BC-specific VOs live under `Domain/<Group>/<BcName>/ValueObjects/`
+- [ ] EF Core `HasConversion` configured for every typed ID and VO in entity configurations
+
+## References
+
+- Related ADRs:
+  - [ADR-0001 — Project Overview and Technology Stack](./0001-project-overview-and-technology-stack.md)
+  - [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](./0002-post-event-storming-architectural-evolution-strategy.md)
+  - [ADR-0005 — AccountProfile BC UserProfile Aggregate Design](./0005-accountprofile-bc-userprofile-aggregate-design.md)
+  - [ADR-0007 — Catalog BC Product, Category, and Tag Aggregate Design](./0007-catalog-bc-product-category-tag-aggregate-design.md)
+- Instruction files:
+  - [`.github/instructions/dotnet-instructions.md`](../../.github/instructions/dotnet-instructions.md)
+  - [`.github/instructions/efcore-instructions.md`](../../.github/instructions/efcore-instructions.md)
+- Issues / PRs: <!-- link -->
+- Repository: https://github.com/kwojtasinski-repo/ECommerceApp
+
+## Reviewers
+
+- @team/architecture

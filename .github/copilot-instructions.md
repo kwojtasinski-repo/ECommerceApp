@@ -51,6 +51,12 @@ This file sets repository-level rules for automation agents, Copilot, and contri
 - `.github/instructions/efcore-instructions.md` — EF Core tracking, transactions, migrations, seeding.
 - `.github/instructions/migration-policy.md` — DB migration approval process and checklist.
 - `.github/instructions/testing-instructions.md` — Unit and integration test patterns, BaseTest, Flurl, Shouldly.
+- Prompt files under `.github/prompts/`:
+  - `bc-analysis.md` — bounded context analysis and migration planning.
+  - `bc-implementation.md` — step-by-step BC implementation guide.
+  - `pr-review.md` — PR review with targeted ADR loading by scope.
+- Agent files under `.github/agents/`:
+  - `adr-generator` — generate ADRs by scanning the codebase; invoke with `@adr-generator`.
 
 ## 3. AI developer profile (expected behavior)
 - Act as a senior .NET developer experienced with DDD, SOLID, and pragmatic TDD.
@@ -87,7 +93,8 @@ Disallowed without explicit human approval:
 ## 6. Pre-edit checklist (mandatory steps before any edit)
 Before proposing or committing changes, perform and document the steps below in the PR description:
 - Read the entire target file(s) and relevant related files (Controllers, services, repository code, tests).
-- Read applicable ADRs under `/docs/adr` and the relevant per-stack instructions under `.github/instructions/`.
+- Read ADRs in `/docs/adr` that are directly relevant to the area being changed — not all of them.
+- Read the relevant per-stack instructions under `.github/instructions/`.
 - Search for usages and migration impact (references, database migrations, API clients) and list affected areas.
 - Run local validations: `dotnet restore`, `dotnet build`, and `dotnet test` (or explain why not possible).
 - Include tests for any behavioral change and a short rollback/mitigation plan for risky changes.

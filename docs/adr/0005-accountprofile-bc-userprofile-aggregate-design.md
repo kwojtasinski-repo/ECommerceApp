@@ -108,3 +108,28 @@ Tables: `profile.UserProfiles`, `profile.Addresses`.
    to inject `IUserProfileService`.
 4. Remove old DI registrations for `ICustomerService`, `IAddressService`, `IContactDetailService`,
    `IContactDetailTypeService` after all tests pass.
+
+## Conformance checklist
+
+- [ ] All `UserProfile`
+- [ ] `UserProfile.Create(...)` is `static`, returns `(UserProfile, UserProfileCreated)`
+- [ ] `UserProfile.cs` has a `private UserProfile()` parameterless constructor for EF Core
+- [ ] `UserProfile.cs` lives under `Domain/AccountProfile/` (no group subfolder)
+- [ ] No `ICollection<Order>`, `ICollection<Payment>` or other cross-BC navigation in `UserProfile.cs`
+- [ ] No `ApplicationUser` navigation property — `string UserId` only
+- [ ] `Address` has no repository interface — all mutations go through `UserProfile` aggregate methods
+- [ ] `UserProfileDbContext` uses schema `"profile"`
+- [ ] `UserProfileService` is `internal sealed`
+
+## Implementation Status
+
+| Layer | Status |
+|---|---|
+| Domain (`UserProfile`, owned `Address`, `UserProfileCreated` event, `IUserProfileRepository`, typed IDs, value objects) | ✅ Done |
+| Infrastructure (`UserProfileDbContext`, `profile.*` schema, `OwnsMany` Address config, `UserProfileRepository`, DI) | ✅ Done |
+| Application (DTOs, ViewModels, `IUserProfileService` incl. address ops, validators, DI) | ✅ Done |
+| Unit tests (`UserProfileAggregateTests`, `UserProfileServiceTests`) | ✅ Done |
+| DB migration (`profile` schema, `UserProfiles` + `Addresses` tables) | ⬜ Pending approval |
+| Integration tests | ⬜ Not started |
+| Controller migration (`CustomerController`, `AddressController`, `ContactDetailController`) | ⬜ Not started |
+| Atomic switch — remove old Customer / Address / ContactDetail registrations | ⬜ After integration tests |

@@ -220,3 +220,30 @@ CreateMap<ImageFileName, string>().ConvertUsing(x => x.Value);
    bounded-context-map refactoring progress tracker.
 5. Legacy `Domain.Model.Item`, `Image`, `Tag`, `Brand`, `Type` and related services/repositories
    are removed only after the atomic switch.
+
+## Conformance checklist
+
+- [ ] All `Product`, `Category`
+- [ ] `Product.Create(...)` is `static`, returns `(Product, ProductCreated)`
+- [ ] `Product.cs` has a `private Product()` parameterless constructor for EF Core
+- [ ] `Product.cs`, `Category.cs`, `Tag.cs` live under `Domain/Catalog/Products/`
+- [ ] No `ICollection<OrderItem>` or other cross-BC navigation in `Product.cs`
+- [ ] `Image.SetAsMain()` and `Image.ClearMain()` are `internal` — not `public`
+- [ ] `ProductDbContext` uses schema `"catalog"`
+- [ ] `ProductService`, `CategoryService`, `ProductTagService` are each `internal sealed`
+- [ ] `CategorySlug` enforces max length 100; `TagSlug` enforces max length 30
+
+## Implementation Status
+
+| Layer | Status |
+|---|---|
+| Domain (`Product`, `Category`, `Tag`, owned `Image`, `ProductStatus`, domain events, typed IDs, value objects, repository interfaces) | ✅ Done |
+| Infrastructure (`ProductDbContext`, `catalog.*` schema, EF configs with `HasMaxLength`, `ProductRepository`, `CategoryRepository`, `ProductTagRepository`, DI) | ✅ Done |
+| Application (DTOs with FluentValidation, ViewModels with AutoMapper, `IProductService`/`ProductService`, `ICategoryService`, `IProductTagService`, global VO converters) | ✅ Done |
+| Unit tests (`ProductAggregateTests`, `ValueObjectTests`) | ✅ Done |
+| DB migration (`InitCatalogSchema`, `catalog.*` tables) | ⬜ Pending approval |
+| Integration tests | ⬜ Not started |
+| Controller migration (`ItemController`, `ImageController`, `TagController`) | ⬜ Not started |
+| Atomic switch — remove legacy `Domain.Model.Item`, `Image`, `Tag`, `Brand`, `Type` | ⬜ After integration tests |
+| `Category.ParentId` + `IsVisible` (hierarchy / filtering) | ⬜ Separate ADR required — ADR-0007 §8 |
+| `Tag.Color` + `IsVisible` | ⬜ Deferred — ADR-0007 §9 |

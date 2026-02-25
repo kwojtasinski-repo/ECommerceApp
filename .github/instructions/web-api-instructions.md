@@ -21,7 +21,7 @@ Security & auth
 - Validate authorization inside services only when required for business logic; prefer attributes for coarse-grained control.
 
 Error handling and responses
-- Do not catch exceptions in controllers; let `ExceptionMiddleware` handle unhandled exceptions.
+- Exception handling pipeline: see [`dotnet-instructions.md §4`](../instructions/dotnet-instructions.md).
 - For expected business errors, return appropriate status codes using `BadRequest`, `NotFound`, `Conflict`, etc., mapping from `BusinessException` when needed.
 - Use `ProblemDetails` or typed error response models (`ExceptionResponse`) for API error contracts.
 
@@ -33,7 +33,7 @@ Testing
 - API integration tests use `IClassFixture<CustomWebApplicationFactory<Startup>>` — NOT `BaseTest<T>` (which is for service-level integration tests).
 - API integration tests use **Flurl** (`client.Request(...)`) for HTTP calls and **Shouldly** (`ShouldBe`, `ShouldNotBeNull`) for assertions.
 - Use `_factory.GetAuthenticatedClient()` to get an authenticated HTTP client in tests.
-- Test naming follows the same pattern: `given_<context>_when_<action>_should_<expected_result>`.
+- Test naming follows `Method_Conditions_ExpectedResult` — see [`testing-instructions.md`](../instructions/testing-instructions.md).
 
 Documentation
 - Keep OpenAPI (Swagger) updated for new endpoints and models. Document expected status codes and error responses.

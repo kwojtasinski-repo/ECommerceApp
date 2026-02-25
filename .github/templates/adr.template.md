@@ -58,6 +58,23 @@ describe the steps needed to migrate. If no migration is needed, write "N/A".
 
 N/A
 
+## Conformance checklist
+<!--
+List the structural invariants that can be verified mechanically during PR review.
+Keep these as WHAT to check (invariants), not HOW to check (tool commands).
+Build and test verification belongs in the agent/reviewer process, not in the ADR.
+
+Examples:
+  - [ ] All aggregate properties use `private set`
+  - [ ] Static `Create(...)` factory method present, returns `(Aggregate, DomainEvent)`
+  - [ ] Aggregate files live under `Domain/<Group>/<BcName>/`
+  - [ ] No cross-BC navigation properties — IDs only
+  - [ ] `DbContext` uses schema `"<schema>"`
+  - [ ] Service implementation is `internal sealed`
+-->
+
+- [ ]
+
 ## References
 <!--
 Links to relevant tickets, docs, RFCs, related ADRs, or external resources.

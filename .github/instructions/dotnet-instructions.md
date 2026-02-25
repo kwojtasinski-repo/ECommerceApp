@@ -131,20 +131,9 @@ Both `ECommerceApp.Web` and `ECommerceApp.API` have a `BaseController` that all 
 
 Unit tests live in `ECommerceApp.UnitTests`, integration tests in `ECommerceApp.IntegrationTests`.
 
-**Test naming — must follow this pattern:**
-```
-Method_Conditions_ExpectedResult()
-```
+**Test naming** — use `Method_Conditions_ExpectedResult` pattern; see [`testing-instructions.md`](../instructions/testing-instructions.md) for convention and examples.
 
-Examples:
-```csharp
-public void AddItem_NullDto_ShouldThrowBusinessException()
-public void AddItem_ValidDtoWithImages_ShouldAddItem()
-public void GetItem_ExistingId_ShouldReturnItem()
-public void MarkAsPaid_AlreadyPaidOrder_ShouldThrowBusinessException()
-```
-
-> **Existing tests** use the legacy `given_<context>_when_<action>_should_<result>` convention — do NOT rename them. All new tests use `Method_Conditions_ExpectedResult`.
+> **Existing tests** use the legacy `given_<context>_when_<action>_should_<result>` convention — do NOT rename them.
 
 **Unit test rules:**
 - Extend `BaseTest` (from `UnitTests/Common/BaseTest.cs`) — provides a configured `IMapper` via `MappingProfile`.

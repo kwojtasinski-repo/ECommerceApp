@@ -32,37 +32,8 @@ and includes a minimal code template adapted to .NET 7 + MSSQL.
 
 ## 1. Module Structure
 
-Every new BC uses **feature-folder organization** per ADR-0003 + ADR-0004.
-The group prefix (`Sales`, `Inventory`, etc.) comes from ADR-0004 module taxonomy.
-
-```
-ECommerceApp.Domain/<Group>/<BcName>/
-  <Aggregate>.cs
-  <ValueObject>.cs
-  I<Aggregate>Repository.cs
-
-ECommerceApp.Application/<Group>/<BcName>/
-  Services/
-    <BcName>Service.cs       ← Facade
-    I<BcName>Service.cs
-  ViewModels/
-    <Name>Vm.cs
-  DTOs/
-    <Name>Dto.cs
-
-ECommerceApp.Infrastructure/<Group>/<BcName>/
-  Repositories/
-    <Aggregate>Repository.cs
-  Configurations/
-    <Aggregate>Configuration.cs
-```
-
-Namespace convention:
-```csharp
-namespace ECommerceApp.Domain.Sales.Orders;
-namespace ECommerceApp.Application.Sales.Orders.Services;
-namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories;
-```
+> Folder convention and namespace rules: see [`dotnet-instructions.md §17`](../../.github/instructions/dotnet-instructions.md).
+> Module taxonomy (group names): see [ADR-0004](../../docs/adr/0004-module-taxonomy-and-bounded-context-grouping.md).
 
 ---
 
@@ -465,21 +436,9 @@ public partial class Context : IOrderDbContext { }
 
 ## 10. DI Registration
 
-**When**: every new BC registers its own services in the layer's `DependencyInjection.cs`.
-Do NOT register in `Startup.cs` / `Program.cs` directly.
-
-```csharp
-// Application/DependencyInjection.cs — add inside the existing method
-services.AddScoped<IOrderService, OrderService>();
-
-// Infrastructure/DependencyInjection.cs — add inside the existing method
-services.AddScoped<IOrderRepository, OrderRepository>();
-```
-
-**Rules:**
-- `IOrderService` registered as `internal sealed OrderService` — consumers only see the interface.
-- New BC registrations are additive — existing registrations are never removed during parallel build.
-- Remove old registrations only after the atomic switch (Step 9 of parallel change).
+> Rules: see [`dotnet-instructions.md §13`](../../.github/instructions/dotnet-instructions.md).
+> Register in the layer's `DependencyInjection.cs` — never in `Startup.cs` / `Program.cs`.
+> New BC registrations are additive; remove old ones only after the atomic switch.
 
 ---
 

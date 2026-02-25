@@ -162,6 +162,12 @@ Incremental — per ADR-0003 Strangler Fig policy:
 2. Existing BCs migrated one group at a time when a dedicated refactoring ADR is accepted.
 3. `Supporting` group (Currencies) is the lowest-risk migration candidate as a reference run.
 
+## Conformance checklist
+
+- [ ] Each new BC folder
+- [ ] No BC placed directly under `Domain/` without a group subfolder (except `Shared/`)
+- [ ] Group folder names match the taxonomy table in § Decision
+
 ## References
 
 - Related ADRs:

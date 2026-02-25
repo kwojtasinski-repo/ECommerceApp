@@ -52,6 +52,21 @@ ECommerceApp.Infrastructure/<Group>/<BcName>/Repositories/
 ECommerceApp.Infrastructure/<Group>/<BcName>/Configurations/
 ```
 
+If a dedicated ADR exists for this BC (e.g. `ADR-00XX`), add a `## Implementation Status` table
+at the end of that ADR now — all rows start as `⬜ Not started`. Update each row to `✅ Done`
+as each step below is completed. The standard rows are:
+
+| Layer | Status |
+|---|---|
+| Domain (aggregate, value objects, domain events, repository interface) | ⬜ Not started |
+| Infrastructure (DbContext, schema, EF configs, repository, DI) | ⬜ Not started |
+| Application (DTOs, ViewModels, service interface + impl, validators, DI) | ⬜ Not started |
+| Unit tests | ⬜ Not started |
+| DB migration | ⬜ Pending approval |
+| Integration tests | ⬜ Not started |
+| Controller migration | ⬜ Not started |
+| Atomic switch | ⬜ After integration tests |
+
 ### Step 2 — Domain layer (pure, no dependencies)
 
 Create in order — each depends on the previous:
@@ -121,7 +136,8 @@ Switch steps:
 1. Update controllers / API controllers to inject the new service interface
 2. Remove old DI registrations (old service + old repository)
 3. Run full test suite
-4. Update `docs/architecture/bounded-context-map.md` progress tracker
+4. Update `## Implementation Status` table in the BC's ADR (mark controller migration and atomic switch as ✅ Done)
+5. Update `docs/architecture/bounded-context-map.md` progress tracker — move BC from **Completed (switch pending)** if fully switched
 
 ---
 
@@ -129,31 +145,19 @@ Switch steps:
 
 ### Domain layer
 - [ ] Folders created under `Domain/<Group>/<BcName>/`
-- [ ] Value objects are `record` types with private constructors
-- [ ] Aggregate has `private set` on all properties
-- [ ] Aggregate has `private` parameterless constructor (for EF Core)
-- [ ] Aggregate has `static Create(...)` factory method
-- [ ] State transitions are methods returning domain events
-- [ ] No `ApplicationUser` navigation property
-- [ ] No cross-BC navigation properties — IDs only
+- [ ] Aggregate rules followed — see [`dotnet-instructions.md §16`](../instructions/dotnet-instructions.md)
 - [ ] Repository interface extends `IGenericRepository<T>`
 
 ### Infrastructure layer
 - [ ] Folders created under `Infrastructure/<Group>/<BcName>/`
 - [ ] EF Core configuration file created
-- [ ] Repository implementation is `internal sealed`
-- [ ] `AsNoTracking()` used for all reads
-- [ ] Repository registered in `Infrastructure/DependencyInjection.cs`
-- [ ] EF Core configuration registered in `Context.OnModelCreating`
+- [ ] Repository registered — see [`dotnet-instructions.md §13`](../instructions/dotnet-instructions.md)
 
 ### Application layer
 - [ ] Folders created under `Application/<Group>/<BcName>/`
-- [ ] DTOs are `record` types
-- [ ] ViewModels implement `IMapFrom<T>`
 - [ ] Service implementation is `internal sealed`
 - [ ] Service never returns domain entities — maps to VM/DTO
-- [ ] `BusinessException` thrown for all domain violations
-- [ ] Service registered in `Application/DependencyInjection.cs`
+- [ ] Service registered — see [`dotnet-instructions.md §13`](../instructions/dotnet-instructions.md)
 
 ### Tests
 - [ ] Unit tests for aggregate methods
@@ -165,6 +169,7 @@ Switch steps:
 ### Switch
 - [ ] Controllers updated to use new service
 - [ ] Old registrations removed
+- [ ] `## Implementation Status` in BC ADR updated (all rows ✅ Done)
 - [ ] Progress tracker updated in `bounded-context-map.md`
 
 ---

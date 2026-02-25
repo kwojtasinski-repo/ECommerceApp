@@ -60,14 +60,98 @@ Fill every section of the template based on scanned evidence:
 - **Consequences → Risks & mitigations**: Include real risks with concrete mitigations.
 - **Alternatives considered**: List real alternatives that were rejected and why.
 - **Migration plan**: If already implemented — write `Already implemented. N/A for new code.`
+- **Conformance checklist**: See Step 6a below.
 - **References**: Link to relevant instruction files under `.github/instructions/`.
+
+### 6a. Generate the conformance checklist
+
+The `## Conformance checklist` section lists the structural invariants from `## Decision`
+that can be verified mechanically during PR review.
+Fill it with **what** must be true (invariants), not **how** to verify (tool commands).
+Build and test verification is handled by the reviewer/agent process, not by the ADR.
+
+- One check per key invariant stated in `## Decision`
+- Reference real class names and file paths found during Step 4
+- Examples of structural invariants to capture:
+  - All aggregate properties use `private set`
+  - Static `Create(...)` factory method present, returning `(Aggregate, DomainEvent)`
+  - Aggregate files live under the correct `Domain/<Group>/<BcName>/` path
+  - No cross-BC navigation properties — foreign key IDs only
+  - `DbContext` uses the correct named schema
+  - Service implementation is `internal sealed`
+  - No `ApplicationUser` navigation property in any domain model
+
+Rule: every item in `## Decision` that is a verifiable invariant must appear in the checklist.
+Prose-only consequences (rationale, trade-offs) stay in `## Consequences` — not in the checklist.
 
 ### 7. Save the ADR
 Save the filled ADR to `/docs/adr/XXXX-short-title.md` where `XXXX` is the zero-padded number
 determined in Step 3.
 
 ### 8. Confirm output
-After saving, confirm the file path and show the full generated content for review.
+After saving, confirm the file path, then immediately proceed to Step 9.
+Do NOT report success before Step 9 passes.
+
+### 9. Validate the generated ADR (post-save)
+
+Run the checks below in order. If a check fails, fix and retry before proceeding to the next check.
+See **Retry policy** for failure behaviour.
+
+**Check 1 — Structure: all required sections present**
+Read the saved file. Verify every section from the template exists:
+- `## Status` with a valid value (`Proposed`, `Accepted`, `Deprecated`, or `Superseded by ADR-XXXX`)
+- `## Date` in `YYYY-MM-DD` format — not `YYYY-MM-DD` literal
+- `## Context` — non-empty, references real constraints
+- `## Decision` — non-empty, uses active voice
+- `## Consequences` with sub-sections `### Positive`, `### Negative`, `### Risks & mitigations`
+- `## Alternatives considered` — at least one rejected alternative
+- `## Conformance checklist` with at least one structural invariant
+- `## References` — contains `Related ADRs` entry (even if `None`)
+
+If any section is missing or still contains template placeholder text → fill that section and re-check.
+
+**Check 2 — No invented class names (Accepted ADRs only)**
+Skip this check for `Proposed` ADRs — class names in proposed ADRs are design intent, not yet implemented.
+
+For `Accepted` ADRs: extract every class name, interface name, and file path mentioned in
+`## Decision` and `## Conformance checklist`. For each one, run `search/textSearch` to confirm it
+exists in the codebase. If a name is NOT found:
+- If it is a planned future class (clearly qualified as such in context) → acceptable, add a note
+- If it was cited as already existing → remove or replace with the real name found in Step 4
+
+**Check 3 — ADR number collision**
+Run `search/fileSearch` for the generated filename prefix (e.g. `0008-`).
+If any file in `/docs/adr/` already starts with that number → increment the number,
+rename the file, and update all self-references inside the document.
+
+**Check 4 — Cross-reference integrity**
+For every ADR listed under `## References → Related ADRs`, run `search/fileSearch` to verify
+the referenced file exists in `/docs/adr/`. Remove any reference to an ADR that does not exist.
+
+---
+
+## Retry policy (never bypass)
+
+After each validation check, if a check FAILS:
+1. State exactly what failed and why (one sentence per failure).
+2. Fix only that specific issue — do not re-generate the whole ADR.
+3. Re-run only the failed check.
+4. Do NOT re-run checks that already passed.
+
+Maximum retries per check: **3**.
+
+If a check still fails after 3 retries, output a **BLOCKED** report and stop:
+
+```
+[BLOCKED] ADR generation incomplete
+Check failed: <check name>
+Attempts: 3/3
+Last error: <exact error or missing item>
+Human action needed: <specific instruction — e.g. "Class X was not found; confirm correct name">
+```
+
+NEVER mark the task as complete if any check failed.
+NEVER output a partial or unvalidated ADR as the final result.
 
 ---
 
