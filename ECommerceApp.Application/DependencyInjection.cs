@@ -6,6 +6,7 @@ using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Identity.IAM.Services;
 using ECommerceApp.Application.Middlewares;
 using ECommerceApp.Application.Services;
+using ECommerceApp.Application.Supporting.Currencies.Services;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +28,7 @@ namespace ECommerceApp.Application
             services.AddIamServices();
             services.AddUserProfileServices();
             services.AddCatalogServices();
+            services.AddCurrencyServices();
             services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
             services.AddFluentValidationAutoValidation();
             return services;

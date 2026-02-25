@@ -4,6 +4,8 @@ using ECommerceApp.Domain.AccountProfile.ValueObjects;
 using ECommerceApp.Domain.Catalog.Products;
 using ECommerceApp.Domain.Catalog.Products.ValueObjects;
 using ECommerceApp.Domain.Shared;
+using ECommerceApp.Domain.Supporting.Currencies;
+using ECommerceApp.Domain.Supporting.Currencies.ValueObjects;
 using System;
 using System.Linq;
 using System.Reflection;
@@ -41,6 +43,11 @@ namespace ECommerceApp.Application.Mapping
             CreateMap<ProductDescription, string>().ConvertUsing(x => x.Value);
             CreateMap<ProductQuantity, int>().ConvertUsing(x => x.Value);
             CreateMap<ImageFileName, string>().ConvertUsing(x => x.Value);
+
+            CreateMap<CurrencyId, int>().ConvertUsing(x => x.Value);
+            CreateMap<CurrencyRateId, int>().ConvertUsing(x => x.Value);
+            CreateMap<CurrencyCode, string>().ConvertUsing(x => x.Value);
+            CreateMap<CurrencyDescription, string>().ConvertUsing(x => x.Value);
 
             ApplyMappingFromAssembly(Assembly.GetExecutingAssembly());
         }

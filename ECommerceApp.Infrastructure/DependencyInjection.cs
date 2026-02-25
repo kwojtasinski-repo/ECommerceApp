@@ -3,6 +3,7 @@ using ECommerceApp.Infrastructure.Catalog.Products;
 using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Identity.IAM.Auth;
 using ECommerceApp.Infrastructure.Repositories;
+using ECommerceApp.Infrastructure.Supporting.Currencies;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,6 +18,7 @@ namespace ECommerceApp.Infrastructure
             services.AddIamInfrastructure(configuration);
             services.AddUserProfileInfrastructure(configuration);
             services.AddCatalogInfrastructure(configuration);
+            services.AddCurrencyInfrastructure(configuration);
             return services;
         }
     }

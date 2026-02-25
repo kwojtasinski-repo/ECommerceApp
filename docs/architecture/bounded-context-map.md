@@ -5,6 +5,7 @@
 > Module taxonomy: [ADR-0004 — Module Taxonomy and Bounded Context Grouping](../adr/0004-module-taxonomy-and-bounded-context-grouping.md)
 > Folder organization: [ADR-0003 — Feature-Folder Organization for New Bounded Context Code](../adr/0003-feature-folder-organization-for-new-bounded-context-code.md)
 > Catalog BC design: [ADR-0007 — Catalog BC — Product, Category and Tag Aggregate Design](../adr/0007-catalog-bc-product-category-tag-aggregate-design.md)
+> Currencies BC design: [ADR-0008 — Supporting/Currencies BC — Currency and CurrencyRate Aggregate Design](../adr/0008-supporting-currencies-bc-design.md)
 
 ---
 
@@ -74,16 +75,16 @@ BC boundaries are logical only — not enforced at the infrastructure level.
 │  ┌─────────────┐  │ Currency     │  │ ApplicationUser ⚠️        │   │
 │  │  Customers  │  │ CurrencyRate │  │ (leaks into Order.User)  │   │
 │  │  (legacy)   │  │ (NBP API)   │  │                          │   │
-│  │ Customer ⚠️  │  └──────────────┘  └──────────────────────────┘   │
-│  │ Address     │                                                     │
-│  └──────┬──────┘                                                     │
-│         │ parallel                                                   │
-│         │ impl ✅                                                     │
-│  ┌──────▼──────────────────┐                                        │
-│  │  AccountProfile (new,   │                                        │
-│  │  own UserProfileDbCtx)  │                                        │
-│  │  UserProfile aggregate  │                                        │
-│  └─────────────────────────┘                                        │
+│  │ Customer ⚠️  │  └──────┬───────┘  └──────────────────────────┘   │
+│  │ Address     │         │ parallel                                 │
+│  └──────┬──────┘         │ impl ✅                                   │
+│         │ parallel  ┌────▼─────────────────┐                        │
+│         │ impl ✅   │  Currencies (new,    │                        │
+│  ┌──────▼──────────────────┐  own CurrencyDbCtx) │                  │
+│  │  AccountProfile (new,   │  Currency (rich)     │                  │
+│  │  own UserProfileDbCtx)  │  CurrencyRate        │                  │
+│  │  UserProfile aggregate  │  (async NBP API)     │                  │
+│  └─────────────────────────┘  └────────────────────┘                │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -152,7 +153,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | **Coupons** | Reference + behavior | `AbstractService` + `CouponHandler` | 🟡 Acceptable for now |
 | **AccountProfile** (`UserProfile`) | Behavioral aggregate | Rich domain model, owned `Address`, own `UserProfileDbContext` — see ADR-0005 | ✅ New implementation ready (parallel) |
 | **Customers** (legacy) | Reference | `AbstractService` | ⚠️ To be replaced by AccountProfile BC |
-| **Currencies** | Reference + external | `AbstractService` + NBP integration | ✅ Acceptable |
+| **Currencies** | Reference + external | Rich domain model, `CurrencyCode`/`CurrencyDescription` VOs, own `CurrencyDbContext`, fully async NBP — see ADR-0008 | ✅ New implementation ready (parallel) |
 | **Identity / IAM** | Infrastructure | ASP.NET Core Identity | ✅ Keep isolated |
 
 ---
@@ -169,6 +170,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | **Identity / IAM** | [ADR-0002 §8](../adr/0002-post-event-storming-architectural-evolution-strategy.md) | Migrate `LoginController` + `UserManagementController` → flip `UseIamStore: true` → remove old `IUserService` / `AuthenticationService` / `Domain/Model/ApplicationUser.cs` → integration tests |
 | **AccountProfile** | [ADR-0005](../adr/0005-accountprofile-bc-userprofile-aggregate-design.md), [ADR-0006](../adr/0006-typedid-and-value-objects-as-shared-domain-primitives.md) | DB migration approval → integration tests → migrate `CustomerController` / `AddressController` / `ContactDetailController` → atomic switch |
 | **Catalog** | [ADR-0007](../adr/0007-catalog-bc-product-category-tag-aggregate-design.md) | DB migration approval → integration tests → migrate `ItemController` / `ImageController` / `TagController` → atomic switch |
+| **Currencies** | [ADR-0008](../adr/0008-supporting-currencies-bc-design.md), [ADR-0006](../adr/0006-typedid-and-value-objects-as-shared-domain-primitives.md) | DB migration approval → integration tests → migrate `CurrencyController` (→ async) → coordinate with Catalog switch (`ItemService` dep) → atomic switch |
 | **Shared domain primitives** (`TypedId<T>`, `Price`, `Money`, `DomainException`) | [ADR-0006](../adr/0006-typedid-and-value-objects-as-shared-domain-primitives.md) | — complete |
 
 > 🔵 Deferred: IAM refresh token — separate ADR required.
@@ -180,8 +182,8 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 
 | BC | ADR | Status | Notes |
 |---|---|---|---|
-| **Sales/Orders** | ADR-0008 | ⬜ Not started | `Order.MarkAsPaid()`, factory, private setters |
-| **Sales/Payments** | ADR-0008 | ⬜ Not started | After Orders — `Payment` factory, state machine |
+| **Sales/Orders** | — | ⬜ Not started | `Order.MarkAsPaid()`, factory, private setters |
+| **Sales/Payments** | — | ⬜ Not started | After Orders — `Payment` factory, state machine |
 | **Sales/Coupons** | — | ⬜ Not started | After Orders + Payments — resolve `CouponHandler` direct `Order.Cost` write |
 | **Presale/Checkout** | — | ⬜ Not started | Greenfield — after all Sales BCs stable |
 
@@ -205,4 +207,5 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 - [ADR-0005 — AccountProfile BC: UserProfile Aggregate Design](../adr/0005-accountprofile-bc-userprofile-aggregate-design.md)
 - [ADR-0006 — Strongly-Typed IDs and Self-Validating Value Objects as Shared Domain Primitives](../adr/0006-typedid-and-value-objects-as-shared-domain-primitives.md)
 - [ADR-0007 — Catalog BC: Product, Category and Tag Aggregate Design](../adr/0007-catalog-bc-product-category-tag-aggregate-design.md)
+- [ADR-0008 — Supporting/Currencies BC: Currency and CurrencyRate Aggregate Design](../adr/0008-supporting-currencies-bc-design.md)
 - [`.github/instructions/dotnet-instructions.md`](../../.github/instructions/dotnet-instructions.md) § 16
