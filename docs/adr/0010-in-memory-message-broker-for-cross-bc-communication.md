@@ -181,12 +181,24 @@ public async Task HandleAsync(CheckoutCompleted msg, CancellationToken ct)
 ```json
 // appsettings.json
 "Messaging": {
-  "UseBackgroundDispatcher": true
+  "UseBackgroundDispatcher": true,
+  "RetryCount": 5,
+  "RetryBaseDelaySeconds": 5,
+  "RetryMaxDelaySeconds": 60,
+  "MaxHandlerExecutionSeconds": 30,
+  "HandlerOverrides": {
+    "CheckoutCompleted": {
+      "RetryBaseDelaySeconds": 10
+    }
+  }
 }
 ```
 
 `UseBackgroundDispatcher = false` is available for test scenarios where synchronous
 in-request dispatch is easier to assert against.
+
+`HandlerOverrides` is keyed by message type name; any field absent in an override entry
+falls back to the global default. See Amendment A4 for full details.
 
 ---
 
@@ -199,15 +211,20 @@ ECommerceApp.Application/Messaging/
   IMessageHandler.cs
   IAsyncMessageDispatcher.cs
   IMessageChannel.cs
-  MessagingOptions.cs
+  IMessageRetryMonitor.cs          ← new (public observability interface)
+  MessagingOptions.cs              ← extended (retry + HandlerOverrides fields)
+  MessageEnvelope.cs               ← new
+  MessageRetryStatus.cs            ← new (Processing | Retrying | DeadLettered)
+  HandlerRetryOptions.cs           ← new (per-type retry override)
   Extensions.cs                    ← AddMessagingServices()
 
 ECommerceApp.Infrastructure/Messaging/
-  MessageChannel.cs
-  AsyncMessageDispatcher.cs
+  MessageChannel.cs                ← updated (Channel<MessageEnvelope>)
+  AsyncMessageDispatcher.cs        ← updated (envelope-aware)
   InMemoryMessageBroker.cs
-  BackgroundMessageDispatcher.cs   ← BackgroundService
-  Extensions.cs                    ← AddMessagingInfrastructure()
+  InMemoryMessageRetryMonitor.cs   ← new (internal sealed Singleton)
+  BackgroundMessageDispatcher.cs   ← updated (retry logic, monitor, hang timeout)
+  Extensions.cs                    ← updated (register InMemoryMessageRetryMonitor)
 ```
 
 ---
@@ -241,8 +258,10 @@ All publisher call sites (`_messageBroker.PublishAsync(...)`) and all handler im
 ### Negative
 
 - One additional `BackgroundService` running concurrently.
-- If a handler throws and retries are not implemented, the message is silently dropped
-  (logged but not retried). Acceptable for current scale; outbox pattern addresses this later.
+- Up to `RetryCount` retry attempts (default 5) with exponential backoff
+  (`min(2^n × RetryBaseDelaySeconds, RetryMaxDelaySeconds)` ± 15% jitter). Messages
+  exhausting all retries enter `DeadLettered` state in `InMemoryMessageRetryMonitor` —
+  visible and logged at `Critical`; not silently dropped.
 - Cross-BC messages are not durable — app restart drops any unprocessed messages in the channel.
   For non-financial background notifications this is acceptable. For critical flows (e.g.,
   checkout → PaymentTimeout scheduling), the `DeferredJobQueue` row is the durable record;
@@ -255,6 +274,13 @@ All publisher call sites (`_messageBroker.PublishAsync(...)`) and all handler im
 - **Risk**: Slow handler blocks channel reader for other messages.
   **Mitigation**: Each handler runs in its own `IServiceScope` inside `Task.Run` (future
   enhancement); for current synchronous dispatch, handler must be fast.
+- **Risk**: Handler hangs (edge case) — `BackgroundMessageDispatcher` loop stalls indefinitely.
+  **Mitigation**: Apply `CancellationTokenSource.CancelAfter(MaxHandlerExecutionSeconds)` per
+  handler invocation to bound execution time. `ProcessingStartedAt` stored in
+  `InMemoryMessageRetryMonitor` provides observability (`Status=Processing AND
+  now − ProcessingStartedAt > MaxHandlerExecutionSeconds`). If hanging handlers become common,
+  move dispatch to parallel `Task.Run` per message. Considered an edge case in the current
+  system — document and monitor rather than over-engineer.
 - **Risk**: Message type defined in wrong BC creates reverse dependency.
   **Mitigation**: Enforce via code review — messages live in publisher's `Messages/` folder only.
 
@@ -290,6 +316,123 @@ No existing code is removed until Step 7. Parallel change strategy applies.
 
 ---
 
+## Amendment — Retry, Observability and Configuration Revisions (2026-02-26)
+
+The following amendments extend the original design with a retry mechanism, dead-letter
+observability, and a configurable backoff strategy. Sections §5 and §6 have been updated
+in-place to reflect these additions. No existing contract (`IMessage`, `IMessageBroker`,
+`IMessageHandler<T>`) changes — only infrastructure internals are extended.
+
+---
+
+### A1 — MessageEnvelope and channel type change
+
+The channel type changes from `Channel<IMessage>` to `Channel<MessageEnvelope>`. `IMessage`
+remains a clean marker interface with no retry fields on the public contract.
+
+`MessageEnvelope` wraps every message in transit:
+
+```csharp
+public sealed record MessageEnvelope(
+    Guid MessageId,
+    IMessage Message,
+    int RetryCount,
+    int MaxRetries,
+    string? LastError,
+    DateTime EnqueuedAt,
+    DateTime? RetryAfter,
+    DateTime? FailedAt);
+```
+
+`MessageId` is stable across all retry attempts — the same `Guid` identifies the original
+dispatch and all subsequent retries.
+
+Affected components: `IMessageChannel`, `MessageChannel`, `IAsyncMessageDispatcher`,
+`AsyncMessageDispatcher`, `BackgroundMessageDispatcher`.
+
+---
+
+### A2 — Retry mechanism with non-blocking re-enqueue
+
+On handler failure, `BackgroundMessageDispatcher` does not re-enqueue synchronously. It uses
+a fire-and-forget `Task.Run` pattern so the channel reader loop is never blocked during the
+backoff delay:
+
+```csharp
+// On handler exception:
+if (envelope.RetryCount < envelope.MaxRetries)
+{
+    var delay = ComputeBackoff(envelope.RetryCount, options);
+    var retryEnvelope = envelope with
+    {
+        RetryCount = envelope.RetryCount + 1,
+        RetryAfter = DateTime.UtcNow + delay,
+        LastError = ex.Message,
+        FailedAt = DateTime.UtcNow
+    };
+    _monitor.SetRetrying(retryEnvelope);
+    _ = Task.Run(async () =>
+    {
+        await Task.Delay(delay, ct);
+        await _channel.Writer.WriteAsync(retryEnvelope, ct);
+    }, ct);
+}
+else
+{
+    _monitor.SetDeadLettered(retryEnvelope);
+    _logger.LogCritical("Message dead-lettered: {MessageType} {MessageId}", ...);
+}
+```
+
+Messages that exhaust all retries are not silently dropped — they enter `DeadLettered` state
+in `InMemoryMessageRetryMonitor` and are logged at `Critical`.
+
+---
+
+### A3 — InMemoryMessageRetryMonitor
+
+A new `internal sealed` Singleton tracks every in-flight message. Same structural pattern as
+`InMemoryJobStatusMonitor`.
+
+State machine:
+
+```
+Enqueued → Processing → (success)                   → removed from monitor
+                     → (failure, retries remain)    → Retrying → Processing (next attempt)
+                     → (failure, retries exhausted) → DeadLettered (retained until cleared)
+```
+
+Monitor entry fields:
+- `MessageId` — stable `Guid` (dictionary key)
+- `MessageType` — for diagnostics
+- `Status` — `MessageRetryStatus` enum: `Processing | Retrying | DeadLettered`
+- `RetryCount`
+- `LastError`
+- `NextRetryAt` — from `RetryAfter` on the envelope
+- `EnqueuedAt`
+- `ProcessingStartedAt` — set when handler invocation begins; cleared on success
+
+Exposed via `IMessageRetryMonitor` (public interface in `Application/Messaging/`).
+
+---
+
+### A4 — Extended MessagingOptions configuration
+
+`MessagingOptions` is extended with retry and timeout settings (see updated §5).
+
+Backoff formula: `min(2^retryCount × RetryBaseDelaySeconds, RetryMaxDelaySeconds)` with
+±15% uniform jitter, computed relative to `FailedAt` (not `EnqueuedAt`) — each retry window
+starts from the previous failure.
+
+`HandlerOverrides` is keyed by message type name. Any field absent in an override entry falls
+back to the global default. Per-type configuration in a database is the correct evolution path
+when the number of distinct message types grows beyond 3–4.
+
+`MaxHandlerExecutionSeconds` is the intended bound for `CancellationTokenSource.CancelAfter(...)`
+per handler invocation (see Risks & mitigations — hang detection edge case).
+
+---
+
 ## Conformance checklist
 
 - [ ] `IMessage`, `IMessageBroker`, `IMessageHandler<T>` live in `Application/Messaging/`
@@ -300,6 +443,12 @@ No existing code is removed until Step 7. Parallel change strategy applies.
 - [ ] `BackgroundMessageDispatcher` is registered via `TryAddHostedService`
 - [ ] `MessagingOptions` is bound from configuration (not hardcoded)
 - [ ] Handler exceptions are caught and logged — never propagate to `BackgroundMessageDispatcher` loop
+- [ ] `MessageEnvelope` carries `MessageId`, `RetryCount`, `RetryAfter`, `FailedAt` — `IMessage` stays clean
+- [ ] `BackgroundMessageDispatcher` uses non-blocking `Task.Run(Delay + WriteAsync)` re-enqueue on retry
+- [ ] `InMemoryMessageRetryMonitor` is `internal sealed` Singleton, keyed by `MessageId`
+- [ ] `RetryCount`, `RetryBaseDelaySeconds`, `RetryMaxDelaySeconds` bound from `MessagingOptions` (not hardcoded)
+- [ ] `HandlerOverrides` per-type override falls back to global defaults when a field is absent
+- [ ] `DeadLettered` entries logged at `Critical` and retained in monitor until explicitly cleared
 
 ---
 
