@@ -6,6 +6,7 @@ using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Identity.IAM.Services;
 using ECommerceApp.Application.Middlewares;
 using ECommerceApp.Application.Services;
+using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Supporting.Currencies.Services;
 using ECommerceApp.Application.Supporting.TimeManagement.Services;
 using FluentValidation;
@@ -31,6 +32,7 @@ namespace ECommerceApp.Application
             services.AddCatalogServices();
             services.AddCurrencyServices();
             services.AddTimeManagementServices();
+            services.AddMessagingServices();
             services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
             services.AddFluentValidationAutoValidation();
             return services;
