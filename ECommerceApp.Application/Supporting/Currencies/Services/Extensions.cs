@@ -1,3 +1,4 @@
+using ECommerceApp.Application.Supporting.TimeManagement;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ECommerceApp.Application.Supporting.Currencies.Services
@@ -8,7 +9,8 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
         {
             return services
                 .AddScoped<ICurrencyService, CurrencyService>()
-                .AddScoped<ICurrencyRateService, CurrencyRateService>();
+                .AddScoped<ICurrencyRateService, CurrencyRateService>()
+                .AddScoped<IScheduledTask, CurrencyRateSyncTask>();
         }
     }
 }

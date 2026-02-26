@@ -1,0 +1,75 @@
+@using ECommerceApp.Application.Supporting.TimeManagement.Models
+@model IReadOnlyList<JobExecutionRecord>
+
+@{
+    ViewData["Title"] = $"History — {ViewBag.JobName}";
+    int currentPage = ViewBag.Page;
+}
+
+<h2>Execution History — <code>@ViewBag.JobName</code></h2>
+
+<a asp-action="Index" class="btn btn-secondary mb-3">
+    <i class="fas fa-arrow-left"></i> Back to Jobs
+</a>
+
+<table class="table table-bordered table-hover">
+    <thead class="thead-dark">
+        <tr>
+            <th>Started</th>
+            <th>Completed</th>
+            <th>Duration</th>
+            <th>Source</th>
+            <th>Result</th>
+            <th>Message</th>
+            <th>Execution ID</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var record in Model)
+        {
+            var duration = record.CompletedAt - record.StartedAt;
+            <tr class="@(record.Succeeded ? "" : "table-danger")">
+                <td>@record.StartedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                <td>@record.CompletedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                <td>@duration.TotalSeconds.ToString("F1")s</td>
+                <td><span class="badge badge-info">@record.Source</span></td>
+                <td>
+                    @if (record.Succeeded)
+                    {
+                        <span class="badge badge-success">Success</span>
+                    }
+                    else
+                    {
+                        <span class="badge badge-danger">Failed</span>
+                    }
+                </td>
+                <td><small>@record.Message</small></td>
+                <td><small class="text-muted">@record.ExecutionId</small></td>
+            </tr>
+        }
+        @if (!Model.Any())
+        {
+            <tr>
+                <td colspan="7" class="text-center text-muted">No execution records found.</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<nav>
+    <ul class="pagination">
+        @if (currentPage > 1)
+        {
+            <li class="page-item">
+                <a class="page-link" asp-action="History" asp-route-jobName="@ViewBag.JobName" asp-route-page="@(currentPage - 1)">Previous</a>
+            </li>
+        }
+        <li class="page-item active"><span class="page-link">@currentPage</span></li>
+        @if (Model.Count == 20)
+        {
+            <li class="page-item">
+                <a class="page-link" asp-action="History" asp-route-jobName="@ViewBag.JobName" asp-route-page="@(currentPage + 1)">Next</a>
+            </li>
+        }
+    </ul>
+</nav>

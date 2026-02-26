@@ -64,6 +64,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "adr", "adr", "{25B91C37-ECC
 		docs\adr\0005-accountprofile-bc-userprofile-aggregate-design.md = docs\adr\0005-accountprofile-bc-userprofile-aggregate-design.md
 		docs\adr\0006-typedid-and-value-objects-as-shared-domain-primitives.md = docs\adr\0006-typedid-and-value-objects-as-shared-domain-primitives.md
 		docs\adr\0007-catalog-bc-product-category-tag-aggregate-design.md = docs\adr\0007-catalog-bc-product-category-tag-aggregate-design.md
+		docs\adr\0008-supporting-currencies-bc-design.md = docs\adr\0008-supporting-currencies-bc-design.md
+		docs\adr\0009-supporting-timemanagement-bc-design.md = docs\adr\0009-supporting-timemanagement-bc-design.md
+		docs\adr\0010-in-memory-message-broker-for-cross-bc-communication.md = docs\adr\0010-in-memory-message-broker-for-cross-bc-communication.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ECommerce", "ECommerce", "{049E647F-D15D-4AFB-8AE6-DB2363C9F4D4}"

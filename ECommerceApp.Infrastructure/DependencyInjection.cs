@@ -4,6 +4,7 @@ using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Identity.IAM.Auth;
 using ECommerceApp.Infrastructure.Repositories;
 using ECommerceApp.Infrastructure.Supporting.Currencies;
+using ECommerceApp.Infrastructure.Supporting.TimeManagement;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,6 +20,12 @@ namespace ECommerceApp.Infrastructure
             services.AddUserProfileInfrastructure(configuration);
             services.AddCatalogInfrastructure(configuration);
             services.AddCurrencyInfrastructure(configuration);
+            services.AddTimeManagementInfrastructure(configuration, jobs =>
+            {
+                jobs.AddRecurring("CurrencyRateSync", cron: "15 12 * * *", maxRetries: 3);
+                jobs.AddRecurring("PaymentExpiration", cron: "*/5 * * * *", maxRetries: 3);
+                jobs.AddDeferred("PaymentTimeout", maxRetries: 2);
+            });
             return services;
         }
     }

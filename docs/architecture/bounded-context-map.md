@@ -6,6 +6,7 @@
 > Folder organization: [ADR-0003 — Feature-Folder Organization for New Bounded Context Code](../adr/0003-feature-folder-organization-for-new-bounded-context-code.md)
 > Catalog BC design: [ADR-0007 — Catalog BC — Product, Category and Tag Aggregate Design](../adr/0007-catalog-bc-product-category-tag-aggregate-design.md)
 > Currencies BC design: [ADR-0008 — Supporting/Currencies BC — Currency and CurrencyRate Aggregate Design](../adr/0008-supporting-currencies-bc-design.md)
+> TimeManagement BC design: [ADR-0009 — Supporting/TimeManagement BC — Scheduled and Deferred Job Design](../adr/0009-supporting-timemanagement-bc-design.md)
 
 ---
 
@@ -154,6 +155,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | **AccountProfile** (`UserProfile`) | Behavioral aggregate | Rich domain model, owned `Address`, own `UserProfileDbContext` — see ADR-0005 | ✅ New implementation ready (parallel) |
 | **Customers** (legacy) | Reference | `AbstractService` | ⚠️ To be replaced by AccountProfile BC |
 | **Currencies** | Reference + external | Rich domain model, `CurrencyCode`/`CurrencyDescription` VOs, own `CurrencyDbContext`, fully async NBP — see ADR-0008 | ✅ New implementation ready (parallel) |
+| **TimeManagement** | Supporting infrastructure | `Channel<T>` async dispatch, `BackgroundService` scheduler + poller + dispatcher, `IScheduledTask` plugin contract, `IDeferredJobScheduler`, `TimeManagementDbContext`, lazy DB init — see ADR-0009 | 🔵 ADR accepted, implementation not started |
 | **Identity / IAM** | Infrastructure | ASP.NET Core Identity | ✅ Keep isolated |
 
 ---
@@ -182,6 +184,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 
 | BC | ADR | Status | Notes |
 |---|---|---|---|
+| **Supporting/TimeManagement** | [ADR-0009](../adr/0009-supporting-timemanagement-bc-design.md) | 🔵 In progress | Domain + Infrastructure + Application + `CurrencyRateSyncTask` + unit tests |
 | **Sales/Orders** | — | ⬜ Not started | `Order.MarkAsPaid()`, factory, private setters |
 | **Sales/Payments** | — | ⬜ Not started | After Orders — `Payment` factory, state machine |
 | **Sales/Coupons** | — | ⬜ Not started | After Orders + Payments — resolve `CouponHandler` direct `Order.Cost` write |
@@ -193,7 +196,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 
 | Task | ADR | Status |
 |---|---|---|
-| Per-BC `DbContext` interfaces | ADR-0009 | ⬜ Not started |
+| Per-BC `DbContext` interfaces | Planned ADR-0010 | ⬜ Not started |
 | `PaymentHandler` → event-based coordination | Planned ADR (Saga) | ⬜ Not started |
 | `CouponHandler` — remove direct `Order.Cost` write | ADR-0002 §9 | ⬜ Not started |
 | Remove `ApplicationUser` nav from `Order` | ADR-0002 §8 | ⬜ Part of Sales/Orders migration |
@@ -208,4 +211,5 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 - [ADR-0006 — Strongly-Typed IDs and Self-Validating Value Objects as Shared Domain Primitives](../adr/0006-typedid-and-value-objects-as-shared-domain-primitives.md)
 - [ADR-0007 — Catalog BC: Product, Category and Tag Aggregate Design](../adr/0007-catalog-bc-product-category-tag-aggregate-design.md)
 - [ADR-0008 — Supporting/Currencies BC: Currency and CurrencyRate Aggregate Design](../adr/0008-supporting-currencies-bc-design.md)
+- [ADR-0009 — Supporting/TimeManagement BC: Scheduled and Deferred Job Design](../adr/0009-supporting-timemanagement-bc-design.md)
 - [`.github/instructions/dotnet-instructions.md`](../../.github/instructions/dotnet-instructions.md) § 16
