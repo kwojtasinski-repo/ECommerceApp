@@ -13,6 +13,8 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
 {
     internal sealed class DeferredJobPollerService : BackgroundService
     {
+        private static readonly TimeSpan LockWindow = TimeSpan.FromMinutes(5);
+
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly JobTriggerChannel _channel;
         private readonly ILogger<DeferredJobPollerService> _logger;
@@ -44,24 +46,33 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
                 var context = scope.ServiceProvider.GetRequiredService<TimeManagementDbContext>();
                 var now = DateTime.UtcNow;
 
-                var pending = await context.DeferredJobInstances
-                    .Include(d => d.ScheduledJob)
-                    .Where(d => d.Status == DeferredJobStatus.Pending && d.RunAt <= now)
+                // A4: fetch both due-pending rows and zombie rows (Running with expired lock)
+                var candidates = await context.DeferredJobQueue
+                    .Where(d => (d.Status == DeferredJobStatus.Pending && d.RunAt <= now)
+                             || (d.Status == DeferredJobStatus.Running && d.LockExpiresAt < now))
                     .OrderBy(d => d.RunAt)
                     .Take(50)
                     .ToListAsync(ct);
 
-                foreach (var instance in pending)
+                foreach (var instance in candidates)
                 {
-                    if (instance.ScheduledJob == null)
+                    // A4: zombie recovery — reset to Pending, do NOT dispatch immediately
+                    if (instance.Status == DeferredJobStatus.Running)
+                    {
+                        _logger.LogWarning(
+                            "Zombie detected for job '{JobName}' (id={Id}), resetting to Pending",
+                            instance.JobName, instance.Id.Value);
+                        instance.ResetZombie(now);
+                        await context.SaveChangesAsync(ct);
                         continue;
+                    }
 
-                    instance.MarkRunning();
+                    instance.MarkRunning(now + LockWindow);
                     await context.SaveChangesAsync(ct);
 
                     await _channel.WriteAsync(new JobTriggerRequest
                     {
-                        JobName = instance.ScheduledJob.Name.Value,
+                        JobName = instance.JobName,
                         EntityId = instance.EntityId,
                         Source = JobTriggerSource.Deferred,
                         DeferredInstanceId = instance.Id.Value

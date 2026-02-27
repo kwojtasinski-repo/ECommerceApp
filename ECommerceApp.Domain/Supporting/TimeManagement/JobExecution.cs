@@ -5,8 +5,8 @@ namespace ECommerceApp.Domain.Supporting.TimeManagement
     public class JobExecution
     {
         public JobExecutionId Id { get; private set; } = new JobExecutionId(0);
-        public ScheduledJobId ScheduledJobId { get; private set; } = default!;
-        public DeferredJobInstanceId? DeferredInstanceId { get; private set; }
+        public string JobName { get; private set; } = default!;
+        public int? DeferredQueueId { get; private set; }
         public byte Source { get; private set; }
         public string ExecutionId { get; private set; } = default!;
         public DateTime StartedAt { get; private set; }
@@ -17,8 +17,8 @@ namespace ECommerceApp.Domain.Supporting.TimeManagement
         private JobExecution() { }
 
         public static JobExecution Record(
-            ScheduledJobId scheduledJobId,
-            DeferredJobInstanceId? deferredInstanceId,
+            string jobName,
+            int? deferredQueueId,
             byte source,
             string executionId,
             DateTime startedAt,
@@ -28,8 +28,8 @@ namespace ECommerceApp.Domain.Supporting.TimeManagement
         {
             return new JobExecution
             {
-                ScheduledJobId = scheduledJobId,
-                DeferredInstanceId = deferredInstanceId,
+                JobName = jobName,
+                DeferredQueueId = deferredQueueId,
                 Source = source,
                 ExecutionId = executionId,
                 StartedAt = startedAt,

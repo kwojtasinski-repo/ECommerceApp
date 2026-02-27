@@ -1,6 +1,7 @@
 using ECommerceApp.Domain.Supporting.TimeManagement;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -22,6 +23,12 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement.Repositories
         public async Task<IReadOnlyList<ScheduledJob>> GetAllAsync(CancellationToken ct = default)
             => await _context.ScheduledJobs
                 .AsNoTracking()
+                .ToListAsync(ct);
+
+        public async Task<IReadOnlyList<ScheduledJob>> GetEnabledAsync(CancellationToken ct = default)
+            => await _context.ScheduledJobs
+                .AsNoTracking()
+                .Where(j => j.IsEnabled)
                 .ToListAsync(ct);
 
         public async Task AddAsync(ScheduledJob job, CancellationToken ct = default)

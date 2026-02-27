@@ -8,6 +8,7 @@ namespace ECommerceApp.Domain.Supporting.TimeManagement
     {
         Task<ScheduledJob?> GetByNameAsync(string name, CancellationToken ct = default);
         Task<IReadOnlyList<ScheduledJob>> GetAllAsync(CancellationToken ct = default);
+        Task<IReadOnlyList<ScheduledJob>> GetEnabledAsync(CancellationToken ct = default);
         Task AddAsync(ScheduledJob job, CancellationToken ct = default);
         Task UpdateAsync(ScheduledJob job, CancellationToken ct = default);
     }

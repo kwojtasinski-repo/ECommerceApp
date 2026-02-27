@@ -22,12 +22,7 @@ namespace ECommerceApp.Infrastructure
             services.AddCatalogInfrastructure(configuration);
             services.AddCurrencyInfrastructure(configuration);
             services.AddMessagingInfrastructure(configuration);
-            services.AddTimeManagementInfrastructure(configuration, jobs =>
-            {
-                jobs.AddRecurring("CurrencyRateSync", cron: "15 12 * * *", maxRetries: 3);
-                jobs.AddRecurring("PaymentExpiration", cron: "*/5 * * * *", maxRetries: 3);
-                jobs.AddDeferred("PaymentTimeout", maxRetries: 2);
-            });
+            services.AddTimeManagementInfrastructure(configuration);
             return services;
         }
     }

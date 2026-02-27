@@ -6,7 +6,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using System;
 
 namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
 {
@@ -14,15 +13,8 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
     {
         public static IServiceCollection AddTimeManagementInfrastructure(
             this IServiceCollection services,
-            IConfiguration configuration,
-            Action<TimeManagementBuilder> configure)
+            IConfiguration configuration)
         {
-            var builder = new TimeManagementBuilder();
-            configure(builder);
-
-            foreach (var config in builder.Configs)
-                services.AddSingleton<IScheduleConfig>(config);
-
             services.AddDbContext<TimeManagementDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 

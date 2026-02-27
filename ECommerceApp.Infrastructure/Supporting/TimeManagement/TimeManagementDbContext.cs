@@ -6,7 +6,7 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
     public class TimeManagementDbContext : DbContext
     {
         public DbSet<ScheduledJob> ScheduledJobs => Set<ScheduledJob>();
-        public DbSet<DeferredJobInstance> DeferredJobInstances => Set<DeferredJobInstance>();
+        public DbSet<DeferredJobInstance> DeferredJobQueue => Set<DeferredJobInstance>();
         public DbSet<JobExecution> JobExecutions => Set<JobExecution>();
 
         public TimeManagementDbContext(DbContextOptions<TimeManagementDbContext> options) : base(options)

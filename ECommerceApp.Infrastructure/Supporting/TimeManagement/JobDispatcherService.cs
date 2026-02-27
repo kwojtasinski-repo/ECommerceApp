@@ -7,7 +7,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,20 +18,17 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
         private readonly JobTriggerChannel _channel;
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly InMemoryJobStatusMonitor _monitor;
-        private readonly IEnumerable<IScheduleConfig> _configs;
         private readonly ILogger<JobDispatcherService> _logger;
 
         public JobDispatcherService(
             JobTriggerChannel channel,
             IServiceScopeFactory scopeFactory,
             InMemoryJobStatusMonitor monitor,
-            IEnumerable<IScheduleConfig> configs,
             ILogger<JobDispatcherService> logger)
         {
             _channel = channel;
             _scopeFactory = scopeFactory;
             _monitor = monitor;
-            _configs = configs;
             _logger = logger;
         }
 
@@ -111,69 +107,57 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
             try
             {
                 var dbContext = scope.ServiceProvider.GetRequiredService<TimeManagementDbContext>();
-                var config = _configs.FirstOrDefault(c => c.JobName == trigger.JobName);
 
-                var scheduledJob = await dbContext.ScheduledJobs
-                    .FirstOrDefaultAsync(j => j.Name.Value == trigger.JobName, ct);
+                // For recurring / manual jobs: update LastRunAt / NextRunAt on ScheduledJob
+                if (trigger.Source != JobTriggerSource.Deferred)
+                {
+                    var scheduledJob = await dbContext.ScheduledJobs
+                        .FirstOrDefaultAsync(j => j.Name.Value == trigger.JobName, ct);
 
-                if (scheduledJob == null && config != null)
-                {
-                    scheduledJob = ScheduledJob.Create(
-                        trigger.JobName, config.JobType, config.CronExpression, config.TimeZoneId, config.MaxRetries);
-                    dbContext.ScheduledJobs.Add(scheduledJob);
-                    await dbContext.SaveChangesAsync(ct);
-                }
-                else if (scheduledJob != null && config != null)
-                {
-                    if (scheduledJob.SyncConfig(config.CronExpression, config.TimeZoneId, config.MaxRetries))
-                        await dbContext.SaveChangesAsync(ct);
-                }
+                    if (scheduledJob != null)
+                    {
+                        DateTime? nextRunAt = null;
+                        try
+                        {
+                            var cron = CronExpression.Parse(scheduledJob.Schedule);
+                            var tz = string.IsNullOrEmpty(scheduledJob.TimeZoneId)
+                                ? TimeZoneInfo.Utc
+                                : TimeZoneInfo.FindSystemTimeZoneById(scheduledJob.TimeZoneId);
+                            nextRunAt = cron.GetNextOccurrence(completedAt, tz);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(ex, "Could not parse schedule for job '{JobName}'", trigger.JobName);
+                        }
 
-                if (scheduledJob == null)
-                {
-                    _logger.LogWarning("Cannot persist result for unknown job '{JobName}'", trigger.JobName);
-                    return;
-                }
-
-                DateTime? nextRunAt = null;
-                if (config?.JobType == JobType.Recurring && config.CronExpression != null)
-                {
-                    var cron = CronExpression.Parse(config.CronExpression);
-                    var tz = string.IsNullOrEmpty(config.TimeZoneId)
-                        ? TimeZoneInfo.Utc
-                        : TimeZoneInfo.FindSystemTimeZoneById(config.TimeZoneId);
-                    nextRunAt = cron.GetNextOccurrence(completedAt, tz);
+                        scheduledJob.RecordRun(completedAt, nextRunAt);
+                    }
                 }
 
-                scheduledJob.RecordRun(completedAt, nextRunAt);
-
-                DeferredJobInstanceId? deferredInstanceId = trigger.DeferredInstanceId.HasValue
-                    ? new DeferredJobInstanceId(trigger.DeferredInstanceId.Value)
-                    : null;
-
+                // Append-only audit record (A2: JobName string, no FK)
                 var execution = JobExecution.Record(
-                    scheduledJob.Id,
-                    deferredInstanceId,
+                    trigger.JobName,
+                    trigger.DeferredInstanceId,
                     (byte)trigger.Source,
                     executionId,
                     startedAt,
                     completedAt,
                     succeeded,
                     message);
-
                 dbContext.JobExecutions.Add(execution);
 
+                // For deferred jobs: DELETE on success, Fail() on failure (handles retry / DeadLetter)
                 if (trigger.DeferredInstanceId.HasValue)
                 {
-                    var instanceId = new DeferredJobInstanceId(trigger.DeferredInstanceId.Value);
-                    var instance = await dbContext.DeferredJobInstances
-                        .FirstOrDefaultAsync(d => d.Id == instanceId, ct);
+                    var instance = await dbContext.DeferredJobQueue
+                        .FirstOrDefaultAsync(d => d.Id.Value == trigger.DeferredInstanceId.Value, ct);
+
                     if (instance != null)
                     {
                         if (succeeded)
-                            instance.Complete();
+                            dbContext.DeferredJobQueue.Remove(instance);
                         else
-                            instance.Fail(message ?? "Unknown error");
+                            instance.Fail(message ?? "Unknown error", completedAt);
                     }
                 }
 

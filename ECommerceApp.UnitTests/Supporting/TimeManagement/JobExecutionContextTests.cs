@@ -96,12 +96,11 @@ namespace ECommerceApp.UnitTests.Supporting.TimeManagement
         [Fact]
         public void DeferredJobInstance_Schedule_SetsCorrectFields()
         {
-            var scheduledJobId = new ScheduledJobId(1);
             var runAt = DateTime.UtcNow.AddMinutes(15);
 
-            var instance = DeferredJobInstance.Schedule(scheduledJobId, "42", runAt);
+            var instance = DeferredJobInstance.Schedule("PaymentTimeout", "42", runAt);
 
-            instance.ScheduledJobId.Should().Be(scheduledJobId);
+            instance.JobName.Should().Be("PaymentTimeout");
             instance.EntityId.Should().Be("42");
             instance.RunAt.Should().Be(runAt);
             instance.Status.Should().Be(DeferredJobStatus.Pending);
@@ -109,36 +108,42 @@ namespace ECommerceApp.UnitTests.Supporting.TimeManagement
         }
 
         [Fact]
-        public void DeferredJobInstance_Fail_IncrementsRetryCount()
+        public void DeferredJobInstance_Fail_IncrementsRetryCountAndMovesToPendingOrDeadLetter()
         {
-            var instance = DeferredJobInstance.Schedule(new ScheduledJobId(1), "1", DateTime.UtcNow);
+            var instance = DeferredJobInstance.Schedule("PaymentTimeout", "1", DateTime.UtcNow.AddMinutes(15));
+            var failedAt = DateTime.UtcNow;
 
-            instance.Fail("error");
+            instance.Fail("error", failedAt);
 
-            instance.Status.Should().Be(DeferredJobStatus.Failed);
             instance.RetryCount.Should().Be(1);
             instance.ErrorMessage.Should().Be("error");
+            // RetryCount(1) <= MaxRetries(3): back to Pending with a new RunAt
+            instance.Status.Should().Be(DeferredJobStatus.Pending);
+            instance.RunAt.Should().BeAfter(failedAt);
         }
 
         [Fact]
-        public void DeferredJobInstance_Complete_SetsStatusCompleted()
+        public void DeferredJobInstance_MarkRunning_SetsStatusAndLockExpiresAt()
         {
-            var instance = DeferredJobInstance.Schedule(new ScheduledJobId(1), "1", DateTime.UtcNow);
-            instance.MarkRunning();
+            var instance = DeferredJobInstance.Schedule("PaymentTimeout", "1", DateTime.UtcNow.AddMinutes(15));
+            var lockExpiry = DateTime.UtcNow.AddMinutes(5);
 
-            instance.Complete();
+            instance.MarkRunning(lockExpiry);
 
-            instance.Status.Should().Be(DeferredJobStatus.Completed);
+            instance.Status.Should().Be(DeferredJobStatus.Running);
+            instance.LockExpiresAt.Should().Be(lockExpiry);
         }
 
         [Fact]
-        public void DeferredJobInstance_Cancel_SetsStatusCancelled()
+        public void DeferredJobInstance_Fail_ExhaustedRetries_MovesToDeadLetter()
         {
-            var instance = DeferredJobInstance.Schedule(new ScheduledJobId(1), "1", DateTime.UtcNow);
+            var instance = DeferredJobInstance.Schedule("PaymentTimeout", "1", DateTime.UtcNow.AddMinutes(15), maxRetries: 1);
+            var failedAt = DateTime.UtcNow;
+            instance.Fail("err1", failedAt);
 
-            instance.Cancel();
+            instance.Fail("err2", failedAt);
 
-            instance.Status.Should().Be(DeferredJobStatus.Cancelled);
+            instance.Status.Should().Be(DeferredJobStatus.DeadLetter);
         }
     }
 }

@@ -21,8 +21,7 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement.Repositories
         {
             return await _context.JobExecutions
                 .AsNoTracking()
-                .Where(e => _context.ScheduledJobs
-                    .Any(j => j.Id == e.ScheduledJobId && j.Name.Value == jobName))
+                .Where(e => e.JobName == jobName)
                 .OrderByDescending(e => e.StartedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)

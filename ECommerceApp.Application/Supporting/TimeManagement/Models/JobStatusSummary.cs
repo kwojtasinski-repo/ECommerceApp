@@ -1,4 +1,3 @@
-using ECommerceApp.Domain.Supporting.TimeManagement;
 using System;
 
 namespace ECommerceApp.Application.Supporting.TimeManagement.Models
@@ -6,8 +5,7 @@ namespace ECommerceApp.Application.Supporting.TimeManagement.Models
     public sealed class JobStatusSummary
     {
         public string JobName { get; init; } = default!;
-        public JobType JobType { get; init; }
-        public string? CronExpression { get; init; }
+        public string? Schedule { get; init; }
         public bool IsEnabled { get; init; }
         public DateTime? LastRunAt { get; init; }
         public DateTime? NextRunAt { get; init; }

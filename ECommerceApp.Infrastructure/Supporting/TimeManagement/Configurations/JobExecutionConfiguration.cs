@@ -15,25 +15,11 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement.Configurations
                    .HasConversion(x => x.Value, v => new JobExecutionId(v))
                    .ValueGeneratedOnAdd();
 
-            builder.Property(x => x.ScheduledJobId)
-                   .HasConversion(x => x.Value, v => new ScheduledJobId(v))
+            builder.Property(x => x.JobName)
+                   .HasMaxLength(100)
                    .IsRequired();
 
-            builder.HasOne<ScheduledJob>()
-                   .WithMany()
-                   .HasForeignKey(x => x.ScheduledJobId)
-                   .OnDelete(DeleteBehavior.Restrict);
-
-            builder.Property(x => x.DeferredInstanceId)
-                   .HasConversion(
-                       x => x != null ? (int?)x.Value : null,
-                       v => v.HasValue ? new DeferredJobInstanceId(v.Value) : null);
-
-            builder.HasOne<DeferredJobInstance>()
-                   .WithMany()
-                   .HasForeignKey(x => x.DeferredInstanceId)
-                   .IsRequired(false)
-                   .OnDelete(DeleteBehavior.Restrict);
+            builder.Property(x => x.DeferredQueueId);
 
             builder.Property(x => x.Source)
                    .HasColumnType("tinyint")

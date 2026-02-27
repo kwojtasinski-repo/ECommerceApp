@@ -23,12 +23,9 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement.Configurations
 
             builder.HasIndex(x => x.Name).IsUnique();
 
-            builder.Property(x => x.JobType)
-                   .HasColumnType("tinyint")
+            builder.Property(x => x.Schedule)
+                   .HasMaxLength(100)
                    .IsRequired();
-
-            builder.Property(x => x.CronExpression)
-                   .HasMaxLength(100);
 
             builder.Property(x => x.TimeZoneId)
                    .HasMaxLength(100);
@@ -43,9 +40,6 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement.Configurations
 
             builder.Property(x => x.LastRunAt);
             builder.Property(x => x.NextRunAt);
-
-            builder.Property(x => x.ConfigHash)
-                   .HasMaxLength(64);
         }
     }
 }
