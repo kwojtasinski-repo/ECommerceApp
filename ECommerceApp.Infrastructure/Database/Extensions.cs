@@ -23,6 +23,7 @@ namespace ECommerceApp.Infrastructure.Database
 
             services.AddHostedService<DbInitializer>();
             services.AddScoped<IDatabaseInitializer, DatabaseInitalizer>();
+            services.AddScoped<IDbContextMigrator, DbContextMigrator<Context>>();
 
             return services;
         }

@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace ECommerceApp.Infrastructure.Catalog.Products.Migrations
 {
-    [DbContext(typeof(ProductDbContext))]
+    [DbContext(typeof(CatalogDbContext))]
     [Migration("20260224230349_InitCatalogSchema")]
     partial class InitCatalogSchema
     {

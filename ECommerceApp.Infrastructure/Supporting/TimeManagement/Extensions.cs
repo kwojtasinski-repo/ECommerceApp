@@ -1,11 +1,10 @@
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Domain.Supporting.TimeManagement;
+using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Supporting.TimeManagement.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Hosting;
 
 namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
 {
@@ -30,9 +29,11 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
             services.AddScoped<IJobTrigger, JobTriggerService>();
             services.AddScoped<IDeferredJobScheduler, DeferredJobScheduler>();
 
-            services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, CronSchedulerService>());
-            services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, DeferredJobPollerService>());
-            services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, JobDispatcherService>());
+            services.AddHostedService<CronSchedulerService>();
+            services.AddHostedService<DeferredJobPollerService>();
+            services.AddHostedService<JobDispatcherService>();
+
+            services.AddScoped<IDbContextMigrator, DbContextMigrator<TimeManagementDbContext>>();
 
             return services;
         }

@@ -29,6 +29,8 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
                 identityBuilder.AddEntityFrameworkStores<Context>();
             }
 
+            services.AddScoped<IDbContextMigrator, DbContextMigrator<IamDbContext>>();
+
             return services
                 .AddScoped(typeof(ISignInManager<>), typeof(SignInManagerInternal<>))
                 .AddScoped(typeof(IUserManager<>), typeof(UserManagerInternal<>))

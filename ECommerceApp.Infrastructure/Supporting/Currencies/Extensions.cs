@@ -1,9 +1,9 @@
 using ECommerceApp.Domain.Supporting.Currencies;
+using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Supporting.Currencies.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-
 namespace ECommerceApp.Infrastructure.Supporting.Currencies
 {
     internal static class Extensions
@@ -12,6 +12,8 @@ namespace ECommerceApp.Infrastructure.Supporting.Currencies
         {
             services.AddDbContext<CurrencyDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+
+            services.AddScoped<IDbContextMigrator, DbContextMigrator<CurrencyDbContext>>();
 
             return services
                 .AddScoped<ICurrencyRepository, CurrencyRepository>()
