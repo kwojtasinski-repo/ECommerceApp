@@ -1,0 +1,33 @@
+@using ECommerceApp.Application.AccountProfile.ViewModels
+@model UserProfileDetailsVm
+@{ ViewData["Title"] = "Edit Profile"; }
+
+<div class="container mt-4" style="max-width:600px">
+    <h2>Edit Profile — <strong>@Model.FirstName @Model.LastName</strong></h2>
+    <form method="post" asp-action="Edit" asp-route-id="@Model.Id">
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label>First Name</label>
+                <input name="firstName" class="form-control" value="@Model.FirstName" required maxlength="300" />
+            </div>
+            <div class="form-group col-md-6">
+                <label>Last Name</label>
+                <input name="lastName" class="form-control" value="@Model.LastName" required maxlength="300" />
+            </div>
+        </div>
+        <div class="form-group form-check">
+            <input name="isCompany" type="checkbox" class="form-check-input" id="isCompany" @(Model.IsCompany ? "checked" : "") />
+            <label class="form-check-label" for="isCompany">Is Company</label>
+        </div>
+        <div class="form-group">
+            <label>Company Name</label>
+            <input name="companyName" class="form-control" value="@Model.CompanyName" maxlength="300" />
+        </div>
+        <div class="form-group">
+            <label>NIP</label>
+            <input name="nip" class="form-control" value="@Model.NIP" maxlength="50" />
+        </div>
+        <button type="submit" class="btn btn-primary">Update</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

@@ -1,0 +1,30 @@
+@using ECommerceApp.Application.Catalog.Products.ViewModels
+@model ProductDetailsVm
+@{ ViewData["Title"] = "Product Details"; }
+
+<div class="container mt-4" style="max-width:700px">
+    <h2>@Model.Name</h2>
+    @if (TempData["Success"] is string msg)
+    {
+        <div class="alert alert-success alert-dismissible fade show">@msg<button type="button" class="close" data-dismiss="alert">&times;</button></div>
+    }
+    <dl class="row">
+        <dt class="col-sm-3">Id</dt><dd class="col-sm-9">@Model.Id</dd>
+        <dt class="col-sm-3">Cost</dt><dd class="col-sm-9">@Model.Cost.ToString("F2")</dd>
+        <dt class="col-sm-3">Quantity</dt><dd class="col-sm-9">@Model.Quantity</dd>
+        <dt class="col-sm-3">Description</dt><dd class="col-sm-9">@Model.Description</dd>
+        <dt class="col-sm-3">Category</dt><dd class="col-sm-9">@Model.CategoryName (id: @Model.CategoryId)</dd>
+        <dt class="col-sm-3">Status</dt><dd class="col-sm-9"><span class="badge badge-secondary">@Model.Status</span></dd>
+        <dt class="col-sm-3">Tags</dt><dd class="col-sm-9">@string.Join(", ", Model.TagIds)</dd>
+    </dl>
+    <div class="btn-group">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+        <form method="post" asp-action="Publish" asp-route-id="@Model.Id" class="d-inline">
+            <button class="btn btn-success">Publish</button>
+        </form>
+        <form method="post" asp-action="Unpublish" asp-route-id="@Model.Id" class="d-inline">
+            <button class="btn btn-secondary">Unpublish</button>
+        </form>
+        <a asp-action="Index" class="btn btn-light">Back</a>
+    </div>
+</div>

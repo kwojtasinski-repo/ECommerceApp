@@ -2,6 +2,7 @@ using AutoMapper;
 using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Identity.IAM.ViewModels;
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Domain.Identity.IAM;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -13,11 +14,11 @@ namespace ECommerceApp.Application.Identity.IAM.Services
 {
     internal sealed class UserManagementService : IUserManagementService
     {
-        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IUserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
         private readonly IMapper _mapper;
 
-        public UserManagementService(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, IMapper mapper)
+        public UserManagementService(IUserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, IMapper mapper)
         {
             _userManager = userManager;
             _roleManager = roleManager;

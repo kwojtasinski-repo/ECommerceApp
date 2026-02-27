@@ -1,0 +1,69 @@
+@using ECommerceApp.Application.Supporting.TimeManagement.Models
+@model IReadOnlyList<JobStatusSummary>
+@{ ViewData["Title"] = "Scheduled Jobs v2"; }
+
+<div class="container mt-4">
+    <h2>Scheduled Jobs <small class="text-muted">TimeManagementDbContext</small></h2>
+    @if (TempData["Success"] is string msg)
+    {
+        <div class="alert alert-success alert-dismissible fade show">@msg<button type="button" class="close" data-dismiss="alert">&times;</button></div>
+    }
+    <table class="table table-bordered table-sm">
+        <thead class="thead-light">
+            <tr><th>Job Name</th><th>Schedule</th><th>Enabled</th><th>Last Run</th><th>Last Result</th><th style="width:220px"></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var j in Model)
+            {
+                <tr>
+                    <td><strong>@j.JobName</strong></td>
+                    <td><code>@(j.Schedule ?? "—")</code></td>
+                    <td>
+                        @if (j.IsEnabled)
+                        {
+                            <span class="badge badge-success">Enabled</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-secondary">Disabled</span>
+                        }
+                    </td>
+                    <td>@(j.NeverRun ? "Never" : j.LastRunAt?.ToString("g"))</td>
+                    <td>
+                        @if (!j.NeverRun)
+                        {
+                            if (j.LastSucceeded == true)
+                            {
+                                <span class="badge badge-success">OK</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger" title="@j.LastMessage">Failed</span>
+                            }
+                        }
+                    </td>
+                    <td>
+                        <form method="post" asp-action="Trigger" asp-route-jobName="@j.JobName" class="d-inline">
+                            <button class="btn btn-sm btn-primary" title="Force run now">
+                                <i class="fas fa-play"></i> Run
+                            </button>
+                        </form>
+                        <a asp-action="History" asp-route-jobName="@j.JobName" class="btn btn-sm btn-info">History</a>
+                        @if (j.IsEnabled)
+                        {
+                            <form method="post" asp-action="Disable" asp-route-jobName="@j.JobName" class="d-inline">
+                                <button class="btn btn-sm btn-secondary">Disable</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <form method="post" asp-action="Enable" asp-route-jobName="@j.JobName" class="d-inline">
+                                <button class="btn btn-sm btn-success">Enable</button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

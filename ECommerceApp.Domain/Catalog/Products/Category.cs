@@ -4,7 +4,7 @@ namespace ECommerceApp.Domain.Catalog.Products
 {
     public class Category
     {
-        public CategoryId Id { get; private set; } = new CategoryId(0);
+        public CategoryId Id { get; private set; }
         public CategoryName Name { get; private set; } = default!;
         public CategorySlug Slug { get; private set; } = default!;
 

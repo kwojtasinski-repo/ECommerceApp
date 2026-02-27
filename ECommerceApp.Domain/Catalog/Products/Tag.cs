@@ -4,7 +4,7 @@ namespace ECommerceApp.Domain.Catalog.Products
 {
     public class Tag
     {
-        public TagId Id { get; private set; } = new TagId(0);
+        public TagId Id { get; private set; }
         public TagName Name { get; private set; } = default!;
         public TagSlug Slug { get; private set; } = default!;
 

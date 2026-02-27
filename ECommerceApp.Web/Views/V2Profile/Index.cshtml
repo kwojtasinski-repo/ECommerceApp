@@ -1,0 +1,36 @@
+@using ECommerceApp.Application.AccountProfile.ViewModels
+@model UserProfileListVm
+@{ ViewData["Title"] = "User Profiles v2"; }
+
+<div class="container mt-4">
+    <h2>User Profiles <small class="text-muted">UserProfileDbContext</small></h2>
+    @if (TempData["Success"] is string msg)
+    {
+        <div class="alert alert-success alert-dismissible fade show">@msg<button type="button" class="close" data-dismiss="alert">&times;</button></div>
+    }
+    <a asp-action="Add" class="btn btn-primary mb-3"><i class="fas fa-plus"></i> Add Profile</a>
+    <p class="text-muted">Total: @Model.Count</p>
+    <table class="table table-bordered table-sm">
+        <thead class="thead-light">
+            <tr><th>Id</th><th>Name</th><th>Email</th><th>Company</th><th style="width:180px"></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var p in Model.Profiles)
+            {
+                <tr>
+                    <td>@p.Id</td>
+                    <td>@p.FirstName @p.LastName</td>
+                    <td>@p.Email</td>
+                    <td>@(p.IsCompany ? p.CompanyName : "-")</td>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-info">Details</a>
+                        <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-warning">Edit</a>
+                        <form method="post" asp-action="Delete" asp-route-id="@p.Id" class="d-inline">
+                            <button class="btn btn-sm btn-danger" onclick="return confirm('Delete?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

@@ -1,0 +1,43 @@
+@{ ViewData["Title"] = "Add User Profile"; }
+
+<div class="container mt-4" style="max-width:600px">
+    <h2>Add User Profile</h2>
+    <form method="post" asp-action="Add">
+        <div class="form-group">
+            <label>User Id <small class="text-muted">(ASP.NET Identity user GUID)</small></label>
+            <input name="userId" class="form-control" required />
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label>First Name</label>
+                <input name="firstName" class="form-control" required maxlength="300" />
+            </div>
+            <div class="form-group col-md-6">
+                <label>Last Name</label>
+                <input name="lastName" class="form-control" required maxlength="300" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <input name="email" type="email" class="form-control" required maxlength="300" />
+        </div>
+        <div class="form-group">
+            <label>Phone Number</label>
+            <input name="phoneNumber" class="form-control" required maxlength="50" />
+        </div>
+        <div class="form-group form-check">
+            <input name="isCompany" type="checkbox" class="form-check-input" id="isCompany" />
+            <label class="form-check-label" for="isCompany">Is Company</label>
+        </div>
+        <div class="form-group">
+            <label>Company Name</label>
+            <input name="companyName" class="form-control" maxlength="300" />
+        </div>
+        <div class="form-group">
+            <label>NIP</label>
+            <input name="nip" class="form-control" maxlength="50" />
+        </div>
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

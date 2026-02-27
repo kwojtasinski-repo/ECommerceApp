@@ -1,6 +1,7 @@
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Identity.IAM.Services;
 using ECommerceApp.Application.Identity.IAM.ViewModels;
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Domain.Identity.IAM;
 using ECommerceApp.UnitTests.Common;
 using FluentAssertions;
@@ -14,14 +15,12 @@ namespace ECommerceApp.UnitTests.Identity.IAM
 {
     public class UserManagementServiceTests : BaseTest
     {
-        private readonly Mock<UserManager<ApplicationUser>> _userManager;
+        private readonly Mock<IUserManager<ApplicationUser>> _userManager;
         private readonly Mock<RoleManager<IdentityRole>> _roleManager;
 
         public UserManagementServiceTests()
         {
-            var userStore = new Mock<IUserStore<ApplicationUser>>();
-            _userManager = new Mock<UserManager<ApplicationUser>>(
-                userStore.Object, null, null, null, null, null, null, null, null);
+            _userManager = new Mock<IUserManager<ApplicationUser>>();
 
             var roleStore = new Mock<IRoleStore<IdentityRole>>();
             _roleManager = new Mock<RoleManager<IdentityRole>>(

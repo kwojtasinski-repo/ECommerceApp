@@ -1,0 +1,40 @@
+@using ECommerceApp.Application.Identity.IAM.ViewModels
+@model UserDetailsVm
+@{ ViewData["Title"] = "Edit User"; }
+
+<div class="container mt-4" style="max-width:500px">
+    <h2>Edit User — <strong>@Model.UserName</strong></h2>
+    <form method="post" asp-action="Edit" asp-route-id="@Model.Id">
+        <div class="form-group">
+            <label asp-for="UserName">Username</label>
+            <input asp-for="UserName" class="form-control" />
+        </div>
+        <div class="form-group">
+            <label asp-for="Email">Email</label>
+            <input asp-for="Email" type="email" class="form-control" />
+        </div>
+        <div class="form-group form-check">
+            <input asp-for="EmailConfirmed" class="form-check-input" />
+            <label asp-for="EmailConfirmed" class="form-check-label">Email Confirmed</label>
+        </div>
+        <div class="form-group">
+            <label asp-for="UserRole">Role</label>
+            <select asp-for="UserRole" class="form-control">
+                <option value="">— no change —</option>
+                @foreach (var role in Model.AvailableRoles)
+                {
+                    if (role.Id == Model.UserRole)
+                    {
+                        <option value="@role.Id" selected>@role.Name</option>
+                    }
+                    else
+                    {
+                        <option value="@role.Id">@role.Name</option>
+                    }
+                }
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Update</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

@@ -1,0 +1,14 @@
+@using ECommerceApp.Application.Supporting.Currencies.ViewModels
+@model CurrencyVm
+@{ ViewData["Title"] = "Currency Details"; }
+
+<div class="container mt-4" style="max-width:600px">
+    <h2>Currency Details</h2>
+    <dl class="row">
+        <dt class="col-sm-3">Id</dt><dd class="col-sm-9">@Model.Id</dd>
+        <dt class="col-sm-3">Code</dt><dd class="col-sm-9"><strong>@Model.Code</strong></dd>
+        <dt class="col-sm-3">Description</dt><dd class="col-sm-9">@Model.Description</dd>
+    </dl>
+    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+    <a asp-action="Index" class="btn btn-secondary">Back</a>
+</div>

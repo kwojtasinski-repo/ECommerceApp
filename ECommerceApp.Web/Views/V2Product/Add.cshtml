@@ -1,0 +1,47 @@
+@using ECommerceApp.Application.Catalog.Products.ViewModels
+@{ ViewData["Title"] = "Add Product"; }
+
+<div class="container mt-4" style="max-width:600px">
+    <h2>Add Product</h2>
+    <form method="post" asp-action="Add">
+        <div class="form-group">
+            <label>Name</label>
+            <input name="name" class="form-control" required minlength="3" maxlength="150" />
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label>Cost</label>
+                <input name="cost" type="number" step="0.01" min="0.01" class="form-control" required />
+            </div>
+            <div class="form-group col-md-6">
+                <label>Quantity</label>
+                <input name="quantity" type="number" min="0" class="form-control" value="0" required />
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Description</label>
+            <textarea name="description" class="form-control" rows="2" maxlength="300"></textarea>
+        </div>
+        <div class="form-group">
+            <label>Category</label>
+            <select name="categoryId" class="form-control" required>
+                <option value="">— select —</option>
+                @foreach (CategoryVm cat in (ViewBag.Categories ?? new List<CategoryVm>()))
+                {
+                    <option value="@cat.Id">@cat.Name</option>
+                }
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Tags <small class="text-muted">(hold Ctrl for multi-select)</small></label>
+            <select name="tagIds" multiple class="form-control" style="height:120px">
+                @foreach (ProductTagVm tag in (ViewBag.Tags ?? new List<ProductTagVm>()))
+                {
+                    <option value="@tag.Id">@tag.Name</option>
+                }
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Save</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

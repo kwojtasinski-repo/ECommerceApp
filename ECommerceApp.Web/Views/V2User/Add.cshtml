@@ -1,0 +1,41 @@
+@using ECommerceApp.Application.Identity.IAM.ViewModels
+@model CreateUserVm
+@{ ViewData["Title"] = "Add User"; }
+
+<div class="container mt-4" style="max-width:500px">
+    <h2>Add User</h2>
+    <form method="post" asp-action="Add">
+        <div class="form-group">
+            <label asp-for="UserName">Username (email)</label>
+            <input asp-for="UserName" class="form-control" />
+            <span asp-validation-for="UserName" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Email">Email</label>
+            <input asp-for="Email" type="email" class="form-control" />
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+        <div class="form-group">
+            <label asp-for="Password">Password</label>
+            <input asp-for="Password" type="password" class="form-control" />
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </div>
+        <div class="form-group form-check">
+            <input asp-for="EmailConfirmed" class="form-check-input" />
+            <label asp-for="EmailConfirmed" class="form-check-label">Email Confirmed</label>
+        </div>
+        <div class="form-group">
+            <label asp-for="UserRole">Role</label>
+            <select asp-for="UserRole" class="form-control">
+                <option value="">— select —</option>
+                @foreach (var role in Model.AvailableRoles)
+                {
+                    <option value="@role.Id">@role.Name</option>
+                }
+            </select>
+            <span asp-validation-for="UserRole" class="text-danger"></span>
+        </div>
+        <button type="submit" class="btn btn-primary">Create</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

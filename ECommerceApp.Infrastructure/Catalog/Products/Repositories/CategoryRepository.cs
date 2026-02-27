@@ -52,7 +52,7 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
         public async Task<List<Category>> GetAllAsync()
             => await _context.Categories
                 .AsNoTracking()
-                .OrderBy(c => c.Name.Value)
+                .OrderBy(c => EF.Property<string>(c, "Name"))
                 .ToListAsync();
     }
 }

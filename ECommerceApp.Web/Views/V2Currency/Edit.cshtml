@@ -1,0 +1,19 @@
+@using ECommerceApp.Application.Supporting.Currencies.ViewModels
+@model CurrencyVm
+@{ ViewData["Title"] = "Edit Currency"; }
+
+<div class="container mt-4" style="max-width:500px">
+    <h2>Edit Currency — <strong>@Model.Code</strong></h2>
+    <form method="post" asp-action="Edit" asp-route-id="@Model.Id">
+        <div class="form-group">
+            <label>Code <small class="text-muted">(exactly 3 chars)</small></label>
+            <input name="code" class="form-control" value="@Model.Code" maxlength="3" minlength="3" required />
+        </div>
+        <div class="form-group">
+            <label>Description</label>
+            <input name="description" class="form-control" value="@Model.Description" required />
+        </div>
+        <button type="submit" class="btn btn-primary">Update</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

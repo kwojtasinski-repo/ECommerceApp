@@ -1,3 +1,4 @@
+using ECommerceApp.Domain.Identity.IAM;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ECommerceApp.Application.Identity.IAM.Services

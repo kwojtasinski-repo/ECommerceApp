@@ -29,7 +29,7 @@ namespace ECommerceApp.Infrastructure.Database
         public DbSet<Currency> Currencies { get; set; }
         public DbSet<CurrencyRate> CurrencyRates { get; set; }
 
-        public Context(DbContextOptions options) : base(options)
+        public Context(DbContextOptions<Context> options) : base(options)
         {
         }
 
@@ -38,7 +38,7 @@ namespace ECommerceApp.Infrastructure.Database
             base.OnModelCreating(builder);
             builder.ApplyConfigurationsFromAssembly(
                 GetType().Assembly,
-                t => !t.Namespace.StartsWith("ECommerceApp.Infrastructure.Identity.IAM"));
+                t => t.Namespace == "ECommerceApp.Infrastructure.Database.Configurations");
             builder.ApplySeed();
             builder.ApplyPrimaryKeyGeneration();
         }

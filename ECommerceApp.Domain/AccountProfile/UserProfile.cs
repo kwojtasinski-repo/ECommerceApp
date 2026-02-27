@@ -6,7 +6,7 @@ namespace ECommerceApp.Domain.AccountProfile
 {
     public class UserProfile
     {
-        public UserProfileId Id { get; private set; } = new UserProfileId(0);
+        public UserProfileId Id { get; private set; }
         public string UserId { get; private set; } = default!;
         public string FirstName { get; private set; } = default!;
         public string LastName { get; private set; } = default!;

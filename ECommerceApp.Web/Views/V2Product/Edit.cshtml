@@ -1,0 +1,61 @@
+@using ECommerceApp.Application.Catalog.Products.ViewModels
+@model ProductDetailsVm
+@{ ViewData["Title"] = "Edit Product"; }
+
+<div class="container mt-4" style="max-width:600px">
+    <h2>Edit Product — <strong>@Model.Name</strong></h2>
+    <form method="post" asp-action="Edit" asp-route-id="@Model.Id">
+        <div class="form-group">
+            <label>Name</label>
+            <input name="name" class="form-control" value="@Model.Name" required minlength="3" maxlength="150" />
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-6">
+                <label>Cost</label>
+                <input name="cost" type="number" step="0.01" min="0.01" class="form-control" value="@Model.Cost" required />
+            </div>
+            <div class="form-group col-md-6">
+                <label>Quantity</label>
+                <input name="quantity" type="number" min="0" class="form-control" value="@Model.Quantity" required />
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Description</label>
+            <textarea name="description" class="form-control" rows="2" maxlength="300">@Model.Description</textarea>
+        </div>
+        <div class="form-group">
+            <label>Category</label>
+            <select name="categoryId" class="form-control" required>
+                @foreach (CategoryVm cat in (ViewBag.Categories ?? new List<CategoryVm>()))
+                {
+                    if (cat.Id == Model.CategoryId)
+                    {
+                        <option value="@cat.Id" selected>@cat.Name</option>
+                    }
+                    else
+                    {
+                        <option value="@cat.Id">@cat.Name</option>
+                    }
+                }
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Tags <small class="text-muted">(hold Ctrl for multi-select)</small></label>
+            <select name="tagIds" multiple class="form-control" style="height:120px">
+                @foreach (ProductTagVm tag in (ViewBag.Tags ?? new List<ProductTagVm>()))
+                {
+                    if (Model.TagIds.Contains(tag.Id))
+                    {
+                        <option value="@tag.Id" selected>@tag.Name</option>
+                    }
+                    else
+                    {
+                        <option value="@tag.Id">@tag.Name</option>
+                    }
+                }
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Update</button>
+        <a asp-action="Index" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>

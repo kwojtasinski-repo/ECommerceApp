@@ -1,0 +1,20 @@
+@using ECommerceApp.Application.AccountProfile.ViewModels
+@model UserProfileDetailsVm
+@{ ViewData["Title"] = "Profile Details"; }
+
+<div class="container mt-4" style="max-width:700px">
+    <h2>@Model.FirstName @Model.LastName</h2>
+    @if (TempData["Success"] is string msg)
+    {
+        <div class="alert alert-success alert-dismissible fade show">@msg<button type="button" class="close" data-dismiss="alert">&times;</button></div>
+    }
+    <dl class="row">
+        <dt class="col-sm-3">Id</dt><dd class="col-sm-9">@Model.Id</dd>
+        <dt class="col-sm-3">User Id</dt><dd class="col-sm-9"><code>@Model.UserId</code></dd>
+        <dt class="col-sm-3">Email</dt><dd class="col-sm-9">@Model.Email</dd>
+        <dt class="col-sm-3">Phone</dt><dd class="col-sm-9">@Model.PhoneNumber</dd>
+        <dt class="col-sm-3">Company</dt><dd class="col-sm-9">@(Model.IsCompany ? $"{Model.CompanyName} (NIP: {Model.NIP})" : "No")</dd>
+    </dl>
+    <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+    <a asp-action="Index" class="btn btn-secondary">Back</a>
+</div>

@@ -24,4 +24,8 @@
     <ProjectReference Include="..\ECommerceApp.Infrastructure\ECommerceApp.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Views\NewBcTest\" />
+  </ItemGroup>
+
 </Project>

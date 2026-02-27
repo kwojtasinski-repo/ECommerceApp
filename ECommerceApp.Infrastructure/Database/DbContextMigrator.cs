@@ -14,6 +14,8 @@ namespace ECommerceApp.Infrastructure.Database
             _context = context;
         }
 
+        public string ContextName => typeof(TContext).Name;
+
         public Task MigrateAsync(CancellationToken ct = default)
             => _context.Database.MigrateAsync(ct);
     }

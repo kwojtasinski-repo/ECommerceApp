@@ -9,7 +9,7 @@ namespace ECommerceApp.Domain.Catalog.Products
 {
     public class Product
     {
-        public ProductId Id { get; private set; } = new ProductId(0);
+        public ProductId Id { get; private set; }
         public ProductName Name { get; private set; } = default!;
         public Price Cost { get; private set; } = default!;
         public ProductQuantity Quantity { get; private set; } = default!;

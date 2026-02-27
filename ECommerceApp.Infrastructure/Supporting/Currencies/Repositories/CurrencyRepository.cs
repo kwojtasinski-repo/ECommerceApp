@@ -43,21 +43,21 @@ namespace ECommerceApp.Infrastructure.Supporting.Currencies.Repositories
         public async Task<List<Currency>> GetAllAsync()
             => await _context.Currencies
                 .AsNoTracking()
-                .OrderBy(c => c.Code.Value)
+                .OrderBy(c => EF.Property<string>(c, "Code"))
                 .ToListAsync();
 
         public async Task<List<Currency>> GetAllAsync(int pageSize, int pageNo, string searchString)
             => await _context.Currencies
                 .AsNoTracking()
-                .Where(c => c.Code.Value.StartsWith(searchString))
-                .OrderBy(c => c.Code.Value)
+                .Where(c => EF.Property<string>(c, "Code").StartsWith(searchString))
+                .OrderBy(c => EF.Property<string>(c, "Code"))
                 .Skip(pageSize * (pageNo - 1))
                 .Take(pageSize)
                 .ToListAsync();
 
         public async Task<int> CountBySearchStringAsync(string searchString)
             => await _context.Currencies
-                .Where(c => c.Code.Value.StartsWith(searchString))
+                .Where(c => EF.Property<string>(c, "Code").StartsWith(searchString))
                 .CountAsync();
     }
 }

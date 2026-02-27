@@ -1,7 +1,9 @@
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
+using IamApplicationUser = ECommerceApp.Domain.Identity.IAM.ApplicationUser;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -29,11 +31,17 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
                 identityBuilder.AddEntityFrameworkStores<Context>();
             }
 
+            services.AddIdentityCore<IamApplicationUser>()
+                .AddRoles<IdentityRole>()
+                .AddDefaultTokenProviders()
+                .AddEntityFrameworkStores<IamDbContext>();
+
             services.AddScoped<IDbContextMigrator, DbContextMigrator<IamDbContext>>();
 
             return services
                 .AddScoped(typeof(ISignInManager<>), typeof(SignInManagerInternal<>))
                 .AddScoped(typeof(IUserManager<>), typeof(UserManagerInternal<>))
+                .AddScoped(typeof(IUserStore<>), typeof(UserStore<>))
                 .Configure<AuthOptions>(configuration.GetSection("Jwt"))
                 .AddSingleton<IJwtManager, JwtManager>()
                 .AddScoped<IUserContext, UserContext>();

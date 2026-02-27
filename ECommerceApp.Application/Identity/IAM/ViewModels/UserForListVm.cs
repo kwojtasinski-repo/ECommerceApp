@@ -1,6 +1,6 @@
 using AutoMapper;
 using ECommerceApp.Application.Mapping;
-using ECommerceApp.Domain.Model;
+using ECommerceApp.Domain.Identity.IAM;
 
 namespace ECommerceApp.Application.Identity.IAM.ViewModels
 {

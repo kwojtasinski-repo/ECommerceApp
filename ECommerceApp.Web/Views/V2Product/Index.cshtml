@@ -1,0 +1,37 @@
+@using ECommerceApp.Application.Catalog.Products.ViewModels
+@model ProductListVm
+@{ ViewData["Title"] = "Products v2"; }
+
+<div class="container mt-4">
+    <h2>Products <small class="text-muted">CatalogDbContext</small></h2>
+    @if (TempData["Success"] is string msg)
+    {
+        <div class="alert alert-success alert-dismissible fade show">@msg<button type="button" class="close" data-dismiss="alert">&times;</button></div>
+    }
+    <a asp-action="Add" class="btn btn-primary mb-3"><i class="fas fa-plus"></i> Add Product</a>
+    <p class="text-muted">Total: @Model.Count</p>
+    <table class="table table-bordered table-sm">
+        <thead class="thead-light">
+            <tr><th>Id</th><th>Name</th><th>Cost</th><th>Qty</th><th>Status</th><th style="width:220px"></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var p in Model.Items)
+            {
+                <tr>
+                    <td>@p.Id</td>
+                    <td>@p.Name</td>
+                    <td>@p.Cost.ToString("F2")</td>
+                    <td>@p.Quantity</td>
+                    <td><span class="badge badge-secondary">@p.Status</span></td>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-info">Details</a>
+                        <a asp-action="Edit" asp-route-id="@p.Id" class="btn btn-sm btn-warning">Edit</a>
+                        <form method="post" asp-action="Delete" asp-route-id="@p.Id" class="d-inline">
+                            <button class="btn btn-sm btn-danger" onclick="return confirm('Delete?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

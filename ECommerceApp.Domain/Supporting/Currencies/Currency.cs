@@ -6,7 +6,7 @@ namespace ECommerceApp.Domain.Supporting.Currencies
     {
         public static readonly CurrencyId PlnId = new CurrencyId(1);
 
-        public CurrencyId Id { get; private set; } = new CurrencyId(0);
+        public CurrencyId Id { get; private set; }
         public CurrencyCode Code { get; private set; } = default!;
         public CurrencyDescription Description { get; private set; } = default!;
 
