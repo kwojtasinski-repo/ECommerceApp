@@ -21,7 +21,7 @@ namespace ECommerceApp.Application.AccountProfile.Services
 
         public async Task<int> CreateAsync(CreateUserProfileDto dto)
         {
-            var (profile, _) = UserProfile.Create(
+            var profile = UserProfile.Create(
                 dto.UserId,
                 dto.FirstName,
                 dto.LastName,

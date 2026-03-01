@@ -10,9 +10,9 @@ namespace ECommerceApp.UnitTests.AccountProfile
         // UserProfile.Create
 
         [Fact]
-        public void Create_ValidParameters_ShouldReturnProfileAndEvent()
+        public void Create_ValidParameters_ShouldReturnProfile()
         {
-            var (profile, @event) = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123456789");
+            var profile = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123456789");
 
             profile.UserId.Should().Be("user-1");
             profile.FirstName.Should().Be("Jan");
@@ -20,8 +20,6 @@ namespace ECommerceApp.UnitTests.AccountProfile
             profile.IsCompany.Should().BeFalse();
             profile.Email.Value.Should().Be("jan@test.com");
             profile.PhoneNumber.Value.Should().Be("123456789");
-            @event.UserId.Should().Be("user-1");
-            @event.OccurredAt.Should().BeCloseTo(DateTime.UtcNow, precision: TimeSpan.FromSeconds(5));
         }
 
         [Fact]
@@ -59,7 +57,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public void Create_CompanyProfileWithAllFields_ShouldReturnProfile()
         {
-            var (profile, _) = UserProfile.Create("user-1", "Jan", "Kowalski", true, "1111111111", "Firma XYZ", "firma@test.com", "123456789");
+            var profile = UserProfile.Create("user-1", "Jan", "Kowalski", true, "1111111111", "Firma XYZ", "firma@test.com", "123456789");
 
             profile.IsCompany.Should().BeTrue();
             profile.CompanyName!.Value.Should().Be("Firma XYZ");
@@ -70,7 +68,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public void UpdatePersonalInfo_ValidParameters_ShouldUpdateProfile()
         {
-            var (profile, _) = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
+            var profile = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
 
             profile.UpdatePersonalInfo("Anna", "Nowak", false, null, null);
 
@@ -81,7 +79,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public void UpdatePersonalInfo_EmptyFirstName_ShouldThrowArgumentException()
         {
-            var (profile, _) = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
+            var profile = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
 
             Action act = () => profile.UpdatePersonalInfo("", "Nowak", false, null, null);
 
@@ -93,7 +91,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public void UpdateContactInfo_ValidParameters_ShouldUpdateEmailAndPhone()
         {
-            var (profile, _) = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "old@test.com", "111");
+            var profile = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "old@test.com", "111");
 
             profile.UpdateContactInfo("new@test.com", "999");
 
@@ -104,7 +102,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public void UpdateContactInfo_EmptyEmail_ShouldThrowArgumentException()
         {
-            var (profile, _) = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
+            var profile = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
 
             Action act = () => profile.UpdateContactInfo("", "123");
 
@@ -116,7 +114,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public void AddAddress_ValidParameters_ShouldAddAddressToProfile()
         {
-            var (profile, _) = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
+            var profile = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
 
             profile.AddAddress("Testowa", "5", null, "12-345", "Warszawa", "PL");
 
@@ -127,7 +125,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public void AddAddress_EmptyStreet_ShouldThrowDomainException()
         {
-            var (profile, _) = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
+            var profile = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
 
             Action act = () => profile.AddAddress("", "5", null, "12-345", "Warszawa", "PL");
 
@@ -139,7 +137,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public void UpdateAddress_NonExistentAddressId_ShouldReturnFalse()
         {
-            var (profile, _) = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
+            var profile = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
 
             var result = profile.UpdateAddress(99, "Nowa", "1", null, "10000", "Kraków", "PL");
 
@@ -151,7 +149,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public void RemoveAddress_NonExistentAddressId_ShouldReturnFalse()
         {
-            var (profile, _) = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
+            var profile = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
 
             var result = profile.RemoveAddress(99);
 
@@ -163,7 +161,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public void AddAddress_InvalidZipCode_ShouldThrowDomainException()
         {
-            var (profile, _) = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
+            var profile = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
 
             Action act = () => profile.AddAddress("Testowa", "5", null, "1", "Warszawa", "PL");
 

@@ -32,7 +32,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
 
         private static UserProfile CreateProfile()
         {
-            var (profile, _) = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123456789");
+            var profile = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123456789");
             return profile;
         }
 

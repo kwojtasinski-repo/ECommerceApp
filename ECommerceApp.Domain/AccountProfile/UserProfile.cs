@@ -21,7 +21,7 @@ namespace ECommerceApp.Domain.AccountProfile
 
         private UserProfile() { }
 
-        public static (UserProfile Profile, UserProfileCreated Event) Create(
+        public static UserProfile Create(
             string userId,
             string firstName,
             string lastName,
@@ -44,7 +44,7 @@ namespace ECommerceApp.Domain.AccountProfile
             if (string.IsNullOrWhiteSpace(phoneNumber))
                 throw new ArgumentException("PhoneNumber cannot be empty", nameof(phoneNumber));
 
-            var profile = new UserProfile
+            return new UserProfile
             {
                 UserId = userId,
                 FirstName = firstName,
@@ -55,9 +55,6 @@ namespace ECommerceApp.Domain.AccountProfile
                 Email = new Email(email),
                 PhoneNumber = new PhoneNumber(phoneNumber)
             };
-
-            var @event = new UserProfileCreated(profile.Id.Value, userId, DateTime.UtcNow);
-            return (profile, @event);
         }
 
         public void UpdatePersonalInfo(
