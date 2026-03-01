@@ -58,9 +58,16 @@ namespace ECommerceApp.Web.Controllers
         public async Task<IActionResult> Edit(string id, UserDetailsVm vm)
         {
             vm.Id = id;
+            if (!ModelState.IsValid)
+            {
+                vm.AvailableRoles = await _userService.GetRolesAsync();
+                return View(vm);
+            }
             await _userService.UpdateUserAsync(vm);
             if (!string.IsNullOrWhiteSpace(vm.UserRole))
                 await _userService.ChangeUserRoleAsync(id, vm.UserRole);
+            if (!string.IsNullOrWhiteSpace(vm.NewPassword))
+                await _userService.ChangePasswordAsync(id, vm.NewPassword);
             TempData["Success"] = "User updated.";
             return RedirectToAction(nameof(Index));
         }

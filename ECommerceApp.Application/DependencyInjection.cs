@@ -35,6 +35,7 @@ namespace ECommerceApp.Application
             services.AddMessagingServices();
             services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
             services.AddFluentValidationAutoValidation();
+            services.AddFluentValidationClientsideAdapters();
             return services;
         }
     }

@@ -18,6 +18,11 @@
             <label asp-for="EmailConfirmed" class="form-check-label">Email Confirmed</label>
         </div>
         <div class="form-group">
+            <label asp-for="NewPassword">New Password <small class="text-muted">(leave blank to keep current)</small></label>
+            <input asp-for="NewPassword" type="password" class="form-control" autocomplete="new-password" />
+            <span asp-validation-for="NewPassword" class="text-danger"></span>
+        </div>
+        <div class="form-group">
             <label asp-for="UserRole">Role</label>
             <select asp-for="UserRole" class="form-control">
                 <option value="">— no change —</option>
@@ -38,3 +43,7 @@
         <a asp-action="Index" class="btn btn-secondary">Cancel</a>
     </form>
 </div>
+
+@section Scripts {
+    @await Html.PartialAsync("_ValidationScriptsPartial")
+}

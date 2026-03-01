@@ -1,6 +1,6 @@
 using AutoMapper;
 using ECommerceApp.Application.Mapping;
-using ECommerceApp.Domain.Model;
+using ECommerceApp.Domain.Identity.IAM;
 using FluentValidation;
 using System.Collections.Generic;
 
@@ -30,6 +30,11 @@ namespace ECommerceApp.Application.Identity.IAM.ViewModels
                                     .EmailAddress().WithMessage("Proszę podać email");
             RuleFor(x => x.Email).NotNull().WithMessage("Email nie może być pusty")
                                  .EmailAddress().WithMessage("Proszę podać email");
+            RuleFor(x => x.NewPassword)
+                .Matches("^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$%^&*-]).{8,}$")
+                .WithMessage("Hasło musi zawierać przynajmniej jedną dużą i małą literę oraz jeden specjalny znak" +
+                    ", a także nie może być krótsze niż 8 znaków")
+                .When(x => !string.IsNullOrWhiteSpace(x.NewPassword));
         }
     }
 }
