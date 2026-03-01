@@ -11,5 +11,6 @@ namespace ECommerceApp.Application.Supporting.TimeManagement
         Task<IReadOnlyList<JobExecutionRecord>> GetHistoryAsync(string jobName, int page, int pageSize, CancellationToken ct = default);
         Task EnableAsync(string jobName, CancellationToken ct = default);
         Task DisableAsync(string jobName, CancellationToken ct = default);
+        Task RegisterAsync(RegisterJobVm vm, CancellationToken ct = default);
     }
 }

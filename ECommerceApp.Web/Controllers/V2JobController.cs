@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using ECommerceApp.Application.Supporting.TimeManagement;
+using ECommerceApp.Application.Supporting.TimeManagement.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.Web.Controllers
@@ -50,6 +51,17 @@ namespace ECommerceApp.Web.Controllers
         {
             await _jobService.DisableAsync(jobName);
             TempData["Success"] = $"Job '{jobName}' disabled.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet("register")]
+        public IActionResult Register() => View(new RegisterJobVm { MaxRetries = 3 });
+
+        [HttpPost("register")]
+        public async Task<IActionResult> Register(RegisterJobVm vm)
+        {
+            await _jobService.RegisterAsync(vm);
+            TempData["Success"] = $"Job '{vm.JobName}' registered.";
             return RedirectToAction(nameof(Index));
         }
     }

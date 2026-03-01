@@ -650,11 +650,13 @@ while not cancelled:
 
 | Layer | Status |
 |---|---|
-| Domain (aggregates, value objects, domain events, repository interfaces) | ✅ Done — needs A3 (`DeferredJobStatus` enum) + A4 (`ComputeRetryRunAt`, `LockExpiresAt`) |
-| Infrastructure (`TimeManagementDbContext`, EF configs, repositories, BackgroundServices, DI) | ✅ Done — needs A1 (remove builder, DB-read in scheduler) + A2 (queue restructure) + A4 (zombie query, lock) + A5 (tick alignment) |
-| Application (`IScheduledTask`, `IDeferredJobScheduler`, `IJobTrigger`, `JobExecutionContext`, `IJobManagementService`, DI) | ✅ Done — needs A1 (remove `IScheduleConfig`) |
+| Domain (aggregates, value objects, domain events, repository interfaces) | ✅ Done — A3 + A4 applied |
+| Infrastructure (`TimeManagementDbContext`, EF configs, repositories, BackgroundServices, DI) | ✅ Done — A1–A5 applied |
+| Application (`IScheduledTask`, `IDeferredJobScheduler`, `IJobTrigger`, `JobExecutionContext`, `IJobManagementService`, DI) | ✅ Done — A1 applied (no `IScheduleConfig`) |
 | First task: `CurrencyRateSyncTask` in Currencies BC | ✅ Done |
-| Unit tests (35 tests passing) | ✅ Done — needs coverage for A3/A4 changes |
+| Unit tests | ✅ Done — `DeferredJobInstance` retry/zombie (A4) tests missing |
+| Admin UI: Register Job form | ⬜ Not started — `IJobManagementService.RegisterAsync` + controller + view needed |
+| `V2JobController` authorization | ⚠️ Intentionally unprotected — test/dev route only, `[Authorize]` to be added once checkout flow is complete |
 | DB migration (`time_management` schema, original) | ⬜ Pending approval |
 | DB migration (A1/A2 schema changes: `Schedule` col, `DeferredJobQueue`, `LockExpiresAt`) | ⬜ Pending approval — must be coordinated with original migration |
 | Integration tests | ⬜ Not started |

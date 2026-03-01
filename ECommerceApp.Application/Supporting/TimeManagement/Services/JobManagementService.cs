@@ -1,6 +1,8 @@
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Supporting.TimeManagement.Models;
+using ECommerceApp.Domain.Shared;
 using ECommerceApp.Domain.Supporting.TimeManagement;
+using ECommerceApp.Domain.Supporting.TimeManagement.ValueObjects;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -74,6 +76,24 @@ namespace ECommerceApp.Application.Supporting.TimeManagement.Services
                 ?? throw new BusinessException($"Job '{jobName}' not found.");
             job.Disable();
             await _scheduledJobRepo.UpdateAsync(job, ct);
+        }
+
+        public async Task RegisterAsync(RegisterJobVm vm, CancellationToken ct = default)
+        {
+            var existing = await _scheduledJobRepo.GetByNameAsync(vm.JobName, ct);
+            if (existing != null)
+                throw new BusinessException($"Job '{vm.JobName}' is already registered.");
+
+            try
+            {
+                _ = new CronSchedule(vm.Schedule);
+                var job = ScheduledJob.Create(vm.JobName, vm.Schedule, vm.TimeZoneId, vm.MaxRetries);
+                await _scheduledJobRepo.AddAsync(job, ct);
+            }
+            catch (DomainException ex)
+            {
+                throw new BusinessException(ex.Message);
+            }
         }
     }
 }
