@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Supporting.TimeManagement;
+using ECommerceApp.Domain.Supporting.TimeManagement.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +19,7 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement.Repositories
 
         public async Task<ScheduledJob?> GetByNameAsync(string name, CancellationToken ct = default)
             => await _context.ScheduledJobs
-                .FirstOrDefaultAsync(j => j.Name.Value == name, ct);
+                .FirstOrDefaultAsync(j => j.Name == new JobName(name), ct);
 
         public async Task<IReadOnlyList<ScheduledJob>> GetAllAsync(CancellationToken ct = default)
             => await _context.ScheduledJobs

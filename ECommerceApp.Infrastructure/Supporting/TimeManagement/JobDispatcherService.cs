@@ -2,6 +2,7 @@ using Cronos;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Application.Supporting.TimeManagement.Models;
 using ECommerceApp.Domain.Supporting.TimeManagement;
+using ECommerceApp.Domain.Supporting.TimeManagement.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -112,7 +113,7 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
                 if (trigger.Source != JobTriggerSource.Deferred)
                 {
                     var scheduledJob = await dbContext.ScheduledJobs
-                        .FirstOrDefaultAsync(j => j.Name.Value == trigger.JobName, ct);
+                        .FirstOrDefaultAsync(j => j.Name == new JobName(trigger.JobName), ct);
 
                     if (scheduledJob != null)
                     {

@@ -12,7 +12,6 @@ namespace ECommerceApp.Domain.Catalog.Products
         public ProductId Id { get; private set; }
         public ProductName Name { get; private set; } = default!;
         public Price Cost { get; private set; } = default!;
-        public ProductQuantity Quantity { get; private set; } = default!;
         public ProductDescription Description { get; private set; } = default!;
         public ProductStatus Status { get; private set; }
         public CategoryId CategoryId { get; private set; } = default!;
@@ -25,30 +24,23 @@ namespace ECommerceApp.Domain.Catalog.Products
 
         private Product() { }
 
-        public static (Product Product, ProductCreated Event) Create(
+        public static Product Create(
             string name,
             decimal cost,
-            int quantity,
             string description,
             int categoryId)
         {
-            if (quantity < 0)
-                throw new DomainException("Quantity must not be negative.");
             if (categoryId <= 0)
                 throw new DomainException("CategoryId must be positive.");
 
-            var product = new Product
+            return new Product
             {
                 Name = new ProductName(name),
                 Cost = new Price(cost),
-                Quantity = new ProductQuantity(quantity),
                 Description = new ProductDescription(description),
                 Status = ProductStatus.Draft,
                 CategoryId = new CategoryId(categoryId)
             };
-
-            var @event = new ProductCreated(product.Id.Value, product.Name.Value, DateTime.UtcNow);
-            return (product, @event);
         }
 
         public ProductPublished Publish()
@@ -65,22 +57,6 @@ namespace ECommerceApp.Domain.Catalog.Products
                 throw new DomainException("Only published products can be unpublished.");
             Status = ProductStatus.Unpublished;
             return new ProductUnpublished(Id.Value, DateTime.UtcNow);
-        }
-
-        public void DecreaseQuantity(int amount)
-        {
-            if (amount <= 0)
-                throw new DomainException("Decrease amount must be positive.");
-            if (Quantity.Value - amount < 0)
-                throw new DomainException($"Cannot decrease quantity by {amount}. Available: {Quantity.Value}.");
-            Quantity = new ProductQuantity(Quantity.Value - amount);
-        }
-
-        public void IncreaseQuantity(int amount)
-        {
-            if (amount <= 0)
-                throw new DomainException("Increase amount must be positive.");
-            Quantity = new ProductQuantity(Quantity.Value + amount);
         }
 
         public void UpdateDetails(string name, decimal cost, string description, int categoryId)

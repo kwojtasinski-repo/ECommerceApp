@@ -7,25 +7,19 @@
     <form method="post" asp-action="Edit" asp-route-id="@Model.Id">
         <div class="form-group">
             <label>Name</label>
-            <input name="name" class="form-control" value="@Model.Name" required minlength="3" maxlength="150" />
+            <input name="Name" class="form-control" value="@Model.Name" required minlength="3" maxlength="150" />
         </div>
-        <div class="form-row">
-            <div class="form-group col-md-6">
-                <label>Cost</label>
-                <input name="cost" type="number" step="0.01" min="0.01" class="form-control" value="@Model.Cost" required />
-            </div>
-            <div class="form-group col-md-6">
-                <label>Quantity</label>
-                <input name="quantity" type="number" min="0" class="form-control" value="@Model.Quantity" required />
-            </div>
+        <div class="form-group">
+            <label>Cost</label>
+            <input name="Cost" type="number" step="0.01" min="0.01" class="form-control" value="@Model.Cost" required />
         </div>
         <div class="form-group">
             <label>Description</label>
-            <textarea name="description" class="form-control" rows="2" maxlength="300">@Model.Description</textarea>
+            <textarea name="Description" class="form-control" rows="2" maxlength="300">@Model.Description</textarea>
         </div>
         <div class="form-group">
             <label>Category</label>
-            <select name="categoryId" class="form-control" required>
+            <select name="CategoryId" class="form-control" required>
                 @foreach (CategoryVm cat in (ViewBag.Categories ?? new List<CategoryVm>()))
                 {
                     if (cat.Id == Model.CategoryId)
@@ -38,24 +32,59 @@
                     }
                 }
             </select>
+            <div class="mt-1">
+                <a href="#" class="small" onclick="toggleNewCat(event)">＋ New category</a>
+                <div id="new-cat-row" style="display:none" class="mt-2">
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+                        <input id="new-cat-name" type="text" class="form-control form-control-sm"
+                               placeholder="Category name" maxlength="100" style="width:200px" />
+                        <button type="button" class="btn btn-sm btn-outline-success" onclick="createCategory()">Create</button>
+                        <button type="button" class="btn btn-sm btn-link text-muted p-0" onclick="cancelNewCat()">Cancel</button>
+                    </div>
+                    <div id="new-cat-error" class="text-danger small"></div>
+                </div>
+            </div>
         </div>
         <div class="form-group">
-            <label>Tags <small class="text-muted">(hold Ctrl for multi-select)</small></label>
-            <select name="tagIds" multiple class="form-control" style="height:120px">
-                @foreach (ProductTagVm tag in (ViewBag.Tags ?? new List<ProductTagVm>()))
-                {
-                    if (Model.TagIds.Contains(tag.Id))
-                    {
-                        <option value="@tag.Id" selected>@tag.Name</option>
-                    }
-                    else
-                    {
-                        <option value="@tag.Id">@tag.Name</option>
-                    }
-                }
-            </select>
+            <label>Tags <small class="text-muted">(comma-separated; new tags will be created automatically)</small></label>
+            <input name="Tags" class="form-control" value="@string.Join(", ", Model.TagNames)"
+                   placeholder="e.g. sale, new-arrival, featured" autocomplete="off" />
         </div>
         <button type="submit" class="btn btn-primary">Update</button>
         <a asp-action="Index" class="btn btn-secondary">Cancel</a>
     </form>
 </div>
+
+<script>
+    function toggleNewCat(e) {
+        e.preventDefault();
+        var row = document.getElementById('new-cat-row');
+        row.style.display = row.style.display === 'none' ? '' : 'none';
+        if (row.style.display !== 'none') document.getElementById('new-cat-name').focus();
+    }
+    function cancelNewCat() {
+        document.getElementById('new-cat-row').style.display = 'none';
+        document.getElementById('new-cat-name').value = '';
+        document.getElementById('new-cat-error').textContent = '';
+    }
+    async function createCategory() {
+        var name = document.getElementById('new-cat-name').value.trim();
+        var errEl = document.getElementById('new-cat-error');
+        if (!name) { errEl.textContent = 'Name is required.'; return; }
+        errEl.textContent = '';
+        var resp = await fetch('/v2/categories/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: name })
+        });
+        if (!resp.ok) { errEl.textContent = 'Could not create category.'; return; }
+        var data = await resp.json();
+        var sel = document.querySelector('select[name="CategoryId"]');
+        var opt = document.createElement('option');
+        opt.value = data.id;
+        opt.textContent = data.name;
+        sel.add(opt);
+        sel.value = data.id;
+        cancelNewCat();
+    }
+</script>

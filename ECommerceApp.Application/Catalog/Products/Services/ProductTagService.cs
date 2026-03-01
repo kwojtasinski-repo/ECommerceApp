@@ -4,6 +4,7 @@ using ECommerceApp.Application.Catalog.Products.ViewModels;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Domain.Catalog.Products;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.Catalog.Products.Services
@@ -76,6 +77,19 @@ namespace ECommerceApp.Application.Catalog.Products.Services
 
             var tag = await _repo.GetOrCreateAsync(name.Trim());
             return _mapper.Map<ProductTagVm>(tag);
+        }
+
+        public async Task<List<TagWithUsageVm>> GetTagsWithUsageAsync(int maxProductsPerTag = 10)
+        {
+            var summaries = await _repo.GetUsageSummariesAsync(maxProductsPerTag);
+            return summaries.Select(s => new TagWithUsageVm
+            {
+                Id = s.Id.Value,
+                Name = s.Name,
+                Slug = s.Slug,
+                TotalProductCount = s.TotalProductCount,
+                TopProductNames = s.TopProductNames.ToList()
+            }).ToList();
         }
     }
 }

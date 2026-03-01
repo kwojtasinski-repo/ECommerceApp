@@ -3,6 +3,7 @@ using ECommerceApp.Infrastructure.Catalog.Products;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ECommerceApp.Infrastructure.Catalog.Products.Migrations
 {
     [DbContext(typeof(CatalogDbContext))]
-    partial class ProductDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260301150309_RemoveQuantityFromProduct")]
+    partial class RemoveQuantityFromProduct
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -175,12 +178,6 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Migrations
                     b.HasOne("ECommerceApp.Domain.Catalog.Products.Product", null)
                         .WithMany("ProductTags")
                         .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("ECommerceApp.Domain.Catalog.Products.Tag", null)
-                        .WithMany()
-                        .HasForeignKey("TagId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });

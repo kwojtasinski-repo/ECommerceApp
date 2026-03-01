@@ -74,7 +74,6 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
             return await _context.Products
                 .AsNoTracking()
                 .Where(p => p.Status == ProductStatus.Published
-                         && p.Quantity.Value > 0
                          && (string.IsNullOrEmpty(searchString) || p.Description.Value.Contains(searchString)))
                 .OrderBy(p => p.Id)
                 .Skip((pageNo - 1) * pageSize)
@@ -86,7 +85,6 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
             => await _context.Products
                 .AsNoTracking()
                 .CountAsync(p => p.Status == ProductStatus.Published
-                              && p.Quantity.Value > 0
                               && (string.IsNullOrEmpty(searchString) || p.Description.Value.Contains(searchString)));
 
         public async Task<List<Product>> GetByIdsAsync(IEnumerable<int> ids)

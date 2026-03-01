@@ -12,7 +12,7 @@
     <p class="text-muted">Total: @Model.Count</p>
     <table class="table table-bordered table-sm">
         <thead class="thead-light">
-            <tr><th>Id</th><th>Name</th><th>Cost</th><th>Qty</th><th>Status</th><th style="width:220px"></th></tr>
+            <tr><th>Id</th><th>Name</th><th>Cost</th><th>Status</th><th style="width:220px"></th></tr>
         </thead>
         <tbody>
             @foreach (var p in Model.Items)
@@ -21,7 +21,6 @@
                     <td>@p.Id</td>
                     <td>@p.Name</td>
                     <td>@p.Cost.ToString("F2")</td>
-                    <td>@p.Quantity</td>
                     <td><span class="badge badge-secondary">@p.Status</span></td>
                     <td>
                         <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-info">Details</a>

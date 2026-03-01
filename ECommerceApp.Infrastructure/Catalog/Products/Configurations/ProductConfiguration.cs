@@ -32,10 +32,6 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Configurations
                    .HasMaxLength(300)
                    .IsRequired();
 
-            builder.Property(p => p.Quantity)
-                   .HasConversion(x => x.Value, v => new ProductQuantity(v))
-                   .IsRequired();
-
             builder.Property(p => p.Status)
                    .IsRequired()
                    .HasDefaultValue(ProductStatus.Draft);

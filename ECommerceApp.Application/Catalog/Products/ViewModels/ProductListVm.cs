@@ -9,7 +9,6 @@ namespace ECommerceApp.Application.Catalog.Products.ViewModels
         public int Id { get; set; }
         public string Name { get; set; }
         public decimal Cost { get; set; }
-        public int Quantity { get; set; }
         public string Status { get; set; }
         public int CategoryId { get; set; }
 
@@ -18,7 +17,6 @@ namespace ECommerceApp.Application.Catalog.Products.ViewModels
             profile.CreateMap<Domain.Catalog.Products.Product, ProductForListVm>()
                 .ForMember(d => d.Name, opt => opt.MapFrom(s => s.Name.Value))
                 .ForMember(d => d.Cost, opt => opt.MapFrom(s => s.Cost.Amount))
-                .ForMember(d => d.Quantity, opt => opt.MapFrom(s => s.Quantity.Value))
                 .ForMember(d => d.CategoryId, opt => opt.MapFrom(s => s.CategoryId.Value))
                 .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()));
         }

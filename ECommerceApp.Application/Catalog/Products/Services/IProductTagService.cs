@@ -14,5 +14,6 @@ namespace ECommerceApp.Application.Catalog.Products.Services
         Task<List<ProductTagVm>> GetAllTags();
         Task<List<ProductTagVm>> SearchTags(string query, int maxResults = 10);
         Task<ProductTagVm> GetOrCreateTag(string name);
+        Task<List<TagWithUsageVm>> GetTagsWithUsageAsync(int maxProductsPerTag = 10);
     }
 }

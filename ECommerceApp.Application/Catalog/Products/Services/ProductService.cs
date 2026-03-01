@@ -42,7 +42,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
                     $"Category with id '{dto.CategoryId}' was not found",
                     ErrorCode.Create("categoryNotFound", ErrorParameter.Create("id", dto.CategoryId)));
 
-            var (product, _) = Product.Create(dto.Name, dto.Cost, dto.Quantity, dto.Description, dto.CategoryId);
+            var product = Product.Create(dto.Name, dto.Cost, dto.Description, dto.CategoryId);
 
             if (dto.TagIds is not null)
             {
@@ -102,6 +102,13 @@ namespace ECommerceApp.Application.Catalog.Products.Services
 
             var category = await _categoryRepo.GetByIdAsync(new CategoryId(product.CategoryId.Value));
             vm.CategoryName = category?.Name.Value ?? string.Empty;
+
+            var tagIds = product.ProductTags.Select(pt => pt.TagId.Value).ToList();
+            if (tagIds.Count > 0)
+            {
+                var tags = await _tagRepo.GetByIdsAsync(tagIds);
+                vm.TagNames = tags.Select(t => t.Name.Value).ToList();
+            }
 
             return vm;
         }

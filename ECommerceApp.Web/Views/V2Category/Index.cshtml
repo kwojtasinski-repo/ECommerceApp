@@ -1,0 +1,33 @@
+@using ECommerceApp.Application.Catalog.Products.ViewModels
+@model System.Collections.Generic.List<CategoryVm>
+@{ ViewData["Title"] = "Categories v2"; }
+
+<div class="container mt-4">
+    <h2>Categories</h2>
+    @if (TempData["Success"] is string msg)
+    {
+        <div class="alert alert-success alert-dismissible fade show">@msg<button type="button" class="close" data-dismiss="alert">&times;</button></div>
+    }
+    <a asp-action="Add" class="btn btn-primary mb-3"><i class="fas fa-plus"></i> Add Category</a>
+    <table class="table table-bordered table-sm">
+        <thead class="thead-light">
+            <tr><th>Id</th><th>Name</th><th>Slug</th><th style="width:160px"></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var c in Model)
+            {
+                <tr>
+                    <td>@c.Id</td>
+                    <td>@c.Name</td>
+                    <td>@c.Slug</td>
+                    <td>
+                        <a asp-action="Edit" asp-route-id="@c.Id" class="btn btn-sm btn-warning">Edit</a>
+                        <form method="post" asp-action="Delete" asp-route-id="@c.Id" class="d-inline">
+                            <button class="btn btn-sm btn-danger" onclick="return confirm('Delete?')">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

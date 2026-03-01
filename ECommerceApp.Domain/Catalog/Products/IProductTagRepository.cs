@@ -15,5 +15,6 @@ namespace ECommerceApp.Domain.Catalog.Products
         Task<List<Tag>> SearchByNameAsync(string query, int maxResults);
         Task<List<Tag>> GetByIdsAsync(IEnumerable<int> ids);
         Task<Tag> GetOrCreateAsync(string name);
+        Task<List<TagUsageSummary>> GetUsageSummariesAsync(int maxProductsPerTag);
     }
 }

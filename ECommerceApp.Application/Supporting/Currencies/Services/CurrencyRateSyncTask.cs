@@ -8,7 +8,7 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
 {
     internal sealed class CurrencyRateSyncTask : IScheduledTask
     {
-        public string TaskName => "CurrencyRateSync";
+        public string TaskName => "CurrencyDownloader";
 
         private readonly ICurrencyRateService _currencyRateService;
         private readonly ICurrencyRepository _currencyRepo;

@@ -339,39 +339,6 @@ namespace ECommerceApp.UnitTests.Catalog.Products
         }
 
         [Fact]
-        public void ProductQuantity_ValidValue_ShouldCreate()
-        {
-            var qty = new ProductQuantity(10);
-
-            qty.Value.Should().Be(10);
-        }
-
-        [Fact]
-        public void ProductQuantity_ZeroValue_ShouldCreate()
-        {
-            var qty = new ProductQuantity(0);
-
-            qty.Value.Should().Be(0);
-        }
-
-        [Fact]
-        public void ProductQuantity_NegativeValue_ShouldThrowDomainException()
-        {
-            var act = () => new ProductQuantity(-1);
-
-            act.Should().Throw<DomainException>().WithMessage("*negative*");
-        }
-
-        [Fact]
-        public void ProductQuantity_ImplicitConversion_ShouldReturnInt()
-        {
-            var qty = new ProductQuantity(5);
-            int value = qty;
-
-            value.Should().Be(5);
-        }
-
-        [Fact]
         public void TagName_ValidName_ShouldCreate()
         {
             var name = new TagName("Sale");

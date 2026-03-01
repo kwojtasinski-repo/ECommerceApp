@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ECommerceApp.Application.Catalog.Products.DTOs;
 using ECommerceApp.Application.Catalog.Products.Services;
+using ECommerceApp.Application.Catalog.Products.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.Web.Controllers
@@ -39,17 +40,16 @@ namespace ECommerceApp.Web.Controllers
         public async Task<IActionResult> Add()
         {
             ViewBag.Categories = await _categoryService.GetAllCategories();
-            ViewBag.Tags = await _tagService.GetAllTags();
+            ViewBag.TagHints = await _tagService.GetAllTags();
             return View();
         }
 
         [HttpPost("add")]
-        public async Task<IActionResult> Add(
-            string name, decimal cost, int quantity, string description,
-            int categoryId, int[] tagIds)
+        public async Task<IActionResult> Add(CreateProductFormVm form)
         {
+            var tagIds = await ResolveTagIds(form.Tags);
             await _productService.AddProduct(
-                new CreateProductDto(name, cost, quantity, description, categoryId, tagIds ?? new int[0]));
+                new CreateProductDto(form.Name, form.Cost, form.Description, form.CategoryId, tagIds));
             TempData["Success"] = "Product added.";
             return RedirectToAction(nameof(Index));
         }
@@ -60,17 +60,15 @@ namespace ECommerceApp.Web.Controllers
             var vm = await _productService.GetProductDetails(id);
             if (vm is null) return NotFound();
             ViewBag.Categories = await _categoryService.GetAllCategories();
-            ViewBag.Tags = await _tagService.GetAllTags();
             return View(vm);
         }
 
         [HttpPost("edit/{id:int}")]
-        public async Task<IActionResult> Edit(
-            int id, string name, decimal cost, int quantity,
-            string description, int categoryId, int[] tagIds)
+        public async Task<IActionResult> Edit(int id, UpdateProductFormVm form)
         {
+            var tagIds = await ResolveTagIds(form.Tags);
             await _productService.UpdateProduct(
-                new UpdateProductDto(id, name, cost, quantity, description, categoryId, tagIds ?? new int[0]));
+                new UpdateProductDto(id, form.Name, form.Cost, form.Description, form.CategoryId, tagIds));
             TempData["Success"] = "Product updated.";
             return RedirectToAction(nameof(Index));
         }
@@ -98,5 +96,24 @@ namespace ECommerceApp.Web.Controllers
             TempData["Success"] = "Product unpublished.";
             return RedirectToAction(nameof(Details), new { id });
         }
+
+        private async Task<int[]> ResolveTagIds(string tags)
+        {
+            if (string.IsNullOrWhiteSpace(tags))
+                return new int[0];
+
+            var names = tags.Split(',', System.StringSplitOptions.RemoveEmptyEntries)
+                            .Select(n => n.Trim())
+                            .Where(n => n.Length > 0);
+
+            var ids = new List<int>();
+            foreach (var name in names)
+            {
+                var tag = await _tagService.GetOrCreateTag(name);
+                ids.Add(tag.Id);
+            }
+            return ids.ToArray();
+        }
+
     }
 }

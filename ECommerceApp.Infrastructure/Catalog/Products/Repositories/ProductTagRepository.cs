@@ -61,9 +61,12 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
                 .ToListAsync();
 
         public async Task<List<Tag>> GetByIdsAsync(IEnumerable<int> ids)
-            => await _context.Tags
-                .Where(t => ids.Contains(EF.Property<int>(t, "Id")))
+        {
+            var tagIds = ids.Select(id => new TagId(id)).ToArray();
+            return await _context.Tags
+                .Where(t => tagIds.Contains(t.Id))
                 .ToListAsync();
+        }
 
         public async Task<Tag> GetOrCreateAsync(string name)
         {
@@ -76,6 +79,38 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
             _context.Tags.Add(tag);
             await _context.SaveChangesAsync();
             return tag;
+        }
+
+        public async Task<List<TagUsageSummary>> GetUsageSummariesAsync(int maxProductsPerTag)
+        {
+            var tags = await _context.Tags
+                .AsNoTracking()
+                .OrderBy(t => EF.Property<string>(t, "Name"))
+                .ToListAsync();
+
+            if (tags.Count == 0)
+                return new List<TagUsageSummary>();
+
+            var joins = await _context.ProductTags
+                .AsNoTracking()
+                .Join(_context.Products, pt => pt.ProductId, p => p.Id,
+                      (pt, p) => new { pt.TagId, p.Name })
+                .ToListAsync();
+
+            var grouped = joins
+                .GroupBy(j => j.TagId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
+            return tags.Select(t =>
+            {
+                var usage = grouped.GetValueOrDefault(t.Id);
+                var total = usage?.Count ?? 0;
+                var topNames = usage?
+                    .Take(maxProductsPerTag)
+                    .Select(u => u.Name.Value)
+                    .ToList() ?? new List<string>();
+                return new TagUsageSummary(t.Id, t.Name.Value, t.Slug.Value, total, topNames);
+            }).ToList();
         }
     }
 }

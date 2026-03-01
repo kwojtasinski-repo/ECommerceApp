@@ -41,7 +41,6 @@ namespace ECommerceApp.Application.Mapping
             CreateMap<TagName, string>().ConvertUsing(x => x.Value);
             CreateMap<CategoryName, string>().ConvertUsing(x => x.Value);
             CreateMap<ProductDescription, string>().ConvertUsing(x => x.Value);
-            CreateMap<ProductQuantity, int>().ConvertUsing(x => x.Value);
             CreateMap<ImageFileName, string>().ConvertUsing(x => x.Value);
 
             CreateMap<CurrencyId, int>().ConvertUsing(x => x.Value);

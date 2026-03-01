@@ -27,6 +27,11 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Configurations
                    .IsRequired();
 
             builder.HasIndex(t => t.Slug).IsUnique();
+
+            builder.HasMany<ProductTag>()
+                   .WithOne()
+                   .HasForeignKey(pt => pt.TagId)
+                   .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

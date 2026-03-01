@@ -7,7 +7,6 @@ namespace ECommerceApp.Application.Catalog.Products.DTOs
         int Id,
         string Name,
         decimal Cost,
-        int Quantity,
         string Description,
         int CategoryId,
         IEnumerable<int> TagIds);
@@ -19,7 +18,6 @@ namespace ECommerceApp.Application.Catalog.Products.DTOs
             RuleFor(x => x.Id).GreaterThan(0);
             RuleFor(x => x.Name).NotNull().NotEmpty().MinimumLength(3).MaximumLength(150);
             RuleFor(x => x.Cost).GreaterThan(0);
-            RuleFor(x => x.Quantity).GreaterThanOrEqualTo(0);
             RuleFor(x => x.Description).MaximumLength(300);
             RuleFor(x => x.CategoryId).GreaterThan(0);
         }
