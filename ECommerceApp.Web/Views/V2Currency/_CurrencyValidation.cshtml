@@ -1,0 +1,7 @@
+@using ECommerceApp.Domain.Supporting.Currencies.ValueObjects
+@{
+    var codesJson = System.Text.Json.JsonSerializer.Serialize(CurrencyCode.GetAllCodes());
+}
+<script>
+    iso4217Codes = @Html.Raw(codesJson);
+</script>

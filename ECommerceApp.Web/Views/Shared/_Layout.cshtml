@@ -187,6 +187,8 @@
     <script>
 
         $(document).on('DOMInitialized', function () {
+            setGlobalError('@Context.Request.Query["Error"]');
+
             var itemCount = document.getElementById("itemCount");
 
             if (!itemCount) {
@@ -199,8 +201,6 @@
                                 itemCount.innerHTML = response.count;
                             }
                         });
-
-            setGlobalError('@Context.Request.Query["Error"]');
         });
 
         function setGlobalError(error) {
@@ -230,10 +230,7 @@
             return this.optional(element) || !/Invalid|NaN/.test(new Date(date[2], date[1], date[0]).toString());
         }
 
-        @{
-            var _iso4217Json = System.Text.Json.JsonSerializer.Serialize(ECommerceApp.Domain.Supporting.Currencies.ValueObjects.CurrencyCode.GetAllCodes());
-        }
-        var iso4217Codes = @Html.Raw(_iso4217Json);
+        var iso4217Codes = [];
         var iso4217Message = 'Podaj prawidłowy kod waluty (np. EUR, USD, PLN).';
         $.validator.addMethod("iso4217", function (value, element) {
             return this.optional(element) || iso4217Codes.indexOf(value.toUpperCase()) >= 0;
