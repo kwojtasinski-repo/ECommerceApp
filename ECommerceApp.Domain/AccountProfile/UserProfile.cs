@@ -117,14 +117,17 @@ namespace ECommerceApp.Domain.AccountProfile
             return true;
         }
 
-        public bool RemoveAddress(int addressId)
+        public RemoveAddressResult RemoveAddress(int addressId)
         {
             var idx = _addresses.FindIndex(a => a.Id == new AddressId(addressId));
             if (idx < 0)
-                return false;
+                return RemoveAddressResult.NotFound;
+
+            if (_addresses.Count == 1)
+                return RemoveAddressResult.LastAddress;
 
             _addresses.RemoveAt(idx);
-            return true;
+            return RemoveAddressResult.Removed;
         }
     }
 }

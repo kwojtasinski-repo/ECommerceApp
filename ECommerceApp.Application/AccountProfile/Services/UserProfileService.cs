@@ -36,7 +36,7 @@ namespace ECommerceApp.Application.AccountProfile.Services
 
         public async Task<bool> UpdatePersonalInfoAsync(UpdateUserProfileDto dto)
         {
-            var profile = await _repository.GetByIdAsync(new UserProfileId(dto.Id));
+            var profile = await _repository.GetByIdAsync(new UserProfileId(dto.Id), track: true);
             if (profile is null)
                 throw new BusinessException($"UserProfile with id {dto.Id} was not found");
 
@@ -47,7 +47,7 @@ namespace ECommerceApp.Application.AccountProfile.Services
 
         public async Task<bool> UpdateContactInfoAsync(UpdateContactInfoDto dto)
         {
-            var profile = await _repository.GetByIdAsync(new UserProfileId(dto.Id));
+            var profile = await _repository.GetByIdAsync(new UserProfileId(dto.Id), track: true);
             if (profile is null)
                 throw new BusinessException($"UserProfile with id {dto.Id} was not found");
 
@@ -114,7 +114,7 @@ namespace ECommerceApp.Application.AccountProfile.Services
 
         public async Task<bool> AddAddressAsync(int userProfileId, string userId, AddAddressDto dto)
         {
-            var profile = await _repository.GetByIdAndUserIdAsync(new UserProfileId(userProfileId), userId);
+            var profile = await _repository.GetByIdAndUserIdAsync(new UserProfileId(userProfileId), userId, track: true);
             if (profile is null)
                 throw new BusinessException($"UserProfile with id {userProfileId} was not found");
 
@@ -125,7 +125,7 @@ namespace ECommerceApp.Application.AccountProfile.Services
 
         public async Task<bool> UpdateAddressAsync(int userProfileId, string userId, UpdateAddressDto dto)
         {
-            var profile = await _repository.GetByIdAndUserIdAsync(new UserProfileId(userProfileId), userId);
+            var profile = await _repository.GetByIdAndUserIdAsync(new UserProfileId(userProfileId), userId, track: true);
             if (profile is null)
                 throw new BusinessException($"UserProfile with id {userProfileId} was not found");
 
@@ -138,12 +138,16 @@ namespace ECommerceApp.Application.AccountProfile.Services
 
         public async Task<bool> RemoveAddressAsync(int userProfileId, int addressId, string userId)
         {
-            var profile = await _repository.GetByIdAndUserIdAsync(new UserProfileId(userProfileId), userId);
+            var profile = await _repository.GetByIdAndUserIdAsync(new UserProfileId(userProfileId), userId, track: true);
             if (profile is null)
                 throw new BusinessException($"UserProfile with id {userProfileId} was not found");
 
-            if (!profile.RemoveAddress(addressId))
+            var result = profile.RemoveAddress(addressId);
+            if (result == RemoveAddressResult.NotFound)
                 throw new BusinessException($"Address with id {addressId} was not found");
+
+            if (result == RemoveAddressResult.LastAddress)
+                throw new BusinessException("Cannot remove the last address from a profile");
 
             await _repository.UpdateAsync(profile);
             return true;

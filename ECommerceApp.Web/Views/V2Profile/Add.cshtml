@@ -1,6 +1,6 @@
 @{ ViewData["Title"] = "Add User Profile"; }
 
-<div class="container mt-4" style="max-width:600px">
+<div class="container mt-4" style="max-width:650px">
     <h2>Add User Profile</h2>
     <form method="post" asp-action="Add">
         <div class="form-group">
@@ -37,6 +37,38 @@
             <label>NIP</label>
             <input name="nip" class="form-control" maxlength="50" />
         </div>
+
+        <hr />
+        <h5>Address <small class="text-muted">(required)</small></h5>
+        <div class="form-row">
+            <div class="form-group col-md-8">
+                <label>Street</label>
+                <input name="street" class="form-control" required maxlength="200" />
+            </div>
+            <div class="form-group col-md-4">
+                <label>Building No.</label>
+                <input name="buildingNumber" class="form-control" required maxlength="20" />
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group col-md-3">
+                <label>Flat No. <small class="text-muted">(opt.)</small></label>
+                <input name="flatNumber" type="number" class="form-control" min="1" />
+            </div>
+            <div class="form-group col-md-4">
+                <label>ZIP Code</label>
+                <input name="zipCode" class="form-control" required maxlength="12" />
+            </div>
+            <div class="form-group col-md-5">
+                <label>City</label>
+                <input name="city" class="form-control" required maxlength="300" />
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Country <small class="text-muted">(ISO 2-letter code, e.g. PL)</small></label>
+            <input name="country" class="form-control" required maxlength="2" minlength="2" placeholder="e.g. PL" />
+        </div>
+
         <button type="submit" class="btn btn-primary">Save</button>
         <a asp-action="Index" class="btn btn-secondary">Cancel</a>
     </form>

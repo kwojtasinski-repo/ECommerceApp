@@ -22,18 +22,24 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Repositories
             return profile.Id;
         }
 
-        public async Task<UserProfile?> GetByIdAsync(UserProfileId id)
-            => await _context.UserProfiles.FirstOrDefaultAsync(p => p.Id == id);
+        private IQueryable<UserProfile> Query(bool track)
+            => track ? _context.UserProfiles : _context.UserProfiles.AsNoTracking();
 
-        public async Task<UserProfile?> GetByIdAndUserIdAsync(UserProfileId id, string userId)
-            => await _context.UserProfiles.FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
+        public async Task<UserProfile?> GetByIdAsync(UserProfileId id, bool track = false)
+            => await Query(track).FirstOrDefaultAsync(p => p.Id == id);
 
-        public async Task<UserProfile?> GetByUserIdAsync(string userId)
-            => await _context.UserProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
+        public async Task<UserProfile?> GetByIdAndUserIdAsync(UserProfileId id, string userId, bool track = false)
+            => await Query(track).FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
+
+        public async Task<UserProfile?> GetByUserIdAsync(string userId, bool track = false)
+            => await Query(track).FirstOrDefaultAsync(p => p.UserId == userId);
 
         public async Task UpdateAsync(UserProfile profile)
         {
-            _context.UserProfiles.Update(profile);
+            // Tracked entities: DetectChanges at SaveChangesAsync handles scalar and owned-entity changes.
+            // Fallback for detached entities (e.g. scalar-only updates via an untracked load).
+            if (_context.Entry(profile).State == EntityState.Detached)
+                _context.UserProfiles.Update(profile);
             await _context.SaveChangesAsync();
         }
 

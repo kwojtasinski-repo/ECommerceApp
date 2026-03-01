@@ -54,6 +54,8 @@ single aggregate boundary. No separate `IAddressService` or `IContactDetailServi
 Own `UserProfileDbContext : DbContext` with schema `"profile"`.
 Tables: `profile.UserProfiles`, `profile.Addresses`.
 
+`UserId` carries a non-unique index (`HasIndex(p => p.UserId)` without `IsUnique()`). One `ApplicationUser` may own multiple `UserProfile` rows; the unique constraint was intentionally omitted to support that scenario.
+
 ## Consequences
 
 ### Positive
@@ -76,6 +78,16 @@ Tables: `profile.UserProfiles`, `profile.Addresses`.
 - **EF Core OwnsMany + private backing field** — verified to work in EF Core 7 via
   `Navigation().HasField("_addresses").UsePropertyAccessMode(PropertyAccessMode.Field)`.
   Build is green and unit tests pass.
+- **`Address.Id` EF Core sentinel** — `AddressId` is a reference-type record; EF Core's sentinel
+  for `ValueGeneratedOnAdd()` on a reference-type property is `null`. Initializing the backing
+  field to `new AddressId(0)` is non-null, so EF treats every new `Address` as an already-existing
+  entity and emits `UPDATE WHERE Id = 0` instead of `INSERT`. Zero rows affected →
+  `DbUpdateConcurrencyException`. **Fix**: initialize `Address.Id` to `default!` (null) so EF
+  correctly recognises the sentinel and generates `INSERT`. See also ADR-0006 Risks.
+- **`UserProfile.Create()` domain event tuple removed** — the original design returned
+  `(UserProfile, UserProfileCreated)` to support out-of-band event dispatch. The tuple was
+  removed because the in-process `InMemoryMessageBroker` (ADR-0010) is the authoritative
+  cross-BC channel; the service layer publishes events explicitly after persistence.
 - **Data migration** — the atomic switch from old Customer BC will require a data migration
   script to populate `Email` and `PhoneNumber` from the most common `ContactDetail` rows.
   This will be handled as a separate migration PR with explicit reviewer sign-off per
@@ -112,7 +124,7 @@ Tables: `profile.UserProfiles`, `profile.Addresses`.
 ## Conformance checklist
 
 - [ ] All `UserProfile` and `Address` properties use `private set` (record: init-only via constructor)
-- [ ] `UserProfile.Create(...)` is `static`, returns `(UserProfile, UserProfileCreated)`
+- [x] `UserProfile.Create(...)` is `static`, returns `UserProfile` (plain return — event tuple removed; see Risks & mitigations)
 - [ ] `UserProfile.cs` has a `private UserProfile()` parameterless constructor for EF Core
 - [ ] `UserProfile.cs` lives under `Domain/AccountProfile/` (no group subfolder)
 - [ ] No `ICollection<Order>`, `ICollection<Payment>` or other cross-BC navigation in `UserProfile.cs`

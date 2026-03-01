@@ -4,7 +4,7 @@ namespace ECommerceApp.Domain.AccountProfile
 {
     public sealed record Address
     {
-        public AddressId Id { get; private set; } = new AddressId(0);
+        public AddressId Id { get; private set; } = default!;
         public Street Street { get; }
         public BuildingNumber BuildingNumber { get; }
         public FlatNumber? FlatNumber { get; }

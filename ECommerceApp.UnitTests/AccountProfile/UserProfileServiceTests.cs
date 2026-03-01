@@ -52,7 +52,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         public async Task UpdatePersonalInfoAsync_ProfileNotFound_ShouldThrowBusinessException()
         {
             var dto = new UpdateUserProfileDto(99, "Jan", "Kowalski", false, null, null);
-            _repository.Setup(r => r.GetByIdAsync(new UserProfileId(99))).ReturnsAsync((UserProfile)null);
+            _repository.Setup(r => r.GetByIdAsync(new UserProfileId(99), It.IsAny<bool>())).ReturnsAsync((UserProfile)null);
 
             var act = async () => await CreateService().UpdatePersonalInfoAsync(dto);
 
@@ -64,7 +64,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         {
             var profile = CreateProfile();
             var dto = new UpdateUserProfileDto(1, "Anna", "Nowak", false, null, null);
-            _repository.Setup(r => r.GetByIdAsync(new UserProfileId(1))).ReturnsAsync(profile);
+            _repository.Setup(r => r.GetByIdAsync(new UserProfileId(1), true)).ReturnsAsync(profile);
 
             var result = await CreateService().UpdatePersonalInfoAsync(dto);
 
@@ -76,7 +76,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         public async Task UpdateContactInfoAsync_ProfileNotFound_ShouldThrowBusinessException()
         {
             var dto = new UpdateContactInfoDto(99, "new@test.com", "999");
-            _repository.Setup(r => r.GetByIdAsync(new UserProfileId(99))).ReturnsAsync((UserProfile)null);
+            _repository.Setup(r => r.GetByIdAsync(new UserProfileId(99), It.IsAny<bool>())).ReturnsAsync((UserProfile)null);
 
             var act = async () => await CreateService().UpdateContactInfoAsync(dto);
 
@@ -87,7 +87,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         public async Task AddAddressAsync_ProfileNotFound_ShouldThrowBusinessException()
         {
             var dto = new AddAddressDto(1, "Testowa", "5", null, "12-345", "Warszawa", "PL");
-            _repository.Setup(r => r.GetByIdAndUserIdAsync(new UserProfileId(1), "user-1")).ReturnsAsync((UserProfile)null);
+            _repository.Setup(r => r.GetByIdAndUserIdAsync(new UserProfileId(1), "user-1", It.IsAny<bool>())).ReturnsAsync((UserProfile)null);
 
             var act = async () => await CreateService().AddAddressAsync(1, "user-1", dto);
 
@@ -99,7 +99,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         {
             var profile = CreateProfile();
             var dto = new AddAddressDto(1, "Testowa", "5", null, "12-345", "Warszawa", "PL");
-            _repository.Setup(r => r.GetByIdAndUserIdAsync(new UserProfileId(1), "user-1")).ReturnsAsync(profile);
+            _repository.Setup(r => r.GetByIdAndUserIdAsync(new UserProfileId(1), "user-1", true)).ReturnsAsync(profile);
 
             var result = await CreateService().AddAddressAsync(1, "user-1", dto);
 
@@ -111,9 +111,21 @@ namespace ECommerceApp.UnitTests.AccountProfile
         public async Task RemoveAddressAsync_NonExistentAddress_ShouldThrowBusinessException()
         {
             var profile = CreateProfile();
-            _repository.Setup(r => r.GetByIdAndUserIdAsync(new UserProfileId(1), "user-1")).ReturnsAsync(profile);
+            _repository.Setup(r => r.GetByIdAndUserIdAsync(new UserProfileId(1), "user-1", true)).ReturnsAsync(profile);
 
             var act = async () => await CreateService().RemoveAddressAsync(1, 99, "user-1");
+
+            await act.Should().ThrowAsync<BusinessException>();
+        }
+
+        [Fact]
+        public async Task RemoveAddressAsync_LastAddress_ShouldThrowBusinessException()
+        {
+            var profile = CreateProfile();
+            profile.AddAddress("Testowa", "5", null, "12-345", "Warszawa", "PL");
+            _repository.Setup(r => r.GetByIdAndUserIdAsync(new UserProfileId(1), "user-1", true)).ReturnsAsync(profile);
+
+            var act = async () => await CreateService().RemoveAddressAsync(1, 0, "user-1");
 
             await act.Should().ThrowAsync<BusinessException>();
         }
@@ -122,7 +134,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         public async Task GetDetailsAsync_ExistingProfile_ShouldReturnVm()
         {
             var profile = CreateProfile();
-            _repository.Setup(r => r.GetByIdAsync(new UserProfileId(1))).ReturnsAsync(profile);
+            _repository.Setup(r => r.GetByIdAsync(new UserProfileId(1), false)).ReturnsAsync(profile);
 
             var result = await CreateService().GetDetailsAsync(1);
 
@@ -134,7 +146,7 @@ namespace ECommerceApp.UnitTests.AccountProfile
         [Fact]
         public async Task GetDetailsAsync_NonExistentProfile_ShouldReturnNull()
         {
-            _repository.Setup(r => r.GetByIdAsync(new UserProfileId(99))).ReturnsAsync((UserProfile)null);
+            _repository.Setup(r => r.GetByIdAsync(new UserProfileId(99), false)).ReturnsAsync((UserProfile)null);
 
             var result = await CreateService().GetDetailsAsync(99);
 

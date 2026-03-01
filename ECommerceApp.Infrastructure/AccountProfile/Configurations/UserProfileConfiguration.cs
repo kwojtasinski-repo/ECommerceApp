@@ -49,7 +49,7 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Configurations
                    .IsRequired()
                    .HasConversion(x => x.Value, v => new PhoneNumber(v));
 
-            builder.HasIndex(p => p.UserId).IsUnique();
+            builder.HasIndex(p => p.UserId);
             builder.HasIndex(p => p.NIP);
 
             builder.OwnsMany(p => p.Addresses, new AddressOwnedTypeConfiguration().Configure);

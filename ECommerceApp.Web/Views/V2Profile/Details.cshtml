@@ -2,7 +2,7 @@
 @model UserProfileDetailsVm
 @{ ViewData["Title"] = "Profile Details"; }
 
-<div class="container mt-4" style="max-width:700px">
+<div class="container mt-4" style="max-width:900px">
     <h2>@Model.FirstName @Model.LastName</h2>
     @if (TempData["Success"] is string msg)
     {
@@ -15,6 +15,37 @@
         <dt class="col-sm-3">Phone</dt><dd class="col-sm-9">@Model.PhoneNumber</dd>
         <dt class="col-sm-3">Company</dt><dd class="col-sm-9">@(Model.IsCompany ? $"{Model.CompanyName} (NIP: {Model.NIP})" : "No")</dd>
     </dl>
+
+    <hr />
+    <h5>Addresses</h5>
+    @if (Model.Addresses.Count == 0)
+    {
+        <p class="text-muted small">No addresses on file.</p>
+    }
+    else
+    {
+        <table class="table table-sm table-bordered">
+            <thead class="thead-light">
+                <tr>
+                    <th>Street</th><th>Building</th><th>Flat</th><th>ZIP</th><th>City</th><th>Country</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var addr in Model.Addresses)
+                {
+                    <tr>
+                        <td>@addr.Street</td>
+                        <td>@addr.BuildingNumber</td>
+                        <td>@(addr.FlatNumber.HasValue ? addr.FlatNumber.ToString() : "—")</td>
+                        <td>@addr.ZipCode</td>
+                        <td>@addr.City</td>
+                        <td>@addr.Country</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
     <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
     <a asp-action="Index" class="btn btn-secondary">Back</a>
 </div>

@@ -147,13 +147,24 @@ namespace ECommerceApp.UnitTests.AccountProfile
         // RemoveAddress
 
         [Fact]
-        public void RemoveAddress_NonExistentAddressId_ShouldReturnFalse()
+        public void RemoveAddress_NonExistentAddressId_ShouldReturnNotFound()
         {
             var profile = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
 
             var result = profile.RemoveAddress(99);
 
-            result.Should().BeFalse();
+            result.Should().Be(RemoveAddressResult.NotFound);
+        }
+
+        [Fact]
+        public void RemoveAddress_LastAddress_ShouldReturnLastAddress()
+        {
+            var profile = UserProfile.Create("user-1", "Jan", "Kowalski", false, null, null, "jan@test.com", "123");
+            profile.AddAddress("Testowa", "5", null, "12-345", "Warszawa", "PL");
+
+            var result = profile.RemoveAddress(0);
+
+            result.Should().Be(RemoveAddressResult.LastAddress);
         }
 
         // Address.Create (internal — tested via UserProfile.AddAddress)

@@ -145,6 +145,12 @@ CreateMap<UserProfileId, int>().ConvertUsing(x => x.Value);
   automatically for nullable reference types) and `ForMember` with null propagation in AutoMapper.
 - **Risk**: New team members unfamiliar with the pattern apply raw primitives in a new BC.
   **Mitigation**: this ADR + `implementation-patterns.md` (sections 3–4) + code review checklist.
+- **Risk**: Reference-type `TypedId<T>` properties with `ValueGeneratedOnAdd()` initialized to
+  `new XxxId(0)` defeat EF Core's sentinel detection. EF Core's sentinel for a nullable
+  reference-type property is `null`; a non-null value (even `new XxxId(0)`) causes EF to generate
+  `UPDATE` instead of `INSERT`, yielding `DbUpdateConcurrencyException` with 0 rows affected.
+  **Mitigation**: always initialize owned-entity `Id` backing fields to `default!` (null) and
+  never assign a `new XxxId(0)` placeholder. See `Address.Id` in the AccountProfile BC (ADR-0005).
 
 ## Alternatives considered
 
