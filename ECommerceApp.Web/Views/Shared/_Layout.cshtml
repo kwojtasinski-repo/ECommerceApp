@@ -229,6 +229,19 @@
             var date = value.split("/");
             return this.optional(element) || !/Invalid|NaN/.test(new Date(date[2], date[1], date[0]).toString());
         }
+
+        @{
+            var _iso4217Json = System.Text.Json.JsonSerializer.Serialize(ECommerceApp.Domain.Supporting.Currencies.ValueObjects.CurrencyCode.GetAllCodes());
+        }
+        var iso4217Codes = @Html.Raw(_iso4217Json);
+        var iso4217Message = 'Podaj prawidłowy kod waluty (np. EUR, USD, PLN).';
+        $.validator.addMethod("iso4217", function (value, element) {
+            return this.optional(element) || iso4217Codes.indexOf(value.toUpperCase()) >= 0;
+        }, function () { return iso4217Message; });
+        $.validator.unobtrusive.adapters.add("iso4217", function (options) {
+            options.rules["iso4217"] = true;
+        });
+        require(['errors'], function (e) { iso4217Message = e.errors.getError('invalidCurrencyCode'); });
     </script>
     <style type="text/css">
         .badge.badge-light {

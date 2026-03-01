@@ -18,6 +18,7 @@
                 couponInvalidDiscount: 'Obniżka jest niepoprawna. Wartość powinna być w przedziale od 1 do 99',
                 couponCodeAlreadyExists: 'Kupon o naziwe {code} już istnieje',
                 currencyCodeEmpty: 'Kod waluty nie może być pusty',
+                invalidCurrencyCode: 'Podaj prawidłowy kod waluty (np. EUR, USD, PLN)',
                 cannotDeleteCouponFromPaidOrder: 'Nie można usunąć kupon z zapłaconego zamówienia',
                 orderNotExistsWhileAddCoupon: 'Nie można dodać kupon do nieistniejącego zamówienia',
                 addCouponToPaidOrderNotAllowed: 'Nie można dodać kuponu do zapłaconego zamówienia',

@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using ECommerceApp.Application.Supporting.Currencies.DTOs;
 using ECommerceApp.Application.Supporting.Currencies.Services;
+using ECommerceApp.Application.Supporting.Currencies.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ECommerceApp.Web.Controllers
@@ -25,12 +26,13 @@ namespace ECommerceApp.Web.Controllers
         }
 
         [HttpGet("add")]
-        public IActionResult Add() => View();
+        public IActionResult Add() => View(new CreateCurrencyFormVm());
 
         [HttpPost("add")]
-        public async Task<IActionResult> Add(string code, string description)
+        public async Task<IActionResult> Add(CreateCurrencyFormVm vm)
         {
-            await _currencyService.AddAsync(new CreateCurrencyDto(code, description));
+            if (!ModelState.IsValid) return View(vm);
+            await _currencyService.AddAsync(new CreateCurrencyDto(vm.Code, vm.Description));
             TempData["Success"] = "Currency added.";
             return RedirectToAction(nameof(Index));
         }
@@ -38,14 +40,16 @@ namespace ECommerceApp.Web.Controllers
         [HttpGet("edit/{id:int}")]
         public async Task<IActionResult> Edit(int id)
         {
-            var vm = await _currencyService.GetByIdAsync(id);
-            return vm is null ? NotFound() : View(vm);
+            var currency = await _currencyService.GetByIdAsync(id);
+            if (currency is null) return NotFound();
+            return View(new UpdateCurrencyFormVm { Id = currency.Id, Code = currency.Code, Description = currency.Description });
         }
 
         [HttpPost("edit/{id:int}")]
-        public async Task<IActionResult> Edit(int id, string code, string description)
+        public async Task<IActionResult> Edit(UpdateCurrencyFormVm vm)
         {
-            await _currencyService.UpdateAsync(new UpdateCurrencyDto(id, code, description));
+            if (!ModelState.IsValid) return View(vm);
+            await _currencyService.UpdateAsync(new UpdateCurrencyDto(vm.Id, vm.Code, vm.Description));
             TempData["Success"] = "Currency updated.";
             return RedirectToAction(nameof(Index));
         }

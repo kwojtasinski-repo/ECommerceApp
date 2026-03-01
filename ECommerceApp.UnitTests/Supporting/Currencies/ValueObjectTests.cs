@@ -55,6 +55,32 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
             code.Value.Should().Be("USD");
         }
 
+        [Theory]
+        [InlineData("AAA")]
+        [InlineData("ZZZ")]
+        [InlineData("XYZ")]
+        public void CurrencyCode_UnknownIso4217Code_ShouldThrowDomainException(string value)
+        {
+            Action action = () => new CurrencyCode(value);
+
+            action.Should().ThrowExactly<DomainException>()
+                .WithMessage($"'{value}' is not a valid ISO 4217 currency code.");
+        }
+
+        [Fact]
+        public void CurrencyCode_IsKnownIso4217Code_ValidCode_ShouldReturnTrue()
+        {
+            CurrencyCode.IsKnownIso4217Code("eur").Should().BeTrue();
+            CurrencyCode.IsKnownIso4217Code("PLN").Should().BeTrue();
+        }
+
+        [Fact]
+        public void CurrencyCode_IsKnownIso4217Code_InvalidCode_ShouldReturnFalse()
+        {
+            CurrencyCode.IsKnownIso4217Code("AAA").Should().BeFalse();
+            CurrencyCode.IsKnownIso4217Code(null).Should().BeFalse();
+        }
+
         [Fact]
         public void CurrencyDescription_ValidDescription_ShouldCreate()
         {
