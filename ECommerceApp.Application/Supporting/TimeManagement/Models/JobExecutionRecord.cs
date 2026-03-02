@@ -1,3 +1,4 @@
+using ECommerceApp.Domain.Supporting.TimeManagement;
 using System;
 
 namespace ECommerceApp.Application.Supporting.TimeManagement.Models

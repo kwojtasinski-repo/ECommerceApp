@@ -1,4 +1,4 @@
-namespace ECommerceApp.Application.Supporting.TimeManagement.Models
+namespace ECommerceApp.Domain.Supporting.TimeManagement
 {
     public enum JobTriggerSource : byte
     {

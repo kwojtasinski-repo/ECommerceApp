@@ -1,3 +1,4 @@
+using ECommerceApp.Domain.Shared;
 using ECommerceApp.Domain.Supporting.TimeManagement.ValueObjects;
 using System;
 
@@ -5,9 +6,9 @@ namespace ECommerceApp.Domain.Supporting.TimeManagement
 {
     public class ScheduledJob
     {
-        public ScheduledJobId Id { get; private set; } = new ScheduledJobId(0);
+        public ScheduledJobId Id { get; private set; } = default!;
         public JobName Name { get; private set; } = default!;
-        public string Schedule { get; private set; } = default!;
+        public CronSchedule Schedule { get; private set; } = default!;
         public string? TimeZoneId { get; private set; }
         public bool IsEnabled { get; private set; }
         public int MaxRetries { get; private set; }
@@ -18,10 +19,12 @@ namespace ECommerceApp.Domain.Supporting.TimeManagement
 
         public static ScheduledJob Create(string name, string schedule, string? timeZoneId, int maxRetries)
         {
+            if (maxRetries < 0)
+                throw new DomainException("Max retries must be non-negative.");
             return new ScheduledJob
             {
                 Name = new JobName(name),
-                Schedule = schedule.Trim(),
+                Schedule = new CronSchedule(schedule),
                 TimeZoneId = timeZoneId?.Trim(),
                 IsEnabled = true,
                 MaxRetries = maxRetries

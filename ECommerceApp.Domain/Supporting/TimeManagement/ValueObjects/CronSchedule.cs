@@ -12,6 +12,9 @@ namespace ECommerceApp.Domain.Supporting.TimeManagement.ValueObjects
             var trimmed = value?.Trim();
             if (string.IsNullOrEmpty(trimmed))
                 throw new DomainException("Cron expression is required.");
+            var parts = trimmed.Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length != 5)
+                throw new DomainException("Cron expression must have exactly 5 parts (minutes granularity only, no seconds field).");
             try
             {
                 CronExpression.Parse(trimmed);

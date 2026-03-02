@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -7,5 +8,6 @@ namespace ECommerceApp.Domain.Supporting.TimeManagement
     {
         Task AddAsync(DeferredJobInstance instance, CancellationToken ct = default);
         Task DeletePendingAsync(string jobName, string entityId, CancellationToken ct = default);
+        Task<IReadOnlyList<DeferredJobInstance>> GetAllAsync(CancellationToken ct = default);
     }
 }

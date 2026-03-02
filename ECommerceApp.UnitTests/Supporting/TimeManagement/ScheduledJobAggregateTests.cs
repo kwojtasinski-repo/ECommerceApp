@@ -13,7 +13,7 @@ namespace ECommerceApp.UnitTests.Supporting.TimeManagement
             var job = ScheduledJob.Create("CurrencyRateSync", "15 12 * * *", null, 3);
 
             job.Name.Value.Should().Be("CurrencyRateSync");
-            job.Schedule.Should().Be("15 12 * * *");
+            job.Schedule.Value.Should().Be("15 12 * * *");
             job.IsEnabled.Should().BeTrue();
             job.MaxRetries.Should().Be(3);
             job.LastRunAt.Should().BeNull();

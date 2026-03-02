@@ -24,6 +24,7 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement.Configurations
             builder.HasIndex(x => x.Name).IsUnique();
 
             builder.Property(x => x.Schedule)
+                   .HasConversion(x => x.Value, v => new CronSchedule(v))
                    .HasMaxLength(100)
                    .IsRequired();
 

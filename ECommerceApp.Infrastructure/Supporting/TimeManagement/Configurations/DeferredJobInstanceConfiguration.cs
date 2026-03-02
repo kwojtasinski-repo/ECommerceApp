@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Supporting.TimeManagement;
+using ECommerceApp.Domain.Supporting.TimeManagement.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,10 +17,12 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement.Configurations
                    .ValueGeneratedOnAdd();
 
             builder.Property(x => x.JobName)
+                   .HasConversion(x => x.Value, v => new JobName(v))
                    .HasMaxLength(100)
                    .IsRequired();
 
             builder.Property(x => x.EntityId)
+                   .HasConversion(x => x.Value, v => new EntityId(v))
                    .HasMaxLength(200)
                    .IsRequired();
 

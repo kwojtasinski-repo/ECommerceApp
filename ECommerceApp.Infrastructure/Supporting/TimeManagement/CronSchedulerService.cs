@@ -2,6 +2,7 @@ using Cronos;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Application.Supporting.TimeManagement.Models;
 using ECommerceApp.Domain.Supporting.TimeManagement;
+using ECommerceApp.Domain.Supporting.TimeManagement;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -65,7 +66,7 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
                                       ?? job.LastRunAt
                                       ?? now.AddSeconds(-30);
 
-                        var cron = CronExpression.Parse(job.Schedule);
+                        var cron = CronExpression.Parse(job.Schedule.Value);
                         var tz = string.IsNullOrEmpty(job.TimeZoneId)
                             ? TimeZoneInfo.Utc
                             : TimeZoneInfo.FindSystemTimeZoneById(job.TimeZoneId);

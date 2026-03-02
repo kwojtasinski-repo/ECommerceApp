@@ -1,0 +1,37 @@
+@model ECommerceApp.Application.Supporting.TimeManagement.Models.ScheduleDeferredJobVm
+@{ ViewData["Title"] = "Schedule Deferred Job"; }
+
+<div class="container mt-4" style="max-width:540px">
+    <h4>Schedule Deferred Job <small class="text-muted">test / dev</small></h4>
+    <hr />
+    <form asp-action="ScheduleDeferred" method="post">
+        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+        <div class="form-group">
+            <label asp-for="JobName">Job Name</label>
+            <input asp-for="JobName" class="form-control" placeholder="e.g. PaymentTimeout" maxlength="100" />
+            <span asp-validation-for="JobName" class="text-danger"></span>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="EntityId">Entity ID</label>
+            <input asp-for="EntityId" class="form-control" placeholder="e.g. 42 (payment ID, order ID…)" maxlength="200" />
+            <span asp-validation-for="EntityId" class="text-danger"></span>
+            <small class="form-text text-muted">The ID of the entity the job should act on.</small>
+        </div>
+
+        <div class="form-group">
+            <label asp-for="DelayMinutes">Run in (minutes)</label>
+            <input asp-for="DelayMinutes" type="number" class="form-control" min="1" max="1440" />
+            <span asp-validation-for="DelayMinutes" class="text-danger"></span>
+            <small class="form-text text-muted">Job will be scheduled for <code>UTC now + delay</code>, truncated to the minute.</small>
+        </div>
+
+        <button type="submit" class="btn btn-warning">Schedule</button>
+        <a asp-action="Index" class="btn btn-secondary ml-2">Cancel</a>
+    </form>
+</div>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}

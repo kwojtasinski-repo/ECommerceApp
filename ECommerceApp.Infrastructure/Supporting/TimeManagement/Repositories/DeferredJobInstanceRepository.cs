@@ -1,5 +1,7 @@
 using ECommerceApp.Domain.Supporting.TimeManagement;
+using ECommerceApp.Domain.Supporting.TimeManagement.ValueObjects;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -24,8 +26,8 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement.Repositories
         public async Task DeletePendingAsync(string jobName, string entityId, CancellationToken ct = default)
         {
             var pending = await _context.DeferredJobQueue
-                .Where(d => d.JobName == jobName
-                         && d.EntityId == entityId
+                .Where(d => d.JobName == new JobName(jobName)
+                         && d.EntityId == new EntityId(entityId)
                          && d.Status == DeferredJobStatus.Pending)
                 .ToListAsync(ct);
 
@@ -35,5 +37,11 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement.Repositories
                 await _context.SaveChangesAsync(ct);
             }
         }
+
+        public async Task<IReadOnlyList<DeferredJobInstance>> GetAllAsync(CancellationToken ct = default)
+            => await _context.DeferredJobQueue
+                .AsNoTracking()
+                .OrderBy(d => d.RunAt)
+                .ToListAsync(ct);
     }
 }

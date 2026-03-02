@@ -1,5 +1,6 @@
 using ECommerceApp.Application.Supporting.TimeManagement.Models;
 using ECommerceApp.Domain.Supporting.TimeManagement;
+using ECommerceApp.Domain.Supporting.TimeManagement;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -72,8 +73,8 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
 
                     await _channel.WriteAsync(new JobTriggerRequest
                     {
-                        JobName = instance.JobName,
-                        EntityId = instance.EntityId,
+                        JobName = instance.JobName.Value,
+                        EntityId = instance.EntityId.Value,
                         Source = JobTriggerSource.Deferred,
                         DeferredInstanceId = instance.Id.Value
                     }, ct);

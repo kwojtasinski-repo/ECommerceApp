@@ -1,13 +1,14 @@
+using ECommerceApp.Domain.Supporting.TimeManagement.ValueObjects;
 using System;
 
 namespace ECommerceApp.Domain.Supporting.TimeManagement
 {
     public class JobExecution
     {
-        public JobExecutionId Id { get; private set; } = new JobExecutionId(0);
-        public string JobName { get; private set; } = default!;
-        public int? DeferredQueueId { get; private set; }
-        public byte Source { get; private set; }
+        public JobExecutionId Id { get; private set; } = default!;
+        public JobName JobName { get; private set; } = default!;
+        public DeferredJobInstanceId? DeferredQueueId { get; private set; }
+        public JobTriggerSource Source { get; private set; }
         public string ExecutionId { get; private set; } = default!;
         public DateTime StartedAt { get; private set; }
         public DateTime? CompletedAt { get; private set; }
@@ -19,7 +20,7 @@ namespace ECommerceApp.Domain.Supporting.TimeManagement
         public static JobExecution Record(
             string jobName,
             int? deferredQueueId,
-            byte source,
+            JobTriggerSource source,
             string executionId,
             DateTime startedAt,
             DateTime completedAt,
@@ -28,8 +29,8 @@ namespace ECommerceApp.Domain.Supporting.TimeManagement
         {
             return new JobExecution
             {
-                JobName = jobName,
-                DeferredQueueId = deferredQueueId,
+                JobName = new JobName(jobName),
+                DeferredQueueId = deferredQueueId.HasValue ? new DeferredJobInstanceId(deferredQueueId.Value) : null,
                 Source = source,
                 ExecutionId = executionId,
                 StartedAt = startedAt,

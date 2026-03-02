@@ -1,5 +1,6 @@
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Supporting.TimeManagement.Models;
+using ECommerceApp.Domain.Supporting.TimeManagement;
 using ECommerceApp.Domain.Shared;
 using ECommerceApp.Domain.Supporting.TimeManagement;
 using ECommerceApp.Domain.Supporting.TimeManagement.ValueObjects;
@@ -14,15 +15,18 @@ namespace ECommerceApp.Application.Supporting.TimeManagement.Services
     {
         private readonly IScheduledJobRepository _scheduledJobRepo;
         private readonly IJobExecutionRepository _executionRepo;
+        private readonly IDeferredJobInstanceRepository _deferredRepo;
         private readonly IJobStatusMonitor _monitor;
 
         public JobManagementService(
             IScheduledJobRepository scheduledJobRepo,
             IJobExecutionRepository executionRepo,
+            IDeferredJobInstanceRepository deferredRepo,
             IJobStatusMonitor monitor)
         {
             _scheduledJobRepo = scheduledJobRepo;
             _executionRepo = executionRepo;
+            _deferredRepo = deferredRepo;
             _monitor = monitor;
         }
 
@@ -35,7 +39,7 @@ namespace ECommerceApp.Application.Supporting.TimeManagement.Services
                 return new JobStatusSummary
                 {
                     JobName = dbJob.Name.Value,
-                    Schedule = dbJob.Schedule,
+                    Schedule = dbJob.Schedule.Value,
                     IsEnabled = dbJob.IsEnabled,
                     LastRunAt = dbJob.LastRunAt ?? latest?.CompletedAt,
                     NextRunAt = dbJob.NextRunAt,
@@ -58,7 +62,24 @@ namespace ECommerceApp.Application.Supporting.TimeManagement.Services
                 CompletedAt = e.CompletedAt ?? e.StartedAt,
                 Succeeded = e.Succeeded,
                 Message = e.Message,
-                Source = (JobTriggerSource)e.Source
+                Source = e.Source
+            }).ToList();
+        }
+
+        public async Task<IReadOnlyList<DeferredJobQueueVm>> GetDeferredQueueAsync(CancellationToken ct = default)
+        {
+            var rows = await _deferredRepo.GetAllAsync(ct);
+            return rows.Select(d => new DeferredJobQueueVm
+            {
+                Id = d.Id.Value,
+                JobName = d.JobName.Value,
+                EntityId = d.EntityId.Value,
+                RunAt = d.RunAt,
+                Status = d.Status,
+                RetryCount = d.RetryCount,
+                MaxRetries = d.MaxRetries,
+                CreatedAt = d.CreatedAt,
+                ErrorMessage = d.ErrorMessage
             }).ToList();
         }
 
@@ -86,7 +107,6 @@ namespace ECommerceApp.Application.Supporting.TimeManagement.Services
 
             try
             {
-                _ = new CronSchedule(vm.Schedule);
                 var job = ScheduledJob.Create(vm.JobName, vm.Schedule, vm.TimeZoneId, vm.MaxRetries);
                 await _scheduledJobRepo.AddAsync(job, ct);
             }

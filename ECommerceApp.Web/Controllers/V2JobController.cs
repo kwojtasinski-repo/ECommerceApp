@@ -1,3 +1,4 @@
+using System;
 using System.Threading.Tasks;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Application.Supporting.TimeManagement.Models;
@@ -10,11 +11,13 @@ namespace ECommerceApp.Web.Controllers
     {
         private readonly IJobManagementService _jobService;
         private readonly IJobTrigger _trigger;
+        private readonly IDeferredJobScheduler _deferredScheduler;
 
-        public V2JobController(IJobManagementService jobService, IJobTrigger trigger)
+        public V2JobController(IJobManagementService jobService, IJobTrigger trigger, IDeferredJobScheduler deferredScheduler)
         {
             _jobService = jobService;
             _trigger = trigger;
+            _deferredScheduler = deferredScheduler;
         }
 
         [HttpGet("")]
@@ -62,6 +65,24 @@ namespace ECommerceApp.Web.Controllers
         {
             await _jobService.RegisterAsync(vm);
             TempData["Success"] = $"Job '{vm.JobName}' registered.";
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpGet("deferred-queue")]
+        public async Task<IActionResult> DeferredQueue() =>
+            View(await _jobService.GetDeferredQueueAsync());
+
+        [HttpGet("schedule-deferred")]
+        public IActionResult ScheduleDeferred() => View(new ScheduleDeferredJobVm());
+
+        [HttpPost("schedule-deferred")]
+        public async Task<IActionResult> ScheduleDeferred(ScheduleDeferredJobVm vm)
+        {
+            if (!ModelState.IsValid)
+                return View(vm);
+            var runAt = DateTime.UtcNow.AddMinutes(vm.DelayMinutes);
+            await _deferredScheduler.ScheduleAsync(vm.JobName, vm.EntityId, runAt);
+            TempData["Success"] = $"Deferred job '{vm.JobName}' scheduled to run in {vm.DelayMinutes} min.";
             return RedirectToAction(nameof(Index));
         }
     }

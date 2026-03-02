@@ -2,6 +2,7 @@ using Cronos;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Application.Supporting.TimeManagement.Models;
 using ECommerceApp.Domain.Supporting.TimeManagement;
+using ECommerceApp.Domain.Supporting.TimeManagement;
 using ECommerceApp.Domain.Supporting.TimeManagement.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -49,7 +50,21 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
 
             if (task == null)
             {
-                _logger.LogWarning("No IScheduledTask registered for job '{JobName}'", trigger.JobName);
+                var noHandlerMsg = $"No IScheduledTask registered for job '{trigger.JobName}'.";
+                _logger.LogWarning(noHandlerMsg);
+                var noHandlerExecutionId = Guid.NewGuid().ToString();
+                var now = DateTime.UtcNow;
+                await PersistResultAsync(scope, trigger, noHandlerExecutionId, now, now, succeeded: false, noHandlerMsg, ct);
+                _monitor.Record(new JobExecutionRecord
+                {
+                    JobName = trigger.JobName,
+                    ExecutionId = noHandlerExecutionId,
+                    StartedAt = now,
+                    CompletedAt = now,
+                    Succeeded = false,
+                    Message = noHandlerMsg,
+                    Source = trigger.Source
+                });
                 return;
             }
 
@@ -120,7 +135,7 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
                         DateTime? nextRunAt = null;
                         try
                         {
-                            var cron = CronExpression.Parse(scheduledJob.Schedule);
+                            var cron = CronExpression.Parse(scheduledJob.Schedule.Value);
                             var tz = string.IsNullOrEmpty(scheduledJob.TimeZoneId)
                                 ? TimeZoneInfo.Utc
                                 : TimeZoneInfo.FindSystemTimeZoneById(scheduledJob.TimeZoneId);
@@ -139,7 +154,7 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
                 var execution = JobExecution.Record(
                     trigger.JobName,
                     trigger.DeferredInstanceId,
-                    (byte)trigger.Source,
+                    trigger.Source,
                     executionId,
                     startedAt,
                     completedAt,
@@ -151,7 +166,7 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
                 if (trigger.DeferredInstanceId.HasValue)
                 {
                     var instance = await dbContext.DeferredJobQueue
-                        .FirstOrDefaultAsync(d => d.Id.Value == trigger.DeferredInstanceId.Value, ct);
+                        .FirstOrDefaultAsync(d => d.Id == trigger.DeferredInstanceId, ct);
 
                     if (instance != null)
                     {

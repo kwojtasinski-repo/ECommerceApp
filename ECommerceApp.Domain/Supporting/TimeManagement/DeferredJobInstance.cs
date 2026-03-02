@@ -1,12 +1,14 @@
+using ECommerceApp.Domain.Shared;
+using ECommerceApp.Domain.Supporting.TimeManagement.ValueObjects;
 using System;
 
 namespace ECommerceApp.Domain.Supporting.TimeManagement
 {
     public class DeferredJobInstance
     {
-        public DeferredJobInstanceId Id { get; private set; } = new DeferredJobInstanceId(0);
-        public string JobName { get; private set; } = default!;
-        public string EntityId { get; private set; } = default!;
+        public DeferredJobInstanceId Id { get; private set; } = default!;
+        public JobName JobName { get; private set; } = default!;
+        public EntityId EntityId { get; private set; } = default!;
         public DateTime RunAt { get; private set; }
         public DeferredJobStatus Status { get; private set; }
         public int RetryCount { get; private set; }
@@ -19,11 +21,14 @@ namespace ECommerceApp.Domain.Supporting.TimeManagement
 
         public static DeferredJobInstance Schedule(string jobName, string entityId, DateTime runAt, int maxRetries = 3)
         {
+            if (maxRetries < 0)
+                throw new DomainException("Max retries must be non-negative.");
+            var runAtMinute = new DateTime(runAt.Year, runAt.Month, runAt.Day, runAt.Hour, runAt.Minute, 0, DateTimeKind.Utc);
             return new DeferredJobInstance
             {
-                JobName = jobName,
-                EntityId = entityId,
-                RunAt = runAt,
+                JobName = new JobName(jobName),
+                EntityId = new EntityId(entityId),
+                RunAt = runAtMinute,
                 Status = DeferredJobStatus.Pending,
                 RetryCount = 0,
                 MaxRetries = maxRetries,

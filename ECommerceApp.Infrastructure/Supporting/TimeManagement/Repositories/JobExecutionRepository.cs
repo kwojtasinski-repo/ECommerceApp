@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Supporting.TimeManagement;
+using ECommerceApp.Domain.Supporting.TimeManagement.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +22,7 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement.Repositories
         {
             return await _context.JobExecutions
                 .AsNoTracking()
-                .Where(e => e.JobName == jobName)
+                .Where(e => e.JobName == new JobName(jobName))
                 .OrderByDescending(e => e.StartedAt)
                 .Skip((page - 1) * pageSize)
                 .Take(pageSize)

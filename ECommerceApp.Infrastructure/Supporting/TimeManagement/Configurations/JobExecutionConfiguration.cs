@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Supporting.TimeManagement;
+using ECommerceApp.Domain.Supporting.TimeManagement.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,12 +17,17 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement.Configurations
                    .ValueGeneratedOnAdd();
 
             builder.Property(x => x.JobName)
+                   .HasConversion(x => x.Value, v => new JobName(v))
                    .HasMaxLength(100)
                    .IsRequired();
 
-            builder.Property(x => x.DeferredQueueId);
+            builder.Property(x => x.DeferredQueueId)
+                   .HasConversion(
+                       id => id != null ? (int?)id.Value : null,
+                       val => val.HasValue ? new DeferredJobInstanceId(val.Value) : null);
 
             builder.Property(x => x.Source)
+                   .HasConversion<byte>()
                    .HasColumnType("tinyint")
                    .IsRequired();
 
