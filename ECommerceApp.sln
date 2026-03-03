@@ -67,6 +67,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "adr", "adr", "{25B91C37-ECC
 		docs\adr\0008-supporting-currencies-bc-design.md = docs\adr\0008-supporting-currencies-bc-design.md
 		docs\adr\0009-supporting-timemanagement-bc-design.md = docs\adr\0009-supporting-timemanagement-bc-design.md
 		docs\adr\0010-in-memory-message-broker-for-cross-bc-communication.md = docs\adr\0010-in-memory-message-broker-for-cross-bc-communication.md
+		docs\adr\0011-inventory-availability-bc-design.md = docs\adr\0011-inventory-availability-bc-design.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ECommerce", "ECommerce", "{049E647F-D15D-4AFB-8AE6-DB2363C9F4D4}"

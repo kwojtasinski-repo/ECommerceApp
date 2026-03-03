@@ -452,6 +452,19 @@ per handler invocation (see Risks & mitigations — hang detection edge case).
 
 ---
 
+## Implementation Status
+
+| Layer | Status |
+|---|---|
+| Contracts (`IMessage`, `IMessageBroker`, `IMessageHandler<T>`, `IAsyncMessageDispatcher`, `IMessageChannel`, `MessagingOptions`) | ✅ Done |
+| Infrastructure (`InMemoryMessageBroker`, `BackgroundMessageDispatcher`, `MessageChannel`, `AsyncMessageDispatcher`) | ✅ Done |
+| Retry + observability (`MessageEnvelope`, `InMemoryMessageRetryMonitor`, `IMessageRetryMonitor`) | ✅ Done |
+| Configuration (`MessagingOptions` with `HandlerOverrides`, retry/timeout settings, `appsettings.json`) | ✅ Done |
+| First message: `CheckoutCompleted` + `CheckoutCompletedHandler` | ⬜ Not started — awaits Checkout/Orders BCs |
+| Integration tests | ⬜ Not started |
+
+---
+
 ## References
 
 - [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](./0002-post-event-storming-architectural-evolution-strategy.md)

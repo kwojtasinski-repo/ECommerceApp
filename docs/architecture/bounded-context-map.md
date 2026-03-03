@@ -155,7 +155,8 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | **AccountProfile** (`UserProfile`) | Behavioral aggregate | Rich domain model, owned `Address`, own `UserProfileDbContext` — see ADR-0005 | ✅ New implementation ready (parallel) |
 | **Customers** (legacy) | Reference | `AbstractService` | ⚠️ To be replaced by AccountProfile BC |
 | **Currencies** | Reference + external | Rich domain model, `CurrencyCode`/`CurrencyDescription` VOs, own `CurrencyDbContext`, fully async NBP — see ADR-0008 | ✅ New implementation ready (parallel) |
-| **TimeManagement** | Supporting infrastructure | `Channel<T>` async dispatch, `BackgroundService` scheduler + poller + dispatcher, `IScheduledTask` plugin contract, `IDeferredJobScheduler`, `TimeManagementDbContext`, lazy DB init — see ADR-0009 | 🔵 ADR accepted, implementation not started |
+| **TimeManagement** | Supporting infrastructure | `Channel<T>` async dispatch, `BackgroundService` scheduler + poller + dispatcher, `IScheduledTask` plugin contract, `IDeferredJobScheduler`, `TimeManagementDbContext`, lazy DB init — see ADR-0009 | ✅ New implementation ready (greenfield) |
+| **Messaging** | Shared infrastructure | `IMessageBroker`, `IMessageHandler<T>`, `BackgroundMessageDispatcher`, retry + dead-letter — see ADR-0010 | ✅ Ready — first message awaits Checkout/Orders BCs |
 | **Identity / IAM** | Infrastructure | ASP.NET Core Identity | ✅ Keep isolated |
 
 ---
@@ -174,6 +175,8 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | **Catalog** | [ADR-0007](../adr/0007-catalog-bc-product-category-tag-aggregate-design.md) | DB migration approval → integration tests → migrate `ItemController` / `ImageController` / `TagController` → atomic switch |
 | **Currencies** | [ADR-0008](../adr/0008-supporting-currencies-bc-design.md), [ADR-0006](../adr/0006-typedid-and-value-objects-as-shared-domain-primitives.md) | DB migration approval → integration tests → migrate `CurrencyController` (→ async) → coordinate with Catalog switch (`ItemService` dep) → atomic switch |
 | **Shared domain primitives** (`TypedId<T>`, `Price`, `Money`, `DomainException`) | [ADR-0006](../adr/0006-typedid-and-value-objects-as-shared-domain-primitives.md) | — complete |
+| **Supporting/TimeManagement** | [ADR-0009](../adr/0009-supporting-timemanagement-bc-design.md) | DB migration approval (two coordinated migrations) → integration tests → `CurrencyRateSyncTask` atomic switch |
+| **Messaging infrastructure** | [ADR-0010](../adr/0010-in-memory-message-broker-for-cross-bc-communication.md) | First message + handler (awaits Checkout/Orders) → integration tests |
 
 > 🔵 Deferred: IAM refresh token — separate ADR required.
 > 🔵 Deferred: `Category.ParentId`/`IsVisible`, `Tag.Color`/`IsVisible` — tracked in [ADR-0007 §8/§9 Implementation Status](../adr/0007-catalog-bc-product-category-tag-aggregate-design.md).
@@ -182,13 +185,14 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 
 ### Next BCs to implement
 
-| BC | ADR | Status | Notes |
-|---|---|---|---|
-| **Supporting/TimeManagement** | [ADR-0009](../adr/0009-supporting-timemanagement-bc-design.md) | 🔵 In progress | Domain + Infrastructure + Application + `CurrencyRateSyncTask` + unit tests |
-| **Sales/Orders** | — | ⬜ Not started | `Order.MarkAsPaid()`, factory, private setters |
-| **Sales/Payments** | — | ⬜ Not started | After Orders — `Payment` factory, state machine |
-| **Sales/Coupons** | — | ⬜ Not started | After Orders + Payments — resolve `CouponHandler` direct `Order.Cost` write |
-| **Presale/Checkout** | — | ⬜ Not started | Greenfield — after all Sales BCs stable |
+| # | BC | ADR | Status | Blocked by |
+|---|---|---|---|---|
+| 1 | **Inventory/Availability** | — | ⬜ Not started | — (fully greenfield) |
+| 2 | **Sales/Orders** | — | ⬜ Not started | — (legacy migration; Checkout + Payments depend on it) |
+| 3 | **Presale/Checkout** | — | ⬜ Not started | Availability (#1) + Orders (#2) |
+| 4 | **Sales/Payments** | — | ⬜ Not started | Orders (#2); fixes `PaymentHandler → OrderService` sync call |
+| 5 | **Sales/Coupons** | — | ⬜ Not started | Orders (#2) + Payments (#4); fixes `CouponHandler → Order.Cost` |
+| 6 | **Sales/Fulfillment** | — | ⬜ Not started | Availability (#1) + Orders (#2) |
 
 ---
 
@@ -196,7 +200,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 
 | Task | ADR | Status |
 |---|---|---|
-| Per-BC `DbContext` interfaces | Planned ADR-0010 | ⬜ Not started |
+| Per-BC `DbContext` interfaces | Planned ADR-0011 | ⬜ Not started |
 | `PaymentHandler` → event-based coordination | Planned ADR (Saga) | ⬜ Not started |
 | `CouponHandler` — remove direct `Order.Cost` write | ADR-0002 §9 | ⬜ Not started |
 | Remove `ApplicationUser` nav from `Order` | ADR-0002 §8 | ⬜ Part of Sales/Orders migration |

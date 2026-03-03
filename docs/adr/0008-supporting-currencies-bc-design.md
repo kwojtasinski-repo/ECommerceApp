@@ -278,6 +278,21 @@ Update `Web/Controllers/CurrencyController.cs`:
 - [x] `CurrencyId` and `CurrencyRateId` are `sealed record` types inheriting `TypedId<int>`
 - [x] `Domain/Supporting/Currencies/Currency.cs` has no navigation properties to `Payment`, `Order`, or `Item`
 - [x] `Domain/Supporting/Currencies/CurrencyRate.cs` has no `Currency` navigation property — `CurrencyId` typed ID only
+
+---
+
+## Implementation Status
+
+| Layer | Status |
+|---|---|
+| Domain (`Currency`, `CurrencyRate` aggregates, `CurrencyCode`/`CurrencyDescription` VOs, typed IDs, repository interfaces) | ✅ Done |
+| Infrastructure (`CurrencyDbContext`, `currencies.*` schema, EF configs, repositories, DI) | ✅ Done |
+| Application (`ICurrencyService`, `ICurrencyRateService`, DTOs, ViewModels, validators, `CurrencyRateSyncTask`, DI) | ✅ Done |
+| Unit tests (49 tests — value objects, aggregates, services, NBP paths) | ✅ Done |
+| DB migration (`InitCurrenciesSchema`, `currencies.*` tables) | ⬜ Pending approval |
+| Integration tests | ⬜ Not started |
+| Controller migration (`CurrencyController` → async, new DTO/VM contracts) | ⬜ Pending integration tests |
+| Atomic switch — remove legacy Currencies registrations (coordinated with Catalog switch) | ⬜ After integration tests |
 - [x] `Infrastructure/Supporting/Currencies/CurrencyDbContext.cs` uses default schema `"currencies"`
 - [x] `Infrastructure/Supporting/Currencies/Configurations/CurrencyConfiguration.cs` configures `CurrencyId` with `ValueGeneratedOnAdd` and `HasConversion`
 - [x] `Infrastructure/Supporting/Currencies/Configurations/CurrencyConfiguration.cs` configures `CurrencyCode` and `CurrencyDescription` with `HasConversion`
