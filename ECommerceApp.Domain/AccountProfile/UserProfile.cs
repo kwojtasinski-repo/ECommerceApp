@@ -119,12 +119,12 @@ namespace ECommerceApp.Domain.AccountProfile
 
         public RemoveAddressResult RemoveAddress(int addressId)
         {
+            if (_addresses.Count == 1)
+                return RemoveAddressResult.LastAddress;
+
             var idx = _addresses.FindIndex(a => a.Id == new AddressId(addressId));
             if (idx < 0)
                 return RemoveAddressResult.NotFound;
-
-            if (_addresses.Count == 1)
-                return RemoveAddressResult.LastAddress;
 
             _addresses.RemoveAt(idx);
             return RemoveAddressResult.Removed;

@@ -50,7 +50,7 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
                 return _mapper.Map<CurrencyRateVm>(plnRate);
             }
 
-            var currencyRate = await GetOrFetchRateAsync(currency, date);
+            var currencyRate = await GetOrFetchRateAsync(currency, id, date);
             return _mapper.Map<CurrencyRateVm>(currencyRate);
         }
 
@@ -68,7 +68,7 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
                 return _mapper.Map<CurrencyRateVm>(plnRate);
             }
 
-            var currencyRate = await GetOrFetchRateAsync(currency, date);
+            var currencyRate = await GetOrFetchRateAsync(currency, id, date);
             return _mapper.Map<CurrencyRateVm>(currencyRate);
         }
 
@@ -83,7 +83,7 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
             return plnRate;
         }
 
-        private async Task<CurrencyRate> GetOrFetchRateAsync(Currency currency, DateTime date)
+        private async Task<CurrencyRate> GetOrFetchRateAsync(Currency currency, CurrencyId currencyId, DateTime date)
         {
             var requestCounts = 1;
             ExchangeRate exchangeRate = null;
@@ -91,7 +91,7 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
 
             while (exchangeRate is null)
             {
-                var existingRate = await _currencyRateRepo.GetRateForDateAsync(currency.Id, searchDate);
+                var existingRate = await _currencyRateRepo.GetRateForDateAsync(currencyId, searchDate);
                 if (existingRate != null)
                     return existingRate;
 
@@ -110,7 +110,7 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
                 requestCounts++;
             }
 
-            var currencyRate = CurrencyRate.Create(currency.Id, exchangeRate.Rates.FirstOrDefault().Mid, searchDate);
+            var currencyRate = CurrencyRate.Create(currencyId, exchangeRate.Rates.FirstOrDefault().Mid, searchDate);
             await _currencyRateRepo.AddAsync(currencyRate);
             return currencyRate;
         }

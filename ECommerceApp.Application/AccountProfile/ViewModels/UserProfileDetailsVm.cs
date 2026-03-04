@@ -20,6 +20,7 @@ namespace ECommerceApp.Application.AccountProfile.ViewModels
         public void Mapping(Profile profile)
         {
             profile.CreateMap<global::ECommerceApp.Domain.AccountProfile.UserProfile, UserProfileDetailsVm>()
+                .ForMember(d => d.Id, opt => opt.MapFrom(s => s.Id != null ? s.Id.Value : 0))
                 .ForMember(d => d.Addresses, opt => opt.MapFrom(s => s.Addresses));
         }
     }

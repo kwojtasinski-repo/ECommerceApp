@@ -48,7 +48,7 @@ namespace ECommerceApp.Domain.Catalog.Products
             if (Status == ProductStatus.Published)
                 throw new DomainException("Product is already published.");
             Status = ProductStatus.Published;
-            return new ProductPublished(Id.Value, DateTime.UtcNow);
+            return new ProductPublished(Id?.Value ?? 0, DateTime.UtcNow);
         }
 
         public ProductUnpublished Unpublish()
@@ -56,7 +56,7 @@ namespace ECommerceApp.Domain.Catalog.Products
             if (Status != ProductStatus.Published)
                 throw new DomainException("Only published products can be unpublished.");
             Status = ProductStatus.Unpublished;
-            return new ProductUnpublished(Id.Value, DateTime.UtcNow);
+            return new ProductUnpublished(Id?.Value ?? 0, DateTime.UtcNow);
         }
 
         public void UpdateDetails(string name, decimal cost, string description, int categoryId)

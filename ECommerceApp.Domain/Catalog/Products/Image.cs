@@ -15,8 +15,6 @@ namespace ECommerceApp.Domain.Catalog.Products
 
         public static Image Create(ProductId productId, string fileName, bool isMain, int sortOrder)
         {
-            if (productId is null)
-                throw new DomainException("ProductId is required.");
             if (sortOrder < 0)
                 throw new DomainException("SortOrder must not be negative.");
 

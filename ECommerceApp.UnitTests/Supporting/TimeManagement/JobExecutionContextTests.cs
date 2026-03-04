@@ -97,12 +97,13 @@ namespace ECommerceApp.UnitTests.Supporting.TimeManagement
         public void DeferredJobInstance_Schedule_SetsCorrectFields()
         {
             var runAt = DateTime.UtcNow.AddMinutes(15);
+            var expectedRunAt = new DateTime(runAt.Year, runAt.Month, runAt.Day, runAt.Hour, runAt.Minute, 0, DateTimeKind.Utc);
 
             var instance = DeferredJobInstance.Schedule("PaymentTimeout", "42", runAt);
 
-            instance.JobName.Should().Be("PaymentTimeout");
-            instance.EntityId.Should().Be("42");
-            instance.RunAt.Should().Be(runAt);
+            instance.JobName.Value.Should().Be("PaymentTimeout");
+            instance.EntityId.Value.Should().Be("42");
+            instance.RunAt.Should().Be(expectedRunAt);
             instance.Status.Should().Be(DeferredJobStatus.Pending);
             instance.RetryCount.Should().Be(0);
         }
