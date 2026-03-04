@@ -8,6 +8,7 @@ using ECommerceApp.Application.Middlewares;
 using ECommerceApp.Application.Services;
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Supporting.Currencies.Services;
+using ECommerceApp.Application.Inventory.Availability.Services;
 using ECommerceApp.Application.Supporting.TimeManagement.Services;
 using FluentValidation;
 using FluentValidation.AspNetCore;
@@ -33,6 +34,7 @@ namespace ECommerceApp.Application
             services.AddCurrencyServices();
             services.AddTimeManagementServices();
             services.AddMessagingServices();
+            services.AddAvailabilityServices();
             services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
             services.AddFluentValidationAutoValidation();
             services.AddFluentValidationClientsideAdapters();

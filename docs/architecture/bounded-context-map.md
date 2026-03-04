@@ -156,6 +156,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | **Customers** (legacy) | Reference | `AbstractService` | ⚠️ To be replaced by AccountProfile BC |
 | **Currencies** | Reference + external | Rich domain model, `CurrencyCode`/`CurrencyDescription` VOs, own `CurrencyDbContext`, fully async NBP — see ADR-0008 | ✅ New implementation ready (parallel) |
 | **TimeManagement** | Supporting infrastructure | `Channel<T>` async dispatch, `BackgroundService` scheduler + poller + dispatcher, `IScheduledTask` plugin contract, `IDeferredJobScheduler`, `TimeManagementDbContext`, lazy DB init — see ADR-0009 | ✅ New implementation ready (greenfield) |
+| **Inventory/Availability** | Behavioral aggregate | Counter aggregate (`StockItem`), `Reservation`, `ProductSnapshot` ACL, `AvailabilityDbContext`, `RowVersion` optimistic locking, deferred `StockAdjustmentJob` with command coalescing, `PaymentWindowTimeoutJob` — see ADR-0011 | ✅ New implementation ready (parallel) |
 | **Messaging** | Shared infrastructure | `IMessageBroker`, `IMessageHandler<T>`, `BackgroundMessageDispatcher`, retry + dead-letter — see ADR-0010 | ✅ Ready — first message awaits Checkout/Orders BCs |
 | **Identity / IAM** | Infrastructure | ASP.NET Core Identity | ✅ Keep isolated |
 
@@ -176,6 +177,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | **Currencies** | [ADR-0008](../adr/0008-supporting-currencies-bc-design.md), [ADR-0006](../adr/0006-typedid-and-value-objects-as-shared-domain-primitives.md) | DB migration approval → integration tests → migrate `CurrencyController` (→ async) → coordinate with Catalog switch (`ItemService` dep) → atomic switch |
 | **Shared domain primitives** (`TypedId<T>`, `Price`, `Money`, `DomainException`) | [ADR-0006](../adr/0006-typedid-and-value-objects-as-shared-domain-primitives.md) | — complete |
 | **Supporting/TimeManagement** | [ADR-0009](../adr/0009-supporting-timemanagement-bc-design.md) | DB migration approval (two coordinated migrations) → integration tests → `CurrencyRateSyncTask` atomic switch |
+| **Inventory/Availability** | [ADR-0011](../adr/0011-inventory-availability-bc-design.md) | DB migration approval (`InitInventorySchema`) → data migration (`Items.Quantity` → `inventory.StockItems`) → integration tests → replace `ItemHandler` calls with `IMessageBroker.PublishAsync(new OrderPlaced(...))` → atomic switch |
 | **Messaging infrastructure** | [ADR-0010](../adr/0010-in-memory-message-broker-for-cross-bc-communication.md) | First message + handler (awaits Checkout/Orders) → integration tests |
 
 > 🔵 Deferred: IAM refresh token — separate ADR required.
@@ -187,12 +189,11 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 
 | # | BC | ADR | Status | Blocked by |
 |---|---|---|---|---|
-| 1 | **Inventory/Availability** | — | ⬜ Not started | — (fully greenfield) |
-| 2 | **Sales/Orders** | — | ⬜ Not started | — (legacy migration; Checkout + Payments depend on it) |
-| 3 | **Presale/Checkout** | — | ⬜ Not started | Availability (#1) + Orders (#2) |
-| 4 | **Sales/Payments** | — | ⬜ Not started | Orders (#2); fixes `PaymentHandler → OrderService` sync call |
-| 5 | **Sales/Coupons** | — | ⬜ Not started | Orders (#2) + Payments (#4); fixes `CouponHandler → Order.Cost` |
-| 6 | **Sales/Fulfillment** | — | ⬜ Not started | Availability (#1) + Orders (#2) |
+| 1 | **Sales/Orders** | — | ⬜ Not started | — (legacy migration; Checkout + Payments depend on it) |
+| 2 | **Presale/Checkout** | — | ⬜ Not started | Availability (#1 done) + Orders (#1) |
+| 3 | **Sales/Payments** | — | ⬜ Not started | Orders (#1); fixes `PaymentHandler → OrderService` sync call |
+| 4 | **Sales/Coupons** | — | ⬜ Not started | Orders (#1) + Payments (#3); fixes `CouponHandler → Order.Cost` |
+| 5 | **Sales/Fulfillment** | — | ⬜ Not started | Availability (done) + Orders (#1) |
 
 ---
 

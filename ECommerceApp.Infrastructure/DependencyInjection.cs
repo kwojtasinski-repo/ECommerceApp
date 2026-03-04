@@ -5,6 +5,7 @@ using ECommerceApp.Infrastructure.Identity.IAM.Auth;
 using ECommerceApp.Infrastructure.Repositories;
 using ECommerceApp.Infrastructure.Messaging;
 using ECommerceApp.Infrastructure.Supporting.Currencies;
+using ECommerceApp.Infrastructure.Inventory.Availability;
 using ECommerceApp.Infrastructure.Supporting.TimeManagement;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,6 +24,7 @@ namespace ECommerceApp.Infrastructure
             services.AddCurrencyInfrastructure(configuration);
             services.AddMessagingInfrastructure(configuration);
             services.AddTimeManagementInfrastructure(configuration);
+            services.AddAvailabilityInfrastructure(configuration);
             return services;
         }
     }

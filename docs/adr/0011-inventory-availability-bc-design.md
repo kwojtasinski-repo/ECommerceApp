@@ -952,11 +952,11 @@ No existing code is removed until Step 11. Parallel change strategy applies.
 
 | Layer | Status |
 |---|---|
-| Domain (`StockItem`, `Reservation`, `ProductSnapshot`, `PendingStockAdjustment`, typed IDs, repository interfaces, domain events) | ⬜ Not started |
-| Infrastructure (`AvailabilityDbContext`, `inventory.*` schema, four configurations, four repositories, DI) | ⬜ Not started |
-| Application (`IStockService`, `StockService`, `ICheckoutSoftHoldService`, `CheckoutSoftHoldService`, message handlers, `PaymentWindowTimeoutJob`, `StockAdjustmentJob` with coalescing, DTOs, DI) | ⬜ Not started |
-| Message contracts (`OrderPlaced`, `OrderCancelled`, `PaymentConfirmed`, `OrderShipped`, `RefundApproved`) | ⬜ Not started |
-| Unit tests (`StockItem` aggregate, `StockService`, soft-hold service) | ⬜ Not started |
+| Domain (`StockItem`, `Reservation`, `ProductSnapshot`, `PendingStockAdjustment`, typed IDs, repository interfaces, domain events) | ✅ Done |
+| Infrastructure (`AvailabilityDbContext`, `inventory.*` schema, four configurations, four repositories, DI) | ✅ Done |
+| Application (`IStockService`, `StockService`, `ICheckoutSoftHoldService`, `CheckoutSoftHoldService`, message handlers, `PaymentWindowTimeoutJob`, `StockAdjustmentJob` with coalescing, DTOs, DI) | ✅ Done |
+| Message contracts (`OrderPlaced`, `OrderCancelled`, `PaymentConfirmed`, `OrderShipped`, `RefundApproved`) | ✅ Done |
+| Unit tests (`StockItem` aggregate, `StockService`, soft-hold service) | ✅ Done |
 | DB migration (`InitInventorySchema` — three tables) | ⬜ Not started |
 | Data migration (`Items.Quantity` → `inventory.StockItems`, product data → `inventory.ProductSnapshots`) | ⬜ Not started |
 | Integration tests | ⬜ Not started |
