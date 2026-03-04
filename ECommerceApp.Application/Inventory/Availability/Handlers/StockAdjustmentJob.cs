@@ -1,4 +1,3 @@
-using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Domain.Inventory.Availability;
 using Microsoft.EntityFrameworkCore;
@@ -51,8 +50,18 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
             const int maxAttempts = 5;
             for (var attempt = 0; attempt < maxAttempts; attempt++)
             {
-                var stock = await _stockItemRepo.GetByProductIdAsync(productId, cancellationToken)
-                    ?? throw new BusinessException($"Stock not found for product '{productId}'.");
+                var stock = await _stockItemRepo.GetByProductIdAsync(productId, cancellationToken);
+                if (stock is null)
+                {
+                    context.ReportFailure($"Stock not found for product '{productId}'.");
+                    return;
+                }
+
+                if (pending.NewQuantity < stock.ReservedQuantity)
+                {
+                    context.ReportFailure($"Cannot adjust stock to {pending.NewQuantity} — {stock.ReservedQuantity} units currently reserved for product '{productId}'.");
+                    return;
+                }
 
                 stock.Adjust(pending.NewQuantity);
 
@@ -67,7 +76,8 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    throw new BusinessException("Adjustment failed after max retries.");
+                    context.ReportFailure("Adjustment failed after max retries.");
+                    return;
                 }
             }
 

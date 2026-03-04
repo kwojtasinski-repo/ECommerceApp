@@ -1,4 +1,3 @@
-using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Inventory.Availability.DTOs;
 using ECommerceApp.Application.Inventory.Availability.Handlers;
 using ECommerceApp.Application.Supporting.TimeManagement;
@@ -34,10 +33,11 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             _deferredScheduler = deferredScheduler;
         }
 
-        public async Task<StockItemDto> GetByProductIdAsync(int productId, CancellationToken ct = default)
+        public async Task<StockItemDto?> GetByProductIdAsync(int productId, CancellationToken ct = default)
         {
-            var stock = await _stockItemRepo.GetByProductIdAsync(productId, ct)
-                ?? throw new BusinessException($"Stock not found for product '{productId}'.");
+            var stock = await _stockItemRepo.GetByProductIdAsync(productId, ct);
+            if (stock is null)
+                return null;
 
             return new StockItemDto(
                 stock.Id?.Value ?? 0,
@@ -47,28 +47,34 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
                 stock.AvailableQuantity);
         }
 
-        public async Task InitializeStockAsync(int productId, int initialQuantity, CancellationToken ct = default)
+        public async Task<bool> InitializeStockAsync(int productId, int initialQuantity, CancellationToken ct = default)
         {
             var existing = await _stockItemRepo.GetByProductIdAsync(productId, ct);
             if (existing != null)
-                throw new BusinessException($"Stock already initialized for product '{productId}'.");
+                return false;
 
             var (stock, _) = StockItem.Create(productId, initialQuantity);
             await _stockItemRepo.AddAsync(stock, ct);
+            return true;
         }
 
-        public async Task ReserveAsync(ReserveStockDto dto, CancellationToken ct = default)
+        public async Task<ReserveStockResult> ReserveAsync(ReserveStockDto dto, CancellationToken ct = default)
         {
-            var snapshot = await _productSnapshotRepo.GetByProductIdAsync(dto.ProductId, ct)
-                ?? throw new BusinessException($"Product snapshot not found for product '{dto.ProductId}'.");
+            var snapshot = await _productSnapshotRepo.GetByProductIdAsync(dto.ProductId, ct);
+            if (snapshot is null)
+                return ReserveStockResult.ProductSnapshotNotFound;
 
             if (!snapshot.CanBeReserved)
-                throw new BusinessException($"Product '{dto.ProductId}' is not available for reservation.");
+                return ReserveStockResult.ProductNotAvailable;
 
             if (!snapshot.IsDigital)
             {
-                var stock = await _stockItemRepo.GetByProductIdAsync(dto.ProductId, ct)
-                    ?? throw new BusinessException($"Stock not found for product '{dto.ProductId}'.");
+                var stock = await _stockItemRepo.GetByProductIdAsync(dto.ProductId, ct);
+                if (stock is null)
+                    return ReserveStockResult.StockNotFound;
+
+                if (dto.Quantity > stock.AvailableQuantity)
+                    return ReserveStockResult.InsufficientStock;
 
                 stock.Reserve(dto.Quantity);
                 await _stockItemRepo.UpdateAsync(stock, ct);
@@ -82,18 +88,20 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             var timeoutEntityId = $"{dto.OrderId}:{dto.ProductId}:{dto.Quantity}";
             await _deferredScheduler.ScheduleAsync(
                 PaymentWindowTimeoutJob.JobTaskName, timeoutEntityId, dto.ExpiresAt, ct);
+
+            return ReserveStockResult.Success;
         }
 
-        public async Task ReleaseAsync(int orderId, int productId, int quantity, CancellationToken ct = default)
+        public async Task<bool> ReleaseAsync(int orderId, int productId, int quantity, CancellationToken ct = default)
         {
             var reservation = await _reservationRepo.GetByOrderAndProductAsync(orderId, productId, ct);
             if (reservation is null)
-                return;
+                return false;
 
             if (reservation.Status == ReservationStatus.Guaranteed)
             {
                 var stock = await _stockItemRepo.GetByProductIdAsync(productId, ct);
-                if (stock != null)
+                if (stock != null && quantity <= stock.ReservedQuantity)
                 {
                     stock.Release(quantity);
                     await _stockItemRepo.UpdateAsync(stock, ct);
@@ -101,22 +109,28 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             }
 
             await _reservationRepo.DeleteAsync(reservation, ct);
+            return true;
         }
 
-        public async Task ConfirmAsync(int orderId, int productId, CancellationToken ct = default)
+        public async Task<bool> ConfirmAsync(int orderId, int productId, CancellationToken ct = default)
         {
             var reservation = await _reservationRepo.GetByOrderAndProductAsync(orderId, productId, ct);
             if (reservation is null)
-                return;
+                return false;
 
             reservation.Confirm();
             await _reservationRepo.UpdateAsync(reservation, ct);
+            return true;
         }
 
-        public async Task FulfillAsync(int orderId, int productId, int quantity, CancellationToken ct = default)
+        public async Task<bool> FulfillAsync(int orderId, int productId, int quantity, CancellationToken ct = default)
         {
-            var stock = await _stockItemRepo.GetByProductIdAsync(productId, ct)
-                ?? throw new BusinessException($"Stock not found for product '{productId}'.");
+            var stock = await _stockItemRepo.GetByProductIdAsync(productId, ct);
+            if (stock is null)
+                return false;
+
+            if (quantity > stock.ReservedQuantity)
+                return false;
 
             stock.Fulfill(quantity);
             await _stockItemRepo.UpdateAsync(stock, ct);
@@ -124,15 +138,19 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             var reservation = await _reservationRepo.GetByOrderAndProductAsync(orderId, productId, ct);
             if (reservation != null)
                 await _reservationRepo.DeleteAsync(reservation, ct);
+
+            return true;
         }
 
-        public async Task ReturnAsync(int productId, int quantity, CancellationToken ct = default)
+        public async Task<bool> ReturnAsync(int productId, int quantity, CancellationToken ct = default)
         {
-            var stock = await _stockItemRepo.GetByProductIdAsync(productId, ct)
-                ?? throw new BusinessException($"Stock not found for product '{productId}'.");
+            var stock = await _stockItemRepo.GetByProductIdAsync(productId, ct);
+            if (stock is null)
+                return false;
 
             stock.Return(quantity);
             await _stockItemRepo.UpdateAsync(stock, ct);
+            return true;
         }
 
         public async Task AdjustAsync(AdjustStockDto dto, CancellationToken ct = default)

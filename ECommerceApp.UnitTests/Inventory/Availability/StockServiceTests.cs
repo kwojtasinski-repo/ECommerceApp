@@ -1,4 +1,3 @@
-using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Inventory.Availability.DTOs;
 using ECommerceApp.Application.Inventory.Availability.Handlers;
 using ECommerceApp.Application.Inventory.Availability.Services;
@@ -58,14 +57,14 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         }
 
         [Fact]
-        public async Task GetByProductIdAsync_StockNotFound_ShouldThrowBusinessException()
+        public async Task GetByProductIdAsync_StockNotFound_ShouldReturnNull()
         {
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(99, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((StockItem)null);
 
-            var act = async () => await CreateService().GetByProductIdAsync(99);
+            var result = await CreateService().GetByProductIdAsync(99);
 
-            await act.Should().ThrowAsync<BusinessException>().WithMessage("*not found*");
+            result.Should().BeNull();
         }
 
         // ── InitializeStockAsync ──────────────────────────────────────────────
@@ -76,21 +75,22 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((StockItem)null);
 
-            await CreateService().InitializeStockAsync(1, 20);
+            var result = await CreateService().InitializeStockAsync(1, 20);
 
+            result.Should().BeTrue();
             _stockItemRepo.Verify(r => r.AddAsync(It.Is<StockItem>(s => s.ProductId == 1 && s.Quantity == 20), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
-        public async Task InitializeStockAsync_AlreadyInitialized_ShouldThrowBusinessException()
+        public async Task InitializeStockAsync_AlreadyInitialized_ShouldReturnFalse()
         {
             var (stock, _) = StockItem.Create(1, 5);
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(stock);
 
-            var act = async () => await CreateService().InitializeStockAsync(1, 10);
+            var result = await CreateService().InitializeStockAsync(1, 10);
 
-            await act.Should().ThrowAsync<BusinessException>().WithMessage("*already initialized*");
+            result.Should().BeFalse();
         }
 
         // ── ReserveAsync ──────────────────────────────────────────────────────
@@ -107,8 +107,9 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(stock);
 
-            await CreateService().ReserveAsync(dto);
+            var result = await CreateService().ReserveAsync(dto);
 
+            result.Should().Be(ReserveStockResult.Success);
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Once);
             _reservationRepo.Verify(r => r.AddAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Once);
             _softHoldService.Verify(s => s.RemoveAsync(1, "user-1", It.IsAny<CancellationToken>()), Times.Once);
@@ -127,36 +128,37 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _productSnapshotRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(snapshot);
 
-            await CreateService().ReserveAsync(dto);
+            var result = await CreateService().ReserveAsync(dto);
 
+            result.Should().Be(ReserveStockResult.Success);
             _stockItemRepo.Verify(r => r.GetByProductIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Never);
             _reservationRepo.Verify(r => r.AddAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
-        public async Task ReserveAsync_SnapshotNotFound_ShouldThrowBusinessException()
+        public async Task ReserveAsync_SnapshotNotFound_ShouldReturnProductSnapshotNotFound()
         {
             _productSnapshotRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((ProductSnapshot)null);
             var dto = new ReserveStockDto(1, 42, 3, "user-1", DateTime.UtcNow.AddHours(1));
 
-            var act = async () => await CreateService().ReserveAsync(dto);
+            var result = await CreateService().ReserveAsync(dto);
 
-            await act.Should().ThrowAsync<BusinessException>().WithMessage("*snapshot not found*");
+            result.Should().Be(ReserveStockResult.ProductSnapshotNotFound);
         }
 
         [Fact]
-        public async Task ReserveAsync_ProductNotOrderable_ShouldThrowBusinessException()
+        public async Task ReserveAsync_ProductNotOrderable_ShouldReturnProductNotAvailable()
         {
             var snapshot = ProductSnapshot.Create(1, "Widget", isDigital: false, CatalogProductStatus.Suspended);
             _productSnapshotRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(snapshot);
             var dto = new ReserveStockDto(1, 42, 3, "user-1", DateTime.UtcNow.AddHours(1));
 
-            var act = async () => await CreateService().ReserveAsync(dto);
+            var result = await CreateService().ReserveAsync(dto);
 
-            await act.Should().ThrowAsync<BusinessException>().WithMessage("*not available*");
+            result.Should().Be(ReserveStockResult.ProductNotAvailable);
         }
 
         // ── ReleaseAsync ──────────────────────────────────────────────────────
@@ -173,22 +175,42 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(stock);
 
-            await CreateService().ReleaseAsync(42, 1, 3);
+            var result = await CreateService().ReleaseAsync(42, 1, 3);
 
+            result.Should().BeTrue();
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Once);
             _reservationRepo.Verify(r => r.DeleteAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
-        public async Task ReleaseAsync_ReservationNotFound_ShouldReturnWithoutError()
+        public async Task ReleaseAsync_ReservationNotFound_ShouldReturnFalse()
         {
             _reservationRepo.Setup(r => r.GetByOrderAndProductAsync(99, 1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Reservation)null);
 
-            var act = async () => await CreateService().ReleaseAsync(99, 1, 3);
+            var result = await CreateService().ReleaseAsync(99, 1, 3);
 
-            await act.Should().NotThrowAsync();
+            result.Should().BeFalse();
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ReleaseAsync_QuantityExceedsReserved_ShouldSkipStockUpdateButDeleteReservation()
+        {
+            var reservation = Reservation.Create(1, 42, 5, DateTime.UtcNow.AddHours(1));
+            var (stock, _) = StockItem.Create(1, 10);
+            stock.Reserve(2);
+
+            _reservationRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(reservation);
+            _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(stock);
+
+            var result = await CreateService().ReleaseAsync(42, 1, 5);
+
+            result.Should().BeTrue();
+            _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Never);
+            _reservationRepo.Verify(r => r.DeleteAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         // ── ConfirmAsync ──────────────────────────────────────────────────────
@@ -200,21 +222,22 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _reservationRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(reservation);
 
-            await CreateService().ConfirmAsync(42, 1);
+            var result = await CreateService().ConfirmAsync(42, 1);
 
+            result.Should().BeTrue();
             reservation.Status.Should().Be(ReservationStatus.Confirmed);
             _reservationRepo.Verify(r => r.UpdateAsync(reservation, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
-        public async Task ConfirmAsync_ReservationNotFound_ShouldReturnWithoutError()
+        public async Task ConfirmAsync_ReservationNotFound_ShouldReturnFalse()
         {
             _reservationRepo.Setup(r => r.GetByOrderAndProductAsync(99, 1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((Reservation)null);
 
-            var act = async () => await CreateService().ConfirmAsync(99, 1);
+            var result = await CreateService().ConfirmAsync(99, 1);
 
-            await act.Should().NotThrowAsync();
+            result.Should().BeFalse();
         }
 
         // ── FulfillAsync ──────────────────────────────────────────────────────
@@ -231,21 +254,37 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _reservationRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(reservation);
 
-            await CreateService().FulfillAsync(42, 1, 5);
+            var result = await CreateService().FulfillAsync(42, 1, 5);
 
+            result.Should().BeTrue();
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Once);
             _reservationRepo.Verify(r => r.DeleteAsync(reservation, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
-        public async Task FulfillAsync_StockNotFound_ShouldThrowBusinessException()
+        public async Task FulfillAsync_StockNotFound_ShouldReturnFalse()
         {
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((StockItem)null);
 
-            var act = async () => await CreateService().FulfillAsync(42, 1, 5);
+            var result = await CreateService().FulfillAsync(42, 1, 5);
 
-            await act.Should().ThrowAsync<BusinessException>().WithMessage("*not found*");
+            result.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task FulfillAsync_QuantityExceedsReserved_ShouldReturnFalse()
+        {
+            var (stock, _) = StockItem.Create(1, 10);
+            stock.Reserve(3);
+
+            _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(stock);
+
+            var result = await CreateService().FulfillAsync(42, 1, 5);
+
+            result.Should().BeFalse();
+            _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         // ── ReturnAsync ───────────────────────────────────────────────────────
@@ -259,21 +298,22 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(stock);
 
-            await CreateService().ReturnAsync(1, 3);
+            var result = await CreateService().ReturnAsync(1, 3);
 
+            result.Should().BeTrue();
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Once);
             stock.Quantity.Should().Be(8);
         }
 
         [Fact]
-        public async Task ReturnAsync_StockNotFound_ShouldThrowBusinessException()
+        public async Task ReturnAsync_StockNotFound_ShouldReturnFalse()
         {
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((StockItem)null);
 
-            var act = async () => await CreateService().ReturnAsync(1, 3);
+            var result = await CreateService().ReturnAsync(1, 3);
 
-            await act.Should().ThrowAsync<BusinessException>().WithMessage("*not found*");
+            result.Should().BeFalse();
         }
 
         // ── AdjustAsync ───────────────────────────────────────────────────────
