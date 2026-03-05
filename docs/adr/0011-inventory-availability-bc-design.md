@@ -62,10 +62,11 @@ Inventory BC without creating a compile-time dependency.
 
 ### 1. Aggregate root: `StockItem` (counter pattern)
 
-`StockItem` holds two plain `int` counters: physical quantity on hand and the total reserved
+`StockItem` holds two `StockQuantity` counters: physical quantity on hand and the total reserved
 quantity (sum of all active `Reservation.Quantity` rows for that product across all orders).
-It never loads a `Reservation` collection — doing so would over-lock and produce large
-aggregates under concurrent load.
+Both are backed by the `StockQuantity` value object (non-negative guard in constructor, `int` column
+in DB via EF `HasConversion`). It never loads a `Reservation` collection — doing so would
+over-lock and produce large aggregates under concurrent load.
 
 `RowVersion` is mapped with `.IsRowVersion()` in `StockItemConfiguration`, which maps to SQL
 Server's `rowversion` type (`binary(8)`). The database auto-increments it on every `UPDATE` —
@@ -80,26 +81,22 @@ namespace ECommerceApp.Domain.Inventory.Availability;
 public class StockItem
 {
     public StockItemId Id { get; private set; }
-    public int ProductId { get; private set; }        // FK to Catalog (int, no nav prop)
-    public int Quantity { get; private set; }          // physical stock on-hand
-    public int ReservedQuantity { get; private set; } // sum of all active Reservation.Quantity for this product
-    public byte[] RowVersion { get; private set; }    // auto-managed by DB via IsRowVersion()
+    public StockProductId ProductId { get; private set; }       // Inventory-local typed wrapper for Catalog product PK
+    public StockQuantity Quantity { get; private set; }          // physical stock on-hand; guards value >= 0
+    public StockQuantity ReservedQuantity { get; private set; }  // sum of all active Reservation.Quantity; guards value >= 0
+    public byte[] RowVersion { get; private set; } = default!;  // auto-managed by DB via IsRowVersion()
 
-    private StockItem() { }                           // EF Core
+    private StockItem() { }                                      // EF Core
 
-    public static (StockItem, StockAdjusted) Create(int productId, int initialQuantity)
+    public static (StockItem, StockAdjusted) Create(StockProductId productId, StockQuantity initialQuantity)
     {
-        if (productId <= 0)
-            throw new DomainException("ProductId must be positive.");
-        if (initialQuantity < 0)
-            throw new DomainException("Initial quantity cannot be negative.");
         var stock = new StockItem
         {
             ProductId = productId,
             Quantity = initialQuantity,
-            ReservedQuantity = 0
+            ReservedQuantity = new StockQuantity(0)
         };
-        return (stock, new StockAdjusted(stock.Id, productId, 0, initialQuantity, DateTime.UtcNow));
+        return (stock, new StockAdjusted(stock.Id, productId.Value, 0, initialQuantity.Value, DateTime.UtcNow));
     }
 
     // Called at Order Created — increments ReservedQuantity counter
@@ -110,33 +107,39 @@ public class StockItem
         if (quantity > AvailableQuantity)
             throw new DomainException(
                 $"Cannot reserve {quantity} — only {AvailableQuantity} available.");
-        ReservedQuantity += quantity;
-        return new StockReserved(Id, ProductId, quantity, DateTime.UtcNow);
+        ReservedQuantity = new StockQuantity(ReservedQuantity.Value + quantity);
+        return new StockReserved(Id, ProductId.Value, quantity, DateTime.UtcNow);
     }
+
+    // Pure predicate — no side effects; used by handlers before calling Release
+    public bool CanRelease(int qty) => qty > 0 && qty <= ReservedQuantity.Value;
 
     // Called at PaymentWindowTimeout (Guaranteed status) or OrderCancelled
     public StockReleased Release(int quantity)
     {
         if (quantity <= 0)
             throw new DomainException("Release quantity must be positive.");
-        if (quantity > ReservedQuantity)
+        if (quantity > ReservedQuantity.Value)
             throw new DomainException(
                 $"Cannot release {quantity} — only {ReservedQuantity} reserved.");
-        ReservedQuantity -= quantity;
-        return new StockReleased(Id, ProductId, quantity, DateTime.UtcNow);
+        ReservedQuantity = new StockQuantity(ReservedQuantity.Value - quantity);
+        return new StockReleased(Id, ProductId.Value, quantity, DateTime.UtcNow);
     }
+
+    // Pure predicate — no side effects; used by handlers before calling Fulfill
+    public bool CanFulfill(int qty) => qty > 0 && qty <= ReservedQuantity.Value;
 
     // Called at OrderShipped — actual stock deduction
     public StockFulfilled Fulfill(int quantity)
     {
         if (quantity <= 0)
             throw new DomainException("Fulfill quantity must be positive.");
-        if (quantity > ReservedQuantity)
+        if (quantity > ReservedQuantity.Value)
             throw new DomainException(
                 $"Cannot fulfill {quantity} — only {ReservedQuantity} reserved.");
-        ReservedQuantity -= quantity;
-        Quantity -= quantity;
-        return new StockFulfilled(Id, ProductId, quantity, DateTime.UtcNow);
+        ReservedQuantity = new StockQuantity(ReservedQuantity.Value - quantity);
+        Quantity = new StockQuantity(Quantity.Value - quantity);
+        return new StockFulfilled(Id, ProductId.Value, quantity, DateTime.UtcNow);
     }
 
     // Called at RefundApproved — stock returned to on-hand
@@ -144,24 +147,23 @@ public class StockItem
     {
         if (quantity <= 0)
             throw new DomainException("Return quantity must be positive.");
-        Quantity += quantity;
-        return new StockReturned(Id, ProductId, quantity, DateTime.UtcNow);
+        Quantity = new StockQuantity(Quantity.Value + quantity);
+        return new StockReturned(Id, ProductId.Value, quantity, DateTime.UtcNow);
     }
 
-    // Admin stock correction — absolute set, must not go below current reservations
-    public StockAdjusted Adjust(int newQuantity)
+    // Admin stock correction — absolute set (REPLACE, not additive); StockQuantity constructor
+    // guards newQuantity >= 0; this method only checks the reservation lower bound.
+    public StockAdjusted Adjust(StockQuantity newQuantity)
     {
-        if (newQuantity < 0)
-            throw new DomainException("Stock quantity cannot be negative.");
-        if (newQuantity < ReservedQuantity)
+        if (newQuantity.Value < ReservedQuantity.Value)
             throw new DomainException(
                 $"Cannot adjust to {newQuantity} — {ReservedQuantity} units currently reserved.");
-        var previous = Quantity;
+        var previous = Quantity.Value;
         Quantity = newQuantity;
-        return new StockAdjusted(Id, ProductId, previous, newQuantity, DateTime.UtcNow);
+        return new StockAdjusted(Id, ProductId.Value, previous, newQuantity.Value, DateTime.UtcNow);
     }
 
-    public int AvailableQuantity => Quantity - ReservedQuantity;
+    public int AvailableQuantity => Quantity.Value - ReservedQuantity.Value;
 }
 ```
 
@@ -181,16 +183,16 @@ namespace ECommerceApp.Domain.Inventory.Availability;
 public class Reservation
 {
     public ReservationId Id { get; private set; }
-    public int ProductId { get; private set; }
-    public int OrderId { get; private set; }         // for tracing — one OrderId, many products
+    public StockProductId ProductId { get; private set; }       // Inventory-local typed wrapper for Catalog product PK
+    public ReservationOrderId OrderId { get; private set; }     // Inventory-local typed wrapper for Sales order PK; one OrderId, many products
     public int Quantity { get; private set; }
     public ReservationStatus Status { get; private set; }
     public DateTime ReservedAt { get; private set; }
-    public DateTime ExpiresAt { get; private set; }  // = OrderPlaced.ExpiresAt (payment window)
+    public DateTime ExpiresAt { get; private set; }             // = OrderPlaced.ExpiresAt (payment window)
 
     private Reservation() { }
 
-    public static Reservation Create(int productId, int orderId, int quantity, DateTime expiresAt)
+    public static Reservation Create(StockProductId productId, ReservationOrderId orderId, int quantity, DateTime expiresAt)
         => new Reservation
         {
             ProductId  = productId,
@@ -200,6 +202,8 @@ public class Reservation
             ReservedAt = DateTime.UtcNow,
             ExpiresAt  = expiresAt
         };
+
+    public bool IsGuaranteed => Status == ReservationStatus.Guaranteed; // pure predicate; guards PaymentWindowTimeoutJob
 
     public void Confirm() => Status = ReservationStatus.Confirmed;
 }
@@ -485,14 +489,14 @@ namespace ECommerceApp.Domain.Inventory.Availability;
 
 public class PendingStockAdjustment
 {
-    public int ProductId { get; private set; }
-    public int NewQuantity { get; private set; }
-    public Guid Version { get; private set; }   // reset on each upsert
+    public StockProductId ProductId { get; private set; }
+    public StockQuantity NewQuantity { get; private set; }  // latest admin-submitted target (setpoint)
+    public Guid Version { get; private set; }               // reset on each upsert
     public DateTime SubmittedAt { get; private set; }
 
     private PendingStockAdjustment() { }
 
-    public static PendingStockAdjustment Create(int productId, int newQuantity)
+    public static PendingStockAdjustment Create(StockProductId productId, StockQuantity newQuantity)
         => new PendingStockAdjustment
         {
             ProductId   = productId,
@@ -735,6 +739,10 @@ ECommerceApp.Domain/Inventory/Availability/
   IReservationRepository.cs
   IProductSnapshotRepository.cs
   IPendingStockAdjustmentRepository.cs
+  ValueObjects/
+    StockQuantity.cs                ← non-negative int quantity VO; guards value >= 0; stored as int via HasConversion
+    StockProductId.cs               ← TypedId<int>; positive guard; Inventory-local wrapper for Catalog product PK
+    ReservationOrderId.cs           ← TypedId<int>; positive guard; Inventory-local wrapper for Sales order PK
   Events/
     StockReserved.cs
     StockReleased.cs
@@ -847,9 +855,14 @@ ECommerceApp.Infrastructure/Inventory/Availability/
 
 ## Alternatives considered
 
-- **`StockQuantity` value object as aggregate field type** — rejected in favour of plain `int`
-  counters; the non-negative invariant is enforced by the domain methods' own guards, and
-  `int` fields reduce noise without losing safety.
+- **`StockQuantity` value object as aggregate field type** — adopted. Initially considered and
+  rejected in favour of plain `int` counters. Subsequently adopted for consistency with the
+  ADR-0006 VO pattern established in AccountProfile and Catalog BCs. The `StockQuantity`
+  constructor centralises the non-negative guard, removes duplicate `< 0` checks from every
+  domain method, and makes the counter semantics explicit at the property level. `StockProductId`
+  and `ReservationOrderId` typed IDs were added for the same reason — guarded positive-integer
+  wrappers that prevent cross-BC primitive confusion. All three live under
+  `Domain/Inventory/Availability/ValueObjects/`.
 - **`Reservation` collection inside `StockItem`** — rejected; loading all reservations per
   product on every stock operation produces large aggregates and over-locks under concurrency.
   Counter pattern achieves the same invariants with a single-row lock.
@@ -913,7 +926,15 @@ No existing code is removed until Step 11. Parallel change strategy applies.
 - [ ] All `StockItem` properties use `private set`
 - [ ] Static `Create(...)` factory method present, returns `(StockItem, StockAdjusted)`
 - [ ] `StockItem` has a `private` parameterless constructor for EF Core
-- [ ] `StockItem.Quantity` and `StockItem.ReservedQuantity` are plain `int` — no `StockQuantity` VO as field type
+- [ ] `StockItem.Quantity` and `StockItem.ReservedQuantity` use `StockQuantity` VO — non-negative invariant enforced by constructor; stored as `int` via EF `HasConversion`
+- [ ] `StockItem.ProductId` uses `StockProductId` typed ID (positive guard) — Inventory-local wrapper for the Catalog product PK
+- [ ] `Reservation.ProductId` uses `StockProductId` typed ID
+- [ ] `Reservation.OrderId` uses `ReservationOrderId` typed ID (positive guard) — Inventory-local wrapper for the Sales order PK
+- [ ] `PendingStockAdjustment.ProductId` uses `StockProductId` typed ID
+- [ ] `PendingStockAdjustment.NewQuantity` uses `StockQuantity` VO
+- [ ] `StockItem.CanRelease(int qty)` and `StockItem.CanFulfill(int qty)` are pure predicates — no side effects; call before `Release`/`Fulfill` to guard intent
+- [ ] `Reservation.IsGuaranteed` is a computed property (`Status == ReservationStatus.Guaranteed`) — pure predicate used by `PaymentWindowTimeoutJob`
+- [ ] `StockQuantity`, `StockProductId`, and `ReservationOrderId` live under `Domain/Inventory/Availability/ValueObjects/`
 - [ ] `Reserve`, `Release`, `Fulfill`, `Return`, `Adjust` are domain methods on `StockItem` — not in service
 - [ ] `Adjust` throws `DomainException` if `newQuantity < ReservedQuantity`
 - [ ] `StockService.AdjustAsync` queues `StockAdjustmentJob` via `IDeferredJobScheduler` — does NOT write inline
@@ -928,7 +949,7 @@ No existing code is removed until Step 11. Parallel change strategy applies.
 - [ ] `StockAdjustmentJob` uses `DeleteIfVersionMatchesAsync` after successful write — race-safe against concurrent admin submissions
 - [ ] `StockAdjustmentJob` application-level concurrency retry loop uses max **5 attempts** with `100ms * 2^attempt` backoff — this is independent of `DeferredJobInstance.MaxRetries` (infrastructure dead-letter threshold, default 3)
 - [ ] `StockItemId` and `ReservationId` extend `TypedId<int>` (per ADR-0006) — declared as `sealed record StockItemId(int Value) : TypedId<int>(Value)`
-- [ ] No cross-BC navigation properties — `ProductId` and `OrderId` are plain `int`
+- [ ] No cross-BC navigation properties — `ProductId` and `OrderId` are Inventory-local typed IDs (`StockProductId`, `ReservationOrderId`) wrapping the foreign BCs' PKs; no EF navigation properties between BCs
 - [ ] `Reservation` is never loaded as a collection inside `StockItem`
 - [ ] `ReservationStatus` has exactly two values: `Guaranteed`, `Confirmed`
 - [ ] `Reservation` table rows are deleted (not updated to a terminal status) on timeout, cancellation, and fulfillment

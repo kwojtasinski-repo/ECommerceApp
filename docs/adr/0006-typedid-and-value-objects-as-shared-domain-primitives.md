@@ -58,6 +58,36 @@ using ECommerceApp.Domain.Shared;
 public sealed record UserProfileId(int Value) : TypedId<int>(Value);
 ```
 
+Typed IDs can also serve as **cross-BC boundary markers** — wrapping a foreign BC's PK as a
+local concept with an additional domain guard:
+
+```csharp
+// Domain/Inventory/Availability/ValueObjects/StockProductId.cs
+public sealed record StockProductId : TypedId<int>
+{
+    public StockProductId(int value) : base(value)
+    {
+        if (value <= 0)
+            throw new DomainException("ProductId must be positive.");
+    }
+}
+
+// Domain/Inventory/Availability/ValueObjects/ReservationOrderId.cs
+public sealed record ReservationOrderId : TypedId<int>
+{
+    public ReservationOrderId(int value) : base(value)
+    {
+        if (value <= 0)
+            throw new DomainException("OrderId must be positive.");
+    }
+}
+```
+
+Unlike `UserProfileId` (assigned by the DB as the entity's own PK), `StockProductId` and
+`ReservationOrderId` wrap a **foreign BC's PK** as an Inventory-local concept. The positive
+guard in the constructor catches invalid lookups before they reach the DB, while the typed
+parameter prevents accidentally passing a product ID where an order ID is expected.
+
 ### 2. Self-validating Value Objects as `sealed record`
 Every domain concept that is defined by its value — not by an identifier — is modelled
 as a `sealed record` with validation in its constructor. No public setters, no factory
@@ -82,6 +112,30 @@ public sealed record Street
     public override string ToString() => Value;
 }
 ```
+
+Value objects are not limited to string concepts. A quantity-domain VO enforces a numeric
+invariant the same way:
+
+```csharp
+// Domain/Inventory/Availability/ValueObjects/StockQuantity.cs
+public sealed record StockQuantity
+{
+    public int Value { get; }
+
+    public StockQuantity(int value)
+    {
+        if (value < 0)
+            throw new DomainException("Stock quantity cannot be negative.");
+        Value = value;
+    }
+
+    public override string ToString() => Value.ToString();
+}
+```
+
+`StockQuantity` is **not** a `TypedId<T>` — it carries no `implicit operator`; its semantics
+are quantity, not identity. It enforces the non-negative invariant once, removing duplicate
+`< 0` guards from every `StockItem` mutating method (`Reserve`, `Release`, `Fulfill`, `Return`).
 
 The constructor enforces the invariant once, at the point of creation. Any code that
 holds a `Street` instance is guaranteed to hold a valid street.
@@ -207,6 +261,7 @@ CreateMap<UserProfileId, int>().ConvertUsing(x => x.Value);
   - [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](./0002-post-event-storming-architectural-evolution-strategy.md)
   - [ADR-0005 — AccountProfile BC UserProfile Aggregate Design](./0005-accountprofile-bc-userprofile-aggregate-design.md)
   - [ADR-0007 — Catalog BC Product, Category, and Tag Aggregate Design](./0007-catalog-bc-product-category-tag-aggregate-design.md)
+  - [ADR-0011 — Inventory/Availability BC StockItem Aggregate Design](./0011-inventory-availability-bc-design.md)
 - Instruction files:
   - [`.github/instructions/dotnet-instructions.md`](../../.github/instructions/dotnet-instructions.md)
   - [`.github/instructions/efcore-instructions.md`](../../.github/instructions/efcore-instructions.md)
