@@ -2,6 +2,7 @@ using ECommerceApp.Application.Inventory.Availability.DTOs;
 using ECommerceApp.Application.Inventory.Availability.Handlers;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Domain.Inventory.Availability;
+using ECommerceApp.Domain.Inventory.Availability.ValueObjects;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -41,9 +42,9 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
 
             return new StockItemDto(
                 stock.Id?.Value ?? 0,
-                stock.ProductId,
-                stock.Quantity,
-                stock.ReservedQuantity,
+                stock.ProductId.Value,
+                stock.Quantity.Value,
+                stock.ReservedQuantity.Value,
                 stock.AvailableQuantity);
         }
 
@@ -53,7 +54,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             if (existing != null)
                 return false;
 
-            var (stock, _) = StockItem.Create(productId, initialQuantity);
+            var (stock, _) = StockItem.Create(new StockProductId(productId), new StockQuantity(initialQuantity));
             await _stockItemRepo.AddAsync(stock, ct);
             return true;
         }
@@ -80,7 +81,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
                 await _stockItemRepo.UpdateAsync(stock, ct);
             }
 
-            var reservation = Reservation.Create(dto.ProductId, dto.OrderId, dto.Quantity, dto.ExpiresAt);
+            var reservation = Reservation.Create(new StockProductId(dto.ProductId), new ReservationOrderId(dto.OrderId), dto.Quantity, dto.ExpiresAt);
             await _reservationRepo.AddAsync(reservation, ct);
 
             await _softHoldService.RemoveAsync(dto.ProductId, dto.UserId, ct);
@@ -98,10 +99,10 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             if (reservation is null)
                 return false;
 
-            if (reservation.Status == ReservationStatus.Guaranteed)
+            if (reservation.IsGuaranteed)
             {
                 var stock = await _stockItemRepo.GetByProductIdAsync(productId, ct);
-                if (stock != null && quantity <= stock.ReservedQuantity)
+                if (stock != null && quantity <= stock.ReservedQuantity.Value)
                 {
                     stock.Release(quantity);
                     await _stockItemRepo.UpdateAsync(stock, ct);
@@ -129,7 +130,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             if (stock is null)
                 return false;
 
-            if (quantity > stock.ReservedQuantity)
+            if (quantity > stock.ReservedQuantity.Value)
                 return false;
 
             stock.Fulfill(quantity);

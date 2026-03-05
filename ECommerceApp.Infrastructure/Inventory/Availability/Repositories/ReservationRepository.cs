@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Inventory.Availability;
+using ECommerceApp.Domain.Inventory.Availability.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,12 +19,12 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
 
         public async Task<Reservation?> GetByOrderAndProductAsync(int orderId, int productId, CancellationToken ct = default)
             => await _context.Reservations
-                .FirstOrDefaultAsync(r => r.OrderId == orderId && r.ProductId == productId, ct);
+                .FirstOrDefaultAsync(r => r.OrderId == new ReservationOrderId(orderId) && r.ProductId == new StockProductId(productId), ct);
 
         public async Task<IReadOnlyList<Reservation>> GetByOrderIdAsync(int orderId, CancellationToken ct = default)
             => await _context.Reservations
                 .AsNoTracking()
-                .Where(r => r.OrderId == orderId)
+                .Where(r => r.OrderId == new ReservationOrderId(orderId))
                 .ToListAsync(ct);
 
         public async Task AddAsync(Reservation reservation, CancellationToken ct = default)

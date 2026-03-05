@@ -1,7 +1,10 @@
+using ECommerceApp.Application.Inventory.Availability;
 using ECommerceApp.Application.Inventory.Availability.DTOs;
 using ECommerceApp.Application.Inventory.Availability.Services;
 using FluentAssertions;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
+using Moq;
 using System;
 using System.Threading.Tasks;
 using Xunit;
@@ -16,7 +19,9 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         public CheckoutSoftHoldServiceTests()
         {
             _cache = new MemoryCache(new MemoryCacheOptions());
-            _service = new CheckoutSoftHoldService(_cache);
+            var options = new Mock<IOptionsMonitor<InventoryOptions>>();
+            options.Setup(o => o.CurrentValue).Returns(new InventoryOptions());
+            _service = new CheckoutSoftHoldService(_cache, options.Object);
         }
 
         public void Dispose() => _cache.Dispose();

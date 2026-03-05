@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Inventory.Availability;
+using ECommerceApp.Domain.Inventory.Availability.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,14 +17,17 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Configurations
                    .ValueGeneratedOnAdd();
 
             builder.Property(s => s.ProductId)
+                   .HasConversion(x => x.Value, v => new StockProductId(v))
                    .IsRequired();
 
             builder.HasIndex(s => s.ProductId).IsUnique();
 
             builder.Property(s => s.Quantity)
+                   .HasConversion(x => x.Value, v => new StockQuantity(v))
                    .IsRequired();
 
             builder.Property(s => s.ReservedQuantity)
+                   .HasConversion(x => x.Value, v => new StockQuantity(v))
                    .IsRequired()
                    .HasDefaultValue(0);
 

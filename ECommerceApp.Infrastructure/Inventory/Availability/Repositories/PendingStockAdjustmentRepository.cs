@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Inventory.Availability;
+using ECommerceApp.Domain.Inventory.Availability.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Threading;
@@ -18,12 +19,12 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
         public async Task<PendingStockAdjustment?> GetByProductIdAsync(int productId, CancellationToken ct = default)
             => await _context.PendingStockAdjustments
                 .AsNoTracking()
-                .FirstOrDefaultAsync(p => p.ProductId == productId, ct);
+                .FirstOrDefaultAsync(p => p.ProductId == new StockProductId(productId), ct);
 
         public async Task UpsertAsync(int productId, int newQuantity, CancellationToken ct = default)
         {
             var existing = await _context.PendingStockAdjustments
-                .FirstOrDefaultAsync(p => p.ProductId == productId, ct);
+                .FirstOrDefaultAsync(p => p.ProductId == new StockProductId(productId), ct);
 
             if (existing != null)
             {
@@ -31,7 +32,7 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
                 await _context.SaveChangesAsync(ct);
             }
 
-            var record = PendingStockAdjustment.Create(productId, newQuantity);
+            var record = PendingStockAdjustment.Create(new StockProductId(productId), new StockQuantity(newQuantity));
             _context.PendingStockAdjustments.Add(record);
             await _context.SaveChangesAsync(ct);
         }
@@ -39,7 +40,7 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
         public async Task DeleteIfVersionMatchesAsync(int productId, Guid version, CancellationToken ct = default)
         {
             var existing = await _context.PendingStockAdjustments
-                .FirstOrDefaultAsync(p => p.ProductId == productId && p.Version == version, ct);
+                .FirstOrDefaultAsync(p => p.ProductId == new StockProductId(productId) && p.Version == version, ct);
 
             if (existing != null)
             {

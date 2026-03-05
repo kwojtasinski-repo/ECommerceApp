@@ -3,6 +3,7 @@ using ECommerceApp.Application.Inventory.Availability.Handlers;
 using ECommerceApp.Application.Inventory.Availability.Services;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Domain.Inventory.Availability;
+using ECommerceApp.Domain.Inventory.Availability.ValueObjects;
 using FluentAssertions;
 using Moq;
 using System;
@@ -44,7 +45,8 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task GetByProductIdAsync_StockExists_ShouldReturnDto()
         {
-            var (stock, _) = StockItem.Create(1, 10);
+            var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
+            var dto = new ReserveStockDto(1, 42, 3, "user-1", DateTime.UtcNow.AddHours(1));
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(stock);
 
@@ -78,13 +80,13 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             var result = await CreateService().InitializeStockAsync(1, 20);
 
             result.Should().BeTrue();
-            _stockItemRepo.Verify(r => r.AddAsync(It.Is<StockItem>(s => s.ProductId == 1 && s.Quantity == 20), It.IsAny<CancellationToken>()), Times.Once);
+            _stockItemRepo.Verify(r => r.AddAsync(It.Is<StockItem>(s => s.ProductId.Value == 1 && s.Quantity.Value == 20), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task InitializeStockAsync_AlreadyInitialized_ShouldReturnFalse()
         {
-            var (stock, _) = StockItem.Create(1, 5);
+            var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(5));
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(stock);
 
@@ -99,7 +101,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         public async Task ReserveAsync_PhysicalProduct_ShouldReserveStockAndCreateReservationAndScheduleTimeout()
         {
             var snapshot = ProductSnapshot.Create(1, "Widget", isDigital: false, CatalogProductStatus.Orderable);
-            var (stock, _) = StockItem.Create(1, 10);
+            var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
             var dto = new ReserveStockDto(1, 42, 3, "user-1", DateTime.UtcNow.AddHours(1));
 
             _productSnapshotRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
@@ -166,8 +168,8 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task ReleaseAsync_GuaranteedReservation_ShouldReleaseStockAndDeleteReservation()
         {
-            var reservation = Reservation.Create(1, 42, 3, DateTime.UtcNow.AddHours(1));
-            var (stock, _) = StockItem.Create(1, 10);
+            var reservation = Reservation.Create(new StockProductId(1), new ReservationOrderId(42), 3, DateTime.UtcNow.AddHours(1));
+            var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
             stock.Reserve(3);
 
             _reservationRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
@@ -197,8 +199,8 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task ReleaseAsync_QuantityExceedsReserved_ShouldSkipStockUpdateButDeleteReservation()
         {
-            var reservation = Reservation.Create(1, 42, 5, DateTime.UtcNow.AddHours(1));
-            var (stock, _) = StockItem.Create(1, 10);
+            var reservation = Reservation.Create(new StockProductId(1), new ReservationOrderId(42), 5, DateTime.UtcNow.AddHours(1));
+            var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
             stock.Reserve(2);
 
             _reservationRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
@@ -218,7 +220,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task ConfirmAsync_ExistingReservation_ShouldConfirmAndUpdate()
         {
-            var reservation = Reservation.Create(1, 42, 3, DateTime.UtcNow.AddHours(1));
+            var reservation = Reservation.Create(new StockProductId(1), new ReservationOrderId(42), 3, DateTime.UtcNow.AddHours(1));
             _reservationRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(reservation);
 
@@ -245,9 +247,9 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task FulfillAsync_ValidStock_ShouldFulfillAndDeleteReservation()
         {
-            var (stock, _) = StockItem.Create(1, 10);
+            var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
             stock.Reserve(5);
-            var reservation = Reservation.Create(1, 42, 5, DateTime.UtcNow.AddHours(1));
+            var reservation = Reservation.Create(new StockProductId(1), new ReservationOrderId(42), 5, DateTime.UtcNow.AddHours(1));
 
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(stock);
@@ -275,7 +277,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task FulfillAsync_QuantityExceedsReserved_ShouldReturnFalse()
         {
-            var (stock, _) = StockItem.Create(1, 10);
+            var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
             stock.Reserve(3);
 
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
@@ -292,7 +294,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task ReturnAsync_ValidStock_ShouldReturnQuantityAndUpdateStock()
         {
-            var (stock, _) = StockItem.Create(1, 10);
+            var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
             stock.Reserve(5);
             stock.Fulfill(5);
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
@@ -302,7 +304,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
 
             result.Should().BeTrue();
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Once);
-            stock.Quantity.Should().Be(8);
+            stock.Quantity.Value.Should().Be(8);
         }
 
         [Fact]

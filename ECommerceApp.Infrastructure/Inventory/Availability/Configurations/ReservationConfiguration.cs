@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Inventory.Availability;
+using ECommerceApp.Domain.Inventory.Availability.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -15,8 +16,14 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Configurations
                    .HasConversion(x => x.Value, v => new ReservationId(v))
                    .ValueGeneratedOnAdd();
 
-            builder.Property(r => r.ProductId).IsRequired();
-            builder.Property(r => r.OrderId).IsRequired();
+            builder.Property(r => r.ProductId)
+                   .HasConversion(x => x.Value, v => new StockProductId(v))
+                   .IsRequired();
+
+            builder.Property(r => r.OrderId)
+                   .HasConversion(x => x.Value, v => new ReservationOrderId(v))
+                   .IsRequired();
+
             builder.Property(r => r.Quantity).IsRequired();
 
             builder.Property(r => r.Status)

@@ -57,7 +57,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
                     return;
                 }
 
-                if (pending.NewQuantity < stock.ReservedQuantity)
+                if (pending.NewQuantity.Value < stock.ReservedQuantity.Value)
                 {
                     context.ReportFailure($"Cannot adjust stock to {pending.NewQuantity} — {stock.ReservedQuantity} units currently reserved for product '{productId}'.");
                     return;

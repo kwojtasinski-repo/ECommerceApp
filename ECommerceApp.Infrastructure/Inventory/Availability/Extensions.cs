@@ -1,3 +1,4 @@
+using ECommerceApp.Application.Inventory.Availability;
 using ECommerceApp.Domain.Inventory.Availability;
 using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Inventory.Availability.Repositories;
@@ -11,6 +12,8 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability
     {
         public static IServiceCollection AddAvailabilityInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
+            services.Configure<InventoryOptions>(configuration.GetSection(InventoryOptions.SectionName));
+
             services.AddDbContext<AvailabilityDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 

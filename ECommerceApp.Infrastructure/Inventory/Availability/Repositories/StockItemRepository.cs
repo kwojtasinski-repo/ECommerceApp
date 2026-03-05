@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Inventory.Availability;
+using ECommerceApp.Domain.Inventory.Availability.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +19,7 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
 
         public async Task<StockItem?> GetByProductIdAsync(int productId, CancellationToken ct = default)
             => await _context.StockItems
-                .FirstOrDefaultAsync(s => s.ProductId == productId, ct);
+                .FirstOrDefaultAsync(s => s.ProductId == new StockProductId(productId), ct);
 
         public async Task<StockItem?> GetByIdAsync(StockItemId id, CancellationToken ct = default)
             => await _context.StockItems
@@ -40,10 +41,10 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
             int pageSize, int pageNo, string searchString, CancellationToken ct = default)
         {
             var query = _context.StockItems.AsNoTracking()
-                .Where(s => s.Quantity - s.ReservedQuantity > 0);
+                .Where(s => s.Quantity.Value - s.ReservedQuantity.Value > 0);
 
             if (!string.IsNullOrWhiteSpace(searchString))
-                query = query.Where(s => s.ProductId.ToString().Contains(searchString));
+                query = query.Where(s => s.ProductId.Value.ToString().Contains(searchString));
 
             return await query
                 .OrderBy(s => s.ProductId)
@@ -55,10 +56,10 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
         public async Task<int> GetAvailableCountAsync(string searchString, CancellationToken ct = default)
         {
             var query = _context.StockItems.AsNoTracking()
-                .Where(s => s.Quantity - s.ReservedQuantity > 0);
+                .Where(s => s.Quantity.Value - s.ReservedQuantity.Value > 0);
 
             if (!string.IsNullOrWhiteSpace(searchString))
-                query = query.Where(s => s.ProductId.ToString().Contains(searchString));
+                query = query.Where(s => s.ProductId.Value.ToString().Contains(searchString));
 
             return await query.CountAsync(ct);
         }

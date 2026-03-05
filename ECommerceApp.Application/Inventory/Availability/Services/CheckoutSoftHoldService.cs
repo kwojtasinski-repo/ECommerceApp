@@ -1,5 +1,6 @@
 using ECommerceApp.Application.Inventory.Availability.DTOs;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -8,19 +9,21 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
 {
     internal sealed class CheckoutSoftHoldService : ICheckoutSoftHoldService
     {
-        private static readonly TimeSpan Ttl = TimeSpan.FromMinutes(15);
         private readonly IMemoryCache _cache;
+        private readonly IOptionsMonitor<InventoryOptions> _options;
 
-        public CheckoutSoftHoldService(IMemoryCache cache)
+        public CheckoutSoftHoldService(IMemoryCache cache, IOptionsMonitor<InventoryOptions> options)
         {
             _cache = cache;
+            _options = options;
         }
 
         public Task HoldAsync(int productId, string userId, int quantity, CancellationToken ct = default)
         {
+            var ttl = _options.CurrentValue.SoftHoldTtl;
             var key = CacheKey(productId, userId);
-            var hold = new SoftHold(productId, userId, quantity, DateTime.UtcNow.Add(Ttl));
-            _cache.Set(key, hold, Ttl);
+            var hold = new SoftHold(productId, userId, quantity, DateTime.UtcNow.Add(ttl));
+            _cache.Set(key, hold, ttl);
             return Task.CompletedTask;
         }
 
