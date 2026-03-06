@@ -61,14 +61,18 @@ Domain/Catalog/Products/
   Image.cs                ← owned entity (ProductId FK)
   ImageId.cs              ← TypedId<int>
   ProductTag.cs           ← join entity
-  ProductStatus.cs        ← enum (Draft | Published | Unpublished)
+  ProductStatus.cs        ← enum (Draft | Published | Unpublished | Discontinued)
+  UnpublishReason.cs      ← enum (ManagerDecision | TestSaleEnded | LegalWithdrawal)
   IProductRepository.cs
   ICategoryRepository.cs
   IProductTagRepository.cs
   Events/
-    ProductCreated.cs
-    ProductPublished.cs
-    ProductUnpublished.cs
+    ProductCreated.cs          ← domain event — raised on Create(); triggers ProductAdded integration message
+    ProductPublished.cs        ← domain event — raised on Publish(); visibility toggle only
+    ProductUnpublished.cs      ← domain event — raised on Unpublish(reason)
+    ProductDiscontinued.cs     ← domain event — raised on Discontinue()
+    ProductDetailsUpdated.cs   ← domain event — raised on UpdateDetails(); name/price/category changed
+    ProductMainImageUpdated.cs ← domain event — raised when first image added or SetMainImage called
   ValueObjects/
     ProductName.cs          max 150, min 3
     ProductDescription.cs   max 300, empty allowed
@@ -105,12 +109,49 @@ logic — the invariant lives in the VO, which is the single source of truth.
 
 ### 4. Product `Status` state machine
 ```
-Draft ──Publish()──► Published ──Unpublish()──► Unpublished ──Publish()──► Published
+Draft ──Publish()──► Published ──Unpublish(reason)──► Unpublished ──Publish()──► Published
+                  Published ──Discontinue()──► Discontinued
 ```
 - `Publish()` throws `DomainException` if already `Published`.
-- `Unpublish()` throws `DomainException` if not `Published`.
-- State transitions return domain events (`ProductPublished`, `ProductUnpublished`).
+- `Unpublish(UnpublishReason reason)` throws `DomainException` if not `Published`.
+- `Discontinue()` throws `DomainException` if already `Discontinued`.
+- State transitions return domain events (`ProductPublished`, `ProductUnpublished`, `ProductDiscontinued`).
+- `UpdateDetails(...)` returns `ProductDetailsUpdated` domain event — not `void`.
+- `AddImage` / `SetMainImage` raise `ProductMainImageUpdated` when the main image changes.
 - `Create(...)` always starts in `Draft`; returns `(Product, ProductCreated)` tuple.
+
+### 4a. `UnpublishReason` enum
+
+Catalog is the authoritative owner of WHY a product is unpublished. Downstream BCs
+(e.g., Presale/Checkout — ADR-0012) map these reasons to their own visibility concepts.
+
+```csharp
+public enum UnpublishReason
+{
+    ManagerDecision = 0,   // general temporary hide
+    TestSaleEnded   = 1,   // product was a trial — did not meet sales targets
+    LegalWithdrawal = 2,   // compliance / legal issue — product must be withdrawn
+}
+```
+
+### 4b. Outbound integration messages (Application layer)
+
+The Application layer translates domain events into integration messages published via `IMessageBroker`.
+These are the **public contract** for downstream BCs.
+
+| Domain event | Integration message | Status | Payload | Consumers |
+|---|---|---|---|---|
+| `ProductCreated` | `ProductAdded` | **New** | `ProductId, Name, Price, CategoryId, OccurredAt` | Presale/Checkout |
+| `ProductPublished` | `ProductPublished` | Existing (unchanged) | `ProductId, ProductName, IsDigital, OccurredAt` | Inventory, Presale/Checkout |
+| `ProductUnpublished` | `ProductUnpublished` | **Changed** — adds `Reason` field | `ProductId, Reason: UnpublishReason, OccurredAt` | Inventory, Presale/Checkout |
+| `ProductDiscontinued` | `ProductDiscontinued` | Existing (unchanged) | `ProductId, OccurredAt` | Inventory, Presale/Checkout |
+| `ProductDetailsUpdated` | `ProductUpdated` | **New** | `ProductId, Name, Price, CategoryId, OccurredAt` | Presale/Checkout |
+| `ProductMainImageUpdated` | `ProductMainImageUpdated` | **New** | `ProductId, MainImageUrl, OccurredAt` | Presale/Checkout |
+
+> **Note**: `ProductPublished` currently carries `ProductName` and `IsDigital` for backward
+> compatibility with `Inventory/ProductPublishedHandler`. When Presale/Checkout Slice 1 is built,
+> Inventory’s handler will transition to consuming `ProductAdded` for those fields, and
+> `ProductPublished` will become a pure visibility toggle (`ProductId, OccurredAt`).
 
 ### 5. Image ownership and main-image invariant
 `Image` is an owned entity of `Product` (max 5 per product). The `IsMain` flag is
@@ -232,6 +273,14 @@ CreateMap<ImageFileName, string>().ConvertUsing(x => x.Value);
 - [ ] `ProductDbContext` uses schema `"catalog"`
 - [ ] `ProductService`, `CategoryService`, `ProductTagService` are each `internal sealed`
 - [ ] `CategorySlug` enforces max length 100; `TagSlug` enforces max length 30
+- [ ] `ProductStatus` enum has four values: `Draft`, `Published`, `Unpublished`, `Discontinued`
+- [ ] `UnpublishReason` enum lives under `Domain/Catalog/Products/`
+- [ ] `Product.Unpublish(UnpublishReason reason)` takes a reason parameter
+- [ ] `Product.Discontinue()` throws `DomainException` if already `Discontinued`
+- [ ] `Product.UpdateDetails(...)` returns `ProductDetailsUpdated` domain event — not `void`
+- [ ] `AddImage`/`SetMainImage` raise `ProductMainImageUpdated` domain event when main image changes
+- [ ] Integration messages `ProductAdded`, `ProductUpdated`, `ProductMainImageUpdated` live in `Application/Catalog/Products/Messages/`
+- [ ] `ProductUnpublished` integration message carries `Reason: UnpublishReason` field
 
 ## Implementation Status
 
@@ -247,3 +296,18 @@ CreateMap<ImageFileName, string>().ConvertUsing(x => x.Value);
 | Atomic switch — remove legacy `Domain.Model.Item`, `Image`, `Tag`, `Brand`, `Type` | ⬜ After integration tests |
 | `Category.ParentId` + `IsVisible` (hierarchy / filtering) | ⬜ Separate ADR required — ADR-0007 §8 |
 | `Tag.Color` + `IsVisible` | ⬜ Deferred — ADR-0007 §9 |
+| Add `Discontinued` to `ProductStatus` + `Discontinue()` on aggregate | ⬜ Not started |
+| Add `UnpublishReason` enum + update `Unpublish(reason)` signature | ⬜ Not started |
+| `UpdateDetails()` returns `ProductDetailsUpdated` domain event (not void) | ⬜ Not started |
+| `AddImage`/`SetMainImage` raise `ProductMainImageUpdated` domain event | ⬜ Not started |
+| New integration messages: `ProductAdded`, `ProductUpdated`, `ProductMainImageUpdated` | ⬜ Not started |
+| Update `ProductUnpublished` message to carry `UnpublishReason` | ⬜ Not started |
+
+## References
+
+- Related ADRs:
+  - [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](./0002-post-event-storming-architectural-evolution-strategy.md)
+  - [ADR-0003 — Feature-Folder Organization for New Bounded Context Code](./0003-feature-folder-organization-for-new-bounded-context-code.md)
+  - [ADR-0006 — TypedId and Value Objects as Shared Domain Primitives](./0006-typedid-and-value-objects-as-shared-domain-primitives.md)
+  - [ADR-0011 — Inventory/Availability BC Design](./0011-inventory-availability-bc-design.md) (ProductSnapshot consumes Catalog events)
+  - [ADR-0012 — Presale/Checkout BC Design](./0012-presale-checkout-bc-design.md) (StorefrontProduct consumes Catalog events)

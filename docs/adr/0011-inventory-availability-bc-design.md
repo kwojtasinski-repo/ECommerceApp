@@ -262,37 +262,23 @@ public enum CatalogProductStatus { Orderable, Suspended, Discontinued }
 
 ### 4. Two-phase reservation
 
-#### Phase 1 — Soft hold (UX only, `IMemoryCache`, no DB)
+#### Phase 1 — Soft reservation (UX only, in-memory TTL)
 
-At checkout confirmation a **15-minute soft hold** is placed in `IMemoryCache` via
-`ICheckoutSoftHoldService`. No `StockItem` write, no `RowVersion` bump, no deferred job.
-The cache key is `softhold:{productId}:{userId}`. TTL auto-evicts the hold — no cleanup code
-needed.
+Soft reservations live in the **Presale/Checkout BC** — see [ADR-0012](./0012-presale-checkout-bc-design.md).
+`Inventory/Availability` has no knowledge of soft reservations. The only reservation concept
+in this BC is the **hard reservation** (Guaranteed/Confirmed, DB-persisted).
 
-This is a UX-layer signal only. It does not constitute a stock guarantee. Race conditions at
-this phase are acceptable — the DB is the authoritative source at Order Created.
-
-```csharp
-public interface ICheckoutSoftHoldService
-{
-    Task HoldAsync(int productId, string userId, int quantity, CancellationToken ct = default);
-    Task<SoftHold?> GetAsync(int productId, string userId, CancellationToken ct = default);
-    Task RemoveAsync(int productId, string userId, CancellationToken ct = default);
-}
-
-// Plain DTO returned by GetAsync — carries only what the caller needs
-public sealed record SoftHold(int ProductId, string UserId, int Quantity, DateTime ExpiresAt);
-```
+The `ICheckoutSoftHoldService`, `CheckoutSoftHoldService`, and `SoftHold` DTO were removed from
+this BC during the Presale/Checkout BC design phase. `IMemoryCache` is not a dependency of any
+Inventory service.
 
 #### Phase 2 — Guaranteed hold (DB, `RowVersion`, payment window)
 
 At **Order Created** (`OrderPlaced` message received):
 
-- **Case A — soft hold still active**: create `Reservation(Guaranteed)`, call
-  `StockItem.Reserve(qty)` (RowVersion bumped), remove soft hold from cache, schedule
+- Check `ProductSnapshot.CanBeReserved`, check `StockItem.AvailableQuantity >= qty`, then:
+  create `Reservation(Guaranteed)`, call `StockItem.Reserve(qty)` (RowVersion bumped), schedule
   `PaymentWindowTimeout` deferred job at `OrderPlaced.ExpiresAt`.
-- **Case B — soft hold expired**: check `ProductSnapshot.CanBeReserved`, check
-  `StockItem.AvailableQuantity >= qty`, then proceed identically to Case A.
 
 `OrderPlaced.ExpiresAt` is the **single source of truth** for both the `Reservation.ExpiresAt`
 field and the `PaymentWindowTimeout` job fire time. This eliminates the gap where a user could
@@ -303,8 +289,7 @@ StockService.ReserveAsync(ReserveStockDto dto):
   1. Load ProductSnapshot → guard CanBeReserved (throws BusinessException if not)
   2. If !IsDigital: load StockItem → Reserve(qty) → UpdateAsync (RowVersion checked by DB)
   3. AddAsync(Reservation.Create(productId, orderId, qty, dto.ExpiresAt))
-  4. RemoveSoftHold(productId, userId)
-  5. ScheduleAsync(PaymentWindowTimeoutJob.JobTaskName, dto.ProductId.ToString(), fireAt=dto.ExpiresAt)
+  4. ScheduleAsync(PaymentWindowTimeoutJob.JobTaskName, dto.ProductId.ToString(), fireAt=dto.ExpiresAt)
 ```
 
 #### Payment window timeout (idempotent)
@@ -694,6 +679,8 @@ All cross-BC triggers use `IMessageBroker`. Dependency direction: Inventory subs
 Sales, Payments, and Catalog messages. The reverse (Sales → Inventory direct call) is
 **forbidden**.
 
+**Inbound (Inventory subscribes)**:
+
 | Message | Publisher BC | Inventory Handler | Action |
 |---|---|---|---|
 | `OrderPlaced` | Sales/Orders | `OrderPlacedHandler` | Create Reservation + Reserve / schedule timeout |
@@ -704,6 +691,17 @@ Sales, Payments, and Catalog messages. The reverse (Sales → Inventory direct c
 | `ProductPublished` | Catalog | `ProductPublishedHandler` | Upsert ProductSnapshot (Orderable) |
 | `ProductUnpublished` | Catalog | `ProductUnpublishedHandler` | ProductSnapshot → Suspended |
 | `ProductDiscontinued` | Catalog | `ProductDiscontinuedHandler` | ProductSnapshot → Discontinued |
+
+**Outbound (Inventory publishes)**:
+
+| Message | Published after | Subscribers | Payload |
+|---|---|---|---|
+| `AvailabilityChanged` | Every `Reserve`, `Release`, `Fulfill`, `Return`, `Adjust` | Presale/Checkout | `ProductId, AvailableQuantity, IsOutOfStock, OccurredAt` |
+
+`AvailabilityChanged` carries `StockItem.AvailableQuantity` computed at the moment of the write.
+It is the single integration message downstream consumers use to track availability. Internal
+domain events (`StockReserved`, `StockReleased`, `StockFulfilled`, etc.) are Inventory-internal
+audit events and are **never exposed** as integration messages.
 
 Message contracts (`OrderPlaced`, `OrderCancelled`, `PaymentConfirmed`, `OrderShipped`,
 `RefundApproved`) live in the **publisher's** `Messages/` folder. Each contract must implement
@@ -754,9 +752,7 @@ ECommerceApp.Domain/Inventory/Availability/
 ECommerceApp.Application/Inventory/Availability/
   Services/
     IStockService.cs
-    StockService.cs                       ← internal sealed
-    ICheckoutSoftHoldService.cs
-    CheckoutSoftHoldService.cs            ← internal sealed, IMemoryCache
+    StockService.cs                       ← internal sealed; publishes AvailabilityChanged after every write
     Extensions.cs
   Handlers/
     OrderPlacedHandler.cs
@@ -774,7 +770,6 @@ ECommerceApp.Application/Inventory/Availability/
     ReservationDto.cs
     AdjustStockDto.cs
     ReserveStockDto.cs
-    SoftHold.cs                           ← sealed record; returned by ICheckoutSoftHoldService.GetAsync
   ViewModels/
     StockItemVm.cs
 
@@ -829,8 +824,8 @@ ECommerceApp.Infrastructure/Inventory/Availability/
   a separate `AvailabilityDbContext` add infrastructure complexity vs. the original single-table
   design. `PendingStockAdjustments` stays small: at most one row per product with a pending
   adjustment (row deleted after job completes).
-- `IMemoryCache` soft hold is node-local — not suitable for multi-instance deployments without
-  upgrade to `IDistributedCache` (deferred).
+- Soft reservations (UX-only TTL holds) live in Presale/Checkout BC — not here. This is by
+  design: see ADR-0012. Inventory has no in-memory cache dependency.
 - Asynchronous message-based integration is more complex to reason about than the legacy
   synchronous `ItemHandler` call. This is the intended direction per ADR-0010.
 
@@ -868,9 +863,10 @@ ECommerceApp.Infrastructure/Inventory/Availability/
   Counter pattern achieves the same invariants with a single-row lock.
 - **`ReservationType` (Soft/Hard) enum on `Reservation`** — rejected; `ReservationStatus`
   encodes the same information. An extra type field would be redundant.
-- **Persist soft holds to DB** — rejected; 15-minute checkout holds are UX artifacts. Persisting
-  them adds DB writes and `RowVersion` contention for a hold that may never become an order.
-  `IMemoryCache` with TTL auto-eviction is sufficient.
+- **Soft holds in Inventory** — relocated; soft reservations (UX-only TTL holds) were initially
+  designed as `ICheckoutSoftHoldService` in this BC and subsequently moved to Presale/Checkout BC
+  (ADR-0012). Inventory is not the correct owner — soft reservations are a customer-intent
+  concept, not a stock-commitment concept. Inventory owns hard reservations only.
 - **Keep `Quantity` on `Item` / `Product`** — rejected; Catalog and Inventory have different
   lifecycles. Coupling them triggers unnecessary cache invalidation and EF change tracking.
 - **Shared `Context` instead of `AvailabilityDbContext`** — rejected; per ADR-0003/0007
@@ -898,8 +894,7 @@ ECommerceApp.Infrastructure/Inventory/Availability/
    `StockItemConfiguration` (`RowVersion` → `IsRowVersion()`), `ReservationConfiguration`,
    `ProductSnapshotConfiguration`, all three repositories.
 3. Create `Application/Inventory/Availability/` with `IStockService`, `StockService`,
-   `ICheckoutSoftHoldService`, `CheckoutSoftHoldService`, all message handlers,
-   `PaymentWindowTimeoutJob`, DTOs, ViewModels.
+   all message handlers, `PaymentWindowTimeoutJob`, DTOs, ViewModels.
 4. Register via `AddAvailabilityServices()` in `Application/DependencyInjection.cs` and
    `AddAvailabilityInfrastructure()` in `Infrastructure/DependencyInjection.cs`.
 5. Generate EF migration `InitInventorySchema` targeting `AvailabilityDbContext`.
@@ -907,7 +902,7 @@ ECommerceApp.Infrastructure/Inventory/Availability/
    populate `inventory.ProductSnapshots` from existing product data.
 7. Write unit tests for `StockItem` aggregate (reserve, release, fulfill, return, adjust,
    boundary invariants, concurrency guard).
-8. Write unit tests for `StockService` and `CheckoutSoftHoldService`.
+8. Write unit tests for `StockService`.
 9. Create message contracts (`OrderPlaced`, `OrderCancelled`, `PaymentConfirmed`,
    `OrderShipped`, `RefundApproved`) in the respective publisher `Messages/` folders.
 10. Verify all existing tests still pass.
@@ -957,8 +952,9 @@ No existing code is removed until Step 11. Parallel change strategy applies.
 - [ ] Digital products (`IsDigital = true`) skip `StockItem.Reserve()` — Reservation row created for tracing only
 - [ ] `AvailabilityDbContext` uses schema `"inventory"`
 - [ ] `StockItemConfiguration` maps `RowVersion` with `.IsRowVersion()` (not `IsConcurrencyToken()` alone)
-- [ ] `StockService` and `CheckoutSoftHoldService` implementations are `internal sealed`
-- [ ] `CheckoutSoftHoldService` uses `IMemoryCache` — no DB writes for soft holds
+- [ ] `StockService` implementation is `internal sealed`
+- [ ] No `IMemoryCache` dependency in any Inventory service — soft reservations belong in Presale/Checkout BC (ADR-0012)
+- [ ] `StockService` publishes `AvailabilityChanged` after every `Reserve`, `Release`, `Fulfill`, `Return`, and `Adjust` operation
 - [ ] `OrderPlaced.ExpiresAt` is used as both `Reservation.ExpiresAt` and `PaymentWindowTimeout` job fire time
 - [ ] `PaymentWindowTimeoutJob` is idempotent — checks `Reservation.Status` before acting
 - [ ] No direct `IStockService` injection from `OrderService` — cross-BC via `IMessageBroker` only
@@ -966,7 +962,7 @@ No existing code is removed until Step 11. Parallel change strategy applies.
 - [ ] Message contracts live in the publisher's `Messages/` folder
 - [ ] Message handlers implement `IMessageHandler<TMessage>` (`Task HandleAsync(TMessage, CancellationToken)`)
 - [ ] Message handlers (`OrderPlacedHandler`, etc.) live in `Application/Inventory/Availability/Handlers/`
-- [ ] `SoftHold` record is defined in `Application/Inventory/Availability/DTOs/` — properties: `ProductId`, `UserId`, `Quantity`, `ExpiresAt`
+- [ ] `AvailabilityChanged` message is defined in `Application/Inventory/Availability/Messages/` — properties: `ProductId`, `AvailableQuantity`, `IsOutOfStock`, `OccurredAt`; implements `IMessage`
 - [ ] Domain events live under `Domain/Inventory/Availability/Events/`
 
 ## Implementation Status
@@ -975,7 +971,9 @@ No existing code is removed until Step 11. Parallel change strategy applies.
 |---|---|
 | Domain (`StockItem`, `Reservation`, `ProductSnapshot`, `PendingStockAdjustment`, typed IDs, repository interfaces, domain events) | ✅ Done |
 | Infrastructure (`AvailabilityDbContext`, `inventory.*` schema, four configurations, four repositories, DI) | ✅ Done |
-| Application (`IStockService`, `StockService`, `ICheckoutSoftHoldService`, `CheckoutSoftHoldService`, message handlers, `PaymentWindowTimeoutJob`, `StockAdjustmentJob` with coalescing, DTOs, DI) | ✅ Done |
+| Application (`IStockService`, `StockService`, message handlers, `PaymentWindowTimeoutJob`, `StockAdjustmentJob` with coalescing, DTOs, DI) | ✅ Done |
+| Remove `ICheckoutSoftHoldService`, `CheckoutSoftHoldService`, `SoftHold` from Inventory codebase | ⬜ Pending Presale/Checkout Slice 1 switch |
+| `AvailabilityChanged` integration message + publishing in `StockService` | ⬜ Not started |
 | Message contracts (`OrderPlaced`, `OrderCancelled`, `PaymentConfirmed`, `OrderShipped`, `RefundApproved`) | ✅ Done |
 | Unit tests (`StockItem` aggregate, `StockService`, soft-hold service) | ✅ Done |
 | DB migration (`InitInventorySchema` — three tables) | ⬜ Not started |
@@ -994,6 +992,7 @@ No existing code is removed until Step 11. Parallel change strategy applies.
   - [ADR-0007 — Catalog BC — Product, Category, and Tag Aggregate Design](./0007-catalog-bc-product-category-tag-aggregate-design.md) (Quantity removed from Product)
   - [ADR-0009 — Supporting TimeManagement BC Design](./0009-supporting-timemanagement-bc-design.md) (`PaymentWindowTimeoutJob`, `JobType.Deferred`)
   - [ADR-0010 — In-Memory Message Broker for Cross-BC Communication](./0010-in-memory-message-broker-for-cross-bc-communication.md) (cross-BC integration pattern)
+  - [ADR-0012 — Presale/Checkout BC Design](./0012-presale-checkout-bc-design.md) (soft reservation, StorefrontProduct, `AvailabilityChanged` consumer)
 - Instruction files:
   - [`.github/instructions/dotnet-instructions.md`](../../.github/instructions/dotnet-instructions.md)
   - [`.github/instructions/efcore-instructions.md`](../../.github/instructions/efcore-instructions.md)
