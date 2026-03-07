@@ -29,7 +29,7 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Configurations
             builder.Property(s => s.ReservedQuantity)
                    .HasConversion(x => x.Value, v => new StockQuantity(v))
                    .IsRequired()
-                   .HasDefaultValue(0);
+                   .HasDefaultValueSql("0");
 
             builder.Property(s => s.RowVersion)
                    .IsRowVersion();

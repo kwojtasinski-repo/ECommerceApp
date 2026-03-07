@@ -973,10 +973,10 @@ No existing code is removed until Step 11. Parallel change strategy applies.
 | Infrastructure (`AvailabilityDbContext`, `inventory.*` schema, four configurations, four repositories, DI) | ✅ Done |
 | Application (`IStockService`, `StockService`, message handlers, `PaymentWindowTimeoutJob`, `StockAdjustmentJob` with coalescing, DTOs, DI) | ✅ Done |
 | Remove `ICheckoutSoftHoldService`, `CheckoutSoftHoldService`, `SoftHold` from Inventory codebase | ⬜ Pending Presale/Checkout Slice 1 switch |
-| `AvailabilityChanged` integration message + publishing in `StockService` | ⬜ Not started |
+| `AvailabilityChanged` integration message + publishing in `StockService` | ⏸ Deferred — no consumer (Presale/Checkout Slice 1) yet |
 | Message contracts (`OrderPlaced`, `OrderCancelled`, `PaymentConfirmed`, `OrderShipped`, `RefundApproved`) | ✅ Done |
 | Unit tests (`StockItem` aggregate, `StockService`, soft-hold service) | ✅ Done |
-| DB migration (`InitInventorySchema` — three tables) | ⬜ Not started |
+| DB migration (`InitInventorySchema` — four tables) | ✅ Done — runs automatically on startup via `RunMigrationsOnStart` |
 | Data migration (`Items.Quantity` → `inventory.StockItems`, product data → `inventory.ProductSnapshots`) | ⬜ Not started |
 | Integration tests | ⬜ Not started |
 | Switch (replace `ItemHandler` calls with `IMessageBroker.PublishAsync`) | ⬜ Not started |
