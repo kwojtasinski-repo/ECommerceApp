@@ -4,7 +4,14 @@
 
 namespace ECommerceApp.Infrastructure.Catalog.Products.Migrations
 {
-    /// <inheritdoc />
+    /// <summary>
+    /// Creates the <c>catalog</c> schema and all initial Catalog BC tables:
+    /// <c>catalog.Categories</c>, <c>catalog.Products</c>, <c>catalog.Tags</c>,
+    /// <c>catalog.Images</c>, <c>catalog.ProductTags</c>.
+    /// Data impact: new schema and tables only — no existing data is modified.
+    /// Rollback: <c>Down()</c> drops all five tables and the schema is left empty;
+    /// run <c>dotnet ef migrations remove</c> before applying to production if needed.
+    /// </summary>
     public partial class InitCatalogSchema : Migration
     {
         /// <inheritdoc />

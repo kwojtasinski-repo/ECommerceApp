@@ -1,9 +1,12 @@
 using AutoMapper;
 using ECommerceApp.Application.Catalog.Products.DTOs;
+using ECommerceApp.Application.Catalog.Products.Messages;
 using ECommerceApp.Application.Catalog.Products.ViewModels;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Messaging;
 using ECommerceApp.Domain.Catalog.Products;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -17,19 +20,22 @@ namespace ECommerceApp.Application.Catalog.Products.Services
         private readonly IProductTagRepository _tagRepo;
         private readonly IImageUrlBuilder _urlBuilder;
         private readonly IMapper _mapper;
+        private readonly IMessageBroker _broker;
 
         public ProductService(
             IProductRepository productRepo,
             ICategoryRepository categoryRepo,
             IProductTagRepository tagRepo,
             IImageUrlBuilder urlBuilder,
-            IMapper mapper)
+            IMapper mapper,
+            IMessageBroker broker)
         {
             _productRepo = productRepo;
             _categoryRepo = categoryRepo;
             _tagRepo = tagRepo;
             _urlBuilder = urlBuilder;
             _mapper = mapper;
+            _broker = broker;
         }
 
         public async Task<int> AddProduct(CreateProductDto dto)
@@ -151,6 +157,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
 
             product.Publish();
             await _productRepo.UpdateAsync(product);
+            await _broker.PublishAsync(new ProductPublished(product.Id.Value, product.Name.Value, false, DateTime.UtcNow));
         }
 
         public async Task UnpublishProduct(int id)
@@ -163,6 +170,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
 
             product.Unpublish();
             await _productRepo.UpdateAsync(product);
+            await _broker.PublishAsync(new ProductUnpublished(product.Id.Value, DateTime.UtcNow));
         }
 
         public async Task<bool> ProductExists(int id)

@@ -273,14 +273,14 @@ CreateMap<ImageFileName, string>().ConvertUsing(x => x.Value);
 - [ ] `ProductDbContext` uses schema `"catalog"`
 - [ ] `ProductService`, `CategoryService`, `ProductTagService` are each `internal sealed`
 - [ ] `CategorySlug` enforces max length 100; `TagSlug` enforces max length 30
-- [ ] `ProductStatus` enum has four values: `Draft`, `Published`, `Unpublished`, `Discontinued`
-- [ ] `UnpublishReason` enum lives under `Domain/Catalog/Products/`
-- [ ] `Product.Unpublish(UnpublishReason reason)` takes a reason parameter
-- [ ] `Product.Discontinue()` throws `DomainException` if already `Discontinued`
-- [ ] `Product.UpdateDetails(...)` returns `ProductDetailsUpdated` domain event — not `void`
-- [ ] `AddImage`/`SetMainImage` raise `ProductMainImageUpdated` domain event when main image changes
-- [ ] Integration messages `ProductAdded`, `ProductUpdated`, `ProductMainImageUpdated` live in `Application/Catalog/Products/Messages/`
-- [ ] `ProductUnpublished` integration message carries `Reason: UnpublishReason` field
+- [ ] `ProductStatus` enum has four values: `Draft`, `Published`, `Unpublished`, `Discontinued` _(⏸ `Discontinued` deferred)_
+- [ ] `UnpublishReason` enum lives under `Domain/Catalog/Products/` _(⏸ deferred)_
+- [ ] `Product.Unpublish(UnpublishReason reason)` takes a reason parameter _(⏸ deferred)_
+- [ ] `Product.Discontinue()` throws `DomainException` if already `Discontinued` _(⏸ deferred)_
+- [ ] `Product.UpdateDetails(...)` returns `ProductDetailsUpdated` domain event — not `void` _(⏸ deferred)_
+- [ ] `AddImage`/`SetMainImage` raise `ProductMainImageUpdated` domain event when main image changes _(⏸ deferred)_
+- [ ] Integration messages `ProductAdded`, `ProductUpdated`, `ProductMainImageUpdated` live in `Application/Catalog/Products/Messages/` _(⏸ deferred)_
+- [ ] `ProductUnpublished` integration message carries `Reason: UnpublishReason` field _(⏸ deferred)_
 
 ## Implementation Status
 
@@ -290,18 +290,19 @@ CreateMap<ImageFileName, string>().ConvertUsing(x => x.Value);
 | Infrastructure (`ProductDbContext`, `catalog.*` schema, EF configs with `HasMaxLength`, `ProductRepository`, `CategoryRepository`, `ProductTagRepository`, DI) | ✅ Done |
 | Application (DTOs with FluentValidation, ViewModels with AutoMapper, `IProductService`/`ProductService`, `ICategoryService`, `IProductTagService`, global VO converters) | ✅ Done |
 | Unit tests (`ProductAggregateTests`, `ValueObjectTests`) | ✅ Done |
-| DB migration (`InitCatalogSchema`, `catalog.*` tables) | ⬜ Pending approval |
+| Publish `ProductPublished` + `ProductUnpublished` via `IMessageBroker` in `ProductService` | ✅ Done |
+| DB migration (`InitCatalogSchema`, `catalog.*` tables) | ✅ Done — runs automatically on startup via `RunMigrationsOnStart` |
 | Integration tests | ⬜ Not started |
 | Controller migration (`ItemController`, `ImageController`, `TagController`) | ⬜ Not started |
 | Atomic switch — remove legacy `Domain.Model.Item`, `Image`, `Tag`, `Brand`, `Type` | ⬜ After integration tests |
 | `Category.ParentId` + `IsVisible` (hierarchy / filtering) | ⬜ Separate ADR required — ADR-0007 §8 |
 | `Tag.Color` + `IsVisible` | ⬜ Deferred — ADR-0007 §9 |
-| Add `Discontinued` to `ProductStatus` + `Discontinue()` on aggregate | ⬜ Not started |
-| Add `UnpublishReason` enum + update `Unpublish(reason)` signature | ⬜ Not started |
-| `UpdateDetails()` returns `ProductDetailsUpdated` domain event (not void) | ⬜ Not started |
-| `AddImage`/`SetMainImage` raise `ProductMainImageUpdated` domain event | ⬜ Not started |
-| New integration messages: `ProductAdded`, `ProductUpdated`, `ProductMainImageUpdated` | ⬜ Not started |
-| Update `ProductUnpublished` message to carry `UnpublishReason` | ⬜ Not started |
+| Add `Discontinued` to `ProductStatus` + `Discontinue()` on aggregate | ⏸ Deferred — no handler for `ProductDiscontinued` yet |
+| Add `UnpublishReason` enum + update `Unpublish(reason)` signature | ⏸ Deferred — no downstream consumer for reason field |
+| `UpdateDetails()` returns `ProductDetailsUpdated` domain event (not void) | ⏸ Deferred — no consumer for `ProductDetailsUpdated` yet |
+| `AddImage`/`SetMainImage` raise `ProductMainImageUpdated` domain event | ⏸ Deferred — no consumer for `ProductMainImageUpdated` yet |
+| New integration messages: `ProductAdded`, `ProductUpdated`, `ProductMainImageUpdated` | ⏸ Deferred — no consumer exists yet |
+| Update `ProductUnpublished` message to carry `UnpublishReason` | ⏸ Deferred — depends on `UnpublishReason` enum (row above) |
 
 ## References
 
@@ -310,4 +311,4 @@ CreateMap<ImageFileName, string>().ConvertUsing(x => x.Value);
   - [ADR-0003 — Feature-Folder Organization for New Bounded Context Code](./0003-feature-folder-organization-for-new-bounded-context-code.md)
   - [ADR-0006 — TypedId and Value Objects as Shared Domain Primitives](./0006-typedid-and-value-objects-as-shared-domain-primitives.md)
   - [ADR-0011 — Inventory/Availability BC Design](./0011-inventory-availability-bc-design.md) (ProductSnapshot consumes Catalog events)
-  - [ADR-0012 — Presale/Checkout BC Design](./0012-presale-checkout-bc-design.md) (StorefrontProduct consumes Catalog events)
+  - [ADR-0012 — Presale/Checkout BC Design](./0012-presale-checkout-bc-design.md) (Presale/Checkout BC; Slice 1 has zero message subscriptions)

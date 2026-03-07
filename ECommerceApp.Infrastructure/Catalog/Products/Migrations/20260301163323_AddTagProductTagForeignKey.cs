@@ -4,8 +4,12 @@
 
 namespace ECommerceApp.Infrastructure.Catalog.Products.Migrations
 {
-    /// <inheritdoc />
-    // Adds FK_ProductTags_Tags_TagId (CASCADE) so deleting a Tag automatically removes its ProductTag join rows.
+    /// <summary>
+    /// Adds <c>FK_ProductTags_Tags_TagId</c> (CASCADE DELETE) to <c>catalog.ProductTags</c>
+    /// so that deleting a <c>Tag</c> automatically removes its join rows in <c>ProductTags</c>.
+    /// Data impact: schema-only — no row data is changed.
+    /// Rollback: <c>Down()</c> drops the foreign key; the join rows remain intact.
+    /// </summary>
     public partial class AddTagProductTagForeignKey : Migration
     {
         /// <inheritdoc />
