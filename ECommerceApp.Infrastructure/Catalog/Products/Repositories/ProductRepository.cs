@@ -2,6 +2,7 @@ using ECommerceApp.Domain.Catalog.Products;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
@@ -91,5 +92,12 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
             => await _context.Products
                 .Where(p => ids.Contains(p.Id.Value))
                 .ToListAsync();
+
+        public async Task<decimal?> GetUnitPriceAsync(ProductId id, CancellationToken ct = default)
+            => await _context.Products
+                .AsNoTracking()
+                .Where(p => p.Id == id && p.Status == ProductStatus.Published)
+                .Select(p => (decimal?)p.Cost.Amount)
+                .FirstOrDefaultAsync(ct);
     }
 }

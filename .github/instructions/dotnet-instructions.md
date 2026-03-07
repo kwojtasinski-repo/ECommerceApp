@@ -69,6 +69,14 @@ throw new BusinessException($"Brand with id '{id}' was not found",
 try { ... } catch (Exception ex) { return BadRequest(ex.Message); }
 ```
 
+> **Result-based error handling — permitted alternative for expected outcomes.**
+> When a failure is a normal, expected business outcome rather than an exceptional condition, returning a result value (`bool`, `enum`, or nullable type) is preferred over throwing `BusinessException`. The primary reason is that exceptions carry stack-unwinding and allocation overhead that is wasteful on paths where failure is anticipated on every call. Use result-based handling when:
+> - A resource is expected to sometimes not exist — return `null` / `T?` instead of throwing
+> - A business check routinely fails under normal user input — e.g. "product not found", "insufficient stock", "item not in cart" — return an enum or `bool`
+> - The caller needs to distinguish between multiple failure reasons to respond differently — use a named enum over a message string
+>
+> Domain aggregate invariant violations (null arguments, invalid state, programming errors) still throw `DomainException` — these are bugs, not expected flow.
+
 ## 5. BaseController — Web and API
 
 Both `ECommerceApp.Web` and `ECommerceApp.API` have a `BaseController` that all controllers must inherit from:

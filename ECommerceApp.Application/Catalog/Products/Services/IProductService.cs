@@ -1,6 +1,7 @@
 using ECommerceApp.Application.Catalog.Products.DTOs;
 using ECommerceApp.Application.Catalog.Products.ViewModels;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.Catalog.Products.Services
@@ -16,5 +17,6 @@ namespace ECommerceApp.Application.Catalog.Products.Services
         Task PublishProduct(int id);
         Task UnpublishProduct(int id);
         Task<bool> ProductExists(int id);
+        Task<decimal?> GetUnitPriceAsync(int id, CancellationToken ct = default);
     }
 }

@@ -67,7 +67,7 @@ namespace ECommerceApp.UnitTests.Catalog.Products
             var product = Product.Create("Test", 10m, "Desc", 1);
             product.Publish();
 
-            var @event = product.Unpublish();
+            var @event = product.Unpublish(UnpublishReason.ManualReview);
 
             product.Status.Should().Be(ProductStatus.Unpublished);
             @event.Should().NotBeNull();
@@ -79,7 +79,7 @@ namespace ECommerceApp.UnitTests.Catalog.Products
         {
             var product = Product.Create("Test", 10m, "Desc", 1);
 
-            var act = () => product.Unpublish();
+            var act = () => product.Unpublish(UnpublishReason.ManualReview);
 
             act.Should().Throw<DomainException>().WithMessage("*Only published*");
         }

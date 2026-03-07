@@ -280,6 +280,10 @@ ECommerceApp.API/Controllers/Presale/
   extraction requires changing only `Infrastructure/Presale/Checkout/Adapters/`.
 - **Price captured at add-to-cart** - `CartItem.UnitPrice` is immutable after add. Downstream
   order lines use this price regardless of later Catalog price changes.
+- **Expected failures use result types** - `CartService` and `SoftReservationService` return
+  `bool`, named enum values, or `null` for predictable outcomes (product not found, insufficient
+  stock, item not in cart). `BusinessException` is reserved for programming errors and true
+  domain invariant violations only.
 
 ### Negative
 - `StorefrontController` makes two in-process service calls per listing request (Catalog +
@@ -332,12 +336,16 @@ ECommerceApp.API/Controllers/Presale/
    `SoftReservation`, `ICartRepository`.
 4. Create `Application/Presale/Checkout/` with `ICatalogClient`, `IStockClient`, `ICartService`,
    `CartService`, `ISoftReservationService`, `SoftReservationService`, DTOs, `PresaleOptions`.
+   Add `Task<decimal?> GetUnitPriceAsync(int id)` to `IProductService` and `ProductService`
+   (Catalog BC prerequisite; `CatalogClientAdapter` depends on this method).
 5. Create `Infrastructure/Presale/Checkout/` with `PresaleDbContext`, `presale.*` schema,
    `CartRepository`, `CatalogClientAdapter`, `StockClientAdapter`, DI registration.
 6. Generate EF migration `InitPresaleSchema` targeting `PresaleDbContext`.
 7. Move `SoftHoldTtl` from `InventoryOptions` to `PresaleOptions.SoftReservationTtl`.
 8. Remove `ICheckoutSoftHoldService`, `CheckoutSoftHoldService`, `SoftHold` from Inventory
-   codebase. Update Inventory unit tests accordingly.
+   codebase. Remove the `_softHoldService.RemoveAsync(...)` call from `StockService.ReserveAsync`
+   (soft reservation removal is owned by `CartService` in Slice 2 via `ISoftReservationService`).
+   Update Inventory DI registration and unit tests accordingly.
 9. Create `StorefrontController` in `ECommerceApp.API/Controllers/Presale/` (BFF endpoint).
 10. Write unit tests for `SoftReservationService` and `CartService`.
 
@@ -362,6 +370,24 @@ ECommerceApp.API/Controllers/Presale/
 - [ ] No cross-BC navigation properties - `ProductId`, `UserId` are plain references
 - [ ] `SoftReservationTtl` is in `PresaleOptions` - not in `InventoryOptions`
 - [ ] Presale has zero `IMessageHandler<T>` registrations in Slice 1 - no event subscriptions
+- [ ] `CartService` and `SoftReservationService` do not throw `BusinessException` for expected business outcomes — return `bool`, enum, or `null` instead
+- [ ] `IProductService` has `GetUnitPriceAsync(int id)` returning `Task<decimal?>` before `CatalogClientAdapter` is implemented
+- [ ] `StockService.ReserveAsync` no longer calls `_softHoldService.RemoveAsync` after atomic switch
+
+## Implementation Status
+
+| Step | Description | Status |
+|------|-------------|--------|
+| 1 | Catalog domain: `Discontinued`, `UnpublishReason`, updated events | ⬜ Not started |
+| 2 | Catalog integration messages: `ProductAdded`, `ProductUpdated`, `ProductMainImageUpdated` | ⬜ Not started |
+| 3 | `Domain/Presale/Checkout/`: `Cart`, `CartItem`, `CartId`, `CartItemId`, `SoftReservation`, `ICartRepository` | ⬜ Not started |
+| 4 | `Application/Presale/Checkout/`: services, contracts, DTOs, `PresaleOptions`; `GetUnitPriceAsync` on `IProductService` | ⬜ Not started |
+| 5 | `Infrastructure/Presale/Checkout/`: `PresaleDbContext`, repositories, adapters, DI | ⬜ Not started |
+| 6 | EF migration `InitPresaleSchema` | ⬜ Not started |
+| 7 | `PresaleOptions.SoftReservationTtl` moved from `InventoryOptions.SoftHoldTtl` | ⬜ Not started |
+| 8 | Atomic switch: remove Inventory soft-hold artifacts; decouple `StockService.ReserveAsync` | ⬜ Not started |
+| 9 | `StorefrontController` BFF endpoint | ⬜ Not started |
+| 10 | Unit tests for `SoftReservationService` and `CartService` | ⬜ Not started |
 
 ## References
 

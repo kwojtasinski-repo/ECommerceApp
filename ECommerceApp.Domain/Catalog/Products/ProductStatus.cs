@@ -4,6 +4,7 @@ namespace ECommerceApp.Domain.Catalog.Products
     {
         Draft = 0,
         Published = 1,
-        Unpublished = 2
+        Unpublished = 2,
+        Discontinued = 3
     }
 }

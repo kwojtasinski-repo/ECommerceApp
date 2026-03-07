@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Domain.Catalog.Products
@@ -16,5 +17,6 @@ namespace ECommerceApp.Domain.Catalog.Products
         Task<List<Product>> GetPublishedAsync(int pageSize, int pageNo, string searchString);
         Task<int> CountPublishedAsync(string searchString);
         Task<List<Product>> GetByIdsAsync(IEnumerable<int> ids);
+        Task<decimal?> GetUnitPriceAsync(ProductId id, CancellationToken ct = default);
     }
 }

@@ -51,12 +51,20 @@ namespace ECommerceApp.Domain.Catalog.Products
             return new ProductPublished(Id?.Value ?? 0, DateTime.UtcNow);
         }
 
-        public ProductUnpublished Unpublish()
+        public ProductUnpublished Unpublish(UnpublishReason reason)
         {
             if (Status != ProductStatus.Published)
                 throw new DomainException("Only published products can be unpublished.");
             Status = ProductStatus.Unpublished;
-            return new ProductUnpublished(Id?.Value ?? 0, DateTime.UtcNow);
+            return new ProductUnpublished(Id?.Value ?? 0, reason, DateTime.UtcNow);
+        }
+
+        public ProductDiscontinued Discontinue()
+        {
+            if (Status == ProductStatus.Discontinued)
+                throw new DomainException("Product is already discontinued.");
+            Status = ProductStatus.Discontinued;
+            return new ProductDiscontinued(Id?.Value ?? 0, DateTime.UtcNow);
         }
 
         public void UpdateDetails(string name, decimal cost, string description, int categoryId)

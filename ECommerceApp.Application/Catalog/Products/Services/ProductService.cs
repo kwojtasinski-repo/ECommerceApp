@@ -9,6 +9,7 @@ using ECommerceApp.Domain.Catalog.Products;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.Catalog.Products.Services
@@ -57,6 +58,8 @@ namespace ECommerceApp.Application.Catalog.Products.Services
             }
 
             var id = await _productRepo.AddAsync(product);
+            var tagIds = dto.TagIds is not null ? dto.TagIds : System.Array.Empty<int>();
+            await _broker.PublishAsync(new ProductAdded(id.Value, dto.Name, dto.Cost, dto.Description, dto.CategoryId, tagIds.ToList().AsReadOnly(), DateTime.UtcNow));
             return id.Value;
         }
 
@@ -80,6 +83,8 @@ namespace ECommerceApp.Application.Catalog.Products.Services
                 product.ReplaceTags(dto.TagIds.Select(id => new TagId(id)));
 
             await _productRepo.UpdateAsync(product);
+            var tagIds = product.ProductTags.Select(pt => pt.TagId.Value).ToList().AsReadOnly();
+            await _broker.PublishAsync(new ProductUpdated(product.Id.Value, product.Name.Value, product.Cost.Amount, product.Description.Value, product.CategoryId.Value, tagIds, DateTime.UtcNow));
             return true;
         }
 
@@ -168,14 +173,19 @@ namespace ECommerceApp.Application.Catalog.Products.Services
                     $"Product with id '{id}' was not found",
                     ErrorCode.Create("productNotFound", ErrorParameter.Create("id", id)));
 
-            product.Unpublish();
+            var @event = product.Unpublish(Domain.Catalog.Products.UnpublishReason.ManualReview);
             await _productRepo.UpdateAsync(product);
-            await _broker.PublishAsync(new ProductUnpublished(product.Id.Value, DateTime.UtcNow));
+            await _broker.PublishAsync(new ProductUnpublished(product.Id.Value, @event.Reason, DateTime.UtcNow));
         }
 
         public async Task<bool> ProductExists(int id)
         {
             return await _productRepo.ExistsByIdAsync(new ProductId(id));
+        }
+
+        public async Task<decimal?> GetUnitPriceAsync(int id, CancellationToken ct = default)
+        {
+            return await _productRepo.GetUnitPriceAsync(new ProductId(id), ct);
         }
     }
 }
