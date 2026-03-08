@@ -159,7 +159,8 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | **Currencies** | Reference + external | Rich domain model, `CurrencyCode`/`CurrencyDescription` VOs, own `CurrencyDbContext`, fully async NBP — see ADR-0008 | ✅ New implementation ready (parallel) |
 | **TimeManagement** | Supporting infrastructure | `Channel<T>` async dispatch, `BackgroundService` scheduler + poller + dispatcher, `IScheduledTask` plugin contract, `IDeferredJobScheduler`, `TimeManagementDbContext`, lazy DB init — see ADR-0009 | ✅ New implementation ready (greenfield) |
 | **Inventory/Availability** | Behavioral aggregate | Counter aggregate (`StockItem`), `Reservation`, `ProductSnapshot` ACL, `AvailabilityDbContext`, `RowVersion` optimistic locking, deferred `StockAdjustmentJob` with command coalescing, `PaymentWindowTimeoutJob`, publishes `AvailabilityChanged` outbound — see ADR-0011. Note: `SoftReservation` moved to Presale/Checkout (ADR-0012). | ✅ New implementation ready (parallel) |
-| **Messaging** | Shared infrastructure | `IMessageBroker`, `IMessageHandler<T>`, `BackgroundMessageDispatcher`, retry + dead-letter — see ADR-0010 | ✅ Ready — first message awaits Checkout/Orders BCs |
+| **Messaging** | Shared infrastructure | `IMessageBroker`, `IMessageHandler<T>`, `BackgroundMessageDispatcher`, retry + dead-letter — see ADR-0010 | ✅ Ready — `StockAvailabilityChanged` active; Presale/Checkout Slice 1 subscribed |
+| **Presale/Checkout** | Behavioral (Slice 1) | `CartLine` write-through cache, `SoftReservation` (DB + cache, captures `UnitPrice` at checkout initiation), `StockSnapshot` event-driven read model, `SoftReservationExpiredJob`, ACL interfaces (`ICatalogClient`, `IStockClient`), BFF `StorefrontController` in API — see ADR-0012. Slice 2 (cart-to-order) blocked by Sales/Orders. | ✅ Slice 1 implemented (parallel) |
 | **Identity / IAM** | Infrastructure | ASP.NET Core Identity | ✅ Keep isolated |
 
 ---
@@ -179,8 +180,9 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | **Currencies** | [ADR-0008](../adr/0008-supporting-currencies-bc-design.md), [ADR-0006](../adr/0006-typedid-and-value-objects-as-shared-domain-primitives.md) | DB migration approval → integration tests → migrate `CurrencyController` (→ async) → coordinate with Catalog switch (`ItemService` dep) → atomic switch |
 | **Shared domain primitives** (`TypedId<T>`, `Price`, `Money`, `DomainException`) | [ADR-0006](../adr/0006-typedid-and-value-objects-as-shared-domain-primitives.md) | — complete |
 | **Supporting/TimeManagement** | [ADR-0009](../adr/0009-supporting-timemanagement-bc-design.md) | DB migration approval (two coordinated migrations) → integration tests → `CurrencyRateSyncTask` atomic switch |
-| **Inventory/Availability** | [ADR-0011](../adr/0011-inventory-availability-bc-design.md) | DB migration approval (`InitInventorySchema`) → data migration (`Items.Quantity` → `inventory.StockItems`) → integration tests → replace `ItemHandler` calls with `IMessageBroker.PublishAsync(new OrderPlaced(...))` → atomic switch |
-| **Messaging infrastructure** | [ADR-0010](../adr/0010-in-memory-message-broker-for-cross-bc-communication.md) | First message + handler (awaits Checkout/Orders) → integration tests |
+| **Inventory/Availability** | [ADR-0011](../adr/0011-inventory-availability-bc-design.md) | DB migration approval (`InitInventorySchema`) → data migration (`Items.Quantity` → `inventory.StockItems`) → integration tests → replace `ItemHandler` calls with `IMessageBroker.PublishAsync(new OrderPlaced(...))` → atomic switch. `AvailabilityChanged` publishing ✅. Soft-hold artifacts removed ✅. |
+| **Presale/Checkout — Slice 1** | [ADR-0012](../adr/0012-presale-checkout-bc-design.md) | DB migration approval (`InitPresaleSchema`) → integration tests → Slice 2 blocked by Sales/Orders |
+| **Messaging infrastructure** | [ADR-0010](../adr/0010-in-memory-message-broker-for-cross-bc-communication.md) | Integration tests → activate for additional BCs (Orders, Payments) |
 
 > 🔵 Deferred: IAM refresh token — separate ADR required.
 > 🔵 Deferred: `Category.ParentId`/`IsVisible`, `Tag.Color`/`IsVisible` — tracked in [ADR-0007 §8/§9 Implementation Status](../adr/0007-catalog-bc-product-category-tag-aggregate-design.md).
@@ -191,9 +193,8 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 
 | # | BC | ADR | Status | Blocked by |
 |---|---|---|---|---|
-| 1 | **Sales/Orders** | — | ⬜ Not started | — (legacy migration; Checkout + Payments depend on it) |
-| 2 | **Presale/Checkout — Slice 1** (Cart aggregate + SoftReservation + ACL contracts; `StorefrontController` BFF in `ECommerceApp.API`) | [ADR-0012](../adr/0012-presale-checkout-bc-design.md) | ⬜ Not started | None — depends only on Availability (done) + Catalog (done) |
-| 2b | **Presale/Checkout — Slice 2** (cart + checkout write flow) | ADR pending | ⬜ Not started | Orders (#1) |
+| 1 | **Sales/Orders** | — | ⬜ Not started | — (legacy migration; Checkout Slice 2 + Payments depend on it) |
+| 2 | **Presale/Checkout — Slice 2** (cart + checkout write flow) | ADR pending | ⬜ Not started | Orders (#1) |
 | 3 | **Sales/Payments** | — | ⬜ Not started | Orders (#1); fixes `PaymentHandler → OrderService` sync call |
 | 4 | **Sales/Coupons** | — | ⬜ Not started | Orders (#1) + Payments (#3); fixes `CouponHandler → Order.Cost` |
 | 5 | **Sales/Fulfillment** | — | ⬜ Not started | Availability (done) + Orders (#1) |
@@ -204,7 +205,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 
 | Task | ADR | Status |
 |---|---|---|
-| Per-BC `DbContext` interfaces | Planned ADR-0011 | ⬜ Not started |
+| Per-BC `DbContext` interfaces | Planned ADR-0013 | ⬜ Not started |
 | `PaymentHandler` → event-based coordination | Planned ADR (Saga) | ⬜ Not started |
 | `CouponHandler` — remove direct `Order.Cost` write | ADR-0002 §9 | ⬜ Not started |
 | Remove `ApplicationUser` nav from `Order` | ADR-0002 §8 | ⬜ Part of Sales/Orders migration |

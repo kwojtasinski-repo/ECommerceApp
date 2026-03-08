@@ -972,8 +972,8 @@ No existing code is removed until Step 11. Parallel change strategy applies.
 | Domain (`StockItem`, `Reservation`, `ProductSnapshot`, `PendingStockAdjustment`, typed IDs, repository interfaces, domain events) | ✅ Done |
 | Infrastructure (`AvailabilityDbContext`, `inventory.*` schema, four configurations, four repositories, DI) | ✅ Done |
 | Application (`IStockService`, `StockService`, message handlers, `PaymentWindowTimeoutJob`, `StockAdjustmentJob` with coalescing, DTOs, DI) | ✅ Done |
-| Remove `ICheckoutSoftHoldService`, `CheckoutSoftHoldService`, `SoftHold` from Inventory codebase | ⬜ Pending Presale/Checkout Slice 1 switch |
-| `AvailabilityChanged` integration message + publishing in `StockService` | ⏸ Deferred — no consumer (Presale/Checkout Slice 1) yet |
+| Remove `ICheckoutSoftHoldService`, `CheckoutSoftHoldService`, `SoftHold` from Inventory codebase | ✅ Done — Presale/Checkout Slice 1 implemented (ADR-0012 Step 8) |
+| `AvailabilityChanged` integration message + publishing in `StockService` | ✅ Done — `StockAvailabilityChangedHandler` in Presale/Checkout Slice 1 subscribed (ADR-0012) |
 | Message contracts (`OrderPlaced`, `OrderCancelled`, `PaymentConfirmed`, `OrderShipped`, `RefundApproved`) | ✅ Done |
 | Unit tests (`StockItem` aggregate, `StockService`, soft-hold service) | ✅ Done |
 | DB migration (`InitInventorySchema` — four tables) | ✅ Done — runs automatically on startup via `RunMigrationsOnStart` |
