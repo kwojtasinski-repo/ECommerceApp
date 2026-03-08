@@ -579,15 +579,15 @@ ECommerceApp.API/Controllers/Presale/
 | Step | Description | Status |
 |------|-------------|--------|
 | 1 | Catalog domain: `Discontinued`, `UnpublishReason`, `Unpublish(reason)`, `Discontinue()`, `GetUnitPriceAsync` | ✅ Done |
-| 2 | `StockAvailabilityChanged` message; `StockService` publishes after every quantity change | ⬜ Not started |
-| 3 | `Domain/Presale/Checkout/`: `CartLine`, `SoftReservation`, `SoftReservationId`, `StockSnapshot`, repository interfaces | ⬜ Not started |
-| 4 | `Application/Presale/Checkout/`: services, handlers (`StockAvailabilityChangedHandler`, `SoftReservationExpiredJob`), contracts, DTOs, `PresaleOptions` | ⬜ Not started |
-| 5 | `Infrastructure/Presale/Checkout/`: `PresaleDbContext`, EF configs, repositories, adapters, DI; register `SoftReservationExpiredJob` in TimeManagement | ⬜ Not started |
-| 6 | EF migration `InitPresaleSchema` | ⬜ Not started |
-| 7 | `PresaleOptions.SoftReservationTtl` moved from `InventoryOptions.SoftHoldTtl`; startup validation | ⬜ Not started |
-| 8 | Atomic switch: remove Inventory soft-hold artifacts; decouple `StockService.ReserveAsync` | ⬜ Not started |
-| 9 | `StorefrontController` BFF endpoint | ⬜ Not started |
-| 10 | Unit tests: `CartService`, `SoftReservationService`, `StockAvailabilityChangedHandler`, `SoftReservationExpiredJob` | ⬜ Not started |
+| 2 | `StockAvailabilityChanged` message; `StockService` publishes after every quantity change | ✅ Done |
+| 3 | `Domain/Presale/Checkout/`: `CartLine`, `SoftReservation`, `SoftReservationId`, `StockSnapshot`, repository interfaces | ✅ Done |
+| 4 | `Application/Presale/Checkout/`: services, handlers (`StockAvailabilityChangedHandler`, `SoftReservationExpiredJob`), contracts, DTOs, `PresaleOptions` | ✅ Done |
+| 5 | `Infrastructure/Presale/Checkout/`: `PresaleDbContext`, EF configs, repositories, adapters, DI; register `SoftReservationExpiredJob` in TimeManagement | ✅ Done |
+| 6 | EF migration `InitPresaleSchema` | ⬜ Pending human approval (migration-policy.md) |
+| 7 | `PresaleOptions.SoftReservationTtl` moved from `InventoryOptions.SoftHoldTtl`; startup validation | ✅ Done |
+| 8 | Atomic switch: remove Inventory soft-hold artifacts; decouple `StockService.ReserveAsync` | ✅ Done |
+| 9 | `StorefrontController` BFF endpoint | ✅ Done |
+| 10 | Unit tests: `CartService`, `SoftReservationService`, `StockAvailabilityChangedHandler`, `SoftReservationExpiredJob` | ✅ Done |
 
 ## References
 

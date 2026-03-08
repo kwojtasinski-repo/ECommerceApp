@@ -7,6 +7,7 @@ namespace ECommerceApp.Domain.Inventory.Availability
     public interface IStockItemRepository
     {
         Task<StockItem?> GetByProductIdAsync(int productId, CancellationToken ct = default);
+        IAsyncEnumerable<StockItem> GetByProductIdsAsync(IReadOnlyList<int> productIds, CancellationToken ct = default);
         Task<StockItem?> GetByIdAsync(StockItemId id, CancellationToken ct = default);
         Task AddAsync(StockItem stockItem, CancellationToken ct = default);
         Task UpdateAsync(StockItem stockItem, CancellationToken ct = default);

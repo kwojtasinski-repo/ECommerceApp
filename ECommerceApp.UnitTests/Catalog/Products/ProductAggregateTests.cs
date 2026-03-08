@@ -233,7 +233,7 @@ namespace ECommerceApp.UnitTests.Catalog.Products
         {
             var product = Product.Create("Test", 10m, "Desc", 1);
             product.Publish();
-            product.Unpublish();
+            product.Unpublish(UnpublishReason.ManualReview);
 
             var @event = product.Publish();
 

@@ -22,9 +22,11 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout
             services.AddScoped<IDbContextMigrator, DbContextMigrator<PresaleDbContext>>();
 
             return services
-                .AddScoped<ICartRepository, CartRepository>()
                 .AddScoped<ICatalogClient, CatalogClientAdapter>()
-                .AddScoped<IStockClient, StockClientAdapter>();
+                .AddScoped<IStockClient, StockClientAdapter>()
+                .AddScoped<ICartLineRepository, CartLineRepository>()
+                .AddScoped<ISoftReservationRepository, SoftReservationRepository>()
+                .AddScoped<IStockSnapshotRepository, StockSnapshotRepository>();
         }
     }
 }

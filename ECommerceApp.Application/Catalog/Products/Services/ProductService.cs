@@ -58,8 +58,6 @@ namespace ECommerceApp.Application.Catalog.Products.Services
             }
 
             var id = await _productRepo.AddAsync(product);
-            var tagIds = dto.TagIds is not null ? dto.TagIds : System.Array.Empty<int>();
-            await _broker.PublishAsync(new ProductAdded(id.Value, dto.Name, dto.Cost, dto.Description, dto.CategoryId, tagIds.ToList().AsReadOnly(), DateTime.UtcNow));
             return id.Value;
         }
 
@@ -83,8 +81,6 @@ namespace ECommerceApp.Application.Catalog.Products.Services
                 product.ReplaceTags(dto.TagIds.Select(id => new TagId(id)));
 
             await _productRepo.UpdateAsync(product);
-            var tagIds = product.ProductTags.Select(pt => pt.TagId.Value).ToList().AsReadOnly();
-            await _broker.PublishAsync(new ProductUpdated(product.Id.Value, product.Name.Value, product.Cost.Amount, product.Description.Value, product.CategoryId.Value, tagIds, DateTime.UtcNow));
             return true;
         }
 

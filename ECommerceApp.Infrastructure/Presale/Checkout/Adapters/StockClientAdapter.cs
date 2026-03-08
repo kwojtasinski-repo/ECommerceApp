@@ -14,7 +14,7 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Adapters
             _stockService = stockService;
         }
 
-        public async Task<bool> TryHoldAsync(int productId, int quantity, CancellationToken ct = default)
+        public async Task<bool> TryReserveAsync(int productId, int quantity, CancellationToken ct = default)
         {
             var stock = await _stockService.GetByProductIdAsync(productId, ct);
             if (stock is null)

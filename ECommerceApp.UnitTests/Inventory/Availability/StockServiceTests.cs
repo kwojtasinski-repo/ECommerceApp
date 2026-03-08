@@ -1,12 +1,14 @@
 using ECommerceApp.Application.Inventory.Availability.DTOs;
 using ECommerceApp.Application.Inventory.Availability.Handlers;
 using ECommerceApp.Application.Inventory.Availability.Services;
+using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Domain.Inventory.Availability;
 using ECommerceApp.Domain.Inventory.Availability.ValueObjects;
 using FluentAssertions;
 using Moq;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -21,6 +23,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         private readonly Mock<IPendingStockAdjustmentRepository> _pendingAdjustmentRepo;
         private readonly Mock<ICheckoutSoftHoldService> _softHoldService;
         private readonly Mock<IDeferredJobScheduler> _deferredScheduler;
+        private readonly Mock<IMessageBroker> _broker;
 
         public StockServiceTests()
         {
@@ -30,6 +33,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _pendingAdjustmentRepo = new Mock<IPendingStockAdjustmentRepository>();
             _softHoldService = new Mock<ICheckoutSoftHoldService>();
             _deferredScheduler = new Mock<IDeferredJobScheduler>();
+            _broker = new Mock<IMessageBroker>();
         }
 
         private StockService CreateService() => new(
@@ -38,7 +42,8 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _productSnapshotRepo.Object,
             _pendingAdjustmentRepo.Object,
             _softHoldService.Object,
-            _deferredScheduler.Object);
+            _deferredScheduler.Object,
+            _broker.Object);
 
         // ── GetByProductIdAsync
 
@@ -67,6 +72,40 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             var result = await CreateService().GetByProductIdAsync(99);
 
             result.Should().BeNull();
+        }
+
+        // ── GetByProductIdsAsync ──────────────────────────────────────────────
+
+        [Fact]
+        public async Task GetByProductIdsAsync_AllIdsHaveStock_ShouldYieldAllDtos()
+        {
+            var (s1, _) = StockItem.Create(new StockProductId(1), new StockQuantity(5));
+            var (s2, _) = StockItem.Create(new StockProductId(2), new StockQuantity(3));
+            _stockItemRepo
+                .Setup(r => r.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
+                .Returns(AsAsyncEnumerable(s1, s2));
+
+            var result = new List<StockItemDto>();
+            await foreach (var dto in CreateService().GetByProductIdsAsync(new[] { 1, 2 }))
+                result.Add(dto);
+
+            result.Should().HaveCount(2);
+            result.Should().Contain(d => d.ProductId == 1 && d.AvailableQuantity == 5);
+            result.Should().Contain(d => d.ProductId == 2 && d.AvailableQuantity == 3);
+        }
+
+        [Fact]
+        public async Task GetByProductIdsAsync_EmptyInput_ShouldYieldNothing()
+        {
+            _stockItemRepo
+                .Setup(r => r.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
+                .Returns(AsAsyncEnumerable());
+
+            var result = new List<StockItemDto>();
+            await foreach (var dto in CreateService().GetByProductIdsAsync(System.Array.Empty<int>()))
+                result.Add(dto);
+
+            result.Should().BeEmpty();
         }
 
         // ── InitializeStockAsync ──────────────────────────────────────────────
@@ -330,8 +369,15 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _pendingAdjustmentRepo.Verify(r => r.UpsertAsync(1, 15, It.IsAny<CancellationToken>()), Times.Once);
             _deferredScheduler.Verify(s => s.CancelAsync(
                 StockAdjustmentJob.JobTaskName, "1", It.IsAny<CancellationToken>()), Times.Once);
-            _deferredScheduler.Verify(s => s.ScheduleAsync(
-                StockAdjustmentJob.JobTaskName, "1", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Once);
-        }
-    }
-}
+                            _deferredScheduler.Verify(s => s.ScheduleAsync(
+                            StockAdjustmentJob.JobTaskName, "1", It.IsAny<DateTime>(), It.IsAny<CancellationToken>()), Times.Once);
+                    }
+
+                    private static async IAsyncEnumerable<StockItem> AsAsyncEnumerable(params StockItem[] items)
+                    {
+                        foreach (var item in items)
+                            yield return item;
+                        await Task.CompletedTask;
+                    }
+                }
+            }

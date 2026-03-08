@@ -3,6 +3,7 @@ using ECommerceApp.Domain.Inventory.Availability.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,6 +21,33 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
         public async Task<StockItem?> GetByProductIdAsync(int productId, CancellationToken ct = default)
             => await _context.StockItems
                 .FirstOrDefaultAsync(s => s.ProductId == new StockProductId(productId), ct);
+
+        public async IAsyncEnumerable<StockItem> GetByProductIdsAsync(
+            IReadOnlyList<int> productIds,
+            [EnumeratorCancellation] CancellationToken ct = default)
+        {
+            if (productIds.Count == 0)
+            {
+                yield break;
+            }
+
+            for (int i = 0; i < productIds.Count; i += BatchSize)
+            {
+                var batch = productIds.Skip(i).Take(BatchSize)
+                            .Select(id => new StockProductId(id))
+                            .ToList();
+                await foreach (var item in _context.StockItems
+                    .AsNoTracking()
+                    .Where(s => batch.Contains(s.ProductId))
+                    .AsAsyncEnumerable()
+                    .WithCancellation(ct))
+                {
+                    yield return item;
+                }
+            }
+        }
+
+        private const int BatchSize = 200;
 
         public async Task<StockItem?> GetByIdAsync(StockItemId id, CancellationToken ct = default)
             => await _context.StockItems

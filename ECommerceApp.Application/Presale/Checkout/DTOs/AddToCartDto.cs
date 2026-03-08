@@ -1,4 +1,4 @@
 namespace ECommerceApp.Application.Presale.Checkout.DTOs
 {
-    public sealed record AddToCartDto(int ProductId, int Quantity);
+    public sealed record AddToCartDto(string UserId, int ProductId, int Quantity);
 }

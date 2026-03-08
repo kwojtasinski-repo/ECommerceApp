@@ -5,8 +5,9 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout
 {
     internal sealed class PresaleDbContext : DbContext
     {
-        public DbSet<Cart> Carts => Set<Cart>();
-        public DbSet<CartItem> CartItems => Set<CartItem>();
+        public DbSet<CartLine> CartLines => Set<CartLine>();
+        public DbSet<SoftReservation> SoftReservations => Set<SoftReservation>();
+        public DbSet<StockSnapshot> StockSnapshots => Set<StockSnapshot>();
 
         public PresaleDbContext(DbContextOptions<PresaleDbContext> options) : base(options)
         {
