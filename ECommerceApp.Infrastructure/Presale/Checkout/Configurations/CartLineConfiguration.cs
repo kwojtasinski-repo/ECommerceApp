@@ -21,7 +21,8 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Configurations
                    .HasConversion(id => id.Value, v => new PresaleProductId(v));
 
             builder.Property(e => e.Quantity)
-                   .HasConversion(q => q.Value, v => new Quantity(v));
+                   .HasConversion(q => q.Value, v => new Quantity(v))
+                   .IsRequired();
         }
     }
 }

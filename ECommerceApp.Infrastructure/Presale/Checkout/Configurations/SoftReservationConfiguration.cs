@@ -17,18 +17,22 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Configurations
                    .ValueGeneratedOnAdd();
 
             builder.Property(e => e.ProductId)
-                   .HasConversion(id => id.Value, v => new PresaleProductId(v));
+                   .HasConversion(id => id.Value, v => new PresaleProductId(v))
+                   .IsRequired();
 
             builder.Property(e => e.UserId)
                    .HasConversion(id => id.Value, v => new PresaleUserId(v))
-                   .HasMaxLength(450);
+                   .HasMaxLength(450)
+                   .IsRequired();
 
             builder.Property(e => e.Quantity)
-                   .HasConversion(q => q.Value, v => new Quantity(v));
+                   .HasConversion(q => q.Value, v => new Quantity(v))
+                   .IsRequired();
 
             builder.Property(e => e.UnitPrice)
                    .HasConversion(p => p.Amount, v => new Price(v))
-                   .HasColumnType("decimal(18,2)");
+                   .HasColumnType("decimal(18,2)")
+                   .IsRequired();
 
             builder.HasIndex(e => new { e.ProductId, e.UserId }).IsUnique();
         }
