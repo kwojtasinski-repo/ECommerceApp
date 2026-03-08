@@ -21,7 +21,6 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         private readonly Mock<IReservationRepository> _reservationRepo;
         private readonly Mock<IProductSnapshotRepository> _productSnapshotRepo;
         private readonly Mock<IPendingStockAdjustmentRepository> _pendingAdjustmentRepo;
-        private readonly Mock<ICheckoutSoftHoldService> _softHoldService;
         private readonly Mock<IDeferredJobScheduler> _deferredScheduler;
         private readonly Mock<IMessageBroker> _broker;
 
@@ -31,7 +30,6 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _reservationRepo = new Mock<IReservationRepository>();
             _productSnapshotRepo = new Mock<IProductSnapshotRepository>();
             _pendingAdjustmentRepo = new Mock<IPendingStockAdjustmentRepository>();
-            _softHoldService = new Mock<ICheckoutSoftHoldService>();
             _deferredScheduler = new Mock<IDeferredJobScheduler>();
             _broker = new Mock<IMessageBroker>();
         }
@@ -41,7 +39,6 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _reservationRepo.Object,
             _productSnapshotRepo.Object,
             _pendingAdjustmentRepo.Object,
-            _softHoldService.Object,
             _deferredScheduler.Object,
             _broker.Object);
 
@@ -153,7 +150,6 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             result.Should().Be(ReserveStockResult.Success);
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Once);
             _reservationRepo.Verify(r => r.AddAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Once);
-            _softHoldService.Verify(s => s.RemoveAsync(1, "user-1", It.IsAny<CancellationToken>()), Times.Once);
             _deferredScheduler.Verify(s => s.ScheduleAsync(
                 PaymentWindowTimeoutJob.JobTaskName,
                 It.Is<string>(e => e.StartsWith("42:1:3")),

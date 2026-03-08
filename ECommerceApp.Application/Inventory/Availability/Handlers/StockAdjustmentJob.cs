@@ -1,3 +1,5 @@
+using ECommerceApp.Application.Inventory.Availability.Messages;
+using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Domain.Inventory.Availability;
 using Microsoft.EntityFrameworkCore;
@@ -15,13 +17,16 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
 
         private readonly IStockItemRepository _stockItemRepo;
         private readonly IPendingStockAdjustmentRepository _pendingAdjustmentRepo;
+        private readonly IMessageBroker _broker;
 
         public StockAdjustmentJob(
             IStockItemRepository stockItemRepo,
-            IPendingStockAdjustmentRepository pendingAdjustmentRepo)
+            IPendingStockAdjustmentRepository pendingAdjustmentRepo,
+            IMessageBroker broker)
         {
             _stockItemRepo = stockItemRepo;
             _pendingAdjustmentRepo = pendingAdjustmentRepo;
+            _broker = broker;
         }
 
         public async Task ExecuteAsync(JobExecutionContext context, CancellationToken cancellationToken)
@@ -46,11 +51,12 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
             }
 
             var version = pending.Version;
+            StockItem? stock = null;
 
             const int maxAttempts = 5;
             for (var attempt = 0; attempt < maxAttempts; attempt++)
             {
-                var stock = await _stockItemRepo.GetByProductIdAsync(productId, cancellationToken);
+                stock = await _stockItemRepo.GetByProductIdAsync(productId, cancellationToken);
                 if (stock is null)
                 {
                     context.ReportFailure($"Stock not found for product '{productId}'.");
@@ -82,6 +88,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
             }
 
             await _pendingAdjustmentRepo.DeleteIfVersionMatchesAsync(productId, version, cancellationToken);
+            await _broker.PublishAsync(new StockAvailabilityChanged(productId, stock.AvailableQuantity, DateTime.UtcNow));
 
             context.ReportSuccess($"Stock adjusted to {pending.NewQuantity} for product {productId}.");
         }

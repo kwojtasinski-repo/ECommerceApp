@@ -19,7 +19,6 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
         private readonly IReservationRepository _reservationRepo;
         private readonly IProductSnapshotRepository _productSnapshotRepo;
         private readonly IPendingStockAdjustmentRepository _pendingAdjustmentRepo;
-        private readonly ICheckoutSoftHoldService _softHoldService;
         private readonly IDeferredJobScheduler _deferredScheduler;
         private readonly IMessageBroker _broker;
 
@@ -28,7 +27,6 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             IReservationRepository reservationRepo,
             IProductSnapshotRepository productSnapshotRepo,
             IPendingStockAdjustmentRepository pendingAdjustmentRepo,
-            ICheckoutSoftHoldService softHoldService,
             IDeferredJobScheduler deferredScheduler,
             IMessageBroker broker)
         {
@@ -36,7 +34,6 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             _reservationRepo = reservationRepo;
             _productSnapshotRepo = productSnapshotRepo;
             _pendingAdjustmentRepo = pendingAdjustmentRepo;
-            _softHoldService = softHoldService;
             _deferredScheduler = deferredScheduler;
             _broker = broker;
         }
@@ -113,8 +110,6 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
 
             var reservation = Reservation.Create(new StockProductId(dto.ProductId), new ReservationOrderId(dto.OrderId), dto.Quantity, dto.ExpiresAt);
             await _reservationRepo.AddAsync(reservation, ct);
-
-            await _softHoldService.RemoveAsync(dto.ProductId, dto.UserId, ct);
 
             var timeoutEntityId = $"{dto.OrderId}:{dto.ProductId}:{dto.Quantity}";
             await _deferredScheduler.ScheduleAsync(PaymentWindowTimeoutJob.JobTaskName, timeoutEntityId, dto.ExpiresAt, ct);
