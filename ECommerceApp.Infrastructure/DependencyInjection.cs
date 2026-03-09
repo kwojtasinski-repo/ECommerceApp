@@ -7,6 +7,7 @@ using ECommerceApp.Infrastructure.Messaging;
 using ECommerceApp.Infrastructure.Supporting.Currencies;
 using ECommerceApp.Infrastructure.Inventory.Availability;
 using ECommerceApp.Infrastructure.Presale.Checkout;
+using ECommerceApp.Infrastructure.Sales.Orders;
 using ECommerceApp.Infrastructure.Supporting.TimeManagement;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,6 +28,7 @@ namespace ECommerceApp.Infrastructure
             services.AddTimeManagementInfrastructure(configuration);
             services.AddAvailabilityInfrastructure(configuration);
             services.AddPresaleInfrastructure(configuration);
+            services.AddOrdersInfrastructure(configuration);
             return services;
         }
     }

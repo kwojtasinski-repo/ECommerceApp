@@ -351,10 +351,10 @@ Parallel Change — existing code untouched until the atomic switch.
 
 | Layer | Status |
 |---|---|
-| Domain (aggregate, value objects, domain events, repository interfaces) | ⬜ Not started |
-| Infrastructure (DbContext, schema, EF configs, repositories, DI) | ⬜ Not started |
-| Application (DTOs, ViewModels, result types, service interface + impl, DI) | ⬜ Not started |
-| Unit tests | ⬜ Not started |
+| Domain (aggregate, value objects, domain events, repository interfaces) | ✅ Done |
+| Infrastructure (DbContext, schema, EF configs, repositories, DI) | ✅ Done |
+| Application (DTOs, ViewModels, result types, service interface + impl, DI) | ✅ Done |
+| Unit tests | ✅ Done |
 | DB migration | ⬜ Pending approval |
 | Integration tests | ⬜ Not started |
 | Controller migration (Web + API atomic switch) | ⬜ Not started |

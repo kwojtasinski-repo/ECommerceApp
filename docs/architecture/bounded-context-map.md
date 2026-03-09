@@ -151,7 +151,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 
 | Bounded Context | Type | Pattern | Status |
 |---|---|---|---|
-| **Orders** | Behavioral aggregate | Rich domain model → target | 🔴 Currently anemic |
+| **Orders** | Behavioral aggregate | Rich domain model → target | 🟡 New implementation in progress (parallel) — Domain, Application, Infrastructure, Unit tests done; DB migration pending; atomic switch pending |
 | **Payments** | Behavioral aggregate | Rich domain model + state machine → target | 🔴 Currently anemic |
 | **Refunds** | Behavioral aggregate | Rich domain model → target | 🔴 Currently anemic |
 | **Catalog** (`Product`) | Mixed | Rich domain model, `ProductStatus` state machine, owned `Image`, `ProductDbContext`, feature-folder — see ADR-0007 | ✅ New implementation ready (parallel) |
@@ -195,7 +195,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 
 | # | BC | ADR | Status | Blocked by |
 |---|---|---|---|---|
-| 1 | **Sales/Orders** | [ADR-0014](../adr/0014-sales-orders-bc-design.md) | 🔵 ADR accepted, implementation not started | — (legacy migration; Checkout Slice 2 + Payments depend on it) |
+| 1 | **Sales/Orders** | [ADR-0014](../adr/0014-sales-orders-bc-design.md) | 🟡 In progress — Domain ✅, Application ✅, Infrastructure ✅, Unit tests ✅ — DB migration pending approval; integration tests + atomic switch pending | — (legacy migration; Checkout Slice 2 + Payments depend on it) |
 | 2 | **Presale/Checkout — Slice 2** (cart + checkout write flow) | ADR pending | ⬜ Not started | Orders (#1) |
 | 3 | **Sales/Payments** | — | ⬜ Not started | Orders (#1); fixes `PaymentHandler → OrderService` sync call |
 | 4 | **Sales/Coupons** | — | ⬜ Not started | Orders (#1) + Payments (#3); fixes `CouponHandler → Order.Cost` |
