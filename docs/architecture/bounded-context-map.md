@@ -9,6 +9,8 @@
 > TimeManagement BC design: [ADR-0009 — Supporting/TimeManagement BC — Scheduled and Deferred Job Design](../adr/0009-supporting-timemanagement-bc-design.md)
 > Inventory BC design: [ADR-0011 — Inventory/Availability BC Design](../adr/0011-inventory-availability-bc-design.md)
 > Presale/Checkout BC design: [ADR-0012 — Presale/Checkout BC Design](../adr/0012-presale-checkout-bc-design.md)
+> Per-BC DbContext interfaces: [ADR-0013 — Per-BC DbContext Interfaces](../adr/0013-per-bc-dbcontext-interfaces.md)
+> Sales/Orders BC design: [ADR-0014 — Sales/Orders BC — Order and OrderItem Aggregate Design](../adr/0014-sales-orders-bc-design.md)
 
 ---
 
@@ -193,7 +195,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 
 | # | BC | ADR | Status | Blocked by |
 |---|---|---|---|---|
-| 1 | **Sales/Orders** | — | ⬜ Not started | — (legacy migration; Checkout Slice 2 + Payments depend on it) |
+| 1 | **Sales/Orders** | [ADR-0014](../adr/0014-sales-orders-bc-design.md) | 🔵 ADR accepted, implementation not started | — (legacy migration; Checkout Slice 2 + Payments depend on it) |
 | 2 | **Presale/Checkout — Slice 2** (cart + checkout write flow) | ADR pending | ⬜ Not started | Orders (#1) |
 | 3 | **Sales/Payments** | — | ⬜ Not started | Orders (#1); fixes `PaymentHandler → OrderService` sync call |
 | 4 | **Sales/Coupons** | — | ⬜ Not started | Orders (#1) + Payments (#3); fixes `CouponHandler → Order.Cost` |
@@ -205,7 +207,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 
 | Task | ADR | Status |
 |---|---|---|
-| Per-BC `DbContext` interfaces | Planned ADR-0013 | ⬜ Not started |
+| Per-BC `DbContext` interfaces | [ADR-0013](../adr/0013-per-bc-dbcontext-interfaces.md) | ⬜ Not started — gate: 80–100% BC implementations complete |
 | `PaymentHandler` → event-based coordination | Planned ADR (Saga) | ⬜ Not started |
 | `CouponHandler` — remove direct `Order.Cost` write | ADR-0002 §9 | ⬜ Not started |
 | Remove `ApplicationUser` nav from `Order` | ADR-0002 §8 | ⬜ Part of Sales/Orders migration |
@@ -221,4 +223,5 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 - [ADR-0007 — Catalog BC: Product, Category and Tag Aggregate Design](../adr/0007-catalog-bc-product-category-tag-aggregate-design.md)
 - [ADR-0008 — Supporting/Currencies BC: Currency and CurrencyRate Aggregate Design](../adr/0008-supporting-currencies-bc-design.md)
 - [ADR-0009 — Supporting/TimeManagement BC: Scheduled and Deferred Job Design](../adr/0009-supporting-timemanagement-bc-design.md)
+- [ADR-0013 — Per-BC DbContext Interfaces](../adr/0013-per-bc-dbcontext-interfaces.md)
 - [`.github/instructions/dotnet-instructions.md`](../../.github/instructions/dotnet-instructions.md) § 16
