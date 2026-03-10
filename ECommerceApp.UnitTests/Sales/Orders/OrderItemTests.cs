@@ -17,10 +17,10 @@ namespace ECommerceApp.UnitTests.Sales.Orders
             item.ItemId.Should().Be(1);
             item.Quantity.Should().Be(3);
             item.UnitCost.Should().Be(19.99m);
-            item.UserId.Should().Be("user1");
+            item.UserId.Value.Should().Be("user1");
             item.OrderId.Should().BeNull();
             item.CouponUsedId.Should().BeNull();
-            item.RefundId.Should().BeNull();
+            item.Snapshot.Should().BeNull();
         }
 
         [Fact]
@@ -53,6 +53,30 @@ namespace ECommerceApp.UnitTests.Sales.Orders
             var act = () => OrderItem.Create(1, 1, 10m, "");
 
             act.Should().Throw<DomainException>().WithMessage("*UserId*required*");
+        }
+
+        // ── SetSnapshot ───────────────────────────────────────────────────────
+
+        [Fact]
+        public void SetSnapshot_ValidSnapshot_ShouldSetSnapshot()
+        {
+            var item = OrderItem.Create(1, 1, 10m, "user1");
+            var snapshot = new OrderProductSnapshot("Widget", "image.jpg");
+
+            item.SetSnapshot(snapshot);
+
+            item.Snapshot!.ProductName.Should().Be("Widget");
+            item.Snapshot.ImageFileName.Should().Be("image.jpg");
+        }
+
+        [Fact]
+        public void SetSnapshot_NullSnapshot_ShouldThrowDomainException()
+        {
+            var item = OrderItem.Create(1, 1, 10m, "user1");
+
+            var act = () => item.SetSnapshot(null!);
+
+            act.Should().Throw<DomainException>().WithMessage("*snapshot*required*");
         }
 
         // ── UpdateQuantity ────────────────────────────────────────────────────
@@ -110,41 +134,6 @@ namespace ECommerceApp.UnitTests.Sales.Orders
             item.RemoveCoupon();
 
             item.CouponUsedId.Should().BeNull();
-        }
-
-        // ── AssignRefund ──────────────────────────────────────────────────────
-
-        [Fact]
-        public void AssignRefund_ValidRefundId_ShouldSetRefundId()
-        {
-            var item = OrderItem.Create(1, 1, 10m, "user1");
-
-            item.AssignRefund(7);
-
-            item.RefundId.Should().Be(7);
-        }
-
-        [Fact]
-        public void AssignRefund_ZeroRefundId_ShouldThrowDomainException()
-        {
-            var item = OrderItem.Create(1, 1, 10m, "user1");
-
-            var act = () => item.AssignRefund(0);
-
-            act.Should().Throw<DomainException>().WithMessage("*RefundId*positive*");
-        }
-
-        // ── RemoveRefund ──────────────────────────────────────────────────────
-
-        [Fact]
-        public void RemoveRefund_AfterAssign_ShouldClearRefundId()
-        {
-            var item = OrderItem.Create(1, 1, 10m, "user1");
-            item.AssignRefund(7);
-
-            item.RemoveRefund();
-
-            item.RefundId.Should().BeNull();
         }
     }
 }

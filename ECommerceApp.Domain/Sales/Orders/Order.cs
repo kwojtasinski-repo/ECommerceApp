@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Sales.Orders.Events;
+using ECommerceApp.Domain.Sales.Orders.ValueObjects;
 using ECommerceApp.Domain.Shared;
 using System;
 using System.Collections.Generic;
@@ -9,7 +10,7 @@ namespace ECommerceApp.Domain.Sales.Orders
     public class Order
     {
         public OrderId Id { get; private set; }
-        public string Number { get; private set; } = default!;
+        public OrderNumber Number { get; private set; } = default!;
         public decimal Cost { get; private set; }
         public DateTime Ordered { get; private set; }
         public DateTime? Delivered { get; private set; }
@@ -18,39 +19,51 @@ namespace ECommerceApp.Domain.Sales.Orders
         public int? DiscountPercent { get; private set; }
         public int CustomerId { get; private set; }
         public int CurrencyId { get; private set; }
-        public string UserId { get; private set; } = default!;
+        public OrderUserId UserId { get; private set; }
         public int? PaymentId { get; private set; }
         public int? RefundId { get; private set; }
         public int? CouponUsedId { get; private set; }
+        public OrderCustomer Customer { get; private set; } = default!;
 
         private readonly List<OrderItem> _orderItems = new();
         public IReadOnlyList<OrderItem> OrderItems => _orderItems.AsReadOnly();
 
+        private readonly List<OrderEvent> _events = new();
+        public IReadOnlyList<OrderEvent> Events => _events.AsReadOnly();
+
         private Order() { }
 
-        public static Order Create(int customerId, int currencyId, string userId, string number, decimal cost = 0m)
+        public static Order Create(
+            int customerId,
+            int currencyId,
+            OrderUserId userId,
+            OrderNumber number,
+            OrderCustomer customer)
         {
             if (customerId <= 0)
                 throw new DomainException("CustomerId must be positive.");
             if (currencyId <= 0)
                 throw new DomainException("CurrencyId must be positive.");
-            if (string.IsNullOrWhiteSpace(userId))
+            if (userId is null || string.IsNullOrWhiteSpace(userId.Value))
                 throw new DomainException("UserId is required.");
-            if (string.IsNullOrWhiteSpace(number))
+            if (number is null)
                 throw new DomainException("Order number is required.");
-            if (cost < 0)
-                throw new DomainException("Cost cannot be negative.");
+            if (customer is null)
+                throw new DomainException("OrderCustomer is required.");
 
-            return new Order
+            var order = new Order
             {
                 Id = new OrderId(0),
                 CustomerId = customerId,
                 CurrencyId = currencyId,
                 UserId = userId,
                 Number = number,
-                Cost = cost,
+                Customer = customer,
                 Ordered = DateTime.UtcNow
             };
+
+            order.AppendEvent(OrderEventType.OrderPlaced);
+            return order;
         }
 
         public void AddItem(OrderItem item)
@@ -87,6 +100,7 @@ namespace ECommerceApp.Domain.Sales.Orders
 
             IsPaid = true;
             PaymentId = paymentId;
+            AppendEvent(OrderEventType.OrderPaid);
             return new OrderPaid(Id.Value, paymentId, DateTime.UtcNow);
         }
 
@@ -99,6 +113,7 @@ namespace ECommerceApp.Domain.Sales.Orders
 
             IsDelivered = true;
             Delivered = DateTime.UtcNow;
+            AppendEvent(OrderEventType.OrderDelivered);
             return new OrderDelivered(Id.Value, DateTime.UtcNow);
         }
 
@@ -118,6 +133,7 @@ namespace ECommerceApp.Domain.Sales.Orders
             }
 
             CalculateCost();
+            AppendEvent(OrderEventType.CouponApplied);
         }
 
         public void RemoveCoupon()
@@ -131,6 +147,7 @@ namespace ECommerceApp.Domain.Sales.Orders
             }
 
             CalculateCost();
+            AppendEvent(OrderEventType.CouponRemoved);
         }
 
         public void AssignRefund(int refundId)
@@ -139,21 +156,18 @@ namespace ECommerceApp.Domain.Sales.Orders
                 throw new DomainException("RefundId must be positive.");
 
             RefundId = refundId;
-
-            foreach (var item in _orderItems)
-            {
-                item.AssignRefund(refundId);
-            }
+            AppendEvent(OrderEventType.RefundAssigned);
         }
 
         public void RemoveRefund()
         {
             RefundId = null;
+            AppendEvent(OrderEventType.RefundRemoved);
+        }
 
-            foreach (var item in _orderItems)
-            {
-                item.RemoveRefund();
-            }
+        private void AppendEvent(OrderEventType eventType, string? payload = null)
+        {
+            _events.Add(new OrderEvent(Id ?? new OrderId(0), eventType, payload));
         }
     }
 }

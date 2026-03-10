@@ -74,7 +74,8 @@ namespace ECommerceApp.Application.Sales.Orders.Services
                 Quantity = item.Quantity,
                 UnitCost = item.UnitCost,
                 CouponUsedId = item.CouponUsedId,
-                RefundId = item.RefundId
+                ProductName = item.Snapshot?.ProductName,
+                ImageFileName = item.Snapshot?.ImageFileName
             };
 
         private static OrderItemForListVm MapToForListVm(OrderItem item)
@@ -85,7 +86,9 @@ namespace ECommerceApp.Application.Sales.Orders.Services
                 Quantity = item.Quantity,
                 UnitCost = item.UnitCost,
                 UserId = item.UserId,
-                OrderId = item.OrderId
+                OrderId = item.OrderId,
+                ProductName = item.Snapshot?.ProductName,
+                ImageFileName = item.Snapshot?.ImageFileName
             };
     }
 }

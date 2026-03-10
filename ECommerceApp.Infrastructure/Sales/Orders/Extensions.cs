@@ -21,6 +21,8 @@ namespace ECommerceApp.Infrastructure.Sales.Orders
             services.AddScoped<IOrderRepository, OrderRepository>();
             services.AddScoped<IOrderItemRepository, OrderItemRepository>();
             services.AddScoped<ICustomerExistenceChecker, CustomerExistenceChecker>();
+            services.AddScoped<IOrderCustomerResolver, OrderCustomerResolver>();
+            services.AddScoped<IOrderProductResolver, OrderProductResolver>();
 
             return services;
         }

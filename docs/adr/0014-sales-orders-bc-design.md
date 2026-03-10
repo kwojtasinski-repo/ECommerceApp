@@ -128,10 +128,15 @@ Rules (per dotnet-instructions.md §16):
 Domain/Sales/Orders/OrderItem.cs
 ```
 
-- `UnitCost` (`decimal`, validated `>= 0`) — captures the item's price at cart-add time.
-  Stays as plain `decimal` (not `Price` VO) to allow promotional free items (`UnitCost = 0`).
-  The shared `Price` VO enforces `> 0` and is not weakened. See §14 for rationale.
+- `UnitCost` (`decimal`, validated `>= 0`) — captures the item's price at cart-add time from
+  the Presale/Checkout BC. Stays as plain `decimal` (not `Price` VO) to allow promotional free
+  items (`UnitCost = 0`). The shared `Price` VO enforces `> 0` and is not weakened. See §14 for rationale.
+- `OrderProductSnapshot? Snapshot { get; private set; }` — `null` during cart state;
+  set at order-placement time via `SetSnapshot`. See §15 for full design.
 - Static `OrderItem.Create(OrderProductId itemId, int quantity, decimal unitCost, OrderUserId userId)` factory.
+  Snapshot is not a constructor parameter — it is resolved separately at placement time.
+- `void SetSnapshot(OrderProductSnapshot snapshot)` — called by `OrderService.PlaceOrderAsync`
+  for each cart item before persisting; throws `DomainException` if snapshot is null.
 - State-mutation methods: `UpdateQuantity`, `ApplyCoupon`, `RemoveCoupon`.
 - `AssignRefund` and `RemoveRefund` do **not** exist on `OrderItem` — refunds are whole-order
   operations owned by `Order.RefundId` and the event log.
@@ -235,6 +240,7 @@ Infrastructure layer: `Infrastructure/Sales/Orders/Extensions.cs`
   - `AddScoped<IDbContextMigrator, DbContextMigrator<OrdersDbContext>>`
   - `AddScoped<IOrderRepository, OrderRepository>`
   - `AddScoped<IOrderItemRepository, OrderItemRepository>`
+  - `AddScoped<IOrderProductResolver, OrderProductResolver>`
 
 Called from `Application/DependencyInjection.cs` and `Infrastructure/DependencyInjection.cs`
 respectively. Old registrations are NOT removed until the atomic switch.
@@ -300,7 +306,7 @@ stored as `varchar(25)` with a `UNIQUE` constraint on `sales.Orders`.
 
 **Entity structure:**
 - `OrderEventId(int)` typed ID.
-- `int OrderId` — raw FK; no navigation property back to `Order`.
+- `OrderId OrderId` — typed FK (matches `Order.Id`); no navigation property back to `Order`.
 - `string EventType` — value from `OrderEventTypes` static constants class (`OrderPlaced`,
   `OrderPaid`, `OrderDelivered`, `CouponApplied`, `CouponRemoved`, `RefundAssigned`, `RefundRemoved`).
   String constants, not an `enum` — adding new types requires no migration.
@@ -326,6 +332,71 @@ order-line context where it is intentional.
 > a `FreeItemPolicy` strategy, or a scoped relaxation of `Price` to `>= 0` with an explicit
 > justification invariant. This is out of scope for the current ADR.
 
+### 15. `OrderProductSnapshot` — product display data at placement time
+
+`OrderProductSnapshot` is an EF Core owned type on `OrderItem`, persisted in the separate
+`sales.OrderItemSnapshots` table. It captures the product's display metadata — name and main
+image — **at the time of order placement**, not at cart-add time. This ensures the order
+record is an accurate historical snapshot regardless of future Catalog changes.
+
+**Fields:**
+- `string ProductName` — required; throws `DomainException` if null or whitespace.
+- `string? ImageFileName` — optional; `null` if the product has no image at placement time.
+
+**Why placement time (not cart-add time):**
+- Cart items are ephemeral and mutable — the user may sit in the cart for hours or days.
+- The "contract" forms at placement; display data should reflect the same business moment as price.
+- Avoids unnecessary Catalog BC reads for cart items that are never ordered.
+- Consistent with `OrderCustomer` snapshot, which is also resolved at placement time (§11).
+
+**Price vs. display data separation:**
+- `UnitCost` (`decimal`) is captured at **cart-add time** from the Presale/Checkout BC.
+  This is intentional: the price the customer was shown during browsing is the committed price.
+- `OrderProductSnapshot` (name, image) is captured at **order-placement time** from the
+  Catalog BC. Display metadata does not affect pricing and can be resolved at placement.
+
+**How it is populated — `SnapshotOrderItemsJob` (implemented):**
+
+`OrderService.PlaceOrderAsync` does **not** resolve snapshots synchronously. Populating
+snapshots inline would block order placement while waiting on N Catalog BC reads (one per
+cart item), which degrades latency for large carts.
+
+Instead, snapshots are populated asynchronously by `SnapshotOrderItemsJob`:
+
+- `IOrderProductResolver` ACL interface lives in `Application/Sales/Orders/Contracts/`.
+- `OrderProductResolver` in `Infrastructure/Sales/Orders/Adapters/` calls
+  `IProductService.GetProductDetails(productId, ct)` to read product name and main image URL
+  from the Catalog BC.
+- `OrderPlacedSnapshotHandler` (`Application/Sales/Orders/Handlers/OrderPlacedSnapshotHandler.cs`)
+  subscribes to `OrderPlaced` and resolves snapshots directly for the items of that specific order:
+  1. Loads `OrderItem` rows for the order via `IOrderItemRepository.GetByOrderIdAsync(orderId)`.
+  2. Calls `IOrderProductResolver.ResolveAsync(productId)` for each item's `ItemId`.
+  3. Calls `IOrderItemRepository.SetSnapshotsAsync` with the resolved results.
+  The message broker dispatches handlers asynchronously in the background, so placement latency
+  is unaffected. No `IJobTrigger` dependency — `OrderService` is entirely decoupled from job infrastructure.
+- `SnapshotOrderItemsJob` remains registered as an `IScheduledTask` sweeper (batch size: 64)
+  to catch any items whose snapshot was not resolved by the handler (e.g. transient Catalog BC failure).
+- `OrderItem.SetSnapshot(OrderProductSnapshot snapshot)` — domain method; throws
+  `DomainException` if snapshot is null.
+- `OrderItem.Snapshot` is `null` for cart items and transiently `null` for freshly placed
+  order items until the handler runs. ViewModels must use null-safe access
+  (`i.Snapshot?.ProductName`).
+
+**EF Core configuration:**
+```csharp
+builder.OwnsOne(oi => oi.Snapshot, s =>
+{
+    s.ToTable("OrderItemSnapshots");
+    s.WithOwner().HasForeignKey("OrderItemId");
+    s.Property(p => p.ProductName).HasMaxLength(300).IsRequired();
+    s.Property(p => p.ImageFileName).HasMaxLength(255);
+});
+```
+
+Stored in `sales.OrderItemSnapshots` (separate table) rather than inline columns on
+`sales.OrderItems` — mirrors the `sales.OrderCustomers` pattern (§11) and keeps
+`sales.OrderItems` narrow.
+
 ## Consequences
 
 ### Positive
@@ -335,8 +406,12 @@ order-line context where it is intentional.
   No cross-BC navigation chain at the domain level.
 - Simulation support: any service can create an `Order` in memory, call `AssignCoupon`, and
   read `Cost` without persisting — enables checkout price preview without side effects.
-- `OrderItem.UnitCost` captures price at cart-add time — removes dependency on `Item.Cost`
-  navigation at order-placement time.
+- `OrderItem.UnitCost` captures price at cart-add time from the Presale/Checkout BC —
+  removes dependency on `Item.Cost` navigation and decouples pricing from Catalog changes.
+- `OrderProductSnapshot` preserves product display data (name, image) as it was at placement
+  time — Catalog changes never corrupt historical order presentation.
+- Separating price capture (cart-add, Presale BC) from display-data capture (placement,
+  Catalog BC) aligns each BC's responsibility with the correct business moment.
 - `PaymentHandler` coupling is broken: `Order.MarkAsPaid(paymentId)` is the only entry point
   for transitioning payment state; external mutation (`order.IsPaid = true`) becomes a
   compile error after the switch (private setter).
@@ -377,6 +452,12 @@ order-line context where it is intentional.
   log must join or use navigation.
 - `IOrderCustomerResolver` introduces a synchronous cross-BC read from Sales/Orders →
   AccountProfile at order placement time.
+- `IOrderProductResolver` introduces N synchronous Catalog BC reads (one per cart item) during
+  `PlaceOrderAsync` — mitigated by `AsNoTracking()` queries but may impact placement latency
+  for large carts.
+- `OrderItem.Snapshot` is nullable in cart state — enforcement (non-null after placement) relies
+  on `PlaceOrderAsync` calling `SetSnapshot`; any direct `OrderItem` persistence outside that
+  flow must enforce this invariant separately.
 
 ### Risks & mitigations
 
@@ -525,11 +606,14 @@ Parallel Change — existing code untouched until the atomic switch.
 | Application — initial design (DTOs, ViewModels, result types, service interface + impl, DI) | ✅ Done |
 | Infrastructure — initial design (DbContext, schema, EF configs, repositories, DI) | ✅ Done |
 | Unit tests — initial design | ✅ Done |
-| Domain — refinements (OrderNumber, OrderCustomer, OrderEvent, OrderProductId, OrderUserId, OrderEventTypes, OrderEventId) | ⬜ Not started |
-| Application — refinements (IOrderCustomerResolver, updated OrderService, updated ViewModels) | ⬜ Not started |
-| Infrastructure — refinements (OrderCustomerResolver, updated configs, OrderEventConfiguration) | ⬜ Not started |
-| Unit tests — refinements (updated Order/OrderItem tests + new VO/customer tests) | ⬜ Not started |
-| DB migration | ⬜ Pending approval |
+| Domain — refinements (OrderNumber, OrderCustomer, OrderEvent, OrderProductId, OrderUserId, OrderEventTypes, OrderEventId, OrderProductSnapshot) | ✅ Done |
+| Application — refinements (IOrderCustomerResolver, IOrderProductResolver, updated OrderService + OrderItemService, updated ViewModels) | ✅ Done |
+| Infrastructure — refinements (OrderCustomerResolver, OrderProductResolver, updated EF configs, OrderEventConfiguration, SetSnapshotsAsync) | ✅ Done |
+| Unit tests — refinements (updated Order/OrderItem tests, SetSnapshot tests) | ✅ Done |
+| Domain — FK type alignment (OrderItem.OrderId → OrderId?, OrderEvent.OrderId → OrderId) | ✅ Done |
+| Application — SnapshotOrderItemsJob (sweeper) + OrderPlacedSnapshotHandler (event-driven, resolves snapshots for the placed order's items directly) | ✅ Done |
+| Infrastructure — AssignToOrderAsync switched to change-tracking (ExecuteUpdateAsync incompatible with value converters) | ✅ Done |
+| DB migration (`InitSalesSchema` at `Infrastructure/Sales/Orders/Migrations/`) | ✅ Done — pending production sign-off per migration policy |
 | Integration tests | ⬜ Not started |
 | Controller migration (Web + API atomic switch) | ⬜ Not started |
 | Atomic switch | ⬜ After integration tests |

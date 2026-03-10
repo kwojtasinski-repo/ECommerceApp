@@ -58,7 +58,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
         {
             var query = _context.Orders.AsNoTracking();
             if (!string.IsNullOrWhiteSpace(search))
-                query = query.Where(o => o.Number.Contains(search));
+                query = query.Where(o => o.Number.Value.Contains(search));
             return await query
                 .OrderByDescending(o => o.Ordered)
                 .Skip(pageSize * (pageNo - 1))
@@ -70,16 +70,19 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
         {
             var query = _context.Orders.AsNoTracking();
             if (!string.IsNullOrWhiteSpace(search))
-                query = query.Where(o => o.Number.Contains(search));
+                query = query.Where(o => o.Number.Value.Contains(search));
             return await query.CountAsync(ct);
         }
 
         public async Task<IReadOnlyList<Order>> GetByUserIdAsync(string userId, CancellationToken ct = default)
-            => await _context.Orders
+        {
+            OrderUserId typedUserId = userId;
+            return await _context.Orders
                 .AsNoTracking()
-                .Where(o => o.UserId == userId)
+                .Where(o => o.UserId == typedUserId)
                 .OrderByDescending(o => o.Ordered)
                 .ToListAsync(ct);
+        }
 
         public async Task<IReadOnlyList<Order>> GetByCustomerIdAsync(int customerId, CancellationToken ct = default)
             => await _context.Orders
@@ -92,7 +95,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
         {
             var query = _context.Orders.AsNoTracking().Where(o => o.IsPaid);
             if (!string.IsNullOrWhiteSpace(search))
-                query = query.Where(o => o.Number.Contains(search));
+                query = query.Where(o => o.Number.Value.Contains(search));
             return await query
                 .OrderByDescending(o => o.Ordered)
                 .Skip(pageSize * (pageNo - 1))
@@ -104,7 +107,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
         {
             var query = _context.Orders.AsNoTracking().Where(o => o.IsPaid);
             if (!string.IsNullOrWhiteSpace(search))
-                query = query.Where(o => o.Number.Contains(search));
+                query = query.Where(o => o.Number.Value.Contains(search));
             return await query.CountAsync(ct);
         }
 

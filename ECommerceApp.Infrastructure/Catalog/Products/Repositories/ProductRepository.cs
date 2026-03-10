@@ -26,11 +26,11 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
         public async Task<Product> GetByIdAsync(ProductId id)
             => await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
 
-        public async Task<Product> GetByIdWithDetailsAsync(ProductId id)
+        public async Task<Product> GetByIdWithDetailsAsync(ProductId id, CancellationToken cancellationToken = default)
             => await _context.Products
                 .Include(p => p.Images)
                 .Include(p => p.ProductTags)
-                .FirstOrDefaultAsync(p => p.Id == id);
+                .FirstOrDefaultAsync(p => p.Id == id, cancellationToken);
 
         public async Task UpdateAsync(Product product)
         {

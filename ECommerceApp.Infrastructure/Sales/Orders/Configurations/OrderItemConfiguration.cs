@@ -15,7 +15,9 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Configurations
                    .HasConversion(x => x.Value, v => new OrderItemId(v))
                    .ValueGeneratedOnAdd();
 
-            builder.Property(oi => oi.ItemId).IsRequired();
+            builder.Property(oi => oi.ItemId)
+                   .HasConversion(id => id.Value, v => new OrderProductId(v))
+                   .IsRequired();
 
             builder.Property(oi => oi.Quantity).IsRequired();
 
@@ -24,14 +26,28 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Configurations
                    .IsRequired();
 
             builder.Property(oi => oi.UserId)
+                   .HasConversion(id => id.Value, v => new OrderUserId(v))
                    .HasMaxLength(450)
                    .IsRequired();
 
             builder.Property(oi => oi.OrderId)
+                   .HasConversion(
+                       id => id != null ? (int?)id.Value : null,
+                       v => v.HasValue ? new OrderId(v.Value) : null)
                    .IsRequired(false);
 
             builder.Property(oi => oi.CouponUsedId);
-            builder.Property(oi => oi.RefundId);
+
+            builder.OwnsOne(oi => oi.Snapshot, s =>
+            {
+                s.ToTable("OrderItemSnapshots");
+                s.WithOwner().HasForeignKey("OrderItemId");
+                s.Property(p => p.ProductName)
+                 .HasMaxLength(300)
+                 .IsRequired();
+                s.Property(p => p.ImageFileName)
+                 .HasMaxLength(255);
+            });
 
             builder.HasIndex(oi => oi.UserId);
             builder.HasIndex(oi => oi.OrderId);

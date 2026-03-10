@@ -7,6 +7,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders
     {
         public DbSet<Order> Orders => Set<Order>();
         public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+        public DbSet<OrderEvent> OrderEvents => Set<OrderEvent>();
 
         public OrdersDbContext(DbContextOptions<OrdersDbContext> options) : base(options)
         {

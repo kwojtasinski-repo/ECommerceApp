@@ -1,3 +1,7 @@
+using ECommerceApp.Application.Messaging;
+using ECommerceApp.Application.Sales.Orders.Handlers;
+using ECommerceApp.Application.Sales.Orders.Messages;
+using ECommerceApp.Application.Supporting.TimeManagement;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ECommerceApp.Application.Sales.Orders.Services
@@ -8,6 +12,8 @@ namespace ECommerceApp.Application.Sales.Orders.Services
         {
             services.AddScoped<IOrderService, OrderService>();
             services.AddScoped<IOrderItemService, OrderItemService>();
+            services.AddScoped<IScheduledTask, SnapshotOrderItemsJob>();
+            services.AddScoped<IMessageHandler<OrderPlaced>, OrderPlacedSnapshotHandler>();
             return services;
         }
     }

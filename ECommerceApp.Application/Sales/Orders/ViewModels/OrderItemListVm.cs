@@ -19,5 +19,7 @@ namespace ECommerceApp.Application.Sales.Orders.ViewModels
         public decimal UnitCost { get; init; }
         public string UserId { get; init; } = default!;
         public int? OrderId { get; init; }
+        public string? ProductName { get; init; }
+        public string? ImageFileName { get; init; }
     }
 }

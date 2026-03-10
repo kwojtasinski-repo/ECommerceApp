@@ -5,6 +5,7 @@ using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Application.Sales.Orders.Results;
 using ECommerceApp.Application.Sales.Orders.ViewModels;
 using ECommerceApp.Domain.Sales.Orders;
+using ECommerceApp.Domain.Sales.Orders.ValueObjects;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,17 +19,20 @@ namespace ECommerceApp.Application.Sales.Orders.Services
         private readonly IOrderRepository _orderRepo;
         private readonly IOrderItemRepository _orderItemRepo;
         private readonly ICustomerExistenceChecker _customerChecker;
+        private readonly IOrderCustomerResolver _customerResolver;
         private readonly IMessageBroker _messageBroker;
 
         public OrderService(
             IOrderRepository orderRepo,
             IOrderItemRepository orderItemRepo,
             ICustomerExistenceChecker customerChecker,
+            IOrderCustomerResolver customerResolver,
             IMessageBroker messageBroker)
         {
             _orderRepo = orderRepo;
             _orderItemRepo = orderItemRepo;
             _customerChecker = customerChecker;
+            _customerResolver = customerResolver;
             _messageBroker = messageBroker;
         }
 
@@ -42,18 +46,22 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             if (cartItems.Count == 0)
                 return PlaceOrderResult.CartItemsNotFound();
 
-            if (cartItems.Any(i => i.UserId != dto.UserId))
+            if (cartItems.Any(i => (string)i.UserId != dto.UserId))
                 return PlaceOrderResult.CartItemsNotOwnedByUser();
 
-            var cost = cartItems.Sum(i => i.UnitCost * i.Quantity);
-            var number = Guid.NewGuid().ToString();
-            var order = Order.Create(dto.CustomerId, dto.CurrencyId, dto.UserId, number, cost);
+            var customer = await _customerResolver.ResolveAsync(dto.CustomerId, ct);
+            var number = OrderNumber.Generate();
+            var order = Order.Create(dto.CustomerId, dto.CurrencyId, dto.UserId, number, customer);
             var orderId = await _orderRepo.AddAsync(order, ct);
 
             await _orderItemRepo.AssignToOrderAsync(dto.CartItemIds, orderId, ct);
 
+            var orderWithItems = await _orderRepo.GetByIdWithItemsAsync(orderId, ct);
+            orderWithItems!.CalculateCost();
+            await _orderRepo.UpdateAsync(orderWithItems, ct);
+
             var items = cartItems
-                .Select(i => new OrderPlacedItem(i.ItemId, i.Quantity))
+                .Select(i => new OrderPlacedItem(i.ItemId.Value, i.Quantity))
                 .ToList();
 
             await _messageBroker.PublishAsync(new OrderPlaced(
@@ -95,7 +103,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
 
         public async Task<OrderOperationResult> MarkAsDeliveredAsync(int orderId, CancellationToken ct = default)
         {
-            var order = await _orderRepo.GetByIdAsync(orderId, ct);
+            var order = await _orderRepo.GetByIdWithItemsAsync(orderId, ct);
             if (order is null)
                 return OrderOperationResult.OrderNotFound;
             if (!order.IsPaid)
@@ -107,7 +115,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             await _orderRepo.UpdateAsync(order, ct);
 
             var items = order.OrderItems
-                .Select(i => new OrderShippedItem(i.ItemId, i.Quantity))
+                .Select(i => new OrderShippedItem(i.ItemId.Value, i.Quantity))
                 .ToList();
 
             await _messageBroker.PublishAsync(new OrderShipped(orderId, items, @event.OccurredAt));
@@ -140,7 +148,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
 
         public async Task<OrderOperationResult> AddRefundAsync(int orderId, int refundId, CancellationToken ct = default)
         {
-            var order = await _orderRepo.GetByIdWithItemsAsync(orderId, ct);
+            var order = await _orderRepo.GetByIdAsync(orderId, ct);
             if (order is null)
                 return OrderOperationResult.OrderNotFound;
 
@@ -207,7 +215,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             => new()
             {
                 Id = order.Id.Value,
-                Number = order.Number,
+                Number = order.Number.Value,
                 Cost = order.Cost,
                 Ordered = order.Ordered,
                 Delivered = order.Delivered,
@@ -220,6 +228,22 @@ namespace ECommerceApp.Application.Sales.Orders.Services
                 RefundId = order.RefundId,
                 CouponUsedId = order.CouponUsedId,
                 DiscountPercent = order.DiscountPercent,
+                Customer = order.Customer is null ? null : new OrderCustomerVm
+                {
+                    FirstName = order.Customer.FirstName,
+                    LastName = order.Customer.LastName,
+                    Email = order.Customer.Email,
+                    PhoneNumber = order.Customer.PhoneNumber,
+                    IsCompany = order.Customer.IsCompany,
+                    CompanyName = order.Customer.CompanyName,
+                    Nip = order.Customer.Nip,
+                    Street = order.Customer.Street,
+                    BuildingNumber = order.Customer.BuildingNumber,
+                    FlatNumber = order.Customer.FlatNumber,
+                    ZipCode = order.Customer.ZipCode,
+                    City = order.Customer.City,
+                    Country = order.Customer.Country
+                },
                 OrderItems = order.OrderItems.Select(i => new OrderItemVm
                 {
                     Id = i.Id.Value,
@@ -227,7 +251,8 @@ namespace ECommerceApp.Application.Sales.Orders.Services
                     Quantity = i.Quantity,
                     UnitCost = i.UnitCost,
                     CouponUsedId = i.CouponUsedId,
-                    RefundId = i.RefundId
+                    ProductName = i.Snapshot?.ProductName,
+                    ImageFileName = i.Snapshot?.ImageFileName
                 }).ToList()
             };
 
@@ -235,7 +260,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             => new()
             {
                 Id = order.Id.Value,
-                Number = order.Number,
+                Number = order.Number.Value,
                 Cost = order.Cost,
                 Ordered = order.Ordered,
                 IsDelivered = order.IsDelivered,

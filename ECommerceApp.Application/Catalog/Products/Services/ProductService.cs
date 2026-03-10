@@ -89,11 +89,13 @@ namespace ECommerceApp.Application.Catalog.Products.Services
             return await _productRepo.DeleteAsync(new ProductId(id));
         }
 
-        public async Task<ProductDetailsVm> GetProductDetails(int id)
+        public async Task<ProductDetailsVm> GetProductDetails(int id, CancellationToken cancellationToken = default)
         {
-            var product = await _productRepo.GetByIdWithDetailsAsync(new ProductId(id));
+            var product = await _productRepo.GetByIdWithDetailsAsync(new ProductId(id), cancellationToken);
             if (product is null)
+            {
                 return null;
+            }
 
             var vm = _mapper.Map<ProductDetailsVm>(product);
             vm.Images = product.Images
