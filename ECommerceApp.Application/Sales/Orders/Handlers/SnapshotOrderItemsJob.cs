@@ -1,7 +1,7 @@
 using ECommerceApp.Application.Sales.Orders.Contracts;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Domain.Sales.Orders;
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -35,20 +35,20 @@ namespace ECommerceApp.Application.Sales.Orders.Handlers
                 return;
             }
 
-            var snapshots = new List<(int ItemId, OrderProductSnapshot Snapshot)>();
-            var failedCount = 0;
+            var productIds = items.Select(i => i.ItemId.Value).ToList();
+            var resolved = await _productResolver.ResolveAllAsync(productIds, cancellationToken);
 
-            foreach (var item in items)
-            {
-                var snapshot = await _productResolver.ResolveAsync(item.ItemId.Value, cancellationToken);
-                if (snapshot is not null)
-                    snapshots.Add((item.Id.Value, snapshot));
-                else
-                    failedCount++;
-            }
+            var snapshots = items
+                .Where(i => resolved.ContainsKey(i.ItemId.Value))
+                .Select(i => (ItemId: i.Id?.Value ?? 0, Snapshot: resolved[i.ItemId.Value]))
+                .ToList();
+
+            var failedCount = items.Count - snapshots.Count;
 
             if (snapshots.Count > 0)
+            {
                 await _orderItemRepo.SetSnapshotsAsync(snapshots, cancellationToken);
+            }
 
             context.ReportSuccess($"Snapshotted {snapshots.Count} item(s); {failedCount} product(s) not found.");
         }

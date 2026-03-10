@@ -14,7 +14,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         {
             var item = OrderItem.Create(1, 3, 19.99m, "user1");
 
-            item.ItemId.Should().Be(1);
+            item.ItemId.Value.Should().Be(1);
             item.Quantity.Should().Be(3);
             item.UnitCost.Should().Be(19.99m);
             item.UserId.Value.Should().Be("user1");

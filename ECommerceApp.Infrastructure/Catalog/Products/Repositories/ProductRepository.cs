@@ -93,6 +93,13 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
                 .Where(p => ids.Contains(p.Id.Value))
                 .ToListAsync();
 
+        public async Task<List<Product>> GetByIdsWithImagesAsync(IEnumerable<int> ids, CancellationToken ct = default)
+            => await _context.Products
+                .AsNoTracking()
+                .Include(p => p.Images)
+                .Where(p => ids.Contains(p.Id.Value))
+                .ToListAsync(ct);
+
         public async Task<decimal?> GetUnitPriceAsync(ProductId id, CancellationToken ct = default)
             => await _context.Products
                 .AsNoTracking()

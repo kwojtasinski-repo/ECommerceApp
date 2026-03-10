@@ -612,6 +612,7 @@ Parallel Change — existing code untouched until the atomic switch.
 | Unit tests — refinements (updated Order/OrderItem tests, SetSnapshot tests) | ✅ Done |
 | Domain — FK type alignment (OrderItem.OrderId → OrderId?, OrderEvent.OrderId → OrderId) | ✅ Done |
 | Application — SnapshotOrderItemsJob (sweeper) + OrderPlacedSnapshotHandler (event-driven, resolves snapshots for the placed order's items directly) | ✅ Done |
+| Unit tests — SnapshotOrderItemsJob (4 cases) + OrderPlacedSnapshotHandler (4 cases) | ✅ Done |
 | Infrastructure — AssignToOrderAsync switched to change-tracking (ExecuteUpdateAsync incompatible with value converters) | ✅ Done |
 | DB migration (`InitSalesSchema` at `Infrastructure/Sales/Orders/Migrations/`) | ✅ Done — pending production sign-off per migration policy |
 | Integration tests | ⬜ Not started |

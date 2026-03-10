@@ -2,7 +2,7 @@ using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Sales.Orders.Contracts;
 using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Domain.Sales.Orders;
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -27,16 +27,18 @@ namespace ECommerceApp.Application.Sales.Orders.Handlers
             if (items.Count == 0)
                 return;
 
-            var snapshots = new List<(int ItemId, OrderProductSnapshot Snapshot)>();
-            foreach (var item in items)
-            {
-                var snapshot = await _productResolver.ResolveAsync(item.ItemId.Value, ct);
-                if (snapshot is not null)
-                    snapshots.Add((item.Id.Value, snapshot));
-            }
+            var productIds = items.Select(i => i.ItemId.Value).ToList();
+            var resolved = await _productResolver.ResolveAllAsync(productIds, ct);
+
+            var snapshots = items
+                .Where(i => resolved.ContainsKey(i.ItemId.Value))
+                .Select(i => (ItemId: i.Id?.Value ?? 0, Snapshot: resolved[i.ItemId.Value]))
+                .ToList();
 
             if (snapshots.Count > 0)
+            {
                 await _orderItemRepo.SetSnapshotsAsync(snapshots, ct);
+            }
         }
     }
 }

@@ -185,5 +185,19 @@ namespace ECommerceApp.Application.Catalog.Products.Services
         {
             return await _productRepo.GetUnitPriceAsync(new ProductId(id), ct);
         }
+
+        public async Task<IReadOnlyList<ProductNameImageDto>> GetProductSnapshotsByIdsAsync(IReadOnlyList<int> ids, CancellationToken ct = default)
+        {
+            var products = await _productRepo.GetByIdsWithImagesAsync(ids, ct);
+            var snapshots = new List<ProductNameImageDto>(products.Count);
+            foreach (var product in products)
+            {
+                var mainImage = product.Images.FirstOrDefault(i => i.IsMain)
+                    ?? product.Images.OrderBy(i => i.SortOrder).FirstOrDefault();
+                var imageUrl = mainImage is not null ? _urlBuilder.Build(mainImage.FileName.Value) : null;
+                snapshots.Add(new ProductNameImageDto(product.Id.Value, product.Name.Value, imageUrl));
+            }
+            return snapshots;
+        }
     }
 }

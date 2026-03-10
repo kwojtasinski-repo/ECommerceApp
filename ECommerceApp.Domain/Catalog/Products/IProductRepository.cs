@@ -17,6 +17,7 @@ namespace ECommerceApp.Domain.Catalog.Products
         Task<List<Product>> GetPublishedAsync(int pageSize, int pageNo, string searchString);
         Task<int> CountPublishedAsync(string searchString);
         Task<List<Product>> GetByIdsAsync(IEnumerable<int> ids);
+        Task<List<Product>> GetByIdsWithImagesAsync(IEnumerable<int> ids, CancellationToken ct = default);
         Task<decimal?> GetUnitPriceAsync(ProductId id, CancellationToken ct = default);
     }
 }
