@@ -3,8 +3,9 @@ namespace ECommerceApp.Domain.Sales.Orders
     public enum OrderEventType
     {
         OrderPlaced,
-        OrderPaid,
-        OrderDelivered,
+        OrderPaymentConfirmed,
+        OrderPaymentExpired,
+        OrderFulfilled,
         CouponApplied,
         CouponRemoved,
         RefundAssigned,

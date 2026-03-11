@@ -1,3 +1,4 @@
+using ECommerceApp.Domain.Sales.Orders;
 using System;
 using System.Collections.Generic;
 
@@ -37,14 +38,10 @@ namespace ECommerceApp.Application.Sales.Orders.ViewModels
         public string Number { get; init; } = default!;
         public decimal Cost { get; init; }
         public DateTime Ordered { get; init; }
-        public DateTime? Delivered { get; init; }
-        public bool IsDelivered { get; init; }
-        public bool IsPaid { get; init; }
+        public OrderStatus Status { get; init; }
         public int CustomerId { get; init; }
         public int CurrencyId { get; init; }
         public string UserId { get; init; } = default!;
-        public int? PaymentId { get; init; }
-        public int? RefundId { get; init; }
         public int? CouponUsedId { get; init; }
         public int? DiscountPercent { get; init; }
         public OrderCustomerVm? Customer { get; init; }

@@ -30,9 +30,11 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Configurations
             builder.Property(o => o.Ordered)
                    .IsRequired();
 
-            builder.Property(o => o.Delivered);
-            builder.Property(o => o.IsDelivered).IsRequired();
-            builder.Property(o => o.IsPaid).IsRequired();
+            builder.Property(o => o.Status)
+                   .HasConversion<string>()
+                   .HasMaxLength(30)
+                   .IsRequired();
+
             builder.Property(o => o.DiscountPercent);
 
             builder.Property(o => o.CustomerId).IsRequired();
@@ -43,8 +45,6 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Configurations
                    .HasMaxLength(450)
                    .IsRequired();
 
-            builder.Property(o => o.PaymentId);
-            builder.Property(o => o.RefundId);
             builder.Property(o => o.CouponUsedId);
 
             builder.OwnsOne(o => o.Customer, c =>
@@ -87,10 +87,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Configurations
 
             builder.HasIndex(o => o.UserId);
             builder.HasIndex(o => o.CustomerId);
-            builder.HasIndex(o => o.IsPaid);
-
-            builder.Property(o => o.IsCancelled).IsRequired();
-            builder.Property(o => o.CancelledAt);
+            builder.HasIndex(o => o.Status);
         }
     }
 }

@@ -3,6 +3,7 @@ using ECommerceApp.Application.Sales.Orders.Handlers;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Application.Supporting.TimeManagement.Models;
 using ECommerceApp.Domain.Sales.Orders;
+using ECommerceApp.Domain.Shared;
 using FluentAssertions;
 using Moq;
 using System;
@@ -30,7 +31,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
             new(null, Guid.NewGuid().ToString());
 
         private static OrderItem CreateOrderItem(int productId = 10)
-            => OrderItem.Create(new OrderProductId(productId), 1, 9.99m, new OrderUserId("user-1"));
+            => OrderItem.Create(new OrderProductId(productId), 1, new UnitCost(9.99m), new OrderUserId("user-1"));
 
         // ── ExecuteAsync ──────────────────────────────────────────────────────
 

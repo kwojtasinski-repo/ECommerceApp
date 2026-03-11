@@ -52,7 +52,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         public async Task HandleAsync_AlreadyPaidOrder_ShouldNotUpdateRepository()
         {
             var order = CreateOrder();
-            order.MarkAsPaid(5);
+            order.ConfirmPayment(5);
             _orderRepo
                 .Setup(r => r.GetByIdWithItemsAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(order);
@@ -63,7 +63,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         }
 
         [Fact]
-        public async Task HandleAsync_UnpaidOrder_ShouldMarkAsPaidAndUpdate()
+        public async Task HandleAsync_UnpaidOrder_ShouldConfirmPaymentAndUpdate()
         {
             var order = CreateOrder();
             _orderRepo
@@ -72,8 +72,8 @@ namespace ECommerceApp.UnitTests.Sales.Orders
 
             await CreateHandler().HandleAsync(CreateMessage(orderId: 1, paymentId: 42));
 
-            order.IsPaid.Should().BeTrue();
-            order.PaymentId.Should().Be(42);
+            order.Status.Should().Be(OrderStatus.PaymentConfirmed);
+            order.Events.Should().Contain(e => e.EventType == OrderEventType.OrderPaymentConfirmed);
             _orderRepo.Verify(r => r.UpdateAsync(order, It.IsAny<CancellationToken>()), Times.Once);
         }
     }

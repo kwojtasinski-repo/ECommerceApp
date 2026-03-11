@@ -21,10 +21,10 @@ namespace ECommerceApp.Application.Sales.Orders.Handlers
             if (order is null)
                 return;
 
-            if (order.IsPaid)
+            if (order.Status != OrderStatus.Placed)
                 return;
 
-            order.MarkAsPaid(message.PaymentId);
+            order.ConfirmPayment(message.PaymentId);
             await _orderRepo.UpdateAsync(order, ct);
         }
     }

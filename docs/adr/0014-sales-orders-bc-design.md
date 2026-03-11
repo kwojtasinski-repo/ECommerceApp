@@ -900,16 +900,16 @@ Parallel Change — existing code untouched until the atomic switch.
 | Unit tests — `OrderCustomerTests.cs` (constructor validation guards) | ✅ Done |
 | Integration tests | ✅ Done — `IntegrationTests/Sales/Orders/OrderServiceTests.cs` (8 tests; guard conditions + read queries) |
 | **Design revision — §14 `UnitCost` VO + §16 `OrderStatus` + §17 event payloads + §18 flow decisions (ADR updated)** | ✅ Done — ADR updated; implementation pending |
-| Domain — new `UnitCost` VO in `Domain/Shared/UnitCost.cs` (amount >= 0) | ⬜ Not started |
-| Domain — `OrderItem`: change `UnitCost` property type from `decimal` to `UnitCost`, update `Create` signature, update `CalculateCost` to use `.Amount` | ⬜ Not started |
-| Domain — redesign: add `OrderStatus`, remove `IsPaid`/`IsDelivered`/`IsCancelled`/`CancelledAt`/`Delivered`/`PaymentId`/`RefundId`, rename `MarkAsPaid` → `ConfirmPayment`, `MarkAsDelivered` → `Fulfill`, generic `AppendEvent<T>`, payload records | ⬜ Not started |
-| Domain — delete `Events/OrderPaid.cs` and `Events/OrderDelivered.cs` | ⬜ Not started |
-| Domain — new `OrderEventType` values: `OrderPaymentConfirmed`, `OrderPaymentExpired`, `OrderFulfilled`; remove `OrderPaid`, `OrderDelivered` | ⬜ Not started |
-| Infrastructure — `OrderItemConfiguration`: add `UnitCost` value conversion | ⬜ Not started |
-| Infrastructure — `OrderConfiguration`: add `Status` column with index, remove `IsPaid`/`IsDelivered`/`IsCancelled`/`CancelledAt`/`Delivered`/`PaymentId`/`RefundId` | ⬜ Not started |
+| Domain — new `UnitCost` VO in `Domain/Shared/UnitCost.cs` (amount >= 0) | ✅ Done |
+| Domain — `OrderItem`: change `UnitCost` property type from `decimal` to `UnitCost`, update `Create` signature, update `CalculateCost` to use `.Amount` | ✅ Done |
+| Domain — redesign: add `OrderStatus`, remove `IsPaid`/`IsDelivered`/`IsCancelled`/`CancelledAt`/`Delivered`/`PaymentId`/`RefundId`, rename `MarkAsPaid` → `ConfirmPayment`, `MarkAsDelivered` → `Fulfill`, generic `AppendEvent<T>`, payload records | ✅ Done |
+| Domain — delete `Events/OrderPaid.cs` and `Events/OrderDelivered.cs` | ✅ Done |
+| Domain — new `OrderEventType` values: `OrderPaymentConfirmed`, `OrderPaymentExpired`, `OrderFulfilled`; remove `OrderPaid`, `OrderDelivered` | ✅ Done |
+| Infrastructure — `OrderItemConfiguration`: add `UnitCost` value conversion | ✅ Done |
+| Infrastructure — `OrderConfiguration`: add `Status` column with index, remove `IsPaid`/`IsDelivered`/`IsCancelled`/`CancelledAt`/`Delivered`/`PaymentId`/`RefundId` | ✅ Done |
 | DB migration — update `sales.Orders` schema (requires approval per migration policy) | ⬜ Not started |
-| Application — update `OrderService`, `OrderPaymentConfirmedHandler`, `OrderPaymentExpiredHandler` to use `Status` guards | ⬜ Not started |
-| Unit tests — update `OrderAggregateTests` for new `Status`-based guards and event payloads | ⬜ Not started |
+| Application — update `OrderService`, `OrderPaymentConfirmedHandler`, `OrderPaymentExpiredHandler` to use `Status` guards | ✅ Done |
+| Unit tests — update `OrderAggregateTests` for new `Status`-based guards and event payloads | ✅ Done |
 | Presale BC — add `OrderPlacedHandler` to clean `CartLine` + `SoftReservation` (Gap 2) | ⬜ Not started |
 | Inventory BC — update `PaymentConfirmedHandler` to use `ConfirmReservationsByOrderAsync` (Gap 3) | ⬜ Not started |
 | Controller migration (Web + API atomic switch) | ⬜ Not started |

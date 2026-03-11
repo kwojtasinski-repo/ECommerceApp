@@ -1,5 +1,4 @@
 using ECommerceApp.Domain.Sales.Orders;
-using ECommerceApp.Domain.Sales.Orders.Events;
 using ECommerceApp.Domain.Sales.Orders.ValueObjects;
 using ECommerceApp.Domain.Shared;
 using FluentAssertions;
@@ -17,7 +16,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         // ── Create ────────────────────────────────────────────────────────────
 
         [Fact]
-        public void Create_ValidParameters_ShouldReturnOrder()
+        public void Create_ValidParameters_ShouldReturnOrderWithPlacedStatus()
         {
             var number = OrderNumber.Generate();
             var order = Order.Create(1, 1, "user1", number, CreateCustomer());
@@ -27,10 +26,10 @@ namespace ECommerceApp.UnitTests.Sales.Orders
             order.UserId.Value.Should().Be("user1");
             order.Number.Value.Should().StartWith("ORD-");
             order.Cost.Should().Be(0);
-            order.IsPaid.Should().BeFalse();
-            order.IsDelivered.Should().BeFalse();
+            order.Status.Should().Be(OrderStatus.Placed);
             order.DiscountPercent.Should().BeNull();
             order.OrderItems.Should().BeEmpty();
+            order.Events.Should().ContainSingle(e => e.EventType == OrderEventType.OrderPlaced);
         }
 
         [Fact]
@@ -76,11 +75,11 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         // ── CalculateCost ─────────────────────────────────────────────────────
 
         [Fact]
-        public void CalculateCost_WithItems_ShouldSumUnitCostTimesQuantity()
+        public void CalculateCost_WithItems_ShouldSumUnitCostAmountTimesQuantity()
         {
             var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
-            order.AddItem(OrderItem.Create(1, 2, 10m, "user1")); // 20
-            order.AddItem(OrderItem.Create(2, 3, 5m, "user1"));  // 15
+            order.AddItem(OrderItem.Create(1, 2, new UnitCost(10m), "user1")); // 20
+            order.AddItem(OrderItem.Create(2, 3, new UnitCost(5m), "user1"));  // 15
 
             order.CalculateCost();
 
@@ -101,83 +100,104 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         public void CalculateCost_WithDiscountPercent_ShouldApplyDiscount()
         {
             var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
-            order.AddItem(OrderItem.Create(1, 1, 100m, "user1"));
+            order.AddItem(OrderItem.Create(1, 1, new UnitCost(100m), "user1"));
             order.AssignCoupon(1, 10); // 10% discount
 
             order.Cost.Should().Be(90m);
         }
 
-        // ── MarkAsPaid ────────────────────────────────────────────────────────
+        // ── ConfirmPayment ────────────────────────────────────────────────────
 
         [Fact]
-        public void MarkAsPaid_UnpaidOrder_ShouldSetPaidAndReturnEvent()
+        public void ConfirmPayment_PlacedOrder_ShouldTransitionToPaymentConfirmedAndAppendEvent()
         {
             var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
 
-            var @event = order.MarkAsPaid(5);
+            order.ConfirmPayment(5);
 
-            order.IsPaid.Should().BeTrue();
-            order.PaymentId.Should().Be(5);
-            @event.Should().BeOfType<OrderPaid>();
-            @event.PaymentId.Should().Be(5);
+            order.Status.Should().Be(OrderStatus.PaymentConfirmed);
+            order.Events.Should().Contain(e => e.EventType == OrderEventType.OrderPaymentConfirmed);
         }
 
         [Fact]
-        public void MarkAsPaid_AlreadyPaidOrder_ShouldThrowDomainException()
+        public void ConfirmPayment_AlreadyPaidOrder_ShouldThrowDomainException()
         {
             var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
-            order.MarkAsPaid(5);
+            order.ConfirmPayment(5);
 
-            var act = () => order.MarkAsPaid(6);
+            var act = () => order.ConfirmPayment(6);
 
-            act.Should().Throw<DomainException>().WithMessage("*already paid*");
+            act.Should().Throw<DomainException>().WithMessage("*cannot confirm payment*");
         }
 
         [Fact]
-        public void MarkAsPaid_ZeroPaymentId_ShouldThrowDomainException()
+        public void ConfirmPayment_ZeroPaymentId_ShouldThrowDomainException()
         {
             var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
 
-            var act = () => order.MarkAsPaid(0);
+            var act = () => order.ConfirmPayment(0);
 
             act.Should().Throw<DomainException>().WithMessage("*PaymentId*positive*");
         }
 
-        // ── MarkAsDelivered ───────────────────────────────────────────────────
+        // ── Fulfill ───────────────────────────────────────────────────────────
 
         [Fact]
-        public void MarkAsDelivered_PaidOrder_ShouldSetDeliveredAndReturnEvent()
+        public void Fulfill_PaymentConfirmedOrder_ShouldTransitionToFulfilledAndAppendEvent()
         {
             var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
-            order.MarkAsPaid(5);
+            order.ConfirmPayment(5);
 
-            var @event = order.MarkAsDelivered();
+            order.Fulfill();
 
-            order.IsDelivered.Should().BeTrue();
-            order.Delivered.Should().NotBeNull();
-            @event.Should().BeOfType<OrderDelivered>();
+            order.Status.Should().Be(OrderStatus.Fulfilled);
+            order.Events.Should().Contain(e => e.EventType == OrderEventType.OrderFulfilled);
         }
 
         [Fact]
-        public void MarkAsDelivered_UnpaidOrder_ShouldThrowDomainException()
+        public void Fulfill_UnpaidOrder_ShouldThrowDomainException()
         {
             var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
 
-            var act = () => order.MarkAsDelivered();
+            var act = () => order.Fulfill();
 
-            act.Should().Throw<DomainException>().WithMessage("*not paid*");
+            act.Should().Throw<DomainException>().WithMessage("*cannot be fulfilled*");
         }
 
         [Fact]
-        public void MarkAsDelivered_AlreadyDeliveredOrder_ShouldThrowDomainException()
+        public void Fulfill_AlreadyFulfilledOrder_ShouldThrowDomainException()
         {
             var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
-            order.MarkAsPaid(5);
-            order.MarkAsDelivered();
+            order.ConfirmPayment(5);
+            order.Fulfill();
 
-            var act = () => order.MarkAsDelivered();
+            var act = () => order.Fulfill();
 
-            act.Should().Throw<DomainException>().WithMessage("*already delivered*");
+            act.Should().Throw<DomainException>().WithMessage("*cannot be fulfilled*");
+        }
+
+        // ── ExpirePayment ─────────────────────────────────────────────────────
+
+        [Fact]
+        public void ExpirePayment_PlacedOrder_ShouldTransitionToCancelledAndAppendEvent()
+        {
+            var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
+
+            order.ExpirePayment();
+
+            order.Status.Should().Be(OrderStatus.Cancelled);
+            order.Events.Should().Contain(e => e.EventType == OrderEventType.OrderPaymentExpired);
+        }
+
+        [Fact]
+        public void ExpirePayment_AlreadyCancelledOrder_ShouldThrowDomainException()
+        {
+            var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
+            order.ExpirePayment();
+
+            var act = () => order.ExpirePayment();
+
+            act.Should().Throw<DomainException>().WithMessage("*cannot expire*");
         }
 
         // ── AssignCoupon ──────────────────────────────────────────────────────
@@ -186,7 +206,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         public void AssignCoupon_ValidDiscount_ShouldSetCouponAndRecalculateCost()
         {
             var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
-            order.AddItem(OrderItem.Create(1, 1, 200m, "user1"));
+            order.AddItem(OrderItem.Create(1, 1, new UnitCost(200m), "user1"));
 
             order.AssignCoupon(7, 25);
 
@@ -194,6 +214,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
             order.DiscountPercent.Should().Be(25);
             order.Cost.Should().Be(150m);
             order.OrderItems[0].CouponUsedId.Should().Be(7);
+            order.Events.Should().Contain(e => e.EventType == OrderEventType.CouponApplied);
         }
 
         [Fact]
@@ -222,7 +243,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         public void RemoveCoupon_WithCouponAssigned_ShouldClearCouponAndRecalculate()
         {
             var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
-            order.AddItem(OrderItem.Create(1, 1, 100m, "user1"));
+            order.AddItem(OrderItem.Create(1, 1, new UnitCost(100m), "user1"));
             order.AssignCoupon(3, 20);
 
             order.RemoveCoupon();
@@ -231,18 +252,29 @@ namespace ECommerceApp.UnitTests.Sales.Orders
             order.DiscountPercent.Should().BeNull();
             order.Cost.Should().Be(100m);
             order.OrderItems[0].CouponUsedId.Should().BeNull();
+            order.Events.Should().Contain(e => e.EventType == OrderEventType.CouponRemoved);
+        }
+
+        [Fact]
+        public void RemoveCoupon_NoCouponAssigned_ShouldThrowDomainException()
+        {
+            var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
+
+            var act = () => order.RemoveCoupon();
+
+            act.Should().Throw<DomainException>().WithMessage("*no coupon*");
         }
 
         // ── AssignRefund ──────────────────────────────────────────────────────
 
         [Fact]
-        public void AssignRefund_ValidRefundId_ShouldSetRefundIdOnOrder()
+        public void AssignRefund_ValidRefundId_ShouldAppendRefundAssignedEvent()
         {
             var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
 
             order.AssignRefund(9);
 
-            order.RefundId.Should().Be(9);
+            order.Events.Should().Contain(e => e.EventType == OrderEventType.RefundAssigned);
         }
 
         [Fact]
@@ -258,27 +290,26 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         // ── RemoveRefund ──────────────────────────────────────────────────────
 
         [Fact]
-        public void RemoveRefund_WithRefundAssigned_ShouldClearRefundIdOnOrder()
+        public void RemoveRefund_ShouldAppendRefundRemovedEvent()
         {
             var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
             order.AssignRefund(9);
 
             order.RemoveRefund();
 
-            order.RefundId.Should().BeNull();
+            order.Events.Should().Contain(e => e.EventType == OrderEventType.RefundRemoved);
         }
 
         // ── Cancel ────────────────────────────────────────────────────────────
 
         [Fact]
-        public void Cancel_PlacedOrder_ShouldSetIsCancelledAndAppendEvent()
+        public void Cancel_PlacedOrder_ShouldTransitionToCancelledAndAppendEvent()
         {
             var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
 
-            order.Cancel();
+            order.Cancel("CustomerRequest");
 
-            order.IsCancelled.Should().BeTrue();
-            order.CancelledAt.Should().NotBeNull();
+            order.Status.Should().Be(OrderStatus.Cancelled);
             order.Events.Should().Contain(e => e.EventType == OrderEventType.OrderCancelled);
         }
 
@@ -286,34 +317,34 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         public void Cancel_AlreadyCancelledOrder_ShouldThrowDomainException()
         {
             var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
-            order.Cancel();
+            order.Cancel("CustomerRequest");
 
-            var act = () => order.Cancel();
+            var act = () => order.Cancel("CustomerRequest");
 
-            act.Should().Throw<DomainException>().WithMessage("*already cancelled*");
+            act.Should().Throw<DomainException>().WithMessage("*cannot be cancelled*");
         }
 
         [Fact]
         public void Cancel_PaidOrder_ShouldThrowDomainException()
         {
             var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
-            order.MarkAsPaid(1);
+            order.ConfirmPayment(1);
 
-            var act = () => order.Cancel();
+            var act = () => order.Cancel("CustomerRequest");
 
-            act.Should().Throw<DomainException>().WithMessage("*paid*");
+            act.Should().Throw<DomainException>().WithMessage("*cannot be cancelled*");
         }
 
         [Fact]
-        public void Cancel_DeliveredOrder_ShouldThrowDomainException()
+        public void Cancel_FulfilledOrder_ShouldThrowDomainException()
         {
             var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
-            order.MarkAsPaid(1);
-            order.MarkAsDelivered();
+            order.ConfirmPayment(1);
+            order.Fulfill();
 
-            var act = () => order.Cancel();
+            var act = () => order.Cancel("CustomerRequest");
 
-            act.Should().Throw<DomainException>().WithMessage("*delivered*");
+            act.Should().Throw<DomainException>().WithMessage("*cannot be cancelled*");
         }
     }
 }

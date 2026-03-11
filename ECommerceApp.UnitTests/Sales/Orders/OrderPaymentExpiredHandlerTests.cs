@@ -56,7 +56,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         public async Task HandleAsync_AlreadyCancelledOrder_ShouldNotPublish()
         {
             var order = CreateOrder();
-            order.Cancel();
+            order.ExpirePayment();
             _orderRepo
                 .Setup(r => r.GetByIdWithItemsAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(order);
@@ -71,7 +71,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         public async Task HandleAsync_AlreadyPaidOrder_ShouldNotCancelOrPublish()
         {
             var order = CreateOrder();
-            order.MarkAsPaid(5);
+            order.ConfirmPayment(5);
             _orderRepo
                 .Setup(r => r.GetByIdWithItemsAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(order);
@@ -83,7 +83,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         }
 
         [Fact]
-        public async Task HandleAsync_PlacedOrder_ShouldCancelAndPublishOrderCancelled()
+        public async Task HandleAsync_PlacedOrder_ShouldExpirePaymentAndPublishOrderCancelled()
         {
             var order = CreateOrder();
             _orderRepo
@@ -92,7 +92,8 @@ namespace ECommerceApp.UnitTests.Sales.Orders
 
             await CreateHandler().HandleAsync(CreateMessage(orderId: 1));
 
-            order.IsCancelled.Should().BeTrue();
+            order.Status.Should().Be(OrderStatus.Cancelled);
+            order.Events.Should().Contain(e => e.EventType == OrderEventType.OrderPaymentExpired);
             _orderRepo.Verify(r => r.UpdateAsync(order, It.IsAny<CancellationToken>()), Times.Once);
             _broker.Verify(b => b.PublishAsync(It.Is<OrderCancelled>(msg => msg.OrderId == 1)), Times.Once);
         }

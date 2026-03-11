@@ -1,9 +1,10 @@
-using ECommerceApp.Domain.Sales.Orders.Events;
+using ECommerceApp.Domain.Sales.Orders.Events.Payloads;
 using ECommerceApp.Domain.Sales.Orders.ValueObjects;
 using ECommerceApp.Domain.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 
 namespace ECommerceApp.Domain.Sales.Orders
 {
@@ -13,18 +14,12 @@ namespace ECommerceApp.Domain.Sales.Orders
         public OrderNumber Number { get; private set; } = default!;
         public decimal Cost { get; private set; }
         public DateTime Ordered { get; private set; }
-        public DateTime? Delivered { get; private set; }
-        public bool IsDelivered { get; private set; }
-        public bool IsPaid { get; private set; }
         public int? DiscountPercent { get; private set; }
         public int CustomerId { get; private set; }
         public int CurrencyId { get; private set; }
         public OrderUserId UserId { get; private set; }
-        public int? PaymentId { get; private set; }
-        public int? RefundId { get; private set; }
         public int? CouponUsedId { get; private set; }
-        public bool IsCancelled { get; private set; }
-        public DateTime? CancelledAt { get; private set; }
+        public OrderStatus Status { get; private set; }
         public OrderCustomer Customer { get; private set; } = default!;
 
         private readonly List<OrderItem> _orderItems = new();
@@ -61,7 +56,8 @@ namespace ECommerceApp.Domain.Sales.Orders
                 UserId = userId,
                 Number = number,
                 Customer = customer,
-                Ordered = DateTime.UtcNow
+                Ordered = DateTime.UtcNow,
+                Status = OrderStatus.Placed
             };
 
             order.AppendEvent(OrderEventType.OrderPlaced);
@@ -90,33 +86,45 @@ namespace ECommerceApp.Domain.Sales.Orders
             var discountRate = DiscountPercent.HasValue
                 ? 1m - DiscountPercent.Value / 100m
                 : 1m;
-            Cost = _orderItems.Sum(i => i.UnitCost * i.Quantity * discountRate);
+            Cost = _orderItems.Sum(i => i.UnitCost.Amount * i.Quantity * discountRate);
         }
 
-        public OrderPaid MarkAsPaid(int paymentId)
+        public void ConfirmPayment(int paymentId)
         {
-            if (IsPaid)
-                throw new DomainException($"Order '{Id?.Value}' is already paid.");
+            if (Status != OrderStatus.Placed)
+                throw new DomainException($"Order '{Id?.Value}' cannot confirm payment — current status is '{Status}'.");
             if (paymentId <= 0)
                 throw new DomainException("PaymentId must be positive.");
 
-            IsPaid = true;
-            PaymentId = paymentId;
-            AppendEvent(OrderEventType.OrderPaid);
-            return new OrderPaid(Id.Value, paymentId, DateTime.UtcNow);
+            Status = OrderStatus.PaymentConfirmed;
+            AppendEvent(OrderEventType.OrderPaymentConfirmed, new PaymentConfirmedPayload(paymentId));
         }
 
-        public OrderDelivered MarkAsDelivered()
+        public void Fulfill()
         {
-            if (!IsPaid)
-                throw new DomainException($"Order '{Id?.Value}' is not paid.");
-            if (IsDelivered)
-                throw new DomainException($"Order '{Id?.Value}' is already delivered.");
+            if (Status is not (OrderStatus.PaymentConfirmed or OrderStatus.PartiallyFulfilled))
+                throw new DomainException($"Order '{Id?.Value}' cannot be fulfilled — current status is '{Status}'.");
 
-            IsDelivered = true;
-            Delivered = DateTime.UtcNow;
-            AppendEvent(OrderEventType.OrderDelivered);
-            return new OrderDelivered(Id.Value, DateTime.UtcNow);
+            Status = OrderStatus.Fulfilled;
+            AppendEvent(OrderEventType.OrderFulfilled);
+        }
+
+        public void Cancel(string reason)
+        {
+            if (Status != OrderStatus.Placed)
+                throw new DomainException($"Order '{Id?.Value}' cannot be cancelled — current status is '{Status}'.");
+
+            Status = OrderStatus.Cancelled;
+            AppendEvent(OrderEventType.OrderCancelled, new OrderCancelledPayload(reason));
+        }
+
+        public void ExpirePayment()
+        {
+            if (Status != OrderStatus.Placed)
+                throw new DomainException($"Order '{Id?.Value}' cannot expire — current status is '{Status}'.");
+
+            Status = OrderStatus.Cancelled;
+            AppendEvent(OrderEventType.OrderPaymentExpired);
         }
 
         public void AssignCoupon(int couponUsedId, int discountPercent)
@@ -130,26 +138,26 @@ namespace ECommerceApp.Domain.Sales.Orders
             DiscountPercent = discountPercent;
 
             foreach (var item in _orderItems)
-            {
                 item.ApplyCoupon(couponUsedId);
-            }
 
             CalculateCost();
-            AppendEvent(OrderEventType.CouponApplied);
+            AppendEvent(OrderEventType.CouponApplied, new CouponAppliedPayload(couponUsedId, discountPercent));
         }
 
         public void RemoveCoupon()
         {
+            if (CouponUsedId is null)
+                throw new DomainException($"Order '{Id?.Value}' has no coupon to remove.");
+
+            var removedId = CouponUsedId.Value;
             CouponUsedId = null;
             DiscountPercent = null;
 
             foreach (var item in _orderItems)
-            {
                 item.RemoveCoupon();
-            }
 
             CalculateCost();
-            AppendEvent(OrderEventType.CouponRemoved);
+            AppendEvent(OrderEventType.CouponRemoved, new CouponRemovedPayload(removedId));
         }
 
         public void AssignRefund(int refundId)
@@ -157,41 +165,19 @@ namespace ECommerceApp.Domain.Sales.Orders
             if (refundId <= 0)
                 throw new DomainException("RefundId must be positive.");
 
-            RefundId = refundId;
-            AppendEvent(OrderEventType.RefundAssigned);
+            AppendEvent(OrderEventType.RefundAssigned, new RefundAssignedPayload(refundId));
         }
 
         public void RemoveRefund()
         {
-            RefundId = null;
             AppendEvent(OrderEventType.RefundRemoved);
         }
 
-        public void Cancel()
-        {
-            if (IsCancelled)
-            {
-                throw new DomainException($"Order '{Id?.Value}' is already cancelled.");
-            }
+        private void AppendEvent<T>(OrderEventType type, T payload)
+            => _events.Add(new OrderEvent(Id ?? new OrderId(0), type,
+                JsonSerializer.Serialize(payload)));
 
-            if (IsDelivered)
-            {
-                throw new DomainException($"Order '{Id?.Value}' cannot be cancelled — already delivered.");
-            }
-
-            if (IsPaid)
-            {
-                throw new DomainException($"Order '{Id?.Value}' cannot be cancelled — already paid.");
-            }
-
-            IsCancelled = true;
-            CancelledAt = DateTime.UtcNow;
-            AppendEvent(OrderEventType.OrderCancelled);
-        }
-
-        private void AppendEvent(OrderEventType eventType, string? payload = null)
-        {
-            _events.Add(new OrderEvent(Id ?? new OrderId(0), eventType, payload));
-        }
+        private void AppendEvent(OrderEventType type)
+            => _events.Add(new OrderEvent(Id ?? new OrderId(0), type, null));
     }
 }

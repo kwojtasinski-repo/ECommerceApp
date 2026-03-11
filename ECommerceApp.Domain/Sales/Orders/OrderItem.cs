@@ -7,7 +7,7 @@ namespace ECommerceApp.Domain.Sales.Orders
         public OrderItemId Id { get; private set; }
         public OrderProductId ItemId { get; private set; }
         public int Quantity { get; private set; }
-        public decimal UnitCost { get; private set; }
+        public UnitCost UnitCost { get; private set; } = default!;
         public OrderUserId UserId { get; private set; }
         public OrderId? OrderId { get; private set; }
         public int? CouponUsedId { get; private set; }
@@ -15,14 +15,14 @@ namespace ECommerceApp.Domain.Sales.Orders
 
         private OrderItem() { }
 
-        public static OrderItem Create(OrderProductId itemId, int quantity, decimal unitCost, OrderUserId userId)
+        public static OrderItem Create(OrderProductId itemId, int quantity, UnitCost unitCost, OrderUserId userId)
         {
             if (itemId is null || itemId.Value <= 0)
                 throw new DomainException("ItemId must be positive.");
             if (quantity <= 0)
                 throw new DomainException("Quantity must be positive.");
-            if (unitCost < 0)
-                throw new DomainException("UnitCost cannot be negative.");
+            if (unitCost is null)
+                throw new DomainException("UnitCost is required.");
             if (userId is null || string.IsNullOrWhiteSpace(userId.Value))
                 throw new DomainException("UserId is required.");
 

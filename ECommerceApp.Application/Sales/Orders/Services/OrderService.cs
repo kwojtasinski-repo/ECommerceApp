@@ -108,19 +108,23 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             var order = await _orderRepo.GetByIdWithItemsAsync(orderId, ct);
             if (order is null)
                 return OrderOperationResult.OrderNotFound;
-            if (!order.IsPaid)
+            if (order.Status != OrderStatus.PaymentConfirmed && order.Status != OrderStatus.PartiallyFulfilled)
                 return OrderOperationResult.NotPaid;
-            if (order.IsDelivered)
+            if (order.Status == OrderStatus.Fulfilled)
                 return OrderOperationResult.AlreadyDelivered;
 
-            var @event = order.MarkAsDelivered();
+            order.Fulfill();
             await _orderRepo.UpdateAsync(order, ct);
+
+            var fulfilledAt = order.Events
+                .Last(e => e.EventType == OrderEventType.OrderFulfilled)
+                .OccurredAt;
 
             var items = order.OrderItems
                 .Select(i => new OrderShippedItem(i.ItemId.Value, i.Quantity))
                 .ToList();
 
-            await _messageBroker.PublishAsync(new OrderShipped(orderId, items, @event.OccurredAt));
+            await _messageBroker.PublishAsync(new OrderShipped(orderId, items, fulfilledAt));
             return OrderOperationResult.Success;
         }
 
@@ -218,10 +222,10 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             var order = await _orderRepo.GetByIdAsync(orderId, ct);
             if (order is null)
                 return OrderOperationResult.OrderNotFound;
-            if (order.IsPaid)
+            if (order.Status != OrderStatus.Placed)
                 return OrderOperationResult.AlreadyPaid;
 
-            order.MarkAsPaid(paymentId);
+            order.ConfirmPayment(paymentId);
             await _orderRepo.UpdateAsync(order, ct);
             return OrderOperationResult.Success;
         }
@@ -231,14 +235,16 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             var order = await _orderRepo.GetByIdWithItemsAsync(orderId, ct);
             if (order is null)
                 return OrderOperationResult.OrderNotFound;
-            if (order.IsCancelled)
+            if (order.Status == OrderStatus.Cancelled)
                 return OrderOperationResult.AlreadyCancelled;
+            if (order.Status != OrderStatus.Placed)
+                return OrderOperationResult.AlreadyPaid;
 
             var items = order.OrderItems
                 .Select(i => new OrderCancelledItem(i.ItemId.Value, i.Quantity))
                 .ToList();
 
-            order.Cancel();
+            order.Cancel("ManualOperator");
             await _orderRepo.UpdateAsync(order, ct);
 
             await _messageBroker.PublishAsync(new OrderCancelled(orderId, items, DateTime.UtcNow));
@@ -252,14 +258,10 @@ namespace ECommerceApp.Application.Sales.Orders.Services
                 Number = order.Number.Value,
                 Cost = order.Cost,
                 Ordered = order.Ordered,
-                Delivered = order.Delivered,
-                IsDelivered = order.IsDelivered,
-                IsPaid = order.IsPaid,
+                Status = order.Status,
                 CustomerId = order.CustomerId,
                 CurrencyId = order.CurrencyId,
                 UserId = order.UserId,
-                PaymentId = order.PaymentId,
-                RefundId = order.RefundId,
                 CouponUsedId = order.CouponUsedId,
                 DiscountPercent = order.DiscountPercent,
                 Customer = order.Customer is null ? null : new OrderCustomerVm
@@ -283,7 +285,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
                     Id = i.Id.Value,
                     ItemId = i.ItemId,
                     Quantity = i.Quantity,
-                    UnitCost = i.UnitCost,
+                    UnitCost = i.UnitCost.Amount,
                     CouponUsedId = i.CouponUsedId,
                     ProductName = i.Snapshot?.ProductName,
                     ImageFileName = i.Snapshot?.ImageFileName
@@ -297,8 +299,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
                 Number = order.Number.Value,
                 Cost = order.Cost,
                 Ordered = order.Ordered,
-                IsDelivered = order.IsDelivered,
-                IsPaid = order.IsPaid,
+                Status = order.Status,
                 CustomerId = order.CustomerId,
                 CurrencyId = order.CurrencyId
             };

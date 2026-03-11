@@ -2,6 +2,7 @@ using ECommerceApp.Application.Sales.Orders.Contracts;
 using ECommerceApp.Application.Sales.Orders.Handlers;
 using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Domain.Sales.Orders;
+using ECommerceApp.Domain.Shared;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -29,7 +30,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
             => new(orderId, new List<OrderPlacedItem>(), "user-1", DateTime.UtcNow.AddDays(3), DateTime.UtcNow, 100m, 1);
 
         private static OrderItem CreateOrderItem(int productId = 10)
-            => OrderItem.Create(new OrderProductId(productId), 1, 9.99m, new OrderUserId("user-1"));
+            => OrderItem.Create(new OrderProductId(productId), 1, new UnitCost(9.99m), new OrderUserId("user-1"));
 
         // ── HandleAsync ───────────────────────────────────────────────────────
 

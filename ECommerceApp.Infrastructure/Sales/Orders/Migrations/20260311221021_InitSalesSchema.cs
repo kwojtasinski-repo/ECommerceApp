@@ -24,16 +24,12 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Migrations
                     Number = table.Column<string>(type: "varchar(25)", maxLength: 25, nullable: false),
                     Cost = table.Column<decimal>(type: "decimal(18,4)", precision: 18, scale: 4, nullable: false),
                     Ordered = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Delivered = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    IsDelivered = table.Column<bool>(type: "bit", nullable: false),
-                    IsPaid = table.Column<bool>(type: "bit", nullable: false),
                     DiscountPercent = table.Column<int>(type: "int", nullable: true),
                     CustomerId = table.Column<int>(type: "int", nullable: false),
                     CurrencyId = table.Column<int>(type: "int", nullable: false),
                     UserId = table.Column<string>(type: "nvarchar(450)", maxLength: 450, nullable: false),
-                    PaymentId = table.Column<int>(type: "int", nullable: true),
-                    RefundId = table.Column<int>(type: "int", nullable: true),
-                    CouponUsedId = table.Column<int>(type: "int", nullable: true)
+                    CouponUsedId = table.Column<int>(type: "int", nullable: true),
+                    Status = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -168,17 +164,17 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Migrations
                 column: "CustomerId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Orders_IsPaid",
-                schema: "sales",
-                table: "Orders",
-                column: "IsPaid");
-
-            migrationBuilder.CreateIndex(
                 name: "IX_Orders_Number",
                 schema: "sales",
                 table: "Orders",
                 column: "Number",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Orders_Status",
+                schema: "sales",
+                table: "Orders",
+                column: "Status");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Orders_UserId",

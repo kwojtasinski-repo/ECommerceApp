@@ -26,14 +26,14 @@ namespace ECommerceApp.Application.Sales.Orders.Handlers
             if (order is null)
                 return;
 
-            if (order.IsCancelled || order.IsPaid)
+            if (order.Status != OrderStatus.Placed)
                 return;
 
             var items = order.OrderItems
                 .Select(i => new OrderCancelledItem(i.ItemId.Value, i.Quantity))
                 .ToList();
 
-            order.Cancel();
+            order.ExpirePayment();
             await _orderRepo.UpdateAsync(order, ct);
 
             await _broker.PublishAsync(new OrderCancelled(message.OrderId, items, DateTime.UtcNow));

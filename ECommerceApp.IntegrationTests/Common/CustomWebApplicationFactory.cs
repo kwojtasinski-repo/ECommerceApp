@@ -23,14 +23,15 @@ namespace ECommerceApp.IntegrationTests.Common
             {
                 builder.ConfigureServices(services =>
                 {
-                    // remove implementation of infrastructure dbContext
+                    // remove only the legacy Context and its options; per-BC DbContexts keep their own options
                     var contextDb = services.FirstOrDefault(descriptor => descriptor.ServiceType == typeof(Context));
                     if (contextDb != null)
                     {
                         services.Remove(contextDb);
-                        var options = services.Where(r => (r.ServiceType == typeof(DbContextOptions))
-                          || (r.ServiceType.IsGenericType && r.ServiceType.GetGenericTypeDefinition() == typeof(DbContextOptions<>))).ToList();
-                        
+                        var options = services.Where(r =>
+                            r.ServiceType == typeof(DbContextOptions) ||
+                            r.ServiceType == typeof(DbContextOptions<Context>)).ToList();
+
                         foreach (var option in options)
                         {
                             services.Remove(option);

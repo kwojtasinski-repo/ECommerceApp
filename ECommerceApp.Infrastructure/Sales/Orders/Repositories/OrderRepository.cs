@@ -27,9 +27,20 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
                 .FirstOrDefaultAsync(o => o.Id == new OrderId(id), ct);
 
         public async Task<Order?> GetByRefundIdWithItemsAsync(int refundId, CancellationToken ct = default)
-            => await _context.Orders
+        {
+            var payload = $"{{\"RefundId\":{refundId}}}";
+            var orderId = await _context.OrderEvents
+                .Where(e => e.EventType == OrderEventType.RefundAssigned && e.Payload == payload)
+                .Select(e => (OrderId?)e.OrderId)
+                .FirstOrDefaultAsync(ct);
+
+            if (orderId is null)
+                return null;
+
+            return await _context.Orders
                 .Include(o => o.OrderItems)
-                .FirstOrDefaultAsync(o => o.RefundId == refundId, ct);
+                .FirstOrDefaultAsync(o => o.Id == orderId, ct);
+        }
 
         public async Task<int> AddAsync(Order order, CancellationToken ct = default)
         {
@@ -93,7 +104,10 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
 
         public async Task<IReadOnlyList<Order>> GetAllPaidAsync(int pageSize, int pageNo, string? search, CancellationToken ct = default)
         {
-            var query = _context.Orders.AsNoTracking().Where(o => o.IsPaid);
+            var query = _context.Orders.AsNoTracking().Where(o =>
+                o.Status == OrderStatus.PaymentConfirmed ||
+                o.Status == OrderStatus.PartiallyFulfilled ||
+                o.Status == OrderStatus.Fulfilled);
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(o => o.Number.Value.Contains(search));
             return await query
@@ -105,7 +119,10 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
 
         public async Task<int> GetAllPaidCountAsync(string? search, CancellationToken ct = default)
         {
-            var query = _context.Orders.AsNoTracking().Where(o => o.IsPaid);
+            var query = _context.Orders.AsNoTracking().Where(o =>
+                o.Status == OrderStatus.PaymentConfirmed ||
+                o.Status == OrderStatus.PartiallyFulfilled ||
+                o.Status == OrderStatus.Fulfilled);
             if (!string.IsNullOrWhiteSpace(search))
                 query = query.Where(o => o.Number.Value.Contains(search));
             return await query.CountAsync(ct);

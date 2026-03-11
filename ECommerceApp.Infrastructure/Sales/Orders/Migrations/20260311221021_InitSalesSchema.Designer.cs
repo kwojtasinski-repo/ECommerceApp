@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ECommerceApp.Infrastructure.Sales.Orders.Migrations
 {
     [DbContext(typeof(OrdersDbContext))]
-    [Migration("20260310224948_InitSalesSchema")]
+    [Migration("20260311221021_InitSalesSchema")]
     partial class InitSalesSchema
     {
         /// <inheritdoc />
@@ -47,17 +47,8 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Migrations
                     b.Property<int>("CustomerId")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("Delivered")
-                        .HasColumnType("datetime2");
-
                     b.Property<int?>("DiscountPercent")
                         .HasColumnType("int");
-
-                    b.Property<bool>("IsDelivered")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsPaid")
-                        .HasColumnType("bit");
 
                     b.Property<string>("Number")
                         .IsRequired()
@@ -67,11 +58,10 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Migrations
                     b.Property<DateTime>("Ordered")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("PaymentId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("RefundId")
-                        .HasColumnType("int");
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
 
                     b.Property<string>("UserId")
                         .IsRequired()
@@ -82,10 +72,10 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.HasIndex("IsPaid");
-
                     b.HasIndex("Number")
                         .IsUnique();
+
+                    b.HasIndex("Status");
 
                     b.HasIndex("UserId");
 

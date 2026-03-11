@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Sales.Orders;
+using ECommerceApp.Domain.Shared;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -22,6 +23,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Configurations
             builder.Property(oi => oi.Quantity).IsRequired();
 
             builder.Property(oi => oi.UnitCost)
+                   .HasConversion(uc => uc.Amount, v => new UnitCost(v))
                    .HasPrecision(18, 4)
                    .IsRequired();
 

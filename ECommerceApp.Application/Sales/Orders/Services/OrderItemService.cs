@@ -2,6 +2,7 @@ using ECommerceApp.Application.Sales.Orders.DTOs;
 using ECommerceApp.Application.Sales.Orders.Results;
 using ECommerceApp.Application.Sales.Orders.ViewModels;
 using ECommerceApp.Domain.Sales.Orders;
+using ECommerceApp.Domain.Shared;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -20,7 +21,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
 
         public async Task<int> AddCartItemAsync(AddOrderItemDto dto, CancellationToken ct = default)
         {
-            var item = OrderItem.Create(dto.ItemId, dto.Quantity, dto.UnitCost, dto.UserId);
+            var item = OrderItem.Create(dto.ItemId, dto.Quantity, new UnitCost(dto.UnitCost), dto.UserId);
             return await _repo.AddAsync(item, ct);
         }
 
@@ -72,7 +73,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
                 Id = item.Id.Value,
                 ItemId = item.ItemId,
                 Quantity = item.Quantity,
-                UnitCost = item.UnitCost,
+                UnitCost = item.UnitCost.Amount,
                 CouponUsedId = item.CouponUsedId,
                 ProductName = item.Snapshot?.ProductName,
                 ImageFileName = item.Snapshot?.ImageFileName
@@ -84,7 +85,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
                 Id = item.Id.Value,
                 ItemId = item.ItemId,
                 Quantity = item.Quantity,
-                UnitCost = item.UnitCost,
+                UnitCost = item.UnitCost.Amount,
                 UserId = item.UserId,
                 OrderId = item.OrderId,
                 ProductName = item.Snapshot?.ProductName,
