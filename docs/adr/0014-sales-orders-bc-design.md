@@ -615,11 +615,11 @@ Parallel Change — existing code untouched until the atomic switch.
 | Unit tests — SnapshotOrderItemsJob (4 cases) + OrderPlacedSnapshotHandler (4 cases) | ✅ Done |
 | Infrastructure — AssignToOrderAsync switched to change-tracking (ExecuteUpdateAsync incompatible with value converters) | ✅ Done |
 | DB migration (`InitSalesSchema` at `Infrastructure/Sales/Orders/Migrations/`) | ✅ Done — pending production sign-off per migration policy |
-| Unit tests — `OrderNumberTests.cs` (`Parse` validation + `Generate` factory) | ⬜ Missing — required by conformance checklist |
-| Unit tests — `OrderCustomerTests.cs` (constructor validation guards) | ⬜ Missing — required by conformance checklist |
-| Integration tests | ⬜ Not started |
+| Unit tests — `OrderNumberTests.cs` (`Parse` validation + `Generate` factory) | ✅ Done |
+| Unit tests — `OrderCustomerTests.cs` (constructor validation guards) | ✅ Done |
+| Integration tests | ✅ Done — `IntegrationTests/Sales/Orders/OrderServiceTests.cs` (8 tests; guard conditions + read queries) |
 | Controller migration (Web + API atomic switch) | ⬜ Not started |
-| Atomic switch | ⬜ After integration tests |
+| Atomic switch | ⬜ After integration tests and controller migration |
 
 ## Conformance checklist
 
