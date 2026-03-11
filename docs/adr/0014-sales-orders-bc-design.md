@@ -539,7 +539,7 @@ Parallel Change — existing code untouched until the atomic switch.
 4. `Domain/Sales/Orders/OrderEventId.cs` — typed ID for `OrderEvent`
 5. `Domain/Sales/Orders/ValueObjects/OrderNumber.cs` — VO with `Generate()` factory and regex validation
 6. `Domain/Sales/Orders/OrderCustomer.cs` — owned value object with validated string fields + address
-7. `Domain/Sales/Orders/OrderEventTypes.cs` — static string constants class
+7. `Domain/Sales/Orders/OrderEventType.cs` — `enum` stored as string via `HasConversion<string>()` in `OrderEventConfiguration` (no migration needed to add new values)
 8. `Domain/Sales/Orders/OrderEvent.cs` — append-only child entity
 9. `Domain/Sales/Orders/OrderItem.cs` — factory (`OrderProductId`, `OrderUserId`, `UnitCost >= 0`), no `RefundId`
 10. `Domain/Sales/Orders/Order.cs` — factory (`OrderNumber`, `OrderUserId`, `OrderCustomer`), `_events` backing field, `AppendEvent` on every transition
@@ -615,6 +615,8 @@ Parallel Change — existing code untouched until the atomic switch.
 | Unit tests — SnapshotOrderItemsJob (4 cases) + OrderPlacedSnapshotHandler (4 cases) | ✅ Done |
 | Infrastructure — AssignToOrderAsync switched to change-tracking (ExecuteUpdateAsync incompatible with value converters) | ✅ Done |
 | DB migration (`InitSalesSchema` at `Infrastructure/Sales/Orders/Migrations/`) | ✅ Done — pending production sign-off per migration policy |
+| Unit tests — `OrderNumberTests.cs` (`Parse` validation + `Generate` factory) | ⬜ Missing — required by conformance checklist |
+| Unit tests — `OrderCustomerTests.cs` (constructor validation guards) | ⬜ Missing — required by conformance checklist |
 | Integration tests | ⬜ Not started |
 | Controller migration (Web + API atomic switch) | ⬜ Not started |
 | Atomic switch | ⬜ After integration tests |
@@ -645,8 +647,8 @@ Parallel Change — existing code untouched until the atomic switch.
 - [ ] `OrderNumber` lives in `Domain/Sales/Orders/ValueObjects/` as a `sealed record`
 - [ ] `OrderNumber` validates against regex `^ORD-\d{8}-[A-F0-9]{8}$` and throws `DomainException` on failure
 - [ ] `OrderNumber.Generate()` static factory uses `DateTime.UtcNow` + `Guid.NewGuid()`
-- [ ] `OrderEventTypes` is a `static class` with `string` constants (no `enum`)
-- [ ] `Order` has `private readonly List<OrderEvent> _events` backing field
+- [ ] `OrderEventType` is an `enum` stored as a string in the DB via EF Core `HasConversion<string>()` in `OrderEventConfiguration` — equivalent to the static constants approach (no migration needed to add new values)
+- [ ] `Order` has `private readonly List<OrderEvent> _events` backing field; `EventType` is `OrderEventType` (enum)
 - [ ] Every state transition method in `Order` calls `AppendEvent(...)` before returning
 - [ ] `OrderEvent.OccurredAt` has no public setter; set only in constructor
 - [ ] `OrderItem` has no `RefundId` property, no `AssignRefund()`, no `RemoveRefund()`

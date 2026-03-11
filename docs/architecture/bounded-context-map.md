@@ -9,6 +9,7 @@
 > TimeManagement BC design: [ADR-0009 — Supporting/TimeManagement BC — Scheduled and Deferred Job Design](../adr/0009-supporting-timemanagement-bc-design.md)
 > Inventory BC design: [ADR-0011 — Inventory/Availability BC Design](../adr/0011-inventory-availability-bc-design.md)
 > Presale/Checkout BC design: [ADR-0012 — Presale/Checkout BC Design](../adr/0012-presale-checkout-bc-design.md)
+> Payments BC design: [ADR-0015 — Sales/Payments BC Design](../adr/0015-sales-payments-bc-design.md)
 > Per-BC DbContext interfaces: [ADR-0013 — Per-BC DbContext Interfaces](../adr/0013-per-bc-dbcontext-interfaces.md)
 > Sales/Orders BC design: [ADR-0014 — Sales/Orders BC — Order and OrderItem Aggregate Design](../adr/0014-sales-orders-bc-design.md)
 
@@ -163,6 +164,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | **Inventory/Availability** | Behavioral aggregate | Counter aggregate (`StockItem`), `Reservation`, `ProductSnapshot` ACL, `AvailabilityDbContext`, `RowVersion` optimistic locking, deferred `StockAdjustmentJob` with command coalescing, `PaymentWindowTimeoutJob`, publishes `AvailabilityChanged` outbound — see ADR-0011. Note: `SoftReservation` moved to Presale/Checkout (ADR-0012). | ✅ New implementation ready (parallel) |
 | **Messaging** | Shared infrastructure | `IMessageBroker`, `IMessageHandler<T>`, `BackgroundMessageDispatcher`, retry + dead-letter — see ADR-0010 | ✅ Ready — `StockAvailabilityChanged` active; Presale/Checkout Slice 1 subscribed |
 | **Presale/Checkout** | Behavioral (Slice 1) | `CartLine` write-through cache, `SoftReservation` (DB + cache, captures `UnitPrice` at checkout initiation), `StockSnapshot` event-driven read model, `SoftReservationExpiredJob`, ACL interfaces (`ICatalogClient`, `IStockClient`), BFF `StorefrontController` in API — see ADR-0012. Slice 2 (cart-to-order) blocked by Sales/Orders. | ✅ Slice 1 implemented (parallel) |
+| **Payments** | Behavioral aggregate | `Payment` state machine (Pending → Confirmed / Expired / Refunded), `PaymentWindowExpiredJob` (Payments BC timer), `OrderPlacedHandler` initializes payment, publishes `PaymentExpired` → chain to `OrderCancelled` — see ADR-0015 | 📋 ADR proposed |
 | **Identity / IAM** | Infrastructure | ASP.NET Core Identity | ✅ Keep isolated |
 
 ---
@@ -197,7 +199,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 |---|---|---|---|---|
 | 1 | **Sales/Orders** | [ADR-0014](../adr/0014-sales-orders-bc-design.md) | 🟡 In progress — Domain ✅, Application ✅, Infrastructure ✅, Unit tests ✅ — DB migration pending approval; integration tests + atomic switch pending | — (legacy migration; Checkout Slice 2 + Payments depend on it) |
 | 2 | **Presale/Checkout — Slice 2** (cart + checkout write flow) | ADR pending | ⬜ Not started | Orders (#1) |
-| 3 | **Sales/Payments** | — | ⬜ Not started | Orders (#1); fixes `PaymentHandler → OrderService` sync call |
+| 3 | **Sales/Payments** | [ADR-0015](../adr/0015-sales-payments-bc-design.md) | 📋 ADR proposed | Orders (#1); fixes `PaymentHandler → OrderService` sync call |
 | 4 | **Sales/Coupons** | — | ⬜ Not started | Orders (#1) + Payments (#3); fixes `CouponHandler → Order.Cost` |
 | 5 | **Sales/Fulfillment** | — | ⬜ Not started | Availability (done) + Orders (#1) |
 
@@ -208,7 +210,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | Task | ADR | Status |
 |---|---|---|
 | Per-BC `DbContext` interfaces | [ADR-0013](../adr/0013-per-bc-dbcontext-interfaces.md) | ⬜ Not started — gate: 80–100% BC implementations complete |
-| `PaymentHandler` → event-based coordination | Planned ADR (Saga) | ⬜ Not started |
+| `PaymentHandler` → event-based coordination | [ADR-0015](../adr/0015-sales-payments-bc-design.md) | 📋 ADR proposed — `PaymentConfirmed` → `Order.MarkAsPaid`; `PaymentExpired` → `Order.Cancel` |
 | `CouponHandler` — remove direct `Order.Cost` write | ADR-0002 §9 | ⬜ Not started |
 | Remove `ApplicationUser` nav from `Order` | ADR-0002 §8 | ⬜ Part of Sales/Orders migration |
 
