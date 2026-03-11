@@ -1,0 +1,71 @@
+using ECommerceApp.Application.Messaging;
+using ECommerceApp.Application.Sales.Payments.DTOs;
+using ECommerceApp.Application.Sales.Payments.Messages;
+using ECommerceApp.Application.Sales.Payments.ViewModels;
+using ECommerceApp.Domain.Sales.Payments;
+using System;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace ECommerceApp.Application.Sales.Payments.Services
+{
+    internal sealed class PaymentService : IPaymentService
+    {
+        private readonly IPaymentRepository _paymentRepo;
+        private readonly IMessageBroker _broker;
+
+        public PaymentService(IPaymentRepository paymentRepo, IMessageBroker broker)
+        {
+            _paymentRepo = paymentRepo;
+            _broker = broker;
+        }
+
+        public async Task<PaymentDetailsVm?> GetByIdAsync(int paymentId, CancellationToken ct = default)
+        {
+            var payment = await _paymentRepo.GetByIdAsync(paymentId, ct);
+            return payment is null ? null : MapToDetailsVm(payment);
+        }
+
+        public async Task<PaymentDetailsVm?> GetByOrderIdAsync(int orderId, CancellationToken ct = default)
+        {
+            var payment = await _paymentRepo.GetByOrderIdAsync(orderId, ct);
+            return payment is null ? null : MapToDetailsVm(payment);
+        }
+
+        public async Task<PaymentOperationResult> ConfirmAsync(ConfirmPaymentDto dto, CancellationToken ct = default)
+        {
+            var payment = await _paymentRepo.GetByIdAsync(dto.PaymentId, ct);
+            if (payment is null)
+                return PaymentOperationResult.PaymentNotFound;
+
+            if (payment.Status == PaymentStatus.Confirmed)
+                return PaymentOperationResult.AlreadyConfirmed;
+            if (payment.Status == PaymentStatus.Expired)
+                return PaymentOperationResult.AlreadyExpired;
+            if (payment.Status == PaymentStatus.Refunded)
+                return PaymentOperationResult.AlreadyRefunded;
+
+            var @event = payment.Confirm(dto.TransactionRef);
+            await _paymentRepo.UpdateAsync(payment, ct);
+
+            await _broker.PublishAsync(new PaymentConfirmed(
+                @event.PaymentId,
+                @event.OrderId,
+                System.Array.Empty<PaymentConfirmedItem>(),
+                @event.OccurredAt));
+
+            return PaymentOperationResult.Success;
+        }
+
+        private static PaymentDetailsVm MapToDetailsVm(Payment payment)
+            => new(
+                payment.Id.Value,
+                payment.OrderId.Value,
+                payment.TotalAmount,
+                payment.CurrencyId,
+                payment.Status.ToString(),
+                payment.ExpiresAt,
+                payment.ConfirmedAt,
+                payment.TransactionRef);
+    }
+}

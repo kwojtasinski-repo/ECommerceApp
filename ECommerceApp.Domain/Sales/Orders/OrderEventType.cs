@@ -8,6 +8,7 @@ namespace ECommerceApp.Domain.Sales.Orders
         CouponApplied,
         CouponRemoved,
         RefundAssigned,
-        RefundRemoved
+        RefundRemoved,
+        OrderCancelled
     }
 }

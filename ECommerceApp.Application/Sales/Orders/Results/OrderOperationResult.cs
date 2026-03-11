@@ -8,6 +8,7 @@ namespace ECommerceApp.Application.Sales.Orders.Results
         NotPaid,
         NotDelivered,
         AlreadyDelivered,
-        CouponNotAssigned
+        CouponNotAssigned,
+        AlreadyCancelled
     }
 }

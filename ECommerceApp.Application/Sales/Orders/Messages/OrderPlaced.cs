@@ -9,7 +9,9 @@ namespace ECommerceApp.Application.Sales.Orders.Messages
         IReadOnlyList<OrderPlacedItem> Items,
         string UserId,
         DateTime ExpiresAt,
-        DateTime OccurredAt) : IMessage;
+        DateTime OccurredAt,
+        decimal TotalAmount,
+        int CurrencyId) : IMessage;
 
     public record OrderPlacedItem(int ProductId, int Quantity);
 }

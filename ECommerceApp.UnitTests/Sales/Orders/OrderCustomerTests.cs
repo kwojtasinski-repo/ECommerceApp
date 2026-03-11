@@ -159,7 +159,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         {
             var act = () => new OrderCustomer(
                 "Jan", "Kowalski", "jan@example.com", "123456789",
-                false, null, null, "Główna", "1", null, "00-001", city, "Polska");
+                false, null, null, "Główna", "1", null, "67-100", city, "Polska");
 
             act.Should().Throw<DomainException>().WithMessage("*City*");
         }

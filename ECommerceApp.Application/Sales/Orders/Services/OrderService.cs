@@ -69,7 +69,9 @@ namespace ECommerceApp.Application.Sales.Orders.Services
                 items,
                 dto.UserId,
                 DateTime.UtcNow.AddDays(3),
-                DateTime.UtcNow));
+                DateTime.UtcNow,
+                orderWithItems!.Cost,
+                orderWithItems.CurrencyId));
 
             return PlaceOrderResult.Success(orderId);
         }
@@ -211,7 +213,39 @@ namespace ECommerceApp.Application.Sales.Orders.Services
         public Task<int?> GetCustomerIdAsync(int orderId, CancellationToken ct = default)
             => _orderRepo.GetCustomerIdAsync(orderId, ct);
 
-        private static OrderDetailsVm MapToDetailsVm(Domain.Sales.Orders.Order order)
+        public async Task<OrderOperationResult> MarkAsPaidAsync(int orderId, int paymentId, CancellationToken ct = default)
+        {
+            var order = await _orderRepo.GetByIdAsync(orderId, ct);
+            if (order is null)
+                return OrderOperationResult.OrderNotFound;
+            if (order.IsPaid)
+                return OrderOperationResult.AlreadyPaid;
+
+            order.MarkAsPaid(paymentId);
+            await _orderRepo.UpdateAsync(order, ct);
+            return OrderOperationResult.Success;
+        }
+
+        public async Task<OrderOperationResult> CancelOrderAsync(int orderId, CancellationToken ct = default)
+        {
+            var order = await _orderRepo.GetByIdWithItemsAsync(orderId, ct);
+            if (order is null)
+                return OrderOperationResult.OrderNotFound;
+            if (order.IsCancelled)
+                return OrderOperationResult.AlreadyCancelled;
+
+            var items = order.OrderItems
+                .Select(i => new OrderCancelledItem(i.ItemId.Value, i.Quantity))
+                .ToList();
+
+            order.Cancel();
+            await _orderRepo.UpdateAsync(order, ct);
+
+            await _messageBroker.PublishAsync(new OrderCancelled(orderId, items, DateTime.UtcNow));
+            return OrderOperationResult.Success;
+        }
+
+        private static OrderDetailsVm MapToDetailsVm(Order order)
             => new()
             {
                 Id = order.Id.Value,
@@ -256,7 +290,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
                 }).ToList()
             };
 
-        private static OrderForListVm MapToForListVm(Domain.Sales.Orders.Order order)
+        private static OrderForListVm MapToForListVm(Order order)
             => new()
             {
                 Id = order.Id.Value,

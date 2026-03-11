@@ -199,7 +199,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 |---|---|---|---|---|
 | 1 | **Sales/Orders** | [ADR-0014](../adr/0014-sales-orders-bc-design.md) | 🟡 In progress — Domain ✅, Application ✅, Infrastructure ✅, Unit tests ✅ — DB migration pending approval; integration tests + atomic switch pending | — (legacy migration; Checkout Slice 2 + Payments depend on it) |
 | 2 | **Presale/Checkout — Slice 2** (cart + checkout write flow) | ADR pending | ⬜ Not started | Orders (#1) |
-| 3 | **Sales/Payments** | [ADR-0015](../adr/0015-sales-payments-bc-design.md) | 📋 ADR proposed | Orders (#1); fixes `PaymentHandler → OrderService` sync call |
+| 3 | **Sales/Payments** | [ADR-0015](../adr/0015-sales-payments-bc-design.md) | 🟡 In progress — Domain ✅, Application ✅, Infrastructure ✅, Unit tests ✅ — DB migrations pending approval; integration tests + atomic switch pending | Orders (#1); fixes `PaymentHandler → OrderService` sync call |
 | 4 | **Sales/Coupons** | — | ⬜ Not started | Orders (#1) + Payments (#3); fixes `CouponHandler → Order.Cost` |
 | 5 | **Sales/Fulfillment** | — | ⬜ Not started | Availability (done) + Orders (#1) |
 
@@ -210,7 +210,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | Task | ADR | Status |
 |---|---|---|
 | Per-BC `DbContext` interfaces | [ADR-0013](../adr/0013-per-bc-dbcontext-interfaces.md) | ⬜ Not started — gate: 80–100% BC implementations complete |
-| `PaymentHandler` → event-based coordination | [ADR-0015](../adr/0015-sales-payments-bc-design.md) | 📋 ADR proposed — `PaymentConfirmed` → `Order.MarkAsPaid`; `PaymentExpired` → `Order.Cancel` |
+| `PaymentHandler` → event-based coordination | [ADR-0015](../adr/0015-sales-payments-bc-design.md) | 🟡 In progress — handlers + job + aggregate implemented ✅; atomic switch (remove legacy `PaymentHandler`) pending integration tests |
 | `CouponHandler` — remove direct `Order.Cost` write | ADR-0002 §9 | ⬜ Not started |
 | Remove `ApplicationUser` nav from `Order` | ADR-0002 §8 | ⬜ Part of Sales/Orders migration |
 

@@ -12,7 +12,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         private static OrderCustomer CreateCustomer() => new(
             "Jan", "Kowalski", "jan@example.com", "123456789",
             false, null, null,
-            "Główna", "1", null, "00-001", "Warszawa", "Polska");
+            "Główna", "1", null, "67-100", "Nowa Sól", "Polska");
 
         // ── Create ────────────────────────────────────────────────────────────
 
@@ -266,6 +266,54 @@ namespace ECommerceApp.UnitTests.Sales.Orders
             order.RemoveRefund();
 
             order.RefundId.Should().BeNull();
+        }
+
+        // ── Cancel ────────────────────────────────────────────────────────────
+
+        [Fact]
+        public void Cancel_PlacedOrder_ShouldSetIsCancelledAndAppendEvent()
+        {
+            var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
+
+            order.Cancel();
+
+            order.IsCancelled.Should().BeTrue();
+            order.CancelledAt.Should().NotBeNull();
+            order.Events.Should().Contain(e => e.EventType == OrderEventType.OrderCancelled);
+        }
+
+        [Fact]
+        public void Cancel_AlreadyCancelledOrder_ShouldThrowDomainException()
+        {
+            var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
+            order.Cancel();
+
+            var act = () => order.Cancel();
+
+            act.Should().Throw<DomainException>().WithMessage("*already cancelled*");
+        }
+
+        [Fact]
+        public void Cancel_PaidOrder_ShouldThrowDomainException()
+        {
+            var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
+            order.MarkAsPaid(1);
+
+            var act = () => order.Cancel();
+
+            act.Should().Throw<DomainException>().WithMessage("*paid*");
+        }
+
+        [Fact]
+        public void Cancel_DeliveredOrder_ShouldThrowDomainException()
+        {
+            var order = Order.Create(1, 1, "user1", OrderNumber.Generate(), CreateCustomer());
+            order.MarkAsPaid(1);
+            order.MarkAsDelivered();
+
+            var act = () => order.Cancel();
+
+            act.Should().Throw<DomainException>().WithMessage("*delivered*");
         }
     }
 }

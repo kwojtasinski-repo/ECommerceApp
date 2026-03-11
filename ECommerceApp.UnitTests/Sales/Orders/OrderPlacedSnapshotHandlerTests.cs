@@ -26,7 +26,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
             => new(_orderItemRepo.Object, _productResolver.Object);
 
         private static OrderPlaced CreateMessage(int orderId = 1)
-            => new(orderId, new List<OrderPlacedItem>(), "user-1", DateTime.UtcNow.AddDays(3), DateTime.UtcNow);
+            => new(orderId, new List<OrderPlacedItem>(), "user-1", DateTime.UtcNow.AddDays(3), DateTime.UtcNow, 100m, 1);
 
         private static OrderItem CreateOrderItem(int productId = 10)
             => OrderItem.Create(new OrderProductId(productId), 1, 9.99m, new OrderUserId("user-1"));

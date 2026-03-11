@@ -23,6 +23,8 @@ namespace ECommerceApp.Domain.Sales.Orders
         public int? PaymentId { get; private set; }
         public int? RefundId { get; private set; }
         public int? CouponUsedId { get; private set; }
+        public bool IsCancelled { get; private set; }
+        public DateTime? CancelledAt { get; private set; }
         public OrderCustomer Customer { get; private set; } = default!;
 
         private readonly List<OrderItem> _orderItems = new();
@@ -163,6 +165,28 @@ namespace ECommerceApp.Domain.Sales.Orders
         {
             RefundId = null;
             AppendEvent(OrderEventType.RefundRemoved);
+        }
+
+        public void Cancel()
+        {
+            if (IsCancelled)
+            {
+                throw new DomainException($"Order '{Id?.Value}' is already cancelled.");
+            }
+
+            if (IsDelivered)
+            {
+                throw new DomainException($"Order '{Id?.Value}' cannot be cancelled — already delivered.");
+            }
+
+            if (IsPaid)
+            {
+                throw new DomainException($"Order '{Id?.Value}' cannot be cancelled — already paid.");
+            }
+
+            IsCancelled = true;
+            CancelledAt = DateTime.UtcNow;
+            AppendEvent(OrderEventType.OrderCancelled);
         }
 
         private void AppendEvent(OrderEventType eventType, string? payload = null)

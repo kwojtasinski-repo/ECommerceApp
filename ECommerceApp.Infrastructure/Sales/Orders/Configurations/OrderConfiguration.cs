@@ -88,6 +88,9 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Configurations
             builder.HasIndex(o => o.UserId);
             builder.HasIndex(o => o.CustomerId);
             builder.HasIndex(o => o.IsPaid);
+
+            builder.Property(o => o.IsCancelled).IsRequired();
+            builder.Property(o => o.CancelledAt);
         }
     }
 }

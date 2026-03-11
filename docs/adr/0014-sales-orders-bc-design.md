@@ -1,7 +1,7 @@
 # ADR-0014: Sales/Orders BC — Order and OrderItem Aggregate Design
 
 ## Status
-Proposed
+Accepted — under revision (see §16–§18 for agreed design amendments)
 
 ## Date
 2026-03-09
@@ -102,8 +102,10 @@ Rules (per dotnet-instructions.md §16):
   Enables cost simulation: create `Order` in memory, call `AssignCoupon`, read `Cost` without
   persisting — ideal for checkout price preview.
 - State transitions return domain events and append to the event log:
-  - `MarkAsPaid(int paymentId) → OrderPaid` domain event; appends `OrderEventTypes.OrderPaid`
-  - `MarkAsDelivered() → OrderDelivered` domain event; appends `OrderEventTypes.OrderDelivered`
+  - `ConfirmPayment(int paymentId)` → appends `OrderEventType.OrderPaymentConfirmed` with `PaymentConfirmedPayload`; transitions `Status` to `PaymentConfirmed`. Replaces `MarkAsPaid`.
+  - `Fulfill()` → appends `OrderEventType.OrderFulfilled`; transitions `Status` to `Fulfilled`. Replaces `MarkAsDelivered`.
+  - `Cancel(string reason)` → appends `OrderEventType.OrderCancelled` with `OrderCancelledPayload`; transitions `Status` to `Cancelled`.
+  - `ExpirePayment()` → appends `OrderEventType.OrderPaymentExpired`; transitions `Status` to `Cancelled`. Called by `OrderPaymentExpiredHandler` when `PaymentExpired` message is received.
 - Mutations coordinated across the collection:
   - `AssignCoupon(int couponUsedId, int discountPercent)` — validates `discountPercent` is 0–100
     (`DomainException` otherwise), stores `DiscountPercent`, sets `CouponUsedId` on order and all
@@ -119,8 +121,12 @@ Rules (per dotnet-instructions.md §16):
   read-only property — append-only audit log. See §13 for structure and EF Core configuration.
 - Every state transition calls internal `AppendEvent(string eventType, string? payload = null)`.
   `OrderEventTypes` static class defines all valid event type string constants.
-- `int CustomerId`, `int CurrencyId`, `int? PaymentId`, `int? RefundId`, `int? CouponUsedId`
+- `int CustomerId`, `int CurrencyId`, `int? CouponUsedId`
   — foreign-key IDs only; no cross-BC navigation properties.
+  `int? PaymentId` and `int? RefundId` are **removed** — their values are stored in event payloads
+  (`PaymentConfirmedPayload.PaymentId`, `RefundAssignedPayload.RefundId`). See §17 for payload records.
+  `bool IsPaid`, `bool IsDelivered`, `bool IsCancelled`, `DateTime? CancelledAt`, `DateTime? Delivered`
+  are **removed** — replaced by `OrderStatus Status`. See §16.
 
 ### 3. `OrderItem` child entity
 
@@ -133,25 +139,57 @@ Domain/Sales/Orders/OrderItem.cs
   items (`UnitCost = 0`). The shared `Price` VO enforces `> 0` and is not weakened. See §14 for rationale.
 - `OrderProductSnapshot? Snapshot { get; private set; }` — `null` during cart state;
   set at order-placement time via `SetSnapshot`. See §15 for full design.
-- Static `OrderItem.Create(OrderProductId itemId, int quantity, decimal unitCost, OrderUserId userId)` factory.
+- Static `OrderItem.Create(OrderProductId itemId, int quantity, UnitCost unitCost, OrderUserId userId)` factory.
   Snapshot is not a constructor parameter — it is resolved separately at placement time.
 - `void SetSnapshot(OrderProductSnapshot snapshot)` — called by `OrderService.PlaceOrderAsync`
   for each cart item before persisting; throws `DomainException` if snapshot is null.
 - State-mutation methods: `UpdateQuantity`, `ApplyCoupon`, `RemoveCoupon`.
 - `AssignRefund` and `RemoveRefund` do **not** exist on `OrderItem` — refunds are whole-order
   operations owned by `Order.RefundId` and the event log.
+- `UnitCost UnitCost { get; private set; }` — typed VO from `Domain/Shared/`; enforces `>= 0`;
+  allows `0` for free/promotional items. See §14.
 - `OrderUserId UserId { get; private set; }` — typed ID; no `ApplicationUser` navigation.
 - `OrderProductId ItemId { get; private set; }` — typed ID; no `Item` navigation property.
 
-### 4. Domain events
+### 4. Domain events — design revision
 
-```
-Domain/Sales/Orders/Events/OrderPaid.cs
-Domain/Sales/Orders/Events/OrderDelivered.cs
+`OrderPaid.cs` and `OrderDelivered.cs` are **removed** in the new design.
+
+State transition methods (`ConfirmPayment`, `Fulfill`, `Cancel`, `ExpirePayment`) no longer
+return domain event records. They update `OrderStatus` and append an `OrderEvent` internally.
+
+**Actual usage analysis (verified against current codebase):**
+
+| Record | Used? | Detail |
+|---|---|---|
+| `OrderPaid` | ❌ Return value discarded | `OrderPaymentConfirmedHandler` calls `order.MarkAsPaid(message.PaymentId)` and ignores the return value. `paymentId` is already in the inbound `PaymentConfirmed` message. |
+| `OrderDelivered` | ✅ `OccurredAt` used | `OrderService.MarkAsDeliveredAsync` uses `@event.OccurredAt` to populate the `OrderShipped` integration message timestamp. |
+
+**How `MarkAsDeliveredAsync` gets the timestamp without `OrderDelivered`:**
+
+`Fulfill()` appends an `OrderFulfilled` event with `OccurredAt = DateTime.UtcNow` before returning.
+The service reads it directly from the aggregate's event collection:
+
+```csharp
+// OrderService.FulfillOrderAsync — new design:
+order.Fulfill();
+await _orderRepo.UpdateAsync(order, ct);
+
+var fulfilledAt = order.Events
+    .Last(e => e.EventType == OrderEventType.OrderFulfilled)
+    .OccurredAt;
+
+await _messageBroker.PublishAsync(new OrderShipped(orderId, items, fulfilledAt));
 ```
 
-Both are `record` types in past tense. Returned from aggregate state-transition methods.
-The service layer is responsible for consuming them (e.g. publishing integration messages).
+This is safe: `Fulfill()` appends the event and `UpdateAsync` persists it — both happen before
+`PublishAsync`. The event collection is loaded in-memory; no extra DB query is needed.
+
+**Files to delete at atomic switch:**
+```
+Domain/Sales/Orders/Events/OrderPaid.cs      ← delete
+Domain/Sales/Orders/Events/OrderDelivered.cs ← delete
+```
 
 ### 5. Result-based error handling (key design decision)
 
@@ -299,38 +337,90 @@ stored as `varchar(25)` with a `UNIQUE` constraint on `sales.Orders`.
 `OrderEvent` is an append-only child entity stored in `sales.OrderEvents`.
 
 **Why a separate table (not a JSON column):**
-- Rows are individually queryable (`WHERE EventType = 'OrderPaid'`).
+- Rows are individually queryable (`WHERE EventType = 'OrderPaymentConfirmed'`).
 - Rows are individually immutable — a JSON column must be rewritten on every append.
 - No column size limit; schema evolution requires no migration of existing rows.
-- Scalar fields on `Order` remain the source of truth — events are never replayed to derive state.
+- `OrderStatus Status` on `Order` is the single authoritative lifecycle column for fast queries.
+  Events carry the contextual history (reason, reference IDs). See §16 for the full decision.
 
 **Entity structure:**
 - `OrderEventId(int)` typed ID.
 - `OrderId OrderId` — typed FK (matches `Order.Id`); no navigation property back to `Order`.
-- `string EventType` — value from `OrderEventTypes` static constants class (`OrderPlaced`,
-  `OrderPaid`, `OrderDelivered`, `CouponApplied`, `CouponRemoved`, `RefundAssigned`, `RefundRemoved`).
-  String constants, not an `enum` — adding new types requires no migration.
-- `string? Payload` — nullable JSON string for supplementary data.
+- `string EventType` — value from `OrderEventType` enum stored as string via `HasConversion<string>()`.
+  Current values: `OrderPlaced`, `OrderPaymentConfirmed`, `OrderPaymentExpired`, `OrderFulfilled`,
+  `OrderCancelled` (carries `reason` payload), `CouponApplied`, `CouponRemoved`, `RefundAssigned`, `RefundRemoved`.
+  Enum stored as string — adding new values requires no migration.
+- `string? Payload` — nullable JSON; typed payload records defined in §17.
 - `DateTime OccurredAt` — UTC; no public setter; set only in constructor.
+
+`AppendEvent` is generic: `private void AppendEvent<T>(OrderEventType type, T? payload = default)`
+where `payload` is serialized to JSON via `JsonSerializer.Serialize`. No-payload events pass `default`.
+
+`OrderStatus Status` on `Order` is the fast-read lifecycle column. Events carry the rich context
+(why did it cancel? which payment confirmed it?). **Both are always written together in the same
+state-transition method, saved in one `SaveChangesAsync` transaction — they can never diverge.**
+`Status` has `private set`, so only domain methods can advance it.
 
 EF Core configuration:
 `HasMany(o => o.Events).WithOne().HasForeignKey(e => e.OrderId).OnDelete(DeleteBehavior.Cascade)`
 with `.Navigation(o => o.Events).HasField("_events").UsePropertyAccessMode(PropertyAccessMode.Field)`.
 
-### 14. `OrderItem.UnitCost` stays `decimal`
+### 14. `OrderItem.UnitCost` — `UnitCost` value object (design revision)
 
-`OrderItem.UnitCost` remains a `decimal` field validated as `>= 0` in `OrderItem.Create(...)`.
-It is **not** the shared `Price` VO.
+`OrderItem.UnitCost` is typed as a `UnitCost` value object, **not** plain `decimal` and
+**not** the shared `Price` VO.
 
-The `Price` VO enforces `> 0` — semantically correct for catalog pricing. Promotional free
-items require `UnitCost = 0`. Rather than weaken `Price`, this constraint is localised to the
-order-line context where it is intentional.
+**Why not `Price`:** `Price` enforces `amount > 0` — correct for catalog pricing but wrong
+for free/promotional items where `UnitCost = 0` is a valid business case.
+
+**Why a VO instead of plain `decimal`:** Provides compile-time type safety and self-documenting
+constraint. Passing `-5m` compiles with `decimal`; `new UnitCost(-5m)` throws `DomainException`
+at the construction site.
+
+**`UnitCost` VO definition** — lives in `Domain/Shared/` alongside `Price` and `Money`:
+
+```csharp
+// Domain/Shared/UnitCost.cs
+public sealed record UnitCost
+{
+    public decimal Amount { get; }
+
+    public UnitCost(decimal amount)
+    {
+        if (amount < 0)
+            throw new DomainException("UnitCost cannot be negative.");
+        Amount = amount;
+    }
+
+    public static UnitCost Zero => new(0m);
+
+    public override string ToString() => Amount.ToString("F2");
+}
+```
+
+**EF Core mapping** in `OrderItemConfiguration`:
+```csharp
+builder.Property(oi => oi.UnitCost)
+       .HasConversion(uc => uc.Amount, v => new UnitCost(v))
+       .HasColumnType("decimal(18,2)");
+```
+
+**`Order.CalculateCost()`** uses `i.UnitCost.Amount`:
+```csharp
+Cost = _orderItems.Sum(i => i.UnitCost.Amount * i.Quantity * discountRate);
+```
+
+**`OrderItem.Create` signature change:**
+```csharp
+// Before: decimal unitCost
+// After:  UnitCost unitCost
+public static OrderItem Create(OrderProductId itemId, int quantity, UnitCost unitCost, OrderUserId userId)
+```
 
 > **Future consideration — Catalog free item pricing policy:**
 > When free or promotional pricing is introduced in the Catalog BC, a dedicated ADR should
-> evaluate the options: an `IsFree` flag on `Product`, a `PromotionalPrice` nullable property,
-> a `FreeItemPolicy` strategy, or a scoped relaxation of `Price` to `>= 0` with an explicit
-> justification invariant. This is out of scope for the current ADR.
+> evaluate options: `IsFree` flag on `Product`, `PromotionalPrice` nullable property, or a
+> `FreeItemPolicy` strategy. Out of scope for this ADR.
 
 ### 15. `OrderProductSnapshot` — product display data at placement time
 
@@ -527,6 +617,197 @@ Stored in `sales.OrderItemSnapshots` (separate table) rather than inline columns
   makes intent clear and allows future refactoring without changing the aggregate API.
 - **Remove `Order.CustomerId` once `OrderCustomer` snapshot exists** — rejected; `CustomerId`
   is still needed for cross-BC queries ("show all orders for customer X").
+- **Keep `IsPaid`, `IsDelivered`, `IsCancelled` as separate boolean columns** — rejected (design
+  revision). Multiple `Is*` booleans grow the table with every new lifecycle state. Replaced by
+  `OrderStatus Status` (single column, enum values). See §16.
+- **Keep `PaymentId`, `RefundId` as scalar FK columns** — rejected (design revision). These
+  cross-BC reference IDs are now carried in event payloads (`PaymentConfirmedPayload`,
+  `RefundAssignedPayload`), which supports future partial-payment scenarios and removes
+  FK columns that only ever hold one value. See §17.
+- **Keep `UnitCost` as plain `decimal`** — rejected (design revision). A `UnitCost` VO in
+  `Domain/Shared/` provides compile-time type safety and self-documents the `>= 0` constraint.
+  Plain `decimal` allows negative values to reach `OrderItem.Create` at runtime. See §14.
+- **Use `Price` VO for `OrderItem.UnitCost`** — rejected (re-confirmed). `Price` enforces
+  `> 0`; free promotional items require `UnitCost = 0`. `UnitCost` VO with `>= 0` is correct.
+
+---
+
+## §16 — `OrderStatus` lifecycle column (design revision)
+
+`Order` carries a single `OrderStatus Status { get; private set; }` column that represents
+the authoritative current lifecycle state. It replaces the four removed scalar properties:
+`bool IsPaid`, `bool IsDelivered`, `bool IsCancelled`, `DateTime? CancelledAt`, `DateTime? Delivered`.
+
+```csharp
+public enum OrderStatus
+{
+    Placed,               // order created — awaiting payment
+    PaymentConfirmed,     // paid — awaiting fulfilment
+    PartiallyFulfilled,   // operator released some items; waiting on remainder
+    Fulfilled,            // all items released / delivered
+    Cancelled,            // payment expired, denied, or manually cancelled
+    Refunded              // refund approved and processed
+}
+```
+
+**Rules:**
+- `Status` has `private set` — only domain methods advance it.
+- Every state transition method updates `Status` **and** appends the corresponding `OrderEvent`
+  in one operation. Both are saved in a single `SaveChangesAsync` — they can never diverge.
+- `Status` is the indexed column for list queries: `WHERE Status = 'PaymentConfirmed'`.
+- New lifecycle states are added as enum values — no new columns, no new migrations beyond
+  the initial schema creation.
+
+**EF Core mapping:**
+```csharp
+builder.Property(o => o.Status)
+       .HasConversion<string>()
+       .HasMaxLength(30)
+       .IsRequired();
+builder.HasIndex(o => o.Status);
+```
+
+**Timestamps derived from events (not stored as columns):**
+
+| Old column | Derived from |
+|---|---|
+| `DateTime? Delivered` | `OrderFulfilled` event `OccurredAt` |
+| `DateTime? CancelledAt` | `OrderCancelled` event `OccurredAt` |
+
+When an API or ViewModel needs "when was this order delivered?", it loads the `OrderFulfilled`
+event for that `OrderId`. For list views that do not need timestamps, only `Status` is needed —
+no event loading required.
+
+**`CalculateCost()` and `DiscountPercent` note:**
+`int? DiscountPercent` and `int? CouponUsedId` remain as columns for now. `CalculateCost()`
+uses `DiscountPercent` directly. Both will be removed when the Coupons BC is introduced.
+See §18 for the deferred Coupons BC work.
+
+---
+
+## §17 — Event payload records (design revision)
+
+Each business event that carries context stores it as a typed JSON payload in
+`OrderEvent.Payload` (serialized via `JsonSerializer.Serialize<T>`).
+
+```csharp
+// Domain/Sales/Orders/Events/Payloads/
+public record PaymentConfirmedPayload(int PaymentId);
+public record OrderCancelledPayload(string Reason);    // "PaymentExpired" | "ManualOperator" | "CustomerRequest"
+public record CouponAppliedPayload(int CouponUsedId, int DiscountPercent);
+public record CouponRemovedPayload(int CouponUsedId);
+public record RefundAssignedPayload(int RefundId);
+public record PartialFulfilmentPayload(IReadOnlyList<FulfilledItem> Items);
+public record FulfilledItem(int ItemId, int Quantity);
+```
+
+Events with no supplementary context (`OrderPlaced`, `OrderPaymentExpired`, `OrderFulfilled`)
+pass `null` payload.
+
+**`PaymentId` and `RefundId` removal from `Order` columns:**
+`int? PaymentId` and `int? RefundId` are removed from `Order`. Their values are now stored in
+`PaymentConfirmedPayload.PaymentId` and `RefundAssignedPayload.RefundId` respectively.
+
+Consequences:
+- `WHERE PaymentId = X` SQL queries are replaced by: load the `OrderPaymentConfirmed` event
+  for the order and deserialize the payload. Rare operation; acceptable cost.
+- Partial payments are naturally supported: multiple `OrderPaymentConfirmed` events per order,
+  each with a different `PaymentId`. No schema change required.
+
+**Payload storage format:** `nvarchar(max)` JSON (human-readable, debuggable via SQL query,
+sufficient for the small payloads in this domain).
+
+---
+
+## §18 — Integration flow design decisions (post-implementation review)
+
+These decisions were made after a full flow analysis (Presale → Orders → Payments → Inventory).
+
+### Gap 1 — `OrderPlaced` domain event appended before `Cost` is known — non-issue
+
+`Order.Create()` appends `OrderEventType.OrderPlaced` with no payload. `Cost = 0` at this
+point because items are not yet assigned. `Cost` is calculated and persisted in the same
+`PlaceOrderAsync` unit of work, BEFORE the `OrderPlaced` integration message is published.
+
+`OrderPlaced` domain event has no payload — it is purely a lifecycle timestamp marker.
+The `OrderPlaced` integration message (published to `IMessageBroker`) carries the correct `Cost`.
+
+**Future consideration:** If `OrderPlaced` domain event ever needs a cost payload, move
+`AppendEvent(OrderEventType.OrderPlaced)` from `Order.Create()` to a separate `FinalizeOrder()`
+method called after `CalculateCost()` in `OrderService.PlaceOrderAsync`.
+
+### Gap 2 — `CartLine` and `SoftReservation` leak after order placement — action required
+
+`OrderService.PlaceOrderAsync` assigns cart `OrderItem` entities to the new order but does NOT
+clean up `CartLine` rows or `SoftReservation` rows in the Presale BC.
+
+**Resolution:** Add `OrderPlacedHandler` in the Presale/Checkout BC:
+
+```csharp
+// Application/Presale/Checkout/Handlers/OrderPlacedHandler.cs
+internal sealed class OrderPlacedHandler : IMessageHandler<OrderPlaced>
+{
+    // 1. Delete CartLine rows for the placed cart item IDs
+    // 2. Delete SoftReservation rows for those items
+    // 3. Mark cart as "processing" in cache (hides checkout UI, shows processing state)
+}
+```
+
+The `SoftReservationExpiredJob` becomes a safety net only — no longer the primary cleanup path.
+**Document in ADR-0012:** Presale BC subscribes to `OrderPlaced`; without this handler,
+every placed order leaks `CartLine` and `SoftReservation` rows indefinitely.
+
+### Gap 3 — `PaymentConfirmed.Items` is empty — resolved by design
+
+`PaymentService.ConfirmAsync` publishes `PaymentConfirmed` with `Items = []`. The Inventory BC's
+`PaymentConfirmedHandler` previously iterated `message.Items` to confirm reservations per item —
+this breaks with an empty list.
+
+**Resolution:** `PaymentConfirmedHandler` in Inventory BC is updated to confirm by `OrderId`,
+not by item list. Inventory already knows all reservations for the order from `OrderPlaced`:
+
+```csharp
+public async Task HandleAsync(PaymentConfirmed message, CancellationToken ct)
+{
+    await _stockService.ConfirmReservationsByOrderAsync(message.OrderId, ct);
+}
+```
+
+`PaymentConfirmed.Items` field is kept as an empty array for backward compatibility but is
+never populated by the Payments BC. The Inventory BC owns its reservation data.
+
+### Gap 5 — Currency architecture decision
+
+`int CurrencyId` stays as a simple FK column on `Order`. No multi-currency complexity at
+the Order aggregate level. This is a single-currency shop; all prices are in one currency.
+
+If the user pays in a different currency, that is a **Payments BC concern**: the `Payment`
+aggregate or its event payload carries the payment currency. The `Order.CurrencyId` is the
+booking currency only.
+
+Future multi-currency scenario: if the Catalog BC introduces per-currency pricing,
+`CurrencyId` is already on `Order` — no migration needed. The payment currency would be
+stored in `PaymentConfirmedPayload` alongside `PaymentId`.
+
+---
+
+### Gap 4 — Inventory `PaymentWindowTimeoutJob` conflict — retire on switch
+
+The Inventory BC has its own `PaymentWindowTimeoutJob` that releases stock when the payment
+window expires. The new Payments BC `PaymentWindowExpiredJob` handles the same trigger via a
+different chain:
+
+```
+PaymentWindowExpiredJob (Payments BC) → PaymentExpired
+→ OrderPaymentExpiredHandler (Orders BC) → OrderCancelled
+→ OrderCancelledHandler (Inventory BC) → releases reservations
+```
+
+Running both means double-release of stock.
+
+**Resolution:** Retire `Inventory.PaymentWindowTimeoutJob` as part of the Payments BC atomic
+switch. Add to the switch checklist:
+> ☐ Deregister `PaymentWindowTimeoutJob` from Inventory BC DI (`Extensions.cs`)
 
 ## Migration plan
 
@@ -618,8 +899,21 @@ Parallel Change — existing code untouched until the atomic switch.
 | Unit tests — `OrderNumberTests.cs` (`Parse` validation + `Generate` factory) | ✅ Done |
 | Unit tests — `OrderCustomerTests.cs` (constructor validation guards) | ✅ Done |
 | Integration tests | ✅ Done — `IntegrationTests/Sales/Orders/OrderServiceTests.cs` (8 tests; guard conditions + read queries) |
+| **Design revision — §14 `UnitCost` VO + §16 `OrderStatus` + §17 event payloads + §18 flow decisions (ADR updated)** | ✅ Done — ADR updated; implementation pending |
+| Domain — new `UnitCost` VO in `Domain/Shared/UnitCost.cs` (amount >= 0) | ⬜ Not started |
+| Domain — `OrderItem`: change `UnitCost` property type from `decimal` to `UnitCost`, update `Create` signature, update `CalculateCost` to use `.Amount` | ⬜ Not started |
+| Domain — redesign: add `OrderStatus`, remove `IsPaid`/`IsDelivered`/`IsCancelled`/`CancelledAt`/`Delivered`/`PaymentId`/`RefundId`, rename `MarkAsPaid` → `ConfirmPayment`, `MarkAsDelivered` → `Fulfill`, generic `AppendEvent<T>`, payload records | ⬜ Not started |
+| Domain — delete `Events/OrderPaid.cs` and `Events/OrderDelivered.cs` | ⬜ Not started |
+| Domain — new `OrderEventType` values: `OrderPaymentConfirmed`, `OrderPaymentExpired`, `OrderFulfilled`; remove `OrderPaid`, `OrderDelivered` | ⬜ Not started |
+| Infrastructure — `OrderItemConfiguration`: add `UnitCost` value conversion | ⬜ Not started |
+| Infrastructure — `OrderConfiguration`: add `Status` column with index, remove `IsPaid`/`IsDelivered`/`IsCancelled`/`CancelledAt`/`Delivered`/`PaymentId`/`RefundId` | ⬜ Not started |
+| DB migration — update `sales.Orders` schema (requires approval per migration policy) | ⬜ Not started |
+| Application — update `OrderService`, `OrderPaymentConfirmedHandler`, `OrderPaymentExpiredHandler` to use `Status` guards | ⬜ Not started |
+| Unit tests — update `OrderAggregateTests` for new `Status`-based guards and event payloads | ⬜ Not started |
+| Presale BC — add `OrderPlacedHandler` to clean `CartLine` + `SoftReservation` (Gap 2) | ⬜ Not started |
+| Inventory BC — update `PaymentConfirmedHandler` to use `ConfirmReservationsByOrderAsync` (Gap 3) | ⬜ Not started |
 | Controller migration (Web + API atomic switch) | ⬜ Not started |
-| Atomic switch | ⬜ After integration tests and controller migration |
+| Atomic switch (includes retiring Inventory `PaymentWindowTimeoutJob` — Gap 4) | ⬜ After integration tests and controller migration |
 
 ## Conformance checklist
 
@@ -634,8 +928,20 @@ Parallel Change — existing code untouched until the atomic switch.
 - [ ] `int? DiscountPercent { get; private set; }` property exists on `Order` — captures coupon discount (0–100) as aggregate state
 - [ ] `Order.CalculateCost()` takes no parameters — converts stored `DiscountPercent` to a rate internally; no navigation chain to `CouponUsed.Coupon.Discount`
 - [ ] `Order.AssignCoupon(int couponUsedId, int discountPercent)` validates `discountPercent` is 0–100 via `DomainException`
-- [ ] `Order.MarkAsPaid(int paymentId)` returns `OrderPaid` domain event
-- [ ] `Order.MarkAsDelivered()` returns `OrderDelivered` domain event
+- [ ] `Order.MarkAsPaid(int paymentId)` returns `OrderPaid` domain event — **superseded**: `ConfirmPayment(int paymentId)` appends `OrderPaymentConfirmed` event, transitions `Status` to `PaymentConfirmed`
+- [ ] `Order.MarkAsDelivered()` returns `OrderDelivered` domain event — **superseded**: `Fulfill()` appends `OrderFulfilled` event, transitions `Status` to `Fulfilled`
+- [ ] `Events/OrderPaid.cs` and `Events/OrderDelivered.cs` do NOT exist — deleted at atomic switch (§4)
+- [ ] `OrderStatus Status { get; private set; }` exists on `Order` (§16)
+- [ ] `bool IsPaid`, `bool IsDelivered`, `bool IsCancelled`, `DateTime? CancelledAt`, `DateTime? Delivered` do NOT exist on `Order` (§16)
+- [ ] `int? PaymentId`, `int? RefundId` do NOT exist on `Order` — values are in event payloads (§17)
+- [ ] `int? CouponUsedId`, `int? DiscountPercent` exist on `Order` (deferred to Coupons BC — §18)
+- [ ] Event payload records exist in `Domain/Sales/Orders/Events/Payloads/` (§17)
+- [ ] `AppendEvent<T>` is generic — serializes payload to JSON; no-payload overload passes `null` (§17)
+- [ ] `UnitCost UnitCost { get; private set; }` on `OrderItem` — typed VO from `Domain/Shared/`, enforces `>= 0` (§14)
+- [ ] `UnitCost` VO exists in `Domain/Shared/UnitCost.cs` (§14)
+- [ ] `OrderItem.Create` accepts `UnitCost unitCost` parameter, not `decimal` (§14)
+- [ ] `Order.CalculateCost()` uses `i.UnitCost.Amount` (§14)
+- [ ] `OrderItemConfiguration` has `HasConversion` for `UnitCost` (§14)
 - [ ] No `ApplicationUser` navigation property on `Order` or `OrderItem` — `OrderUserId UserId` only
 - [ ] No cross-BC navigation properties on `Order` — `int CustomerId`, `int CurrencyId`, `int? PaymentId`, `int? CouponUsedId`, `int? RefundId` only
 - [ ] No `Item` navigation property on `OrderItem` — `OrderProductId ItemId` only
@@ -647,7 +953,7 @@ Parallel Change — existing code untouched until the atomic switch.
 - [ ] `OrderNumber` lives in `Domain/Sales/Orders/ValueObjects/` as a `sealed record`
 - [ ] `OrderNumber` validates against regex `^ORD-\d{8}-[A-F0-9]{8}$` and throws `DomainException` on failure
 - [ ] `OrderNumber.Generate()` static factory uses `DateTime.UtcNow` + `Guid.NewGuid()`
-- [ ] `OrderEventType` is an `enum` stored as a string in the DB via EF Core `HasConversion<string>()` in `OrderEventConfiguration` — equivalent to the static constants approach (no migration needed to add new values)
+- [ ] `OrderEventType` is an `enum` stored as a string in the DB via EF Core `HasConversion<string>()` in `OrderEventConfiguration` — values: `OrderPlaced`, `OrderPaymentConfirmed`, `OrderPaymentExpired`, `OrderFulfilled`, `OrderCancelled`, `CouponApplied`, `CouponRemoved`, `RefundAssigned`, `RefundRemoved` (§13, §17)
 - [ ] `Order` has `private readonly List<OrderEvent> _events` backing field; `EventType` is `OrderEventType` (enum)
 - [ ] Every state transition method in `Order` calls `AppendEvent(...)` before returning
 - [ ] `OrderEvent.OccurredAt` has no public setter; set only in constructor

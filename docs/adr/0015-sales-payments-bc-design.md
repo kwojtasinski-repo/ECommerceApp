@@ -726,14 +726,14 @@ internal sealed class PaymentsDbContext : DbContext
 
 | Step | Description | Status |
 |------|-------------|--------|
-| 1–6 | Payment domain layer (`PaymentId`, `PaymentOrderId`, `PaymentStatus`, events, `Payment` aggregate, `IPaymentRepository`) | 🟡 In progress — `PaymentId.cs` created |
-| 7–8 | Orders aggregate extension (`IsCancelled`, `CancelledAt`, `Cancel()`, `OrderCancelled` event type) | ⬜ Not started |
-| 9–12 | Integration message updates (`OrderPlaced` + `TotalAmount` + `CurrencyId`; `PaymentConfirmed` + `PaymentId`; new `PaymentExpired`) | ⬜ Not started |
-| 13–18 | Application layer — Payments BC (`OrderPlacedHandler`, `PaymentWindowExpiredJob`, `IPaymentService`, `PaymentService`, DTOs, ViewModels, DI) | ⬜ Not started |
-| 19–24 | Application layer — Orders BC extensions (`MarkAsPaidAsync`, `CancelOrderAsync`, `AlreadyCancelled`, two new handlers, DI) | ⬜ Not started |
-| 25–29 | Infrastructure layer — Payments BC (`PaymentsDbContext`, configuration, repository, DI, register job in TimeManagement) | ⬜ Not started |
-| 30–31 | Infrastructure layer — Orders BC schema extension (map `IsCancelled`, `CancelledAt`) | ⬜ Not started |
-| 32–37 | Unit tests (Payment aggregate, two Payments handlers, Order.Cancel, two Orders handlers) | ⬜ Not started |
+| 1–6 | Payment domain layer (`PaymentId`, `PaymentOrderId`, `PaymentStatus`, events, `Payment` aggregate, `IPaymentRepository`) | ✅ Done |
+| 7–8 | Orders aggregate extension (`IsCancelled`, `CancelledAt`, `Cancel()`, `OrderCancelled` event type) | ✅ Done |
+| 9–12 | Integration message updates (`OrderPlaced` + `TotalAmount` + `CurrencyId`; `PaymentConfirmed` + `PaymentId`; new `PaymentExpired`) | ✅ Done |
+| 13–18 | Application layer — Payments BC (`OrderPlacedHandler`, `PaymentWindowExpiredJob`, `IPaymentService`, `PaymentService`, DTOs, ViewModels, DI) | ✅ Done |
+| 19–24 | Application layer — Orders BC extensions (`MarkAsPaidAsync`, `CancelOrderAsync`, `AlreadyCancelled`, two new handlers, DI) | ✅ Done |
+| 25–29 | Infrastructure layer — Payments BC (`PaymentsDbContext`, configuration, repository, DI, register job in TimeManagement) | ✅ Done |
+| 30–31 | Infrastructure layer — Orders BC schema extension (map `IsCancelled`, `CancelledAt`) | ✅ Done |
+| 32–37 | Unit tests (Payment aggregate, two Payments handlers, Order.Cancel, two Orders handlers) | ✅ Done |
 | 38–39 | DB migrations (`InitPaymentsSchema`, `AddOrderCancellationFields`) | ⬜ Pending human approval per migration policy |
 | 40–43 | Integration tests + atomic switch (remove legacy `PaymentHandler` coupling; update controllers) | ⬜ Not started |
 
