@@ -39,6 +39,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "instructions", "instruction
 		.github\instructions\frontend-instructions.md = .github\instructions\frontend-instructions.md
 		.github\instructions\migration-policy.md = .github\instructions\migration-policy.md
 		.github\instructions\razorpages-instructions.md = .github\instructions\razorpages-instructions.md
+		.github\instructions\shared-primitives.instructions.md = .github\instructions\shared-primitives.instructions.md
 		.github\instructions\testing-instructions.md = .github\instructions\testing-instructions.md
 		.github\instructions\web-api-instructions.md = .github\instructions\web-api-instructions.md
 	EndProjectSection
@@ -51,6 +52,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "agents", "agents", "{D2867909-022A-479A-A6F9-3CF92C8F518C}"
 	ProjectSection(SolutionItems) = preProject
 		.github\agents\adr-generator.md = .github\agents\adr-generator.md
+		.github\agents\bc-switch.md = .github\agents\bc-switch.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{908C6C00-47A3-455F-82C8-5BBECB045911}"
@@ -91,11 +93,28 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "prompts", "prompts", "{BAC4
 	ProjectSection(SolutionItems) = preProject
 		.github\prompts\bc-analysis.md = .github\prompts\bc-analysis.md
 		.github\prompts\bc-implementation.md = .github\prompts\bc-implementation.md
+		.github\prompts\pr-review.md = .github\prompts\pr-review.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "patterns", "patterns", "{DB95CC21-7869-4EAC-8EB3-F5706D958E0A}"
 	ProjectSection(SolutionItems) = preProject
 		docs\patterns\implementation-patterns.md = docs\patterns\implementation-patterns.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "roadmap", "roadmap", "{8FA6F8D3-44D1-4AC3-9335-8B69F45EA3DD}"
+	ProjectSection(SolutionItems) = preProject
+		docs\roadmap\frontend-pipeline.md = docs\roadmap\frontend-pipeline.md
+		docs\roadmap\iam-atomic-switch.md = docs\roadmap\iam-atomic-switch.md
+		docs\roadmap\orders-atomic-switch.md = docs\roadmap\orders-atomic-switch.md
+		docs\roadmap\payments-atomic-switch.md = docs\roadmap\payments-atomic-switch.md
+		docs\roadmap\presale-slice2.md = docs\roadmap\presale-slice2.md
+		docs\roadmap\README.md = docs\roadmap\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "context", "context", "{1064B208-B85A-4013-8C84-597303D43282}"
+	ProjectSection(SolutionItems) = preProject
+		.github\context\known-issues.md = .github\context\known-issues.md
+		.github\context\project-state.md = .github\context\project-state.md
 	EndProjectSection
 EndProject
 Global
@@ -156,6 +175,8 @@ Global
 		{5EC11768-8E47-4C89-9EBC-78E600311851} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 		{BAC45AC5-6905-4FAF-956C-CD73D03DB4BD} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{DB95CC21-7869-4EAC-8EB3-F5706D958E0A} = {908C6C00-47A3-455F-82C8-5BBECB045911}
+		{8FA6F8D3-44D1-4AC3-9335-8B69F45EA3DD} = {908C6C00-47A3-455F-82C8-5BBECB045911}
+		{1064B208-B85A-4013-8C84-597303D43282} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C833E166-660D-4E9D-85E1-0ED811E2828E}

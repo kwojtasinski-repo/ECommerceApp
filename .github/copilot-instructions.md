@@ -51,12 +51,24 @@ This file sets repository-level rules for automation agents, Copilot, and contri
 - `.github/instructions/efcore-instructions.md` — EF Core tracking, transactions, migrations, seeding.
 - `.github/instructions/migration-policy.md` — DB migration approval process and checklist.
 - `.github/instructions/testing-instructions.md` — Unit and integration test patterns, BaseTest, Flurl, Shouldly.
+- `.github/instructions/shared-primitives.instructions.md` — Rules for `TypedId`, `Money`, `Price`, `UnitCost`, `Quantity` (ADR-0006); auto-loaded when editing `Domain/Shared/**`.
 - Prompt files under `.github/prompts/`:
   - `bc-analysis.md` — bounded context analysis and migration planning.
-  - `bc-implementation.md` — step-by-step BC implementation guide.
+  - `bc-implementation.md` — step-by-step BC implementation guide (includes gate check for blockers).
   - `pr-review.md` — PR review with targeted ADR loading by scope.
 - Agent files under `.github/agents/`:
   - `adr-generator` — generate ADRs by scanning the codebase; invoke with `@adr-generator`.
+  - `bc-switch` — atomic BC switch (legacy cleanup + DI swap + controller migration + tests); invoke with `@bc-switch`.
+- Context files under `.github/context/` (read before any implementation task):
+  - `project-state.md` — tactical BC implementation status, active work, pending switches.
+  - `known-issues.md` — confirmed bugs not yet fixed; do not re-introduce resolved items.
+- Roadmap files under `docs/roadmap/`:
+  - `README.md` — overview of all active roadmaps and dependency order.
+  - `frontend-pipeline.md` — ADR-0021 phases with acceptance criteria and bug list.
+  - `orders-atomic-switch.md` — Sales/Orders pending steps and atomic switch checklist; **highest-priority unblocking item**.
+  - `payments-atomic-switch.md` — Sales/Payments DB migrations + atomic switch; blocked by Orders.
+  - `iam-atomic-switch.md` — Identity/IAM atomic switch steps; coordinate with Orders switch.
+  - `presale-slice2.md` — Presale/Checkout Slice 2 implementation steps; blocked by Orders.
 
 ## 3. AI developer profile (expected behavior)
 - Act as a senior .NET developer experienced with DDD, SOLID, and pragmatic TDD.
@@ -103,3 +115,16 @@ Before proposing or committing changes, perform and document the steps below in 
 ## 7. Communication and PR expectations
 - PRs must explain what changed, why, which tests were added/updated, and rollback steps for risky changes.
 - Tag `@team/architecture` or maintainers for ADR-impacting PRs.
+
+## 8. Current project context (read before any implementation task)
+
+**BC changes rule**: Before editing, adding, or extending any BC-related code, MUST fetch `.github/context/project-state.md` and verify the BC is not blocked. If blocked, STOP and explain the blocker. Do not proceed.
+
+**Bug fix rule**: Before fixing any bug, MUST fetch `.github/context/known-issues.md` to check if it is already tracked and if a fix approach is documented.
+
+**Clarification rule**: If scope, BC ownership, layer boundaries, or blocker status are unclear, ask a clarifying question BEFORE writing any code.
+
+- **`.github/context/project-state.md`** — BC implementation status; what is active, what is legacy, what is blocked. Read this before touching any service, handler, or repository to avoid working against the wrong implementation (legacy vs new BC).
+- **`.github/context/known-issues.md`** — confirmed bugs; do not re-introduce a resolved issue or duplicate a tracked fix.
+- **`docs/roadmap/README.md`** — planned phases and dependency order; use to determine whether a task is blocked or ready.
+- **`docs/architecture/bounded-context-map.md`** — authoritative BC map; check before adding cross-BC dependencies or proposing new aggregates.

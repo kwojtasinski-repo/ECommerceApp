@@ -14,6 +14,20 @@
 
 ---
 
+## ⛔ Gate check — ALWAYS run this before any implementation step
+
+**Step 0 — mandatory before touching any code:**
+
+1. Fetch `.github/context/project-state.md`.
+2. Find the row for the BC you are about to implement.
+3. Check its status column:
+   - If the status contains **"blocked"**, **"not started"**, or lists an unresolved blocker → **STOP**.
+     Reply: *"BC [name] is blocked: [exact blocker text from project-state.md]. Cannot proceed until blocker is resolved."*
+   - If the status shows the BC as **in progress** or **ready** → continue to Step 1 below.
+4. If you have any doubt about scope, dependencies, or which layer to touch → **ask a clarifying question before writing code**.
+
+---
+
 ## Core principles — read before writing any code
 
 1. **Parallel Change — never break existing behavior.**
