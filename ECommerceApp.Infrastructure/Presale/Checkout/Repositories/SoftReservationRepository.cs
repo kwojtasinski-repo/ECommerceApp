@@ -30,6 +30,11 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Repositories
                 .Where(r => r.ProductId == productId)
                 .ToListAsync(ct);
 
+        public async Task<IReadOnlyList<SoftReservation>> GetByUserIdAsync(PresaleUserId userId, CancellationToken ct = default)
+            => await _context.SoftReservations
+                .Where(r => r.UserId == userId)
+                .ToListAsync(ct);
+
         public async Task AddAsync(SoftReservation reservation, CancellationToken ct = default)
         {
             _context.SoftReservations.Add(reservation);
@@ -46,6 +51,15 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Repositories
         {
             var reservations = await _context.SoftReservations
                 .Where(r => r.ProductId == productId)
+                .ToListAsync(ct);
+            _context.SoftReservations.RemoveRange(reservations);
+            await _context.SaveChangesAsync(ct);
+        }
+
+        public async Task DeleteAllForUserAsync(PresaleUserId userId, CancellationToken ct = default)
+        {
+            var reservations = await _context.SoftReservations
+                .Where(r => r.UserId == userId)
                 .ToListAsync(ct);
             _context.SoftReservations.RemoveRange(reservations);
             await _context.SaveChangesAsync(ct);

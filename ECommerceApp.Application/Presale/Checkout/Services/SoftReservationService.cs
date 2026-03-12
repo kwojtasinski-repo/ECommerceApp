@@ -116,6 +116,22 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
             }
         }
 
+        public async Task RemoveAllForUserAsync(string userId, CancellationToken ct = default)
+        {
+            PresaleUserId presaleUserId = userId;
+            var all = await _reservationRepo.GetByUserIdAsync(presaleUserId, ct);
+            foreach (var r in all)
+            {
+                await _deferredScheduler.CancelAsync(SoftReservationExpiredJob.JobTaskName, r.Id?.Value.ToString() ?? "", ct);
+                _cache.Remove(CacheKey(r.ProductId.Value, userId));
+
+                if (_productUserIndex.TryGetValue(r.ProductId.Value, out var set))
+                    lock (set) { set.Remove(userId); }
+            }
+
+            await _reservationRepo.DeleteAllForUserAsync(presaleUserId, ct);
+        }
+
         private static string CacheKey(int productId, string userId) => $"sr:{productId}:{userId}";
     }
 }

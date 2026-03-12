@@ -1,6 +1,7 @@
 using ECommerceApp.Application.Inventory.Availability.Messages;
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Presale.Checkout.Handlers;
+using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -19,7 +20,8 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
                 .AddScoped<ISoftReservationService, SoftReservationService>()
                 .AddScoped<ICartService, CartService>()
                 .AddScoped<IScheduledTask, SoftReservationExpiredJob>()
-                .AddScoped<IMessageHandler<StockAvailabilityChanged>, StockAvailabilityChangedHandler>();
+                .AddScoped<IMessageHandler<StockAvailabilityChanged>, StockAvailabilityChangedHandler>()
+                .AddScoped<IMessageHandler<OrderPlaced>, OrderPlacedHandler>();
         }
     }
 }

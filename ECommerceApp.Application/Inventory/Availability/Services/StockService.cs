@@ -152,6 +152,16 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             return true;
         }
 
+        public async Task ConfirmReservationsByOrderAsync(int orderId, CancellationToken ct = default)
+        {
+            var reservations = await _reservationRepo.GetByOrderIdAsync(orderId, ct);
+            foreach (var reservation in reservations)
+            {
+                reservation.Confirm();
+                await _reservationRepo.UpdateAsync(reservation, ct);
+            }
+        }
+
         public async Task<bool> FulfillAsync(int orderId, int productId, int quantity, CancellationToken ct = default)
         {
             var stock = await _stockItemRepo.GetByProductIdAsync(productId, ct);

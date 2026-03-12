@@ -17,10 +17,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
 
         public async Task HandleAsync(PaymentConfirmed message, CancellationToken ct = default)
         {
-            foreach (var item in message.Items)
-            {
-                await _stockService.ConfirmAsync(message.OrderId, item.ProductId, ct);
-            }
+            await _stockService.ConfirmReservationsByOrderAsync(message.OrderId, ct);
         }
     }
 }

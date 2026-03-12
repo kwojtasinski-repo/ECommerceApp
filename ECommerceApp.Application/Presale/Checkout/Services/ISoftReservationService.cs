@@ -10,5 +10,6 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
         Task<SoftReservation?> GetAsync(int productId, string userId, CancellationToken ct = default);
         Task RemoveAsync(int productId, string userId, CancellationToken ct = default);
         Task RemoveAllForProductAsync(int productId, CancellationToken ct = default);
+        Task RemoveAllForUserAsync(string userId, CancellationToken ct = default);
     }
 }

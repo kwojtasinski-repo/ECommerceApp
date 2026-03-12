@@ -277,6 +277,47 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             result.Should().BeFalse();
         }
 
+        // ── ConfirmReservationsByOrderAsync ───────────────────────────────────
+
+        [Fact]
+        public async Task ConfirmReservationsByOrderAsync_MultipleReservations_ShouldConfirmAll()
+        {
+            var r1 = Reservation.Create(new StockProductId(1), new ReservationOrderId(42), 3, DateTime.UtcNow.AddHours(1));
+            var r2 = Reservation.Create(new StockProductId(2), new ReservationOrderId(42), 5, DateTime.UtcNow.AddHours(1));
+            _reservationRepo.Setup(r => r.GetByOrderIdAsync(42, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<Reservation> { r1, r2 });
+
+            await CreateService().ConfirmReservationsByOrderAsync(42);
+
+            r1.Status.Should().Be(ReservationStatus.Confirmed);
+            r2.Status.Should().Be(ReservationStatus.Confirmed);
+            _reservationRepo.Verify(r => r.UpdateAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+        }
+
+        [Fact]
+        public async Task ConfirmReservationsByOrderAsync_NoReservations_ShouldNotUpdate()
+        {
+            _reservationRepo.Setup(r => r.GetByOrderIdAsync(99, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<Reservation>());
+
+            await CreateService().ConfirmReservationsByOrderAsync(99);
+
+            _reservationRepo.Verify(r => r.UpdateAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ConfirmReservationsByOrderAsync_SingleReservation_ShouldConfirmAndUpdate()
+        {
+            var reservation = Reservation.Create(new StockProductId(5), new ReservationOrderId(10), 2, DateTime.UtcNow.AddHours(1));
+            _reservationRepo.Setup(r => r.GetByOrderIdAsync(10, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<Reservation> { reservation });
+
+            await CreateService().ConfirmReservationsByOrderAsync(10);
+
+            reservation.Status.Should().Be(ReservationStatus.Confirmed);
+            _reservationRepo.Verify(r => r.UpdateAsync(reservation, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
         // ── FulfillAsync ──────────────────────────────────────────────────────
 
         [Fact]

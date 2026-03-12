@@ -910,8 +910,8 @@ Parallel Change — existing code untouched until the atomic switch.
 | DB migration — update `sales.Orders` schema (requires approval per migration policy) | ⬜ Not started |
 | Application — update `OrderService`, `OrderPaymentConfirmedHandler`, `OrderPaymentExpiredHandler` to use `Status` guards | ✅ Done |
 | Unit tests — update `OrderAggregateTests` for new `Status`-based guards and event payloads | ✅ Done |
-| Presale BC — add `OrderPlacedHandler` to clean `CartLine` + `SoftReservation` (Gap 2) | ⬜ Not started |
-| Inventory BC — update `PaymentConfirmedHandler` to use `ConfirmReservationsByOrderAsync` (Gap 3) | ⬜ Not started |
+| Presale BC — add `OrderPlacedHandler` to clean `CartLine` + `SoftReservation` (Gap 2) | ✅ Done |
+| Inventory BC — update `PaymentConfirmedHandler` to use `ConfirmReservationsByOrderAsync` (Gap 3) | ✅ Done |
 | Controller migration (Web + API atomic switch) | ⬜ Not started |
 | Atomic switch (includes retiring Inventory `PaymentWindowTimeoutJob` — Gap 4) | ⬜ After integration tests and controller migration |
 
