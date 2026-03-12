@@ -4,7 +4,8 @@
 Accepted
 
 ## Date
-2026-03-06
+2026-03-06 (Slice 1)
+2026-03-12 (Slice 2 design)
 
 ## Context
 
@@ -392,7 +393,11 @@ ECommerceApp.Application/Presale/Checkout/
     CartService.cs                <- write-through: DB first, then IMemoryCache
     ISoftReservationService.cs
     SoftReservationService.cs     <- internal sealed; DB + IMemoryCache + IDeferredJobScheduler
+    ICheckoutService.cs           <- Slice 2: cart-to-order coordination
+    CheckoutService.cs            <- internal sealed; Slice 2: coordinates SoftReservations → IOrderService
     Extensions.cs
+  Results/
+    CheckoutResult.cs             <- Slice 2: success/failure result for PlaceOrderAsync
   Handlers/
     StockAvailabilityChangedHandler.cs  <- IMessageHandler<StockAvailabilityChanged>; upserts StockSnapshot
     SoftReservationExpiredJob.cs        <- IScheduledTask; deletes DB row + evicts cache entry
@@ -402,6 +407,7 @@ ECommerceApp.Application/Presale/Checkout/
   ViewModels/
     CartVm.cs
     CartLineVm.cs
+    SoftReservationPriceChangeVm.cs  <- Slice 2: price-change warning per checkout line
   PresaleOptions.cs               <- SoftReservationTtl (moved from InventoryOptions)
 
 ECommerceApp.Application/Inventory/Availability/Messages/
@@ -428,7 +434,152 @@ ECommerceApp.Infrastructure/Presale/Checkout/
 
 ECommerceApp.API/Controllers/Presale/
   StorefrontController.cs         <- BFF; not a BC; composes Catalog + Inventory per-request
+
+ECommerceApp.Application/Sales/Orders/DTOs/
+  PlaceOrderFromPresaleDto.cs     <- Slice 2: explicit price-per-line for presale checkout
+  PlaceOrderLineDto.cs            <- Slice 2: (ProductId, Quantity, UnitPrice) per line
 ```
+
+### 11. `ICheckoutService` — cart-to-order coordination
+
+`ICheckoutService` is the Slice 2 entry point. It coordinates the cart-to-order transition.
+Cart CRUD (`AddOrUpdateAsync`, `RemoveAsync`, `GetCartAsync`) stays in `ICartService`;
+`ICheckoutService` owns only order placement.
+
+```csharp
+// Application/Presale/Checkout/Services/
+public interface ICheckoutService
+{
+    Task<CheckoutResult> PlaceOrderAsync(PresaleUserId userId, int customerId, int currencyId, CancellationToken ct = default);
+}
+```
+
+`CheckoutResult` is a result type with factory methods:
+
+```csharp
+// Application/Presale/Checkout/Results/
+public sealed record CheckoutResult
+{
+    public bool IsSuccess { get; }
+    public int? OrderId { get; }
+    public string? FailureReason { get; }
+
+    private CheckoutResult(bool isSuccess, int? orderId, string? failureReason)
+    {
+        IsSuccess = isSuccess;
+        OrderId = orderId;
+        FailureReason = failureReason;
+    }
+
+    public static CheckoutResult Success(int orderId) => new(true, orderId, null);
+    public static CheckoutResult NoSoftReservations() => new(false, null, "Checkout not initiated. Call ISoftReservationService.HoldAsync first.");
+    public static CheckoutResult StockUnavailable(int productId) => new(false, null, $"Product {productId} is no longer available in the requested quantity.");
+    public static CheckoutResult OrderFailed(string reason) => new(false, null, reason);
+}
+```
+
+`CheckoutService` is `internal sealed`. It is registered in
+`Application/Presale/Checkout/Services/Extensions.cs`.
+
+### 12. Checkout coordination flow
+
+`CheckoutService.PlaceOrderAsync` executes these steps in sequence:
+
+1. **Load soft reservations**: `ISoftReservationService.GetAllForUserAsync(userId, ct)`.
+   Empty list → return `CheckoutResult.NoSoftReservations()`.
+
+2. **Final stock gate**: For each reservation call `IStockClient.TryReserveAsync(productId, quantity, ct)`.
+   This is a **read-only availability check** against live `Inventory.StockItem.AvailableQuantity`
+   (see `StockClientAdapter`). The actual Inventory reservation is created by
+   `Inventory.OrderPlacedHandler` reacting to the `OrderPlaced` message in step 3. If any
+   `TryReserveAsync` returns `false` → return `CheckoutResult.StockUnavailable(productId)`.
+
+3. **Place order**: Build `PlaceOrderFromPresaleDto` by mapping each `SoftReservation` to a
+   `PlaceOrderLineDto(ProductId, Quantity, UnitPrice)` using the locked `SoftReservation.UnitPrice`.
+   Call `IOrderService.PlaceOrderFromPresaleAsync(dto, ct)`. If `!result.IsSuccess` → return
+   `CheckoutResult.OrderFailed(result.FailureReason!)`.
+
+4. **Remove soft reservations**: `ISoftReservationService.RemoveAsync(productId, userId, ct)` for
+   each reservation. `SoftReservationService.RemoveAsync` calls `IDeferredJobScheduler.CancelAsync`
+   internally, discarding the scheduled expiry jobs.
+
+5. **Clear cart**: `ICartService.ClearAsync(userId, ct)`.
+
+6. Return `CheckoutResult.Success(result.OrderId!.Value)`.
+
+**Failure at step 3 is non-transactional**: if order placement fails the soft reservations are
+left intact — they will expire naturally via `SoftReservationExpiredJob`. This avoids a
+partial-cleanup race condition and keeps the checkout path side-effect-free on failure.
+
+`ISoftReservationService` gains one new method to support step 1:
+
+```csharp
+Task<IReadOnlyList<SoftReservation>> GetAllForUserAsync(PresaleUserId userId, CancellationToken ct = default);
+```
+
+Implemented in `SoftReservationService` by querying `ISoftReservationRepository.GetAllByUserIdAsync`
+and populating per-item cache entries for any cache misses.
+
+### 13. `PlaceOrderFromPresaleAsync` — Sales/Orders BC extension
+
+`IOrderService` gains one new method:
+
+```csharp
+Task<PlaceOrderResult> PlaceOrderFromPresaleAsync(PlaceOrderFromPresaleDto dto, CancellationToken ct = default);
+```
+
+Two new DTOs added to `Application/Sales/Orders/DTOs/`:
+
+```csharp
+public sealed record PlaceOrderLineDto(int ProductId, int Quantity, decimal UnitPrice);
+
+public sealed record PlaceOrderFromPresaleDto(
+    int CustomerId,
+    int CurrencyId,
+    string UserId,
+    IReadOnlyList<PlaceOrderLineDto> Lines);
+```
+
+`OrderService.PlaceOrderFromPresaleAsync` follows the same flow as `PlaceOrderAsync` except it
+uses the supplied `PlaceOrderLineDto.UnitPrice` per line instead of calling
+`IOrderProductResolver` for a live Catalog price lookup. `PlaceOrderAsync` (legacy `CartItemIds`
+path) is left unchanged — both methods co-exist on `IOrderService`.
+
+The `OrderPlaced` message published by either method includes `Items: IReadOnlyList<OrderPlacedItem>`
+which triggers `Inventory.OrderPlacedHandler` → `StockService.ReserveAsync` (the actual
+Inventory hard reservation). The presale stock gate in §12 step 2 is a read-only pre-check;
+the definitive hard reservation is owned by the Inventory BC.
+
+### 14. Price-change warning at order placement
+
+Between checkout initiation (`SoftReservationService.HoldAsync`) and confirmation
+(`CheckoutService.PlaceOrderAsync`) the Catalog price may change. The order confirmation UI
+must warn the customer before they confirm placement.
+
+`ISoftReservationService` gains a second new method:
+
+```csharp
+Task<IReadOnlyList<SoftReservationPriceChangeVm>> GetPriceChangesAsync(PresaleUserId userId, CancellationToken ct = default);
+```
+
+```csharp
+// Application/Presale/Checkout/ViewModels/
+public sealed record SoftReservationPriceChangeVm(
+    int ProductId,
+    decimal LockedPrice,    // SoftReservation.UnitPrice — the authoritative transaction price
+    decimal CurrentPrice);  // ICatalogClient.GetUnitPriceAsync — live Catalog price
+```
+
+`GetPriceChangesAsync` loads all active `SoftReservation`s for the user, calls
+`ICatalogClient.GetUnitPriceAsync` for each product, and returns only lines where
+`LockedPrice != CurrentPrice`. An empty list means prices have not changed since checkout
+initiation.
+
+**Policy**: `CheckoutService.PlaceOrderAsync` always uses `SoftReservation.UnitPrice` as the
+authoritative transaction price (§8). The warning is advisory only — the customer may confirm
+even if prices changed. `StorefrontController` (or the consuming controller) is responsible
+for calling `GetPriceChangesAsync` before rendering the order confirmation view and displaying
+a warning for each changed line.
 
 ## Consequences
 
@@ -540,12 +691,24 @@ ECommerceApp.API/Controllers/Presale/
 10. Write unit tests for `CartService`, `SoftReservationService`,
     `StockAvailabilityChangedHandler`, and `SoftReservationExpiredJob`.
 
-**Slice 2 (future) - blocked by Sales/Orders BC:**
+**Slice 2 (unblocked — Sales/Orders BC complete):**
 
-11. Implement checkout flow: `SoftReservation` -> `OrderPlaced` event -> hard reservation via
-    `IStockClient.TryReserveAsync`.
-12. Add price-change warning logic: compare `SoftReservation.UnitPrice` vs current Catalog
-    price at order placement time.
+11. Add `ICheckoutService`, `CheckoutService` (internal sealed), and `CheckoutResult` to
+    `Application/Presale/Checkout/Services/` and `Application/Presale/Checkout/Results/`.
+    Register `ICheckoutService` → `CheckoutService` in `Extensions.cs`.
+12. Add `ISoftReservationService.GetAllForUserAsync` and `GetPriceChangesAsync`. Add
+    `SoftReservationPriceChangeVm` to `Application/Presale/Checkout/ViewModels/`. Add
+    `ISoftReservationRepository.GetAllByUserIdAsync` to the repository interface and implement
+    in `SoftReservationRepository`. Implement both new service methods in `SoftReservationService`.
+13. Add `PlaceOrderLineDto` and `PlaceOrderFromPresaleDto` to `Application/Sales/Orders/DTOs/`.
+    Add `IOrderService.PlaceOrderFromPresaleAsync` and implement in `OrderService` (uses supplied
+    `UnitPrice` directly; bypasses `IOrderProductResolver` price lookup). `PlaceOrderAsync`
+    (legacy `CartItemIds` path) is left unchanged.
+14. Implement `CheckoutService.PlaceOrderAsync` coordination flow (§12). Expose a checkout
+    endpoint in `StorefrontController` (or a dedicated `CheckoutController`) that calls
+    `GetPriceChangesAsync` before confirming and `PlaceOrderAsync` on confirmation. Write unit
+    tests for `CheckoutService`, `SoftReservationService.GetAllForUserAsync`, and
+    `GetPriceChangesAsync`.
 
 ## Conformance checklist
 
@@ -573,6 +736,21 @@ ECommerceApp.API/Controllers/Presale/
 - [ ] `CartService` and `SoftReservationService` return `bool` or `null` for expected business outcomes — no `BusinessException`
 - [ ] `IProductService` has `GetUnitPriceAsync(int id)` returning `Task<decimal?>` before `CatalogClientAdapter` is implemented
 - [ ] `StockService.ReserveAsync` no longer calls `_softHoldService.RemoveAsync` after atomic switch
+- [ ] `ICheckoutService` is a separate interface from `ICartService` — cart CRUD ≠ checkout coordination
+- [ ] `CheckoutService` is `internal sealed` and registered via `ICheckoutService` in `Extensions.cs`
+- [ ] `CheckoutResult` uses factory methods: `Success`, `NoSoftReservations`, `StockUnavailable`, `OrderFailed`
+- [ ] `CheckoutService.PlaceOrderAsync` calls `IStockClient.TryReserveAsync` per line **before** calling `IOrderService.PlaceOrderFromPresaleAsync` — read-only gate only; does not create the Inventory reservation
+- [ ] The actual Inventory reservation is created by `Inventory.OrderPlacedHandler` reacting to `OrderPlaced` — `CheckoutService` never calls `IStockClient.ReleaseAsync`
+- [ ] `CheckoutService.PlaceOrderAsync` maps `SoftReservation.UnitPrice` into `PlaceOrderLineDto.UnitPrice` — no fresh `ICatalogClient` call at placement time
+- [ ] On order placement failure (step 3), soft reservations are NOT removed — they expire naturally via `SoftReservationExpiredJob`
+- [ ] `ISoftReservationService` has `GetAllForUserAsync(PresaleUserId, CancellationToken)` returning `Task<IReadOnlyList<SoftReservation>>`
+- [ ] `ISoftReservationService` has `GetPriceChangesAsync(PresaleUserId, CancellationToken)` returning `Task<IReadOnlyList<SoftReservationPriceChangeVm>>`
+- [ ] `SoftReservationPriceChangeVm` has `ProductId`, `LockedPrice`, `CurrentPrice` — lives in `Application/Presale/Checkout/ViewModels/`
+- [ ] `PlaceOrderFromPresaleDto` and `PlaceOrderLineDto` live in `Application/Sales/Orders/DTOs/`
+- [ ] `IOrderService.PlaceOrderFromPresaleAsync` bypasses `IOrderProductResolver` — uses `PlaceOrderLineDto.UnitPrice` directly
+- [ ] `PlaceOrderAsync` (legacy `CartItemIds` path) is left unchanged after introducing `PlaceOrderFromPresaleAsync`
+- [ ] Price-change warning is advisory — `CheckoutService.PlaceOrderAsync` accepts the locked price regardless of current Catalog price
+- [ ] `StorefrontController` (or consuming controller) calls `GetPriceChangesAsync` before rendering the order confirmation view
 
 ## Implementation Status
 
@@ -588,6 +766,10 @@ ECommerceApp.API/Controllers/Presale/
 | 8 | Atomic switch: remove Inventory soft-hold artifacts; decouple `StockService.ReserveAsync` | ✅ Done |
 | 9 | `StorefrontController` BFF endpoint | ✅ Done |
 | 10 | Unit tests: `CartService`, `SoftReservationService`, `StockAvailabilityChangedHandler`, `SoftReservationExpiredJob` | ✅ Done |
+| 11 | `ICheckoutService`, `CheckoutService`, `CheckoutResult` in `Application/Presale/Checkout/` | ⬜ Pending |
+| 12 | `ISoftReservationService.GetAllForUserAsync` + `GetPriceChangesAsync`; `SoftReservationPriceChangeVm`; `ISoftReservationRepository.GetAllByUserIdAsync` | ⬜ Pending |
+| 13 | `PlaceOrderLineDto`, `PlaceOrderFromPresaleDto`; `IOrderService.PlaceOrderFromPresaleAsync` + `OrderService` implementation | ⬜ Pending |
+| 14 | `CheckoutService.PlaceOrderAsync` coordination; DI registration; API endpoint; unit tests | ⬜ Pending |
 
 ## References
 
@@ -599,6 +781,7 @@ ECommerceApp.API/Controllers/Presale/
   - [ADR-0009 - Supporting TimeManagement BC Design](./0009-supporting-timemanagement-bc-design.md) (`IDeferredJobScheduler`, `IScheduledTask`; `SoftReservationExpiredJob` registered here)
   - [ADR-0010 - In-Memory Message Broker](./0010-in-memory-message-broker-for-cross-bc-communication.md) (`StockAvailabilityChanged` cross-BC integration; Presale has one handler in Slice 1)
   - [ADR-0011 - Inventory/Availability BC Design](./0011-inventory-availability-bc-design.md) (`StockAvailabilityChanged` published by `StockService`; soft hold removed from Inventory)
+  - [ADR-0014 - Sales/Orders BC Design](./0014-sales-orders-bc-design.md) (`IOrderService.PlaceOrderFromPresaleAsync` extension; `OrderPlaced` triggers `Inventory.OrderPlacedHandler`)
 - Architecture map:
   - [`docs/architecture/bounded-context-map.md`](../architecture/bounded-context-map.md)
 - Instruction files:

@@ -12,6 +12,11 @@
 > Payments BC design: [ADR-0015 — Sales/Payments BC Design](../adr/0015-sales-payments-bc-design.md)
 > Per-BC DbContext interfaces: [ADR-0013 — Per-BC DbContext Interfaces](../adr/0013-per-bc-dbcontext-interfaces.md)
 > Sales/Orders BC design: [ADR-0014 — Sales/Orders BC — Order and OrderItem Aggregate Design](../adr/0014-sales-orders-bc-design.md)
+> Coupons BC design: [ADR-0016 — Sales/Coupons BC Design](../adr/0016-sales-coupons-bc-design.md)
+> Fulfillment BC design: [ADR-0017 — Sales/Fulfillment BC Design](../adr/0017-sales-fulfillment-bc-design.md)
+> Communication BC design: [ADR-0018 — Supporting/Communication BC — Customer Notification Design](../adr/0018-supporting-communication-bc-design.md)
+> Identity/IAM BC design: [ADR-0019 — Identity/IAM BC — Standalone Design and Atomic Switch Plan](../adr/0019-identity-iam-bc-design.md)
+> Backoffice BC design: [ADR-0020 — Backoffice BC — Admin Aggregation and Reporting Design](../adr/0020-backoffice-bc-design.md)
 
 ---
 
@@ -156,7 +161,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | **Payments** | Behavioral aggregate | Rich domain model + state machine → target | 🔴 Currently anemic |
 | **Refunds** | Behavioral aggregate | Rich domain model → target | 🔴 Currently anemic |
 | **Catalog** (`Product`) | Mixed | Rich domain model, `ProductStatus` state machine, owned `Image`, `ProductDbContext`, feature-folder — see ADR-0007 | ✅ New implementation ready (parallel) |
-| **Coupons** | Reference + behavior | `AbstractService` + `CouponHandler` | 🟡 Acceptable for now |
+| **Coupons** | Reference + behavior | `AbstractService` + `CouponHandler` | 📋 ADR proposed — [ADR-0016](../adr/0016-sales-coupons-bc-design.md) Slice 1: one-time coupon on order; Slice 2 deferred |
 | **AccountProfile** (`UserProfile`) | Behavioral aggregate | Rich domain model, owned `Address`, own `UserProfileDbContext` — see ADR-0005 | ✅ New implementation ready (parallel) |
 | **Customers** (legacy) | Reference | `AbstractService` | ⚠️ To be replaced by AccountProfile BC |
 | **Currencies** | Reference + external | Rich domain model, `CurrencyCode`/`CurrencyDescription` VOs, own `CurrencyDbContext`, fully async NBP — see ADR-0008 | ✅ New implementation ready (parallel) |
@@ -166,6 +171,7 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | **Presale/Checkout** | Behavioral (Slice 1) | `CartLine` write-through cache, `SoftReservation` (DB + cache, captures `UnitPrice` at checkout initiation), `StockSnapshot` event-driven read model, `SoftReservationExpiredJob`, ACL interfaces (`ICatalogClient`, `IStockClient`), BFF `StorefrontController` in API — see ADR-0012. Slice 2 (cart-to-order) blocked by Sales/Orders. | ✅ Slice 1 implemented (parallel) |
 | **Payments** | Behavioral aggregate | `Payment` state machine (Pending → Confirmed / Expired / Refunded), `PaymentWindowExpiredJob` (Payments BC timer), `OrderPlacedHandler` initializes payment, publishes `PaymentExpired` → chain to `OrderCancelled` — see ADR-0015 | 📋 ADR proposed |
 | **Identity / IAM** | Infrastructure | ASP.NET Core Identity | ✅ Keep isolated |
+| **Backoffice** | Application-only | Admin aggregations, reporting — no domain model | ⚠️ No ADR — scope and boundaries undefined |
 
 ---
 
@@ -198,10 +204,10 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | # | BC | ADR | Status | Blocked by |
 |---|---|---|---|---|
 | 1 | **Sales/Orders** | [ADR-0014](../adr/0014-sales-orders-bc-design.md) | 🟡 In progress — Domain ✅, Application ✅, Infrastructure ✅, Unit tests ✅ — DB migration pending approval; integration tests + atomic switch pending | — (legacy migration; Checkout Slice 2 + Payments depend on it) |
-| 2 | **Presale/Checkout — Slice 2** (cart + checkout write flow) | ADR pending | ⬜ Not started | Orders (#1) |
+| 2 | **Presale/Checkout — Slice 2** (cart + checkout write flow) | [ADR-0012](../adr/0012-presale-checkout-bc-design.md) §11–14 (formal amendment — not a separate ADR) | ⬜ Not started | Orders (#1) |
 | 3 | **Sales/Payments** | [ADR-0015](../adr/0015-sales-payments-bc-design.md) | 🟡 In progress — Domain ✅, Application ✅, Infrastructure ✅, Unit tests ✅ — DB migrations pending approval; integration tests + atomic switch pending | Orders (#1); fixes `PaymentHandler → OrderService` sync call |
-| 4 | **Sales/Coupons** | — | ⬜ Not started | Orders (#1) + Payments (#3); fixes `CouponHandler → Order.Cost` |
-| 5 | **Sales/Fulfillment** | — | ⬜ Not started | Availability (done) + Orders (#1) |
+| 4 | **Sales/Coupons** | [ADR-0016](../adr/0016-sales-coupons-bc-design.md) | ⬜ Not started — Slice 1: one-time coupon on order; Slice 2 (CouponType, expiry, per-item) deferred | Orders (#1) + Payments (#3); fixes `CouponHandler → Order.Cost` |
+| 5 | **Sales/Fulfillment** | [ADR-0017](../adr/0017-sales-fulfillment-bc-design.md) | 📋 ADR proposed — Slice 1: Refund aggregate (`RefundApproved` redesign, Payments extension); Slice 2: Shipment deferred | Orders (#1) + Payments (#3); fixes `RefundService → OrderService` sync call + `RefundApproved` wrong-BC ownership |
 
 ---
 
@@ -211,8 +217,21 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 |---|---|---|
 | Per-BC `DbContext` interfaces | [ADR-0013](../adr/0013-per-bc-dbcontext-interfaces.md) | ⬜ Not started — gate: 80–100% BC implementations complete |
 | `PaymentHandler` → event-based coordination | [ADR-0015](../adr/0015-sales-payments-bc-design.md) | 🟡 In progress — handlers + job + aggregate implemented ✅; atomic switch (remove legacy `PaymentHandler`) pending integration tests |
-| `CouponHandler` — remove direct `Order.Cost` write | ADR-0002 §9 | ⬜ Not started |
-| Remove `ApplicationUser` nav from `Order` | ADR-0002 §8 | ⬜ Part of Sales/Orders migration |
+| `CouponHandler` — remove direct `Order.Cost` write | [ADR-0016](../adr/0016-sales-coupons-bc-design.md) | ⬜ Not started — atomic switch step 10 |
+| `RefundService` → event-based coordination; `RefundApproved` moved to Fulfillment BC; `Payment.IssueRefund` per-item design replaced | [ADR-0017](../adr/0017-sales-fulfillment-bc-design.md) | ⬜ Not started — atomic switch step 11 |
+| Remove `ApplicationUser` nav from `Order` | [ADR-0019](../adr/0019-identity-iam-bc-design.md) §5 step 6 | ⬜ Part of Sales/Orders + IAM atomic switch — coordinate per ADR-0019 §5 |
+| Frontend error pipeline — `BusinessException._codes` silently discarded; `errors.js:showErrorFromResponse` hides all MVC errors; JS client drift (`ajaxRequest.js` vs `fetch`) | [ADR-0021](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) | ⬜ Phase 1 (error pipeline) + Phase 2 (bug fixes) not started |
+
+---
+
+### BC ADR coverage gaps
+
+| BC | Current ADR coverage | Gap |
+|---|---|---|
+| **Supporting/Communication** | [ADR-0018](../adr/0018-supporting-communication-bc-design.md) ✅ | Covered — lean ADR proposed. Blocked by Fulfillment Slice 1 + Coupons Slice 1. |
+| **Identity / IAM** | [ADR-0019](../adr/0019-identity-iam-bc-design.md) ✅ | Covered — standalone ADR proposed; atomic switch steps defined |
+| **Backoffice** | [ADR-0020](../adr/0020-backoffice-bc-design.md) ✅ | Covered — application-only BC; no domain model. Scope and query assembly pattern defined. |
+| **Currencies** | [ADR-0008](../adr/0008-supporting-currencies-bc-design.md) ✅ | Covered — new implementation ready (parallel) |
 
 ---
 
@@ -226,4 +245,12 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 - [ADR-0008 — Supporting/Currencies BC: Currency and CurrencyRate Aggregate Design](../adr/0008-supporting-currencies-bc-design.md)
 - [ADR-0009 — Supporting/TimeManagement BC: Scheduled and Deferred Job Design](../adr/0009-supporting-timemanagement-bc-design.md)
 - [ADR-0013 — Per-BC DbContext Interfaces](../adr/0013-per-bc-dbcontext-interfaces.md)
+- [ADR-0014 — Sales/Orders BC: Order and OrderItem Aggregate Design](../adr/0014-sales-orders-bc-design.md)
+- [ADR-0015 — Sales/Payments BC Design](../adr/0015-sales-payments-bc-design.md)
+- [ADR-0016 — Sales/Coupons BC Design](../adr/0016-sales-coupons-bc-design.md)
+- [ADR-0017 — Sales/Fulfillment BC Design](../adr/0017-sales-fulfillment-bc-design.md)
+- [ADR-0018 — Supporting/Communication BC: Customer Notification Design](../adr/0018-supporting-communication-bc-design.md)
+- [ADR-0019 — Identity/IAM BC: Standalone Design and Atomic Switch Plan](../adr/0019-identity-iam-bc-design.md)
+- [ADR-0020 — Backoffice BC: Admin Aggregation and Reporting Design](../adr/0020-backoffice-bc-design.md)
+- [ADR-0021 — Frontend Error Pipeline and JS Migration Strategy](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md)
 - [`.github/instructions/dotnet-instructions.md`](../../.github/instructions/dotnet-instructions.md) § 16

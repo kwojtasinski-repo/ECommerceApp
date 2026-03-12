@@ -72,6 +72,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "adr", "adr", "{25B91C37-ECC
 		docs\adr\0013-per-bc-dbcontext-interfaces.md = docs\adr\0013-per-bc-dbcontext-interfaces.md
 		docs\adr\0014-sales-orders-bc-design.md = docs\adr\0014-sales-orders-bc-design.md
 		docs\adr\0015-sales-payments-bc-design.md = docs\adr\0015-sales-payments-bc-design.md
+		docs\adr\0016-sales-coupons-bc-design.md = docs\adr\0016-sales-coupons-bc-design.md
+		docs\adr\0017-sales-fulfillment-bc-design.md = docs\adr\0017-sales-fulfillment-bc-design.md
+		docs\adr\0018-supporting-communication-bc-design.md = docs\adr\0018-supporting-communication-bc-design.md
+		docs\adr\0019-identity-iam-bc-design.md = docs\adr\0019-identity-iam-bc-design.md
+		docs\adr\0020-backoffice-bc-design.md = docs\adr\0020-backoffice-bc-design.md
+		docs\adr\0021-frontend-error-pipeline-and-js-migration-strategy.md = docs\adr\0021-frontend-error-pipeline-and-js-migration-strategy.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ECommerce", "ECommerce", "{049E647F-D15D-4AFB-8AE6-DB2363C9F4D4}"
