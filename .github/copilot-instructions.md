@@ -28,7 +28,7 @@ Per-stack files under `.github/instructions/` (check for new additions):
 - `pre-edit.instructions.md` — Pre-edit checklist + doc/ADR suggestions (`**`).
 - `docs-index.instructions.md` — Docs lookup table: ADRs, architecture, patterns, roadmaps (`**`).
 
-Prompts (`.github/prompts/`): `bc-analysis.prompt.md`, `bc-implementation.prompt.md`, `pr-review.prompt.md`.
+Prompts (`.github/prompts/`): `bc-analysis.prompt.md`, `bc-implementation.prompt.md`, `pr-review.prompt.md`.  
 Agents (`.github/agents/`): `adr-generator` (`@adr-generator`), `bc-switch` (`@bc-switch`), `copilot-setup-maintainer` (`@copilot-setup-maintainer`).
 
 ## 3. AI developer profile
@@ -44,6 +44,7 @@ Agents (`.github/agents/`): `adr-generator` (`@adr-generator`), `bc-switch` (`@b
 - When creating a new ADR, copy `.github/templates/adr.template.md`. Save to `docs/adr/XXXX-short-title.md`.
 - Read applicable per-stack instructions before writing code for that stack.
 - Detailed rules for AbstractService, Handler pattern, ExceptionMiddleware, IFileStore, NBP API → see `dotnet.instructions.md`.
+- **BC changes rule**: Before editing BC-related code, MUST read `.github/context/project-state.md` and verify the BC is not blocked. If blocked, STOP and explain the blocker. No atomic switch for any BC is performed until 80–95% of the overall BC migration implementation is complete. Atomic switches are always deferred to the end of the migration programme, not done after each individual BC.
 
 ## 5. Communication & PRs
 
@@ -51,8 +52,6 @@ Agents (`.github/agents/`): `adr-generator` (`@adr-generator`), `bc-switch` (`@b
 - Tag `@team/architecture` for ADR-impacting PRs.
 
 ## 6. Project context (read before implementation)
-
-**BC changes rule**: Before editing BC-related code, MUST read `.github/context/project-state.md` and verify the BC is not blocked. If blocked, STOP and explain the blocker.
 
 **Bug fix rule**: Before fixing any bug, MUST read `.github/context/known-issues.md` to check if already tracked.
 

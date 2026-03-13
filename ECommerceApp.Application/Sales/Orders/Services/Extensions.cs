@@ -6,6 +6,8 @@ using ECommerceApp.Application.Sales.Payments.Messages;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using Microsoft.Extensions.DependencyInjection;
 
+using FulfillmentMessages = ECommerceApp.Application.Sales.Fulfillment.Messages;
+
 namespace ECommerceApp.Application.Sales.Orders.Services
 {
     internal static class Extensions
@@ -20,6 +22,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             services.AddScoped<IMessageHandler<PaymentExpired>, OrderPaymentExpiredHandler>();
             services.AddScoped<IMessageHandler<CouponApplied>, OrderCouponAppliedHandler>();
             services.AddScoped<IMessageHandler<CouponRemovedFromOrder>, OrderCouponRemovedHandler>();
+            services.AddScoped<IMessageHandler<FulfillmentMessages.RefundApproved>, OrderRefundApprovedHandler>();
             return services;
         }
     }

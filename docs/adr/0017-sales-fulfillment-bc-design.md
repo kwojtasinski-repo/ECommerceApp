@@ -704,8 +704,8 @@ cross-reference alongside `docs/architecture/bounded-context-map.md`.
 | 5 | `Application/Sales/Payments/Handlers/PaymentRefundApprovedHandler`; registered in Payments DI | ⬜ Not started |
 | 6 | `Infrastructure/Sales/Fulfillment/`: `FulfillmentDbContext`, `RefundConfiguration`, `RefundRepository`, `OrderExistenceCheckerAdapter`, DI | ⬜ Not started |
 | 7 | `FulfillmentDbContext` registered in `Infrastructure/DependencyInjection.cs` | ⬜ Not started |
-| 8 | EF migration `InitFulfillmentSchema` targeting `FulfillmentDbContext` | ⬜ Pending human approval (migration-policy.md) |
-| 9 | Unit tests: `RefundAggregateTests`, `RefundServiceTests`, `PaymentRefundApprovedHandlerTests`, `OrderRefundApprovedHandlerTests`, updated `InventoryRefundApprovedHandlerTests` | ⬜ Not started |
+| 8 | EF migration `InitFulfillmentSchema` targeting `FulfillmentDbContext` | ✅ Generated — pending human approval (migration-policy.md) |
+| 9 | Unit tests: `RefundAggregateTests`, `RefundServiceTests`, `PaymentRefundApprovedHandlerTests`, `OrderRefundApprovedHandlerTests`, updated `InventoryRefundApprovedHandlerTests` | ✅ Done (33 tests passing; `InventoryRefundApprovedHandlerTests` update deferred to atomic switch) |
 | 10 | Integration tests: `RefundServiceIntegrationTests` | ⬜ Not started |
 | 11 | Atomic switch: update `Inventory.RefundApprovedHandler`; remove old `RefundApproved` from Payments; migrate controllers → `IRefundService`; remove legacy `RefundService` | ⬜ After integration tests |
 | 12–18 | Slice 2 — deferred features (`Shipment` aggregate + `ShipmentLine`, state machine, cross-BC handlers, `Order.MarkAsRefunded()`) — see §11 | ⬜ Future ADR |

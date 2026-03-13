@@ -57,6 +57,23 @@ namespace ECommerceApp.Application.Sales.Payments.Services
             return PaymentOperationResult.Success;
         }
 
+        public async Task<PaymentOperationResult> ProcessRefundAsync(int orderId, int refundId, CancellationToken ct = default)
+        {
+            var payment = await _paymentRepo.GetByOrderIdAsync(orderId, ct);
+            if (payment is null)
+                return PaymentOperationResult.PaymentNotFound;
+
+            if (payment.Status == PaymentStatus.Expired)
+                return PaymentOperationResult.AlreadyExpired;
+            if (payment.Status == PaymentStatus.Refunded)
+                return PaymentOperationResult.AlreadyRefunded;
+
+            payment.Refund(refundId);
+            await _paymentRepo.UpdateAsync(payment, ct);
+
+            return PaymentOperationResult.Success;
+        }
+
         private static PaymentDetailsVm MapToDetailsVm(Payment payment)
             => new(
                 payment.Id.Value,

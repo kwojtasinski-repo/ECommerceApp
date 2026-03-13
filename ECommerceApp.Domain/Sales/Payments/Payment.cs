@@ -86,5 +86,16 @@ namespace ECommerceApp.Domain.Sales.Payments
             Status = PaymentStatus.Refunded;
             return new RefundIssuedEvent(Id.Value, OrderId.Value, productId, quantity, DateTime.UtcNow);
         }
+
+        public PaymentRefundedEvent Refund(int refundId)
+        {
+            if (Status != PaymentStatus.Confirmed)
+            {
+                throw new DomainException($"Cannot refund payment — current status is '{Status}'.");
+            }
+
+            Status = PaymentStatus.Refunded;
+            return new PaymentRefundedEvent(Id.Value, OrderId.Value, refundId, DateTime.UtcNow);
+        }
     }
 }

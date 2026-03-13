@@ -11,6 +11,7 @@ using ECommerceApp.Application.Supporting.Currencies.Services;
 using ECommerceApp.Application.Inventory.Availability.Services;
 using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Application.Sales.Coupons.Services;
+using ECommerceApp.Application.Sales.Fulfillment.Services;
 using ECommerceApp.Application.Sales.Payments.Services;
 using ECommerceApp.Application.Sales.Orders.Services;
 using ECommerceApp.Application.Supporting.TimeManagement.Services;
@@ -43,6 +44,7 @@ namespace ECommerceApp.Application
             services.AddOrderServices();
             services.AddPaymentServices();
             services.AddCouponServices();
+            services.AddFulfillmentServices();
             services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
             services.AddFluentValidationAutoValidation();
             services.AddFluentValidationClientsideAdapters();

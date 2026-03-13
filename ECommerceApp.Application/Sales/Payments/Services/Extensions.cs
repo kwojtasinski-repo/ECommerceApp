@@ -1,4 +1,5 @@
 using ECommerceApp.Application.Messaging;
+using ECommerceApp.Application.Sales.Fulfillment.Messages;
 using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Application.Sales.Payments.Handlers;
 using ECommerceApp.Application.Supporting.TimeManagement;
@@ -13,7 +14,8 @@ namespace ECommerceApp.Application.Sales.Payments.Services
             return services
                 .AddScoped<IPaymentService, PaymentService>()
                 .AddScoped<IScheduledTask, PaymentWindowExpiredJob>()
-                .AddScoped<IMessageHandler<OrderPlaced>, OrderPlacedHandler>();
+                .AddScoped<IMessageHandler<OrderPlaced>, OrderPlacedHandler>()
+                .AddScoped<IMessageHandler<RefundApproved>, PaymentRefundApprovedHandler>();
         }
     }
 }
