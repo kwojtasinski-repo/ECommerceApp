@@ -1,12 +1,12 @@
 # Bounded Context Implementation Prompt
 
-> **Usage**: Reference this file in Copilot Chat with `#file:.github/prompts/bc-implementation.md`
+> **Usage**: Reference this file in Copilot Chat with `#file:.github/prompts/bc-implementation.prompt.md`
 > then append: `Implement the [BC_NAME] bounded context.`
 >
 > Example:
 > ```
-> #file:.github/prompts/bc-implementation.md
-> #file:.github/prompts/bc-analysis.md
+> #file:.github/prompts/bc-implementation.prompt.md
+> #file:.github/prompts/bc-analysis.prompt.md
 > Implement the Inventory/Availability bounded context.
 > ```
 >
@@ -159,19 +159,19 @@ Switch steps:
 
 ### Domain layer
 - [ ] Folders created under `Domain/<Group>/<BcName>/`
-- [ ] Aggregate rules followed — see [`dotnet-instructions.md §16`](../instructions/dotnet-instructions.md)
+- [ ] Aggregate rules followed — see [`dotnet.instructions.md §16`](../instructions/dotnet.instructions.md)
 - [ ] Repository interface extends `IGenericRepository<T>`
 
 ### Infrastructure layer
 - [ ] Folders created under `Infrastructure/<Group>/<BcName>/`
 - [ ] EF Core configuration file created
-- [ ] Repository registered — see [`dotnet-instructions.md §13`](../instructions/dotnet-instructions.md)
+- [ ] Repository registered — see [`dotnet.instructions.md §13`](../instructions/dotnet.instructions.md)
 
 ### Application layer
 - [ ] Folders created under `Application/<Group>/<BcName>/`
 - [ ] Service implementation is `internal sealed`
 - [ ] Service never returns domain entities — maps to VM/DTO
-- [ ] Service registered — see [`dotnet-instructions.md §13`](../instructions/dotnet-instructions.md)
+- [ ] Service registered — see [`dotnet.instructions.md §13`](../instructions/dotnet.instructions.md)
 
 ### Tests
 - [ ] Unit tests for aggregate methods
@@ -193,5 +193,5 @@ Switch steps:
 - Pattern templates: [`docs/patterns/implementation-patterns.md`](../../docs/patterns/implementation-patterns.md)
 - Folder/namespace rules: [ADR-0003](../../docs/adr/0003-feature-folder-organization-for-new-bounded-context-code.md)
 - Module taxonomy: [ADR-0004](../../docs/adr/0004-module-taxonomy-and-bounded-context-grouping.md)
-- Rich domain model rules: [`.github/instructions/dotnet-instructions.md`](../instructions/dotnet-instructions.md) § 16
+- Rich domain model rules: [`.github/instructions/dotnet.instructions.md`](../instructions/dotnet.instructions.md) § 16
 - BC map + progress tracker: [`docs/architecture/bounded-context-map.md`](../../docs/architecture/bounded-context-map.md)

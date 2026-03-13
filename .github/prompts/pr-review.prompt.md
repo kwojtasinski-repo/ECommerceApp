@@ -1,11 +1,11 @@
 # PR Review Prompt
 
-> **Usage**: Reference this file in Copilot Chat with `#file:.github/prompts/pr-review.md`
+> **Usage**: Reference this file in Copilot Chat with `#file:.github/prompts/pr-review.prompt.md`
 > then append: `Review this PR.` or `Review the changes in [area].`
 >
 > Example:
 > ```
-> #file:.github/prompts/pr-review.md
+> #file:.github/prompts/pr-review.prompt.md
 > Review the changes in the Catalog BC.
 > ```
 >
@@ -65,7 +65,7 @@ Load **only** the ADRs that apply to the scope identified in Step 1:
 | AccountProfile BC touched | [ADR-0005](../../docs/adr/0005-accountprofile-bc-userprofile-aggregate-design.md) |
 | `Domain/Shared/` or typed IDs / VOs touched | [ADR-0006](../../docs/adr/0006-typedid-and-value-objects-as-shared-domain-primitives.md) |
 | Catalog BC touched | [ADR-0007](../../docs/adr/0007-catalog-bc-product-category-tag-aggregate-design.md) |
-| `Infrastructure/Migrations/` touched | [`migration-policy.md`](../instructions/migration-policy.md) |
+| `Infrastructure/Migrations/` touched | [`migration-policy.instructions.md`](../instructions/migration-policy.instructions.md) |
 
 ### Step 3 — Architectural conformance
 
@@ -89,7 +89,7 @@ Check the following for all changed files:
 - Namespace matches folder path exactly
 - No new files added to legacy horizontal folders (`Domain/Model/`, `Application/Services/`, `Infrastructure/Repositories/`) unless explicitly continuing existing legacy work
 
-**Domain model rules** (for behavioral aggregates — `dotnet-instructions.md §16`):
+**Domain model rules** (for behavioral aggregates — `dotnet.instructions.md §16`):
 - All properties use `private set`
 - Static `Create(...)` factory method present
 - `private` parameterless constructor present for EF Core
@@ -97,7 +97,7 @@ Check the following for all changed files:
 - No `ApplicationUser` navigation property — `string UserId` only
 - No cross-BC navigation properties — IDs only
 
-**Service rules** (`dotnet-instructions.md §2–§3`):
+**Service rules** (`dotnet.instructions.md §2–§3`):
 - Reference/lookup services inherit `AbstractService`
 - Complex domain operations use the Handler pattern — not duplicated in controllers
 - Services are `internal sealed`; exposed only via interface
@@ -108,18 +108,18 @@ Load and check **only** the instruction file matching the changed stack:
 
 | Changed files | Check against |
 |---|---|
-| `ECommerceApp.API/**/*.cs` | [`web-api-instructions.md`](../instructions/web-api-instructions.md) |
-| `ECommerceApp.Web/**/*.cs`, `**/*.cshtml` | [`razorpages-instructions.md`](../instructions/razorpages-instructions.md) |
-| `ECommerceApp.Infrastructure/**/*.cs` | [`efcore-instructions.md`](../instructions/efcore-instructions.md) |
-| `wwwroot/**`, `*.cshtml` (frontend assets) | [`frontend-instructions.md`](../instructions/frontend-instructions.md) |
-| Any `.cs` file | [`dotnet-instructions.md`](../instructions/dotnet-instructions.md) §4–§15 |
+| `ECommerceApp.API/**/*.cs` | [`web-api.instructions.md`](../instructions/web-api.instructions.md) |
+| `ECommerceApp.Web/**/*.cs`, `**/*.cshtml` | [`razorpages.instructions.md`](../instructions/razorpages.instructions.md) |
+| `ECommerceApp.Infrastructure/**/*.cs` | [`efcore.instructions.md`](../instructions/efcore.instructions.md) |
+| `wwwroot/**`, `*.cshtml` (frontend assets) | [`frontend.instructions.md`](../instructions/frontend.instructions.md) |
+| Any `.cs` file | [`dotnet.instructions.md`](../instructions/dotnet.instructions.md) §4–§15 |
 
 ### Step 5 — Tests
 
 - [ ] Unit tests added for any new aggregate method or value object
 - [ ] Integration tests added or updated for any new service method
 - [ ] No existing tests broken (check test project for compilation errors)
-- [ ] Test naming follows `Method_Conditions_ExpectedResult` — see [`testing-instructions.md`](../instructions/testing-instructions.md)
+- [ ] Test naming follows `Method_Conditions_ExpectedResult` — see [`testing.instructions.md`](../instructions/testing.instructions.md)
 - [ ] API integration tests use Flurl + Shouldly, NOT `BaseTest<T>`
 
 ### Step 6 — Migrations (if `Infrastructure/Migrations/` is touched)
@@ -189,5 +189,5 @@ For items that look correct, confirm:
 - Parallel change strategy: [ADR-0002](../../docs/adr/0002-post-event-storming-architectural-evolution-strategy.md)
 - Folder organization: [ADR-0003](../../docs/adr/0003-feature-folder-organization-for-new-bounded-context-code.md)
 - Module taxonomy: [ADR-0004](../../docs/adr/0004-module-taxonomy-and-bounded-context-grouping.md)
-- Domain model rules: [`dotnet-instructions.md §16`](../instructions/dotnet-instructions.md)
+- Domain model rules: [`dotnet.instructions.md §16`](../instructions/dotnet.instructions.md)
 - BC map: [`bounded-context-map.md`](../../docs/architecture/bounded-context-map.md)

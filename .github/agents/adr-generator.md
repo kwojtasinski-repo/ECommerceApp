@@ -177,11 +177,11 @@ Architecture:
 - External integration: NBP API via `CurrencyRateService` + `NBPResponseUtils`.
 
 Instruction files to reference in ADRs:
-- `.github/instructions/dotnet-instructions.md`
-- `.github/instructions/web-api-instructions.md`
-- `.github/instructions/efcore-instructions.md`
-- `.github/instructions/testing-instructions.md`
-- `.github/instructions/migration-policy.md`
+- `.github/instructions/dotnet.instructions.md`
+- `.github/instructions/web-api.instructions.md`
+- `.github/instructions/efcore.instructions.md`
+- `.github/instructions/testing.instructions.md`
+- `.github/instructions/migration-policy.instructions.md`
 
 ADR template location: `.github/templates/adr.template.md`
 ADR output folder: `/docs/adr/`

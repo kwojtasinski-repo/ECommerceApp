@@ -1,130 +1,61 @@
 # Copilot Instructions for ECommerceApp
 
+> This file is the **repo-level policy** for AI agents and Copilot. Per-stack details are auto-loaded from `.github/instructions/` via `applyTo:` globs. See `docs-index.instructions.md` for the docs lookup table.
+
 ## 1. Project summary
-Short description: ECommerceApp — a simple e-commerce web application that allows placing offers on a website and ordering items. Built with ASP.NET Core MVC + Web API using clean/onion architecture, EF Core and ASP.NET Core Identity. Typical projects: `ECommerceApp.Web` (MVC Controllers + Views, Identity Area with Razor Pages), `ECommerceApp.API` (REST endpoints, JWT authentication), `ECommerceApp.Application` (services, DTOs, viewmodels), `ECommerceApp.Infrastructure` (EF Core Context, repositories, migrations), `ECommerceApp.Domain` (domain models/interfaces), plus unit and integration tests.
 
-Contents: UI (MVC Controllers + Views, Identity Razor Pages area), API controllers, application services, repositories using EF Core, migrations under `Infrastructure/Migrations`, ADRs under `/docs/adr`.
+ECommerceApp — ASP.NET Core MVC + Web API e-commerce platform. Clean/onion architecture, EF Core, ASP.NET Core Identity.
 
-Business domain: ECommerceApp is an e-commerce platform covering the following domain areas:
-- **Catalog**: products (`Item`) with images, brands, tags, and types.
-- **Orders**: customer orders (`Order`, `OrderItem`) with cart and checkout flows.
-- **Payments**: payment processing and payment state tracking (`Payment`, `PaymentState`).
-- **Refunds**: refund requests and lifecycle (`Refund`).
-- **Coupons**: discount coupons with types and usage tracking (`Coupon`, `CouponType`, `CouponUsed`).
-- **Customers**: customer profiles with addresses and contact details (`Customer`, `Address`, `ContactDetail`).
-- **Currencies**: multi-currency support with external currency rate integration via NBP (National Bank of Poland) API (`Currency`, `CurrencyRate`).
-- **Identity & User Management**: ASP.NET Core Identity for authentication, role-based access, and admin user management.
+**Projects**: `Web` (MVC + Views + Identity Razor Pages), `API` (REST + JWT), `Application` (services, DTOs, VMs), `Infrastructure` (EF Core, repos, migrations), `Domain` (models, interfaces), plus unit/integration tests.
 
-Technology stack:
-- **Backend**: ASP.NET Core MVC, Web API, EF Core, LINQ, FluentValidation, AutoMapper.
-- **Auth**: ASP.NET Core Identity, JWT (API), Google OAuth (Web).
-- **Testing**: xUnit, Moq, FluentAssertions.
-- **Database**: MSSQL.
+**Domain areas**: Catalog, Orders, Payments, Refunds, Coupons, Customers, Currencies (NBP API), Identity & User Management.
 
-Frontend stack (`ECommerceApp.Web`):
-- **Bootstrap** — layout and responsive UI components.
-- **Bootstrap Select** — enhanced dropdown selects.
-- **Font Awesome** — icon library (solid and brands).
-- **jQuery** — DOM manipulation and AJAX requests.
-- **jQuery Validation + Unobtrusive** — client-side form validation integrated with ASP.NET Core tag helpers.
-- **Globalize + CLDR.js + jquery-validation-globalize** — locale-aware number, date, and currency formatting and validation.
-- **require.js** — module loader for custom JavaScript.
-- Custom JS modules under `wwwroot/js/`: `ajaxRequest.js` (AJAX abstraction), `modalService.js`, `dialogTemplate.js`, `buttonTemplate.js`, `forms.js`, `validations.js`, `errors.js`, `config.js`, `site.js`.
+**Tech**: ASP.NET Core, EF Core, FluentValidation, AutoMapper, xUnit, Moq, FluentAssertions, MSSQL. Frontend: Bootstrap, jQuery, require.js, LibMan (`libman.json`). UI labels are partially in Polish — do not translate without explicit request.
 
-Frontend notes (important for agents):
-- UI navigation labels are partially in Polish (e.g., `Koszyk`, `Moje zamówienia`, `Przedmioty`) — do not translate or change UI text without explicit request.
-- Role-based navigation visibility is controlled by `UserPermissions.Roles` (`Administrator`, `Manager`, `Service`, `User`) directly in `_Layout.cshtml`.
-- Cart item count is loaded dynamically via AJAX on every page using `ajaxRequest.js`.
-- Front-end libraries are managed via `libman.json` (LibMan); do not add or update libraries without checking `libman.json` first.
+## 2. Instruction files (auto-loaded by path)
 
-> Authoritative instructions: this file (`.github/copilot-instructions.md`) is the repository-level policy for AI agents and automation. Do NOT assume another canonical file elsewhere; follow this file and the per-stack instructions under `.github/instructions/` (when present).
+Per-stack files under `.github/instructions/` (check for new additions):
 
-## 2. Purpose & scope
-This file sets repository-level rules for automation agents, Copilot, and contributors.
-- Purpose: ensure safe, consistent, and reviewable changes performed by humans or automation.
-- Scope: guidance for code changes, CI, tests, ADRs, and upgrade procedures relevant to this .NET MVC project.
-- Per-stack detailed instructions live under `.github/instructions/`. Current files (always check for new additions):
-- `.github/instructions/dotnet-instructions.md` — .NET architecture, services, handlers, testing, DI, auth.
-- `.github/instructions/web-api-instructions.md` — Web API controllers, DTOs, error handling, integration tests.
-- `.github/instructions/razorpages-instructions.md` — MVC controllers, Views, Razor Pages (Identity area), forms.
-- `.github/instructions/frontend-instructions.md` — LibMan, JS modules, require.js, UI text rules.
-- `.github/instructions/efcore-instructions.md` — EF Core tracking, transactions, migrations, seeding.
-- `.github/instructions/migration-policy.md` — DB migration approval process and checklist.
-- `.github/instructions/testing-instructions.md` — Unit and integration test patterns, BaseTest, Flurl, Shouldly.
-- `.github/instructions/shared-primitives.instructions.md` — Rules for `TypedId`, `Money`, `Price`, `UnitCost`, `Quantity` (ADR-0006); auto-loaded when editing `Domain/Shared/**`.
-- Prompt files under `.github/prompts/`:
-  - `bc-analysis.md` — bounded context analysis and migration planning.
-  - `bc-implementation.md` — step-by-step BC implementation guide (includes gate check for blockers).
-  - `pr-review.md` — PR review with targeted ADR loading by scope.
-- Agent files under `.github/agents/`:
-  - `adr-generator` — generate ADRs by scanning the codebase; invoke with `@adr-generator`.
-  - `bc-switch` — atomic BC switch (legacy cleanup + DI swap + controller migration + tests); invoke with `@bc-switch`.
-- Context files under `.github/context/` (read before any implementation task):
-  - `project-state.md` — tactical BC implementation status, active work, pending switches.
-  - `known-issues.md` — confirmed bugs not yet fixed; do not re-introduce resolved items.
-- Roadmap files under `docs/roadmap/`:
-  - `README.md` — overview of all active roadmaps and dependency order.
-  - `frontend-pipeline.md` — ADR-0021 phases with acceptance criteria and bug list.
-  - `orders-atomic-switch.md` — Sales/Orders pending steps and atomic switch checklist; **highest-priority unblocking item**.
-  - `payments-atomic-switch.md` — Sales/Payments DB migrations + atomic switch; blocked by Orders.
-  - `iam-atomic-switch.md` — Identity/IAM atomic switch steps; coordinate with Orders switch.
-  - `presale-slice2.md` — Presale/Checkout Slice 2 implementation steps; blocked by Orders.
+- `dotnet.instructions.md` — .NET architecture, services, handlers, DI, auth (`**/*.cs, **/*.csproj`).
+- `web-api.instructions.md` — Web API controllers, DTOs, integration tests (`ECommerceApp.API/**`).
+- `razorpages.instructions.md` — MVC controllers, Views, Razor Pages (`ECommerceApp.Web/**`).
+- `frontend.instructions.md` — LibMan, JS modules, require.js (`wwwroot/**, **/*.cshtml`).
+- `efcore.instructions.md` — EF Core tracking, transactions, seeding (`ECommerceApp.Infrastructure/**`).
+- `migration-policy.instructions.md` — DB migration approval (`Infrastructure/Migrations/**`).
+- `testing.instructions.md` — Unit/integration test patterns (`UnitTests/**, IntegrationTests/**`).
+- `shared-primitives.instructions.md` — TypedId, Money, Price, Quantity (`Domain/Shared/**`).
+- `safety.instructions.md` — Allowed/disallowed actions (`**`).
+- `pre-edit.instructions.md` — Pre-edit checklist + doc/ADR suggestions (`**`).
+- `docs-index.instructions.md` — Docs lookup table: ADRs, architecture, patterns, roadmaps (`**`).
 
-## 3. AI developer profile (expected behavior)
+Prompts (`.github/prompts/`): `bc-analysis.prompt.md`, `bc-implementation.prompt.md`, `pr-review.prompt.md`.
+Agents (`.github/agents/`): `adr-generator` (`@adr-generator`), `bc-switch` (`@bc-switch`), `copilot-setup-maintainer` (`@copilot-setup-maintainer`).
+
+## 3. AI developer profile
+
 - Act as a senior .NET developer experienced with DDD, SOLID, and pragmatic TDD.
-- Be concise and technical; prefer code-first responses and short rationales.
+- Be concise and technical; prefer code-first responses.
 - Ask clarifying questions when requirements are ambiguous.
-- Explain trade-offs when multiple valid approaches exist.
 - Always add or update tests for behavioral changes.
 
-## 4. Key authoritative rules (do not bypass)
-- Always read and follow applicable ADRs in `/docs/adr` before making design or architecture changes.
-- When creating a new ADR, always copy and fill `.github/templates/adr.template.md` — never create ADRs from scratch. Save to `/docs/adr/XXXX-short-title.md`.
-- Always read applicable per-stack instructions under `.github/instructions/` (if they exist) before writing code for that stack.
-- Never assume or hard-code framework or package versions. If a change requires a specific SDK/package version, ask the human for confirmation.
-- Do not perform destructive actions or operations against production systems.
-- Services for reference/lookup domains (`Brand`, `Tag`, `Type`, `Currency`, `Coupon`, `Address`, `ContactDetail`, etc.) must inherit from `AbstractService` base class. For behavioral aggregates (`Order`, `Payment`, `Refund`, `OrderItem`), apply rich domain model patterns per `dotnet-instructions.md` § 16 — state transitions belong on the aggregate, not in standalone service classes. See [ADR-0002](../docs/adr/0002-post-event-storming-architectural-evolution-strategy.md).
-- Complex domain operations use the **Handler pattern** (`CouponHandler`, `PaymentHandler`, `ItemHandler`) — do not duplicate this logic in controllers or plain services.
-- All exceptions must flow through `ExceptionMiddleware` + `BusinessException` pipeline — do not add raw try/catch blocks in controllers.
-- File operations (images) must use `IFileStore` / `IFileWrapper` abstractions — do not use raw `System.IO` directly.
-- Currency rates are fetched from the external **NBP API** via `CurrencyRateService` + `NBPResponseUtils` — do not hardcode rates or bypass this integration.
+## 4. Key rules (do not bypass)
 
-## 5. Allowed / disallowed actions (high-level)
-Allowed (without separate approval):
-- Small, focused code changes and refactors requested by humans that include tests and pass CI.
-- Add or update documentation, ADRs, and test-only helper code.
-- Non-destructive CI and doc changes.
+- Read applicable ADRs in `docs/adr/` before design changes. Use `docs-index.instructions.md` to find the right ADR.
+- When creating a new ADR, copy `.github/templates/adr.template.md`. Save to `docs/adr/XXXX-short-title.md`.
+- Read applicable per-stack instructions before writing code for that stack.
+- Detailed rules for AbstractService, Handler pattern, ExceptionMiddleware, IFileStore, NBP API → see `dotnet.instructions.md`.
 
-Disallowed without explicit human approval:
-- Any edits to files under `Infrastructure/Migrations/` or running production DB migrations.
-- Introducing or committing secrets or credentials.
-- Upgrading to preview SDKs or preview major package versions.
-- Large API-breaking changes, cross-service contract changes, or mass refactors without an accepted ADR and sign-off.
-- Any automated change that directly affects production systems.
+## 5. Communication & PRs
 
-## 6. Pre-edit checklist (mandatory steps before any edit)
-Before proposing or committing changes, perform and document the steps below in the PR description:
-- Read the entire target file(s) and relevant related files (Controllers, services, repository code, tests).
-- Read ADRs in `/docs/adr` that are directly relevant to the area being changed — not all of them.
-- Read the relevant per-stack instructions under `.github/instructions/`.
-- Search for usages and migration impact (references, database migrations, API clients) and list affected areas.
-- Run local validations: `dotnet restore`, `dotnet build`, and `dotnet test` (or explain why not possible).
-- Include tests for any behavioral change and a short rollback/mitigation plan for risky changes.
-- Open a pull request for review; do not merge without human approval unless explicitly asked.
+- PRs must explain what changed, why, tests added/updated, and rollback steps for risky changes.
+- Tag `@team/architecture` for ADR-impacting PRs.
 
-## 7. Communication and PR expectations
-- PRs must explain what changed, why, which tests were added/updated, and rollback steps for risky changes.
-- Tag `@team/architecture` or maintainers for ADR-impacting PRs.
+## 6. Project context (read before implementation)
 
-## 8. Current project context (read before any implementation task)
+**BC changes rule**: Before editing BC-related code, MUST read `.github/context/project-state.md` and verify the BC is not blocked. If blocked, STOP and explain the blocker.
 
-**BC changes rule**: Before editing, adding, or extending any BC-related code, MUST fetch `.github/context/project-state.md` and verify the BC is not blocked. If blocked, STOP and explain the blocker. Do not proceed.
+**Bug fix rule**: Before fixing any bug, MUST read `.github/context/known-issues.md` to check if already tracked.
 
-**Bug fix rule**: Before fixing any bug, MUST fetch `.github/context/known-issues.md` to check if it is already tracked and if a fix approach is documented.
+**Clarification rule**: If scope, BC ownership, or blocker status are unclear, ask a clarifying question BEFORE writing code.
 
-**Clarification rule**: If scope, BC ownership, layer boundaries, or blocker status are unclear, ask a clarifying question BEFORE writing any code.
-
-- **`.github/context/project-state.md`** — BC implementation status; what is active, what is legacy, what is blocked. Read this before touching any service, handler, or repository to avoid working against the wrong implementation (legacy vs new BC).
-- **`.github/context/known-issues.md`** — confirmed bugs; do not re-introduce a resolved issue or duplicate a tracked fix.
-- **`docs/roadmap/README.md`** — planned phases and dependency order; use to determine whether a task is blocked or ready.
-- **`docs/architecture/bounded-context-map.md`** — authoritative BC map; check before adding cross-BC dependencies or proposing new aggregates.
+Context: `project-state.md`, `known-issues.md`. Roadmaps: `docs/roadmap/README.md`. BC map: `bounded-context-map.md`.

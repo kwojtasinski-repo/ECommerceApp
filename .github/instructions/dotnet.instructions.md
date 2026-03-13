@@ -139,7 +139,7 @@ Both `ECommerceApp.Web` and `ECommerceApp.API` have a `BaseController` that all 
 
 Unit tests live in `ECommerceApp.UnitTests`, integration tests in `ECommerceApp.IntegrationTests`.
 
-**Test naming** — use `Method_Conditions_ExpectedResult` pattern; see [`testing-instructions.md`](../instructions/testing-instructions.md) for convention and examples.
+**Test naming** — use `Method_Conditions_ExpectedResult` pattern; see [`testing.instructions.md`](../instructions/testing.instructions.md) for convention and examples.
 
 > **Existing tests** use the legacy `given_<context>_when_<action>_should_<result>` convention — do NOT rename them.
 

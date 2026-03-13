@@ -1,9 +1,9 @@
 # Bounded Context Analysis Prompt
 
-> **Usage**: Reference this file in Copilot Chat with `#file:.github/prompts/bc-analysis.md`
+> **Usage**: Reference this file in Copilot Chat with `#file:.github/prompts/bc-analysis.prompt.md`
 > then append: `Analyze the [BC_NAME] bounded context.`
 >
-> Example: `#file:.github/prompts/bc-analysis.md Analyze the Orders bounded context.`
+> Example: `#file:.github/prompts/bc-analysis.prompt.md Analyze the Orders bounded context.`
 
 ---
 
@@ -86,7 +86,7 @@ List what needs to be created that doesn't exist yet:
 | Missing artifact | Why needed |
 |---|---|
 | `Domain/[Group]/[BC]/I[Aggregate]Repository.cs` | per ADR-0003 convention |
-| Factory method on `[Model]` | per dotnet-instructions.md § 16 |
+| Factory method on `[Model]` | per dotnet.instructions.md § 16 |
 | Domain method `[Model].[Transition]()` | state transition belongs on aggregate |
 
 ## Step 7 — Recommended implementation order
