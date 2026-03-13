@@ -37,9 +37,13 @@ and the atomic switch (remove legacy code) remain.
 
 ## What is NOT started yet (in priority order)
 
-1. **Presale/Checkout Slice 2** (steps 11–14 in ADR-0012) — blocked by Sales/Orders atomic switch
-2. **Sales/Coupons BC** — blocked by Orders + Payments
-3. **Sales/Fulfillment BC** — blocked by Orders + Payments
+> **Strategy — Parallel Change, build-first:** All BCs are built alongside legacy code before any atomic switch is executed.
+> Atomic switches are deferred until ~80–95% of backend BC implementations are complete.
+> Two blocker types: **`implementation blocked`** (true stop — hard dependency missing) vs **`atomic switch blocked`** (implementation proceeds in parallel now).
+
+1. **Presale/Checkout Slice 2** (steps 11–14 in ADR-0012) — ⛔ **implementation blocked** by Sales/Orders atomic switch (write-path creates Orders via the new aggregate; must be live first)
+2. **Sales/Coupons BC** — ✅ **implementation CAN proceed now** in parallel (ADR-0016 §Decision: "Can be implemented now"); **atomic switch blocked** by Orders + Payments switches
+3. **Sales/Fulfillment BC** — ✅ **implementation CAN proceed now** in parallel (ADR-0017); **atomic switch blocked** by Orders + Payments switches
 4. **Supporting/Communication BC** — blocked by Fulfillment Slice 1 + Coupons Slice 1
 5. **Backoffice BC** — blocked by ADR-0013 (per-BC DbContext interfaces); gated by ~80% BC completion
 6. **Per-BC DbContext interfaces** (ADR-0013) — gate: ~80–100% BC implementations complete

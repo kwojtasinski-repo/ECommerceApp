@@ -206,8 +206,8 @@ Aggregates own their state transitions. Cross-BC communication via domain events
 | 1 | **Sales/Orders** | [ADR-0014](../adr/0014-sales-orders-bc-design.md) | 🟡 In progress — Domain ✅, Application ✅, Infrastructure ✅, Unit tests ✅ — DB migration pending approval; integration tests + atomic switch pending | — (legacy migration; Checkout Slice 2 + Payments depend on it) |
 | 2 | **Presale/Checkout — Slice 2** (cart + checkout write flow) | [ADR-0012](../adr/0012-presale-checkout-bc-design.md) §11–14 (formal amendment — not a separate ADR) | ⬜ Not started | Orders (#1) |
 | 3 | **Sales/Payments** | [ADR-0015](../adr/0015-sales-payments-bc-design.md) | 🟡 In progress — Domain ✅, Application ✅, Infrastructure ✅, Unit tests ✅ — DB migrations pending approval; integration tests + atomic switch pending | Orders (#1); fixes `PaymentHandler → OrderService` sync call |
-| 4 | **Sales/Coupons** | [ADR-0016](../adr/0016-sales-coupons-bc-design.md) | ⬜ Not started — Slice 1: one-time coupon on order; Slice 2 (CouponType, expiry, per-item) deferred | Orders (#1) + Payments (#3); fixes `CouponHandler → Order.Cost` |
-| 5 | **Sales/Fulfillment** | [ADR-0017](../adr/0017-sales-fulfillment-bc-design.md) | 📋 ADR proposed — Slice 1: Refund aggregate (`RefundApproved` redesign, Payments extension); Slice 2: Shipment deferred | Orders (#1) + Payments (#3); fixes `RefundService → OrderService` sync call + `RefundApproved` wrong-BC ownership |
+| 4 | **Sales/Coupons** | [ADR-0016](../adr/0016-sales-coupons-bc-design.md) | 🟡 Implementation in progress — Slice 1 parallel change underway; Slice 2 (CouponType, expiry, per-item) deferred | **Atomic switch only** — blocked by Orders (#1) + Payments (#3); fixes `CouponHandler → Order.Cost` |
+| 5 | **Sales/Fulfillment** | [ADR-0017](../adr/0017-sales-fulfillment-bc-design.md) | 📋 ADR proposed — Slice 1: Refund aggregate (`RefundApproved` redesign, Payments extension); Slice 2: Shipment deferred — ✅ implementation can proceed in parallel now | **Atomic switch only** — blocked by Orders (#1) + Payments (#3); fixes `RefundService → OrderService` sync call + `RefundApproved` wrong-BC ownership |
 
 ---
 

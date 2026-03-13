@@ -1,4 +1,5 @@
 using ECommerceApp.Application.Messaging;
+using ECommerceApp.Application.Sales.Coupons.Messages;
 using ECommerceApp.Application.Sales.Orders.Handlers;
 using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Application.Sales.Payments.Messages;
@@ -17,6 +18,8 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             services.AddScoped<IMessageHandler<OrderPlaced>, OrderPlacedSnapshotHandler>();
             services.AddScoped<IMessageHandler<PaymentConfirmed>, OrderPaymentConfirmedHandler>();
             services.AddScoped<IMessageHandler<PaymentExpired>, OrderPaymentExpiredHandler>();
+            services.AddScoped<IMessageHandler<CouponApplied>, OrderCouponAppliedHandler>();
+            services.AddScoped<IMessageHandler<CouponRemovedFromOrder>, OrderCouponRemovedHandler>();
             return services;
         }
     }

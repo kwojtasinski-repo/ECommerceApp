@@ -570,14 +570,14 @@ data migration step (Slice 2 migration checklist). No new `CouponType` entity is
 
 | Step | Description | Status |
 |------|-------------|--------|
-| 1 | Folder structure created | ⬜ Not started |
-| 2 | `Domain/Sales/Coupons/`: `Coupon`, `CouponId`, `CouponUsed`, `CouponUsedId`, `CouponStatus`, repository interfaces | ⬜ Not started |
-| 3 | `Application/Sales/Coupons/`: `ICouponService`, `CouponService`, result types, messages, `CouponsOrderCancelledHandler`, `IOrderExistenceChecker`, DI | ⬜ Not started |
-| 4 | `Application/Sales/Orders/Handlers/`: `OrderCouponAppliedHandler`, `OrderCouponRemovedHandler`; registered in Orders DI | ⬜ Not started |
-| 5 | `Infrastructure/Sales/Coupons/`: `CouponsDbContext`, EF configs, repositories, `OrderExistenceCheckerAdapter`, DI | ⬜ Not started |
-| 6 | `CouponsDbContext` registered in `Infrastructure/DependencyInjection.cs` | ⬜ Not started |
-| 7 | EF migration `InitCouponsSchema` targeting `CouponsDbContext` | ⬜ Pending human approval (migration-policy.md) |
-| 8 | Unit tests: `CouponAggregateTests`, `CouponServiceTests`, `CouponsOrderCancelledHandlerTests`, `OrderCouponAppliedHandlerTests`, `OrderCouponRemovedHandlerTests` | ⬜ Not started |
+| 1 | Folder structure created | ✅ Done |
+| 2 | `Domain/Sales/Coupons/`: `Coupon`, `CouponId`, `CouponUsed`, `CouponUsedId`, `CouponStatus`, repository interfaces | ✅ Done |
+| 3 | `Application/Sales/Coupons/`: `ICouponService`, `CouponService`, result types, messages, `CouponsOrderCancelledHandler`, `IOrderExistenceChecker`, DI | ✅ Done |
+| 4 | `Application/Sales/Orders/Handlers/`: `OrderCouponAppliedHandler`, `OrderCouponRemovedHandler`; registered in Orders DI | ✅ Done |
+| 5 | `Infrastructure/Sales/Coupons/`: `CouponsDbContext`, EF configs, repositories, `OrderExistenceCheckerAdapter`, DI | ✅ Done |
+| 6 | `CouponsDbContext` registered in `Infrastructure/DependencyInjection.cs` | ✅ Done |
+| 7 | EF migration `InitCouponsSchema` targeting `CouponsDbContext` | ✅ Generated — ⬜ pending approval (migration-policy.md) |
+| 8 | Unit tests: `CouponAggregateTests`, `CouponServiceTests`, `CouponsOrderCancelledHandlerTests`, `OrderCouponAppliedHandlerTests`, `OrderCouponRemovedHandlerTests` | ✅ Done |
 | 9 | Integration tests: `CouponServiceIntegrationTests` | ⬜ Not started |
 | 10 | Atomic switch: controllers → `ICouponService`; remove legacy `CouponHandler` | ⬜ After integration tests |
 | 11–15 | Slice 2 — deferred features (CouponType, expiry, per-item, bulk, admin CRUD) | ⬜ Future ADR |

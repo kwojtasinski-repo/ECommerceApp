@@ -20,10 +20,15 @@
 
 1. Fetch `.github/context/project-state.md`.
 2. Find the row for the BC you are about to implement.
-3. Check its status column:
-   - If the status contains **"blocked"**, **"not started"**, or lists an unresolved blocker → **STOP**.
-     Reply: *"BC [name] is blocked: [exact blocker text from project-state.md]. Cannot proceed until blocker is resolved."*
-   - If the status shows the BC as **in progress** or **ready** → continue to Step 1 below.
+3. Check its status column. There are **two distinct blocker types** — treat them differently:
+
+   | Blocker type | Meaning | Action |
+   |---|---|---|
+   | **`implementation blocked`** | A hard dependency is missing — e.g., an aggregate that does not exist yet, a DB schema that has not been created, a write-path that requires the upstream BC to be live | **STOP.** Reply: *"BC [name] implementation is blocked: [exact blocker]. Cannot proceed until resolved."* |
+   | **`atomic switch blocked`** | The controller migration / legacy removal must wait for another BC's switch, but the Domain + Application + Infrastructure layers can be built in parallel now (Parallel Change) | **CONTINUE to Step 1.** Note: *"Atomic switch blocked by [X] — implementing in parallel. Will stop before the atomic-switch step."* |
+
+   - If the status is **"not started"** with no explicit `implementation blocked` label → read the BC's ADR. If §Decision says "Can be implemented now" → **CONTINUE**. Otherwise ask for clarification.
+   - If the status is **"in progress"** or **"ready"** → **CONTINUE to Step 1 below**.
 4. If you have any doubt about scope, dependencies, or which layer to touch → **ask a clarifying question before writing code**.
 
 ---
