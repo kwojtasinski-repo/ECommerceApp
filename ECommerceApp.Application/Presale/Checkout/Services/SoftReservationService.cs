@@ -137,7 +137,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
 
         public async Task<IReadOnlyList<SoftReservation>> GetAllForUserAsync(PresaleUserId userId, CancellationToken ct = default)
         {
-            return await _reservationRepo.GetActiveByUserIdAsync(userId, ct);
+            return await _reservationRepo.GetByUserIdAsync(userId, ct);
         }
 
         public Task CommitAllForUserAsync(PresaleUserId userId, CancellationToken ct = default)
@@ -176,7 +176,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
 
         public async Task<IReadOnlyList<SoftReservationPriceChangeVm>> GetPriceChangesAsync(PresaleUserId userId, CancellationToken ct = default)
         {
-            var reservations = await _reservationRepo.GetActiveByUserIdAsync(userId, ct);
+            var reservations = await _reservationRepo.GetByUserIdAsync(userId, ct);
             var changes = new List<SoftReservationPriceChangeVm>();
             foreach (var r in reservations)
             {

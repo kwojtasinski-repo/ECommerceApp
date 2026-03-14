@@ -24,6 +24,36 @@ namespace ECommerceApp.Domain.Sales.Payments
             int currencyId,
             DateTime expiresAt)
         {
+            if (totalAmount < 0)
+            {
+                throw new DomainException("TotalAmount cannot be negative.");
+            }
+            if (currencyId <= 0)
+            {
+                throw new DomainException("CurrencyId must be positive.");
+            }
+
+            return new Payment
+            {
+                OrderId = orderId,
+                TotalAmount = totalAmount,
+                CurrencyId = currencyId,
+                Status = PaymentStatus.Pending,
+                ExpiresAt = expiresAt
+            };
+        }
+
+        public static Payment Create(
+            PaymentId paymentId,
+            PaymentOrderId orderId,
+            decimal totalAmount,
+            int currencyId,
+            DateTime expiresAt)
+        {
+            if (paymentId is null || paymentId.Value <= 0)
+            {
+                throw new DomainException("PaymentId must be positive.");
+            }
             if (orderId is null || orderId.Value <= 0)
             {
                 throw new DomainException("OrderId must be positive.");
@@ -39,7 +69,7 @@ namespace ECommerceApp.Domain.Sales.Payments
 
             return new Payment
             {
-                Id = new PaymentId(0),
+                Id = paymentId,
                 OrderId = orderId,
                 TotalAmount = totalAmount,
                 CurrencyId = currencyId,

@@ -50,7 +50,6 @@ namespace ECommerceApp.Domain.Sales.Orders
 
             var order = new Order
             {
-                Id = new OrderId(0),
                 CustomerId = customerId,
                 CurrencyId = currencyId,
                 UserId = userId,

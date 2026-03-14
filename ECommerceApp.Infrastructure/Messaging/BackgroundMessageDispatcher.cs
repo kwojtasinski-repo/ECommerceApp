@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -29,7 +30,6 @@ namespace ECommerceApp.Infrastructure.Messaging
         {
             await foreach (var message in _channel.Reader.ReadAllAsync(ct))
             {
-                using var scope = _serviceScopeFactory.CreateScope();
                 try
                 {
                     var handlerType = typeof(IMessageHandler<>).MakeGenericType(message.GetType());
@@ -40,19 +40,32 @@ namespace ECommerceApp.Infrastructure.Messaging
                         continue;
                     }
 
-                    var tasks = new List<Task>();
-                    foreach (var h in scope.ServiceProvider.GetServices(handlerType))
+                    int handlerCount;
+                    using (var probe = _serviceScopeFactory.CreateScope())
                     {
-                        tasks.Add((Task)method.Invoke(h, new object[] { message, ct })!);
+                        handlerCount = probe.ServiceProvider.GetServices(handlerType).Count();
                     }
 
-                    if (tasks.Count == 0)
+                    if (handlerCount == 0)
                     {
                         _logger.LogWarning("No handler registered for message type {MessageType}", message.GetType().Name);
                         continue;
                     }
 
+                    var tasks = new List<Task>(handlerCount);
+                    for (var i = 0; i < handlerCount; i++)
+                    {
+                        tasks.Add(RunInScopeAsync(i));
+                    }
+
                     await Task.WhenAll(tasks);
+
+                    async Task RunInScopeAsync(int index)
+                    {
+                        using var handlerScope = _serviceScopeFactory.CreateScope();
+                        var h = handlerScope.ServiceProvider.GetServices(handlerType).ElementAt(index);
+                        await (Task)method.Invoke(h, new object[] { message, ct })!;
+                    }
                 }
                 catch (Exception ex)
                 {

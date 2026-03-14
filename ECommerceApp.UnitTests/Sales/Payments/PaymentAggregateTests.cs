@@ -10,7 +10,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
     public class PaymentAggregateTests
     {
         private static Payment CreatePending() => Payment.Create(
-            new PaymentOrderId(1), 199.99m, 1, DateTime.UtcNow.AddDays(3));
+            new PaymentId(1), new PaymentOrderId(1), 199.99m, 1, DateTime.UtcNow.AddDays(3));
 
         // ── Create ────────────────────────────────────────────────────────────
 

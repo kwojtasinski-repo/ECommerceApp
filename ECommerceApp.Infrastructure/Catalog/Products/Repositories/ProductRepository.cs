@@ -89,16 +89,22 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
                               && (string.IsNullOrEmpty(searchString) || p.Description.Value.Contains(searchString)));
 
         public async Task<List<Product>> GetByIdsAsync(IEnumerable<int> ids)
-            => await _context.Products
-                .Where(p => ids.Contains(p.Id.Value))
+        {
+            var productIds = ids.Select(id => new ProductId(id)).ToList();
+            return await _context.Products
+                .Where(p => productIds.Contains(p.Id))
                 .ToListAsync();
+        }
 
         public async Task<List<Product>> GetByIdsWithImagesAsync(IEnumerable<int> ids, CancellationToken ct = default)
-            => await _context.Products
+        {
+            var productIds = ids.Select(id => new ProductId(id)).ToList();
+            return await _context.Products
                 .AsNoTracking()
                 .Include(p => p.Images)
-                .Where(p => ids.Contains(p.Id.Value))
+                .Where(p => productIds.Contains(p.Id))
                 .ToListAsync(ct);
+        }
 
         public async Task<decimal?> GetUnitPriceAsync(ProductId id, CancellationToken ct = default)
             => await _context.Products

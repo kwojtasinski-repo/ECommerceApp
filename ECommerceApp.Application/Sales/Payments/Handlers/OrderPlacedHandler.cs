@@ -30,7 +30,7 @@ namespace ECommerceApp.Application.Sales.Payments.Handlers
 
             await _scheduler.ScheduleAsync(
                 PaymentWindowExpiredJob.JobTaskName,
-                payment.Id.Value.ToString(),
+                payment.Id?.Value.ToString() ?? "0",
                 message.ExpiresAt,
                 ct);
         }
