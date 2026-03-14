@@ -1,11 +1,13 @@
 using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Application.Presale.Checkout.Results;
 using ECommerceApp.Application.Presale.Checkout.Services;
+using ECommerceApp.Application.Presale.Checkout.ViewModels;
 using ECommerceApp.Domain.Presale.Checkout;
 using FluentAssertions;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -253,6 +255,186 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _softReservationService.Verify(
                 s => s.RevertAllForUserAsync(UserId, It.IsAny<CancellationToken>()),
                 Times.Once);
+        }
+
+        // ?? AC: EmptyCart ??????????????????????????????????????????????????????
+
+        [Fact]
+        public async Task InitiateAsync_EmptyCart_ReturnsCartEmpty()
+        {
+            _cartService
+                .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((CartVm?)null);
+
+            var result = await _sut.InitiateAsync(UserId);
+
+            result.Should().BeOfType<InitiateCheckoutResult.CartEmpty>();
+        }
+
+        [Fact]
+        public async Task InitiateAsync_EmptyCart_DoesNotRemoveFromCart()
+        {
+            _cartService
+                .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((CartVm?)null);
+
+            await _sut.InitiateAsync(UserId);
+
+            _cartService.Verify(
+                c => c.RemoveRangeAsync(It.IsAny<PresaleUserId>(), It.IsAny<IReadOnlyList<PresaleProductId>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        // ?? AC: AlreadyInProgress guard ????????????????????????????????????????
+
+        [Fact]
+        public async Task InitiateAsync_ActiveReservationExists_ReturnsAlreadyInProgress()
+        {
+            _cartService
+                .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1) }));
+            var active = MakeReservation(productId: 1, qty: 1, unitPrice: 10m);
+            _softReservationService
+                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<SoftReservation> { active });
+
+            var result = await _sut.InitiateAsync(UserId);
+
+            result.Should().BeOfType<InitiateCheckoutResult.AlreadyInProgress>();
+        }
+
+        [Fact]
+        public async Task InitiateAsync_ActiveReservationExists_DoesNotCallHold()
+        {
+            _cartService
+                .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1) }));
+            var active = MakeReservation(productId: 1, qty: 1, unitPrice: 10m);
+            _softReservationService
+                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<SoftReservation> { active });
+
+            await _sut.InitiateAsync(UserId);
+
+            _softReservationService.Verify(
+                s => s.HoldAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        // ?? AC: All unavailable ? NothingReserved, no cart cleanup ?????????????
+
+        [Fact]
+        public async Task InitiateAsync_AllProductsUnavailable_ReturnsNothingReserved()
+        {
+            _cartService
+                .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1) }));
+            _softReservationService
+                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<SoftReservation>());
+            _softReservationService
+                .Setup(s => s.HoldAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            var result = await _sut.InitiateAsync(UserId);
+
+            result.Should().BeOfType<InitiateCheckoutResult.NothingReserved>();
+        }
+
+        [Fact]
+        public async Task InitiateAsync_AllProductsUnavailable_DoesNotRemoveFromCart()
+        {
+            _cartService
+                .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1) }));
+            _softReservationService
+                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<SoftReservation>());
+            _softReservationService
+                .Setup(s => s.HoldAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            await _sut.InitiateAsync(UserId);
+
+            _cartService.Verify(
+                c => c.RemoveRangeAsync(It.IsAny<PresaleUserId>(), It.IsAny<IReadOnlyList<PresaleProductId>>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        // ?? AC: All reserved ? Completed, reserved products removed from cart ??
+
+        [Fact]
+        public async Task InitiateAsync_AllProductsReserved_ReturnsCompleted()
+        {
+            _cartService
+                .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1), new(2, 2) }));
+            _softReservationService
+                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<SoftReservation>());
+            _softReservationService
+                .Setup(s => s.HoldAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            var result = await _sut.InitiateAsync(UserId);
+
+            result.Should().BeOfType<InitiateCheckoutResult.Completed>()
+                .Which.ReservedCount.Should().Be(2);
+        }
+
+        [Fact]
+        public async Task InitiateAsync_AllProductsReserved_RemovesAllReservedFromCart()
+        {
+            _cartService
+                .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1), new(2, 2) }));
+            _softReservationService
+                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<SoftReservation>());
+            _softReservationService
+                .Setup(s => s.HoldAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+
+            IReadOnlyList<PresaleProductId>? capturedIds = null;
+            _cartService
+                .Setup(c => c.RemoveRangeAsync(UserId, It.IsAny<IReadOnlyList<PresaleProductId>>(), It.IsAny<CancellationToken>()))
+                .Callback<PresaleUserId, IReadOnlyList<PresaleProductId>, CancellationToken>((_, ids, _) => capturedIds = ids)
+                .Returns(Task.CompletedTask);
+
+            await _sut.InitiateAsync(UserId);
+
+            capturedIds.Should().NotBeNull();
+            capturedIds!.Select(p => p.Value).Should().BeEquivalentTo(new[] { 1, 2 });
+        }
+
+        // ?? AC: Partial reservation ? only succeeded products removed from cart ?
+
+        [Fact]
+        public async Task InitiateAsync_PartialReservation_RemovesOnlySucceededFromCart()
+        {
+            _cartService
+                .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(10, 1), new(20, 1) }));
+            _softReservationService
+                .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<SoftReservation>());
+            _softReservationService
+                .Setup(s => s.HoldAsync(10, UserId.Value, 1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
+            _softReservationService
+                .Setup(s => s.HoldAsync(20, UserId.Value, 1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+
+            IReadOnlyList<PresaleProductId>? capturedIds = null;
+            _cartService
+                .Setup(c => c.RemoveRangeAsync(UserId, It.IsAny<IReadOnlyList<PresaleProductId>>(), It.IsAny<CancellationToken>()))
+                .Callback<PresaleUserId, IReadOnlyList<PresaleProductId>, CancellationToken>((_, ids, _) => capturedIds = ids)
+                .Returns(Task.CompletedTask);
+
+            await _sut.InitiateAsync(UserId);
+
+            capturedIds.Should().ContainSingle()
+                .Which.Value.Should().Be(10);
         }
     }
 }

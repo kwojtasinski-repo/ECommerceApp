@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Supporting.Currencies;
+using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Infrastructure.Supporting.Currencies
@@ -19,6 +20,7 @@ namespace ECommerceApp.Infrastructure.Supporting.Currencies
             builder.ApplyConfigurationsFromAssembly(
                 GetType().Assembly,
                 t => t.Namespace != null && t.Namespace.StartsWith("ECommerceApp.Infrastructure.Supporting.Currencies.Configurations"));
+            builder.UseUtcDateTimes();
         }
     }
 }

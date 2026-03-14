@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Inventory.Availability;
+using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Infrastructure.Inventory.Availability
@@ -21,6 +22,7 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability
             modelBuilder.ApplyConfigurationsFromAssembly(
                 GetType().Assembly,
                 t => t.Namespace != null && t.Namespace.StartsWith("ECommerceApp.Infrastructure.Inventory.Availability.Configurations"));
+            modelBuilder.UseUtcDateTimes();
         }
     }
 }

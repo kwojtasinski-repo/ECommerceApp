@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.AccountProfile;
+using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Infrastructure.AccountProfile
@@ -18,6 +19,7 @@ namespace ECommerceApp.Infrastructure.AccountProfile
             builder.ApplyConfigurationsFromAssembly(
                 GetType().Assembly,
                 t => t.Namespace == "ECommerceApp.Infrastructure.AccountProfile.Configurations");
+            builder.UseUtcDateTimes();
         }
     }
 }

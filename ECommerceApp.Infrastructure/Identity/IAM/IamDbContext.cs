@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Identity.IAM;
+using ECommerceApp.Infrastructure.Database;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -18,6 +19,7 @@ namespace ECommerceApp.Infrastructure.Identity.IAM
             builder.ApplyConfigurationsFromAssembly(
                 GetType().Assembly,
                 t => t.Namespace == "ECommerceApp.Infrastructure.Identity.IAM.Configurations");
+            builder.UseUtcDateTimes();
         }
     }
 }

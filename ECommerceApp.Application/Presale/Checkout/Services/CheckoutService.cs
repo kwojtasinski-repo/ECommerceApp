@@ -28,9 +28,15 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
         {
             var cart = await _cartService.GetCartAsync(userId, ct);
             if (cart is null || cart.Lines.Count == 0)
+            {
                 return InitiateCheckoutResult.EmptyCart();
+            }
 
-            await _softReservationService.RemoveActiveForUserAsync(userId.Value, ct);
+            var existing = await _softReservationService.GetAllForUserAsync(userId, ct);
+            if (existing.Any(r => r.Status == SoftReservationStatus.Active))
+            {
+                return InitiateCheckoutResult.CheckoutAlreadyInProgress();
+            }
 
             var succeeded = new List<int>();
             var unavailable = new List<int>();
@@ -39,13 +45,20 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
             {
                 var held = await _softReservationService.HoldAsync(line.ProductId, userId.Value, line.Quantity, ct);
                 if (held)
+                {
                     succeeded.Add(line.ProductId);
+                }
                 else
+                {
                     unavailable.Add(line.ProductId);
+                }
             }
 
             if (succeeded.Count == 0)
                 return InitiateCheckoutResult.AllUnavailable(unavailable);
+
+            var reservedProductIds = succeeded.Select(id => new PresaleProductId(id)).ToList();
+            await _cartService.RemoveRangeAsync(userId, reservedProductIds, ct);
 
             return InitiateCheckoutResult.Reserved(succeeded.Count, unavailable);
         }

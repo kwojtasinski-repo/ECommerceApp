@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Catalog.Products;
+using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Infrastructure.Catalog.Products
@@ -22,6 +23,7 @@ namespace ECommerceApp.Infrastructure.Catalog.Products
             builder.ApplyConfigurationsFromAssembly(
                 GetType().Assembly,
                 t => t.Namespace != null && t.Namespace.StartsWith("ECommerceApp.Infrastructure.Catalog.Products.Configurations"));
+            builder.UseUtcDateTimes();
         }
     }
 }

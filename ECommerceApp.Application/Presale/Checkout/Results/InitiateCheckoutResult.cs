@@ -29,8 +29,14 @@ namespace ECommerceApp.Application.Presale.Checkout.Results
             internal NothingReserved(IReadOnlyList<int> unavailable) => UnavailableProductIds = unavailable;
         }
 
+        public sealed class AlreadyInProgress : InitiateCheckoutResult
+        {
+            internal AlreadyInProgress() { }
+        }
+
         public static Completed Reserved(int count, IReadOnlyList<int> unavailable) => new(count, unavailable);
         public static CartEmpty EmptyCart() => new();
         public static NothingReserved AllUnavailable(IReadOnlyList<int> unavailable) => new(unavailable);
+        public static AlreadyInProgress CheckoutAlreadyInProgress() => new();
     }
 }

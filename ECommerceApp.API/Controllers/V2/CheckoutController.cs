@@ -36,6 +36,7 @@ namespace ECommerceApp.API.Controllers.V2
                 InitiateCheckoutResult.Completed c => Ok(new { c.ReservedCount, c.UnavailableProductIds }),
                 InitiateCheckoutResult.NothingReserved n => Conflict(new { Error = "All items are currently unavailable.", n.UnavailableProductIds }),
                 InitiateCheckoutResult.CartEmpty => BadRequest(new { Error = "Cart is empty." }),
+                InitiateCheckoutResult.AlreadyInProgress => Conflict(new { Error = "A checkout is already in progress." }),
                 _ => StatusCode(500)
             };
         }

@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Supporting.TimeManagement;
+using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
@@ -20,6 +21,7 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
             builder.ApplyConfigurationsFromAssembly(
                 GetType().Assembly,
                 t => t.Namespace != null && t.Namespace.StartsWith("ECommerceApp.Infrastructure.Supporting.TimeManagement.Configurations"));
+            builder.UseUtcDateTimes();
         }
     }
 }

@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Sales.Orders;
+using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Infrastructure.Sales.Orders
@@ -20,6 +21,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders
             modelBuilder.ApplyConfigurationsFromAssembly(
                 GetType().Assembly,
                 t => t.Namespace != null && t.Namespace.StartsWith("ECommerceApp.Infrastructure.Sales.Orders.Configurations"));
+            modelBuilder.UseUtcDateTimes();
         }
     }
 }

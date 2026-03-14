@@ -39,6 +39,7 @@ namespace ECommerceApp.Infrastructure.Database
             builder.ApplyConfigurationsFromAssembly(
                 GetType().Assembly,
                 t => t.Namespace == "ECommerceApp.Infrastructure.Database.Configurations");
+            builder.UseUtcDateTimes();
             builder.ApplySeed();
             builder.ApplyPrimaryKeyGeneration();
         }

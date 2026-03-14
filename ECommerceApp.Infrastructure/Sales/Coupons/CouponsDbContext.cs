@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Sales.Coupons;
+using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Infrastructure.Sales.Coupons
@@ -19,6 +20,7 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons
             modelBuilder.ApplyConfigurationsFromAssembly(
                 GetType().Assembly,
                 t => t.Namespace != null && t.Namespace.StartsWith("ECommerceApp.Infrastructure.Sales.Coupons.Configurations"));
+            modelBuilder.UseUtcDateTimes();
         }
     }
 }

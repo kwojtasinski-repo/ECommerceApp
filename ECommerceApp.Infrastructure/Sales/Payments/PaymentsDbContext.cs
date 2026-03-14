@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Sales.Payments;
+using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Infrastructure.Sales.Payments
@@ -18,6 +19,7 @@ namespace ECommerceApp.Infrastructure.Sales.Payments
             modelBuilder.ApplyConfigurationsFromAssembly(
                 GetType().Assembly,
                 t => t.Namespace != null && t.Namespace.StartsWith("ECommerceApp.Infrastructure.Sales.Payments.Configurations"));
+            modelBuilder.UseUtcDateTimes();
         }
     }
 }

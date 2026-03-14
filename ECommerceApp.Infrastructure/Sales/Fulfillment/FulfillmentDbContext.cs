@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Sales.Fulfillment;
+using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Infrastructure.Sales.Fulfillment
@@ -18,6 +19,7 @@ namespace ECommerceApp.Infrastructure.Sales.Fulfillment
             modelBuilder.ApplyConfigurationsFromAssembly(
                 GetType().Assembly,
                 t => t.Namespace != null && t.Namespace.StartsWith("ECommerceApp.Infrastructure.Sales.Fulfillment.Configurations"));
+            modelBuilder.UseUtcDateTimes();
         }
     }
 }
