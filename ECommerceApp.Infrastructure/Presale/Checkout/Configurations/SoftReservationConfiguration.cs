@@ -35,6 +35,11 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Configurations
                    .IsRequired();
 
             builder.HasIndex(e => new { e.ProductId, e.UserId }).IsUnique();
+
+            builder.Property(e => e.Status)
+                   .HasConversion<int>()
+                   .HasDefaultValue(SoftReservationStatus.Active)
+                   .IsRequired();
         }
     }
 }

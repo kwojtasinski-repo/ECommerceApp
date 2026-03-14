@@ -137,12 +137,46 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
 
         public async Task<IReadOnlyList<SoftReservation>> GetAllForUserAsync(PresaleUserId userId, CancellationToken ct = default)
         {
-            return await _reservationRepo.GetByUserIdAsync(userId, ct);
+            return await _reservationRepo.GetActiveByUserIdAsync(userId, ct);
+        }
+
+        public Task CommitAllForUserAsync(PresaleUserId userId, CancellationToken ct = default)
+            => _reservationRepo.CommitAllForUserAsync(userId, ct);
+
+        public Task RevertAllForUserAsync(PresaleUserId userId, CancellationToken ct = default)
+            => _reservationRepo.RevertAllForUserAsync(userId, ct);
+
+        public async Task RemoveActiveForUserAsync(string userId, CancellationToken ct = default)
+        {
+            PresaleUserId presaleUserId = userId;
+            var active = await _reservationRepo.GetActiveByUserIdAsync(presaleUserId, ct);
+            foreach (var r in active)
+            {
+                await _deferredScheduler.CancelAsync(SoftReservationExpiredJob.JobTaskName, r.Id?.Value.ToString() ?? "", ct);
+                await _reservationRepo.DeleteAsync(r, ct);
+                _cache.Remove(CacheKey(r.ProductId.Value, userId));
+                if (_productUserIndex.TryGetValue(r.ProductId.Value, out var set))
+                    lock (set) { set.Remove(userId); }
+            }
+        }
+
+        public async Task RemoveCommittedForUserAsync(string userId, CancellationToken ct = default)
+        {
+            PresaleUserId presaleUserId = userId;
+            var committed = await _reservationRepo.GetCommittedByUserIdAsync(presaleUserId, ct);
+            foreach (var r in committed)
+            {
+                await _deferredScheduler.CancelAsync(SoftReservationExpiredJob.JobTaskName, r.Id?.Value.ToString() ?? "", ct);
+                _cache.Remove(CacheKey(r.ProductId.Value, userId));
+                if (_productUserIndex.TryGetValue(r.ProductId.Value, out var set))
+                    lock (set) { set.Remove(userId); }
+            }
+            await _reservationRepo.DeleteCommittedForUserAsync(presaleUserId, ct);
         }
 
         public async Task<IReadOnlyList<SoftReservationPriceChangeVm>> GetPriceChangesAsync(PresaleUserId userId, CancellationToken ct = default)
         {
-            var reservations = await _reservationRepo.GetByUserIdAsync(userId, ct);
+            var reservations = await _reservationRepo.GetActiveByUserIdAsync(userId, ct);
             var changes = new List<SoftReservationPriceChangeVm>();
             foreach (var r in reservations)
             {
@@ -156,3 +190,4 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
         }
     }
 }
+

@@ -6,6 +6,7 @@ using ECommerceApp.Application.Sales.Orders.Results;
 using ECommerceApp.Application.Sales.Orders.ViewModels;
 using ECommerceApp.Domain.Sales.Orders;
 using ECommerceApp.Domain.Sales.Orders.ValueObjects;
+using ECommerceApp.Domain.Shared;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -251,9 +252,58 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             return OrderOperationResult.Success;
         }
 
-        public Task<PlaceOrderResult> PlaceOrderFromPresaleAsync(PlaceOrderFromPresaleDto dto, CancellationToken ct = default)
+        public async Task<PlaceOrderResult> PlaceOrderFromPresaleAsync(PlaceOrderFromPresaleDto dto, CancellationToken ct = default)
         {
-            throw new NotImplementedException("Blocked: awaiting Orders BC atomic switch — see project-state.md and presale-slice2.md §13");
+            if (dto.Lines.Count == 0)
+            {
+                return PlaceOrderResult.CartItemsNotFound();
+            }
+
+            var customer = new OrderCustomer(
+                dto.Customer.FirstName,
+                dto.Customer.LastName,
+                dto.Customer.Email,
+                dto.Customer.PhoneNumber,
+                dto.Customer.IsCompany,
+                dto.Customer.CompanyName,
+                dto.Customer.Nip,
+                dto.Customer.Street,
+                dto.Customer.BuildingNumber,
+                dto.Customer.FlatNumber,
+                dto.Customer.ZipCode,
+                dto.Customer.City,
+                dto.Customer.Country);
+
+            var number = OrderNumber.Generate();
+            var order = Order.Create(dto.CustomerId, dto.CurrencyId, dto.UserId, number, customer);
+
+            foreach (var line in dto.Lines)
+            {
+                var item = OrderItem.Create(
+                    new OrderProductId(line.ProductId),
+                    line.Quantity,
+                    new UnitCost(line.UnitPrice),
+                    dto.UserId);
+                order.AddItem(item);
+            }
+
+            order.CalculateCost();
+            var orderId = await _orderRepo.AddAsync(order, ct);
+
+            var items = dto.Lines
+                .Select(l => new OrderPlacedItem(l.ProductId, l.Quantity))
+                .ToList();
+
+            await _messageBroker.PublishAsync(new OrderPlaced(
+                orderId,
+                items,
+                dto.UserId,
+                DateTime.UtcNow.AddDays(3),
+                DateTime.UtcNow,
+                order.Cost,
+                dto.CurrencyId));
+
+            return PlaceOrderResult.Success(orderId);
         }
 
         private static OrderDetailsVm MapToDetailsVm(Order order)

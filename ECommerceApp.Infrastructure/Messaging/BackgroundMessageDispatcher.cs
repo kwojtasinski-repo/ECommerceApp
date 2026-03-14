@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -32,21 +33,26 @@ namespace ECommerceApp.Infrastructure.Messaging
                 try
                 {
                     var handlerType = typeof(IMessageHandler<>).MakeGenericType(message.GetType());
-                    var handler = scope.ServiceProvider.GetService(handlerType);
-                    if (handler is null)
+                    var method = handlerType.GetMethod(nameof(IMessageHandler<IMessage>.HandleAsync));
+                    if (method is null)
+                    {
+                        _logger.LogError("No HandleAsync method on handler type for {MessageType}", message.GetType().Name);
+                        continue;
+                    }
+
+                    var tasks = new List<Task>();
+                    foreach (var h in scope.ServiceProvider.GetServices(handlerType))
+                    {
+                        tasks.Add((Task)method.Invoke(h, new object[] { message, ct })!);
+                    }
+
+                    if (tasks.Count == 0)
                     {
                         _logger.LogWarning("No handler registered for message type {MessageType}", message.GetType().Name);
                         continue;
                     }
 
-                    var method = handlerType.GetMethod(nameof(IMessageHandler<IMessage>.HandleAsync));
-                    if (method is null)
-                    {
-                        _logger.LogError("Handler for message type {MessageType} does not have a HandleAsync method", message.GetType().Name);
-                        continue;
-                    }
-
-                    await (Task)method.Invoke(handler, new object[] { message, ct })!;
+                    await Task.WhenAll(tasks);
                 }
                 catch (Exception ex)
                 {

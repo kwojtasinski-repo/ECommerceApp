@@ -42,6 +42,12 @@ namespace ECommerceApp.Application.Presale.Checkout.Handlers
                 return;
             }
 
+            if (reservation.Status == SoftReservationStatus.Committed)
+            {
+                context.ReportSuccess($"No-op: reservation {reservationId} is being confirmed.");
+                return;
+            }
+
             await _reservationRepo.DeleteAsync(reservation, cancellationToken);
             _cache.Remove(CacheKey(reservation.ProductId.Value, reservation.UserId.Value));
 

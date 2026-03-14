@@ -1,15 +1,18 @@
 ### ============================================================
-### Presale V2 — Storefront + Cart
+### Presale V2 — Storefront + Cart + Checkout
 ### Base URL: https://localhost:49609
 ###
 ### Storefront: anonymous (published products browse)
 ### Cart: authenticated (any user — operates on own cart via userId)
+### Checkout: authenticated — soft-reserve → price-change check → confirm
 ###
 ### Full checkout flow:
-###   1. Browse products  →  GET /api/storefront/products
-###   2. Add to cart      →  POST /api/v2/cart/items
-###   3. View cart        →  GET  /api/v2/cart
-###   4. Place order      →  POST /api/v2/orders  (see sales-orders-v2.http)
+###   1. Browse products      →  GET  /api/storefront/products
+###   2. Add to cart          →  POST /api/v2/cart/items
+###   3. View cart            →  GET  /api/v2/cart
+###   4. Initiate checkout    →  POST /api/v2/soft-reservations  (hold price per product)
+###   5. Check price changes  →  GET  /api/v2/checkout/price-changes  (warn if prices shifted)
+###   6. Confirm order        →  POST /api/v2/checkout/confirm
 ### ============================================================
 
 @baseUrl = https://localhost:49609
@@ -116,4 +119,62 @@ Authorization: Bearer {{token}}
 # Expected: 404 Not Found (or empty CartVm depending on implementation)
 GET {{baseUrl}}/api/v2/cart
 Authorization: Bearer {{token}}
+###
+
+# ============================================================
+# CHECKOUT — authenticated
+# Steps: initiate → check prices → confirm
+#   1. POST /api/v2/checkout/initiate     — lock prices into SoftReservations (15 min TTL)
+#   2. GET  /api/v2/checkout/price-changes — warn if prices shifted since initiation
+#   3. POST /api/v2/checkout/confirm       — place the order
+# ============================================================
+
+### Step 4 — Initiate checkout (lock prices + TTL)
+# Locks the current Catalog price for every cart item into a SoftReservation (15-min TTL).
+# Re-calling refreshes prices and resets the TTL (idempotent).
+# 200 OK         →  { "reservedCount": <int>, "unavailableProductIds": [] }
+# 409 Conflict   →  all products unavailable
+# 400 Bad Request → cart is empty
+POST {{baseUrl}}/api/v2/checkout/initiate
+Authorization: Bearer {{token}}
+###
+
+### Step 5 — Check price changes before confirming
+# Returns lines where SoftReservation.UnitPrice != current Catalog price.
+# Empty array = prices unchanged → safe to confirm immediately.
+# Expected: 200 OK  →  SoftReservationPriceChangeVm[]
+GET {{baseUrl}}/api/v2/checkout/price-changes
+Authorization: Bearer {{token}}
+###
+
+### Step 6 — Confirm order placement
+# Customer data is submitted directly from the form (may be pre-filled from AccountProfile).
+# No server-side customer lookup is performed — the inline data is embedded in the order.
+# 200 OK        →  { "orderId": <int> }
+# 400 Bad Request  →  no active soft reservations (must re-initiate checkout)
+# 409 Conflict     →  a product is no longer available in the requested quantity
+# 422 Unprocessable Entity  →  order service returned a failure (e.g. invalid customer data)
+POST {{baseUrl}}/api/v2/checkout/confirm
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "customerId": 1,
+  "currencyId": 1,
+  "customer": {
+    "firstName": "Jan",
+    "lastName": "Kowalski",
+    "email": "jan.kowalski@example.com",
+    "phoneNumber": "+48123456789",
+    "isCompany": false,
+    "companyName": null,
+    "nip": null,
+    "street": "ul. Testowa",
+    "buildingNumber": "1",
+    "flatNumber": null,
+    "zipCode": "00-001",
+    "city": "Warszawa",
+    "country": "Poland"
+  }
+}
 ###

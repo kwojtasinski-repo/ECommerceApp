@@ -1,8 +1,8 @@
 using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Application.Presale.Checkout.Results;
-using ECommerceApp.Application.Sales.Orders.Services;
 using ECommerceApp.Domain.Presale.Checkout;
-using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,25 +11,66 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
     internal sealed class CheckoutService : ICheckoutService
     {
         private readonly ISoftReservationService _softReservationService;
-        private readonly IStockClient _stockClient;
-        private readonly IOrderService _orderService;
+        private readonly IOrderClient _orderClient;
         private readonly ICartService _cartService;
 
         public CheckoutService(
             ISoftReservationService softReservationService,
-            IStockClient stockClient,
-            IOrderService orderService,
+            IOrderClient orderClient,
             ICartService cartService)
         {
             _softReservationService = softReservationService;
-            _stockClient = stockClient;
-            _orderService = orderService;
+            _orderClient = orderClient;
             _cartService = cartService;
         }
 
-        public Task<CheckoutResult> PlaceOrderAsync(PresaleUserId userId, int customerId, int currencyId, CancellationToken ct = default)
+        public async Task<InitiateCheckoutResult> InitiateAsync(PresaleUserId userId, CancellationToken ct = default)
         {
-            throw new NotImplementedException("Blocked: awaiting Orders BC atomic switch — see project-state.md and presale-slice2.md §14");
+            var cart = await _cartService.GetCartAsync(userId, ct);
+            if (cart is null || cart.Lines.Count == 0)
+                return InitiateCheckoutResult.EmptyCart();
+
+            await _softReservationService.RemoveActiveForUserAsync(userId.Value, ct);
+
+            var succeeded = new List<int>();
+            var unavailable = new List<int>();
+
+            foreach (var line in cart.Lines)
+            {
+                var held = await _softReservationService.HoldAsync(line.ProductId, userId.Value, line.Quantity, ct);
+                if (held)
+                    succeeded.Add(line.ProductId);
+                else
+                    unavailable.Add(line.ProductId);
+            }
+
+            if (succeeded.Count == 0)
+                return InitiateCheckoutResult.AllUnavailable(unavailable);
+
+            return InitiateCheckoutResult.Reserved(succeeded.Count, unavailable);
+        }
+
+        public async Task<CheckoutResult> PlaceOrderAsync(PresaleUserId userId, int customerId, int currencyId, CheckoutCustomer customer, CancellationToken ct = default)
+        {
+            var reservations = await _softReservationService.GetAllForUserAsync(userId, ct);
+            if (reservations.Count == 0)
+                return CheckoutResult.NoReservations();
+
+            await _softReservationService.CommitAllForUserAsync(userId, ct);
+
+            var lines = reservations
+                .Select(r => new CheckoutLine(r.ProductId.Value, r.Quantity.Value, r.UnitPrice.Amount))
+                .ToList();
+
+            var result = await _orderClient.PlaceOrderAsync(customerId, currencyId, userId.Value, customer, lines, ct);
+            if (!result.IsSuccess)
+            {
+                await _softReservationService.RevertAllForUserAsync(userId, ct);
+                return CheckoutResult.Failed(result.FailureReason!);
+            }
+
+            return CheckoutResult.Succeeded(result.OrderId!.Value);
         }
     }
 }
+

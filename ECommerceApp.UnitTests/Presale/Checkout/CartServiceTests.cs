@@ -77,6 +77,28 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _cartRepo.Verify(r => r.DeleteAsync("user-1", 1, It.IsAny<CancellationToken>()), Times.Once);
         }
 
+        // ── RemoveRangeAsync ──────────────────────────────────────────────────
+
+        [Fact]
+        public async Task RemoveRangeAsync_MultipleProducts_ShouldDeleteAllInOneCallAndRefreshCache()
+        {
+            var productIds = new List<PresaleProductId> { new(10), new(20) };
+            _cartRepo.Setup(r => r.DeleteRangeAsync(
+                    It.IsAny<PresaleUserId>(), It.IsAny<IReadOnlyList<PresaleProductId>>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            _cartRepo.Setup(r => r.GetByUserIdAsync(It.IsAny<PresaleUserId>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<CartLine>());
+
+            await _service.RemoveRangeAsync("user-1", productIds);
+
+            _cartRepo.Verify(r => r.DeleteRangeAsync(
+                It.Is<PresaleUserId>(id => id.Value == "user-1"),
+                It.Is<IReadOnlyList<PresaleProductId>>(ids => ids.Count == 2),
+                It.IsAny<CancellationToken>()), Times.Once);
+            _cartRepo.Verify(r => r.DeleteAsync(
+                It.IsAny<PresaleUserId>(), It.IsAny<PresaleProductId>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
         // ── ClearAsync ────────────────────────────────────────────────────────
 
         [Fact]

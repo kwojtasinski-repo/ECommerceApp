@@ -2,6 +2,8 @@ using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Domain.Presale.Checkout;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,8 +25,9 @@ namespace ECommerceApp.Application.Presale.Checkout.Handlers
         public async Task HandleAsync(OrderPlaced message, CancellationToken ct = default)
         {
             PresaleUserId userId = message.UserId;
-            await _cartService.ClearAsync(userId, ct);
-            await _softReservationService.RemoveAllForUserAsync(message.UserId, ct);
+            IReadOnlyList<PresaleProductId> productIds = message.Items.Select(i => new PresaleProductId(i.ProductId)).ToList();
+            await _cartService.RemoveRangeAsync(userId, productIds, ct);
+            await _softReservationService.RemoveCommittedForUserAsync(message.UserId, ct);
         }
     }
 }

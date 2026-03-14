@@ -23,7 +23,7 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout
 
             return services
                 .AddScoped<ICatalogClient, CatalogClientAdapter>()
-                .AddScoped<IStockClient, StockClientAdapter>()
+                .AddScoped<IOrderClient, OrderClientAdapter>()
                 .AddScoped<ICartLineRepository, CartLineRepository>()
                 .AddScoped<ISoftReservationRepository, SoftReservationRepository>()
                 .AddScoped<IStockSnapshotRepository, StockSnapshotRepository>();

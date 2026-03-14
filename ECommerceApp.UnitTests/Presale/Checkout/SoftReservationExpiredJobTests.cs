@@ -94,5 +94,22 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
 
             _reservationRepo.Verify(r => r.DeleteAsync(It.IsAny<SoftReservation>(), It.IsAny<System.Threading.CancellationToken>()), Times.Never);
         }
+
+        [Fact]
+        public async Task ExecuteAsync_CommittedReservation_ShouldSkipAndReportSuccessNoOp()
+        {
+            var reservation = SoftReservation.Create(1, "user-1", 2, 10m, DateTime.UtcNow.AddMinutes(15));
+            reservation.Commit();
+
+            _reservationRepo.Setup(r => r.GetByIdAsync(It.IsAny<SoftReservationId>(), It.IsAny<System.Threading.CancellationToken>()))
+                .ReturnsAsync(reservation);
+            var context = new JobExecutionContext("1", Guid.NewGuid().ToString());
+
+            await _job.ExecuteAsync(context, default);
+
+            _reservationRepo.Verify(r => r.DeleteAsync(It.IsAny<SoftReservation>(), It.IsAny<System.Threading.CancellationToken>()), Times.Never);
+            context.Outcome.Should().BeOfType<JobOutcome.Success>()
+                .Which.Message.Should().Contain("No-op");
+        }
     }
 }

@@ -181,6 +181,7 @@ Unit tests live in `ECommerceApp.UnitTests`, integration tests in `ECommerceApp.
 - Use C# features available in the project — follow existing file style (no file-scoped namespaces are used; do not introduce them).
 - Do NOT add comments unless requested — prefer self-documenting code.
 - Do NOT add `sealed` to classes unless specifically required.
+- **Always use braces `{}` for all control flow statements (`if`, `foreach`, `for`, `while`, `do`) — even for single-line bodies. Never omit braces.**
 
 ## 16. Domain model richness policy
 

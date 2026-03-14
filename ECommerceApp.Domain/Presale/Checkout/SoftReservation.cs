@@ -11,8 +11,12 @@ namespace ECommerceApp.Domain.Presale.Checkout
         public Quantity Quantity { get; private set; } = default!;
         public Price UnitPrice { get; private set; } = default!;
         public DateTime ExpiresAt { get; private set; }
+        public SoftReservationStatus Status { get; private set; }
 
         private SoftReservation() { }
+
+        public void Commit() => Status = SoftReservationStatus.Committed;
+        public void Revert() => Status = SoftReservationStatus.Active;
 
         public static SoftReservation Create(
             int productId, string userId, int quantity, decimal unitPrice, DateTime expiresAt)

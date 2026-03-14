@@ -50,6 +50,21 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Repositories
             }
         }
 
+        public async Task DeleteRangeAsync(PresaleUserId userId, IReadOnlyList<PresaleProductId> productIds, CancellationToken ct = default)
+        {
+            var idList = productIds.ToList();
+            var lines = await _context.CartLines
+                .Where(c => c.UserId == userId && idList.Contains(c.ProductId))
+                .ToListAsync(ct);
+            if (lines.Count == 0)
+            {
+                return;
+            }
+
+            _context.CartLines.RemoveRange(lines);
+            await _context.SaveChangesAsync(ct);
+        }
+
         public async Task DeleteAllForUserAsync(PresaleUserId userId, CancellationToken ct = default)
         {
             var lines = await _context.CartLines

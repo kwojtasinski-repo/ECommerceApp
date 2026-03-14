@@ -3,6 +3,7 @@ using ECommerceApp.Application.Presale.Checkout.ViewModels;
 using ECommerceApp.Domain.Presale.Checkout;
 using Microsoft.Extensions.Caching.Memory;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,6 +31,12 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
         public async Task RemoveAsync(PresaleUserId userId, PresaleProductId productId, CancellationToken ct = default)
         {
             await _cartRepo.DeleteAsync(userId, productId, ct);
+            await RefreshCacheAsync(userId, ct);
+        }
+
+        public async Task RemoveRangeAsync(PresaleUserId userId, IReadOnlyList<PresaleProductId> productIds, CancellationToken ct = default)
+        {
+            await _cartRepo.DeleteRangeAsync(userId, productIds, ct);
             await RefreshCacheAsync(userId, ct);
         }
 

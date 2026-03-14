@@ -35,6 +35,16 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Repositories
                 .Where(r => r.UserId == userId)
                 .ToListAsync(ct);
 
+        public async Task<IReadOnlyList<SoftReservation>> GetActiveByUserIdAsync(PresaleUserId userId, CancellationToken ct = default)
+            => await _context.SoftReservations
+                .Where(r => r.UserId == userId && r.Status == SoftReservationStatus.Active)
+                .ToListAsync(ct);
+
+        public async Task<IReadOnlyList<SoftReservation>> GetCommittedByUserIdAsync(PresaleUserId userId, CancellationToken ct = default)
+            => await _context.SoftReservations
+                .Where(r => r.UserId == userId && r.Status == SoftReservationStatus.Committed)
+                .ToListAsync(ct);
+
         public async Task AddAsync(SoftReservation reservation, CancellationToken ct = default)
         {
             _context.SoftReservations.Add(reservation);
@@ -64,5 +74,35 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Repositories
             _context.SoftReservations.RemoveRange(reservations);
             await _context.SaveChangesAsync(ct);
         }
+
+        public async Task DeleteCommittedForUserAsync(PresaleUserId userId, CancellationToken ct = default)
+        {
+            var reservations = await _context.SoftReservations
+                .Where(r => r.UserId == userId && r.Status == SoftReservationStatus.Committed)
+                .ToListAsync(ct);
+            _context.SoftReservations.RemoveRange(reservations);
+            await _context.SaveChangesAsync(ct);
+        }
+
+        public async Task CommitAllForUserAsync(PresaleUserId userId, CancellationToken ct = default)
+        {
+            var reservations = await _context.SoftReservations
+                .Where(r => r.UserId == userId && r.Status == SoftReservationStatus.Active)
+                .ToListAsync(ct);
+            foreach (var r in reservations)
+                r.Commit();
+            await _context.SaveChangesAsync(ct);
+        }
+
+        public async Task RevertAllForUserAsync(PresaleUserId userId, CancellationToken ct = default)
+        {
+            var reservations = await _context.SoftReservations
+                .Where(r => r.UserId == userId && r.Status == SoftReservationStatus.Committed)
+                .ToListAsync(ct);
+            foreach (var r in reservations)
+                r.Revert();
+            await _context.SaveChangesAsync(ct);
+        }
     }
 }
+

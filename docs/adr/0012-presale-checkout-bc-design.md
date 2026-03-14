@@ -6,6 +6,7 @@ Accepted
 ## Date
 2026-03-06 (Slice 1)
 2026-03-12 (Slice 2 design)
+2026-03-14 (Slice 3: initiation endpoint, SoftReservationStatus, TOCTOU fix)
 
 ## Context
 
@@ -346,6 +347,7 @@ presale.SoftReservations
   Quantity    int           NOT NULL
   UnitPrice   decimal(18,2) NOT NULL
   ExpiresAt   datetime2     NOT NULL
+  Status      int           NOT NULL  DEFAULT 0  (0=Active, 1=Committed)
 
 presale.StockSnapshots
   ProductId          int       PK (NOT IDENTITY — ValueGeneratedNever)
@@ -450,7 +452,12 @@ Cart CRUD (`AddOrUpdateAsync`, `RemoveAsync`, `GetCartAsync`) stays in `ICartSer
 // Application/Presale/Checkout/Services/
 public interface ICheckoutService
 {
-    Task<CheckoutResult> PlaceOrderAsync(PresaleUserId userId, int customerId, int currencyId, CancellationToken ct = default);
+    // Slice 3 — locks prices for all cart items into SoftReservations (TTL = PresaleOptions.SoftReservationTtl).
+    // Re-calling refreshes prices and resets TTL. Removes existing Active reservations first.
+    Task<InitiateCheckoutResult> InitiateAsync(PresaleUserId userId, CancellationToken ct = default);
+
+    Task<CheckoutResult> PlaceOrderAsync(PresaleUserId userId, int customerId, int currencyId,
+        CheckoutCustomer customer, CancellationToken ct = default);
 }
 ```
 
@@ -483,42 +490,35 @@ public sealed record CheckoutResult
 
 ### 12. Checkout coordination flow
 
-`CheckoutService.PlaceOrderAsync` executes these steps in sequence:
+`CheckoutService.PlaceOrderAsync` executes a **commit / revert** pattern to guard against
+the `SoftReservationExpiredJob` TOCTOU race:
 
-1. **Load soft reservations**: `ISoftReservationService.GetAllForUserAsync(userId, ct)`.
-   Empty list → return `CheckoutResult.NoSoftReservations()`.
+1. **Load active soft reservations**: `ISoftReservationService.GetAllForUserAsync(userId, ct)`
+   returns only `Active` reservations. Empty list → `CheckoutResult.NoSoftReservations()`.
 
-2. **Final stock gate**: For each reservation call `IStockClient.TryReserveAsync(productId, quantity, ct)`.
-   This is a **read-only availability check** against live `Inventory.StockItem.AvailableQuantity`
-   (see `StockClientAdapter`). The actual Inventory reservation is created by
-   `Inventory.OrderPlacedHandler` reacting to the `OrderPlaced` message in step 3. If any
-   `TryReserveAsync` returns `false` → return `CheckoutResult.StockUnavailable(productId)`.
+2. **Commit** (TOCTOU guard): `ISoftReservationService.CommitAllForUserAsync(userId, ct)` marks
+   all fetched reservations as `Committed` in the DB. `SoftReservationExpiredJob` checks
+   `Status == Active` before deleting — `Committed` rows are skipped entirely, so the expiry
+   job cannot race the confirmation.
 
-3. **Place order**: Build `PlaceOrderFromPresaleDto` by mapping each `SoftReservation` to a
-   `PlaceOrderLineDto(ProductId, Quantity, UnitPrice)` using the locked `SoftReservation.UnitPrice`.
-   Call `IOrderService.PlaceOrderFromPresaleAsync(dto, ct)`. If `!result.IsSuccess` → return
-   `CheckoutResult.OrderFailed(result.FailureReason!)`.
+3. **Place order**: Build lines from the already-loaded reservations using `SoftReservation.UnitPrice`
+   (the locked price). Call `IOrderClient.PlaceOrderAsync(...)`. On failure:
+   `ISoftReservationService.RevertAllForUserAsync(userId, ct)` flips status back to `Active`,
+   restoring them to the normal expiry flow. Return `CheckoutResult.Failed(...)`.
 
-4. **Remove soft reservations**: `ISoftReservationService.RemoveAsync(productId, userId, ct)` for
-   each reservation. `SoftReservationService.RemoveAsync` calls `IDeferredJobScheduler.CancelAsync`
-   internally, discarding the scheduled expiry jobs.
+4. **Return success**: `CheckoutResult.Succeeded(orderId)`. No explicit cleanup in the service.
+   `OrderPlaced` is published by `OrderService`; `Presale.OrderPlacedHandler` reacts to it:
+   - Removes ordered cart items via `ICartService.RemoveRangeAsync(userId, productIds)` (preserves
+     any items the user added after checkout initiation).
+   - Removes `Committed` reservations via `ISoftReservationService.RemoveCommittedForUserAsync`
+     (cancels their deferred expiry jobs).
 
-5. **Clear cart**: `ICartService.ClearAsync(userId, ct)`.
-
-6. Return `CheckoutResult.Success(result.OrderId!.Value)`.
-
-**Failure at step 3 is non-transactional**: if order placement fails the soft reservations are
-left intact — they will expire naturally via `SoftReservationExpiredJob`. This avoids a
-partial-cleanup race condition and keeps the checkout path side-effect-free on failure.
-
-`ISoftReservationService` gains one new method to support step 1:
-
-```csharp
-Task<IReadOnlyList<SoftReservation>> GetAllForUserAsync(PresaleUserId userId, CancellationToken ct = default);
-```
-
-Implemented in `SoftReservationService` by querying `ISoftReservationRepository.GetAllByUserIdAsync`
-and populating per-item cache entries for any cache misses.
+`CheckoutService.InitiateAsync`:
+1. Load cart via `ICartService.GetCartAsync`. Empty cart → `InitiateCheckoutResult.EmptyCart()`.
+2. Remove existing `Active` reservations for user (`RemoveActiveForUserAsync`) — clean slate for
+   price/TTL refresh on re-initiation.
+3. For each cart line call `ISoftReservationService.HoldAsync`. Track succeeded/unavailable product IDs.
+4. Return `InitiateCheckoutResult.Reserved(count, unavailableIds)` or `AllUnavailable` if all failed.
 
 ### 13. `PlaceOrderFromPresaleAsync` — Sales/Orders BC extension
 
@@ -580,6 +580,50 @@ authoritative transaction price (§8). The warning is advisory only — the cust
 even if prices changed. `StorefrontController` (or the consuming controller) is responsible
 for calling `GetPriceChangesAsync` before rendering the order confirmation view and displaying
 a warning for each changed line.
+
+### 15. `SoftReservationStatus` — TOCTOU guard (Slice 3)
+
+Added to prevent `SoftReservationExpiredJob` from deleting a reservation mid-confirmation:
+
+```csharp
+// Domain/Presale/Checkout/
+public enum SoftReservationStatus { Active = 0, Committed = 1 }
+```
+
+`SoftReservation` gains two domain methods:
+
+```csharp
+public void Commit() => Status = SoftReservationStatus.Committed;
+public void Revert() => Status = SoftReservationStatus.Active;
+```
+
+`SoftReservationExpiredJob.ExecuteAsync` now checks `reservation.Status == Committed`
+and reports success no-op if true — the reservation is being confirmed, expiry is irrelevant.
+
+### 16. `BackgroundMessageDispatcher` — multi-handler fan-out (Slice 3)
+
+The dispatcher previously resolved a single `IMessageHandler<T>` via `GetService` (singular),
+causing all but the last-registered handler to be silently dropped. The fix:
+
+- Resolved `GetMethod` once before the loop.
+- Iterated all handlers via `GetServices` + `foreach`.
+- Used `Task.WhenAll` for parallel fan-out.
+- Replaced the `GetService`/null-check guard with a `tasks.Count == 0` check.
+
+This unblocks all four `IMessageHandler<OrderPlaced>` registrations:
+`OrderPlacedSnapshotHandler` (Orders), `Presale.OrderPlacedHandler`,
+`Payments.OrderPlacedHandler`, `Inventory.OrderPlacedHandler`.
+
+### 17. Checkout API endpoints (Slice 3)
+
+```
+POST /api/v2/checkout/initiate      → ICheckoutService.InitiateAsync
+GET  /api/v2/checkout/price-changes → ISoftReservationService.GetPriceChangesAsync
+POST /api/v2/checkout/confirm       → ICheckoutService.PlaceOrderAsync
+```
+
+All endpoints are `[Authorize]`. `Initiate` is idempotent — re-calling removes existing `Active`
+reservations and re-creates them with fresh prices and TTL.
 
 ## Consequences
 
@@ -738,8 +782,10 @@ a warning for each changed line.
 - [ ] `StockService.ReserveAsync` no longer calls `_softHoldService.RemoveAsync` after atomic switch
 - [ ] `ICheckoutService` is a separate interface from `ICartService` — cart CRUD ≠ checkout coordination
 - [ ] `CheckoutService` is `internal sealed` and registered via `ICheckoutService` in `Extensions.cs`
-- [ ] `CheckoutResult` uses factory methods: `Success`, `NoSoftReservations`, `StockUnavailable`, `OrderFailed`
-- [ ] `CheckoutService.PlaceOrderAsync` calls `IStockClient.TryReserveAsync` per line **before** calling `IOrderService.PlaceOrderFromPresaleAsync` — read-only gate only; does not create the Inventory reservation
+- [x] `CheckoutResult` uses factory methods: `Succeeded`, `NoReservations`, `StockNotAvailable`, `Failed`
+- [x] `CheckoutService.PlaceOrderAsync` does **not** call `IStockClient.TryReserveAsync` — the TOCTOU guard is
+  `SoftReservationStatus.Committed` (commit/revert pattern); definitive hard reservation is made by
+  `Inventory.OrderPlacedHandler` reacting to `OrderPlaced`
 - [ ] The actual Inventory reservation is created by `Inventory.OrderPlacedHandler` reacting to `OrderPlaced` — `CheckoutService` never calls `IStockClient.ReleaseAsync`
 - [ ] `CheckoutService.PlaceOrderAsync` maps `SoftReservation.UnitPrice` into `PlaceOrderLineDto.UnitPrice` — no fresh `ICatalogClient` call at placement time
 - [ ] On order placement failure (step 3), soft reservations are NOT removed — they expire naturally via `SoftReservationExpiredJob`
@@ -761,15 +807,21 @@ a warning for each changed line.
 | 3 | `Domain/Presale/Checkout/`: `CartLine`, `SoftReservation`, `SoftReservationId`, `StockSnapshot`, repository interfaces | ✅ Done |
 | 4 | `Application/Presale/Checkout/`: services, handlers (`StockAvailabilityChangedHandler`, `SoftReservationExpiredJob`), contracts, DTOs, `PresaleOptions` | ✅ Done |
 | 5 | `Infrastructure/Presale/Checkout/`: `PresaleDbContext`, EF configs, repositories, adapters, DI; register `SoftReservationExpiredJob` in TimeManagement | ✅ Done |
-| 6 | EF migration `InitPresaleSchema` | ⬜ Pending human approval (migration-policy.md) |
+| 6 | EF migration `InitPresaleSchema` | ✅ Done |
 | 7 | `PresaleOptions.SoftReservationTtl` moved from `InventoryOptions.SoftHoldTtl`; startup validation | ✅ Done |
 | 8 | Atomic switch: remove Inventory soft-hold artifacts; decouple `StockService.ReserveAsync` | ✅ Done |
 | 9 | `StorefrontController` BFF endpoint | ✅ Done |
 | 10 | Unit tests: `CartService`, `SoftReservationService`, `StockAvailabilityChangedHandler`, `SoftReservationExpiredJob` | ✅ Done |
-| 11 | `ICheckoutService`, `CheckoutService`, `CheckoutResult` in `Application/Presale/Checkout/` | ⬜ Pending |
-| 12 | `ISoftReservationService.GetAllForUserAsync` + `GetPriceChangesAsync`; `SoftReservationPriceChangeVm`; `ISoftReservationRepository.GetAllByUserIdAsync` | ⬜ Pending |
-| 13 | `PlaceOrderLineDto`, `PlaceOrderFromPresaleDto`; `IOrderService.PlaceOrderFromPresaleAsync` + `OrderService` implementation | ⬜ Pending |
-| 14 | `CheckoutService.PlaceOrderAsync` coordination; DI registration; API endpoint; unit tests | ⬜ Pending |
+| 11 | `ICheckoutService`, `CheckoutService`, `CheckoutResult` in `Application/Presale/Checkout/` | ✅ Done |
+| 12 | `ISoftReservationService.GetAllForUserAsync` + `GetPriceChangesAsync`; `SoftReservationPriceChangeVm`; repository extension | ✅ Done |
+| 13 | `IOrderClient` ACL + `OrderClientAdapter`; `CheckoutCustomer` inline customer data flowing end-to-end | ✅ Done |
+| 14 | `CheckoutService.PlaceOrderAsync` + DI registration + `CheckoutController` (price-changes + confirm) + unit tests | ✅ Done |
+| 15 | `SoftReservationStatus` enum + `Commit()`/`Revert()` domain methods + EF migration `AddSoftReservationStatus` | ✅ Done |
+| 16 | `BackgroundMessageDispatcher` multi-handler fan-out fix (`GetService` → `GetServices` + `Task.WhenAll`) | ✅ Done |
+| 17 | `ICheckoutService.InitiateAsync` + `POST /api/v2/checkout/initiate` endpoint + new service/repo methods | ✅ Done |
+| 18 | `OrderPlacedHandler` scoped to `Committed` reservations only; `SoftReservationExpiredJob` skips `Committed` | ✅ Done |
+| 19 | Unit tests updated: `CheckoutServiceTests`, `OrderPlacedHandlerTests`, `SoftReservationExpiredJobTests` | ✅ Done |
+| 20 | `ICartService.RemoveRangeAsync` + `ICartLineRepository.DeleteRangeAsync`: batch cart-item removal; `OrderPlacedHandler` uses single call (preserves post-initiation cart items); `CartServiceTests` updated | ✅ Done |
 
 ## References
 

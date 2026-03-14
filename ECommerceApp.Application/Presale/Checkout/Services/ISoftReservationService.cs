@@ -13,6 +13,10 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
         Task RemoveAsync(int productId, string userId, CancellationToken ct = default);
         Task RemoveAllForProductAsync(int productId, CancellationToken ct = default);
         Task RemoveAllForUserAsync(string userId, CancellationToken ct = default);
+        Task RemoveActiveForUserAsync(string userId, CancellationToken ct = default);
+        Task RemoveCommittedForUserAsync(string userId, CancellationToken ct = default);
+        Task CommitAllForUserAsync(PresaleUserId userId, CancellationToken ct = default);
+        Task RevertAllForUserAsync(PresaleUserId userId, CancellationToken ct = default);
         Task<IReadOnlyList<SoftReservation>> GetAllForUserAsync(PresaleUserId userId, CancellationToken ct = default);
         Task<IReadOnlyList<SoftReservationPriceChangeVm>> GetPriceChangesAsync(PresaleUserId userId, CancellationToken ct = default);
     }

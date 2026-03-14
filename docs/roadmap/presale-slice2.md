@@ -44,9 +44,11 @@ Slice 2 requires the `Sales/Orders` BC to be at least 80% implemented and
 ### Step 14 — `CheckoutService` coordination + API endpoint + unit tests
 | File | Action |
 |---|---|
-| `Application/Presale/Checkout/Services/CheckoutService.cs` | Implement full §12 flow: load reservations → stock gate (`IStockClient.TryReserveAsync`) → place order (`IOrderService.PlaceOrderFromPresaleAsync`) → remove reservations → clear cart |
-| `API/Controllers/Presale/StorefrontController.cs` (or new `CheckoutController`) | Add POST endpoint calling `GetPriceChangesAsync` for confirmation view; POST endpoint calling `PlaceOrderAsync` on confirmation |
-| `ECommerceApp.UnitTests/Presale/Checkout/` | Add `CheckoutServiceTests`, `SoftReservationServiceGetAllTests`, `GetPriceChangesTests` |
+| `Application/Presale/Checkout/Contracts/IOrderClient.cs` | Add ACL interface `IOrderClient` + `OrderPlacementResult` + `CheckoutLine` — isolates Presale from Orders BC |
+| `Infrastructure/Presale/Checkout/Adapters/OrderClientAdapter.cs` | Adapter: wraps `IOrderService.PlaceOrderFromPresaleAsync`; maps `CheckoutLine[]` → `PlaceOrderFromPresaleDto` |
+| `Application/Presale/Checkout/Services/CheckoutService.cs` | Implement §12 flow via `IOrderClient` (no `IStockClient` — stock reservation is reactive via `Inventory.OrderPlacedHandler`) |
+| `API/Controllers/V2/CheckoutController.cs` | GET `/api/v2/checkout/price-changes` + POST `/api/v2/checkout/confirm` |
+| `ECommerceApp.UnitTests/Presale/Checkout/` | `CheckoutServiceTests` (10 tests), `GetPriceChangesTests` (7 tests) |
 
 ---
 
@@ -55,26 +57,62 @@ Slice 2 requires the `Sales/Orders` BC to be at least 80% implemented and
 ```
 PlaceOrderAsync(userId, customerId, currencyId)
   1. GetAllForUserAsync(userId) → empty? → NoSoftReservations
-  2. For each reservation: IStockClient.TryReserveAsync → false? → StockUnavailable(productId)
-  3. Build PlaceOrderFromPresaleDto (UnitPrice from SoftReservation — no ICatalogClient call)
-     IOrderService.PlaceOrderFromPresaleAsync → failure? → OrderFailed(reason)
+  2. Build CheckoutLine list (UnitPrice from SoftReservation — no ICatalogClient call at checkout time)
+     IOrderClient.PlaceOrderAsync → failure? → OrderFailed(reason)
      [soft reservations NOT removed on failure — expire via SoftReservationExpiredJob]
-  4. ISoftReservationService.RemoveAsync per reservation
-  5. ICartService.ClearAsync(userId)
-  6. Return Success(orderId)
+     [stock reservation is reactive: OrderPlaced → Inventory.OrderPlacedHandler → StockService.ReserveAsync]
+  3. ISoftReservationService.RemoveAsync per reservation
+  4. ICartService.ClearAsync(userId)
+  5. Return Success(orderId)
 ```
+
+> **ACL boundary**: `CheckoutService` depends on `IOrderClient` (Presale Contracts), not `IOrderService` directly.
+> `OrderClientAdapter` (Infrastructure) bridges to Orders BC — same pattern as `ICatalogClient` / `IStockClient`.
+> `IStockClient` is retained in the codebase for `StorefrontQueryService` use but is no longer part of the checkout write path.
 
 ---
 
 ## Acceptance criteria
 
-- [ ] `ICheckoutService.PlaceOrderAsync` returns `NoSoftReservations` when no active reservations exist
-- [ ] `ICheckoutService.PlaceOrderAsync` returns `StockUnavailable(productId)` when `IStockClient.TryReserveAsync` returns `false`
-- [ ] On order placement failure, soft reservations are left intact (expire naturally)
-- [ ] `SoftReservation.UnitPrice` flows into `PlaceOrderLineDto.UnitPrice` — no fresh `ICatalogClient` call at placement time
-- [ ] `IOrderService.PlaceOrderAsync` (legacy `CartItemIds` path) is unchanged after introducing `PlaceOrderFromPresaleAsync`
-- [ ] `GetPriceChangesAsync` returns only lines where `LockedPrice != CurrentPrice`
-- [ ] Confirmation UI shows price-change warning when `GetPriceChangesAsync` returns non-empty list
+- [x] `ICheckoutService.PlaceOrderAsync` returns `NoSoftReservations` when no active reservations exist
+- [x] `CheckoutService` uses `IOrderClient` ACL — not direct `IOrderService` injection (same isolation pattern as `ICatalogClient`)
+- [x] On order placement failure, soft reservations are left intact (expire naturally)
+- [x] `SoftReservation.UnitPrice` flows into `CheckoutLine.UnitPrice` → `PlaceOrderLineDto.UnitPrice` — no fresh `ICatalogClient` call at placement time
+- [x] `IOrderService.PlaceOrderAsync` (legacy `CartItemIds` path) is unchanged after introducing `PlaceOrderFromPresaleAsync`
+- [x] `GetPriceChangesAsync` returns only lines where `LockedPrice != CurrentPrice`
+- [x] Confirmation UI shows price-change warning when `GetPriceChangesAsync` returns non-empty list
+
+---
+
+---
+
+## Known edge cases
+
+### [EC-001] `SoftReservationExpiredJob` fires while `CheckoutService.PlaceOrderAsync` is in progress (TOCTOU race)
+
+**Scenario:**
+1. User initiates checkout → `SoftReservation`s created, expiry jobs scheduled via `IDeferredJobScheduler`.
+2. User pauses on the price-change confirmation screen.
+3. `SoftReservationExpiredJob` fires (TTL reached) → deletes `SoftReservation` rows from DB, evicts from cache, calls `IDeferredJobScheduler.CancelAsync`.
+4. User clicks "Confirm Order" *just after* the TTL boundary → calls `CheckoutService.PlaceOrderAsync`.
+
+**Possible outcomes depending on exact timing:**
+
+| Timing | Outcome | Impact |
+|---|---|---|
+| Job fires **before** `GetAllForUserAsync` | Returns empty list → `NoSoftReservations` | ⚠️ User sees "checkout not initiated" even though they clicked in good faith — must restart checkout |
+| Job fires **between** `GetAllForUserAsync` and `RemoveAsync` | Order placed with correct locked prices (in-memory list still valid); `RemoveAsync` is a DB no-op | ✅ Benign — order placed correctly, cart cleared |
+| Job fires **after** `RemoveAsync` | Normal happy path | ✅ No issue |
+
+**Key observation:** `SoftReservationExpiredJob` does not clear `CartLine`s — only `SoftReservation` rows.
+If `NoSoftReservations` is returned, the user's cart is still intact; they only need to re-initiate checkout (call `HoldAsync` again).
+
+**Mitigation options to consider:**
+- **Accept the race** (current approach): `PresaleOptions.SoftReservationTtl` should be generous enough (e.g., 15 min) that this is rare. The `NoSoftReservations` response should be surfaced to the user as "Your reservation expired — please restart checkout", not a generic error.
+- **Grace window**: When rendering the confirmation page, call `GetPriceChangesAsync` and check if reservations are still active. Warn the user if TTL is close (e.g., < 60 s remaining).
+- **TTL extension on confirmation view**: Extend `SoftReservation.ExpiresAt` by a fixed grace period when the user navigates to the confirmation page. Requires `UpdateExpiryAsync` on `ISoftReservationRepository` and cancelling + rescheduling the `IDeferredJobScheduler` job.
+
+**Decision needed before atomic switch**: Choose one of the above mitigations and update `CheckoutService` + confirmation UI accordingly. The `NoSoftReservations` error message must be user-friendly, not a developer-facing code name.
 
 ---
 
