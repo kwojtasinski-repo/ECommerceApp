@@ -24,8 +24,8 @@ POST {{baseUrl}}/api/Login
 Content-Type: {{contentType}}
 
 {
-  "email": "admin@admin.com",
-  "password": "Admin@1234"
+  "email": "admin@localhost",
+  "password": "aDminN@W25!"
 }
 
 ###
@@ -53,7 +53,7 @@ Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
 {
-  "productId": 10,
+  "productId": 1,
   "initialQuantity": 100
 }
 ###

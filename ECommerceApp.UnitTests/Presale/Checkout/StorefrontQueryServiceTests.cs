@@ -37,7 +37,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
 
             var result = await _service.GetPublishedProductsAsync(10, 1, "");
 
-            result.Items.Should().ContainSingle(i =>
+            result.Products.Should().ContainSingle(i =>
                 i.ProductId == 5 &&
                 i.Name == "Bag" &&
                 i.Price == 49.99m &&
@@ -55,7 +55,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
 
             var result = await _service.GetPublishedProductsAsync(10, 1, "");
 
-            result.Items.Should().ContainSingle(i =>
+            result.Products.Should().ContainSingle(i =>
                 i.ProductId == 3 &&
                 i.AvailableQuantity == 0 &&
                 !i.InStock);
@@ -65,13 +65,13 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         public async Task GetPublishedProductsAsync_EmptyProductList_ReturnsEmptyItems()
         {
             _products.Setup(p => p.GetPublishedProducts(10, 1, ""))
-                .ReturnsAsync(new ProductListVm { Items = new List<ProductForListVm>(), Count = 0, PageSize = 10, CurrentPage = 1, SearchString = "" });
+                .ReturnsAsync(new ProductListVm { Products = new List<ProductForListVm>(), Count = 0, PageSize = 10, CurrentPage = 1, SearchString = "" });
             _stock.Setup(s => s.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
                 .Returns(AsAsyncEnumerable());
 
             var result = await _service.GetPublishedProductsAsync(10, 1, "");
 
-            result.Items.Should().BeEmpty();
+            result.Products.Should().BeEmpty();
             result.TotalCount.Should().Be(0);
             _stock.Verify(s => s.GetByProductIdsAsync(
                 It.Is<IReadOnlyList<int>>(ids => ids.Count == 0),
@@ -82,7 +82,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         public async Task GetPublishedProductsAsync_PaginationMetadataPassedThrough()
         {
             _products.Setup(p => p.GetPublishedProducts(5, 2, "coat"))
-                .ReturnsAsync(new ProductListVm { Items = new List<ProductForListVm>(), Count = 42, PageSize = 5, CurrentPage = 2, SearchString = "coat" });
+                .ReturnsAsync(new ProductListVm { Products = new List<ProductForListVm>(), Count = 42, PageSize = 5, CurrentPage = 2, SearchString = "coat" });
             _stock.Setup(s => s.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
                 .Returns(AsAsyncEnumerable());
 
@@ -108,7 +108,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
 
             var result = await _service.GetPublishedProductsAsync(10, 1, "");
 
-            result.Items.Should().HaveCount(2);
+            result.Products.Should().HaveCount(2);
             // All product IDs collected and passed in one batch — not N separate calls
             _stock.Verify(s => s.GetByProductIdsAsync(
                 It.Is<IReadOnlyList<int>>(ids => ids.Count == 2),
@@ -126,7 +126,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         private static ProductListVm ProductListWith(params ProductForListVm[] items) =>
             new ProductListVm
             {
-                Items = new List<ProductForListVm>(items),
+                Products = new List<ProductForListVm>(items),
                 Count = items.Length,
                 PageSize = 10,
                 CurrentPage = 1,

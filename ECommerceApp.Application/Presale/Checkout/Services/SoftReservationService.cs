@@ -1,5 +1,6 @@
 using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Application.Presale.Checkout.Handlers;
+using ECommerceApp.Application.Presale.Checkout.ViewModels;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Domain.Presale.Checkout;
 using Microsoft.Extensions.Caching.Memory;
@@ -133,5 +134,25 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
         }
 
         private static string CacheKey(int productId, string userId) => $"sr:{productId}:{userId}";
+
+        public async Task<IReadOnlyList<SoftReservation>> GetAllForUserAsync(PresaleUserId userId, CancellationToken ct = default)
+        {
+            return await _reservationRepo.GetByUserIdAsync(userId, ct);
+        }
+
+        public async Task<IReadOnlyList<SoftReservationPriceChangeVm>> GetPriceChangesAsync(PresaleUserId userId, CancellationToken ct = default)
+        {
+            var reservations = await _reservationRepo.GetByUserIdAsync(userId, ct);
+            var changes = new List<SoftReservationPriceChangeVm>();
+            foreach (var r in reservations)
+            {
+                var currentPrice = await _catalogClient.GetUnitPriceAsync(r.ProductId.Value, ct);
+                if (currentPrice.HasValue && currentPrice.Value != r.UnitPrice.Amount)
+                {
+                    changes.Add(new SoftReservationPriceChangeVm(r.ProductId.Value, r.UnitPrice.Amount, currentPrice.Value));
+                }
+            }
+            return changes;
+        }
     }
 }

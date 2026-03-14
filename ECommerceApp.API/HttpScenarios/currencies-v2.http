@@ -20,8 +20,8 @@ POST {{baseUrl}}/api/Login
 Content-Type: {{contentType}}
 
 {
-  "email": "admin@admin.com",
-  "password": "Admin@1234"
+  "email": "admin@localhost",
+  "password": "aDminN@W25!"
 }
 
 ###
@@ -94,9 +94,9 @@ Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
 {
-  "id": 1,
+  "id": 5,
   "code": "EUR",
-  "description": "Euro — updated description"
+  "description": "Euro — European Union"
 }
 ###
 
@@ -112,12 +112,12 @@ Authorization: Bearer {{token}}
 
 ### Get latest rate for a currency
 # Expected: 200 OK  →  CurrencyRateVm { currencyId, rate, date }
-GET {{baseUrl}}/api/v2/currencies/1/rate/latest
+GET {{baseUrl}}/api/v2/currencies/4/rate/latest
 ###
 
 ### Get rate for a specific day
 # Expected: 200 OK  →  CurrencyRateVm
-GET {{baseUrl}}/api/v2/currencies/1/rate?date=2026-03-01
+GET {{baseUrl}}/api/v2/currencies/4/rate?date=2026-03-01
 ###
 
 ### Get rate — currency not found

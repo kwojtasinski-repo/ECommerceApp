@@ -25,6 +25,10 @@ namespace ECommerceApp.Infrastructure.Supporting.Currencies.Repositories
         public async Task<Currency> GetByIdAsync(CurrencyId id)
             => await _context.Currencies.FirstOrDefaultAsync(c => c.Id == id);
 
+        public async Task<bool> ExistsAsync(string code)
+            => await _context.Currencies
+                .AnyAsync(c => c.Code.Value == code);
+
         public async Task UpdateAsync(Currency currency)
         {
             _context.Currencies.Update(currency);
@@ -43,21 +47,21 @@ namespace ECommerceApp.Infrastructure.Supporting.Currencies.Repositories
         public async Task<List<Currency>> GetAllAsync()
             => await _context.Currencies
                 .AsNoTracking()
-                .OrderBy(c => EF.Property<string>(c, "Code"))
+                .OrderBy(c => c.Code.Value)
                 .ToListAsync();
 
         public async Task<List<Currency>> GetAllAsync(int pageSize, int pageNo, string searchString)
             => await _context.Currencies
                 .AsNoTracking()
-                .Where(c => EF.Property<string>(c, "Code").StartsWith(searchString))
-                .OrderBy(c => EF.Property<string>(c, "Code"))
+                .Where(c => c.Code.Value.StartsWith(searchString))
+                .OrderBy(c => c.Code.Value)
                 .Skip(pageSize * (pageNo - 1))
                 .Take(pageSize)
                 .ToListAsync();
 
         public async Task<int> CountBySearchStringAsync(string searchString)
             => await _context.Currencies
-                .Where(c => EF.Property<string>(c, "Code").StartsWith(searchString))
+                .Where(c => c.Code.Value.StartsWith(searchString))
                 .CountAsync();
     }
 }

@@ -5,7 +5,7 @@ namespace ECommerceApp.Domain.Supporting.Currencies
 {
     public class CurrencyRate
     {
-        public CurrencyRateId Id { get; private set; } = new CurrencyRateId(0);
+        public CurrencyRateId Id { get; private set; }
         public CurrencyId CurrencyId { get; private set; } = default!;
         public decimal Rate { get; private set; }
         public DateTime CurrencyDate { get; private set; }

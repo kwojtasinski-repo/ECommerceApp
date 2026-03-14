@@ -48,10 +48,7 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Migrations
             modelBuilder.Entity("ECommerceApp.Domain.Inventory.Availability.ProductSnapshot", b =>
                 {
                     b.Property<int>("ProductId")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("ProductId"));
 
                     b.Property<byte>("CatalogStatus")
                         .HasColumnType("tinyint");

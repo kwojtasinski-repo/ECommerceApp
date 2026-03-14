@@ -6,6 +6,7 @@ using ECommerceApp.Application.Supporting.Currencies.ViewModels;
 using ECommerceApp.Application.Utils;
 using ECommerceApp.Domain.Supporting.Currencies;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -72,8 +73,7 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
             return _mapper.Map<CurrencyRateVm>(currencyRate);
         }
 
-        private async Task<CurrencyRate> GetOrCreatePlnRateAsync(CurrencyId currencyId, DateTime date)
-        {
+        private async Task<CurrencyRate> GetOrCreatePlnRateAsync(CurrencyId currencyId, DateTime date)        {
             var rate = await _currencyRateRepo.GetRateForDateAsync(currencyId, date);
             if (rate != null)
                 return rate;
@@ -113,6 +113,42 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
             var currencyRate = CurrencyRate.Create(currencyId, exchangeRate.Rates.FirstOrDefault().Mid, searchDate);
             await _currencyRateRepo.AddAsync(currencyRate);
             return currencyRate;
+        }
+
+        public async Task<int> SyncAllRatesAsync(CancellationToken ct = default)
+        {
+            var content = await _nbpClient.GetCurrencyTable(ct);
+            var tables = NBPResponseUtils.GetResponseContent<List<ExchangeRateTable>>(content);
+            if (tables is null || tables.Count == 0)
+                return 0;
+
+            var ratesByCode = tables[0].Rates
+                .ToDictionary(r => r.Code.ToUpperInvariant(), r => r.Mid);
+
+            var currencies = await _currencyRepo.GetAllAsync();
+            var date = DateTime.UtcNow.Date;
+            var synced = 0;
+
+            foreach (var currency in currencies)
+            {
+                if (currency.Id == Currency.PlnId)
+                    continue;
+
+                if (!ratesByCode.TryGetValue(currency.Code.Value.ToUpperInvariant(), out var mid))
+                {
+                    continue;
+                }
+
+                var existing = await _currencyRateRepo.GetRateForDateAsync(currency.Id, date);
+                if (existing is not null)
+                    continue;
+
+                var currencyRate = CurrencyRate.Create(currency.Id, mid, date);
+                await _currencyRateRepo.AddAsync(currencyRate);
+                synced++;
+            }
+
+            return synced;
         }
     }
 }

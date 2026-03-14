@@ -25,8 +25,8 @@ POST {{baseUrl}}/api/Login
 Content-Type: {{contentType}}
 
 {
-  "email": "admin@admin.com",
-  "password": "Admin@1234"
+  "email": "admin@localhost",
+  "password": "aDminN@W25!"
 }
 
 ###
@@ -68,7 +68,7 @@ Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
 {
-  "userId": "replace-with-real-user-id",
+  "userId": "8e445865-a24d-4543-a6c6-9443d048cdb9",
   "productId": 1,
   "quantity": 2
 }
@@ -94,7 +94,7 @@ Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
 {
-  "userId": "replace-with-real-user-id",
+  "userId": "8e445865-a24d-4543-a6c6-9443d048cdb9",
   "productId": 1,
   "quantity": 5
 }

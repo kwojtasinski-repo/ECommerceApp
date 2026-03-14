@@ -128,7 +128,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
             var count = await _productRepo.CountAsync(searchString);
             return new ProductListVm
             {
-                Items = _mapper.Map<List<ProductForListVm>>(products),
+                Products = _mapper.Map<List<ProductForListVm>>(products),
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
@@ -142,7 +142,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
             var count = await _productRepo.CountPublishedAsync(searchString);
             return new ProductListVm
             {
-                Items = _mapper.Map<List<ProductForListVm>>(products),
+                Products = _mapper.Map<List<ProductForListVm>>(products),
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,

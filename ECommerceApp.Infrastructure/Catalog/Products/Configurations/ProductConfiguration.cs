@@ -27,10 +27,14 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Configurations
                    .HasPrecision(18, 4)
                    .IsRequired();
 
-            builder.Property(p => p.Description)
-                   .HasConversion(x => x.Value, v => new ProductDescription(v))
-                   .HasMaxLength(300)
-                   .IsRequired();
+            builder.OwnsOne(p => p.Description, d =>
+            {
+                d.Property(x => x.Value)
+                 .HasColumnName("Description")
+                 .HasMaxLength(300)
+                 .IsRequired();
+            });
+            builder.Navigation(p => p.Description).IsRequired();
 
             builder.Property(p => p.Status)
                    .IsRequired()

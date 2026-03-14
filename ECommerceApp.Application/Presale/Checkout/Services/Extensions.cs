@@ -19,6 +19,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
                 .AddScoped<IStorefrontQueryService, StorefrontQueryService>()
                 .AddScoped<ISoftReservationService, SoftReservationService>()
                 .AddScoped<ICartService, CartService>()
+                .AddScoped<ICheckoutService, CheckoutService>()
                 .AddScoped<IScheduledTask, SoftReservationExpiredJob>()
                 .AddScoped<IMessageHandler<StockAvailabilityChanged>, StockAvailabilityChangedHandler>()
                 .AddScoped<IMessageHandler<OrderPlaced>, OrderPlacedHandler>();

@@ -24,13 +24,15 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
             var existing = await _context.ProductSnapshots
                 .FirstOrDefaultAsync(p => p.ProductId == snapshot.ProductId, ct);
 
-            if (existing != null)
+            if (existing is null)
             {
-                _context.ProductSnapshots.Remove(existing);
-                await _context.SaveChangesAsync(ct);
+                _context.ProductSnapshots.Add(snapshot);
+            }
+            else
+            {
+                _context.Entry(existing).CurrentValues.SetValues(snapshot);
             }
 
-            _context.ProductSnapshots.Add(snapshot);
             await _context.SaveChangesAsync(ct);
         }
     }

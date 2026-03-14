@@ -251,6 +251,11 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             return OrderOperationResult.Success;
         }
 
+        public Task<PlaceOrderResult> PlaceOrderFromPresaleAsync(PlaceOrderFromPresaleDto dto, CancellationToken ct = default)
+        {
+            throw new NotImplementedException("Blocked: awaiting Orders BC atomic switch — see project-state.md and presale-slice2.md §13");
+        }
+
         private static OrderDetailsVm MapToDetailsVm(Order order)
             => new()
             {

@@ -24,7 +24,7 @@ namespace ECommerceApp.Application.Catalog.Products.ViewModels
 
     public class ProductListVm
     {
-        public List<ProductForListVm> Items { get; set; } = new();
+        public List<ProductForListVm> Products { get; set; } = new();
         public int PageSize { get; set; }
         public int CurrentPage { get; set; }
         public string SearchString { get; set; }

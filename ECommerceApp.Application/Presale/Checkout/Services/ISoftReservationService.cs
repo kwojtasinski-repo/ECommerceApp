@@ -1,4 +1,6 @@
+using ECommerceApp.Application.Presale.Checkout.ViewModels;
 using ECommerceApp.Domain.Presale.Checkout;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -11,5 +13,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
         Task RemoveAsync(int productId, string userId, CancellationToken ct = default);
         Task RemoveAllForProductAsync(int productId, CancellationToken ct = default);
         Task RemoveAllForUserAsync(string userId, CancellationToken ct = default);
+        Task<IReadOnlyList<SoftReservation>> GetAllForUserAsync(PresaleUserId userId, CancellationToken ct = default);
+        Task<IReadOnlyList<SoftReservationPriceChangeVm>> GetPriceChangesAsync(PresaleUserId userId, CancellationToken ct = default);
     }
 }

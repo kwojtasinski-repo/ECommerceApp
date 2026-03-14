@@ -25,14 +25,14 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
         {
             var productList = await _products.GetPublishedProducts(pageSize, pageNo, searchString);
 
-            var productIds = productList.Items.Select(p => p.Id).ToList();
+            var productIds = productList.Products.Select(p => p.Id).ToList();
             var stockByProductId = new Dictionary<int, StockItemDto>(productIds.Count);
             await foreach (var s in _stock.GetByProductIdsAsync(productIds, ct))
             {
                 stockByProductId[s.ProductId] = s;
             }
 
-            var items = productList.Items.Select(p =>
+            var items = productList.Products.Select(p =>
             {
                 stockByProductId.TryGetValue(p.Id, out var stock);
                 var available = stock?.AvailableQuantity ?? 0;

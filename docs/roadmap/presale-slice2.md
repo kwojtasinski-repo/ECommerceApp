@@ -2,13 +2,13 @@
 
 > ADR: [ADR-0012](../adr/0012-presale-checkout-bc-design.md) §11–14 (formal amendment — not a separate ADR)
 > Status: ⬜ Not started
-> **Blocked by**: Sales/Orders BC atomic switch
+> **Blocked by**: Sales/Orders BC implementation below 80%
 
 ---
 
 ## Gate condition
-Slice 2 cannot start until `Sales/Orders` BC atomic switch is complete and
-`IOrderService.PlaceOrderFromPresaleAsync` is available. See [`project-state.md`](../../.github/context/project-state.md).
+Slice 2 requires the `Sales/Orders` BC to be at least 80% implemented and
+`IOrderService.PlaceOrderFromPresaleAsync` to be available. See [`project-state.md`](../../.github/context/project-state.md).
 
 ---
 

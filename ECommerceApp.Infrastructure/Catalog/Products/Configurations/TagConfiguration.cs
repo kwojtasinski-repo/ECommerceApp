@@ -16,10 +16,14 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Configurations
                    .HasConversion(x => x.Value, v => new TagId(v))
                    .ValueGeneratedOnAdd();
 
-            builder.Property(t => t.Name)
-                   .HasConversion(x => x.Value, v => new TagName(v))
-                   .HasMaxLength(50)
-                   .IsRequired();
+            builder.OwnsOne(t => t.Name, b =>
+            {
+                b.Property(x => x.Value)
+                 .HasColumnName("Name")
+                 .HasMaxLength(50)
+                 .IsRequired();
+            });
+            builder.Navigation(t => t.Name).IsRequired();
 
             builder.Property(t => t.Slug)
                    .HasConversion(x => x.Value, v => new TagSlug(v))

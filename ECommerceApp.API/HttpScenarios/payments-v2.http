@@ -26,8 +26,8 @@ POST {{baseUrl}}/api/Login
 Content-Type: {{contentType}}
 
 {
-  "email": "admin@admin.com",
-  "password": "Admin@1234"
+  "email": "admin@localhost",
+  "password": "aDminN@W25!"
 }
 
 ###

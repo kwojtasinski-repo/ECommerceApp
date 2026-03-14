@@ -19,8 +19,8 @@ POST {{baseUrl}}/api/Login
 Content-Type: {{contentType}}
 
 {
-  "email": "admin@admin.com",
-  "password": "Admin@1234"
+  "email": "admin@localhost",
+  "password": "aDminN@W25!"
 }
 
 ###
@@ -76,12 +76,12 @@ Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
 {
-  "id": 1,
+  "id": 2,
   "name": "Gaming Laptop Pro V2",
   "cost": 4299.99,
   "description": "Updated high-performance gaming laptop",
-  "categoryId": 1,
-  "tagIds": [1, 2, 3]
+  "categoryId": 10,
+  "tagIds": [6, 7]
 }
 ###
 
@@ -95,6 +95,7 @@ Authorization: Bearer {{token}}
 # Expected: 200 OK
 PUT {{baseUrl}}/api/v2/products/1/unpublish
 Authorization: Bearer {{token}}
+
 ###
 
 ### Delete product (MaintenanceRole)

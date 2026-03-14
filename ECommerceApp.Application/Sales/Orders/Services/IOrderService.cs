@@ -10,6 +10,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
     public interface IOrderService
     {
         Task<PlaceOrderResult> PlaceOrderAsync(PlaceOrderDto dto, CancellationToken ct = default);
+        Task<PlaceOrderResult> PlaceOrderFromPresaleAsync(PlaceOrderFromPresaleDto dto, CancellationToken ct = default);
         Task<OrderDetailsVm?> GetOrderDetailsAsync(int orderId, CancellationToken ct = default);
         Task<OrderOperationResult> UpdateOrderAsync(UpdateOrderDto dto, CancellationToken ct = default);
         Task<OrderOperationResult> DeleteOrderAsync(int orderId, CancellationToken ct = default);

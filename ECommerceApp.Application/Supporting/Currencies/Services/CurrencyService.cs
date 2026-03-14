@@ -24,6 +24,10 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
             if (dto is null)
                 throw new BusinessException($"{nameof(CreateCurrencyDto)} cannot be null");
 
+            var normalizedCode = dto.Code?.Trim().ToUpperInvariant();
+            if (await _repo.ExistsAsync(normalizedCode))
+                throw new BusinessException($"Currency with code '{normalizedCode}' already exists.");
+
             var currency = Currency.Create(dto.Code, dto.Description);
             var id = await _repo.AddAsync(currency);
             return id.Value;
@@ -37,6 +41,11 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
             var currency = await _repo.GetByIdAsync(new CurrencyId(dto.Id));
             if (currency is null)
                 return false;
+
+            var normalizedCode = dto.Code?.Trim().ToUpperInvariant();
+            if (!string.Equals(currency.Code.Value, normalizedCode, System.StringComparison.Ordinal)
+                && await _repo.ExistsAsync(normalizedCode))
+                throw new BusinessException($"Currency with code '{normalizedCode}' already exists.");
 
             currency.Update(dto.Code, dto.Description);
             await _repo.UpdateAsync(currency);

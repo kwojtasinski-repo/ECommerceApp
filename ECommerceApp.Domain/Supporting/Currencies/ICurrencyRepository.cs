@@ -7,6 +7,7 @@ namespace ECommerceApp.Domain.Supporting.Currencies
     {
         Task<CurrencyId> AddAsync(Currency currency);
         Task<Currency> GetByIdAsync(CurrencyId id);
+        Task<bool> ExistsAsync(string code);
         Task UpdateAsync(Currency currency);
         Task<bool> DeleteAsync(CurrencyId id);
         Task<List<Currency>> GetAllAsync();

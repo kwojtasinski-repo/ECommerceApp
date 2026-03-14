@@ -39,7 +39,14 @@ namespace ECommerceApp.Infrastructure.Messaging
                         continue;
                     }
 
-                    await ((dynamic)handler).HandleAsync((dynamic)message, ct);
+                    var method = handlerType.GetMethod(nameof(IMessageHandler<IMessage>.HandleAsync));
+                    if (method is null)
+                    {
+                        _logger.LogError("Handler for message type {MessageType} does not have a HandleAsync method", message.GetType().Name);
+                        continue;
+                    }
+
+                    await (Task)method.Invoke(handler, new object[] { message, ct })!;
                 }
                 catch (Exception ex)
                 {

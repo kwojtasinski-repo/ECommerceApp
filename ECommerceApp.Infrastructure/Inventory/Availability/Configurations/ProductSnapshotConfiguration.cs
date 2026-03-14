@@ -11,6 +11,7 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Configurations
             builder.ToTable("ProductSnapshots");
 
             builder.HasKey(p => p.ProductId);
+            builder.Property(p => p.ProductId).ValueGeneratedNever();
 
             builder.Property(p => p.ProductName)
                    .HasMaxLength(200)

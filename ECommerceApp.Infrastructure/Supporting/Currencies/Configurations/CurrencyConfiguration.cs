@@ -1,5 +1,4 @@
 using ECommerceApp.Domain.Supporting.Currencies;
-using ECommerceApp.Domain.Supporting.Currencies.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,17 +15,24 @@ namespace ECommerceApp.Infrastructure.Supporting.Currencies.Configurations
                    .HasConversion(x => x.Value, v => new CurrencyId(v))
                    .ValueGeneratedOnAdd();
 
-            builder.Property(c => c.Code)
-                   .HasConversion(x => x.Value, v => new CurrencyCode(v))
-                   .HasMaxLength(3)
-                   .IsRequired();
+            builder.OwnsOne(c => c.Code, b =>
+            {
+                b.Property(x => x.Value)
+                 .HasColumnName("Code")
+                 .HasMaxLength(3)
+                 .IsRequired();
+                b.HasIndex(x => x.Value).IsUnique().HasDatabaseName("IX_Currencies_Code");
+            });
+            builder.Navigation(c => c.Code).IsRequired();
 
-            builder.Property(c => c.Description)
-                   .HasConversion(x => x.Value, v => new CurrencyDescription(v))
-                   .HasMaxLength(300)
-                   .IsRequired();
-
-            builder.HasIndex(c => c.Code).IsUnique();
+            builder.OwnsOne(c => c.Description, b =>
+            {
+                b.Property(x => x.Value)
+                 .HasColumnName("Description")
+                 .HasMaxLength(300)
+                 .IsRequired();
+            });
+            builder.Navigation(c => c.Description).IsRequired();
         }
     }
 }

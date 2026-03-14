@@ -43,8 +43,7 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Migrations
                 schema: "inventory",
                 columns: table => new
                 {
-                    ProductId = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
+                    ProductId = table.Column<int>(type: "int", nullable: false),
                     ProductName = table.Column<string>(type: "nvarchar(200)", maxLength: 200, nullable: false),
                     IsDigital = table.Column<bool>(type: "bit", nullable: false),
                     CatalogStatus = table.Column<byte>(type: "tinyint", nullable: false)

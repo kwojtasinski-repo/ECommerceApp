@@ -49,14 +49,14 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
         public async Task<List<Tag>> GetAllAsync()
             => await _context.Tags
                 .AsNoTracking()
-                .OrderBy(t => EF.Property<string>(t, "Name"))
+                .OrderBy(t => t.Name.Value)
                 .ToListAsync();
 
         public async Task<List<Tag>> SearchByNameAsync(string query, int maxResults)
             => await _context.Tags
                 .AsNoTracking()
-                .Where(t => EF.Property<string>(t, "Name").StartsWith(query))
-                .OrderBy(t => EF.Property<string>(t, "Name"))
+                .Where(t => t.Name.Value.StartsWith(query))
+                .OrderBy(t => t.Name.Value)
                 .Take(maxResults)
                 .ToListAsync();
 

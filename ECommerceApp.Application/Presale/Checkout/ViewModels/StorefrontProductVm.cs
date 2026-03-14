@@ -11,7 +11,7 @@ namespace ECommerceApp.Application.Presale.Checkout.ViewModels
         bool InStock);
 
     public sealed record StorefrontProductListVm(
-        IReadOnlyList<StorefrontProductVm> Items,
+        IReadOnlyList<StorefrontProductVm> Products,
         int TotalCount,
         int PageSize,
         int CurrentPage,
