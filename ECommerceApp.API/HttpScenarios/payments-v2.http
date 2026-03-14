@@ -1,0 +1,123 @@
+### ============================================================
+### Payments V2
+### Base URL: https://localhost:49609
+###
+### Payment is auto-created when an order is placed (via OrderPlacedHandler).
+### The only manual action here is confirming payment (MaintenanceRole).
+###
+### Flow:
+###   1. POST /api/v2/orders       → order placed → payment created automatically
+###   2. GET  /api/v2/payments/by-order/{orderId}  → find payment id
+###   3. PUT  /api/v2/payments/confirm             → confirm → triggers PaymentConfirmed
+###   4. PaymentConfirmedHandler   → order status → Paid
+###   5. POST /api/v2/refunds      → request refund (refunds-v2.http)
+### ============================================================
+
+@baseUrl = https://localhost:49609
+@token = YOUR_JWT_TOKEN
+@contentType = application/json
+
+# ============================================================
+# AUTH
+# ============================================================
+
+### Login as admin
+POST {{baseUrl}}/api/Login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@admin.com",
+  "password": "Admin@1234"
+}
+
+###
+
+# ============================================================
+# PAYMENTS
+# ============================================================
+
+### Get payment by id
+# Expected: 200 OK  →  PaymentDetailsVm
+GET {{baseUrl}}/api/v2/payments/1
+Authorization: Bearer {{token}}
+###
+
+### Get payment — not found
+# Expected: 404 Not Found
+GET {{baseUrl}}/api/v2/payments/99999
+Authorization: Bearer {{token}}
+###
+
+### Get payment by order id
+# Expected: 200 OK  →  PaymentDetailsVm
+GET {{baseUrl}}/api/v2/payments/by-order/1
+Authorization: Bearer {{token}}
+###
+
+### Get payment by order — no payment for this order
+# Expected: 404 Not Found
+GET {{baseUrl}}/api/v2/payments/by-order/99999
+Authorization: Bearer {{token}}
+###
+
+### Confirm payment — happy path (MaintenanceRole)
+# Expected: 200 OK
+# paymentId: obtained from GET /by-order above
+PUT {{baseUrl}}/api/v2/payments/confirm
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "paymentId": 1,
+  "transactionRef": "TXN-20260314-001"
+}
+###
+
+### Confirm payment — without transaction reference
+# Expected: 200 OK (transactionRef is optional)
+PUT {{baseUrl}}/api/v2/payments/confirm
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "paymentId": 2,
+  "transactionRef": null
+}
+###
+
+### Confirm payment — already confirmed
+# Expected: 409 Conflict  →  { "error": "Payment is already confirmed." }
+PUT {{baseUrl}}/api/v2/payments/confirm
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "paymentId": 1,
+  "transactionRef": "TXN-DUPLICATE"
+}
+###
+
+### Confirm payment — payment not found
+# Expected: 404 Not Found  →  { "error": "Payment not found." }
+PUT {{baseUrl}}/api/v2/payments/confirm
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "paymentId": 99999,
+  "transactionRef": null
+}
+###
+
+### Confirm payment — expired window
+# Expected: 409 Conflict  →  { "error": "Payment window has expired." }
+# (requires a payment whose expiry job has already run)
+PUT {{baseUrl}}/api/v2/payments/confirm
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "paymentId": 3,
+  "transactionRef": "TXN-EXPIRED"
+}
+###

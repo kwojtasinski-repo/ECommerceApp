@@ -1,0 +1,136 @@
+### ============================================================
+### Inventory V2 — Stock management
+### Base URL: https://localhost:49609
+###
+### MaintenanceRole: initialize, adjust, return stock
+### Authenticated: reserve, release reservations
+###
+### Typical flow:
+###   1. Initialize stock for a new product
+###   2. Reserve on order placement (triggered by Presale/Checkout)
+###   3. Release/confirm based on payment outcome
+### ============================================================
+
+@baseUrl = https://localhost:49609
+@token = YOUR_JWT_TOKEN
+@contentType = application/json
+
+# ============================================================
+# AUTH
+# ============================================================
+
+### Login as admin
+POST {{baseUrl}}/api/Login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@admin.com",
+  "password": "Admin@1234"
+}
+
+###
+
+# ============================================================
+# STOCK ITEMS
+# ============================================================
+
+### Get stock for a product
+# Expected: 200 OK  →  StockItemDto { productId, availableQuantity, reservedQuantity }
+GET {{baseUrl}}/api/v2/inventory/stock/1
+Authorization: Bearer {{token}}
+###
+
+### Get stock — product not found
+# Expected: 404 Not Found
+GET {{baseUrl}}/api/v2/inventory/stock/99999
+Authorization: Bearer {{token}}
+###
+
+### Initialize stock for a new product (MaintenanceRole)
+# Expected: 201 Created
+POST {{baseUrl}}/api/v2/inventory/stock/initialize
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "productId": 10,
+  "initialQuantity": 100
+}
+###
+
+### Initialize stock — already initialized
+# Expected: 409 Conflict  →  { "error": "Stock already initialized for this product." }
+POST {{baseUrl}}/api/v2/inventory/stock/initialize
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "productId": 10,
+  "initialQuantity": 50
+}
+###
+
+### Adjust stock quantity (MaintenanceRole) — set new absolute quantity
+# Expected: 200 OK
+POST {{baseUrl}}/api/v2/inventory/stock/adjust
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "productId": 1,
+  "newQuantity": 50
+}
+###
+
+### Return stock (e.g. after refund) — MaintenanceRole
+# Expected: 200 OK
+POST {{baseUrl}}/api/v2/inventory/stock/return
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "productId": 1,
+  "quantity": 2
+}
+###
+
+# ============================================================
+# RESERVATIONS
+# ============================================================
+
+### Reserve stock for an order
+# Expected: 200 OK  →  { "result": "Success" }
+# Replace expiresAt with a future datetime
+POST {{baseUrl}}/api/v2/inventory/reservations
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "productId": 1,
+  "orderId": 1,
+  "quantity": 2,
+  "userId": "replace-with-real-user-id",
+  "expiresAt": "2027-01-01T00:00:00Z"
+}
+###
+
+### Reserve stock — insufficient stock
+# Expected: 409 Conflict  →  { "error": "Insufficient stock.", "result": "InsufficientStock" }
+POST {{baseUrl}}/api/v2/inventory/reservations
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "productId": 1,
+  "orderId": 2,
+  "quantity": 99999,
+  "userId": "replace-with-real-user-id",
+  "expiresAt": "2027-01-01T00:00:00Z"
+}
+###
+
+### Release reservation (e.g. order cancelled)
+# Expected: 204 No Content
+DELETE {{baseUrl}}/api/v2/inventory/reservations?orderId=1&productId=1&quantity=2
+Authorization: Bearer {{token}}
+###

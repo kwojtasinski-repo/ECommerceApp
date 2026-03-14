@@ -1,0 +1,142 @@
+### ============================================================
+### Sales Orders V2
+### Base URL: https://localhost:49609
+###
+### Full sales flow:
+###   1. Add items to cart         (presale-v2.http)
+###   2. POST /api/v2/orders       → PlaceOrder → 201 orderId
+###   3. PUT  /api/v2/payments/confirm  → confirm payment (payments-v2.http)
+###   4. PUT  /api/v2/orders/{id}/deliver → mark delivered (MaintenanceRole)
+###   5. POST /api/v2/refunds      → request refund (refunds-v2.http)
+### ============================================================
+
+@baseUrl = https://localhost:49609
+@token = YOUR_JWT_TOKEN
+@contentType = application/json
+
+# ============================================================
+# AUTH
+# ============================================================
+
+### Login as admin
+POST {{baseUrl}}/api/Login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@admin.com",
+  "password": "Admin@1234"
+}
+
+###
+
+# ============================================================
+# ORDERS
+# ============================================================
+
+### Get all orders — paged (MaintenanceRole)
+# Expected: 200 OK  →  OrderListVm
+GET {{baseUrl}}/api/v2/orders?pageSize=10&pageNo=1
+Authorization: Bearer {{token}}
+###
+
+### Get all orders — search
+# Expected: 200 OK
+GET {{baseUrl}}/api/v2/orders?search=Jan&pageSize=10&pageNo=1
+Authorization: Bearer {{token}}
+###
+
+### Get paid orders only (MaintenanceRole)
+# Expected: 200 OK
+GET {{baseUrl}}/api/v2/orders/paid?pageSize=10&pageNo=1
+Authorization: Bearer {{token}}
+###
+
+### Get my orders (current user)
+# Expected: 200 OK  →  List<OrderForListVm>
+GET {{baseUrl}}/api/v2/orders/my
+Authorization: Bearer {{token}}
+###
+
+### Get order by id
+# Expected: 200 OK  →  OrderDetailsVm
+GET {{baseUrl}}/api/v2/orders/1
+Authorization: Bearer {{token}}
+###
+
+### Get order — not found
+# Expected: 404 Not Found
+GET {{baseUrl}}/api/v2/orders/99999
+Authorization: Bearer {{token}}
+###
+
+### Place order from cart
+# Expected: 201 Created  →  { "orderId": <newId> }
+# cartItemIds: ids returned from GET /api/v2/cart
+POST {{baseUrl}}/api/v2/orders
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "customerId": 1,
+  "currencyId": 1,
+  "userId": "replace-with-real-user-id",
+  "cartItemIds": [1, 2]
+}
+###
+
+### Place order — customer not found
+# Expected: 400 Bad Request  →  { "error": "Customer '99999' not found." }
+POST {{baseUrl}}/api/v2/orders
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "customerId": 99999,
+  "currencyId": 1,
+  "userId": "replace-with-real-user-id",
+  "cartItemIds": [1]
+}
+###
+
+### Update order (ManagingRole)
+# Expected: 200 OK
+PUT {{baseUrl}}/api/v2/orders
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "orderId": 1,
+  "customerId": 1,
+  "currencyId": 2
+}
+###
+
+### Cancel order
+# Expected: 200 OK
+PUT {{baseUrl}}/api/v2/orders/1/cancel
+Authorization: Bearer {{token}}
+###
+
+### Cancel order — already cancelled
+# Expected: 409 Conflict  →  { "error": "Order is already cancelled." }
+PUT {{baseUrl}}/api/v2/orders/1/cancel
+Authorization: Bearer {{token}}
+###
+
+### Mark order as delivered (MaintenanceRole)
+# Expected: 200 OK  (order must be in Paid status)
+PUT {{baseUrl}}/api/v2/orders/1/deliver
+Authorization: Bearer {{token}}
+###
+
+### Mark order delivered — not paid
+# Expected: 409 Conflict  →  { "error": "Order has not been paid." }
+PUT {{baseUrl}}/api/v2/orders/2/deliver
+Authorization: Bearer {{token}}
+###
+
+### Delete order (ManagingRole)
+# Expected: 204-like OK (or 200 depending on mapping)
+DELETE {{baseUrl}}/api/v2/orders/1
+Authorization: Bearer {{token}}
+###

@@ -1,0 +1,126 @@
+### ============================================================
+### Currencies V2
+### Base URL: https://localhost:49609
+###
+### Read endpoints are anonymous.
+### Create/Update/Delete require ManagingRole.
+### Currency rates are synced by the CurrencyRateSyncTask job (NBP API).
+### ============================================================
+
+@baseUrl = https://localhost:49609
+@token = YOUR_JWT_TOKEN
+@contentType = application/json
+
+# ============================================================
+# AUTH
+# ============================================================
+
+### Login as admin
+POST {{baseUrl}}/api/Login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@admin.com",
+  "password": "Admin@1234"
+}
+
+###
+
+# ============================================================
+# CURRENCIES
+# ============================================================
+
+### Get all currencies — paged (anonymous)
+# Expected: 200 OK  →  CurrencyListVm
+GET {{baseUrl}}/api/v2/currencies?pageSize=10&pageNo=1
+###
+
+### Get all currencies — search
+# Expected: 200 OK
+GET {{baseUrl}}/api/v2/currencies?searchString=EUR&pageSize=5&pageNo=1
+###
+
+### Get currency by id (anonymous)
+# Expected: 200 OK  →  CurrencyVm
+GET {{baseUrl}}/api/v2/currencies/1
+###
+
+### Get currency — not found
+# Expected: 404 Not Found
+GET {{baseUrl}}/api/v2/currencies/99999
+###
+
+### Create currency (ManagingRole)
+# Expected: 201 Created  →  { "id": <newId> }
+# Code must be a valid ISO 4217 code
+POST {{baseUrl}}/api/v2/currencies
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "code": "EUR",
+  "description": "Euro — European Union"
+}
+###
+
+### Create currency — USD
+# Expected: 201 Created
+POST {{baseUrl}}/api/v2/currencies
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "code": "USD",
+  "description": "US Dollar"
+}
+###
+
+### Create currency — invalid ISO code
+# Expected: 400 Bad Request  →  validation error
+POST {{baseUrl}}/api/v2/currencies
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "code": "XYZ",
+  "description": "Not a real currency"
+}
+###
+
+### Update currency (ManagingRole)
+# Expected: 200 OK
+PUT {{baseUrl}}/api/v2/currencies
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "id": 1,
+  "code": "EUR",
+  "description": "Euro — updated description"
+}
+###
+
+### Delete currency (ManagingRole)
+# Expected: 204 No Content
+DELETE {{baseUrl}}/api/v2/currencies/1
+Authorization: Bearer {{token}}
+###
+
+# ============================================================
+# CURRENCY RATES (synced from NBP API by the scheduled job)
+# ============================================================
+
+### Get latest rate for a currency
+# Expected: 200 OK  →  CurrencyRateVm { currencyId, rate, date }
+GET {{baseUrl}}/api/v2/currencies/1/rate/latest
+###
+
+### Get rate for a specific day
+# Expected: 200 OK  →  CurrencyRateVm
+GET {{baseUrl}}/api/v2/currencies/1/rate?date=2026-03-01
+###
+
+### Get rate — currency not found
+# Expected: 404 Not Found
+GET {{baseUrl}}/api/v2/currencies/99999/rate/latest
+###

@@ -1,0 +1,211 @@
+### ============================================================
+### Catalog V2 — Products, Categories, Tags
+### Base URL: https://localhost:49609
+###
+### Anonymous endpoints: GET products, GET categories, GET tags
+### MaintenanceRole required: POST/PUT/DELETE, publish/unpublish
+### ============================================================
+
+@baseUrl = https://localhost:49609
+@token = YOUR_JWT_TOKEN
+@contentType = application/json
+
+# ============================================================
+# AUTH (copy token into @token above)
+# ============================================================
+
+### Login as admin
+POST {{baseUrl}}/api/Login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@admin.com",
+  "password": "Admin@1234"
+}
+
+###
+
+# ============================================================
+# PRODUCTS
+# ============================================================
+
+### Get all products — paged (anonymous)
+# Expected: 200 OK  →  ProductListVm
+GET {{baseUrl}}/api/v2/products?pageSize=10&pageNo=1
+###
+
+### Get published products only (anonymous)
+# Expected: 200 OK
+GET {{baseUrl}}/api/v2/products/published?pageSize=10&pageNo=1
+###
+
+### Get published products — search
+# Expected: 200 OK  →  filtered list
+GET {{baseUrl}}/api/v2/products/published?searchString=laptop&pageSize=5&pageNo=1
+###
+
+### Get product by id (anonymous)
+# Expected: 200 OK  →  ProductDetailsVm
+GET {{baseUrl}}/api/v2/products/1
+###
+
+### Get product by id — not found
+# Expected: 404 Not Found
+GET {{baseUrl}}/api/v2/products/99999
+###
+
+### Create product (MaintenanceRole)
+# Expected: 201 Created  →  { "id": <newId> }
+POST {{baseUrl}}/api/v2/products
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Gaming Laptop Pro",
+  "cost": 3999.99,
+  "description": "High-performance gaming laptop",
+  "categoryId": 1,
+  "tagIds": [1, 2]
+}
+###
+
+### Update product (MaintenanceRole)
+# Expected: 200 OK
+PUT {{baseUrl}}/api/v2/products
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "id": 1,
+  "name": "Gaming Laptop Pro V2",
+  "cost": 4299.99,
+  "description": "Updated high-performance gaming laptop",
+  "categoryId": 1,
+  "tagIds": [1, 2, 3]
+}
+###
+
+### Publish product (MaintenanceRole)
+# Expected: 200 OK
+PUT {{baseUrl}}/api/v2/products/1/publish
+Authorization: Bearer {{token}}
+###
+
+### Unpublish product (MaintenanceRole)
+# Expected: 200 OK
+PUT {{baseUrl}}/api/v2/products/1/unpublish
+Authorization: Bearer {{token}}
+###
+
+### Delete product (MaintenanceRole)
+# Expected: 204 No Content
+DELETE {{baseUrl}}/api/v2/products/1
+Authorization: Bearer {{token}}
+###
+
+# ============================================================
+# CATEGORIES
+# ============================================================
+
+### Get all categories (anonymous)
+# Expected: 200 OK  →  List<CategoryVm>
+GET {{baseUrl}}/api/v2/categories
+###
+
+### Get category by id (anonymous)
+# Expected: 200 OK  →  CategoryVm
+GET {{baseUrl}}/api/v2/categories/1
+###
+
+### Get category — not found
+# Expected: 404 Not Found
+GET {{baseUrl}}/api/v2/categories/99999
+###
+
+### Create category (MaintenanceRole)
+# Expected: 201 Created  →  { "id": <newId> }
+POST {{baseUrl}}/api/v2/categories
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Electronics"
+}
+###
+
+### Create category — validation error (name too long)
+# Expected: 400 Bad Request
+POST {{baseUrl}}/api/v2/categories
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "name": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+}
+###
+
+### Update category (MaintenanceRole)
+# Expected: 200 OK
+PUT {{baseUrl}}/api/v2/categories
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "id": 1,
+  "name": "Consumer Electronics"
+}
+###
+
+### Delete category (MaintenanceRole)
+# Expected: 204 No Content
+DELETE {{baseUrl}}/api/v2/categories/1
+Authorization: Bearer {{token}}
+###
+
+# ============================================================
+# TAGS
+# ============================================================
+
+### Get all tags (anonymous)
+# Expected: 200 OK  →  List<ProductTagVm>
+GET {{baseUrl}}/api/v2/tags
+###
+
+### Get tag by id (anonymous)
+# Expected: 200 OK  →  ProductTagVm
+GET {{baseUrl}}/api/v2/tags/1
+###
+
+### Search tags (anonymous)
+# Expected: 200 OK  →  matching tags
+GET {{baseUrl}}/api/v2/tags/search?q=gam&maxResults=5
+###
+
+### Create tag (MaintenanceRole)
+# Expected: 201 Created  →  { "id": <newId> }
+POST {{baseUrl}}/api/v2/tags
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "name": "gaming"
+}
+###
+
+### Update tag (MaintenanceRole)
+# Expected: 200 OK
+PUT {{baseUrl}}/api/v2/tags
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "id": 1,
+  "name": "gaming-gear"
+}
+###
+
+### Delete tag (MaintenanceRole)
+# Expected: 204 No Content
+DELETE {{baseUrl}}/api/v2/tags/1
+Authorization: Bearer {{token}}
+###

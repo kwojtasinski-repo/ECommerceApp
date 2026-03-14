@@ -1,0 +1,207 @@
+### ============================================================
+### Account Profile V2 — User Profiles + Addresses
+### Base URL: https://localhost:49609
+###
+### GET /me — own profile (any authenticated user)
+### GET list / details — ManagingRole
+### POST/PUT — any authenticated (own data)
+### DELETE — ManagingRole
+### ============================================================
+
+@baseUrl = https://localhost:49609
+@token = YOUR_JWT_TOKEN
+@contentType = application/json
+
+# ============================================================
+# AUTH
+# ============================================================
+
+### Login as admin
+POST {{baseUrl}}/api/Login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@admin.com",
+  "password": "Admin@1234"
+}
+
+###
+
+# ============================================================
+# PROFILES
+# ============================================================
+
+### Get all profiles — paged (ManagingRole)
+# Expected: 200 OK  →  UserProfileListVm
+GET {{baseUrl}}/api/v2/profiles?pageSize=10&pageNo=1
+Authorization: Bearer {{token}}
+###
+
+### Get all profiles — search
+# Expected: 200 OK
+GET {{baseUrl}}/api/v2/profiles?searchString=kowalski&pageSize=10&pageNo=1
+Authorization: Bearer {{token}}
+###
+
+### Get my profile (current user)
+# Expected: 200 OK  →  UserProfileVm | 404 if not created yet
+GET {{baseUrl}}/api/v2/profiles/me
+Authorization: Bearer {{token}}
+###
+
+### Get profile by id (own or ManagingRole)
+# Expected: 200 OK  →  UserProfileVm
+GET {{baseUrl}}/api/v2/profiles/1
+Authorization: Bearer {{token}}
+###
+
+### Get profile details (ManagingRole)
+# Expected: 200 OK  →  UserProfileDetailsVm
+GET {{baseUrl}}/api/v2/profiles/1/details
+Authorization: Bearer {{token}}
+###
+
+### Get profile — not found
+# Expected: 404 Not Found
+GET {{baseUrl}}/api/v2/profiles/99999
+Authorization: Bearer {{token}}
+###
+
+### Create profile
+# Expected: 201 Created  →  { "id": <newId> }
+# Replace userId with a real ApplicationUser.Id from the IAM store
+POST {{baseUrl}}/api/v2/profiles
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "userId": "replace-with-real-user-guid",
+  "firstName": "Jan",
+  "lastName": "Kowalski",
+  "isCompany": false,
+  "nip": null,
+  "companyName": null,
+  "email": "jan.kowalski@example.com",
+  "phoneNumber": "+48600100200"
+}
+###
+
+### Create profile — company
+# Expected: 201 Created
+POST {{baseUrl}}/api/v2/profiles
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "userId": "replace-with-real-user-guid",
+  "firstName": "Anna",
+  "lastName": "Nowak",
+  "isCompany": true,
+  "nip": "1234567890",
+  "companyName": "Nowak Sp. z o.o.",
+  "email": "anna.nowak@firma.pl",
+  "phoneNumber": "+48700200300"
+}
+###
+
+### Update personal info
+# Expected: 200 OK
+PUT {{baseUrl}}/api/v2/profiles/personal
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "id": 1,
+  "firstName": "Jan",
+  "lastName": "Kowalski-Updated",
+  "isCompany": false,
+  "nip": null,
+  "companyName": null
+}
+###
+
+### Update contact info
+# Expected: 200 OK
+PUT {{baseUrl}}/api/v2/profiles/contact
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "id": 1,
+  "email": "new.email@example.com",
+  "phoneNumber": "+48601999888"
+}
+###
+
+### Delete profile (ManagingRole)
+# Expected: 204 No Content
+DELETE {{baseUrl}}/api/v2/profiles/1
+Authorization: Bearer {{token}}
+###
+
+# ============================================================
+# ADDRESSES
+# ============================================================
+
+### Add address to profile
+# Expected: 201 Created
+POST {{baseUrl}}/api/v2/profiles/1/addresses
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "userProfileId": 1,
+  "street": "ul. Marszałkowska",
+  "buildingNumber": "10",
+  "flatNumber": 5,
+  "zipCode": "00-001",
+  "city": "Warszawa",
+  "country": "PL"
+}
+###
+
+### Add address — no flat number
+# Expected: 201 Created
+POST {{baseUrl}}/api/v2/profiles/1/addresses
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "userProfileId": 1,
+  "street": "ul. Krakowska",
+  "buildingNumber": "22A",
+  "flatNumber": null,
+  "zipCode": "30-001",
+  "city": "Kraków",
+  "country": "PL"
+}
+###
+
+### Update address
+# Expected: 200 OK
+PUT {{baseUrl}}/api/v2/profiles/1/addresses
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "addressId": 1,
+  "street": "ul. Nowy Świat",
+  "buildingNumber": "5",
+  "flatNumber": null,
+  "zipCode": "00-002",
+  "city": "Warszawa",
+  "country": "PL"
+}
+###
+
+### Remove address
+# Expected: 204 No Content
+DELETE {{baseUrl}}/api/v2/profiles/1/addresses/1
+Authorization: Bearer {{token}}
+###
+
+### Remove address — not found
+# Expected: 404 Not Found
+DELETE {{baseUrl}}/api/v2/profiles/1/addresses/99999
+Authorization: Bearer {{token}}
+###

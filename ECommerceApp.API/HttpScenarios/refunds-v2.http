@@ -1,0 +1,222 @@
+### ============================================================
+### Refunds V2 — API scenarios
+### Base URL: https://localhost:49609
+###
+### Usage:
+###   1. Run "Login as admin" first — copy the token from the
+###      response body into @token below.
+###   2. Run scenarios in order or pick individual ones.
+###   3. Replace {refundId} / {orderId} with real IDs from your
+###      dev database (see seed data in Infrastructure/Database/SeedData).
+### ============================================================
+
+@baseUrl = https://localhost:49609
+@token = YOUR_JWT_TOKEN
+@contentType = application/json
+
+# ============================================================
+# AUTH — obtain a JWT token
+# ============================================================
+
+### Login as admin
+# Expected: 200 OK  →  { "token": "...", ... }
+POST {{baseUrl}}/api/Login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@admin.com",
+  "password": "Admin@1234"
+}
+
+### Login as manager
+# Expected: 200 OK  →  { "token": "...", ... }
+POST {{baseUrl}}/api/Login
+Content-Type: {{contentType}}
+
+{
+  "email": "manager@manager.com",
+  "password": "Manager@1234"
+}
+
+# ============================================================
+# GET /api/v2/refunds  — paged list (MaintenanceRole required)
+# ============================================================
+
+### Get all refunds — first page, default page size
+# Expected: 200 OK  →  RefundListVm { refunds: [...], currentPage: 1, ... }
+GET {{baseUrl}}/api/v2/refunds
+Authorization: Bearer {{token}}
+
+###
+
+### Get refunds — custom paging
+# Expected: 200 OK
+GET {{baseUrl}}/api/v2/refunds?pageSize=5&pageNo=1
+Authorization: Bearer {{token}}
+
+###
+
+### Get refunds — search by reason keyword
+# Expected: 200 OK  →  filtered list
+GET {{baseUrl}}/api/v2/refunds?search=damage&pageSize=10&pageNo=1
+Authorization: Bearer {{token}}
+
+###
+
+# ============================================================
+# GET /api/v2/refunds/{id}  — single refund
+# ============================================================
+
+### Get refund by id — happy path
+# Expected: 200 OK  →  RefundDetailsVm { id, orderId, reason, status, items: [...] }
+GET {{baseUrl}}/api/v2/refunds/1
+Authorization: Bearer {{token}}
+
+###
+
+### Get refund by id — not found
+# Expected: 404 Not Found
+GET {{baseUrl}}/api/v2/refunds/99999
+Authorization: Bearer {{token}}
+
+###
+
+# ============================================================
+# POST /api/v2/refunds  — request a new refund
+# ============================================================
+
+### Request refund — happy path (replace orderId with a valid paid order id)
+# Expected: 201 Created
+POST {{baseUrl}}/api/v2/refunds
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "orderId": 1,
+  "reason": "Product arrived damaged",
+  "onWarranty": true,
+  "items": [
+    { "productId": 1, "quantity": 1 },
+    { "productId": 2, "quantity": 2 }
+  ]
+}
+
+###
+
+### Request refund — single item, no warranty
+# Expected: 201 Created
+POST {{baseUrl}}/api/v2/refunds
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "orderId": 2,
+  "reason": "Wrong item received",
+  "onWarranty": false,
+  "items": [
+    { "productId": 3, "quantity": 1 }
+  ]
+}
+
+###
+
+### Request refund — order does not exist
+# Expected: 404 Not Found  →  { "error": "Order not found." }
+POST {{baseUrl}}/api/v2/refunds
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "orderId": 99999,
+  "reason": "Never received",
+  "onWarranty": false,
+  "items": [
+    { "productId": 1, "quantity": 1 }
+  ]
+}
+
+###
+
+### Request refund — duplicate (run after the happy path above for same orderId)
+# Expected: 409 Conflict  →  { "error": "An active refund already exists for this order." }
+POST {{baseUrl}}/api/v2/refunds
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "orderId": 1,
+  "reason": "Duplicate attempt",
+  "onWarranty": false,
+  "items": [
+    { "productId": 1, "quantity": 1 }
+  ]
+}
+
+###
+
+# ============================================================
+# PUT /api/v2/refunds/{id}/approve  — approve (MaintenanceRole)
+# ============================================================
+
+### Approve refund — happy path (replace id with a Requested refund)
+# Expected: 200 OK
+PUT {{baseUrl}}/api/v2/refunds/1/approve
+Authorization: Bearer {{token}}
+
+###
+
+### Approve refund — not found
+# Expected: 404 Not Found  →  { "error": "Refund not found." }
+PUT {{baseUrl}}/api/v2/refunds/99999/approve
+Authorization: Bearer {{token}}
+
+###
+
+### Approve refund — already processed (run after happy path approve above)
+# Expected: 409 Conflict  →  { "error": "Refund has already been processed." }
+PUT {{baseUrl}}/api/v2/refunds/1/approve
+Authorization: Bearer {{token}}
+
+###
+
+# ============================================================
+# PUT /api/v2/refunds/{id}/reject  — reject (MaintenanceRole)
+# ============================================================
+
+### Reject refund — happy path (use a different Requested refund, e.g. id=2)
+# Expected: 200 OK
+PUT {{baseUrl}}/api/v2/refunds/2/reject
+Authorization: Bearer {{token}}
+
+###
+
+### Reject refund — not found
+# Expected: 404 Not Found  →  { "error": "Refund not found." }
+PUT {{baseUrl}}/api/v2/refunds/99999/reject
+Authorization: Bearer {{token}}
+
+###
+
+### Reject refund — already processed (run after happy path reject above)
+# Expected: 409 Conflict  →  { "error": "Refund has already been processed." }
+PUT {{baseUrl}}/api/v2/refunds/2/reject
+Authorization: Bearer {{token}}
+
+###
+
+# ============================================================
+# Authorization boundary checks
+# ============================================================
+
+### Get list without token — should be blocked
+# Expected: 401 Unauthorized
+GET {{baseUrl}}/api/v2/refunds
+
+###
+
+### Approve without admin/manager/service role (login as regular user first)
+# Expected: 403 Forbidden
+PUT {{baseUrl}}/api/v2/refunds/1/approve
+Authorization: Bearer <regular-user-token>
+
+###

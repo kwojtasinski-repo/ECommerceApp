@@ -1,0 +1,119 @@
+### ============================================================
+### Presale V2 — Storefront + Cart
+### Base URL: https://localhost:49609
+###
+### Storefront: anonymous (published products browse)
+### Cart: authenticated (any user — operates on own cart via userId)
+###
+### Full checkout flow:
+###   1. Browse products  →  GET /api/storefront/products
+###   2. Add to cart      →  POST /api/v2/cart/items
+###   3. View cart        →  GET  /api/v2/cart
+###   4. Place order      →  POST /api/v2/orders  (see sales-orders-v2.http)
+### ============================================================
+
+@baseUrl = https://localhost:49609
+@token = YOUR_JWT_TOKEN
+@contentType = application/json
+
+# ============================================================
+# AUTH
+# ============================================================
+
+### Login
+POST {{baseUrl}}/api/Login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@admin.com",
+  "password": "Admin@1234"
+}
+
+###
+
+# ============================================================
+# STOREFRONT — public product browse (anonymous)
+# ============================================================
+
+### Browse published products — first page
+# Expected: 200 OK  →  StorefrontProductListVm
+GET {{baseUrl}}/api/storefront/products?pageSize=10&pageNo=1
+###
+
+### Browse published products — search
+# Expected: 200 OK  →  filtered list
+GET {{baseUrl}}/api/storefront/products?searchString=laptop&pageSize=5&pageNo=1
+###
+
+### Browse published products — next page
+# Expected: 200 OK
+GET {{baseUrl}}/api/storefront/products?pageSize=5&pageNo=2
+###
+
+# ============================================================
+# CART — authenticated
+# ============================================================
+
+### Get current user's cart
+# Expected: 200 OK  →  CartVm  |  404 if cart is empty/doesn't exist
+GET {{baseUrl}}/api/v2/cart
+Authorization: Bearer {{token}}
+###
+
+### Add item to cart (or update quantity if already in cart)
+# Expected: 200 OK
+# Replace userId with the actual user id from the JWT claim
+POST {{baseUrl}}/api/v2/cart/items
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "userId": "replace-with-real-user-id",
+  "productId": 1,
+  "quantity": 2
+}
+###
+
+### Add another item
+# Expected: 200 OK
+POST {{baseUrl}}/api/v2/cart/items
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "userId": "replace-with-real-user-id",
+  "productId": 2,
+  "quantity": 1
+}
+###
+
+### Update quantity of existing cart item (same productId → overwrites)
+# Expected: 200 OK
+POST {{baseUrl}}/api/v2/cart/items
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "userId": "replace-with-real-user-id",
+  "productId": 1,
+  "quantity": 5
+}
+###
+
+### Remove single item from cart
+# Expected: 204 No Content
+DELETE {{baseUrl}}/api/v2/cart/items/1
+Authorization: Bearer {{token}}
+###
+
+### Clear entire cart
+# Expected: 204 No Content
+DELETE {{baseUrl}}/api/v2/cart
+Authorization: Bearer {{token}}
+###
+
+### Get cart after clearing — should be empty/404
+# Expected: 404 Not Found (or empty CartVm depending on implementation)
+GET {{baseUrl}}/api/v2/cart
+Authorization: Bearer {{token}}
+###

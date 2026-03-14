@@ -1,0 +1,119 @@
+### ============================================================
+### Jobs V2 — Time Management / Scheduled Jobs
+### Base URL: https://localhost:49609
+###
+### All endpoints require MaintenanceRole.
+###
+### Known jobs (registered at startup):
+###   - PaymentWindowExpiredJob     (Payments BC)
+###   - StockAdjustmentJob          (Inventory BC)
+###   - SoftReservationExpiredJob   (Presale BC)
+###   - CurrencyRateSyncTask        (Currencies BC)
+###   - PaymentWindowTimeoutJob     (Inventory BC)
+###   - SnapshotOrderItemsJob       (Orders BC)
+### ============================================================
+
+@baseUrl = https://localhost:49609
+@token = YOUR_JWT_TOKEN
+@contentType = application/json
+
+# ============================================================
+# AUTH
+# ============================================================
+
+### Login as admin
+POST {{baseUrl}}/api/Login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@admin.com",
+  "password": "Admin@1234"
+}
+
+###
+
+# ============================================================
+# JOBS
+# ============================================================
+
+### Get all registered jobs and their current status
+# Expected: 200 OK  →  List<JobStatusSummary>
+GET {{baseUrl}}/api/v2/jobs
+Authorization: Bearer {{token}}
+###
+
+### Get deferred job queue (jobs waiting to be picked up)
+# Expected: 200 OK  →  List<DeferredJobQueueVm>
+GET {{baseUrl}}/api/v2/jobs/deferred
+Authorization: Bearer {{token}}
+###
+
+### Get execution history for PaymentWindowExpiredJob
+# Expected: 200 OK  →  List<JobExecutionRecord>
+GET {{baseUrl}}/api/v2/jobs/PaymentWindowExpiredJob/history?page=1&pageSize=20
+Authorization: Bearer {{token}}
+###
+
+### Get history — StockAdjustmentJob
+# Expected: 200 OK
+GET {{baseUrl}}/api/v2/jobs/StockAdjustmentJob/history?page=1&pageSize=10
+Authorization: Bearer {{token}}
+###
+
+### Get history — CurrencyRateSyncTask
+# Expected: 200 OK
+GET {{baseUrl}}/api/v2/jobs/CurrencyRateSyncTask/history?page=1&pageSize=10
+Authorization: Bearer {{token}}
+###
+
+### Get history — SoftReservationExpiredJob
+# Expected: 200 OK
+GET {{baseUrl}}/api/v2/jobs/SoftReservationExpiredJob/history?page=1&pageSize=10
+Authorization: Bearer {{token}}
+###
+
+### Enable a job (e.g. after it was disabled)
+# Expected: 200 OK
+PUT {{baseUrl}}/api/v2/jobs/PaymentWindowExpiredJob/enable
+Authorization: Bearer {{token}}
+###
+
+### Disable a job (e.g. for maintenance)
+# Expected: 200 OK
+PUT {{baseUrl}}/api/v2/jobs/StockAdjustmentJob/disable
+Authorization: Bearer {{token}}
+###
+
+### Register a new custom job
+# Schedule: standard cron expression (5-part)
+# Expected: 200 OK
+POST {{baseUrl}}/api/v2/jobs/register
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "jobName": "MyCustomJob",
+  "schedule": "0 */6 * * *",
+  "timeZoneId": "Europe/Warsaw",
+  "maxRetries": 3
+}
+###
+
+### Register job — every minute (for testing)
+# Expected: 200 OK
+POST {{baseUrl}}/api/v2/jobs/register
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "jobName": "TestHeartbeatJob",
+  "schedule": "* * * * *",
+  "timeZoneId": null,
+  "maxRetries": 1
+}
+###
+
+### Unauthorized — no token
+# Expected: 401 Unauthorized
+GET {{baseUrl}}/api/v2/jobs
+###
