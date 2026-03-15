@@ -103,7 +103,23 @@
                 return;
             }
 
-            showError(error.responseJSON);
+            const data = error.responseJSON;
+
+            // structured codes path (BusinessException with _codes)
+            if (Array.isArray(data.codes) && data.codes.length > 0) {
+                showError(data.codes);
+                return;
+            }
+
+            // flat message fallback (non-BusinessException, or codes list empty)
+            if (data.response) {
+                const errorContainer = document.querySelector('#ErrorContainer');
+                const errorValue = document.querySelector('#ErrorValue');
+                if (errorContainer && errorValue) {
+                    errorContainer.style.display = 'block';
+                    errorValue.textContent = data.response;
+                }
+            }
         }
 
         function showError(errorsArray) {

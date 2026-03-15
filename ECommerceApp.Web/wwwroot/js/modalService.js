@@ -179,8 +179,8 @@
                 showConfirmationModal: function (headerText, bodyText) {
                     const headerTemplate = createModalHeader(headerText);
                     const bodyTemplate = createModalBody(bodyText);
-                    const confirmButton = buttonTemplate.createButton("Tak", "btn btn-danger", () => { closeModal(); invokeActionAfterButtonClick(confirmAction); }, "type");
-                    const cancelButton = buttonTemplate.createButton("Nie", "btn btn-secondary", this.close, "type");
+                    const confirmButton = buttonTemplate.createButton("Tak", "btn btn-danger", () => { closeModal(); invokeActionAfterButtonClick(confirmAction); }, "button");
+                    const cancelButton = buttonTemplate.createButton("Nie", "btn btn-secondary", this.close, "button");
                     const footerTemplate = createModalFooter([confirmButton, cancelButton]);
                     const modalTemplate = createModalTemplate(headerTemplate, bodyTemplate, footerTemplate);
                     document.body.appendChild(modalTemplate);

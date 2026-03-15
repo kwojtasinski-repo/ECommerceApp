@@ -59,8 +59,14 @@
 
 ## Resolved
 
-*(Move entries here with fix PR reference when merged)*
+### [KI-001] `BusinessException._codes` silently discarded — no Polish error messages displayed ✅
+- **Fix**: `ExceptionResponse` now carries `IReadOnlyList<ErrorCodeDto>? Codes`. `ErrorMapToResponse.Map()` maps `BusinessException._codes` → `ErrorCodeDto` list. `errors.js:showErrorFromResponse` handles structured `data.codes` array + flat `data.response` fallback. `_Layout.cshtml:setGlobalError` missing `return` fixed.
+- **Files changed**: `ErrorCodeDto.cs` (new), `ExceptionResponse.cs`, `ErrorMapToResponse.cs`, `errors.js`, `_Layout.cshtml`
+
+### [KI-005] `buttonTemplate.js` — invalid HTML button `type` attribute ✅
+- **Fix**: Changed `"type"` literal to `"button"` in `modalService.js` confirmation modal button creation.
+- **Files changed**: `modalService.js`
 
 ---
 
-*Last reviewed: 2026-03-12*
+*Last reviewed: 2026-03-15*
