@@ -2,10 +2,57 @@
 applyTo: "**"
 ---
 
-# Docs Index — Lookup Table for Copilot
+# Docs Index — Copilot Routing Table
 
-> This file teaches Copilot **what documentation exists** and **when to read it**.
-> The docs themselves are human-owned — never modify them. Just look up and read.
+> **Single entry point** for all Copilot configuration and project documentation.
+> Load files **on demand** — read only what the task requires, then follow connections.
+> Docs are human-owned — never modify them. Just look up and read.
+
+## Quick navigation
+
+| Your task               | Read first                        | Then chain to                       |
+| ----------------------- | --------------------------------- | ----------------------------------- |
+| First-time orientation  | ADR-0001                          | `project-state.md`, `repo-index.md` |
+| Writing/editing C# code | `dotnet.instructions.md` (auto)   | ADR for the target BC               |
+| Creating a BC artifact  | `implementation-patterns.md`      | Matching `create-*` skill           |
+| Fixing a bug            | `known-issues.md`                 | `project-state.md`                  |
+| BC migration work       | `bounded-context-map.md`          | BC's ADR → `project-state.md`       |
+| Adding Copilot config   | This file                         | `@copilot-setup-maintainer`         |
+| Frontend/JS changes     | `frontend.instructions.md` (auto) | ADR-0021                            |
+
+## Instruction files (`.github/instructions/`)
+
+Auto-loaded by `applyTo:` globs — Copilot reads these automatically when editing matching files.
+
+| File                                | `applyTo:`                          | Scope                                 |
+| ----------------------------------- | ----------------------------------- | ------------------------------------- |
+| `dotnet.instructions.md`            | `**/*.cs, **/*.csproj`              | .NET architecture, services, DI, auth |
+| `web-api.instructions.md`           | `ECommerceApp.API/**`               | Web API controllers, DTOs             |
+| `razorpages.instructions.md`        | `ECommerceApp.Web/**`               | MVC, Views, Razor Pages               |
+| `frontend.instructions.md`          | `wwwroot/**, **/*.cshtml`           | LibMan, JS modules, require.js        |
+| `efcore.instructions.md`            | `ECommerceApp.Infrastructure/**`    | EF Core tracking, transactions        |
+| `migration-policy.instructions.md`  | `Infrastructure/Migrations/**`      | DB migration approval                 |
+| `testing.instructions.md`           | `UnitTests/**, IntegrationTests/**` | Unit/integration test patterns        |
+| `shared-primitives.instructions.md` | `Domain/Shared/**`                  | TypedId, Money, Price, Quantity       |
+| `safety.instructions.md`            | `**`                                | Allowed/disallowed actions            |
+| `pre-edit.instructions.md`          | `**`                                | Pre-edit checklist, doc suggestions   |
+| `docs-index.instructions.md`        | `**`                                | This file — routing table             |
+
+## Agents (`.github/agents/`)
+
+| Agent            | Invoke                      | When to use                                   |
+| ---------------- | --------------------------- | --------------------------------------------- |
+| ADR Generator    | `@adr-generator`            | Generating a new Architecture Decision Record |
+| BC Switch        | `@bc-switch`                | Executing atomic BC legacy-to-new switch      |
+| Setup Maintainer | `@copilot-setup-maintainer` | Syncing Copilot config and `.sln` structure   |
+
+## Prompts (`.github/prompts/`)
+
+| Prompt                        | When to use                            |
+| ----------------------------- | -------------------------------------- |
+| `bc-analysis.prompt.md`       | Analyzing a BC for migration readiness |
+| `bc-implementation.prompt.md` | Planning BC implementation steps       |
+| `pr-review.prompt.md`         | Reviewing a pull request               |
 
 ## ADRs (`docs/adr/`)
 
@@ -60,7 +107,24 @@ Read an ADR **only** when the "When to read" condition matches the files you are
 
 ## Context files (`.github/context/`)
 
-| File               | When to read                                                       |
-| ------------------ | ------------------------------------------------------------------ |
-| `project-state.md` | **Always** before editing BC-related code — check if BC is blocked |
-| `known-issues.md`  | **Always** before fixing any bug — check if already tracked        |
+| File               | When to read                                                         |
+| ------------------ | -------------------------------------------------------------------- |
+| `project-state.md` | **Always** before editing BC-related code — check if BC is blocked   |
+| `known-issues.md`  | **Always** before fixing any bug — check if already tracked          |
+| `repo-index.md`    | When you need to locate code across the repo — full codebase map     |
+| `future-skills.md` | When creating skills, adding cross-BC events, or planning automation |
+
+## Skills (`.github/skills/`)
+
+Read a skill **before** scaffolding the corresponding artifact.
+
+| Skill                     | When to read                                                     |
+| ------------------------- | ---------------------------------------------------------------- |
+| `create-unit-test`        | Scaffolding a new xUnit test class (service, aggregate, handler) |
+| `create-dbcontext`        | Creating a per-BC DbContext (4-file set)                         |
+| `create-ef-configuration` | Adding an EF Core entity configuration                           |
+| `create-di-extension`     | Adding Application or Infrastructure DI extension methods        |
+| `create-domain-event`     | Creating cross-BC IMessage events and/or IMessageHandler         |
+| `create-integration-test` | Scaffolding an integration test with BaseTest<T> + Shouldly      |
+| `create-http-scenario`    | Creating a .http file for any API endpoint testing               |
+| `create-validator`        | Adding a FluentValidation AbstractValidator<T>                   |

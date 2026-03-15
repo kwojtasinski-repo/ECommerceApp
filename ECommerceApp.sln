@@ -118,8 +118,52 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "roadmap", "roadmap", "{8FA6
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "context", "context", "{1064B208-B85A-4013-8C84-597303D43282}"
 	ProjectSection(SolutionItems) = preProject
+		.github\context\future-skills.md = .github\context\future-skills.md
 		.github\context\known-issues.md = .github\context\known-issues.md
 		.github\context\project-state.md = .github\context\project-state.md
+		.github\context\repo-index.md = .github\context\repo-index.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "skills", "skills", "{2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "create-dbcontext", "create-dbcontext", "{454D908B-026B-44BF-BC5B-21687F7F3181}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\create-dbcontext\SKILL.md = .github\skills\create-dbcontext\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "create-di-extension", "create-di-extension", "{85AD127C-4128-4C3B-9BC1-9CA2EDA721A3}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\create-di-extension\SKILL.md = .github\skills\create-di-extension\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "create-domain-event", "create-domain-event", "{65AFD939-5CC2-4C42-9599-4B77A0DA4571}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\create-domain-event\SKILL.md = .github\skills\create-domain-event\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "create-ef-configuration", "create-ef-configuration", "{8845B7FC-77A8-4375-9474-5FC43CA45C77}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\create-ef-configuration\SKILL.md = .github\skills\create-ef-configuration\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "create-http-scenario", "create-http-scenario", "{D064447E-C0D6-44A5-AF64-8FB064F75ABA}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\create-http-scenario\SKILL.md = .github\skills\create-http-scenario\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "create-integration-test", "create-integration-test", "{3F4FB488-668E-45EE-BCE3-6A5B4B55B5C9}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\create-integration-test\SKILL.md = .github\skills\create-integration-test\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "create-unit-test", "create-unit-test", "{0812F74D-3AE1-492C-BFB1-2F8FFA4FC97A}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\create-unit-test\SKILL.md = .github\skills\create-unit-test\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "create-validator", "create-validator", "{F3E145DF-ADCD-4EFA-BC2C-8C4855A9E597}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\create-validator\SKILL.md = .github\skills\create-validator\SKILL.md
 	EndProjectSection
 EndProject
 Global
@@ -182,6 +226,15 @@ Global
 		{DB95CC21-7869-4EAC-8EB3-F5706D958E0A} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 		{8FA6F8D3-44D1-4AC3-9335-8B69F45EA3DD} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 		{1064B208-B85A-4013-8C84-597303D43282} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{2FBD2A37-7C7A-4EE9-87FD-DECAC3085916} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{454D908B-026B-44BF-BC5B-21687F7F3181} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{85AD127C-4128-4C3B-9BC1-9CA2EDA721A3} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{65AFD939-5CC2-4C42-9599-4B77A0DA4571} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{8845B7FC-77A8-4375-9474-5FC43CA45C77} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{D064447E-C0D6-44A5-AF64-8FB064F75ABA} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{3F4FB488-668E-45EE-BCE3-6A5B4B55B5C9} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{0812F74D-3AE1-492C-BFB1-2F8FFA4FC97A} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{F3E145DF-ADCD-4EFA-BC2C-8C4855A9E597} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C833E166-660D-4E9D-85E1-0ED811E2828E}

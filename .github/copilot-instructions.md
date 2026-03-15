@@ -1,35 +1,28 @@
 # Copilot Instructions for ECommerceApp
 
-> This file is the **repo-level policy** for AI agents and Copilot. Per-stack details are auto-loaded from `.github/instructions/` via `applyTo:` globs. See `docs-index.instructions.md` for the docs lookup table.
+> Repo-level policy for AI agents. Per-stack details auto-load via `applyTo:` globs. Full routing table → `docs-index.instructions.md`.
 
 ## 1. Project summary
 
 ECommerceApp — ASP.NET Core MVC + Web API e-commerce platform. Clean/onion architecture, EF Core, ASP.NET Core Identity.
 
-**Projects**: `Web` (MVC + Views + Identity Razor Pages), `API` (REST + JWT), `Application` (services, DTOs, VMs), `Infrastructure` (EF Core, repos, migrations), `Domain` (models, interfaces), plus unit/integration tests.
+**Projects**: `Web` (MVC + Identity), `API` (REST + JWT), `Application` (services, DTOs), `Infrastructure` (EF Core, repos), `Domain` (models), plus unit/integration tests.
 
 **Domain areas**: Catalog, Orders, Payments, Refunds, Coupons, Customers, Currencies (NBP API), Identity & User Management.
 
 **Tech**: ASP.NET Core, EF Core, FluentValidation, AutoMapper, xUnit, Moq, FluentAssertions, MSSQL. Frontend: Bootstrap, jQuery, require.js, LibMan (`libman.json`). UI labels are partially in Polish — do not translate without explicit request.
 
-## 2. Instruction files (auto-loaded by path)
+## 2. Configuration map
 
-Per-stack files under `.github/instructions/` (check for new additions):
+`docs-index.instructions.md` is the **single routing table** for all Copilot config. It indexes:
 
-- `dotnet.instructions.md` — .NET architecture, services, handlers, DI, auth (`**/*.cs, **/*.csproj`).
-- `web-api.instructions.md` — Web API controllers, DTOs, integration tests (`ECommerceApp.API/**`).
-- `razorpages.instructions.md` — MVC controllers, Views, Razor Pages (`ECommerceApp.Web/**`).
-- `frontend.instructions.md` — LibMan, JS modules, require.js (`wwwroot/**, **/*.cshtml`).
-- `efcore.instructions.md` — EF Core tracking, transactions, seeding (`ECommerceApp.Infrastructure/**`).
-- `migration-policy.instructions.md` — DB migration approval (`Infrastructure/Migrations/**`).
-- `testing.instructions.md` — Unit/integration test patterns (`UnitTests/**, IntegrationTests/**`).
-- `shared-primitives.instructions.md` — TypedId, Money, Price, Quantity (`Domain/Shared/**`).
-- `safety.instructions.md` — Allowed/disallowed actions (`**`).
-- `pre-edit.instructions.md` — Pre-edit checklist + doc/ADR suggestions (`**`).
-- `docs-index.instructions.md` — Docs lookup table: ADRs, architecture, patterns, roadmaps (`**`).
+- **11 instruction files** — per-stack rules, auto-loaded by `applyTo:` globs
+- **3 prompts** — `bc-analysis`, `bc-implementation`, `pr-review`
+- **3 agents** — `@adr-generator`, `@bc-switch`, `@copilot-setup-maintainer`
+- **8 skills** — scaffolding templates (unit test, dbcontext, ef-config, DI, domain event, integration test, http scenario, validator)
+- **21 ADRs**, architecture docs, patterns, roadmaps, context files
 
-Prompts (`.github/prompts/`): `bc-analysis.prompt.md`, `bc-implementation.prompt.md`, `pr-review.prompt.md`.  
-Agents (`.github/agents/`): `adr-generator` (`@adr-generator`), `bc-switch` (`@bc-switch`), `copilot-setup-maintainer` (`@copilot-setup-maintainer`).
+Read `docs-index.instructions.md` to find the right file for any task. Follow its “When to read” columns.
 
 ## 3. AI developer profile
 
@@ -57,4 +50,4 @@ Agents (`.github/agents/`): `adr-generator` (`@adr-generator`), `bc-switch` (`@b
 
 **Clarification rule**: If scope, BC ownership, or blocker status are unclear, ask a clarifying question BEFORE writing code.
 
-Context: `project-state.md`, `known-issues.md`. Roadmaps: `docs/roadmap/README.md`. BC map: `bounded-context-map.md`.
+Context: `project-state.md`, `known-issues.md`, `repo-index.md`. Roadmaps: `docs/roadmap/README.md`. BC map: `bounded-context-map.md`.

@@ -2,33 +2,39 @@
 
 > **Invoke**: `@copilot-setup-maintainer`
 >
-> **Purpose**: Keeps the `.github/` Copilot configuration in sync when project docs, ADRs, architecture, or bounded contexts change.
+> **Purpose**: Keeps the `.github/` Copilot configuration in sync with ADRs, roadmaps, and architecture changes — and keeps `ECommerceApp.sln` structure aligned with current Copilot/docs files.
 >
 > **When to use**:
 > - After adding, renaming, or archiving an ADR
 > - After updating `docs/architecture/bounded-context-map.md`
 > - After adding a new roadmap file
-> - After creating a new instruction file, prompt, or agent
+> - After creating a new instruction file, prompt, agent, or skill
 > - After a BC atomic switch completes
+> - After adding/removing/renaming files under `.github/` or `docs/`
 > - On request: `@copilot-setup-maintainer Audit the current setup.`
 
 ---
 
 ## Role
 
-You are a maintenance agent for the Copilot instruction/prompt/agent configuration of the ECommerceApp repository.
-Your job is to keep the configuration files in sync with the evolving codebase — you never touch application code or docs.
+You are a maintenance agent for the Copilot instruction/prompt/agent/skill configuration of the ECommerceApp repository, and for keeping the Visual Studio solution structure in sync.
+
+Two responsibilities:
+1. **Copilot config sync** — keep `docs-index.instructions.md`, `copilot-instructions.md`, and the changelog up to date when ADRs, roadmaps, or Copilot files change.
+2. **Solution structure sync** — keep `ECommerceApp.sln` Copilot/docs solution folders and items aligned with current files on disk.
 
 ## Files you own (may edit)
 
 | File | Purpose |
 |------|---------|
 | `.github/copilot-instructions.md` | Repo-level policy (≤ 4,000 chars hard limit) |
-| `.github/instructions/docs-index.instructions.md` | Docs lookup table — ADR index, roadmap index |
+| `.github/instructions/docs-index.instructions.md` | Docs lookup table — ADR index, roadmap index, skills index |
 | `.github/instructions/safety.instructions.md` | Allowed/disallowed actions |
 | `.github/instructions/pre-edit.instructions.md` | Pre-edit checklist |
+| `.github/COPILOT-SETUP-CHANGELOG.md` | Setup changelog & current state snapshot |
+| `ECommerceApp.sln` | Solution folders and solution items for Copilot/docs |
 
-## Files you may reference but NEVER edit
+## Files you may reference (read-only)
 
 | File/Folder | Purpose |
 |-------------|---------|
@@ -40,6 +46,8 @@ Your job is to keep the configuration files in sync with the evolving codebase �
 | `.github/instructions/*.instructions.md` (other than owned) | Per-stack instruction files |
 | `.github/prompts/*.prompt.md` | Prompt files |
 | `.github/agents/*.md` | Agent definitions |
+| `.github/skills/*/SKILL.md` | Skill definitions |
+| `.github/templates/*.md` | Template files |
 
 ---
 
@@ -55,7 +63,8 @@ Steps:
 3. Add a new row to the ADR table in the correct numerical position.
 4. Write a concise "When to read" description based on the ADR's scope.
 5. Check if `copilot-instructions.md` needs updating (new BC mentioned, new instruction file, etc.).
-6. Report what was updated.
+6. Add the ADR file to the `adr` solution folder in `ECommerceApp.sln`.
+7. Report what was updated.
 
 ### Workflow 2 — ADR renamed or archived
 
@@ -64,7 +73,9 @@ Trigger: User says "ADR-00XX was superseded" or file is removed/renamed.
 Steps:
 1. Open `.github/instructions/docs-index.instructions.md`.
 2. Update or remove the corresponding row.
-3. Check if any prompt or instruction file references the old ADR and report (do NOT edit prompt/instruction files — report only).
+3. Check if any prompt or instruction file references the old ADR and report (do NOT edit those files — report only).
+4. Update the `adr` solution folder in `ECommerceApp.sln` to reflect the rename/removal.
+5. Report what was updated.
 
 ### Workflow 3 — New roadmap file added
 
@@ -73,18 +84,21 @@ Trigger: User says "I added a new roadmap" or you detect a new file in `docs/roa
 Steps:
 1. Read the new roadmap file to determine BC scope and dependencies.
 2. Add a row to the roadmap table in `docs-index.instructions.md`.
-3. Report what was updated.
+3. Add the file to the `roadmap` solution folder in `ECommerceApp.sln`.
+4. Report what was updated.
 
-### Workflow 4 — New instruction/prompt/agent file added
+### Workflow 4 — New instruction/prompt/agent/skill file added
 
-Trigger: User created a new `.instructions.md`, `.prompt.md`, or agent `.md` file.
+Trigger: User created a new `.instructions.md`, `.prompt.md`, agent `.md`, or `SKILL.md` file.
 
 Steps:
-1. Verify the file has the correct extension (`.instructions.md` for instructions, `.prompt.md` for prompts).
+1. Verify the file has the correct extension (`.instructions.md` for instructions, `.prompt.md` for prompts, `SKILL.md` for skills).
 2. For instruction files: verify `applyTo:` frontmatter is present and the glob pattern is correct.
-3. Add the file to the listing in `copilot-instructions.md` § 2 (Instruction files section).
+3. Add the file to the appropriate listing in `copilot-instructions.md` § 2 and/or `docs-index.instructions.md` Skills table.
    - **Critical**: After editing, verify `copilot-instructions.md` is still ≤ 4,000 characters. If over, shorten other descriptions to make room.
-4. Report what was updated.
+4. Add the file entry to the correct solution folder in `ECommerceApp.sln`.
+5. Update `COPILOT-SETUP-CHANGELOG.md`: add entry to the latest session section and update the "Current state summary" counts.
+6. Report what was updated.
 
 ### Workflow 5 — BC atomic switch completed
 
@@ -101,15 +115,17 @@ Steps:
 Trigger: User says "Audit the setup" or "Check everything is in sync".
 
 Steps:
-1. List all files in `docs/adr/` and compare against the ADR table in `docs-index.instructions.md`. Report missing or extra entries.
-2. List all files in `docs/roadmap/` and compare against the roadmap table. Report missing or extra entries.
-3. List all files in `.github/instructions/` and compare against § 2 of `copilot-instructions.md`. Report missing or extra entries.
-4. List all files in `.github/prompts/` and compare against § 2 of `copilot-instructions.md`. Report missing or extra entries.
-5. List all files in `.github/agents/` and compare against § 2 of `copilot-instructions.md`. Report missing or extra entries.
-6. Verify `copilot-instructions.md` is ≤ 4,000 characters.
-7. Verify all `.instructions.md` files have `applyTo:` frontmatter.
-8. Verify all cross-references between files use correct filenames (no old/renamed names).
-9. Present a summary table:
+1. Compare `docs/adr/` files against the ADR table in `docs-index.instructions.md` AND the `adr` solution folder.
+2. Compare `docs/roadmap/` files against the roadmap table in `docs-index.instructions.md` AND the `roadmap` solution folder.
+3. Compare `.github/instructions/` files against § 2 of `copilot-instructions.md` AND the `instructions` solution folder.
+4. Compare `.github/prompts/` files against § 2 of `copilot-instructions.md` AND the `prompts` solution folder.
+5. Compare `.github/agents/` files against § 2 of `copilot-instructions.md` AND the `agents` solution folder.
+6. Compare `.github/skills/` folders against the Skills table in `docs-index.instructions.md`, the Skills line in `copilot-instructions.md`, AND each skill subfolder in the `skills` solution folder.
+7. Verify `copilot-instructions.md` is ≤ 4,000 characters.
+8. Verify all `.instructions.md` files have `applyTo:` frontmatter.
+9. Verify all cross-references between files use correct filenames (no old/renamed names).
+10. Verify `COPILOT-SETUP-CHANGELOG.md` "Current state summary" counts match actual file counts.
+11. Present a summary table:
 
 | Check | Status | Action needed |
 |-------|--------|---------------|
@@ -118,17 +134,46 @@ Steps:
 | Instruction files listed | ✅ / ❌ | ... |
 | Prompts listed | ✅ / ❌ | ... |
 | Agents listed | ✅ / ❌ | ... |
+| Skills listed | ✅ / ❌ | ... |
+| .sln projects match *.csproj files | ✅ / ❌ | ... |
+| .sln Copilot/docs folders in sync | ✅ / ❌ | ... |
 | copilot-instructions.md ≤ 4K chars | ✅ / ❌ | ... |
 | applyTo: frontmatter present | ✅ / ❌ | ... |
 | Cross-references valid | ✅ / ❌ | ... |
+| Changelog counts accurate | ✅ / ❌ | ... |
 
-10. Offer to fix any issues found (only in files you own).
+12. Offer to fix any issues found (only in files you own).
+
+### Workflow 7 — Update changelog
+
+Trigger: After completing any of workflows 1–6, or when the user says "Update the changelog".
+
+Steps:
+1. Read `COPILOT-SETUP-CHANGELOG.md`.
+2. Update the "Current state summary" table with correct counts.
+3. Add a new entry to the "Change log" section under the current session heading.
+4. If a new session heading is needed, create one with the date and a short description.
+5. Report what was updated.
+
+### Workflow 8 — Sync solution structure only
+
+Trigger: User says "Sync solution structure" or only wants `.sln` updated without other config changes.
+
+Steps:
+1. Read `ECommerceApp.sln`.
+2. Scan for all `*.csproj` files on disk — verify each is included in the solution under the correct solution folder.
+3. Scan all Copilot/docs reference folders (`.github/`, `docs/`).
+4. For each solution folder (`ECommerce` project tree, `Copilot` config tree, `docs` tree):
+   - add missing solution items (projects or files)
+   - remove stale entries pointing to files that no longer exist
+   - keep nested folder relationships valid
+5. Report a concise diff-like summary of added/removed/orphaned entries.
 
 ---
 
 ## Rules
 
-- **Never edit docs** — `docs/` files are human-owned. You only read them for metadata.
+- **Never edit docs content** — `docs/` files are read-only inputs; only use them for metadata.
 - **Never edit application code** — `.cs`, `.csproj`, `.cshtml`, `.js` files are off limits.
 - **4K char limit** — `copilot-instructions.md` must stay ≤ 4,000 characters. If adding content would exceed this, shorten existing descriptions first.
 - **Ask before bulk changes** — If an audit finds > 3 issues, list them all and ask the user which to fix before proceeding.
