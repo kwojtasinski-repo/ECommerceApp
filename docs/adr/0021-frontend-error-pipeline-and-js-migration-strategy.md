@@ -236,6 +236,9 @@ will already require a rewrite pass.
 ## References
 
 - [ADR-0001 — Technology Stack](./0001-project-overview-and-technology-stack.md)
+- [ADR-0022 — Navbar Two-Tier Redesign](./0022-navbar-two-tier-redesign.md)
+  *(The navbar redesign is the first large new-code surface governed by the fetch-first
+  standard from § 3 of this ADR)*
 - [`ECommerceApp.Application/Middlewares/ExceptionMiddleware.cs`](../../ECommerceApp.Application/Middlewares/ExceptionMiddleware.cs)
 - [`ECommerceApp.Application/Exceptions/ErrorMapToResponse.cs`](../../ECommerceApp.Application/Exceptions/ErrorMapToResponse.cs)
 - [`ECommerceApp.Application/ViewModels/ExceptionResponse.cs`](../../ECommerceApp.Application/ViewModels/ExceptionResponse.cs)
