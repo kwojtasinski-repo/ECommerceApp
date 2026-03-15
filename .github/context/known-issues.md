@@ -19,34 +19,20 @@
 
 ## High
 
-### [KI-002] `ajaxRequest.js` image upload silently broken in `EditItem.cshtml`
-- **Severity**: 🟠 High
-- **Location**: `ECommerceApp.Web/wwwroot/js/ajaxRequest.js` · `ECommerceApp.Web/Views/Item/EditItem.cshtml`
-- **Symptom**: Uploading a product image in `EditItem.cshtml` fails silently or throws a JS runtime error. The image is not saved.
-- **Root cause**: `ajaxRequest.send()` is called with `{ formData }` (an object wrapping `FormData`, not `FormData` directly). jQuery `$.ajax` with `{ formData }` does not configure `processData: false` / `contentType: false`, corrupting the multipart body. The resolved value of `$.ajax` is then treated as a `fetch` Response object (`.ok`, `.text()`, `.status` accessed) — jQuery does not return a `Response`; those properties are `undefined`.
-- **Fix tracked in**: [ADR-0021](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) Phase 2 bug #1 · [Roadmap](../roadmap/frontend-pipeline.md#phase-2--targeted-bug-fixes)
-
 ---
 
 ## Medium
 
-### [KI-003] `modalService.js` — `denyAction` fires on info modal close
-- **Severity**: 🟡 Medium
-- **Location**: `ECommerceApp.Web/wwwroot/js/modalService.js`
-- **Symptom**: Clicking the close button (✕) on an informational modal triggers the `denyAction` handler (Promise rejection), causing unexpected behavior in callers that expect no rejection on close.
-- **Root cause**: `close()` calls `denyAction` unconditionally without checking whether the active modal is a confirmation or informational type.
-- **Fix tracked in**: [ADR-0021](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) Phase 2 bug #2 · [Roadmap](../roadmap/frontend-pipeline.md#phase-2--targeted-bug-fixes)
-
-### [KI-004] `validations.js` email regex — ReDoS risk
-- **Severity**: 🟡 Medium
-- **Location**: `ECommerceApp.Web/wwwroot/js/validations.js` — `emailRegex`
-- **Symptom**: Catastrophic backtracking on pathological email strings (e.g., very long strings with invalid characters). Can freeze the browser tab.
-- **Root cause**: 4000-character RFC 2822 regex pattern with nested quantifiers. Standard `/^[^\s@]+@[^\s@]+\.[^\s@]+$/` is sufficient and safe.
-- **Fix tracked in**: [ADR-0021](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) Phase 2 bug #4 · [Roadmap](../roadmap/frontend-pipeline.md#phase-2--targeted-bug-fixes)
-
 ---
 
 ## Low
+
+### [KI-006] `given_valid_order_should_update` — timezone comparison failure
+- **Severity**: 🔵 Low
+- **Location**: `ECommerceApp.IntegrationTests/API/OrderControllerTests.cs`
+- **Symptom**: Test fails with `should be 2026-03-15T19:20:03+01:00 but was 2026-03-15T18:20:03Z`. Same moment, different `DateTimeKind` — `DateTime` equality compares ticks directly; local ticks ≠ UTC ticks.
+- **Root cause**: `Ordered = DateTime.Now` serializes with `+01:00` offset. The API normalizes to UTC on the roundtrip, returning `Z`. The `.ShouldBe` comparison then fails because the tick values differ.
+- **Fix tracked in**: Resolved inline (no ADR needed).
 
 ### [KI-005] `buttonTemplate.js` — invalid HTML button `type` attribute
 - **Severity**: 🔵 Low
@@ -63,9 +49,25 @@
 - **Fix**: `ExceptionResponse` now carries `IReadOnlyList<ErrorCodeDto>? Codes`. `ErrorMapToResponse.Map()` maps `BusinessException._codes` → `ErrorCodeDto` list. `errors.js:showErrorFromResponse` handles structured `data.codes` array + flat `data.response` fallback. `_Layout.cshtml:setGlobalError` missing `return` fixed.
 - **Files changed**: `ErrorCodeDto.cs` (new), `ExceptionResponse.cs`, `ErrorMapToResponse.cs`, `errors.js`, `_Layout.cshtml`
 
+### [KI-006] `given_valid_order_should_update` — timezone comparison failure ✅
+- **Fix**: Changed `Ordered = DateTime.Now` → `DateTime.UtcNow` and `ShouldBeLessThan(DateTime.Now)` → `DateTime.UtcNow`. UTC roundtrips cleanly through the API; ticks match on both sides.
+- **Files changed**: `OrderControllerTests.cs`
+
 ### [KI-005] `buttonTemplate.js` — invalid HTML button `type` attribute ✅
 - **Fix**: Changed `"type"` literal to `"button"` in `modalService.js` confirmation modal button creation.
 - **Files changed**: `modalService.js`
+
+### [KI-002] `ajaxRequest.js` image upload silently broken in `EditItem.cshtml` ✅
+- **Fix**: `ajaxRequest.js:asyncAjax` now auto-detects `FormData` and sets `processData: false` + `contentType: false`. `EditItem.cshtml:SendAddImageRequest` passes `formData` directly (not `{ formData }`) and handles the jQuery-resolved value correctly — on success: reload; on failure: existing error handlers.
+- **Files changed**: `ajaxRequest.js`, `EditItem.cshtml`
+
+### [KI-003] `modalService.js` — `denyAction` fires on info modal close ✅
+- **Fix**: Public `close()` now calls `closeModal()` directly instead of `closeButtonHandler()`. Cancel button in confirmation modal changed to call `closeButtonHandler` directly, preserving Promise resolution semantics.
+- **Files changed**: `modalService.js`
+
+### [KI-004] `validations.js` email regex — ReDoS risk ✅
+- **Fix**: Replaced 4000-char RFC 2822 regex with safe `/^[^\s@]+@[^\s@]+\.[^\s@]+$/`.
+- **Files changed**: `validations.js`
 
 ---
 

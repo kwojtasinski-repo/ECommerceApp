@@ -179,7 +179,7 @@ namespace ECommerceApp.IntegrationTests.API
             var order = new UpdateOrderDto { 
                 Id = 6,
                 CustomerId = 1,
-                Ordered = DateTime.Now,
+                Ordered = DateTime.UtcNow,
                 OrderNumber = "ZAM/11/01/2024/1",
                 PromoCode = "IOHFUJGSD",
                 Payment = new PaymentInfoDto { CurrencyId = 1 },
@@ -215,7 +215,7 @@ namespace ECommerceApp.IntegrationTests.API
             orderAdded.IsDelivered.ShouldBeTrue();
             orderAdded.Delivered.HasValue.ShouldBeTrue();
             orderAdded.Delivered.Value.ShouldBeGreaterThan(order.Ordered.Value);
-            orderAdded.Delivered.Value.ShouldBeLessThan(DateTime.Now);
+            orderAdded.Delivered.Value.ShouldBeLessThan(DateTime.UtcNow);
             orderAdded.OrderItems.ShouldNotBeEmpty();
             orderAdded.OrderItems.Count.ShouldBe(expectedOrderItems);
             orderAdded.OrderItems.ShouldContain(oi => oi.ItemId == 1);

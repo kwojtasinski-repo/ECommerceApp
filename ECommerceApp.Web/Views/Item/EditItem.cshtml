@@ -87,10 +87,6 @@
                         </dl>
 
                         <input class="btn-block" type="button" value="Wgraj" onclick="Upload(this)" />
-
-                        <div style="margin-top:15px">
-                            <output name="result"></output>
-                        </div>
                     </form>
                 </div>
             }
@@ -152,22 +148,12 @@ else
                 }
             }
 
-            var resultElement = oFormElement.elements.namedItem("result");
             const formData = new FormData(oFormElement);
 
             try {
-                const response = await ajaxRequest.send(oFormElement.action, 'POST', {
-                    formData
-                });
+                await ajaxRequest.send(oFormElement.action, 'POST', formData);
                 clearImageUploadInput();
-
-                if (response.ok) {
-                   window.location.reload();
-                }
-                let responseText = await response.text();
-
-                resultElement.value = 'Result: ' + response.status + ' ' +
-                    response.statusText + ' ' + responseText;
+                window.location.reload();
             } catch (error) {
                 if (error.status === statusCodes.Unauthorized) {
                     window.location.href = "Identity/Account/Login";
@@ -176,7 +162,17 @@ else
                     showError([{ code: 'generalError' }]);
                 }
                 if (error.status === statusCodes.BadRequest) {
-                    showErrorFromResponse(error);
+                    const codes = ajaxRequest.getErrorCodes(error);
+                    if (codes.length > 0) {
+                        const container = document.getElementById(fileUploadId).parentElement;
+                        for (const code of codes) {
+                            container.appendChild(forms.createErrorSpan(
+                                errors.getError(code.Code ?? code.code, code.Parameters ?? code.parameters)
+                            ));
+                        }
+                    } else {
+                        showErrorFromResponse(error);
+                    }
                 }
             }
         }

@@ -1,7 +1,7 @@
 # ADR-0021: Frontend Error Pipeline and JS Migration Strategy
 
 ## Status
-Proposed
+Accepted
 
 ## Date
 2026-03-12
@@ -229,7 +229,7 @@ will already require a rewrite pass.
 - [x] `ExceptionResponse.ToString()` serializes `codes` with camelCase; omits key when null
 - [x] `errors.js:showErrorFromResponse` handles both `data.codes` (array) and `data.response` (flat fallback)
 - [x] `showError(errorsArray)` is unchanged — still iterates `[{code, parameters}]` array
-- [ ] Integration tests asserting `ExceptionResponse` body are updated for the new shape
+- [x] Integration tests asserting `ExceptionResponse` body are updated for the new shape
 - [ ] No new views introduce `ajaxRequest.js` after this ADR is accepted
 - [ ] `modalService.js` Bootstrap 4 rewrite is listed as prerequisite in any Bootstrap 5 upgrade ADR
 

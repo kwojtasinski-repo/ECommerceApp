@@ -105,13 +105,19 @@
 
             const data = error.responseJSON;
 
-            // structured codes path (BusinessException with _codes)
+            // Web AJAX path: BadRequest(codes) returns array directly
+            if (Array.isArray(data) && data.length > 0) {
+                showError(data);
+                return;
+            }
+
+            // API path: ExceptionMiddleware wraps in { codes: [...], ... }
             if (Array.isArray(data.codes) && data.codes.length > 0) {
                 showError(data.codes);
                 return;
             }
 
-            // flat message fallback (non-BusinessException, or codes list empty)
+            // flat message fallback (non-BusinessException)
             if (data.response) {
                 const errorContainer = document.querySelector('#ErrorContainer');
                 const errorValue = document.querySelector('#ErrorValue');

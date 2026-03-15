@@ -3,6 +3,7 @@ using ECommerceApp.Application.ViewModels.Coupon;
 using ECommerceApp.IntegrationTests.Common;
 using Flurl.Http;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Shouldly;
 using System;
 using System.Collections.Generic;
@@ -188,6 +189,43 @@ namespace ECommerceApp.IntegrationTests.API
 
             response.StatusCode.ShouldBe((int) HttpStatusCode.NotFound);
         }
+        [Fact]
+        public async Task given_business_exception_without_codes_should_return_bad_request_without_codes_key_in_body()
+        {
+            var client = await _factory.GetAuthenticatedClient();
+            var coupon = CreateDefaultCouponVm(53);
+
+            var response = await client.Request("api/coupons")
+                .AllowAnyHttpStatus()
+                .PostJsonAsync(coupon);
+
+            var body = await response.ResponseMessage.Content.ReadAsStringAsync();
+            var json = JObject.Parse(body);
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
+            json["response"].ShouldNotBeNull();
+            json["codes"].ShouldBeNull();
+        }
+
+        [Fact]
+        public async Task given_coupon_with_existing_code_should_return_bad_request_with_error_code_and_parameter_in_body()
+        {
+            var client = await _factory.GetAuthenticatedClient();
+            var coupon = CreateDefaultCouponVm(0);
+            coupon.Code = "AGEWEDSGFEW";
+
+            var response = await client.Request("api/coupons")
+                .AllowAnyHttpStatus()
+                .PostJsonAsync(coupon);
+
+            var body = await response.ResponseMessage.Content.ReadAsStringAsync();
+            var json = JObject.Parse(body);
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
+            json["codes"].ShouldNotBeNull();
+            json["codes"][0]["code"].Value<string>().ShouldBe("couponCodeAlreadyExists");
+            json["codes"][0]["parameters"][0]["name"].Value<string>().ShouldBe("code");
+            json["codes"][0]["parameters"][0]["value"].Value<string>().ShouldBe("AGEWEDSGFEW");
+        }
+
         private CouponVm CreateDefaultCouponVm(int id)
         {
             var coupon = new CouponVm

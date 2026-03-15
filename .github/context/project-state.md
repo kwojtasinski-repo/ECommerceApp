@@ -15,7 +15,7 @@
 |---|---|---|
 | **Sales/Orders BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ — **DB migration pending approval**; integration tests + atomic switch not started | DB migration approval (migration-policy.instructions.md) |
 | **Sales/Payments BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ — **DB migrations pending approval**; integration tests + atomic switch not started | Orders atomic switch must complete first |
-| **Frontend error pipeline** | ADR-0021 accepted — Phase 1 (error pipeline fix) and Phase 2 (bug fixes) **not yet started** | None — can start now |
+| **Frontend error pipeline** | ADR-0021 ✅ Accepted — Phase 1 (error pipeline fix) ✅ done, Phase 2 (bug fixes) ✅ done, Phase 3 (new-code fetch standard) ✅ ongoing — Phase 4 (BS5 `modalService.js` rewrite + AMD cleanup) deferred to BS5 milestone | BS5 upgrade scheduling |
 
 ---
 
