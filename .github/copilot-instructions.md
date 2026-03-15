@@ -51,3 +51,5 @@ Read `docs-index.instructions.md` to find the right file for any task. Follow it
 **Clarification rule**: If scope, BC ownership, or blocker status are unclear, ask a clarifying question BEFORE writing code.
 
 Context: `project-state.md`, `known-issues.md`, `repo-index.md`. Roadmaps: `docs/roadmap/README.md`. BC map: `bounded-context-map.md`.
+
+**Architecture suggestion rule**: `pre-edit.instructions.md` defines when to proactively suggest ADR, BC map, roadmap, or project-state updates. Always follow its triggers after completing implementation work.
