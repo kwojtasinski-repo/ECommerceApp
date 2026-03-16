@@ -8,40 +8,40 @@ using System.Threading.Tasks;
 
 namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
 {
-    internal sealed class ReservationRepository : IReservationRepository
+    internal sealed class StockHoldRepository : IStockHoldRepository
     {
         private readonly AvailabilityDbContext _context;
 
-        public ReservationRepository(AvailabilityDbContext context)
+        public StockHoldRepository(AvailabilityDbContext context)
         {
             _context = context;
         }
 
-        public async Task<Reservation?> GetByOrderAndProductAsync(int orderId, int productId, CancellationToken ct = default)
-            => await _context.Reservations
+        public async Task<StockHold?> GetByOrderAndProductAsync(int orderId, int productId, CancellationToken ct = default)
+            => await _context.StockHolds
                 .FirstOrDefaultAsync(r => r.OrderId == new ReservationOrderId(orderId) && r.ProductId == new StockProductId(productId), ct);
 
-        public async Task<IReadOnlyList<Reservation>> GetByOrderIdAsync(int orderId, CancellationToken ct = default)
-            => await _context.Reservations
+        public async Task<IReadOnlyList<StockHold>> GetByOrderIdAsync(int orderId, CancellationToken ct = default)
+            => await _context.StockHolds
                 .AsNoTracking()
                 .Where(r => r.OrderId == new ReservationOrderId(orderId))
                 .ToListAsync(ct);
 
-        public async Task AddAsync(Reservation reservation, CancellationToken ct = default)
+        public async Task AddAsync(StockHold stockHold, CancellationToken ct = default)
         {
-            _context.Reservations.Add(reservation);
+            _context.StockHolds.Add(stockHold);
             await _context.SaveChangesAsync(ct);
         }
 
-        public async Task UpdateAsync(Reservation reservation, CancellationToken ct = default)
+        public async Task UpdateAsync(StockHold stockHold, CancellationToken ct = default)
         {
-            _context.Reservations.Update(reservation);
+            _context.StockHolds.Update(stockHold);
             await _context.SaveChangesAsync(ct);
         }
 
-        public async Task DeleteAsync(Reservation reservation, CancellationToken ct = default)
+        public async Task DeleteAsync(StockHold stockHold, CancellationToken ct = default)
         {
-            _context.Reservations.Remove(reservation);
+            _context.StockHolds.Remove(stockHold);
             await _context.SaveChangesAsync(ct);
         }
     }

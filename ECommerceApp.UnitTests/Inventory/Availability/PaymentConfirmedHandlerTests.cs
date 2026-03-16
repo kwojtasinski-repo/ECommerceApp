@@ -31,7 +31,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
 
             await _handler.HandleAsync(message);
 
-            _stockService.Verify(s => s.ConfirmReservationsByOrderAsync(
+            _stockService.Verify(s => s.ConfirmHoldsByOrderAsync(
                 42, It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -61,7 +61,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
 
             await _handler.HandleAsync(message);
 
-            _stockService.Verify(s => s.ConfirmReservationsByOrderAsync(
+            _stockService.Verify(s => s.ConfirmHoldsByOrderAsync(
                 99, It.IsAny<CancellationToken>()), Times.Once);
         }
     }

@@ -13,14 +13,14 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
         public string TaskName => JobTaskName;
 
         private readonly IStockItemRepository _stockItemRepo;
-        private readonly IReservationRepository _reservationRepo;
+        private readonly IStockHoldRepository _stockHoldRepo;
 
         public PaymentWindowTimeoutJob(
             IStockItemRepository stockItemRepo,
-            IReservationRepository reservationRepo)
+            IStockHoldRepository stockHoldRepo)
         {
             _stockItemRepo = stockItemRepo;
-            _reservationRepo = reservationRepo;
+            _stockHoldRepo = stockHoldRepo;
         }
 
         public async Task ExecuteAsync(JobExecutionContext context, CancellationToken cancellationToken)
@@ -41,11 +41,11 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
                 return;
             }
 
-            var reservation = await _reservationRepo.GetByOrderAndProductAsync(orderId, productId, cancellationToken);
+            var stockHold = await _stockHoldRepo.GetByOrderAndProductAsync(orderId, productId, cancellationToken);
 
-            if (reservation is null || reservation.Status == ReservationStatus.Confirmed)
+            if (stockHold is null || !stockHold.IsGuaranteed)
             {
-                context.ReportSuccess("No-op: already paid or reservation not found.");
+                context.ReportSuccess("No-op: not in Guaranteed state.");
                 return;
             }
 
@@ -56,9 +56,10 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
                 await _stockItemRepo.UpdateAsync(stock, cancellationToken);
             }
 
-            await _reservationRepo.DeleteAsync(reservation, cancellationToken);
+            stockHold.MarkAsReleased();
+            await _stockHoldRepo.UpdateAsync(stockHold, cancellationToken);
 
-            context.ReportSuccess($"Reservation released for order {orderId}, product {productId}.");
+            context.ReportSuccess($"Stock hold released for order {orderId}, product {productId}.");
         }
     }
 }

@@ -16,7 +16,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
     internal sealed class StockService : IStockService
     {
         private readonly IStockItemRepository _stockItemRepo;
-        private readonly IReservationRepository _reservationRepo;
+        private readonly IStockHoldRepository _stockHoldRepo;
         private readonly IProductSnapshotRepository _productSnapshotRepo;
         private readonly IPendingStockAdjustmentRepository _pendingAdjustmentRepo;
         private readonly IDeferredJobScheduler _deferredScheduler;
@@ -24,14 +24,14 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
 
         public StockService(
             IStockItemRepository stockItemRepo,
-            IReservationRepository reservationRepo,
+            IStockHoldRepository stockHoldRepo,
             IProductSnapshotRepository productSnapshotRepo,
             IPendingStockAdjustmentRepository pendingAdjustmentRepo,
             IDeferredJobScheduler deferredScheduler,
             IMessageBroker broker)
         {
             _stockItemRepo = stockItemRepo;
-            _reservationRepo = reservationRepo;
+            _stockHoldRepo = stockHoldRepo;
             _productSnapshotRepo = productSnapshotRepo;
             _pendingAdjustmentRepo = pendingAdjustmentRepo;
             _deferredScheduler = deferredScheduler;
@@ -108,8 +108,8 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
                 await _broker.PublishAsync(new StockAvailabilityChanged(dto.ProductId, stock.AvailableQuantity, DateTime.UtcNow));
             }
 
-            var reservation = Reservation.Create(new StockProductId(dto.ProductId), new ReservationOrderId(dto.OrderId), dto.Quantity, dto.ExpiresAt);
-            await _reservationRepo.AddAsync(reservation, ct);
+            var stockHold = StockHold.Create(new StockProductId(dto.ProductId), new ReservationOrderId(dto.OrderId), dto.Quantity, dto.ExpiresAt);
+            await _stockHoldRepo.AddAsync(stockHold, ct);
 
             var timeoutEntityId = $"{dto.OrderId}:{dto.ProductId}:{dto.Quantity}";
             await _deferredScheduler.ScheduleAsync(PaymentWindowTimeoutJob.JobTaskName, timeoutEntityId, dto.ExpiresAt, ct);
@@ -118,13 +118,13 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
 
         public async Task<bool> ReleaseAsync(int orderId, int productId, int quantity, CancellationToken ct = default)
         {
-            var reservation = await _reservationRepo.GetByOrderAndProductAsync(orderId, productId, ct);
-            if (reservation is null)
+            var stockHold = await _stockHoldRepo.GetByOrderAndProductAsync(orderId, productId, ct);
+            if (stockHold is null)
             {
                 return false;
             }
 
-            if (reservation.IsGuaranteed)
+            if (stockHold.IsGuaranteed)
             {
                 var stock = await _stockItemRepo.GetByProductIdAsync(productId, ct);
                 if (stock != null && quantity <= stock.ReservedQuantity.Value)
@@ -135,30 +135,31 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
                 }
             }
 
-            await _reservationRepo.DeleteAsync(reservation, ct);
+            stockHold.MarkAsReleased();
+            await _stockHoldRepo.UpdateAsync(stockHold, ct);
             return true;
         }
 
         public async Task<bool> ConfirmAsync(int orderId, int productId, CancellationToken ct = default)
         {
-            var reservation = await _reservationRepo.GetByOrderAndProductAsync(orderId, productId, ct);
-            if (reservation is null)
+            var stockHold = await _stockHoldRepo.GetByOrderAndProductAsync(orderId, productId, ct);
+            if (stockHold is null)
             {
                 return false;
             }
 
-            reservation.Confirm();
-            await _reservationRepo.UpdateAsync(reservation, ct);
+            stockHold.Confirm();
+            await _stockHoldRepo.UpdateAsync(stockHold, ct);
             return true;
         }
 
-        public async Task ConfirmReservationsByOrderAsync(int orderId, CancellationToken ct = default)
+        public async Task ConfirmHoldsByOrderAsync(int orderId, CancellationToken ct = default)
         {
-            var reservations = await _reservationRepo.GetByOrderIdAsync(orderId, ct);
-            foreach (var reservation in reservations)
+            var stockHolds = await _stockHoldRepo.GetByOrderIdAsync(orderId, ct);
+            foreach (var stockHold in stockHolds)
             {
-                reservation.Confirm();
-                await _reservationRepo.UpdateAsync(reservation, ct);
+                stockHold.Confirm();
+                await _stockHoldRepo.UpdateAsync(stockHold, ct);
             }
         }
 
@@ -179,10 +180,11 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             await _stockItemRepo.UpdateAsync(stock, ct);
             await _broker.PublishAsync(new StockAvailabilityChanged(productId, stock.AvailableQuantity, DateTime.UtcNow));
 
-            var reservation = await _reservationRepo.GetByOrderAndProductAsync(orderId, productId, ct);
-            if (reservation != null)
+            var stockHold = await _stockHoldRepo.GetByOrderAndProductAsync(orderId, productId, ct);
+            if (stockHold != null)
             {
-                await _reservationRepo.DeleteAsync(reservation, ct);
+                stockHold.MarkAsFulfilled();
+                await _stockHoldRepo.UpdateAsync(stockHold, ct);
             }
 
             return true;

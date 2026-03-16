@@ -18,7 +18,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
     public class StockServiceTests
     {
         private readonly Mock<IStockItemRepository> _stockItemRepo;
-        private readonly Mock<IReservationRepository> _reservationRepo;
+        private readonly Mock<IStockHoldRepository> _stockHoldRepo;
         private readonly Mock<IProductSnapshotRepository> _productSnapshotRepo;
         private readonly Mock<IPendingStockAdjustmentRepository> _pendingAdjustmentRepo;
         private readonly Mock<IDeferredJobScheduler> _deferredScheduler;
@@ -27,7 +27,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         public StockServiceTests()
         {
             _stockItemRepo = new Mock<IStockItemRepository>();
-            _reservationRepo = new Mock<IReservationRepository>();
+            _stockHoldRepo = new Mock<IStockHoldRepository>();
             _productSnapshotRepo = new Mock<IProductSnapshotRepository>();
             _pendingAdjustmentRepo = new Mock<IPendingStockAdjustmentRepository>();
             _deferredScheduler = new Mock<IDeferredJobScheduler>();
@@ -36,7 +36,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
 
         private StockService CreateService() => new(
             _stockItemRepo.Object,
-            _reservationRepo.Object,
+            _stockHoldRepo.Object,
             _productSnapshotRepo.Object,
             _pendingAdjustmentRepo.Object,
             _deferredScheduler.Object,
@@ -149,7 +149,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
 
             result.Should().Be(ReserveStockResult.Success);
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Once);
-            _reservationRepo.Verify(r => r.AddAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Once);
+            _stockHoldRepo.Verify(r => r.AddAsync(It.IsAny<StockHold>(), It.IsAny<CancellationToken>()), Times.Once);
             _deferredScheduler.Verify(s => s.ScheduleAsync(
                 PaymentWindowTimeoutJob.JobTaskName,
                 It.Is<string>(e => e.StartsWith("42:1:3")),
@@ -170,7 +170,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             result.Should().Be(ReserveStockResult.Success);
             _stockItemRepo.Verify(r => r.GetByProductIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Never);
-            _reservationRepo.Verify(r => r.AddAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Once);
+            _stockHoldRepo.Verify(r => r.AddAsync(It.IsAny<StockHold>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -203,12 +203,12 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task ReleaseAsync_GuaranteedReservation_ShouldReleaseStockAndDeleteReservation()
         {
-            var reservation = Reservation.Create(new StockProductId(1), new ReservationOrderId(42), 3, DateTime.UtcNow.AddHours(1));
+            var stockHold = StockHold.Create(new StockProductId(1), new ReservationOrderId(42), 3, DateTime.UtcNow.AddHours(1));
             var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
             stock.Reserve(3);
 
-            _reservationRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(reservation);
+            _stockHoldRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(stockHold);
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(stock);
 
@@ -216,14 +216,14 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
 
             result.Should().BeTrue();
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Once);
-            _reservationRepo.Verify(r => r.DeleteAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Once);
+            _stockHoldRepo.Verify(r => r.UpdateAsync(It.IsAny<StockHold>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task ReleaseAsync_ReservationNotFound_ShouldReturnFalse()
         {
-            _reservationRepo.Setup(r => r.GetByOrderAndProductAsync(99, 1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Reservation)null);
+            _stockHoldRepo.Setup(r => r.GetByOrderAndProductAsync(99, 1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((StockHold)null);
 
             var result = await CreateService().ReleaseAsync(99, 1, 3);
 
@@ -234,12 +234,12 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task ReleaseAsync_QuantityExceedsReserved_ShouldSkipStockUpdateButDeleteReservation()
         {
-            var reservation = Reservation.Create(new StockProductId(1), new ReservationOrderId(42), 5, DateTime.UtcNow.AddHours(1));
+            var stockHold = StockHold.Create(new StockProductId(1), new ReservationOrderId(42), 5, DateTime.UtcNow.AddHours(1));
             var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
             stock.Reserve(2);
 
-            _reservationRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(reservation);
+            _stockHoldRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(stockHold);
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(stock);
 
@@ -247,7 +247,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
 
             result.Should().BeTrue();
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Never);
-            _reservationRepo.Verify(r => r.DeleteAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Once);
+            _stockHoldRepo.Verify(r => r.UpdateAsync(It.IsAny<StockHold>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         // ── ConfirmAsync ──────────────────────────────────────────────────────
@@ -255,22 +255,22 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task ConfirmAsync_ExistingReservation_ShouldConfirmAndUpdate()
         {
-            var reservation = Reservation.Create(new StockProductId(1), new ReservationOrderId(42), 3, DateTime.UtcNow.AddHours(1));
-            _reservationRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(reservation);
+            var stockHold = StockHold.Create(new StockProductId(1), new ReservationOrderId(42), 3, DateTime.UtcNow.AddHours(1));
+            _stockHoldRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(stockHold);
 
             var result = await CreateService().ConfirmAsync(42, 1);
 
             result.Should().BeTrue();
-            reservation.Status.Should().Be(ReservationStatus.Confirmed);
-            _reservationRepo.Verify(r => r.UpdateAsync(reservation, It.IsAny<CancellationToken>()), Times.Once);
+            stockHold.Status.Should().Be(StockHoldStatus.Confirmed);
+            _stockHoldRepo.Verify(r => r.UpdateAsync(stockHold, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
         public async Task ConfirmAsync_ReservationNotFound_ShouldReturnFalse()
         {
-            _reservationRepo.Setup(r => r.GetByOrderAndProductAsync(99, 1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Reservation)null);
+            _stockHoldRepo.Setup(r => r.GetByOrderAndProductAsync(99, 1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((StockHold)null);
 
             var result = await CreateService().ConfirmAsync(99, 1);
 
@@ -282,40 +282,40 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         [Fact]
         public async Task ConfirmReservationsByOrderAsync_MultipleReservations_ShouldConfirmAll()
         {
-            var r1 = Reservation.Create(new StockProductId(1), new ReservationOrderId(42), 3, DateTime.UtcNow.AddHours(1));
-            var r2 = Reservation.Create(new StockProductId(2), new ReservationOrderId(42), 5, DateTime.UtcNow.AddHours(1));
-            _reservationRepo.Setup(r => r.GetByOrderIdAsync(42, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<Reservation> { r1, r2 });
+            var r1 = StockHold.Create(new StockProductId(1), new ReservationOrderId(42), 3, DateTime.UtcNow.AddHours(1));
+            var r2 = StockHold.Create(new StockProductId(2), new ReservationOrderId(42), 5, DateTime.UtcNow.AddHours(1));
+            _stockHoldRepo.Setup(r => r.GetByOrderIdAsync(42, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<StockHold> { r1, r2 });
 
-            await CreateService().ConfirmReservationsByOrderAsync(42);
+            await CreateService().ConfirmHoldsByOrderAsync(42);
 
-            r1.Status.Should().Be(ReservationStatus.Confirmed);
-            r2.Status.Should().Be(ReservationStatus.Confirmed);
-            _reservationRepo.Verify(r => r.UpdateAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+            r1.Status.Should().Be(StockHoldStatus.Confirmed);
+            r2.Status.Should().Be(StockHoldStatus.Confirmed);
+            _stockHoldRepo.Verify(r => r.UpdateAsync(It.IsAny<StockHold>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
         }
 
         [Fact]
         public async Task ConfirmReservationsByOrderAsync_NoReservations_ShouldNotUpdate()
         {
-            _reservationRepo.Setup(r => r.GetByOrderIdAsync(99, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<Reservation>());
+            _stockHoldRepo.Setup(r => r.GetByOrderIdAsync(99, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<StockHold>());
 
-            await CreateService().ConfirmReservationsByOrderAsync(99);
+            await CreateService().ConfirmHoldsByOrderAsync(99);
 
-            _reservationRepo.Verify(r => r.UpdateAsync(It.IsAny<Reservation>(), It.IsAny<CancellationToken>()), Times.Never);
+            _stockHoldRepo.Verify(r => r.UpdateAsync(It.IsAny<StockHold>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
         public async Task ConfirmReservationsByOrderAsync_SingleReservation_ShouldConfirmAndUpdate()
         {
-            var reservation = Reservation.Create(new StockProductId(5), new ReservationOrderId(10), 2, DateTime.UtcNow.AddHours(1));
-            _reservationRepo.Setup(r => r.GetByOrderIdAsync(10, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new List<Reservation> { reservation });
+            var stockHold = StockHold.Create(new StockProductId(5), new ReservationOrderId(10), 2, DateTime.UtcNow.AddHours(1));
+            _stockHoldRepo.Setup(r => r.GetByOrderIdAsync(10, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<StockHold> { stockHold });
 
-            await CreateService().ConfirmReservationsByOrderAsync(10);
+            await CreateService().ConfirmHoldsByOrderAsync(10);
 
-            reservation.Status.Should().Be(ReservationStatus.Confirmed);
-            _reservationRepo.Verify(r => r.UpdateAsync(reservation, It.IsAny<CancellationToken>()), Times.Once);
+            stockHold.Status.Should().Be(StockHoldStatus.Confirmed);
+            _stockHoldRepo.Verify(r => r.UpdateAsync(stockHold, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         // ── FulfillAsync ──────────────────────────────────────────────────────
@@ -325,18 +325,18 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         {
             var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
             stock.Reserve(5);
-            var reservation = Reservation.Create(new StockProductId(1), new ReservationOrderId(42), 5, DateTime.UtcNow.AddHours(1));
+            var stockHold = StockHold.Create(new StockProductId(1), new ReservationOrderId(42), 5, DateTime.UtcNow.AddHours(1));
 
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(stock);
-            _reservationRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(reservation);
+            _stockHoldRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(stockHold);
 
             var result = await CreateService().FulfillAsync(42, 1, 5);
 
             result.Should().BeTrue();
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Once);
-            _reservationRepo.Verify(r => r.DeleteAsync(reservation, It.IsAny<CancellationToken>()), Times.Once);
+            _stockHoldRepo.Verify(r => r.UpdateAsync(stockHold, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]

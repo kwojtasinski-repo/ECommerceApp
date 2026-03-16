@@ -21,7 +21,7 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability
 
             return services
                 .AddScoped<IStockItemRepository, StockItemRepository>()
-                .AddScoped<IReservationRepository, ReservationRepository>()
+                .AddScoped<IStockHoldRepository, StockHoldRepository>()
                 .AddScoped<IProductSnapshotRepository, ProductSnapshotRepository>()
                 .AddScoped<IPendingStockAdjustmentRepository, PendingStockAdjustmentRepository>();
         }

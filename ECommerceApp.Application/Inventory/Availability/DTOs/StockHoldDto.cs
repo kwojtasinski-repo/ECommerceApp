@@ -2,7 +2,7 @@ using System;
 
 namespace ECommerceApp.Application.Inventory.Availability.DTOs
 {
-    public sealed record ReservationDto(
+    public sealed record StockHoldDto(
         int Id,
         int ProductId,
         int OrderId,

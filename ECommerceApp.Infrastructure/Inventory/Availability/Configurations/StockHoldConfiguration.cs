@@ -5,15 +5,15 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace ECommerceApp.Infrastructure.Inventory.Availability.Configurations
 {
-    internal sealed class ReservationConfiguration : IEntityTypeConfiguration<Reservation>
+    internal sealed class StockHoldConfiguration : IEntityTypeConfiguration<StockHold>
     {
-        public void Configure(EntityTypeBuilder<Reservation> builder)
+        public void Configure(EntityTypeBuilder<StockHold> builder)
         {
-            builder.ToTable("Reservations");
+            builder.ToTable("StockHolds");
 
             builder.HasKey(r => r.Id);
             builder.Property(r => r.Id)
-                   .HasConversion(x => x.Value, v => new ReservationId(v))
+                   .HasConversion(x => x.Value, v => new StockHoldId(v))
                    .ValueGeneratedOnAdd();
 
             builder.Property(r => r.ProductId)
@@ -33,7 +33,21 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Configurations
             builder.Property(r => r.ReservedAt).IsRequired();
             builder.Property(r => r.ExpiresAt).IsRequired();
 
-            builder.HasIndex(r => new { r.OrderId, r.ProductId });
+            var guaranteedStatus = (byte)StockHoldStatus.Guaranteed;
+            var confirmedStatus = (byte)StockHoldStatus.Confirmed;
+            var activeFilter = $"[Status] IN ({guaranteedStatus}, {confirmedStatus})";
+
+            builder.HasIndex(r => new { r.OrderId, r.ProductId })
+                   .HasFilter(activeFilter);
+
+            builder.HasIndex(r => r.ReservedAt)
+                   .IsDescending()
+                   .IncludeProperties(
+                       nameof(StockHold.ProductId),
+                       nameof(StockHold.OrderId),
+                       nameof(StockHold.Quantity),
+                       nameof(StockHold.ExpiresAt))
+                   .HasFilter(activeFilter);
         }
     }
 }

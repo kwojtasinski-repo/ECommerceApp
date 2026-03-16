@@ -167,12 +167,13 @@ public class StockItem
 }
 ```
 
-### 2. `Reservation` entity (active-holds-only table)
+### 2. `Reservation` entity (reservation lifecycle table)
 
 `Reservation` is a **separate entity**, never a collection inside `StockItem`. It is queried
-independently when needed. The table holds only **active** reservations — rows are deleted when
-the reservation lifecycle ends (timeout, cancellation, or fulfillment). This keeps the table
-small and avoids accumulating dead rows.
+independently when needed. The table holds **all** reservations — both active and terminal.
+Terminal transitions update `Status` to `Released` or `Fulfilled` instead of deleting the row.
+This preserves the full reservation history for the `Historia zmian` audit view in the
+Inventory admin UI (ADR-0022).
 
 One `Order` with multiple `OrderItem`s produces **one `Reservation` row per product** — a
 single `OrderId` can appear in multiple rows.
@@ -205,28 +206,34 @@ public class Reservation
 
     public bool IsGuaranteed => Status == ReservationStatus.Guaranteed; // pure predicate; guards PaymentWindowTimeoutJob
 
-    public void Confirm() => Status = ReservationStatus.Confirmed;
+    public void Confirm()         => Status = ReservationStatus.Confirmed;
+    public void MarkAsReleased()  => Status = ReservationStatus.Released;
+    public void MarkAsFulfilled() => Status = ReservationStatus.Fulfilled;
 }
 
-public enum ReservationStatus
+public enum ReservationStatus : byte
 {
-    Guaranteed,  // stock counter held — awaiting payment
-    Confirmed    // payment confirmed — awaiting shipment
+    Guaranteed = 0,  // active   — stock counter held, awaiting payment
+    Confirmed  = 1,  // active   — payment confirmed, awaiting shipment
+    Released   = 2,  // terminal — stock returned (payment timeout or order cancellation)
+    Fulfilled  = 3,  // terminal — stock consumed (OrderShipped); mirrors OrderStatus.Fulfilled
 }
 ```
 
-**Terminal transitions** (Reservation row deleted, not updated):
+**Terminal transitions** (Reservation row updated to terminal status, never deleted):
 
 | Trigger | Counter change on `StockItem` | Reservation row |
 |---|---|---|
-| `PaymentWindowTimeout` (Guaranteed) | `Release(qty)` | **DELETE** |
-| `OrderCancelled` | `Release(qty)` | **DELETE** |
-| `OrderShipped` | `Fulfill(qty)` | **DELETE** |
-| `RefundApproved` | `Return(qty)` | — (already deleted after fulfillment) |
+| `PaymentWindowTimeout` (Guaranteed) | `Release(qty)` | `Status → Released` |
+| `OrderCancelled` | `Release(qty)` | `Status → Released` |
+| `OrderShipped` | `Fulfill(qty)` | `Status → Fulfilled` |
+| `RefundApproved` | `Return(qty)` | — (already in terminal state after fulfillment) |
 | `PaymentWindowTimeout` (Confirmed) | no-op | no-op |
 
-`ConfirmedAt`, `FulfilledAt`, `ReleasedAt` are **not stored** on the row — domain events carry
-the audit trail.
+Active rows: `Status IN (Guaranteed, Confirmed)` — queried by the Rezerwacje admin view.
+Historical rows: `Status IN (Released, Fulfilled)` — queried by the Historia zmian audit view,
+ordered `ReservedAt DESC`. `ExpiresAt` and `ReservedAt` provide temporal context without
+additional columns.
 
 ### 3. `ProductSnapshot` read model (ACL from Catalog)
 
@@ -308,11 +315,11 @@ PaymentWindowTimeoutJob.ExecuteAsync(context, ct):
      If parts.Length != 3 or any parse fails → context.ReportFailure("Invalid EntityId format"); return
      orderId = parts[0], productId = parts[1], quantity = parts[2]
   3. Load Reservation by (orderId, productId)
-  4. If not found OR Status == Confirmed → context.ReportSuccess("No-op: already paid or expired"); return
-  5. If Status == Guaranteed:
-       StockItem.Release(quantity)
-       Delete Reservation
-       context.ReportSuccess()
+  4. If not found OR Status != Guaranteed → context.ReportSuccess("No-op: not in Guaranteed state"); return
+  5. StockItem.Release(quantity)
+     reservation.MarkAsReleased()
+     UpdateAsync(reservation)     ← soft-terminal; row preserved for audit
+     context.ReportSuccess()
 ```
 
 ### 5. Domain events
@@ -354,6 +361,7 @@ public interface IReservationRepository
         int orderId, CancellationToken ct = default);
     Task AddAsync(Reservation reservation, CancellationToken ct = default);
     Task UpdateAsync(Reservation reservation, CancellationToken ct = default);
+    // DeleteAsync retained for compatibility; terminal transitions use UpdateAsync + MarkAsReleased/MarkAsFulfilled instead.
     Task DeleteAsync(Reservation reservation, CancellationToken ct = default);
 }
 
@@ -411,7 +419,7 @@ inventory.Reservations
   ProductId        int NOT NULL
   OrderId          int NOT NULL
   Quantity         int NOT NULL
-  Status           tinyint NOT NULL           ← 0=Guaranteed, 1=Confirmed
+  Status           tinyint NOT NULL           ← 0=Guaranteed, 1=Confirmed, 2=Released, 3=Fulfilled
   ReservedAt       datetime2 NOT NULL
   ExpiresAt        datetime2 NOT NULL         ← = OrderPlaced.ExpiresAt
 

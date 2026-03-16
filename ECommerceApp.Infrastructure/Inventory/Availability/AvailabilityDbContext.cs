@@ -7,7 +7,7 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability
     public class AvailabilityDbContext : DbContext
     {
         public DbSet<StockItem> StockItems => Set<StockItem>();
-        public DbSet<Reservation> Reservations => Set<Reservation>();
+        public DbSet<StockHold> StockHolds => Set<StockHold>();
         public DbSet<ProductSnapshot> ProductSnapshots => Set<ProductSnapshot>();
         public DbSet<PendingStockAdjustment> PendingStockAdjustments => Set<PendingStockAdjustment>();
 
