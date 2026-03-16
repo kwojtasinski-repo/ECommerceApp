@@ -10,6 +10,7 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability
         public DbSet<StockHold> StockHolds => Set<StockHold>();
         public DbSet<ProductSnapshot> ProductSnapshots => Set<ProductSnapshot>();
         public DbSet<PendingStockAdjustment> PendingStockAdjustments => Set<PendingStockAdjustment>();
+        public DbSet<StockAuditEntry> StockAuditEntries => Set<StockAuditEntry>();
 
         public AvailabilityDbContext(DbContextOptions<AvailabilityDbContext> options) : base(options)
         {

@@ -27,6 +27,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
 
             var productIds = productList.Products.Select(p => p.Id).ToList();
             var stockByProductId = new Dictionary<int, StockItemDto>(productIds.Count);
+            // TODO: get it from table StockSnapshots -> no raw query to inventory
             await foreach (var s in _stock.GetByProductIdsAsync(productIds, ct))
             {
                 stockByProductId[s.ProductId] = s;

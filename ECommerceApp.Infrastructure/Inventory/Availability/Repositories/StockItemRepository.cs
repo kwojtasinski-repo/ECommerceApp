@@ -91,5 +91,17 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
 
             return await query.CountAsync(ct);
         }
+
+        public async Task<IReadOnlyList<StockItem>> GetAllPagedAsync(
+            int page, int pageSize, CancellationToken ct = default)
+            => await _context.StockItems
+                .AsNoTracking()
+                .OrderBy(s => s.ProductId)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
+
+        public async Task<int> GetAllCountAsync(CancellationToken ct = default)
+            => await _context.StockItems.AsNoTracking().CountAsync(ct);
     }
 }

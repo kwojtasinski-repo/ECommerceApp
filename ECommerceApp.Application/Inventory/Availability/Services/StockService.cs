@@ -21,6 +21,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
         private readonly IPendingStockAdjustmentRepository _pendingAdjustmentRepo;
         private readonly IDeferredJobScheduler _deferredScheduler;
         private readonly IMessageBroker _broker;
+        private readonly IStockAuditRepository _auditRepo;
 
         public StockService(
             IStockItemRepository stockItemRepo,
@@ -28,7 +29,8 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             IProductSnapshotRepository productSnapshotRepo,
             IPendingStockAdjustmentRepository pendingAdjustmentRepo,
             IDeferredJobScheduler deferredScheduler,
-            IMessageBroker broker)
+            IMessageBroker broker,
+            IStockAuditRepository auditRepo)
         {
             _stockItemRepo = stockItemRepo;
             _stockHoldRepo = stockHoldRepo;
@@ -36,6 +38,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             _pendingAdjustmentRepo = pendingAdjustmentRepo;
             _deferredScheduler = deferredScheduler;
             _broker = broker;
+            _auditRepo = auditRepo;
         }
 
         public async Task<StockItemDto?> GetByProductIdAsync(int productId, CancellationToken ct = default)
@@ -77,6 +80,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
 
             var (stock, _) = StockItem.Create(new StockProductId(productId), new StockQuantity(initialQuantity));
             await _stockItemRepo.AddAsync(stock, ct);
+            await _auditRepo.AddAsync(StockAuditEntry.Create(productId, StockChangeType.Initialized, 0, stock.AvailableQuantity, null, DateTime.UtcNow), ct);
             await _broker.PublishAsync(new StockAvailabilityChanged(productId, stock.AvailableQuantity, DateTime.UtcNow));
             return true;
         }
@@ -98,13 +102,19 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             {
                 var stock = await _stockItemRepo.GetByProductIdAsync(dto.ProductId, ct);
                 if (stock is null)
+                {
                     return ReserveStockResult.StockNotFound;
+                }
 
                 if (dto.Quantity > stock.AvailableQuantity)
+                {
                     return ReserveStockResult.InsufficientStock;
+                }
 
+                var reserveBefore = stock.AvailableQuantity;
                 stock.Reserve(dto.Quantity);
                 await _stockItemRepo.UpdateAsync(stock, ct);
+                await _auditRepo.AddAsync(StockAuditEntry.Create(dto.ProductId, StockChangeType.Reserved, reserveBefore, stock.AvailableQuantity, dto.OrderId, DateTime.UtcNow), ct);
                 await _broker.PublishAsync(new StockAvailabilityChanged(dto.ProductId, stock.AvailableQuantity, DateTime.UtcNow));
             }
 
@@ -129,8 +139,10 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
                 var stock = await _stockItemRepo.GetByProductIdAsync(productId, ct);
                 if (stock != null && quantity <= stock.ReservedQuantity.Value)
                 {
+                    var releaseBefore = stock.AvailableQuantity;
                     stock.Release(quantity);
                     await _stockItemRepo.UpdateAsync(stock, ct);
+                    await _auditRepo.AddAsync(StockAuditEntry.Create(productId, StockChangeType.Released, releaseBefore, stock.AvailableQuantity, orderId, DateTime.UtcNow), ct);
                     await _broker.PublishAsync(new StockAvailabilityChanged(productId, stock.AvailableQuantity, DateTime.UtcNow));
                 }
             }
@@ -176,8 +188,10 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
                 return false;
             }
 
+            var fulfillBefore = stock.AvailableQuantity;
             stock.Fulfill(quantity);
             await _stockItemRepo.UpdateAsync(stock, ct);
+            await _auditRepo.AddAsync(StockAuditEntry.Create(productId, StockChangeType.Fulfilled, fulfillBefore, stock.AvailableQuantity, orderId, DateTime.UtcNow), ct);
             await _broker.PublishAsync(new StockAvailabilityChanged(productId, stock.AvailableQuantity, DateTime.UtcNow));
 
             var stockHold = await _stockHoldRepo.GetByOrderAndProductAsync(orderId, productId, ct);
@@ -198,8 +212,10 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
                 return false;
             }
 
+            var returnBefore = stock.AvailableQuantity;
             stock.Return(quantity);
             await _stockItemRepo.UpdateAsync(stock, ct);
+            await _auditRepo.AddAsync(StockAuditEntry.Create(productId, StockChangeType.Returned, returnBefore, stock.AvailableQuantity, null, DateTime.UtcNow), ct);
             await _broker.PublishAsync(new StockAvailabilityChanged(productId, stock.AvailableQuantity, DateTime.UtcNow));
             return true;
         }

@@ -1,5 +1,7 @@
 using ECommerceApp.Domain.Inventory.Availability;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -18,6 +20,13 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
             => await _context.ProductSnapshots
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.ProductId == productId, ct);
+
+        public async Task<IReadOnlyList<ProductSnapshot>> GetByProductIdsAsync(
+            IReadOnlyList<int> productIds, CancellationToken ct = default)
+            => await _context.ProductSnapshots
+                .AsNoTracking()
+                .Where(p => productIds.Contains(p.ProductId))
+                .ToListAsync(ct);
 
         public async Task UpsertAsync(ProductSnapshot snapshot, CancellationToken ct = default)
         {

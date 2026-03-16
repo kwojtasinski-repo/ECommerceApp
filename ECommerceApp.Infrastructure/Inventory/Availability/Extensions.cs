@@ -12,6 +12,7 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability
     {
         public static IServiceCollection AddAvailabilityInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
+            services.AddMemoryCache();
             services.Configure<InventoryOptions>(configuration.GetSection(InventoryOptions.SectionName));
 
             services.AddDbContext<AvailabilityDbContext>(options =>
@@ -23,7 +24,8 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability
                 .AddScoped<IStockItemRepository, StockItemRepository>()
                 .AddScoped<IStockHoldRepository, StockHoldRepository>()
                 .AddScoped<IProductSnapshotRepository, ProductSnapshotRepository>()
-                .AddScoped<IPendingStockAdjustmentRepository, PendingStockAdjustmentRepository>();
+                .AddScoped<IPendingStockAdjustmentRepository, PendingStockAdjustmentRepository>()
+                .AddScoped<IStockAuditRepository, StockAuditRepository>();
         }
     }
 }

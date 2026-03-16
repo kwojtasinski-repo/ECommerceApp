@@ -1,0 +1,105 @@
+@using ECommerceApp.Application.Inventory.Availability.ViewModels
+@model StockAuditVm
+@{ ViewData["Title"] = "Historia zmian stanu magazynu"; }
+
+<div class="container mt-4">
+    <h2>Historia zmian stanu magazynu</h2>
+
+    <table class="table table-bordered table-sm">
+        <thead class="thead-light">
+            <tr>
+                <th>Kiedy</th>
+                <th>Produkt</th>
+                <th>Typ zmiany</th>
+                <th>Przed</th>
+                <th>Po</th>
+                <th>Delta</th>
+                <th>Zamówienie</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var entry in Model.Products)
+            {
+                <tr>
+                    <td>@entry.OccurredAt.ToString("g")</td>
+                    <td>
+                        @entry.ProductName
+                        <small class="text-muted">#@entry.ProductId</small>
+                    </td>
+                    <td>
+                        @switch (entry.ChangeType)
+                        {
+                            case "Initialized":
+                                <span class="badge badge-secondary">Inicjalizacja</span>
+                                break;
+                            case "Reserved":
+                                <span class="badge badge-primary">Rezerwacja</span>
+                                break;
+                            case "Released":
+                                <span class="badge badge-warning">Zwolnienie</span>
+                                break;
+                            case "Fulfilled":
+                                <span class="badge badge-dark">Realizacja</span>
+                                break;
+                            case "Returned":
+                                <span class="badge badge-info">Zwrot</span>
+                                break;
+                            case "Adjusted":
+                                <span class="badge badge-light border">Korekta</span>
+                                break;
+                            default:
+                                <span class="badge badge-secondary">@entry.ChangeType</span>
+                                break;
+                        }
+                    </td>
+                    <td>@entry.QuantityBefore</td>
+                    <td>@entry.QuantityAfter</td>
+                    <td>
+                        @if (entry.Delta > 0)
+                        {
+                            <span class="text-success font-weight-bold">+@entry.Delta</span>
+                        }
+                        else if (entry.Delta < 0)
+                        {
+                            <span class="text-danger font-weight-bold">@entry.Delta</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">0</span>
+                        }
+                    </td>
+                    <td>
+                        @if (entry.OrderId.HasValue)
+                        {
+                            <span>#@entry.OrderId</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">—</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @{
+        var totalPages = (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize);
+    }
+    <div class="d-flex justify-content-between align-items-center">
+        <small class="text-muted">Łącznie: @Model.TotalCount wpisów</small>
+        <div>
+            @if (Model.Page > 1)
+            {
+                <a asp-action="Audit" asp-route-page="@(Model.Page - 1)" asp-route-pageSize="@Model.PageSize"
+                   class="btn btn-outline-secondary btn-sm">← Poprzednia</a>
+            }
+            <span class="mx-2">Strona @Model.Page / @(totalPages > 0 ? totalPages : 1)</span>
+            @if (Model.Page < totalPages)
+            {
+                <a asp-action="Audit" asp-route-page="@(Model.Page + 1)" asp-route-pageSize="@Model.PageSize"
+                   class="btn btn-outline-secondary btn-sm">Następna →</a>
+            }
+        </div>
+    </div>
+</div>

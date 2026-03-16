@@ -27,6 +27,27 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
                 .Where(r => r.OrderId == new ReservationOrderId(orderId))
                 .ToListAsync(ct);
 
+        public async Task<IReadOnlyList<StockHold>> GetPagedAsync(
+            int page, int pageSize, StockHoldStatus[]? statuses, CancellationToken ct = default)
+        {
+            var query = _context.StockHolds.AsNoTracking();
+            if (statuses != null)
+                query = query.Where(h => statuses.Contains(h.Status));
+            return await query
+                .OrderByDescending(h => h.ReservedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
+        }
+
+        public async Task<int> GetCountAsync(StockHoldStatus[]? statuses, CancellationToken ct = default)
+        {
+            var query = _context.StockHolds.AsNoTracking();
+            if (statuses != null)
+                query = query.Where(h => statuses.Contains(h.Status));
+            return await query.CountAsync(ct);
+        }
+
         public async Task AddAsync(StockHold stockHold, CancellationToken ct = default)
         {
             _context.StockHolds.Add(stockHold);

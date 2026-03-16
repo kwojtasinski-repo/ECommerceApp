@@ -19,18 +19,21 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         private readonly Mock<IStockItemRepository> _stockItemRepo;
         private readonly Mock<IPendingStockAdjustmentRepository> _pendingAdjustmentRepo;
         private readonly Mock<IMessageBroker> _broker;
+        private readonly Mock<IStockAuditRepository> _auditRepo;
 
         public StockAdjustmentJobTests()
         {
             _stockItemRepo = new Mock<IStockItemRepository>();
             _pendingAdjustmentRepo = new Mock<IPendingStockAdjustmentRepository>();
             _broker = new Mock<IMessageBroker>();
+            _auditRepo = new Mock<IStockAuditRepository>();
         }
 
         private StockAdjustmentJob CreateJob() => new(
             _stockItemRepo.Object,
             _pendingAdjustmentRepo.Object,
-            _broker.Object);
+            _broker.Object,
+            _auditRepo.Object);
 
         private static JobExecutionContext ContextFor(string entityId) =>
             new(entityId, Guid.NewGuid().ToString());

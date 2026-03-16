@@ -2,6 +2,8 @@ using ECommerceApp.Domain.Inventory.Availability;
 using ECommerceApp.Domain.Inventory.Availability.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -20,6 +22,13 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
             => await _context.PendingStockAdjustments
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.ProductId == new StockProductId(productId), ct);
+
+        public async Task<IReadOnlyList<PendingStockAdjustment>> GetByProductIdsAsync(
+            IReadOnlyList<int> productIds, CancellationToken ct = default)
+            => await _context.PendingStockAdjustments
+                .AsNoTracking()
+                .Where(p => productIds.Contains(p.ProductId.Value))
+                .ToListAsync(ct);
 
         public async Task UpsertAsync(int productId, int newQuantity, CancellationToken ct = default)
         {

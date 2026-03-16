@@ -46,6 +46,7 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Configurations
                        nameof(StockHold.ProductId),
                        nameof(StockHold.OrderId),
                        nameof(StockHold.Quantity),
+                       nameof(StockHold.Status),
                        nameof(StockHold.ExpiresAt))
                    .HasFilter(activeFilter);
         }

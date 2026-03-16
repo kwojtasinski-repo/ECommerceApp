@@ -18,15 +18,18 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
         private readonly IStockItemRepository _stockItemRepo;
         private readonly IPendingStockAdjustmentRepository _pendingAdjustmentRepo;
         private readonly IMessageBroker _broker;
+        private readonly IStockAuditRepository _auditRepo;
 
         public StockAdjustmentJob(
             IStockItemRepository stockItemRepo,
             IPendingStockAdjustmentRepository pendingAdjustmentRepo,
-            IMessageBroker broker)
+            IMessageBroker broker,
+            IStockAuditRepository auditRepo)
         {
             _stockItemRepo = stockItemRepo;
             _pendingAdjustmentRepo = pendingAdjustmentRepo;
             _broker = broker;
+            _auditRepo = auditRepo;
         }
 
         public async Task ExecuteAsync(JobExecutionContext context, CancellationToken cancellationToken)
@@ -52,6 +55,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
 
             var version = pending.Version;
             StockItem? stock = null;
+            int adjustBefore = 0;
 
             const int maxAttempts = 5;
             for (var attempt = 0; attempt < maxAttempts; attempt++)
@@ -69,6 +73,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
                     return;
                 }
 
+                adjustBefore = stock.AvailableQuantity;
                 stock.Adjust(pending.NewQuantity);
 
                 try
@@ -88,6 +93,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
             }
 
             await _pendingAdjustmentRepo.DeleteIfVersionMatchesAsync(productId, version, cancellationToken);
+            await _auditRepo.AddAsync(StockAuditEntry.Create(productId, StockChangeType.Adjusted, adjustBefore, stock!.AvailableQuantity, null, DateTime.UtcNow), cancellationToken);
             await _broker.PublishAsync(new StockAvailabilityChanged(productId, stock.AvailableQuantity, DateTime.UtcNow));
 
             context.ReportSuccess($"Stock adjusted to {pending.NewQuantity} for product {productId}.");

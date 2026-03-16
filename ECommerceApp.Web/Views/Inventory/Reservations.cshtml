@@ -1,0 +1,137 @@
+@using ECommerceApp.Application.Inventory.Availability.ViewModels
+@model StockHoldsVm
+@{ ViewData["Title"] = "Rezerwacje magazynowe"; }
+
+<div class="container mt-4">
+    <h2>Rezerwacje magazynowe</h2>
+
+    @if (TempData["Success"] is string msg)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @msg
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
+        </div>
+    }
+
+    <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+            <a class="nav-link @(Model.StatusFilter == "active" ? "active" : "")"
+               asp-action="Reservations" asp-route-status="active" asp-route-page="1" asp-route-pageSize="@Model.PageSize">
+                Aktywne
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link @(Model.StatusFilter == "all" ? "active" : "")"
+               asp-action="Reservations" asp-route-status="all" asp-route-page="1" asp-route-pageSize="@Model.PageSize">
+                Wszystkie
+            </a>
+        </li>
+    </ul>
+
+    <table class="table table-bordered table-sm">
+        <thead class="thead-light">
+            <tr>
+                <th>ID</th>
+                <th>Produkt</th>
+                <th>Zamówienie</th>
+                <th>Ilość</th>
+                <th>Status</th>
+                <th>Zarezerwowano</th>
+                <th>Wygasa</th>
+                <th style="width:180px"></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var hold in Model.Items)
+            {
+                <tr>
+                    <td>@hold.Id</td>
+                    <td>
+                        @hold.ProductName
+                        <small class="text-muted">#@hold.ProductId</small>
+                    </td>
+                    <td>#@hold.OrderId</td>
+                    <td>@hold.Quantity</td>
+                    <td>
+                        @switch (hold.Status)
+                        {
+                            case "Guaranteed":
+                                <span class="badge badge-primary">Gwarantowana</span>
+                                break;
+                            case "Confirmed":
+                                <span class="badge badge-success">Potwierdzona</span>
+                                break;
+                            case "Released":
+                                <span class="badge badge-secondary">Zwolniona</span>
+                                break;
+                            case "Fulfilled":
+                                <span class="badge badge-dark">Zrealizowana</span>
+                                break;
+                            default:
+                                <span class="badge badge-light">@hold.Status</span>
+                                break;
+                        }
+                    </td>
+                    <td>@hold.ReservedAt.ToString("g")</td>
+                    <td>
+                        @if (hold.ExpiresAt < DateTime.UtcNow)
+                        {
+                            <span class="text-danger">@hold.ExpiresAt.ToString("g")</span>
+                        }
+                        else
+                        {
+                            @hold.ExpiresAt.ToString("g")
+                        }
+                    </td>
+                    <td>
+                        @if (hold.CanRelease)
+                        {
+                            <form asp-action="Release" method="post" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="orderId" value="@hold.OrderId" />
+                                <input type="hidden" name="productId" value="@hold.ProductId" />
+                                <input type="hidden" name="quantity" value="@hold.Quantity" />
+                                <button type="submit" class="btn btn-sm btn-outline-warning"
+                                        onclick="return confirm('Zwolnić rezerwację?')">
+                                    Zwolnij
+                                </button>
+                            </form>
+                        }
+                        @if (hold.CanConfirm)
+                        {
+                            <form asp-action="Confirm" method="post" class="d-inline ml-1">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="orderId" value="@hold.OrderId" />
+                                <input type="hidden" name="productId" value="@hold.ProductId" />
+                                <button type="submit" class="btn btn-sm btn-outline-success"
+                                        onclick="return confirm('Potwierdzić rezerwację?')">
+                                    Potwierdź
+                                </button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @{
+        var totalPages = (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize);
+    }
+    <div class="d-flex justify-content-between align-items-center">
+        <small class="text-muted">Łącznie: @Model.TotalCount rezerwacji</small>
+        <div>
+            @if (Model.Page > 1)
+            {
+                <a asp-action="Reservations" asp-route-page="@(Model.Page - 1)" asp-route-pageSize="@Model.PageSize" asp-route-status="@Model.StatusFilter"
+                   class="btn btn-outline-secondary btn-sm">← Poprzednia</a>
+            }
+            <span class="mx-2">Strona @Model.Page / @totalPages</span>
+            @if (Model.Page < totalPages)
+            {
+                <a asp-action="Reservations" asp-route-page="@(Model.Page + 1)" asp-route-pageSize="@Model.PageSize" asp-route-status="@Model.StatusFilter"
+                   class="btn btn-outline-secondary btn-sm">Następna →</a>
+            }
+        </div>
+    </div>
+</div>

@@ -23,6 +23,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         private readonly Mock<IPendingStockAdjustmentRepository> _pendingAdjustmentRepo;
         private readonly Mock<IDeferredJobScheduler> _deferredScheduler;
         private readonly Mock<IMessageBroker> _broker;
+        private readonly Mock<IStockAuditRepository> _auditRepo;
 
         public StockServiceTests()
         {
@@ -32,6 +33,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _pendingAdjustmentRepo = new Mock<IPendingStockAdjustmentRepository>();
             _deferredScheduler = new Mock<IDeferredJobScheduler>();
             _broker = new Mock<IMessageBroker>();
+            _auditRepo = new Mock<IStockAuditRepository>();
         }
 
         private StockService CreateService() => new(
@@ -40,7 +42,8 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _productSnapshotRepo.Object,
             _pendingAdjustmentRepo.Object,
             _deferredScheduler.Object,
-            _broker.Object);
+            _broker.Object,
+            _auditRepo.Object);
 
         // ── GetByProductIdAsync
 

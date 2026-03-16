@@ -14,7 +14,8 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
         {
             services.AddMemoryCache();
             services
-                .AddScoped<IStockService, StockService>();
+                .AddScoped<IStockService, StockService>()
+                .AddScoped<IStockQueryService, StockQueryService>();
             services
                 .AddScoped<IScheduledTask, PaymentWindowTimeoutJob>()
                 .AddScoped<IScheduledTask, StockAdjustmentJob>();
