@@ -6,7 +6,7 @@
     <h2>Execution History — <strong>@ViewBag.JobName</strong></h2>
     <a asp-action="Index" class="btn btn-secondary mb-3">Back to Jobs</a>
     <table class="table table-bordered table-sm">
-        <thead class="thead-light">
+        <thead class="table-light">
             <tr><th>Started At</th><th>Duration</th><th>Trigger</th><th>Result</th><th>Message</th></tr>
         </thead>
         <tbody>
@@ -15,15 +15,15 @@
                 <tr>
                     <td>@r.StartedAt.ToString("g")</td>
                     <td>@((r.CompletedAt - r.StartedAt).ToString(@"hh\:mm\:ss"))</td>
-                    <td><span class="badge badge-secondary">@r.Source</span></td>
+                    <td><span class="badge text-bg-secondary">@r.Source</span></td>
                     <td>
                         @if (r.Succeeded)
                         {
-                            <span class="badge badge-success">OK</span>
+                            <span class="badge text-bg-success">OK</span>
                         }
                         else
                         {
-                            <span class="badge badge-danger">Failed</span>
+                            <span class="badge text-bg-danger">Failed</span>
                         }
                     </td>
                     <td><small>@r.Message</small></td>

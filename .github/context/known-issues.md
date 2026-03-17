@@ -8,13 +8,6 @@
 
 ## Critical
 
-### [KI-001] `BusinessException._codes` silently discarded — no Polish error messages displayed
-- **Severity**: 🔴 Critical
-- **Location**: `ECommerceApp.Application/Exceptions/ErrorMapToResponse.cs` (backend) + `ECommerceApp.Web/wwwroot/js/errors.js` (frontend)
-- **Symptom**: Any `BusinessException` thrown in the MVC layer shows no error message to the user. `#ErrorContainer` is hidden. Errors are silently swallowed.
-- **Root cause**: `ErrorMapToResponse.Map()` discards `BusinessException._codes` and only passes `ex.Message` as a plain string. `ExceptionResponse` serializes as `{ response: "...", statusCode: 400 }`. `errors.js:showError()` guards on `.length`; a plain object has no `.length` → guard is `true` → container hidden.
-- **Fix tracked in**: [ADR-0021](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) Phase 1 · [Roadmap](../roadmap/frontend-pipeline.md#phase-1--error-pipeline-fix)
-
 ---
 
 ## High

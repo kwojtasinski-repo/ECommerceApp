@@ -32,15 +32,15 @@
                 <td>@record.StartedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
                 <td>@record.CompletedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
                 <td>@duration.TotalSeconds.ToString("F1")s</td>
-                <td><span class="badge badge-info">@record.Source</span></td>
+                <td><span class="badge text-bg-info">@record.Source</span></td>
                 <td>
                     @if (record.Succeeded)
                     {
-                        <span class="badge badge-success">Success</span>
+                        <span class="badge text-bg-success">Success</span>
                     }
                     else
                     {
-                        <span class="badge badge-danger">Failed</span>
+                        <span class="badge text-bg-danger">Failed</span>
                     }
                 </td>
                 <td><small>@record.Message</small></td>

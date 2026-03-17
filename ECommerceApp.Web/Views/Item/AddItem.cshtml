@@ -42,7 +42,7 @@
             </div>
             <div class="form-group">
                 <label asp-for="BrandId" class="control-label">Firma: </label>
-                <select id="ItemBrand" asp-for="BrandId" asp-items="@(new SelectList(Model.Brands,"Id", "Name"))" class="show-tick form-control data-search"></select>
+                <select id="ItemBrand" asp-for="BrandId" asp-items="@(new SelectList(Model.Brands,"Id", "Name"))" class="form-select"></select>
                 <span asp-validation-for="BrandId" class="text-danger"></span>
             </div>
             <p>
@@ -50,7 +50,7 @@
             </p>
             <div class="form-group">
                 <label asp-for="TypeId" class="control-label">Typ: </label>
-                <select id="ItemType" asp-for="TypeId" asp-items="@(new SelectList(Model.Types,"Id", "Name"))" class="show-tick form-control data-search"></select>
+                <select id="ItemType" asp-for="TypeId" asp-items="@(new SelectList(Model.Types,"Id", "Name"))" class="form-select"></select>
                 <span asp-validation-for="TypeId" class="text-danger"></span>
             </div>
             <p>
@@ -63,7 +63,8 @@
                 <span asp-validation-for="CurrencyId" class="text-danger"></span>
             </div>
             <div>
-                <select multiple asp-for="ItemTags" asp-items="@(new SelectList(Model.Tags, "Id", "Name"))" class="show-tick form-control data-search"></select>
+                <label class="control-label">Tagi</label>
+                <select id="ItemTagsSelect" multiple asp-for="ItemTags" asp-items="@(new SelectList(Model.Tags, "Id", "Name"))" class="form-select"></select>
             </div>
             <div id="ImagesToAddToItem" style="display: none;"></div>
             <br />
@@ -72,7 +73,7 @@
             </div>
         </form>
     </div>
-    <div class="col-md-6 col-md-offset-2">
+    <div class="col-md-6 offset-md-2">
         @if (Model.Images.Count() < 5)
         {
             <div>
@@ -92,7 +93,7 @@
                         </dd>
                     </dl>
 
-                    <input id="FileUpload_SubmitButton" class="btn-block" type="button" value="Wgraj" onclick="Upload(this)" />
+                    <button id="FileUpload_SubmitButton" class="btn btn-outline-secondary w-100 mt-2" type="button" onclick="Upload(this)">Wgraj</button>
 
                     <div style="margin-top:15px">
                         <output name="result"></output>
@@ -106,10 +107,10 @@
         {
             <div data-name="ImageData" data-image-name="@Model.Images[i].Name" class="card" style="width:18rem;">
                 <div class="card-body">
-                    <button class="btn btn-sm btn-danger" style="margin-left: auto; margin-right: 0;" onclick="DeleteImage(@Model.Images[i].Id)">Usuń</button>
+                    <button class="btn btn-sm btn-danger ms-auto d-block" onclick="DeleteImage(@Model.Images[i].Id)">Usuń</button>
                     <img src="data:image;base64,@Model.Images[i].ImageSource" style="display: block; width: auto; max-width: 15rem; height: auto; max-height: 300px" />
-                    <input type="hidden" name="Images[i].ImageSource" />
-                    <input type="hidden" name="Images[i].Name" />
+                    <input type="hidden" name="Images[@i].ImageSource" />
+                    <input type="hidden" name="Images[@i].Name" />
                 </div>
             </div>
         }
@@ -135,6 +136,7 @@
 
         $(document).on('DOMInitialized', function () {
             forms.initFormValidator(itemFormValidator);
+            new TomSelect('#ItemTagsSelect', { plugins: ['remove_button'], placeholder: 'Wybierz tagi...' });
         });
 
         const itemFormValidator = {
@@ -358,8 +360,7 @@
             div.style = 'width: 18rem;';
             const div2 = document.createElement('div');
             div2.className = 'card-body'
-            const button = buttonTemplate.createButton('Usuń', 'btn btn-sm btn-danger', () => deleteImage(image.id), 'button');
-            button.style = 'margin-left: auto; margin-right: 0;';
+            const button = buttonTemplate.createButton('Usuń', 'btn btn-sm btn-danger ms-auto d-block', () => deleteImage(image.id), 'button');
             const img = document.createElement('img');
             img.style = 'display: block; width: auto; max-width: 15rem; height: auto; max-height: 300px';
             img.src = image.data;

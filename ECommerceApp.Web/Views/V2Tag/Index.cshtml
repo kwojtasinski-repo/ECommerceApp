@@ -6,11 +6,11 @@
     <h2>Tags</h2>
     @if (TempData["Success"] is string msg)
     {
-        <div class="alert alert-success alert-dismissible fade show">@msg<button type="button" class="close" data-dismiss="alert">&times;</button></div>
+        <div class="alert alert-success alert-dismissible fade show">@msg<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>
     }
     <a asp-action="Add" class="btn btn-primary mb-3"><i class="fas fa-plus"></i> Add Tag</a>
     <table class="table table-bordered table-sm">
-        <thead class="thead-light">
+        <thead class="table-light">
             <tr><th>Id</th><th>Name</th><th>Slug</th><th>Used in products</th><th style="width:160px"></th></tr>
         </thead>
         <tbody>
@@ -30,7 +30,7 @@
                             <span class="small">@string.Join(", ", t.TopProductNames)</span>
                             @if (t.HasMore)
                             {
-                                <span class="badge badge-secondary ml-1">@t.TotalProductCount+</span>
+                                <span class="badge text-bg-secondary ms-1">@t.TotalProductCount+</span>
                             }
                         }
                     </td>

@@ -3,6 +3,10 @@
   "defaultProvider": "cdnjs",
   "libraries": [
     {
+      "library": "twitter-bootstrap@5.3.3",
+      "destination": "wwwroot/lib/bootstrap/"
+    },
+    {
       "library": "cldrjs@0.5.5",
       "destination": "wwwroot/lib/cldrjs/"
     },
@@ -49,6 +53,14 @@
       "files": [
         "jquery.validate.globalize.min.js",
         "jquery.validate.globalize.js"
+      ]
+    },
+    {
+      "library": "tom-select@2.4.1",
+      "destination": "wwwroot/lib/tom-select/",
+      "files": [
+        "css/tom-select.bootstrap5.min.css",
+        "js/tom-select.complete.min.js"
       ]
     }
   ]

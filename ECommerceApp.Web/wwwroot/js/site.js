@@ -7,12 +7,7 @@ $(document).on('DOMInitialized', async function () {
         await beforePageFullyLoaded();
     }
 
-    $('[data-toggle="tooltip"]').tooltip();
-    $('.data-search').attr('data-live-search', true);
-    $('.data-search').selectpicker({
-        width: '100%',
-        title: '- [Wybierz] -',
-        style: 'select-search-style',
-        size: 6
-    })
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+        new bootstrap.Tooltip(el);
+    });
 });

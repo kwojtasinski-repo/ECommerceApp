@@ -12,12 +12,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - ECommerceApp</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/lib/bootstrap/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" />
     <link rel="stylesheet" href="~/lib/fontawesome/css/fontawesome.min.css" />
     <link rel="stylesheet" href="~/lib/fontawesome/css/brands.min.css">
     <link rel="stylesheet" href="~/lib/fontawesome/css/solid.min.css">
-    <link rel="stylesheet" href="~/lib/bootstrap-select/css/bootstrap-select.min.css" />
+    <link rel="stylesheet" href="~/lib/tom-select/css/tom-select.bootstrap5.min.css" />
 </head>
 <body>
     <header>
@@ -33,44 +33,42 @@
         <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow">
             <div class="container">
                 <a class="navbar-brand navbar-title-app" asp-area="" asp-controller="Home" asp-action="Index">ECommerceApp</a>
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#topbarCollapse"
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topbarCollapse"
                         aria-controls="topbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="topbarCollapse">
-                    <form class="form-inline mx-auto" asp-area="" asp-controller="Item" asp-action="Index" method="get">
+                    <form class="d-flex mx-auto" asp-area="" asp-controller="Item" asp-action="Index" method="get">
                         <div class="input-group">
                             <input name="searchString" type="text" class="form-control" placeholder="Szukaj produktów..." />
-                            <div class="input-group-append">
-                                <div class="dropdown">
-                                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="categoryFilterBtn" data-toggle="dropdown">Kategoria</button>
-                                    <div class="dropdown-menu">
-                                        @foreach (var cat in categories)
-                                        {
-                                            <a class="dropdown-item category-filter-item" href="#" data-type-id="@cat.Id">@cat.Name</a>
-                                        }
-                                    </div>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="categoryFilterBtn" data-bs-toggle="dropdown">Kategoria</button>
+                                <div class="dropdown-menu">
+                                    @foreach (var cat in categories)
+                                    {
+                                        <a class="dropdown-item category-filter-item" href="#" data-type-id="@cat.Id">@cat.Name</a>
+                                    }
                                 </div>
-                                <input type="hidden" name="typeId" id="searchTypeId" />
-                                <button type="submit" class="btn btn-outline-secondary"><i class="fa-solid fa-magnifying-glass"></i></button>
                             </div>
+                            <input type="hidden" name="typeId" id="searchTypeId" />
+                            <button type="submit" class="btn btn-outline-secondary"><i class="fa-solid fa-magnifying-glass"></i></button>
                         </div>
                     </form>
-                    <ul class="navbar-nav ml-auto align-items-center">
+                    <ul class="navbar-nav ms-auto align-items-center">
                         @if (isSignedIn)
                         {
-                            <li class="nav-item mr-2">
+                            <li class="nav-item me-2">
                                 <a class="nav-link position-relative" asp-area="" asp-controller="Order" asp-action="ShowMyCart">
-                                    <span id="itemCount" class="position-absolute badge rounded-pill badge-light" style="top:0;left:14px;"></span>
                                     <i class="fas fa-shopping-cart fa-lg"></i>
+                                    <span id="itemCount" class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-light"></span>
                                 </a>
                             </li>
                         }
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userMenuToggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <a class="nav-link dropdown-toggle" href="#" id="userMenuToggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i class="fa-solid fa-user fa-lg"></i>
                             </a>
-                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userMenuToggle">
+                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuToggle">
                                 @if (isSignedIn)
                                 {
                                     <a class="dropdown-item" asp-area="" asp-controller="Order" asp-action="ShowMyOrders">Moje zamówienia</a>
@@ -94,22 +92,22 @@
         </nav>
         <nav class="navbar navbar-expand-sm navbar-light bg-light border-bottom">
             <div class="container">
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#secondaryNavCollapse"
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#secondaryNavCollapse"
                         aria-controls="secondaryNavCollapse" aria-expanded="false" aria-label="Toggle secondary navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="secondaryNavCollapse">
                     @if (isMaintenanceRole)
                     {
-                        <ul class="navbar-nav">
+                        <ul class="navbar-nav gap-2">
                             @if (isManagingRole)
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="Coupon" asp-action="Index">Kupony</a>
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="Coupon" asp-action="Index"><i class="fa-solid fa-ticket me-1"></i>Kupony</a>
                                 </li>
                             }
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark" href="#" data-toggle="dropdown">Katalog</a>
+                                <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown"><i class="fa-solid fa-box-open me-1"></i>Katalog</a>
                                 <div class="dropdown-menu">
                                     <a class="dropdown-item" asp-area="" asp-controller="Item" asp-action="Index">Produkty</a>
                                     <a class="dropdown-item" asp-area="" asp-controller="Type" asp-action="Index">Kategorie</a>
@@ -121,7 +119,7 @@
                                 </div>
                             </li>
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark" href="#" data-toggle="dropdown">Magazyn</a>
+                                <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown"><i class="fa-solid fa-warehouse me-1"></i>Magazyn</a>
                                 <div class="dropdown-menu">
                                     <a class="dropdown-item" asp-area="" asp-controller="Inventory" asp-action="Index">Przegląd stanu</a>
                                     <a class="dropdown-item" asp-area="" asp-controller="Inventory" asp-action="Reservations">Rezerwacje</a>
@@ -131,7 +129,7 @@
                                 </div>
                             </li>
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark" href="#" data-toggle="dropdown">Realizacja</a>
+                                <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown"><i class="fa-solid fa-truck me-1"></i>Realizacja</a>
                                 <div class="dropdown-menu">
                                     <a class="dropdown-item" asp-area="" asp-controller="Order" asp-action="Index">Zamówienia</a>
                                     <a class="dropdown-item" asp-area="" asp-controller="Order" asp-action="ShowOrdersPaid">Wydania</a>
@@ -139,7 +137,7 @@
                                 </div>
                             </li>
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark" href="#" data-toggle="dropdown">Zaplecze</a>
+                                <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown"><i class="fa-solid fa-gears me-1"></i>Zaplecze</a>
                                 <div class="dropdown-menu">
                                     @if (isManagingRole)
                                     {
@@ -154,9 +152,9 @@
                     }
                     else
                     {
-                        <ul class="navbar-nav">
+                        <ul class="navbar-nav gap-2">
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark" href="#" data-toggle="dropdown">Kategorie</a>
+                                <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown"><i class="fa-solid fa-list me-1"></i>Kategorie</a>
                                 <div class="dropdown-menu">
                                     @foreach (var cat in categories)
                                     {
@@ -185,7 +183,7 @@
     <footer class="border-top footer text-muted">
         <div class="container">
             <div class="container-fluid row">
-                <div class="col text-left">
+                <div class="col text-start">
                     &copy; 2021 - 2024 - ECommerceApp.Web
                 </div>
 
@@ -198,8 +196,8 @@
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/lib/bootstrap-select/js/bootstrap-select.min.js"></script>
+    <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/tom-select/js/tom-select.complete.min.js"></script>
     <script src="~/lib/require-js/require.js"></script>
     <script src="~/js/config.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
@@ -269,7 +267,7 @@
         require(['errors'], function (e) { iso4217Message = e.errors.getError('invalidCurrencyCode'); });
     </script>
     <style type="text/css">
-        .badge.badge-light {
+        .badge.text-bg-light {
             color: #0077cc
         }
 

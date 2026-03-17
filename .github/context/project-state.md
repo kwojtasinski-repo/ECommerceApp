@@ -5,7 +5,7 @@
 > For confirmed bugs see [`.github/context/known-issues.md`](./known-issues.md).
 > For planned work see [`docs/roadmap/README.md`](../docs/roadmap/README.md).
 
-*Last updated: 2026-03-12*
+*Last updated: 2026-03-22*
 
 ---
 
@@ -15,7 +15,7 @@
 |---|---|---|
 | **Sales/Orders BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ — **DB migration pending approval**; integration tests + atomic switch not started | DB migration approval (migration-policy.instructions.md) |
 | **Sales/Payments BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ — **DB migrations pending approval**; integration tests + atomic switch not started | Orders atomic switch must complete first |
-| **Frontend error pipeline** | ADR-0021 ✅ Accepted — Phase 1 (error pipeline fix) ✅ done, Phase 2 (bug fixes) ✅ done, Phase 3 (new-code fetch standard) ✅ ongoing — Phase 4 (BS5 `modalService.js` rewrite + AMD cleanup) deferred to BS5 milestone | BS5 upgrade scheduling |
+| **Frontend error pipeline** | ADR-0021 ✅ Accepted — Phase 1 (error pipeline fix) ✅ done, Phase 2 (bug fixes) ✅ done, Phase 3 (new-code fetch standard) ✅ ongoing, Phase 4 (BS5 `modalService.js` rewrite + AMD cleanup) ✅ done | — |
 
 ---
 

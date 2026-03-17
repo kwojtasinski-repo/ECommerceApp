@@ -6,7 +6,7 @@
     <h2>Historia zmian stanu magazynu</h2>
 
     <table class="table table-bordered table-sm">
-        <thead class="thead-light">
+        <thead class="table-light">
             <tr>
                 <th>Kiedy</th>
                 <th>Produkt</th>
@@ -30,25 +30,25 @@
                         @switch (entry.ChangeType)
                         {
                             case "Initialized":
-                                <span class="badge badge-secondary">Inicjalizacja</span>
+                                <span class="badge text-bg-secondary">Inicjalizacja</span>
                                 break;
                             case "Reserved":
-                                <span class="badge badge-primary">Rezerwacja</span>
+                                <span class="badge text-bg-primary">Rezerwacja</span>
                                 break;
                             case "Released":
-                                <span class="badge badge-warning">Zwolnienie</span>
+                                <span class="badge text-bg-warning">Zwolnienie</span>
                                 break;
                             case "Fulfilled":
-                                <span class="badge badge-dark">Realizacja</span>
+                                <span class="badge text-bg-dark">Realizacja</span>
                                 break;
                             case "Returned":
-                                <span class="badge badge-info">Zwrot</span>
+                                <span class="badge text-bg-info">Zwrot</span>
                                 break;
                             case "Adjusted":
-                                <span class="badge badge-light border">Korekta</span>
+                                <span class="badge text-bg-light border">Korekta</span>
                                 break;
                             default:
-                                <span class="badge badge-secondary">@entry.ChangeType</span>
+                                <span class="badge text-bg-secondary">@entry.ChangeType</span>
                                 break;
                         }
                     </td>
@@ -57,11 +57,11 @@
                     <td>
                         @if (entry.Delta > 0)
                         {
-                            <span class="text-success font-weight-bold">+@entry.Delta</span>
+                            <span class="text-success fw-bold">+@entry.Delta</span>
                         }
                         else if (entry.Delta < 0)
                         {
-                            <span class="text-danger font-weight-bold">@entry.Delta</span>
+                            <span class="text-danger fw-bold">@entry.Delta</span>
                         }
                         else
                         {

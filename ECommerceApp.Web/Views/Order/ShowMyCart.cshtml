@@ -71,11 +71,11 @@ else
                         @Html.ActionLink($"{orderItem.ItemName}", "ViewItem", "Item", new { id = orderItem.ItemId })
                     </td>
                     <td style="width:100px;">
-                        <div class="row item-info">
-                            <a><i style="margin-right:5px;" onclick="AddQuantity(@orderItem.Id, @orderItem.ItemId, @orderItem.ItemOrderQuantity)" id="OrderItemAddQuantity" class="fas fa-plus-circle ml-2 fa-custom"></i></a>
-                            <span id="ItemQuantity">@Html.DisplayFor(model => orderItem.ItemOrderQuantity)</span>
+                        <div class="d-flex align-items-center item-info">
+                            <a><i onclick="RemoveQuantity(@orderItem.Id, @orderItem.ItemId, @orderItem.ItemOrderQuantity)" class="fa fa-minus-circle fa-custom" id="OrderItemRemoveQuantity"></i></a>
+                            <span id="ItemQuantity" class="mx-2">@Html.DisplayFor(model => orderItem.ItemOrderQuantity)</span>
                             <input type="hidden" id="ItemCost" value="@(orderItem.ItemCost)" />
-                            <a><i onclick="RemoveQuantity(@orderItem.Id, @orderItem.ItemId, @orderItem.ItemOrderQuantity)" class="fa fa-minus-circle ml-2 fa-custom" id="OrderItemRemoveQuantity"></i></a>
+                            <a><i onclick="AddQuantity(@orderItem.Id, @orderItem.ItemId, @orderItem.ItemOrderQuantity)" id="OrderItemAddQuantity" class="fas fa-plus-circle fa-custom"></i></a>
                         </div>
                     </td>
                     <td>

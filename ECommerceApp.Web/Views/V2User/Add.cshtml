@@ -26,7 +26,7 @@
         </div>
         <div class="form-group">
             <label asp-for="UserRole">Role</label>
-            <select asp-for="UserRole" class="form-control">
+            <select asp-for="UserRole" class="form-select">
                 <option value="">— select —</option>
                 @foreach (var role in Model.AvailableRoles)
                 {

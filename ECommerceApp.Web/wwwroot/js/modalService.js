@@ -10,6 +10,7 @@
         */
         const modalService = (function () {
             const modalIdentifyClass = "modalClass";
+            let _modalInstance = null;
 
             /**
              * Creates modal template html
@@ -22,9 +23,6 @@
                 const modalDiv = document.createElement("div");
                 modalDiv.className = "modal fade " + modalIdentifyClass;
                 modalDiv.tabIndex = "-1";
-                modalDiv.role = "dialog";
-                modalDiv.setAttribute('data-keyboard', 'false');
-                modalDiv.setAttribute('data-backdrop', 'static')
                 modalDiv.appendChild(createDialog(headerTemplate, bodyTemplate, footerTemplate));
                 return modalDiv;
             }
@@ -64,17 +62,14 @@
             /**
              * Creates modal header html
              * @param title Title of modal
+             * @param closeHandler Handler invoked when the header close button is clicked
              *
              */
-            function createModalHeader(title) {
+            function createModalHeader(title, closeHandler) {
                 const titleText = document.createElement("h5");
                 titleText.className = "modal-title";
                 titleText.textContent = title ? title : "";
-                const closeButton = buttonTemplate.createButton(undefined, "close", closeButtonHandler, "button", [{ key: "data-dismiss", value: "modal" }, { key: "aria-label", value: "Close" }]);
-                const spanCloseButton = document.createElement("span");
-                spanCloseButton.setAttribute("aria-hidden", "true");
-                spanCloseButton.innerHTML = "&times;";
-                closeButton.appendChild(spanCloseButton);
+                const closeButton = buttonTemplate.createButton(undefined, "btn-close", closeHandler, "button", [{ key: "aria-label", value: "Close" }]);
                 return dialogTemplate.createDialogHeader([titleText, closeButton]);
             }
 
@@ -92,9 +87,10 @@
             /**
              * Creates modal footer html
              * @param buttons Html buttons used in footer modal.
+             * @param defaultCloseHandler Handler for the default Close button (used when no custom buttons provided).
              *
              */
-            function createModalFooter(buttons) {
+            function createModalFooter(buttons, defaultCloseHandler) {
                 const modalFooter = dialogTemplate.createDialogFooter();
 
                 if (buttons) {
@@ -104,10 +100,20 @@
                     return modalFooter;
                 }
 
-                const closeButton = buttonTemplate.createButton("Close", "btn btn-secondary", closeButtonHandler, "button", [{ key: "data-dismiss", value: "modal" }]);
+                const closeButton = buttonTemplate.createButton("Close", "btn btn-secondary", defaultCloseHandler, "button");
                 modalFooter.appendChild(closeButton);
 
                 return modalFooter;
+            }
+
+            /**
+             * Shows a modal element using Bootstrap 5 Modal class
+             * @param el The modal DOM element.
+             *
+             */
+            function showModal(el) {
+                _modalInstance = new bootstrap.Modal(el, { backdrop: 'static', keyboard: false });
+                _modalInstance.show();
             }
 
             /**
@@ -115,14 +121,12 @@
              *
              */
             function closeModal() {
-                const modal = $('.' + modalIdentifyClass);
-                if (!modal) {
-                    return;
-                }
+                const el = document.querySelector('.' + modalIdentifyClass);
+                if (!el) return;
 
-                modal.modal('hide');
-                // cleanup 150ms for animation
-                setTimeout(() => modal.remove(), 150);
+                _modalInstance?.hide();
+                el.addEventListener('hidden.bs.modal', function () { el.remove(); }, { once: true });
+                _modalInstance = null;
             }
 
             /** actions which defines what should be used on subscribe, structure { actionName: '', func: () => {} }
@@ -146,7 +150,15 @@
             }
 
             /**
-             * Handler for closing modal, it closes modal and invoke method which was assigned as denyAction
+             * Handler for closing info modals — only closes the modal, does not invoke any action
+             *
+             */
+            function closeOnlyHandler() {
+                closeModal();
+            }
+
+            /**
+             * Handler for closing confirmation modal deny button — closes modal and invokes denyAction
              *
              */
             function closeButtonHandler() {
@@ -163,12 +175,12 @@
                  *
                  */
                 showInformationModal: function (headerText, bodyText) {
-                    const headerTemplate = createModalHeader(headerText);
+                    const headerTemplate = createModalHeader(headerText, closeOnlyHandler);
                     const bodyTemplate = createModalBody(bodyText);
-                    const footerTemplate = createModalFooter();
+                    const footerTemplate = createModalFooter(undefined, closeOnlyHandler);
                     const modalTemplate = createModalTemplate(headerTemplate, bodyTemplate, footerTemplate);
                     document.body.appendChild(modalTemplate);
-                    $('.' + modalIdentifyClass).modal('show');
+                    showModal(modalTemplate);
                 },
                 /**
                  * Shows confirmation modal
@@ -177,17 +189,17 @@
                  *
                  */
                 showConfirmationModal: function (headerText, bodyText) {
-                    const headerTemplate = createModalHeader(headerText);
+                    const headerTemplate = createModalHeader(headerText, closeButtonHandler);
                     const bodyTemplate = createModalBody(bodyText);
-                    const confirmButton = buttonTemplate.createButton("Tak", "btn btn-danger", () => { closeModal(); invokeActionAfterButtonClick(confirmAction); }, "button");
+                    const confirmButton = buttonTemplate.createButton("Tak", "btn btn-danger", function () { closeModal(); invokeActionAfterButtonClick(confirmAction); }, "button");
                     const cancelButton = buttonTemplate.createButton("Nie", "btn btn-secondary", closeButtonHandler, "button");
                     const footerTemplate = createModalFooter([confirmButton, cancelButton]);
                     const modalTemplate = createModalTemplate(headerTemplate, bodyTemplate, footerTemplate);
                     document.body.appendChild(modalTemplate);
-                    $('.' + modalIdentifyClass).modal('show');
-                    return new Promise((resolve, _) => {
-                        actions.push({ actionName: confirmAction, func: () => resolve(true) });
-                        actions.push({ actionName: denyAction, func: () => resolve(false) });
+                    showModal(modalTemplate);
+                    return new Promise(function (resolve, _) {
+                        actions.push({ actionName: confirmAction, func: function () { resolve(true); } });
+                        actions.push({ actionName: denyAction, func: function () { resolve(false); } });
                     });
                 },
                 /**
@@ -200,7 +212,7 @@
                 showCustomModal: function (header, body, footer) {
                     const modalTemplate = createModalTemplate(header, body, footer);
                     document.body.appendChild(modalTemplate);
-                    $('.' + modalIdentifyClass).modal('show');
+                    showModal(modalTemplate);
                 },
 
                 /**
@@ -211,7 +223,7 @@
                     closeModal();
                 },
                 createHeader: function (title) {
-                    return createModalHeader(title);
+                    return createModalHeader(title, closeOnlyHandler);
                 }
             }
         })();

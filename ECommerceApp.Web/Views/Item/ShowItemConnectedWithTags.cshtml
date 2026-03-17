@@ -11,9 +11,9 @@
     <a asp-action="Index">Powrót do listy przedmiotów</a>
 </p>
 <form id="search-form" asp-action="ShowItemConnectedWithTags" asp-controller="Item" method="post">
-    <div class="row">
-        <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
-        <input type="submit" value="Wyszukaj" />
+    <div class="input-group mb-3">
+        <input type="text" asp-for="SearchString" name="searchString" id="searchString" class="form-control" placeholder="Wyszukaj..." />
+        <button type="submit" class="btn btn-outline-secondary">Wyszukaj</button>
     </div>
     <table class="table">
         <thead>

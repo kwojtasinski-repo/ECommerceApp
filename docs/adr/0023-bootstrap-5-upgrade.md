@@ -1,7 +1,7 @@
 # ADR-0023: Upgrade Bootstrap from 4.3.1 to 5
 
 ## Status
-Proposed
+Accepted
 
 ## Date
 2026-03-17
@@ -179,8 +179,10 @@ built using **Tom Select** (v2.x, latest stable). Tom Select is chosen because:
 - No jQuery dependency — aligns with ADR-0021 §3 (`fetch`-first for V2 views).
 - Actively maintained; latest stable release Feb 2026.
 
-Tom Select is **not** introduced in this PR. It is recorded here so that the V2 Catalog
-view work does not re-evaluate this decision.
+Tom Select is introduced in this migration for the `AddItem.cshtml` and `EditItem.cshtml`
+tag multi-select (`#ItemTagsSelect`), loaded globally via `_Layout.cshtml`. The V2 Catalog
+views should follow the same Tom Select pattern. This decision is recorded here so that
+V2 Catalog view work does not re-evaluate the library choice.
 
 ### 5. Check Identity area pages
 

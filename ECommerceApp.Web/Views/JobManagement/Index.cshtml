@@ -28,11 +28,11 @@
                 <td>
                     @if (job.IsEnabled)
                     {
-                        <span class="badge badge-success">Enabled</span>
+                        <span class="badge text-bg-success">Enabled</span>
                     }
                     else
                     {
-                        <span class="badge badge-secondary">Disabled</span>
+                        <span class="badge text-bg-secondary">Disabled</span>
                     }
                 </td>
                 <td>@(job.NeverRun ? "Never" : job.LastRunAt?.ToString("yyyy-MM-dd HH:mm:ss"))</td>
@@ -44,11 +44,11 @@
                     }
                     else if (job.LastSucceeded == true)
                     {
-                        <span class="badge badge-success"><i class="fas fa-check"></i> Success</span>
+                        <span class="badge text-bg-success"><i class="fas fa-check"></i> Success</span>
                     }
                     else if (job.LastSucceeded == false)
                     {
-                        <span class="badge badge-danger" title="@job.LastMessage"><i class="fas fa-times"></i> Failed</span>
+                        <span class="badge text-bg-danger" title="@job.LastMessage"><i class="fas fa-times"></i> Failed</span>
                     }
                 </td>
                 <td>

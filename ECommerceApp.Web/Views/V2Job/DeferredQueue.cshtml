@@ -6,7 +6,7 @@
 <div class="container mt-4">
     <h2>Deferred Job Queue <small class="text-muted">read-only</small></h2>
     <a asp-action="Index" class="btn btn-outline-secondary btn-sm mb-3">&larr; Back to Jobs</a>
-    <a asp-action="ScheduleDeferred" class="btn btn-outline-warning btn-sm mb-3 ml-2">+ Schedule Deferred Job</a>
+    <a asp-action="ScheduleDeferred" class="btn btn-outline-warning btn-sm mb-3 ms-2">+ Schedule Deferred Job</a>
 
     @if (!Model.Any())
     {
@@ -15,7 +15,7 @@
     else
     {
         <table class="table table-bordered table-sm">
-            <thead class="thead-light">
+            <thead class="table-light">
                 <tr>
                     <th>ID</th>
                     <th>Job Name</th>
@@ -39,13 +39,13 @@
                             @switch (d.Status)
                             {
                                 case DeferredJobStatus.Pending:
-                                    <span class="badge badge-primary">Pending</span>
+                                    <span class="badge text-bg-primary">Pending</span>
                                     break;
                                 case DeferredJobStatus.Running:
-                                    <span class="badge badge-warning">Running</span>
+                                    <span class="badge text-bg-warning">Running</span>
                                     break;
                                 case DeferredJobStatus.DeadLetter:
-                                    <span class="badge badge-danger">DeadLetter</span>
+                                    <span class="badge text-bg-danger">DeadLetter</span>
                                     break;
                             }
                         </td>

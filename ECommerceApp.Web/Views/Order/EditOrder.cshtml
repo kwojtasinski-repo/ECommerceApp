@@ -52,7 +52,7 @@
                 <div class="form-group">
                     <label style="display:none;" asp-for="CustomerId" class="control-label"></label>
                     <label class="control-label">Klient:</label>
-                    <select id="CustomerInfoId" asp-for="CustomerId" class="show-tick form-control data-search"></select>
+                    <select id="CustomerInfoId" asp-for="CustomerId" class="form-select"></select>
                     <input id="CustomerIdValue" type="hidden" value="@Model.CustomerId" />
                     <span asp-validation-for="CustomerId" class="text-danger"></span>
                 </div>
@@ -153,7 +153,7 @@
                                     <input id="orderItemId" type="hidden" name="OrderItems[@i].Id" class="form-control" value="@Model.OrderItems[i].Id" />
                                 </td>
                                 <td>
-                                    <a><i id="OrderItems[@i].ItemOrderQuantity" class="fas fa-plus-circle ml-2 fa-custom add-quantity"></i></a>
+                                    <a><i id="OrderItems[@i].ItemOrderQuantity" class="fas fa-plus-circle ms-2 fa-custom add-quantity"></i></a>
                                     <input id="ItemQuantity[@i]" name="OrderItems[@i].ItemOrderQuantity" value="@Model.OrderItems[i].ItemOrderQuantity" readonly style="width: 45px; display: inline !important; margin-left: 4px; margin-right: 4px;" class="form-control" />
                                     <a><i class="fa fa-minus-circle fa-custom remove-quantity" style="margin-right: 4px" id="OrderItems[@i].ItemOrderQuantity"></i></a>
                                     <button id="@i" type="button" class="btn btn-danger delete">Usuń</button>
@@ -362,19 +362,19 @@
             const addQuantityAnchor = document.createElement('a');
             const addIcon = document.createElement('i');
             addIcon.setAttribute("id", "OrderItems[" + index + "].ItemOrderQuantity");
-            addIcon.className = "fas fa-plus-circle ml-2 fa-custom add-quantity";
+            addIcon.className = "fas fa-plus-circle ms-2 fa-custom add-quantity";
             addQuantityAnchor.appendChild(addIcon);
             const inputQuantity = document.createElement('input');
             inputQuantity.setAttribute("id", "ItemQuantity[" + index + "]");
             inputQuantity.name = "OrderItems[" + index + "].ItemOrderQuantity";
             inputQuantity.setAttribute("readonly", true);
             inputQuantity.style = "width: 45px; display: inline !important";
-            inputQuantity.className = "form-control ml-2 mr-2";
+            inputQuantity.className = "form-control ms-2 me-2";
             inputQuantity.value = orderItem.quantity;
             const deleteQuantityAnchor = document.createElement('a');
             const deleteIcon = document.createElement('i');
             deleteIcon.setAttribute("id", "OrderItems[" + index + "].ItemOrderQuantity");
-            deleteIcon.className = "fas fa-minus-circle mr-2 fa-custom remove-quantity";
+            deleteIcon.className = "fas fa-minus-circle me-2 fa-custom remove-quantity";
             deleteQuantityAnchor.appendChild(deleteIcon);
             const button = buttonTemplate.createButton('Usuń', 'btn btn-danger delete', undefined, 'button', [{ key: "id", value: index }]);
             button.id = index;

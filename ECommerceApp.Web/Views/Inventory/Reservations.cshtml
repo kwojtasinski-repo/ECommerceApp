@@ -9,7 +9,7 @@
     {
         <div class="alert alert-success alert-dismissible fade show">
             @msg
-            <button type="button" class="close" data-dismiss="alert">&times;</button>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
@@ -29,7 +29,7 @@
     </ul>
 
     <table class="table table-bordered table-sm">
-        <thead class="thead-light">
+        <thead class="table-light">
             <tr>
                 <th>ID</th>
                 <th>Produkt</th>
@@ -56,19 +56,19 @@
                         @switch (hold.Status)
                         {
                             case "Guaranteed":
-                                <span class="badge badge-primary">Gwarantowana</span>
+                                <span class="badge text-bg-primary">Gwarantowana</span>
                                 break;
                             case "Confirmed":
-                                <span class="badge badge-success">Potwierdzona</span>
+                                <span class="badge text-bg-success">Potwierdzona</span>
                                 break;
                             case "Released":
-                                <span class="badge badge-secondary">Zwolniona</span>
+                                <span class="badge text-bg-secondary">Zwolniona</span>
                                 break;
                             case "Fulfilled":
-                                <span class="badge badge-dark">Zrealizowana</span>
+                                <span class="badge text-bg-dark">Zrealizowana</span>
                                 break;
                             default:
-                                <span class="badge badge-light">@hold.Status</span>
+                                <span class="badge text-bg-light">@hold.Status</span>
                                 break;
                         }
                     </td>
@@ -99,7 +99,7 @@
                         }
                         @if (hold.CanConfirm)
                         {
-                            <form asp-action="Confirm" method="post" class="d-inline ml-1">
+                            <form asp-action="Confirm" method="post" class="d-inline ms-1">
                                 @Html.AntiForgeryToken()
                                 <input type="hidden" name="orderId" value="@hold.OrderId" />
                                 <input type="hidden" name="productId" value="@hold.ProductId" />

@@ -29,7 +29,7 @@
             </div>
             <div class="form-group mt-2 mb-2">
                 <label asp-for="UserRole" class="control-label">Rola: </label>
-                <select id="UserRole" asp-for="UserRole" asp-items="@(new SelectList(Model.Roles, "Id", "Name"))" class="show-tick form-control data-search"></select>
+                <select id="UserRole" asp-for="UserRole" asp-items="@(new SelectList(Model.Roles, "Id", "Name"))" class="form-select"></select>
                 <span asp-validation-for="UserRole" class="text-danger"></span>
             </div>
             <div class="form-group">

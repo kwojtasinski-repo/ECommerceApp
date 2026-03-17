@@ -23,9 +23,9 @@
     }
 </p>
 <form asp-action="Index" asp-controller="Item" method="post" id="search-form">
-    <div class="row">
-        <input type="text" asp-for="SearchString" name="searchString" id="searchString" />
-        <input type="submit" value="Wyszukaj" />
+    <div class="input-group mb-3">
+        <input type="text" asp-for="SearchString" name="searchString" id="searchString" class="form-control" placeholder="Wyszukaj..." />
+        <button type="submit" class="btn btn-outline-secondary">Wyszukaj</button>
     </div>
     <table class="table">
         <thead>
