@@ -1,0 +1,27 @@
+@{ ViewData["Title"] = "Korekta stanu magazynu"; }
+
+<div class="container mt-4">
+    <h2>Korekta stanu magazynu</h2>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <form asp-action="Adjust" method="post">
+                        @Html.AntiForgeryToken()
+                        <div class="form-group">
+                            <label for="productId">ID produktu</label>
+                            <input type="number" class="form-control" id="productId" name="productId" min="1" required />
+                        </div>
+                        <div class="form-group">
+                            <label for="newQuantity">Nowy stan magazynowy</label>
+                            <input type="number" class="form-control" id="newQuantity" name="newQuantity" min="0" required />
+                        </div>
+                        <button type="submit" class="btn btn-primary">Zaplanuj korektę</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary ml-2">Anuluj</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

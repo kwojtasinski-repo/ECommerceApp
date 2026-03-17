@@ -30,6 +30,12 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
                 .Where(p => productIds.Contains(p.ProductId.Value))
                 .ToListAsync(ct);
 
+        public async Task<IReadOnlyList<PendingStockAdjustment>> GetAllAsync(CancellationToken ct = default)
+            => await _context.PendingStockAdjustments
+                .AsNoTracking()
+                .OrderBy(p => p.SubmittedAt)
+                .ToListAsync(ct);
+
         public async Task UpsertAsync(int productId, int newQuantity, CancellationToken ct = default)
         {
             var existing = await _context.PendingStockAdjustments

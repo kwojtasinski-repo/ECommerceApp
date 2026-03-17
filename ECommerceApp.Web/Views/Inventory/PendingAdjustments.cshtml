@@ -1,0 +1,42 @@
+@using ECommerceApp.Application.Inventory.Availability.ViewModels
+@model PendingAdjustmentsVm
+@{ ViewData["Title"] = "Oczekujące korekty"; }
+
+<div class="container mt-4">
+    <h2>Oczekujące korekty stanu</h2>
+
+    @if (!Model.Items.Any())
+    {
+        <div class="alert alert-info">Brak oczekujących korekt.</div>
+    }
+    else
+    {
+        <table class="table table-bordered table-sm">
+            <thead class="thead-light">
+                <tr>
+                    <th>ID produktu</th>
+                    <th>Nazwa</th>
+                    <th>Nowy stan</th>
+                    <th>Zgłoszono (UTC)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td>@item.ProductId</td>
+                        <td>@item.ProductName</td>
+                        <td><span class="badge badge-warning">→ @item.NewQuantity</span></td>
+                        <td>@item.SubmittedAt.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <small class="text-muted">Łącznie: @Model.Items.Count oczekujących korekt</small>
+    }
+
+    <div class="mt-3">
+        <a asp-action="Index" class="btn btn-outline-secondary btn-sm">← Powrót do przeglądu</a>
+        <a asp-action="AdjustStock" class="btn btn-outline-primary btn-sm ml-2">Dodaj korektę</a>
+    </div>
+</div>

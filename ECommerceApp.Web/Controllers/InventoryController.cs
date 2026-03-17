@@ -2,6 +2,7 @@ using ECommerceApp.Application.Inventory.Availability.DTOs;
 using ECommerceApp.Application.Inventory.Availability.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Web.Controllers
@@ -31,10 +32,11 @@ namespace ECommerceApp.Web.Controllers
             => View(await _query.GetAuditAsync(page, pageSize));
 
         [HttpGet]
-        public IActionResult AdjustStock() => RedirectToAction(nameof(Index));
+        public IActionResult AdjustStock() => View();
 
         [HttpGet]
-        public IActionResult PendingAdjustments() => RedirectToAction(nameof(Index));
+        public async Task<IActionResult> PendingAdjustments(CancellationToken ct = default)
+            => View(await _query.GetPendingAdjustmentsAsync(ct));
 
         [Authorize(Roles = ManagingRole)]
         [HttpPost]

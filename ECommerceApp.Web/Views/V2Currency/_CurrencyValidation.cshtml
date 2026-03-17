@@ -4,4 +4,11 @@
 }
 <script>
     iso4217Codes = @Html.Raw(codesJson);
+
+    $.validator.addMethod('iso4217', function (value, element) {
+        if (!value) return true;
+        return iso4217Codes.indexOf(value.trim().toUpperCase()) !== -1;
+    }, 'Invalid ISO 4217 currency code.');
+
+    $.validator.unobtrusive.adapters.addBool('iso4217');
 </script>

@@ -9,6 +9,7 @@ namespace ECommerceApp.Domain.Inventory.Availability
     {
         Task<PendingStockAdjustment?> GetByProductIdAsync(int productId, CancellationToken ct = default);
         Task<IReadOnlyList<PendingStockAdjustment>> GetByProductIdsAsync(IReadOnlyList<int> productIds, CancellationToken ct = default);
+        Task<IReadOnlyList<PendingStockAdjustment>> GetAllAsync(CancellationToken ct = default);
         Task UpsertAsync(int productId, int newQuantity, CancellationToken ct = default);
         Task DeleteIfVersionMatchesAsync(int productId, Guid version, CancellationToken ct = default);
     }

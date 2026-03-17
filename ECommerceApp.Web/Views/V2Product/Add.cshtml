@@ -87,37 +87,3 @@
         cancelNewCat();
     }
 </script>
-
-<script>
-    function toggleNewCat(e) {
-        e.preventDefault();
-        var row = document.getElementById('new-cat-row');
-        row.style.display = row.style.display === 'none' ? '' : 'none';
-        if (row.style.display !== 'none') document.getElementById('new-cat-name').focus();
-    }
-    function cancelNewCat() {
-        document.getElementById('new-cat-row').style.display = 'none';
-        document.getElementById('new-cat-name').value = '';
-        document.getElementById('new-cat-error').textContent = '';
-    }
-    async function createCategory() {
-        var name = document.getElementById('new-cat-name').value.trim();
-        var errEl = document.getElementById('new-cat-error');
-        if (!name) { errEl.textContent = 'Name is required.'; return; }
-        errEl.textContent = '';
-        var resp = await fetch('/v2/categories/create', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ name: name })
-        });
-        if (!resp.ok) { errEl.textContent = 'Could not create category.'; return; }
-        var data = await resp.json();
-        var sel = document.querySelector('select[name="CategoryId"]');
-        var opt = document.createElement('option');
-        opt.value = data.id;
-        opt.textContent = data.name;
-        sel.add(opt);
-        sel.value = data.id;
-        cancelNewCat();
-    }
-</script>

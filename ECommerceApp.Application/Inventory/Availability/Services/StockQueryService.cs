@@ -172,5 +172,28 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
 
             return vm;
         }
+
+        public async Task<PendingAdjustmentsVm> GetPendingAdjustmentsAsync(CancellationToken ct = default)
+        {
+            var pending = await _pendingRepo.GetAllAsync(ct);
+            var productIds = pending.Select(p => p.ProductId.Value).ToList();
+            var snapshots = await _snapshotRepo.GetByProductIdsAsync(productIds, ct);
+            var snapshotMap = snapshots.ToDictionary(s => s.ProductId);
+
+            var vmItems = pending.Select(p =>
+            {
+                snapshotMap.TryGetValue(p.ProductId.Value, out var snapshot);
+                return new PendingAdjustmentRowVm
+                {
+                    ProductId   = p.ProductId.Value,
+                    ProductName = snapshot?.ProductName ?? $"Product #{p.ProductId.Value}",
+                    NewQuantity = p.NewQuantity.Value,
+                    SubmittedAt = p.SubmittedAt,
+                    Version     = p.Version,
+                };
+            }).ToList();
+
+            return new PendingAdjustmentsVm { Items = vmItems };
+        }
     }
 }
