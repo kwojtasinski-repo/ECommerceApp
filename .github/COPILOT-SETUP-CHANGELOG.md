@@ -9,14 +9,14 @@
 
 ## Current state summary
 
-| Category                               | Count | Details                                                |
-| -------------------------------------- | ----- | ------------------------------------------------------ |
-| `copilot-instructions.md`              | 1     | ≤ 4,000 chars, repo-level policy                       |
-| Instruction files (`.instructions.md`) | 11    | All with `applyTo:` frontmatter                        |
-| Prompt files (`.prompt.md`)            | 3     | BC analysis, BC implementation, PR review              |
-| Agent files                            | 3     | adr-generator, bc-switch, copilot-setup-maintainer     |
-| Skills (`SKILL.md`)                    | 8     | Scaffolding templates for common artifacts             |
-| Context files                          | 4     | project-state, known-issues, repo-index, future-skills |
+| Category                               | Count | Details                                                               |
+| -------------------------------------- | ----- | --------------------------------------------------------------------- |
+| `copilot-instructions.md`              | 1     | ≤ 4,000 chars, repo-level policy                                      |
+| Instruction files (`.instructions.md`) | 11    | All with `applyTo:` frontmatter                                       |
+| Prompt files (`.prompt.md`)            | 3     | BC analysis, BC implementation, PR review                             |
+| Agent files                            | 4     | adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer     |
+| Skills (`SKILL.md`)                    | 8     | Scaffolding templates for common artifacts                            |
+| Context files                          | 5     | project-state, known-issues, repo-index, future-skills, anti-patterns |
 
 ---
 
@@ -46,12 +46,13 @@
 | `bc-implementation.prompt.md` | Session 1 (renamed) |
 | `pr-review.prompt.md`         | Session 1 (renamed) |
 
-### `.github/agents/` (3 files)
+### `.github/agents/` (4 files)
 
 | File                          | Added                       |
 | ----------------------------- | --------------------------- |
 | `adr-generator.md`            | Pre-existing (refs updated) |
 | `bc-switch.md`                | Pre-existing                |
+| `code-reviewer.md`            | Session 3 (new)             |
 | `copilot-setup-maintainer.md` | Session 1 (new)             |
 
 ### `.github/skills/` (8 skills)
@@ -67,18 +68,38 @@
 | `create-http-scenario`    | .http file for any API endpoint testing        | Session 2 |
 | `create-validator`        | FluentValidation AbstractValidator             | Session 2 |
 
-### `.github/context/` (4 files)
+### `.github/context/` (5 files)
 
-| File               | Added                               |
-| ------------------ | ----------------------------------- |
-| `project-state.md` | Pre-existing                        |
-| `known-issues.md`  | Pre-existing                        |
-| `repo-index.md`    | Session 2 (new — full codebase map) |
-| `future-skills.md` | Session 2 (new — skills roadmap)    |
+| File                       | Added                                        |
+| -------------------------- | -------------------------------------------- |
+| `project-state.md`         | Pre-existing                                 |
+| `known-issues.md`          | Pre-existing                                 |
+| `repo-index.md`            | Session 2 (new — full codebase map)          |
+| `future-skills.md`         | Session 2 (new — skills roadmap)             |
+| `anti-patterns.context.md` | Session 3 (new — consolidated anti-patterns) |
 
 ---
 
 ## Change log
+
+### Session 4 — Drift audit & sync (2026-03-17)
+
+| #   | Change                                            | Files affected                                    |
+| --- | ------------------------------------------------- | ------------------------------------------------- |
+| 1   | Fixed ADR count 21 → 23 in copilot-instructions   | `.github/copilot-instructions.md`                 |
+| 2   | Added missing ADR-0022 row to docs-index           | `.github/instructions/docs-index.instructions.md` |
+| 3   | Updated changelog with Session 4                   | `COPILOT-SETUP-CHANGELOG.md`                      |
+
+### Session 3 — Code reviewer & anti-patterns (2026-03-17)
+
+| #   | Change                                               | Files affected                                    |
+| --- | ---------------------------------------------------- | ------------------------------------------------- |
+| 1   | Created consolidated anti-patterns context file      | `.github/context/anti-patterns.context.md`        |
+| 2   | Created code-reviewer agent                          | `.github/agents/code-reviewer.md`                 |
+| 3   | Added repo-index verification workflow to maintainer | `.github/agents/copilot-setup-maintainer.md`      |
+| 4   | Updated docs-index with new agent and context file   | `.github/instructions/docs-index.instructions.md` |
+| 5   | Updated agent count in copilot-instructions          | `.github/copilot-instructions.md`                 |
+| 6   | Updated changelog counts and inventory               | `COPILOT-SETUP-CHANGELOG.md`                      |
 
 ### Session 2 — Skills & codebase index (2026-03-15)
 

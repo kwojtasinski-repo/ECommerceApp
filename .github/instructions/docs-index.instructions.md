@@ -44,6 +44,7 @@ Auto-loaded by `applyTo:` globs — Copilot reads these automatically when editi
 | ---------------- | --------------------------- | --------------------------------------------- |
 | ADR Generator    | `@adr-generator`            | Generating a new Architecture Decision Record |
 | BC Switch        | `@bc-switch`                | Executing atomic BC legacy-to-new switch      |
+| Code Reviewer    | `@code-reviewer`            | Automated PR review against ADRs and rules    |
 | Setup Maintainer | `@copilot-setup-maintainer` | Syncing Copilot config and `.sln` structure   |
 
 ## Prompts (`.github/prompts/`)
@@ -58,29 +59,31 @@ Auto-loaded by `applyTo:` globs — Copilot reads these automatically when editi
 
 Read an ADR **only** when the "When to read" condition matches the files you are editing.
 
-| ADR  | Title                                                 | When to read                                       |
-| ---- | ----------------------------------------------------- | -------------------------------------------------- |
-| 0001 | Project overview and technology stack                 | First-time context; project-wide tech decisions    |
-| 0002 | Post-event-storming architectural evolution strategy  | Any BC migration or parallel-change work           |
-| 0003 | Feature folder organization for new BC code           | Creating new folders/namespaces for a BC           |
-| 0004 | Module taxonomy and bounded context grouping          | BC grouping, module naming, namespace decisions    |
-| 0005 | AccountProfile BC — UserProfile aggregate design      | Editing AccountProfile domain or services          |
-| 0006 | TypedId and value objects as shared domain primitives | Editing `Domain/Shared/**` (TypedId, Money, Price) |
-| 0007 | Catalog BC — Product, Category, Tag aggregate design  | Editing Catalog domain or services                 |
-| 0008 | Supporting/Currencies BC design                       | Editing Currency, CurrencyRate, NBP integration    |
-| 0009 | Supporting/TimeManagement BC design                   | Editing time-related domain logic                  |
-| 0010 | In-memory message broker for cross-BC communication   | Adding domain events or cross-BC messaging         |
-| 0011 | Inventory/Availability BC design                      | Editing Inventory domain or stock logic            |
-| 0012 | Presale/Checkout BC design                            | Editing checkout flow, cart logic                  |
-| 0013 | Per-BC DbContext interfaces                           | Adding new DbContext or per-BC data access         |
-| 0014 | Sales/Orders BC design                                | Editing Order, OrderItem domain or services        |
-| 0015 | Sales/Payments BC design                              | Editing Payment, PaymentState domain or services   |
-| 0016 | Sales/Coupons BC design                               | Editing Coupon, CouponType, CouponUsed             |
-| 0017 | Sales/Fulfillment BC design                           | Editing fulfillment or shipping logic              |
-| 0018 | Supporting/Communication BC design                    | Editing notification or messaging features         |
-| 0019 | Identity/IAM BC design                                | Editing Identity, roles, authentication            |
-| 0020 | Backoffice BC design                                  | Editing admin/backoffice features                  |
-| 0021 | Frontend error pipeline and JS migration strategy     | Editing `wwwroot/js/**`, error handling in Views   |
+| ADR  | Title                                                 | When to read                                                                     |
+| ---- | ----------------------------------------------------- | -------------------------------------------------------------------------------- |
+| 0001 | Project overview and technology stack                 | First-time context; project-wide tech decisions                                  |
+| 0002 | Post-event-storming architectural evolution strategy  | Any BC migration or parallel-change work                                         |
+| 0003 | Feature folder organization for new BC code           | Creating new folders/namespaces for a BC                                         |
+| 0004 | Module taxonomy and bounded context grouping          | BC grouping, module naming, namespace decisions                                  |
+| 0005 | AccountProfile BC — UserProfile aggregate design      | Editing AccountProfile domain or services                                        |
+| 0006 | TypedId and value objects as shared domain primitives | Editing `Domain/Shared/**` (TypedId, Money, Price)                               |
+| 0007 | Catalog BC — Product, Category, Tag aggregate design  | Editing Catalog domain or services                                               |
+| 0008 | Supporting/Currencies BC design                       | Editing Currency, CurrencyRate, NBP integration                                  |
+| 0009 | Supporting/TimeManagement BC design                   | Editing time-related domain logic                                                |
+| 0010 | In-memory message broker for cross-BC communication   | Adding domain events or cross-BC messaging                                       |
+| 0011 | Inventory/Availability BC design                      | Editing Inventory domain or stock logic                                          |
+| 0012 | Presale/Checkout BC design                            | Editing checkout flow, cart logic                                                |
+| 0013 | Per-BC DbContext interfaces                           | Adding new DbContext or per-BC data access                                       |
+| 0014 | Sales/Orders BC design                                | Editing Order, OrderItem domain or services                                      |
+| 0015 | Sales/Payments BC design                              | Editing Payment, PaymentState domain or services                                 |
+| 0016 | Sales/Coupons BC design                               | Editing Coupon, CouponType, CouponUsed                                           |
+| 0017 | Sales/Fulfillment BC design                           | Editing fulfillment or shipping logic                                            |
+| 0018 | Supporting/Communication BC design                    | Editing notification or messaging features                                       |
+| 0019 | Identity/IAM BC design                                | Editing Identity, roles, authentication                                          |
+| 0020 | Backoffice BC design                                  | Editing admin/backoffice features                                                |
+| 0021 | Frontend error pipeline and JS migration strategy     | Editing `wwwroot/js/**`, error handling in Views                                 |
+| 0022 | Navbar two-tier redesign                              | Editing navbar, `_Layout.cshtml`, navigation structure                           |
+| 0023 | Bootstrap 5 upgrade                                   | Editing `_Layout.cshtml`, `modalService.js`, or any view with BS data attributes |
 
 ## Architecture docs (`docs/architecture/`)
 
@@ -107,12 +110,13 @@ Read an ADR **only** when the "When to read" condition matches the files you are
 
 ## Context files (`.github/context/`)
 
-| File               | When to read                                                         |
-| ------------------ | -------------------------------------------------------------------- |
-| `project-state.md` | **Always** before editing BC-related code — check if BC is blocked   |
-| `known-issues.md`  | **Always** before fixing any bug — check if already tracked          |
-| `repo-index.md`    | When you need to locate code across the repo — full codebase map     |
-| `future-skills.md` | When creating skills, adding cross-BC events, or planning automation |
+| File                       | When to read                                                              |
+| -------------------------- | ------------------------------------------------------------------------- |
+| `project-state.md`         | **Always** before editing BC-related code — check if BC is blocked        |
+| `known-issues.md`          | **Always** before fixing any bug — check if already tracked               |
+| `repo-index.md`            | When you need to locate code across the repo — full codebase map          |
+| `future-skills.md`         | When creating skills, adding cross-BC events, or planning automation      |
+| `anti-patterns.context.md` | Loaded by `@code-reviewer` — consolidated "never do" rules (BLOCKS MERGE) |
 
 ## Skills (`.github/skills/`)
 

@@ -18,9 +18,9 @@ ECommerceApp — ASP.NET Core MVC + Web API e-commerce platform. Clean/onion arc
 
 - **11 instruction files** — per-stack rules, auto-loaded by `applyTo:` globs
 - **3 prompts** — `bc-analysis`, `bc-implementation`, `pr-review`
-- **3 agents** — `@adr-generator`, `@bc-switch`, `@copilot-setup-maintainer`
+- **4 agents** — `@adr-generator`, `@bc-switch`, `@code-reviewer`, `@copilot-setup-maintainer`
 - **8 skills** — scaffolding templates (unit test, dbcontext, ef-config, DI, domain event, integration test, http scenario, validator)
-- **21 ADRs**, architecture docs, patterns, roadmaps, context files
+- **23 ADRs**, architecture docs, patterns, roadmaps, context files
 
 Read `docs-index.instructions.md` to find the right file for any task. Follow its “When to read” columns.
 
