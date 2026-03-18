@@ -52,9 +52,12 @@ We introduce **Sales/Coupons** as a bounded context within the `Sales` group, wi
   `OrderCouponAppliedHandler`, `CouponRemovedFromOrder` → `OrderCouponRemovedHandler`),
   `CouponsOrderCancelledHandler` to release coupons when orders are cancelled. Can be
   implemented now.
-- **Slice 2 (deferred)** — `CouponType` (per-order / per-item), expiry dates, multi-use limits,
-  per-item discount application, bulk issuance. Will be designed in a future ADR amendment
-  once Slice 1 is in production.
+- **Slice 2 (designed — §9)** — Rule-based coupon policy model. Replaces `DiscountPercent` +
+  `CouponStatus` with `RulesJson` (serialized `CouponRuleDefinition[]`). Three rule categories:
+  Scope (required ×1), Discount (required ×1), Constraint (optional ×N, zero = unrestricted).
+  Multi-coupon per order (default 5, max 10), independent evaluation, optimistic concurrency,
+  `OrderPriceAdjusted` boundary event, `PriceAdjustmentLedger` on Order, creation-time
+  validation, and ML extensibility seam (future — not implemented in Slice 2).
 
 ### 1. `Coupon` aggregate
 
@@ -377,78 +380,186 @@ ECommerceApp.Infrastructure/Sales/Coupons/
     (generated)
 ```
 
-### 9. Slice 2 — deferred features
+### 9. Slice 2 — Rule-Based Coupon Policy Model
 
-The following are explicitly out of scope for Slice 1. They will be addressed in a future ADR
-amendment once Slice 1 is in production and integration-tested.
+> **Status**: Designed. Replaces the preliminary §9.1–9.6 with a comprehensive rule-based
+> architecture that subsumes CouponType, expiry, multi-use, per-item scoping, and extensibility
+> through a single engine.
 
-#### 9.1 `CouponType` — per-order vs per-item distinction
+#### 9.1 Core Architecture
 
-The legacy `CouponType.Type` string (`"for only one Order"` / `"for only one Item"`) becomes a
-proper enum in Slice 2:
+Slice 1 uses a fixed `DiscountPercent`. Slice 2 replaces this with a **rule-based coupon
+policy model**:
+
+1. An `ICouponRuleRegistry` singleton is built at startup from
+   `CouponWorkflowBuilder.DefineRule<T>("name")` calls — a **flat, immutable vocabulary**.
+2. Each coupon carries `RulesJson` — serialized `CouponRuleDefinition[]` selecting rules and
+   supplying per-coupon parameters.
+3. Three categories: **Scope** (required ×1), **Discount** (required ×1),
+   **Constraint** (optional ×N — zero = unrestricted).
+4. Each `DefineRule<T>()` registers both a runtime **evaluator** and a creation-time
+   **parameter validator**. Bad coupons never reach the database.
+
+#### 9.2 `Coupon` Aggregate Redesign
+
+- `RulesJson` (`nvarchar(max)`) replaces `DiscountPercent` and `CouponStatus`.
+- `Version` (`rowversion`) for optimistic concurrency.
+- `Coupon.Create(code, description, rulesJson, scopeTargets)` validates:
+  exactly one scope rule, exactly one discount rule, scope ↔ targets consistency
+  (e.g., `per-product` scope requires non-empty targets; `order-total` requires empty targets).
+  Violations throw `DomainException`.
+
+#### 9.3 Rule Vocabulary (Initial)
+
+**Scope:** `order-total`, `per-product`, `per-category`, `per-tag`.
+
+**Discount:**
+
+| Rule | Parameters | Notes |
+|---|---|---|
+| `percentage-off` | `{ "percent": "15" }` | |
+| `fixed-amount-off` | `{ "amount": "50" }` | |
+| `free-item` | `{ "productId": "123", "quantity": "1" }` | Targeted product |
+| `gift-product` | `{ "productId": "456", "quantity": "1" }` | Requires stock check; out of stock → reject |
+| `free-cheapest-item` | `{ "maxFreeUnits": "1" }` | Auto-selects from cart |
+
+**Constraint** (zero = unrestricted):
+
+| Rule | Parameters | Notes |
+|---|---|---|
+| `max-uses` | `{ "maxUses": "100" }` | Total usage count |
+| `max-uses-per-user` | `{ "maxUsesPerUser": "1" }` | Per-user count |
+| `valid-date-range` | `{ "validFrom": "...", "validTo": "..." }` | Time window |
+| `min-order-value` | `{ "minValue": "100" }` | Default: 100 (configurable by admin per coupon) |
+| `special-event` | `{ "eventCode": "BLACK_FRIDAY" }` | `ISpecialEventCache` lookup |
+| `first-purchase-only` | `{}` | Zero completed orders |
+
+All parameters use **defaults-when-missing** convention (`.TryGetValue()` with fallback).
+
+#### 9.4 Supporting Entities
+
+**`CouponUsed` (enhanced):**
+
+- `CouponId` (`CouponId?`, nullable) — set for DB coupons. `RuntimeCouponSnapshot` (`string?`,
+  JSON) — set for runtime/ML coupons (code, source, discountPercent, scope). Invariant: exactly
+  one must be non-null.
+- `UserId` (`string`, required) — added for `max-uses-per-user`.
+- Unique constraints on `CouponId` and `OrderId` **removed** (multi-use, multi-coupon).
+- Two factory methods: `CreateForDbCoupon(couponId, orderId, userId)` and
+  `CreateForRuntimeCoupon(snapshotJson, orderId, userId)`.
+
+**`CouponApplicationRecord` (new — audit):**
+
+- Fields: `CouponUsedId` (plain `int` — no DB FK constraint; audit reference only; survives
+  `CouponUsed` deletion), `CouponCode`, `DiscountType`, `DiscountValue`, `OriginalTotal`,
+  `Reduction`, `AppliedAt`, `WasReversed` (bool), `ReversedAt` (DateTime?).
+- Never deleted — only `WasReversed = true` on cancellation/refund.
+
+**`SpecialEvent` (new):** `Code` (unique), `Name`, `StartsAt`, `EndsAt`, `IsActive`.
+`ISpecialEventCache` — `IMemoryCache`, 5-min TTL, admin-invalidatable.
+
+**`CouponScopeTarget` (new):** `CouponId` (FK), `ScopeType`, `TargetId`, `TargetName`
+(display-only snapshot). No FK from `TargetId` to Catalog (cross-BC). Engine uses only `TargetId`.
+
+#### 9.5 Validation Engine
+
+**Two-tier runtime:** Tier 1 (sync, zero DB) → Tier 2 (async, DB/cache) — Tier 2 runs only
+if Tier 1 passes. **Creation-time:** each rule's parameter validator called by
+`CreateCouponAsync()` before persisting.
+
+#### 9.6 Multi-Coupon Evaluation, Concurrency, and Discount Cap
+
+**Independent evaluation:** each coupon against **original order total**. Reductions summed.
+Deterministic (order-independent).
+
+**Discount cap (Checkout BC enforces):** floor at `max(0, original - sum)`. New coupon
+**rejected** if sum already ≥ originalTotal.
+
+**Max coupons:** default 5 (`CouponsOptions.MaxCouponsPerOrder`), hard ceiling 10.
+Per-coupon `IsExclusive` flag → if set, no more coupons can be added. Returned in
+`CouponApplicationResult` for Checkout BC enforcement.
+
+**Concurrency:** `Version` (`rowversion`) on `Coupon`. On `DbUpdateConcurrencyException` →
+reload + re-evaluate + retry (max 2). First successful write wins.
+
+#### 9.7 Orders Integration
+
+**`OrderPriceAdjusted`** replaces `CouponApplied`:
 
 ```csharp
-// Domain/Sales/Coupons/
-public enum CouponScope { Order, Item }
+public record OrderPriceAdjusted(
+    int OrderId, decimal NewPrice, decimal Delta,
+    string AdjustmentType, int ReferenceId) : IMessage;
 ```
 
-`Coupon` gains a `CouponScope Scope { get; private set; }` field. `Coupon.Create(...)` is extended
-with a `CouponScope scope = CouponScope.Order` parameter. Existing Slice 1 tests remain valid:
-`CouponScope.Order` is the default and covers the Slice 1 behaviour.
+Orders BC receives thin price events — no coupon domain knowledge.
 
-The `CouponApplied` message gains an optional `int? OrderItemId` field to carry the targeted item
-when `Scope == Item`. `OrderCouponAppliedHandler` in the Orders BC calls a new
-`IOrderService.AddItemCouponAsync(orderId, orderItemId, couponUsedId, discountPercent)` for
-per-item application. `Order.AssignItemCoupon(orderItemId, couponUsedId, discountPercent)` is a new
-aggregate method that applies the discount to one `OrderItem` only and recalculates `Cost`.
+**`PriceAdjustmentLedger`:** replaces `CouponUsedId` + `DiscountPercent` on `Order` with a
+`PriceAdjustment` collection. `ApplyPriceAdjustment()` replaces `AssignCoupon()`.
+`RemovePriceAdjustment()` replaces `RemoveCoupon()`. `CalculateCost()` sums items minus
+adjustments.
 
-#### 9.2 Expiry dates
+#### 9.8 Cancellation, Refund, and Operational Policies
 
-`Coupon` gains `DateTime? ValidFrom` and `DateTime? ValidTo`. A new `CouponStatus.Expired` value is
-added. `CouponService.ApplyCouponAsync` checks both fields before step 5 (`coupon.MarkAsUsed()`):
-- `ValidFrom > UtcNow` → return `CouponApplyResult.NotYetValid` (new enum value)
-- `ValidTo < UtcNow` → return `CouponApplyResult.Expired` (new enum value)
+**Token return:** `CouponsOrderCancelledHandler` finds all `CouponUsed` for the order (list),
+iterates. For each: finds the matching `CouponApplicationRecord` by plain `CouponUsedId` int and
+marks `WasReversed = true`, then deletes the `CouponUsed` record. Ordering invariant: mark before
+delete — `CouponUsed` must still exist during the match step. User can re-use coupon if still valid.
 
-A background scheduled task `ExpiredCouponsJob` (registered in TimeManagement) runs daily,
-queries `sales.Coupons WHERE Status = 'Available' AND ValidTo < GETUTCDATE()`, and calls
-`coupon.MarkAsExpired()` (new method — transitions `Available → Expired`). `Expired` coupons
-cannot be `MarkAsUsed()` and cannot be `Release()`d.
+**Catalog event subscription:** `ProductRenamed`, `CategoryRenamed`, `TagRenamed` messages
+(Catalog BC publishes) → Coupons BC updates `CouponScopeTarget.TargetName`. Display-only sync.
+**Gap:** current `Product` aggregate lacks rename event — prerequisite for Slice 2.
+Product unpublish/discontinue → do nothing.
 
-#### 9.3 Multi-use limits
+**Code collision:** DB coupons take priority. Runtime ML coupons: max 10% for ephemeral.
+Higher → ML persists to DB via `CreateCouponAsync`. **Gift stock:** out of stock → reject
+coupon entirely (stock check via `IStockClient`).
 
-`Coupon` gains `int? UsageLimit` and `int UsageCount` (default `0`). The 1:1 unique constraint on
-`CouponUsed.CouponId` is **relaxed** to allow N `CouponUsed` records per `Coupon` (when
-`UsageLimit > 1`). The unique constraint on `CouponUsed.OrderId` **remains** (one coupon per order
-regardless).
+#### 9.9 ML/Runtime Extensibility (Future — Not Implemented in Slice 2)
 
-`Coupon.MarkAsUsed()` increments `UsageCount`. If `UsageLimit.HasValue && UsageCount >= UsageLimit`
-the coupon status transitions to `Used` (exhausted). If `UsageLimit` is null the coupon may be used
-indefinitely — `MarkAsUsed()` does not change `Status`, only increments the counter.
+The interface seam is defined; no runtime coupon source ships in Slice 2.
 
-#### 9.4 Bulk issuance
+- `IRuntimeCouponSource` — `Task<RuntimeCoupon?> SuggestCouponAsync(userId, context, ct)`.
+  `NullRuntimeCouponSource` registered as default (returns `null`).
+- Two ML tiers (when implemented): **Ephemeral** (≤10%) → `RuntimeCouponSnapshot` JSON;
+  **Persistent** (>10%) → ML creates DB coupon via `CreateCouponAsync`.
+- `CouponSuggested` (`IMessage`) — published from future suggestion-display endpoint, not from
+  `ApplyCouponAsync`. Interface defined; flow built when ML is implemented.
 
-A `CouponBatch` value object carries a template: `DiscountPercent`, `CouponScope`, `ValidFrom`,
-`ValidTo`, `UsageLimit`. `ICouponService.IssueBulkAsync(CouponBatch batch, int count)` generates
-`count` `Coupon` entities with unique codes (e.g., `BATCH-XXXX-YYYY` format), persists them, and
-returns the list of generated codes.
+#### 9.10 Configuration
 
-#### 9.5 Admin CRUD
+```csharp
+public sealed class CouponsOptions
+{
+    public int MaxCouponsPerOrder { get; set; } = 5;        // hard ceiling: 10
+    public decimal DefaultMinOrderValue { get; set; } = 100m;
+}
+```
 
-New service methods on `ICouponService`:
-- `CreateCouponAsync(CreateCouponDto dto)` → `CouponCreateResult`
-- `UpdateCouponAsync(UpdateCouponDto dto)` → `CouponOperationResult`
-- `DeleteCouponAsync(int couponId)` → `CouponOperationResult` (only if `Status == Available` and
-  `UsageCount == 0`)
+#### 9.11 DB Schema Changes (Slice 2 Migration)
 
-These replace the legacy admin UI that currently calls `CouponService` (legacy `AbstractService`).
-An admin controller migration is part of the Slice 2 atomic switch.
+```
+sales.Coupons        — RulesJson (nvarchar(max)), Version (rowversion);
+                       DiscountPercent + Status removed
+sales.CouponUsed     — CouponId nullable, + RuntimeCouponSnapshot (nvarchar(max)),
+                       + UserId (nvarchar(450)); unique constraints removed
+                       CHECK: exactly one of CouponId / RuntimeCouponSnapshot is NOT NULL
 
-#### 9.6 Legacy `CouponType` migration
+sales.CouponScopeTargets       — NEW (CouponId FK, ScopeType, TargetId, TargetName)
+sales.CouponApplicationRecords — NEW (CouponUsedId int (no DB FK — plain audit ref), CouponCode, DiscountType, DiscountValue,
+                                      OriginalTotal, Reduction, AppliedAt, WasReversed, ReversedAt)
+sales.SpecialEvents            — NEW (Code UNIQUE, Name, StartsAt, EndsAt, IsActive)
+```
 
-The legacy `CouponType` entity (`Domain/Model/CouponType.cs`) is removed as part of the Slice 2
-switch. Existing `CouponType.Type` string values are mapped to the new `CouponScope` enum during the
-data migration step (Slice 2 migration checklist). No new `CouponType` entity is created — the
-`CouponScope` enum field on `Coupon` replaces it entirely.
+**Data migration:** existing `sales.Coupons` → generate `RulesJson` from `DiscountPercent`
+(`[{ scope: "order-total" }, { discount: "percentage-off", parameters: { percent: "<value>" } }]`).
+Existing `sales.CouponUsed` → set `UserId` from legacy join or sentinel.
+
+#### 9.12 Legacy Migration
+
+The legacy `CouponType` entity (`Domain/Model/CouponType.cs`) is removed in the Slice 2 atomic
+switch. Its `Type` string values are no longer needed — the rule-based model replaces `CouponType`
+entirely through scope + discount rule combinations.
 
 ## Consequences
 
@@ -530,15 +641,31 @@ data migration step (Slice 2 migration checklist). No new `CouponType` entity is
     `ICouponHandler`. Remove legacy `CouponHandler` DI registration and all direct references
     to the legacy `CouponHandler` from controllers and services.
 
-**Slice 2 (deferred — future ADR amendment or dedicated ADR):**
+**Slice 2 (rule-based model — designed in §9):**
 
-11. Add `CouponType` aggregate (per-order / per-item enum), add `ValidFrom`/`ValidTo` expiry
-    fields and `CouponStatus.Expired`, add `UsageLimit` with remaining-uses tracking.
-12. Add per-item coupon application: `ApplyCouponToItemAsync(couponCode, orderId, orderItemId)`.
-    Extend `CouponApplied` message to carry per-item discount info.
-13. Add bulk coupon issuance: `IssueBulkAsync(templateId, count)`.
-14. Add admin CRUD for `Coupon` via new BC service methods and V2 controllers.
-15. Migrate legacy `CouponType` data and remove the legacy `CouponType` model from `Domain/Model/`.
+11. Redesign `Coupon` aggregate: replace `DiscountPercent` + `Status` with `RulesJson` + `Version`.
+    Add domain guard in `Create()` for scope ↔ targets consistency.
+12. Enhance `CouponUsed`: add `UserId`, make `CouponId` nullable, add `RuntimeCouponSnapshot`.
+    Remove unique constraints on `CouponId` and `OrderId`.
+13. Create new entities: `CouponScopeTarget`, `CouponApplicationRecord`, `SpecialEvent`.
+14. Build rule engine: `ICouponRuleRegistry`, `CouponWorkflowBuilder`, `CouponRuleDescriptor`,
+    two-tier validation, creation-time parameter validation. Register initial rule vocabulary.
+15. Redesign `CouponService` for rule-based evaluation, multi-coupon support, independent
+    evaluation strategy. Add `CreateCouponAsync` with full validation pipeline.
+16. Replace `CouponApplied` with `OrderPriceAdjusted`. Add `PriceAdjustmentLedger` and
+    `PriceAdjustment` to the Orders BC `Order` aggregate (replaces `AssignCoupon`/`RemoveCoupon`).
+17. Update `CouponsOrderCancelledHandler` for multi-coupon: returns list, iterates, marks
+    `CouponApplicationRecord.WasReversed = true`.
+18. Add `ISpecialEventCache`, `NullRuntimeCouponSource`, `CouponsOptions`.
+19. Generate EF migration for Slice 2 schema changes. Include data migration for existing
+    `sales.Coupons` rows (`DiscountPercent` → `RulesJson`).
+20. Add Catalog BC prerequisite: `ProductRenamed`, `CategoryRenamed`, `TagRenamed` messages and
+    corresponding aggregate methods. Add `CatalogNameChangedHandler` in Coupons BC.
+21. Write unit tests for rule engine, redesigned aggregate, redesigned service, all handlers.
+22. Write integration tests for multi-coupon flows, concurrent usage, cancellation/refund.
+23. Admin CRUD via V2 controllers using new `ICouponService.CreateCouponAsync`.
+24. Atomic switch: migrate legacy views/controllers, remove legacy `CouponType` entity and
+    `CouponHandler`.
 
 ## Conformance checklist
 
@@ -566,6 +693,23 @@ data migration step (Slice 2 migration checklist). No new `CouponType` entity is
 - [ ] `CouponType` is NOT present anywhere in the Slice 1 domain or infrastructure
 - [ ] Legacy `CouponHandler` is NOT removed until atomic switch (step 10) is verified green with all tests passing
 
+**Slice 2 (rule-based model):**
+- [ ] `Coupon` has `RulesJson` (`nvarchar(max)`) and `Version` (`rowversion`) — `DiscountPercent` and `CouponStatus` removed
+- [ ] `Coupon.Create()` validates: exactly one scope rule, exactly one discount rule, scope ↔ targets consistency
+- [ ] `CouponUsed.CouponId` is nullable; `RuntimeCouponSnapshot` is nullable; exactly one must be non-null
+- [ ] `CouponUsed.UserId` is required (`nvarchar(450)`)
+- [ ] Unique constraints on `CouponUsed.CouponId` and `CouponUsed.OrderId` are removed
+- [ ] `CouponApplicationRecord` is never deleted — only `WasReversed` flag set
+- [ ] `ICouponRuleRegistry` is registered as singleton — immutable after startup
+- [ ] Each `DefineRule<T>()` registers both evaluator and parameter validator
+- [ ] `OrderPriceAdjusted` replaces `CouponApplied` as cross-BC message
+- [ ] `PriceAdjustmentLedger` on `Order` replaces scalar `CouponUsedId` + `DiscountPercent`
+- [ ] `CouponsOrderCancelledHandler` handles multi-coupon (list iteration, not single result)
+- [ ] `NullRuntimeCouponSource` is registered as default `IRuntimeCouponSource`
+- [ ] `CouponsOptions.MaxCouponsPerOrder` default is 5, hard ceiling 10
+- [ ] No FK from `CouponScopeTarget.TargetId` to Catalog tables — cross-BC boundary
+- [ ] `CouponApplicationRecord.CouponUsedId` has no DB FK constraint — plain `int` audit reference; survives `CouponUsed` deletion
+
 ## Implementation Status
 
 | Step | Description | Status |
@@ -580,7 +724,7 @@ data migration step (Slice 2 migration checklist). No new `CouponType` entity is
 | 8 | Unit tests: `CouponAggregateTests`, `CouponServiceTests`, `CouponsOrderCancelledHandlerTests`, `OrderCouponAppliedHandlerTests`, `OrderCouponRemovedHandlerTests` | ✅ Done |
 | 9 | Integration tests: `CouponServiceIntegrationTests` | ⬜ Not started |
 | 10 | Atomic switch: controllers → `ICouponService`; remove legacy `CouponHandler` | ⬜ After integration tests |
-| 11–15 | Slice 2 — deferred features (CouponType, expiry, per-item, bulk, admin CRUD) | ⬜ Future ADR |
+| 11–24 | Slice 2 — rule-based coupon policy model (see §9) | ⬜ Designed — implementation not started |
 
 ## References
 

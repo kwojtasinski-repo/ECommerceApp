@@ -5,7 +5,7 @@
 > For confirmed bugs see [`.github/context/known-issues.md`](./known-issues.md).
 > For planned work see [`docs/roadmap/README.md`](../docs/roadmap/README.md).
 
-*Last updated: 2026-03-18*
+*Last updated: 2026-03-19*
 
 ---
 
@@ -39,6 +39,8 @@ and the atomic switch (remove legacy code) remain.
 | **TimeManagement** | Two coordinated DB migrations approval → integration tests → `CurrencyRateSyncTask` atomic switch | [ADR-0009](../docs/adr/0009-supporting-timemanagement-bc-design.md) |
 | **Inventory/Availability** | `InitInventorySchema` migration approval + data migration (`Items.Quantity` → `inventory.StockItems`) → integration tests → replace `ItemHandler` calls with `IMessageBroker` → atomic switch | [ADR-0011](../docs/adr/0011-inventory-availability-bc-design.md) |
 | **Presale/Checkout Slice 1** | `InitPresaleSchema` migration approval → integration tests | [ADR-0012](../docs/adr/0012-presale-checkout-bc-design.md) |
+| **Sales/Coupons Slice 1** | `InitCouponsSchema` migration approval → integration tests → migrate `CouponController` / `CouponUsedController` / `CouponTypeController` → remove legacy `CouponHandler` | [ADR-0016](../docs/adr/0016-sales-coupons-bc-design.md) |
+| **Sales/Fulfillment Slice 1** | `InitFulfillmentSchema` migration approval → integration tests → migrate `RefundController` → remove legacy `RefundService`; `InventoryRefundApprovedHandler` import update deferred to atomic switch | [ADR-0017](../docs/adr/0017-sales-fulfillment-bc-design.md) |
 
 ---
 
@@ -49,9 +51,9 @@ and the atomic switch (remove legacy code) remain.
 > Two blocker types: **`implementation blocked`** (true stop — hard dependency missing) vs **`atomic switch blocked`** (implementation proceeds in parallel now).
 
 1. **Presale/Checkout Slice 2** (steps 11–14 in ADR-0012) — ⛔ **implementation blocked** by Sales/Orders atomic switch (write-path creates Orders via the new aggregate; must be live first)
-2. **Sales/Coupons BC** — ✅ **implementation CAN proceed now** in parallel (ADR-0016 §Decision: "Can be implemented now"); **atomic switch blocked** by Orders + Payments switches
-3. **Sales/Fulfillment BC** — ✅ **implementation CAN proceed now** in parallel (ADR-0017); **atomic switch blocked** by Orders + Payments switches
-4. **Supporting/Communication BC** — blocked by Fulfillment Slice 1 + Coupons Slice 1
+2. **Sales/Coupons Slice 2** (ADR-0016 §9) — ⚠️ **designed — implementation not started**; blocked by Coupons Slice 1 in production + Orders + Payments atomic switches
+3. **Sales/Fulfillment Slice 2** (ADR-0017 §11) — ⚠️ **designed — implementation not started**; blocked by Fulfillment Slice 1 in production + Orders + Payments atomic switches
+4. **Supporting/Communication BC** — blocked by Fulfillment Slice 1 atomic switch + Coupons Slice 1 atomic switch
 5. **Backoffice BC** — blocked by ADR-0013 (per-BC DbContext interfaces); gated by ~80% BC completion
 6. **Per-BC DbContext interfaces** (ADR-0013) — gate: ~80–100% BC implementations complete
 
@@ -79,4 +81,6 @@ These legacy classes exist in parallel with the new BC implementations.
 | `Application/Services/Payments/PaymentService.cs` + `PaymentHandler.cs` | `Application/Sales/Payments/Services/PaymentService.cs` | Payments atomic switch |
 | `Application/Services/Customers/CustomerService.cs` | `Application/AccountProfile/Services/UserProfileService.cs` | AccountProfile atomic switch |
 | `Application/Services/Currencies/CurrencyService.cs` | `Application/Supporting/Currencies/Services/CurrencyService.cs` | Currencies atomic switch |
+| `Application/Services/Refunds/RefundService.cs` | `Application/Sales/Fulfillment/Services/RefundService.cs` | Fulfillment atomic switch |
+| `Application/Services/Coupons/CouponHandler.cs` | `Application/Sales/Coupons/Services/CouponService.cs` | Coupons atomic switch |
 | `Domain/Model/` (anemic models) | BC-specific rich aggregates under `Domain/<BC>/` | Per-BC atomic switches |

@@ -697,13 +697,13 @@ cross-reference alongside `docs/architecture/bounded-context-map.md`.
 
 | Step | Description | Status |
 |------|-------------|--------|
-| 1 | Folder structure created | ⬜ Not started |
-| 2 | `Domain/Sales/Fulfillment/`: `Refund`, `RefundId`, `RefundItem`, `RefundStatus`, `IRefundRepository` | ⬜ Not started |
-| 3 | `Application/Sales/Fulfillment/`: services, results, messages, `IOrderExistenceChecker`, DTOs, ViewModels, DI; + ADR-0015 extension: `Payment.Refund()`, `PaymentRefundedEvent`, `IPaymentService.ProcessRefundAsync` | ⬜ Not started |
-| 4 | `Application/Sales/Orders/Handlers/OrderRefundApprovedHandler`; registered in Orders DI | ⬜ Not started |
-| 5 | `Application/Sales/Payments/Handlers/PaymentRefundApprovedHandler`; registered in Payments DI | ⬜ Not started |
-| 6 | `Infrastructure/Sales/Fulfillment/`: `FulfillmentDbContext`, `RefundConfiguration`, `RefundRepository`, `OrderExistenceCheckerAdapter`, DI | ⬜ Not started |
-| 7 | `FulfillmentDbContext` registered in `Infrastructure/DependencyInjection.cs` | ⬜ Not started |
+| 1 | Folder structure created | ✅ Done |
+| 2 | `Domain/Sales/Fulfillment/`: `Refund`, `RefundId`, `RefundItem`, `RefundStatus`, `IRefundRepository` | ✅ Done |
+| 3 | `Application/Sales/Fulfillment/`: services, results, messages, `IOrderExistenceChecker`, DTOs, ViewModels, DI; + ADR-0015 extension: `Payment.Refund()`, `PaymentRefundedEvent`, `IPaymentService.ProcessRefundAsync` | ✅ Done |
+| 4 | `Application/Sales/Orders/Handlers/OrderRefundApprovedHandler`; registered in Orders DI | ✅ Done |
+| 5 | `Application/Sales/Payments/Handlers/PaymentRefundApprovedHandler`; registered in Payments DI | ✅ Done |
+| 6 | `Infrastructure/Sales/Fulfillment/`: `FulfillmentDbContext`, `RefundConfiguration`, `RefundRepository`, `OrderExistenceCheckerAdapter`, DI | ✅ Done |
+| 7 | `FulfillmentDbContext` registered in `Infrastructure/DependencyInjection.cs` | ✅ Done |
 | 8 | EF migration `InitFulfillmentSchema` targeting `FulfillmentDbContext` | ✅ Generated — pending human approval (migration-policy.md) |
 | 9 | Unit tests: `RefundAggregateTests`, `RefundServiceTests`, `PaymentRefundApprovedHandlerTests`, `OrderRefundApprovedHandlerTests`, updated `InventoryRefundApprovedHandlerTests` | ✅ Done (33 tests passing; `InventoryRefundApprovedHandlerTests` update deferred to atomic switch) |
 | 10 | Integration tests: `RefundServiceIntegrationTests` | ⬜ Not started |
