@@ -1,7 +1,7 @@
 # ADR-0022: Navbar Two-Tier Redesign
 
 ## Status
-Proposed
+Accepted
 
 ## Date
 2026-03-15
@@ -40,8 +40,8 @@ have working CRUD views but are not linked from any navbar item. They are effect
 from managers who need them.
 
 **Existing codebase constraints:**
-- Bootstrap 4 in use; `modalService.js` is BS4 hard-wired (ADR-0021 § 4 defers BS5 upgrade).
-- All nav links must use legacy MVC controllers (`Item/`, `Type/`, `Refund/`, `Order/`,
+- Bootstrap 5.3.3 in use (ADR-0023 completed the BS5 migration before this ADR was implemented).
+- All nav links must use legacy MVC controllers
   `Coupon/`, `Currency/`, `UserManagement/`, `JobManagement/`, `Brand/`). No V2-prefix
   controllers appear in the navbar.
 - `IStockService` (Inventory BC) is operation-only — query methods must be added before any
@@ -155,21 +155,25 @@ Zaplecze ▾                                (mixed roles — see below)
 - `Zaplecze ▾ → Użytkownicy` and `Zaplecze ▾ → Kupony - typy`: rendered only for
   `ManagingRole`.
 
-### 6. `IStockService` query extension
+### 6. `IStockQueryService` — dedicated query service
 
-Before any Inventory web views can be built, `IStockService` must be extended with list/query
-methods. The following signatures will be added to the interface and implemented in
-`StockService`:
+**Implementation deviation**: the initial decision was to extend `IStockService` with four
+query methods. During implementation, the team adopted the alternative of a separate
+`IStockQueryService` interface (see Alternatives considered). The interface is implemented
+in `StockQueryService` and returns paginated view-model types:
 
 ```csharp
-Task<IReadOnlyList<StockItemDto>> GetAllAsync(CancellationToken ct = default);
-Task<IReadOnlyList<ReservationDto>> GetReservationsAsync(CancellationToken ct = default);
-Task<IReadOnlyList<PendingStockAdjustmentDto>> GetPendingAdjustmentsAsync(CancellationToken ct = default);
-Task<IReadOnlyList<StockAuditEntryDto>> GetAuditAsync(CancellationToken ct = default);
+public interface IStockQueryService
+{
+    Task<StockOverviewVm> GetOverviewAsync(int page, int pageSize, CancellationToken ct = default);
+    Task<StockHoldsVm> GetHoldsAsync(int page, int pageSize, string statusFilter = "active", CancellationToken ct = default);
+    Task<StockAuditVm> GetAuditAsync(int page, int pageSize, CancellationToken ct = default);
+    Task<PendingAdjustmentsVm> GetPendingAdjustmentsAsync(CancellationToken ct = default);
+}
 ```
 
-DTOs `PendingStockAdjustmentDto` and `StockAuditEntryDto` are new; `StockItemDto` and
-`ReservationDto` already exist in `Application/Inventory/Availability/DTOs/`.
+View-model types (`StockOverviewVm`, `StockHoldsVm`, `StockAuditVm`, `PendingAdjustmentsVm`)
+live in `Application/Inventory/Availability/ViewModels/`. `IStockService` is unchanged.
 
 ### 7. New `InventoryController` (Web)
 
@@ -246,40 +250,43 @@ accessible via its existing in-flow link from order detail pages. Not added to t
   `CategoryMenuViewComponent` would be cleaner for reuse, but the layout injection approach
   is simpler for a single layout file. The `ViewComponent` refactor can be done independently
   without changing nav behaviour.
-- **Add Inventory query surface to a new `IStockQueryService`** — considered. Rejected in
-  favour of extending `IStockService` to avoid a second DI registration and interface split
-  for what is still the same aggregate. If the query surface grows significantly, extraction
-  to `IStockQueryService` is the natural next step.
+- **Add Inventory query surface to a new `IStockQueryService`** — initially rejected in
+  favour of extending `IStockService`. **Adopted during implementation**: the query surface
+  returns paginated view-model types that do not belong on the command-oriented `IStockService`.
+  A separate `IStockQueryService` keeps the read and write surfaces cleanly separated with
+  no impact on existing `IStockService` consumers or mocks.
 - **Keep `_LoginPartial.cshtml` and embed it inside the dropdown** — rejected. Partial renders
   its own `<ul>` and cannot be cleanly nested inside a Bootstrap dropdown `<ul>`.
 
 ## Migration plan
 
-**Phase 1 — `IStockService` query extension (prerequisite for Phase 3):**
-1. Add `PendingStockAdjustmentDto` and `StockAuditEntryDto` to
-   `Application/Inventory/Availability/DTOs/`.
-2. Add four query method signatures to `IStockService`.
-3. Implement them in `StockService`; add repository queries as needed.
-4. Update mocks in unit/integration tests that implement `IStockService`.
+**Phase 1 — `IStockQueryService` — new dedicated query service (prerequisite for Phase 3):** ✅
+1. ✅ Create `IStockQueryService` in `Application/Inventory/Availability/Services/`.
+2. ✅ Implement `StockQueryService`; wire repository queries for overview, holds, audit, and
+   pending adjustments with pagination.
+3. ✅ Add view-model types (`StockOverviewVm`, `StockHoldsVm`, `StockAuditVm`,
+   `PendingAdjustmentsVm`) to `Application/Inventory/Availability/ViewModels/`.
+4. ✅ Register `IStockQueryService` / `StockQueryService` in DI. `IStockService` is unchanged;
+   no mock updates required for existing tests.
 
-**Phase 2 — `_Layout.cshtml` two-tier navbar:**
-5. Replace the single `<nav>` block with top bar + secondary nav structure.
-6. Add search form (`GET Item/Index`) with category filter dropdown.
-7. Move cart badge into top bar; preserve existing `ajaxRequest` cart-count mechanism.
-8. Inline the `[👤▾]` user menu (anonymous + signed-in states); remove
+**Phase 2 — `_Layout.cshtml` two-tier navbar:** ✅
+5. ✅ Replace the single `<nav>` block with top bar + secondary nav structure.
+6. ✅ Add search form (`GET Item/Index`) with category filter dropdown.
+7. ✅ Move cart badge into top bar; preserve existing `ajaxRequest` cart-count mechanism.
+8. ✅ Inline the `[👤▾]` user menu (anonymous + signed-in states); remove
    `<partial name="_LoginPartial" />`.
-9. Wire secondary nav: `Kategorie ▾` for guests/users; management bar for `MaintenanceRole`.
-10. Inject `@inject ICategoryService CategoryService` at top of `_Layout.cshtml`; populate
-    both `[Kategoria ▾]` and `Kategorie ▾` from `CategoryService.GetAllTypes()`.
+9. ✅ Wire secondary nav: `Kategorie ▾` for guests/users; management bar for `MaintenanceRole`.
+10. ✅ Inject `@inject ICategoryService CategoryService` at top of `_Layout.cshtml`; populate
+    both `[Kategoria ▾]` and `Kategorie ▾` from `CategoryService.GetAllCategories()`.
 
-**Phase 3 — InventoryController + 5 views:**
-11. Create `ECommerceApp.Web/Controllers/InventoryController.cs`.
-12. Create views: `Views/Inventory/Index.cshtml`, `Reservations.cshtml`,
+**Phase 3 — InventoryController + 5 views:** ✅
+11. ✅ Create `ECommerceApp.Web/Controllers/InventoryController.cs`.
+12. ✅ Create views: `Views/Inventory/Index.cshtml`, `Reservations.cshtml`,
     `AdjustStock.cshtml`, `PendingAdjustments.cshtml`, `Audit.cshtml`.
 
-**Phase 4 — Cleanup:**
-13. Verify no other layout or area partial still renders `<partial name="_LoginPartial" />`.
-14. Delete `_LoginPartial.cshtml`.
+**Phase 4 — Cleanup:** ✅
+13. ✅ Verified no other layout or area partial renders `<partial name="_LoginPartial" />`.
+14. ✅ Deleted `_LoginPartial.cshtml`.
 15. Update `project-state.md` and `known-issues.md`.
 
 ## Conformance checklist
@@ -294,11 +301,11 @@ accessible via its existing in-flow link from order detail pages. Not added to t
 - [x] `Katalog ▾ → Marki` guarded by `ManagingRole`
 - [x] `Zaplecze ▾ → Użytkownicy` and `Kupony - typy` guarded by `ManagingRole`
 - [x] `[Kategoria ▾]` filter and `Kategorie ▾` dropdown both populated from single `ICategoryService` injection
-- [ ] `IStockService` has `GetAllAsync`, `GetReservationsAsync`, `GetPendingAdjustmentsAsync`, `GetAuditAsync`
-- [ ] `InventoryController` class-level `[Authorize(Roles = MaintenanceRole)]`
-- [ ] All five Inventory views exist under `Views/Inventory/`
+- [x] `IStockQueryService` has `GetOverviewAsync`, `GetHoldsAsync`, `GetPendingAdjustmentsAsync`, `GetAuditAsync` *(deviation: separate service instead of extending `IStockService` — see §6 and Alternatives)*
+- [x] `InventoryController` class-level `[Authorize(Roles = MaintenanceRole)]`
+- [x] All five Inventory views exist under `Views/Inventory/`
 - [x] No `<partial name="_LoginPartial" />` call remains in `_Layout.cshtml`
-- [ ] `_LoginPartial.cshtml` deleted after Phase 4 verification
+- [x] `_LoginPartial.cshtml` deleted after Phase 4 verification
 - [x] No new views in this ADR introduce `ajaxRequest.js` (ADR-0021 § 3)
 
 ## References
@@ -309,7 +316,8 @@ accessible via its existing in-flow link from order detail pages. Not added to t
   standard from ADR-0021 § 3)*
 - [ADR-0011 — Inventory Availability BC Design](./0011-inventory-availability-bc-design.md)
 - [`ECommerceApp.Web/Views/Shared/_Layout.cshtml`](../../ECommerceApp.Web/Views/Shared/_Layout.cshtml)
-- [`ECommerceApp.Web/Views/Shared/_LoginPartial.cshtml`](../../ECommerceApp.Web/Views/Shared/_LoginPartial.cshtml)
-- [`ECommerceApp.Application/Inventory/Availability/Services/IStockService.cs`](../../ECommerceApp.Application/Inventory/Availability/Services/IStockService.cs)
+- ~~[`ECommerceApp.Web/Views/Shared/_LoginPartial.cshtml`]~~ *(deleted — Phase 4 cleanup)*
+- [`ECommerceApp.Application/Inventory/Availability/Services/IStockQueryService.cs`](../../ECommerceApp.Application/Inventory/Availability/Services/IStockQueryService.cs)
+- [`ECommerceApp.Application/Inventory/Availability/Services/StockQueryService.cs`](../../ECommerceApp.Application/Inventory/Availability/Services/StockQueryService.cs)
 - [`ECommerceApp.Web/Controllers/BaseController.cs`](../../ECommerceApp.Web/Controllers/BaseController.cs)
 - [`ECommerceApp.Application/Catalog/Products/Services/ICategoryService.cs`](../../ECommerceApp.Application/Catalog/Products/Services/ICategoryService.cs)

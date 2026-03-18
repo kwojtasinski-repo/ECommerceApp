@@ -5,7 +5,7 @@
 > For confirmed bugs see [`.github/context/known-issues.md`](./known-issues.md).
 > For planned work see [`docs/roadmap/README.md`](../docs/roadmap/README.md).
 
-*Last updated: 2026-03-22*
+*Last updated: 2026-03-18*
 
 ---
 
@@ -15,11 +15,18 @@
 |---|---|---|
 | **Sales/Orders BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ — **DB migration pending approval**; integration tests + atomic switch not started | DB migration approval (migration-policy.instructions.md) |
 | **Sales/Payments BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ — **DB migrations pending approval**; integration tests + atomic switch not started | Orders atomic switch must complete first |
-| **Frontend error pipeline** | ADR-0021 ✅ Accepted — Phase 1 (error pipeline fix) ✅ done, Phase 2 (bug fixes) ✅ done, Phase 3 (new-code fetch standard) ✅ ongoing, Phase 4 (BS5 `modalService.js` rewrite + AMD cleanup) ✅ done | — |
 
 ---
 
-## Parallel implementations ready to switch (waiting for migration approval)
+## Recently completed
+
+| Area | Summary | ADR |
+|---|---|---|
+| **Frontend error pipeline** | Phase 1 (ExceptionResponse + errors.js) ✅ Phase 2 (bug fixes: ajaxRequest FormData, modalService denyAction, buttonTemplate type, validations ReDoS) ✅ Phase 3 (fetch-first new-code policy) ✅ ongoing Phase 4 (BS5 modalService rewrite + AMD cleanup / `addObjectPropertiesToGlobal` removed + DOMInitialized event-data pattern) ✅ | [ADR-0021](../docs/adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) |
+| **Bootstrap 5 upgrade** | All views migrated to BS5.3.3; TomSelect 2.4.1 installed; modalService rewritten for BS5 API; BS4 attributes and jQuery plugin calls removed | [ADR-0023](../docs/adr/0023-bootstrap-5-upgrade.md) |
+| **Navbar two-tier redesign** | Top bar (search + category filter + cart badge + user menu) ✅ Secondary nav (Kategorie for guests; management bar for MaintenanceRole) ✅ IStockQueryService + 5 Inventory views + InventoryController ✅ `_LoginPartial.cshtml` retired ✅ | [ADR-0022](../docs/adr/0022-navbar-two-tier-redesign.md) |
+
+---
 
 These BCs are fully implemented alongside legacy code. Only migration approval, integration tests,
 and the atomic switch (remove legacy code) remain.
