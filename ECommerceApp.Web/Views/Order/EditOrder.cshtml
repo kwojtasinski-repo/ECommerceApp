@@ -196,6 +196,7 @@
 @section Scripts {
     <script>
         let orderItems = [];
+        let forms, buttonTemplate, ajaxRequest, modalService, dialogTemplate, statusCodes, showError, showErrorFromResponse, formatPln;
         const orderId = document.querySelector('[data-name="Id"]').value;
         const itemCosts = [];
 
@@ -208,7 +209,8 @@
             await getUserContacts();
         }
 
-        $(document).on('DOMInitialized', function () {
+        $(document).on('DOMInitialized', function (event, mods) {
+            ({ forms, buttonTemplate, ajaxRequest, modalService, dialogTemplate, statusCodes, showError, showErrorFromResponse, formatPln } = mods);
             initView();
         });
 

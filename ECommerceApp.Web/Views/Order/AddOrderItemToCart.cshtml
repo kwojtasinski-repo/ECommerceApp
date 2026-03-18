@@ -55,13 +55,15 @@
 
     @section Scripts {
         <script type="text/javascript">
+            let formatPln;
             var selectedIndex;
             var selectedValue;
             var costFromSelectList;
             var itemSelectList = document.getElementById('Items');
             var itemList = @Json.Serialize(Model.Items);
 
-            $(document).on('DOMInitialized', function () {
+            $(document).on('DOMInitialized', function (event, mods) {
+                ({ formatPln } = mods);
                 selectedValue = itemSelectList.options[itemSelectList.selectedIndex].value;
                 costFromSelectList = GetItemCost(itemList, selectedValue);
                 selectedValue = itemSelectList.options[itemSelectList.selectedIndex].value;

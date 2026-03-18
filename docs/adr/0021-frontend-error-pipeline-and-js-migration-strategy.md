@@ -218,8 +218,10 @@ will already require a rewrite pass.
 
 **Phase 4 — Bootstrap 5 milestone (scheduled separately):**
 12. Rewrite `modalService.js` for BS5 data attributes; remove `$().modal()` jQuery plugin calls.
-13. Remove `addObjectPropertiesToGlobal` from `config.js`; convert views to explicit AMD
-    `require([...])` declarations.
+13. ✅ Remove `addObjectPropertiesToGlobal` from `config.js`; pass modules as `DOMInitialized`
+    event data (`$(document).trigger('DOMInitialized', [modules])`). All views destructure
+    required modules from the event argument. `window.PagerClick` kept as explicit global
+    for inline `onclick` HTML attributes in paginated list views.
 
 ## Conformance checklist
 

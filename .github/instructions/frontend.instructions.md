@@ -38,7 +38,10 @@ Dependency management
 JavaScript patterns
 - Project uses `require.js` as module loader. Follow existing AMD module patterns in `wwwroot/js/config.js`.
 - Reuse custom modules (`ajaxRequest`, `modalService`, `dialogTemplate`, `buttonTemplate`, `validations`, `errors`, `site`) rather than creating new global functions.
-- Avoid polluting global namespace; register modules via `require.js`.
+- **`addObjectPropertiesToGlobal` is removed.** Module references are passed as the second argument of the `DOMInitialized` event trigger. All page scripts must destructure from the event data — not rely on `window.*` globals.
+- **DOMInitialized handler signature**: `$(document).on('DOMInitialized', function (event, { forms, buttonTemplate, ... }) { ... })`. Destructure only the modules the view actually needs.
+- **Let-capture pattern** (required when a module is used outside the `DOMInitialized` handler, e.g. in functions called from click handlers): declare `let moduleName;` at script top, then assign inside DOMInitialized via `({ moduleName } = mods)`.
+- `window.PagerClick` is kept as an explicit global to support inline `onclick="PagerClick(...)"` HTML attributes in paginated list views. Do not use `addObjectPropertiesToGlobal` for any other purpose.
 - All AJAX calls must use `ajaxRequest` helper to ensure consistent headers, error handling, and CSRF token usage.
 
 Validation & globalization

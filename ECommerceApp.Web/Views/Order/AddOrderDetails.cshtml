@@ -127,6 +127,7 @@
 
     <script type="text/javascript">
         let orderItems = [];
+        let buttonTemplate, ajaxRequest, showError, showErrorFromResponse, statusCodes, formatPln;
         const orderId = document.querySelector('[data-name="Id"]').value;
         const itemCosts = [];
 
@@ -135,7 +136,8 @@
         var selectedIndex;
         var selectedValue;
 
-        $(document).on('DOMInitialized', function () {
+        $(document).on('DOMInitialized', function (event, mods) {
+            ({ buttonTemplate, ajaxRequest, showError, showErrorFromResponse, statusCodes, formatPln } = mods);
             initView();
         });
 

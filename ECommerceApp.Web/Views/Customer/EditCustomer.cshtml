@@ -182,6 +182,7 @@
 
 @section Scripts {
         <script>
+            let modalService, ajaxRequest, showError, showErrorFromResponse;
             const customerFormValidator = {
                 formId: "customerForm",
                 hasCompany: false,
@@ -229,8 +230,9 @@
                 }
             }
 
-            $(document).on('DOMInitialized', function () {
-                forms.initFormValidator(customerFormValidator);
+            $(document).on('DOMInitialized', function (event, mods) {
+                ({ modalService, ajaxRequest, showError, showErrorFromResponse } = mods);
+                mods.forms.initFormValidator(customerFormValidator);
             });
 
             $('#CompanyEnter').on('click', function () {

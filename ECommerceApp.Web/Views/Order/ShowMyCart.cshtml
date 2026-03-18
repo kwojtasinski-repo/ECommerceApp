@@ -141,6 +141,8 @@ else
 @section Scripts
 {
     <script>
+        let ajaxRequest, statusCodes, showError, showErrorFromResponse;
+
         async function AddQuantity(id, itemId, quantity) {
             try {
                 const objectJson = JSON.stringify({
@@ -209,7 +211,8 @@ else
          }
 
 
-        $(document).on('DOMInitialized', function () {
+        $(document).on('DOMInitialized', function (event, mods) {
+            ({ ajaxRequest, statusCodes, showError, showErrorFromResponse } = mods);
             const summaryCost = document.querySelector('[id="SummaryCost"]');
             if (!summaryCost) {
                 return;

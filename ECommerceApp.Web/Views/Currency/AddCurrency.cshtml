@@ -56,7 +56,7 @@
             }
         };
 
-        $(document).on('DOMInitialized', function () {
+        $(document).on('DOMInitialized', function (event, { forms }) {
             forms.initFormValidator(currencyFormValidator);
         });
     </script>

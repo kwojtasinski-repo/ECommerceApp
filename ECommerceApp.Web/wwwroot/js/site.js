@@ -2,7 +2,7 @@
 config.init();
 
 // initialize, enable tooltips
-$(document).on('DOMInitialized', async function () {
+$(document).on('DOMInitialized', async function (event, modules) {
     if (typeof beforePageFullyLoaded === "function") {
         await beforePageFullyLoaded();
     }

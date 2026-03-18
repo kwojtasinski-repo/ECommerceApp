@@ -121,10 +121,14 @@ else
 @section Scripts {
     <script>
         const fileUploadId = 'FileUpload_FormFile';
+        let forms, maxCountImages, allowedExtensions, ajaxRequest, modalService, statusCodes, showError, showErrorFromResponse, errors;
 
-        $(document).on('DOMInitialized', function () {
+        $(document).on('DOMInitialized', function (event, mods) {
+            ({ forms, maxCountImages, allowedExtensions, ajaxRequest, modalService, statusCodes, showError, showErrorFromResponse, errors } = mods);
             forms.initFormValidator(itemFormValidator);
             new TomSelect('#ItemTagsSelect', { plugins: ['remove_button'], placeholder: 'Wybierz tagi...' });
+            new TomSelect('#ItemBrand');
+            new TomSelect('#ItemType');
         });
 
         async function Upload(input) {

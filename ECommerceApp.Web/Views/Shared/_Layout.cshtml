@@ -203,8 +203,8 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
 
-        $(document).on('DOMInitialized', function () {
-            setGlobalError('@Context.Request.Query["Error"]');
+        $(document).on('DOMInitialized', function (event, { ajaxRequest, showError, he }) {
+            setGlobalError('@Context.Request.Query["Error"]', showError, he);
 
             var itemCount = document.getElementById("itemCount");
 
@@ -228,7 +228,7 @@
             });
         });
 
-        function setGlobalError(error) {
+        function setGlobalError(error, showError, he) {
             if (!error) {
                 showError();
                 return;

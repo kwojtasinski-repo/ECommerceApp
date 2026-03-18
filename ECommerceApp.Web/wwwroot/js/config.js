@@ -11,22 +11,25 @@
     function init() {
         require(["validations", "common", "buttonTemplate", "dialogTemplate", "errors", "forms", "ajaxRequest", "modalService", "he"],
             function (validations, common, buttonTemplate, dialogTemplate, errors, forms, ajaxRequest, modalService, he) {
-                addObjectPropertiesToGlobal(validations);
-                addObjectPropertiesToGlobal(common);
-                addObjectPropertiesToGlobal(buttonTemplate);
-                addObjectPropertiesToGlobal(dialogTemplate);
-                addObjectPropertiesToGlobal(errors);
-                addObjectPropertiesToGlobal(forms);
-                addObjectPropertiesToGlobal(ajaxRequest);
-                addObjectPropertiesToGlobal(modalService);
-                window.he = he;
-                $(document).trigger('DOMInitialized');
-
-                function addObjectPropertiesToGlobal(obj) {
-                    for (const prop in obj) {
-                        window[prop] = obj[prop];
-                    }
-                }
+                window.PagerClick = common.PagerClick;
+                $(document).trigger('DOMInitialized', [{
+                    emailRegex: validations.emailRegex,
+                    passwordRegex: validations.passwordRegex,
+                    maxCountImages: validations.maxCountImages,
+                    allowedExtensions: validations.allowedExtensions,
+                    PagerClick: common.PagerClick,
+                    statusCodes: common.statusCodes,
+                    formatPln: common.formatPln,
+                    buttonTemplate: buttonTemplate.buttonTemplate,
+                    dialogTemplate: dialogTemplate.dialogTemplate,
+                    errors: errors.errors,
+                    showErrorFromResponse: errors.showErrorFromResponse,
+                    showError: errors.showError,
+                    forms: forms.forms,
+                    ajaxRequest: ajaxRequest.ajaxRequest,
+                    modalService: modalService.modalService,
+                    he
+                }]);
             }
         );
     }

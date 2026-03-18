@@ -157,18 +157,28 @@ function closeModal() {
 ### 4. Replace `bootstrap-select` usage in legacy Item views
 
 `bootstrap-select` is used only in `Item/AddItem.cshtml` and `Item/EditItem.cshtml`,
-activated via `$('.data-search').selectpicker({...})` in `site.js`. Both views are legacy
-and pending full rewrite; a full UX-equivalent replacement is not justified here.
+activated via `$('.data-search').selectpicker({...})` in `site.js`. The multi-select UX
+(searchable tags field) is restored immediately using **Tom Select** (v2.4.1) rather than
+falling back to a plain native `<select>`, because Tom Select ships a Bootstrap 5
+compatible theme and is the confirmed V2 Catalog library (see §4 rationale below).
 
 Migration steps:
 - Remove the `data-search` class from all `<select>` elements in `AddItem.cshtml` and
-  `EditItem.cshtml`; the elements become plain native `<select>` controls.
+  `EditItem.cshtml`; the elements that are NOT the tags field become plain native `<select>`.
 - Remove the `.data-search` / `.selectpicker()` block from `site.js`.
 - Remove all `bootstrap-select` entries from `libman.json`.
 - Remove the `bootstrap-select` CSS and JS `<link>`/`<script>` tags from `_Layout.cshtml`.
+- Add `tom-select@2.4.1` to `libman.json` (provider: `cdnjs`, files: `tom-select.bootstrap5.min.css` → `wwwroot/lib/tom-select/css/`, `tom-select.complete.min.js` → `wwwroot/lib/tom-select/js/`).
+- Add Tom Select CSS `<link>` to `<head>` in `_Layout.cshtml` before Bootstrap CSS.
+- Add Tom Select JS `<script>` to `_Layout.cshtml` after `bootstrap.bundle.min.js`.
+- On the tags `<select>` in both views: add `id="ItemTagsSelect"` and `class="form-select"`.
+- In each view's `@section Scripts`, inside the `DOMInitialized` handler, initialize:
+  ```javascript
+  new TomSelect('#ItemTagsSelect', { plugins: ['remove_button'], placeholder: 'Wybierz tagi...' });
+  ```
+- Run `libman restore`. Verify no 404s in browser Network tab.
 
-The searchable/multi-select UX will be restored when the V2 Catalog (Product) views are
-built using **Tom Select** (v2.x, latest stable). Tom Select is chosen because:
+Tom Select is chosen for the tags field because:
 - It ships `tom-select.bootstrap5.css` which reads directly from Bootstrap 5 CSS custom
   properties (`--bs-border-color`, `--bs-primary`, `--bs-body-bg`, etc.) — no separate
   colour system, no specificity conflicts with Bootstrap styles.
@@ -203,7 +213,8 @@ required pattern for all new modal code.
 - `modalService.js` can be extended with new modal types without fighting the BS4 jQuery
   plugin API.
 - `bootstrap-select` removed — ~30 kB fewer bytes loaded on every page; the two legacy
-  Item views fall back to native `<select>` pending their full V2 rewrite.
+  Item views restore tag searchable-select UX via Tom Select (`#ItemTagsSelect`) loaded
+  globally, and other `<select>` elements fall back to native controls pending V2 rewrite.
 - V2 views gain access to BS5 utility improvements (gap, offset, logical properties).
 - All 19 legacy modal views are fixed by the single `modalService.js` rewrite — no HTML
   changes to those views required.
@@ -214,8 +225,8 @@ required pattern for all new modal code.
 - The `closeModal()` function must now manage a `Modal` instance reference; a leaked reference
   (if `closeModal()` is not called) will prevent the next modal from opening cleanly.
 - Identity area scaffolded pages may have additional BS4 references that require manual review.
-- `Item/AddItem.cshtml` and `Item/EditItem.cshtml` lose the searchable-select UX
-  (live search, tick marks) until V2 Catalog views are built.
+- Tom Select instance on `#ItemTagsSelect` is initialised inside `DOMInitialized`; if that
+  event fires before the element is in the DOM, the select will silently fall back to native.
 
 ### Risks & mitigations
 - **Risk**: A view contains an inline BS4 data attribute that the search did not surface
@@ -256,11 +267,12 @@ required pattern for all new modal code.
   deferred BS5 milestone was already planned (ADR-0021 §4). The band-aid adds work before
   the inevitable rewrite.
 
-- **Replace `bootstrap-select` with Tom Select in the legacy Item views now** — rejected.
-  Both views are pending full rewrite as part of the legacy UI redesign. Introducing Tom
-  Select into transitional views adds unnecessary dependency surface before its natural
-  integration point (the V2 Catalog Product views). Tom Select is recorded in §4 as the
-  confirmed choice for that future work.
+- **Replace `bootstrap-select` with Tom Select in the legacy Item views now** — **accepted**
+  (decision revised during implementation). Tom Select v2.4.1 is installed globally and
+  initialised on `#ItemTagsSelect` in `AddItem.cshtml` and `EditItem.cshtml`. The original
+  rejection rationale ("unnecessary dependency surface") was outweighed by the fact that
+  Tom Select is already the confirmed V2 Catalog library, ships a zero-conflict Bootstrap 5
+  theme, and restores the tags searchable-multi-select UX immediately at negligible extra cost.
 
 - **Slim Select instead of Tom Select for V2 Catalog views** — rejected. Slim Select 3.x
   ships its own CSS that does not read from Bootstrap 5 CSS custom properties; it would
@@ -277,14 +289,18 @@ required pattern for all new modal code.
 
 All steps are part of a single PR unless noted. Phases are ordered by dependency.
 
-**Phase 1 — Library swap and `bootstrap-select` removal:**
-1. Update `libman.json`: remove `bootstrap-select`; add `bootstrap@5.3.x`.
+**Phase 1 — Library swap, `bootstrap-select` removal, and Tom Select introduction:**
+1. Update `libman.json`: remove `bootstrap-select`; add `bootstrap@5.3.x`; add `tom-select@2.4.1`.
 2. Update `_Layout.cshtml` script/style references to BS5 paths.
 3. Remove `bootstrap-select` CSS and JS `<link>`/`<script>` tags from `_Layout.cshtml`.
-4. Remove `data-search` class from all `<select>` elements in `Item/AddItem.cshtml` and
+4. Add Tom Select CSS `<link>` to `<head>` and Tom Select JS `<script>` after `bootstrap.bundle.min.js` in `_Layout.cshtml`.
+5. Remove `data-search` class from all `<select>` elements in `Item/AddItem.cshtml` and
    `Item/EditItem.cshtml`.
-5. Remove the `.data-search` / `.selectpicker()` initialisation block from `site.js`.
-6. Run `libman restore`. Verify no 404s in browser Network tab.
+6. Remove the `.data-search` / `.selectpicker()` initialisation block from `site.js`.
+7. Add `id="ItemTagsSelect"` and `class="form-select"` to the tags `<select>` in both views.
+8. In each view's `@section Scripts` `DOMInitialized` handler, add:
+   `new TomSelect('#ItemTagsSelect', { plugins: ['remove_button'], placeholder: 'Wybierz tagi...' });`
+9. Run `libman restore`. Verify no 404s in browser Network tab.
 
 **Phase 2 — `_Layout.cshtml` data attribute and utility class sweep:**
 1. Replace all `data-toggle` / `data-target` with `data-bs-toggle` / `data-bs-target`.
@@ -327,9 +343,13 @@ All steps are part of a single PR unless noted. Phases are ordered by dependency
 
 - [ ] `libman.json` contains no `bootstrap-select` entry.
 - [ ] `libman.json` Bootstrap version starts with `5.`.
+- [ ] `libman.json` contains a `tom-select` entry at v2.4.x.
 - [ ] `_Layout.cshtml` contains no `bootstrap-select` `<link>` or `<script>`.
+- [ ] `_Layout.cshtml` loads `tom-select.bootstrap5.min.css` in `<head>`.
+- [ ] `_Layout.cshtml` loads `tom-select.complete.min.js` after `bootstrap.bundle.min.js`.
 - [ ] `site.js` contains no `.selectpicker(` call.
 - [ ] `Item/AddItem.cshtml` and `Item/EditItem.cshtml` contain no `data-search` class.
+- [ ] `Item/AddItem.cshtml` and `Item/EditItem.cshtml` initialise `new TomSelect('#ItemTagsSelect', ...)` inside `DOMInitialized`.
 - [ ] Workspace-wide grep for `data-toggle=` returns zero results in `*.cshtml` files.
 - [ ] Workspace-wide grep for `data-target=` returns zero results in `*.cshtml` files.
 - [ ] Workspace-wide grep for `data-dismiss=` returns zero results in `*.cshtml` and `*.js` files.

@@ -368,6 +368,7 @@ else
         var costItems = document.getElementsByClassName('CostOfItem');
         var quantityItems = document.getElementsByClassName('QuantiyOfItem');
         var cost = 0.0;
+        let ajaxRequest, showError, showErrorFromResponse, statusCodes, formatPln, forms;
         const orderFormValidator = {
             formId: "orderForm",
             beforeInitializeFields: function () {
@@ -545,7 +546,8 @@ else
             }
         }
 
-        $(document).on('DOMInitialized', function () {
+        $(document).on('DOMInitialized', function (event, mods) {
+            ({ ajaxRequest, showError, showErrorFromResponse, statusCodes, formatPln, forms } = mods);
             if ($('#orderForm').length === 0) {
                 return;
             }

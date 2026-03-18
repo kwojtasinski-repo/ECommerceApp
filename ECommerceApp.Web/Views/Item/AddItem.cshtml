@@ -126,6 +126,7 @@
 
     <script type="text/javascript">
         let tags = [];
+        let buttonTemplate, maxCountImages, allowedExtensions;
         const imgDataTag = 'ImageData';
         const imgAddToItemTag = 'ImagesToAddToItem';
         const imgsToAddTag = 'ImgSourceToAdd';
@@ -134,9 +135,12 @@
         const uploadSubmitButton = 'FileUpload_SubmitButton';
         const indexAddedImage = 'ImageAdded';
 
-        $(document).on('DOMInitialized', function () {
-            forms.initFormValidator(itemFormValidator);
+        $(document).on('DOMInitialized', function (event, mods) {
+            ({ buttonTemplate, maxCountImages, allowedExtensions } = mods);
+            mods.forms.initFormValidator(itemFormValidator);
             new TomSelect('#ItemTagsSelect', { plugins: ['remove_button'], placeholder: 'Wybierz tagi...' });
+            new TomSelect('#ItemBrand');
+            new TomSelect('#ItemType');
         });
 
         const itemFormValidator = {
