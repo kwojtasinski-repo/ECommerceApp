@@ -25,5 +25,11 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons.Repositories
             _context.Coupons.Update(coupon);
             await _context.SaveChangesAsync(ct);
         }
+
+        public async Task AddAsync(Coupon coupon, CancellationToken ct = default)
+        {
+            await _context.Coupons.AddAsync(coupon, ct);
+            await _context.SaveChangesAsync(ct);
+        }
     }
 }

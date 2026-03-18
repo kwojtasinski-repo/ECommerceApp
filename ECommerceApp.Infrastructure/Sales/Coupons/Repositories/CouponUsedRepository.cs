@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ECommerceApp.Domain.Sales.Coupons;
@@ -28,5 +30,11 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons.Repositories
             _context.CouponUsed.Remove(couponUsed);
             await _context.SaveChangesAsync(ct);
         }
+
+        public async Task<IReadOnlyList<CouponUsed>> FindAllByOrderIdAsync(int orderId, CancellationToken ct = default)
+            => await _context.CouponUsed.Where(cu => cu.OrderId == orderId).ToListAsync(ct);
+
+        public async Task<int> CountByUserAndCouponAsync(string userId, int couponId, CancellationToken ct = default)
+            => await _context.CouponUsed.CountAsync(cu => cu.UserId == userId && cu.CouponId == new CouponId(couponId), ct);
     }
 }

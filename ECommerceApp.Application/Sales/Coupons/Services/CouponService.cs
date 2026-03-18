@@ -1,7 +1,9 @@
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Sales.Coupons.Contracts;
+using ECommerceApp.Application.Sales.Coupons.DTOs;
 using ECommerceApp.Application.Sales.Coupons.Messages;
 using ECommerceApp.Application.Sales.Coupons.Results;
 using ECommerceApp.Domain.Sales.Coupons;
@@ -63,6 +65,11 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
             await _coupons.UpdateAsync(coupon, ct);
             await _broker.PublishAsync(new CouponRemovedFromOrder(orderId));
             return CouponRemoveResult.Removed;
+        }
+
+        public Task<CouponApplicationResult> CreateCouponAsync(CreateCouponDto dto, CancellationToken ct = default)
+        {
+            throw new NotImplementedException("Slice 2 — rule-based coupon creation");
         }
     }
 }
