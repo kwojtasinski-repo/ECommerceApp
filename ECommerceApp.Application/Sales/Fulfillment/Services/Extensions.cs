@@ -7,7 +7,8 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
         public static IServiceCollection AddFulfillmentServices(this IServiceCollection services)
         {
             return services
-                .AddScoped<IRefundService, RefundService>();
+                .AddScoped<IRefundService, RefundService>()
+                .AddScoped<IShipmentService, ShipmentService>();
         }
     }
 }
