@@ -263,6 +263,17 @@ namespace ECommerceApp.UnitTests.Architecture
                 .Check(Architecture);
         }
 
+        [Fact]
+        public void Domain_Identity_ShouldNotDependOnOtherBCs()
+        {
+            Types().That().Are(DomainIdentity)
+                .Should().NotDependOnAny(
+                    Types().That().AreNot(DomainIdentity)
+                        .And().AreNot(SharedDomain))
+                .Because("Identity domain must be self-contained (+ Shared kernel)")
+                .Check(Architecture);
+        }
+
         // ════════════════════════════════════════════════════════════════════════
         // Application layer — BCs depend on own domain + Shared + Messaging +
         // cross-BC message contracts (for handlers subscribing to foreign events)
@@ -418,6 +429,34 @@ namespace ECommerceApp.UnitTests.Architecture
                 .Check(Architecture);
         }
 
+        [Fact]
+        public void App_Identity_ShouldOnlyDependOnOwnDomain()
+        {
+            Types().That().Are(AppIdentity)
+                .Should().NotDependOnAny(
+                    Types().That().AreNot(AppIdentity)
+                        .And().AreNot(DomainIdentity)
+                        .And().AreNot(SharedDomain)
+                        .And().AreNot(SharedApplication)
+                        .And().AreNot(Messaging))
+                .Because("Identity application must not depend on other BCs")
+                .Check(Architecture);
+        }
+
+        [Fact]
+        public void App_TimeManagement_ShouldOnlyDependOnOwnDomain()
+        {
+            Types().That().Are(AppTimeManagement)
+                .Should().NotDependOnAny(
+                    Types().That().AreNot(AppTimeManagement)
+                        .And().AreNot(DomainTimeManagement)
+                        .And().AreNot(SharedDomain)
+                        .And().AreNot(SharedApplication)
+                        .And().AreNot(Messaging))
+                .Because("TimeManagement application must not depend on other BCs")
+                .Check(Architecture);
+        }
+
         // ════════════════════════════════════════════════════════════════════════
         // Domain layer must not reference Application or Infrastructure
         // ════════════════════════════════════════════════════════════════════════
@@ -503,13 +542,16 @@ namespace ECommerceApp.UnitTests.Architecture
         [Fact]
         public void Infrastructure_Coupons_CrossBcAccess_OnlyInAdapters()
         {
+            // Adapters reference: IOrderService (CompletedOrderCounterAdapter),
+            //                     IStockService (StockAvailabilityCheckerAdapter)
             Types().That().FollowCustomPredicate(
                     t => t.FullName.StartsWith("ECommerceApp.Infrastructure.Sales.Coupons.") &&
                          !t.FullName.StartsWith("ECommerceApp.Infrastructure.Sales.Coupons.Adapters."),
                     "reside in Infrastructure.Sales.Coupons tree but not in Adapters")
                 .Should().NotDependOnAny(
-                    Types().That().Are(AppOrders))
-                .Because("Only Coupons adapters should depend on Orders services — not repositories or DbContext")
+                    Types().That().Are(AppOrders)
+                        .Or().Are(AppInventory))
+                .Because("Only Coupons adapters should depend on Orders/Inventory services — not repositories or DbContext")
                 .Check(Architecture);
         }
 
@@ -525,6 +567,22 @@ namespace ECommerceApp.UnitTests.Architecture
                         .Or().Are(AppInventory)
                         .Or().Are(AppOrders))
                 .Because("Only Presale adapters should depend on Catalog/Inventory/Orders services")
+                .Check(Architecture);
+        }
+
+        [Fact]
+        public void Infrastructure_Orders_CrossBcAccess_OnlyInAdapters()
+        {
+            // OrderCustomerResolver adapter reads legacy Context for customer data
+            Types().That().FollowCustomPredicate(
+                    t => t.FullName.StartsWith("ECommerceApp.Infrastructure.Sales.Orders.") &&
+                         !t.FullName.StartsWith("ECommerceApp.Infrastructure.Sales.Orders.Adapters."),
+                    "reside in Infrastructure.Sales.Orders tree but not in Adapters")
+                .Should().NotDependOnAny(
+                    Types().That().Are(AppAccountProfile)
+                        .Or().Are(AppCatalog)
+                        .Or().Are(AppInventory))
+                .Because("Only Orders adapters should depend on other BC services — not repositories or DbContext")
                 .Check(Architecture);
         }
     }

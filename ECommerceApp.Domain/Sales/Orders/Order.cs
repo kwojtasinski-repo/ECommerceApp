@@ -172,6 +172,37 @@ namespace ECommerceApp.Domain.Sales.Orders
             AppendEvent(OrderEventType.RefundRemoved);
         }
 
+        public void AdjustPrice(decimal newCost)
+        {
+            if (newCost < 0)
+                throw new DomainException("Cost cannot be negative.");
+
+            Cost = newCost;
+            AppendEvent(OrderEventType.PriceAdjusted);
+        }
+
+        public void RecordShipmentDispatched()
+        {
+            if (Status != OrderStatus.PaymentConfirmed)
+                return;
+
+            AppendEvent(OrderEventType.ShipmentDispatched);
+        }
+
+        public void MarkAsPartiallyFulfilled()
+        {
+            if (Status is not (OrderStatus.PaymentConfirmed or OrderStatus.PartiallyFulfilled))
+                return;
+
+            Status = OrderStatus.PartiallyFulfilled;
+            AppendEvent(OrderEventType.PartiallyFulfilled);
+        }
+
+        public void RecordShipmentFailure()
+        {
+            AppendEvent(OrderEventType.ShipmentFailed);
+        }
+
         private void AppendEvent<T>(OrderEventType type, T payload)
             => _events.Add(new OrderEvent(Id ?? new OrderId(0), type,
                 JsonSerializer.Serialize(payload)));

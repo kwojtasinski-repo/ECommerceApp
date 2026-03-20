@@ -13,13 +13,19 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons
     {
         public static IServiceCollection AddCouponsInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
+            services.AddMemoryCache();
             services.AddDbContext<CouponsDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
             services.AddScoped<IDbContextMigrator, DbContextMigrator<CouponsDbContext>>();
             services.AddScoped<ICouponRepository, CouponRepository>();
             services.AddScoped<ICouponUsedRepository, CouponUsedRepository>();
+            services.AddScoped<ICouponApplicationRecordRepository, CouponApplicationRecordRepository>();
             services.AddScoped<IOrderExistenceChecker, OrderExistenceCheckerAdapter>();
+            services.AddScoped<IStockAvailabilityChecker, StockAvailabilityCheckerAdapter>();
+            services.AddScoped<ICompletedOrderCounter, CompletedOrderCounterAdapter>();
+            services.AddScoped<ISpecialEventCache, SpecialEventCache>();
+            services.AddScoped<IRuntimeCouponSource, NullRuntimeCouponSource>();
 
             return services;
         }

@@ -8,6 +8,8 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons
     {
         public DbSet<Coupon> Coupons => Set<Coupon>();
         public DbSet<CouponUsed> CouponUsed => Set<CouponUsed>();
+        public DbSet<CouponApplicationRecord> CouponApplicationRecords => Set<CouponApplicationRecord>();
+        public DbSet<SpecialEvent> SpecialEvents => Set<SpecialEvent>();
 
         public CouponsDbContext(DbContextOptions<CouponsDbContext> options) : base(options)
         {

@@ -22,7 +22,13 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             services.AddScoped<IMessageHandler<PaymentExpired>, OrderPaymentExpiredHandler>();
             services.AddScoped<IMessageHandler<CouponApplied>, OrderCouponAppliedHandler>();
             services.AddScoped<IMessageHandler<CouponRemovedFromOrder>, OrderCouponRemovedHandler>();
+            services.AddScoped<IMessageHandler<OrderPriceAdjusted>, OrderPriceAdjustedHandler>();
             services.AddScoped<IMessageHandler<FulfillmentMessages.RefundApproved>, OrderRefundApprovedHandler>();
+            services.AddScoped<IMessageHandler<FulfillmentMessages.RefundRejected>, OrderRefundRejectedHandler>();
+            services.AddScoped<IMessageHandler<FulfillmentMessages.ShipmentDelivered>, OrderShipmentDeliveredHandler>();
+            services.AddScoped<IMessageHandler<FulfillmentMessages.ShipmentDispatched>, OrderShipmentDispatchedHandler>();
+            services.AddScoped<IMessageHandler<FulfillmentMessages.ShipmentFailed>, OrderShipmentFailedHandler>();
+            services.AddScoped<IMessageHandler<FulfillmentMessages.ShipmentPartiallyDelivered>, OrderShipmentPartiallyDeliveredHandler>();
             return services;
         }
     }

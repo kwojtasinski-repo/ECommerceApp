@@ -10,6 +10,10 @@ namespace ECommerceApp.Domain.Sales.Orders
         CouponRemoved,
         RefundAssigned,
         RefundRemoved,
-        OrderCancelled
+        OrderCancelled,
+        PriceAdjusted,
+        ShipmentDispatched,
+        ShipmentFailed,
+        PartiallyFulfilled
     }
 }
