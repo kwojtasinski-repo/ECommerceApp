@@ -1,4 +1,4 @@
-using ECommerceApp.Application.Catalog.Products.Services;
+using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Application.Presale.Checkout.ViewModels;
 using ECommerceApp.Domain.Presale.Checkout;
 using System.Collections.Generic;
@@ -10,19 +10,19 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
 {
     internal sealed class StorefrontQueryService : IStorefrontQueryService
     {
-        private readonly IProductService _products;
+        private readonly ICatalogClient _catalog;
         private readonly IStockSnapshotRepository _stockSnapshots;
 
-        public StorefrontQueryService(IProductService products, IStockSnapshotRepository stockSnapshots)
+        public StorefrontQueryService(ICatalogClient catalog, IStockSnapshotRepository stockSnapshots)
         {
-            _products = products;
+            _catalog = catalog;
             _stockSnapshots = stockSnapshots;
         }
 
         public async Task<StorefrontProductListVm> GetPublishedProductsAsync(
             int pageSize, int pageNo, string searchString, CancellationToken ct = default)
         {
-            var productList = await _products.GetPublishedProducts(pageSize, pageNo, searchString);
+            var productList = await _catalog.GetPublishedProductsAsync(pageSize, pageNo, searchString, ct);
 
             var productIds = productList.Products.Select(p => p.Id).ToList();
             var snapshotByProductId = new Dictionary<int, StockSnapshot>(productIds.Count);

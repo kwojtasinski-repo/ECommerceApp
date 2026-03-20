@@ -1,5 +1,4 @@
-﻿using ECommerceApp.Application.Catalog.Products.Services;
-using ECommerceApp.Application.Catalog.Products.ViewModels;
+﻿using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Domain.Presale.Checkout;
 using FluentAssertions;
@@ -15,22 +14,22 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
 {
     public class StorefrontQueryServiceTests
     {
-        private readonly Mock<IProductService> _products;
+        private readonly Mock<ICatalogClient> _catalog;
         private readonly Mock<IStockSnapshotRepository> _stockSnapshots;
         private readonly StorefrontQueryService _service;
 
         public StorefrontQueryServiceTests()
         {
-            _products = new Mock<IProductService>();
+            _catalog = new Mock<ICatalogClient>();
             _stockSnapshots = new Mock<IStockSnapshotRepository>();
-            _service = new StorefrontQueryService(_products.Object, _stockSnapshots.Object);
+            _service = new StorefrontQueryService(_catalog.Object, _stockSnapshots.Object);
         }
 
         [Fact]
         public async Task GetPublishedProductsAsync_MergesStockAvailability()
         {
-            _products.Setup(p => p.GetPublishedProducts(10, 1, ""))
-                .ReturnsAsync(ProductListWith(new ProductForListVm { Id = 5, Name = "Bag", Cost = 49.99m, CategoryId = 2 }));
+            _catalog.Setup(p => p.GetPublishedProductsAsync(10, 1, "", It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductPageWith(new CatalogProductItem(5, "Bag", 49.99m, 2)));
             _stockSnapshots.Setup(s => s.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
                 .Returns(AsAsyncEnumerable(StockSnapshot.Create(5, 7, DateTime.UtcNow)));
 
@@ -47,8 +46,8 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetPublishedProductsAsync_NoStockEntry_ReturnsAvailableZeroAndInStockFalse()
         {
-            _products.Setup(p => p.GetPublishedProducts(10, 1, ""))
-                .ReturnsAsync(ProductListWith(new ProductForListVm { Id = 3, Name = "Hat", Cost = 20m, CategoryId = 1 }));
+            _catalog.Setup(p => p.GetPublishedProductsAsync(10, 1, "", It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductPageWith(new CatalogProductItem(3, "Hat", 20m, 1)));
             _stockSnapshots.Setup(s => s.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
                 .Returns(AsAsyncEnumerable());
 
@@ -63,8 +62,8 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetPublishedProductsAsync_EmptyProductList_ReturnsEmptyItems()
         {
-            _products.Setup(p => p.GetPublishedProducts(10, 1, ""))
-                .ReturnsAsync(new ProductListVm { Products = new List<ProductForListVm>(), Count = 0, PageSize = 10, CurrentPage = 1, SearchString = "" });
+            _catalog.Setup(p => p.GetPublishedProductsAsync(10, 1, "", It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new CatalogProductPage(new List<CatalogProductItem>(), 0, 10, 1, ""));
             _stockSnapshots.Setup(s => s.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
                 .Returns(AsAsyncEnumerable());
 
@@ -80,8 +79,8 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetPublishedProductsAsync_PaginationMetadataPassedThrough()
         {
-            _products.Setup(p => p.GetPublishedProducts(5, 2, "coat"))
-                .ReturnsAsync(new ProductListVm { Products = new List<ProductForListVm>(), Count = 42, PageSize = 5, CurrentPage = 2, SearchString = "coat" });
+            _catalog.Setup(p => p.GetPublishedProductsAsync(5, 2, "coat", It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new CatalogProductPage(new List<CatalogProductItem>(), 42, 5, 2, "coat"));
             _stockSnapshots.Setup(s => s.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
                 .Returns(AsAsyncEnumerable());
 
@@ -96,10 +95,10 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetPublishedProductsAsync_MultipleProducts_PassesAllIdsInSingleBatchCall()
         {
-            var p1 = new ProductForListVm { Id = 1, Name = "A", Cost = 10m, CategoryId = 1 };
-            var p2 = new ProductForListVm { Id = 2, Name = "B", Cost = 20m, CategoryId = 1 };
-            _products.Setup(p => p.GetPublishedProducts(10, 1, ""))
-                .ReturnsAsync(ProductListWith(p1, p2));
+            var p1 = new CatalogProductItem(1, "A", 10m, 1);
+            var p2 = new CatalogProductItem(2, "B", 20m, 1);
+            _catalog.Setup(p => p.GetPublishedProductsAsync(10, 1, "", It.IsAny<CancellationToken>()))
+                .ReturnsAsync(ProductPageWith(p1, p2));
             _stockSnapshots.Setup(s => s.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
                 .Returns(AsAsyncEnumerable(
                     StockSnapshot.Create(1, 5, DateTime.UtcNow),
@@ -127,14 +126,12 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         private static IAsyncEnumerable<StockSnapshot> AsAsyncEnumerable(params StockSnapshot[] items)
             => AsAsyncEnumerable(default, items);
 
-        private static ProductListVm ProductListWith(params ProductForListVm[] items) =>
-            new ProductListVm
-            {
-                Products = new List<ProductForListVm>(items),
-                Count = items.Length,
-                PageSize = 10,
-                CurrentPage = 1,
-                SearchString = ""
-            };
+        private static CatalogProductPage ProductPageWith(params CatalogProductItem[] items) =>
+            new CatalogProductPage(
+                new List<CatalogProductItem>(items),
+                items.Length,
+                10,
+                1,
+                "");
     }
 }
