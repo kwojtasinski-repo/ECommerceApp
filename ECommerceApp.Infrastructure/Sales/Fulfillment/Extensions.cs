@@ -18,6 +18,7 @@ namespace ECommerceApp.Infrastructure.Sales.Fulfillment
 
             services.AddScoped<IDbContextMigrator, DbContextMigrator<FulfillmentDbContext>>();
             services.AddScoped<IRefundRepository, RefundRepository>();
+            services.AddScoped<IShipmentRepository, ShipmentRepository>();
             services.AddScoped<IOrderExistenceChecker, OrderExistenceCheckerAdapter>();
 
             return services;

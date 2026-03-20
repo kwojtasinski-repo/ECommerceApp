@@ -7,6 +7,7 @@ namespace ECommerceApp.Infrastructure.Sales.Fulfillment
     internal sealed class FulfillmentDbContext : DbContext
     {
         public DbSet<Refund> Refunds => Set<Refund>();
+        public DbSet<Shipment> Shipments => Set<Shipment>();
 
         public FulfillmentDbContext(DbContextOptions<FulfillmentDbContext> options) : base(options)
         {

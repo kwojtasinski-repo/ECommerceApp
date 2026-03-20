@@ -4,6 +4,7 @@ namespace ECommerceApp.Domain.Sales.Fulfillment
 {
     public class ShipmentLine
     {
+        public int Id { get; private set; }
         public int ProductId { get; private set; }
         public int Quantity { get; private set; }
 
