@@ -113,6 +113,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
             var result = await CreateService().ApproveRefundAsync(1);
 
             result.Should().Be(RefundOperationResult.AlreadyProcessed);
+            _refunds.Verify(r => r.UpdateAsync(It.IsAny<Refund>(), It.IsAny<CancellationToken>()), Times.Never);
             _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
         }
 
@@ -162,6 +163,21 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
             var result = await CreateService().RejectRefundAsync(1);
 
             result.Should().Be(RefundOperationResult.AlreadyProcessed);
+            _refunds.Verify(r => r.UpdateAsync(It.IsAny<Refund>(), It.IsAny<CancellationToken>()), Times.Never);
+            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task RejectRefundAsync_AlreadyApproved_ShouldReturnAlreadyProcessed()
+        {
+            var refund = CreateRequestedRefund();
+            refund.Approve();
+            _refunds.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(refund);
+
+            var result = await CreateService().RejectRefundAsync(1);
+
+            result.Should().Be(RefundOperationResult.AlreadyProcessed);
+            _refunds.Verify(r => r.UpdateAsync(It.IsAny<Refund>(), It.IsAny<CancellationToken>()), Times.Never);
             _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
         }
 

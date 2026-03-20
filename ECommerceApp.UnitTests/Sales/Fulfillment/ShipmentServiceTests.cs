@@ -170,6 +170,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
 
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
+            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
         }
 
         [Fact]
@@ -181,6 +182,8 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
             var result = await CreateService().MarkAsInTransitAsync(1, "TRACK-NEW");
 
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
+            _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
+            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
         }
 
         [Fact]
@@ -192,9 +195,11 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
             var result = await CreateService().MarkAsInTransitAsync(1, "TRACK-NEW");
 
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
+            _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
+            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
         }
 
-        // ── MarkAsDeliveredAsync ──────────────────────────────────────────────
+        // ── MarkAsDeliveredAsync
 
         [Fact]
         public async Task MarkAsDeliveredAsync_ShipmentNotFound_ShouldReturnNotFound()
@@ -248,6 +253,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
 
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
+            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
         }
 
         [Fact]
@@ -259,6 +265,8 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
             var result = await CreateService().MarkAsDeliveredAsync(1);
 
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
+            _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
+            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
         }
 
         [Fact]
@@ -270,9 +278,11 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
             var result = await CreateService().MarkAsDeliveredAsync(1);
 
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
+            _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
+            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
         }
 
-        // ── MarkAsFailedAsync ─────────────────────────────────────────────────
+        // ── MarkAsFailedAsync
 
         [Fact]
         public async Task MarkAsFailedAsync_ShipmentNotFound_ShouldReturnNotFound()
@@ -354,6 +364,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
 
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
+            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
         }
 
         [Fact]
@@ -365,9 +376,11 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
             var result = await CreateService().MarkAsFailedAsync(1);
 
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
+            _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
+            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
         }
 
-        // ── GetShipmentAsync ──────────────────────────────────────────────────
+        // ── GetShipmentAsync
 
         [Fact]
         public async Task GetShipmentAsync_NotFound_ShouldReturnNull()

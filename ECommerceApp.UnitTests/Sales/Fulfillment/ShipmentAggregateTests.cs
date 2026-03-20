@@ -97,9 +97,10 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         }
 
         [Theory]
+        [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void MarkAsInTransit_EmptyOrWhitespaceTracking_ShouldThrowDomainException(string tracking)
+        public void MarkAsInTransit_NullEmptyOrWhitespaceTracking_ShouldThrowDomainException(string? tracking)
         {
             var shipment = CreatePending();
 
