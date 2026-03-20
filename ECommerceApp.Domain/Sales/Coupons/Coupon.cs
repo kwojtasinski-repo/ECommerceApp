@@ -97,12 +97,12 @@ namespace ECommerceApp.Domain.Sales.Coupons
                 throw new DomainException($"Exactly one Discount rule is required. Found {discountRules.Count}.");
 
             var scopeRule = scopeRules[0];
-            var requiresTargets = scopeRule.Name != "order-total";
+            var requiresTargets = scopeRule.Name != CouponRuleNames.OrderTotal;
 
             if (requiresTargets && (scopeTargets == null || scopeTargets.Count == 0))
                 throw new DomainException($"Scope rule '{scopeRule.Name}' requires scope targets.");
             if (!requiresTargets && scopeTargets != null && scopeTargets.Count > 0)
-                throw new DomainException("Scope rule 'order-total' must not have scope targets.");
+                throw new DomainException($"Scope rule '{CouponRuleNames.OrderTotal}' must not have scope targets.");
         }
     }
 }

@@ -1,6 +1,7 @@
 using ECommerceApp.Domain.Sales.Coupons;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ECommerceApp.Application.Sales.Coupons.Rules
 {
@@ -24,7 +25,39 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules
 
         public ICouponRuleRegistry Build()
         {
-            throw new NotImplementedException("Rule registry construction — Slice 2");
+            return new CouponRuleRegistry(_rules);
+        }
+
+        private sealed class CouponRuleRegistry : ICouponRuleRegistry
+        {
+            private readonly Dictionary<string, CouponRuleDescriptor> _rulesByName;
+            private readonly IReadOnlyList<CouponRuleDescriptor> _allRules;
+
+            public CouponRuleRegistry(IEnumerable<CouponRuleDescriptor> rules)
+            {
+                _allRules = rules.ToList();
+                _rulesByName = _allRules.ToDictionary(r => r.Name);
+            }
+
+            public CouponRuleDescriptor GetRule(string ruleName)
+            {
+                if (_rulesByName.TryGetValue(ruleName, out var descriptor))
+                    return descriptor;
+
+                throw new KeyNotFoundException($"Rule '{ruleName}' is not registered.");
+            }
+
+            public bool TryGetRule(string ruleName, out CouponRuleDescriptor descriptor)
+            {
+                return _rulesByName.TryGetValue(ruleName, out descriptor);
+            }
+
+            public IReadOnlyList<CouponRuleDescriptor> GetAllRules() => _allRules;
+
+            public IReadOnlyList<CouponRuleDescriptor> GetRulesByCategory(CouponRuleCategory category)
+            {
+                return _allRules.Where(r => r.Category == category).ToList();
+            }
         }
     }
 }
