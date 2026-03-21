@@ -108,6 +108,12 @@ Read an ADR **only** when the "When to read" condition matches the files you are
 | `presale-slice2.md`         | Working on Presale/Checkout Slice 2 (blocked by Orders)                  |
 | `frontend-pipeline.md`      | Working on frontend JS/error pipeline (ADR-0021 phases)                  |
 
+## Reports (`docs/reports/`)
+
+| File                                    | When to read                                                                       |
+| --------------------------------------- | ---------------------------------------------------------------------------------- |
+| `cross-bc-integration-test-report.md`  | Checking cross-BC integration flow coverage or planning new integration test scope |
+
 ## Context files (`.github/context/`)
 
 | File                       | When to read                                                              |

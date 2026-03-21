@@ -82,6 +82,17 @@
 
 ## Change log
 
+### Session 5 — Full audit & .sln sync (2026-06-27)
+
+| #   | Change                                                             | Files affected                                    |
+| --- | ------------------------------------------------------------------ | ------------------------------------------------- |
+| 1   | Added ADR-0022 (Navbar) and ADR-0023 (Bootstrap 5) to sln adr folder | `ECommerceApp.sln`                             |
+| 2   | Added `code-reviewer.md` to sln agents folder                      | `ECommerceApp.sln`                                |
+| 3   | Added `anti-patterns.context.md` to sln context folder             | `ECommerceApp.sln`                                |
+| 4   | Created `reports` solution folder; added `cross-bc-integration-test-report.md` | `ECommerceApp.sln`                   |
+| 5   | Added `docs/reports/` section to docs-index                        | `.github/instructions/docs-index.instructions.md` |
+| 6   | Updated changelog with Session 5                                   | `COPILOT-SETUP-CHANGELOG.md`                      |
+
 ### Session 4 — Drift audit & sync (2026-03-17)
 
 | #   | Change                                            | Files affected                                    |

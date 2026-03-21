@@ -45,18 +45,32 @@ Full details and blocking analysis: [`bounded-context-map.md § Next BCs to impl
 
 ---
 
-## Design amendments agreed (implementation pending)
+## Design amendments — completed ✅
 
-> These are documented as ADR amendments, not separate roadmaps. Priority order reflects
-> business impact (P0 = stock integrity risk).
+> All P0–P3 design amendments have been implemented and verified (all unit, integration, and architecture tests green).
+> These are documented as ADR amendments.
 
-| Priority | Topic | ADR Amendment | What |
-|---|---|---|---|
-| **P0** | Fulfillment → Inventory parallel fan-out | [ADR-0017 §13](../adr/0017-sales-fulfillment-bc-design.md), [ADR-0011 amendment](../adr/0011-inventory-availability-bc-design.md) | Fix stock leak: 3 Inventory handlers for Fulfillment messages; retire OrderShippedHandler; ShipmentStatus.PartiallyDelivered; enriched messages with Items[] |
-| **P1** | Order event payload enrichment | [ADR-0014 §19](../adr/0014-sales-orders-bc-design.md) | ShipmentFailurePayload, enriched PartialFulfilmentPayload (ShipmentId + FailedItems) |
-| **P1** | Operator notifications | [ADR-0014 §19](../adr/0014-sales-orders-bc-design.md), [ADR-0018 §2](../adr/0018-supporting-communication-bc-design.md) | OrderRequiresAttention message (no consumer until Communication BC) |
-| **P2** | CouponOversizeGuard | [ADR-0016 §10.1](../adr/0016-sales-coupons-bc-design.md) | New constraint rule for fixed-amount coupons exceeding order total; enabled by default |
-| **P3** | Catalog → Coupons name sync | [ADR-0016 §10.2](../adr/0016-sales-coupons-bc-design.md) | 3 Catalog messages + 3 Coupons handlers + IScopeTargetRepository for CouponScopeTarget.TargetName sync |
+| Priority | Topic | ADR Amendment | What | Status |
+|---|---|---|---|---|
+| **P0** | Fulfillment → Inventory parallel fan-out | [ADR-0017 §13](../adr/0017-sales-fulfillment-bc-design.md), [ADR-0011 amendment](../adr/0011-inventory-availability-bc-design.md) | 3 Inventory handlers (ShipmentDelivered/Failed/PartiallyDelivered); OrderShippedHandler retired; ShipmentStatus.PartiallyDelivered; enriched messages with Items[]; `StockReconciliationRequired` alert on stock operation failures | ✅ Done |
+| **P1** | Order event payload enrichment | [ADR-0014 §19](../adr/0014-sales-orders-bc-design.md) | ShipmentFailurePayload, enriched PartialFulfilmentPayload (ShipmentId + FailedItems) | ✅ Done |
+| **P1** | Operator notifications | [ADR-0014 §19](../adr/0014-sales-orders-bc-design.md), [ADR-0018 §2](../adr/0018-supporting-communication-bc-design.md) | OrderRequiresAttention message (no consumer until Communication BC) | ✅ Done |
+| **P2** | CouponOversizeGuard | [ADR-0016 §10.1](../adr/0016-sales-coupons-bc-design.md) | Constraint rule for fixed-amount coupons exceeding order total; always-on (unconditional injection); per-coupon `BypassOversizeGuard` override | ✅ Done |
+| **P3** | Catalog → Coupons name sync | [ADR-0016 §10.2](../adr/0016-sales-coupons-bc-design.md) | 3 Catalog messages (ProductNameChanged, CategoryNameChanged, TagNameChanged) + 3 Coupons handlers + IScopeTargetRepository for CouponScopeTarget.TargetName sync | ✅ Done |
+
+---
+
+## Future architectural considerations
+
+> Items for future discussion and implementation. Not blocked — deferred by choice until
+> we have enough production experience and confidence in the current design.
+
+| # | Topic | Rationale | When to act | Tracking |
+|---|---|---|---|---|
+| **F1** | **ADR slimming — split implementation details** | ADRs are growing large (many exceed 300 lines). Split detailed implementation sections (domain model specs, handler contracts, EF configurations, validation rules) into dedicated `docs/adr/implementation/XXXX-impl.md` files linked from the parent ADR. The ADR retains high-level design decisions; the implementation file captures how the solution works in detail with fine-grained requirements. | When any ADR exceeds ~250 lines, or during the next atomic-switch phase when ADRs are reviewed | `docs/adr/implementation/` directory (to be created) |
+| **F2** | **Common location for public event contracts** | Currently each BC defines its own message records under `Application/<BC>/Messages/`. Consider a shared `Application/Messaging/Contracts/` or per-publisher namespace convention so consumers can discover available events without scanning every BC. Trade-off: shared location vs. BC autonomy. | Future design discussion — after all BCs are implemented and cross-BC message count stabilises | — |
+| **F3** | **Saga / Orchestrator pattern evaluation** | Some multi-step flows (e.g., PlaceOrder → Payment → Inventory → Fulfillment) are currently choreography-based (event chains). If flows grow more complex or require compensation logic, evaluate saga/orchestrator patterns. Do not refactor prematurely — wait until we confirm the design direction. | When we identify a flow that requires explicit compensation or ordering guarantees beyond what choreography provides | Separate ADR required |
+| **F4** | **Event handler chain refactoring** ⚠️ *crucial* | Several handlers publish new events from within an event handler (e.g., `OrderPaymentExpiredHandler` handles `PaymentExpired` → cancels order → publishes `OrderCancelled`). While this works for the current in-memory broker, it creates implicit chains that are hard to trace, test in isolation, and reason about failure/retry semantics. Refactor selected flows to use direct method calls within a single BC or introduce an explicit orchestrator where the chain crosses BC boundaries. | After the current design is validated in production and we have clarity on which chains are problematic. Priority: high — affects debuggability and resilience. | — |
 
 ---
 
@@ -70,4 +84,4 @@ Full details and blocking analysis: [`bounded-context-map.md § Next BCs to impl
 
 ---
 
-*Last reviewed: 2026-03-12*
+*Last reviewed: 2026-03-20*
