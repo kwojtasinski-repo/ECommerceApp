@@ -1,3 +1,4 @@
+using ECommerceApp.Application.Sales.Coupons.Rules.Evaluators;
 using ECommerceApp.Domain.Sales.Coupons;
 using System;
 using System.Collections.Generic;
@@ -8,6 +9,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules
     public sealed class CouponWorkflowBuilder
     {
         private readonly List<CouponRuleDescriptor> _rules = new();
+        private bool _enableOversizeGuard;
 
         public CouponWorkflowBuilder DefineRule(
             string name,
@@ -23,9 +25,30 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules
             return this;
         }
 
+        public CouponWorkflowBuilder WithOversizeGuard(bool enabled = true)
+        {
+            _enableOversizeGuard = enabled;
+            return this;
+        }
+
         public ICouponRuleRegistry Build()
         {
-            return new CouponRuleRegistry(_rules);
+            var rules = new List<CouponRuleDescriptor>(_rules);
+
+            if (_enableOversizeGuard
+                && rules.Any(r => r.Name == CouponRuleNames.FixedAmountOff)
+                && !rules.Any(r => r.Name == CouponRuleNames.OversizeGuard))
+            {
+                var evaluator = new CouponOversizeGuardEvaluator();
+                rules.Add(new CouponRuleDescriptor(
+                    CouponRuleNames.OversizeGuard,
+                    CouponRuleCategory.Constraint,
+                    evaluator,
+                    null,
+                    null));
+            }
+
+            return new CouponRuleRegistry(rules);
         }
 
         private sealed class CouponRuleRegistry : ICouponRuleRegistry

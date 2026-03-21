@@ -4,5 +4,6 @@ namespace ECommerceApp.Application.Sales.Coupons
     {
         public int MaxCouponsPerOrder { get; set; } = 5;        // hard ceiling: 10
         public decimal DefaultMinOrderValue { get; set; } = 100m;
+        public bool EnableOversizeGuard { get; set; } = true;
     }
 }

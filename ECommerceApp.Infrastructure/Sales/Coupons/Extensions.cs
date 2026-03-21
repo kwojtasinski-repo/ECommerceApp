@@ -26,6 +26,7 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons
             services.AddScoped<ICompletedOrderCounter, CompletedOrderCounterAdapter>();
             services.AddScoped<ISpecialEventCache, SpecialEventCache>();
             services.AddScoped<IRuntimeCouponSource, NullRuntimeCouponSource>();
+            services.AddScoped<IScopeTargetRepository, ScopeTargetRepository>();
 
             return services;
         }

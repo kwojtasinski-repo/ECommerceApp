@@ -22,5 +22,6 @@ namespace ECommerceApp.Domain.Sales.Coupons
         public const string MinOrderValue = "min-order-value";
         public const string SpecialEvent = "special-event";
         public const string FirstPurchaseOnly = "first-purchase-only";
+        public const string OversizeGuard = "coupon-oversize-guard";
     }
 }
