@@ -132,7 +132,16 @@ Aggregates own their state transitions. Cross-BC communication via domain events
                                   │               │                │              │
                                   │ IFulfillDbCtx │                │ ICouponDbCtx │
                                   │ Refund/Shipmt │                │ Coupon       │
-                                  └───────────────┘                └──────────────┘
+                                  └───────┬───────┘                └──────┬───────┘
+                                          │ events (parallel               │ events
+                                          │ fan-out §13)                   │ (name sync §10)
+                                          ▼                                │
+                                  ┌───────────────┐                        │
+                                  │  Inventory    │◄───────────────────────┘
+                                  │  Availability │    (Catalog.Messages:
+                                  │               │     ProductNameChanged,
+                                  │ IAvailDbCtx   │     not direct dep)
+                                  └───────────────┘
 
 ┌───────────────────────┐  ┌──────────────────┐  ┌──────────────────────────────────────┐
 │   AccountProfile      │  │   Currencies     │  │           Identity / IAM             │

@@ -45,6 +45,21 @@ Full details and blocking analysis: [`bounded-context-map.md § Next BCs to impl
 
 ---
 
+## Design amendments agreed (implementation pending)
+
+> These are documented as ADR amendments, not separate roadmaps. Priority order reflects
+> business impact (P0 = stock integrity risk).
+
+| Priority | Topic | ADR Amendment | What |
+|---|---|---|---|
+| **P0** | Fulfillment → Inventory parallel fan-out | [ADR-0017 §13](../adr/0017-sales-fulfillment-bc-design.md), [ADR-0011 amendment](../adr/0011-inventory-availability-bc-design.md) | Fix stock leak: 3 Inventory handlers for Fulfillment messages; retire OrderShippedHandler; ShipmentStatus.PartiallyDelivered; enriched messages with Items[] |
+| **P1** | Order event payload enrichment | [ADR-0014 §19](../adr/0014-sales-orders-bc-design.md) | ShipmentFailurePayload, enriched PartialFulfilmentPayload (ShipmentId + FailedItems) |
+| **P1** | Operator notifications | [ADR-0014 §19](../adr/0014-sales-orders-bc-design.md), [ADR-0018 §2](../adr/0018-supporting-communication-bc-design.md) | OrderRequiresAttention message (no consumer until Communication BC) |
+| **P2** | CouponOversizeGuard | [ADR-0016 §10.1](../adr/0016-sales-coupons-bc-design.md) | New constraint rule for fixed-amount coupons exceeding order total; enabled by default |
+| **P3** | Catalog → Coupons name sync | [ADR-0016 §10.2](../adr/0016-sales-coupons-bc-design.md) | 3 Catalog messages + 3 Coupons handlers + IScopeTargetRepository for CouponScopeTarget.TargetName sync |
+
+---
+
 ## Deferred (scheduled separately)
 
 | Item | Blocked by | ADR / Tracking |

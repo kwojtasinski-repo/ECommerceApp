@@ -56,6 +56,7 @@ We will introduce a dedicated **Supporting/Communication BC** as a leaf-node BC 
 | `RefundRejected` | Fulfillment (ADR-0017) | Email: refund rejected, reason |
 | `OrderPlaced` | Orders (ADR-0014) | Email: order confirmation |
 | `OrderCancelled` | Orders (ADR-0014) | Email: order cancellation |
+| `OrderRequiresAttention` | Orders (ADR-0014 §19) | Internal: operator alert — shipment failure or partial delivery |
 | `PaymentConfirmed` | Payments (ADR-0015) | Email: payment received |
 | `PaymentExpired` | Payments (ADR-0015) | Email: payment window expired |
 | `CouponExpired` | Coupons (ADR-0016 §9) | Email: coupon expired — deferred to Slice 2 |
