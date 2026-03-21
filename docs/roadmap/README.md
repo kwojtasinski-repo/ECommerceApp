@@ -10,12 +10,12 @@
 
 | Area | File | ADR | Status |
 |---|---|---|---|
-| **Sales/Orders — atomic switch** | [`orders-atomic-switch.md`](./orders-atomic-switch.md) | [ADR-0014](../adr/0014-sales-orders-bc-design.md) | 🟡 DB migration approval pending; controller migration + switch not started |
-| **Sales/Payments — DB migrations + atomic switch** | [`payments-atomic-switch.md`](./payments-atomic-switch.md) | [ADR-0015](../adr/0015-sales-payments-bc-design.md) | ⬜ Atomic switch blocked by Orders switch; implementation ✅ done |
+| **Sales/Orders — atomic switch** | [`orders-atomic-switch.md`](./orders-atomic-switch.md) | [ADR-0014](../adr/0014-sales-orders-bc-design.md) | 🟡 DB migration ✅ approved; integration tests ✅ done; controller migration + switch not started |
+| **Sales/Payments — DB migrations + atomic switch** | [`payments-atomic-switch.md`](./payments-atomic-switch.md) | [ADR-0015](../adr/0015-sales-payments-bc-design.md) | 🟡 DB migrations ✅ approved; implementation ✅ + integration tests ✅ done; atomic switch blocked by Orders |
 | **Sales/Coupons — Slice 1 implementation** | — (see ADR) | [ADR-0016](../adr/0016-sales-coupons-bc-design.md) | 🟡 Implementation in progress (parallel change); atomic switch blocked by Orders + Payments |
 | **Presale/Checkout — Slice 2** | [`presale-slice2.md`](./presale-slice2.md) | [ADR-0012](../adr/0012-presale-checkout-bc-design.md) §11–14 | ⛔ Implementation blocked by Orders atomic switch |
 | **Identity/IAM — atomic switch** | [`iam-atomic-switch.md`](./iam-atomic-switch.md) | [ADR-0019](../adr/0019-identity-iam-bc-design.md) | 🟡 Migration approval pending; coordinate with Orders switch |
-| **Frontend error pipeline & JS migration** | [`frontend-pipeline.md`](./frontend-pipeline.md) | [ADR-0021](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) | ⬜ Phase 1–2 not started |
+| **Frontend error pipeline & JS migration** | [`frontend-pipeline.md`](./frontend-pipeline.md) | [ADR-0021](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) | ✅ Phase 1–4 complete |
 
 ---
 
@@ -71,6 +71,7 @@ Full details and blocking analysis: [`bounded-context-map.md § Next BCs to impl
 | **F2** | **Common location for public event contracts** | Currently each BC defines its own message records under `Application/<BC>/Messages/`. Consider a shared `Application/Messaging/Contracts/` or per-publisher namespace convention so consumers can discover available events without scanning every BC. Trade-off: shared location vs. BC autonomy. | Future design discussion — after all BCs are implemented and cross-BC message count stabilises | — |
 | **F3** | **Saga / Orchestrator pattern evaluation** | Some multi-step flows (e.g., PlaceOrder → Payment → Inventory → Fulfillment) are currently choreography-based (event chains). If flows grow more complex or require compensation logic, evaluate saga/orchestrator patterns. Do not refactor prematurely — wait until we confirm the design direction. | When we identify a flow that requires explicit compensation or ordering guarantees beyond what choreography provides | Separate ADR required |
 | **F4** | **Event handler chain refactoring** ⚠️ *crucial* | Several handlers publish new events from within an event handler (e.g., `OrderPaymentExpiredHandler` handles `PaymentExpired` → cancels order → publishes `OrderCancelled`). While this works for the current in-memory broker, it creates implicit chains that are hard to trace, test in isolation, and reason about failure/retry semantics. Refactor selected flows to use direct method calls within a single BC or introduce an explicit orchestrator where the chain crosses BC boundaries. | After the current design is validated in production and we have clarity on which chains are problematic. Priority: high — affects debuggability and resilience. | — |
+| **F5** | **ModuleClient evolution — universal cross-BC adapter** ⚠️ *important* | `ModuleClient` uses `GetService()` (singular) — only dispatches to the last-registered handler ([KI-007](../../.github/context/known-issues.md)). Fix: change to `GetServices()`. Beyond the bug fix, the `ModuleClient` concept (generic cross-module dispatch via `IServiceProvider`) is architecturally superior to the current per-BC adapter classes (`OrderExistenceCheckerAdapter`, `CatalogClientAdapter`, `StockAvailabilityCheckerAdapter`, etc.). Evolve `ModuleClient` into a universal cross-BC communication mechanism that supports: (1) fire-and-forget events (current), (2) query/request-response semantics (new — replace adapter interfaces), (3) optional async dispatch. This would eliminate the need to write a new adapter class every time one BC needs data from another. | Phase 1 (bug fix): can be done now — change `GetService` → `GetServices` + loop. Phase 2 (query support): after atomic switches are complete and adapter usage patterns stabilise. | [KI-007](../../.github/context/known-issues.md) |
 
 ---
 
@@ -84,4 +85,4 @@ Full details and blocking analysis: [`bounded-context-map.md § Next BCs to impl
 
 ---
 
-*Last reviewed: 2026-03-20*
+*Last reviewed: 2026-03-28*

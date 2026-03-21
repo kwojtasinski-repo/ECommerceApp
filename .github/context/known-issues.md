@@ -16,6 +16,15 @@
 
 ## Medium
 
+### [KI-007] `ModuleClient.PublishAsync` — dispatches to only ONE handler per event type
+- **Severity**: 🟠 Medium
+- **Location**: `ECommerceApp.Infrastructure/Messaging/ModuleClient.cs` (line 23)
+- **Symptom**: When multiple BCs register `IMessageHandler<T>` for the same event type `T`, only the last-registered handler executes. All other subscribers are silently skipped.
+- **Root cause**: `_serviceProvider.GetService(handlerType)` resolves a **single** service. `GetServices()` (plural) is required to resolve all registered handlers. `BackgroundMessageDispatcher` uses `GetServices()` correctly but runs asynchronously via `Channel<T>`, making it unsuitable for synchronous test assertions.
+- **Impact**: In production (`UseBackgroundDispatcher = true`), the `BackgroundMessageDispatcher` path is used so this bug is masked. If `UseBackgroundDispatcher` is set to `false`, multi-consumer events (e.g., `OrderPlaced` consumed by Payments + Inventory + Presale) will only reach one handler.
+- **Workaround**: Production always uses the background dispatcher. Integration tests use `SynchronousMultiHandlerBroker` which resolves all handlers correctly.
+- **Fix tracked in**: [Roadmap F5](../../docs/roadmap/README.md) — ModuleClient evolution.
+
 ---
 
 ## Low

@@ -1,7 +1,7 @@
 # Roadmap: Sales/Payments BC — DB Migrations + Atomic Switch
 
 > ADR: [ADR-0015](../adr/0015-sales-payments-bc-design.md) — Sales/Payments BC Design
-> Status: 🟡 In progress — Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅
+> Status: 🟡 In progress — Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migration ✅ approved
 > **Blocked by**: Sales/Orders atomic switch (`orders-atomic-switch.md`)
 
 ---

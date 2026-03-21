@@ -1,7 +1,7 @@
 # Roadmap: Sales/Orders BC — Atomic Switch
 
 > ADR: [ADR-0014](../adr/0014-sales-orders-bc-design.md) — Sales/Orders BC Design
-> Status: 🟡 In progress — Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅
+> Status: 🟡 In progress — Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migration ✅ approved
 > **Blocks**: Sales/Payments atomic switch · Presale/Checkout Slice 2 · Sales/Coupons · Sales/Fulfillment
 
 ---
@@ -17,7 +17,7 @@ All layers are implemented and tested. The two remaining gate items before the a
 | Infrastructure — OrdersDbContext, configurations, repositories, adapters, DI | ✅ Done |
 | Unit tests | ✅ Done |
 | Integration tests — `OrderServiceTests.cs` (8 tests) | ✅ Done |
-| `InitSalesSchema` DB migration (creates `sales.Orders`, `sales.OrderItems`, `sales.OrderEvents`) | ✅ Done — **pending production sign-off** |
+| `InitSalesSchema` DB migration (creates `sales.Orders`, `sales.OrderItems`, `sales.OrderEvents`) | ✅ Done — **approved** |
 
 ---
 

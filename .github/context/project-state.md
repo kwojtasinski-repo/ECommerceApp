@@ -5,7 +5,7 @@
 > For confirmed bugs see [`.github/context/known-issues.md`](./known-issues.md).
 > For planned work see [`docs/roadmap/README.md`](../docs/roadmap/README.md).
 
-*Last updated: 2026-03-20*
+*Last updated: 2026-03-28*
 
 ---
 
@@ -13,8 +13,8 @@
 
 | Area | State | Key blocker |
 |---|---|---|
-| **Sales/Orders BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ — **DB migration pending approval**; integration tests + atomic switch not started | DB migration approval (migration-policy.instructions.md) |
-| **Sales/Payments BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ — **DB migrations pending approval**; integration tests + atomic switch not started | Orders atomic switch must complete first |
+| **Sales/Orders BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ — **DB migration ✅ approved**; atomic switch pending (Steps 2–8 in `orders-atomic-switch.md`) | Controller migration + DI swap |
+| **Sales/Payments BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ — **DB migrations ✅ approved**; atomic switch pending | Orders atomic switch must complete first |
 
 ---
 
@@ -22,25 +22,27 @@
 
 | Area | Summary | ADR |
 |---|---|---|
+| **DB migrations approved** | All per-BC DB migrations approved for all 10 BCs (Orders, Payments, Coupons, Fulfillment, Inventory, Presale, Catalog, AccountProfile, Currencies, TimeManagement). Universal blocker removed. | — |
+| **BC integration tests** | 96 new integration tests across 12 test files: 86 per-BC service tests (9 BCs) + 10 cross-BC event chain tests (3 files). Test infrastructure: `BcWebApplicationFactory`, `BcBaseTest<T>`, `SynchronousMultiHandlerBroker`, `TypedIdAwareValueGeneratorSelector`, `NoOpDbContextMigrator`. All tests passing (423 total). | — |
 | **Frontend error pipeline** | Phase 1 (ExceptionResponse + errors.js) ✅ Phase 2 (bug fixes: ajaxRequest FormData, modalService denyAction, buttonTemplate type, validations ReDoS) ✅ Phase 3 (fetch-first new-code policy) ✅ ongoing Phase 4 (BS5 modalService rewrite + AMD cleanup / `addObjectPropertiesToGlobal` removed + DOMInitialized event-data pattern) ✅ | [ADR-0021](../docs/adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) |
 | **Bootstrap 5 upgrade** | All views migrated to BS5.3.3; TomSelect 2.4.1 installed; modalService rewritten for BS5 API; BS4 attributes and jQuery plugin calls removed | [ADR-0023](../docs/adr/0023-bootstrap-5-upgrade.md) |
 | **Navbar two-tier redesign** | Top bar (search + category filter + cart badge + user menu) ✅ Secondary nav (Kategorie for guests; management bar for MaintenanceRole) ✅ IStockQueryService + 5 Inventory views + InventoryController ✅ `_LoginPartial.cshtml` retired ✅ | [ADR-0022](../docs/adr/0022-navbar-two-tier-redesign.md) |
 
 ---
 
-These BCs are fully implemented alongside legacy code. Only migration approval, integration tests,
-and the atomic switch (remove legacy code) remain.
+These BCs are fully implemented alongside legacy code. DB migrations are approved and integration tests are done.
+Only the atomic switch (controller migration + remove legacy code) remains.
 
 | BC | Pending | ADR |
 |---|---|---|
-| **AccountProfile** | DB migration approval → integration tests → migrate `CustomerController` / `AddressController` / `ContactDetailController` → remove legacy `CustomerService` | [ADR-0005](../docs/adr/0005-accountprofile-bc-userprofile-aggregate-design.md) |
-| **Catalog** | DB migration approval → integration tests → migrate `ItemController` / `ImageController` / `TagController` → atomic switch | [ADR-0007](../docs/adr/0007-catalog-bc-product-category-tag-aggregate-design.md) |
-| **Currencies** | DB migration approval → integration tests → migrate `CurrencyController` (async) → coordinate with Catalog switch → atomic switch | [ADR-0008](../docs/adr/0008-supporting-currencies-bc-design.md) |
-| **TimeManagement** | Two coordinated DB migrations approval → integration tests → `CurrencyRateSyncTask` atomic switch | [ADR-0009](../docs/adr/0009-supporting-timemanagement-bc-design.md) |
-| **Inventory/Availability** | `InitInventorySchema` migration approval + data migration (`Items.Quantity` → `inventory.StockItems`) → integration tests → replace `ItemHandler` calls with `IMessageBroker` → atomic switch | [ADR-0011](../docs/adr/0011-inventory-availability-bc-design.md) |
-| **Presale/Checkout Slice 1** | `InitPresaleSchema` migration approval → integration tests | [ADR-0012](../docs/adr/0012-presale-checkout-bc-design.md) |
-| **Sales/Coupons Slice 1** | `InitCouponsSchema` migration approval → integration tests → migrate `CouponController` / `CouponUsedController` / `CouponTypeController` → remove legacy `CouponHandler` | [ADR-0016](../docs/adr/0016-sales-coupons-bc-design.md) |
-| **Sales/Fulfillment Slice 1** | `InitFulfillmentSchema` migration approval → integration tests → migrate `RefundController` → remove legacy `RefundService`; `InventoryRefundApprovedHandler` import update deferred to atomic switch | [ADR-0017](../docs/adr/0017-sales-fulfillment-bc-design.md) |
+| **AccountProfile** | Migrate `CustomerController` / `AddressController` / `ContactDetailController` → remove legacy `CustomerService` → atomic switch | [ADR-0005](../docs/adr/0005-accountprofile-bc-userprofile-aggregate-design.md) |
+| **Catalog** | Migrate `ItemController` / `ImageController` / `TagController` → atomic switch | [ADR-0007](../docs/adr/0007-catalog-bc-product-category-tag-aggregate-design.md) |
+| **Currencies** | Migrate `CurrencyController` (async) → coordinate with Catalog switch → atomic switch | [ADR-0008](../docs/adr/0008-supporting-currencies-bc-design.md) |
+| **TimeManagement** | `CurrencyRateSyncTask` atomic switch | [ADR-0009](../docs/adr/0009-supporting-timemanagement-bc-design.md) |
+| **Inventory/Availability** | Data migration (`Items.Quantity` → `inventory.StockItems`) → replace `ItemHandler` calls with `IMessageBroker` → atomic switch | [ADR-0011](../docs/adr/0011-inventory-availability-bc-design.md) |
+| **Presale/Checkout Slice 1** | Ready for production — no controller migration needed (Slice 1 is new BFF endpoints only) | [ADR-0012](../docs/adr/0012-presale-checkout-bc-design.md) |
+| **Sales/Coupons Slice 1** | Migrate `CouponController` / `CouponUsedController` / `CouponTypeController` → remove legacy `CouponHandler` → atomic switch | [ADR-0016](../docs/adr/0016-sales-coupons-bc-design.md) |
+| **Sales/Fulfillment Slice 1** | Migrate `RefundController` → remove legacy `RefundService` → atomic switch; `InventoryRefundApprovedHandler` import update deferred to atomic switch | [ADR-0017](../docs/adr/0017-sales-fulfillment-bc-design.md) |
 
 ---
 

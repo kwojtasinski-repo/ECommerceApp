@@ -5,7 +5,7 @@
 > For BC status see [`project-state.md`](../../.github/context/project-state.md).
 > For roadmap see [`docs/roadmap/README.md`](../roadmap/README.md).
 
-*Last updated: 2026-03-20*
+*Last updated: 2026-03-28*
 
 ---
 

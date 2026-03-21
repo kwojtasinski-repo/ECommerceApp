@@ -3,10 +3,9 @@ using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Web;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ValueGeneration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -39,6 +38,7 @@ namespace ECommerceApp.IntegrationTests.Common
             builder.ConfigureServices(services =>
             {
                 ReplaceAllBcDbContextsWithInMemory(services);
+                MakeAllBcDbContextsTransient(services);
                 ReplaceMessageBrokerWithSynchronous(services);
                 RemoveBackgroundMessageDispatcher(services);
                 ReplaceDbContextMigratorsWithNoOp(services);
@@ -73,7 +73,8 @@ namespace ECommerceApp.IntegrationTests.Common
                 // Build InMemory options for the specific DbContext type
                 var optionsBuilderType = typeof(DbContextOptionsBuilder<>).MakeGenericType(dbContextType);
                 var optionsBuilder = (DbContextOptionsBuilder)Activator.CreateInstance(optionsBuilderType)!;
-                optionsBuilder.UseInMemoryDatabase(dbName);
+                optionsBuilder.UseInMemoryDatabase(dbName)
+                    .ReplaceService<IValueGeneratorSelector, TypedIdAwareValueGeneratorSelector>();
 
                 services.AddSingleton(descriptor.ServiceType, optionsBuilder.Options);
             }
@@ -88,6 +89,50 @@ namespace ECommerceApp.IntegrationTests.Common
             foreach (var d in nonGenericOptions)
             {
                 services.Remove(d);
+            }
+        }
+
+        /// <summary>
+        /// Changes all per-BC DbContext registrations from <see cref="ServiceLifetime.Scoped"/>
+        /// to <see cref="ServiceLifetime.Transient"/>.
+        /// <para>
+        /// In production, each HTTP request creates a new DI scope (and thus a new DbContext instance).
+        /// In tests, we don't create new scopes between service calls, so the same scoped DbContext
+        /// retains change-tracker state between operations. This causes tracking conflicts when
+        /// <c>AsNoTracking()</c> queries return new instances that are then <c>Update()</c>-ed while
+        /// the original entity from a previous <c>Add()</c> is still tracked.
+        /// </para>
+        /// <para>
+        /// Converting all scoped registrations to transient means each service resolution gets a fresh
+        /// instance tree (DbContext, repositories, services) with empty change trackers,
+        /// while the InMemory database (shared by name) retains the data across instances.
+        /// </para>
+        /// </summary>
+        private static void MakeAllBcDbContextsTransient(IServiceCollection services)
+        {
+            var scopedDescriptors = services
+                .Where(d => d.Lifetime == ServiceLifetime.Scoped
+                    && d.ServiceType != typeof(Context))
+                .ToList();
+
+            foreach (var descriptor in scopedDescriptors)
+            {
+                services.Remove(descriptor);
+
+                if (descriptor.ImplementationFactory != null)
+                {
+                    services.Add(new ServiceDescriptor(
+                        descriptor.ServiceType,
+                        descriptor.ImplementationFactory,
+                        ServiceLifetime.Transient));
+                }
+                else
+                {
+                    services.Add(new ServiceDescriptor(
+                        descriptor.ServiceType,
+                        descriptor.ImplementationType ?? descriptor.ServiceType,
+                        ServiceLifetime.Transient));
+                }
             }
         }
 
