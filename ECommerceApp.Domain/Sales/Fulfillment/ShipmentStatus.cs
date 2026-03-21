@@ -5,6 +5,7 @@ namespace ECommerceApp.Domain.Sales.Fulfillment
         Pending,
         InTransit,
         Delivered,
-        Failed
+        Failed,
+        PartiallyDelivered
     }
 }

@@ -66,5 +66,17 @@ namespace ECommerceApp.Domain.Sales.Fulfillment
 
             Status = ShipmentStatus.Failed;
         }
+
+        public void MarkAsPartiallyDelivered(IReadOnlyList<int> deliveredProductIds)
+        {
+            if (Status != ShipmentStatus.InTransit)
+                throw new DomainException($"Shipment '{Id?.Value}' is not in transit.");
+
+            if (deliveredProductIds is null || !deliveredProductIds.Any())
+                throw new DomainException("At least one delivered product is required.");
+
+            Status = ShipmentStatus.PartiallyDelivered;
+            DeliveredAt = DateTime.UtcNow;
+        }
     }
 }

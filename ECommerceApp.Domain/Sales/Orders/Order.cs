@@ -189,18 +189,23 @@ namespace ECommerceApp.Domain.Sales.Orders
             AppendEvent(OrderEventType.ShipmentDispatched);
         }
 
-        public void MarkAsPartiallyFulfilled()
+        public void MarkAsPartiallyFulfilled(int shipmentId,
+            IReadOnlyList<FulfilledItem> deliveredItems,
+            IReadOnlyList<FulfilledItem> failedItems)
         {
             if (Status is not (OrderStatus.PaymentConfirmed or OrderStatus.PartiallyFulfilled))
                 return;
 
             Status = OrderStatus.PartiallyFulfilled;
-            AppendEvent(OrderEventType.PartiallyFulfilled);
+            AppendEvent(OrderEventType.PartiallyFulfilled,
+                new PartialFulfilmentPayload(shipmentId, deliveredItems, failedItems));
         }
 
-        public void RecordShipmentFailure()
+        public void RecordShipmentFailure(int shipmentId,
+            IReadOnlyList<FailedShipmentItem> items)
         {
-            AppendEvent(OrderEventType.ShipmentFailed);
+            AppendEvent(OrderEventType.ShipmentFailed,
+                new ShipmentFailurePayload(shipmentId, items));
         }
 
         private void AppendEvent<T>(OrderEventType type, T payload)

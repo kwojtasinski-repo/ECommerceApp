@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -93,6 +94,7 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
             await _broker.PublishAsync(new ShipmentDelivered(
                 shipment.Id.Value,
                 shipment.OrderId,
+                MapToLineItems(shipment.Lines),
                 DateTime.UtcNow));
 
             return ShipmentOperationResult.Success;
@@ -120,6 +122,46 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
             await _broker.PublishAsync(new ShipmentFailed(
                 shipment.Id.Value,
                 shipment.OrderId,
+                MapToLineItems(shipment.Lines),
+                DateTime.UtcNow));
+
+            return ShipmentOperationResult.Success;
+        }
+
+        public async Task<ShipmentOperationResult> MarkAsPartiallyDeliveredAsync(int shipmentId, IReadOnlyList<int> deliveredProductIds, CancellationToken ct = default)
+        {
+            var shipment = await _shipments.GetByIdAsync(shipmentId, ct);
+            if (shipment is null)
+            {
+                return ShipmentOperationResult.NotFound;
+            }
+
+            try
+            {
+                shipment.MarkAsPartiallyDelivered(deliveredProductIds);
+            }
+            catch (DomainException)
+            {
+                return ShipmentOperationResult.InvalidStatus;
+            }
+
+            await _shipments.UpdateAsync(shipment, ct);
+
+            var deliveredSet = new HashSet<int>(deliveredProductIds);
+            var deliveredItems = shipment.Lines
+                .Where(l => deliveredSet.Contains(l.ProductId))
+                .Select(l => new ShipmentLineItem(l.ProductId, l.Quantity))
+                .ToList();
+            var failedItems = shipment.Lines
+                .Where(l => !deliveredSet.Contains(l.ProductId))
+                .Select(l => new ShipmentLineItem(l.ProductId, l.Quantity))
+                .ToList();
+
+            await _broker.PublishAsync(new ShipmentPartiallyDelivered(
+                shipment.Id.Value,
+                shipment.OrderId,
+                deliveredItems,
+                failedItems,
                 DateTime.UtcNow));
 
             return ShipmentOperationResult.Success;
@@ -164,5 +206,8 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
                 shipment.Status.ToString(),
                 shipment.ShippedAt,
                 shipment.DeliveredAt);
+
+        private static IReadOnlyList<ShipmentLineItem> MapToLineItems(IReadOnlyList<ShipmentLine> lines)
+            => lines.Select(l => new ShipmentLineItem(l.ProductId, l.Quantity)).ToList();
     }
 }
