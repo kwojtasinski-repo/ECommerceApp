@@ -320,7 +320,8 @@ namespace ECommerceApp.UnitTests.Architecture
         [Fact]
         public void App_Coupons_ShouldOnlyDependOnOwnDomainAndMessageContracts()
         {
-            // Coupons handlers consume: OrderCancelled
+            // Coupons handlers consume: OrderCancelled, ProductNameChanged,
+            // CategoryNameChanged, TagNameChanged
             Types().That().Are(AppCoupons)
                 .Should().NotDependOnAny(
                     Types().That().AreNot(AppCoupons)
@@ -328,7 +329,8 @@ namespace ECommerceApp.UnitTests.Architecture
                         .And().AreNot(SharedDomain)
                         .And().AreNot(SharedApplication)
                         .And().AreNot(Messaging)
-                        .And().AreNot(OrderMessages))      // CouponsOrderCancelledHandler
+                        .And().AreNot(OrderMessages)       // CouponsOrderCancelledHandler
+                        .And().AreNot(CatalogMessages))    // ProductNameChanged/CategoryNameChanged/TagNameChangedHandler
                 .Because("Coupons application must not depend on other BCs except via message contracts")
                 .Check(Architecture);
         }
@@ -350,9 +352,9 @@ namespace ECommerceApp.UnitTests.Architecture
         [Fact]
         public void App_Inventory_ShouldOnlyDependOnOwnDomainAndMessageContracts()
         {
-            // Inventory handlers consume: OrderPlaced, OrderCancelled, OrderShipped,
+            // Inventory handlers consume: OrderPlaced, OrderCancelled,
             // PaymentConfirmed, ProductPublished, ProductUnpublished, ProductDiscontinued,
-            // RefundApproved (from Payments)
+            // RefundApproved (from Payments), ShipmentDelivered/Failed/PartiallyDelivered (from Fulfillment)
             Types().That().Are(AppInventory)
                 .Should().NotDependOnAny(
                     Types().That().AreNot(AppInventory)
@@ -360,9 +362,10 @@ namespace ECommerceApp.UnitTests.Architecture
                         .And().AreNot(SharedDomain)
                         .And().AreNot(SharedApplication)
                         .And().AreNot(Messaging)
-                        .And().AreNot(OrderMessages)       // OrderPlacedHandler, OrderCancelledHandler, OrderShippedHandler
+                        .And().AreNot(OrderMessages)       // OrderPlacedHandler, OrderCancelledHandler
                         .And().AreNot(PaymentMessages)     // PaymentConfirmedHandler, RefundApprovedHandler
                         .And().AreNot(CatalogMessages)     // ProductPublished/Unpublished/DiscontinuedHandler
+                        .And().AreNot(FulfillmentMessages)  // ShipmentDelivered/Failed/PartiallyDeliveredHandler
                         .And().AreNot(AppTimeManagement))  // StockAdjustmentJob, PaymentWindowTimeoutJob
                 .Because("Inventory application must not depend on other BCs except via message contracts")
                 .Check(Architecture);
