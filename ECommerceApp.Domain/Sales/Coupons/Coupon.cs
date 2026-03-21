@@ -16,6 +16,7 @@ namespace ECommerceApp.Domain.Sales.Coupons
         // ── Slice 2 additions ────────────────────────────────────────────
         public string RulesJson { get; private set; }      // serialized CouponRuleDefinition[]
         public byte[] Version { get; private set; }        // rowversion for optimistic concurrency
+        public bool BypassOversizeGuard { get; private set; }  // admin override for the oversize guard (default: false)
 
         private Coupon() { }
 

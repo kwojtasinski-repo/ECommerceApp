@@ -160,10 +160,10 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
 
             var registry = builder.Build();
 
-            registry.GetAllRules().Should().HaveCount(15);
+            registry.GetAllRules().Should().HaveCount(16);  // 15 explicit + 1 auto-injected oversize guard
             registry.GetRulesByCategory(CouponRuleCategory.Scope).Should().HaveCount(4);
             registry.GetRulesByCategory(CouponRuleCategory.Discount).Should().HaveCount(5);
-            registry.GetRulesByCategory(CouponRuleCategory.Constraint).Should().HaveCount(6);
+            registry.GetRulesByCategory(CouponRuleCategory.Constraint).Should().HaveCount(7);  // 6 explicit + oversize guard
         }
 
         // ── Stub evaluator for testing ────────────────────────────────────────

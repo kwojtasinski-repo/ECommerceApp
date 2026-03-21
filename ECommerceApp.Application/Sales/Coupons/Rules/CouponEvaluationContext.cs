@@ -8,13 +8,15 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules
         public string UserId { get; }
         public decimal OriginalTotal { get; }
         public IReadOnlyList<CouponEvaluationItem> Items { get; }
+        public bool BypassOversizeGuard { get; }
 
-        public CouponEvaluationContext(int orderId, string userId, decimal originalTotal, IReadOnlyList<CouponEvaluationItem> items)
+        public CouponEvaluationContext(int orderId, string userId, decimal originalTotal, IReadOnlyList<CouponEvaluationItem> items, bool bypassOversizeGuard = false)
         {
             OrderId = orderId;
             UserId = userId;
             OriginalTotal = originalTotal;
             Items = items;
+            BypassOversizeGuard = bypassOversizeGuard;
         }
     }
 
