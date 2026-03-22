@@ -1,3 +1,4 @@
+using ECommerceApp.API.Filters;
 using ECommerceApp.Application.Presale.Checkout.DTOs;
 using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Domain.Presale.Checkout;
@@ -28,6 +29,8 @@ namespace ECommerceApp.API.Controllers.V2
         }
 
         [HttpPost("items")]
+        [Authorize(Policy = "TrustedApiUser")]
+        [ServiceFilter(typeof(MaxApiQuantityFilter))]
         public async Task<IActionResult> AddOrUpdate([FromBody] AddToCartDto dto, CancellationToken ct = default)
         {
             await _cart.AddOrUpdateAsync(dto, ct);
@@ -35,6 +38,7 @@ namespace ECommerceApp.API.Controllers.V2
         }
 
         [HttpDelete("items/{productId:int}")]
+        [Authorize(Policy = "TrustedApiUser")]
         public async Task<IActionResult> RemoveItem(int productId, CancellationToken ct = default)
         {
             var userId = GetUserId();
@@ -43,6 +47,7 @@ namespace ECommerceApp.API.Controllers.V2
         }
 
         [HttpDelete]
+        [Authorize(Policy = "TrustedApiUser")]
         public async Task<IActionResult> ClearCart(CancellationToken ct = default)
         {
             var userId = GetUserId();

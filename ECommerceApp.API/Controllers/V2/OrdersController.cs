@@ -1,3 +1,4 @@
+using ECommerceApp.Application.Permissions;
 using ECommerceApp.Application.Sales.Orders.DTOs;
 using ECommerceApp.Application.Sales.Orders.Results;
 using ECommerceApp.Application.Sales.Orders.Services;
@@ -48,7 +49,13 @@ namespace ECommerceApp.API.Controllers.V2
         public async Task<IActionResult> GetById(int id, CancellationToken ct = default)
         {
             var vm = await _orders.GetOrderDetailsAsync(id, ct);
-            return vm is null ? NotFound() : Ok(vm);
+            if (vm is null) return NotFound();
+            if (!User.IsInRole(UserPermissions.Roles.Administrator) &&
+                !User.IsInRole(UserPermissions.Roles.Manager) &&
+                !User.IsInRole(UserPermissions.Roles.Service) &&
+                vm.UserId != GetUserId())
+                return Forbid();
+            return Ok(vm);
         }
 
         [HttpGet("my")]
@@ -60,6 +67,7 @@ namespace ECommerceApp.API.Controllers.V2
         }
 
         [HttpPost]
+        [Authorize(Policy = "TrustedApiUser")]
         public async Task<IActionResult> PlaceOrder([FromBody] PlaceOrderDto dto, CancellationToken ct = default)
         {
             var result = await _orders.PlaceOrderAsync(dto, ct);

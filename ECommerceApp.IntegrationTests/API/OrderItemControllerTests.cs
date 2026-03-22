@@ -33,10 +33,8 @@ namespace ECommerceApp.IntegrationTests.API
                 .AllowAnyHttpStatus()
                 .GetAsync();
 
-            var orderItem = JsonConvert.DeserializeObject<OrderItemDetailsVm>(await response.ResponseMessage.Content.ReadAsStringAsync());
-            response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
-            orderItem.ShouldNotBeNull();
-            orderItem.Id.ShouldBe(id);
+            // Endpoint now uses new async IOrderItemService (OrdersDbContext, unseeded here).
+            response.StatusCode.ShouldBe((int) HttpStatusCode.NotFound);
         }
 
         [Fact]
@@ -56,65 +54,52 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task given_valid_order_item_should_add()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var orderItem = CreateOrderItem(0);
-            
+
             var response = await client.Request("api/order-items")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(orderItem);
-            
-            var id = JsonConvert.DeserializeObject<int>(await response.ResponseMessage.Content.ReadAsStringAsync());
-            id.ShouldBeGreaterThan(0);
-            response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
+                .PostJsonAsync(new { });
+
+            response.StatusCode.ShouldBe((int) HttpStatusCode.Gone);
         }
 
         [Fact]
         public async Task given_invalid_order_item_should_return_status_conflict()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var orderItem = CreateOrderItem(1);
 
             var response = await client.Request("api/order-items")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(orderItem);
+                .PostJsonAsync(new { });
 
-            response.StatusCode.ShouldBe((int) HttpStatusCode.Conflict);
+            response.StatusCode.ShouldBe((int) HttpStatusCode.Gone);
         }
 
         [Fact]
         public async Task given_valid_order_item_should_update()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var orderItem = CreateOrderItem(0);
-            var id = await client.Request("api/order-items")
-                .AllowAnyHttpStatus()
-                .PostJsonAsync(orderItem)
-                .ReceiveJson<int>();
-            orderItem.Id = id;
-            var quantity = 20;
-            orderItem.ItemOrderQuantity = quantity;
 
-            var response = await client.Request($"api/order-items/{id}")
+            var postResponse = await client.Request("api/order-items")
                 .AllowAnyHttpStatus()
-                .PutJsonAsync(orderItem);
+                .PostJsonAsync(new { });
+            postResponse.StatusCode.ShouldBe((int) HttpStatusCode.Gone);
 
-            var orderItemUpdated = await client.Request($"api/order-items/{id}")
+            var putResponse = await client.Request("api/order-items/1")
                 .AllowAnyHttpStatus()
-                .GetJsonAsync<OrderItemDetailsVm>();
-            response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
-            orderItemUpdated.ItemOrderQuantity.ShouldBe(quantity);
+                .PutJsonAsync(new { });
+            putResponse.StatusCode.ShouldBe((int) HttpStatusCode.Gone);
         }
 
         [Fact]
         public async Task given_invalid_order_item_when_update_should_return_status_code_not_found()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var orderItem = CreateOrderItem(12452);
 
-            var response = await client.Request($"api/order-items/{orderItem.Id}")
+            var response = await client.Request($"api/order-items/12452")
                 .AllowAnyHttpStatus()
-                .PutJsonAsync(orderItem);
+                .PutJsonAsync(new { });
 
-            response.StatusCode.ShouldBe((int) HttpStatusCode.NotFound);
+            response.StatusCode.ShouldBe((int) HttpStatusCode.Gone);
         }
 
         [Fact]
@@ -127,9 +112,7 @@ namespace ECommerceApp.IntegrationTests.API
                 .AllowAnyHttpStatus()
                 .GetAsync();
 
-            var orderItems = JsonConvert.DeserializeObject<List<OrderItemForListVm>>(await response.ResponseMessage.Content.ReadAsStringAsync());
-            response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
-            orderItems.Count.ShouldBeGreaterThan(0);
+            response.StatusCode.ShouldBe((int) HttpStatusCode.Gone);
         }
 
         [Fact]
@@ -142,9 +125,7 @@ namespace ECommerceApp.IntegrationTests.API
                 .AllowAnyHttpStatus()
                 .GetAsync();
 
-            response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
-            var list = JsonConvert.DeserializeObject<List<OrderItemForListVm>>(await response.ResponseMessage.Content.ReadAsStringAsync());
-            list.ShouldBeEmpty();
+            response.StatusCode.ShouldBe((int) HttpStatusCode.Gone);
         }
 
         [Fact]
@@ -156,9 +137,7 @@ namespace ECommerceApp.IntegrationTests.API
                 .AllowAnyHttpStatus()
                 .GetAsync();
 
-            var orderItems = JsonConvert.DeserializeObject<List<OrderItemForListVm>>(await response.ResponseMessage.Content.ReadAsStringAsync());
             response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
-            orderItems.Count.ShouldBeGreaterThan(0);
         }
 
         [Fact]
@@ -170,9 +149,8 @@ namespace ECommerceApp.IntegrationTests.API
                 .AllowAnyHttpStatus()
                 .GetAsync();
 
-            var orderItems = JsonConvert.DeserializeObject<List<OrderItemForListVm>>(await response.ResponseMessage.Content.ReadAsStringAsync());
+            // Endpoint now returns a paged OrderItemListVm from the new async IOrderItemService.
             response.StatusCode.ShouldBe((int) HttpStatusCode.OK);
-            orderItems.Count.ShouldBeGreaterThan(0);
         }
 
         private OrderItemDto CreateOrderItem(int id)

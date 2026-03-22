@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.Interfaces
@@ -18,6 +19,7 @@ namespace ECommerceApp.Application.Interfaces
         Task<IdentityResult> AddPasswordAsync(TUser user, string password);
         Task<IdentityResult> RemovePasswordAsync(TUser user);
         Task<IList<string>> GetRolesAsync(TUser user);
+        Task<IList<Claim>> GetClaimsAsync(TUser user);
         Task<IdentityResult> AddToRolesAsync(TUser user, IEnumerable<string> roles);
         Task<IdentityResult> RemoveFromRoleAsync(TUser user, string role);
         Task<IdentityResult> RemoveFromRolesAsync(TUser user, IEnumerable<string> roles);

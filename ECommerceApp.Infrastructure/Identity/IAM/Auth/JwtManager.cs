@@ -23,7 +23,7 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
                 SecurityAlgorithms.HmacSha256);
         }
 
-        public string IssueToken(string userId, string email, IEnumerable<string> roles)
+        public string IssueToken(string userId, string email, IEnumerable<string> roles, IEnumerable<Claim>? extraClaims = null)
         {
             var claims = new List<Claim>
             {
@@ -34,6 +34,11 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
             };
 
             claims.AddRange(roles.Select(role => new Claim(ClaimsIdentity.DefaultRoleClaimType, role)));
+            if (extraClaims != null)
+            {
+                claims.AddRange(extraClaims);
+            }
+
             var token = new JwtSecurityToken(_authOptions.Value.Issuer, _authOptions.Value.Issuer, claims, expires: DateTime.Now.AddMinutes(120), signingCredentials: _signingCredentials);
             return new JwtSecurityTokenHandler().WriteToken(token);
         }

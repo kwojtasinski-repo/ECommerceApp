@@ -1,9 +1,9 @@
-﻿using System.Collections.Generic;
-using ECommerceApp.Application.ViewModels.Order;
+﻿using ECommerceApp.Application.Sales.Orders.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using ECommerceApp.Application.Services.Orders;
-using ECommerceApp.Application.DTO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ECommerceApp.API.Controllers
 {
@@ -20,59 +20,45 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet]
-        public ActionResult<List<OrderForListVm>> GetOrders()
+        public async Task<IActionResult> GetOrders(CancellationToken ct = default)
         {
-            var orders = _orderService.GetAllOrders();
-            return Ok(orders);
+            var vm = await _orderService.GetAllOrdersAsync(100, 1, null, ct);
+            return Ok(vm);
         }
 
         [HttpGet("by-customer/{customerId}")]
-        public ActionResult<List<OrderForListVm>> GetOrdersByCustomerId(int customerId)
+        public async Task<IActionResult> GetOrdersByCustomerId(int customerId, CancellationToken ct = default)
         {
-            var orders = _orderService.GetAllOrdersByCustomerId(customerId);
+            var orders = await _orderService.GetOrdersByCustomerIdAsync(customerId, ct);
             return Ok(orders);
         }
 
         [HttpGet("{id}")]
-        public ActionResult<OrderDetailsVm> GetOrder(int id)
+        public async Task<IActionResult> GetOrder(int id, CancellationToken ct = default)
         {
-            var order = _orderService.GetOrderDetail(id);
-            if (order == null)
-            {
-                return NotFound();
-            }
-            return Ok(order);
+            var order = await _orderService.GetOrderDetailsAsync(id, ct);
+            return order is null ? NotFound() : Ok(order);
         }
 
         [HttpGet("by-user")]
-        public ActionResult<List<OrderForListVm>> GetMyOrders()
+        public async Task<IActionResult> GetMyOrders(CancellationToken ct = default)
         {
             var userId = GetUserId();
-            var orders = _orderService.GetAllOrdersByUserId(userId);
+            var orders = await _orderService.GetOrdersByUserIdAsync(userId, ct);
             return Ok(orders);
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPut("{id:int}")]
-        public IActionResult EditOrder(int id, [FromBody] UpdateOrderDto model)
-        {
-            model.Id = id;
-            return _orderService.UpdateOrder(model) is not null
-                ? Ok()
-                : NotFound();
-        }
+        public IActionResult EditOrder(int id)
+            => StatusCode(StatusCodes.Status410Gone, new { error = "This endpoint has been removed. Use PUT /api/v2/orders." });
 
         [HttpPost]
-        public IActionResult AddOrder([FromBody] AddOrderDto model)
-        {
-            return Ok(_orderService.AddOrder(model));
-        }
+        public IActionResult AddOrder()
+            => StatusCode(StatusCodes.Status410Gone, new { error = "This endpoint has been removed. Use POST /api/v2/checkout/confirm." });
 
         [HttpPost("with-all-order-items")]
-        public IActionResult AddOrderFromOrderItems([FromBody] AddOrderFromCartDto model)
-        {
-            var id = _orderService.AddOrderFromCart(model);
-            return Ok(id);
-        }
+        public IActionResult AddOrderFromOrderItems()
+            => StatusCode(StatusCodes.Status410Gone, new { error = "This endpoint has been removed. Use POST /api/v2/checkout/confirm." });
     }
 }

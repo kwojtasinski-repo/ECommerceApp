@@ -71,8 +71,7 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task given_invalid_currency_when_pay_for_order_should_return_status_code_bad_request()
         {
             var client = await _factory.GetAuthenticatedClient();
-            var orderId = await AddOrder(1);
-            var payment = new AddPaymentDto() { OrderId = orderId, CurrencyId = 1000 };
+            var payment = new AddPaymentDto() { OrderId = 1, CurrencyId = 1000 };
 
             var response = await client.Request("api/payments")
                 .AllowHttpStatus(HttpStatusCode.BadRequest)

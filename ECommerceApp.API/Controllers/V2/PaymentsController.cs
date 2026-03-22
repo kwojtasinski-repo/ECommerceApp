@@ -20,6 +20,7 @@ namespace ECommerceApp.API.Controllers.V2
         }
 
         [HttpGet("{id:int}")]
+        [Authorize(Roles = MaintenanceRole)]
         public async Task<IActionResult> GetById(int id, CancellationToken ct = default)
         {
             var vm = await _payments.GetByIdAsync(id, ct);

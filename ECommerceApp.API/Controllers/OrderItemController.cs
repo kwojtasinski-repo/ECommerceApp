@@ -1,10 +1,9 @@
-﻿using ECommerceApp.Application;
-using ECommerceApp.Application.ViewModels.OrderItem;
+﻿using ECommerceApp.Application.Sales.Orders.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using ECommerceApp.Application.Services.Orders;
-using ECommerceApp.Application.DTO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ECommerceApp.API.Controllers
 {
@@ -21,67 +20,40 @@ namespace ECommerceApp.API.Controllers
 
         [Authorize(Roles = $"{ManagingRole}")]
         [HttpGet]
-        public ActionResult<List<OrderItemDto>> GetAllOrderItems()
+        public async Task<IActionResult> GetAllOrderItems(CancellationToken ct = default)
         {
-            var orderItems = _orderItemService.GetOrderItems();
-            return Ok(orderItems);
+            var vm = await _orderItemService.GetAllPagedAsync(100, 1, null, ct);
+            return Ok(vm);
         }
 
         [Authorize(Roles = $"{ManagingRole}")]
         [HttpGet("{id}")]
-        public ActionResult<OrderItemDetailsVm> GetOrderItem(int id)
+        public async Task<IActionResult> GetOrderItem(int id, CancellationToken ct = default)
         {
-            var orderItem = _orderItemService.GetOrderItemDetails(id);
-            if (orderItem is null)
-            {
-                return NotFound();
-            }
-            return Ok(orderItem);
+            var orderItem = await _orderItemService.GetByIdAsync(id, ct);
+            return orderItem is null ? NotFound() : Ok(orderItem);
         }
 
         [HttpGet("by-user")]
-        public ActionResult<List<OrderItemVm>> ShowMyCart()
+        public async Task<IActionResult> ShowMyCart(CancellationToken ct = default)
         {
             var userId = GetUserId();
-            var orderItems = _orderItemService.GetOrderItemsForRealization(userId);
+            var orderItems = await _orderItemService.GetCartItemsByUserIdAsync(userId, ct);
             return Ok(orderItems);
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpPut("{id:int}")]
-        public IActionResult EditOrderItem(int id, [FromBody] AddOrderItemDto model)
-        {
-            model.Id = id;
-            if (!ModelState.IsValid)
-            {
-                return Conflict(ModelState);
-            }
-            var orderItem = model.AsOrderItemDto();
-            orderItem.UserId = GetUserId();
-            return _orderItemService.UpdateOrderItem(orderItem)
-                ? Ok()
-                : NotFound();
-        }
+        public IActionResult EditOrderItem(int id)
+            => StatusCode(StatusCodes.Status410Gone, new { error = "This endpoint has been removed. Use DELETE /api/v2/cart/items/{productId} then POST /api/v2/cart/items." });
 
         [HttpPost]
-        public IActionResult AddOrderItem([FromBody] AddOrderItemDto model)
-        {
-            if (model.Id != 0)
-            {
-                return Conflict(ModelState);
-            }
-            var orderItem = model.AsOrderItemDto();
-            orderItem.UserId = GetUserId();
-            var id = _orderItemService.AddOrderItem(orderItem);
-            return Ok(id);
-        }
+        public IActionResult AddOrderItem()
+            => StatusCode(StatusCodes.Status410Gone, new { error = "This endpoint has been removed. Use POST /api/v2/cart/items." });
 
         [Authorize(Roles = $"{MaintenanceRole}")]
         [HttpGet("by-items/{id}")]
-        public ActionResult<List<OrderItemDto>> GetOrderItemsByItemId(int id)
-        {
-            var orderItems = _orderItemService.GetOrderItemsByItemId(id);
-            return Ok(orderItems);
-        }
+        public IActionResult GetOrderItemsByItemId(int id)
+            => StatusCode(StatusCodes.Status410Gone, new { error = "This endpoint has been removed. Use GET /api/v2/orders." });
     }
 }

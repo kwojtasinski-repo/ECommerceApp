@@ -11,7 +11,7 @@
 
 | Category                               | Count | Details                                                               |
 | -------------------------------------- | ----- | --------------------------------------------------------------------- |
-| `copilot-instructions.md`              | 1     | ≤ 4,000 chars, repo-level policy                                      |
+| `copilot-instructions.md`              | 1     | ≤ 4,000 chars (3,724), repo-level policy                              |
 | Instruction files (`.instructions.md`) | 11    | All with `applyTo:` frontmatter                                       |
 | Prompt files (`.prompt.md`)            | 3     | BC analysis, BC implementation, PR review                             |
 | Agent files                            | 4     | adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer     |
@@ -82,38 +82,48 @@
 
 ## Change log
 
+### Session 7 — Full audit & trim (2026-03-22)
+
+| #   | Change                                                                                                            | Files affected                       |
+| --- | ----------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| 1   | Trimmed `copilot-instructions.md` from 5,506 → 3,724 chars: condensed §2 bullets, §4 BC rule, §6 arch rule, §7–§9 | `.github/copilot-instructions.md`    |
+| 2   | Fixed ADR count 23 → 25 in §2 of `copilot-instructions.md`                                                        | `.github/copilot-instructions.md`    |
+| 3   | Added ADR-0025 to `adr` solution folder                                                                           | `ECommerceApp.sln`                   |
+| 4   | Updated repo-index At a Glance: ADRs 24→25, Razor views 134→153, JS modules 10→11                                 | `.github/context/repo-index.md`      |
+| 5   | Updated changelog current state summary and added Session 7 entry                                                 | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
 ### Session 6 — ADR-0024 + full audit (2026-03-22)
 
-| #   | Change                                                                                  | Files affected                                                      |
-| --- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| 1   | Created ADR-0024 (controller routing strategy: Areas for Web, in-place swap for API)   | `docs/adr/0024-controller-routing-strategy.md`                      |
-| 2   | Added ADR-0024 row to docs-index ADR table                                              | `.github/instructions/docs-index.instructions.md`                   |
-| 3   | Added ADR-0024 routing strategy note to roadmap README                                  | `docs/roadmap/README.md`                                            |
-| 4   | Updated `orders-atomic-switch.md` Steps 3–4 to Area-based approach + ADR-0024 ref      | `docs/roadmap/orders-atomic-switch.md`                              |
-| 5   | Updated `payments-atomic-switch.md` Step 3 to Area-based approach + ADR-0024 ref       | `docs/roadmap/payments-atomic-switch.md`                            |
-| 6   | Added routing strategy as key architectural invariant                                   | `.github/context/project-state.md`                                  |
-| 7   | ADR-0024 added to `ECommerceApp.sln` `adr` solution folder (auto by VS on file create) | `ECommerceApp.sln`                                                  |
-| 8   | Full audit (Workflow 6 + Workflow 8): repo-index At a Glance metrics updated            | `.github/context/repo-index.md`                                     |
-| 9   | Updated changelog counts and added Session 6 entry                                      | `COPILOT-SETUP-CHANGELOG.md`                                        |
+| #   | Change                                                                                 | Files affected                                    |
+| --- | -------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| 1   | Created ADR-0024 (controller routing strategy: Areas for Web, in-place swap for API)   | `docs/adr/0024-controller-routing-strategy.md`    |
+| 2   | Added ADR-0024 row to docs-index ADR table                                             | `.github/instructions/docs-index.instructions.md` |
+| 3   | Added ADR-0024 routing strategy note to roadmap README                                 | `docs/roadmap/README.md`                          |
+| 4   | Updated `orders-atomic-switch.md` Steps 3–4 to Area-based approach + ADR-0024 ref      | `docs/roadmap/orders-atomic-switch.md`            |
+| 5   | Updated `payments-atomic-switch.md` Step 3 to Area-based approach + ADR-0024 ref       | `docs/roadmap/payments-atomic-switch.md`          |
+| 6   | Added routing strategy as key architectural invariant                                  | `.github/context/project-state.md`                |
+| 7   | ADR-0024 added to `ECommerceApp.sln` `adr` solution folder (auto by VS on file create) | `ECommerceApp.sln`                                |
+| 8   | Full audit (Workflow 6 + Workflow 8): repo-index At a Glance metrics updated           | `.github/context/repo-index.md`                   |
+| 9   | Updated changelog counts and added Session 6 entry                                     | `COPILOT-SETUP-CHANGELOG.md`                      |
 
 ### Session 5 — Full audit & .sln sync (2026-06-27)
 
-| #   | Change                                                             | Files affected                                    |
-| --- | ------------------------------------------------------------------ | ------------------------------------------------- |
-| 1   | Added ADR-0022 (Navbar) and ADR-0023 (Bootstrap 5) to sln adr folder | `ECommerceApp.sln`                             |
-| 2   | Added `code-reviewer.md` to sln agents folder                      | `ECommerceApp.sln`                                |
-| 3   | Added `anti-patterns.context.md` to sln context folder             | `ECommerceApp.sln`                                |
-| 4   | Created `reports` solution folder; added `cross-bc-integration-test-report.md` | `ECommerceApp.sln`                   |
-| 5   | Added `docs/reports/` section to docs-index                        | `.github/instructions/docs-index.instructions.md` |
-| 6   | Updated changelog with Session 5                                   | `COPILOT-SETUP-CHANGELOG.md`                      |
+| #   | Change                                                                         | Files affected                                    |
+| --- | ------------------------------------------------------------------------------ | ------------------------------------------------- |
+| 1   | Added ADR-0022 (Navbar) and ADR-0023 (Bootstrap 5) to sln adr folder           | `ECommerceApp.sln`                                |
+| 2   | Added `code-reviewer.md` to sln agents folder                                  | `ECommerceApp.sln`                                |
+| 3   | Added `anti-patterns.context.md` to sln context folder                         | `ECommerceApp.sln`                                |
+| 4   | Created `reports` solution folder; added `cross-bc-integration-test-report.md` | `ECommerceApp.sln`                                |
+| 5   | Added `docs/reports/` section to docs-index                                    | `.github/instructions/docs-index.instructions.md` |
+| 6   | Updated changelog with Session 5                                               | `COPILOT-SETUP-CHANGELOG.md`                      |
 
 ### Session 4 — Drift audit & sync (2026-03-17)
 
-| #   | Change                                            | Files affected                                    |
-| --- | ------------------------------------------------- | ------------------------------------------------- |
-| 1   | Fixed ADR count 21 → 23 in copilot-instructions   | `.github/copilot-instructions.md`                 |
-| 2   | Added missing ADR-0022 row to docs-index           | `.github/instructions/docs-index.instructions.md` |
-| 3   | Updated changelog with Session 4                   | `COPILOT-SETUP-CHANGELOG.md`                      |
+| #   | Change                                          | Files affected                                    |
+| --- | ----------------------------------------------- | ------------------------------------------------- |
+| 1   | Fixed ADR count 21 → 23 in copilot-instructions | `.github/copilot-instructions.md`                 |
+| 2   | Added missing ADR-0022 row to docs-index        | `.github/instructions/docs-index.instructions.md` |
+| 3   | Updated changelog with Session 4                | `COPILOT-SETUP-CHANGELOG.md`                      |
 
 ### Session 3 — Code reviewer & anti-patterns (2026-03-17)
 

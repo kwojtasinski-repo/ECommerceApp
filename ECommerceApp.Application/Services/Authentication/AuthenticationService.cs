@@ -29,8 +29,9 @@ namespace ECommerceApp.Application.Services.Authentication
 
             var user = _userManager.FindByNameAsync(signInDto.Email).GetAwaiter().GetResult() ?? throw new BusinessException("Invalid credentials");
             var roles = _userManager.GetRolesAsync(user).GetAwaiter().GetResult();
+            var userClaims = _userManager.GetClaimsAsync(user).GetAwaiter().GetResult();
             // TODO: Store token, add timespan for expire, create refreshToken provider
-            var jwtToken = _jwtManager.IssueToken(user.Id, user.Email, roles);
+            var jwtToken = _jwtManager.IssueToken(user.Id, user.Email, roles, userClaims);
             var refreshToken = "";
             return new SignInResponseDto(jwtToken, refreshToken);
         }

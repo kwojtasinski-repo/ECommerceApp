@@ -1,7 +1,10 @@
 using System;
 using System.Text;
+using ECommerceApp.API.Filters;
+using ECommerceApp.API.Options;
 using ECommerceApp.Application;
 using ECommerceApp.Application.Middlewares;
+using ECommerceApp.Application.Permissions;
 using ECommerceApp.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -40,6 +43,18 @@ namespace ECommerceApp.API
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
                     };
                 });
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy("TrustedApiUser", policy =>
+                    policy.RequireAuthenticatedUser()
+                          .RequireAssertion(ctx =>
+                              ctx.User.HasClaim("api:purchase", "true") ||
+                              ctx.User.IsInRole(UserPermissions.Roles.Service) ||
+                              ctx.User.IsInRole(UserPermissions.Roles.Manager) ||
+                              ctx.User.IsInRole(UserPermissions.Roles.Administrator)));
+            });
+            services.Configure<WebOptions>(Configuration.GetSection("WebOptions"));
+            services.AddScoped<MaxApiQuantityFilter>();
             services.AddApplication();
             services.AddInfrastructure(Configuration);
             services.AddControllers().AddNewtonsoftJson(options =>

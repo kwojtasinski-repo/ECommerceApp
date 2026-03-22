@@ -58,7 +58,7 @@
                         @if (isSignedIn)
                         {
                             <li class="nav-item me-2">
-                                <a class="nav-link position-relative" asp-area="" asp-controller="Order" asp-action="ShowMyCart">
+                                <a class="nav-link position-relative" asp-area="Presale" asp-controller="Checkout" asp-action="Cart">
                                     <i class="fas fa-shopping-cart fa-lg"></i>
                                     <span id="itemCount" class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-light"></span>
                                 </a>
@@ -71,8 +71,8 @@
                             <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuToggle">
                                 @if (isSignedIn)
                                 {
-                                    <a class="dropdown-item" asp-area="" asp-controller="Order" asp-action="ShowMyOrders">Moje zamówienia</a>
-                                    <a class="dropdown-item" asp-area="" asp-controller="Payment" asp-action="ViewMyPayments">Moje płatności</a>
+                                    <a class="dropdown-item" asp-area="Sales" asp-controller="Orders" asp-action="MyOrders">Moje zamówienia</a>
+                                    <a class="dropdown-item" asp-area="Sales" asp-controller="Payments" asp-action="MyPayments">Moje płatności</a>
                                     <a class="dropdown-item" asp-area="" asp-controller="Customer" asp-action="Index">Dane kontaktowe</a>
                                     <div class="dropdown-divider"></div>
                                     <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
@@ -131,8 +131,8 @@
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown"><i class="fa-solid fa-truck me-1"></i>Realizacja</a>
                                 <div class="dropdown-menu">
-                                    <a class="dropdown-item" asp-area="" asp-controller="Order" asp-action="Index">Zamówienia</a>
-                                    <a class="dropdown-item" asp-area="" asp-controller="Order" asp-action="ShowOrdersPaid">Wydania</a>
+                                    <a class="dropdown-item" asp-area="Sales" asp-controller="Orders" asp-action="Index">Zamówienia</a>
+                                    <a class="dropdown-item" asp-area="Sales" asp-controller="Orders" asp-action="PaidOrders">Wydania</a>
                                     <a class="dropdown-item" asp-area="" asp-controller="Refund" asp-action="Index">Zwroty</a>
                                 </div>
                             </li>

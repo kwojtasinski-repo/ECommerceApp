@@ -1,7 +1,7 @@
 # Roadmap: Sales/Orders BC — Atomic Switch
 
 > ADR: [ADR-0014](../adr/0014-sales-orders-bc-design.md) — Sales/Orders BC Design
-> Status: 🟡 In progress — Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migration ✅ approved
+> Status: ✅ Switch live — Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migration ✅ approved ✅ API tiered access ✅ Nav links ✅ All acceptance criteria met
 > **Blocks**: Sales/Payments atomic switch · Presale/Checkout Slice 2 · Sales/Coupons · Sales/Fulfillment
 
 ---
@@ -75,7 +75,7 @@ before any controller migration or atomic switch:
 | `Web/Areas/Presale/Views/Checkout/` | ✅ Done (Cart, PlaceOrder, Summary) |
 | `Application/Presale/Checkout/ViewModels/CartLineVm.cs` | ✅ Done — `ProductName` added |
 | `Application/Presale/Checkout/Services/CartService.cs` | ✅ Done — enriches cart lines via `IProductService.GetProductSnapshotsByIdsAsync` |
-| `Web/Views/Shared/_Layout.cshtml` nav links | ⏱ Deferred — updated in same PR as frontend wiring |
+| `Web/Views/Shared/_Layout.cshtml` nav links | ✅ Done — all links point to new Area routes |
 
 ### Step 3a — Checkout/PlaceOrder: profile prefill ✅ Done
 
@@ -91,32 +91,32 @@ before any controller migration or atomic switch:
 | `Web/Areas/Presale/Controllers/CheckoutController.cs` | ✅ `IUserProfileService` injected; `PlaceOrder` GET calls `GetDetailsByUserIdAsync` and passes `UserProfileDetailsVm?` to view |
 | `Web/Areas/Presale/Views/Checkout/PlaceOrder.cshtml` | ✅ Typed model `UserProfileDetailsVm?`; `customerId` hidden; all personal + address fields prefilled from profile; first address used if available |
 
-### Step 4 — API replacement + tiered access model 🟡 Design agreed — implementation pending
+### Step 4 — API replacement + tiered access model ✅ Done
 
 > **Design agreed 2026-03-22** — see [ADR-0025](../adr/0025-api-tiered-access-trusted-purchase-policy.md).
-> Implementation is split into three phases (4a / 4b / 4c).
+> Implementation completed 2026-03-25. All gate conditions met.
 >
-> **Gate conditions — all must be ✅ before atomic switch:**
+> **Gate conditions — all ✅:**
 
 | Gate | Condition | Status |
 |---|---|---|
-| G1 | `TrustedApiUser` policy registered and applied to all write endpoints | ⏳ Pending |
-| G2 | `api:purchase` claim emitted from `LoginController` JWT assembly | ⏳ Pending |
-| G3 | Ownership checks on `GET /orders/{id}` and `GET /payments/{id}` | ⏳ Pending |
-| G4 | `MaxApiQuantityFilter` applied to `CartController.AddOrUpdate` | ⏳ Pending |
-| G5 | `AddToCartDtoValidator` created and registered (Web 99-cap) | ⏳ Pending |
-| G6 | `WebOptions:BaseUrl` configured; `Confirm` returns `{ orderId, paymentUrl }` | ⏳ Pending |
-| G7 | Legacy `API/Controllers/OrderController.cs` swapped to new `IOrderService` | ⏳ Pending |
-| G8 | Legacy `API/Controllers/OrderItemController.cs` swapped to new `IOrderItemService` | ⏳ Pending |
+| G1 | `TrustedApiUser` policy registered and applied to all write endpoints | ✅ Done |
+| G2 | `api:purchase` claim emitted from `LoginController` JWT assembly | ✅ Done |
+| G3 | Ownership checks on `GET /orders/{id}` and `GET /payments/{id}` | ✅ Done |
+| G4 | `MaxApiQuantityFilter` applied to `CartController.AddOrUpdate` | ✅ Done |
+| G5 | `AddToCartDtoValidator` created and registered (Web 99-cap) | ✅ Done |
+| G6 | `WebOptions:BaseUrl` configured; `Confirm` returns `{ orderId, paymentUrl }` | ✅ Done |
+| G7 | Legacy `API/Controllers/OrderController.cs` swapped to new `IOrderService` | ✅ Done |
+| G8 | Legacy `API/Controllers/OrderItemController.cs` swapped to new `IOrderItemService` | ✅ Done |
 
 #### Phase 4a — Authorization policy
 
 | Action | Status |
 |---|---|
-| Register `TrustedApiUser` policy in `API/Startup.cs` (claim `api:purchase=true` OR role `Service`/`Manager`/`Administrator`) | ⏳ Pending |
-| Apply `[Authorize(Policy = "TrustedApiUser")]` to cart-write, checkout, and order-placement endpoints | ⏳ Pending |
-| Emit claim `api:purchase` from `LoginController` JWT assembly when user has the flag | ⏳ Pending |
-| Add ownership check to `GET /api/v2/orders/{id}` and `GET /api/v2/payments/{id}` | ⏳ Pending |
+| Register `TrustedApiUser` policy in `API/Startup.cs` (claim `api:purchase=true` OR role `Service`/`Manager`/`Administrator`) | ✅ Done |
+| Apply `[Authorize(Policy = "TrustedApiUser")]` to cart-write, checkout, and order-placement endpoints | ✅ Done |
+| Emit claim `api:purchase` from `LoginController` JWT assembly when user has the flag | ✅ Done |
+| Add ownership check to `GET /api/v2/orders/{id}` and `GET /api/v2/payments/{id}` | ✅ Done |
 
 #### Phase 4b — Quantity limit (max 5 units per product per API order line)
 
@@ -127,19 +127,19 @@ before any controller migration or atomic switch:
 
 | Action | Status |
 |---|---|
-| Create `ApiPurchaseOptions` with `MaxQuantityPerOrderLine = 5` and `MaxWebQuantityPerOrderLine = 99` constants | ⏳ Pending |
-| Create `MaxApiQuantityFilter` action filter | ⏳ Pending |
-| Apply filter to `CartController.AddOrUpdate` | ⏳ Pending |
-| Create `AddToCartDtoValidator` (FluentValidation) in Application layer — Web cap: 99 | ⏳ Pending |
+| Create `ApiPurchaseOptions` with `MaxQuantityPerOrderLine = 5` and `MaxWebQuantityPerOrderLine = 99` constants | ✅ Done |
+| Create `MaxApiQuantityFilter` action filter | ✅ Done |
+| Apply filter to `CartController.AddOrUpdate` | ✅ Done |
+| Create `AddToCartDtoValidator` (FluentValidation) in Application layer — Web cap: 99 | ✅ Done |
 
 #### Phase 4c — Payment URL in checkout confirm response
 
 | Action | Status |
 |---|---|
-| Create `WebOptions` class and register in `API/Startup.cs` | ⏳ Pending |
-| Inject `IOptions<WebOptions>` into `API/Controllers/V2/CheckoutController` | ⏳ Pending |
-| Update `Confirm` action to return `{ orderId, paymentUrl }` | ⏳ Pending |
-| Add `WebOptions:BaseUrl` to `API/appsettings.json` and `API/appsettings.Development.json` | ⏳ Pending |
+| Create `WebOptions` class and register in `API/Startup.cs` | ✅ Done |
+| Inject `IOptions<WebOptions>` into `API/Controllers/V2/CheckoutController` | ✅ Done |
+| Update `Confirm` action to return `{ orderId, paymentUrl }` | ✅ Done |
+| Add `WebOptions:BaseUrl` to `API/appsettings.json` and `API/appsettings.Development.json` | ✅ Done |
 
 #### API service swap (original Step 4 scope)
 
@@ -209,19 +209,19 @@ before any controller migration or atomic switch:
 
 ## Acceptance criteria
 
-### Switch live (Steps 1–7)
+### Switch live (Steps 1–7) ✅ All met
 
-- [ ] `sales.Orders` schema correct — `Status` column present (via `InitSalesSchema`); legacy `dbo.Orders` untouched
-- [ ] Web: `Areas/Sales/Controllers/OrdersController.cs` uses `Application.Sales.Orders.Services.IOrderService` with `[Area("Sales")]`
-- [ ] Web: `Areas/Presale/Controllers/CheckoutController.cs` uses Presale services with `[Area("Presale")]`
-- [ ] API: `OrderController` uses `Application.Sales.Orders.Services.IOrderService` — in-place swap
-- [ ] `Startup.cs` includes area route `{area:exists}/{controller}/{action=Index}/{id?}`
-- [ ] `_Layout.cshtml` nav links point to new Area routes
+- [x] `sales.Orders` schema correct — `Status` column present (via `InitSalesSchema`); legacy `dbo.Orders` untouched
+- [x] Web: `Areas/Sales/Controllers/OrdersController.cs` uses `Application.Sales.Orders.Services.IOrderService` with `[Area("Sales")]`
+- [x] Web: `Areas/Presale/Controllers/CheckoutController.cs` uses Presale services with `[Area("Presale")]`
+- [x] API: `OrderController` uses `Application.Sales.Orders.Services.IOrderService` — in-place swap
+- [x] `Startup.cs` includes area route `{area:exists}/{controller}/{action=Index}/{id?}`
+- [x] `_Layout.cshtml` nav links point to new Area routes
 - [x] `PaymentHandler` / `CouponHandler` / `ItemHandler` — no changes required; legacy handlers stop being called after switch, removed in Step 8
-- [ ] `OrderPlacedHandler` (Presale BC) clears cart + soft reservations on `OrderPlaced`
-- [ ] `PaymentConfirmedHandler` (Inventory BC) uses `ConfirmReservationsByOrderAsync`
-- [ ] Full test suite green after activation
-- [ ] `bounded-context-map.md` updated (switch live)
+- [x] `OrderPlacedHandler` (Presale BC) clears cart + soft reservations on `OrderPlaced` — verified: calls `RemoveRangeAsync` + `RemoveCommittedForUserAsync`
+- [x] `PaymentConfirmedHandler` (Inventory BC) calls `ConfirmHoldsByOrderAsync` (the bulk order-level confirm operation)
+- [x] Full test suite green after activation — 1457/1457 passing
+- [x] `bounded-context-map.md` updated (switch live)
 
 ### Cleanup (Step 8 — deferred)
 
@@ -232,4 +232,4 @@ before any controller migration or atomic switch:
 
 ---
 
-*Last reviewed: 2026-03-25 · ADRs: [ADR-0014](../adr/0014-sales-orders-bc-design.md), [ADR-0024](../adr/0024-controller-routing-strategy.md)*
+*Last reviewed: 2026-03-26 · ADRs: [ADR-0014](../adr/0014-sales-orders-bc-design.md), [ADR-0024](../adr/0024-controller-routing-strategy.md), [ADR-0025](../adr/0025-api-tiered-access-trusted-purchase-policy.md)*

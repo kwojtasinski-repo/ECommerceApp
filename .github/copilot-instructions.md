@@ -10,17 +10,13 @@ ECommerceApp — ASP.NET Core MVC + Web API e-commerce platform. Clean/onion arc
 
 **Domain areas**: Catalog, Orders, Payments, Refunds, Coupons, Customers, Currencies (NBP API), Identity & User Management.
 
-**Tech**: ASP.NET Core, EF Core, FluentValidation, AutoMapper, xUnit, Moq, FluentAssertions, MSSQL. Frontend: Bootstrap, jQuery, require.js, LibMan (`libman.json`). UI labels are partially in Polish — do not translate without explicit request.
+**Tech**: ASP.NET Core, EF Core, FluentValidation, AutoMapper, xUnit, Moq, FluentAssertions, MSSQL. Frontend: Bootstrap, jQuery, require.js, LibMan. UI labels are partially in Polish — do not translate without explicit request.
 
 ## 2. Configuration map
 
 `docs-index.instructions.md` is the **single routing table** for all Copilot config. It indexes:
 
-- **11 instruction files** — per-stack rules, auto-loaded by `applyTo:` globs
-- **3 prompts** — `bc-analysis`, `bc-implementation`, `pr-review`
-- **4 agents** — `@adr-generator`, `@bc-switch`, `@code-reviewer`, `@copilot-setup-maintainer`
-- **8 skills** — scaffolding templates (unit test, dbcontext, ef-config, DI, domain event, integration test, http scenario, validator)
-- **23 ADRs**, architecture docs, patterns, roadmaps, context files
+- **11 instruction files**, **3 prompts**, **4 agents**, **8 skills**, **25 ADRs**, architecture docs, patterns, roadmaps, context files
 
 Read `docs-index.instructions.md` to find the right file for any task. Follow its “When to read” columns.
 
@@ -37,7 +33,7 @@ Read `docs-index.instructions.md` to find the right file for any task. Follow it
 - When creating a new ADR, copy `.github/templates/adr.template.md`. Save to `docs/adr/XXXX-short-title.md`.
 - Read applicable per-stack instructions before writing code for that stack.
 - Detailed rules for AbstractService, Handler pattern, ExceptionMiddleware, IFileStore, NBP API → see `dotnet.instructions.md`.
-- **BC changes rule**: Before editing BC-related code, MUST read `.github/context/project-state.md` and verify the BC is not blocked. If blocked, STOP and explain the blocker. No atomic switch for any BC is performed until 80–95% of the overall BC migration implementation is complete. Atomic switches are always deferred to the end of the migration programme, not done after each individual BC.
+- **BC changes rule**: Before editing BC-related code, MUST read `.github/context/project-state.md` and verify it is not blocked. If blocked, STOP. Atomic switches deferred until 80–95% of migration is complete — never after individual BCs.
 
 ## 5. Communication & PRs
 
@@ -52,20 +48,17 @@ Read `docs-index.instructions.md` to find the right file for any task. Follow it
 
 Context: `project-state.md`, `known-issues.md`, `repo-index.md`. Roadmaps: `docs/roadmap/README.md`. BC map: `bounded-context-map.md`.
 
-**Architecture suggestion rule**: `pre-edit.instructions.md` defines when to proactively suggest ADR, BC map, roadmap, or project-state updates. Always follow its triggers after completing implementation work.
+**Architecture suggestion rule**: Follow `pre-edit.instructions.md` triggers to suggest ADR, BC map, roadmap, or project-state updates after implementation.
 
-## 7. Coupons Configuration
+## 7. Coupons
 
-- Coupons BC Slice 2: The maximum number of coupons per order is set to a default of 5 (industry standard), with a hard ceiling of 10. This limit is configurable via `CouponsOptions.MaxCouponsPerOrder`.
+- Max coupons/order: default 5, ceiling 10 (`CouponsOptions.MaxCouponsPerOrder`). See ADR-0016.
 
-## 8. .NET 8+ Upgrade Rule
+## 8. .NET 8+ Upgrade
 
-- **FluentAssertions → AwesomeAssertions**: When upgrading the project to .NET 8 or later, replace the `FluentAssertions` NuGet package with `AwesomeAssertions` (Apache 2.0 community fork). Replace all `using FluentAssertions;` → `using AwesomeAssertions;`. No assertion syntax changes needed. See [KI-008](context/known-issues.md) for details. Do NOT perform this replacement while the project targets .NET 7 or earlier.
+- Replace `FluentAssertions` → `AwesomeAssertions` on .NET 8+ upgrade (drop-in, no syntax changes). Do NOT on .NET 7. See [KI-008](context/known-issues.md).
 
-## 9. API Purchase Limit Configuration
+## 9. API Purchase Limits
 
-- **Max 5 units per product per API order line**: The API enforces a maximum of 5 units of a single product per cart line (`ApiPurchaseOptions.MaxQuantityPerOrderLine = 5`). This is an API-only limit enforced via `MaxApiQuantityFilter` — the domain (`Shared.Quantity`) stays pure. The Web storefront uses a separate validator (`AddToCartDtoValidator`, limit 99 per line).
-- **Future**: Both API and Web limits become backoffice-configurable — two independent settings (`ApiMaxQuantityPerOrderLine`, `WebMaxQuantityPerOrderLine`) stored in `backoffice.PurchaseLimitSettings`, loaded into `IMemoryCache` on startup, resolved via `IApiPurchaseLimitsService`. Until the Backoffice BC is live, the constants in `ApiPurchaseOptions` are authoritative.
-- **Do NOT add a max quantity cap to `Shared.Quantity`** — that value object is channel-agnostic and must stay pure.
-- **Trusted API user**: `TrustedApiUser` policy = authenticated AND (`api:purchase` claim OR role `Service`/`Manager`/`Administrator`). The `User` role alone does not grant purchase flow access via API.
-- See [ADR-0025](docs/adr/0025-api-tiered-access-trusted-purchase-policy.md) and [DD-002](context/known-issues.md).
+- Max 5 units/line via `MaxApiQuantityFilter` (`ApiPurchaseOptions`); Web max 99 (`AddToCartDtoValidator`). Never cap `Shared.Quantity`.
+- `TrustedApiUser` = authenticated + `api:purchase` claim OR `Service`/`Manager`/`Administrator` role. See [ADR-0025](docs/adr/0025-api-tiered-access-trusted-purchase-policy.md) and [DD-002](context/known-issues.md).

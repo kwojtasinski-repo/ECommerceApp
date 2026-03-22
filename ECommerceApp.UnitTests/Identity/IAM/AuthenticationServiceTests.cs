@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Identity;
 using Moq;
 using System;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -73,7 +74,9 @@ namespace ECommerceApp.UnitTests.Identity.IAM
                         .ReturnsAsync(user);
             _userManager.Setup(u => u.GetRolesAsync(user))
                         .ReturnsAsync(roles);
-            _jwtManager.Setup(j => j.IssueToken(user.Id, user.Email, roles))
+            _userManager.Setup(u => u.GetClaimsAsync(user))
+                        .ReturnsAsync(new List<Claim>());
+            _jwtManager.Setup(j => j.IssueToken(user.Id, user.Email, roles, It.IsAny<IEnumerable<Claim>>()))
                        .Returns(expectedToken);
 
             var service = CreateService();
