@@ -1,4 +1,3 @@
-
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 18
 VisualStudioVersion = 18.2.11415.280
@@ -57,8 +56,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "agents", "agents", "{D28679
 	ProjectSection(SolutionItems) = preProject
 		.github\agents\adr-generator.md = .github\agents\adr-generator.md
 		.github\agents\bc-switch.md = .github\agents\bc-switch.md
-		.github\agents\copilot-setup-maintainer.md = .github\agents\copilot-setup-maintainer.md
 		.github\agents\code-reviewer.md = .github\agents\code-reviewer.md
+		.github\agents\copilot-setup-maintainer.md = .github\agents\copilot-setup-maintainer.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{908C6C00-47A3-455F-82C8-5BBECB045911}"
@@ -88,6 +87,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "adr", "adr", "{25B91C37-ECC
 		docs\adr\0021-frontend-error-pipeline-and-js-migration-strategy.md = docs\adr\0021-frontend-error-pipeline-and-js-migration-strategy.md
 		docs\adr\0022-navbar-two-tier-redesign.md = docs\adr\0022-navbar-two-tier-redesign.md
 		docs\adr\0023-bootstrap-5-upgrade.md = docs\adr\0023-bootstrap-5-upgrade.md
+		docs\adr\0024-controller-routing-strategy.md = docs\adr\0024-controller-routing-strategy.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ECommerce", "ECommerce", "{049E647F-D15D-4AFB-8AE6-DB2363C9F4D4}"
@@ -121,8 +121,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "roadmap", "roadmap", "{8FA6
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "context", "context", "{1064B208-B85A-4013-8C84-597303D43282}"
 	ProjectSection(SolutionItems) = preProject
-		.github\context\future-skills.md = .github\context\future-skills.md
 		.github\context\anti-patterns.context.md = .github\context\anti-patterns.context.md
+		.github\context\future-skills.md = .github\context\future-skills.md
 		.github\context\known-issues.md = .github\context\known-issues.md
 		.github\context\project-state.md = .github\context\project-state.md
 		.github\context\repo-index.md = .github\context\repo-index.md
@@ -235,6 +235,7 @@ Global
 		{DB95CC21-7869-4EAC-8EB3-F5706D958E0A} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 		{8FA6F8D3-44D1-4AC3-9335-8B69F45EA3DD} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 		{1064B208-B85A-4013-8C84-597303D43282} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{7C3E91A2-B4D5-4F68-9A1C-E2F30748D6B1} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 		{2FBD2A37-7C7A-4EE9-87FD-DECAC3085916} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{454D908B-026B-44BF-BC5B-21687F7F3181} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
 		{85AD127C-4128-4C3B-9BC1-9CA2EDA721A3} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
@@ -244,7 +245,6 @@ Global
 		{3F4FB488-668E-45EE-BCE3-6A5B4B55B5C9} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
 		{0812F74D-3AE1-492C-BFB1-2F8FFA4FC97A} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
 		{F3E145DF-ADCD-4EFA-BC2C-8C4855A9E597} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
-		{7C3E91A2-B4D5-4F68-9A1C-E2F30748D6B1} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C833E166-660D-4E9D-85E1-0ED811E2828E}

@@ -1,0 +1,36 @@
+@model ECommerceApp.Application.Sales.Payments.ViewModels.PaymentDetailsVm
+
+@{
+    ViewData["Title"] = "Potwierdź płatność";
+}
+
+<h1>Potwierdź płatność</h1>
+
+<dl class="row">
+    <dt class="col-sm-3">Id płatności</dt>
+    <dd class="col-sm-9">@Model.Id</dd>
+
+    <dt class="col-sm-3">Id zamówienia</dt>
+    <dd class="col-sm-9">@Model.OrderId</dd>
+
+    <dt class="col-sm-3">Kwota</dt>
+    <dd class="col-sm-9">@Model.TotalAmount.ToString("N2")</dd>
+
+    <dt class="col-sm-3">Status</dt>
+    <dd class="col-sm-9">@Model.Status</dd>
+
+    <dt class="col-sm-3">Wygasa</dt>
+    <dd class="col-sm-9">@Model.ExpiresAt.ToString("dd.MM.yyyy HH:mm")</dd>
+</dl>
+
+<form asp-area="Sales" asp-controller="Payments" asp-action="Create" method="post">
+    <input type="hidden" name="PaymentId" value="@Model.Id" />
+
+    <div class="mb-3">
+        <label class="form-label" for="TransactionRef">Numer transakcji</label>
+        <input type="text" id="TransactionRef" name="TransactionRef" value="@Model.TransactionRef" class="form-control" placeholder="Opcjonalnie" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Potwierdź płatność</button>
+    <a asp-area="Sales" asp-controller="Orders" asp-action="Details" asp-route-id="@Model.OrderId" class="btn btn-secondary">Anuluj</a>
+</form>

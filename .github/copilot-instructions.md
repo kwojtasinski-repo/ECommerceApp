@@ -57,3 +57,7 @@ Context: `project-state.md`, `known-issues.md`, `repo-index.md`. Roadmaps: `docs
 ## 7. Coupons Configuration
 
 - Coupons BC Slice 2: The maximum number of coupons per order is set to a default of 5 (industry standard), with a hard ceiling of 10. This limit is configurable via `CouponsOptions.MaxCouponsPerOrder`.
+
+## 8. .NET 8+ Upgrade Rule
+
+- **FluentAssertions → AwesomeAssertions**: When upgrading the project to .NET 8 or later, replace the `FluentAssertions` NuGet package with `AwesomeAssertions` (Apache 2.0 community fork). Replace all `using FluentAssertions;` → `using AwesomeAssertions;`. No assertion syntax changes needed. See [KI-008](context/known-issues.md) for details. Do NOT perform this replacement while the project targets .NET 7 or earlier.

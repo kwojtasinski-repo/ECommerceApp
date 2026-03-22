@@ -1,0 +1,87 @@
+@model ECommerceApp.Application.Sales.Orders.ViewModels.OrderDetailsVm
+
+@{
+    ViewData["Title"] = "Realizacja zamówienia";
+}
+
+<h1>Realizacja zamówienia</h1>
+
+<dl class="row">
+    <dt class="col-sm-3">Id</dt>
+    <dd class="col-sm-9">@Model.Id</dd>
+
+    <dt class="col-sm-3">Nr zamówienia</dt>
+    <dd class="col-sm-9">@Model.Number</dd>
+
+    <dt class="col-sm-3">Koszt</dt>
+    <dd class="col-sm-9">@Model.Cost.ToString("N2")</dd>
+
+    <dt class="col-sm-3">Data zamówienia</dt>
+    <dd class="col-sm-9">@Model.Ordered.ToString("dd.MM.yyyy HH:mm")</dd>
+
+    <dt class="col-sm-3">Status</dt>
+    <dd class="col-sm-9">@Model.Status</dd>
+
+    <dt class="col-sm-3">Id klienta</dt>
+    <dd class="col-sm-9">@Model.CustomerId</dd>
+</dl>
+
+@if (Model.Customer != null)
+{
+    <h4>Adres dostawy</h4>
+    <dl class="row">
+        <dt class="col-sm-3">Odbiorca</dt>
+        <dd class="col-sm-9">@Model.Customer.FirstName @Model.Customer.LastName</dd>
+
+        <dt class="col-sm-3">Adres</dt>
+        <dd class="col-sm-9">
+            @Model.Customer.Street @Model.Customer.BuildingNumber
+            @if (!string.IsNullOrEmpty(Model.Customer.FlatNumber))
+            {
+                <text>/ @Model.Customer.FlatNumber</text>
+            }
+            , @Model.Customer.ZipCode @Model.Customer.City, @Model.Customer.Country
+        </dd>
+
+        <dt class="col-sm-3">Telefon</dt>
+        <dd class="col-sm-9">@Model.Customer.PhoneNumber</dd>
+    </dl>
+}
+
+@if (Model.OrderItems != null && Model.OrderItems.Count > 0)
+{
+    <h4>Pozycje zamówienia</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Produkt</th>
+                <th>Ilość</th>
+                <th>Cena jedn.</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.OrderItems)
+            {
+                <tr>
+                    <td>@(item.ProductName ?? item.ItemId.ToString())</td>
+                    <td>@item.Quantity</td>
+                    <td>@item.UnitCost.ToString("N2")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<div class="d-flex gap-2 mt-3">
+    <form asp-area="Sales" asp-controller="Orders" asp-action="Dispatch" method="post">
+        <input type="hidden" name="id" value="@Model.Id" />
+        <button type="submit" class="btn btn-success">Oznacz jako dostarczone</button>
+    </form>
+
+    <form asp-area="Sales" asp-controller="Orders" asp-action="Cancel" method="post">
+        <input type="hidden" name="id" value="@Model.Id" />
+        <button type="submit" class="btn btn-danger">Anuluj zamówienie</button>
+    </form>
+
+    <a asp-area="Sales" asp-controller="Orders" asp-action="PaidOrders" class="btn btn-secondary">Wróć</a>
+</div>

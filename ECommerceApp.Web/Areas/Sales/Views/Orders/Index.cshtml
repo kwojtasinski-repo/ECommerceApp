@@ -1,0 +1,66 @@
+@model ECommerceApp.Application.Sales.Orders.ViewModels.OrderListVm
+
+@{
+    ViewData["Title"] = "Zamówienia";
+}
+
+<h1>Zamówienia</h1>
+
+<form asp-area="Sales" asp-controller="Orders" asp-action="Index" method="post">
+    <div class="input-group mb-3">
+        <input type="number" name="pageSize" value="@Model.PageSize" class="form-control" style="max-width:80px;" placeholder="Rozmiar strony" />
+        <input type="number" name="pageNo" value="@Model.CurrentPage" class="form-control" style="max-width:80px;" placeholder="Strona" />
+        <input type="text" name="searchString" value="@Model.SearchString" class="form-control" placeholder="Wyszukaj..." />
+        <button type="submit" class="btn btn-outline-secondary">Wyszukaj</button>
+    </div>
+</form>
+
+@if (Model.Orders == null || Model.Orders.Count == 0)
+{
+    <p><em>Brak zamówień.</em></p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Nr zamówienia</th>
+                <th>Koszt</th>
+                <th>Data zamówienia</th>
+                <th>Status</th>
+                <th>Id klienta</th>
+                <th>Akcja</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in Model.Orders)
+            {
+                <tr>
+                    <td>@order.Id</td>
+                    <td>@order.Number</td>
+                    <td>@order.Cost.ToString("N2")</td>
+                    <td>@order.Ordered.ToString("dd.MM.yyyy HH:mm")</td>
+                    <td>@order.Status</td>
+                    <td>@order.CustomerId</td>
+                    <td>
+                        <a asp-area="Sales" asp-controller="Orders" asp-action="Details" asp-route-id="@order.Id">Szczegóły</a> |
+                        <a asp-area="Sales" asp-controller="Orders" asp-action="Edit" asp-route-id="@order.Id">Edytuj</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <nav>
+        <ul class="pagination">
+            @for (int i = 1; i <= (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize); i++)
+            {
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" asp-area="Sales" asp-controller="Orders" asp-action="Index"
+                       asp-route-pageNo="@i" asp-route-pageSize="@Model.PageSize" asp-route-searchString="@Model.SearchString">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}

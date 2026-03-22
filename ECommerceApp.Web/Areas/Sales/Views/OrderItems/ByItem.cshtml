@@ -1,0 +1,51 @@
+@model ECommerceApp.Application.Sales.Orders.ViewModels.OrderItemListVm
+
+@{
+    ViewData["Title"] = "Pozycje zamówień dla produktu";
+}
+
+<h1>Pozycje zamówień dla produktu</h1>
+
+@if (Model.Items == null || Model.Items.Count == 0)
+{
+    <p><em>Brak pozycji dla wybranego produktu.</em></p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Produkt</th>
+                <th>Ilość</th>
+                <th>Cena jedn.</th>
+                <th>Id zamówienia</th>
+                <th>Akcja</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Items)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@(item.ProductName ?? item.ItemId.ToString())</td>
+                    <td>@item.Quantity</td>
+                    <td>@item.UnitCost.ToString("N2")</td>
+                    <td>
+                        @if (item.OrderId.HasValue)
+                        {
+                            <a asp-area="Sales" asp-controller="Orders" asp-action="Details" asp-route-id="@item.OrderId">@item.OrderId</a>
+                        }
+                    </td>
+                    <td>
+                        <a asp-area="Sales" asp-controller="OrderItems" asp-action="Details" asp-route-id="@item.Id">Szczegóły</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<div>
+    <a asp-area="Sales" asp-controller="OrderItems" asp-action="Index">Wróć do listy</a>
+</div>

@@ -1,0 +1,46 @@
+@model System.Collections.Generic.IReadOnlyList<ECommerceApp.Application.Sales.Orders.ViewModels.OrderForListVm>
+
+@{
+    ViewData["Title"] = "Zamówienia klienta";
+}
+
+<h1>Zamówienia klienta</h1>
+
+@if (Model == null || Model.Count == 0)
+{
+    <p><em>Brak zamówień dla tego klienta.</em></p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Nr zamówienia</th>
+                <th>Koszt</th>
+                <th>Data zamówienia</th>
+                <th>Status</th>
+                <th>Akcja</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var order in Model)
+            {
+                <tr>
+                    <td>@order.Id</td>
+                    <td>@order.Number</td>
+                    <td>@order.Cost.ToString("N2")</td>
+                    <td>@order.Ordered.ToString("dd.MM.yyyy HH:mm")</td>
+                    <td>@order.Status</td>
+                    <td>
+                        <a asp-area="Sales" asp-controller="Orders" asp-action="Details" asp-route-id="@order.Id">Szczegóły</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<div>
+    <a asp-area="Sales" asp-controller="Orders" asp-action="Index">Wróć do listy zamówień</a>
+</div>

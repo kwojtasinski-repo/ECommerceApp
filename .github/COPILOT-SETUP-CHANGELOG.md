@@ -82,6 +82,20 @@
 
 ## Change log
 
+### Session 6 — ADR-0024 + full audit (2026-03-22)
+
+| #   | Change                                                                                  | Files affected                                                      |
+| --- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| 1   | Created ADR-0024 (controller routing strategy: Areas for Web, in-place swap for API)   | `docs/adr/0024-controller-routing-strategy.md`                      |
+| 2   | Added ADR-0024 row to docs-index ADR table                                              | `.github/instructions/docs-index.instructions.md`                   |
+| 3   | Added ADR-0024 routing strategy note to roadmap README                                  | `docs/roadmap/README.md`                                            |
+| 4   | Updated `orders-atomic-switch.md` Steps 3–4 to Area-based approach + ADR-0024 ref      | `docs/roadmap/orders-atomic-switch.md`                              |
+| 5   | Updated `payments-atomic-switch.md` Step 3 to Area-based approach + ADR-0024 ref       | `docs/roadmap/payments-atomic-switch.md`                            |
+| 6   | Added routing strategy as key architectural invariant                                   | `.github/context/project-state.md`                                  |
+| 7   | ADR-0024 added to `ECommerceApp.sln` `adr` solution folder (auto by VS on file create) | `ECommerceApp.sln`                                                  |
+| 8   | Full audit (Workflow 6 + Workflow 8): repo-index At a Glance metrics updated            | `.github/context/repo-index.md`                                     |
+| 9   | Updated changelog counts and added Session 6 entry                                      | `COPILOT-SETUP-CHANGELOG.md`                                        |
+
 ### Session 5 — Full audit & .sln sync (2026-06-27)
 
 | #   | Change                                                             | Files affected                                    |

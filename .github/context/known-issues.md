@@ -29,7 +29,16 @@
 
 ## Low
 
-### [KI-006] `given_valid_order_should_update` — timezone comparison failure
+### [KI-008] FluentAssertions → AwesomeAssertions migration required for .NET 8+
+- **Severity**: 🔵 Low (deferred — triggered only on .NET 8+ upgrade)
+- **Location**: All test projects (`ECommerceApp.Tests`, `ECommerceApp.IntegrationTests`)
+- **Symptom**: FluentAssertions v6.x uses Apache 2.0 license but v7+ switched to a commercial license. v6 targets .NET 6/7 and will not receive updates for .NET 9+.
+- **Root cause**: License change in FluentAssertions v7. Staying on v6 means no .NET 9+ support; upgrading to v7 requires a commercial license.
+- **Fix**: Replace NuGet package `FluentAssertions` → `AwesomeAssertions` (community fork, Apache 2.0, API-compatible with v6). Replace `using FluentAssertions;` → `using AwesomeAssertions;` across all test files. No assertion syntax changes needed.
+- **Condition**: Do NOT execute this migration until the project targets .NET 8 or later. On .NET 7 the current FluentAssertions v6 works fine.
+- **Fix tracked in**: .NET 8+ upgrade roadmap (when created).
+
+### [KI-006]
 - **Severity**: 🔵 Low
 - **Location**: `ECommerceApp.IntegrationTests/API/OrderControllerTests.cs`
 - **Symptom**: Test fails with `should be 2026-03-15T19:20:03+01:00 but was 2026-03-15T18:20:03Z`. Same moment, different `DateTimeKind` — `DateTime` equality compares ticks directly; local ticks ≠ UTC ticks.
@@ -91,4 +100,4 @@
 
 ---
 
-*Last reviewed: 2026-03-15*
+*Last reviewed: 2026-03-22*

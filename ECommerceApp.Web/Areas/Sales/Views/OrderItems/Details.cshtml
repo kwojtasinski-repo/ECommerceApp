@@ -1,0 +1,31 @@
+@model ECommerceApp.Application.Sales.Orders.ViewModels.OrderItemVm
+
+@{
+    ViewData["Title"] = "Szczegóły pozycji zamówienia";
+}
+
+<h1>Szczegóły pozycji zamówienia</h1>
+
+<dl class="row">
+    <dt class="col-sm-3">Id</dt>
+    <dd class="col-sm-9">@Model.Id</dd>
+
+    <dt class="col-sm-3">Produkt</dt>
+    <dd class="col-sm-9">@(Model.ProductName ?? Model.ItemId.ToString())</dd>
+
+    <dt class="col-sm-3">Ilość</dt>
+    <dd class="col-sm-9">@Model.Quantity</dd>
+
+    <dt class="col-sm-3">Cena jednostkowa</dt>
+    <dd class="col-sm-9">@Model.UnitCost.ToString("N2")</dd>
+
+    @if (Model.CouponUsedId.HasValue)
+    {
+        <dt class="col-sm-3">Id kuponu</dt>
+        <dd class="col-sm-9">@Model.CouponUsedId</dd>
+    }
+</dl>
+
+<div>
+    <a asp-area="Sales" asp-controller="OrderItems" asp-action="Index">Wróć do listy</a>
+</div>

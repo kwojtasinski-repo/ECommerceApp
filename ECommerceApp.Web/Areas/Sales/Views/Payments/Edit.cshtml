@@ -1,0 +1,45 @@
+@model ECommerceApp.Application.Sales.Payments.ViewModels.PaymentDetailsVm
+
+@{
+    ViewData["Title"] = "Edytuj płatność";
+}
+
+<h1>Edytuj płatność</h1>
+
+@* IPaymentService nie posiada metody aktualizacji — widok wyświetla aktualne dane. *@
+<div class="alert alert-info">
+    Edycja płatności nie jest dostępna — metoda aktualizacji nie została jeszcze zaimplementowana.
+</div>
+
+<dl class="row">
+    <dt class="col-sm-3">Id płatności</dt>
+    <dd class="col-sm-9">@Model.Id</dd>
+
+    <dt class="col-sm-3">Id zamówienia</dt>
+    <dd class="col-sm-9">@Model.OrderId</dd>
+
+    <dt class="col-sm-3">Kwota</dt>
+    <dd class="col-sm-9">@Model.TotalAmount.ToString("N2")</dd>
+
+    <dt class="col-sm-3">Status</dt>
+    <dd class="col-sm-9">@Model.Status</dd>
+
+    <dt class="col-sm-3">Wygasa</dt>
+    <dd class="col-sm-9">@Model.ExpiresAt.ToString("dd.MM.yyyy HH:mm")</dd>
+
+    @if (Model.ConfirmedAt.HasValue)
+    {
+        <dt class="col-sm-3">Potwierdzona</dt>
+        <dd class="col-sm-9">@Model.ConfirmedAt.Value.ToString("dd.MM.yyyy HH:mm")</dd>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.TransactionRef))
+    {
+        <dt class="col-sm-3">Nr transakcji</dt>
+        <dd class="col-sm-9">@Model.TransactionRef</dd>
+    }
+</dl>
+
+<div>
+    <a asp-area="Sales" asp-controller="Payments" asp-action="Details" asp-route-id="@Model.Id">Szczegóły</a>
+</div>

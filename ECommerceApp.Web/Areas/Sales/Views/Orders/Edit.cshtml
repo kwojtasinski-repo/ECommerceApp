@@ -1,0 +1,34 @@
+@model ECommerceApp.Application.Sales.Orders.ViewModels.OrderDetailsVm
+
+@{
+    ViewData["Title"] = "Edytuj zamówienie";
+}
+
+<h1>Edytuj zamówienie</h1>
+
+<form asp-area="Sales" asp-controller="Orders" asp-action="Edit" method="post">
+    <input type="hidden" name="OrderId" value="@Model.Id" />
+
+    <div class="mb-3">
+        <label class="form-label">Nr zamówienia</label>
+        <input class="form-control" value="@Model.Number" disabled />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Status</label>
+        <input class="form-control" value="@Model.Status" disabled />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="CustomerId">Id klienta</label>
+        <input type="number" id="CustomerId" name="CustomerId" value="@Model.CustomerId" class="form-control" required />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label" for="CurrencyId">Id waluty</label>
+        <input type="number" id="CurrencyId" name="CurrencyId" value="@Model.CurrencyId" class="form-control" required />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Zapisz</button>
+    <a asp-area="Sales" asp-controller="Orders" asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">Anuluj</a>
+</form>

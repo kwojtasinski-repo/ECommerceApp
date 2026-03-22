@@ -1,0 +1,107 @@
+@model ECommerceApp.Application.Sales.Orders.ViewModels.OrderDetailsVm
+
+@{
+    ViewData["Title"] = "Szczegóły zamówienia";
+}
+
+<h1>Szczegóły zamówienia</h1>
+
+<dl class="row">
+    <dt class="col-sm-3">Id</dt>
+    <dd class="col-sm-9">@Model.Id</dd>
+
+    <dt class="col-sm-3">Nr zamówienia</dt>
+    <dd class="col-sm-9">@Model.Number</dd>
+
+    <dt class="col-sm-3">Koszt</dt>
+    <dd class="col-sm-9">@Model.Cost.ToString("N2")</dd>
+
+    <dt class="col-sm-3">Data zamówienia</dt>
+    <dd class="col-sm-9">@Model.Ordered.ToString("dd.MM.yyyy HH:mm")</dd>
+
+    <dt class="col-sm-3">Status</dt>
+    <dd class="col-sm-9">@Model.Status</dd>
+
+    <dt class="col-sm-3">Id klienta</dt>
+    <dd class="col-sm-9">@Model.CustomerId</dd>
+
+    <dt class="col-sm-3">Id waluty</dt>
+    <dd class="col-sm-9">@Model.CurrencyId</dd>
+
+    @if (Model.CouponUsedId.HasValue)
+    {
+        <dt class="col-sm-3">Id kuponu</dt>
+        <dd class="col-sm-9">@Model.CouponUsedId</dd>
+
+        <dt class="col-sm-3">Rabat (%)</dt>
+        <dd class="col-sm-9">@Model.DiscountPercent</dd>
+    }
+</dl>
+
+@if (Model.Customer != null)
+{
+    <h4>Dane klienta</h4>
+    <dl class="row">
+        <dt class="col-sm-3">Imię i nazwisko</dt>
+        <dd class="col-sm-9">@Model.Customer.FirstName @Model.Customer.LastName</dd>
+
+        <dt class="col-sm-3">Email</dt>
+        <dd class="col-sm-9">@Model.Customer.Email</dd>
+
+        <dt class="col-sm-3">Telefon</dt>
+        <dd class="col-sm-9">@Model.Customer.PhoneNumber</dd>
+
+        @if (Model.Customer.IsCompany)
+        {
+            <dt class="col-sm-3">Firma</dt>
+            <dd class="col-sm-9">@Model.Customer.CompanyName</dd>
+
+            <dt class="col-sm-3">NIP</dt>
+            <dd class="col-sm-9">@Model.Customer.Nip</dd>
+        }
+
+        <dt class="col-sm-3">Adres</dt>
+        <dd class="col-sm-9">
+            @Model.Customer.Street @Model.Customer.BuildingNumber
+            @if (!string.IsNullOrEmpty(Model.Customer.FlatNumber))
+            {
+                <text>/ @Model.Customer.FlatNumber</text>
+            }
+            , @Model.Customer.ZipCode @Model.Customer.City, @Model.Customer.Country
+        </dd>
+    </dl>
+}
+
+@if (Model.OrderItems != null && Model.OrderItems.Count > 0)
+{
+    <h4>Pozycje zamówienia</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Produkt</th>
+                <th>Ilość</th>
+                <th>Cena jedn.</th>
+                <th>Akcja</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.OrderItems)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@(item.ProductName ?? item.ItemId.ToString())</td>
+                    <td>@item.Quantity</td>
+                    <td>@item.UnitCost.ToString("N2")</td>
+                    <td>
+                        <a asp-area="Sales" asp-controller="OrderItems" asp-action="Details" asp-route-id="@item.Id">Szczegóły</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<div>
+    <a asp-area="Sales" asp-controller="Orders" asp-action="MyOrders">Wróć do moich zamówień</a>
+</div>

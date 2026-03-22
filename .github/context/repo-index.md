@@ -8,7 +8,7 @@
 > For confirmed bugs → see [`known-issues.md`](./known-issues.md)
 > For documentation lookup → see [`.github/instructions/docs-index.instructions.md`](../instructions/docs-index.instructions.md)
 
-*Last updated: 2026-03-15*
+*Last updated: 2026-03-22*
 
 ---
 
@@ -16,16 +16,16 @@
 
 | Metric | Value |
 |---|---|
-| **Total C# source files** | ~1,003 (excl. bin/obj) |
+| **Total C# source files** | ~1,143 (excl. bin/obj) |
 | **Total lines of C#** | ~44,500 (excl. migrations) |
-| **Razor views (.cshtml)** | 130 |
+| **Razor views (.cshtml)** | 134 |
 | **JavaScript modules** | 10 |
 | **Identity Razor Pages** | 14 |
-| **ADRs** | 21 |
-| **DbContexts** | 11 (1 legacy + 10 per-BC) |
+| **ADRs** | 24 |
+| **DbContexts** | 12 (1 legacy + 11 per-BC) |
 | **DB migration folders** | 12 |
 | **HTTP scenario files** | 9 |
-| **Test files** | 118 (76 unit + 42 integration) |
+| **Test files** | 156 (96 unit + 60 integration) |
 
 ---
 
