@@ -25,7 +25,7 @@ _Last updated: 2026-03-22_
 | **DbContexts**            | 12 (1 legacy + 11 per-BC)      |
 | **DB migration folders**  | 12                             |
 | **HTTP scenario files**   | 9                              |
-| **Test files**            | 156 (96 unit + 60 integration) |
+| **Test files**            | 161 (96 unit + 65 integration) |
 
 ---
 
@@ -38,8 +38,8 @@ _Last updated: 2026-03-22_
 | `ECommerceApp.Infrastructure`   | 245                  | 6,857  | EF Core, repositories, DbContexts, external clients  |
 | `ECommerceApp.Web`              | 44 .cs + 130 .cshtml | 3,830  | MVC controllers, views, Identity pages, frontend     |
 | `ECommerceApp.API`              | 29                   | 1,889  | REST controllers, JWT auth                           |
-| `ECommerceApp.UnitTests`        | 76                   | 10,844 | xUnit unit tests                                     |
-| `ECommerceApp.IntegrationTests` | 42                   | 4,837  | xUnit integration tests                              |
+| `ECommerceApp.UnitTests`        | 96                   | 10,844 | xUnit unit tests                                     |
+| `ECommerceApp.IntegrationTests` | 65                   | 4,837  | xUnit integration tests                              |
 
 ---
 
@@ -399,7 +399,7 @@ Managed via `libman.json`: bootstrap, bootstrap-select, jQuery, jQuery-validatio
 
 ## Test Projects
 
-### Unit Tests (`ECommerceApp.UnitTests/` — 76 files, 10,844 lines)
+### Unit Tests (`ECommerceApp.UnitTests/` — 96 files, 10,844 lines)
 
 | Folder                       | Coverage area                                                                               |
 | ---------------------------- | ------------------------------------------------------------------------------------------- |
@@ -418,7 +418,7 @@ Managed via `libman.json`: bootstrap, bootstrap-select, jQuery, jQuery-validatio
 | `Services/`                  | 18 legacy service test files (Address, Brand, Coupon, Currency, Item, Order, Payment, etc.) |
 | `Common/`                    | Shared test helpers                                                                         |
 
-### Integration Tests (`ECommerceApp.IntegrationTests/` — 42 files, 4,837 lines)
+### Integration Tests (`ECommerceApp.IntegrationTests/` — 65 files, 4,837 lines)
 
 | Folder          | Coverage area                              |
 | --------------- | ------------------------------------------ |

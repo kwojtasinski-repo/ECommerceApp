@@ -17,6 +17,7 @@ applyTo: "**"
 | Creating a BC artifact  | `implementation-patterns.md`      | Matching `create-*` skill           |
 | Fixing a bug            | `known-issues.md`                 | `project-state.md`                  |
 | BC migration work       | `bounded-context-map.md`          | BC's ADR → `project-state.md`       |
+| Controller migration    | `endpoint-map.md`                 | ADR-0024 → BC's ADR                 |
 | Adding Copilot config   | This file                         | `@copilot-setup-maintainer`         |
 | Frontend/JS changes     | `frontend.instructions.md` (auto) | ADR-0021                            |
 
@@ -109,6 +110,12 @@ Read an ADR **only** when the "When to read" condition matches the files you are
 | `iam-atomic-switch.md`      | Working on Identity/IAM BC (coordinate with Orders switch)               |
 | `presale-slice2.md`         | Working on Presale/Checkout Slice 2 (blocked by Orders)                  |
 | `frontend-pipeline.md`      | Working on frontend JS/error pipeline (ADR-0021 phases)                  |
+
+## Reference docs (`docs/reference/`)
+
+| File               | When to read                                                                                                                                     |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `endpoint-map.md`  | Before migrating any controller — lists every Web + API endpoint post-switch, auth requirements, image serving design, and what gets deleted |
 
 ## Reports (`docs/reports/`)
 

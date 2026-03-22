@@ -82,6 +82,16 @@
 
 ## Change log
 
+### Session 8 — Full audit & repo-index sync (2026-03-23)
+
+| #   | Change                                                                                               | Files affected                                     |
+| --- | ---------------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| 1   | Added `docs\reference\endpoint-map.md` (and new `reference` solution folder) to solution            | `ECommerceApp.sln`                                 |
+| 2   | Updated repo-index At a Glance: Test files 156→161 (integration 60→65)                              | `.github/context/repo-index.md`                    |
+| 3   | Updated repo-index Solution Projects: UnitTests 76→96 files, IntegrationTests 42→65 files            | `.github/context/repo-index.md`                    |
+| 4   | Updated repo-index section headings: UnitTests 76→96, IntegrationTests 42→65                        | `.github/context/repo-index.md`                    |
+| 5   | Updated changelog with Session 8 entry                                                               | `.github/COPILOT-SETUP-CHANGELOG.md`               |
+
 ### Session 7 — Full audit & trim (2026-03-22)
 
 | #   | Change                                                                                                            | Files affected                       |
