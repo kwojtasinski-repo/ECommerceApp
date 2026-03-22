@@ -2,6 +2,7 @@ using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Application.Presale.Checkout.DTOs;
 using ECommerceApp.Application.Presale.Checkout.Results;
 using ECommerceApp.Application.Presale.Checkout.Services;
+using ECommerceApp.Application.Presale.Checkout.ViewModels;
 using ECommerceApp.Domain.Presale.Checkout;
 using ECommerceApp.Web.Controllers;
 using Microsoft.AspNetCore.Authorization;
@@ -16,11 +17,13 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
     {
         private readonly ICartService _cartService;
         private readonly ICheckoutService _checkoutService;
+        private readonly IAccountProfileClient _accountProfileClient;
 
-        public CheckoutController(ICartService cartService, ICheckoutService checkoutService)
+        public CheckoutController(ICartService cartService, ICheckoutService checkoutService, IAccountProfileClient accountProfileClient)
         {
             _cartService = cartService;
             _checkoutService = checkoutService;
+            _accountProfileClient = accountProfileClient;
         }
 
         [HttpGet]
@@ -32,46 +35,33 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         }
 
         [HttpGet]
-        public IActionResult AddItem(int id)
-        {
-            return View(model: id);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> AddItem(int productId, int quantity)
-        {
-            var userId = GetUserId();
-            await _cartService.AddOrUpdateAsync(new AddToCartDto(userId, productId, quantity));
-            return RedirectToAction(nameof(Cart));
-        }
-
-        [HttpGet]
         public async Task<IActionResult> PlaceOrder()
         {
             var userId = new PresaleUserId(GetUserId());
             var result = await _checkoutService.InitiateAsync(userId);
             if (result is InitiateCheckoutResult.CartEmpty || result is InitiateCheckoutResult.NothingReserved)
                 return RedirectToAction(nameof(Cart));
-            return View();
+            return View(new PlaceOrderVm());
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetProfileForCheckout()
+        {
+            var profile = await _accountProfileClient.GetProfileAsync(GetUserId());
+            return Json(profile);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> PlaceOrder(
-            int customerId, int currencyId,
-            string firstName, string lastName, string email, string phoneNumber,
-            bool isCompany, string? companyName, string? nip,
-            string street, string buildingNumber, string? flatNumber,
-            string zipCode, string city, string country)
+        public async Task<IActionResult> PlaceOrder(PlaceOrderVm vm)
         {
             var customer = new CheckoutCustomer(
-                firstName, lastName, email, phoneNumber,
-                isCompany, companyName, nip,
-                street, buildingNumber, flatNumber,
-                zipCode, city, country);
+                vm.FirstName, vm.LastName, vm.Email, vm.PhoneNumber,
+                vm.IsCompany, vm.CompanyName, vm.Nip,
+                vm.Street, vm.BuildingNumber, vm.FlatNumber,
+                vm.ZipCode, vm.City, vm.Country);
             var userId = new PresaleUserId(GetUserId());
-            var result = await _checkoutService.PlaceOrderAsync(userId, customerId, currencyId, customer);
+            var result = await _checkoutService.PlaceOrderAsync(userId, vm.CustomerId, vm.CurrencyId, customer);
             return result switch
             {
                 CheckoutResult.Success s => RedirectToAction(nameof(Summary), new { id = s.OrderId }),

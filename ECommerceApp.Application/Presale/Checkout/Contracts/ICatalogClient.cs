@@ -10,7 +10,12 @@ namespace ECommerceApp.Application.Presale.Checkout.Contracts
 
         Task<CatalogProductPage> GetPublishedProductsAsync(
             int pageSize, int pageNo, string searchString, CancellationToken ct = default);
+
+        Task<IReadOnlyList<CatalogProductSummary>> GetProductsByIdsAsync(
+            IReadOnlyList<int> productIds, CancellationToken ct = default);
     }
+
+    public sealed record CatalogProductSummary(int Id, string Name);
 
     public sealed record CatalogProductItem(int Id, string Name, decimal Cost, int CategoryId);
 

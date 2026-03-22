@@ -1,0 +1,12 @@
+@model System.Collections.Generic.IEnumerable<ECommerceApp.Application.Sales.Payments.ViewModels.PaymentVm>
+
+@{
+    ViewData["Title"] = "Moje płatności";
+}
+
+<h1>Moje płatności</h1>
+
+@* IPaymentService.GetByUserIdAsync nie jest jeszcze zaimplementowane — lista będzie dostępna po dodaniu tej metody. *@
+<div class="alert alert-info">
+    Lista Twoich płatności jest niedostępna — metoda serwisu nie została jeszcze zaimplementowana.
+</div>

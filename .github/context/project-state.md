@@ -5,7 +5,7 @@
 > For confirmed bugs see [`.github/context/known-issues.md`](./known-issues.md).
 > For planned work see [`docs/roadmap/README.md`](../docs/roadmap/README.md).
 
-*Last updated: 2026-03-22*
+*Last updated: 2026-03-25*
 
 ---
 
@@ -13,8 +13,9 @@
 
 | Area | State | Key blocker |
 |---|---|---|
-| **Sales/Orders BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ — **DB migration ✅ approved**; controller switch pending (Steps 2–8 in `orders-atomic-switch.md`); **legacy code retained until post-switch production validation** | Controller migration + DI swap |
-| **Sales/Payments BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ — **DB migrations ✅ approved**; controller switch pending; **legacy `PaymentHandler` retained until post-switch validation** | Orders switch must activate first |
+| **Sales/Orders BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migration ✅ approved — **Web Area controllers + views ✅ done**, **DI wired ✅ done**, **PlaceOrder profile prefill ✅ done** (Steps 1–6 + 3a complete); legacy code retained | Step 4 (API swap — external contract agreement required before implementation) |
+| **Sales/Payments BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migrations ✅ approved — **Web Area controller + views ✅ done**; legacy `PaymentHandler` retained (not modified — will simply stop being called after switch) | Orders switch must activate first |
+| **Presale/Checkout BC** | Checkout Area controller ✅ + views ✅ (Cart enriched with product names via `ICatalogClient`). PlaceOrder profile prefill ✅ done — `customerId` resolved from `UserProfileDetailsVm.Id`, all fields prefilled from first address | No remaining blockers — ready for switch once Orders activates |
 
 ---
 

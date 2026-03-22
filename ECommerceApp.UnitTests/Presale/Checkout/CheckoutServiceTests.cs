@@ -292,7 +292,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             _cartService
                 .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1) }));
+                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1, null) }));
             var active = MakeReservation(productId: 1, qty: 1, unitPrice: 10m);
             _softReservationService
                 .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
@@ -308,7 +308,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             _cartService
                 .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1) }));
+                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1, null) }));
             var active = MakeReservation(productId: 1, qty: 1, unitPrice: 10m);
             _softReservationService
                 .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
@@ -328,7 +328,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             _cartService
                 .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1) }));
+                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1, null) }));
             _softReservationService
                 .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<SoftReservation>());
@@ -346,7 +346,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             _cartService
                 .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1) }));
+                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1, null) }));
             _softReservationService
                 .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<SoftReservation>());
@@ -368,7 +368,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             _cartService
                 .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1), new(2, 2) }));
+                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1, null), new(2, 2, null) }));
             _softReservationService
                 .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<SoftReservation>());
@@ -387,7 +387,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             _cartService
                 .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1), new(2, 2) }));
+                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(1, 1, null), new(2, 2, null) }));
             _softReservationService
                 .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<SoftReservation>());
@@ -414,7 +414,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             _cartService
                 .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(10, 1), new(20, 1) }));
+                .ReturnsAsync(new CartVm(UserId.Value, new List<CartLineVm> { new(10, 1, null), new(20, 1, null) }));
             _softReservationService
                 .Setup(s => s.GetAllForUserAsync(UserId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<SoftReservation>());

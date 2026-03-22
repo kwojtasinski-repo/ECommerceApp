@@ -1,3 +1,4 @@
+using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Application.Presale.Checkout.DTOs;
 using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Application.Presale.Checkout.ViewModels;
@@ -17,13 +18,18 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
     {
         private readonly Mock<ICartLineRepository> _cartRepo;
         private readonly IMemoryCache _cache;
+        private readonly Mock<ICatalogClient> _catalog;
         private readonly CartService _service;
 
         public CartServiceTests()
         {
             _cartRepo = new Mock<ICartLineRepository>();
             _cache = new MemoryCache(new MemoryCacheOptions());
-            _service = new CartService(_cartRepo.Object, _cache);
+            _catalog = new Mock<ICatalogClient>();
+            _catalog
+                .Setup(c => c.GetProductsByIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<CatalogProductSummary>());
+            _service = new CartService(_cartRepo.Object, _cache, _catalog.Object);
         }
 
         public void Dispose() => _cache.Dispose();
@@ -135,7 +141,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetCartAsync_CacheHit_ShouldReturnCachedValueWithoutDbCall()
         {
-            var vm = new CartVm("user-1", new List<CartLineVm> { new(1, 3) });
+            var vm = new CartVm("user-1", new List<CartLineVm> { new(1, 3, null) });
             _cache.Set("cart:user-1", vm, TimeSpan.FromMinutes(30));
 
             var result = await _service.GetCartAsync("user-1");

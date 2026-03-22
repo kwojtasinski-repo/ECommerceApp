@@ -1,0 +1,105 @@
+﻿@model ECommerceApp.Application.Presale.Checkout.ViewModels.PlaceOrderVm
+@{
+    ViewData["Title"] = "Złóż zamówienie";
+}
+
+<h1>Złóż zamówienie</h1>
+
+<form asp-area="Presale" asp-controller="Checkout" asp-action="PlaceOrder" method="post"
+      data-profile-url="@Url.Action("GetProfileForCheckout", "Checkout", new { area = "Presale" })">
+
+    <input asp-for="CustomerId" type="hidden" />
+
+    <div class="mb-3">
+        <label class="form-label">Id waluty</label>
+        <input asp-for="CurrencyId" type="number" class="form-control" style="max-width:180px;" required />
+    </div>
+
+    <h4>Dane osobowe</h4>
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label class="form-label">Imię</label>
+            <input asp-for="FirstName" class="form-control" required />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Nazwisko</label>
+            <input asp-for="LastName" class="form-control" required />
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label class="form-label">Email</label>
+            <input asp-for="Email" type="email" class="form-control" required />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Telefon</label>
+            <input asp-for="PhoneNumber" type="tel" class="form-control" required />
+        </div>
+    </div>
+
+    <h4>Dane firmy</h4>
+
+    <div class="mb-3 form-check">
+        <input asp-for="IsCompany" type="checkbox" class="form-check-input" />
+        <label class="form-check-label" asp-for="IsCompany">Zamówienie na firmę</label>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label class="form-label">Nazwa firmy</label>
+            <input asp-for="CompanyName" class="form-control" />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">NIP</label>
+            <input asp-for="Nip" class="form-control" />
+        </div>
+    </div>
+
+    <h4>Adres dostawy</h4>
+
+    <div class="row mb-3">
+        <div class="col-md-8">
+            <label class="form-label">Ulica</label>
+            <input asp-for="Street" class="form-control" required />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Nr budynku</label>
+            <input asp-for="BuildingNumber" class="form-control" required />
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Nr lokalu</label>
+            <input asp-for="FlatNumber" class="form-control" />
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-3">
+            <label class="form-label">Kod pocztowy</label>
+            <input asp-for="ZipCode" class="form-control" required />
+        </div>
+        <div class="col-md-5">
+            <label class="form-label">Miasto</label>
+            <input asp-for="City" class="form-control" required />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Kraj</label>
+            <input asp-for="Country" class="form-control" required />
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Zamów</button>
+    <a asp-area="Presale" asp-controller="Checkout" asp-action="Cart" class="btn btn-secondary">Wróć do koszyka</a>
+</form>
+
+@section Scripts {
+    <script>
+        require(["checkout-placeorder"], function (placeOrder) {
+            var form = document.querySelector("form[data-profile-url]");
+            if (form) {
+                placeOrder.prefillFromProfile(form.dataset.profileUrl);
+            }
+        });
+    </script>
+}

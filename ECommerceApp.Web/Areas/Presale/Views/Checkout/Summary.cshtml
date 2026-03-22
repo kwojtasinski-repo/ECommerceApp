@@ -1,0 +1,21 @@
+@model int
+
+@{
+    ViewData["Title"] = "Zamówienie złożone";
+    var orderId = Model;
+}
+
+<div class="text-center mt-4">
+    <h1>&#10003; Zamówienie złożone!</h1>
+    <p class="lead">Dziękujemy za zamówienie. Twoje zamówienie zostało przyjęte do realizacji.</p>
+    <p>Nr zamówienia: <strong>@orderId</strong></p>
+
+    <div class="mt-4">
+        <a asp-area="Sales" asp-controller="Orders" asp-action="Details" asp-route-id="@orderId" class="btn btn-primary">
+            Zobacz szczegóły zamówienia
+        </a>
+        <a asp-area="Sales" asp-controller="Orders" asp-action="MyOrders" class="btn btn-secondary">
+            Moje zamówienia
+        </a>
+    </div>
+</div>

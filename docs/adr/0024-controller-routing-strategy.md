@@ -216,6 +216,103 @@ Implementation follows the atomic switch roadmaps:
 - [ ] `_Layout.cshtml` navigation links updated in the same PR that activates each Area controller
 - [ ] AJAX paths in views updated in the same PR that moves the corresponding action to an Area
 
+## View Reduction Decisions
+
+During the parallel-change implementation phase the initial route mapping produced more views than
+needed. The following decisions were made to keep the new Area views lean and purposeful.
+
+### Dropped views (never created or deleted)
+
+| View | Reason |
+|---|---|
+| `Areas/Sales/Views/Orders/ByCustomer.cshtml` | Duplicate of `Index` — admin can filter by customerId via the search box. No separate route needed. |
+| `Areas/Sales/Views/OrderItems/ByItem.cshtml` | Duplicate of `OrderItems/Index` with a search filter. Same reasoning. |
+| `Areas/Sales/Views/Payments/Edit.cshtml` | Payments are immutable after creation — only `Confirm` or `Refund` operations exist. No update service method. |
+| `Areas/Presale/Views/Checkout/OrderDetails.cshtml` | `CheckoutController.OrderDetails` is a redirect-only action (→ `PlaceOrder`). The view file is never rendered. |
+
+### Kept views with BackOffice deferral note
+
+The following views exist as "nice-to-have" stubs in the current Area controllers. They were kept
+because removing them would require touching already-created controllers. They are candidates for
+relocation to a future **BackOffice BC** that will consolidate admin management screens:
+
+| View | Current state | BackOffice intention |
+|---|---|---|
+| `Areas/Sales/Views/Orders/PaidOrders.cshtml` | Active — paged list of paid orders | Could become a filtered tab on the BackOffice Orders dashboard |
+| `Areas/Sales/Views/Orders/Edit.cshtml` | Active — edits only `CustomerId` + `CurrencyId` | Very narrow scope; BackOffice will offer richer order management |
+| `Areas/Sales/Views/OrderItems/Index.cshtml` | Active — paged admin list | Order items are already shown inline in `Orders/Details`; BackOffice is the better home |
+| `Areas/Sales/Views/OrderItems/Details.cshtml` | Active — single item detail | Future: render as modal/dialog inside Orders admin view |
+
+### Checkout/PlaceOrder — customer data prefill from account profile
+
+**Agreed design (2026-03-22):**
+
+The `PlaceOrder` form always submits full human-readable customer data (name, address, phone, etc.).
+`customerId` is **never a visible or editable field** for the user.
+
+Flow:
+
+1. `CheckoutController.PlaceOrder` GET calls `IUserProfileService.GetByUserIdAsync(userId)` to
+   retrieve the user's saved profile data.
+2. Profile data is passed to the view and **prefills** all checkout form fields (firstName, lastName,
+   email, phoneNumber, address fields). User can edit any field before submitting.
+3. Profile management lives in the **Account/Profile** section (`UserProfileService`) — the checkout
+   form borrows from it but never manages it. No "save address" button on the checkout form itself.
+4. On POST, all form data is sent. `customerId` resolution is handled server-side (pending design —
+   see open item below).
+5. `currencyId` will be resolved from a default or user preference, not a manual input.
+
+**Open item**: How `customerId` (Sales BC integer ID) is resolved server-side from the authenticated
+`userId` needs a concrete implementation decision before the switch goes live. Options:
+- Resolve via `IUserProfileService` (UserProfile.Id ≈ customerId if IDs are aligned)
+- Add a dedicated `ICustomerResolver.GetOrCreateAsync(userId)` contract in the Checkout BC
+- Keep as a hidden field pre-populated by the controller from profile data
+This is tracked in `orders-atomic-switch.md` Step 3a.
+
+### API layer — temporary closure and replacement strategy
+
+**Agreed decision (2026-03-22):**
+
+The legacy API controllers (`/api/orders`, `/api/order-items`, `/api/payments`) will be **completely
+replaced** — not updated in-place — as part of the atomic switch. The affected 1–2 external
+consumers have been notified and accepted a ~1 day downtime window during the cutover.
+
+Full API scope discussion (what endpoints to expose and their contract shapes) is deferred to a
+separate session before the API replacement PR is opened. No API controller changes are made until
+that discussion is complete.
+
+**Do NOT modify any API controllers** until the API scope session is done and documented.
+
+The current `Payments/Create` and `Payments/Details` views are standalone. The agreed future
+direction is to surface payment status and the confirm-payment action directly within
+`Orders/Details`, so users access payment information through their order rather than navigating to
+a separate payment route. `MyPayments` remains a stub until `IPaymentService.GetByUserIdAsync` is
+implemented.
+
+### AddItem (Presale/Checkout) — inline product action (deferred to post-switch)
+
+`Presale/Checkout/AddItem` exists as a standalone view (no quantity input — one click = one item added).
+This standalone route is a POC fallback only. When the frontend is wired **after the BC atomic switch**,
+the following agreed design applies:
+
+- **Trigger point**: `V2Product/Index` (product listing) and `V2Product/Details` (product detail page)
+  each get an inline "Dodaj do koszyka" button. No separate navigation to an `AddItem` page.
+- **Mechanism**: AJAX POST — user stays on the current page; no full navigation occurs.
+- **Endpoint**: POST to `CheckoutController.UpdateCartItem(productId, quantity: 1)` — this action
+  already returns `Ok()` and is AJAX-compatible. No new endpoint needed.
+- **Anti-forgery**: The JS caller must send the `__RequestVerificationToken` header (read from the
+  meta tag or hidden field already rendered by `_Layout.cshtml`). `[ValidateAntiForgeryToken]` will
+  be added to `UpdateCartItem` when the frontend is wired.
+- **Success feedback**: Toast notification + button text change ("Dodano ✓") to confirm the item
+  was added without the user leaving the page. Silent failure is not acceptable.
+- **`AddItem` view fate**: Once the inline buttons are live, `Presale/Checkout/AddItem.cshtml` and
+  the `CheckoutController.AddItem` GET/POST actions can be removed in the legacy cleanup pass.
+
+> ⏱ **Do NOT implement** `V2Product` button wiring until the BC atomic switch is complete and
+> the new Presale/Checkout controller is the active route. Track in frontend wiring task.
+
+---
+
 ## References
 
 - [ADR-0014](0014-sales-orders-bc-design.md) — Sales/Orders BC Design

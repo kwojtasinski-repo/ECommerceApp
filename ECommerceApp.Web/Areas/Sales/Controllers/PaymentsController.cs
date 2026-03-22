@@ -54,25 +54,6 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
             return RedirectToAction(nameof(MyPayments));
         }
 
-        // IPaymentService has no update method — Edit shows current details only.
-        [Authorize(Roles = MaintenanceRole)]
-        [HttpGet]
-        public async Task<IActionResult> Edit(int id)
-        {
-            var payment = await _paymentService.GetByIdAsync(id);
-            if (payment is null)
-                return NotFound();
-            return View(payment);
-        }
-
-        [Authorize(Roles = MaintenanceRole)]
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Edit(int id)
-        {
-            return RedirectToAction(nameof(Details), new { id });
-        }
-
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {

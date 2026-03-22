@@ -1,3 +1,4 @@
+using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Application.Presale.Checkout.DTOs;
 using ECommerceApp.Application.Presale.Checkout.ViewModels;
 using ECommerceApp.Domain.Presale.Checkout;
@@ -14,11 +15,13 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
     {
         private readonly ICartLineRepository _cartRepo;
         private readonly IMemoryCache _cache;
+        private readonly ICatalogClient _catalog;
 
-        public CartService(ICartLineRepository cartRepo, IMemoryCache cache)
+        public CartService(ICartLineRepository cartRepo, IMemoryCache cache, ICatalogClient catalog)
         {
             _cartRepo = cartRepo;
             _cache = cache;
+            _catalog = catalog;
         }
 
         public async Task AddOrUpdateAsync(AddToCartDto dto, CancellationToken ct = default)
@@ -65,7 +68,14 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
                 return null;
             }
 
-            var vm = new CartVm(userId, lines.Select(l => new CartLineVm(l.ProductId.Value, l.Quantity.Value)).ToList());
+            var productIds = lines.Select(l => l.ProductId.Value).Distinct().ToList();
+            var summaries = await _catalog.GetProductsByIdsAsync(productIds, ct);
+            var nameMap = summaries.ToDictionary(s => s.Id, s => s.Name);
+
+            var vm = new CartVm(userId, lines.Select(l => new CartLineVm(
+                l.ProductId.Value,
+                l.Quantity.Value,
+                nameMap.TryGetValue(l.ProductId.Value, out var name) ? name : null)).ToList());
             _cache.Set(CacheKey(userId.Value), vm, TimeSpan.FromMinutes(30));
             return vm;
         }

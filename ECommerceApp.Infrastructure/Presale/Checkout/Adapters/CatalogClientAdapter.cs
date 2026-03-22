@@ -1,5 +1,6 @@
 using ECommerceApp.Application.Catalog.Products.Services;
 using ECommerceApp.Application.Presale.Checkout.Contracts;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -28,6 +29,13 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Adapters
                 .ToList();
 
             return new CatalogProductPage(items, result.Count, result.PageSize, result.CurrentPage, result.SearchString ?? "");
+        }
+
+        public async Task<IReadOnlyList<CatalogProductSummary>> GetProductsByIdsAsync(
+            IReadOnlyList<int> productIds, CancellationToken ct = default)
+        {
+            var snapshots = await _productService.GetProductSnapshotsByIdsAsync(productIds, ct);
+            return snapshots.Select(s => new CatalogProductSummary(s.Id, s.Name)).ToList();
         }
     }
 }
