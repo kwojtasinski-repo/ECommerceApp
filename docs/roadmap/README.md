@@ -10,10 +10,10 @@
 
 | Area | File | ADR | Status |
 |---|---|---|---|
-| **Sales/Orders — atomic switch** | [`orders-atomic-switch.md`](./orders-atomic-switch.md) | [ADR-0014](../adr/0014-sales-orders-bc-design.md) | 🟡 DB migration ✅ approved; integration tests ✅ done; controller migration + switch not started |
-| **Sales/Payments — DB migrations + atomic switch** | [`payments-atomic-switch.md`](./payments-atomic-switch.md) | [ADR-0015](../adr/0015-sales-payments-bc-design.md) | 🟡 DB migrations ✅ approved; implementation ✅ + integration tests ✅ done; atomic switch blocked by Orders |
+| **Sales/Orders — atomic switch** | [`orders-atomic-switch.md`](./orders-atomic-switch.md) | [ADR-0014](../adr/0014-sales-orders-bc-design.md) | ✅ Switch live — all acceptance criteria met; Step 8 (legacy cleanup) deferred |
+| **Sales/Payments — DB migrations + atomic switch** | [`payments-atomic-switch.md`](./payments-atomic-switch.md) | [ADR-0015](../adr/0015-sales-payments-bc-design.md) | ✅ Switch live — all acceptance criteria met; Step 5/6 (legacy cleanup) deferred |
 | **Sales/Coupons — Slice 1 implementation** | — (see ADR) | [ADR-0016](../adr/0016-sales-coupons-bc-design.md) | 🟡 Implementation in progress (parallel change); atomic switch blocked by Orders + Payments |
-| **Presale/Checkout — Slice 2** | [`presale-slice2.md`](./presale-slice2.md) | [ADR-0012](../adr/0012-presale-checkout-bc-design.md) §11–14 | ⛔ Implementation blocked by Orders atomic switch |
+| **Presale/Checkout — Slice 2** | [`presale-slice2.md`](./presale-slice2.md) | [ADR-0012](../adr/0012-presale-checkout-bc-design.md) §11–14 | ✅ Switch live — implementation complete, integration tests ✅, EC-001 decision ✅ |
 | **Identity/IAM — atomic switch** | [`iam-atomic-switch.md`](./iam-atomic-switch.md) | [ADR-0019](../adr/0019-identity-iam-bc-design.md) | 🟡 Migration approval pending; coordinate with Orders switch |
 | **Frontend error pipeline & JS migration** | [`frontend-pipeline.md`](./frontend-pipeline.md) | [ADR-0021](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) | ✅ Phase 1–4 complete |
 
@@ -26,20 +26,20 @@
 > Two parallel tracks. Implementation proceeds on all BCs simultaneously (Parallel Change).
 > Atomic switches are sequential and deferred until ~80–95% of backend implementations are complete.
 
-**Implementation track** — build in parallel, no ordering constraint (except Presale Slice 2):
+**Implementation track** — build in parallel, no ordering constraint:
 ```
 Sales/Coupons Slice 1   ─► can start now
 Sales/Fulfillment Slice 1 ─► can start now
-Presale/Checkout Slice 2 ─► blocked until Orders atomic switch is live
+Presale/Checkout Slice 2 ✅ Switch live
 ```
 
 **Switch track** — sequential, executed after backend implementations reach 80–95%:
 ```
-Sales/Orders (DB migration + atomic switch)
-  └─► Sales/Payments (DB migration + atomic switch)
-  └─► Presale/Checkout Slice 2 (unblocked)
-        └─► Sales/Coupons (atomic switch)
-        └─► Sales/Fulfillment (atomic switch)
+Sales/Orders (DB migration + atomic switch) ✅ Switch live
+  └─► Sales/Payments (DB migration + atomic switch) ✅ Switch live
+  └─► Presale/Checkout Slice 2 ✅ Switch live
+        └─► Sales/Coupons (atomic switch) — blocked until Coupons Slice 1 in production
+        └─► Sales/Fulfillment (atomic switch) — blocked until Fulfillment Slice 1 in production
               └─► Supporting/Communication
 ```
 

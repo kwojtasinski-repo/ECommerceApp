@@ -1,4 +1,4 @@
-# ADR-0005: AccountProfile BC — UserProfile Aggregate with Owned Address and Direct Contact Fields
+﻿# ADR-0005: AccountProfile BC — UserProfile Aggregate with Owned Address and Direct Contact Fields
 
 ## Status
 Accepted

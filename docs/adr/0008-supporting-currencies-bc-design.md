@@ -1,4 +1,4 @@
-# ADR-0008: Supporting/Currencies BC — Currency and CurrencyRate Aggregate Design
+﻿# ADR-0008: Supporting/Currencies BC — Currency and CurrencyRate Aggregate Design
 
 ## Status
 
@@ -225,7 +225,7 @@ Legacy registrations are removed only at atomic switch (Step 7 of bc-implementat
 All new BC artifacts created: domain, infrastructure, application, unit tests.
 New services registered alongside legacy services in DI — no old registrations removed.
 
-**Phase 2 — DB migration (⬜ pending approval)**
+**Phase 2 — DB migration (✅ approved — applied)**
 Generate and review `ECommerceApp.Infrastructure/Supporting/Currencies/Migrations/` via
 `dotnet ef migrations add InitCurrenciesSchema --context CurrencyDbContext`.
 Includes a data migration script to populate "currencies" schema tables from legacy "dbo" tables.

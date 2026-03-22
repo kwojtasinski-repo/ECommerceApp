@@ -1,4 +1,4 @@
-# ADR-0017: Sales/Fulfillment BC — Slice 1: Refund Aggregate; Slice 2: Shipment (deferred)
+﻿# ADR-0017: Sales/Fulfillment BC — Slice 1: Refund Aggregate; Slice 2: Shipment (deferred)
 
 ## Status
 Accepted

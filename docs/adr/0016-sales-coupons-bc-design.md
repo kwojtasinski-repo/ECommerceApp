@@ -1,4 +1,4 @@
-# ADR-0016: Sales/Coupons BC — Slice 1: One-Time Coupon on Order
+﻿# ADR-0016: Sales/Coupons BC — Slice 1: One-Time Coupon on Order
 
 ## Status
 Accepted

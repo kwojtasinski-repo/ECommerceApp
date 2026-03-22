@@ -1,4 +1,4 @@
-# ADR-0009: Supporting/TimeManagement BC — Scheduled and Deferred Job Design
+﻿# ADR-0009: Supporting/TimeManagement BC — Scheduled and Deferred Job Design
 
 ## Status
 Accepted — Amended 2026-02-26 (see § Amendment below)

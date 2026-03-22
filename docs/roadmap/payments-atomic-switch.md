@@ -1,8 +1,8 @@
 # Roadmap: Sales/Payments BC — DB Migrations + Atomic Switch
 
 > ADR: [ADR-0015](../adr/0015-sales-payments-bc-design.md) — Sales/Payments BC Design
-> Status: 🟡 In progress — Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migration ✅ approved
-> **Blocked by**: Sales/Orders atomic switch (`orders-atomic-switch.md`)
+> Status: ✅ Switch live — Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migration ✅ approved
+> **Unblocked by**: Sales/Orders atomic switch ✅ complete
 
 ---
 
@@ -100,13 +100,13 @@ implementations before the legacy `PaymentHandler` is removed.
 
 ### Switch live (Steps 1–4)
 
-- [ ] `payments.Payments` table exists with `RowVersion`, `UNIQUE(OrderId)`, `Status` index
-- [ ] Web: `Areas/Sales/Controllers/PaymentsController.cs` uses `IPaymentService` with `[Area("Sales")]`
-- [ ] Web: Legacy `PaymentController` untouched (stays as fallback)
-- [ ] `_Layout.cshtml` payment nav links point to `/Sales/Payments/*`
-- [ ] Integration tests for PaymentService, OrderPaymentConfirmedHandler, OrderPaymentExpiredHandler pass
-- [ ] Full test suite green
-- [ ] `bounded-context-map.md` updated (switch live)
+- [x] `payments.Payments` table exists with `RowVersion`, `UNIQUE(OrderId)`, `Status` index
+- [x] Web: `Areas/Sales/Controllers/PaymentsController.cs` uses `IPaymentService` with `[Area("Sales")]`
+- [x] Web: Legacy `PaymentController` untouched (stays as fallback)
+- [x] `_Layout.cshtml` payment nav links point to `/Sales/Payments/*`
+- [x] Integration tests for PaymentService, OrderPaymentConfirmedHandler, OrderPaymentExpiredHandler pass
+- [x] Full test suite green
+- [x] `bounded-context-map.md` updated (switch live)
 
 ### Cleanup (Steps 5–6 — deferred)
 
@@ -118,4 +118,4 @@ implementations before the legacy `PaymentHandler` is removed.
 
 ---
 
-*Last reviewed: 2026-03-22 · ADRs: [ADR-0015](../adr/0015-sales-payments-bc-design.md), [ADR-0024](../adr/0024-controller-routing-strategy.md)*
+*Last reviewed: 2026-03-26 · ADRs: [ADR-0015](../adr/0015-sales-payments-bc-design.md), [ADR-0024](../adr/0024-controller-routing-strategy.md)*

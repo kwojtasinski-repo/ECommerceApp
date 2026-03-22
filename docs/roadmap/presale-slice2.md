@@ -1,8 +1,8 @@
 # Roadmap: Presale/Checkout — Slice 2
 
 > ADR: [ADR-0012](../adr/0012-presale-checkout-bc-design.md) §11–14 (formal amendment — not a separate ADR)
-> Status: ⬜ Not started
-> **Blocked by**: Sales/Orders BC implementation below 80%
+> Status: ✅ Switch live
+> ~~**Blocked by**: Sales/Orders BC implementation below 80%~~ — Orders switch is live
 
 ---
 
@@ -112,8 +112,8 @@ If `NoSoftReservations` is returned, the user's cart is still intact; they only 
 - **Grace window**: When rendering the confirmation page, call `GetPriceChangesAsync` and check if reservations are still active. Warn the user if TTL is close (e.g., < 60 s remaining).
 - **TTL extension on confirmation view**: Extend `SoftReservation.ExpiresAt` by a fixed grace period when the user navigates to the confirmation page. Requires `UpdateExpiryAsync` on `ISoftReservationRepository` and cancelling + rescheduling the `IDeferredJobScheduler` job.
 
-**Decision needed before atomic switch**: Choose one of the above mitigations and update `CheckoutService` + confirmation UI accordingly. The `NoSoftReservations` error message must be user-friendly, not a developer-facing code name.
+**Decision — Accept the race** ✅: `PresaleOptions.SoftReservationTtl` is 15 min, making the race rare. The `CheckoutController` already surfaces `NoSoftReservations` as a user-friendly message: *"Checkout not initiated. Please initiate checkout first."* — the user restarts checkout from the cart. No code change required.
 
 ---
 
-*Last reviewed: 2026-03-12 · ADR: [ADR-0012 §11–14](../adr/0012-presale-checkout-bc-design.md)*
+*Last reviewed: 2026-03-26 · ADR: [ADR-0012 §11–14](../adr/0012-presale-checkout-bc-design.md)*
