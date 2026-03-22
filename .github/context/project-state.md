@@ -5,7 +5,7 @@
 > For confirmed bugs see [`.github/context/known-issues.md`](./known-issues.md).
 > For planned work see [`docs/roadmap/README.md`](../docs/roadmap/README.md).
 
-*Last updated: 2026-03-28*
+*Last updated: 2026-03-22*
 
 ---
 
@@ -13,8 +13,8 @@
 
 | Area | State | Key blocker |
 |---|---|---|
-| **Sales/Orders BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ — **DB migration ✅ approved**; atomic switch pending (Steps 2–8 in `orders-atomic-switch.md`) | Controller migration + DI swap |
-| **Sales/Payments BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ — **DB migrations ✅ approved**; atomic switch pending | Orders atomic switch must complete first |
+| **Sales/Orders BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ — **DB migration ✅ approved**; controller switch pending (Steps 2–8 in `orders-atomic-switch.md`); **legacy code retained until post-switch production validation** | Controller migration + DI swap |
+| **Sales/Payments BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ — **DB migrations ✅ approved**; controller switch pending; **legacy `PaymentHandler` retained until post-switch validation** | Orders switch must activate first |
 
 ---
 
@@ -69,6 +69,7 @@ Only the atomic switch (controller migration + remove legacy code) remains.
 - Cart CRUD lives in `ICartService`; checkout coordination lives in `ICheckoutService` (Presale BC)
 - `SoftReservation.UnitPrice` is immutable after creation — price captured at checkout initiation, not at add-to-cart
 - `StockSnapshot` is updated via `StockAvailabilityChanged` event — never polled directly from Inventory
+- **Controller routing strategy** ([ADR-0024](../../docs/adr/0024-controller-routing-strategy.md)): Web = new Area-based routes (`/Sales/Orders/*`, `/Presale/Checkout/*`), legacy controllers stay active; API = in-place swap, same routes; Identity = unchanged
 
 ---
 

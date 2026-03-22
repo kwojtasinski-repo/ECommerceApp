@@ -17,6 +17,8 @@
 | **Identity/IAM — atomic switch** | [`iam-atomic-switch.md`](./iam-atomic-switch.md) | [ADR-0019](../adr/0019-identity-iam-bc-design.md) | 🟡 Migration approval pending; coordinate with Orders switch |
 | **Frontend error pipeline & JS migration** | [`frontend-pipeline.md`](./frontend-pipeline.md) | [ADR-0021](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) | ✅ Phase 1–4 complete |
 
+> **Routing strategy for all controller migrations**: [ADR-0024](../adr/0024-controller-routing-strategy.md) — Web uses ASP.NET Core Areas (new parallel routes), API uses in-place swap. Applies to Orders, Payments, and all subsequent BC controller switches.
+
 ---
 
 ## Dependency order for next BC work
@@ -85,4 +87,4 @@ Full details and blocking analysis: [`bounded-context-map.md § Next BCs to impl
 
 ---
 
-*Last reviewed: 2026-03-28*
+*Last reviewed: 2026-03-22*

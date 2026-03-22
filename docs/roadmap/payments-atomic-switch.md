@@ -30,19 +30,14 @@ implementations before the legacy `PaymentHandler` is removed.
 
 ### Step 1 — DB migrations (require approval)
 
-Two migrations must be submitted and approved together per [migration policy](../../.github/instructions/migration-policy.md):
+| Migration | Context | Creates | Status |
+|---|---|---|---|
+| `InitPaymentsSchema` | `PaymentsDbContext` | `payments.Payments` table with `RowVersion`, `UNIQUE(OrderId)`, `Status` index | ✅ Done — **approved** |
 
-| Migration | Context | Creates |
-|---|---|---|
-| `InitPaymentsSchema` | `PaymentsDbContext` | `payments.Payments` table with `RowVersion`, `UNIQUE(OrderId)`, `Status` index |
-| `AddOrderCancellationFields` | `OrdersDbContext` | `IsCancelled bit NOT NULL DEFAULT 0`, `CancelledAt datetime2 NULL` on `sales.Orders` |
-
-```
-dotnet ef migrations add InitPaymentsSchema --project Infrastructure --context PaymentsDbContext
-dotnet ef migrations add AddOrderCancellationFields --project Infrastructure --context OrdersDbContext
-```
-
-> Both migrations are non-destructive on existing data. Submit together as a coordinated PR.
+> ~~`AddOrderCancellationFields`~~ — **Not needed.** The new Orders BC (`sales.Orders`) tracks cancellation
+> via the `Status` column (`OrderStatus.Cancelled`) and `OrderEvents` table (with `OccurredAt` timestamps).
+> There are no `IsCancelled`/`CancelledAt` columns in the new schema — and the legacy `dbo.Orders` table
+> remains untouched during the parallel-change period.
 
 ### Step 2 — Integration tests
 
@@ -54,34 +49,43 @@ dotnet ef migrations add AddOrderCancellationFields --project Infrastructure --c
 | `IntegrationTests/Sales/Orders/OrderPaymentExpiredHandlerTests.cs` | `Order.Status` transitions to `Cancelled` on `PaymentExpired` message |
 | All existing integration tests | Must still pass |
 
-### Step 3 — Atomic switch
+### Step 3 — Activate new services (controller swap)
+
+> Routing strategy: [ADR-0024](../adr/0024-controller-routing-strategy.md)
+> - **Web**: New `Areas/Sales/Controllers/PaymentsController.cs` with `[Area("Sales")]`. Legacy `PaymentController` stays active.
+> - **API**: In-place swap on existing payment endpoints.
+>
+> ⚠️ **Do not remove `PaymentHandler` yet.** Keep it compiled and registered; it is no longer called
+> but remains as a fallback until the new code has been validated through at least one payment cycle.
 
 | File | Action |
 |---|---|
-| `Web/Controllers/PaymentController.cs` | Replace legacy `PaymentHandler.CreatePayment()` call with `IPaymentService.ConfirmAsync(dto)` |
-| `Web/Controllers/OrderController.cs` | Replace `PaymentHandler.HandlePaymentChangesOnOrder()` call with `IOrderService.MarkAsPaidAsync(orderId)` (already injected after Orders switch) |
-| `Application/Services/Payments/PaymentHandler.cs` | Remove `CreatePayment()` and `HandlePaymentChangesOnOrder()` methods (or remove file if no other methods remain) |
-| `Application/DependencyInjection.cs` | Remove legacy `IPaymentHandler` / `PaymentHandler` DI registration |
+| `Web/Areas/Sales/Controllers/PaymentsController.cs` | Create `[Area("Sales")]` controller injecting `Application.Sales.Payments.Services.IPaymentService`. Actions: `Index`, `Create`, `Edit`, `Details`, `MyPayments` |
+| `Web/Areas/Sales/Views/Payments/` | Create views using new `Application.Sales.Payments.ViewModels.*` |
+| `Web/Views/Shared/_Layout.cshtml` | Update Payment nav links: `/Payment/ViewMyPayments` → `/Sales/Payments/MyPayments` |
 | `Infrastructure/DependencyInjection.cs` | Confirm `PaymentsDbContext`, `IPaymentRepository` (Payments), `PaymentWindowExpiredJob` are registered |
 
-### Step 4 — Retire Inventory `PaymentWindowTimeoutJob` (post-switch)
-
-> This step is deferred until the Payments BC has been live for at least one payment window cycle
-> to confirm `PaymentWindowExpiredJob` (Payments) is firing correctly.
-
-| File | Action |
-|---|---|
-| `Application/Inventory/Availability/Handlers/PaymentWindowTimeoutJob.cs` | Remove — replaced by Payments BC `PaymentWindowExpiredJob` |
-| `Application/Inventory/Availability/Services/Extensions.cs` | Remove `PaymentWindowTimeoutJob` registration |
-| Unit tests | Remove `PaymentWindowTimeoutJobTests.cs` (Inventory) |
-
-### Step 5 — Verification
+### Step 4 — Verification
 
 | Action |
 |---|
 | `dotnet build` — green |
 | `dotnet test` — full test suite green |
-| Update `bounded-context-map.md` — move Sales/Payments to Completed BCs |
+| Update `bounded-context-map.md` — move Sales/Payments to Active (switch live, cleanup pending) |
+| Monitor for one full payment window cycle before cleanup |
+
+### Step 5 — Legacy cleanup (deferred — post-production validation)
+
+> Execute only after `PaymentWindowExpiredJob` (Payments) has been confirmed firing correctly in production.
+
+| File | Action |
+|---|---|
+| `Application/Services/Payments/PaymentHandler.cs` | Remove `CreatePayment()` and `HandlePaymentChangesOnOrder()` methods (or delete file if empty) |
+| `Application/DependencyInjection.cs` | Remove legacy `IPaymentHandler` / `PaymentHandler` DI registration |
+
+### Step 6 — Retire Inventory `PaymentWindowTimeoutJob` (deferred — after Step 5)
+
+> Deferred until Payments BC has been live for at least one payment window cycle.
 
 ---
 
@@ -94,16 +98,24 @@ dotnet ef migrations add AddOrderCancellationFields --project Infrastructure --c
 
 ## Acceptance criteria
 
+### Switch live (Steps 1–4)
+
 - [ ] `payments.Payments` table exists with `RowVersion`, `UNIQUE(OrderId)`, `Status` index
-- [ ] `IsCancelled` and `CancelledAt` columns exist on `sales.Orders`
-- [ ] `PaymentController` (Web) injects `IPaymentService` — no `PaymentHandler.CreatePayment()` call
-- [ ] `OrderController` (Web) injects `IOrderService` (Sales.Orders) — no `PaymentHandler.HandlePaymentChangesOnOrder()` call
-- [ ] `PaymentHandler.CreatePayment()` and `HandlePaymentChangesOnOrder()` removed
-- [ ] `IPaymentHandler` / `PaymentHandler` DI registrations removed from `Application/DependencyInjection.cs`
+- [ ] Web: `Areas/Sales/Controllers/PaymentsController.cs` uses `IPaymentService` with `[Area("Sales")]`
+- [ ] Web: Legacy `PaymentController` untouched (stays as fallback)
+- [ ] `_Layout.cshtml` payment nav links point to `/Sales/Payments/*`
 - [ ] Integration tests for PaymentService, OrderPaymentConfirmedHandler, OrderPaymentExpiredHandler pass
 - [ ] Full test suite green
-- [ ] `bounded-context-map.md` updated
+- [ ] `bounded-context-map.md` updated (switch live)
+
+### Cleanup (Steps 5–6 — deferred)
+
+- [ ] `PaymentHandler.CreatePayment()` and `HandlePaymentChangesOnOrder()` removed
+- [ ] `IPaymentHandler` / `PaymentHandler` DI registrations removed from `Application/DependencyInjection.cs`
+- [ ] `PaymentWindowTimeoutJob` (Inventory) retired
+- [ ] `PaymentWindowTimeoutJobTests.cs` (Inventory) removed
+- [ ] Full test suite green after cleanup
 
 ---
 
-*Last reviewed: 2026-03-12 · ADR: [ADR-0015](../adr/0015-sales-payments-bc-design.md)*
+*Last reviewed: 2026-03-22 · ADRs: [ADR-0015](../adr/0015-sales-payments-bc-design.md), [ADR-0024](../adr/0024-controller-routing-strategy.md)*

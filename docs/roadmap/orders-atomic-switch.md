@@ -23,24 +23,27 @@ All layers are implemented and tested. The two remaining gate items before the a
 
 ## Gate conditions
 
-Both DB migrations must be approved per [migration policy](../../.github/instructions/migration-policy.md)
+DB migration must be approved per [migration policy](../../.github/instructions/migration-policy.md)
 before any controller migration or atomic switch:
 
-1. **`InitSalesSchema`** — already generated; awaiting production sign-off.
-2. **Schema update migration** — for `OrderStatus` column + removal of `IsPaid`/`IsDelivered`/`IsCancelled`/`PaymentId`/`RefundId` per §16 design revision. Not yet generated.
+1. **`InitSalesSchema`** — ✅ generated and **approved**. Creates `sales.Orders`, `sales.OrderItems`, `sales.OrderEvents` with `Status nvarchar(30)` column and indexes.
+
+> **`UpdateOrdersSchema` is NOT needed.** The new BC uses a separate `sales` schema. The `Status` column
+> was included from the start in `InitSalesSchema`. The legacy `dbo.Orders` table (with `IsPaid`,
+> `IsDelivered`, `PaymentId`, `RefundId`) remains untouched — it's consumed by legacy services that
+> stay active during the parallel-change period.
 
 ---
 
 ## Pending steps
 
-### Step 1 — Schema update migration (requires approval)
+### ~~Step 1 — Schema update migration~~ ✅ Not needed
 
-| File | Action |
-|---|---|
-| `Infrastructure/Sales/Orders/Migrations/` | `dotnet ef migrations add UpdateOrdersSchema --project Infrastructure --context OrdersDbContext` — adds `Status` column (index), removes legacy flag columns, aligns with §16 design revision |
-| Submit migration PR | Wait for sign-off before proceeding |
+> Removed. The `InitSalesSchema` migration already creates the `sales.Orders` table with `Status nvarchar(30)`.
+> The new BC uses a completely separate schema (`sales.*`) from the legacy tables (`dbo.*`).
+> No column additions or removals are required — the new schema was correct from the start.
 
-### Step 2 — Presale BC gap (OrderPlacedHandler cleanup)
+### Step 1 — Presale BC gap (OrderPlacedHandler cleanup)
 
 | File | Action |
 |---|---|
@@ -48,29 +51,40 @@ before any controller migration or atomic switch:
 | `Application/Presale/Checkout/Services/Extensions.cs` | Register the new handler |
 | `UnitTests/Presale/Checkout/OrderPlacedHandlerTests.cs` | Unit tests: empty cart case, no reservations case, happy path |
 
-### Step 3 — Inventory BC gap (PaymentConfirmedHandler update)
+### Step 2 — Inventory BC gap (PaymentConfirmedHandler update)
 
 | File | Action |
 |---|---|
 | `Application/Inventory/Availability/Handlers/PaymentConfirmedHandler.cs` | Update to call `IStockService.ConfirmReservationsByOrderAsync(orderId)` instead of the current single-reservation lookup pattern |
 | `UnitTests/Inventory/Availability/PaymentConfirmedHandlerTests.cs` | Add / update unit tests for the new method signature |
 
-### Step 4 — Controller migration (Web)
+### Step 3 — Controller migration (Web — Area-based)
+
+> Routing strategy: [ADR-0024](../adr/0024-controller-routing-strategy.md) — new parallel routes via ASP.NET Core Areas.
+> Legacy controllers stay active and untouched.
 
 | File | Action |
 |---|---|
-| `Web/Controllers/OrderController.cs` | Replace injection of legacy `IOrderService` (`Application.Services.Orders`) with new `Application.Sales.Orders.Services.IOrderService` |
-| `Web/Controllers/OrderItemController.cs` | Replace injection of legacy `IOrderItemService` with new `Application.Sales.Orders.Services.IOrderItemService` |
-| Verify all action methods map to new service method signatures | `PlaceOrderAsync`, `GetOrdersForCustomerAsync`, `GetOrderDetailsAsync`, `UpdateOrderAsync`, `FulfillOrderAsync`, `CancelOrderAsync`, `GetOrderItemsAsync`, `AddOrderItemAsync`, `DeleteOrderItemAsync` |
+| `Web/Startup.cs` | Add area route: `{area:exists}/{controller}/{action=Index}/{id?}` before the default route |
+| `Web/Areas/Sales/Controllers/OrdersController.cs` | Create `[Area("Sales")]` controller injecting `Application.Sales.Orders.Services.IOrderService`. Actions: `Index`, `MyOrders`, `Details`, `Edit`, `ByCustomer`, `PaidOrders`, `Dispatch`, `Fulfillment` |
+| `Web/Areas/Sales/Controllers/OrderItemsController.cs` | Create `[Area("Sales")]` controller injecting `Application.Sales.Orders.Services.IOrderItemService`. Actions: `Index`, `ByItem`, `Details` |
+| `Web/Areas/Sales/Views/Orders/` | Create views using new `Application.Sales.Orders.ViewModels.*` |
+| `Web/Areas/Sales/Views/OrderItems/` | Create views using new VMs |
+| `Web/Areas/Presale/Controllers/CheckoutController.cs` | Create `[Area("Presale")]` controller for cart + place-order flow. Actions: `Cart`, `AddItem`, `PlaceOrder`, `OrderDetails`, `Summary`, `UpdateCartItem`, `DeleteCartItem` |
+| `Web/Areas/Presale/Views/Checkout/` | Create views for cart/checkout using new VMs |
+| `Web/Views/Shared/_Layout.cshtml` | Update nav links: `/Order/ShowMyCart` → `/Presale/Checkout/Cart`, `/Order/ShowMyOrders` → `/Sales/Orders/MyOrders`, etc. |
 
-### Step 5 — Controller migration (API)
+### Step 4 — Controller migration (API — in-place swap)
+
+> Routing strategy: [ADR-0024](../adr/0024-controller-routing-strategy.md) — hard in-place replacement,
+> same route paths, new service implementations. API breaking changes accepted (internal API).
 
 | File | Action |
 |---|---|
-| `API/Controllers/OrderController.cs` | Same swap as Web — new `IOrderService` |
-| `API/Controllers/OrderItemController.cs` | Same swap — new `IOrderItemService` |
+| `API/Controllers/OrderController.cs` | Replace injection of legacy `IOrderService` with `Application.Sales.Orders.Services.IOrderService`. Update action signatures and return types (see ADR-0024 breaking changes table) |
+| `API/Controllers/OrderItemController.cs` | Replace injection of legacy `IOrderItemService` with `Application.Sales.Orders.Services.IOrderItemService`. Update action signatures |
 
-### Step 6 — Update legacy handlers (before DI swap)
+### Step 5 — Update legacy handlers (before DI swap)
 
 | File | Action |
 |---|---|
@@ -78,45 +92,71 @@ before any controller migration or atomic switch:
 | `Application/Services/Coupons/CouponHandler.cs` | Replace direct `order.CouponUsed`/`CalculateCost` chain with `order.AssignCoupon(couponUsedId, discountPercent)` |
 | `Application/Services/Items/ItemHandler.cs` | Remove `orderItem.Item.Cost` navigation chain — use `orderItem.UnitCost.Amount` |
 
-### Step 7 — Atomic switch (DI swap)
+### Step 6 — Activate new services (DI swap in controllers only)
+
+> ⚠️ **Do not remove legacy code yet.** The new code runs in production for at least one full order lifecycle
+> before cleanup. Legacy services remain registered as a fallback — they are no longer called but remain
+> compilable and deployable. Remove only after confirmed production stability.
 
 | File | Action |
 |---|---|
-| `Application/DependencyInjection.cs` | Remove registrations for legacy `OrderService` (`Application.Services.Orders`) and `OrderItemService` (`Application.Services.Orders`) |
-| `Infrastructure/DependencyInjection.cs` | Remove registrations for legacy `OrderRepository` (`Infrastructure.Repositories`) and `OrderItemRepository` (`Infrastructure.Repositories`) |
 | `Infrastructure/DependencyInjection.cs` | Confirm new `OrdersDbContext`, `OrderRepository` (Sales.Orders), `OrderItemRepository` (Sales.Orders) are registered |
+| `Application/DependencyInjection.cs` | New `OrderService` + `OrderItemService` (`Application.Sales.Orders`) must be registered **before** this step |
 
-### Step 8 — Verification
+### Step 7 — Verification
 
 | Action |
 |---|
 | `dotnet build` — green |
 | `dotnet test` — full test suite green, zero regressions |
-| Update `bounded-context-map.md` — move Sales/Orders to Completed BCs |
-| Open integration tests for remaining service-level assertions (payments, coupon, fulfill flows) |
+| Update `bounded-context-map.md` — move Sales/Orders to Active (switch live, cleanup pending) |
+| Monitor production for one full payment + fulfillment cycle before cleanup |
+
+### Step 8 — Legacy cleanup (deferred — post-production validation)
+
+> Execute only after new code has been running stably. Coordinate with IAM atomic switch
+> (removes `Domain/Model/Order.cs` legacy model) and Payments switch.
+
+| File | Action |
+|---|---|
+| `Application/DependencyInjection.cs` | Remove registrations for legacy `OrderService` (`Application.Services.Orders`) and `OrderItemService` (`Application.Services.Orders`) |
+| `Infrastructure/DependencyInjection.cs` | Remove registrations for legacy `OrderRepository` (`Infrastructure.Repositories`) and `OrderItemRepository` (`Infrastructure.Repositories`) |
+| `Application/Services/Orders/` | Delete legacy `OrderService.cs`, `OrderItemService.cs` |
+| `Infrastructure/Repositories/` | Delete legacy `OrderRepository.cs`, `OrderItemRepository.cs` |
 
 ---
 
 ## Coordinate with
 
-- **IAM atomic switch** (`iam-atomic-switch.md`) — `Order.User` nav prop removal (step 6 in ADR-0019) should be done as part of this switch or immediately after. The `Domain/Model/Order.cs` legacy model is removed here.
-- **Sales/Payments** (`payments-atomic-switch.md`) — Payments atomic switch is blocked by this switch completing.
+- **IAM atomic switch** (`iam-atomic-switch.md`) — `Order.User` nav prop removal (step 6 in ADR-0019) should be done as part of Step 9 (cleanup). The `Domain/Model/Order.cs` legacy model is deleted during cleanup, not at controller switch time.
+- **Sales/Payments** (`payments-atomic-switch.md`) — Payments controller switch is unblocked after Step 6 (activation) completes. Payments cleanup is deferred similarly.
 
 ---
 
 ## Acceptance criteria
 
-- [ ] `sales.Orders` schema matches §16 design revision — `Status` column present, legacy flag columns absent
-- [ ] `OrderController` (Web + API) uses `Application.Sales.Orders.Services.IOrderService` — no injection of `Application.Services.Orders.IOrderService`
+### Switch live (Steps 1–7)
+
+- [ ] `sales.Orders` schema correct — `Status` column present (via `InitSalesSchema`); legacy `dbo.Orders` untouched
+- [ ] Web: `Areas/Sales/Controllers/OrdersController.cs` uses `Application.Sales.Orders.Services.IOrderService` with `[Area("Sales")]`
+- [ ] Web: `Areas/Presale/Controllers/CheckoutController.cs` uses Presale services with `[Area("Presale")]`
+- [ ] API: `OrderController` uses `Application.Sales.Orders.Services.IOrderService` — in-place swap
+- [ ] `Startup.cs` includes area route `{area:exists}/{controller}/{action=Index}/{id?}`
+- [ ] `_Layout.cshtml` nav links point to new Area routes
 - [ ] `PaymentHandler.CreatePayment()` calls `order.ConfirmPayment(paymentId)` — no direct `order.IsPaid = true`
 - [ ] `CouponHandler.HandleCouponChangesOnOrder()` calls `order.AssignCoupon(...)` — no LoD navigation chain
-- [ ] Legacy `OrderService` + `OrderItemService` (`Application/Services/Orders/`) DI registrations removed
-- [ ] Legacy `OrderRepository` + `OrderItemRepository` (`Infrastructure/Repositories/`) DI registrations removed
 - [ ] `OrderPlacedHandler` (Presale BC) clears cart + soft reservations on `OrderPlaced`
 - [ ] `PaymentConfirmedHandler` (Inventory BC) uses `ConfirmReservationsByOrderAsync`
-- [ ] Full test suite green after atomic switch
-- [ ] `bounded-context-map.md` updated
+- [ ] Full test suite green after activation
+- [ ] `bounded-context-map.md` updated (switch live)
+
+### Cleanup (Step 8 — deferred)
+
+- [ ] Legacy `OrderService` + `OrderItemService` (`Application/Services/Orders/`) DI registrations removed
+- [ ] Legacy `OrderRepository` + `OrderItemRepository` (`Infrastructure/Repositories/`) DI registrations removed
+- [ ] `Domain/Model/Order.cs` legacy model deleted (coordinate with IAM switch)
+- [ ] Full test suite green after cleanup
 
 ---
 
-*Last reviewed: 2026-03-12 · ADR: [ADR-0014](../adr/0014-sales-orders-bc-design.md)*
+*Last reviewed: 2026-03-22 · ADRs: [ADR-0014](../adr/0014-sales-orders-bc-design.md), [ADR-0024](../adr/0024-controller-routing-strategy.md)*

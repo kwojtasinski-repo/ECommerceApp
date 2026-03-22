@@ -84,6 +84,7 @@ Read an ADR **only** when the "When to read" condition matches the files you are
 | 0021 | Frontend error pipeline and JS migration strategy     | Editing `wwwroot/js/**`, error handling in Views                                 |
 | 0022 | Navbar two-tier redesign                              | Editing navbar, `_Layout.cshtml`, navigation structure                           |
 | 0023 | Bootstrap 5 upgrade                                   | Editing `_Layout.cshtml`, `modalService.js`, or any view with BS data attributes |
+| 0024 | Controller routing strategy for BC atomic switches    | Creating Area controllers, migrating Web/API controllers, editing `Startup.cs` routing |
 
 ## Architecture docs (`docs/architecture/`)
 
