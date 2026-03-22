@@ -91,17 +91,63 @@ before any controller migration or atomic switch:
 | `Web/Areas/Presale/Controllers/CheckoutController.cs` | ✅ `IUserProfileService` injected; `PlaceOrder` GET calls `GetDetailsByUserIdAsync` and passes `UserProfileDetailsVm?` to view |
 | `Web/Areas/Presale/Views/Checkout/PlaceOrder.cshtml` | ✅ Typed model `UserProfileDetailsVm?`; `customerId` hidden; all personal + address fields prefilled from profile; first address used if available |
 
-### Step 4 — API replacement (design-gated — external system contract discussion pending)
+### Step 4 — API replacement + tiered access model 🟡 Design agreed — implementation pending
 
-> ⚠️ **Not yet agreed.** The API exposes order data to external consumers. Before swapping the injected
-> service, the team must agree which endpoints are kept, which are changed, and what breaking changes
-> are acceptable to external callers. This is a business/integration agreement, not just a code change.
-> Implementation proceeds only after that agreement is reached.
+> **Design agreed 2026-03-22** — see [ADR-0025](../adr/0025-api-tiered-access-trusted-purchase-policy.md).
+> Implementation is split into three phases (4a / 4b / 4c).
+>
+> **Gate conditions — all must be ✅ before atomic switch:**
+
+| Gate | Condition | Status |
+|---|---|---|
+| G1 | `TrustedApiUser` policy registered and applied to all write endpoints | ⏳ Pending |
+| G2 | `api:purchase` claim emitted from `LoginController` JWT assembly | ⏳ Pending |
+| G3 | Ownership checks on `GET /orders/{id}` and `GET /payments/{id}` | ⏳ Pending |
+| G4 | `MaxApiQuantityFilter` applied to `CartController.AddOrUpdate` | ⏳ Pending |
+| G5 | `AddToCartDtoValidator` created and registered (Web 99-cap) | ⏳ Pending |
+| G6 | `WebOptions:BaseUrl` configured; `Confirm` returns `{ orderId, paymentUrl }` | ⏳ Pending |
+| G7 | Legacy `API/Controllers/OrderController.cs` swapped to new `IOrderService` | ⏳ Pending |
+| G8 | Legacy `API/Controllers/OrderItemController.cs` swapped to new `IOrderItemService` | ⏳ Pending |
+
+#### Phase 4a — Authorization policy
+
+| Action | Status |
+|---|---|
+| Register `TrustedApiUser` policy in `API/Startup.cs` (claim `api:purchase=true` OR role `Service`/`Manager`/`Administrator`) | ⏳ Pending |
+| Apply `[Authorize(Policy = "TrustedApiUser")]` to cart-write, checkout, and order-placement endpoints | ⏳ Pending |
+| Emit claim `api:purchase` from `LoginController` JWT assembly when user has the flag | ⏳ Pending |
+| Add ownership check to `GET /api/v2/orders/{id}` and `GET /api/v2/payments/{id}` | ⏳ Pending |
+
+#### Phase 4b — Quantity limit (max 5 units per product per API order line)
+
+> **Future (Backoffice BC)**: Both API limit (`ApiMaxQuantityPerOrderLine`) and Web limit
+> (`WebMaxQuantityPerOrderLine`) will be configurable via `backoffice.PurchaseLimitSettings`
+> DB table + `IMemoryCache` + `IApiPurchaseLimitsService`. Hardcoded constants are the
+> authoritative source until Backoffice BC is live.
+
+| Action | Status |
+|---|---|
+| Create `ApiPurchaseOptions` with `MaxQuantityPerOrderLine = 5` and `MaxWebQuantityPerOrderLine = 99` constants | ⏳ Pending |
+| Create `MaxApiQuantityFilter` action filter | ⏳ Pending |
+| Apply filter to `CartController.AddOrUpdate` | ⏳ Pending |
+| Create `AddToCartDtoValidator` (FluentValidation) in Application layer — Web cap: 99 | ⏳ Pending |
+
+#### Phase 4c — Payment URL in checkout confirm response
+
+| Action | Status |
+|---|---|
+| Create `WebOptions` class and register in `API/Startup.cs` | ⏳ Pending |
+| Inject `IOptions<WebOptions>` into `API/Controllers/V2/CheckoutController` | ⏳ Pending |
+| Update `Confirm` action to return `{ orderId, paymentUrl }` | ⏳ Pending |
+| Add `WebOptions:BaseUrl` to `API/appsettings.json` and `API/appsettings.Development.json` | ⏳ Pending |
+
+#### API service swap (original Step 4 scope)
 
 | File | Action |
 |---|---|
-| `API/Controllers/OrderController.cs` | Replace injection of legacy `IOrderService` with `Application.Sales.Orders.Services.IOrderService`. Update action signatures and return types per agreed external contract |
-| `API/Controllers/OrderItemController.cs` | Replace injection of legacy `IOrderItemService` with `Application.Sales.Orders.Services.IOrderItemService`. Update action signatures per agreed contract |
+| `API/Controllers/V2/OrdersController.cs` | Already on `Application.Sales.Orders.Services.IOrderService` — verify all endpoints are wired correctly |
+| `API/Controllers/OrderController.cs` | Replace injection of legacy `IOrderService` with `Application.Sales.Orders.Services.IOrderService`. Update action signatures and return types |
+| `API/Controllers/OrderItemController.cs` | Replace injection of legacy `IOrderItemService` with `Application.Sales.Orders.Services.IOrderItemService`. Update action signatures |
 
 ### ~~Step 5 — Update legacy handlers~~ ✅ Not needed
 

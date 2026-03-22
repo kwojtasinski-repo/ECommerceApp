@@ -13,7 +13,7 @@
 
 | Area | State | Key blocker |
 |---|---|---|
-| **Sales/Orders BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migration ✅ approved — **Web Area controllers + views ✅ done**, **DI wired ✅ done**, **PlaceOrder profile prefill ✅ done** (Steps 1–6 + 3a complete); legacy code retained | Step 4 (API swap — external contract agreement required before implementation) |
+| **Sales/Orders BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migration ✅ approved — **Web Area controllers + views ✅ done**, **DI wired ✅ done**, **PlaceOrder profile prefill ✅ done** (Steps 1–6 + 3a complete); legacy code retained | Step 4 (API tiered access — **design agreed** [ADR-0025](../docs/adr/0025-api-tiered-access-trusted-purchase-policy.md), implementation pending: 4a auth policy, 4b quantity limit, 4c payment URL) |
 | **Sales/Payments BC** | Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migrations ✅ approved — **Web Area controller + views ✅ done**; legacy `PaymentHandler` retained (not modified — will simply stop being called after switch) | Orders switch must activate first |
 | **Presale/Checkout BC** | Checkout Area controller ✅ + views ✅ (Cart enriched with product names via `ICatalogClient`). PlaceOrder profile prefill ✅ done — `customerId` resolved from `UserProfileDetailsVm.Id`, all fields prefilled from first address | No remaining blockers — ready for switch once Orders activates |
 
@@ -23,6 +23,7 @@
 
 | Area | Summary | ADR |
 |---|---|---|
+| **API tiered access — design agreed** | Trusted purchase policy (`api:purchase` claim OR `Service` role), max 5 units per product per API order line (hardcoded now, backoffice-configurable later via in-memory cache), payment URL returned from checkout confirm (`WebOptions:BaseUrl` + fixed path). Web quantity gap also identified (`AddToCartDtoValidator` pending). | [ADR-0025](../docs/adr/0025-api-tiered-access-trusted-purchase-policy.md) |
 | **DB migrations approved** | All per-BC DB migrations approved for all 10 BCs (Orders, Payments, Coupons, Fulfillment, Inventory, Presale, Catalog, AccountProfile, Currencies, TimeManagement). Universal blocker removed. | — |
 | **BC integration tests** | 96 new integration tests across 12 test files: 86 per-BC service tests (9 BCs) + 10 cross-BC event chain tests (3 files). Test infrastructure: `BcWebApplicationFactory`, `BcBaseTest<T>`, `SynchronousMultiHandlerBroker`, `TypedIdAwareValueGeneratorSelector`, `NoOpDbContextMigrator`. All tests passing (423 total). | — |
 | **Frontend error pipeline** | Phase 1 (ExceptionResponse + errors.js) ✅ Phase 2 (bug fixes: ajaxRequest FormData, modalService denyAction, buttonTemplate type, validations ReDoS) ✅ Phase 3 (fetch-first new-code policy) ✅ ongoing Phase 4 (BS5 modalService rewrite + AMD cleanup / `addObjectPropertiesToGlobal` removed + DOMInitialized event-data pattern) ✅ | [ADR-0021](../docs/adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) |

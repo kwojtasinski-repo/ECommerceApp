@@ -85,6 +85,7 @@ Read an ADR **only** when the "When to read" condition matches the files you are
 | 0022 | Navbar two-tier redesign                              | Editing navbar, `_Layout.cshtml`, navigation structure                           |
 | 0023 | Bootstrap 5 upgrade                                   | Editing `_Layout.cshtml`, `modalService.js`, or any view with BS data attributes |
 | 0024 | Controller routing strategy for BC atomic switches    | Creating Area controllers, migrating Web/API controllers, editing `Startup.cs` routing |
+| 0025 | API tiered access — Trusted purchase policy, quantity limits, payment URL | Editing API V2 `CartController`, `CheckoutController`, `OrdersController`, `LoginController` JWT claims, `ApiPurchaseOptions`, `MaxApiQuantityFilter` |
 
 ## Architecture docs (`docs/architecture/`)
 

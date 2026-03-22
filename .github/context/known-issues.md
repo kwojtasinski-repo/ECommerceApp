@@ -56,6 +56,18 @@
 
 ## Deferred Design Decisions
 
+### [DD-002] No quantity upper limit on cart/order — Web gap
+- **Severity**: 🟡 Medium (design debt)
+- **Location**: `ECommerceApp.Application/Presale/Checkout/DTOs/AddToCartDto.cs` — no validator exists
+- **Issue**: `Shared.Quantity` only validates `value > 0`. There is no maximum quantity cap enforced
+  anywhere — neither in the domain, the application layer, nor the Web controllers. A user on the Web
+  storefront can add an arbitrary quantity of any single product to the cart.
+- **Agreed fix**: Create `AddToCartDtoValidator` (FluentValidation) in the Application layer.
+  Web limit: `RuleFor(x => x.Quantity).InclusiveBetween(1, 99)` — sourced from `ApiPurchaseOptions.MaxWebQuantityPerOrderLine`.
+  The API limit (max 5 per line) is handled separately via `MaxApiQuantityFilter` — see [ADR-0025](../docs/adr/0025-api-tiered-access-trusted-purchase-policy.md).
+- **Future**: Both Web and API limits become backoffice-configurable via `backoffice.PurchaseLimitSettings` + `IMemoryCache`.
+- **Fix tracked in**: [orders-atomic-switch.md Step 4b](../../docs/roadmap/orders-atomic-switch.md)
+
 ### [DD-001] `StockHold` — missing `Withdrawn` status and non-reversible state transitions
 - **Severity**: 🟡 Medium (design debt)
 - **Context**: Inventory/Availability BC — `StockHold.Status` enum (`StockHoldStatus`)

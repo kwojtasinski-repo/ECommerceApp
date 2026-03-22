@@ -61,3 +61,11 @@ Context: `project-state.md`, `known-issues.md`, `repo-index.md`. Roadmaps: `docs
 ## 8. .NET 8+ Upgrade Rule
 
 - **FluentAssertions → AwesomeAssertions**: When upgrading the project to .NET 8 or later, replace the `FluentAssertions` NuGet package with `AwesomeAssertions` (Apache 2.0 community fork). Replace all `using FluentAssertions;` → `using AwesomeAssertions;`. No assertion syntax changes needed. See [KI-008](context/known-issues.md) for details. Do NOT perform this replacement while the project targets .NET 7 or earlier.
+
+## 9. API Purchase Limit Configuration
+
+- **Max 5 units per product per API order line**: The API enforces a maximum of 5 units of a single product per cart line (`ApiPurchaseOptions.MaxQuantityPerOrderLine = 5`). This is an API-only limit enforced via `MaxApiQuantityFilter` — the domain (`Shared.Quantity`) stays pure. The Web storefront uses a separate validator (`AddToCartDtoValidator`, limit 99 per line).
+- **Future**: Both API and Web limits become backoffice-configurable — two independent settings (`ApiMaxQuantityPerOrderLine`, `WebMaxQuantityPerOrderLine`) stored in `backoffice.PurchaseLimitSettings`, loaded into `IMemoryCache` on startup, resolved via `IApiPurchaseLimitsService`. Until the Backoffice BC is live, the constants in `ApiPurchaseOptions` are authoritative.
+- **Do NOT add a max quantity cap to `Shared.Quantity`** — that value object is channel-agnostic and must stay pure.
+- **Trusted API user**: `TrustedApiUser` policy = authenticated AND (`api:purchase` claim OR role `Service`/`Manager`/`Administrator`). The `User` role alone does not grant purchase flow access via API.
+- See [ADR-0025](docs/adr/0025-api-tiered-access-trusted-purchase-policy.md) and [DD-002](context/known-issues.md).
