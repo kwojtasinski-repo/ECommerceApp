@@ -1,5 +1,6 @@
 using ECommerceApp.Domain.Sales.Payments;
 using Microsoft.EntityFrameworkCore;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -23,6 +24,18 @@ namespace ECommerceApp.Infrastructure.Sales.Payments.Repositories
             => await _context.Payments
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.OrderId == new PaymentOrderId(orderId), ct);
+
+        public async Task<Payment?> GetByPaymentIdAsync(Guid paymentId, string userId, CancellationToken ct = default)
+            => await _context.Payments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.PaymentId == paymentId && p.UserId == userId, ct);
+
+        public async Task<Payment?> GetPendingByOrderIdAsync(int orderId, string userId, CancellationToken ct = default)
+            => await _context.Payments
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.OrderId == new PaymentOrderId(orderId)
+                                       && p.UserId == userId
+                                       && p.Status == PaymentStatus.Pending, ct);
 
         public async Task AddAsync(Payment payment, CancellationToken ct = default)
         {

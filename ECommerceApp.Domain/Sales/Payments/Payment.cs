@@ -7,7 +7,9 @@ namespace ECommerceApp.Domain.Sales.Payments
     public class Payment
     {
         public PaymentId Id { get; private set; } = default!;
+        public Guid PaymentId { get; private set; }
         public PaymentOrderId OrderId { get; private set; } = default!;
+        public string UserId { get; private set; } = default!;
         public decimal TotalAmount { get; private set; }
         public int CurrencyId { get; private set; }
         public PaymentStatus Status { get; private set; }
@@ -22,7 +24,8 @@ namespace ECommerceApp.Domain.Sales.Payments
             PaymentOrderId orderId,
             decimal totalAmount,
             int currencyId,
-            DateTime expiresAt)
+            DateTime expiresAt,
+            string userId)
         {
             if (totalAmount < 0)
             {
@@ -32,10 +35,16 @@ namespace ECommerceApp.Domain.Sales.Payments
             {
                 throw new DomainException("CurrencyId must be positive.");
             }
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                throw new DomainException("UserId is required.");
+            }
 
             return new Payment
             {
+                PaymentId = Guid.NewGuid(),
                 OrderId = orderId,
+                UserId = userId,
                 TotalAmount = totalAmount,
                 CurrencyId = currencyId,
                 Status = PaymentStatus.Pending,
@@ -48,7 +57,8 @@ namespace ECommerceApp.Domain.Sales.Payments
             PaymentOrderId orderId,
             decimal totalAmount,
             int currencyId,
-            DateTime expiresAt)
+            DateTime expiresAt,
+            string userId)
         {
             if (paymentId is null || paymentId.Value <= 0)
             {
@@ -66,11 +76,17 @@ namespace ECommerceApp.Domain.Sales.Payments
             {
                 throw new DomainException("CurrencyId must be positive.");
             }
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                throw new DomainException("UserId is required.");
+            }
 
             return new Payment
             {
                 Id = paymentId,
+                PaymentId = Guid.NewGuid(),
                 OrderId = orderId,
+                UserId = userId,
                 TotalAmount = totalAmount,
                 CurrencyId = currencyId,
                 Status = PaymentStatus.Pending,

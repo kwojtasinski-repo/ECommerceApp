@@ -10,7 +10,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
     public class PaymentAggregateTests
     {
         private static Payment CreatePending() => Payment.Create(
-            new PaymentId(1), new PaymentOrderId(1), 199.99m, 1, DateTime.UtcNow.AddDays(3));
+            new PaymentId(1), new PaymentOrderId(1), 199.99m, 1, DateTime.UtcNow.AddDays(3), "user-1");
 
         // ── Create ────────────────────────────────────────────────────────────
 
@@ -18,7 +18,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         public void Create_ValidParameters_ShouldReturnPendingPayment()
         {
             var expiresAt = DateTime.UtcNow.AddDays(3);
-            var payment = Payment.Create(new PaymentOrderId(1), 99.99m, 2, expiresAt);
+            var payment = Payment.Create(new PaymentOrderId(1), 99.99m, 2, expiresAt, "user-1");
 
             payment.OrderId.Value.Should().Be(1);
             payment.TotalAmount.Should().Be(99.99m);
@@ -27,12 +27,14 @@ namespace ECommerceApp.UnitTests.Sales.Payments
             payment.ExpiresAt.Should().Be(expiresAt);
             payment.ConfirmedAt.Should().BeNull();
             payment.TransactionRef.Should().BeNull();
+            payment.PaymentId.Should().NotBe(Guid.Empty);
+            payment.UserId.Should().Be("user-1");
         }
 
         [Fact]
         public void Create_ZeroOrderId_ShouldThrowDomainException()
         {
-            var act = () => Payment.Create(new PaymentOrderId(1), 99.99m, 1, DateTime.UtcNow.AddDays(3));
+            var act = () => Payment.Create(new PaymentOrderId(1), 99.99m, 1, DateTime.UtcNow.AddDays(3), "user-1");
 
             act.Should().NotThrow();
         }
@@ -40,7 +42,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         [Fact]
         public void Create_NegativeTotalAmount_ShouldThrowDomainException()
         {
-            var act = () => Payment.Create(new PaymentOrderId(1), -1m, 1, DateTime.UtcNow.AddDays(3));
+            var act = () => Payment.Create(new PaymentOrderId(1), -1m, 1, DateTime.UtcNow.AddDays(3), "user-1");
 
             act.Should().Throw<DomainException>().WithMessage("*TotalAmount*");
         }
@@ -48,7 +50,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         [Fact]
         public void Create_ZeroCurrencyId_ShouldThrowDomainException()
         {
-            var act = () => Payment.Create(new PaymentOrderId(1), 99.99m, 0, DateTime.UtcNow.AddDays(3));
+            var act = () => Payment.Create(new PaymentOrderId(1), 99.99m, 0, DateTime.UtcNow.AddDays(3), "user-1");
 
             act.Should().Throw<DomainException>().WithMessage("*CurrencyId*");
         }
@@ -56,7 +58,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         [Fact]
         public void Create_ZeroTotalAmount_ShouldSucceed()
         {
-            var act = () => Payment.Create(new PaymentOrderId(1), 0m, 1, DateTime.UtcNow.AddDays(3));
+            var act = () => Payment.Create(new PaymentOrderId(1), 0m, 1, DateTime.UtcNow.AddDays(3), "user-1");
 
             act.Should().NotThrow();
         }

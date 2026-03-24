@@ -50,6 +50,8 @@ namespace ECommerceApp.UnitTests.Sales.Payments
             savedPayment.TotalAmount.Should().Be(49.99m);
             savedPayment.CurrencyId.Should().Be(2);
             savedPayment.Status.Should().Be(PaymentStatus.Pending);
+            savedPayment.PaymentId.Should().NotBe(Guid.Empty);
+            savedPayment.UserId.Should().Be("user-1");
         }
 
         [Fact]

@@ -32,7 +32,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
 
         private static Payment CreatePendingPayment(int paymentId = 1, int orderId = 10)
         {
-            var payment = Payment.Create(new PaymentOrderId(orderId), 99m, 1, DateTime.UtcNow.AddDays(3));
+            var payment = Payment.Create(new PaymentOrderId(orderId), 99m, 1, DateTime.UtcNow.AddDays(3), "user-1");
             typeof(Payment).GetProperty(nameof(Payment.Id))!
                 .GetSetMethod(nonPublic: true)!
                 .Invoke(payment, new object[] { new PaymentId(paymentId) });

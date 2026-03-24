@@ -14,6 +14,7 @@ namespace ECommerceApp.Application.Sales.Payments.ViewModels
 
     public sealed record PaymentDetailsVm(
         int Id,
+        Guid PaymentId,
         int OrderId,
         decimal TotalAmount,
         int CurrencyId,

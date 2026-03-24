@@ -77,6 +77,7 @@ namespace ECommerceApp.Application.Sales.Payments.Services
         private static PaymentDetailsVm MapToDetailsVm(Payment payment)
             => new(
                 payment.Id.Value,
+                payment.PaymentId,
                 payment.OrderId.Value,
                 payment.TotalAmount,
                 payment.CurrencyId,

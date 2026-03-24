@@ -24,7 +24,8 @@ namespace ECommerceApp.Application.Sales.Payments.Handlers
                 new PaymentOrderId(message.OrderId),
                 message.TotalAmount,
                 message.CurrencyId,
-                message.ExpiresAt);
+                message.ExpiresAt,
+                message.UserId);
 
             await _paymentRepo.AddAsync(payment, ct);
 
