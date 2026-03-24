@@ -17,7 +17,7 @@ namespace ECommerceApp.Infrastructure.Sales.Payments.Migrations
                 table: "Payments",
                 type: "uniqueidentifier",
                 nullable: false,
-                defaultValue: new Guid("00000000-0000-0000-0000-000000000000"));
+                defaultValueSql: "NEWID()");
 
             migrationBuilder.AddColumn<string>(
                 name: "UserId",

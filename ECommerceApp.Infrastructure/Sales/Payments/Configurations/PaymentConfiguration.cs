@@ -35,7 +35,9 @@ namespace ECommerceApp.Infrastructure.Sales.Payments.Configurations
             builder.Property(p => p.ConfirmedAt);
             builder.Property(p => p.TransactionRef).HasMaxLength(200);
 
-            builder.Property(p => p.PaymentId).IsRequired();
+            builder.Property(p => p.PaymentId)
+                   .IsRequired()
+                   .HasDefaultValueSql("NEWID()");
             builder.HasIndex(p => p.PaymentId).IsUnique();
 
             builder.Property(p => p.UserId).HasMaxLength(450).IsRequired();
