@@ -1,0 +1,52 @@
+### ============================================================
+### Payments
+### Base URL: https://localhost:49609
+###
+### Payment is auto-created when an order is placed (via OrderPlacedHandler).
+### To get the payment Guid token, call GET /api/orders/{orderId} after checkout confirm
+### — the response includes a non-null paymentUrl when status is "Placed".
+###
+### Flow:
+###   1. POST /api/checkout/confirm  → { orderId }          (presale.http)
+###   2. GET  /api/orders/{orderId}  → { ..., paymentUrl }  (sales-orders.http)
+###   3. Extract Guid from paymentUrl → use below to fetch payment details
+###   4. Complete payment via Web UI at the paymentUrl
+### ============================================================
+
+@baseUrl = https://localhost:49609
+@token = YOUR_JWT_TOKEN
+@contentType = application/json
+
+# ============================================================
+# AUTH
+# ============================================================
+
+### Login
+POST {{baseUrl}}/api/Login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@localhost",
+  "password": "aDminN@W25!"
+}
+
+###
+
+# ============================================================
+# PAYMENTS — own-scoped by Guid token
+# ============================================================
+
+### Get payment by Guid token (own-scoped)
+# Expected: 200 OK  →  PaymentDetailsVm
+# paymentId: Guid extracted from the paymentUrl returned by GET /api/orders/{orderId}
+GET {{baseUrl}}/api/payments/00000000-0000-0000-0000-000000000000
+Authorization: Bearer {{token}}
+
+###
+
+### Get payment — not found / not owned by current user
+# Expected: 404 Not Found
+GET {{baseUrl}}/api/payments/ffffffff-ffff-ffff-ffff-ffffffffffff
+Authorization: Bearer {{token}}
+
+###

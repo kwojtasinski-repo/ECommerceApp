@@ -32,6 +32,18 @@ namespace ECommerceApp.Application.Sales.Payments.Services
             return payment is null ? null : MapToDetailsVm(payment);
         }
 
+        public async Task<PaymentDetailsVm?> GetByTokenAsync(Guid paymentId, string userId, CancellationToken ct = default)
+        {
+            var payment = await _paymentRepo.GetByPaymentIdAsync(paymentId, userId, ct);
+            return payment is null ? null : MapToDetailsVm(payment);
+        }
+
+        public async Task<PaymentDetailsVm?> GetPendingByOrderIdAsync(int orderId, string userId, CancellationToken ct = default)
+        {
+            var payment = await _paymentRepo.GetPendingByOrderIdAsync(orderId, userId, ct);
+            return payment is null ? null : MapToDetailsVm(payment);
+        }
+
         public async Task<PaymentOperationResult> ConfirmAsync(ConfirmPaymentDto dto, CancellationToken ct = default)
         {
             var payment = await _paymentRepo.GetByIdAsync(dto.PaymentId, ct);

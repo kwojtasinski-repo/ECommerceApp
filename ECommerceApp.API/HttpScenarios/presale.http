@@ -1,18 +1,18 @@
 ### ============================================================
-### Presale V2 — Storefront + Cart + Checkout
+### Presale — Storefront + Cart + Checkout
 ### Base URL: https://localhost:49609
 ###
 ### Storefront: anonymous (published products browse)
-### Cart: authenticated (any user — operates on own cart via userId)
-### Checkout: authenticated — soft-reserve → price-change check → confirm
+### Cart: authenticated; mutations require TrustedApiUser policy
+### Checkout: authenticated + TrustedApiUser → initiate → confirm → orderId
 ###
 ### Full checkout flow:
-###   1. Browse products      →  GET  /api/storefront/products
-###   2. Add to cart          →  POST /api/v2/cart/items
-###   3. View cart            →  GET  /api/v2/cart
-###   4. Initiate checkout    →  POST /api/v2/soft-reservations  (hold price per product)
-###   5. Check price changes  →  GET  /api/v2/checkout/price-changes  (warn if prices shifted)
-###   6. Confirm order        →  POST /api/v2/checkout/confirm
+###   1. Browse products      →  GET  /api/storefront/products  (anonymous)
+###   2. Add to cart          →  POST /api/cart/items           (TrustedApiUser)
+###   3. View cart            →  GET  /api/cart                 (authenticated)
+###   4. Initiate checkout    →  POST /api/checkout/initiate    (TrustedApiUser, locks prices 15-min TTL)
+###   5. Confirm order        →  POST /api/checkout/confirm     (TrustedApiUser)
+###   6. Get order + payment  →  GET  /api/orders/{orderId}     (see sales-orders.http)
 ### ============================================================
 
 @baseUrl = https://localhost:49609
@@ -54,19 +54,19 @@ GET {{baseUrl}}/api/storefront/products?pageSize=5&pageNo=2
 ###
 
 # ============================================================
-# CART — authenticated
+# CART — GET requires Authorize; mutations require TrustedApiUser
 # ============================================================
 
 ### Get current user's cart
 # Expected: 200 OK  →  CartVm  |  404 if cart is empty/doesn't exist
-GET {{baseUrl}}/api/v2/cart
+GET {{baseUrl}}/api/cart
 Authorization: Bearer {{token}}
 ###
 
-### Add item to cart (or update quantity if already in cart)
+### Add item to cart (or update quantity if already in cart)  [TrustedApiUser]
 # Expected: 200 OK
-# Replace userId with the actual user id from the JWT claim
-POST {{baseUrl}}/api/v2/cart/items
+# Max 5 units per line (MaxApiQuantityFilter); Web UI cap is 99
+POST {{baseUrl}}/api/cart/items
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
@@ -77,9 +77,9 @@ Content-Type: {{contentType}}
 }
 ###
 
-### Add another item
+### Add another item  [TrustedApiUser]
 # Expected: 200 OK
-POST {{baseUrl}}/api/v2/cart/items
+POST {{baseUrl}}/api/cart/items
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
@@ -90,9 +90,9 @@ Content-Type: {{contentType}}
 }
 ###
 
-### Update quantity of existing cart item (same productId → overwrites)
+### Update quantity of existing cart item (same productId → overwrites)  [TrustedApiUser]
 # Expected: 200 OK
-POST {{baseUrl}}/api/v2/cart/items
+POST {{baseUrl}}/api/cart/items
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
@@ -103,58 +103,50 @@ Content-Type: {{contentType}}
 }
 ###
 
-### Remove single item from cart
+### Remove single item from cart  [TrustedApiUser]
 # Expected: 204 No Content
-DELETE {{baseUrl}}/api/v2/cart/items/1
+DELETE {{baseUrl}}/api/cart/items/1
 Authorization: Bearer {{token}}
 ###
 
-### Clear entire cart
+### Clear entire cart  [TrustedApiUser]
 # Expected: 204 No Content
-DELETE {{baseUrl}}/api/v2/cart
+DELETE {{baseUrl}}/api/cart
 Authorization: Bearer {{token}}
 ###
 
 ### Get cart after clearing — should be empty/404
-# Expected: 404 Not Found (or empty CartVm depending on implementation)
-GET {{baseUrl}}/api/v2/cart
+# Expected: 404 Not Found
+GET {{baseUrl}}/api/cart
 Authorization: Bearer {{token}}
 ###
 
 # ============================================================
-# CHECKOUT — authenticated
-# Steps: initiate → check prices → confirm
-#   1. POST /api/v2/checkout/initiate     — lock prices into SoftReservations (15 min TTL)
-#   2. GET  /api/v2/checkout/price-changes — warn if prices shifted since initiation
-#   3. POST /api/v2/checkout/confirm       — place the order
+# CHECKOUT — TrustedApiUser required
+# Steps: initiate → confirm
+#   1. POST /api/checkout/initiate  — lock prices into SoftReservations (15-min TTL)
+#   2. POST /api/checkout/confirm   — place the order; returns { orderId }
+#      Then: GET /api/orders/{orderId} to get paymentUrl (sales-orders.http)
 # ============================================================
 
-### Step 4 — Initiate checkout (lock prices + TTL)
+### Step 4 — Initiate checkout (lock prices + TTL)  [TrustedApiUser]
 # Locks the current Catalog price for every cart item into a SoftReservation (15-min TTL).
 # Re-calling refreshes prices and resets the TTL (idempotent).
 # 200 OK         →  { "reservedCount": <int>, "unavailableProductIds": [] }
-# 409 Conflict   →  all products unavailable
+# 409 Conflict   →  all products unavailable / checkout already in progress
 # 400 Bad Request → cart is empty
-POST {{baseUrl}}/api/v2/checkout/initiate
+POST {{baseUrl}}/api/checkout/initiate
 Authorization: Bearer {{token}}
 ###
 
-### Step 5 — Check price changes before confirming
-# Returns lines where SoftReservation.UnitPrice != current Catalog price.
-# Empty array = prices unchanged → safe to confirm immediately.
-# Expected: 200 OK  →  SoftReservationPriceChangeVm[]
-GET {{baseUrl}}/api/v2/checkout/price-changes
-Authorization: Bearer {{token}}
-###
-
-### Step 6 — Confirm order placement
+### Step 5 — Confirm order placement  [TrustedApiUser]
 # Customer data is submitted directly from the form (may be pre-filled from AccountProfile).
 # No server-side customer lookup is performed — the inline data is embedded in the order.
 # 200 OK        →  { "orderId": <int> }
 # 400 Bad Request  →  no active soft reservations (must re-initiate checkout)
 # 409 Conflict     →  a product is no longer available in the requested quantity
 # 422 Unprocessable Entity  →  order service returned a failure (e.g. invalid customer data)
-POST {{baseUrl}}/api/v2/checkout/confirm
+POST {{baseUrl}}/api/checkout/confirm
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 

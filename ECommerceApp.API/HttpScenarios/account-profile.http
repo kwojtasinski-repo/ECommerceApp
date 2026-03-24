@@ -1,11 +1,11 @@
 ### ============================================================
-### Account Profile V2 — User Profiles + Addresses
+### Account Profile — Customers + Addresses
 ### Base URL: https://localhost:49609
 ###
-### GET /me — own profile (any authenticated user)
-### GET list / details — ManagingRole
-### POST/PUT — any authenticated (own data)
-### DELETE — ManagingRole
+### GET {id}  — own profile (userId scoped) or admin
+### POST/PUT  — any authenticated (own data)
+### Addresses — POST /api/addresses, PUT /api/addresses/{profileId},
+###             DELETE /api/addresses/{profileId}/{addressId}
 ### ============================================================
 
 @baseUrl = https://localhost:49609
@@ -28,49 +28,25 @@ Content-Type: {{contentType}}
 ###
 
 # ============================================================
-# PROFILES
+# CUSTOMER PROFILES — /api/customers
 # ============================================================
 
-### Get all profiles — paged (ManagingRole)
-# Expected: 200 OK  →  UserProfileListVm
-GET {{baseUrl}}/api/v2/profiles?pageSize=10&pageNo=1
-Authorization: Bearer {{token}}
-###
-
-### Get all profiles — search
-# Expected: 200 OK
-GET {{baseUrl}}/api/v2/profiles?searchString=kowalski&pageSize=10&pageNo=1
-Authorization: Bearer {{token}}
-###
-
-### Get my profile (current user)
-# Expected: 200 OK  →  UserProfileVm | 404 if not created yet
-GET {{baseUrl}}/api/v2/profiles/me
-Authorization: Bearer {{token}}
-###
-
-### Get profile by id (own or ManagingRole)
-# Expected: 200 OK  →  UserProfileVm
-GET {{baseUrl}}/api/v2/profiles/1
-Authorization: Bearer {{token}}
-###
-
-### Get profile details (ManagingRole)
-# Expected: 200 OK  →  UserProfileDetailsVm
-GET {{baseUrl}}/api/v2/profiles/1/details
+### Get profile by id (own-scoped)
+# Expected: 200 OK  →  UserProfileVm | 404 if not found / not owned
+GET {{baseUrl}}/api/customers/1
 Authorization: Bearer {{token}}
 ###
 
 ### Get profile — not found
 # Expected: 404 Not Found
-GET {{baseUrl}}/api/v2/profiles/99999
+GET {{baseUrl}}/api/customers/99999
 Authorization: Bearer {{token}}
 ###
 
 ### Create profile
 # Expected: 201 Created  →  { "id": <newId> }
 # Replace userId with a real ApplicationUser.Id from the IAM store
-POST {{baseUrl}}/api/v2/profiles
+POST {{baseUrl}}/api/customers
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
@@ -88,7 +64,7 @@ Content-Type: {{contentType}}
 
 ### Create profile — company
 # Expected: 201 Created
-POST {{baseUrl}}/api/v2/profiles
+POST {{baseUrl}}/api/customers
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
@@ -106,7 +82,7 @@ Content-Type: {{contentType}}
 
 ### Update personal info
 # Expected: 200 OK
-PUT {{baseUrl}}/api/v2/profiles/personal
+PUT {{baseUrl}}/api/customers/1
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
@@ -120,32 +96,29 @@ Content-Type: {{contentType}}
 }
 ###
 
-### Update contact info
-# Expected: 200 OK
-PUT {{baseUrl}}/api/v2/profiles/contact
+### Update profile — id mismatch (route id vs body id)
+# Expected: 400 Bad Request  →  { "error": "Id mismatch." }
+PUT {{baseUrl}}/api/customers/1
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
 {
-  "id": 1,
-  "email": "new.email@example.com",
-  "phoneNumber": "+48601999888"
+  "id": 99,
+  "firstName": "Bad",
+  "lastName": "Request",
+  "isCompany": false,
+  "nip": null,
+  "companyName": null
 }
 ###
 
-### Delete profile (ManagingRole)
-# Expected: 204 No Content
-DELETE {{baseUrl}}/api/v2/profiles/1
-Authorization: Bearer {{token}}
-###
-
 # ============================================================
-# ADDRESSES
+# ADDRESSES — /api/addresses
 # ============================================================
 
 ### Add address to profile
 # Expected: 201 Created
-POST {{baseUrl}}/api/v2/profiles/1/addresses
+POST {{baseUrl}}/api/addresses
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
@@ -162,7 +135,7 @@ Content-Type: {{contentType}}
 
 ### Add address — no flat number
 # Expected: 201 Created
-POST {{baseUrl}}/api/v2/profiles/1/addresses
+POST {{baseUrl}}/api/addresses
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
@@ -179,7 +152,7 @@ Content-Type: {{contentType}}
 
 ### Update address
 # Expected: 200 OK
-PUT {{baseUrl}}/api/v2/profiles/1/addresses
+PUT {{baseUrl}}/api/addresses/1
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
@@ -196,12 +169,6 @@ Content-Type: {{contentType}}
 
 ### Remove address
 # Expected: 204 No Content
-DELETE {{baseUrl}}/api/v2/profiles/5/addresses/8
-Authorization: Bearer {{token}}
-###
-
-### Remove address — not found
-# Expected: 404 Not Found
-DELETE {{baseUrl}}/api/v2/profiles/1/addresses/99999
+DELETE {{baseUrl}}/api/addresses/5/8
 Authorization: Bearer {{token}}
 ###

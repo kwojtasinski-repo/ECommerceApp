@@ -82,6 +82,23 @@
 
 ## Change log
 
+### Session 9 — HTTP scenarios refresh + .sln sync (2026-03-25)
+
+| #   | Change                                                                                                   | Files affected                                       |
+| --- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| 1   | Deleted 9 stale `*-v2.http` scenario files (routes were `api/v2/...`)                                   | `ECommerceApp.API/HttpScenarios/`                    |
+| 2   | Created `payments.http` — `GET api/payments/{paymentId:guid}` (own-scoped by Guid token)                 | `ECommerceApp.API/HttpScenarios/payments.http`       |
+| 3   | Created `presale.http` — `api/cart`, `api/checkout` (removed price-changes step; confirm returns orderId) | `ECommerceApp.API/HttpScenarios/presale.http`        |
+| 4   | Created `sales-orders.http` — `GET api/orders/{id}` with paymentUrl in response                          | `ECommerceApp.API/HttpScenarios/sales-orders.http`   |
+| 5   | Created `catalog.http` — `api/items` published-only GET list + GET {id}                                  | `ECommerceApp.API/HttpScenarios/catalog.http`        |
+| 6   | Created `account-profile.http` — `api/customers` + `api/addresses` (POST/PUT/DELETE)                     | `ECommerceApp.API/HttpScenarios/account-profile.http`|
+| 7   | Created `refunds.http` — `api/refunds` GET {id} + POST (removed admin approve/reject)                    | `ECommerceApp.API/HttpScenarios/refunds.http`        |
+| 8   | Created `currencies.http` — kept `api/v2/currencies` (admin controller, not part of BC switch)            | `ECommerceApp.API/HttpScenarios/currencies.http`     |
+| 9   | Created `inventory.http` — kept `api/v2/inventory` (admin controller, not part of BC switch)              | `ECommerceApp.API/HttpScenarios/inventory.http`      |
+| 10  | Created `jobs.http` — kept `api/v2/jobs` (admin controller, not part of BC switch)                       | `ECommerceApp.API/HttpScenarios/jobs.http`           |
+| 11  | Added `docs\reports\web-ui-views-report.md` to `reports` solution folder                                 | `ECommerceApp.sln`                                   |
+| 12  | Added `HttpScenarios` solution folder with all 9 `.http` files as solution items                         | `ECommerceApp.sln`                                   |
+
 ### Session 8 — Full audit & repo-index sync (2026-03-23)
 
 | #   | Change                                                                                               | Files affected                                     |

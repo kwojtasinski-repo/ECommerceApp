@@ -1,15 +1,16 @@
 ### ============================================================
-### Jobs V2 — Time Management / Scheduled Jobs
+### Jobs — scheduled job management (admin/internal scenarios)
 ### Base URL: https://localhost:49609
 ###
 ### All endpoints require MaintenanceRole.
+###
+### Note: route prefix is /api/v2/jobs (admin controller, not part of BC switch).
 ###
 ### Known jobs (registered at startup):
 ###   - PaymentWindowExpiredJob     (Payments BC)
 ###   - StockAdjustmentJob          (Inventory BC)
 ###   - SoftReservationExpiredJob   (Presale BC)
 ###   - CurrencyRateSyncTask        (Currencies BC)
-###   - PaymentWindowTimeoutJob     (Inventory BC)
 ###   - SnapshotOrderItemsJob       (Orders BC)
 ### ============================================================
 
@@ -54,66 +55,30 @@ GET {{baseUrl}}/api/v2/jobs/PaymentWindowExpiredJob/history?page=1&pageSize=20
 Authorization: Bearer {{token}}
 ###
 
-### Get history — StockAdjustmentJob
-# Expected: 200 OK
-GET {{baseUrl}}/api/v2/jobs/StockAdjustmentJob/history?page=1&pageSize=10
-Authorization: Bearer {{token}}
-###
-
-### Get history — CurrencyRateSyncTask
-# Expected: 200 OK
-GET {{baseUrl}}/api/v2/jobs/CurrencyRateSyncTask/history?page=1&pageSize=10
-Authorization: Bearer {{token}}
-###
-
 ### Get history — SoftReservationExpiredJob
 # Expected: 200 OK
 GET {{baseUrl}}/api/v2/jobs/SoftReservationExpiredJob/history?page=1&pageSize=10
 Authorization: Bearer {{token}}
 ###
 
-### Enable a job (e.g. after it was disabled)
+### Get history — SnapshotOrderItemsJob
+# Expected: 200 OK
+GET {{baseUrl}}/api/v2/jobs/SnapshotOrderItemsJob/history?page=1&pageSize=10
+Authorization: Bearer {{token}}
+###
+
+# ============================================================
+# JOB CONTROL
+# ============================================================
+
+### Enable a job
 # Expected: 200 OK
 PUT {{baseUrl}}/api/v2/jobs/PaymentWindowExpiredJob/enable
 Authorization: Bearer {{token}}
 ###
 
-### Disable a job (e.g. for maintenance)
+### Disable a job
 # Expected: 200 OK
 PUT {{baseUrl}}/api/v2/jobs/StockAdjustmentJob/disable
 Authorization: Bearer {{token}}
-###
-
-### Register a new custom job
-# Schedule: standard cron expression (5-part)
-# Expected: 200 OK
-POST {{baseUrl}}/api/v2/jobs/register
-Authorization: Bearer {{token}}
-Content-Type: {{contentType}}
-
-{
-  "jobName": "MyCustomJob",
-  "schedule": "0 */6 * * *",
-  "timeZoneId": "Europe/Warsaw",
-  "maxRetries": 3
-}
-###
-
-### Register job — every minute (for testing)
-# Expected: 200 OK
-POST {{baseUrl}}/api/v2/jobs/register
-Authorization: Bearer {{token}}
-Content-Type: {{contentType}}
-
-{
-  "jobName": "TestHeartbeatJob",
-  "schedule": "* * * * *",
-  "timeZoneId": null,
-  "maxRetries": 1
-}
-###
-
-### Unauthorized — no token
-# Expected: 401 Unauthorized
-GET {{baseUrl}}/api/v2/jobs
 ###

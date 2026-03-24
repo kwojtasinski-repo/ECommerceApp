@@ -1,0 +1,53 @@
+### ============================================================
+### Sales Orders
+### Base URL: https://localhost:49609
+###
+### Full sales flow:
+###   1. Checkout confirm    (presale.http)        → orderId
+###   2. GET /api/orders/{id}                      → order details + paymentUrl (when Placed)
+###   3. Web UI payment via  paymentUrl from step 2
+###   4. POST /api/refunds   (refunds.http)        → request refund
+### ============================================================
+
+@baseUrl = https://localhost:49609
+@token = YOUR_JWT_TOKEN
+@contentType = application/json
+
+# ============================================================
+# AUTH
+# ============================================================
+
+### Login as admin
+POST {{baseUrl}}/api/Login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@localhost",
+  "password": "aDminN@W25!"
+}
+
+###
+
+# ============================================================
+# ORDERS — own-scoped (admin/manager/service roles can view any)
+# ============================================================
+
+### Get order by id
+# Expected: 200 OK  →  { id, number, cost, ordered, status, customerId, currencyId,
+#                        couponUsedId, discountPercent, customer, orderItems,
+#                        paymentUrl }  ← paymentUrl is non-null when status == "Placed"
+GET {{baseUrl}}/api/orders/1
+Authorization: Bearer {{token}}
+###
+
+### Get order — not found
+# Expected: 404 Not Found
+GET {{baseUrl}}/api/orders/99999
+Authorization: Bearer {{token}}
+###
+
+### Get order belonging to another user (non-admin)
+# Expected: 403 Forbidden
+GET {{baseUrl}}/api/orders/2
+Authorization: Bearer {{token}}
+###

@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 namespace ECommerceApp.API.Controllers.V2
 {
     [Authorize]
-    [Route("api/v2/cart")]
+    [Route("api/cart")]
     public class CartController : BaseController
     {
         private readonly ICartService _cart;

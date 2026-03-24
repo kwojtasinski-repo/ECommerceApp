@@ -1,0 +1,119 @@
+### ============================================================
+### Refunds — customer-facing scenarios
+### Base URL: https://localhost:49609
+###
+### GET {id}  — own refund details
+### POST      — request a new refund (own paid order)
+###
+### Admin operations (approve/reject/list) are accessible via Web UI only.
+### ============================================================
+
+@baseUrl = https://localhost:49609
+@token = YOUR_JWT_TOKEN
+@contentType = application/json
+
+# ============================================================
+# AUTH
+# ============================================================
+
+### Login
+POST {{baseUrl}}/api/Login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@localhost",
+  "password": "aDminN@W25!"
+}
+
+###
+
+# ============================================================
+# GET /api/refunds/{id}  — single refund
+# ============================================================
+
+### Get refund by id — happy path
+# Expected: 200 OK  →  RefundDetailsVm { id, orderId, reason, status, items: [...] }
+GET {{baseUrl}}/api/refunds/1
+Authorization: Bearer {{token}}
+
+###
+
+### Get refund by id — not found
+# Expected: 404 Not Found
+GET {{baseUrl}}/api/refunds/99999
+Authorization: Bearer {{token}}
+
+###
+
+# ============================================================
+# POST /api/refunds  — request a new refund
+# ============================================================
+
+### Request refund — happy path (replace orderId with a valid paid order id)
+# Expected: 201 Created
+POST {{baseUrl}}/api/refunds
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "orderId": 1,
+  "reason": "Product arrived damaged",
+  "onWarranty": true,
+  "items": [
+    { "productId": 1, "quantity": 1 },
+    { "productId": 2, "quantity": 2 }
+  ]
+}
+
+###
+
+### Request refund — single item, no warranty
+# Expected: 201 Created
+POST {{baseUrl}}/api/refunds
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "orderId": 2,
+  "reason": "Wrong item received",
+  "onWarranty": false,
+  "items": [
+    { "productId": 3, "quantity": 1 }
+  ]
+}
+
+###
+
+### Request refund — order does not exist
+# Expected: 404 Not Found  →  { "error": "Order not found." }
+POST {{baseUrl}}/api/refunds
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "orderId": 99999,
+  "reason": "Never received",
+  "onWarranty": false,
+  "items": [
+    { "productId": 1, "quantity": 1 }
+  ]
+}
+
+###
+
+### Request refund — duplicate (run after the happy path above for same orderId)
+# Expected: 409 Conflict  →  { "error": "An active refund already exists for this order." }
+POST {{baseUrl}}/api/refunds
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "orderId": 1,
+  "reason": "Duplicate attempt",
+  "onWarranty": false,
+  "items": [
+    { "productId": 1, "quantity": 1 }
+  ]
+}
+
+###

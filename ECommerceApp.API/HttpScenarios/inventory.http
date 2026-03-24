@@ -1,9 +1,11 @@
 ### ============================================================
-### Inventory V2 — Stock management
+### Inventory — stock management (admin/internal scenarios)
 ### Base URL: https://localhost:49609
 ###
 ### MaintenanceRole: initialize, adjust, return stock
 ### Authenticated: reserve, release reservations
+###
+### Note: route prefix is /api/v2/inventory (admin controller, not part of BC switch).
 ###
 ### Typical flow:
 ###   1. Initialize stock for a new product
@@ -58,19 +60,7 @@ Content-Type: {{contentType}}
 }
 ###
 
-### Initialize stock — already initialized
-# Expected: 409 Conflict  →  { "error": "Stock already initialized for this product." }
-POST {{baseUrl}}/api/v2/inventory/stock/initialize
-Authorization: Bearer {{token}}
-Content-Type: {{contentType}}
-
-{
-  "productId": 10,
-  "initialQuantity": 50
-}
-###
-
-### Adjust stock quantity (MaintenanceRole) — set new absolute quantity
+### Adjust stock quantity (MaintenanceRole)
 # Expected: 200 OK
 POST {{baseUrl}}/api/v2/inventory/stock/adjust
 Authorization: Bearer {{token}}
@@ -78,11 +68,11 @@ Content-Type: {{contentType}}
 
 {
   "productId": 1,
-  "newQuantity": 50
+  "delta": -5
 }
 ###
 
-### Return stock (e.g. after refund) — MaintenanceRole
+### Return stock (MaintenanceRole) — e.g. after refund
 # Expected: 200 OK
 POST {{baseUrl}}/api/v2/inventory/stock/return
 Authorization: Bearer {{token}}
@@ -98,39 +88,21 @@ Content-Type: {{contentType}}
 # RESERVATIONS
 # ============================================================
 
-### Reserve stock for an order
-# Expected: 200 OK  →  { "result": "Success" }
-# Replace expiresAt with a future datetime
+### Reserve stock (authenticated)
+# Expected: 200 OK  →  { result: "Success" }  |  409 Conflict (insufficient stock)
 POST {{baseUrl}}/api/v2/inventory/reservations
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
 {
-  "productId": 1,
   "orderId": 1,
-  "quantity": 2,
-  "userId": "replace-with-real-user-id",
-  "expiresAt": "2027-01-01T00:00:00Z"
-}
-###
-
-### Reserve stock — insufficient stock
-# Expected: 409 Conflict  →  { "error": "Insufficient stock.", "result": "InsufficientStock" }
-POST {{baseUrl}}/api/v2/inventory/reservations
-Authorization: Bearer {{token}}
-Content-Type: {{contentType}}
-
-{
   "productId": 1,
-  "orderId": 2,
-  "quantity": 99999,
-  "userId": "replace-with-real-user-id",
-  "expiresAt": "2027-01-01T00:00:00Z"
+  "quantity": 2
 }
 ###
 
-### Release reservation (e.g. order cancelled)
-# Expected: 204 No Content
+### Release reservation (authenticated)
+# Expected: 204 No Content  |  404 Not Found
 DELETE {{baseUrl}}/api/v2/inventory/reservations?orderId=1&productId=1&quantity=2
 Authorization: Bearer {{token}}
 ###

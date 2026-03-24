@@ -137,6 +137,20 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reports", "reports", "{7C3E91A2-B4D5-4F68-9A1C-E2F30748D6B1}"
 	ProjectSection(SolutionItems) = preProject
 		docs\reports\cross-bc-integration-test-report.md = docs\reports\cross-bc-integration-test-report.md
+		docs\reports\web-ui-views-report.md = docs\reports\web-ui-views-report.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HttpScenarios", "HttpScenarios", "{B3C4D5E6-F7A8-4B9C-8D0E-1F2A3B4C5D6E}"
+	ProjectSection(SolutionItems) = preProject
+		ECommerceApp.API\HttpScenarios\account-profile.http = ECommerceApp.API\HttpScenarios\account-profile.http
+		ECommerceApp.API\HttpScenarios\catalog.http = ECommerceApp.API\HttpScenarios\catalog.http
+		ECommerceApp.API\HttpScenarios\currencies.http = ECommerceApp.API\HttpScenarios\currencies.http
+		ECommerceApp.API\HttpScenarios\inventory.http = ECommerceApp.API\HttpScenarios\inventory.http
+		ECommerceApp.API\HttpScenarios\jobs.http = ECommerceApp.API\HttpScenarios\jobs.http
+		ECommerceApp.API\HttpScenarios\payments.http = ECommerceApp.API\HttpScenarios\payments.http
+		ECommerceApp.API\HttpScenarios\presale.http = ECommerceApp.API\HttpScenarios\presale.http
+		ECommerceApp.API\HttpScenarios\refunds.http = ECommerceApp.API\HttpScenarios\refunds.http
+		ECommerceApp.API\HttpScenarios\sales-orders.http = ECommerceApp.API\HttpScenarios\sales-orders.http
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "skills", "skills", "{2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}"
