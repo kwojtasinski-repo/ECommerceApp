@@ -14,5 +14,9 @@ namespace ECommerceApp.Application.Sales.Fulfillment.ViewModels
     public sealed class ShipmentListVm
     {
         public IReadOnlyList<ShipmentVm> Shipments { get; init; } = new List<ShipmentVm>();
+        public int CurrentPage { get; init; }
+        public int PageSize { get; init; }
+        public int TotalCount { get; init; }
+        public string? SearchString { get; init; }
     }
 }

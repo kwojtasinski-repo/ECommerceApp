@@ -73,6 +73,10 @@
 }
 
 <div class="d-flex gap-2 mt-3">
+    <a asp-area="Sales" asp-controller="Shipment" asp-action="Create" asp-route-orderId="@Model.Id" class="btn btn-primary">Utwórz przesyłkę</a>
+
+    <a asp-area="Sales" asp-controller="Shipment" asp-action="OrderShipments" asp-route-orderId="@Model.Id" class="btn btn-outline-info">Przesyłki</a>
+
     <form asp-area="Sales" asp-controller="Orders" asp-action="Dispatch" method="post">
         <input type="hidden" name="id" value="@Model.Id" />
         <button type="submit" class="btn btn-success">Oznacz jako dostarczone</button>

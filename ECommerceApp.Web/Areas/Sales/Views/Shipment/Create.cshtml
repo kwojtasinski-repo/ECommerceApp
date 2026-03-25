@@ -1,0 +1,85 @@
+@model ECommerceApp.Application.Sales.Orders.ViewModels.OrderDetailsVm
+@{
+    ViewData["Title"] = "Utwórz przesyłkę";
+}
+
+<div class="container mt-4" style="max-width:700px;">
+    <h2><i class="fa-solid fa-box me-2"></i>Utwórz przesyłkę dla zamówienia #@Model.Id</h2>
+
+    <div asp-validation-summary="All" class="alert alert-danger d-none" id="validationSummary"></div>
+
+    <div class="card mb-3">
+        <div class="card-header">Szczegóły zamówienia</div>
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Nr zamówienia</dt>
+                <dd class="col-sm-8">@Model.Number</dd>
+                <dt class="col-sm-4">Koszt</dt>
+                <dd class="col-sm-8">@Model.Cost.ToString("N2")</dd>
+                <dt class="col-sm-4">Status</dt>
+                <dd class="col-sm-8">@Model.Status</dd>
+            </dl>
+        </div>
+    </div>
+
+    <form method="post" asp-action="Create">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="orderId" value="@Model.Id" />
+
+        <h5>Pozycje do wysłania</h5>
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Wyślij</th>
+                    <th>Produkt</th>
+                    <th>Ilość</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model.OrderItems != null)
+                {
+                    @for (int i = 0; i < Model.OrderItems.Count; i++)
+                    {
+                        var item = Model.OrderItems[i];
+                        <tr>
+                            <td>
+                                <input type="checkbox" class="form-check-input line-check" data-idx="@i" checked />
+                            </td>
+                            <td>@(item.ProductName ?? item.ItemId.ToString())</td>
+                            <td>
+                                <input type="hidden" name="productIds" value="@item.ItemId" class="pid-@i" disabled />
+                                <input type="number" name="quantities" value="@item.Quantity" min="1" max="@item.Quantity" class="form-control form-control-sm qty-@i" style="max-width:80px;" disabled />
+                            </td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Utwórz przesyłkę</button>
+            <a asp-area="Sales" asp-controller="Orders" asp-action="Fulfillment" asp-route-id="@Model.Id" class="btn btn-secondary">Anuluj</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var s = document.getElementById('validationSummary');
+            if (s && s.querySelectorAll('li').length > 0) s.classList.remove('d-none');
+
+            document.querySelectorAll('.line-check').forEach(function (cb) {
+                var idx = cb.dataset.idx;
+                var pid = document.querySelector('.pid-' + idx);
+                var qty = document.querySelector('.qty-' + idx);
+                function toggle() {
+                    pid.disabled = !cb.checked;
+                    qty.disabled = !cb.checked;
+                }
+                toggle();
+                cb.addEventListener('change', toggle);
+            });
+        })();
+    </script>
+}

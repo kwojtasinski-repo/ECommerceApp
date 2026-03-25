@@ -1,0 +1,110 @@
+@model ECommerceApp.Application.Sales.Fulfillment.ViewModels.ShipmentDetailsVm
+@{
+    ViewData["Title"] = "Szczegóły przesyłki";
+}
+
+<div class="container mt-4" style="max-width:800px;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="fa-solid fa-box me-2"></i>Przesyłka #@Model.Id</h2>
+        <div>
+            <a asp-action="OrderShipments" asp-route-orderId="@Model.OrderId" class="btn btn-outline-secondary me-1">Przesyłki zamówienia</a>
+            <a asp-action="Index" class="btn btn-secondary">Wróć</a>
+        </div>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-4">Zamówienie</dt>
+                <dd class="col-sm-8">
+                    <a asp-area="Sales" asp-controller="Orders" asp-action="Details" asp-route-id="@Model.OrderId">#@Model.OrderId</a>
+                </dd>
+
+                <dt class="col-sm-4">Nr śledzenia</dt>
+                <dd class="col-sm-8">@(Model.TrackingNumber ?? "—")</dd>
+
+                <dt class="col-sm-4">Status</dt>
+                <dd class="col-sm-8">
+                    @switch (Model.Status)
+                    {
+                        case "Pending":
+                            <span class="badge bg-warning text-dark">Oczekuje</span>
+                            break;
+                        case "InTransit":
+                            <span class="badge bg-primary">W drodze</span>
+                            break;
+                        case "Delivered":
+                            <span class="badge bg-success">Dostarczono</span>
+                            break;
+                        case "Failed":
+                            <span class="badge bg-danger">Niepowodzenie</span>
+                            break;
+                        case "PartiallyDelivered":
+                            <span class="badge bg-info">Częściowo dostarczono</span>
+                            break;
+                        default:
+                            <span class="badge bg-secondary">@Model.Status</span>
+                            break;
+                    }
+                </dd>
+
+                <dt class="col-sm-4">Wysłano</dt>
+                <dd class="col-sm-8">@(Model.ShippedAt?.ToString("dd.MM.yyyy HH:mm") ?? "—")</dd>
+
+                <dt class="col-sm-4">Dostarczono</dt>
+                <dd class="col-sm-8">@(Model.DeliveredAt?.ToString("dd.MM.yyyy HH:mm") ?? "—")</dd>
+            </dl>
+        </div>
+    </div>
+
+    <h5>Pozycje</h5>
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>ID produktu</th>
+                <th>Ilość</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var line in Model.Lines)
+            {
+                <tr>
+                    <td>@line.ProductId</td>
+                    <td>@line.Quantity</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @* ── Status transition actions ── *@
+    <div class="d-flex gap-2 mt-3 flex-wrap">
+        @if (Model.Status == "Pending")
+        {
+            <form method="post" asp-action="Dispatch" class="d-flex gap-2">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <input type="text" name="trackingNumber" class="form-control" style="max-width:220px;" placeholder="Nr śledzenia" required />
+                <button type="submit" class="btn btn-primary text-nowrap">Wyślij</button>
+            </form>
+            <form method="post" asp-action="Fail">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Oznaczyć jako niepowodzenie?');">Niepowodzenie</button>
+            </form>
+        }
+
+        @if (Model.Status == "InTransit")
+        {
+            <form method="post" asp-action="Deliver">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="btn btn-success">Oznacz dostarczono</button>
+            </form>
+            <form method="post" asp-action="Fail">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Oznaczyć jako niepowodzenie?');">Niepowodzenie</button>
+            </form>
+        }
+    </div>
+</div>

@@ -16,5 +16,6 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
         Task<ShipmentOperationResult> MarkAsPartiallyDeliveredAsync(int shipmentId, IReadOnlyList<int> deliveredProductIds, CancellationToken ct = default);
         Task<ShipmentDetailsVm?> GetShipmentAsync(int shipmentId, CancellationToken ct = default);
         Task<ShipmentListVm> GetShipmentsByOrderIdAsync(int orderId, CancellationToken ct = default);
+        Task<ShipmentListVm> GetAllShipmentsAsync(int pageSize, int pageNo, string searchString, CancellationToken ct = default);
     }
 }

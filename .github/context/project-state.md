@@ -5,7 +5,7 @@
 > For confirmed bugs see [`.github/context/known-issues.md`](./known-issues.md).
 > For planned work see [`docs/roadmap/README.md`](../docs/roadmap/README.md).
 
-*Last updated: 2026-03-26 (Sales/Coupons Slice 1 — CouponController atomic switch live)*
+*Last updated: 2026-03-26 (Sales/Fulfillment Slice 2 — ShipmentController switch live)*
 
 ---
 
@@ -23,7 +23,8 @@
 
 | Area | Summary | ADR |
 |---|---|---|
-| **Sales/Coupons Slice 1 — switch live** | Atomic switch complete. `ICouponRepository` extended (`GetAllAsync`, `CountAsync`, `DeleteAsync`). `Coupon.Update()` added to domain. `CouponListVm`, `CouponDetailVm`, `UpdateCouponDto` created. `ICouponService` + `CouponService` extended with `AddCouponAsync`, `GetCouponsAsync`, `GetCouponAsync`, `UpdateCouponAsync`, `DeleteCouponAsync` (note: `CreateCouponAsync` remains `NotImplementedException` — Slice 2 spec). New `Areas/Sales/Controllers/CouponController.cs` (6 actions, MaintenanceRole). 4 new views (Index, Create, Edit, Details). Legacy `CouponController`, `CouponTypeController`, `CouponUsedController` deleted. Nav Kupony → `asp-area="Sales"`. Legacy DI (`ICouponService`, `ICouponTypeService`, `ICouponUsedService`, `ICouponHandler`) retained — `OrderService` (legacy) hard dependency; deferred to Step 8. 1361/1361 tests passing. | [ADR-0016](../docs/adr/0016-sales-coupons-bc-design.md), [ADR-0024](../docs/adr/0024-controller-routing-strategy.md) |
+| **Sales/Fulfillment Slice 2 — switch live** | ShipmentController added to `Areas/Sales`. `IShipmentRepository` extended (`GetAllAsync`, `CountAsync`). `ShipmentListVm` extended with pagination fields. `IShipmentService` + `ShipmentService` extended with `GetAllShipmentsAsync`. New controller: 8 actions (Index GET/POST, Details, Create GET/POST, Dispatch, Deliver, Fail). 4 views: Index (paginated list), Details (status transitions), Create (from order items), OrderShipments (per-order list). `_Layout.cshtml` → "Przesyłki" added to Realizacja dropdown. `Fulfillment.cshtml` → "Utwórz przesyłkę" + "Przesyłki" links added. No legacy controller to delete (purely new). 1361/1361 tests passing. | [ADR-0017](../docs/adr/0017-sales-fulfillment-bc-design.md), [ADR-0024](../docs/adr/0024-controller-routing-strategy.md) |
+| **Sales/Coupons Slice 1 — switch live** |
 | **Sales/Fulfillment Slice 1 — switch live** |
 | **Presale/Checkout Slice 2 — switch live** |
 | **Sales/Payments — switch live** | All acceptance criteria met. Web Area controller + views wired. Integration tests: PaymentServiceTests (8), OrderPlacedHandlerTests (3), OrderPaymentConfirmedHandlerTests (2), OrderPaymentExpiredHandlerTests (2). 430 integration tests passing. Legacy `PaymentHandler` retained for Step 5 cleanup. | [ADR-0015](../docs/adr/0015-sales-payments-bc-design.md), [ADR-0024](../docs/adr/0024-controller-routing-strategy.md) |
@@ -61,7 +62,7 @@ Only the atomic switch (controller migration + remove legacy code) remains.
 
 1. **Presale/Checkout Slice 2** (steps 11–14 in ADR-0012) — ✅ **Switch live** — implementation complete, integration tests done, EC-001 decision documented
 2. **Sales/Coupons Slice 2** (ADR-0016 §9) — 🔄 **implementation in progress**; Domain ✅ Application ✅ (rules engine, 15 evaluators + auto-injected CouponOversizeGuard = 16 total, contracts, workflow builder) Infrastructure ✅ (5 adapters/repos: StockAvailabilityChecker, CompletedOrderCounter, SpecialEventCache, CouponApplicationRecordRepository, NullRuntimeCouponSource); **design amendments completed** (§10): CouponOversizeGuard — always-on constraint rule with per-coupon `BypassOversizeGuard` override (no global toggle), Catalog→Coupons name sync (3 messages: ProductNameChanged, CategoryNameChanged, TagNameChanged + 3 handlers + IScopeTargetRepository); **atomic switch blocked** by Coupons Slice 1 in production; DB migration for CouponApplicationRecords + SpecialEvents tables pending approval
-3. **Sales/Fulfillment Slice 2** (ADR-0017 §11) — 🔄 **implementation in progress**; Domain ✅ (Shipment aggregate, ShipmentLine, ShipmentStatus incl. PartiallyDelivered) Application ✅ (ShipmentService, 5 message contracts with Items[], 6 Orders handlers, 3 Inventory handlers: ShipmentDelivered/Failed/PartiallyDelivered with `StockReconciliationRequired` failure signaling) Infrastructure ✅ (ShipmentRepository, EF config); **design amendments completed** (§13): parallel fan-out to Inventory (3 handlers), enriched messages with Items[], OrderShippedHandler retirement, `StockReconciliationRequired` alert (StockOperationType enum: Fulfill/Release), `OrderRequiresAttention` operator notification; **atomic switch blocked** by Fulfillment Slice 1 in production
+3. **Sales/Fulfillment Slice 2** (ADR-0017 §11) — ✅ **Switch live** — ShipmentController deployed to Areas/Sales, full shipment lifecycle UI (create/dispatch/deliver/fail). Domain ✅ Application ✅ Infrastructure ✅ Web ✅
 4. **Supporting/Communication BC** — ✅ unblocked (Fulfillment Slice 1 + Coupons Slice 1 both live)
 5. **Backoffice BC** — blocked by ADR-0013 (per-BC DbContext interfaces); gated by ~80% BC completion
 6. **Per-BC DbContext interfaces** (ADR-0013) — gate: ~80–100% BC implementations complete

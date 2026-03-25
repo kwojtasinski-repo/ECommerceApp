@@ -1,0 +1,71 @@
+@model ECommerceApp.Application.Sales.Fulfillment.ViewModels.ShipmentListVm
+@{
+    ViewData["Title"] = "Przesyłki zamówienia";
+    var orderId = (int)ViewBag.OrderId;
+}
+
+<div class="container mt-4" style="max-width:900px;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="fa-solid fa-box me-2"></i>Przesyłki zamówienia #@orderId</h2>
+        <div>
+            <a asp-action="Create" asp-route-orderId="@orderId" class="btn btn-primary me-1"><i class="fa-solid fa-plus me-1"></i>Nowa przesyłka</a>
+            <a asp-area="Sales" asp-controller="Orders" asp-action="Fulfillment" asp-route-id="@orderId" class="btn btn-secondary">Wróć do realizacji</a>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Nr śledzenia</th>
+                    <th>Status</th>
+                    <th>Wysłano</th>
+                    <th>Dostarczono</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model.Shipments)
+                {
+                    <tr>
+                        <td>@s.Id</td>
+                        <td>@(s.TrackingNumber ?? "—")</td>
+                        <td>
+                            @switch (s.Status)
+                            {
+                                case "Pending":
+                                    <span class="badge bg-warning text-dark">Oczekuje</span>
+                                    break;
+                                case "InTransit":
+                                    <span class="badge bg-primary">W drodze</span>
+                                    break;
+                                case "Delivered":
+                                    <span class="badge bg-success">Dostarczono</span>
+                                    break;
+                                case "Failed":
+                                    <span class="badge bg-danger">Niepowodzenie</span>
+                                    break;
+                                case "PartiallyDelivered":
+                                    <span class="badge bg-info">Częściowo</span>
+                                    break;
+                                default:
+                                    <span class="badge bg-secondary">@s.Status</span>
+                                    break;
+                            }
+                        </td>
+                        <td>@(s.ShippedAt?.ToString("dd.MM.yyyy HH:mm") ?? "—")</td>
+                        <td>@(s.DeliveredAt?.ToString("dd.MM.yyyy HH:mm") ?? "—")</td>
+                        <td class="text-end">
+                            <a asp-action="Details" asp-route-id="@s.Id" class="btn btn-sm btn-outline-info">Szczegóły</a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Shipments.Any())
+                {
+                    <tr><td colspan="6" class="text-center text-muted">Brak przesyłek dla tego zamówienia.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

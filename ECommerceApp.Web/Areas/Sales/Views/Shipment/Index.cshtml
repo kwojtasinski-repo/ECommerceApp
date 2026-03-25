@@ -1,0 +1,110 @@
+@model ECommerceApp.Application.Sales.Fulfillment.ViewModels.ShipmentListVm
+@{
+    ViewData["Title"] = "Przesyłki";
+}
+
+<div class="container-fluid mt-4">
+    <h2><i class="fa-solid fa-box me-2"></i>Przesyłki</h2>
+
+    <form method="post" class="row g-2 mb-3">
+        <div class="col-auto">
+            <select name="pageSize" class="form-select">
+                @foreach (var s in new[] { 10, 20, 50 })
+                {
+                    <option value="@s" selected="@(Model.PageSize == s)">@s</option>
+                }
+            </select>
+        </div>
+        <div class="col">
+            <input name="searchString" type="text" class="form-control" placeholder="Nr śledzenia lub ID zamówienia..." value="@Model.SearchString" />
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-secondary">Szukaj</button>
+        </div>
+    </form>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Zamówienie</th>
+                    <th>Nr śledzenia</th>
+                    <th>Status</th>
+                    <th>Wysłano</th>
+                    <th>Dostarczono</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model.Shipments)
+                {
+                    <tr>
+                        <td>@s.Id</td>
+                        <td>
+                            <a asp-area="Sales" asp-controller="Orders" asp-action="Details" asp-route-id="@s.OrderId">@s.OrderId</a>
+                        </td>
+                        <td>@(s.TrackingNumber ?? "—")</td>
+                        <td>
+                            @switch (s.Status)
+                            {
+                                case "Pending":
+                                    <span class="badge bg-warning text-dark">Oczekuje</span>
+                                    break;
+                                case "InTransit":
+                                    <span class="badge bg-primary">W drodze</span>
+                                    break;
+                                case "Delivered":
+                                    <span class="badge bg-success">Dostarczono</span>
+                                    break;
+                                case "Failed":
+                                    <span class="badge bg-danger">Niepowodzenie</span>
+                                    break;
+                                case "PartiallyDelivered":
+                                    <span class="badge bg-info">Częściowo</span>
+                                    break;
+                                default:
+                                    <span class="badge bg-secondary">@s.Status</span>
+                                    break;
+                            }
+                        </td>
+                        <td>@(s.ShippedAt?.ToString("dd.MM.yyyy HH:mm") ?? "—")</td>
+                        <td>@(s.DeliveredAt?.ToString("dd.MM.yyyy HH:mm") ?? "—")</td>
+                        <td class="text-end">
+                            <a asp-action="Details" asp-route-id="@s.Id" class="btn btn-sm btn-outline-info">Szczegóły</a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Shipments.Any())
+                {
+                    <tr><td colspan="7" class="text-center text-muted">Brak przesyłek.</td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center">
+        <small class="text-muted">Łącznie: @Model.TotalCount</small>
+        @{
+            var totalPages = Model.PageSize > 0 ? (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize) : 1;
+        }
+        @if (totalPages > 1)
+        {
+            <nav>
+                <ul class="pagination mb-0">
+                    @for (int p = 1; p <= totalPages; p++)
+                    {
+                        <li class="page-item @(p == Model.CurrentPage ? "active" : "")">
+                            <form method="post" class="d-inline">
+                                <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                                <input type="hidden" name="pageNo" value="@p" />
+                                <input type="hidden" name="searchString" value="@Model.SearchString" />
+                                <button type="submit" class="page-link">@p</button>
+                            </form>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    </div>
+</div>

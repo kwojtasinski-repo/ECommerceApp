@@ -40,5 +40,31 @@ namespace ECommerceApp.Infrastructure.Sales.Fulfillment.Repositories
                 .Include(s => s.Lines)
                 .Where(s => s.OrderId == orderId)
                 .ToListAsync(ct);
+
+        public async Task<IReadOnlyList<Shipment>> GetAllAsync(int pageSize, int pageNo, string searchString, CancellationToken ct = default)
+        {
+            var query = _context.Shipments.Include(s => s.Lines).AsQueryable();
+            if (!string.IsNullOrWhiteSpace(searchString))
+            {
+                if (int.TryParse(searchString, out var orderId))
+                    query = query.Where(s => s.OrderId == orderId);
+                else
+                    query = query.Where(s => s.TrackingNumber != null && s.TrackingNumber.Contains(searchString));
+            }
+            return await query.OrderByDescending(s => s.ShippedAt).Skip((pageNo - 1) * pageSize).Take(pageSize).ToListAsync(ct);
+        }
+
+        public async Task<int> CountAsync(string searchString, CancellationToken ct = default)
+        {
+            var query = _context.Shipments.AsQueryable();
+            if (!string.IsNullOrWhiteSpace(searchString))
+            {
+                if (int.TryParse(searchString, out var orderId))
+                    query = query.Where(s => s.OrderId == orderId);
+                else
+                    query = query.Where(s => s.TrackingNumber != null && s.TrackingNumber.Contains(searchString));
+            }
+            return await query.CountAsync(ct);
+        }
     }
 }

@@ -188,6 +188,20 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
             };
         }
 
+        public async Task<ShipmentListVm> GetAllShipmentsAsync(int pageSize, int pageNo, string searchString, CancellationToken ct = default)
+        {
+            var shipments = await _shipments.GetAllAsync(pageSize, pageNo, searchString, ct);
+            var total = await _shipments.CountAsync(searchString, ct);
+            return new ShipmentListVm
+            {
+                Shipments = shipments.Select(MapToVm).ToList(),
+                CurrentPage = pageNo,
+                PageSize = pageSize,
+                TotalCount = total,
+                SearchString = searchString
+            };
+        }
+
         private static ShipmentDetailsVm MapToDetailsVm(Shipment shipment)
             => new(
                 shipment.Id.Value,
