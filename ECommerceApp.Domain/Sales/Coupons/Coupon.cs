@@ -72,6 +72,16 @@ namespace ECommerceApp.Domain.Sales.Coupons
             Status = CouponStatus.Available;
         }
 
+        public void Update(string code, string description)
+        {
+            if (string.IsNullOrWhiteSpace(code))
+                throw new DomainException("Coupon code is required.");
+            if (string.IsNullOrWhiteSpace(description))
+                throw new DomainException("Description is required.");
+            Code = code;
+            Description = description;
+        }
+
         // ── Slice 2 rule validation ─────────────────────────────────────
 
         private static List<CouponRuleDefinition> DeserializeRules(string rulesJson)

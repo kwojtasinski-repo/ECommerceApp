@@ -104,7 +104,7 @@
                             @if (isManagingRole)
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="" asp-controller="Coupon" asp-action="Index"><i class="fa-solid fa-ticket me-1"></i>Kupony</a>
+                                    <a class="nav-link text-dark" asp-area="Sales" asp-controller="Coupon" asp-action="Index"><i class="fa-solid fa-ticket me-1"></i>Kupony</a>
                                 </li>
                             }
                             <li class="nav-item dropdown">
@@ -143,8 +143,7 @@
                                     @if (isManagingRole)
                                     {
                                         <a class="dropdown-item" asp-area="" asp-controller="UserManagement" asp-action="Index">Użytkownicy</a>
-                                        <a class="dropdown-item" asp-area="" asp-controller="CouponType" asp-action="Index">Kupony - typy</a>
-                                    }
+                                        }
                                     <a class="dropdown-item" asp-area="" asp-controller="Currency" asp-action="Index">Waluty</a>
                                     <a class="dropdown-item" asp-area="" asp-controller="JobManagement" asp-action="Index">Zadania</a>
                                 </div>

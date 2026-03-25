@@ -12,7 +12,7 @@
 |---|---|---|---|
 | **Sales/Orders — atomic switch** | [`orders-atomic-switch.md`](./orders-atomic-switch.md) | [ADR-0014](../adr/0014-sales-orders-bc-design.md) | ✅ Switch live — all acceptance criteria met; Step 8 (legacy cleanup) deferred |
 | **Sales/Payments — DB migrations + atomic switch** | [`payments-atomic-switch.md`](./payments-atomic-switch.md) | [ADR-0015](../adr/0015-sales-payments-bc-design.md) | ✅ Switch live — all acceptance criteria met; Step 5/6 (legacy cleanup) deferred |
-| **Sales/Coupons — Slice 1 implementation** | — (see ADR) | [ADR-0016](../adr/0016-sales-coupons-bc-design.md) | 🟡 Implementation in progress (parallel change); atomic switch blocked by Orders + Payments |
+| **Sales/Coupons — Slice 1 atomic switch** | — (see ADR) | [ADR-0016](../adr/0016-sales-coupons-bc-design.md) | ✅ Switch live — `CouponController` migrated to `Areas/Sales`, legacy UI controllers deleted, nav updated. Legacy service DI retained (Step 8). |
 | **Presale/Checkout — Slice 2** | [`presale-slice2.md`](./presale-slice2.md) | [ADR-0012](../adr/0012-presale-checkout-bc-design.md) §11–14 | ✅ Switch live — implementation complete, integration tests ✅, EC-001 decision ✅ |
 | **Identity/IAM — atomic switch** | [`iam-atomic-switch.md`](./iam-atomic-switch.md) | [ADR-0019](../adr/0019-identity-iam-bc-design.md) | 🟡 Migration approval pending; coordinate with Orders switch |
 | **Identity/IAM — refresh token** | [`iam-refresh-token.md`](./iam-refresh-token.md) | ADR-0019 amendment pending | 🔵 Planned — design settled, not started |
@@ -39,9 +39,9 @@ Presale/Checkout Slice 2 ✅ Switch live
 Sales/Orders (DB migration + atomic switch) ✅ Switch live
   └─► Sales/Payments (DB migration + atomic switch) ✅ Switch live
   └─► Presale/Checkout Slice 2 ✅ Switch live
-        └─► Sales/Coupons (atomic switch) — blocked until Coupons Slice 1 in production
-        └─► Sales/Fulfillment (atomic switch) — blocked until Fulfillment Slice 1 in production
-              └─► Supporting/Communication
+        └─► Sales/Coupons (atomic switch) ✅ Switch live
+        └─► Sales/Fulfillment (atomic switch) ✅ Switch live
+              └─► Supporting/Communication — ✅ unblocked
 ```
 
 Full details and blocking analysis: [`bounded-context-map.md § Next BCs to implement`](../architecture/bounded-context-map.md).

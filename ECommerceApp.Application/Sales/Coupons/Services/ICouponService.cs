@@ -2,6 +2,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using ECommerceApp.Application.Sales.Coupons.DTOs;
 using ECommerceApp.Application.Sales.Coupons.Results;
+using ECommerceApp.Application.Sales.Coupons.ViewModels;
 
 namespace ECommerceApp.Application.Sales.Coupons.Services
 {
@@ -9,8 +10,11 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
     {
         Task<CouponApplyResult> ApplyCouponAsync(string couponCode, int orderId, CancellationToken ct = default);
         Task<CouponRemoveResult> RemoveCouponAsync(int orderId, CancellationToken ct = default);
-
-        // ── Slice 2 addition ─────────────────────────────────────────────
         Task<CouponApplicationResult> CreateCouponAsync(CreateCouponDto dto, CancellationToken ct = default);
+        Task<bool> AddCouponAsync(string code, string description, CancellationToken ct = default);
+        Task<CouponListVm> GetCouponsAsync(int pageSize, int pageNo, string searchString, CancellationToken ct = default);
+        Task<CouponDetailVm?> GetCouponAsync(int id, CancellationToken ct = default);
+        Task<bool> UpdateCouponAsync(UpdateCouponDto dto, CancellationToken ct = default);
+        Task<bool> DeleteCouponAsync(int id, CancellationToken ct = default);
     }
 }

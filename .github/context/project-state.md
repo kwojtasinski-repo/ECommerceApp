@@ -5,7 +5,7 @@
 > For confirmed bugs see [`.github/context/known-issues.md`](./known-issues.md).
 > For planned work see [`docs/roadmap/README.md`](../docs/roadmap/README.md).
 
-*Last updated: 2026-03-26 (Sales/Fulfillment Slice 1 — RefundController atomic switch live)*
+*Last updated: 2026-03-26 (Sales/Coupons Slice 1 — CouponController atomic switch live)*
 
 ---
 
@@ -23,7 +23,8 @@
 
 | Area | Summary | ADR |
 |---|---|---|
-| **Sales/Fulfillment Slice 1 — switch live** | Atomic switch complete. `UserId` added to `Refund` aggregate (property, `Create()`, guard, EF config). DB migration `AddUserIdToRefunds` applied (indexes on `OrderId` + `UserId`). New `Areas/Sales/Controllers/RefundController.cs` (8 actions, scope checks). 5 new views (`Index`, `Edit`, `View`, `Request`, `MyRefunds`). `InventoryRefundApprovedHandler` switched from legacy `Sales.Payments.Messages.RefundApproved` (flat) to `Sales.Fulfillment.Messages.RefundApproved` (enriched `Items[]`). Legacy `Web/Controllers/RefundController.cs` removed. Legacy `IRefundService` DI registration removed. 46 tests passing. Legacy service class files retained for Step 8 cleanup. | [ADR-0017](../docs/adr/0017-sales-fulfillment-bc-design.md), [ADR-0024](../docs/adr/0024-controller-routing-strategy.md) |
+| **Sales/Coupons Slice 1 — switch live** | Atomic switch complete. `ICouponRepository` extended (`GetAllAsync`, `CountAsync`, `DeleteAsync`). `Coupon.Update()` added to domain. `CouponListVm`, `CouponDetailVm`, `UpdateCouponDto` created. `ICouponService` + `CouponService` extended with `AddCouponAsync`, `GetCouponsAsync`, `GetCouponAsync`, `UpdateCouponAsync`, `DeleteCouponAsync` (note: `CreateCouponAsync` remains `NotImplementedException` — Slice 2 spec). New `Areas/Sales/Controllers/CouponController.cs` (6 actions, MaintenanceRole). 4 new views (Index, Create, Edit, Details). Legacy `CouponController`, `CouponTypeController`, `CouponUsedController` deleted. Nav Kupony → `asp-area="Sales"`. Legacy DI (`ICouponService`, `ICouponTypeService`, `ICouponUsedService`, `ICouponHandler`) retained — `OrderService` (legacy) hard dependency; deferred to Step 8. 1361/1361 tests passing. | [ADR-0016](../docs/adr/0016-sales-coupons-bc-design.md), [ADR-0024](../docs/adr/0024-controller-routing-strategy.md) |
+| **Sales/Fulfillment Slice 1 — switch live** |
 | **Presale/Checkout Slice 2 — switch live** |
 | **Sales/Payments — switch live** | All acceptance criteria met. Web Area controller + views wired. Integration tests: PaymentServiceTests (8), OrderPlacedHandlerTests (3), OrderPaymentConfirmedHandlerTests (2), OrderPaymentExpiredHandlerTests (2). 430 integration tests passing. Legacy `PaymentHandler` retained for Step 5 cleanup. | [ADR-0015](../docs/adr/0015-sales-payments-bc-design.md), [ADR-0024](../docs/adr/0024-controller-routing-strategy.md) |
 | **Sales/Orders — switch live** |
@@ -47,7 +48,7 @@ Only the atomic switch (controller migration + remove legacy code) remains.
 | **TimeManagement** | `CurrencyRateSyncTask` atomic switch | [ADR-0009](../docs/adr/0009-supporting-timemanagement-bc-design.md) |
 | **Inventory/Availability** | Data migration (`Items.Quantity` → `inventory.StockItems`) → replace `ItemHandler` calls with `IMessageBroker` → atomic switch | [ADR-0011](../docs/adr/0011-inventory-availability-bc-design.md) |
 | **Presale/Checkout Slice 1** | Ready for production — no controller migration needed (Slice 1 is new BFF endpoints only) | [ADR-0012](../docs/adr/0012-presale-checkout-bc-design.md) |
-| **Sales/Coupons Slice 1** | Migrate `CouponController` / `CouponUsedController` / `CouponTypeController` → remove legacy `CouponHandler` → atomic switch | [ADR-0016](../docs/adr/0016-sales-coupons-bc-design.md) |
+| **Sales/Coupons Slice 1** | ✅ **Switch live** — `CouponController` migrated, legacy UI controllers removed, nav updated. Legacy service DI retained for Step 8 (OrderService dependency). | [ADR-0016](../docs/adr/0016-sales-coupons-bc-design.md) |
 | **Sales/Fulfillment Slice 1** | ✅ **Switch live** — `RefundController` migrated, legacy service DI removed, `InventoryRefundApprovedHandler` switched to Fulfillment messages. Legacy class files retained for Step 8 cleanup. | [ADR-0017](../docs/adr/0017-sales-fulfillment-bc-design.md) |
 
 ---
@@ -61,7 +62,7 @@ Only the atomic switch (controller migration + remove legacy code) remains.
 1. **Presale/Checkout Slice 2** (steps 11–14 in ADR-0012) — ✅ **Switch live** — implementation complete, integration tests done, EC-001 decision documented
 2. **Sales/Coupons Slice 2** (ADR-0016 §9) — 🔄 **implementation in progress**; Domain ✅ Application ✅ (rules engine, 15 evaluators + auto-injected CouponOversizeGuard = 16 total, contracts, workflow builder) Infrastructure ✅ (5 adapters/repos: StockAvailabilityChecker, CompletedOrderCounter, SpecialEventCache, CouponApplicationRecordRepository, NullRuntimeCouponSource); **design amendments completed** (§10): CouponOversizeGuard — always-on constraint rule with per-coupon `BypassOversizeGuard` override (no global toggle), Catalog→Coupons name sync (3 messages: ProductNameChanged, CategoryNameChanged, TagNameChanged + 3 handlers + IScopeTargetRepository); **atomic switch blocked** by Coupons Slice 1 in production; DB migration for CouponApplicationRecords + SpecialEvents tables pending approval
 3. **Sales/Fulfillment Slice 2** (ADR-0017 §11) — 🔄 **implementation in progress**; Domain ✅ (Shipment aggregate, ShipmentLine, ShipmentStatus incl. PartiallyDelivered) Application ✅ (ShipmentService, 5 message contracts with Items[], 6 Orders handlers, 3 Inventory handlers: ShipmentDelivered/Failed/PartiallyDelivered with `StockReconciliationRequired` failure signaling) Infrastructure ✅ (ShipmentRepository, EF config); **design amendments completed** (§13): parallel fan-out to Inventory (3 handlers), enriched messages with Items[], OrderShippedHandler retirement, `StockReconciliationRequired` alert (StockOperationType enum: Fulfill/Release), `OrderRequiresAttention` operator notification; **atomic switch blocked** by Fulfillment Slice 1 in production
-4. **Supporting/Communication BC** — blocked by Fulfillment Slice 1 atomic switch + Coupons Slice 1 atomic switch
+4. **Supporting/Communication BC** — ✅ unblocked (Fulfillment Slice 1 + Coupons Slice 1 both live)
 5. **Backoffice BC** — blocked by ADR-0013 (per-BC DbContext interfaces); gated by ~80% BC completion
 6. **Per-BC DbContext interfaces** (ADR-0013) — gate: ~80–100% BC implementations complete
 
