@@ -1,0 +1,92 @@
+@model ProductListVm
+@{
+    ViewData["Title"] = "Wszystkie produkty";
+    var totalPages = Model.Count == 0 ? 1 : (int)Math.Ceiling((double)Model.Count / Model.PageSize);
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2><i class="fa-solid fa-box-open me-2"></i>Produkty</h2>
+        <a asp-action="Create" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i>Dodaj produkt</a>
+    </div>
+
+    <form method="post" class="row g-2 mb-3">
+        <div class="col-auto">
+            <select name="pageSize" class="form-select">
+                @foreach (var s in new[] { 10, 20, 50 })
+                {
+                    <option value="@s" selected="@(Model.PageSize == s)">@s</option>
+                }
+            </select>
+        </div>
+        <div class="col">
+            <input name="searchString" type="text" class="form-control" placeholder="Szukaj..." value="@Model.SearchString" />
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-secondary">Szukaj</button>
+        </div>
+        <input type="hidden" name="pageNo" value="1" />
+    </form>
+
+    @if (Model.Products.Count == 0)
+    {
+        <p class="text-muted">Brak produktów.</p>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Nazwa</th>
+                        <th>Cena</th>
+                        <th>Status</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var product in Model.Products)
+                    {
+                        <tr>
+                            <td>@product.Name</td>
+                            <td>@product.Cost.ToString("C")</td>
+                            <td>
+                                @if (product.Status == "Published")
+                                {
+                                    <span class="badge bg-success">Opublikowany</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Szkic</span>
+                                }
+                            </td>
+                            <td>
+                                <a asp-action="Details" asp-route-id="@product.Id" class="btn btn-outline-info btn-sm">Szczegóły</a>
+                                <a asp-action="Edit" asp-route-id="@product.Id" class="btn btn-outline-warning btn-sm">Edytuj</a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    @if (totalPages > 1)
+    {
+        <nav>
+            <ul class="pagination">
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                        <form method="post" class="d-inline">
+                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                            <input type="hidden" name="pageNo" value="@i" />
+                            <input type="hidden" name="searchString" value="@Model.SearchString" />
+                            <button type="submit" class="page-link">@i</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+</div>

@@ -137,6 +137,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reference", "reference", "{
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reports", "reports", "{7C3E91A2-B4D5-4F68-9A1C-E2F30748D6B1}"
 	ProjectSection(SolutionItems) = preProject
+		docs\reports\bc-migration-status.md = docs\reports\bc-migration-status.md
 		docs\reports\cross-bc-integration-test-report.md = docs\reports\cross-bc-integration-test-report.md
 		docs\reports\web-ui-views-report.md = docs\reports\web-ui-views-report.md
 	EndProjectSection

@@ -1,0 +1,66 @@
+@model CreateProductFormVm
+@{
+    ViewData["Title"] = "Dodaj produkt";
+    var categories = ViewBag.Categories as System.Collections.Generic.List<CategoryVm> ?? new System.Collections.Generic.List<CategoryVm>();
+}
+
+<div class="container mt-4" style="max-width:700px;">
+    <h2><i class="fa-solid fa-box-open me-2"></i>Dodaj produkt</h2>
+
+    <form method="post">
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="All" class="alert alert-danger d-none" id="validationSummary"></div>
+
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label">Nazwa</label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Cost" class="form-label">Cena</label>
+            <input asp-for="Cost" type="number" step="0.01" class="form-control" />
+            <span asp-validation-for="Cost" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Description" class="form-label">Opis</label>
+            <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="CategoryId" class="form-label">Kategoria</label>
+            <select asp-for="CategoryId" class="form-select">
+                <option value="">-- wybierz --</option>
+                @foreach (var cat in categories)
+                {
+                    <option value="@cat.Id">@cat.Name</option>
+                }
+            </select>
+            <span asp-validation-for="CategoryId" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="Tags" class="form-label">Tagi (oddziel przecinkami)</label>
+            <input asp-for="Tags" class="form-control" placeholder="np. nowy, promocja" />
+            <span asp-validation-for="Tags" class="text-danger"></span>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Dodaj</button>
+            <a asp-action="All" class="btn btn-secondary">Anuluj</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var s = document.getElementById('validationSummary');
+            if (s && s.querySelectorAll('li').length > 0) s.classList.remove('d-none');
+        })();
+    </script>
+}

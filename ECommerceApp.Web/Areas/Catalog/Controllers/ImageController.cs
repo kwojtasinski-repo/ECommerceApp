@@ -1,14 +1,16 @@
-﻿using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.POCO;
 using ECommerceApp.Application.Services.Items;
+using ECommerceApp.Web.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 
-namespace ECommerceApp.Web.Controllers
+namespace ECommerceApp.Web.Areas.Catalog.Controllers
 {
-    [Authorize(Roles = $"{MaintenanceRole}")]
+    [Area("Catalog")]
+    [Authorize(Roles = MaintenanceRole)]
     public class ImageController : BaseController
     {
         private readonly IImageService _service;
@@ -26,7 +28,7 @@ namespace ECommerceApp.Web.Controllers
             {
                 _service.AddImages(addImages);
             }
-            catch(BusinessException exception)
+            catch (BusinessException exception)
             {
                 return BadRequest(BuildErrorModel(exception).Codes);
             }
@@ -39,8 +41,8 @@ namespace ECommerceApp.Web.Controllers
             try
             {
                 return _service.Delete(id)
-                        ? Ok()
-                        : NotFound();
+                    ? Ok()
+                    : NotFound();
             }
             catch (BusinessException exception)
             {

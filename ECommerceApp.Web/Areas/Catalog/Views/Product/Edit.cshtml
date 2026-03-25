@@ -1,0 +1,182 @@
+@model UpdateProductFormVm
+@{
+    ViewData["Title"] = "Edytuj produkt";
+    var productId = (int)ViewBag.ProductId;
+    var categories = ViewBag.Categories as System.Collections.Generic.List<CategoryVm> ?? new System.Collections.Generic.List<CategoryVm>();
+    var images = ViewBag.Images as System.Collections.Generic.List<ProductImageVm> ?? new System.Collections.Generic.List<ProductImageVm>();
+}
+
+<div class="container mt-4">
+    <h2><i class="fa-solid fa-box-open me-2"></i>Edytuj produkt</h2>
+
+    <div class="row">
+        <div class="col-md-6">
+            <form id="formEditProduct" asp-action="Edit" asp-route-id="@productId" method="post">
+                @Html.AntiForgeryToken()
+
+                <div asp-validation-summary="All" class="alert alert-danger d-none" id="validationSummary"></div>
+
+                <div class="mb-3">
+                    <label asp-for="Name" class="form-label">Nazwa</label>
+                    <input id="ProductNameInput" asp-for="Name" class="form-control" />
+                    <span asp-validation-for="Name" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Cost" class="form-label">Cena</label>
+                    <input id="ProductCostInput" asp-for="Cost" type="number" step="0.01" class="form-control" />
+                    <span asp-validation-for="Cost" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Description" class="form-label">Opis</label>
+                    <textarea id="ProductDescriptionInput" asp-for="Description" class="form-control" rows="4"></textarea>
+                    <span asp-validation-for="Description" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="CategoryId" class="form-label">Kategoria</label>
+                    <select id="ProductCategorySelect" asp-for="CategoryId" class="form-select">
+                        @foreach (var cat in categories)
+                        {
+                            <option value="@cat.Id">@cat.Name</option>
+                        }
+                    </select>
+                    <span asp-validation-for="CategoryId" class="text-danger"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="Tags" class="form-label">Tagi (oddziel przecinkami)</label>
+                    <input asp-for="Tags" class="form-control" placeholder="np. nowy, promocja" />
+                    <span asp-validation-for="Tags" class="text-danger"></span>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Zapisz</button>
+                    <a asp-action="Details" asp-route-id="@productId" class="btn btn-secondary">Anuluj</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="col-md-5 offset-md-1">
+            <h4>Zdjęcia</h4>
+
+            <form id="UploadImages" action="/Catalog/Image/UploadImages?itemId=@productId"
+                  enctype="multipart/form-data" onsubmit="return false" method="post">
+                <dl>
+                    <dt>
+                        <label for="FileUpload_FormFile">Pliki</label>
+                    </dt>
+                    <dd>
+                        <input id="FileUpload_FormFile" multiple="multiple" type="file" name="files" />
+                    </dd>
+                </dl>
+                <button class="btn btn-outline-secondary w-100 mt-2" type="button" onclick="Upload(this)">Wgraj</button>
+            </form>
+
+            @if (images.Count > 0)
+            {
+                <div class="mt-3">
+                    @foreach (var img in images)
+                    {
+                        <div class="card mb-2" style="max-width:18rem;" data-name="ItemImage">
+                            <div class="card-body p-2">
+                                <button class="btn btn-sm btn-danger ms-auto d-block mb-1" onclick="DeleteImage(@img.Id)">Usuń</button>
+                                <img src="@img.Url" class="img-fluid rounded" style="max-height:200px;" />
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var s = document.getElementById('validationSummary');
+            if (s && s.querySelectorAll('li').length > 0) s.classList.remove('d-none');
+        })();
+
+        const fileUploadId = 'FileUpload_FormFile';
+        let ajaxRequest, modalService, statusCodes, showError, showErrorFromResponse, errors, forms;
+
+        $(document).on('DOMInitialized', function (event, mods) {
+            ({ ajaxRequest, modalService, statusCodes, showError, showErrorFromResponse, errors, forms } = mods);
+            new TomSelect('#ProductCategorySelect');
+        });
+
+        async function Upload(input) {
+            var uploadForm = document.getElementById("UploadImages");
+            await SendAddImageRequest(uploadForm);
+        }
+
+        async function SendAddImageRequest(oFormElement) {
+            clearImageUploadValidationErrors();
+            const formData = new FormData(oFormElement);
+            try {
+                await ajaxRequest.send(oFormElement.action, 'POST', formData);
+                clearImageUploadInput();
+                window.location.reload();
+            } catch (error) {
+                if (error.status === statusCodes.Unauthorized) {
+                    window.location.href = "Identity/Account/Login";
+                }
+                if (error.status === statusCodes.InternalErrorServer) {
+                    showError([{ code: 'generalError' }]);
+                }
+                if (error.status === statusCodes.BadRequest) {
+                    const codes = ajaxRequest.getErrorCodes(error);
+                    if (codes.length > 0) {
+                        const container = document.getElementById(fileUploadId).parentElement;
+                        for (const code of codes) {
+                            container.appendChild(forms.createErrorSpan(
+                                errors.getError(code.Code ?? code.code, code.Parameters ?? code.parameters)
+                            ));
+                        }
+                    } else {
+                        showErrorFromResponse(error);
+                    }
+                }
+            }
+        }
+
+        async function DeleteImage(id) {
+            const result = await modalService.showConfirmationModal('Usuń zdjęcie', 'Czy na pewno chcesz usunąć zdjęcie?');
+            if (!result) {
+                return;
+            }
+            await SendDeleteRequest(id);
+        }
+
+        async function SendDeleteRequest(id) {
+            var imageId = parseInt(id);
+            var url = '/Catalog/Image/DeleteImage/' + imageId;
+            try {
+                await ajaxRequest.send(url, 'DELETE');
+                window.location.reload();
+            } catch (error) {
+                if (error.status === statusCodes.Unauthorized) {
+                    window.location.href = "Identity/Account/Login";
+                }
+                if (error.status === statusCodes.InternalErrorServer) {
+                    showError([{ code: 'generalError' }]);
+                }
+                if (error.status === statusCodes.BadRequest) {
+                    showErrorFromResponse(error);
+                }
+            }
+            clearImageUploadValidationErrors();
+        }
+
+        function clearImageUploadValidationErrors() {
+            document.getElementById(fileUploadId)?.parentElement?.querySelectorAll('.field-validation-invalid')?.forEach((el) => el.remove());
+        }
+
+        function clearImageUploadInput() {
+            document.getElementById(fileUploadId).value = null;
+        }
+    </script>
+}

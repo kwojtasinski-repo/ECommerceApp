@@ -38,7 +38,7 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="topbarCollapse">
-                    <form class="d-flex mx-auto" asp-area="" asp-controller="Item" asp-action="Index" method="get">
+                    <form class="d-flex mx-auto" asp-area="Catalog" asp-controller="Product" asp-action="Index" method="get">
                         <div class="input-group">
                             <input name="searchString" type="text" class="form-control" placeholder="Szukaj produktów..." />
                             <div class="dropdown">
@@ -110,9 +110,9 @@
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown"><i class="fa-solid fa-box-open me-1"></i>Katalog</a>
                                 <div class="dropdown-menu">
-                                    <a class="dropdown-item" asp-area="" asp-controller="Item" asp-action="Index">Produkty</a>
-                                    <a class="dropdown-item" asp-area="" asp-controller="Type" asp-action="Index">Kategorie</a>
-                                    <a class="dropdown-item" asp-area="" asp-controller="Tag" asp-action="Index">Tagi</a>
+                                    <a class="dropdown-item" asp-area="Catalog" asp-controller="Product" asp-action="All">Produkty</a>
+                                    <a class="dropdown-item" asp-area="Catalog" asp-controller="Category" asp-action="Index">Kategorie</a>
+                                    <a class="dropdown-item" asp-area="Catalog" asp-controller="Tag" asp-action="Index">Tagi</a>
                                     @if (isManagingRole)
                                     {
                                         <a class="dropdown-item" asp-area="" asp-controller="Brand" asp-action="Index">Marki</a>
@@ -160,7 +160,7 @@
                                 <div class="dropdown-menu">
                                     @foreach (var cat in categories)
                                     {
-                                        <a class="dropdown-item" asp-area="" asp-controller="Item" asp-action="Index" asp-route-typeId="@cat.Id">@cat.Name</a>
+                                        <a class="dropdown-item" asp-area="Catalog" asp-controller="Product" asp-action="Index">@cat.Name</a>
                                     }
                                 </div>
                             </li>

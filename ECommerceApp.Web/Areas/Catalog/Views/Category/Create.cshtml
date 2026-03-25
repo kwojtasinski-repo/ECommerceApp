@@ -1,0 +1,35 @@
+@model CategoryFormVm
+@{
+    ViewData["Title"] = "Dodaj kategorię";
+}
+
+<div class="container mt-4" style="max-width:600px;">
+    <h2><i class="fa-solid fa-list me-2"></i>Dodaj kategorię</h2>
+
+    <form method="post">
+        @Html.AntiForgeryToken()
+
+        <div asp-validation-summary="All" class="alert alert-danger d-none" id="validationSummary"></div>
+
+        <div class="mb-3">
+            <label asp-for="Name" class="form-label">Nazwa</label>
+            <input asp-for="Name" class="form-control" />
+            <span asp-validation-for="Name" class="text-danger"></span>
+        </div>
+
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Dodaj</button>
+            <a asp-action="Index" class="btn btn-secondary">Anuluj</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var s = document.getElementById('validationSummary');
+            if (s && s.querySelectorAll('li').length > 0) s.classList.remove('d-none');
+        })();
+    </script>
+}
