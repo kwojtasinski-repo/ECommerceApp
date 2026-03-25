@@ -114,6 +114,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "roadmap", "roadmap", "{8FA6
 	ProjectSection(SolutionItems) = preProject
 		docs\roadmap\frontend-pipeline.md = docs\roadmap\frontend-pipeline.md
 		docs\roadmap\iam-atomic-switch.md = docs\roadmap\iam-atomic-switch.md
+		docs\roadmap\iam-refresh-token.md = docs\roadmap\iam-refresh-token.md
 		docs\roadmap\orders-atomic-switch.md = docs\roadmap\orders-atomic-switch.md
 		docs\roadmap\payments-atomic-switch.md = docs\roadmap\payments-atomic-switch.md
 		docs\roadmap\presale-slice2.md = docs\roadmap\presale-slice2.md

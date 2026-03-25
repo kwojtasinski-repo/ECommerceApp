@@ -108,6 +108,7 @@ Read an ADR **only** when the "When to read" condition matches the files you are
 | `orders-atomic-switch.md`   | Working on Sales/Orders BC (highest-priority unblocking item)            |
 | `payments-atomic-switch.md` | Working on Sales/Payments BC (blocked by Orders)                         |
 | `iam-atomic-switch.md`      | Working on Identity/IAM BC (coordinate with Orders switch)               |
+| `iam-refresh-token.md`      | Implementing refresh token feature for the API (design settled)          |
 | `presale-slice2.md`         | Working on Presale/Checkout Slice 2 (blocked by Orders)                  |
 | `frontend-pipeline.md`      | Working on frontend JS/error pipeline (ADR-0021 phases)                  |
 

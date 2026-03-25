@@ -82,6 +82,17 @@
 
 ## Change log
 
+### Session 10 — IAM refresh token roadmap + docs-index sync (2026-03-27)
+
+| #   | Change                                                                                              | Files affected                                    |
+| --- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| 1   | Created `docs/roadmap/iam-refresh-token.md` — 8-step plan, design decisions settled (DB storage, Jti binding, rotation-on-use, deferred SessionId) | `docs/roadmap/iam-refresh-token.md` |
+| 2   | Added `iam-refresh-token.md` to active roadmaps table in `README.md`                               | `docs/roadmap/README.md`                          |
+| 3   | Removed stale "IAM refresh token" entry from Deferred section (now tracked as active roadmap)       | `docs/roadmap/README.md`                          |
+| 4   | Removed stale "Bootstrap 5 upgrade" entry from Deferred section (completed — ADR-0023)              | `docs/roadmap/README.md`                          |
+| 5   | Added `iam-refresh-token.md` row to docs-index roadmap table                                        | `.github/instructions/docs-index.instructions.md` |
+| 6   | Updated changelog with Session 10 entry                                                             | `.github/COPILOT-SETUP-CHANGELOG.md`              |
+
 ### Session 9 — HTTP scenarios refresh + .sln sync (2026-03-25)
 
 | #   | Change                                                                                                   | Files affected                                       |

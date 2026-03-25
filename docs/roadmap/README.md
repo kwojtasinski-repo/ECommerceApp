@@ -15,6 +15,7 @@
 | **Sales/Coupons — Slice 1 implementation** | — (see ADR) | [ADR-0016](../adr/0016-sales-coupons-bc-design.md) | 🟡 Implementation in progress (parallel change); atomic switch blocked by Orders + Payments |
 | **Presale/Checkout — Slice 2** | [`presale-slice2.md`](./presale-slice2.md) | [ADR-0012](../adr/0012-presale-checkout-bc-design.md) §11–14 | ✅ Switch live — implementation complete, integration tests ✅, EC-001 decision ✅ |
 | **Identity/IAM — atomic switch** | [`iam-atomic-switch.md`](./iam-atomic-switch.md) | [ADR-0019](../adr/0019-identity-iam-bc-design.md) | 🟡 Migration approval pending; coordinate with Orders switch |
+| **Identity/IAM — refresh token** | [`iam-refresh-token.md`](./iam-refresh-token.md) | ADR-0019 amendment pending | 🔵 Planned — design settled, not started |
 | **Frontend error pipeline & JS migration** | [`frontend-pipeline.md`](./frontend-pipeline.md) | [ADR-0021](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) | ✅ Phase 1–4 complete |
 
 > **Routing strategy for all controller migrations**: [ADR-0024](../adr/0024-controller-routing-strategy.md) — Web uses ASP.NET Core Areas (new parallel routes), API uses in-place swap. Applies to Orders, Payments, and all subsequent BC controller switches.
@@ -82,8 +83,6 @@ Full details and blocking analysis: [`bounded-context-map.md § Next BCs to impl
 | Item | Blocked by | ADR / Tracking |
 |---|---|---|
 | Per-BC DbContext interfaces | 80–100% BC implementations complete | [ADR-0013](../adr/0013-per-bc-dbcontext-interfaces.md) |
-| Bootstrap 5 upgrade + `modalService.js` rewrite | Bootstrap upgrade decision | [ADR-0021](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) §4 |
-| IAM refresh token | Separate ADR required | [bounded-context-map.md](../architecture/bounded-context-map.md) |
 
 ---
 
