@@ -5,7 +5,7 @@
 > For confirmed bugs see [`.github/context/known-issues.md`](./known-issues.md).
 > For planned work see [`docs/roadmap/README.md`](../docs/roadmap/README.md).
 
-*Last updated: 2026-05-27 (Currencies — CurrencyController switch live)*
+*Last updated: 2026-05-27 (Jobs — JobManagementController switch live)*
 
 ---
 
@@ -23,6 +23,7 @@
 
 | Area | Summary | ADR |
 |---|---|---|
+| **Jobs — switch live** | `JobManagementController` migrated to `Areas/Jobs`. 2 views (Index, History). Legacy `Controllers/JobManagementController.cs` + `Views/JobManagement/` deleted. Zaplecze nav updated to `asp-area="Jobs"`. Pure structural move — already used new BC services (`IJobManagementService`, `IJobTrigger` from `Application.Supporting.TimeManagement`). 1361/1361 tests passing. | [ADR-0009](../docs/adr/0009-supporting-timemanagement-bc-design.md), [ADR-0024](../docs/adr/0024-controller-routing-strategy.md) |
 | **Currencies — switch live** | `CurrencyController` migrated to `Areas/Currencies`. 4 views (Index, Create, Edit, Details). Legacy `CurrencyController` + 4 legacy `Views/Currency/` views deleted. Zaplecze nav updated to `asp-area="Currencies"`. Service swapped from legacy sync `ICurrencyService` (Application.Services.Currencies) to new async `ICurrencyService` (Application.Supporting.Currencies.Services). Action renames: `AddCurrency→Create`, `EditCurrency→Edit`, `ViewCurrency→Details`, `DeleteCurrency→Delete`. 1361/1361 tests passing. | [ADR-0008](../docs/adr/0008-supporting-currencies-bc-design.md), [ADR-0024](../docs/adr/0024-controller-routing-strategy.md) |
 | **Inventory/Availability — switch live** | `StockController` migrated to `Areas/Inventory`.
 | **Sales/Fulfillment Slice 2 — switch live** | ShipmentController added to `Areas/Sales`.

@@ -1,11 +1,13 @@
 using ECommerceApp.Application.Permissions;
 using ECommerceApp.Application.Supporting.TimeManagement;
+using ECommerceApp.Web.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
-namespace ECommerceApp.Web.Controllers
+namespace ECommerceApp.Web.Areas.Jobs.Controllers
 {
+    [Area("Jobs")]
     [Authorize(Roles = UserPermissions.Roles.Administrator)]
     public class JobManagementController : BaseController
     {

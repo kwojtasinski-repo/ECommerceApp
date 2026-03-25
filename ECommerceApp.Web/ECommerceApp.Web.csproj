@@ -30,6 +30,7 @@
     <Folder Include="Views\Currency\" />
     <Folder Include="Views\Customer\" />
     <Folder Include="Views\Inventory\" />
+    <Folder Include="Views\JobManagement\" />
     <Folder Include="Views\NewBcTest\" />
   </ItemGroup>
 
