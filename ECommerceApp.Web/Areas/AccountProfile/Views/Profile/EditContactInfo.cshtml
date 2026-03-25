@@ -1,0 +1,25 @@
+@{
+    ViewData["Title"] = "Edytuj dane kontaktowe";
+}
+
+<h1 class="h3 mb-4">Edytuj dane kontaktowe</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="EditContactInfo" asp-route-id="@ViewBag.ProfileId" method="post">
+            <div class="mb-3">
+                <label class="form-label">Email</label>
+                <input name="email" type="email" value="@ViewBag.Email" class="form-control" required />
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Telefon</label>
+                <input name="phoneNumber" value="@ViewBag.PhoneNumber" class="form-control" required />
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+                <button type="submit" class="btn btn-primary">Zapisz</button>
+                <a asp-action="Details" asp-route-id="@ViewBag.ProfileId" class="btn btn-outline-secondary">Anuluj</a>
+            </div>
+        </form>
+    </div>
+</div>

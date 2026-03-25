@@ -74,7 +74,7 @@
                                     <a class="dropdown-item" asp-area="Sales" asp-controller="Orders" asp-action="MyOrders">Moje zamówienia</a>
                                     <a class="dropdown-item" asp-area="Sales" asp-controller="Payments" asp-action="MyPayments">Moje płatności</a>
                                     <a class="dropdown-item" asp-area="Sales" asp-controller="Refund" asp-action="MyRefunds">Moje zwroty</a>
-                                    <a class="dropdown-item" asp-area="" asp-controller="Customer" asp-action="Index">Dane kontaktowe</a>
+                                    <a class="dropdown-item" asp-area="AccountProfile" asp-controller="Profile" asp-action="Index">Dane kontaktowe</a>
                                     <div class="dropdown-divider"></div>
                                     <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
                                         <button type="submit" class="dropdown-item btn btn-link">Wyloguj</button>
@@ -144,6 +144,7 @@
                                     @if (isManagingRole)
                                     {
                                         <a class="dropdown-item" asp-area="" asp-controller="UserManagement" asp-action="Index">Użytkownicy</a>
+                                        <a class="dropdown-item" asp-area="AccountProfile" asp-controller="Profile" asp-action="All">Klienci</a>
                                         }
                                     <a class="dropdown-item" asp-area="" asp-controller="Currency" asp-action="Index">Waluty</a>
                                     <a class="dropdown-item" asp-area="" asp-controller="JobManagement" asp-action="Index">Zadania</a>

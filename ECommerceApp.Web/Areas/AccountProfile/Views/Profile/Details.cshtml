@@ -1,0 +1,109 @@
+@model UserProfileDetailsVm
+@{
+    ViewData["Title"] = "Szczegóły profilu";
+    var isAdmin = User.IsInRole(UserPermissions.Roles.Administrator)
+        || User.IsInRole(UserPermissions.Roles.Manager)
+        || User.IsInRole(UserPermissions.Roles.Service);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3">Szczegóły profilu</h1>
+    <div class="d-flex gap-2">
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Edytuj dane</a>
+        <a asp-action="EditContactInfo" asp-route-id="@Model.Id" class="btn btn-outline-secondary">Edytuj kontakt</a>
+        @if (isAdmin)
+        {
+            <form asp-action="Delete" asp-route-id="@Model.Id" method="post" class="d-inline">
+                <button type="submit" class="btn btn-danger"
+                        onclick="return confirm('Czy na pewno chcesz usunąć ten profil?')">Usuń</button>
+            </form>
+        }
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <dl class="row">
+            <dt class="col-sm-4">Imię i nazwisko</dt>
+            <dd class="col-sm-8">@Model.FirstName @Model.LastName</dd>
+
+            <dt class="col-sm-4">Email</dt>
+            <dd class="col-sm-8">@Model.Email</dd>
+
+            <dt class="col-sm-4">Telefon</dt>
+            <dd class="col-sm-8">@Model.PhoneNumber</dd>
+
+            @if (Model.IsCompany)
+            {
+                <dt class="col-sm-4">Firma</dt>
+                <dd class="col-sm-8">@Model.CompanyName</dd>
+
+                <dt class="col-sm-4">NIP</dt>
+                <dd class="col-sm-8">@Model.NIP</dd>
+            }
+        </dl>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h4>Adresy</h4>
+    <a asp-action="AddAddress" asp-route-userProfileId="@Model.Id" class="btn btn-sm btn-outline-primary">Dodaj adres</a>
+</div>
+
+@if (Model.Addresses.Count == 0)
+{
+    <p class="text-muted">Brak adresów.</p>
+}
+else
+{
+    <table class="table table-sm table-hover">
+        <thead>
+            <tr>
+                <th>Ulica</th>
+                <th>Nr budynku</th>
+                <th>Nr lokalu</th>
+                <th>Kod pocztowy</th>
+                <th>Miasto</th>
+                <th>Kraj</th>
+                <th>Akcje</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var a in Model.Addresses)
+            {
+                <tr>
+                    <td>@a.Street</td>
+                    <td>@a.BuildingNumber</td>
+                    <td>@(a.FlatNumber?.ToString() ?? "—")</td>
+                    <td>@a.ZipCode</td>
+                    <td>@a.City</td>
+                    <td>@a.Country</td>
+                    <td class="d-flex gap-1">
+                        <a asp-action="EditAddress"
+                           asp-route-userProfileId="@Model.Id"
+                           asp-route-addressId="@a.Id"
+                           class="btn btn-sm btn-outline-secondary">Edytuj</a>
+                        <form asp-action="DeleteAddress"
+                              asp-route-userProfileId="@Model.Id"
+                              asp-route-addressId="@a.Id"
+                              method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('Czy na pewno chcesz usunąć ten adres?')">Usuń</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<div class="mt-3">
+    @if (isAdmin)
+    {
+        <a asp-action="All" class="btn btn-outline-secondary">Wróć do listy</a>
+    }
+    else
+    {
+        <a asp-action="Index" class="btn btn-outline-secondary">Wróć</a>
+    }
+</div>

@@ -25,6 +25,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Views\Address\" />
+    <Folder Include="Views\ContactDetail\" />
+    <Folder Include="Views\Customer\" />
     <Folder Include="Views\NewBcTest\" />
   </ItemGroup>
 

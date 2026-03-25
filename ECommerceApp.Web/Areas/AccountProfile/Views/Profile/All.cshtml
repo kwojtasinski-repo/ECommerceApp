@@ -1,0 +1,81 @@
+@model UserProfileListVm
+@{
+    ViewData["Title"] = "Profile użytkowników";
+    var totalPages = Model.PageSize > 0 ? (int)Math.Ceiling((double)Model.Count / Model.PageSize) : 1;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3">Profile użytkowników</h1>
+</div>
+
+<form method="post">
+    <div class="row mb-3 g-2">
+        <div class="col-auto">
+            <select name="pageSize" class="form-select">
+                <option value="20" selected="@(Model.PageSize == 20)">20</option>
+                <option value="50" selected="@(Model.PageSize == 50)">50</option>
+                <option value="100" selected="@(Model.PageSize == 100)">100</option>
+            </select>
+        </div>
+        <div class="col">
+            <input name="searchString" value="@Model.SearchString" class="form-control" placeholder="Szukaj..." />
+        </div>
+        <div class="col-auto">
+            <button type="submit" class="btn btn-secondary">Szukaj</button>
+        </div>
+    </div>
+</form>
+
+@if (Model.Profiles.Count == 0)
+{
+    <p class="text-muted">Brak profili.</p>
+}
+else
+{
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Imię i nazwisko</th>
+                <th>Firma</th>
+                <th>Email</th>
+                <th>Akcje</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in Model.Profiles)
+            {
+                <tr>
+                    <td>@p.FirstName @p.LastName</td>
+                    <td>@(p.IsCompany ? p.CompanyName ?? "—" : "—")</td>
+                    <td>@p.Email</td>
+                    <td class="d-flex gap-1">
+                        <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-outline-primary">Szczegóły</a>
+                        <form asp-action="Delete" asp-route-id="@p.Id" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger"
+                                    onclick="return confirm('Czy na pewno chcesz usunąć ten profil?')">Usuń</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (totalPages > 1)
+    {
+        <nav>
+            <ul class="pagination">
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                        <form method="post" class="d-inline">
+                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                            <input type="hidden" name="pageNo" value="@i" />
+                            <input type="hidden" name="searchString" value="@Model.SearchString" />
+                            <button type="submit" class="page-link">@i</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}

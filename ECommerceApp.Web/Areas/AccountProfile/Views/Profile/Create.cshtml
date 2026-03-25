@@ -1,0 +1,103 @@
+@model CreateProfileFormVm
+@{
+    ViewData["Title"] = "Nowy profil";
+}
+
+<h1 class="h3 mb-4">Nowy profil</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <form method="post">
+            <input asp-for="UserId" type="hidden" />
+
+            <h5 class="mb-3">Dane osobowe</h5>
+
+            <div class="mb-3">
+                <label asp-for="FirstName" class="form-label">Imię</label>
+                <input asp-for="FirstName" class="form-control" />
+                <span asp-validation-for="FirstName" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="LastName" class="form-label">Nazwisko</label>
+                <input asp-for="LastName" class="form-control" />
+                <span asp-validation-for="LastName" class="text-danger"></span>
+            </div>
+            <div class="mb-3 form-check">
+                <input asp-for="IsCompany" class="form-check-input" type="checkbox" id="isCompanyCheck" />
+                <label class="form-check-label" for="isCompanyCheck">Firma</label>
+            </div>
+            <div id="companyFields" style="display:none">
+                <div class="mb-3">
+                    <label asp-for="CompanyName" class="form-label">Nazwa firmy</label>
+                    <input asp-for="CompanyName" class="form-control" />
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Nip" class="form-label">NIP</label>
+                    <input asp-for="Nip" class="form-control" />
+                </div>
+            </div>
+
+            <h5 class="mb-3 mt-4">Kontakt</h5>
+
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label">Email</label>
+                <input asp-for="Email" type="email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="PhoneNumber" class="form-label">Telefon</label>
+                <input asp-for="PhoneNumber" class="form-control" />
+                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
+            </div>
+
+            <h5 class="mb-3 mt-4">Adres <span class="text-muted fw-normal fs-6">(opcjonalnie)</span></h5>
+
+            <div class="mb-3">
+                <label asp-for="Street" class="form-label">Ulica</label>
+                <input asp-for="Street" class="form-control" />
+            </div>
+            <div class="row mb-3">
+                <div class="col">
+                    <label asp-for="BuildingNumber" class="form-label">Nr budynku</label>
+                    <input asp-for="BuildingNumber" class="form-control" />
+                </div>
+                <div class="col">
+                    <label asp-for="FlatNumber" class="form-label">Nr lokalu</label>
+                    <input asp-for="FlatNumber" type="number" class="form-control" />
+                </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col">
+                    <label asp-for="ZipCode" class="form-label">Kod pocztowy</label>
+                    <input asp-for="ZipCode" class="form-control" />
+                </div>
+                <div class="col">
+                    <label asp-for="City" class="form-label">Miasto</label>
+                    <input asp-for="City" class="form-control" />
+                </div>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Country" class="form-label">Kraj (2-literowy kod)</label>
+                <input asp-for="Country" class="form-control" maxlength="2" />
+            </div>
+
+            <div class="d-flex gap-2 mt-3">
+                <button type="submit" class="btn btn-primary">Utwórz</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Anuluj</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var chk = document.getElementById('isCompanyCheck');
+            var fields = document.getElementById('companyFields');
+            if (chk.checked) fields.style.display = '';
+            chk.addEventListener('change', function () {
+                fields.style.display = chk.checked ? '' : 'none';
+            });
+        })();
+    </script>
+}

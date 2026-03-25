@@ -43,7 +43,7 @@ Only the atomic switch (controller migration + remove legacy code) remains.
 
 | BC | Pending | ADR |
 |---|---|---|
-| **AccountProfile** | Migrate `CustomerController` / `AddressController` / `ContactDetailController` → remove legacy `CustomerService` → atomic switch | [ADR-0005](../docs/adr/0005-accountprofile-bc-userprofile-aggregate-design.md) |
+| **AccountProfile** | ✅ **Switch live** — `ProfileController` migrated to `Areas/AccountProfile`, 8 views (Index, All, Create, Details, Edit, EditContactInfo, AddAddress, EditAddress), legacy `CustomerController`/`AddressController`/`ContactDetailController` + views deleted, nav updated. Legacy `ICustomerService` DI retained (legacy `OrderService` dependency). | [ADR-0005](../docs/adr/0005-accountprofile-bc-userprofile-aggregate-design.md) |
 | **Catalog** | Migrate `ItemController` / `ImageController` / `TagController` → atomic switch | [ADR-0007](../docs/adr/0007-catalog-bc-product-category-tag-aggregate-design.md) |
 | **Currencies** | Migrate `CurrencyController` (async) → coordinate with Catalog switch → atomic switch | [ADR-0008](../docs/adr/0008-supporting-currencies-bc-design.md) |
 | **TimeManagement** | `CurrencyRateSyncTask` atomic switch | [ADR-0009](../docs/adr/0009-supporting-timemanagement-bc-design.md) |
@@ -90,7 +90,7 @@ These legacy classes exist in parallel with the new BC implementations.
 |---|---|---|
 | `Application/Services/Orders/OrderService.cs` | `Application/Sales/Orders/Services/OrderService.cs` | Orders atomic switch |
 | `Application/Services/Payments/PaymentService.cs` + `PaymentHandler.cs` | `Application/Sales/Payments/Services/PaymentService.cs` | Payments atomic switch |
-| `Application/Services/Customers/CustomerService.cs` | `Application/AccountProfile/Services/UserProfileService.cs` | AccountProfile atomic switch |
+| `Application/Services/Customers/CustomerService.cs` | `Application/AccountProfile/Services/UserProfileService.cs` | Legacy DI retained (OrderService dependency) — Step 8 cleanup |
 | `Application/Services/Currencies/CurrencyService.cs` | `Application/Supporting/Currencies/Services/CurrencyService.cs` | Currencies atomic switch |
 | `Application/Services/Refunds/RefundService.cs` | `Application/Sales/Fulfillment/Services/RefundService.cs` | Fulfillment atomic switch |
 | `Application/Services/Coupons/CouponHandler.cs` | `Application/Sales/Coupons/Services/CouponService.cs` | Coupons atomic switch |
