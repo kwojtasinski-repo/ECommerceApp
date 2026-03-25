@@ -1,4 +1,3 @@
-@using ECommerceApp.Application.Inventory.Availability.ViewModels
 @model StockOverviewVm
 @{ ViewData["Title"] = "Przegląd stanu magazynu"; }
 
@@ -99,43 +98,3 @@
         </div>
     </div>
 </div>
-
-<!-- Adjust Modal -->
-<div class="modal fade" id="adjustModal" tabindex="-1" role="dialog" aria-labelledby="adjustModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="adjustModalLabel">Korekta stanu magazynu</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
-            </div>
-            <form asp-action="Adjust" method="post">
-                @Html.AntiForgeryToken()
-                <div class="modal-body">
-                    <p>Produkt: <strong id="adjustProductName"></strong></p>
-                    <p>Obecny stan: <strong id="adjustCurrentQty"></strong></p>
-                    <input type="hidden" name="productId" id="adjustProductId" />
-                    <div class="form-group">
-                        <label for="adjustNewQty">Nowy stan magazynowy</label>
-                        <input type="number" class="form-control" name="newQuantity" id="adjustNewQty" min="0" required />
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
-                    <button type="submit" class="btn btn-primary">Zaplanuj korektę</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-@section Scripts {
-    <script>
-        $('#adjustModal').on('show.bs.modal', function (event) {
-            var btn = $(event.relatedTarget);
-            $('#adjustProductId').val(btn.data('productid'));
-            $('#adjustProductName').text(btn.data('productname'));
-            $('#adjustCurrentQty').text(btn.data('quantity'));
-            $('#adjustNewQty').val('');
-        });
-    </script>
-}

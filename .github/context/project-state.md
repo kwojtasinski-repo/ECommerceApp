@@ -5,7 +5,7 @@
 > For confirmed bugs see [`.github/context/known-issues.md`](./known-issues.md).
 > For planned work see [`docs/roadmap/README.md`](../docs/roadmap/README.md).
 
-*Last updated: 2026-03-26 (Sales/Fulfillment Slice 2 — ShipmentController switch live)*
+*Last updated: 2026-05-27 (Inventory/Availability — StockController switch live)*
 
 ---
 
@@ -23,7 +23,8 @@
 
 | Area | Summary | ADR |
 |---|---|---|
-| **Sales/Fulfillment Slice 2 — switch live** | ShipmentController added to `Areas/Sales`. `IShipmentRepository` extended (`GetAllAsync`, `CountAsync`). `ShipmentListVm` extended with pagination fields. `IShipmentService` + `ShipmentService` extended with `GetAllShipmentsAsync`. New controller: 8 actions (Index GET/POST, Details, Create GET/POST, Dispatch, Deliver, Fail). 4 views: Index (paginated list), Details (status transitions), Create (from order items), OrderShipments (per-order list). `_Layout.cshtml` → "Przesyłki" added to Realizacja dropdown. `Fulfillment.cshtml` → "Utwórz przesyłkę" + "Przesyłki" links added. No legacy controller to delete (purely new). 1361/1361 tests passing. | [ADR-0017](../docs/adr/0017-sales-fulfillment-bc-design.md), [ADR-0024](../docs/adr/0024-controller-routing-strategy.md) |
+| **Inventory/Availability — switch live** | `StockController` migrated to `Areas/Inventory`. 5 views (Index, Reservations, Audit, AdjustStock, PendingAdjustments) created. Legacy `InventoryController` + 5 legacy `Views/Inventory/` views deleted. Magazyn nav dropdown updated to `asp-area="Inventory" asp-controller="Stock"`. Controller already used new BC services (`IStockQueryService`, `IStockService`) — no service swap needed. 1361/1361 tests passing. | [ADR-0011](../docs/adr/0011-inventory-availability-bc-design.md), [ADR-0024](../docs/adr/0024-controller-routing-strategy.md) |
+| **Sales/Fulfillment Slice 2 — switch live** | ShipmentController added to `Areas/Sales`.
 | **Sales/Coupons Slice 1 — switch live** |
 | **Sales/Fulfillment Slice 1 — switch live** |
 | **Presale/Checkout Slice 2 — switch live** |
@@ -47,7 +48,7 @@ Only the atomic switch (controller migration + remove legacy code) remains.
 | **Catalog** | ✅ **Switch live** — `ProductController` + `CategoryController` + `TagController` + `ImageController` migrated to `Areas/Catalog`, 11 views (Product: Index/All/Details/Create/Edit; Category: Index/Create/Edit; Tag: Index/Create/Edit). Legacy `ItemController`/`ImageController`/`TagController`/`TypeController` + 14 views deleted. Nav updated. Legacy `IItemService` DI retained (legacy `OrderService` dependency). `IImageService` retained (Catalog `ImageController` still uses it). | [ADR-0007](../docs/adr/0007-catalog-bc-product-category-tag-aggregate-design.md) |
 | **Currencies** | Migrate `CurrencyController` (async) → coordinate with Catalog switch → atomic switch | [ADR-0008](../docs/adr/0008-supporting-currencies-bc-design.md) |
 | **TimeManagement** | `CurrencyRateSyncTask` atomic switch | [ADR-0009](../docs/adr/0009-supporting-timemanagement-bc-design.md) |
-| **Inventory/Availability** | Data migration (`Items.Quantity` → `inventory.StockItems`) → replace `ItemHandler` calls with `IMessageBroker` → atomic switch | [ADR-0011](../docs/adr/0011-inventory-availability-bc-design.md) |
+| **Inventory/Availability** | ✅ **Switch live** — `StockController` migrated to `Areas/Inventory`, 5 views, legacy controller + legacy views deleted, nav updated. | [ADR-0011](../docs/adr/0011-inventory-availability-bc-design.md) |
 | **Presale/Checkout Slice 1** | Ready for production — no controller migration needed (Slice 1 is new BFF endpoints only) | [ADR-0012](../docs/adr/0012-presale-checkout-bc-design.md) |
 | **Sales/Coupons Slice 1** | ✅ **Switch live** — `CouponController` migrated, legacy UI controllers removed, nav updated. Legacy service DI retained for Step 8 (OrderService dependency). | [ADR-0016](../docs/adr/0016-sales-coupons-bc-design.md) |
 | **Sales/Fulfillment Slice 1** | ✅ **Switch live** — `RefundController` migrated, legacy service DI removed, `InventoryRefundApprovedHandler` switched to Fulfillment messages. Legacy class files retained for Step 8 cleanup. | [ADR-0017](../docs/adr/0017-sales-fulfillment-bc-design.md) |

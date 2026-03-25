@@ -1,19 +1,21 @@
 using ECommerceApp.Application.Inventory.Availability.DTOs;
 using ECommerceApp.Application.Inventory.Availability.Services;
+using ECommerceApp.Web.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ECommerceApp.Web.Controllers
+namespace ECommerceApp.Web.Areas.Inventory.Controllers
 {
+    [Area("Inventory")]
     [Authorize(Roles = MaintenanceRole)]
-    public class InventoryController : BaseController
+    public class StockController : BaseController
     {
         private readonly IStockQueryService _query;
         private readonly IStockService _stock;
 
-        public InventoryController(IStockQueryService query, IStockService stock)
+        public StockController(IStockQueryService query, IStockService stock)
         {
             _query = query;
             _stock = stock;
