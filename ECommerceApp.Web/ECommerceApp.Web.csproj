@@ -27,6 +27,7 @@
   <ItemGroup>
     <Folder Include="Views\Address\" />
     <Folder Include="Views\ContactDetail\" />
+    <Folder Include="Views\Currency\" />
     <Folder Include="Views\Customer\" />
     <Folder Include="Views\Inventory\" />
     <Folder Include="Views\NewBcTest\" />

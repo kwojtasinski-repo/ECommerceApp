@@ -5,7 +5,7 @@
 > For confirmed bugs see [`.github/context/known-issues.md`](./known-issues.md).
 > For planned work see [`docs/roadmap/README.md`](../docs/roadmap/README.md).
 
-*Last updated: 2026-05-27 (Inventory/Availability — StockController switch live)*
+*Last updated: 2026-05-27 (Currencies — CurrencyController switch live)*
 
 ---
 
@@ -23,7 +23,8 @@
 
 | Area | Summary | ADR |
 |---|---|---|
-| **Inventory/Availability — switch live** | `StockController` migrated to `Areas/Inventory`. 5 views (Index, Reservations, Audit, AdjustStock, PendingAdjustments) created. Legacy `InventoryController` + 5 legacy `Views/Inventory/` views deleted. Magazyn nav dropdown updated to `asp-area="Inventory" asp-controller="Stock"`. Controller already used new BC services (`IStockQueryService`, `IStockService`) — no service swap needed. 1361/1361 tests passing. | [ADR-0011](../docs/adr/0011-inventory-availability-bc-design.md), [ADR-0024](../docs/adr/0024-controller-routing-strategy.md) |
+| **Currencies — switch live** | `CurrencyController` migrated to `Areas/Currencies`. 4 views (Index, Create, Edit, Details). Legacy `CurrencyController` + 4 legacy `Views/Currency/` views deleted. Zaplecze nav updated to `asp-area="Currencies"`. Service swapped from legacy sync `ICurrencyService` (Application.Services.Currencies) to new async `ICurrencyService` (Application.Supporting.Currencies.Services). Action renames: `AddCurrency→Create`, `EditCurrency→Edit`, `ViewCurrency→Details`, `DeleteCurrency→Delete`. 1361/1361 tests passing. | [ADR-0008](../docs/adr/0008-supporting-currencies-bc-design.md), [ADR-0024](../docs/adr/0024-controller-routing-strategy.md) |
+| **Inventory/Availability — switch live** | `StockController` migrated to `Areas/Inventory`.
 | **Sales/Fulfillment Slice 2 — switch live** | ShipmentController added to `Areas/Sales`.
 | **Sales/Coupons Slice 1 — switch live** |
 | **Sales/Fulfillment Slice 1 — switch live** |
@@ -46,7 +47,7 @@ Only the atomic switch (controller migration + remove legacy code) remains.
 |---|---|---|
 | **AccountProfile** | ✅ **Switch live** — `ProfileController` migrated to `Areas/AccountProfile`, 8 views (Index, All, Create, Details, Edit, EditContactInfo, AddAddress, EditAddress), legacy `CustomerController`/`AddressController`/`ContactDetailController` + views deleted, nav updated. Legacy `ICustomerService` DI retained (legacy `OrderService` dependency). | [ADR-0005](../docs/adr/0005-accountprofile-bc-userprofile-aggregate-design.md) |
 | **Catalog** | ✅ **Switch live** — `ProductController` + `CategoryController` + `TagController` + `ImageController` migrated to `Areas/Catalog`, 11 views (Product: Index/All/Details/Create/Edit; Category: Index/Create/Edit; Tag: Index/Create/Edit). Legacy `ItemController`/`ImageController`/`TagController`/`TypeController` + 14 views deleted. Nav updated. Legacy `IItemService` DI retained (legacy `OrderService` dependency). `IImageService` retained (Catalog `ImageController` still uses it). | [ADR-0007](../docs/adr/0007-catalog-bc-product-category-tag-aggregate-design.md) |
-| **Currencies** | Migrate `CurrencyController` (async) → coordinate with Catalog switch → atomic switch | [ADR-0008](../docs/adr/0008-supporting-currencies-bc-design.md) |
+| **Currencies** | ✅ **Switch live** — `CurrencyController` in `Areas/Currencies`, new async BC service, legacy controller + views deleted, nav updated. | [ADR-0008](../docs/adr/0008-supporting-currencies-bc-design.md) |
 | **TimeManagement** | `CurrencyRateSyncTask` atomic switch | [ADR-0009](../docs/adr/0009-supporting-timemanagement-bc-design.md) |
 | **Inventory/Availability** | ✅ **Switch live** — `StockController` migrated to `Areas/Inventory`, 5 views, legacy controller + legacy views deleted, nav updated. | [ADR-0011](../docs/adr/0011-inventory-availability-bc-design.md) |
 | **Presale/Checkout Slice 1** | Ready for production — no controller migration needed (Slice 1 is new BFF endpoints only) | [ADR-0012](../docs/adr/0012-presale-checkout-bc-design.md) |

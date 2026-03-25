@@ -1,0 +1,22 @@
+@model CurrencyVm
+
+@{
+    ViewData["Title"] = "Szczegóły waluty";
+}
+
+<div>
+    <h4>Szczegóły waluty</h4>
+    <hr />
+    <dl class="row">
+        <dt class="col-sm-2">Id</dt>
+        <dd class="col-sm-10">@Model.Id</dd>
+        <dt class="col-sm-2">Kod</dt>
+        <dd class="col-sm-10">@Model.Code</dd>
+        <dt class="col-sm-2">Opis</dt>
+        <dd class="col-sm-10">@Model.Description</dd>
+    </dl>
+</div>
+<div>
+    <a asp-action="Edit" asp-route-id="@Model.Id">Edytuj</a> |
+    <a asp-action="Index">Wróć do listy walut</a>
+</div>

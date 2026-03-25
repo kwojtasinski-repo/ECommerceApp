@@ -37,7 +37,7 @@
 | **Sales / Payments** | ⚠️ IN PROGRESS | `Areas/Sales/Controllers/PaymentsController.cs` | Yes — `Controllers/PaymentController.cs` still live | Yes — `Views/Payment/` still exist |
 | **Sales / OrderItems** | ⚠️ IN PROGRESS | `Areas/Sales/Controllers/OrderItemsController.cs` | Yes — `Controllers/OrderItemController.cs` still live | Yes — `Views/OrderItem/` still exists |
 | **Inventory** | ✅ DONE | `Areas/Inventory/Controllers/StockController.cs` | No — `Controllers/InventoryController.cs` removed ✅ | No — `Views/Inventory/` removed ✅ |
-| **Currencies** | ❌ NOT STARTED | None | Yes — `Controllers/CurrencyController.cs` still live | Yes — `Views/Currency/` still exist |
+| **Currencies** | ✅ DONE | `Areas/Currencies/Controllers/CurrencyController.cs` | No — `Controllers/CurrencyController.cs` removed ✅ | No — `Views/Currency/` removed ✅ |
 | **IAM / UserManagement** | ❌ NOT STARTED | None | Yes — `Controllers/UserManagementController.cs` still live | Yes — `Views/UserManagement/` still exist |
 | **Jobs** | ❌ NOT STARTED | None | Yes — `Controllers/JobManagementController.cs` still live | Yes — `Views/JobManagement/` still exist |
 
@@ -211,6 +211,6 @@
 | 3 | **Catalog legacy view cleanup** | Delete `Views/Item/` and `Views/Tag/` — controllers already gone, views are orphaned |
 | 4 | **Coupon legacy view cleanup** | Delete `Views/Coupon/`, `Views/CouponType/`, `Views/CouponUsed/` |
 | 5 | **Inventory** ✅ DONE | **StockController** live in `Areas/Inventory`, legacy removed |
-| 6 | **Currencies / Jobs / IAM** | Pure backoffice, no cross-BC deps — can be done in parallel |
+| 6 | **Currencies** ✅ DONE | **CurrencyController** live in `Areas/Currencies`, legacy removed, new async service |
 | 7 | **Sales atomic switch** (Orders + Payments + OrderItems) | Delete `Controllers/OrderController.cs`, `Controllers/OrderItemController.cs`, `Controllers/PaymentController.cs` and all legacy `Views/Order/`, `Views/Payment/`, `Views/OrderItem/` — largest step, requires R-3/R-4/R-5 resolved first |
 | 8 | **Refund / Shipment cleanup** | Delete legacy `Views/Refund/` after confirming no nav links reference old routes |

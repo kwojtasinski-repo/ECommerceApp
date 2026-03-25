@@ -1,17 +1,16 @@
-﻿@model ECommerceApp.Application.ViewModels.Currency.ListCurrencyVm
-
+@model CurrencyListVm
 
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Waluty";
 }
 
 <h1>Waluty</h1>
 
 <p>
-    <a asp-action="AddCurrency">Dodaj walutę</a>
+    <a asp-action="Create">Dodaj walutę</a>
 </p>
 
-<form id="search-form" asp-action="Index" asp-controller="Currency" method="post">
+<form id="search-form" asp-action="Index" method="post">
     <div class="input-group mb-3">
         <input type="text" asp-for="SearchString" name="searchString" id="searchString" class="form-control" placeholder="Wyszukaj..." />
         <button type="submit" class="btn btn-outline-secondary">Wyszukaj</button>
@@ -19,12 +18,8 @@
     <table class="table">
         <thead>
             <tr>
-                <th>
-                    Id
-                </th>
-                <th>
-                    Kod
-                </th>
+                <th>Id</th>
+                <th>Kod</th>
                 <th>Akcja</th>
             </tr>
         </thead>
@@ -32,15 +27,11 @@
             @foreach (var currency in Model.Currencies)
             {
                 <tr>
+                    <td>@currency.Id</td>
+                    <td>@currency.Code</td>
                     <td>
-                        @Html.DisplayFor(modelCurrency => currency.Id)
-                    </td>
-                    <td>
-                        @Html.DisplayFor(modelCurrency => currency.Code)
-                    </td>
-                    <td>
-                        @Html.ActionLink("Edytuj", "EditCurrency", new {  id = currency.Id  }) |
-                        @Html.ActionLink("Szczegóły", "ViewCurrency", new { id = currency.Id }) |
+                        <a asp-action="Edit" asp-route-id="@currency.Id">Edytuj</a> |
+                        <a asp-action="Details" asp-route-id="@currency.Id">Szczegóły</a> |
                         <a class="anchor-link" onclick="deleteCurrency(@currency.Id, '@currency.Code')">Usuń</a>
                     </td>
                 </tr>
@@ -80,7 +71,7 @@
 
             try {
                 showError();
-                await ajaxRequest.send('/Currency/DeleteCurrency/' + id, 'DELETE', undefined);
+                await ajaxRequest.send('/Currencies/Currency/Delete/' + id, 'DELETE', undefined);
                 window.location.reload();
             } catch (error) {
                 if (error.status === statusCodes.Unauthorized) {
