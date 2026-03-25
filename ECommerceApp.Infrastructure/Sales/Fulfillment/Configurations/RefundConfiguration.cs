@@ -16,6 +16,10 @@ namespace ECommerceApp.Infrastructure.Sales.Fulfillment.Configurations
                    .ValueGeneratedOnAdd();
 
             builder.Property(r => r.OrderId).IsRequired();
+            builder.HasIndex(r => r.OrderId);
+
+            builder.Property(r => r.UserId).HasMaxLength(450).IsRequired();
+            builder.HasIndex(r => r.UserId);
             builder.Property(r => r.Reason).HasMaxLength(1000).IsRequired();
             builder.Property(r => r.OnWarranty).IsRequired();
 

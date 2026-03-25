@@ -9,5 +9,6 @@ namespace ECommerceApp.Application.Sales.Fulfillment.ViewModels
         bool OnWarranty,
         string Status,
         DateTime RequestedAt,
-        DateTime? ProcessedAt);
+        DateTime? ProcessedAt,
+        string UserId);
 }

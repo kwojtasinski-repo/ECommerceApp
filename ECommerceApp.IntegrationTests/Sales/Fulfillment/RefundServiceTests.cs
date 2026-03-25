@@ -20,7 +20,8 @@ namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
                 OrderId: int.MaxValue,
                 Reason: "Damaged goods",
                 OnWarranty: false,
-                Items: new List<RequestRefundItemDto> { new(ProductId: 1, Quantity: 1) });
+                Items: new List<RequestRefundItemDto> { new(ProductId: 1, Quantity: 1) },
+                UserId: "test-user");
 
             var result = await _service.RequestRefundAsync(dto);
 

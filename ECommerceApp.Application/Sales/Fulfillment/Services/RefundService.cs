@@ -42,7 +42,7 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
             }
 
             var items = dto.Items.Select(i => RefundItem.Create(i.ProductId, i.Quantity));
-            var refund = Refund.Create(dto.OrderId, dto.Reason, dto.OnWarranty, items);
+            var refund = Refund.Create(dto.OrderId, dto.Reason, dto.OnWarranty, items, dto.UserId);
             await _refunds.AddAsync(refund, ct);
 
             return RefundRequestResult.Requested;
@@ -133,7 +133,8 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
                 refund.OnWarranty,
                 refund.Status.ToString(),
                 refund.RequestedAt,
-                refund.ProcessedAt);
+                refund.ProcessedAt,
+                refund.UserId);
 
         private static RefundDetailsVm MapToDetailsVm(Refund refund)
             => new(
@@ -144,6 +145,7 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
                 refund.Status.ToString(),
                 refund.RequestedAt,
                 refund.ProcessedAt,
-                refund.Items.Select(i => new RefundItemVm(i.ProductId, i.Quantity)).ToList());
+                refund.Items.Select(i => new RefundItemVm(i.ProductId, i.Quantity)).ToList(),
+                refund.UserId);
     }
 }

@@ -9,6 +9,7 @@ namespace ECommerceApp.Domain.Sales.Fulfillment
     {
         public RefundId Id { get; private set; } = default!;
         public int OrderId { get; private set; }
+        public string UserId { get; private set; } = default!;
         public string Reason { get; private set; } = default!;
         public bool OnWarranty { get; private set; }
         public RefundStatus Status { get; private set; }
@@ -20,11 +21,16 @@ namespace ECommerceApp.Domain.Sales.Fulfillment
 
         private Refund() { }
 
-        public static Refund Create(int orderId, string reason, bool onWarranty, IEnumerable<RefundItem> items)
+        public static Refund Create(int orderId, string reason, bool onWarranty, IEnumerable<RefundItem> items, string userId)
         {
             if (orderId <= 0)
             {
                 throw new DomainException("OrderId must be positive.");
+            }
+
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                throw new DomainException("UserId is required.");
             }
 
             if (string.IsNullOrWhiteSpace(reason))
@@ -41,6 +47,7 @@ namespace ECommerceApp.Domain.Sales.Fulfillment
             var refund = new Refund
             {
                 OrderId = orderId,
+                UserId = userId,
                 Reason = reason,
                 OnWarranty = onWarranty,
                 Status = RefundStatus.Requested,

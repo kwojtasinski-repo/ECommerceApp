@@ -18,7 +18,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         {
             var items = new[] { RefundItem.Create(10, 3), RefundItem.Create(20, 1) };
 
-            var refund = Refund.Create(99, "Defective product", true, items);
+            var refund = Refund.Create(99, "Defective product", true, items, "user-1");
 
             refund.OrderId.Should().Be(99);
             refund.Reason.Should().Be("Defective product");
@@ -38,7 +38,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [InlineData(-1)]
         public void Create_InvalidOrderId_ShouldThrowDomainException(int orderId)
         {
-            var act = () => Refund.Create(orderId, "reason", false, DefaultItems());
+            var act = () => Refund.Create(orderId, "reason", false, DefaultItems(), "user-1");
 
             act.Should().Throw<DomainException>().WithMessage("*OrderId*positive*");
         }
@@ -49,7 +49,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [InlineData("   ")]
         public void Create_InvalidReason_ShouldThrowDomainException(string? reason)
         {
-            var act = () => Refund.Create(1, reason!, false, DefaultItems());
+            var act = () => Refund.Create(1, reason!, false, DefaultItems(), "user-1");
 
             act.Should().Throw<DomainException>().WithMessage("*Reason*required*");
         }
@@ -57,7 +57,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public void Create_NullItems_ShouldThrowDomainException()
         {
-            var act = () => Refund.Create(1, "reason", false, null!);
+            var act = () => Refund.Create(1, "reason", false, null!, "user-1");
 
             act.Should().Throw<DomainException>().WithMessage("*Items*required*");
         }
@@ -65,7 +65,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public void Create_EmptyItems_ShouldThrowDomainException()
         {
-            var act = () => Refund.Create(1, "reason", false, Array.Empty<RefundItem>());
+            var act = () => Refund.Create(1, "reason", false, Array.Empty<RefundItem>(), "user-1");
 
             act.Should().Throw<DomainException>().WithMessage("*At least one*");
         }
@@ -75,7 +75,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public void Approve_RequestedRefund_ShouldSetStatusToApproved()
         {
-            var refund = Refund.Create(1, "reason", false, DefaultItems());
+            var refund = Refund.Create(1, "reason", false, DefaultItems(), "user-1");
 
             refund.Approve();
 
@@ -87,7 +87,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public void Approve_AlreadyApprovedRefund_ShouldThrowDomainException()
         {
-            var refund = Refund.Create(1, "reason", false, DefaultItems());
+            var refund = Refund.Create(1, "reason", false, DefaultItems(), "user-1");
             refund.Approve();
 
             var act = () => refund.Approve();
@@ -98,7 +98,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public void Approve_RejectedRefund_ShouldThrowDomainException()
         {
-            var refund = Refund.Create(1, "reason", false, DefaultItems());
+            var refund = Refund.Create(1, "reason", false, DefaultItems(), "user-1");
             refund.Reject();
 
             var act = () => refund.Approve();
@@ -111,7 +111,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public void Reject_RequestedRefund_ShouldSetStatusToRejected()
         {
-            var refund = Refund.Create(1, "reason", false, DefaultItems());
+            var refund = Refund.Create(1, "reason", false, DefaultItems(), "user-1");
 
             refund.Reject();
 
@@ -123,7 +123,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public void Reject_AlreadyRejectedRefund_ShouldThrowDomainException()
         {
-            var refund = Refund.Create(1, "reason", false, DefaultItems());
+            var refund = Refund.Create(1, "reason", false, DefaultItems(), "user-1");
             refund.Reject();
 
             var act = () => refund.Reject();
@@ -134,7 +134,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public void Reject_ApprovedRefund_ShouldThrowDomainException()
         {
-            var refund = Refund.Create(1, "reason", false, DefaultItems());
+            var refund = Refund.Create(1, "reason", false, DefaultItems(), "user-1");
             refund.Approve();
 
             var act = () => refund.Reject();

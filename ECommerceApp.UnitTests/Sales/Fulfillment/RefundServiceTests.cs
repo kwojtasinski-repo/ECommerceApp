@@ -34,7 +34,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         private static Refund CreateRequestedRefund(int id = 1, int orderId = 99)
         {
             var items = new[] { RefundItem.Create(10, 2), RefundItem.Create(20, 1) };
-            var refund = Refund.Create(orderId, "Defective", true, items);
+            var refund = Refund.Create(orderId, "Defective", true, items, "user-1");
             typeof(Refund).GetProperty(nameof(Refund.Id))!
                 .GetSetMethod(nonPublic: true)!
                 .Invoke(refund, new object[] { new RefundId(id) });
@@ -46,7 +46,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
             {
                 new(10, 2),
                 new(20, 1)
-            });
+            }, UserId: "user-1");
 
         // ── RequestRefundAsync ────────────────────────────────────────────────
 

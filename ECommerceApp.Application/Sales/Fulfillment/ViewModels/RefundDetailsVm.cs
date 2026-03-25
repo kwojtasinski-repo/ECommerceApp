@@ -13,5 +13,6 @@ namespace ECommerceApp.Application.Sales.Fulfillment.ViewModels
         string Status,
         DateTime RequestedAt,
         DateTime? ProcessedAt,
-        IReadOnlyList<RefundItemVm> Items);
+        IReadOnlyList<RefundItemVm> Items,
+        string UserId);
 }

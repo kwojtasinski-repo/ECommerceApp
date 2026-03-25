@@ -6,5 +6,6 @@ namespace ECommerceApp.Application.Sales.Fulfillment.DTOs
         int OrderId,
         string Reason,
         bool OnWarranty,
-        IReadOnlyList<RequestRefundItemDto> Items);
+        IReadOnlyList<RequestRefundItemDto> Items,
+        string UserId);
 }
