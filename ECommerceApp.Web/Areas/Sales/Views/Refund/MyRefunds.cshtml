@@ -1,0 +1,44 @@
+@model RefundListVm
+
+@{
+    ViewData["Title"] = "Moje zwroty";
+}
+
+<h1>Moje zwroty</h1>
+
+@if (Model.Refunds == null || Model.Refunds.Count == 0)
+{
+    <p><em>Nie masz żadnych zwrotów.</em></p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Id zamówienia</th>
+                <th>Powód</th>
+                <th>Gwarancja</th>
+                <th>Status</th>
+                <th>Data zgłoszenia</th>
+                <th>Akcja</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var refund in Model.Refunds)
+            {
+                <tr>
+                    <td>@refund.Id</td>
+                    <td>@refund.OrderId</td>
+                    <td>@refund.Reason</td>
+                    <td>@(refund.OnWarranty ? "Tak" : "Nie")</td>
+                    <td>@refund.Status</td>
+                    <td>@refund.RequestedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                    <td>
+                        <a asp-area="Sales" asp-controller="Refund" asp-action="View" asp-route-id="@refund.Id">Szczegóły</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

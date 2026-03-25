@@ -5,7 +5,7 @@
 > For confirmed bugs see [`.github/context/known-issues.md`](./known-issues.md).
 > For planned work see [`docs/roadmap/README.md`](../docs/roadmap/README.md).
 
-*Last updated: 2026-03-26 (Presale/Checkout Slice 2 switch live)*
+*Last updated: 2026-03-26 (Sales/Fulfillment Slice 1 — RefundController atomic switch live)*
 
 ---
 
@@ -23,7 +23,8 @@
 
 | Area | Summary | ADR |
 |---|---|---|
-| **Presale/Checkout Slice 2 — switch live** | All acceptance criteria met. `ICheckoutService`, `CheckoutService`, `CheckoutResult`, `ISoftReservationService` extensions (`GetAllForUserAsync`, `GetPriceChangesAsync`, `CommitAllForUserAsync`, `RevertAllForUserAsync`), `IOrderService.PlaceOrderFromPresaleAsync`, `IOrderClient` ACL + `OrderClientAdapter`, API `GET /price-changes` + `POST /confirm`. Unit tests: `CheckoutServiceTests` (19), `GetPriceChangesTests` (7). Integration tests: `SoftReservationServiceTests` (8), `CheckoutServiceIntegrationTests` (4). EC-001: Accept the race. 442 integration tests passing. | [ADR-0012](../docs/adr/0012-presale-checkout-bc-design.md) §11–14 |
+| **Sales/Fulfillment Slice 1 — switch live** | Atomic switch complete. `UserId` added to `Refund` aggregate (property, `Create()`, guard, EF config). DB migration `AddUserIdToRefunds` applied (indexes on `OrderId` + `UserId`). New `Areas/Sales/Controllers/RefundController.cs` (8 actions, scope checks). 5 new views (`Index`, `Edit`, `View`, `Request`, `MyRefunds`). `InventoryRefundApprovedHandler` switched from legacy `Sales.Payments.Messages.RefundApproved` (flat) to `Sales.Fulfillment.Messages.RefundApproved` (enriched `Items[]`). Legacy `Web/Controllers/RefundController.cs` removed. Legacy `IRefundService` DI registration removed. 46 tests passing. Legacy service class files retained for Step 8 cleanup. | [ADR-0017](../docs/adr/0017-sales-fulfillment-bc-design.md), [ADR-0024](../docs/adr/0024-controller-routing-strategy.md) |
+| **Presale/Checkout Slice 2 — switch live** |
 | **Sales/Payments — switch live** | All acceptance criteria met. Web Area controller + views wired. Integration tests: PaymentServiceTests (8), OrderPlacedHandlerTests (3), OrderPaymentConfirmedHandlerTests (2), OrderPaymentExpiredHandlerTests (2). 430 integration tests passing. Legacy `PaymentHandler` retained for Step 5 cleanup. | [ADR-0015](../docs/adr/0015-sales-payments-bc-design.md), [ADR-0024](../docs/adr/0024-controller-routing-strategy.md) |
 | **Sales/Orders — switch live** |
 | **API tiered access — implemented** | Trusted purchase policy (`api:purchase` claim OR `Service` role), max 5 units per product per API order line (hardcoded now, backoffice-configurable later via in-memory cache), payment URL returned from checkout confirm (`WebOptions:BaseUrl` + fixed path). Web quantity cap: `AddToCartDtoValidator` (99 limit). | [ADR-0025](../docs/adr/0025-api-tiered-access-trusted-purchase-policy.md) |
@@ -47,7 +48,7 @@ Only the atomic switch (controller migration + remove legacy code) remains.
 | **Inventory/Availability** | Data migration (`Items.Quantity` → `inventory.StockItems`) → replace `ItemHandler` calls with `IMessageBroker` → atomic switch | [ADR-0011](../docs/adr/0011-inventory-availability-bc-design.md) |
 | **Presale/Checkout Slice 1** | Ready for production — no controller migration needed (Slice 1 is new BFF endpoints only) | [ADR-0012](../docs/adr/0012-presale-checkout-bc-design.md) |
 | **Sales/Coupons Slice 1** | Migrate `CouponController` / `CouponUsedController` / `CouponTypeController` → remove legacy `CouponHandler` → atomic switch | [ADR-0016](../docs/adr/0016-sales-coupons-bc-design.md) |
-| **Sales/Fulfillment Slice 1** | Migrate `RefundController` → remove legacy `RefundService` → atomic switch; `InventoryRefundApprovedHandler` import update deferred to atomic switch | [ADR-0017](../docs/adr/0017-sales-fulfillment-bc-design.md) |
+| **Sales/Fulfillment Slice 1** | ✅ **Switch live** — `RefundController` migrated, legacy service DI removed, `InventoryRefundApprovedHandler` switched to Fulfillment messages. Legacy class files retained for Step 8 cleanup. | [ADR-0017](../docs/adr/0017-sales-fulfillment-bc-design.md) |
 
 ---
 

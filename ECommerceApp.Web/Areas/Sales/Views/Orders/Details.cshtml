@@ -102,6 +102,11 @@
     </table>
 }
 
-<div>
+<div class="d-flex gap-2">
     <a asp-area="Sales" asp-controller="Orders" asp-action="MyOrders">Wróć do moich zamówień</a>
+    @if (Model.Status == OrderStatus.PaymentConfirmed || Model.Status == OrderStatus.Fulfilled)
+    {
+        <text>|</text>
+        <a asp-area="Sales" asp-controller="Refund" asp-action="Request" asp-route-orderId="@Model.Id">Złóż wniosek o zwrot</a>
+    }
 </div>

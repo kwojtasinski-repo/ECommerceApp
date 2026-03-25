@@ -1,0 +1,65 @@
+@model RefundListVm
+
+@{
+    ViewData["Title"] = "Zwroty";
+}
+
+<h1>Zwroty</h1>
+
+<form asp-area="Sales" asp-controller="Refund" asp-action="Index" method="post">
+    <div class="input-group mb-3">
+        <input type="number" name="pageSize" value="@Model.PageSize" class="form-control" style="max-width:80px;" placeholder="Rozmiar strony" />
+        <input type="number" name="pageNo" value="@Model.CurrentPage" class="form-control" style="max-width:80px;" placeholder="Strona" />
+        <input type="text" name="searchString" value="@Model.SearchString" class="form-control" placeholder="Wyszukaj..." />
+        <button type="submit" class="btn btn-outline-secondary">Wyszukaj</button>
+    </div>
+</form>
+
+@if (Model.Refunds == null || Model.Refunds.Count == 0)
+{
+    <p><em>Brak zwrotów.</em></p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Id zamówienia</th>
+                <th>Powód</th>
+                <th>Gwarancja</th>
+                <th>Status</th>
+                <th>Data zgłoszenia</th>
+                <th>Akcja</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var refund in Model.Refunds)
+            {
+                <tr>
+                    <td>@refund.Id</td>
+                    <td>@refund.OrderId</td>
+                    <td>@refund.Reason</td>
+                    <td>@(refund.OnWarranty ? "Tak" : "Nie")</td>
+                    <td>@refund.Status</td>
+                    <td>@refund.RequestedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                    <td>
+                        <a asp-area="Sales" asp-controller="Refund" asp-action="Edit" asp-route-id="@refund.Id">Edytuj</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <nav>
+        <ul class="pagination">
+            @for (int i = 1; i <= (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize); i++)
+            {
+                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                    <a class="page-link" asp-area="Sales" asp-controller="Refund" asp-action="Index"
+                       asp-route-pageNo="@i" asp-route-pageSize="@Model.PageSize" asp-route-searchString="@Model.SearchString">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}

@@ -1,6 +1,6 @@
 using ECommerceApp.Application.Inventory.Availability.Services;
 using ECommerceApp.Application.Messaging;
-using ECommerceApp.Application.Sales.Payments.Messages;
+using ECommerceApp.Application.Sales.Fulfillment.Messages;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,7 +17,10 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
 
         public async Task HandleAsync(RefundApproved message, CancellationToken ct = default)
         {
-            await _stockService.ReturnAsync(message.ProductId, message.Quantity, ct);
+            foreach (var item in message.Items)
+            {
+                await _stockService.ReturnAsync(item.ProductId, item.Quantity, ct);
+            }
         }
     }
 }

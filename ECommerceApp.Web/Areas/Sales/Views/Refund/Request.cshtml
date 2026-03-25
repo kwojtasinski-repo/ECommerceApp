@@ -1,0 +1,59 @@
+@model OrderDetailsVm
+
+@{
+    ViewData["Title"] = "Złóż wniosek o zwrot";
+}
+
+<h1>Złóż wniosek o zwrot</h1>
+
+<h4>Zamówienie nr @Model.Number</h4>
+
+<form asp-area="Sales" asp-controller="Refund" asp-action="Request" method="post">
+    <input type="hidden" name="orderId" value="@Model.Id" />
+
+    <div class="mb-3">
+        <label for="reason" class="form-label">Powód zwrotu</label>
+        <textarea name="reason" id="reason" class="form-control" rows="3" required maxlength="1000"></textarea>
+    </div>
+
+    <div class="form-check mb-3">
+        <input type="checkbox" name="onWarranty" value="true" id="onWarranty" class="form-check-input" />
+        <label for="onWarranty" class="form-check-label">Na gwarancji</label>
+    </div>
+
+    @if (Model.OrderItems != null && Model.OrderItems.Count > 0)
+    {
+        <h4>Pozycje do zwrotu</h4>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Produkt</th>
+                    <th>Zamówiona ilość</th>
+                    <th>Ilość do zwrotu</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.OrderItems)
+                {
+                    <tr>
+                        <td>@(item.ProductName ?? item.ItemId.ToString())</td>
+                        <td>@item.Quantity</td>
+                        <td>
+                            <input type="hidden" name="productIds" value="@item.ItemId" />
+                            <input type="number" name="quantities" value="@item.Quantity" min="0" max="@item.Quantity" class="form-control" style="max-width:100px;" />
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+
+    <div class="d-flex gap-2 mt-3">
+        <button type="submit" class="btn btn-primary">Złóż wniosek</button>
+        <a asp-area="Sales" asp-controller="Orders" asp-action="Details" asp-route-id="@Model.Id" class="btn btn-secondary">Anuluj</a>
+    </div>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
