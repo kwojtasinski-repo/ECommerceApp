@@ -1,12 +1,14 @@
+using ECommerceApp.Application.Identity.IAM.Services;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Domain.Model;
+using ECommerceApp.Domain.Identity.IAM;
 using ECommerceApp.Infrastructure.Database;
-using IamApplicationUser = ECommerceApp.Domain.Identity.IAM.ApplicationUser;
+using ECommerceApp.Infrastructure.Identity.IAM.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
 {
@@ -31,7 +33,7 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
                 identityBuilder.AddEntityFrameworkStores<Context>();
             }
 
-            services.AddIdentityCore<IamApplicationUser>()
+            services.AddIdentityCore<ApplicationUser>()
                 .AddRoles<IdentityRole>()
                 .AddDefaultTokenProviders()
                 .AddEntityFrameworkStores<IamDbContext>();
@@ -44,6 +46,9 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
                 .AddScoped(typeof(IUserStore<>), typeof(UserStore<>))
                 .Configure<AuthOptions>(configuration.GetSection("Jwt"))
                 .AddSingleton<IJwtManager, JwtManager>()
+                .AddSingleton<IRefreshTokenOptions>(sp =>
+                    sp.GetRequiredService<IOptions<AuthOptions>>().Value)
+                .AddScoped<Domain.Identity.IAM.IRefreshTokenRepository, RefreshTokenRepository>()
                 .AddScoped<IUserContext, UserContext>();
         }
     }

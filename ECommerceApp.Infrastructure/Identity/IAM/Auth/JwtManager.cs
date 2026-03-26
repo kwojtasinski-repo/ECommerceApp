@@ -23,12 +23,13 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
                 SecurityAlgorithms.HmacSha256);
         }
 
-        public string IssueToken(string userId, string email, IEnumerable<string> roles, IEnumerable<Claim>? extraClaims = null)
+        public IssuedJwt IssueToken(string userId, string email, IEnumerable<string> roles, IEnumerable<Claim>? extraClaims = null)
         {
+            var jti = Guid.NewGuid().ToString();
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, userId),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+                new Claim(JwtRegisteredClaimNames.Jti, jti),
                 new Claim(ClaimTypes.NameIdentifier, userId),
                 new Claim(ClaimTypes.Name, email)
             };
@@ -40,7 +41,7 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
             }
 
             var token = new JwtSecurityToken(_authOptions.Value.Issuer, _authOptions.Value.Issuer, claims, expires: DateTime.Now.AddMinutes(120), signingCredentials: _signingCredentials);
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            return new IssuedJwt(new JwtSecurityTokenHandler().WriteToken(token), jti);
         }
     }
 }

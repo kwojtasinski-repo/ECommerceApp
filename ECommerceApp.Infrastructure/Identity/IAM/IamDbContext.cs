@@ -8,6 +8,8 @@ namespace ECommerceApp.Infrastructure.Identity.IAM
 {
     public class IamDbContext : IdentityDbContext<ApplicationUser, IdentityRole, string>
     {
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+
         public IamDbContext(DbContextOptions<IamDbContext> options) : base(options)
         {
         }
