@@ -3,6 +3,7 @@ description: >
   Use this agent to generate Architecture Decision Records (ADRs) for ECommerceApp.
   It reads the ADR template, scans the codebase for context, assigns the next ADR number,
   and produces a fully filled ADR file saved under /docs/adr/.
+  Trigger phrases: create ADR, new ADR, generate ADR, architecture decision record.
 name: adr-generator
 tools:
   - read/readFile

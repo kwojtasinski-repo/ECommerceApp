@@ -42,6 +42,7 @@ namespace ECommerceApp.IntegrationTests.Common
                 ReplaceMessageBrokerWithSynchronous(services);
                 RemoveBackgroundMessageDispatcher(services);
                 ReplaceDbContextMigratorsWithNoOp(services);
+                EnsureAllBcDbContextsCreated(services);
             });
         }
 
@@ -203,6 +204,30 @@ namespace ECommerceApp.IntegrationTests.Common
 
             // For DbContexts that aren't registered as DbContext directly,
             // we rely on the fact that EF Core calls OnModelCreating on first use
+        }
+
+        /// <summary>
+        /// Ensures all per-BC InMemory databases have their schemas created (applies HasData seeds).
+        /// Called automatically during host setup after all InMemory replacements are complete.
+        /// </summary>
+        private static void EnsureAllBcDbContextsCreated(IServiceCollection services)
+        {
+            var bcContextTypes = services
+                .Where(d => d.ServiceType.IsGenericType
+                    && d.ServiceType.GetGenericTypeDefinition() == typeof(DbContextOptions<>)
+                    && d.ServiceType != typeof(DbContextOptions<Context>))
+                .Select(d => d.ServiceType.GetGenericArguments()[0])
+                .ToList();
+
+            using var tempSp = services.BuildServiceProvider();
+            using var scope = tempSp.CreateScope();
+            foreach (var ctxType in bcContextTypes)
+            {
+                if (scope.ServiceProvider.GetService(ctxType) is DbContext ctx)
+                {
+                    ctx.Database.EnsureCreated();
+                }
+            }
         }
     }
 }

@@ -16,26 +16,11 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
     {
         public static IServiceCollection AddIamInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
-            var iamFeatureOptions = configuration.GetSection("Iam").Get<IamFeatureOptions>() ?? new IamFeatureOptions();
-
             services.AddDbContext<IamDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
-            var identityBuilder = services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
-                    .AddRoles<IdentityRole>();
-
-            if (iamFeatureOptions.UseIamStore)
-            {
-                identityBuilder.AddEntityFrameworkStores<IamDbContext>();
-            }
-            else
-            {
-                identityBuilder.AddEntityFrameworkStores<Context>();
-            }
-
-            services.AddIdentityCore<ApplicationUser>()
+            services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
                 .AddRoles<IdentityRole>()
-                .AddDefaultTokenProviders()
                 .AddEntityFrameworkStores<IamDbContext>();
 
             services.AddScoped<IDbContextMigrator, DbContextMigrator<IamDbContext>>();
@@ -48,7 +33,7 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
                 .AddSingleton<IJwtManager, JwtManager>()
                 .AddSingleton<IRefreshTokenOptions>(sp =>
                     sp.GetRequiredService<IOptions<AuthOptions>>().Value)
-                .AddScoped<Domain.Identity.IAM.IRefreshTokenRepository, RefreshTokenRepository>()
+                .AddScoped<IRefreshTokenRepository, RefreshTokenRepository>()
                 .AddScoped<IUserContext, UserContext>();
         }
     }

@@ -3,6 +3,7 @@ description: >
   Code reviewer agent for ECommerceApp.
   Performs automated PR review: checks ADR compliance, anti-patterns, coding standards,
   test coverage, and cross-BC boundary rules. Reports BLOCKS MERGE or APPROVED.
+  Trigger phrases: review code, check PR, code review, review changes, check anti-patterns.
 name: code-reviewer
 tools:
   - read/readFile
@@ -24,20 +25,27 @@ with findings that either **block merge** or are **advisory**.
 
 Always load these files **before** inspecting any changed code:
 
-1. `.github/context/anti-patterns.context.md` — **BLOCKS MERGE** source. Any violation here blocks.
+1. `.github/context/anti-patterns-critical.context.md` — **BLOCKS MERGE** source. Any violation here blocks.
 2. `.github/context/project-state.md` — verify no changes touch blocked BCs or frozen legacy code.
 3. `.github/instructions/dotnet.instructions.md` — architecture and coding standards.
 4. `.github/instructions/safety.instructions.md` — allowed/disallowed actions.
 
 Then load **only the relevant** per-stack instructions based on which files changed:
 
-- `.cs` in `Infrastructure/` → `efcore.instructions.md`
-- `.cs` in `Web/` → `razorpages.instructions.md`
-- `.cs` in `API/` → `web-api.instructions.md`
-- `.cshtml` or `wwwroot/` → `frontend.instructions.md`
-- `Domain/Shared/` → `shared-primitives.instructions.md`
-- `UnitTests/` or `IntegrationTests/` → `testing.instructions.md`
-- `Infrastructure/Migrations/` → `migration-policy.instructions.md`
+| Changed file type                   | Load additionally                   |
+| ----------------------------------- | ----------------------------------- |
+| `.cs` in `Infrastructure/`          | `efcore.instructions.md`            |
+| `.cs` in `Web/`                     | `razorpages.instructions.md`        |
+| `.cs` in `API/`                     | `web-api.instructions.md`           |
+| `.cshtml` or `wwwroot/`             | `frontend.instructions.md`          |
+| `Domain/Shared/`                    | `shared-primitives.instructions.md` |
+| `UnitTests/` or `IntegrationTests/` | `testing.instructions.md`           |
+| `Infrastructure/Migrations/`        | `migration-policy.instructions.md`  |
+
+> **Context budget**: load at most 2 context files + relevant per-stack instructions. Never bulk-load everything.
+
+> **Sync note**: The conditional loading table above is maintained by `@copilot-setup-maintainer` (Workflow 9).  
+> If an instruction file is added or removed, the maintainer cascades the update here automatically.
 
 ---
 
@@ -45,7 +53,7 @@ Then load **only the relevant** per-stack instructions based on which files chan
 
 ### 1. Anti-pattern scan (BLOCKS MERGE)
 
-For each changed file, verify **none** of the rules in `anti-patterns.context.md` are violated.
+For each changed file, verify **none** of the rules in `anti-patterns-critical.context.md` are violated.
 Any match → mark as **BLOCKS MERGE** with the specific anti-pattern name and file/line reference.
 
 ### 2. ADR compliance

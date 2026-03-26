@@ -1,0 +1,87 @@
+@model ECommerceApp.Application.Identity.IAM.ViewModels.CreateUserVm
+
+@{
+    ViewData["Title"] = "AddUser";
+}
+
+<h1>Dodawanie użytkownika</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form id="userForm" asp-action="AddUser">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" id="LoginName" asp-for="UserName" class="form-control" />
+            <div class="form-group">
+                <label asp-for="Email" class="control-label">Email</label>
+                <input id="LoginInput" asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    <input class="form-check-input" asp-for="EmailConfirmed" /> Potwierdzony Email
+                </label>
+            </div>
+            <div class="form-group">
+                <label asp-for="Password" class="control-label">Hasło</label>
+                <input id="PasswordInput" type="password" asp-for="Password" class="form-control" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+            <div class="form-group mt-2 mb-2">
+                <label asp-for="UserRole" class="control-label">Rola: </label>
+                <select id="UserRole" asp-for="UserRole" asp-items="@(new SelectList(Model.AvailableRoles, "Id", "Name"))" class="form-select"></select>
+                <span asp-validation-for="UserRole" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Utwórz" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Powrót do listy użytkowników</a>
+</div>
+
+@section Scripts {
+    <script>
+        const userFormValidator = {
+            formId: "userForm",
+            login: {
+                controlId: 'LoginInput',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Email jest wymagany',
+                    v => v && emailRegex.test(v) || 'Email zawiera niepoprawny format',
+                ],
+                valid: false,
+                value: ''
+            },
+            password: {
+                controlId: 'PasswordInput',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Hasło jest wymagane',
+                    v => v && passwordRegex.test(v) || 'Hasło powinno zawierać 8 znaków w tym dużą i małą literę, cyfrę oraz znak specjalny',
+                ],
+                valid: false,
+                value: ''
+            },
+            userRole: {
+                controlId: 'UserRole',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Wymagane jest przypisanie przynajmniej 1 roli użytkownikowi'
+                ],
+                valid: false,
+                value: []
+            },
+            beforeSubmit: function () {
+                var loginName = document.querySelector('#LoginName');
+                loginName.value = this.login.value;
+            }
+        };
+
+
+        $(document).on('DOMInitialized', function (event, { forms }) {
+            forms.initFormValidator(userFormValidator);
+        });
+    </script>
+}

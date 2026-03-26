@@ -1,0 +1,65 @@
+@model ECommerceApp.Application.Identity.IAM.ViewModels.UserDetailsVm
+
+@{
+    ViewData["Title"] = "AddRolesToUser";
+}
+
+<h1>Dodawanie ról użytkownika</h1>
+
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form id="addRolesToUserForm" asp-action="AddRolesToUser">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="Id" class="form-control" />
+            <div class="form-group">
+                <label asp-for="UserName" class="control-label">Nazwa</label>
+                <input readonly asp-for="UserName" class="form-control" />
+                <span asp-validation-for="UserName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="Email" class="control-label">Email</label>
+                <input readonly asp-for="Email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div class="form-group form-check">
+                <label class="form-check-label">
+                    <input onclick="return false;" class="form-check-input" asp-for="EmailConfirmed" /> Potwierdzony email
+                </label>
+            </div>
+            <div class="form-group mt-2 mb-2">
+                <label asp-for="UserRole" class="control-label">Rola: </label>
+                <select id="UserRole" asp-for="UserRole" asp-items="@(new SelectList(Model.AvailableRoles, "Id", "Name"))" class="form-select"></select>
+                <span asp-validation-for="UserRole" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Utwórz" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Powrót do listy użytkowników</a>
+</div>
+
+@section Scripts {
+    <script>
+        const addRolesToUserFormValidator = {
+            formId: "addRolesToUserForm",
+            userRole: {
+                controlId: 'UserRole',
+                rules: [
+                    v => v && v.trim().length > 0 || 'Wymagane jest przypisanie przynajmniej 1 roli użytkownikowi'
+                ],
+                valid: false,
+                value: []
+            }
+        };
+
+
+        $(document).on('DOMInitialized', function (event, { forms }) {
+            forms.initFormValidator(addRolesToUserFormValidator);
+        });
+    </script>
+}

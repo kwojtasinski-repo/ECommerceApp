@@ -37,6 +37,7 @@ Auto-loaded by `applyTo:` globs — Copilot reads these automatically when editi
 | `shared-primitives.instructions.md` | `Domain/Shared/**`                  | TypedId, Money, Price, Quantity       |
 | `safety.instructions.md`            | `**`                                | Allowed/disallowed actions            |
 | `pre-edit.instructions.md`          | `**`                                | Pre-edit checklist, doc suggestions   |
+| `copilot-config-sync.instructions.md` | `.github/**`                     | Auto-sync trigger for config changes  |
 | `docs-index.instructions.md`        | `**`                                | This file — routing table             |
 
 ## Agents (`.github/agents/`)
@@ -132,7 +133,7 @@ Read an ADR **only** when the "When to read" condition matches the files you are
 | `known-issues.md`          | **Always** before fixing any bug — check if already tracked               |
 | `repo-index.md`            | When you need to locate code across the repo — full codebase map          |
 | `future-skills.md`         | When creating skills, adding cross-BC events, or planning automation      |
-| `anti-patterns.context.md` | Loaded by `@code-reviewer` — consolidated "never do" rules (BLOCKS MERGE) |
+| `anti-patterns-critical.context.md` | Loaded by `@code-reviewer` — BLOCKS MERGE violations (critical only) |
 
 ## Skills (`.github/skills/`)
 

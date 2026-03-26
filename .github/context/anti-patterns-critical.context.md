@@ -1,6 +1,6 @@
-# Anti-Patterns — ECommerceApp
+# Anti-Patterns — Critical (BLOCKS MERGE)
 
-> **BLOCKS MERGE** — any violation below must be fixed before a PR is merged.
+> Any violation below **blocks merge** — must be fixed before a PR is merged.
 > Consolidated from: `safety.instructions.md`, `dotnet.instructions.md`, `project-state.md`, `shared-primitives.instructions.md`, `efcore.instructions.md`.
 
 _Last updated: 2026-03-17_

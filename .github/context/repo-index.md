@@ -8,7 +8,7 @@
 > For confirmed bugs → see [`known-issues.md`](./known-issues.md)
 > For documentation lookup → see [`.github/instructions/docs-index.instructions.md`](../instructions/docs-index.instructions.md)
 
-_Last updated: 2026-03-22_
+_Last updated: 2026-03-26_
 
 ---
 
@@ -18,14 +18,14 @@ _Last updated: 2026-03-22_
 | ------------------------- | ------------------------------ |
 | **Total C# source files** | ~1,143 (excl. bin/obj)         |
 | **Total lines of C#**     | ~44,500 (excl. migrations)     |
-| **Razor views (.cshtml)** | 153                            |
+| **Razor views (.cshtml)** | 176                            |
 | **JavaScript modules**    | 11                             |
 | **Identity Razor Pages**  | 14                             |
 | **ADRs**                  | 25                             |
 | **DbContexts**            | 12 (1 legacy + 11 per-BC)      |
 | **DB migration folders**  | 12                             |
 | **HTTP scenario files**   | 9                              |
-| **Test files**            | 161 (96 unit + 65 integration) |
+| **Test files**            | 149 (97 unit + 52 integration) |
 
 ---
 
@@ -174,8 +174,9 @@ Each BC has code in up to 4 layers. "Legacy" means old flat code that coexists a
 | Domain         | `Domain/Supporting/TimeManagement/`                                | `ScheduledJob.cs`, `JobExecution.cs`, `DeferredJobInstance.cs`, Events (17 files)                                                                                       |
 | Application    | `Application/Supporting/TimeManagement/`                           | Handlers, Models, Services, scheduler interfaces                                                                                                                        |
 | Infrastructure | `Infrastructure/Supporting/TimeManagement/`                        | `TimeManagementDbContext.cs`, `CronSchedulerService.cs`, `DeferredJobPollerService.cs`, `DeferredJobScheduler.cs`, poller/dispatcher services, Repositories, Migrations |
-| Web (V2)       | `Web/Controllers/V2JobController.cs`, `JobManagementController.cs` |                                                                                                                                                                         |
-| Views (V2)     | `Web/Views/V2Job/` (5), `JobManagement/` (2)                       |                                                                                                                                                                         |
+| Web (Area) ✅  | `Web/Areas/Jobs/Controllers/JobManagementController.cs`            | 2 views: Index, History                                                                                                                                                 |
+| Web (V2)       | `Web/Controllers/V2JobController.cs`                               |                                                                                                                                                                         |
+| Views (V2)     | `Web/Views/V2Job/` (5)                                             |                                                                                                                                                                         |
 | ADR            | `docs/adr/0009`                                                    |                                                                                                                                                                         |
 
 ### AccountProfile
@@ -200,15 +201,14 @@ Each BC has code in up to 4 layers. "Legacy" means old flat code that coexists a
 
 | Layer          | Path                                          | Key files                                     |
 | -------------- | --------------------------------------------- | --------------------------------------------- |
-| Domain         | `Domain/Identity/IAM/ApplicationUser.cs`      | Single file — extends ASP.NET Core Identity   |
+| Domain         | `Domain/Identity/IAM/`                        | `ApplicationUser.cs`, `RefreshToken.cs`, `IRefreshTokenRepository.cs` |
 | Application    | `Application/Identity/IAM/`                   | DTOs, Services, ViewModels                    |
-| Infrastructure | `Infrastructure/Identity/IAM/`                | `IamDbContext.cs`, Auth logic, Migrations     |
-| Web (V2)       | `Web/Controllers/V2UserController.cs`         |                                               |
-| Web (legacy)   | `Web/Controllers/UserManagementController.cs` |                                               |
+| Infrastructure | `Infrastructure/Identity/IAM/`                | `IamDbContext.cs`, Auth logic, `RefreshTokenRepository.cs`, Migrations (2) |
+| Web (Area) ✅  | `Web/Areas/IAM/Controllers/UserManagementController.cs` | 5 views: Index, AddUser, EditUser, ChangeUserPassword, AddRolesToUser |
+| Web (V2)       | `Web/Controllers/V2UserController.cs`         | 4 views: `Web/Views/V2User/` (Index, Add, Edit, Details) |
+| Web (legacy)   | `Web/Controllers/UserManagementController.cs` | — legacy, do not extend |
 | Web Areas      | `Web/Areas/Identity/Pages/Account/`           | Login, Register, ForgotPassword, Manage pages |
-| API (legacy)   | `API/Controllers/LoginController.cs`          |                                               |
-| Views (V2)     | `Web/Views/V2User/` (4)                       |                                               |
-| Views (legacy) | `Web/Views/UserManagement/` (5)               |                                               |
+| API (legacy)   | `API/Controllers/LoginController.cs`          | JWT sign-in — pending swap to new `IAuthenticationService` |
 | ADR            | `docs/adr/0019`                               |                                               |
 
 ---

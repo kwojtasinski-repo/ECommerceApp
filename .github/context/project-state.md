@@ -5,7 +5,7 @@
 > For confirmed bugs see [`.github/context/known-issues.md`](./known-issues.md).
 > For planned work see [`docs/roadmap/README.md`](../docs/roadmap/README.md).
 
-*Last updated: 2026-05-27 (Jobs — JobManagementController switch live)*
+*Last updated: 2026-03-26 (IAM — Area controller live; Refresh token feature Steps 1–4 done)*
 
 ---
 
@@ -13,6 +13,7 @@
 
 | Area | State | Key blocker |
 |---|---|---|
+| **Identity/IAM BC** | **🟡 Switch in progress** — Domain ✅ Application ✅ Infrastructure ✅ `IamDbContext` ✅ Unit tests ✅ — `Areas/IAM/Controllers/UserManagementController.cs` + 5 views ✅ — `InitIamSchema` migration ✅ pending prod sign-off — Refresh token feature Steps 1–4 ✅ (`RefreshToken` entity, `IRefreshTokenRepository`, `RefreshTokenRepository`, migration `AddRefreshTokensTable`, `AuthenticationService.RefreshAsync/RevokeAsync`, `RefreshTokenTests`) — Steps 5–7 (`AuthController`, `.http`, integration tests) pending. | Migration `AddRefreshTokensTable` pending approval; `LoginController` swap pending |
 | **Sales/Orders BC** | **✅ Switch live** — Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migration ✅ approved — Web Area controllers + views ✅, DI wired ✅, PlaceOrder profile prefill ✅, API tiered access (G1–G8) ✅, nav links ✅. All acceptance criteria met. Legacy code retained for Step 8 cleanup. | None — **switch is live** |
 | **Sales/Payments BC** | **✅ Switch live** — Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migrations ✅ approved — Web Area controller + views ✅, DI wired ✅. All acceptance criteria met. Legacy `PaymentHandler` retained for Step 5 cleanup. | None — **switch is live** |
 | **Presale/Checkout BC** | **✅ Slice 2 Switch live** — `ICheckoutService` + `CheckoutService` + `CheckoutResult` ✅, `ISoftReservationService.GetAllForUserAsync` + `GetPriceChangesAsync` ✅, `IOrderService.PlaceOrderFromPresaleAsync` ✅, `IOrderClient` ACL + `OrderClientAdapter` ✅, API endpoints `GET /price-changes` + `POST /confirm` ✅, unit tests ✅, integration tests ✅ (8 new: SoftReservationServiceTests ×8 + CheckoutServiceIntegrationTests ×4). EC-001 decision: Accept the race. | None — **switch is live** |

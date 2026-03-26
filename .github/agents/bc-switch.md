@@ -4,6 +4,7 @@ description: >
   Executes the full legacy-to-new switch for a completed bounded context:
   verifies readiness, identifies legacy files, swaps DI registrations,
   removes legacy code, runs build and tests, and reports a commit-ready summary.
+  Trigger phrases: switch BC, atomic switch, legacy switch, BC migration, swap bounded context.
 name: bc-switch
 tools:
   - read/readFile

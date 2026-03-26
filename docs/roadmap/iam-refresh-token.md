@@ -1,7 +1,7 @@
 # Roadmap: Identity/IAM — Refresh Token Feature
 
 > ADR: [ADR-0019](../adr/0019-identity-iam-bc-design.md) — Identity/IAM BC Design (amendment pending — see note below)
-> Status: 🔵 Planned — design decisions settled, implementation not started
+> Status: � In progress — Steps 1–4 ✅ done (2026-03-26); Steps 5–7 pending
 > **Fits inside**: IAM BC — implement before or alongside `iam-atomic-switch.md` Step 2
 
 ---
@@ -22,9 +22,9 @@
 
 | File | What's there |
 |---|---|
-| `Application/Identity/IAM/DTOs/SignInResponseDto.cs` | `record SignInResponseDto(string AccessToken, string RefreshToken)` — `RefreshToken` always `""` today |
-| `Infrastructure/Identity/IAM/Auth/JwtManager.cs` | Issues `Jti` claim (`Guid.NewGuid()`) on every token — the binding key is already there |
-| `Application/Identity/IAM/Services/AuthenticationService.cs` | `SignInAsync` issues token, returns `SignInResponseDto("token", "")` — stub ready to be filled |
+| `Application/Identity/IAM/DTOs/SignInResponseDto.cs` | `record SignInResponseDto(string AccessToken, string RefreshToken)` — ✅ `RefreshToken` now populated |
+| `Infrastructure/Identity/IAM/Auth/JwtManager.cs` | Issues `Jti` claim (`Guid.NewGuid()`) on every token — ✅ returns `(Token, Jti)` tuple |
+| `Application/Identity/IAM/Services/AuthenticationService.cs` | ✅ `SignInAsync` persists `RefreshToken` entity; `RefreshAsync` + `RevokeAsync` implemented |
 
 ---
 
@@ -51,46 +51,46 @@ public class RefreshToken
 
 ## Implementation steps
 
-### Step 1 — Domain entity + repository interface
+### Step 1 — Domain entity + repository interface ✅ Done
 
-| File | Action |
+| File | Status |
 |---|---|
-| `Domain/Identity/IAM/RefreshToken.cs` | New entity — `Create(userId, token, jwtId, expiresAt)`, `Revoke()` method |
-| `Domain/Identity/IAM/IRefreshTokenRepository.cs` | `AddAsync`, `GetByTokenAsync`, `RevokeAllForUserAsync` |
+| `Domain/Identity/IAM/RefreshToken.cs` | ✅ `Create(userId, token, jwtId, expiresAt)`, `Revoke()` method |
+| `Domain/Identity/IAM/IRefreshTokenRepository.cs` | ✅ `AddAsync`, `GetByTokenAsync`, `RevokeAllForUserAsync` |
 
 ---
 
-### Step 2 — EF Core configuration + migration
+### Step 2 — EF Core configuration + migration ✅ Done
 
-| File | Action |
+| File | Status |
 |---|---|
-| `Infrastructure/Identity/IAM/Configurations/RefreshTokenConfiguration.cs` | Map to `iam.RefreshTokens`; index on `Token` (unique); index on `UserId` |
-| `Infrastructure/Identity/IAM/IamDbContext.cs` | Add `DbSet<RefreshToken>` |
-| `Infrastructure/Identity/IAM/Repositories/RefreshTokenRepository.cs` | Implement `IRefreshTokenRepository` |
-| Migration `AddRefreshTokensTable` | **Requires approval per migration policy before going to production** |
+| `Infrastructure/Identity/IAM/Configurations/RefreshTokenConfiguration.cs` | ✅ Map to `iam.RefreshTokens`; indexes in place |
+| `Infrastructure/Identity/IAM/IamDbContext.cs` | ✅ `DbSet<RefreshToken>` added |
+| `Infrastructure/Identity/IAM/Repositories/RefreshTokenRepository.cs` | ✅ Implemented |
+| Migration `20260326002201_AddRefreshTokensTable` | ✅ Generated — **pending approval per migration policy** |
 
 ---
 
-### Step 3 — Update `IJwtManager` + `JwtManager`
+### Step 3 — Update `IJwtManager` + `JwtManager` ✅ Done
 
-| File | Change |
+| File | Status |
 |---|---|
-| `Application/Interfaces/IJwtManager.cs` | Return `(string Token, string Jti)` tuple instead of bare `string` |
-| `Infrastructure/Identity/IAM/Auth/JwtManager.cs` | Return the `Jti` alongside the token so `AuthenticationService` can store it |
+| `Application/Interfaces/IJwtManager.cs` | ✅ Returns `(string Token, string Jti)` tuple |
+| `Infrastructure/Identity/IAM/Auth/JwtManager.cs` | ✅ Returns `Jti` alongside token |
 
 > **Non-breaking**: callers that only need the token string use `.Token`; no other callers today.
 
 ---
 
-### Step 4 — Update `IAuthenticationService` + `AuthenticationService`
+### Step 4 — Update `IAuthenticationService` + `AuthenticationService` ✅ Done
 
-| Method | Change |
+| Method | Status |
 |---|---|
-| `SignInAsync` | After issuing JWT: generate opaque refresh token (`CryptographicRandomBytes`), persist `RefreshToken` entity, return real `RefreshToken` in `SignInResponseDto` |
-| `RefreshAsync(string refreshToken)` | Validate token exists + not revoked + not expired + `JwtId` matches a valid JWT → revoke old → issue new pair → return `SignInResponseDto` |
-| `RevokeAsync(string refreshToken)` | Mark token revoked — used on explicit logout |
+| `SignInAsync` | ✅ Persists `RefreshToken` entity, returns real `RefreshToken` in `SignInResponseDto` |
+| `RefreshAsync(string refreshToken)` | ✅ Validate + rotate + return new pair |
+| `RevokeAsync(string refreshToken)` | ✅ Mark token revoked |
 
-> Theft detection: if `GetByTokenAsync` finds an **already-revoked** token, call `RevokeAllForUserAsync(userId)` — entire user's session wiped.
+> Theft detection: if `GetByTokenAsync` finds an **already-revoked** token, calls `RevokeAllForUserAsync(userId)` — entire user's session wiped.
 
 ---
 
@@ -111,12 +111,12 @@ public class RefreshToken
 
 ---
 
-### Step 7 — Unit tests
+### Step 7 — Unit tests ✅ Done
 
-| Test class | Cases |
+| Test class | Status |
 |---|---|
-| `AuthenticationServiceTests` (extend existing) | `RefreshAsync` happy path; expired token → exception; revoked token → theft detection (all revoked); wrong `JwtId` → exception |
-| `RefreshTokenTests` | `Create` valid; `Revoke` sets flag; cannot revoke twice |
+| `AuthenticationServiceTests` (extended) | ✅ `RefreshAsync` happy path; expired token → exception; revoked token → theft detection; wrong `JwtId` → exception |
+| `RefreshTokenTests` | ✅ `Create` valid; `Revoke` sets flag; cannot revoke twice |
 
 ---
 

@@ -28,10 +28,10 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
             var jti = Guid.NewGuid().ToString();
             var claims = new List<Claim>
             {
-                new Claim(JwtRegisteredClaimNames.Sub, userId),
-                new Claim(JwtRegisteredClaimNames.Jti, jti),
-                new Claim(ClaimTypes.NameIdentifier, userId),
-                new Claim(ClaimTypes.Name, email)
+                new(JwtRegisteredClaimNames.Sub, userId),
+                new(JwtRegisteredClaimNames.Jti, jti),
+                new(ClaimTypes.NameIdentifier, userId),
+                new(ClaimTypes.Name, email)
             };
 
             claims.AddRange(roles.Select(role => new Claim(ClaimsIdentity.DefaultRoleClaimType, role)));

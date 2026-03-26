@@ -1,3 +1,21 @@
+---
+description: >
+  Copilot configuration maintainer for ECommerceApp.
+  Keeps .github/ config, docs-index, changelog, and .sln structure in sync.
+  Cascades changes to code-reviewer. Runs audits on request.
+  Trigger phrases: audit setup, sync config, update changelog, check setup, maintain copilot config.
+name: copilot-setup-maintainer
+tools:
+  - read/readFile
+  - search/fileSearch
+  - search/textSearch
+  - search/listDirectory
+  - read/problems
+  - edit/editFile
+  - create/createFile
+  - runCommand
+---
+
 # Copilot Setup Maintainer Agent
 
 > **Invoke**: `@copilot-setup-maintainer`
@@ -34,6 +52,7 @@ Two responsibilities:
 | `.github/instructions/safety.instructions.md`     | Allowed/disallowed actions                                 |
 | `.github/instructions/pre-edit.instructions.md`   | Pre-edit checklist                                         |
 | `.github/COPILOT-SETUP-CHANGELOG.md`              | Setup changelog & current state snapshot                   |
+| `.github/agents/code-reviewer.md`                 | Code reviewer — cascading context-loading updates only     |
 | `ECommerceApp.sln`                                | Solution folders and solution items for Copilot/docs       |
 
 ## Files you may reference (read-only)
@@ -134,25 +153,27 @@ Steps:
 9. Verify all cross-references between files use correct filenames (no old/renamed names).
 10. Verify `COPILOT-SETUP-CHANGELOG.md` "Current state summary" counts match actual file counts.
 11. Run **Workflow 8** (Verify repo-index metrics) as part of the audit.
-12. Present a summary table:
+12. Run **Workflow 9** (Verify code-reviewer conditional loading table matches current instruction files).
+13. Present a summary table:
 
-| Check                               | Status  | Action needed |
-| ----------------------------------- | ------- | ------------- |
-| ADR index complete                  | ✅ / ❌ | ...           |
-| Roadmap index complete              | ✅ / ❌ | ...           |
-| Instruction files listed            | ✅ / ❌ | ...           |
-| Prompts listed                      | ✅ / ❌ | ...           |
-| Agents listed                       | ✅ / ❌ | ...           |
-| Skills listed                       | ✅ / ❌ | ...           |
-| .sln projects match \*.csproj files | ✅ / ❌ | ...           |
-| .sln Copilot/docs folders in sync   | ✅ / ❌ | ...           |
-| copilot-instructions.md ≤ 4K chars  | ✅ / ❌ | ...           |
-| applyTo: frontmatter present        | ✅ / ❌ | ...           |
-| Cross-references valid              | ✅ / ❌ | ...           |
-| Changelog counts accurate           | ✅ / ❌ | ...           |
-| Repo-index metrics accurate         | ✅ / ❌ | ...           |
+| Check                                | Status  | Action needed |
+| ------------------------------------ | ------- | ------------- |
+| ADR index complete                   | ✅ / ❌ | ...           |
+| Roadmap index complete               | ✅ / ❌ | ...           |
+| Instruction files listed             | ✅ / ❌ | ...           |
+| Prompts listed                       | ✅ / ❌ | ...           |
+| Agents listed                        | ✅ / ❌ | ...           |
+| Skills listed                        | ✅ / ❌ | ...           |
+| .sln projects match \*.csproj files  | ✅ / ❌ | ...           |
+| .sln Copilot/docs folders in sync    | ✅ / ❌ | ...           |
+| copilot-instructions.md ≤ 4K chars   | ✅ / ❌ | ...           |
+| applyTo: frontmatter present         | ✅ / ❌ | ...           |
+| Cross-references valid               | ✅ / ❌ | ...           |
+| Changelog counts accurate            | ✅ / ❌ | ...           |
+| Repo-index metrics accurate          | ✅ / ❌ | ...           |
+| Code-reviewer context loading synced | ✅ / ❌ | ...           |
 
-13. Offer to fix any issues found (only in files you own).
+14. Offer to fix any issues found (only in files you own).
 
 ### Workflow 7 — Update changelog
 
@@ -190,7 +211,32 @@ Steps:
 
 6. Offer to update `repo-index.md` with corrected values (only in the "At a Glance" table — do not rewrite the rest of the file).
 
-### Workflow 9 — Sync solution structure only
+### Workflow 9 — Cascade config changes to code-reviewer
+
+Trigger: Any change to files that the code-reviewer references — anti-patterns, instruction files, safety rules, or project-state. Also triggered by `copilot-config-sync.instructions.md` suggestions.
+
+Steps:
+
+1. Identify what changed:
+   - Anti-patterns file (`context/anti-patterns-critical.context.md`) — rules added/removed/renamed.
+   - Instruction file added/removed/renamed under `instructions/`.
+   - Safety rules changed (`instructions/safety.instructions.md`).
+   - Project-state changed (`context/project-state.md`) — frozen legacy table updated.
+2. Open `.github/agents/code-reviewer.md`.
+3. Apply cascading updates:
+
+| What changed                                   | Update in code-reviewer                                                      |
+| ---------------------------------------------- | ---------------------------------------------------------------------------- |
+| Anti-pattern rule added/removed                | Verify § "Anti-pattern scan" still references correct file and rule names    |
+| Instruction file added                         | Add row to conditional loading table under "Before reviewing — load context" |
+| Instruction file removed/renamed               | Remove or update the corresponding row                                       |
+| `applyTo:` glob changed on an instruction file | Update the matching condition in the conditional loading table               |
+| Legacy code table changed in project-state     | Verify § "Legacy code protection" references match                           |
+
+4. After editing `code-reviewer.md`, run **Workflow 7** (update changelog).
+5. Report what was cascaded.
+
+### Workflow 10 — Sync solution structure only
 
 Trigger: User says "Sync solution structure" or only wants `.sln` updated without other config changes.
 

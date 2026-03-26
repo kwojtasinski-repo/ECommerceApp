@@ -1,7 +1,7 @@
 # Roadmap: Identity/IAM BC — Atomic Switch
 
 > ADR: [ADR-0019](../adr/0019-identity-iam-bc-design.md) — Identity/IAM BC Design and Atomic Switch Plan
-> Status: 🟡 In progress — Domain ✅ Application ✅ Infrastructure ✅ `InitIamSchema` migration ✅
+> Status: 🟡 In progress — Domain ✅ Application ✅ Infrastructure ✅ migrations ✅ Area controller ✅ Refresh token Steps 1–4 ✅
 > **Coordinate with**: Sales/Orders atomic switch (`orders-atomic-switch.md`) — step 3 below
 
 ---
@@ -14,7 +14,10 @@
 | Application — `IAuthenticationService`, `AuthenticationService`, `IUserManagementService`, `UserManagementService`, `IJwtManager`, DTOs, ViewModels, DI | ✅ Done |
 | Infrastructure — `IamDbContext` (schema `iam`), `JwtManager`, `SignInManagerInternal`, `UserManagerInternal`, `UserContext`, `IamFeatureOptions` (`UseIamStore`), Google OAuth wiring | ✅ Done |
 | `InitIamSchema` migration — `Infrastructure/Identity/IAM/Migrations/20260222222309_InitIamSchema.cs` | ✅ Done — **pending production sign-off** |
-| Unit tests — `UserManagementServiceTests`, `AuthenticationServiceTests` | ✅ Done |
+| Unit tests — `UserManagementServiceTests`, `AuthenticationServiceTests`, `RefreshTokenTests` | ✅ Done |
+| Refresh token feature (Steps 1–4) — `RefreshToken` entity, `IRefreshTokenRepository`, `RefreshTokenRepository`, migration `AddRefreshTokensTable` (2026-03-26), `AuthenticationService.RefreshAsync/RevokeAsync` | ✅ Done — **`AddRefreshTokensTable` migration pending production sign-off** |
+| `Areas/IAM/Controllers/UserManagementController.cs` + 5 views (Index, AddUser, EditUser, ChangeUserPassword, AddRolesToUser) | ✅ Done |
+| Integration test — `UserManagementServiceTests.cs` | ✅ Done |
 
 ---
 
