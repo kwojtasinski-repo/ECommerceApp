@@ -107,6 +107,6 @@
     @if (Model.Status == OrderStatus.PaymentConfirmed || Model.Status == OrderStatus.Fulfilled)
     {
         <text>|</text>
-        <a asp-area="Sales" asp-controller="Refund" asp-action="Request" asp-route-orderId="@Model.Id">Złóż wniosek o zwrot</a>
+        <a asp-area="Sales" asp-controller="Refund" asp-action="Request" asp-route-id="@Model.Id">Złóż wniosek o zwrot</a>
     }
 </div>

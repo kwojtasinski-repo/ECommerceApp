@@ -9,7 +9,7 @@
 <h4>Zamówienie nr @Model.Number</h4>
 
 <form asp-area="Sales" asp-controller="Refund" asp-action="Request" method="post">
-    <input type="hidden" name="orderId" value="@Model.Id" />
+    <input type="hidden" name="id" value="@Model.Id" />
 
     <div class="mb-3">
         <label for="reason" class="form-label">Powód zwrotu</label>

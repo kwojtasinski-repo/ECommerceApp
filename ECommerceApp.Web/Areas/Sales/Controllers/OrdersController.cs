@@ -3,6 +3,7 @@ using ECommerceApp.Application.Sales.Orders.Services;
 using ECommerceApp.Web.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Web.Areas.Sales.Controllers
@@ -50,6 +51,8 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
             var order = await _orderService.GetOrderDetailsAsync(id);
             if (order is null)
                 return NotFound();
+            if (!MaintenanceRoles.Any(r => User.IsInRole(r)) && order.UserId != GetUserId())
+                return Forbid();
             return View(order);
         }
 

@@ -67,6 +67,8 @@ namespace ECommerceApp.Web.Areas.IAM.Controllers
             }
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteUser(string id)
         {
             try

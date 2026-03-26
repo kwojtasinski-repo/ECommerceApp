@@ -96,6 +96,7 @@ namespace ECommerceApp.Application.Sales.Payments.Services
                 payment.Status.ToString(),
                 payment.ExpiresAt,
                 payment.ConfirmedAt,
-                payment.TransactionRef);
+                payment.TransactionRef,
+                payment.UserId);
     }
 }

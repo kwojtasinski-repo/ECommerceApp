@@ -21,7 +21,8 @@ namespace ECommerceApp.Application.Sales.Payments.ViewModels
         string Status,
         DateTime ExpiresAt,
         DateTime? ConfirmedAt,
-        string? TransactionRef);
+        string? TransactionRef,
+        string UserId);
 
     public sealed record PaymentListVm(
         IReadOnlyList<PaymentVm> Payments,

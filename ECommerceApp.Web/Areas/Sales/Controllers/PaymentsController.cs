@@ -5,6 +5,7 @@ using ECommerceApp.Web.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Web.Areas.Sales.Controllers
@@ -36,11 +37,10 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
             return View(new PaymentListVm(Array.Empty<PaymentVm>(), pageNo ?? 1, pageSize, 0));
         }
 
-        // id = orderId — loads the pending payment for an order
         [HttpGet]
         public async Task<IActionResult> Create(int id)
         {
-            var payment = await _paymentService.GetByOrderIdAsync(id);
+            var payment = await _paymentService.GetPendingByOrderIdAsync(id, GetUserId());
             if (payment is null)
                 return NotFound();
             return View(payment);
@@ -60,6 +60,8 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
             var payment = await _paymentService.GetByIdAsync(id);
             if (payment is null)
                 return NotFound();
+            if (!MaintenanceRoles.Any(r => User.IsInRole(r)) && payment.UserId != GetUserId())
+                return Forbid();
             return View(payment);
         }
 

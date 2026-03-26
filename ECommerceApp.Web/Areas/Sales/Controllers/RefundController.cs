@@ -85,9 +85,9 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Request(int orderId)
+        public async Task<IActionResult> Request(int id)
         {
-            var order = await _orderService.GetOrderDetailsAsync(orderId);
+            var order = await _orderService.GetOrderDetailsAsync(id);
             if (order is null)
                 return NotFound();
             if (order.UserId != GetUserId())
@@ -97,10 +97,10 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Request(int orderId, string reason, bool onWarranty, int[] productIds, int[] quantities)
+        public async Task<IActionResult> Request(int id, string reason, bool onWarranty, int[] productIds, int[] quantities)
         {
             var userId = GetUserId();
-            var order = await _orderService.GetOrderDetailsAsync(orderId);
+            var order = await _orderService.GetOrderDetailsAsync(id);
             if (order is null)
                 return NotFound();
             if (order.UserId != userId)
@@ -110,7 +110,7 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
                 .Zip(quantities, (pid, qty) => new RequestRefundItemDto(pid, qty))
                 .ToList();
 
-            var dto = new RequestRefundDto(orderId, reason, onWarranty, items, userId);
+            var dto = new RequestRefundDto(id, reason, onWarranty, items, userId);
             var result = await _refundService.RequestRefundAsync(dto);
 
             if (result == RefundRequestResult.OrderNotFound)
