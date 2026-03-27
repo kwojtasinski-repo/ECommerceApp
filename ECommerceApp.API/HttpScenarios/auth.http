@@ -1,0 +1,89 @@
+### ============================================================
+### Auth — Refresh Token endpoints
+### Base URL: https://localhost:49609
+###
+### Flow:
+###   1. POST /api/Login              → { accessToken, refreshToken }  (via LoginController)
+###   2. POST /api/auth/refresh       → { accessToken, refreshToken }  (rotate token pair)
+###   3. POST /api/auth/revoke        → 204 No Content                 (invalidate refresh token)
+###
+### Notes:
+###   - /api/auth/refresh is anonymous — no Bearer token required
+###   - /api/auth/revoke requires a valid Bearer access token
+###   - Reusing a rotated (spent) refresh token triggers theft detection and
+###     revokes ALL tokens for that user
+### ============================================================
+
+@baseUrl = https://localhost:49609
+@contentType = application/json
+@token = YOUR_JWT_TOKEN
+@refreshToken = YOUR_REFRESH_TOKEN
+
+# ============================================================
+# AUTH — obtain initial tokens
+# ============================================================
+
+### Login (get initial access + refresh token pair)
+POST {{baseUrl}}/api/Login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@localhost",
+  "password": "aDminN@W25!"
+}
+
+###
+
+# ============================================================
+# REFRESH — rotate token pair (anonymous)
+# ============================================================
+
+### Refresh token — returns new access token + new refresh token
+# Expected: 200 OK  →  { "accessToken": "...", "refreshToken": "..." }
+# Set @refreshToken above to the value returned by Login or a previous Refresh call
+POST {{baseUrl}}/api/auth/refresh
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+###
+
+### Refresh — invalid/expired token
+# Expected: 400 Bad Request
+POST {{baseUrl}}/api/auth/refresh
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "invalid-token-value"
+}
+
+###
+
+# ============================================================
+# REVOKE — invalidate a refresh token (requires auth)
+# ============================================================
+
+### Revoke refresh token
+# Expected: 204 No Content
+POST {{baseUrl}}/api/auth/revoke
+Content-Type: {{contentType}}
+Authorization: Bearer {{token}}
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+###
+
+### Revoke — attempt refresh after revocation
+# Expected: 400 Bad Request  (token already revoked)
+POST {{baseUrl}}/api/auth/refresh
+Content-Type: {{contentType}}
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+###

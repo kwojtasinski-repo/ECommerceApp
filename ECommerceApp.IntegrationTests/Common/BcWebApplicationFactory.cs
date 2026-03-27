@@ -4,6 +4,7 @@ using ECommerceApp.Web;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ValueGeneration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -34,6 +35,16 @@ namespace ECommerceApp.IntegrationTests.Common
         {
             // Let the base class handle the legacy Context → InMemory swap + seed data
             base.ConfigureWebHost(builder);
+
+            builder.ConfigureAppConfiguration(config =>
+            {
+                config.AddInMemoryCollection(new Dictionary<string, string>
+                {
+                    ["Jwt:Key"] = "test-integration-signing-key-must-be-at-least-32-chars!",
+                    ["Jwt:Issuer"] = "test-issuer",
+                    ["Jwt:RefreshTokenTtlDays"] = "7"
+                });
+            });
 
             builder.ConfigureServices(services =>
             {

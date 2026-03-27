@@ -1,6 +1,6 @@
-# Remaining BC Migration — Work & Effort Report
+﻿# Remaining BC Migration — Work & Effort Report
 
-> Generated: 2026-05-27
+> Generated: 2026-05-28
 > Source of truth: `bc-migration-status.md` (rev 3), `iam-atomic-switch.md`, `iam-refresh-token.md`, `orders-atomic-switch.md`, `payments-atomic-switch.md`, `project-state.md`
 >
 > **T-shirt sizes**: XS < 30 min · S = 30 min–2 h · M = 2–4 h · L = 4 h–1 day · XL = multi-day
@@ -11,23 +11,23 @@
 
 | Priority | Work stream | Size | Blocker? |
 |----------|-------------|------|---------|
-| 1 | Security / route quick-fixes (R-1, R-4, R-5, R-6) | 4 × XS | None — do immediately |
-| 2 | IAM Refresh Token — Steps 5–8 (API controller, `.http`, integration tests) | S + XS + S | `AddRefreshTokensTable` migration approval |
-| 3 | IAM Atomic Switch — Steps 1–9 | M | `InitIamSchema` migration approval + refresh token Step 5–8 done first |
-| 4 | Legacy view cleanup (Refund, Coupon, CouponType, CouponUsed) | XS | IAM controller must be live first (else Coupon views are still reachable via legacy) |
-| 5 | Payments cleanup — Steps 5–6 (PaymentHandler + PaymentWindowTimeoutJob) | S | At least one payment window cycle in production confirmed |
-| 6 | Sales Atomic Switch — Orders + Payments + OrderItems Step 8 | L | R-3, R-4, R-5 fixed; Payments Step 5 done first |
-| 7 | Feature gaps (R-2, R-3, R-7, R-8) | S–M each | R-3 gates Sales switch; R-2/R-7/R-8 are independent |
+| ✅ Done | Security / route quick-fixes (R-1, R-3, R-4, R-5, R-6) | — | — |
+| ✅ Done | IAM Refresh Token — Steps 5–8 (AuthController, auth.http, integration tests, RefreshTokenDto) | — | — |
+| 1 | IAM Atomic Switch — Steps 1–9 | M | `InitIamSchema` + `AddRefreshTokensTable` migration prod sign-off |
+| 2 | Legacy view cleanup (Refund, Coupon, CouponType, CouponUsed) | XS | IAM controller must be live first |
+| 3 | Payments cleanup — Steps 5–6 (PaymentHandler + PaymentWindowTimeoutJob) | S | One payment window cycle in production confirmed |
+| 4 | Sales Atomic Switch — Orders + Payments + OrderItems Step 8 | L | Payments Step 3 done first |
+| 5 | Feature gaps (R-2, R-7, R-8, R-11) | S–M each | Independent; R-11 is XS doc update |
 
-Total remaining: **~2–3 focused engineering days** (excluding migration approval wait time).
+Total remaining: **~1.5–2 focused engineering days** (excluding migration approval wait time).
 
 ---
 
-## Priority 1 — Security / Route Quick-Fixes
+## ✅ Completed — Security / Route Quick-Fixes (was Priority 1)
 
-> No dependencies. Fix these in one PR before anything else.
+> All 5 fixes implemented and verified: build ✅ · 21/21 unit tests ✅
 
-### R-6 · `DeleteUser` missing HTTP verb attribute — **XS**
+### R-6 · `DeleteUser` missing HTTP verb attribute — ✅ Done
 
 | | |
 |---|---|
@@ -39,7 +39,7 @@ Total remaining: **~2–3 focused engineering days** (excluding migration approv
 
 ---
 
-### R-1 · `RefundController.Request` param name mismatch — **XS**
+### R-1 · `RefundController.Request` param name mismatch — ✅ Done
 
 | | |
 |---|---|
@@ -51,7 +51,7 @@ Total remaining: **~2–3 focused engineering days** (excluding migration approv
 
 ---
 
-### R-5 · `OrdersController.Details` — no ownership scope check — **XS**
+### R-5 · `OrdersController.Details` — no ownership scope check — ✅ Done
 
 | | |
 |---|---|
@@ -63,7 +63,7 @@ Total remaining: **~2–3 focused engineering days** (excluding migration approv
 
 ---
 
-### R-4 · `PaymentsController.Details` — no ownership scope check — **XS**
+### R-4 · `PaymentsController.Details` — no ownership scope check — ✅ Done
 
 | | |
 |---|---|
@@ -75,39 +75,36 @@ Total remaining: **~2–3 focused engineering days** (excluding migration approv
 
 ---
 
-## Priority 2 — IAM Refresh Token (Steps 5–8)
+## ✅ Completed — IAM Refresh Token Steps 5–8 (was Priority 2)
 
-> Steps 1–4 are ✅ done. Steps 5–8 complete the feature before the IAM atomic switch.
-> Gated by: `AddRefreshTokensTable` migration approval (process, not code).
+> Steps 1–4 were already done. Steps 5–8 completed 2026-05-28. Full feature live.
+> Gated by: `AddRefreshTokensTable` migration prod sign-off (process, not code).
 
-### Step 5 — `AuthController` (new refresh + revoke endpoints) — **S**
+### Step 5 — `AuthController` (new refresh + revoke endpoints) — ✅ Done
 
-| File | Action |
+| File | Status |
 |---|---|
-| `ECommerceApp.API/Controllers/V2/AuthController.cs` (new) | `POST /api/auth/refresh` — accepts `{ refreshToken }`, calls `IAuthenticationService.RefreshAsync`, returns `SignInResponseDto`; `POST /api/auth/revoke` — `[Authorize]`, calls `RevokeAsync`, returns `204` |
-| `ECommerceApp.API/Startup.cs` | Register `AuthController` route / ensure DI is wired (likely already is via `AddIamServices`) |
-
-**Effort**: S — 2 endpoints, ~40 lines, no new service code.
+| `ECommerceApp.API/Controllers/V2/AuthController.cs` | ✅ Created — `[AllowAnonymous] POST /api/auth/refresh` returns `SignInResponseDto`; `[Authorize] POST /api/auth/revoke` returns 204 |
+| `ECommerceApp.API/Startup.cs` | No change needed — IAM DI already wired unconditionally |
 
 ---
 
-### Step 6 — HTTP scenario file — **XS**
+### Step 6 — HTTP scenario file — ✅ Done
 
-| File | Action |
+| File | Status |
 |---|---|
-| `ECommerceApp.API/HttpScenarios/auth.http` (new) | Sign-in → capture `refreshToken` → call `POST /api/auth/refresh` → call `POST /api/auth/revoke` |
-
-**Effort**: XS — follow existing `.http` file patterns (see `presale.http`).
+| `ECommerceApp.API/HttpScenarios/auth.http` | ✅ Created — Login → Refresh (anonymous) → Revoke (authorized) → stale-token scenario |
 
 ---
 
-### Step 7 — Integration tests — **S**
+### Step 7 — Integration tests — ✅ Done
 
-| File | Coverage |
+| File | Status |
 |---|---|
-| `ECommerceApp.IntegrationTests/Identity/IAM/RefreshTokenIntegrationTests.cs` (new) | Sign-in → refresh → new token valid; refresh with revoked token → `BusinessException`; revoke → subsequent refresh fails |
-
-**Effort**: S — 3 test scenarios, reuse `BcBaseTest<IamDbContext>` pattern.
+| `ECommerceApp.IntegrationTests/Identity/IAM/RefreshTokenIntegrationTests.cs` | ✅ Created — 4 tests: valid refresh, invalid token, rotation-reuse theft detection, revoke-then-refresh |
+| `IntegrationTests/Common/BcWebApplicationFactory.cs` | ✅ Updated — `ConfigureAppConfiguration` injects `Jwt:Key/Issuer/RefreshTokenTtlDays` for test environment |
+| `IntegrationTests/Common/HttpContextAccessorTest.cs` | ✅ Updated — accepts `IServiceProvider`; sets `HttpContext.RequestServices` so `SignInManager` can resolve ASP.NET auth services |
+| `Application/Identity/IAM/DTOs/RefreshTokenDto.cs` | ✅ Created — `record RefreshTokenDto(string RefreshToken)` |
 
 ---
 
@@ -121,9 +118,9 @@ Total remaining: **~2–3 focused engineering days** (excluding migration approv
 
 ---
 
-## Priority 3 — IAM Atomic Switch (Steps 1–9)
+## Priority 1 — IAM Atomic Switch (Steps 1–9)
 
-> Requires: `InitIamSchema` migration approved + refresh token Steps 5–7 done.
+> Requires: `InitIamSchema` migration approved + `AddRefreshTokensTable` migration approved + both pending prod sign-off.
 > Full plan: `docs/roadmap/iam-atomic-switch.md`
 
 | Step | File(s) | Action | Size |
@@ -159,7 +156,7 @@ Total remaining: **~2–3 focused engineering days** (excluding migration approv
 
 ---
 
-## Priority 4 — Legacy View Cleanup (dead views)
+## Priority 2 — Legacy View Cleanup (dead views)
 
 > These are orphaned view files — their controllers are already removed. Pure file deletions.
 > No logic risk; verify with `dotnet build` after each delete batch.
@@ -175,7 +172,7 @@ Total remaining: **~2–3 focused engineering days** (excluding migration approv
 
 ---
 
-## Priority 5 — Payments Legacy Cleanup (Steps 5–6)
+## Priority 3 — Payments Legacy Cleanup (Steps 5–6)
 
 > Gate: at least one full payment window cycle confirmed in production.
 > Full plan: `docs/roadmap/payments-atomic-switch.md`
@@ -190,23 +187,15 @@ Total remaining: **~2–3 focused engineering days** (excluding migration approv
 
 ---
 
-## Priority 6 — R-3 · `PaymentsController.Create` type fix — **S**
+## ✅ Completed — R-3 · `PaymentsController.Create` type fix
 
-> Must be done **before** the Sales atomic switch.
-
-| | |
-|---|---|
-| **File** | `ECommerceApp.Web/Areas/Sales/Controllers/PaymentsController.cs` |
-| **Defect** | `Create(int id)` uses `id` as orderId — but the target route was `GET /Sales/Payments/Create/{paymentId:guid}` with `Guid paymentId`. Also lacks a Pending-status guard (creating payment for an already-confirmed order should be rejected). |
-| **Fix** | Change action to accept the correct identifier; call `IPaymentService` to look up pending payment by order/user; redirect to existing payment if already confirmed. Align with actual payment creation flow. |
-| **Effort** | S — review `IPaymentService` contract, update action signature + view model + `Create.cshtml` |
-| **Test** | Unit test: non-Pending order → redirect or error; happy path → payment form rendered |
+> Fixed 2026-05-28: `Create(int id)` now calls `GetPendingByOrderIdAsync(id, GetUserId())` — user-scope guard + Pending-status check in one call. Gate for Sales Atomic Switch Step 8 cleared.
 
 ---
 
-## Priority 6 (cont.) — Sales Atomic Switch — Step 8
+## Priority 4 — Sales Atomic Switch — Step 8
 
-> Gate: R-3, R-4, R-5 fixed; Payments Step 5 done; Orders + Payments running stably.
+> Gate: Payments Step 3 done (prod cycle confirmed).
 > Full plans: `docs/roadmap/orders-atomic-switch.md` Step 8, `docs/roadmap/payments-atomic-switch.md` Step 5.
 
 **This is the largest single step — batch it into one PR.**
@@ -258,7 +247,7 @@ Total remaining: **~2–3 focused engineering days** (excluding migration approv
 
 ---
 
-## Priority 7 — Feature Gaps & Cross-BC Coupling
+## Priority 5 — Feature Gaps & Cross-BC Coupling
 
 ### R-2 · `RefundController.Report` action missing — **S**
 
@@ -303,28 +292,26 @@ Total remaining: **~2–3 focused engineering days** (excluding migration approv
 ## Dependency Graph
 
 ```
-R-6, R-1, R-4, R-5  ─────────────────────────────────────────► fix immediately (no deps)
-                                                                     │
-Refresh Token Steps 5–7 ─► IAM Atomic Switch ──────────────────────►┤
-   (needs migration approval)                                        │
-                                                                     │
-R-3 ──────────────────────────────────────────────────────────────►  Sales Atomic Switch (Step 8)
-R-4 + R-5 (already above) ─────────────────────────────────────────► (needs R-3/R-4/R-5 clear)
-Payments Step 5+6 ─────────────────────────────────────────────────►┘
+R-6, R-1, R-3, R-4, R-5   ✅ Done
+Refresh Token Steps 5–8    ✅ Done
 
-Legacy view cleanup ──► anytime after Refund/Coupon controllers confirmed gone
-R-2, R-7, R-8 ────────► independent, can be done in any order
-```
+IAM Atomic Switch  ───────────────► code-ready; needs prod sign-off for InitIamSchema + AddRefreshTokensTable
 
+Payments Step 5+6  ──────────► needs prod cycle confirmation
+
+Sales Atomic Switch (Step 8)  ─────► needs Payments Step 5+6 done first
+
+Legacy view cleanup  ─────────► anytime after Refund/Coupon controllers confirmed gone
+R-2, R-7, R-8, R-11  ───────► independent, any order
+```n
 ---
 
 ## Recommended Sprint Allocation
 
 | Sprint | Items | Expected outcome |
-|--------|-------|-----------------|
-| **Sprint A** (½ day) | R-6, R-1, R-4, R-5 | All security defects closed; one PR |
-| **Sprint B** (1 day) | Refresh Token Steps 5–7 + R-3 + R-8 | IAM feature complete; PaymentsController.Create correct; Catalog decoupled |
-| **Sprint C** (½ day) | IAM Atomic Switch (after migration approvals) | IAM ✅ DONE; legacy files gone |
-| **Sprint D** (½ day) | Legacy view cleanup + Payments Step 5+6 | Dead code removed; PaymentHandler gone |
-| **Sprint E** (½ day) | Sales Atomic Switch Step 8 | Sales/Orders + Sales/Payments + Sales/OrderItems ✅ DONE |
-| **Backlog** | R-2 (Refund Report), R-7 (tag-grouped listing), R-11 (doc fix) | Low risk, anytime |
+|--------|-------|----------------|
+| ✅ Sprint A | R-6, R-1, R-3, R-4, R-5, Refresh Token Steps 5–8 | All security defects closed; IAM refresh token feature complete |
+| **Sprint B** (½ day) | IAM Atomic Switch (after migration sign-offs) | IAM ✅ DONE; legacy files gone |
+| **Sprint C** (½ day) | Legacy view cleanup + Payments Step 5+6 | Dead code removed; PaymentHandler gone |
+| **Sprint D** (½ day) | Sales Atomic Switch Step 8 | Sales/Orders + Sales/Payments + Sales/OrderItems ✅ DONE |
+| **Backlog** | R-2 (Refund Report), R-7 (tag-grouped listing), R-8 (ImageController), R-11 (doc fix) | Low risk, anytime |

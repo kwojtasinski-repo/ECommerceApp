@@ -1,7 +1,7 @@
-# Roadmap: Identity/IAM — Refresh Token Feature
+﻿# Roadmap: Identity/IAM — Refresh Token Feature
 
 > ADR: [ADR-0019](../adr/0019-identity-iam-bc-design.md) — Identity/IAM BC Design (amendment pending — see note below)
-> Status: � In progress — Steps 1–4 ✅ done (2026-03-26); Steps 5–7 pending
+> Status: ✅ Complete — Steps 1–8 ✅ done (2026-05-28); `ExpiredRefreshTokenCleanupJob` deferred (optional, low priority)
 > **Fits inside**: IAM BC — implement before or alongside `iam-atomic-switch.md` Step 2
 
 ---
@@ -94,20 +94,20 @@ public class RefreshToken
 
 ---
 
-### Step 5 — API controller
+### Step 5 — API controller ✅ Done
 
-| File | Action |
+| File | Status |
 |---|---|
-| `API/Controllers/V2/AuthController.cs` (new or extend `LoginController`) | `POST /api/auth/refresh` — accepts `{ refreshToken }`, returns new `SignInResponseDto` |
-| | `POST /api/auth/revoke` — accepts `{ refreshToken }`, `[Authorize]`, returns `204` |
+| `API/Controllers/V2/AuthController.cs` ✅ Created | `[AllowAnonymous] POST /api/auth/refresh` → `SignInResponseDto`; `[Authorize] POST /api/auth/revoke` → 204 |
+| `Application/Identity/IAM/DTOs/RefreshTokenDto.cs` ✅ Created | `record RefreshTokenDto(string RefreshToken)` — shared request body DTO |
 
 ---
 
-### Step 6 — HTTP scenario file
+### Step 6 — HTTP scenario file ✅ Done
 
-| File | Action |
+| File | Status |
 |---|---|
-| `API/HttpScenarios/auth.http` | Sign-in → capture `refreshToken` → call refresh → call revoke |
+| `API/HttpScenarios/auth.http` ✅ Created | Login → Refresh (anonymous) → Revoke (authorized) → stale-token re-use scenario |
 
 ---
 
@@ -120,11 +120,15 @@ public class RefreshToken
 
 ---
 
-### Step 8 — Integration tests
+### Step 8 — Integration tests ✅ Done
 
-| File | Coverage |
+| File | Status |
 |---|---|
-| `IntegrationTests/Identity/IAM/RefreshTokenTests.cs` | Sign-in → refresh → verify new access token valid; refresh with revoked token → `BusinessException`; revoke → refresh fails |
+| `IntegrationTests/Identity/IAM/RefreshTokenIntegrationTests.cs` ✅ Created | 4 scenarios: valid refresh → new pair; invalid token → `BusinessException`; rotation reuse (theft detection) → `BusinessException`; revoke-then-refresh → `BusinessException` |
+
+> **Infrastructure fixes required to support JWT in the test environment:**
+> - `IntegrationTests/Common/BcWebApplicationFactory.cs` — `ConfigureAppConfiguration` injects `Jwt:Key/Issuer/RefreshTokenTtlDays`; `JwtManager` is a singleton that reads `AuthOptions.Key` in its constructor — the test host had no `Jwt` section in any appsettings.
+> - `IntegrationTests/Common/HttpContextAccessorTest.cs` — now accepts `IServiceProvider` via constructor and sets `HttpContext.RequestServices`; required by `SignInManager.PasswordSignInAsync` → `context.SignInAsync(...)` chain.
 
 ---
 

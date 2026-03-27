@@ -2,7 +2,7 @@
 
 > **What has been Area-switched, what is still legacy, and where routes deviate from `web-ui-views-report.md`.**
 >
-> Last updated: 2026-05-27 (rev 3)
+> Last updated: 2026-05-28 (rev 4 — R-1/R-3/R-4/R-5/R-6 fixed; Refresh Token Steps 5–8 done)
 > Routing template (Startup.cs): `{area:exists}/{controller}/{action=Index}/{id?}` and `{controller}/{action=Index}/{id?}`
 > ⚠️ **Key implication**: only a parameter literally named `id` binds to the `{id?}` path segment. Any other name (e.g. `orderId`, `jobName`) falls back to **query string**.
 
@@ -255,19 +255,19 @@
 
 ---
 
-## Summary of Route Defects
+Route Defects
 
 | # | Controller | Issue | Severity |
 |---|---|---|---|
-| R-1 | `RefundController.Request` | `orderId` param doesn't bind to `{id?}` path segment — route resolves to query string `?orderId=x` instead of `/{orderId}` | 🔴 Breaks links that assume path-segment URL |
+| R-1 | `RefundController.Request` | ~~`orderId` param doesn't bind to `{id?}` path segment~~ | ✅ Fixed 2026-05-28 — renamed to `id` |
 | R-2 | `RefundController` | `Report` action missing entirely | 🟠 Missing feature |
-| R-3 | `PaymentsController.Create` | `int id` (orderId) instead of `Guid paymentId`; no Pending-status guard | 🔴 Must fix before atomic switch |
-| R-4 | `PaymentsController.Details` | No `payment.UserId ≠ caller` scope check | 🔴 Security |
-| R-5 | `OrdersController.Details` | No `order.UserId ≠ caller` scope check | 🔴 Security |
-| R-6 | `IAM/UserManagementController.DeleteUser` | No `[HttpPost]`/`[HttpDelete]` attribute — GET-triggered delete, unsafe | 🔴 Security |
+| R-3 | `PaymentsController.Create` | ~~`int id` (orderId) instead of `Guid paymentId`; no Pending-status guard~~ | ✅ Fixed 2026-05-28 — `GetPendingByOrderIdAsync(id, GetUserId())` |
+| R-4 | `PaymentsController.Details` | ~~No `payment.UserId ≠ caller` scope check~~ | ✅ Fixed 2026-05-28 — ownership check + `UserId` in `PaymentDetailsVm` |
+| R-5 | `OrdersController.Details` | ~~No `order.UserId ≠ caller` scope check~~ | ✅ Fixed 2026-05-28 — maintenance-bypass ownership check |
+| R-6 | `IAM/UserManagementController.DeleteUser` | ~~No `[HttpPost]`/`[HttpDelete]` attribute — GET-triggered delete, unsafe~~ | ✅ Fixed 2026-05-28 — `[HttpPost]` + `[ValidateAntiForgeryToken]` |
 | R-7 | `ProductController` | `ShowItemConnectedWithTags` equivalent missing — no grouped-by-tag product listing in new Area | 🟠 Feature gap (decide: drop or implement?) |
 | R-8 | `Catalog/ImageController` | Still injects `IImageService` from `Application.Services.Items` — legacy namespace, not new Catalog BC service | 🟠 Cross-BC coupling |
-| R-9 | `ProfileController.AddAddress` | `userProfileId` falls back to query string — inconsistent with path-segment convention | 🟡 Style |
+| R
 | R-10 | `ProfileController.EditAddress` | Same as R-9 for both params | 🟡 Style |
 | R-11 | `web-ui-views-report.md` | Multiple stale entries: `ProfileController` vs `UserProfileController`; Catalog/IAM/Jobs/Currencies/Inventory sections out of date | 📝 Doc fix needed |
 

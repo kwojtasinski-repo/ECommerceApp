@@ -139,6 +139,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reports", "reports", "{7C3E
 	ProjectSection(SolutionItems) = preProject
 		docs\reports\bc-migration-status.md = docs\reports\bc-migration-status.md
 		docs\reports\cross-bc-integration-test-report.md = docs\reports\cross-bc-integration-test-report.md
+		docs\reports\remaining-work-effort.md = docs\reports\remaining-work-effort.md
 		docs\reports\web-ui-views-report.md = docs\reports\web-ui-views-report.md
 	EndProjectSection
 EndProject

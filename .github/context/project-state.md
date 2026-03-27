@@ -5,7 +5,7 @@
 > For confirmed bugs see [`.github/context/known-issues.md`](./known-issues.md).
 > For planned work see [`docs/roadmap/README.md`](../docs/roadmap/README.md).
 
-*Last updated: 2026-03-26 (IAM — Area controller live; Refresh token feature Steps 1–4 done)*
+*Last updated: 2026-05-28 (IAM — Refresh Token Steps 5–8 done; Security fixes R-1/R-3/R-4/R-5/R-6 done; test infra improved)*
 
 ---
 
@@ -13,7 +13,7 @@
 
 | Area | State | Key blocker |
 |---|---|---|
-| **Identity/IAM BC** | **🟡 Switch in progress** — Domain ✅ Application ✅ Infrastructure ✅ `IamDbContext` ✅ Unit tests ✅ — `Areas/IAM/Controllers/UserManagementController.cs` + 5 views ✅ — `InitIamSchema` migration ✅ pending prod sign-off — Refresh token feature Steps 1–4 ✅ (`RefreshToken` entity, `IRefreshTokenRepository`, `RefreshTokenRepository`, migration `AddRefreshTokensTable`, `AuthenticationService.RefreshAsync/RevokeAsync`, `RefreshTokenTests`) — Steps 5–7 (`AuthController`, `.http`, integration tests) pending. | Migration `AddRefreshTokensTable` pending approval; `LoginController` swap pending |
+| **Identity/IAM BC** | **🟡 Switch in progress** — Domain ✅ Application ✅ Infrastructure ✅ `IamDbContext` ✅ Unit tests ✅ — `Areas/IAM/Controllers/UserManagementController.cs` + 5 views ✅ — `InitIamSchema` migration ✅ pending prod sign-off — Refresh token feature Steps 1–8 ✅ (`RefreshToken` entity, `IRefreshTokenRepository`, `RefreshTokenRepository`, migration `AddRefreshTokensTable`, `AuthenticationService.RefreshAsync/RevokeAsync`, `RefreshTokenTests`, `AuthController`, `auth.http`, `RefreshTokenIntegrationTests`, `RefreshTokenDto`) — Security fixes R-1/R-3/R-4/R-5/R-6 ✅. | Migration `AddRefreshTokensTable` pending prod sign-off; `LoginController` swap pending |
 | **Sales/Orders BC** | **✅ Switch live** — Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migration ✅ approved — Web Area controllers + views ✅, DI wired ✅, PlaceOrder profile prefill ✅, API tiered access (G1–G8) ✅, nav links ✅. All acceptance criteria met. Legacy code retained for Step 8 cleanup. | None — **switch is live** |
 | **Sales/Payments BC** | **✅ Switch live** — Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migrations ✅ approved — Web Area controller + views ✅, DI wired ✅. All acceptance criteria met. Legacy `PaymentHandler` retained for Step 5 cleanup. | None — **switch is live** |
 | **Presale/Checkout BC** | **✅ Slice 2 Switch live** — `ICheckoutService` + `CheckoutService` + `CheckoutResult` ✅, `ISoftReservationService.GetAllForUserAsync` + `GetPriceChangesAsync` ✅, `IOrderService.PlaceOrderFromPresaleAsync` ✅, `IOrderClient` ACL + `OrderClientAdapter` ✅, API endpoints `GET /price-changes` + `POST /confirm` ✅, unit tests ✅, integration tests ✅ (8 new: SoftReservationServiceTests ×8 + CheckoutServiceIntegrationTests ×4). EC-001 decision: Accept the race. | None — **switch is live** |
@@ -24,6 +24,8 @@
 
 | Area | Summary | ADR |
 |---|---|---|
+| **IAM — Refresh Token Steps 5–8** | `AuthController` (V2, `POST /api/auth/refresh` + `POST /api/auth/revoke`) ✅ · `auth.http` scenario file ✅ · `RefreshTokenIntegrationTests` (4 tests) ✅ · `RefreshTokenDto` ✅ · Test infra: `BcWebApplicationFactory` injects `Jwt:Key/Issuer/RefreshTokenTtlDays` via `ConfigureAppConfiguration`; `HttpContextAccessorTest` now injects `IServiceProvider` so `HttpContext.RequestServices` is set (required by `SignInManager.PasswordSignInAsync`). | [ADR-0019](../docs/adr/0019-identity-iam-bc-design.md) |
+| **Security / Route fixes (R-1, R-3, R-4, R-5, R-6)** | R-6: `DeleteUser` → `[HttpPost]` + `[ValidateAntiForgeryToken]` · R-1: `RefundController.Request` param renamed `orderId→id` + view/tag-helper fixes · R-5: `OrdersController.Details` → maintenance-bypass ownership check · R-4: `PaymentsController.Details` → ownership check + `UserId` added to `PaymentDetailsVm` · R-3: `PaymentsController.Create` → `GetPendingByOrderIdAsync(id, GetUserId())` (user-scope + Pending guard). Build ✅ · 21/21 unit tests ✅ | — |
 | **Jobs — switch live** | `JobManagementController` migrated to `Areas/Jobs`. 2 views (Index, History). Legacy `Controllers/JobManagementController.cs` + `Views/JobManagement/` deleted. Zaplecze nav updated to `asp-area="Jobs"`. Pure structural move — already used new BC services (`IJobManagementService`, `IJobTrigger` from `Application.Supporting.TimeManagement`). 1361/1361 tests passing. | [ADR-0009](../docs/adr/0009-supporting-timemanagement-bc-design.md), [ADR-0024](../docs/adr/0024-controller-routing-strategy.md) |
 | **Currencies — switch live** | `CurrencyController` migrated to `Areas/Currencies`. 4 views (Index, Create, Edit, Details). Legacy `CurrencyController` + 4 legacy `Views/Currency/` views deleted. Zaplecze nav updated to `asp-area="Currencies"`. Service swapped from legacy sync `ICurrencyService` (Application.Services.Currencies) to new async `ICurrencyService` (Application.Supporting.Currencies.Services). Action renames: `AddCurrency→Create`, `EditCurrency→Edit`, `ViewCurrency→Details`, `DeleteCurrency→Delete`. 1361/1361 tests passing. | [ADR-0008](../docs/adr/0008-supporting-currencies-bc-design.md), [ADR-0024](../docs/adr/0024-controller-routing-strategy.md) |
 | **Inventory/Availability — switch live** | `StockController` migrated to `Areas/Inventory`.
