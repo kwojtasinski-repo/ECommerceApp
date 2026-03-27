@@ -2,12 +2,12 @@
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Threading.Tasks;
+using ECommerceApp.Domain.Identity.IAM;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.WebUtilities;
-using ECommerceApp.Domain.Model;
 
 namespace ECommerceApp.Web.Areas.Identity.Pages.Account.Manage
 {

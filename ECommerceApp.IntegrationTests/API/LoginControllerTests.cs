@@ -1,57 +1,52 @@
-﻿using ECommerceApp.API;
-using ECommerceApp.Application.DTO;
+﻿using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.Identity.IAM.DTOs;
+using ECommerceApp.Application.Identity.IAM.Services;
+using ECommerceApp.Application.Identity.IAM.ViewModels;
 using ECommerceApp.IntegrationTests.Common;
-using Flurl.Http;
 using Shouldly;
 using System;
-using System.Collections.Generic;
-using System.Net;
-using System.Text;
 using System.Threading.Tasks;
 using Xunit;
 
 namespace ECommerceApp.IntegrationTests.API
 {
-    public class LoginControllerTests : IClassFixture<CustomWebApplicationFactory<Startup>> 
+    public class LoginControllerTests : BcBaseTest<IAuthenticationService>
     {
-        private readonly FlurlClient _client;
+        private const string Password = "Test@1234!";
 
-        public LoginControllerTests(CustomWebApplicationFactory<Startup> customWebApplicationFactory)
+        private async Task<string> CreateTestUserAsync()
         {
-            var httpClient = customWebApplicationFactory.CreateClient();
-            _client = new FlurlClient(httpClient);
+            var email = $"login{Guid.NewGuid():N}@test.com";
+            var userMgmt = GetRequiredService<IUserManagementService>();
+            await userMgmt.CreateUserAsync(new CreateUserVm
+            {
+                UserName = email,
+                Email = email,
+                EmailConfirmed = true,
+                Password = Password,
+                UserRole = "User"
+            });
+            return email;
         }
 
         [Fact]
         public async Task given_valid_credentials_should_return_token()
         {
-            var testUser = new SignInDto("test@test", "Test@test12");
+            var email = await CreateTestUserAsync();
 
-            var jsonToken = await _client.Request("api/login")
-                .WithHeader("content-type", "application/json")
-                .AllowAnyHttpStatus()
-                .PostJsonAsync(testUser)
-                .ReceiveJson<Dictionary<string, string>>();
+            var result = await _service.SignInAsync(new SignInDto(email, Password));
 
-            jsonToken.ShouldNotBeNull();
-            jsonToken.TryGetValue("accessToken", out var token);
-            token.ShouldNotBeNullOrWhiteSpace();
-            token.Length.ShouldBeGreaterThan(1);
-            jsonToken.TryGetValue("refreshToken", out var refreshToken);
-            refreshToken.ShouldNotBeNull();
+            result.ShouldNotBeNull();
+            result.AccessToken.ShouldNotBeNullOrWhiteSpace();
+            result.AccessToken.Length.ShouldBeGreaterThan(1);
+            result.RefreshToken.ShouldNotBeNullOrWhiteSpace();
         }
 
         [Fact]
-        public async Task given_invalid_credentials_should_return_bad_request()
+        public async Task given_invalid_credentials_should_throw_business_exception()
         {
-            var testUser = new SignInDto("123", "123");
-
-            var response = await _client.Request("api/login")
-                .WithHeader("content-type", "application/json")
-                .AllowAnyHttpStatus()
-                .PostJsonAsync(testUser);
-
-            response.StatusCode.ShouldBe((int) HttpStatusCode.BadRequest);
+            await Should.ThrowAsync<BusinessException>(
+                () => _service.SignInAsync(new SignInDto("nonexistent@test.com", "WrongPassword1!")));
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿@using ECommerceApp.Domain.Model
+﻿@using ECommerceApp.Domain.Identity.IAM
 @using ECommerceApp.Application.Permissions
 @using ECommerceApp.Application.Catalog.Products.Services
 @using Microsoft.AspNetCore.Identity
@@ -143,7 +143,7 @@
                                 <div class="dropdown-menu">
                                     @if (isManagingRole)
                                     {
-                                        <a class="dropdown-item" asp-area="" asp-controller="UserManagement" asp-action="Index">Użytkownicy</a>
+                                        <a class="dropdown-item" asp-area="IAM" asp-controller="UserManagement" asp-action="Index">Użytkownicy</a>
                                         <a class="dropdown-item" asp-area="AccountProfile" asp-controller="Profile" asp-action="All">Klienci</a>
                                         }
                                     <a class="dropdown-item" asp-area="Currencies" asp-controller="Currency" asp-action="Index">Waluty</a>

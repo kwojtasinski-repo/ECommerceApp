@@ -5,7 +5,7 @@
 > For confirmed bugs see [`.github/context/known-issues.md`](./known-issues.md).
 > For planned work see [`docs/roadmap/README.md`](../docs/roadmap/README.md).
 
-*Last updated: 2026-05-28 (IAM — Refresh Token Steps 5–8 done; Security fixes R-1/R-3/R-4/R-5/R-6 done; test infra improved)*
+*Last updated: 2026-05-28 (Full legacy switch: Context → DbContext, Domain.Model.ApplicationUser deleted, API V2 controllers moved to non-V2 namespace, 7 intermediate V2* Web controllers deleted, 4 legacy Web controllers deleted + views, 30+ legacy service/repository/interface files deleted, legacy DI cleaned, test infra updated. 1020 tests pass.)*
 
 ---
 
@@ -13,9 +13,9 @@
 
 | Area | State | Key blocker |
 |---|---|---|
-| **Identity/IAM BC** | **🟡 Switch in progress** — Domain ✅ Application ✅ Infrastructure ✅ `IamDbContext` ✅ Unit tests ✅ — `Areas/IAM/Controllers/UserManagementController.cs` + 5 views ✅ — `InitIamSchema` migration ✅ pending prod sign-off — Refresh token feature Steps 1–8 ✅ (`RefreshToken` entity, `IRefreshTokenRepository`, `RefreshTokenRepository`, migration `AddRefreshTokensTable`, `AuthenticationService.RefreshAsync/RevokeAsync`, `RefreshTokenTests`, `AuthController`, `auth.http`, `RefreshTokenIntegrationTests`, `RefreshTokenDto`) — Security fixes R-1/R-3/R-4/R-5/R-6 ✅. | Migration `AddRefreshTokensTable` pending prod sign-off; `LoginController` swap pending |
-| **Sales/Orders BC** | **✅ Switch live** — Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migration ✅ approved — Web Area controllers + views ✅, DI wired ✅, PlaceOrder profile prefill ✅, API tiered access (G1–G8) ✅, nav links ✅. All acceptance criteria met. Legacy code retained for Step 8 cleanup. | None — **switch is live** |
-| **Sales/Payments BC** | **✅ Switch live** — Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migrations ✅ approved — Web Area controller + views ✅, DI wired ✅. All acceptance criteria met. Legacy `PaymentHandler` retained for Step 5 cleanup. | None — **switch is live** |
+| **Identity/IAM BC** | **✅ Switch complete** — All IAM features live. `Context` changed from `IdentityDbContext` → `DbContext` ✅. `Domain.Model.ApplicationUser` deleted ✅. Legacy controllers, services, repositories deleted. ADR-0019 Accepted. | None |
+| **Sales/Orders BC** | **✅ Switch complete** — Legacy `OrderController`, `OrderItemController`, `OrderService`, `OrderItemService` deleted. Legacy views removed. | None |
+| **Sales/Payments BC** | **✅ Switch complete** — Legacy `PaymentController`, `PaymentService`, `PaymentHandler` deleted. Legacy views removed. | None |
 | **Presale/Checkout BC** | **✅ Slice 2 Switch live** — `ICheckoutService` + `CheckoutService` + `CheckoutResult` ✅, `ISoftReservationService.GetAllForUserAsync` + `GetPriceChangesAsync` ✅, `IOrderService.PlaceOrderFromPresaleAsync` ✅, `IOrderClient` ACL + `OrderClientAdapter` ✅, API endpoints `GET /price-changes` + `POST /confirm` ✅, unit tests ✅, integration tests ✅ (8 new: SoftReservationServiceTests ×8 + CheckoutServiceIntegrationTests ×4). EC-001 decision: Accept the race. | None — **switch is live** |
 
 ---
@@ -92,12 +92,15 @@ Only the atomic switch (controller migration + remove legacy code) remains.
 These legacy classes exist in parallel with the new BC implementations.
 **Do not add new features or fix bugs in these.** Direct future work to the new BC equivalents.
 
-| Legacy | Replaced by | Switch pending |
-|---|---|---|
-| `Application/Services/Orders/OrderService.cs` | `Application/Sales/Orders/Services/OrderService.cs` | Orders atomic switch |
-| `Application/Services/Payments/PaymentService.cs` + `PaymentHandler.cs` | `Application/Sales/Payments/Services/PaymentService.cs` | Payments atomic switch |
-| `Application/Services/Customers/CustomerService.cs` | `Application/AccountProfile/Services/UserProfileService.cs` | Legacy DI retained (OrderService dependency) — Step 8 cleanup |
-| `Application/Services/Currencies/CurrencyService.cs` | `Application/Supporting/Currencies/Services/CurrencyService.cs` | Currencies atomic switch |
-| `Application/Services/Refunds/RefundService.cs` | `Application/Sales/Fulfillment/Services/RefundService.cs` | Fulfillment atomic switch |
-| `Application/Services/Coupons/CouponHandler.cs` | `Application/Sales/Coupons/Services/CouponService.cs` | Coupons atomic switch |
-| `Domain/Model/` (anemic models) | BC-specific rich aggregates under `Domain/<BC>/` | Per-BC atomic switches |
+| Legacy | Status |
+|---|---|
+| `Application/Services/Orders/OrderService.cs` | ✅ **Deleted** — replaced by `Application/Sales/Orders/Services/OrderService.cs` |
+| `Application/Services/Payments/PaymentService.cs` + `PaymentHandler.cs` | ✅ **Deleted** — replaced by `Application/Sales/Payments/Services/PaymentService.cs` |
+| `Application/Services/Customers/CustomerService.cs` | ✅ **Deleted** — replaced by `Application/AccountProfile/Services/UserProfileService.cs` |
+| `Application/Services/Currencies/CurrencyService.cs` | ✅ **Deleted** — replaced by `Application/Supporting/Currencies/Services/CurrencyService.cs` |
+| `Application/Services/Refunds/RefundService.cs` | ✅ **Deleted** — replaced by `Application/Sales/Fulfillment/Services/RefundService.cs` |
+| `Application/Services/Coupons/CouponHandler.cs` | ✅ **Deleted** — replaced by `Application/Sales/Coupons/Services/CouponService.cs` |
+| `Application/Services/Brands/BrandService.cs` | 🟡 **Retained** — no BC replacement yet; used by `Web/Controllers/BrandController.cs` |
+| `Application/Services/Items/ImageService.cs` | 🟡 **Retained** — used by Catalog `ImageController` (Web Area) and API `ImageController` |
+| `Domain/Model/` (anemic models) | 🟡 **Retained** — still used by `Context` DbSets and EF configurations; `ApplicationUser.cs` deleted |
+| API `Controllers/V2/` namespace | ✅ **Moved** — all 12 controllers moved to `Controllers/` namespace |

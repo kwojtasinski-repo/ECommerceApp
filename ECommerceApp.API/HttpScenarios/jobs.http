@@ -23,7 +23,7 @@
 # ============================================================
 
 ### Login as admin
-POST {{baseUrl}}/api/Login
+POST {{baseUrl}}/api/auth/login
 Content-Type: {{contentType}}
 
 {

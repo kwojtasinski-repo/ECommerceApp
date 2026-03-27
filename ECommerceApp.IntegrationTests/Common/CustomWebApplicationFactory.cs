@@ -1,10 +1,12 @@
 ﻿using ECommerceApp.API;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Infrastructure.Database;
+using ECommerceApp.Infrastructure.Identity.IAM;
 using Flurl.Http;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -21,6 +23,16 @@ namespace ECommerceApp.IntegrationTests.Common
         {
             try
             {
+                builder.ConfigureAppConfiguration(config =>
+                {
+                    config.AddInMemoryCollection(new Dictionary<string, string>
+                    {
+                        ["Jwt:Key"] = "test-integration-signing-key-must-be-at-least-32-chars!",
+                        ["Jwt:Issuer"] = "test-issuer",
+                        ["Jwt:RefreshTokenTtlDays"] = "7"
+                    });
+                });
+
                 builder.ConfigureServices(services =>
                 {
                     // remove only the legacy Context and its options; per-BC DbContexts keep their own options
@@ -38,6 +50,13 @@ namespace ECommerceApp.IntegrationTests.Common
                         }
                     }
 
+                    // Also replace IamDbContext with InMemory
+                    var iamDb = services.FirstOrDefault(descriptor => descriptor.ServiceType == typeof(DbContextOptions<IamDbContext>));
+                    if (iamDb != null)
+                    {
+                        services.Remove(iamDb);
+                    }
+
                     var servicesProvider = new ServiceCollection()
                         .AddEntityFrameworkInMemoryDatabase()
                         .BuildServiceProvider();
@@ -45,6 +64,12 @@ namespace ECommerceApp.IntegrationTests.Common
                     services.AddDbContext<Context>(options =>
                     {
                         options.UseInMemoryDatabase("InMemoryDatabase");
+                        options.UseInternalServiceProvider(servicesProvider);
+                    });
+
+                    services.AddDbContext<IamDbContext>(options =>
+                    {
+                        options.UseInMemoryDatabase("InMemoryIamDatabase");
                         options.UseInternalServiceProvider(servicesProvider);
                     });
 
@@ -56,13 +81,16 @@ namespace ECommerceApp.IntegrationTests.Common
                     using var scope = sp.CreateScope();
                     var scopedServices = scope.ServiceProvider;
                     var context = scopedServices.GetRequiredService<Context>();
+                    var iamContext = scopedServices.GetRequiredService<IamDbContext>();
                     var logger = scopedServices.GetRequiredService<ILogger<CustomWebApplicationFactory<TStartup>>>();
 
                     context.Database.EnsureCreated();
+                    iamContext.Database.EnsureCreated();
 
                     try
                     {
                         Utilities.InitilizeDbForTests(context);
+                        Utilities.InitializeIamUsers(scopedServices).GetAwaiter().GetResult();
                     }
                     catch (Exception ex)
                     {
@@ -95,7 +123,7 @@ namespace ECommerceApp.IntegrationTests.Common
         private async Task<string> GetTokenAsync(FlurlClient client)
         {
             var testUser = new SignInDto("test@test", "Test@test12");
-            var jsonToken = await client.Request("api/login")
+            var jsonToken = await client.Request("api/auth/login")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
                 .PostJsonAsync(testUser)

@@ -32,6 +32,7 @@
     <Folder Include="Views\Inventory\" />
     <Folder Include="Views\JobManagement\" />
     <Folder Include="Views\NewBcTest\" />
+    <Folder Include="Views\UserManagement\" />
   </ItemGroup>
 
 </Project>

@@ -1,7 +1,7 @@
 # ADR-0019: Identity/IAM BC — Standalone Design and Atomic Switch Plan
 
 ## Status
-Proposed
+Accepted
 
 ## Date
 2026-03-12

@@ -3,7 +3,7 @@
 ### Base URL: https://localhost:49609
 ###
 ### Flow:
-###   1. POST /api/Login              → { accessToken, refreshToken }  (via LoginController)
+###   1. POST /api/auth/login          → { accessToken, refreshToken }  (via AuthController)
 ###   2. POST /api/auth/refresh       → { accessToken, refreshToken }  (rotate token pair)
 ###   3. POST /api/auth/revoke        → 204 No Content                 (invalidate refresh token)
 ###
@@ -24,7 +24,7 @@
 # ============================================================
 
 ### Login (get initial access + refresh token pair)
-POST {{baseUrl}}/api/Login
+POST {{baseUrl}}/api/auth/login
 Content-Type: {{contentType}}
 
 {

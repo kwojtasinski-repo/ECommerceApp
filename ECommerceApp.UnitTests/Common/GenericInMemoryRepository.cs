@@ -1,4 +1,4 @@
-﻿using ECommerceApp.Domain.Model;
+using ECommerceApp.Domain.Model;
 using System.Collections.Generic;
 using System.Linq;
 

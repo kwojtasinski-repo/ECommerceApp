@@ -1,8 +1,9 @@
-﻿using ECommerceApp.Domain.Model;
+﻿using ECommerceApp.Domain.Identity.IAM;
+using ECommerceApp.Domain.Model;
 using ECommerceApp.Infrastructure.Database;
-using ECommerceApp.Application.Permissions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.DependencyInjection;
 using MimeTypes;
 using System;
 using System.Collections.Generic;
@@ -56,39 +57,6 @@ namespace ECommerceApp.IntegrationTests.Common
             context.Add(currencyRate1);
             var currencyRate2 = new Domain.Model.CurrencyRate { Id = 2, Currency = currency2, CurrencyDate = DateTime.Now.Date, CurrencyId = 2, Rate = new decimal(0.5214) };
             context.Add(currencyRate2);
-
-            //user: { email: "test@test", userName: "test@test", password: "Test@test12" }
-            var testUser = new ApplicationUser
-            { 
-                Id = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e", 
-                Email = "test@test", 
-                UserName = "test@test",
-                NormalizedUserName = "TEST@TEST",
-                PasswordHash = "AQAAAAEAACcQAAAAEAhNvr909GdhKMLVvTQ6kj17HAWZPg6c+YgQ8rl/m1Ww6Pf+fqJ8FUf+yU5N5stXOA==", ConcurrencyStamp = "db68806b-190f-4abf-a39f-9b2d74039dd9",
-                SecurityStamp = string.Empty,
-                EmailConfirmed = true
-            };
-            context.Add(testUser);
-            
-            var userRole = new IdentityUserRole<string>
-            {
-                RoleId = UserPermissions.Roles.Administrator,
-                UserId = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e"
-            };
-            context.Add(userRole);
-
-            //user: { email: "test2@test2", userName: "test2@test2", password: "Test@test12" }
-            var testUser2 = new ApplicationUser
-            {
-                Id = "e4fc1feb-7d08-4207-bd52-3f3464a01564",
-                Email = "test2@test2",
-                UserName = "test2@test2",
-                NormalizedUserName = "TEST2@TEST2",
-                PasswordHash = "AQAAAAEAACcQAAAAEAhNvr909GdhKMLVvTQ6kj17HAWZPg6c+YgQ8rl/m1Ww6Pf+fqJ8FUf+yU5N5stXOA==",
-                SecurityStamp = string.Empty,
-                EmailConfirmed = true
-            };
-            context.Add(testUser2);
 
             var couponType = new Domain.Model.CouponType { Id = 1, Type = "Type1" };
             context.Add(couponType);
@@ -185,6 +153,40 @@ namespace ECommerceApp.IntegrationTests.Common
             // ---------------------------------- Dane testowe ----------------------------------
 
             context.SaveChanges();
+        }
+
+        public static async Task InitializeIamUsers(IServiceProvider services)
+        {
+            var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+            var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+
+            // Ensure roles exist
+            foreach (var role in new[] { "Administrator", "Manager", "Service", "User", "NotRegister" })
+            {
+                if (!await roleManager.RoleExistsAsync(role))
+                    await roleManager.CreateAsync(new IdentityRole(role));
+            }
+
+            // Create test user
+            var testUser = new ApplicationUser
+            {
+                Id = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e",
+                UserName = "test@test",
+                Email = "test@test",
+                EmailConfirmed = true
+            };
+            await userManager.CreateAsync(testUser, "Test@test12");
+            await userManager.AddToRoleAsync(testUser, "Administrator");
+
+            // Create second test user
+            var testUser2 = new ApplicationUser
+            {
+                Id = "e4fc1feb-7d08-4207-bd52-3f3464a01564",
+                UserName = "test2@test2",
+                Email = "test2@test2",
+                EmailConfirmed = true
+            };
+            await userManager.CreateAsync(testUser2, "Test@test12");
         }
 
         public static async Task<IFormFile> CreateIFormFileFrom(string filePath)

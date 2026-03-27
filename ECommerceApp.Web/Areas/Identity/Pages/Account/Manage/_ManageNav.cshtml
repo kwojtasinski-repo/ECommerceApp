@@ -1,4 +1,4 @@
-﻿@using ECommerceApp.Domain.Model
+﻿@using ECommerceApp.Domain.Identity.IAM
 @inject SignInManager<ApplicationUser> SignInManager
 @{
     var hasExternalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).Any();

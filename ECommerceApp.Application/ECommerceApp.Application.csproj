@@ -21,4 +21,11 @@
   <ItemGroup>
 	<FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
+
+
+  <ItemGroup>
+    <Folder Include="Services\Coupons\" />
+    <Folder Include="Services\Currencies\" />
+    <Folder Include="Services\Users\" />
+  </ItemGroup>
 </Project>

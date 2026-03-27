@@ -16,7 +16,6 @@ namespace ECommerceApp.Domain.Model
         public int CustomerId { get; set; }
         public Customer Customer { get; set; }
         public string UserId { get; set; }
-        public ApplicationUser User { get; set; }
         public int? PaymentId { get; set; }
         public bool IsPaid { get; set; }
         public virtual Payment Payment { get; set; }
@@ -92,19 +91,6 @@ namespace ECommerceApp.Domain.Model
                     Id = Currency.Id,
                     Code = Currency.Code,
                     Description = Currency.Description,
-                } : null,
-                User = User is not null ? new ApplicationUser
-                {
-                    Id = User.Id,
-                    AccessFailedCount = User.AccessFailedCount,
-                    ConcurrencyStamp = User.ConcurrencyStamp,
-                    Email = User.Email,
-                    EmailConfirmed = User.EmailConfirmed,
-                    LockoutEnabled = User.LockoutEnabled,
-                    LockoutEnd = User.LockoutEnd,
-                    NormalizedEmail = User.NormalizedEmail,
-                    NormalizedUserName = User.NormalizedUserName,
-                    UserName = User.UserName,
                 } : null,
                 Customer = Customer is not null ? new Customer
                 {

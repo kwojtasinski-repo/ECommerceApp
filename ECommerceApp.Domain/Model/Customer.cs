@@ -5,7 +5,6 @@ namespace ECommerceApp.Domain.Model
     public class Customer : BaseEntity
     {
         public string UserId { get; set; }
-        public ApplicationUser User { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public bool IsCompany { get; set; }
