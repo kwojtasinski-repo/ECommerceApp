@@ -8,10 +8,10 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ECommerceApp.API.Controllers
+namespace ECommerceApp.API.Controllers.Inventory
 {
     [Authorize]
-    [Route("api/v2/inventory")]
+    [Route("api/inventory")]
     public class InventoryController : BaseController
     {
         private readonly IStockService _stock;

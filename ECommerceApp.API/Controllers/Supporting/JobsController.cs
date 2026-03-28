@@ -5,10 +5,10 @@ using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ECommerceApp.API.Controllers
+namespace ECommerceApp.API.Controllers.Supporting
 {
     [Authorize(Roles = BaseController.MaintenanceRole)]
-    [Route("api/v2/jobs")]
+    [Route("api/jobs")]
     public class JobsController : BaseController
     {
         private readonly IJobManagementService _jobs;

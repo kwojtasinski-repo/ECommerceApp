@@ -8,5 +8,8 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
     {
         Task<StorefrontProductListVm> GetPublishedProductsAsync(
             int pageSize, int pageNo, string searchString, CancellationToken ct = default);
+
+        Task<StorefrontProductListVm> GetPublishedProductsByTagAsync(
+            int tagId, int pageSize, int pageNo, CancellationToken ct = default);
     }
 }

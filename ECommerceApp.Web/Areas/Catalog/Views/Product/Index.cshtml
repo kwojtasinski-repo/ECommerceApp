@@ -1,12 +1,24 @@
 @model ProductListVm
+@using ECommerceApp.Application.Catalog.Products.ViewModels
 @{
     ViewData["Title"] = "Produkty";
     var totalPages = Model.Count == 0 ? 1 : (int)Math.Ceiling((double)Model.Count / Model.PageSize);
+    var allTags = ViewBag.AllTags as List<ProductTagVm> ?? new List<ProductTagVm>();
 }
 
 <div class="container mt-4">
     <h2><i class="fa-solid fa-box-open me-2"></i>Produkty</h2>
 
+    @if (allTags.Count > 0)
+    {
+        <div class="mb-3">
+            @foreach (var tag in allTags)
+            {
+                <a asp-action="ByTag" asp-route-tagId="@tag.Id"
+                   class="badge bg-secondary text-decoration-none me-1 mb-1">@tag.Name</a>
+            }
+        </div>
+    }
     <form method="post" class="row g-2 mb-3">
         <div class="col-auto">
             <select name="pageSize" class="form-select">

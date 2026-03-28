@@ -1,5 +1,4 @@
-﻿using ECommerceApp.Application.POCO;
-using ECommerceApp.Application.Services.Items;
+﻿using ECommerceApp.Application.Catalog.Images.Services;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
 using Xunit;

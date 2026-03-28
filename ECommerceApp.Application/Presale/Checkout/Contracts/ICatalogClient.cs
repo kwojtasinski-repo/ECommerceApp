@@ -11,6 +11,9 @@ namespace ECommerceApp.Application.Presale.Checkout.Contracts
         Task<CatalogProductPage> GetPublishedProductsAsync(
             int pageSize, int pageNo, string searchString, CancellationToken ct = default);
 
+        Task<CatalogProductPage> GetPublishedProductsByTagAsync(
+            int tagId, int pageSize, int pageNo, CancellationToken ct = default);
+
         Task<IReadOnlyList<CatalogProductSummary>> GetProductsByIdsAsync(
             IReadOnlyList<int> productIds, CancellationToken ct = default);
     }

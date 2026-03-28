@@ -14,6 +14,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
         Task<ProductDetailsVm> GetProductDetails(int id, CancellationToken cancellationToken = default);
         Task<ProductListVm> GetAllProducts(int pageSize, int pageNo, string searchString);
         Task<ProductListVm> GetPublishedProducts(int pageSize, int pageNo, string searchString);
+        Task<ProductListVm> GetPublishedProductsByTagAsync(int tagId, int pageSize, int pageNo);
         Task PublishProduct(int id);
         Task UnpublishProduct(int id);
         Task<bool> ProductExists(int id);

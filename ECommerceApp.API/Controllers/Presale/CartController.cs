@@ -1,13 +1,12 @@
 using ECommerceApp.API.Filters;
 using ECommerceApp.Application.Presale.Checkout.DTOs;
 using ECommerceApp.Application.Presale.Checkout.Services;
-using ECommerceApp.Domain.Presale.Checkout;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ECommerceApp.API.Controllers
+namespace ECommerceApp.API.Controllers.Presale
 {
     [Authorize]
     [Route("api/cart")]
@@ -29,7 +28,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpPost("items")]
-        [Authorize(Policy = "TrustedApiUser")]
+        [Authorize(Policy = ApiPolicies.TrustedApiUser)]
         [ServiceFilter(typeof(MaxApiQuantityFilter))]
         public async Task<IActionResult> AddOrUpdate([FromBody] AddToCartDto dto, CancellationToken ct = default)
         {
@@ -38,7 +37,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpDelete("items/{productId:int}")]
-        [Authorize(Policy = "TrustedApiUser")]
+        [Authorize(Policy = ApiPolicies.TrustedApiUser)]
         public async Task<IActionResult> RemoveItem(int productId, CancellationToken ct = default)
         {
             var userId = GetUserId();
@@ -47,7 +46,7 @@ namespace ECommerceApp.API.Controllers
         }
 
         [HttpDelete]
-        [Authorize(Policy = "TrustedApiUser")]
+        [Authorize(Policy = ApiPolicies.TrustedApiUser)]
         public async Task<IActionResult> ClearCart(CancellationToken ct = default)
         {
             var userId = GetUserId();

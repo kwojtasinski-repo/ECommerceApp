@@ -30,5 +30,17 @@ namespace ECommerceApp.API.Controllers.Presale
             var result = await _storefront.GetPublishedProductsAsync(pageSize, pageNo, searchString ?? "", ct);
             return Ok(result);
         }
+
+        // GET api/storefront/products/by-tag/{tagId}?pageSize=10&pageNo=1
+        [HttpGet("products/by-tag/{tagId:int}")]
+        public async Task<ActionResult<StorefrontProductListVm>> GetProductsByTag(
+            int tagId,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] int pageNo = 1,
+            CancellationToken ct = default)
+        {
+            var result = await _storefront.GetPublishedProductsByTagAsync(tagId, pageSize, pageNo, ct);
+            return Ok(result);
+        }
     }
 }

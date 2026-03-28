@@ -32,30 +32,30 @@ Content-Type: {{contentType}}
 
 ### Get all published items — paged
 # Expected: 200 OK  →  ProductListVm
-GET {{baseUrl}}/api/items?pageSize=10&pageNo=1
+GET {{baseUrl}}/api/products?pageSize=10&pageNo=1
 Authorization: Bearer {{token}}
 ###
 
 ### Get published items — search
 # Expected: 200 OK  →  filtered list
-GET {{baseUrl}}/api/items?searchString=laptop&pageSize=5&pageNo=1
+GET {{baseUrl}}/api/products?searchString=laptop&pageSize=5&pageNo=1
 Authorization: Bearer {{token}}
 ###
 
 ### Get published items — next page
 # Expected: 200 OK
-GET {{baseUrl}}/api/items?pageSize=5&pageNo=2
+GET {{baseUrl}}/api/products?pageSize=5&pageNo=2
 Authorization: Bearer {{token}}
 ###
 
 ### Get item by id
 # Expected: 200 OK  →  ProductDetailsVm
-GET {{baseUrl}}/api/items/1
+GET {{baseUrl}}/api/products/1
 Authorization: Bearer {{token}}
 ###
 
 ### Get item — not found
 # Expected: 404 Not Found
-GET {{baseUrl}}/api/items/99999
+GET {{baseUrl}}/api/products/99999
 Authorization: Bearer {{token}}
 ###

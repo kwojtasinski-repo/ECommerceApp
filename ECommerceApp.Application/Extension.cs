@@ -2,8 +2,11 @@
 using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Security.Claims;
 
+[assembly: InternalsVisibleTo("ECommerceApp.UnitTests")]
+[assembly: InternalsVisibleTo("ECommerceApp.IntegrationTests")]
 namespace ECommerceApp.Application
 {
     public static class Extension

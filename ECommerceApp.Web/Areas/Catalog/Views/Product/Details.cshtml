@@ -62,9 +62,11 @@
                 {
                     <dt class="col-sm-3">Tagi</dt>
                     <dd class="col-sm-9">
-                        @foreach (var tag in Model.TagNames)
+                        @foreach (var tag in Model.TagIds.Zip(Model.TagNames, (id, name) => new { id, name }))
                         {
-                            <span class="badge bg-secondary me-1">@tag</span>
+                            <a asp-area="Catalog" asp-controller="Product" asp-action="ByTag"
+                               asp-route-tagId="@tag.id"
+                               class="badge bg-secondary text-decoration-none me-1">@tag.name</a>
                         }
                     </dd>
                 }

@@ -1,12 +1,12 @@
 ﻿using ECommerceApp.Application.POCO;
-using ECommerceApp.Application.Services.Items;
+using ECommerceApp.Application.Catalog.Images.Services;
 using ECommerceApp.Application.ViewModels.Image;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 
-namespace ECommerceApp.API.Controllers
+namespace ECommerceApp.API.Controllers.Catalog
 {
     [Authorize]
     [Route("api/images")]

@@ -1,4 +1,3 @@
-﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.POCO;
@@ -12,16 +11,13 @@ using System.IO;
 using System.Linq;
 using System.Text;
 
-namespace ECommerceApp.Application.Services.Items
+namespace ECommerceApp.Application.Catalog.Images.Services
 {
-    public class ImageService : IImageService
+    internal sealed class ImageService : IImageService
     {
         private readonly IFileStore _fileStore;
         private readonly IImageRepository _imageRepository;
-        private readonly int ALLOWED_SIZE = 10 * 1024 * 1024; // 10 mb
-        private readonly List<string> IMAGE_EXTENSION_PARAMETERS = new () { ".jpg", ".png" }; // extensions
         private readonly string FILE_DIR = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "Upload" + Path.DirectorySeparatorChar + "Files" + Path.DirectorySeparatorChar + Guid.NewGuid().ToString();
-        private readonly int ALLOWED_IMAGES_COUNT = 5;
 
         public ImageService(IImageRepository repo, IFileStore fileStore)
         {
@@ -188,111 +184,33 @@ namespace ECommerceApp.Application.Services.Items
             return imagesVm;
         }
 
-        public List<ImageInfoDto> GetImages(IEnumerable<int> imagesId)
-        {
-            return _imageRepository.GetImagesByItemsId(imagesId)
-                                   .Select(i => new ImageInfoDto
-                                   {
-                                       Id = i.Id,
-                                       Name = i.Name,
-                                       ItemId = i.ItemId
-                                   })
-                                   .ToList();
-        }
-
-        public List<int> AddImages(AddImagesWithBase64POCO dto)
-        {
-            if (dto is null)
-            {
-                throw new BusinessException($"{typeof(AddImagesPOCO).Name} cannot be null");
-            }
-
-            if (dto.FilesWithBase64Format == null || !dto.FilesWithBase64Format.Any())
-            {
-                throw new BusinessException("Adding image without source is not allowed");
-            }
-
-            var files = dto.FilesWithBase64Format.Select(f => new FileWithBytes(f.Name, Convert.FromBase64String(f.FileSource)));
-            ValidImages(files);
-            if (dto.ItemId.HasValue)
-            {
-                ValidImageCount(dto.ItemId.Value, files.Count());
-            }
-
-            var images = new List<Image>();
-
-            foreach (var image in files)
-            {
-                var fileDir = _fileStore.WriteFile(image.Name, image.FileSource, FILE_DIR);
-
-                var img = new Image()
-                {
-                    Id = 0,
-                    ItemId = dto.ItemId,
-                    Name = fileDir.Name,
-                    SourcePath = fileDir.SourcePath
-                };
-
-                images.Add(img);
-            }
-
-            var ids = _imageRepository.AddImages(images);
-
-            return ids;
-        }
-
-        public ErrorMessage ValidBase64File(IEnumerable<ValidBase64File> base64Files)
-        {
-            var errorMessage = new ErrorMessage();
-            if (base64Files is null || !base64Files.Any())
-            {
-                return errorMessage;
-            }
-
-            foreach (var file in base64Files)
-            {
-                if (!IsBase64String(file.FileSource))
-                {
-                    errorMessage.Message.AppendLine($"Image '{file.Name}' has invalid Base64 string");
-                    errorMessage.ErrorCodes.Add(ErrorCode.Create("invalidImageFormat", ErrorParameter.Create("name", file.Name)));
-                }
-            }
-            return errorMessage;
-        }
-
         private void ValidImages(ICollection<IFormFile> images)
         {
             ValidImages(images.Select(i => new ValidateFile(i.FileName, i.Length)));
-        }
-
-        private void ValidImages(IEnumerable<FileWithBytes> images)
-        {
-            ValidImages(images.Select(i => new ValidateFile(i.Name, i.FileSource.LongLength)));
         }
 
         private void ValidImages(IEnumerable<ValidateFile> images)
         {
             var errorMessage = new ErrorMessage();
 
-            // FIRST VALIDATION
             foreach (var image in images)
             {
                 var size = image.Size;
                 var fileName = image.Name;
 
-                if (size > ALLOWED_SIZE)
+                if (size > ImageConstraints.MaxFileSizeBytes)
                 {
-                    errorMessage.Message.Append("Image ").Append(fileName).Append(" is too big (").Append(size).Append(" bytes). Allowed ").Append(ALLOWED_SIZE).Append("bytes\r\n");
-                    errorMessage.ErrorCodes.Add(ErrorCode.Create("fileSizeTooBig", new List<ErrorParameter> { ErrorParameter.Create("name", fileName), ErrorParameter.Create("size", size), ErrorParameter.Create("allowedSize", ALLOWED_SIZE) }));
+                    errorMessage.Message.Append("Image ").Append(fileName).Append(" is too big (").Append(size).Append(" bytes). Allowed ").Append(ImageConstraints.MaxFileSizeBytes).Append("bytes\r\n");
+                    errorMessage.ErrorCodes.Add(ErrorCode.Create("fileSizeTooBig", new List<ErrorParameter> { ErrorParameter.Create("name", fileName), ErrorParameter.Create("size", size), ErrorParameter.Create("allowedSize", ImageConstraints.MaxFileSizeBytes) }));
                 }
 
                 var extension = _fileStore.GetFileExtenstion(fileName) ?? string.Empty;
-                var containsExtension = IMAGE_EXTENSION_PARAMETERS.Contains(extension);
+                var containsExtension = ImageConstraints.AllowedExtensions.Contains(extension);
 
                 if (!containsExtension)
                 {
                     var sb = new StringBuilder();
-                    IMAGE_EXTENSION_PARAMETERS.ForEach(i => sb.AppendLine(i));
+                    foreach (var ext in ImageConstraints.AllowedExtensions) sb.AppendLine(ext);
                     errorMessage.Message.AppendLine($"Image {fileName} extension {extension} is not allowed. Allowed extensions {sb}");
                     errorMessage.ErrorCodes.Add(ErrorCode.Create("fileExtensionNotAllowed", new List<ErrorParameter> { ErrorParameter.Create("name", fileName), ErrorParameter.Create("extension", extension), ErrorParameter.Create("extensions", sb.ToString()) }));
                 }
@@ -309,9 +227,9 @@ namespace ECommerceApp.Application.Services.Items
             var imageCount = _imageRepository.GetCountByItemId(itemId);
             var count = imageCount + imagesToAdd;
 
-            if (count > ALLOWED_IMAGES_COUNT)
+            if (count > ImageConstraints.MaxImagesPerItem)
             {
-                throw new BusinessException($"Cannot add more than {ALLOWED_IMAGES_COUNT} images. There are already '{imagesToAdd}' images for item with id '{itemId}'", ErrorCode.Create("tooManyImages", new List<ErrorParameter> { ErrorParameter.Create("allowedImagesCount", ALLOWED_IMAGES_COUNT), ErrorParameter.Create("imageCount", imagesToAdd), ErrorParameter.Create("id", itemId) }));
+                throw new BusinessException($"Cannot add more than {ImageConstraints.MaxImagesPerItem} images. There are already '{imagesToAdd}' images for item with id '{itemId}'", ErrorCode.Create("tooManyImages", new List<ErrorParameter> { ErrorParameter.Create("allowedImagesCount", ImageConstraints.MaxImagesPerItem), ErrorParameter.Create("imageCount", imagesToAdd), ErrorParameter.Create("id", itemId) }));
             }
         }
 
@@ -328,13 +246,6 @@ namespace ECommerceApp.Application.Services.Items
             };
         }
 
-        private static bool IsBase64String(string base64)
-        {
-            Span<byte> buffer = new(new byte[base64.Length]);
-            return Convert.TryFromBase64String(base64, buffer, out int bytesParsed);
-        }
-
-        private record FileWithBytes(string Name, byte[] FileSource);
         private record ValidateFile(string Name, long Size);
     }
 }

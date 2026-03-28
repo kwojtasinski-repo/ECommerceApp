@@ -31,6 +31,18 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Adapters
             return new CatalogProductPage(items, result.Count, result.PageSize, result.CurrentPage, result.SearchString ?? "");
         }
 
+        public async Task<CatalogProductPage> GetPublishedProductsByTagAsync(
+            int tagId, int pageSize, int pageNo, CancellationToken ct = default)
+        {
+            var result = await _productService.GetPublishedProductsByTagAsync(tagId, pageSize, pageNo);
+
+            var items = result.Products
+                .Select(p => new CatalogProductItem(p.Id, p.Name, p.Cost, p.CategoryId))
+                .ToList();
+
+            return new CatalogProductPage(items, result.Count, result.PageSize, result.CurrentPage, string.Empty);
+        }
+
         public async Task<IReadOnlyList<CatalogProductSummary>> GetProductsByIdsAsync(
             IReadOnlyList<int> productIds, CancellationToken ct = default)
         {

@@ -45,7 +45,7 @@ namespace ECommerceApp.API
                 });
             services.AddAuthorization(options =>
             {
-                options.AddPolicy("TrustedApiUser", policy =>
+                options.AddPolicy(ApiPolicies.TrustedApiUser, policy =>
                     policy.RequireAuthenticatedUser()
                           .RequireAssertion(ctx =>
                               ctx.User.HasClaim("api:purchase", "true") ||

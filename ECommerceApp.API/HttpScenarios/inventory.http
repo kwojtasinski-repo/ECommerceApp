@@ -5,7 +5,7 @@
 ### MaintenanceRole: initialize, adjust, return stock
 ### Authenticated: reserve, release reservations
 ###
-### Note: route prefix is /api/v2/inventory (admin controller, not part of BC switch).
+### Note: route prefix is /api/inventory
 ###
 ### Typical flow:
 ###   1. Initialize stock for a new product
@@ -38,19 +38,19 @@ Content-Type: {{contentType}}
 
 ### Get stock for a product
 # Expected: 200 OK  →  StockItemDto { productId, availableQuantity, reservedQuantity }
-GET {{baseUrl}}/api/v2/inventory/stock/1
+GET {{baseUrl}}/api/inventory/stock/1
 Authorization: Bearer {{token}}
 ###
 
 ### Get stock — product not found
 # Expected: 404 Not Found
-GET {{baseUrl}}/api/v2/inventory/stock/99999
+GET {{baseUrl}}/api/inventory/stock/99999
 Authorization: Bearer {{token}}
 ###
 
 ### Initialize stock for a new product (MaintenanceRole)
 # Expected: 201 Created
-POST {{baseUrl}}/api/v2/inventory/stock/initialize
+POST {{baseUrl}}/api/inventory/stock/initialize
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
@@ -62,7 +62,7 @@ Content-Type: {{contentType}}
 
 ### Adjust stock quantity (MaintenanceRole)
 # Expected: 200 OK
-POST {{baseUrl}}/api/v2/inventory/stock/adjust
+POST {{baseUrl}}/api/inventory/stock/adjust
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
@@ -74,7 +74,7 @@ Content-Type: {{contentType}}
 
 ### Return stock (MaintenanceRole) — e.g. after refund
 # Expected: 200 OK
-POST {{baseUrl}}/api/v2/inventory/stock/return
+POST {{baseUrl}}/api/inventory/stock/return
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
@@ -90,7 +90,7 @@ Content-Type: {{contentType}}
 
 ### Reserve stock (authenticated)
 # Expected: 200 OK  →  { result: "Success" }  |  409 Conflict (insufficient stock)
-POST {{baseUrl}}/api/v2/inventory/reservations
+POST {{baseUrl}}/api/inventory/reservations
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
@@ -103,6 +103,6 @@ Content-Type: {{contentType}}
 
 ### Release reservation (authenticated)
 # Expected: 204 No Content  |  404 Not Found
-DELETE {{baseUrl}}/api/v2/inventory/reservations?orderId=1&productId=1&quantity=2
+DELETE {{baseUrl}}/api/inventory/reservations?orderId=1&productId=1&quantity=2
 Authorization: Bearer {{token}}
 ###

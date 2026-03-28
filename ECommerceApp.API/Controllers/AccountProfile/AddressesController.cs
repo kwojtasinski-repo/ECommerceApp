@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
-namespace ECommerceApp.API.Controllers
+namespace ECommerceApp.API.Controllers.AccountProfile
 {
     [Authorize]
     [Route("api/addresses")]

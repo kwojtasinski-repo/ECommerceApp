@@ -6,10 +6,10 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
 
-namespace ECommerceApp.API.Controllers
+namespace ECommerceApp.API.Controllers.Supporting
 {
     [Authorize]
-    [Route("api/v2/currencies")]
+    [Route("api/currencies")]
     public class CurrenciesController : BaseController
     {
         private readonly ICurrencyService _currencies;

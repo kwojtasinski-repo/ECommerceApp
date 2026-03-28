@@ -2,7 +2,7 @@
 
 > **What has been Area-switched, what is still legacy, and where routes deviate from `web-ui-views-report.md`.**
 >
-> Last updated: 2026-05-28 (rev 4 — R-1/R-3/R-4/R-5/R-6 fixed; Refresh Token Steps 5–8 done)
+> Last updated: 2026-05-28 (rev 5 — IAM switch complete; Sales/Orders + Payments + OrderItems switched; 30+ legacy service/repo/interface files deleted; 7 V2\* Web controllers deleted; V2 API namespace cleared; `Context` → `DbContext`; `Domain.Model.ApplicationUser` deleted; 1020 tests ✅)
 > Routing template (Startup.cs): `{area:exists}/{controller}/{action=Index}/{id?}` and `{controller}/{action=Index}/{id?}`
 > ⚠️ **Key implication**: only a parameter literally named `id` binds to the `{id?}` path segment. Any other name (e.g. `orderId`, `jobName`) falls back to **query string**.
 
@@ -26,20 +26,43 @@
 |----|--------|----------------|-------------------------------|--------------------------|
 | **Presale / Checkout** | ✅ DONE | `Areas/Presale/Controllers/CheckoutController.cs` | No | No |
 | **AccountProfile / Profile** | ✅ DONE | `Areas/AccountProfile/Controllers/ProfileController.cs` | No | No — `Views/Customer/`, `Views/Address/`, `Views/ContactDetail/` all gone |
-| **Sales / Coupon** | ✅ DONE | `Areas/Sales/Controllers/CouponController.cs` | No | Yes — `Views/Coupon/`, `Views/CouponType/`, `Views/CouponUsed/` still exist (cleanup pending) |
+| **Sales / Coupon** | ✅ DONE | `Areas/Sales/Controllers/CouponController.cs` | No | ⚠️ `Views/Coupon/` (4), `Views/CouponType/` (4), `Views/CouponUsed/` (4) — orphaned, no controller |
 | **Sales / Shipment** | 🆕 NEW | `Areas/Sales/Controllers/ShipmentController.cs` | N/A | N/A |
 | **Catalog / Product** | ✅ DONE | `Areas/Catalog/Controllers/ProductController.cs` | No — `ItemController` removed | No — `Views/Item/` removed |
 | **Catalog / Tag** | ✅ DONE | `Areas/Catalog/Controllers/TagController.cs` | No — `TagController` removed | No — `Views/Tag/` removed |
 | **Catalog / Category** | 🆕 NEW | `Areas/Catalog/Controllers/CategoryController.cs` | N/A — new concept | N/A |
 | **Catalog / Image** | ⚠️ IN PROGRESS | `Areas/Catalog/Controllers/ImageController.cs` | No — moved to Area | No — but still injects legacy `IImageService` from `Application.Services.Items` ⚠️ |
 | **Sales / Refund** | ⚠️ IN PROGRESS | `Areas/Sales/Controllers/RefundController.cs` | No — `Controllers/RefundController.cs` removed ✅ | Yes — `Views/Refund/Index.cshtml`, `Views/Refund/EditRefund.cshtml`, `Views/Refund/ViewRefundDetails.cshtml` still exist |
-| **Sales / Orders** | ⚠️ IN PROGRESS | `Areas/Sales/Controllers/OrdersController.cs` | Yes — `Controllers/OrderController.cs` still live | Yes — `Views/Order/` (many views) still exist |
-| **Sales / Payments** | ⚠️ IN PROGRESS | `Areas/Sales/Controllers/PaymentsController.cs` | Yes — `Controllers/PaymentController.cs` still live | Yes — `Views/Payment/` still exist |
-| **Sales / OrderItems** | ⚠️ IN PROGRESS | `Areas/Sales/Controllers/OrderItemsController.cs` | Yes — `Controllers/OrderItemController.cs` still live | Yes — `Views/OrderItem/` still exists |
+| **Sales / Orders** | ✅ DONE | `Areas/Sales/Controllers/OrdersController.cs` | No — `Controllers/OrderController.cs` deleted ✅ | No — `Views/Order/` (17 views) deleted ✅ |
+| **Sales / Payments** | ✅ DONE | `Areas/Sales/Controllers/PaymentsController.cs` | No — `Controllers/PaymentController.cs` deleted ✅ | No — `Views/Payment/` (5 views) deleted ✅ |
+| **Sales / OrderItems** | ✅ DONE | `Areas/Sales/Controllers/OrderItemsController.cs` | No — `Controllers/OrderItemController.cs` deleted ✅ | No — `Views/OrderItem/` (3 views) deleted ✅ |
 | **Inventory** | ✅ DONE | `Areas/Inventory/Controllers/StockController.cs` | No — `Controllers/InventoryController.cs` removed ✅ | No — `Views/Inventory/` removed ✅ |
 | **Currencies** | ✅ DONE | `Areas/Currencies/Controllers/CurrencyController.cs` | No — `Controllers/CurrencyController.cs` removed ✅ | No — `Views/Currency/` removed ✅ |
-| **IAM / UserManagement** | ⚠️ IN PROGRESS | `Areas/IAM/Controllers/UserManagementController.cs` | Yes — `Controllers/UserManagementController.cs` still live | Yes — `Views/UserManagement/` (5 files) still exist |
+| **IAM / UserManagement** | ✅ DONE | `Areas/IAM/Controllers/UserManagementController.cs` | No — `Controllers/UserManagementController.cs` deleted ✅ | No — `Views/UserManagement/` (5 views) deleted ✅ |
 | **Jobs** | ✅ DONE | `Areas/Jobs/Controllers/JobManagementController.cs` | No — `Controllers/JobManagementController.cs` removed ✅ | No — `Views/JobManagement/` removed ✅ |
+| **Brand** | ⚠️ LEGACY ONLY | No BC equivalent — `Controllers/BrandController.cs` active | — (no switch planned yet) | `Views/Brand/` (4 views) — active legacy |
+
+---
+
+## Orphaned View Folders (no controller — safe to delete)
+
+These root `Views/` folders have no matching controller. All associated controllers were either moved to Areas or deleted. Pure dead code — no logic risk.
+
+| Folder | Files | Reason orphaned |
+|---|---|---|
+| `Views/V2Category/` | Add, Edit, Index (3) | `V2CategoryController` deleted in Session 2 |
+| `Views/V2Currency/` | Add, Details, Edit, Index (4) | `V2CurrencyController` deleted |
+| `Views/V2Product/` | Add, Details, Edit (3) | `V2ProductController` deleted |
+| `Views/V2Profile/` | Add, Details, Edit, Index (4) | `V2ProfileController` deleted |
+| `Views/V2Tag/` | Add, Edit (2) | `V2TagController` deleted |
+| `Views/V2User/` | Add, Details, Edit, Index (4) | `V2UserController` deleted |
+| `Views/V2Job/` | DeferredQueue, History, Index, Register, ScheduleDeferred (5) | `V2JobController` deleted |
+| `Views/Coupon/` | AddCoupon, EditCoupon, Index, ViewCoupon (4) | `CouponController` moved to `Areas/Sales` |
+| `Views/CouponType/` | AddCouponType, EditCouponType, Index, ViewCouponType (4) | No replacement |
+| `Views/CouponUsed/` | AddCouponUsed, EditCouponUsed, Index, ViewCouponUsed (4) | No replacement |
+| `Views/Refund/` | EditRefund, Index, ViewRefundDetails (3) | `RefundController` moved to `Areas/Sales` |
+
+**Total**: ~38 files. `dotnet build` confirms no references — safe to `git rm` in one batch.
 
 ---
 
@@ -120,13 +143,13 @@
 
 ---
 
-### Sales / Orders ⚠️
+### Sales / Orders ✅
 
 | Report route | Actual action signature | Binds correctly? |
 |---|---|---|
 | `GET /Sales/Orders` | `Index()` | ✅ |
 | `GET /Sales/Orders/MyOrders` | `MyOrders()` | ✅ |
-| `GET /Sales/Orders/Details/{id}` | `Details(int id)` — `id` matches `{id?}` | ✅ route — ⚠️ **no `UserId` scope check** (security issue #1 from report) |
+| `GET /Sales/Orders/Details/{id}` | `Details(int id)` — `id` matches `{id?}` | ✅ — ownership check present (R-5 fixed 2026-05-28) |
 | `GET /Sales/Orders/Edit/{id}` | `Edit(int id)` | ✅ |
 | `GET /Sales/Orders/PaidOrders` | `PaidOrders()` | ✅ |
 | `GET /Sales/Orders/Fulfillment/{id}` | `Fulfillment(int id)` | ✅ |
@@ -134,18 +157,18 @@
 
 ---
 
-### Sales / Payments ⚠️
+### Sales / Payments ✅
 
 | Report route | Actual action signature | Binds correctly? |
 |---|---|---|
-| `GET /Sales/Payments` | `Index()` (stub — empty list) | ✅ route — ⚠️ stub |
-| `GET /Sales/Payments/Create/{paymentId:guid}` *(target)* | `Create(int id)` — `id` = orderId | ⚠️ **Type wrong**: `int id` (orderId) instead of `Guid paymentId`; no Pending-status guard — known issue #R-3 |
-| `GET /Sales/Payments/Details/{id}` | `Details(int id)` — `id` matches `{id?}` | ✅ route — ⚠️ **no `UserId` scope check** (security issue #R-4) |
-| `GET /Sales/Payments/MyPayments` | `MyPayments()` (stub — empty list) | ✅ route — ⚠️ stub |
+| `GET /Sales/Payments` | `Index()` | ✅ |
+| `GET /Sales/Payments/Create/{id}` | `Create(int id)` — calls `GetPendingByOrderIdAsync(id, GetUserId())` | ✅ — user-scope + Pending-status guard (R-3 fixed 2026-05-28) |
+| `GET /Sales/Payments/Details/{id}` | `Details(int id)` — `id` matches `{id?}` | ✅ — ownership check present (R-4 fixed 2026-05-28) |
+| `GET /Sales/Payments/MyPayments` | `MyPayments()` | ✅ |
 
 ---
 
-### Sales / OrderItems ⚠️
+### Sales / OrderItems ✅
 
 | Report route | Actual action signature | Binds correctly? |
 |---|---|---|
@@ -240,9 +263,9 @@
 
 ---
 
-### IAM / UserManagement ⚠️
+### IAM / UserManagement ✅
 
-> **Legacy routes** were `/UserManagement/...`. New Area routes are `/IAM/UserManagement/...`. Legacy controller still alive.
+> **Legacy routes** were `/UserManagement/...`. New Area routes are `/IAM/UserManagement/...`. Legacy controller deleted ✅ — `Controllers/UserManagementController.cs` removed, `Views/UserManagement/` removed.
 
 | Legacy → New route | Actual action signature | Binds correctly? |
 |---|---|---|
@@ -251,7 +274,7 @@
 | `/UserManagement/EditUser/{id}` → `GET /IAM/UserManagement/EditUser/{id}` | `EditUser(string id)` | ✅ |
 | `/UserManagement/AddUser` → `GET /IAM/UserManagement/AddUser` | `AddUser()` | ✅ |
 | `/UserManagement/ChangeUserPassword/{id}` → `GET /IAM/UserManagement/ChangeUserPassword/{id}` | `ChangeUserPassword(string id)` | ✅ |
-| `/UserManagement/DeleteUser/{id}` → `DELETE /IAM/UserManagement/DeleteUser` | `DeleteUser(string id)` — **no HTTP verb attribute** | ⚠️ **Missing `[HttpPost]`/`[HttpDelete]`** — responds to GET by default; delete-on-GET is unsafe. Currently called via AJAX but should be `[HttpPost]` or `[HttpDelete]`. |
+| `POST /IAM/UserManagement/DeleteUser` | `DeleteUser(string id)` — `[HttpPost]` + `[ValidateAntiForgeryToken]` | ✅ — R-6 fixed 2026-05-28 |
 
 ---
 

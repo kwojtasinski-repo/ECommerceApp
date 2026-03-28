@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ECommerceApp.API.Controllers
+namespace ECommerceApp.API.Controllers.Presale
 {
     [Authorize]
     [Route("api/checkout")]
@@ -24,7 +24,7 @@ namespace ECommerceApp.API.Controllers
         // Locks prices for all cart items into SoftReservations with a 15-minute TTL.
         // Must be called before confirm. Re-calling refreshes prices and TTL.
         [HttpPost("initiate")]
-        [Authorize(Policy = "TrustedApiUser")]
+        [Authorize(Policy = ApiPolicies.TrustedApiUser)]
         public async Task<IActionResult> Initiate(CancellationToken ct = default)
         {
             var userId = new PresaleUserId(GetUserId());
@@ -46,7 +46,7 @@ namespace ECommerceApp.API.Controllers
         // AccountProfile or manual entry. No server-side customer lookup is performed.
         // Returns orderId; use GET api/orders/{orderId} to obtain paymentUrl.
         [HttpPost("confirm")]
-        [Authorize(Policy = "TrustedApiUser")]
+        [Authorize(Policy = ApiPolicies.TrustedApiUser)]
         public async Task<IActionResult> Confirm([FromBody] ConfirmCheckoutRequest request, CancellationToken ct = default)
         {
             var userId = new PresaleUserId(GetUserId());

@@ -4,7 +4,7 @@
 ###
 ### All endpoints require MaintenanceRole.
 ###
-### Note: route prefix is /api/v2/jobs (admin controller, not part of BC switch).
+### Note: route prefix is /api/jobs
 ###
 ### Known jobs (registered at startup):
 ###   - PaymentWindowExpiredJob     (Payments BC)
@@ -39,31 +39,31 @@ Content-Type: {{contentType}}
 
 ### Get all registered jobs and their current status
 # Expected: 200 OK  →  List<JobStatusSummary>
-GET {{baseUrl}}/api/v2/jobs
+GET {{baseUrl}}/api/jobs
 Authorization: Bearer {{token}}
 ###
 
 ### Get deferred job queue (jobs waiting to be picked up)
 # Expected: 200 OK  →  List<DeferredJobQueueVm>
-GET {{baseUrl}}/api/v2/jobs/deferred
+GET {{baseUrl}}/api/jobs/deferred
 Authorization: Bearer {{token}}
 ###
 
 ### Get execution history for PaymentWindowExpiredJob
 # Expected: 200 OK  →  List<JobExecutionRecord>
-GET {{baseUrl}}/api/v2/jobs/PaymentWindowExpiredJob/history?page=1&pageSize=20
+GET {{baseUrl}}/api/jobs/PaymentWindowExpiredJob/history?page=1&pageSize=20
 Authorization: Bearer {{token}}
 ###
 
 ### Get history — SoftReservationExpiredJob
 # Expected: 200 OK
-GET {{baseUrl}}/api/v2/jobs/SoftReservationExpiredJob/history?page=1&pageSize=10
+GET {{baseUrl}}/api/jobs/SoftReservationExpiredJob/history?page=1&pageSize=10
 Authorization: Bearer {{token}}
 ###
 
 ### Get history — SnapshotOrderItemsJob
 # Expected: 200 OK
-GET {{baseUrl}}/api/v2/jobs/SnapshotOrderItemsJob/history?page=1&pageSize=10
+GET {{baseUrl}}/api/jobs/SnapshotOrderItemsJob/history?page=1&pageSize=10
 Authorization: Bearer {{token}}
 ###
 
@@ -73,12 +73,12 @@ Authorization: Bearer {{token}}
 
 ### Enable a job
 # Expected: 200 OK
-PUT {{baseUrl}}/api/v2/jobs/PaymentWindowExpiredJob/enable
+PUT {{baseUrl}}/api/jobs/PaymentWindowExpiredJob/enable
 Authorization: Bearer {{token}}
 ###
 
 ### Disable a job
 # Expected: 200 OK
-PUT {{baseUrl}}/api/v2/jobs/StockAdjustmentJob/disable
+PUT {{baseUrl}}/api/jobs/StockAdjustmentJob/disable
 Authorization: Bearer {{token}}
 ###

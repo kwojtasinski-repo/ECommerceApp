@@ -1,8 +1,6 @@
 ﻿using ECommerceApp.API;
-using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.POCO;
-using ECommerceApp.Application.Services.Items;
 using ECommerceApp.Application.ViewModels.Image;
 using ECommerceApp.Domain.Interface;
 using ECommerceApp.IntegrationTests.Common;

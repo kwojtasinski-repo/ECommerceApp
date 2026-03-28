@@ -6,7 +6,7 @@
 ### Create/Update/Delete require ManagingRole.
 ### Currency rates are synced by the CurrencyRateSyncTask job (NBP API).
 ###
-### Note: route prefix is /api/v2/currencies (admin controller, not part of BC switch).
+### Note: route prefix is /api/currencies
 ### ============================================================
 
 @baseUrl = https://localhost:49609
@@ -34,28 +34,28 @@ Content-Type: {{contentType}}
 
 ### Get all currencies — paged (anonymous)
 # Expected: 200 OK  →  CurrencyListVm
-GET {{baseUrl}}/api/v2/currencies?pageSize=10&pageNo=1
+GET {{baseUrl}}/api/currencies?pageSize=10&pageNo=1
 ###
 
 ### Get all currencies — search
 # Expected: 200 OK
-GET {{baseUrl}}/api/v2/currencies?searchString=EUR&pageSize=5&pageNo=1
+GET {{baseUrl}}/api/currencies?searchString=EUR&pageSize=5&pageNo=1
 ###
 
 ### Get currency by id (anonymous)
 # Expected: 200 OK  →  CurrencyVm
-GET {{baseUrl}}/api/v2/currencies/1
+GET {{baseUrl}}/api/currencies/1
 ###
 
 ### Get currency — not found
 # Expected: 404 Not Found
-GET {{baseUrl}}/api/v2/currencies/99999
+GET {{baseUrl}}/api/currencies/99999
 ###
 
 ### Create currency (ManagingRole)
 # Expected: 201 Created  →  { "id": <newId> }
 # Code must be a valid ISO 4217 code
-POST {{baseUrl}}/api/v2/currencies
+POST {{baseUrl}}/api/currencies
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
@@ -67,7 +67,7 @@ Content-Type: {{contentType}}
 
 ### Update currency (ManagingRole)
 # Expected: 200 OK
-PUT {{baseUrl}}/api/v2/currencies
+PUT {{baseUrl}}/api/currencies
 Authorization: Bearer {{token}}
 Content-Type: {{contentType}}
 
@@ -80,7 +80,7 @@ Content-Type: {{contentType}}
 
 ### Delete currency (ManagingRole)
 # Expected: 204 No Content
-DELETE {{baseUrl}}/api/v2/currencies/1
+DELETE {{baseUrl}}/api/currencies/1
 Authorization: Bearer {{token}}
 ###
 
@@ -90,10 +90,10 @@ Authorization: Bearer {{token}}
 
 ### Get latest rate for currency
 # Expected: 200 OK  →  CurrencyRateVm
-GET {{baseUrl}}/api/v2/currencies/1/rate/latest
+GET {{baseUrl}}/api/currencies/1/rate/latest
 ###
 
 ### Get rate for specific day
 # Expected: 200 OK  →  CurrencyRateVm
-GET {{baseUrl}}/api/v2/currencies/1/rate?date=2026-01-01
+GET {{baseUrl}}/api/currencies/1/rate?date=2026-01-01
 ###

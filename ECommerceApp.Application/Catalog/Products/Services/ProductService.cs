@@ -150,6 +150,20 @@ namespace ECommerceApp.Application.Catalog.Products.Services
             };
         }
 
+        public async Task<ProductListVm> GetPublishedProductsByTagAsync(int tagId, int pageSize, int pageNo)
+        {
+            var products = await _productRepo.GetPublishedByTagAsync(tagId, pageSize, pageNo);
+            var count = await _productRepo.CountPublishedByTagAsync(tagId);
+            return new ProductListVm
+            {
+                Products = _mapper.Map<List<ProductForListVm>>(products),
+                PageSize = pageSize,
+                CurrentPage = pageNo,
+                SearchString = string.Empty,
+                Count = count
+            };
+        }
+
         public async Task PublishProduct(int id)
         {
             var product = await _productRepo.GetByIdAsync(new ProductId(id));

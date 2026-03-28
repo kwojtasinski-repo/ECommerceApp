@@ -4,10 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ECommerceApp.API.Controllers
+namespace ECommerceApp.API.Controllers.Catalog
 {
     [Authorize]
-    [Route("api/items")]
+    [Route("api/products")]
     public class CatalogController : BaseController
     {
         private readonly IProductService _products;

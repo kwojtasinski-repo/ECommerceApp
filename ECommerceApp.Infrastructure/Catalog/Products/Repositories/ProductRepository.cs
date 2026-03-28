@@ -88,6 +88,29 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
                 .CountAsync(p => p.Status == ProductStatus.Published
                               && (string.IsNullOrEmpty(searchString) || p.Description.Value.Contains(searchString)));
 
+        public async Task<List<Product>> GetPublishedByTagAsync(int tagId, int pageSize, int pageNo)
+        {
+            if (pageNo < 1) pageNo = 1;
+            var tagIdTyped = new TagId(tagId);
+            return await _context.Products
+                .AsNoTracking()
+                .Where(p => p.Status == ProductStatus.Published
+                         && p.ProductTags.Any(pt => pt.TagId == tagIdTyped))
+                .OrderBy(p => p.Id)
+                .Skip((pageNo - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public async Task<int> CountPublishedByTagAsync(int tagId)
+        {
+            var tagIdTyped = new TagId(tagId);
+            return await _context.Products
+                .AsNoTracking()
+                .CountAsync(p => p.Status == ProductStatus.Published
+                              && p.ProductTags.Any(pt => pt.TagId == tagIdTyped));
+        }
+
         public async Task<List<Product>> GetByIdsAsync(IEnumerable<int> ids)
         {
             var productIds = ids.Select(id => new ProductId(id)).ToList();

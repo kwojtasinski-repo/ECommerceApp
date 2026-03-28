@@ -12,7 +12,8 @@ namespace ECommerceApp.Application.Catalog.Products.Services
                 .AddScoped<IProductService, ProductService>()
                 .AddScoped<ICategoryService, CategoryService>()
                 .AddScoped<IProductTagService, ProductTagService>()
-                .AddSingleton<IImageUrlBuilder, RelativeImageUrlBuilder>();
+                .AddSingleton<IImageUrlBuilder, RelativeImageUrlBuilder>()
+                .AddTransient<Images.Services.IImageService, Images.Services.ImageService>();
         }
     }
 }
