@@ -1,7 +1,7 @@
 # Remaining Work Effort
 
-> **Rev 2 — Generated 2026-05-28**
-> Test suite: **1020 / 1020** ✅ (843 unit + 177 integration)
+> **Rev 3 — Generated 2026-06-05**
+> Test suite: **1009 / 1009** ✅ (832 unit + 177 integration)
 > Previous priorities 1–4 (IAM switch, legacy view cleanup, Payments cleanup, Sales switch) are **all complete**.
 
 ---
@@ -10,13 +10,13 @@
 
 | # | Item | Size | Status |
 |---|---|---|---|
-| 1 | Orphaned view cleanup (~38 files in 11 folders) | XS | 🟡 Pending |
+| 1 | Orphaned view cleanup (~38 files in 11 folders) + Brand removal | XS | ✅ Done — 20 orphaned view folders deleted (7×V2*, Coupon, CouponType, CouponUsed, Refund, Brand + 9 empty), BrandController + service + DTO + tests deleted, nav link removed |
 | 2 | R-8 — `ImageController` legacy service swap → `ImageService` moved to `Catalog.Images.Services` | S | ✅ Done |
 | 3 | R-2 — `RefundController.Report` action | — | ✅ Dropped (no requirement, API not needed) |
 | 4 | R-7 — `ShowItemConnectedWithTags` feature gap | S | ✅ Done — `ByTag` action + tag filter strip + clickable tag links in Details |
-| 5 | CurrencyRateSyncTask atomic switch (TimeManagement) | XS | 🟡 Pending |
+| 5 | CurrencyRateSyncTask atomic switch (TimeManagement) | XS | ✅ Done — already using `ICurrencyRateService` from new BC; legacy `CurrencyRateDto` deleted |
 | 6 | Refresh Token expiry cleanup job | XS | 🔵 Deferred (low priority) |
-| 7 | Brand BC — no BC equivalent, legacy-only | TBD | 🔴 Tech debt, no timeline |
+| 7 | Brand BC — no BC equivalent, legacy-only | — | ❌ Cancelled + cleaned — `BrandController`, `IBrandService`, `BrandService`, `BrandDto`, `ListForBrandVm`, views, tests all deleted; nav link removed; DI registration removed |
 | 8 | Coupons Slice 2 — DB migration approval + atomic switch | L | 🔄 In progress |
 | 9 | Communication BC | TBD | ❌ Not started |
 | 10 | Backoffice BC | TBD | ❌ Blocked (ADR-0013) |
@@ -92,13 +92,9 @@ dotnet build  # must stay green
 
 ---
 
-## Priority 5 — CurrencyRateSyncTask Atomic Switch — **XS**
+## Priority 5 — CurrencyRateSyncTask Atomic Switch — ✅ Done
 
-| | |
-|---|---|
-| **Context** | `JobManagementController` switched to `Areas/Jobs` ✅. `CurrencyRateSyncTask` wiring in the TimeManagement BC still uses legacy scheduling hook. |
-| **Action** | Verify task registration goes through the new BC's `IDeferredJobScheduler`; delete any legacy scheduling call if present |
-| **ADR** | [ADR-0009](../../docs/adr/0009-supporting-timemanagement-bc-design.md) |
+Already fully switched to new BC. `CurrencyRateSyncTask` uses `ICurrencyRateService` from `Application.Supporting.Currencies.Services`, registered via `AddCurrencyServices()` as `IScheduledTask`. Legacy `CurrencyRateDto` deleted.
 
 ---
 
@@ -111,18 +107,24 @@ dotnet build  # must stay green
 
 ---
 
-## Priority 7 — Brand BC — **Tech Debt, No Timeline**
+## Priority 7 — Brand BC — ❌ Cancelled + Cleaned
 
-Brand has no BC equivalent. Legacy stack is healthy and fully functional.
+Brand BC cancelled — Category BC covers this domain. All Brand code removed:
 
-| Component | File | Status |
-|---|---|---|
-| Controller | `Web/Controllers/BrandController.cs` | ✅ Active (legacy) |
-| Service | `Application/Services/Brands/BrandService.cs` + `IBrandService.cs` | ✅ Active (legacy) |
-| Repository | `Infrastructure/Repositories/BrandRepository.cs` | ✅ Active (legacy) |
-| Views | `Views/Brand/` (AddBrand, EditBrand, Index, ViewBrand — 4 files) | ✅ Active (legacy) |
+| Component | Action |
+|---|---|
+| `Web/Controllers/BrandController.cs` | ❌ Deleted |
+| `Application/Services/Brands/BrandService.cs` + `IBrandService.cs` | ❌ Deleted |
+| `Application/DTO/BrandDto.cs` | ❌ Deleted |
+| `Application/ViewModels/Brand/ListForBrandVm.cs` | ❌ Deleted |
+| `Views/Brand/` (4 files) | ❌ Deleted |
+| `UnitTests/Services/Brand/BrandServiceTests.cs` | ❌ Deleted |
+| `IntegrationTests/Services/BrandServiceTests.cs` | ❌ Deleted |
+| DI registration in `Application/Services/Extensions.cs` | ❌ Removed |
+| DI registration in `Infrastructure/Repositories/Extensions.cs` | ❌ Removed |
+| Nav link "Marki" in `_Layout.cshtml` | ❌ Removed |
 
-**Decision needed**: Create a `Supporting/Brands` BC (or fold into `Catalog`) — or accept as perpetual legacy. No action until decision made.
+Legacy `Domain/Model/Brand.cs`, `BrandRepository.cs`, `IBrandRepository`, `Context.Brands` DbSet retained — DB FK from `Item.BrandId` still exists. Will be removed in future DB cleanup migration.
 
 ---
 

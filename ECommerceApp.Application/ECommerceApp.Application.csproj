@@ -24,9 +24,11 @@
 
 
   <ItemGroup>
+    <Folder Include="Services\Brands\" />
     <Folder Include="Services\Coupons\" />
     <Folder Include="Services\Currencies\" />
     <Folder Include="Services\Items\" />
     <Folder Include="Services\Users\" />
+    <Folder Include="ViewModels\Brand\" />
   </ItemGroup>
 </Project>

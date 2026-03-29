@@ -9,7 +9,6 @@ namespace ECommerceApp.Infrastructure.Repositories
         {
             services.AddTransient(typeof(IGenericRepository<>), typeof(GenericRepository<>));
             services.AddTransient<IImageRepository, ImageRepository>();
-            services.AddTransient<IBrandRepository, BrandRepository>();
             return services;
         }
     }

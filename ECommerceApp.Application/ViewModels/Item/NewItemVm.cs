@@ -17,7 +17,6 @@ namespace ECommerceApp.Application.ViewModels.Item
         public int TypeId { get; set; }
         public int CurrencyId { get; set; }
 
-        public List<BrandDto> Brands { get; set; } = new List<BrandDto>();
         public List<TypeDto> Types { get; set; } = new List<TypeDto>();
         public List<TagDto> Tags { get; set; } = new List<TagDto>();
         public List<int> ItemTags { get; set; } = new List<int>();

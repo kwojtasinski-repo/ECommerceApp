@@ -1,5 +1,4 @@
-﻿using ECommerceApp.Application.Services.Brands;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 
 namespace ECommerceApp.Application.Services
 {
@@ -7,7 +6,6 @@ namespace ECommerceApp.Application.Services
     {
         public static IServiceCollection AddServices(this IServiceCollection services)
         {
-            services.AddTransient<IBrandService, BrandService>();
             services.AddHttpContextAccessor();
             return services;
         }

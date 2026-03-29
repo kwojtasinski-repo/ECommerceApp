@@ -14,10 +14,10 @@
 | **Sales/Payments — DB migrations + atomic switch** | [`payments-atomic-switch.md`](./payments-atomic-switch.md) | [ADR-0015](../adr/0015-sales-payments-bc-design.md) | ✅ Switch live — all acceptance criteria met; Step 5/6 (legacy cleanup) deferred |
 | **Sales/Coupons — Slice 1 atomic switch** | — (see ADR) | [ADR-0016](../adr/0016-sales-coupons-bc-design.md) | ✅ Switch live — `CouponController` migrated to `Areas/Sales`, legacy UI controllers deleted, nav updated. Legacy service DI retained (Step 8). |
 | **Presale/Checkout — Slice 2** | [`presale-slice2.md`](./presale-slice2.md) | [ADR-0012](../adr/0012-presale-checkout-bc-design.md) §11–14 | ✅ Switch live — implementation complete, integration tests ✅, EC-001 decision ✅ |
-| **Identity/IAM — atomic switch** | [`iam-atomic-switch.md`](./iam-atomic-switch.md) | [ADR-0019](../adr/0019-identity-iam-bc-design.md) | 🟡 Migration approval pending; coordinate with Orders switch |
+| **Identity/IAM — atomic switch** | [`iam-atomic-switch.md`](./iam-atomic-switch.md) | [ADR-0019](../adr/0019-identity-iam-bc-design.md) | ✅ Switch complete — `Context` → `DbContext`, `Domain.Model.ApplicationUser` deleted, legacy controllers/services/repos deleted |
 | **Identity/IAM — refresh token** | [`iam-refresh-token.md`](./iam-refresh-token.md) | ADR-0019 amendment pending | 🔵 Planned — design settled, not started |
 | **Frontend error pipeline & JS migration** | [`frontend-pipeline.md`](./frontend-pipeline.md) | [ADR-0021](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) | ✅ Phase 1–4 complete |
-| **Storefront — `/offers` public browsing** | [`storefront-offers.md`](./storefront-offers.md) | — | 🟡 In progress — service layers ✅, routing + home page pending |
+| **Storefront — `/offers` public browsing** | [`storefront-offers.md`](./storefront-offers.md) | — | ✅ §1 routing + §2 home page done — §3 category strip optional |
 | **Chunked image upload** | [`chunked-upload.md`](./chunked-upload.md) | — | 🔵 Planned — server-driven design agreed, v1 spike not started |
 
 > **Routing strategy for all controller migrations**: [ADR-0024](../adr/0024-controller-routing-strategy.md) — Web uses ASP.NET Core Areas (new parallel routes), API uses in-place swap. Applies to Orders, Payments, and all subsequent BC controller switches.

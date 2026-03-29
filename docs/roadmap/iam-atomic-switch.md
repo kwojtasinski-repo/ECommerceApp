@@ -1,7 +1,7 @@
 # Roadmap: Identity/IAM BC — Atomic Switch
 
 > ADR: [ADR-0019](../adr/0019-identity-iam-bc-design.md) — Identity/IAM BC Design and Atomic Switch Plan
-> Status: 🟡 In progress — Domain ✅ Application ✅ Infrastructure ✅ migrations ✅ Area controller ✅ Refresh token Steps 1–4 ✅
+> Status: ✅ Switch complete — `Context` → `DbContext`, `Domain.Model.ApplicationUser` deleted, legacy controllers/services/repos deleted, all IAM features live. ADR-0019 Accepted.
 > **Coordinate with**: Sales/Orders atomic switch (`orders-atomic-switch.md`) — step 3 below
 
 ---
