@@ -1,4 +1,5 @@
 using ECommerceApp.Application.Presale.Checkout.DTOs;
+using ECommerceApp.Application.Presale.Checkout.Results;
 using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Domain.Presale.Checkout;
 using ECommerceApp.IntegrationTests.Common;
@@ -23,12 +24,12 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
             result.ShouldBeNull();
         }
 
-        // ── AddOrUpdateAsync ─────────────────────────────────────────────
+        // ── SetCartItemAsync ─────────────────────────────────────────────
 
         [Fact]
-        public async Task AddOrUpdateAsync_NewItem_ShouldAddToCart()
+        public async Task SetCartItemAsync_NewItem_ShouldAddToCart()
         {
-            await _service.AddOrUpdateAsync(new AddToCartDto(TestUserId, ProductId: 10, Quantity: 3));
+            await _service.SetCartItemAsync(new AddToCartDto(TestUserId, ProductId: 10, Quantity: 3));
 
             var cart = await _service.GetCartAsync(new PresaleUserId(TestUserId));
 
@@ -40,10 +41,10 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
         }
 
         [Fact]
-        public async Task AddOrUpdateAsync_MultipleItems_ShouldAddAllToCart()
+        public async Task SetCartItemAsync_MultipleItems_ShouldAddAllToCart()
         {
-            await _service.AddOrUpdateAsync(new AddToCartDto(TestUserId, ProductId: 10, Quantity: 2));
-            await _service.AddOrUpdateAsync(new AddToCartDto(TestUserId, ProductId: 20, Quantity: 5));
+            await _service.SetCartItemAsync(new AddToCartDto(TestUserId, ProductId: 10, Quantity: 2));
+            await _service.SetCartItemAsync(new AddToCartDto(TestUserId, ProductId: 20, Quantity: 5));
 
             var cart = await _service.GetCartAsync(new PresaleUserId(TestUserId));
 
@@ -51,13 +52,29 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
             cart.Lines.Count.ShouldBe(2);
         }
 
+        // ── AddToCartAsync ───────────────────────────────────────────────────
+
+        [Fact]
+        public async Task AddToCartAsync_ExistingItem_ShouldIncrementQuantity()
+        {
+            await _service.SetCartItemAsync(new AddToCartDto(TestUserId, ProductId: 10, Quantity: 3));
+
+            var result = await _service.AddToCartAsync(new AddToCartDto(TestUserId, ProductId: 10, Quantity: 2));
+
+            result.ShouldBeOfType<AddToCartResult.Success>();
+            var cart = await _service.GetCartAsync(new PresaleUserId(TestUserId));
+            cart.ShouldNotBeNull();
+            cart.Lines.Count.ShouldBe(1);
+            cart.Lines[0].Quantity.ShouldBe(5); // 3 + 2
+        }
+
         // ── RemoveAsync ──────────────────────────────────────────────────
 
         [Fact]
         public async Task RemoveAsync_ExistingItem_ShouldRemoveFromCart()
         {
-            await _service.AddOrUpdateAsync(new AddToCartDto(TestUserId, ProductId: 10, Quantity: 2));
-            await _service.AddOrUpdateAsync(new AddToCartDto(TestUserId, ProductId: 20, Quantity: 3));
+            await _service.SetCartItemAsync(new AddToCartDto(TestUserId, ProductId: 10, Quantity: 2));
+            await _service.SetCartItemAsync(new AddToCartDto(TestUserId, ProductId: 20, Quantity: 3));
 
             await _service.RemoveAsync(new PresaleUserId(TestUserId), new PresaleProductId(10));
 
@@ -72,9 +89,9 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
         [Fact]
         public async Task RemoveRangeAsync_MultipleItems_ShouldRemoveAll()
         {
-            await _service.AddOrUpdateAsync(new AddToCartDto(TestUserId, ProductId: 10, Quantity: 1));
-            await _service.AddOrUpdateAsync(new AddToCartDto(TestUserId, ProductId: 20, Quantity: 1));
-            await _service.AddOrUpdateAsync(new AddToCartDto(TestUserId, ProductId: 30, Quantity: 1));
+            await _service.SetCartItemAsync(new AddToCartDto(TestUserId, ProductId: 10, Quantity: 1));
+            await _service.SetCartItemAsync(new AddToCartDto(TestUserId, ProductId: 20, Quantity: 1));
+            await _service.SetCartItemAsync(new AddToCartDto(TestUserId, ProductId: 30, Quantity: 1));
 
             await _service.RemoveRangeAsync(
                 new PresaleUserId(TestUserId),
@@ -91,8 +108,8 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
         [Fact]
         public async Task ClearAsync_CartWithItems_ShouldEmptyCart()
         {
-            await _service.AddOrUpdateAsync(new AddToCartDto(TestUserId, ProductId: 10, Quantity: 2));
-            await _service.AddOrUpdateAsync(new AddToCartDto(TestUserId, ProductId: 20, Quantity: 3));
+            await _service.SetCartItemAsync(new AddToCartDto(TestUserId, ProductId: 10, Quantity: 2));
+            await _service.SetCartItemAsync(new AddToCartDto(TestUserId, ProductId: 20, Quantity: 3));
 
             await _service.ClearAsync(new PresaleUserId(TestUserId));
 
@@ -110,9 +127,9 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
             empty.ShouldBeNull();
 
             // Add items
-            await _service.AddOrUpdateAsync(new AddToCartDto(TestUserId, ProductId: 1, Quantity: 2));
-            await _service.AddOrUpdateAsync(new AddToCartDto(TestUserId, ProductId: 2, Quantity: 3));
-            await _service.AddOrUpdateAsync(new AddToCartDto(TestUserId, ProductId: 3, Quantity: 1));
+            await _service.SetCartItemAsync(new AddToCartDto(TestUserId, ProductId: 1, Quantity: 2));
+            await _service.SetCartItemAsync(new AddToCartDto(TestUserId, ProductId: 2, Quantity: 3));
+            await _service.SetCartItemAsync(new AddToCartDto(TestUserId, ProductId: 3, Quantity: 1));
 
             var withThree = await _service.GetCartAsync(new PresaleUserId(TestUserId));
             withThree.ShouldNotBeNull();

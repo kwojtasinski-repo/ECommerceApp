@@ -1,5 +1,6 @@
 using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Application.Presale.Checkout.DTOs;
+using ECommerceApp.Application.Presale.Checkout.Options;
 using ECommerceApp.Application.Presale.Checkout.Results;
 using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Application.Presale.Checkout.ViewModels;
@@ -7,6 +8,7 @@ using ECommerceApp.Domain.Presale.Checkout;
 using ECommerceApp.Web.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Web.Areas.Presale.Controllers
@@ -40,7 +42,10 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
             var userId = new PresaleUserId(GetUserId());
             var result = await _checkoutService.InitiateAsync(userId);
             if (result is InitiateCheckoutResult.CartEmpty || result is InitiateCheckoutResult.NothingReserved)
+            {
                 return RedirectToAction(nameof(Cart));
+            }
+
             return View(new PlaceOrderVm());
         }
 
@@ -81,11 +86,56 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
             return View(model: id);
         }
 
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> CartCount()
+        {
+            if (!User.Identity.IsAuthenticated)
+            {
+                return Json(new { count = 0 });
+            }
+
+            var userId = new PresaleUserId(GetUserId());
+            var cart = await _cartService.GetCartAsync(userId);
+            return Json(new { count = cart?.Lines.Sum(l => l.Quantity) ?? 0 });
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddToCart(int productId, int quantity, string returnUrl)
+        {
+            if (!User.Identity.IsAuthenticated)
+            {
+                var safeReturn = !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)
+                    ? returnUrl : Url.Action(nameof(Cart));
+                return RedirectToPage("/Account/Login", new { area = "Identity", returnUrl = safeReturn });
+            }
+            if (quantity < 1)
+            {
+                return BadRequest();
+            }
+
+            var userId = GetUserId();
+            var result = await _cartService.AddToCartAsync(new AddToCartDto(userId, productId, quantity));
+            return result switch
+            {
+                AddToCartResult.Success => !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl)
+                    ? Redirect(returnUrl) : RedirectToAction(nameof(Cart)),
+                _ => BadRequest()
+            };
+        }
+
         [HttpPost]
         public async Task<IActionResult> UpdateCartItem(int productId, int quantity)
         {
+            if (quantity < 1 || quantity > CheckoutOptions.MaxWebQuantityPerOrderLine)
+            {
+                return BadRequest();
+            }
+
             var userId = GetUserId();
-            await _cartService.AddOrUpdateAsync(new AddToCartDto(userId, productId, quantity));
+            await _cartService.SetCartItemAsync(new AddToCartDto(userId, productId, quantity));
             return Ok();
         }
 

@@ -17,6 +17,8 @@
 | **Identity/IAM — atomic switch** | [`iam-atomic-switch.md`](./iam-atomic-switch.md) | [ADR-0019](../adr/0019-identity-iam-bc-design.md) | 🟡 Migration approval pending; coordinate with Orders switch |
 | **Identity/IAM — refresh token** | [`iam-refresh-token.md`](./iam-refresh-token.md) | ADR-0019 amendment pending | 🔵 Planned — design settled, not started |
 | **Frontend error pipeline & JS migration** | [`frontend-pipeline.md`](./frontend-pipeline.md) | [ADR-0021](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) | ✅ Phase 1–4 complete |
+| **Storefront — `/offers` public browsing** | [`storefront-offers.md`](./storefront-offers.md) | — | 🟡 In progress — service layers ✅, routing + home page pending |
+| **Chunked image upload** | [`chunked-upload.md`](./chunked-upload.md) | — | 🔵 Planned — server-driven design agreed, v1 spike not started |
 
 > **Routing strategy for all controller migrations**: [ADR-0024](../adr/0024-controller-routing-strategy.md) — Web uses ASP.NET Core Areas (new parallel routes), API uses in-place swap. Applies to Orders, Payments, and all subsequent BC controller switches.
 

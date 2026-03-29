@@ -1,0 +1,110 @@
+@model StorefrontProductDetailsVm
+@using ECommerceApp.Application.Presale.Checkout.Options
+@{
+    ViewData["Title"] = Model.Name;
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>@Model.Name</h2>
+        <a asp-area="Presale" asp-controller="Storefront" asp-action="Index" class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-arrow-left me-1"></i>Wróć do listy
+        </a>
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-sm-3">Cena</dt>
+                <dd class="col-sm-9">@Model.Price.ToString("C")</dd>
+
+                <dt class="col-sm-3">Dostępność</dt>
+                <dd class="col-sm-9">
+                    @if (Model.InStock)
+                    {
+                        <span class="badge bg-success">Dostępny (@Model.AvailableQuantity szt.)</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">Niedostępny</span>
+                    }
+                </dd>
+
+                <dt class="col-sm-3">Kategoria</dt>
+                <dd class="col-sm-9">@Model.CategoryName</dd>
+
+                <dt class="col-sm-3">Opis</dt>
+                <dd class="col-sm-9">@Model.Description</dd>
+
+                @if (Model.TagNames.Count > 0)
+                {
+                    <dt class="col-sm-3">Tagi</dt>
+                    <dd class="col-sm-9">
+                        @foreach (var tag in Model.TagIds.Zip(Model.TagNames, (id, name) => new { id, name }))
+                        {
+                            <a asp-area="Presale" asp-controller="Storefront" asp-action="ByTag"
+                               asp-route-tagId="@tag.id"
+                               class="badge bg-secondary text-decoration-none me-1">@tag.name</a>
+                        }
+                    </dd>
+                }
+            </dl>
+        </div>
+    </div>
+
+    @if (Model.Images.Count > 0)
+    {
+        <div class="row g-2 mb-3">
+            @foreach (var img in Model.Images)
+            {
+                <div class="col-auto">
+                    <img src="@img.Url" alt="@Model.Name" class="img-thumbnail" style="max-height:150px;" />
+                </div>
+            }
+        </div>
+    }
+
+    @if (Model.InStock)
+    {
+        <div class="card mb-3">
+            <div class="card-body">
+                <form id="addToCartForm" asp-area="Presale" asp-controller="Checkout" asp-action="AddToCart" method="post"
+                      class="d-flex align-items-center gap-3 flex-wrap">
+                    <input type="hidden" name="productId" value="@Model.ProductId" />
+                    <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="fw-semibold mb-0">Ilość:</label>
+                        <input type="number" name="quantity" value="1" min="1" max="@CheckoutOptions.MaxWebQuantityPerOrderLine"
+                               class="form-control form-control-sm" style="width:80px;" />
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fa-solid fa-cart-plus me-2"></i>Dodaj do koszyka
+                    </button>
+                </form>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).on('DOMInitialized', function (event, { cartNotification }) {
+            document.getElementById('addToCartForm').addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const form = e.target;
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams(new FormData(form))
+                });
+                if (response.ok) {
+                    // fetch follows all redirects — response.url is the final destination
+                    // (returnUrl on success, login page when unauthenticated)
+                    window.location.href = response.url;
+                } else {
+                    cartNotification.showCartError('Maksymalna dozwolona ilość tego produktu w koszyku wynosi @CheckoutOptions.MaxWebQuantityPerOrderLine szt.');
+                }
+            });
+        });
+    </script>
+}

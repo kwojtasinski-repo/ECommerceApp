@@ -38,11 +38,11 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="topbarCollapse">
-                    <form class="d-flex mx-auto" asp-area="Catalog" asp-controller="Product" asp-action="Index" method="get">
+                    <form class="d-flex flex-grow-1 mx-3" asp-area="Presale" asp-controller="Storefront" asp-action="Index" method="get">
                         <div class="input-group">
                             <input name="searchString" type="text" class="form-control" placeholder="Szukaj produktów..." />
                             <div class="dropdown">
-                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="categoryFilterBtn" data-bs-toggle="dropdown">Kategoria</button>
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="categoryFilterBtn" data-bs-toggle="dropdown"><i class="fa-solid fa-filter me-1"></i>Kategoria</button>
                                 <div class="dropdown-menu">
                                     @foreach (var cat in categories)
                                     {
@@ -155,12 +155,15 @@
                     else
                     {
                         <ul class="navbar-nav gap-2">
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="Presale" asp-controller="Storefront" asp-action="Index"><i class="fa-solid fa-tag me-1"></i>Oferty</a>
+                            </li>
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown"><i class="fa-solid fa-list me-1"></i>Kategorie</a>
                                 <div class="dropdown-menu">
                                     @foreach (var cat in categories)
                                     {
-                                        <a class="dropdown-item" asp-area="Catalog" asp-controller="Product" asp-action="Index">@cat.Name</a>
+                                        <a class="dropdown-item" asp-area="Presale" asp-controller="Storefront" asp-action="Index">@cat.Name</a>
                                     }
                                 </div>
                             </li>
@@ -186,7 +189,7 @@
         <div class="container">
             <div class="container-fluid row">
                 <div class="col text-start">
-                    &copy; 2021 - 2024 - ECommerceApp.Web
+                    &copy; 2021 - 2026 - ECommerceApp.Web
                 </div>
 
                 <div class="col text-center">
@@ -195,12 +198,15 @@
             </div>
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js"></script>
     <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="~/lib/tom-select/js/tom-select.complete.min.js"></script>
     <script src="~/lib/require-js/require.js"></script>
+    @{ var jsVersion = (ECommerceApp.Web.Services.JsVersionProvider)Context.RequestServices.GetService(typeof(ECommerceApp.Web.Services.JsVersionProvider)); }
+    <script>window.__jsVersion = '@jsVersion?.GetVersion()';</script>
     <script src="~/js/config.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
@@ -214,7 +220,7 @@
                 return;
             }
 
-            ajaxRequest.send("/OrderItem/OrderItemCount", "GET", undefined, "application/json", "json")
+            ajaxRequest.send("/Presale/Checkout/CartCount", "GET", undefined, "application/json", "json")
                         .then(response => { 
                             if (response.count > 0) {
                                 itemCount.innerHTML = response.count;

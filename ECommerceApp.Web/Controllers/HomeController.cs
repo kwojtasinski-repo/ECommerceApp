@@ -2,21 +2,27 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using ECommerceApp.Web.Models;
+using ECommerceApp.Application.Presale.Checkout.Services;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace ECommerceApp.Web.Controllers
 {
     public class HomeController : Controller
     {
         private readonly ILogger<HomeController> _logger;
+        private readonly IStorefrontQueryService _storefront;
 
-        public HomeController(ILogger<HomeController> logger)
+        public HomeController(ILogger<HomeController> logger, IStorefrontQueryService storefront)
         {
             _logger = logger;
+            _storefront = storefront;
         }
 
-        public IActionResult Index()
+        public async Task<IActionResult> Index(CancellationToken ct = default)
         {
-            return View();
+            var featured = await _storefront.GetPublishedProductsAsync(10, 1, string.Empty, ct);
+            return View(featured);
         }
 
         public IActionResult Privacy()

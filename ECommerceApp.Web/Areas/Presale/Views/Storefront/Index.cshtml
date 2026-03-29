@@ -1,0 +1,109 @@
+@model StorefrontProductListVm
+@using ECommerceApp.Application.Catalog.Products.ViewModels
+@{
+    ViewData["Title"] = "Produkty";
+    var totalPages = Model.TotalCount == 0 ? 1 : (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize);
+    var allTags = ViewBag.AllTags as List<ProductTagVm> ?? new List<ProductTagVm>();
+}
+
+<div class="container mt-4">
+    <h2><i class="fa-solid fa-box-open me-2"></i>Produkty</h2>
+
+    @if (allTags.Count > 0)
+    {
+        <div class="mb-3">
+            @foreach (var tag in allTags)
+            {
+                <a asp-area="Presale" asp-controller="Storefront" asp-action="ByTag" asp-route-tagId="@tag.Id"
+                   class="badge bg-secondary text-decoration-none me-1 mb-1">@tag.Name</a>
+            }
+        </div>
+    }
+
+    <form method="post" class="row g-2 mb-3">
+        <div class="col-auto">
+            <select name="pageSize" class="form-select">
+                @foreach (var s in new[] { 12, 24, 48 })
+                {
+                    <option value="@s" selected="@(Model.PageSize == s ? "selected" : null)">@s</option>
+                }
+            </select>
+        </div>
+        <input type="hidden" name="searchString" value="@Model.SearchString" />
+        <input type="hidden" name="pageNo" value="1" />
+    </form>
+
+    @if (Model.Products.Count == 0)
+    {
+        <p class="text-muted">Brak produktów.</p>
+    }
+    else
+    {
+        <div class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
+            @foreach (var product in Model.Products)
+            {
+                <div class="col">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">@product.Name</h5>
+                            <p class="card-text text-muted">@product.Price.ToString("C")</p>
+                            @if (product.InStock)
+                            {
+                                <span class="badge bg-success">Dostępny</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">Niedostępny</span>
+                            }
+                        </div>
+                        <div class="card-footer bg-transparent p-2">
+                            <div class="d-grid gap-1">
+                                <a asp-area="Presale" asp-controller="Storefront" asp-action="Details" asp-route-id="@product.ProductId"
+                                   class="btn btn-outline-primary btn-sm">Szczegóły</a>
+                                @if (product.InStock)
+                                {
+                                    <form asp-area="Presale" asp-controller="Checkout" asp-action="AddToCart" method="post"
+                                          class="js-add-to-cart-form">
+                                            <input type="hidden" name="productId" value="@product.ProductId" />
+                                            <input type="hidden" name="quantity" value="1" />
+                                            <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                                            <button type="submit" class="btn btn-primary btn-sm w-100">
+                                                <i class="fa-solid fa-cart-plus me-1"></i>Do koszyka
+                                            </button>
+                                        </form>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (totalPages > 1)
+    {
+        <nav class="mt-3">
+            <ul class="pagination">
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                        <form method="post" class="d-inline">
+                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                            <input type="hidden" name="pageNo" value="@i" />
+                            <input type="hidden" name="searchString" value="@Model.SearchString" />
+                            <button type="submit" class="page-link">@i</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+        </div>
+
+@section Scripts {
+    <script>
+        $(document).on('DOMInitialized', function (event, { cartNotification }) {
+            cartNotification.bindCartForms();
+        });
+    </script>
+}

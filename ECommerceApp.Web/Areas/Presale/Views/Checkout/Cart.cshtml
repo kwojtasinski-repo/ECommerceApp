@@ -1,43 +1,110 @@
-@model ECommerceApp.Application.Presale.Checkout.ViewModels.CartVm?
+@model ECommerceApp.Application.Presale.Checkout.ViewModels.CartVm
+@using ECommerceApp.Application.Presale.Checkout.Options
 
 @{
     ViewData["Title"] = "Koszyk";
 }
 
-<h1>Koszyk</h1>
+<h1><i class="fa-solid fa-cart-shopping me-2"></i>Koszyk</h1>
 
 @if (Model == null || Model.Lines.Count == 0)
 {
-    <p><em>Twój koszyk jest pusty.</em></p>
+    <div class="alert alert-info mt-3">
+        <i class="fa-solid fa-circle-info me-2"></i>Twój koszyk jest pusty.
+    </div>
+    <a asp-area="Presale" asp-controller="Storefront" asp-action="Index" class="btn btn-outline-primary">
+        <i class="fa-solid fa-box-open me-1"></i>Przeglądaj oferty
+    </a>
 }
 else
 {
-    <table class="table">
-        <thead>
+    <table class="table align-middle mt-3">
+        <thead class="table-light">
             <tr>
                 <th>Produkt</th>
-                <th>Ilość</th>
-                <th>Akcja</th>
+                <th class="text-center">Ilość</th>
+                <th></th>
             </tr>
         </thead>
         <tbody>
             @foreach (var line in Model.Lines)
             {
                 <tr>
-                    <td>@(line.ProductName ?? line.ProductId.ToString())</td>
-                    <td>@line.Quantity</td>
                     <td>
-                        <form asp-area="Presale" asp-controller="Checkout" asp-action="DeleteCartItem" method="post" class="d-inline">
-                            <input type="hidden" name="id" value="@line.ProductId" />
-                            <button type="submit" class="btn btn-sm btn-outline-danger">Usuń</button>
-                        </form>
+                        <a asp-area="Presale" asp-controller="Storefront" asp-action="Details"
+                           asp-route-id="@line.ProductId" class="text-decoration-none fw-semibold">
+                            @(line.ProductName ?? line.ProductId.ToString())
+                        </a>
+                    </td>
+                    <td class="text-center" style="width:160px;">
+                        <div class="d-flex align-items-center justify-content-center gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    onclick="updateQuantity(@line.ProductId, @(line.Quantity - 1))"
+                                    @(line.Quantity <= 1 ? "disabled" : "")>
+                                <i class="fa-solid fa-minus"></i>
+                            </button>
+                            <span class="fw-semibold" style="min-width:24px;">@line.Quantity</span>
+                            <button type="button" class="btn btn-sm btn-outline-secondary"
+                                    onclick="updateQuantity(@line.ProductId, @(line.Quantity + 1))"
+                                    @(line.Quantity >= CheckoutOptions.MaxWebQuantityPerOrderLine ? "disabled" : "")>
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td class="text-end">
+                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                onclick="removeItem(@line.ProductId)">
+                            <i class="fa-solid fa-trash me-1"></i>Usuń
+                        </button>
                     </td>
                 </tr>
             }
         </tbody>
     </table>
 
-    <div class="mt-3">
-        <a asp-area="Presale" asp-controller="Checkout" asp-action="PlaceOrder" class="btn btn-primary">Przejdź do zamówienia</a>
+    <div class="mt-3 d-flex gap-2">
+        <a asp-area="Presale" asp-controller="Checkout" asp-action="PlaceOrder" class="btn btn-primary">
+            <i class="fa-solid fa-bag-shopping me-1"></i>Przejdź do zamówienia
+        </a>
+        <a asp-area="Presale" asp-controller="Storefront" asp-action="Index" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-arrow-left me-1"></i>Kontynuuj zakupy
+        </a>
     </div>
+}
+
+@section Scripts {
+    <script>
+        var _cartNotification = null;
+
+        $(document).on('DOMInitialized', function (event, { cartNotification }) {
+            _cartNotification = cartNotification;
+        });
+
+        async function updateQuantity(productId, newQuantity) {
+            if (newQuantity < 1) return;
+            const response = await fetch('/Presale/Checkout/UpdateCartItem', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `productId=${productId}&quantity=${newQuantity}`
+            });
+            if (response.ok) {
+                location.reload();
+            } else {
+                _cartNotification?.showCartError('Nie można ustawić tej ilości (zakres: 1–@CheckoutOptions.MaxWebQuantityPerOrderLine).');
+            }
+        }
+
+        async function removeItem(productId) {
+            const response = await fetch('/Presale/Checkout/DeleteCartItem', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `id=${productId}`
+            });
+            if (response.ok) {
+                location.reload();
+            } else {
+                _cartNotification?.showCartError('Nie udało się usunąć produktu.');
+            }
+        }
+    </script>
 }

@@ -1,5 +1,6 @@
 using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Application.Presale.Checkout.DTOs;
+using ECommerceApp.Application.Presale.Checkout.Results;
 using ECommerceApp.Application.Presale.Checkout.ViewModels;
 using ECommerceApp.Domain.Presale.Checkout;
 using Microsoft.Extensions.Caching.Memory;
@@ -16,15 +17,30 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
         private readonly ICartLineRepository _cartRepo;
         private readonly IMemoryCache _cache;
         private readonly ICatalogClient _catalog;
+        private readonly ICartRequirements _requirements;
 
-        public CartService(ICartLineRepository cartRepo, IMemoryCache cache, ICatalogClient catalog)
+        public CartService(ICartLineRepository cartRepo, IMemoryCache cache, ICatalogClient catalog, ICartRequirements requirements)
         {
             _cartRepo = cartRepo;
             _cache = cache;
             _catalog = catalog;
+            _requirements = requirements;
         }
 
-        public async Task AddOrUpdateAsync(AddToCartDto dto, CancellationToken ct = default)
+        public async Task<AddToCartResult> AddToCartAsync(AddToCartDto dto, CancellationToken ct = default)
+        {
+            var cart = await GetCartAsync(new PresaleUserId(dto.UserId), ct);
+            var existingQty = cart?.Lines.FirstOrDefault(l => l.ProductId == dto.ProductId)?.Quantity ?? 0;
+            if (existingQty + dto.Quantity > _requirements.MaxQuantityPerOrderLine)
+                return AddToCartResult.LimitExceeded(_requirements.MaxQuantityPerOrderLine);
+
+            var line = CartLine.Create(dto.UserId, dto.ProductId, existingQty + dto.Quantity);
+            await _cartRepo.UpsertAsync(line, ct);
+            await RefreshCacheAsync(new PresaleUserId(dto.UserId), ct);
+            return AddToCartResult.Added();
+        }
+
+        public async Task SetCartItemAsync(AddToCartDto dto, CancellationToken ct = default)
         {
             var line = CartLine.Create(dto.UserId, dto.ProductId, dto.Quantity);
             await _cartRepo.UpsertAsync(line, ct);

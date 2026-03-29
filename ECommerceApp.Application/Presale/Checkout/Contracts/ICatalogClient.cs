@@ -14,6 +14,8 @@ namespace ECommerceApp.Application.Presale.Checkout.Contracts
         Task<CatalogProductPage> GetPublishedProductsByTagAsync(
             int tagId, int pageSize, int pageNo, CancellationToken ct = default);
 
+        Task<CatalogProductDetails?> GetProductDetailsAsync(int productId, CancellationToken ct = default);
+
         Task<IReadOnlyList<CatalogProductSummary>> GetProductsByIdsAsync(
             IReadOnlyList<int> productIds, CancellationToken ct = default);
     }
@@ -28,4 +30,16 @@ namespace ECommerceApp.Application.Presale.Checkout.Contracts
         int PageSize,
         int CurrentPage,
         string SearchString);
+
+    public sealed record CatalogProductImage(int Id, string Url, bool IsMain, int SortOrder);
+
+    public sealed record CatalogProductDetails(
+        int Id,
+        string Name,
+        decimal Cost,
+        string Description,
+        string CategoryName,
+        IReadOnlyList<CatalogProductImage> Images,
+        IReadOnlyList<int> TagIds,
+        IReadOnlyList<string> TagNames);
 }

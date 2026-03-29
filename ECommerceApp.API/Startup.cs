@@ -5,6 +5,7 @@ using ECommerceApp.API.Options;
 using ECommerceApp.Application;
 using ECommerceApp.Application.Middlewares;
 using ECommerceApp.Application.Permissions;
+using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Infrastructure;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -55,6 +56,7 @@ namespace ECommerceApp.API
             });
             services.Configure<WebOptions>(Configuration.GetSection("WebOptions"));
             services.AddScoped<MaxApiQuantityFilter>();
+            services.AddSingleton<ICartRequirements>(new CartRequirements(ApiPurchaseOptions.MaxQuantityPerOrderLine));
             services.AddApplication();
             services.AddInfrastructure(Configuration);
             services.AddControllers().AddNewtonsoftJson(options =>

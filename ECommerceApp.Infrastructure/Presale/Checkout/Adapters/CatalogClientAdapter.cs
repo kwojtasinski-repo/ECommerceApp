@@ -43,6 +43,21 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Adapters
             return new CatalogProductPage(items, result.Count, result.PageSize, result.CurrentPage, string.Empty);
         }
 
+        public async Task<CatalogProductDetails?> GetProductDetailsAsync(int productId, CancellationToken ct = default)
+        {
+            if (!await _productService.ProductExists(productId))
+                return null;
+
+            var vm = await _productService.GetProductDetails(productId);
+            var images = vm.Images
+                .Select(i => new CatalogProductImage(i.Id, i.Url, i.IsMain, i.SortOrder))
+                .ToList();
+
+            return new CatalogProductDetails(
+                vm.Id, vm.Name, vm.Cost, vm.Description, vm.CategoryName,
+                images, vm.TagIds, vm.TagNames);
+        }
+
         public async Task<IReadOnlyList<CatalogProductSummary>> GetProductsByIdsAsync(
             IReadOnlyList<int> productIds, CancellationToken ct = default)
         {

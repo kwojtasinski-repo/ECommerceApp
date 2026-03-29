@@ -7,7 +7,7 @@
 <div class="container-fluid mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2><i class="fa-solid fa-box-open me-2"></i>Produkty</h2>
-        <a asp-action="Create" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i>Dodaj produkt</a>
+        <a asp-area="Catalog" asp-controller="Product" asp-action="Create" class="btn btn-primary"><i class="fa-solid fa-plus me-1"></i>Dodaj produkt</a>
     </div>
 
     <form method="post" class="row g-2 mb-3">
@@ -15,7 +15,7 @@
             <select name="pageSize" class="form-select">
                 @foreach (var s in new[] { 10, 20, 50 })
                 {
-                    <option value="@s" selected="@(Model.PageSize == s)">@s</option>
+                    <option value="@s" selected="@(Model.PageSize == s ? "selected" : null)">@s</option>
                 }
             </select>
         </div>
@@ -61,8 +61,8 @@
                                 }
                             </td>
                             <td>
-                                <a asp-action="Details" asp-route-id="@product.Id" class="btn btn-outline-info btn-sm">Szczegóły</a>
-                                <a asp-action="Edit" asp-route-id="@product.Id" class="btn btn-outline-warning btn-sm">Edytuj</a>
+                                <a asp-area="Catalog" asp-controller="Product" asp-action="Details" asp-route-id="@product.Id" class="btn btn-outline-info btn-sm">Szczegóły</a>
+                                <a asp-area="Catalog" asp-controller="Product" asp-action="Edit" asp-route-id="@product.Id" class="btn btn-outline-warning btn-sm">Edytuj</a>
                             </td>
                         </tr>
                     }

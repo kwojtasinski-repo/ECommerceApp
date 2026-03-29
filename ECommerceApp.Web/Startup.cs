@@ -10,7 +10,9 @@ using ECommerceApp.Application;
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
 using ECommerceApp.Web.Filters;
-using FluentValidation.AspNetCore;
+using ECommerceApp.Application.Presale.Checkout.Contracts;
+using ECommerceApp.Application.Presale.Checkout.Options;
+using ECommerceApp.Web.Services;
 
 namespace ECommerceApp.Web
 {
@@ -28,6 +30,8 @@ namespace ECommerceApp.Web
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<ICartRequirements>(new CartRequirements(CheckoutOptions.MaxWebQuantityPerOrderLine));
+            services.AddSingleton<JsVersionProvider>();
             services.AddApplication();
             services.AddInfrastructure(Configuration);
 

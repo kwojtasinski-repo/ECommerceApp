@@ -65,9 +65,9 @@
              * @param closeHandler Handler invoked when the header close button is clicked
              *
              */
-            function createModalHeader(title, closeHandler) {
+            function createModalHeader(title, closeHandler, typeClass) {
                 const titleText = document.createElement("h5");
-                titleText.className = "modal-title";
+                titleText.className = "modal-title" + (typeClass ? ' ' + typeClass : '');
                 titleText.textContent = title ? title : "";
                 const closeButton = buttonTemplate.createButton(undefined, "btn-close", closeHandler, "button", [{ key: "aria-label", value: "Close" }]);
                 return dialogTemplate.createDialogHeader([titleText, closeButton]);
@@ -129,6 +129,22 @@
                 _modalInstance = null;
             }
 
+            const ModalType = Object.freeze({
+                Alert: 'alert',
+                Error: 'error',
+                Information: 'information',
+                Warning: 'warning',
+                Success: 'success'
+            });
+
+            const typeClassMap = {
+                [ModalType.Alert]: '',
+                [ModalType.Error]: 'text-danger',
+                [ModalType.Information]: 'text-info',
+                [ModalType.Warning]: 'text-warning',
+                [ModalType.Success]: 'text-success'
+            };
+
             /** actions which defines what should be used on subscribe, structure { actionName: '', func: () => {} }
             */
             const actions = [];
@@ -168,14 +184,17 @@
 
             // public variables functions
             return {
+                ModalType,
                 /**
-                 * Shows information modal
+                 * Shows a modal identified by its type
+                 * @param type Modal type from ModalType.
                  * @param headerText Title of modal.
                  * @param bodyText Text inside of body modal.
                  *
                  */
-                showInformationModal: function (headerText, bodyText) {
-                    const headerTemplate = createModalHeader(headerText, closeOnlyHandler);
+                show: function (type, headerText, bodyText) {
+                    const typeClass = typeClassMap[type] ?? '';
+                    const headerTemplate = createModalHeader(headerText, closeOnlyHandler, typeClass);
                     const bodyTemplate = createModalBody(bodyText);
                     const footerTemplate = createModalFooter(undefined, closeOnlyHandler);
                     const modalTemplate = createModalTemplate(headerTemplate, bodyTemplate, footerTemplate);
@@ -222,8 +241,9 @@
                 close: function () {
                     closeModal();
                 },
-                createHeader: function (title) {
-                    return createModalHeader(title, closeOnlyHandler);
+                createHeader: function (title, type) {
+                    const typeClass = type ? (typeClassMap[type] ?? '') : '';
+                    return createModalHeader(title, closeOnlyHandler, typeClass);
                 }
             }
         })();

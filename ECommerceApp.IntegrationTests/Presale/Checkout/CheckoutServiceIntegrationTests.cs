@@ -67,7 +67,7 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
             await SeedStockSnapshotAsync(productId);
 
             var cartService = GetRequiredService<ICartService>();
-            await cartService.AddOrUpdateAsync(new AddToCartDto(userId, productId, 2));
+            await cartService.SetCartItemAsync(new AddToCartDto(userId, productId, 2));
 
             var initiateResult = await _service.InitiateAsync(presaleUserId);
             initiateResult.ShouldBeOfType<InitiateCheckoutResult.Completed>();
@@ -105,7 +105,7 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
             // No snapshot seeded — HoldAsync will return false for this product
 
             var cartService = GetRequiredService<ICartService>();
-            await cartService.AddOrUpdateAsync(new AddToCartDto(userId, productId, 1));
+            await cartService.SetCartItemAsync(new AddToCartDto(userId, productId, 1));
 
             var result = await _service.InitiateAsync(presaleUserId);
 

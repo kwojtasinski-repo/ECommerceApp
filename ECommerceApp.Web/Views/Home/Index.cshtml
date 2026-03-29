@@ -1,19 +1,67 @@
-﻿@{
+﻿@model ECommerceApp.Application.Presale.Checkout.ViewModels.StorefrontProductListVm
+@{
     ViewData["Title"] = "Home Page";
 }
 
-    <div class="text-center">
-        <h1 class="display-4">Witaj w aplikacji ECommerceApp</h1>
-        <br /><br />
-        <p style="font-family: 'Montserrat', sans-serif; font-weight:bold;">
-            Aplikacja pozwala na wystawienie
-            lub zamówienie przedmiotów
-        </p>
+<div class="text-center py-5 bg-light rounded mb-4">
+    <h1 class="display-5 fw-bold">Witaj w ECommerceApp</h1>
+    <p class="lead text-muted mb-3">Przeglądaj tysiące ofert lub skorzystaj z wyszukiwarki powyżej</p>
+    <a asp-area="Presale" asp-controller="Storefront" asp-action="Index" class="btn btn-primary px-4">
+        <i class="fa-solid fa-box-open me-2"></i>Przeglądaj oferty
+    </a>
+</div>
 
-        <br />
-        <div class="col" style="text-align:center;">
-            <a asp-controller="Item" asp-action="Index" class="btn btn-outline-info" style="font-family: 'Montserrat', sans-serif; font-weight:bold; font-size:15px;">
-                Pokaż przedmioty
-            </a>
-        </div>
+@if (Model.Products.Count > 0)
+{
+    <div class="mb-2 d-flex justify-content-between align-items-center">
+        <h5 class="fw-semibold mb-0"><i class="fa-solid fa-star me-2 text-warning"></i>Najnowsze oferty</h5>
+        <a asp-area="Presale" asp-controller="Storefront" asp-action="Index" class="text-decoration-none small">Zobacz wszystkie &rarr;</a>
     </div>
+    <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-3 mb-4">
+        @foreach (var product in Model.Products)
+        {
+            <div class="col">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body p-3">
+                        <h6 class="card-title mb-1">@product.Name</h6>
+                        <p class="card-text text-primary fw-semibold mb-1">@product.Price.ToString("C")</p>
+                        @if (product.InStock)
+                        {
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">Dostępny</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Niedostępny</span>
+                        }
+                    </div>
+                    <div class="card-footer bg-transparent p-2">
+                        <div class="d-grid gap-1">
+                            <a asp-area="Presale" asp-controller="Storefront" asp-action="Details" asp-route-id="@product.ProductId"
+                               class="btn btn-outline-primary btn-sm">Szczegóły</a>
+                            @if (product.InStock)
+                            {
+                                <form asp-area="Presale" asp-controller="Checkout" asp-action="AddToCart" method="post"
+                                      class="js-add-to-cart-form">
+                                    <input type="hidden" name="productId" value="@product.ProductId" />
+                                    <input type="hidden" name="quantity" value="1" />
+                                    <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
+                                    <button type="submit" class="btn btn-primary btn-sm w-100">
+                                        <i class="fa-solid fa-cart-plus me-1"></i>Do koszyka
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@section Scripts {
+    <script>
+        $(document).on('DOMInitialized', function (event, { cartNotification }) {
+            cartNotification.bindCartForms();
+        });
+    </script>
+}

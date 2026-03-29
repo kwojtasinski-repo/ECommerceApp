@@ -67,5 +67,22 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
 
             return new StorefrontProductListVm(items, productList.Count, productList.PageSize, productList.CurrentPage, string.Empty);
         }
+            public async Task<StorefrontProductDetailsVm?> GetProductDetailsAsync(int productId, CancellationToken ct = default)
+            {
+                var product = await _catalog.GetProductDetailsAsync(productId, ct);
+                if (product is null)
+                    return null;
+
+                StockSnapshot? snapshot = null;
+                await foreach (var s in _stockSnapshots.GetByProductIdsAsync(new List<int> { productId }, ct))
+                {
+                    snapshot = s;
+                }
+
+                var available = snapshot?.AvailableQuantity ?? 0;
+                return new StorefrontProductDetailsVm(
+                    product.Id, product.Name, product.Cost, product.Description, product.CategoryName,
+                    product.Images, product.TagIds, product.TagNames, available, available > 0);
+            }
+        }
     }
-}

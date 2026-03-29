@@ -64,7 +64,7 @@
                     <dd class="col-sm-9">
                         @foreach (var tag in Model.TagIds.Zip(Model.TagNames, (id, name) => new { id, name }))
                         {
-                            <a asp-area="Catalog" asp-controller="Product" asp-action="ByTag"
+                            <a asp-area="Presale" asp-controller="Storefront" asp-action="ByTag"
                                asp-route-tagId="@tag.id"
                                class="badge bg-secondary text-decoration-none me-1">@tag.name</a>
                         }

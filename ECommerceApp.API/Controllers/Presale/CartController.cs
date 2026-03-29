@@ -32,7 +32,7 @@ namespace ECommerceApp.API.Controllers.Presale
         [ServiceFilter(typeof(MaxApiQuantityFilter))]
         public async Task<IActionResult> AddOrUpdate([FromBody] AddToCartDto dto, CancellationToken ct = default)
         {
-            await _cart.AddOrUpdateAsync(dto, ct);
+            await _cart.SetCartItemAsync(dto, ct);
             return Ok();
         }
 

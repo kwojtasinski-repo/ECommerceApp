@@ -25,36 +25,6 @@ namespace ECommerceApp.Web.Areas.Catalog.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Index(string? searchString = null)
-        {
-            var model = await _productService.GetPublishedProducts(12, 1, searchString ?? string.Empty);
-            ViewBag.AllTags = await _tagService.GetAllTags();
-            return View(model);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Index(int pageSize, int pageNo, string? searchString)
-        {
-            var model = await _productService.GetPublishedProducts(pageSize, pageNo, searchString ?? string.Empty);
-            ViewBag.AllTags = await _tagService.GetAllTags();
-            return View(model);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> ByTag(int tagId, int pageSize = 12, int pageNo = 1)
-        {
-            var tag = await _tagService.GetTag(tagId);
-            if (tag is null)
-            {
-                return NotFound();
-            }
-            var model = await _productService.GetPublishedProductsByTagAsync(tagId, pageSize, pageNo);
-            ViewBag.TagName = tag.Name;
-            ViewBag.TagId = tagId;
-            return View(model);
-        }
-
-        [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
             if (!await _productService.ProductExists(id))

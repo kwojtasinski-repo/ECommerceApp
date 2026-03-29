@@ -4,13 +4,14 @@
             baseUrl: '/js',
             paths: {
                 he: '../lib/he'
-            }
+            },
+            urlArgs: 'v=' + (window.__jsVersion || '1')
         });
     }
 
     function init() {
-        require(["validations", "common", "buttonTemplate", "dialogTemplate", "errors", "forms", "ajaxRequest", "modalService", "he"],
-            function (validations, common, buttonTemplate, dialogTemplate, errors, forms, ajaxRequest, modalService, he) {
+        require(["validations", "common", "buttonTemplate", "dialogTemplate", "errors", "forms", "ajaxRequest", "modalService", "cartNotification", "he"],
+            function (validations, common, buttonTemplate, dialogTemplate, errors, forms, ajaxRequest, modalService, cartNotification, he) {
                 window.PagerClick = common.PagerClick;
                 $(document).trigger('DOMInitialized', [{
                     emailRegex: validations.emailRegex,
@@ -28,6 +29,7 @@
                     forms: forms.forms,
                     ajaxRequest: ajaxRequest.ajaxRequest,
                     modalService: modalService.modalService,
+                    cartNotification: cartNotification.cartNotification,
                     he
                 }]);
             }
