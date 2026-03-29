@@ -7,5 +7,5 @@ namespace ECommerceApp.Domain.Sales.Coupons
     public sealed record CouponRuleDefinition(
         string Name,
         CouponRuleCategory Category,
-        Dictionary<string, string> Parameters);
+        IReadOnlyDictionary<string, string> Parameters);
 }

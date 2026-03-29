@@ -8,6 +8,7 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons
     {
         public DbSet<Coupon> Coupons => Set<Coupon>();
         public DbSet<CouponUsed> CouponUsed => Set<CouponUsed>();
+        public DbSet<CouponScopeTarget> CouponScopeTargets => Set<CouponScopeTarget>();
         public DbSet<CouponApplicationRecord> CouponApplicationRecords => Set<CouponApplicationRecord>();
         public DbSet<SpecialEvent> SpecialEvents => Set<SpecialEvent>();
 

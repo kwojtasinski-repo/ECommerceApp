@@ -6,6 +6,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Results
         CouponNotFound,
         CouponAlreadyUsed,
         OrderAlreadyHasCoupon,
-        OrderNotFound
+        OrderNotFound,
+        RulesNotSatisfied
     }
 }

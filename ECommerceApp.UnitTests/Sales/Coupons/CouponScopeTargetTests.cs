@@ -17,7 +17,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             var target = CouponScopeTarget.Create(couponId, "per-product", targetId: 42, targetName: "Widget X");
 
             target.CouponId.Should().Be(couponId);
-            target.ScopeType.Should().Be("per-product");
+            target.ScopeType.Value.Should().Be("per-product");
             target.TargetId.Should().Be(42);
             target.TargetName.Should().Be("Widget X");
         }
@@ -93,7 +93,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         {
             var target = CouponScopeTarget.Create(new CouponId(1), scopeType, targetId: 1, targetName: "T");
 
-            target.ScopeType.Should().Be(scopeType);
+            target.ScopeType.Value.Should().Be(scopeType);
         }
 
         // ── No FK to Catalog ──────────────────────────────────────────────────

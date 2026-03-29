@@ -1,6 +1,5 @@
 using ECommerceApp.Domain.Sales.Coupons;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -62,7 +61,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules
 
                 if (descriptor.SyncEvaluator != null)
                 {
-                    var parameters = (IReadOnlyDictionary<string, string>)rule.Parameters
+                    var parameters = rule.Parameters
                                      ?? new Dictionary<string, string>();
                     var result = descriptor.SyncEvaluator.Evaluate(context, parameters);
 
@@ -91,7 +90,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Rules
 
                 if (descriptor.AsyncEvaluator != null)
                 {
-                    var parameters = (IReadOnlyDictionary<string, string>)rule.Parameters
+                    var parameters = rule.Parameters
                                      ?? new Dictionary<string, string>();
                     var result = await descriptor.AsyncEvaluator.EvaluateAsync(context, parameters, ct);
 

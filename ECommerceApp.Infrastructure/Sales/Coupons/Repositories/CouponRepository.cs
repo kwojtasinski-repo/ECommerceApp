@@ -17,7 +17,7 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons.Repositories
         }
 
         public Task<Coupon?> GetByCodeAsync(string code, CancellationToken ct = default)
-            => _context.Coupons.FirstOrDefaultAsync(c => c.Code == code, ct);
+            => _context.Coupons.FirstOrDefaultAsync(c => c.Code.Value == code, ct);
 
         public Task<Coupon?> GetByIdAsync(int id, CancellationToken ct = default)
             => _context.Coupons.FirstOrDefaultAsync(c => c.Id == new CouponId(id), ct);
@@ -26,7 +26,10 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons.Repositories
         {
             var query = _context.Coupons.AsQueryable();
             if (!string.IsNullOrWhiteSpace(searchString))
-                query = query.Where(c => c.Code.Contains(searchString) || c.Description.Contains(searchString));
+            {
+                query = query.Where(c => c.Code.Value.Contains(searchString) || c.Description.Value.Contains(searchString));
+            }
+
             return await query.OrderBy(c => c.Code).Skip((pageNo - 1) * pageSize).Take(pageSize).ToListAsync(ct);
         }
 
@@ -34,7 +37,7 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons.Repositories
         {
             var query = _context.Coupons.AsQueryable();
             if (!string.IsNullOrWhiteSpace(searchString))
-                query = query.Where(c => c.Code.Contains(searchString) || c.Description.Contains(searchString));
+                query = query.Where(c => c.Code.Value.Contains(searchString) || c.Description.Value.Contains(searchString));
             return await query.CountAsync(ct);
         }
 

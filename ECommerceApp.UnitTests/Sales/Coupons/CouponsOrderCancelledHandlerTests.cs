@@ -39,7 +39,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
 
         private static Coupon CreateUsedCoupon(int id = 5)
         {
-            var coupon = Coupon.Create("SAVE10", 10, "desc");
+            var coupon = Coupon.Create("SAVE10", "desc");
             typeof(Coupon).GetProperty(nameof(Coupon.Id))!
                 .GetSetMethod(nonPublic: true)!
                 .Invoke(coupon, new object[] { new CouponId(id) });

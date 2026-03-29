@@ -2,10 +2,12 @@ using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Sales.Coupons.Contracts;
 using ECommerceApp.Application.Sales.Coupons.Messages;
 using ECommerceApp.Application.Sales.Coupons.Results;
+using ECommerceApp.Application.Sales.Coupons.Rules;
 using ECommerceApp.Application.Sales.Coupons.Services;
 using ECommerceApp.Domain.Sales.Coupons;
 using FluentAssertions;
 using Moq;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
@@ -18,6 +20,8 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         private readonly Mock<ICouponUsedRepository> _couponUsed;
         private readonly Mock<IOrderExistenceChecker> _orderExistence;
         private readonly Mock<IMessageBroker> _broker;
+        private readonly Mock<IScopeTargetRepository> _scopeTargets;
+        private readonly Mock<ICouponRulePipeline> _pipeline;
 
         public CouponServiceTests()
         {
@@ -25,14 +29,16 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             _couponUsed = new Mock<ICouponUsedRepository>();
             _orderExistence = new Mock<IOrderExistenceChecker>();
             _broker = new Mock<IMessageBroker>();
+            _scopeTargets = new Mock<IScopeTargetRepository>();
+            _pipeline = new Mock<ICouponRulePipeline>();
         }
 
         private ICouponService CreateService()
-            => new CouponService(_coupons.Object, _couponUsed.Object, _orderExistence.Object, _broker.Object);
+            => new CouponService(_coupons.Object, _couponUsed.Object, _orderExistence.Object, _broker.Object, _scopeTargets.Object, _pipeline.Object);
 
-        private static Coupon CreateAvailableCoupon(int id = 1, string code = "SAVE10", int discount = 10)
+        private static Coupon CreateAvailableCoupon(int id = 1, string code = "SAVE10")
         {
-            var coupon = Coupon.Create(code, discount, "desc");
+            var coupon = Coupon.Create(code, "desc");
             typeof(Coupon).GetProperty(nameof(Coupon.Id))!
                 .GetSetMethod(nonPublic: true)!
                 .Invoke(coupon, new object[] { new CouponId(id) });
@@ -55,7 +61,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         {
             _orderExistence.Setup(x => x.ExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
-            var result = await CreateService().ApplyCouponAsync("SAVE10", 99);
+            var result = await CreateService().ApplyCouponAsync("SAVE10", new CouponEvaluationContext(99, "user-1", 0m, new List<CouponEvaluationItem>()));
 
             result.Should().Be(CouponApplyResult.OrderNotFound);
             _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
@@ -67,7 +73,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             _orderExistence.Setup(x => x.ExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _coupons.Setup(x => x.GetByCodeAsync("NOSUCH", It.IsAny<CancellationToken>())).ReturnsAsync((Coupon?)null);
 
-            var result = await CreateService().ApplyCouponAsync("NOSUCH", 99);
+            var result = await CreateService().ApplyCouponAsync("NOSUCH", new CouponEvaluationContext(99, "user-1", 0m, new List<CouponEvaluationItem>()));
 
             result.Should().Be(CouponApplyResult.CouponNotFound);
             _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
@@ -81,7 +87,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             _orderExistence.Setup(x => x.ExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _coupons.Setup(x => x.GetByCodeAsync("SAVE10", It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
 
-            var result = await CreateService().ApplyCouponAsync("SAVE10", 99);
+            var result = await CreateService().ApplyCouponAsync("SAVE10", new CouponEvaluationContext(99, "user-1", 0m, new List<CouponEvaluationItem>()));
 
             result.Should().Be(CouponApplyResult.CouponAlreadyUsed);
             _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
@@ -96,7 +102,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             _coupons.Setup(x => x.GetByCodeAsync("SAVE10", It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
             _couponUsed.Setup(x => x.FindByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(existing);
 
-            var result = await CreateService().ApplyCouponAsync("SAVE10", 99);
+            var result = await CreateService().ApplyCouponAsync("SAVE10", new CouponEvaluationContext(99, "user-1", 0m, new List<CouponEvaluationItem>()));
 
             result.Should().Be(CouponApplyResult.OrderAlreadyHasCoupon);
             _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
@@ -105,7 +111,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         [Fact]
         public async Task ApplyCouponAsync_HappyPath_ShouldMarkCouponUsedPersistAndPublishCouponApplied()
         {
-            var coupon = CreateAvailableCoupon(id: 5, code: "SAVE10", discount: 10);
+            var coupon = CreateAvailableCoupon(id: 5, code: "SAVE10");
             _orderExistence.Setup(x => x.ExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _coupons.Setup(x => x.GetByCodeAsync("SAVE10", It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
             _couponUsed.Setup(x => x.FindByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync((CouponUsed?)null);
@@ -121,7 +127,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
                 })
                 .Returns(Task.CompletedTask);
 
-            var result = await CreateService().ApplyCouponAsync("SAVE10", 99);
+            var result = await CreateService().ApplyCouponAsync("SAVE10", new CouponEvaluationContext(99, "user-1", 200m, new List<CouponEvaluationItem>()));
 
             result.Should().Be(CouponApplyResult.Applied);
             coupon.Status.Should().Be(CouponStatus.Used);
@@ -134,7 +140,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
                 m[0].GetType() == typeof(CouponApplied) &&
                 ((CouponApplied)m[0]).OrderId == 99 &&
                 ((CouponApplied)m[0]).CouponUsedId == 7 &&
-                ((CouponApplied)m[0]).DiscountPercent == 10)), Times.Once);
+                ((CouponApplied)m[0]).DiscountPercent == 0)), Times.Once);
         }
 
         // ── RemoveCouponAsync ─────────────────────────────────────────────────

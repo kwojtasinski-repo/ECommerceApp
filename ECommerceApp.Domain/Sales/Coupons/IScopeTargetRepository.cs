@@ -8,6 +8,7 @@ namespace ECommerceApp.Domain.Sales.Coupons
     {
         Task<IReadOnlyList<CouponScopeTarget>> GetByScopeTypeAndTargetIdAsync(
             string scopeType, int targetId, CancellationToken ct = default);
+        Task AddRangeAsync(IReadOnlyList<CouponScopeTarget> targets, CancellationToken ct = default);
         Task UpdateRangeAsync(IReadOnlyList<CouponScopeTarget> targets, CancellationToken ct = default);
     }
 }

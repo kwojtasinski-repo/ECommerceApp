@@ -4,6 +4,7 @@ using ECommerceApp.Infrastructure.Sales.Coupons;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ECommerceApp.Infrastructure.Sales.Coupons.Migrations
 {
     [DbContext(typeof(CouponsDbContext))]
-    partial class CouponsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260329211342_RemoveCouponDiscountPercent")]
+    partial class RemoveCouponDiscountPercent
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

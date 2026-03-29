@@ -7,18 +7,17 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
 {
     public class CouponAggregateTests
     {
-        private static Coupon CreateAvailable() => Coupon.Create("SAVE10", 10, "10% off everything");
+        private static Coupon CreateAvailable() => Coupon.Create("SAVE10", "10% off everything");
 
         // ── Create ────────────────────────────────────────────────────────────
 
         [Fact]
         public void Create_ValidParameters_ShouldReturnAvailableCoupon()
         {
-            var coupon = Coupon.Create("SAVE10", 10, "10% off everything");
+            var coupon = Coupon.Create("SAVE10", "10% off everything");
 
-            coupon.Code.Should().Be("SAVE10");
-            coupon.DiscountPercent.Should().Be(10);
-            coupon.Description.Should().Be("10% off everything");
+            coupon.Code.Value.Should().Be("SAVE10");
+            coupon.Description.Value.Should().Be("10% off everything");
             coupon.Status.Should().Be(CouponStatus.Available);
         }
 

@@ -32,7 +32,6 @@
                 <tr>
                     <th>Kod</th>
                     <th>Opis</th>
-                    <th>Rabat (%)</th>
                     <th>Status</th>
                     <th></th>
                 </tr>
@@ -43,7 +42,6 @@
                     <tr>
                         <td><strong>@c.Code</strong></td>
                         <td>@c.Description</td>
-                        <td>@c.DiscountPercent</td>
                         <td>
                             @if (c.Status == "Available")
                             {
@@ -67,7 +65,7 @@
                 }
                 @if (!Model.Coupons.Any())
                 {
-                    <tr><td colspan="5" class="text-center text-muted">Brak kuponów.</td></tr>
+                    <tr><td colspan="4" class="text-center text-muted">Brak kuponów.</td></tr>
                 }
             </tbody>
         </table>

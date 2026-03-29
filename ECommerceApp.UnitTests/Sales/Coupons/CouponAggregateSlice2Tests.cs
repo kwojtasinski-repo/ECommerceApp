@@ -37,8 +37,8 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
 
             var coupon = Coupon.CreateWithRules("SAVE15", "15% off order", rulesJson, new List<CouponScopeTarget>());
 
-            coupon.Code.Should().Be("SAVE15");
-            coupon.Description.Should().Be("15% off order");
+            coupon.Code.Value.Should().Be("SAVE15");
+            coupon.Description.Value.Should().Be("15% off order");
             coupon.RulesJson.Should().Be(rulesJson);
         }
 
@@ -53,7 +53,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
 
             var coupon = Coupon.CreateWithRules("FLAT50", "50 off order", rulesJson, new List<CouponScopeTarget>());
 
-            coupon.Code.Should().Be("FLAT50");
+            coupon.Code.Value.Should().Be("FLAT50");
             coupon.GetRules().Should().HaveCount(4);
         }
 
@@ -65,7 +65,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
 
             var coupon = Coupon.CreateWithRules("PROD15", "15% off product", rulesJson, targets);
 
-            coupon.Code.Should().Be("PROD15");
+            coupon.Code.Value.Should().Be("PROD15");
             coupon.RulesJson.Should().NotBeNullOrWhiteSpace();
         }
 
@@ -77,7 +77,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
 
             var coupon = Coupon.CreateWithRules("CAT15", "15% off category", rulesJson, targets);
 
-            coupon.Code.Should().Be("CAT15");
+            coupon.Code.Value.Should().Be("CAT15");
         }
 
         [Fact]
@@ -88,7 +88,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
 
             var coupon = Coupon.CreateWithRules("TAG15", "15% off tag", rulesJson, targets);
 
-            coupon.Code.Should().Be("TAG15");
+            coupon.Code.Value.Should().Be("TAG15");
         }
 
         // ── CreateWithRules — scope rule count validation ─────────────────────
@@ -265,7 +265,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         [Fact]
         public void GetRules_Slice1CouponWithoutRulesJson_ShouldReturnEmpty()
         {
-            var coupon = Coupon.Create("LEGACY", 10, "legacy coupon");
+            var coupon = Coupon.Create("LEGACY", "legacy coupon");
 
             var rules = coupon.GetRules();
 
@@ -296,10 +296,9 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         [Fact]
         public void Create_Slice1Factory_ShouldStillWork()
         {
-            var coupon = Coupon.Create("LEGACY", 10, "legacy");
+            var coupon = Coupon.Create("LEGACY", "legacy");
 
-            coupon.Code.Should().Be("LEGACY");
-            coupon.DiscountPercent.Should().Be(10);
+            coupon.Code.Value.Should().Be("LEGACY");
             coupon.Status.Should().Be(CouponStatus.Available);
             coupon.RulesJson.Should().BeNull();
             coupon.Version.Should().BeNull();
@@ -308,7 +307,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         [Fact]
         public void MarkAsUsed_ShouldStillWorkAfterSlice2Additions()
         {
-            var coupon = Coupon.Create("SAVE10", 10, "desc");
+            var coupon = Coupon.Create("SAVE10", "desc");
 
             coupon.MarkAsUsed();
 
@@ -318,12 +317,67 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         [Fact]
         public void Release_ShouldStillWorkAfterSlice2Additions()
         {
-            var coupon = Coupon.Create("SAVE10", 10, "desc");
+            var coupon = Coupon.Create("SAVE10", "desc");
             coupon.MarkAsUsed();
 
             coupon.Release();
 
             coupon.Status.Should().Be(CouponStatus.Available);
+        }
+
+        // ── UpdateRules ───────────────────────────────────────────────────────
+
+        [Fact]
+        public void UpdateRules_ValidRulesJson_ShouldReplaceRulesJson()
+        {
+            var original = BuildRulesJson(ScopeRule("order-total"), DiscountRule("percentage-off"));
+            var coupon = Coupon.CreateWithRules("SAVE15", "15% off", original, new List<CouponScopeTarget>());
+
+            var updated = BuildRulesJson(ScopeRule("order-total"), DiscountRule("fixed-amount-off", new Dictionary<string, string> { ["amount"] = "20" }));
+            coupon.UpdateRules(updated, new List<CouponScopeTarget>());
+
+            coupon.RulesJson.Should().Be(updated);
+            coupon.GetRules().Should().HaveCount(2);
+            coupon.GetRules()[1].Name.Should().Be("fixed-amount-off");
+        }
+
+        [Fact]
+        public void UpdateRules_ChangeScopeFromOrderTotalToPerProduct_ShouldRequireTargets()
+        {
+            var original = BuildRulesJson(ScopeRule("order-total"), DiscountRule());
+            var coupon = Coupon.CreateWithRules("SAVE15", "15% off", original, new List<CouponScopeTarget>());
+
+            var newRules = BuildRulesJson(ScopeRule("per-product"), DiscountRule());
+            var act = () => coupon.UpdateRules(newRules, new List<CouponScopeTarget>());
+
+            act.Should().Throw<DomainException>().WithMessage("*requires scope targets*");
+        }
+
+        [Fact]
+        public void UpdateRules_ValidPerProductWithTargets_ShouldSucceed()
+        {
+            var original = BuildRulesJson(ScopeRule("order-total"), DiscountRule());
+            var coupon = Coupon.CreateWithRules("SAVE15", "15% off", original, new List<CouponScopeTarget>());
+            var target = CreateTarget(couponId: 1, scopeType: "per-product", targetId: 42);
+
+            var newRules = BuildRulesJson(ScopeRule("per-product"), DiscountRule());
+            coupon.UpdateRules(newRules, new List<CouponScopeTarget> { target });
+
+            coupon.GetRules()[0].Name.Should().Be("per-product");
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("  ")]
+        public void UpdateRules_EmptyRulesJson_ShouldThrowDomainException(string rulesJson)
+        {
+            var coupon = Coupon.CreateWithRules("X", "desc",
+                BuildRulesJson(ScopeRule(), DiscountRule()), new List<CouponScopeTarget>());
+
+            var act = () => coupon.UpdateRules(rulesJson, new List<CouponScopeTarget>());
+
+            act.Should().Throw<DomainException>().WithMessage("*RulesJson*required*");
         }
     }
 }

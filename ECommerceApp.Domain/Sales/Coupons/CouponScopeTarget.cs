@@ -1,3 +1,4 @@
+using ECommerceApp.Domain.Sales.Coupons.ValueObjects;
 using ECommerceApp.Domain.Shared;
 
 namespace ECommerceApp.Domain.Sales.Coupons
@@ -8,7 +9,7 @@ namespace ECommerceApp.Domain.Sales.Coupons
     {
         public CouponScopeTargetId Id { get; private set; }
         public CouponId CouponId { get; private set; }
-        public string ScopeType { get; private set; }
+        public CouponScopeType ScopeType { get; private set; }
         public int TargetId { get; private set; }           // plain int — no FK to Catalog
         public string TargetName { get; private set; }      // display-only snapshot
 
@@ -17,16 +18,19 @@ namespace ECommerceApp.Domain.Sales.Coupons
         public static CouponScopeTarget Create(CouponId couponId, string scopeType, int targetId, string targetName)
         {
             if (couponId is null)
+            {
                 throw new DomainException("CouponId is required.");
-            if (string.IsNullOrWhiteSpace(scopeType))
-                throw new DomainException("ScopeType is required.");
+            }
+
             if (targetId <= 0)
+            {
                 throw new DomainException("TargetId must be positive.");
+            }
 
             return new CouponScopeTarget
             {
                 CouponId = couponId,
-                ScopeType = scopeType,
+                ScopeType = new CouponScopeType(scopeType),
                 TargetId = targetId,
                 TargetName = targetName ?? string.Empty
             };

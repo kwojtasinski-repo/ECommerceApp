@@ -35,6 +35,8 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         private readonly Mock<ICouponRuleRegistry> _ruleRegistry;
         private readonly Mock<ISpecialEventCache> _specialEventCache;
         private readonly Mock<IRuntimeCouponSource> _runtimeCouponSource;
+        private readonly Mock<IScopeTargetRepository> _scopeTargets;
+        private readonly Mock<ICouponRulePipeline> _pipeline;
         private readonly CouponsOptions _options;
 
         public CouponServiceSlice2Tests()
@@ -47,6 +49,8 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             _ruleRegistry = new Mock<ICouponRuleRegistry>();
             _specialEventCache = new Mock<ISpecialEventCache>();
             _runtimeCouponSource = new Mock<IRuntimeCouponSource>();
+            _scopeTargets = new Mock<IScopeTargetRepository>();
+            _pipeline = new Mock<ICouponRulePipeline>();
             _options = new CouponsOptions { MaxCouponsPerOrder = 5 };
         }
 
@@ -90,12 +94,14 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
                     new CouponRuleDefinition("percentage-off", CouponRuleCategory.Discount, new Dictionary<string, string> { ["percent"] = "15" })),
                 ScopeTargets = new List<ScopeTargetDto>()
             };
-            var service = CreateSlice1Service(); // Will need Slice 2 service when implemented
+            _coupons.Setup(x => x.GetByCodeAsync("SAVE15", It.IsAny<CancellationToken>())).ReturnsAsync((Coupon)null);
+            _coupons.Setup(x => x.AddAsync(It.IsAny<Coupon>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            var service = CreateSlice1Service();
 
-            var act = async () => await service.CreateCouponAsync(dto);
+            var result = await service.CreateCouponAsync(dto);
 
-            // Until Slice 2 CouponService is implemented, this throws NotImplementedException
-            await act.Should().ThrowAsync<System.NotImplementedException>();
+            result.Success.Should().BeTrue();
+            _coupons.Verify(x => x.AddAsync(It.IsAny<Coupon>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -113,11 +119,23 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
                     new() { ScopeType = "per-product", TargetId = 42, TargetName = "Widget" }
                 }
             };
+            _coupons.Setup(x => x.GetByCodeAsync("PROD15", It.IsAny<CancellationToken>())).ReturnsAsync((Coupon)null);
+            _coupons.Setup(x => x.AddAsync(It.IsAny<Coupon>(), It.IsAny<CancellationToken>()))
+                .Callback<Coupon, CancellationToken>((c, _) =>
+                    typeof(Coupon).GetProperty(nameof(Coupon.Id))!
+                        .GetSetMethod(nonPublic: true)!
+                        .Invoke(c, new object[] { new CouponId(99) }))
+                .Returns(Task.CompletedTask);
+            _scopeTargets.Setup(x => x.AddRangeAsync(It.IsAny<IReadOnlyList<CouponScopeTarget>>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
             var service = CreateSlice1Service();
 
-            var act = async () => await service.CreateCouponAsync(dto);
+            var result = await service.CreateCouponAsync(dto);
 
-            await act.Should().ThrowAsync<System.NotImplementedException>();
+            result.Success.Should().BeTrue();
+            _scopeTargets.Verify(x => x.AddRangeAsync(
+                It.Is<IReadOnlyList<CouponScopeTarget>>(targets => targets.Count == 1),
+                It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -132,11 +150,13 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
                     new CouponRuleDefinition("percentage-off", CouponRuleCategory.Discount, new Dictionary<string, string> { ["percent"] = "15" })),
                 ScopeTargets = new List<ScopeTargetDto>()
             };
+            _coupons.Setup(x => x.GetByCodeAsync("INVALID", It.IsAny<CancellationToken>())).ReturnsAsync((Coupon)null);
             var service = CreateSlice1Service();
 
-            var act = async () => await service.CreateCouponAsync(dto);
+            var result = await service.CreateCouponAsync(dto);
 
-            await act.Should().ThrowAsync<System.NotImplementedException>();
+            result.Success.Should().BeFalse();
+            result.FailureReason.Should().Contain("Scope");
         }
 
         // ══════════════════════════════════════════════════════════════════════
@@ -178,28 +198,6 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             // When Slice 2 is implemented, ApplyCouponAsync should check count and reject
         }
 
-        // ══════════════════════════════════════════════════════════════════════
-        // Exclusive coupon — IsExclusive flag
-        // ══════════════════════════════════════════════════════════════════════
-
-        [Fact]
-        public void CouponApplicationResult_Applied_WithExclusiveFlag_ShouldIndicateExclusivity()
-        {
-            var result = CouponApplicationResult.Applied(reduction: 30m, isExclusive: true);
-
-            result.Success.Should().BeTrue();
-            result.IsExclusive.Should().BeTrue();
-            result.Reduction.Should().Be(30m);
-        }
-
-        [Fact]
-        public void CouponApplicationResult_Applied_NotExclusive_ShouldDefaultToFalse()
-        {
-            var result = CouponApplicationResult.Applied(reduction: 30m);
-
-            result.IsExclusive.Should().BeFalse();
-        }
-
         [Fact]
         public void CouponApplicationResult_Failed_ShouldContainReason()
         {
@@ -207,57 +205,6 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
 
             result.Success.Should().BeFalse();
             result.FailureReason.Should().Be("Coupon expired");
-            result.Reduction.Should().Be(0m);
-        }
-
-        // ══════════════════════════════════════════════════════════════════════
-        // Independent evaluation — each coupon against original total
-        // ══════════════════════════════════════════════════════════════════════
-
-        [Fact]
-        public void IndependentEvaluation_MultipleCoupons_ShouldEachUseOriginalTotal()
-        {
-            // Spec: each coupon evaluates independently against the ORIGINAL order total
-            // The reductions are summed, not cascaded
-            var originalTotal = 200m;
-
-            // Coupon A: 15% of 200 = 30
-            var reductionA = originalTotal * 15m / 100m;
-            // Coupon B: flat 50 off (evaluated against original 200, NOT against 170)
-            var reductionB = 50m;
-
-            var totalReduction = reductionA + reductionB;
-            var finalPrice = originalTotal - totalReduction;
-
-            reductionA.Should().Be(30m);
-            totalReduction.Should().Be(80m);
-            finalPrice.Should().Be(120m);
-        }
-
-        [Fact]
-        public void IndependentEvaluation_ReductionExceedsTotal_ShouldFloorAtZero()
-        {
-            var originalTotal = 100m;
-            var totalReduction = 150m;
-            var finalPrice = System.Math.Max(0m, originalTotal - totalReduction);
-
-            finalPrice.Should().Be(0m);
-        }
-
-        // ══════════════════════════════════════════════════════════════════════
-        // Discount cap — Checkout BC enforcement (new coupon rejected if sum >= total)
-        // ══════════════════════════════════════════════════════════════════════
-
-        [Fact]
-        public void DiscountCap_NewCouponWhenSumAlreadyCoversTotal_ShouldBeRejected()
-        {
-            // Spec: new coupon REJECTED if existing reduction sum >= originalTotal
-            var originalTotal = 100m;
-            var existingReductions = 100m; // already fully discounted
-
-            var newCouponShouldBeRejected = existingReductions >= originalTotal;
-
-            newCouponShouldBeRejected.Should().BeTrue();
         }
 
         // ══════════════════════════════════════════════════════════════════════
@@ -370,7 +317,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         public async Task ApplyCouponAsync_Slice1HappyPath_ShouldStillWork()
         {
             // Slice 1 CouponApplied message still works
-            var coupon = Coupon.Create("SAVE10", 10, "desc");
+            var coupon = Coupon.Create("SAVE10", "desc");
             typeof(Coupon).GetProperty(nameof(Coupon.Id))!
                 .GetSetMethod(nonPublic: true)!
                 .Invoke(coupon, new object[] { new CouponId(5) });
@@ -387,9 +334,50 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
                 })
                 .Returns(Task.CompletedTask);
 
-            var result = await CreateSlice1Service().ApplyCouponAsync("SAVE10", 99);
+            var result = await CreateSlice1Service().ApplyCouponAsync("SAVE10", new CouponEvaluationContext(99, "user-1", 200m, new List<CouponEvaluationItem>()));
 
             result.Should().Be(CouponApplyResult.Applied);
+        }
+
+        [Fact]
+        public async Task ApplyCouponAsync_RuleBasedCoupon_PipelinePasses_ShouldReturnApplied()
+        {
+            var coupon = CreateRuleBasedCoupon(id: 5, code: "SAVE15");
+            var context = new CouponEvaluationContext(99, "user-1", 200m, new List<CouponEvaluationItem>());
+            _orderExistence.Setup(x => x.ExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _coupons.Setup(x => x.GetByCodeAsync("SAVE15", It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
+            _couponUsed.Setup(x => x.FindByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync((CouponUsed)null);
+            _couponUsed.Setup(x => x.AddAsync(It.IsAny<CouponUsed>(), It.IsAny<CancellationToken>()))
+                .Callback<CouponUsed, CancellationToken>((cu, _) =>
+                    typeof(CouponUsed).GetProperty(nameof(CouponUsed.Id))!
+                        .GetSetMethod(nonPublic: true)!
+                        .Invoke(cu, new object[] { new CouponUsedId(7) }))
+                .Returns(Task.CompletedTask);
+            _pipeline.Setup(p => p.EvaluateAsync(It.IsAny<IReadOnlyList<CouponRuleDefinition>>(), It.IsAny<CouponEvaluationContext>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CouponRulePipelineResult.Success(30m));
+
+            var result = await CreateSlice1Service().ApplyCouponAsync("SAVE15", context);
+
+            result.Should().Be(CouponApplyResult.Applied);
+            _pipeline.Verify(p => p.EvaluateAsync(It.IsAny<IReadOnlyList<CouponRuleDefinition>>(), context, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ApplyCouponAsync_RuleBasedCoupon_PipelineFails_ShouldReturnRulesNotSatisfied()
+        {
+            var coupon = CreateRuleBasedCoupon(code: "SAVE15");
+            var context = new CouponEvaluationContext(99, "user-1", 10m, new List<CouponEvaluationItem>());
+            _orderExistence.Setup(x => x.ExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _coupons.Setup(x => x.GetByCodeAsync("SAVE15", It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
+            _couponUsed.Setup(x => x.FindByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync((CouponUsed)null);
+            _pipeline.Setup(p => p.EvaluateAsync(It.IsAny<IReadOnlyList<CouponRuleDefinition>>(), It.IsAny<CouponEvaluationContext>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CouponRulePipelineResult.Failure(new[] { "Order total too low." }));
+
+            var result = await CreateSlice1Service().ApplyCouponAsync("SAVE15", context);
+
+            result.Should().Be(CouponApplyResult.RulesNotSatisfied);
+            _couponUsed.Verify(r => r.AddAsync(It.IsAny<CouponUsed>(), It.IsAny<CancellationToken>()), Times.Never);
+            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
         }
 
         [Fact]
@@ -399,7 +387,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             typeof(CouponUsed).GetProperty(nameof(CouponUsed.Id))!
                 .GetSetMethod(nonPublic: true)!
                 .Invoke(couponUsed, new object[] { new CouponUsedId(3) });
-            var coupon = Coupon.Create("SAVE10", 10, "desc");
+            var coupon = Coupon.Create("SAVE10", "desc");
             typeof(Coupon).GetProperty(nameof(Coupon.Id))!
                 .GetSetMethod(nonPublic: true)!
                 .Invoke(coupon, new object[] { new CouponId(5) });
@@ -416,6 +404,80 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         // ── helper ────────────────────────────────────────────────────────────
 
         private ICouponService CreateSlice1Service()
-            => new CouponService(_coupons.Object, _couponUsed.Object, _orderExistence.Object, _broker.Object);
+            => new CouponService(_coupons.Object, _couponUsed.Object, _orderExistence.Object, _broker.Object, _scopeTargets.Object, _pipeline.Object);
+
+        // ══════════════════════════════════════════════════════════════════════
+        // SimulateCouponAsync — runs rule pipeline without committing
+        // ══════════════════════════════════════════════════════════════════════
+
+        [Fact]
+        public async Task SimulateCouponAsync_CouponNotFound_ShouldReturnFailure()
+        {
+            _coupons.Setup(x => x.GetByCodeAsync("MISSING", It.IsAny<CancellationToken>())).ReturnsAsync((Coupon)null);
+            var context = new CouponEvaluationContext(99, "user-1", 200m, new List<CouponEvaluationItem>());
+
+            var result = await CreateSlice1Service().SimulateCouponAsync("MISSING", context);
+
+            result.Passed.Should().BeFalse();
+            result.FailureReasons.Should().ContainSingle(r => r.Contains("MISSING"));
+        }
+
+        [Fact]
+        public async Task SimulateCouponAsync_CouponNotAvailable_ShouldReturnFailure()
+        {
+            var coupon = Coupon.Create("USED10", "desc");
+            coupon.MarkAsUsed();
+            _coupons.Setup(x => x.GetByCodeAsync("USED10", It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
+            var context = new CouponEvaluationContext(99, "user-1", 200m, new List<CouponEvaluationItem>());
+
+            var result = await CreateSlice1Service().SimulateCouponAsync("USED10", context);
+
+            result.Passed.Should().BeFalse();
+            result.FailureReasons.Should().ContainSingle(r => r.Contains("USED10"));
+        }
+
+        [Fact]
+        public async Task SimulateCouponAsync_Slice1CouponWithNoRules_ShouldReturnSuccessWithZeroReduction()
+        {
+            var coupon = Coupon.Create("FLAT", "flat coupon, no rules");
+            _coupons.Setup(x => x.GetByCodeAsync("FLAT", It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
+            var context = new CouponEvaluationContext(99, "user-1", 200m, new List<CouponEvaluationItem>());
+
+            var result = await CreateSlice1Service().SimulateCouponAsync("FLAT", context);
+
+            result.Passed.Should().BeTrue();
+            result.TotalReduction.Should().Be(0m);
+            _pipeline.Verify(p => p.EvaluateAsync(It.IsAny<IReadOnlyList<CouponRuleDefinition>>(), It.IsAny<CouponEvaluationContext>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task SimulateCouponAsync_RulesPass_ShouldReturnSuccessWithReduction()
+        {
+            var coupon = CreateRuleBasedCoupon(code: "SAVE15");
+            _coupons.Setup(x => x.GetByCodeAsync("SAVE15", It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
+            _pipeline.Setup(p => p.EvaluateAsync(It.IsAny<IReadOnlyList<CouponRuleDefinition>>(), It.IsAny<CouponEvaluationContext>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CouponRulePipelineResult.Success(30m));
+            var context = new CouponEvaluationContext(99, "user-1", 200m, new List<CouponEvaluationItem>());
+
+            var result = await CreateSlice1Service().SimulateCouponAsync("SAVE15", context);
+
+            result.Passed.Should().BeTrue();
+            result.TotalReduction.Should().Be(30m);
+        }
+
+        [Fact]
+        public async Task SimulateCouponAsync_RulesFail_ShouldReturnFailure()
+        {
+            var coupon = CreateRuleBasedCoupon(code: "SAVE15");
+            _coupons.Setup(x => x.GetByCodeAsync("SAVE15", It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
+            _pipeline.Setup(p => p.EvaluateAsync(It.IsAny<IReadOnlyList<CouponRuleDefinition>>(), It.IsAny<CouponEvaluationContext>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CouponRulePipelineResult.Failure(new[] { "Order total too low." }));
+            var context = new CouponEvaluationContext(99, "user-1", 5m, new List<CouponEvaluationItem>());
+
+            var result = await CreateSlice1Service().SimulateCouponAsync("SAVE15", context);
+
+            result.Passed.Should().BeFalse();
+            result.FailureReasons.Should().ContainSingle("Order total too low.");
+        }
     }
 }

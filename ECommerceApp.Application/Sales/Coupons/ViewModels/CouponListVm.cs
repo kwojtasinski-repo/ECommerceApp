@@ -15,7 +15,6 @@ namespace ECommerceApp.Application.Sales.Coupons.ViewModels
     {
         public int Id { get; init; }
         public string Code { get; init; } = string.Empty;
-        public int DiscountPercent { get; init; }
         public string Description { get; init; } = string.Empty;
         public string Status { get; init; } = string.Empty;
     }

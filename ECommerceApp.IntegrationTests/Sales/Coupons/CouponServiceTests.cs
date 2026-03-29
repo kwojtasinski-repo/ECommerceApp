@@ -1,7 +1,9 @@
 using ECommerceApp.Application.Sales.Coupons.Results;
+using ECommerceApp.Application.Sales.Coupons.Rules;
 using ECommerceApp.Application.Sales.Coupons.Services;
 using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -14,7 +16,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Coupons
         [Fact]
         public async Task ApplyCouponAsync_NonExistentOrder_ShouldReturnOrderNotFound()
         {
-            var result = await _service.ApplyCouponAsync("PROMO-123", orderId: int.MaxValue);
+            var result = await _service.ApplyCouponAsync("PROMO-123", new CouponEvaluationContext(int.MaxValue, "user-1", 0m, new List<CouponEvaluationItem>()));
 
             result.ShouldBe(CouponApplyResult.OrderNotFound);
         }
