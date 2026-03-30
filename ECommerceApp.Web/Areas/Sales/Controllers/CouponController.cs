@@ -49,12 +49,13 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
                 return View(dto);
             }
 
-            var added = await _couponService.AddCouponAsync(dto.Code, dto.Description);
-            if (!added)
+            var result = await _couponService.CreateCouponAsync(dto);
+            if (!result.Success)
             {
-                ModelState.AddModelError(string.Empty, $"Kupon z kodem '{dto.Code}' już istnieje.");
+                ModelState.AddModelError(string.Empty, result.FailureReason);
                 return View(dto);
             }
+
             return RedirectToAction(nameof(Index));
         }
 

@@ -10,23 +10,42 @@ namespace ECommerceApp.Application.Sales.Coupons.Handlers
     {
         private readonly ICouponUsedRepository _couponUsed;
         private readonly ICouponRepository _coupons;
+        private readonly ICouponApplicationRecordRepository _applicationRecords;
 
-        public CouponsOrderCancelledHandler(ICouponUsedRepository couponUsed, ICouponRepository coupons)
+        public CouponsOrderCancelledHandler(
+            ICouponUsedRepository couponUsed,
+            ICouponRepository coupons,
+            ICouponApplicationRecordRepository applicationRecords)
         {
             _couponUsed = couponUsed;
             _coupons = coupons;
+            _applicationRecords = applicationRecords;
         }
 
         public async Task HandleAsync(OrderCancelled message, CancellationToken ct = default)
         {
-            var couponUsed = await _couponUsed.FindByOrderIdAsync(message.OrderId, ct);
-            if (couponUsed is null)
+            var couponsUsed = await _couponUsed.FindAllByOrderIdAsync(message.OrderId, ct);
+            if (couponsUsed.Count == 0)
                 return;
 
-            var coupon = await _coupons.GetByIdAsync(couponUsed.CouponId.Value, ct);
-            coupon.Release();
-            await _coupons.UpdateAsync(coupon, ct);
-            await _couponUsed.DeleteAsync(couponUsed, ct);
+            foreach (var couponUsed in couponsUsed)
+            {
+                if (couponUsed.CouponId is not null)
+                {
+                    var coupon = await _coupons.GetByIdAsync(couponUsed.CouponId.Value, ct);
+                    coupon.Release();
+                    await _coupons.UpdateAsync(coupon, ct);
+                }
+
+                var record = await _applicationRecords.FindByCouponUsedIdAsync(couponUsed.Id.Value, ct);
+                if (record is not null)
+                {
+                    record.MarkAsReversed();
+                    await _applicationRecords.UpdateAsync(record, ct);
+                }
+
+                await _couponUsed.DeleteAsync(couponUsed, ct);
+            }
         }
     }
 }

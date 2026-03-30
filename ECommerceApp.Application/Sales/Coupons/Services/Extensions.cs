@@ -13,6 +13,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
         {
             return services
                 .AddCouponRuleEngine()
+                .AddSingleton(new CouponsOptions())
                 .AddScoped<ICouponService, CouponService>()
                 .AddScoped<IMessageHandler<OrderCancelled>, CouponsOrderCancelledHandler>()
                 .AddScoped<IMessageHandler<ProductNameChanged>, ProductNameChangedHandler>()

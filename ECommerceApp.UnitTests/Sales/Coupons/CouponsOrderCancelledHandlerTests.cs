@@ -15,15 +15,17 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
     {
         private readonly Mock<ICouponUsedRepository> _couponUsed;
         private readonly Mock<ICouponRepository> _coupons;
+        private readonly Mock<ICouponApplicationRecordRepository> _applicationRecords;
 
         public CouponsOrderCancelledHandlerTests()
         {
             _couponUsed = new Mock<ICouponUsedRepository>();
             _coupons = new Mock<ICouponRepository>();
+            _applicationRecords = new Mock<ICouponApplicationRecordRepository>();
         }
 
         private CouponsOrderCancelledHandler CreateHandler()
-            => new(_couponUsed.Object, _coupons.Object);
+            => new(_couponUsed.Object, _coupons.Object, _applicationRecords.Object);
 
         private static OrderCancelled CreateMessage(int orderId = 99)
             => new(orderId, new List<OrderCancelledItem>(), DateTime.UtcNow);
@@ -52,7 +54,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         [Fact]
         public async Task HandleAsync_NoCouponUsedForOrder_ShouldBeNoOp()
         {
-            _couponUsed.Setup(x => x.FindByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync((CouponUsed?)null);
+            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(new List<CouponUsed>());
 
             await CreateHandler().HandleAsync(CreateMessage(orderId: 99));
 
@@ -66,7 +68,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         {
             var couponUsed = CreateCouponUsed(couponId: 5, orderId: 99);
             var coupon = CreateUsedCoupon(id: 5);
-            _couponUsed.Setup(x => x.FindByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(couponUsed);
+            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(new List<CouponUsed> { couponUsed });
             _coupons.Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
 
             await CreateHandler().HandleAsync(CreateMessage(orderId: 99));

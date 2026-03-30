@@ -314,9 +314,8 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         // ══════════════════════════════════════════════════════════════════════
 
         [Fact]
-        public async Task ApplyCouponAsync_Slice1HappyPath_ShouldStillWork()
+        public async Task ApplyCouponAsync_Slice1CouponWithNoRules_ShouldReturnNoDiscountProduced()
         {
-            // Slice 1 CouponApplied message still works
             var coupon = Coupon.Create("SAVE10", "desc");
             typeof(Coupon).GetProperty(nameof(Coupon.Id))!
                 .GetSetMethod(nonPublic: true)!
@@ -324,19 +323,11 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
 
             _orderExistence.Setup(x => x.ExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _coupons.Setup(x => x.GetByCodeAsync("SAVE10", It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
-            _couponUsed.Setup(x => x.FindByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync((CouponUsed)null);
-            _couponUsed.Setup(x => x.AddAsync(It.IsAny<CouponUsed>(), It.IsAny<CancellationToken>()))
-                .Callback<CouponUsed, CancellationToken>((cu, _) =>
-                {
-                    typeof(CouponUsed).GetProperty(nameof(CouponUsed.Id))!
-                        .GetSetMethod(nonPublic: true)!
-                        .Invoke(cu, new object[] { new CouponUsedId(7) });
-                })
-                .Returns(Task.CompletedTask);
+            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(new List<CouponUsed>());
 
             var result = await CreateSlice1Service().ApplyCouponAsync("SAVE10", new CouponEvaluationContext(99, "user-1", 200m, new List<CouponEvaluationItem>()));
 
-            result.Should().Be(CouponApplyResult.Applied);
+            result.Should().Be(CouponApplyResult.NoDiscountProduced);
         }
 
         [Fact]
@@ -346,7 +337,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             var context = new CouponEvaluationContext(99, "user-1", 200m, new List<CouponEvaluationItem>());
             _orderExistence.Setup(x => x.ExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _coupons.Setup(x => x.GetByCodeAsync("SAVE15", It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
-            _couponUsed.Setup(x => x.FindByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync((CouponUsed)null);
+            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(new List<CouponUsed>());
             _couponUsed.Setup(x => x.AddAsync(It.IsAny<CouponUsed>(), It.IsAny<CancellationToken>()))
                 .Callback<CouponUsed, CancellationToken>((cu, _) =>
                     typeof(CouponUsed).GetProperty(nameof(CouponUsed.Id))!
@@ -360,6 +351,17 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
 
             result.Should().Be(CouponApplyResult.Applied);
             _pipeline.Verify(p => p.EvaluateAsync(It.IsAny<IReadOnlyList<CouponRuleDefinition>>(), context, It.IsAny<CancellationToken>()), Times.Once);
+            _broker.Verify(b => b.PublishAsync(It.Is<IMessage[]>(m =>
+                m.Length == 2 &&
+                m[0].GetType() == typeof(CouponApplied) &&
+                ((CouponApplied)m[0]).OrderId == 99 &&
+                ((CouponApplied)m[0]).CouponUsedId == 7 &&
+                m[1].GetType() == typeof(OrderPriceAdjusted) &&
+                ((OrderPriceAdjusted)m[1]).OrderId == 99 &&
+                ((OrderPriceAdjusted)m[1]).NewPrice == 170m &&
+                ((OrderPriceAdjusted)m[1]).Delta == -30m &&
+                ((OrderPriceAdjusted)m[1]).AdjustmentType == "coupon" &&
+                ((OrderPriceAdjusted)m[1]).ReferenceId == 7)), Times.Once);
         }
 
         [Fact]
@@ -369,7 +371,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             var context = new CouponEvaluationContext(99, "user-1", 10m, new List<CouponEvaluationItem>());
             _orderExistence.Setup(x => x.ExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _coupons.Setup(x => x.GetByCodeAsync("SAVE15", It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
-            _couponUsed.Setup(x => x.FindByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync((CouponUsed)null);
+            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(new List<CouponUsed>());
             _pipeline.Setup(p => p.EvaluateAsync(It.IsAny<IReadOnlyList<CouponRuleDefinition>>(), It.IsAny<CouponEvaluationContext>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CouponRulePipelineResult.Failure(new[] { "Order total too low." }));
 
@@ -404,7 +406,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         // ── helper ────────────────────────────────────────────────────────────
 
         private ICouponService CreateSlice1Service()
-            => new CouponService(_coupons.Object, _couponUsed.Object, _orderExistence.Object, _broker.Object, _scopeTargets.Object, _pipeline.Object);
+            => new CouponService(_coupons.Object, _couponUsed.Object, _orderExistence.Object, _broker.Object, _scopeTargets.Object, _pipeline.Object, _options, _applicationRecords.Object);
 
         // ══════════════════════════════════════════════════════════════════════
         // SimulateCouponAsync — runs rule pipeline without committing
@@ -478,6 +480,94 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
 
             result.Passed.Should().BeFalse();
             result.FailureReasons.Should().ContainSingle("Order total too low.");
+        }
+
+        // ══════════════════════════════════════════════════════════════════════
+        // Stacking strategy — effective price and fixed-value guards
+        // ══════════════════════════════════════════════════════════════════════
+
+        [Fact]
+        public async Task ApplyCouponAsync_EffectivePriceAlreadyZero_ShouldReturnNoDiscountProduced()
+        {
+            var coupon = CreateRuleBasedCoupon(id: 5, code: "SAVE15");
+            var existingCouponUsed = CreateCouponUsedForDb(id: 1, couponId: 10, orderId: 99);
+            var previousRecord = CouponApplicationRecord.Create(1, "PREV", "fixed", 200m, 200m, 200m);
+            var context = new CouponEvaluationContext(99, "user-1", 200m, new List<CouponEvaluationItem>());
+
+            _orderExistence.Setup(x => x.ExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _coupons.Setup(x => x.GetByCodeAsync("SAVE15", It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
+            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<CouponUsed> { existingCouponUsed });
+            _applicationRecords.Setup(x => x.FindByOrderIdAsync(99, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<CouponApplicationRecord> { previousRecord });
+
+            var result = await CreateSlice1Service().ApplyCouponAsync("SAVE15", context);
+
+            result.Should().Be(CouponApplyResult.NoDiscountProduced);
+            _pipeline.Verify(p => p.EvaluateAsync(It.IsAny<IReadOnlyList<CouponRuleDefinition>>(), It.IsAny<CouponEvaluationContext>(), It.IsAny<CancellationToken>()), Times.Never);
+            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ApplyCouponAsync_CouponReductionExceedsEffectivePrice_ShouldCapAndApply()
+        {
+            // price=150, already reduced by 100 → effective=50; pipeline wants 75 → capped to 50
+            var coupon = CreateRuleBasedCoupon(id: 5, code: "SAVE15");
+            var existingCouponUsed = CreateCouponUsedForDb(id: 1, couponId: 10, orderId: 99);
+            var previousRecord = CouponApplicationRecord.Create(1, "PREV", "fixed", 100m, 150m, 100m);
+            var context = new CouponEvaluationContext(99, "user-1", 150m, new List<CouponEvaluationItem>());
+
+            _orderExistence.Setup(x => x.ExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _coupons.Setup(x => x.GetByCodeAsync("SAVE15", It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
+            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<CouponUsed> { existingCouponUsed });
+            _applicationRecords.Setup(x => x.FindByOrderIdAsync(99, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<CouponApplicationRecord> { previousRecord });
+            _couponUsed.Setup(x => x.AddAsync(It.IsAny<CouponUsed>(), It.IsAny<CancellationToken>()))
+                .Callback<CouponUsed, CancellationToken>((cu, _) =>
+                    typeof(CouponUsed).GetProperty(nameof(CouponUsed.Id))!
+                        .GetSetMethod(nonPublic: true)!
+                        .Invoke(cu, new object[] { new CouponUsedId(7) }))
+                .Returns(Task.CompletedTask);
+            _pipeline.Setup(p => p.EvaluateAsync(It.IsAny<IReadOnlyList<CouponRuleDefinition>>(), It.IsAny<CouponEvaluationContext>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(CouponRulePipelineResult.Success(75m));
+
+            var result = await CreateSlice1Service().ApplyCouponAsync("SAVE15", context);
+
+            result.Should().Be(CouponApplyResult.Applied);
+            _broker.Verify(b => b.PublishAsync(It.Is<IMessage[]>(m =>
+                m.Length == 2 &&
+                m[1].GetType() == typeof(OrderPriceAdjusted) &&
+                ((OrderPriceAdjusted)m[1]).NewPrice == 0m &&
+                ((OrderPriceAdjusted)m[1]).Delta == -50m)), Times.Once);
+            _applicationRecords.Verify(r => r.AddAsync(
+                It.Is<CouponApplicationRecord>(ar => ar.Reduction == 50m),
+                It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task ApplyCouponAsync_FixedValueCouponExceedsOriginalTotal_ShouldReturnRulesNotSatisfied()
+        {
+            // fixed coupon of 100 applied to order worth 99 → reject
+            var rulesJson = BuildRulesJson(
+                new CouponRuleDefinition("order-total", CouponRuleCategory.Scope, new Dictionary<string, string>()),
+                new CouponRuleDefinition("fixed-amount-off", CouponRuleCategory.Discount, new Dictionary<string, string> { ["amount"] = "100" }));
+            var coupon = Coupon.CreateWithRules("FIXED100", "100 off", rulesJson, new List<CouponScopeTarget>());
+            typeof(Coupon).GetProperty(nameof(Coupon.Id))!
+                .GetSetMethod(nonPublic: true)!
+                .Invoke(coupon, new object[] { new CouponId(5) });
+
+            var context = new CouponEvaluationContext(99, "user-1", 99m, new List<CouponEvaluationItem>());
+            _orderExistence.Setup(x => x.ExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _coupons.Setup(x => x.GetByCodeAsync("FIXED100", It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
+            _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new List<CouponUsed>());
+
+            var result = await CreateSlice1Service().ApplyCouponAsync("FIXED100", context);
+
+            result.Should().Be(CouponApplyResult.RulesNotSatisfied);
+            _pipeline.Verify(p => p.EvaluateAsync(It.IsAny<IReadOnlyList<CouponRuleDefinition>>(), It.IsAny<CouponEvaluationContext>(), It.IsAny<CancellationToken>()), Times.Never);
+            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
         }
     }
 }

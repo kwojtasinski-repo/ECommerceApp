@@ -23,6 +23,8 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
         private readonly IMessageBroker _broker;
         private readonly IScopeTargetRepository _scopeTargets;
         private readonly ICouponRulePipeline _pipeline;
+        private readonly CouponsOptions _options;
+        private readonly ICouponApplicationRecordRepository _applicationRecords;
 
         public CouponService(
             ICouponRepository coupons,
@@ -30,7 +32,9 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
             IOrderExistenceChecker orderExistence,
             IMessageBroker broker,
             IScopeTargetRepository scopeTargets,
-            ICouponRulePipeline pipeline)
+            ICouponRulePipeline pipeline,
+            CouponsOptions options,
+            ICouponApplicationRecordRepository applicationRecords)
         {
             _coupons = coupons;
             _couponUsed = couponUsed;
@@ -38,37 +42,86 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
             _broker = broker;
             _scopeTargets = scopeTargets;
             _pipeline = pipeline;
+            _options = options;
+            _applicationRecords = applicationRecords;
         }
 
         public async Task<CouponApplyResult> ApplyCouponAsync(string couponCode, CouponEvaluationContext context, CancellationToken ct = default)
         {
             if (!await _orderExistence.ExistsAsync(context.OrderId, ct))
+            {
                 return CouponApplyResult.OrderNotFound;
+            }
 
             var coupon = await _coupons.GetByCodeAsync(couponCode, ct);
             if (coupon is null)
+            {
                 return CouponApplyResult.CouponNotFound;
+            }
 
             if (coupon.Status != CouponStatus.Available)
+            {
                 return CouponApplyResult.CouponAlreadyUsed;
+            }
 
-            var existing = await _couponUsed.FindByOrderIdAsync(context.OrderId, ct);
-            if (existing is not null)
+            var existingCoupons = await _couponUsed.FindAllByOrderIdAsync(context.OrderId, ct);
+            var maxCoupons = Math.Min(_options.MaxCouponsPerOrder, 10);
+            if (existingCoupons.Count >= maxCoupons)
+            {
                 return CouponApplyResult.OrderAlreadyHasCoupon;
+            }
+
+            var previousRecords = existingCoupons.Count > 0
+                ? await _applicationRecords.FindByOrderIdAsync(context.OrderId, ct)
+                : Array.Empty<CouponApplicationRecord>();
+            var totalPreviousReductions = previousRecords.Sum(r => r.Reduction);
+            var effectivePrice = context.OriginalTotal - totalPreviousReductions;
+            if (effectivePrice <= 0m)
+            {
+                return CouponApplyResult.NoDiscountProduced;
+            }
 
             var rules = coupon.GetRules();
+            var discountRule = rules.FirstOrDefault(r => r.Category == CouponRuleCategory.Discount);
+            var discountValue = ExtractDiscountValue(discountRule);
+
+            if (discountRule?.Parameters.ContainsKey("amount") == true && discountValue > context.OriginalTotal)
+            {
+                return CouponApplyResult.RulesNotSatisfied;
+            }
+
+            CouponRulePipelineResult pipelineResult = null;
             if (rules.Count > 0)
             {
-                var pipelineResult = await _pipeline.EvaluateAsync(rules, context, ct);
+                pipelineResult = await _pipeline.EvaluateAsync(rules, context, ct);
                 if (!pipelineResult.Passed)
+                {
                     return CouponApplyResult.RulesNotSatisfied;
+                }
+            }
+
+            var intendedReduction = pipelineResult?.TotalReduction ?? 0m;
+            var actualReduction = Math.Min(intendedReduction, effectivePrice);
+            if (actualReduction <= 0m)
+            {
+                return CouponApplyResult.NoDiscountProduced;
             }
 
             coupon.MarkAsUsed();
-            var couponUsed = CouponUsed.Create(coupon.Id, context.OrderId);
+            var couponUsed = CouponUsed.CreateForDbCoupon(coupon.Id, context.OrderId, context.UserId);
             await _couponUsed.AddAsync(couponUsed, ct);
             await _coupons.UpdateAsync(coupon, ct);
-            await _broker.PublishAsync(new CouponApplied(context.OrderId, couponUsed.Id.Value, 0));
+
+            var discountType = discountRule?.Name ?? "none";
+            var record = CouponApplicationRecord.Create(
+                couponUsed.Id.Value, coupon.Code.Value, discountType,
+                discountValue, context.OriginalTotal, actualReduction);
+            await _applicationRecords.AddAsync(record, ct);
+
+            await _broker.PublishAsync(
+                new CouponApplied(context.OrderId, couponUsed.Id.Value, 0),
+                new OrderPriceAdjusted(context.OrderId, effectivePrice - actualReduction, -actualReduction, "coupon", couponUsed.Id.Value));
+
             return CouponApplyResult.Applied;
         }
 
@@ -220,6 +273,26 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
             }
 
             return await _pipeline.EvaluateAsync(rules, context, ct);
+        }
+
+        private static decimal ExtractDiscountValue(CouponRuleDefinition discountRule)
+        {
+            if (discountRule is null)
+            { 
+                return 0m;
+            }
+
+            if (discountRule.Parameters.TryGetValue("percent", out var pct) && decimal.TryParse(pct, out var p))
+            {
+                return p;
+            }
+
+            if (discountRule.Parameters.TryGetValue("amount", out var amt) && decimal.TryParse(amt, out var a))
+            {
+                return a;
+            }
+
+            return 0m;
         }
     }
 }

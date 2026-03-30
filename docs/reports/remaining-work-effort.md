@@ -1,7 +1,7 @@
 # Remaining Work Effort
 
-> **Rev 3 — Generated 2026-06-05**
-> Test suite: **1009 / 1009** ✅ (832 unit + 177 integration)
+> **Rev 4 — Generated 2026-06-05**
+> Test suite: **1019 / 1020** ✅ (835 unit + 177 integration · 1 pre-existing Catalog arch failure: `App_Catalog_ShouldOnlyDependOnOwnDomain`)
 > Previous priorities 1–4 (IAM switch, legacy view cleanup, Payments cleanup, Sales switch) are **all complete**.
 
 ---
@@ -17,7 +17,7 @@
 | 5 | CurrencyRateSyncTask atomic switch (TimeManagement) | XS | ✅ Done — already using `ICurrencyRateService` from new BC; legacy `CurrencyRateDto` deleted |
 | 6 | Refresh Token expiry cleanup job | XS | 🔵 Deferred (low priority) |
 | 7 | Brand BC — no BC equivalent, legacy-only | — | ❌ Cancelled + cleaned — `BrandController`, `IBrandService`, `BrandService`, `BrandDto`, `ListForBrandVm`, views, tests all deleted; nav link removed; DI registration removed |
-| 8 | Coupons Slice 2 — DB migration approval + atomic switch | L | 🔄 In progress |
+| 8 | Coupons Slice 2 — DB migration approval + atomic switch | L | 🔄 In progress — Gaps A–F complete, DB migration pending |
 | 9 | Communication BC | TBD | ❌ Not started |
 | 10 | Backoffice BC | TBD | ❌ Blocked (ADR-0013) |
 | 11 | Per-BC DbContext interfaces (ADR-0013) | — | ❌ Gate: ~80–100% BCs complete |
@@ -130,7 +130,7 @@ Legacy `Domain/Model/Brand.cs`, `BrandRepository.cs`, `IBrandRepository`, `Conte
 
 ## Priority 8 — Coupons Slice 2 — **L (In Progress)**
 
-Implementation complete at Domain + Application + Infrastructure layers.
+Implementation complete at Domain + Application + Infrastructure + Web layers.
 
 | Item | Status |
 |---|---|
@@ -138,6 +138,19 @@ Implementation complete at Domain + Application + Infrastructure layers.
 | Application: 16 evaluators (15 + CouponOversizeGuard auto-injected), workflow builder, contracts | ✅ Done |
 | Infrastructure: 5 adapters/repos (StockAvailabilityChecker, CompletedOrderCounter, SpecialEventCache, CouponApplicationRecordRepository, NullRuntimeCouponSource) | ✅ Done |
 | DB migration: `CouponApplicationRecords` + `SpecialEvents` tables | 🟡 Pending approval |
+| Gap A: `CreateForDbCoupon` in `ApplyCouponAsync` (captures userId) | ✅ Done |
+| Gap B: `MaxCouponsPerOrder` enforcement (multi-coupon guard, ceiling 10) | ✅ Done |
+| Gap C: Audit trail via `CouponApplicationRecord` + `ExtractDiscountValue` | ✅ Done |
+| Gap D: `OrderPriceAdjusted` wiring — published alongside `CouponApplied` when `reduction > 0` | ✅ Done |
+| Gap D+: `NoDiscountProduced` — coupons with no reduction rejected before persistence | ✅ Done |
+| Gap E: `CouponsOrderCancelledHandler` rewrite (multi-coupon, DB/runtime, audit reversal) | ✅ Done |
+| Gap F: Admin UI — `CouponController.Create` switched from `AddCouponAsync` to `CreateCouponAsync`, `RulesJson` textarea added | ✅ Done |
+| `CouponsOptions` registered as singleton in DI | ✅ Done |
+| `ICouponApplicationRecordRepository` injected into `CouponService` | ✅ Done |
+| Stacking Rule A: fixed-value coupon rejected when `discountValue > context.OriginalTotal` (checked before pipeline) | ✅ Done |
+| Stacking Rule B: fail-fast when `effectivePrice ≤ 0`; cap `actualReduction = Math.Min(intended, effectivePrice)` | ✅ Done |
+| `OrderPriceAdjusted.NewPrice` bug fix: now `effectivePrice − actualReduction` (not `OriginalTotal − reduction`) | ✅ Done |
+| Unit tests: 44 passing (32 service + 12 handler) | ✅ Done |
 | Atomic switch | ❌ Blocked by Coupons Slice 1 in production |
 
 See [ADR-0016](../../docs/adr/0016-sales-coupons-bc-design.md) §9.
