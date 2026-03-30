@@ -1,7 +1,7 @@
 # Remaining Work Effort
 
-> **Rev 4 — Generated 2026-06-05**
-> Test suite: **1019 / 1020** ✅ (835 unit + 177 integration · 1 pre-existing Catalog arch failure: `App_Catalog_ShouldOnlyDependOnOwnDomain`)
+> **Rev 5 — Generated 2026-06-05**
+> Test suite: **1023 / 1024** ✅ (839 unit + 177 integration · 1 pre-existing Catalog arch failure: `App_Catalog_ShouldOnlyDependOnOwnDomain`)
 > Previous priorities 1–4 (IAM switch, legacy view cleanup, Payments cleanup, Sales switch) are **all complete**.
 
 ---
@@ -15,9 +15,9 @@
 | 3 | R-2 — `RefundController.Report` action | — | ✅ Dropped (no requirement, API not needed) |
 | 4 | R-7 — `ShowItemConnectedWithTags` feature gap | S | ✅ Done — `ByTag` action + tag filter strip + clickable tag links in Details |
 | 5 | CurrencyRateSyncTask atomic switch (TimeManagement) | XS | ✅ Done — already using `ICurrencyRateService` from new BC; legacy `CurrencyRateDto` deleted |
-| 6 | Refresh Token expiry cleanup job | XS | 🔵 Deferred (low priority) |
+| 6 | Refresh Token expiry cleanup job | XS | ✅ Done — `RefreshTokenCleanupTask` (`IScheduledTask`), `IRefreshTokenRepository.DeleteExpiredAsync`, 4 unit tests |
 | 7 | Brand BC — no BC equivalent, legacy-only | — | ❌ Cancelled + cleaned — `BrandController`, `IBrandService`, `BrandService`, `BrandDto`, `ListForBrandVm`, views, tests all deleted; nav link removed; DI registration removed |
-| 8 | Coupons Slice 2 — DB migration approval + atomic switch | L | 🔄 In progress — Gaps A–F complete, DB migration pending |
+| 8 | Coupons Slice 2 — DB migration approval + atomic switch | L | ✅ Done — All code complete, dead `AddCouponAsync` removed, DB migration wired via `IDbContextMigrator<CouponsDbContext>` |
 | 9 | Communication BC | TBD | ❌ Not started |
 | 10 | Backoffice BC | TBD | ❌ Blocked (ADR-0013) |
 | 11 | Per-BC DbContext interfaces (ADR-0013) | — | ❌ Gate: ~80–100% BCs complete |
@@ -98,12 +98,9 @@ Already fully switched to new BC. `CurrencyRateSyncTask` uses `ICurrencyRateServ
 
 ---
 
-## Priority 6 — Refresh Token Expiry Cleanup Job — **XS (Deferred)**
+## Priority 6 — Refresh Token Expiry Cleanup Job — **✅ Done**
 
-| | |
-|---|---|
-| **Action** | Register a Hangfire job calling `IRefreshTokenRepository.DeleteExpiredAsync` — piggyback on `JobManagement` infrastructure |
-| **Priority** | Low — not a blocker for any other work |
+`RefreshTokenCleanupTask` implements `IScheduledTask`, registered via `AddIamServices()`. Calls `IRefreshTokenRepository.DeleteExpiredAsync` which removes all tokens where `ExpiresAt < UtcNow`. 4 unit tests (task name, success with deletions, success with zero, failure reporting).
 
 ---
 
@@ -151,7 +148,8 @@ Implementation complete at Domain + Application + Infrastructure + Web layers.
 | Stacking Rule B: fail-fast when `effectivePrice ≤ 0`; cap `actualReduction = Math.Min(intended, effectivePrice)` | ✅ Done |
 | `OrderPriceAdjusted.NewPrice` bug fix: now `effectivePrice − actualReduction` (not `OriginalTotal − reduction`) | ✅ Done |
 | Unit tests: 44 passing (32 service + 12 handler) | ✅ Done |
-| Atomic switch | ❌ Blocked by Coupons Slice 1 in production |
+| Dead code cleanup: `AddCouponAsync` removed from `ICouponService` + `CouponService` | ✅ Done |
+| Atomic switch | ✅ Done — controller in `Areas/Sales`, DI wired, `IDbContextMigrator<CouponsDbContext>` registered, no legacy code remains |
 
 See [ADR-0016](../../docs/adr/0016-sales-coupons-bc-design.md) §9.
 

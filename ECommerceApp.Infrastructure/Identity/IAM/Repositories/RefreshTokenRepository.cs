@@ -46,5 +46,22 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Repositories
 
             await _context.SaveChangesAsync(ct);
         }
+
+        public async Task<int> DeleteExpiredAsync(CancellationToken ct = default)
+        {
+            var cutoff = System.DateTime.UtcNow;
+            var expired = await _context.RefreshTokens
+                .Where(r => r.ExpiresAt < cutoff)
+                .ToListAsync(ct);
+
+            if (expired.Count == 0)
+            {
+                return 0;
+            }
+
+            _context.RefreshTokens.RemoveRange(expired);
+            await _context.SaveChangesAsync(ct);
+            return expired.Count;
+        }
     }
 }

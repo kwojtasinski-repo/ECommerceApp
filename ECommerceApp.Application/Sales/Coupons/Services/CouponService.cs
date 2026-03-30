@@ -172,24 +172,6 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
             return CouponApplicationResult.Applied();
         }
 
-        public async Task<bool> AddCouponAsync(string code, string description, CancellationToken ct = default)
-        {
-            if (string.IsNullOrWhiteSpace(code) || string.IsNullOrWhiteSpace(description))
-            {
-                return false;
-            }
-
-            var existing = await _coupons.GetByCodeAsync(code, ct);
-            if (existing is not null)
-            {
-                return false;
-            }
-
-            var coupon = Coupon.Create(code, description);
-            await _coupons.AddAsync(coupon, ct);
-            return true;
-        }
-
         public async Task<CouponListVm> GetCouponsAsync(int pageSize, int pageNo, string searchString, CancellationToken ct = default)
         {
             var coupons = await _coupons.GetAllAsync(pageSize, pageNo, searchString, ct);

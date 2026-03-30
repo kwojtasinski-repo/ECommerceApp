@@ -9,5 +9,6 @@ namespace ECommerceApp.Domain.Identity.IAM
         Task<RefreshToken> GetByTokenAsync(string token, CancellationToken ct = default);
         Task UpdateAsync(RefreshToken refreshToken, CancellationToken ct = default);
         Task RevokeAllForUserAsync(string userId, CancellationToken ct = default);
+        Task<int> DeleteExpiredAsync(CancellationToken ct = default);
     }
 }
