@@ -200,6 +200,7 @@
     <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js"></script>
     <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="~/lib/tom-select/js/tom-select.complete.min.js"></script>
+    @RenderSection("PreScripts", required: false)
     <script src="~/lib/require-js/require.js"></script>
     @{ var jsVersion = (ECommerceApp.Web.Services.JsVersionProvider)Context.RequestServices.GetService(typeof(ECommerceApp.Web.Services.JsVersionProvider)); }
     <script>window.__jsVersion = '@jsVersion?.GetVersion()';</script>
