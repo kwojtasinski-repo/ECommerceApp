@@ -1,5 +1,5 @@
-﻿using ECommerceApp.Domain.Interface;
-using ECommerceApp.Domain.Model;
+﻿using ECommerceApp.Domain.Catalog.Products;
+using ECommerceApp.Infrastructure.Catalog.Products;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,73 +9,27 @@ namespace ECommerceApp.Infrastructure.Repositories
 {
     public class ImageRepository : IImageRepository
     {
-        private readonly IGenericRepository<Image> _genericRepository;
+        private readonly CatalogDbContext _context;
 
-        public ImageRepository(IGenericRepository<Image> genericRepository)
+        public ImageRepository(CatalogDbContext context)
         {
-            _genericRepository = genericRepository;
-        }
-
-        public async Task<int> AddImage(Image image)
-        {
-            var id = await _genericRepository.AddAsync(image);
-            return id;
-        }
-
-        public List<int> AddImages(List<Image> images)
-        {
-            return _genericRepository.AddRange(images);
-        }
-
-        public bool DeleteImage(Image image)
-        {
-            return _genericRepository.Delete(image);
-        }
-
-        public async Task DeleteImage(int imageId)
-        {
-            await _genericRepository.DeleteAsync(imageId);
-        }
-
-        public List<Image> GetAllImages()
-        {
-            return _genericRepository.GetAll().ToList();
-        }
-
-        public int GetCountByItemId(int? itemId)
-        {
-            return _genericRepository.GetAll()
-                                     .AsNoTracking()
-                                     .Where(im => itemId.HasValue && im.ItemId == itemId.Value)
-                                     .Select(i => i.Id)
-                                     .Count();
+            _context = context;
         }
 
         public async Task<Image> GetImageById(int imageId)
+            => await _context.Images.AsNoTracking()
+                .FirstOrDefaultAsync(i => i.Id == new ImageId(imageId));
+
+        public async Task<List<Image>> GetAllImages()
         {
-            var image = await _genericRepository.GetByIdAsync(imageId);
-            return image;
+            return await _context.Images.AsNoTracking().ToListAsync();
         }
 
-        public List<Image> GetImagesByItemsId(IEnumerable<int> imagesId)
+        public async Task<List<Image>> GetProductImages(int productId)
         {
-            return _genericRepository.GetAll()
-                        .Where(i => imagesId.Contains(i.Id))
-                        .AsNoTracking()
-                        .Select(i => new Image
-                        {
-                            Id = i.Id,
-                            Name = i.Name,
-                            ItemId = i.ItemId,
-                        })
-                        .ToList();
-        }
-
-        public List<Image> GetItemImages(int itemId)
-        {
-            return _genericRepository.GetAll()
-                              .Where(i => i.ItemId == itemId)
-                              .ToList();
+            return await _context.Images.AsNoTracking()
+                .Where(i => i.ProductId == new ProductId(productId))
+                .ToListAsync();
         }
     }
 }

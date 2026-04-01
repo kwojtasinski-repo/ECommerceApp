@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ECommerceApp.Application.Catalog.Images.ViewModels;
 using ECommerceApp.Application.Mapping;
 using System.Collections.Generic;
 
@@ -19,7 +20,7 @@ namespace ECommerceApp.Application.ViewModels.Item
         public string CurrencyName { get; set; }
 
         public List<ItemTagForListVm> ItemTags { get; set; }
-        public List<Image.GetImageVm> Images { get; set; }
+        public List<GetImageVm> Images { get; set; }
 
         public void Mapping(Profile profile)
         {

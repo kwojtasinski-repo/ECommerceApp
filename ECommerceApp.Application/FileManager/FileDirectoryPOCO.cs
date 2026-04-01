@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace ECommerceApp.Application.POCO
+namespace ECommerceApp.Application.FileManager
 {
     public class FileDirectoryPOCO
     {

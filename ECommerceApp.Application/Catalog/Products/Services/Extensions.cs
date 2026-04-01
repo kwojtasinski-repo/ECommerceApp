@@ -1,3 +1,4 @@
+using ECommerceApp.Application.Catalog.Images.Services;
 using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Interfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,7 +14,8 @@ namespace ECommerceApp.Application.Catalog.Products.Services
                 .AddScoped<ICategoryService, CategoryService>()
                 .AddScoped<IProductTagService, ProductTagService>()
                 .AddSingleton<IImageUrlBuilder, RelativeImageUrlBuilder>()
-                .AddTransient<Images.Services.IImageService, Images.Services.ImageService>();
+                .AddTransient<IImageService, ImageService>()
+                .AddTransient<IUrlImageResolver, UrlImageResolver>();
         }
     }
 }

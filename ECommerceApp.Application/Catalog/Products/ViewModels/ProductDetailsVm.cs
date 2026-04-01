@@ -36,6 +36,7 @@ namespace ECommerceApp.Application.Catalog.Products.ViewModels
     public class ProductImageVm
     {
         public int Id { get; set; }
+        public string FileName { get; set; }
         public string Url { get; set; }
         public bool IsMain { get; set; }
         public int SortOrder { get; set; }

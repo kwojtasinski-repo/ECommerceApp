@@ -1,11 +1,12 @@
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.POCO;
+using ECommerceApp.Application.Catalog.Images.Models;
 using ECommerceApp.Application.Catalog.Images.Services;
 using ECommerceApp.Web.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ECommerceApp.Web.Areas.Catalog.Controllers
 {
@@ -21,12 +22,12 @@ namespace ECommerceApp.Web.Areas.Catalog.Controllers
         }
 
         [HttpPost]
-        public ActionResult<List<int>> UploadImages(int itemId, [FromForm] ICollection<IFormFile> files)
+        public async Task<ActionResult<List<int>>> UploadImages(int itemId, [FromForm] ICollection<IFormFile> files)
         {
             var addImages = new AddImagesPOCO { Files = files, ItemId = itemId };
             try
             {
-                _service.AddImages(addImages);
+                await _service.AddImages(addImages);
             }
             catch (BusinessException exception)
             {
@@ -36,11 +37,11 @@ namespace ECommerceApp.Web.Areas.Catalog.Controllers
         }
 
         [HttpDelete]
-        public IActionResult DeleteImage(int id)
+        public async Task<IActionResult> DeleteImage(int id)
         {
             try
             {
-                return _service.Delete(id)
+                return await _service.Delete(id)
                     ? Ok()
                     : NotFound();
             }

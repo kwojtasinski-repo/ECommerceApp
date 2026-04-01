@@ -1,6 +1,5 @@
 ﻿using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.POCO;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;

@@ -1,9 +1,11 @@
+using ECommerceApp.Application.Constants;
+
 namespace ECommerceApp.Application.Presale.Checkout.ViewModels
 {
     public class PlaceOrderVm
     {
         public int CustomerId { get; set; }
-        public int CurrencyId { get; set; }
+        public int CurrencyId { get; set; } = CurrencyConstants.PlnId;
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;

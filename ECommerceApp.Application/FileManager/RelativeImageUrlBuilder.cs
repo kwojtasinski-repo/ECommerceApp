@@ -6,17 +6,41 @@ namespace ECommerceApp.Application.FileManager
     internal sealed class RelativeImageUrlBuilder : IImageUrlBuilder
     {
         private readonly string _basePath;
+        private readonly string _baseUrl;
+        private readonly string _segment;
 
         public RelativeImageUrlBuilder(IConfiguration configuration)
         {
-            _basePath = configuration["Images:BasePath"] ?? "/api/images";
+            _basePath = configuration["Images:BasePath"] ?? string.Empty;
+            _baseUrl  = configuration["Images:BaseUrl"]  ?? string.Empty;
+            // Derive the canonical segment from the last part of the path: "/api/images" → "images"
+            _segment  = _basePath.TrimStart('/').Contains('/')
+                ? _basePath.TrimStart('/').Substring(_basePath.TrimStart('/').LastIndexOf('/') + 1)
+                : _basePath.TrimStart('/');
         }
 
-        public string Build(string fileName)
+        /// <inheritdoc/>
+        public string Build(int imageId)
         {
-            if (string.IsNullOrWhiteSpace(fileName))
+            if (imageId <= 0)
+            {
                 return string.Empty;
-            return $"{_basePath}/{fileName}";
+            }
+
+            return string.IsNullOrEmpty(_baseUrl)
+                ? $"{_basePath}/{imageId}"
+                : $"{_baseUrl}{_basePath}/{imageId}";
+        }
+
+        /// <inheritdoc/>
+        public string GetCanonical(int imageId)
+        {
+            if (imageId <= 0)
+            {
+                return string.Empty;
+            }
+
+            return $"{_segment}/{imageId}";
         }
     }
 }

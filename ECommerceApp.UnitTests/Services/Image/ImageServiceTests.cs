@@ -1,15 +1,18 @@
-﻿using ECommerceApp.Application.Catalog.Images.Services;
+using ECommerceApp.Application.Catalog.Images.Models;
+using ECommerceApp.Application.Catalog.Images.Services;
+using ECommerceApp.Application.Catalog.Images.ViewModels;
 using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.POCO;
-using ECommerceApp.Application.ViewModels.Image;
-using ECommerceApp.Domain.Interface;
+using ECommerceApp.Domain.Catalog.Products;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 
 namespace ECommerceApp.Tests.Services.Image
@@ -18,215 +21,242 @@ namespace ECommerceApp.Tests.Services.Image
     {
         private readonly Mock<IImageRepository> _imageRepository;
         private readonly Mock<IFileStore> _fileStore;
+        private readonly Mock<IProductRepository> _productRepository;
 
         public ImageServiceTests()
         {
             _imageRepository = new Mock<IImageRepository>();
             _fileStore = new Mock<IFileStore>();
+            _productRepository = new Mock<IProductRepository>();
         }
 
         [Fact]
-        public void given_valid_image_should_add()
+        public async Task given_valid_image_should_add()
         {
             var image = CreateImageVm();
             image.Id = 0;
-            _imageRepository.Setup(i => i.GetAllImages()).Returns(new List<Domain.Model.Image>());
+            var product = CreateProductWithImages(0);
             _fileStore.Setup(f => f.GetFileExtenstion(It.IsAny<string>())).Returns(".jpg");
-            _fileStore.Setup(f => f.WriteFile(It.IsAny<IFormFile>(), It.IsAny<string>())).Returns(new Application.POCO.FileDirectoryPOCO { Name = "Name", SourcePath = "/abc"});
-            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
-            
-            imageService.Add(image);
+            _fileStore.Setup(f => f.WriteFile(It.IsAny<IFormFile>(), It.IsAny<string>()))
+                .Returns(new FileDirectoryPOCO { Name = "Name", SourcePath = "/upload/file.jpg" });
+            _productRepository.Setup(p => p.GetByIdWithDetailsAsync(It.IsAny<ProductId>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(product);
+            _productRepository.Setup(p => p.UpdateAsync(It.IsAny<Product>())).Returns(Task.CompletedTask);
+            var imageService = CreateService();
 
-            _imageRepository.Verify(i => i.AddImage(It.IsAny<Domain.Model.Image>()), Times.Once);
+            await imageService.Add(image);
+
+            _productRepository.Verify(p => p.UpdateAsync(It.IsAny<Product>()), Times.Once);
         }
 
         [Fact]
-        public void given_invalid_image_extension_should_throw_an_exception()
+        public async Task given_invalid_image_extension_should_throw_an_exception()
         {
             var image = CreateImageVm();
             image.Id = 0;
-            _imageRepository.Setup(i => i.GetAllImages()).Returns(new List<Domain.Model.Image>());
             _fileStore.Setup(f => f.GetFileExtenstion(It.IsAny<string>())).Returns(".bin");
-            _fileStore.Setup(f => f.WriteFile(It.IsAny<IFormFile>(), It.IsAny<string>())).Returns(new Application.POCO.FileDirectoryPOCO { Name = "Name", SourcePath = "/abc" });
-            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
+            var imageService = CreateService();
 
-            Action action = () => imageService.Add(image);
+            Func<Task> action = () => imageService.Add(image);
 
-            action.Should().ThrowExactly<BusinessException>();
+            await action.Should().ThrowExactlyAsync<BusinessException>();
         }
 
         [Fact]
-        public void given_too_big_image_extension_should_throw_an_exception()
+        public async Task given_too_big_image_extension_should_throw_an_exception()
         {
             var image = CreateImageVm();
             image.Images = new List<IFormFile>() { AddFileToIFormFile("abcsa2", 41943041) };
             image.Id = 0;
-            _imageRepository.Setup(i => i.GetAllImages()).Returns(new List<Domain.Model.Image>());
             _fileStore.Setup(f => f.GetFileExtenstion(It.IsAny<string>())).Returns(".jpg");
-            _fileStore.Setup(f => f.WriteFile(It.IsAny<IFormFile>(), It.IsAny<string>())).Returns(new Application.POCO.FileDirectoryPOCO { Name = "Name", SourcePath = "/abc" });
-            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
+            var imageService = CreateService();
 
-            Action action = () => imageService.Add(image);
+            Func<Task> action = () => imageService.Add(image);
 
-            action.Should().ThrowExactly<BusinessException>();
+            await action.Should().ThrowExactlyAsync<BusinessException>();
         }
 
         [Fact]
-        public void given_too_many_images_should_throw_an_exception() 
+        public async Task given_too_many_images_should_throw_an_exception()
         {
             var image = CreateImageVm();
             image.Id = 0;
             image.Images.Add(AddFileToIFormFile("acs"));
-            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
+            var imageService = CreateService();
 
-            Action action = () => imageService.Add(image);
+            Func<Task> action = () => imageService.Add(image);
 
-            action.Should().ThrowExactly<BusinessException>().WithMessage("Cannot add more than one images use another method");
+            (await action.Should().ThrowExactlyAsync<BusinessException>())
+                .WithMessage("Cannot add more than one images use another method");
         }
 
         [Fact]
-        public void given_invalid_image_should_throw_an_exception()
+        public async Task given_invalid_image_should_throw_an_exception()
         {
             var image = CreateImageVm();
-            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
+            var imageService = CreateService();
 
-            Action action = () => imageService.Add(image);
+            Func<Task> action = () => imageService.Add(image);
 
-            action.Should().ThrowExactly<BusinessException>().WithMessage("When adding object Id should be equals 0");
+            (await action.Should().ThrowExactlyAsync<BusinessException>())
+                .WithMessage("When adding object Id should be equals 0");
         }
 
         [Fact]
-        public void given_valid_image_with_invalid_files_should_throw_an_exception()
+        public async Task given_valid_image_with_invalid_files_should_throw_an_exception()
         {
             var image = CreateImageVm();
             image.Id = 0;
             image.Images = null;
-            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
+            var imageService = CreateService();
 
-            Action action = () => imageService.Add(image);
+            Func<Task> action = () => imageService.Add(image);
 
-            action.Should().ThrowExactly<BusinessException>().WithMessage("Adding image without source is not allowed");
+            (await action.Should().ThrowExactlyAsync<BusinessException>())
+                .WithMessage("Adding image without source is not allowed");
         }
 
         [Fact]
-        public void given_file_when_limit_exceeded_should_throw_an_exception()
+        public async Task given_file_when_limit_exceeded_should_throw_an_exception()
         {
             var image = CreateImageVm();
             image.Id = 0;
-            _imageRepository.Setup(i => i.GetCountByItemId(It.IsAny<int>())).Returns(5);
+            var product = CreateProductWithImages(5);
             _fileStore.Setup(f => f.GetFileExtenstion(It.IsAny<string>())).Returns(".jpg");
-            _fileStore.Setup(f => f.WriteFile(It.IsAny<IFormFile>(), It.IsAny<string>())).Returns(new Application.POCO.FileDirectoryPOCO { Name = "Name", SourcePath = "/abc" });
-            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
+            _productRepository.Setup(p => p.GetByIdWithDetailsAsync(It.IsAny<ProductId>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(product);
+            var imageService = CreateService();
 
-            Action action = () => imageService.Add(image);
+            Func<Task> action = () => imageService.Add(image);
 
-            action.Should().ThrowExactly<BusinessException>();
+            await action.Should().ThrowExactlyAsync<BusinessException>();
         }
 
         [Fact]
-        public void given_valid_images_should_add()
+        public async Task given_valid_images_should_add()
         {
             int itemId = 1;
             var images = new AddImagesPOCO() { Files = new List<IFormFile> { AddFileToIFormFile("test1"), AddFileToIFormFile("test2") }, ItemId = itemId };
+            var product = CreateProductWithImages(0);
             _fileStore.Setup(f => f.GetFileExtenstion(It.IsAny<string>())).Returns(".jpg");
-            _fileStore.Setup(f => f.WriteFile(It.IsAny<IFormFile>(), It.IsAny<string>())).Returns(new Application.POCO.FileDirectoryPOCO { Name = "Name", SourcePath = "/abc" });
-            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
+            _fileStore.Setup(f => f.WriteFile(It.IsAny<IFormFile>(), It.IsAny<string>()))
+                .Returns(new FileDirectoryPOCO { Name = "Name", SourcePath = "/upload/file.jpg" });
+            _productRepository.Setup(p => p.GetByIdWithDetailsAsync(It.IsAny<ProductId>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(product);
+            _productRepository.Setup(p => p.UpdateAsync(It.IsAny<Product>())).Returns(Task.CompletedTask);
+            var imageService = CreateService();
 
-            imageService.AddImages(images);
+            await imageService.AddImages(images);
 
-            _imageRepository.Verify(i => i.AddImages(It.IsAny<List<Domain.Model.Image>>()), Times.Once);
+            _productRepository.Verify(p => p.UpdateAsync(It.IsAny<Product>()), Times.Once);
         }
 
         [Fact]
-        public void given_images_when_limit_exceeded_should_throw_an_exception()
+        public async Task given_images_when_limit_exceeded_should_throw_an_exception()
         {
             int itemId = 1;
             var images = new AddImagesPOCO() { Files = new List<IFormFile> { AddFileToIFormFile("test1"), AddFileToIFormFile("test2") }, ItemId = itemId };
-            _imageRepository.Setup(i => i.GetCountByItemId(It.IsAny<int>())).Returns(5);
+            var product = CreateProductWithImages(5);
             _fileStore.Setup(f => f.GetFileExtenstion(It.IsAny<string>())).Returns(".jpg");
-            _fileStore.Setup(f => f.WriteFile(It.IsAny<IFormFile>(), It.IsAny<string>())).Returns(new Application.POCO.FileDirectoryPOCO { Name = "Name", SourcePath = "/abc" });
-            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
+            _productRepository.Setup(p => p.GetByIdWithDetailsAsync(It.IsAny<ProductId>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(product);
+            var imageService = CreateService();
 
-            Action action = () => imageService.AddImages(images);
+            Func<Task> action = () => imageService.AddImages(images);
 
-            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("Cannot add more than 5 images. There is already 5 images for item id 1");
+            await action.Should().ThrowExactlyAsync<BusinessException>();
         }
 
         [Fact]
-        public void given_valid_images_with_too_large_file_should_throw_an_exception()
+        public async Task given_valid_images_with_too_large_file_should_throw_an_exception()
         {
             int itemId = 1;
             var images = new AddImagesPOCO() { Files = new List<IFormFile> { AddFileToIFormFile("test1"), AddFileToIFormFile("test2", 41943041) }, ItemId = itemId };
             _fileStore.Setup(f => f.GetFileExtenstion(It.IsAny<string>())).Returns(".jpg");
-            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
+            var imageService = CreateService();
 
-            Action action = () => imageService.AddImages(images);
+            Func<Task> action = () => imageService.AddImages(images);
 
-            action.Should().ThrowExactly<BusinessException>();
+            await action.Should().ThrowExactlyAsync<BusinessException>();
         }
 
         [Fact]
-        public void given_images_with_invalid_extension_should_throw_an_exception()
+        public async Task given_images_with_invalid_extension_should_throw_an_exception()
         {
             int itemId = 1;
             var images = new AddImagesPOCO() { Files = new List<IFormFile> { AddFileToIFormFile("test1"), AddFileToIFormFile("test2") }, ItemId = itemId };
-            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
+            var imageService = CreateService();
 
-            Action action = () => imageService.AddImages(images);
+            Func<Task> action = () => imageService.AddImages(images);
 
-            action.Should().ThrowExactly<BusinessException>();
+            await action.Should().ThrowExactlyAsync<BusinessException>();
         }
 
         [Fact]
-        public void given_invalid_images_should_throw_an_exception()
+        public async Task given_invalid_images_should_throw_an_exception()
         {
             int itemId = 1;
-            var images = new AddImagesPOCO() { Files = new List<IFormFile> {  }, ItemId = itemId };
-            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
+            var images = new AddImagesPOCO() { Files = new List<IFormFile>(), ItemId = itemId };
+            var imageService = CreateService();
 
-            Action action = () => imageService.AddImages(images);
+            Func<Task> action = () => imageService.AddImages(images);
 
-            action.Should().ThrowExactly<BusinessException>().WithMessage("Adding image without source is not allowed");
+            (await action.Should().ThrowExactlyAsync<BusinessException>())
+                .WithMessage("Adding image without source is not allowed");
         }
 
         [Fact]
-        public void given_null_images_should_throw_an_exception()
+        public async Task given_null_images_should_throw_an_exception()
         {
             int itemId = 1;
             var images = new AddImagesPOCO() { Files = null, ItemId = itemId };
-            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
+            var imageService = CreateService();
 
-            Action action = () => imageService.AddImages(images);
+            Func<Task> action = () => imageService.AddImages(images);
 
-            action.Should().ThrowExactly<BusinessException>().WithMessage("Adding image without source is not allowed");
+            (await action.Should().ThrowExactlyAsync<BusinessException>())
+                .WithMessage("Adding image without source is not allowed");
         }
 
         [Fact]
-        public void given_null_image_when_add_should_throw_an_exception()
+        public async Task given_null_image_when_add_should_throw_an_exception()
         {
-            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
+            var imageService = CreateService();
 
-            Action action = () => imageService.Add(null);
+            Func<Task> action = () => imageService.Add(null);
 
-            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+            (await action.Should().ThrowExactlyAsync<BusinessException>())
+                .Which.Message.Contains("cannot be null");
         }
 
         [Fact]
-        public void given_null_image_when_add_images_should_throw_an_exception()
+        public async Task given_null_image_when_add_images_should_throw_an_exception()
         {
-            var imageService = new ImageService(_imageRepository.Object, _fileStore.Object);
+            var imageService = CreateService();
 
-            Action action = () => imageService.AddImages((AddImagesPOCO)null);
+            Func<Task> action = () => imageService.AddImages((AddImagesPOCO)null);
 
-            action.Should().ThrowExactly<BusinessException>().Which.Message.Contains("cannot be null");
+            (await action.Should().ThrowExactlyAsync<BusinessException>())
+                .Which.Message.Contains("cannot be null");
+        }
+
+        private ImageService CreateService()
+            => new ImageService(_imageRepository.Object, _fileStore.Object, _productRepository.Object);
+
+        private static Product CreateProductWithImages(int imageCount)
+        {
+            var product = Product.Create("Test Product", 10m, "Description", 1);
+            for (int i = 0; i < imageCount; i++)
+                product.AddImage($"/upload/image{i}.jpg");
+            return product;
         }
 
         private static ImageVm CreateImageVm()
         {
-            Random random = new ();
+            Random random = new();
             var name = $"Name {random.Next(1, 10)}";
 
-            var image = new ImageVm
+            return new ImageVm
             {
                 Id = 1,
                 ItemId = 1,
@@ -234,19 +264,16 @@ namespace ECommerceApp.Tests.Services.Image
                 SourcePath = $"Path/{random.Next(1, 20)}",
                 Images = new List<IFormFile>() { AddFileToIFormFile(name) }
             };
-
-            return image;
         }
 
         private static IFormFile AddFileToIFormFile(string fileName, int size = 0)
         {
-            var bytes = size == 0 ? Array.Empty<byte>() : new byte[size]; 
+            var bytes = size == 0 ? Array.Empty<byte>() : new byte[size];
             var stream = new MemoryStream(bytes);
-            var formFile = new FormFile(stream, 0, stream.Length, ".jpg", fileName)
+            return new FormFile(stream, 0, stream.Length, ".jpg", fileName)
             {
                 Headers = new HeaderDictionary()
             };
-            return formFile;
         }
     }
 }

@@ -63,6 +63,24 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
 
             var ttl = _options.CurrentValue.SoftReservationTtl;
             var expiresAt = DateTime.UtcNow.Add(ttl);
+
+            var stale = await _reservationRepo.FindAsync(productId, userId, ct);
+            if (stale is not null)
+            {
+                if (stale.Status == SoftReservationStatus.Active)
+                {
+                    _cache.Set(CacheKey(productId, userId), stale, ttl);
+                    return true;
+                }
+
+                // Stale committed reservation left over from a previous order — remove it first.
+                await _deferredScheduler.CancelAsync(SoftReservationExpiredJob.JobTaskName, stale.Id?.Value.ToString() ?? "", ct);
+                await _reservationRepo.DeleteAsync(stale, ct);
+                _cache.Remove(CacheKey(productId, userId));
+                if (_productUserIndex.TryGetValue(productId, out var staleSet))
+                    lock (staleSet) { staleSet.Remove(userId); }
+            }
+
             var reservation = SoftReservation.Create(productId, userId, quantity, unitPrice.Value, expiresAt);
             await _reservationRepo.AddAsync(reservation, ct);
 

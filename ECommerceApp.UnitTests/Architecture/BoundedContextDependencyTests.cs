@@ -55,7 +55,8 @@ namespace ECommerceApp.UnitTests.Architecture
                      t.FullName.StartsWith("ECommerceApp.Application.FileManager.") ||
                      t.FullName.StartsWith("ECommerceApp.Application.External.") ||
                      t.FullName.StartsWith("ECommerceApp.Application.Utils.") ||
-                     t.FullName.StartsWith("ECommerceApp.Application.Abstracts."),
+                     t.FullName.StartsWith("ECommerceApp.Application.Abstracts.") ||
+                     t.FullName.StartsWith("ECommerceApp.Application.ViewModels.BaseVm"),
                 "reside in shared application infrastructure")
             .As("Application.Shared");
 
@@ -80,7 +81,7 @@ namespace ECommerceApp.UnitTests.Architecture
             InNsTree("ECommerceApp.Domain.Presale.Checkout", "Domain.Presale.Checkout");
 
         private static readonly IObjectProvider<IType> DomainCatalog =
-            InNsTree("ECommerceApp.Domain.Catalog.Products", "Domain.Catalog.Products");
+            InNsTree("ECommerceApp.Domain.Catalog", "Domain.Catalog");
 
         private static readonly IObjectProvider<IType> DomainAccountProfile =
             InNsTree("ECommerceApp.Domain.AccountProfile", "Domain.AccountProfile");
@@ -115,7 +116,7 @@ namespace ECommerceApp.UnitTests.Architecture
             InNsTree("ECommerceApp.Application.Presale.Checkout", "Application.Presale.Checkout");
 
         private static readonly IObjectProvider<IType> AppCatalog =
-            InNsTree("ECommerceApp.Application.Catalog.Products", "Application.Catalog.Products");
+            InNsTree("ECommerceApp.Application.Catalog", "Application.Catalog");
 
         private static readonly IObjectProvider<IType> AppAccountProfile =
             InNsTree("ECommerceApp.Application.AccountProfile", "Application.AccountProfile");
@@ -441,7 +442,8 @@ namespace ECommerceApp.UnitTests.Architecture
                         .And().AreNot(DomainIdentity)
                         .And().AreNot(SharedDomain)
                         .And().AreNot(SharedApplication)
-                        .And().AreNot(Messaging))
+                        .And().AreNot(Messaging)
+                        .And().AreNot(AppTimeManagement))   // RefreshTokenCleanupTask implements IScheduledTask
                 .Because("Identity application must not depend on other BCs")
                 .Check(Architecture);
         }

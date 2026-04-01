@@ -17,18 +17,8 @@
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
-
   <ItemGroup>
 	<FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
-
-  <ItemGroup>
-    <Folder Include="Services\Brands\" />
-    <Folder Include="Services\Coupons\" />
-    <Folder Include="Services\Currencies\" />
-    <Folder Include="Services\Items\" />
-    <Folder Include="Services\Users\" />
-    <Folder Include="ViewModels\Brand\" />
-  </ItemGroup>
 </Project>

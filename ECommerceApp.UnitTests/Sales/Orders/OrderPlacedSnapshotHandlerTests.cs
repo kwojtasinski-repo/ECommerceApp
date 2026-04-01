@@ -52,8 +52,8 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         {
             var item1 = CreateOrderItem(productId: 10);
             var item2 = CreateOrderItem(productId: 20);
-            var snapshot1 = new OrderProductSnapshot("Product A", "a.jpg");
-            var snapshot2 = new OrderProductSnapshot("Product B", null);
+            var snapshot1 = new OrderProductSnapshot("Product A", "a.jpg", "/api/images/1");
+            var snapshot2 = new OrderProductSnapshot("Product B", null, null);
 
             _orderItemRepo
                 .Setup(r => r.GetByOrderIdAsync(1, It.IsAny<CancellationToken>()))
@@ -74,7 +74,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         {
             var item1 = CreateOrderItem(productId: 10);
             var item2 = CreateOrderItem(productId: 99);
-            var snapshot1 = new OrderProductSnapshot("Product A", "a.jpg");
+            var snapshot1 = new OrderProductSnapshot("Product A", "a.jpg", "/api/images/1");
 
             _orderItemRepo
                 .Setup(r => r.GetByOrderIdAsync(1, It.IsAny<CancellationToken>()))

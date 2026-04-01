@@ -103,7 +103,8 @@ namespace ECommerceApp.Application.Catalog.Products.Services
                 .Select(i => new ProductImageVm
                 {
                     Id = i.Id.Value,
-                    Url = _urlBuilder.Build(i.FileName.Value),
+                    FileName = i.FileName.Value,
+                    Url = _urlBuilder.Build(i.Id.Value),
                     IsMain = i.IsMain,
                     SortOrder = i.SortOrder
                 })
@@ -208,8 +209,8 @@ namespace ECommerceApp.Application.Catalog.Products.Services
             {
                 var mainImage = product.Images.FirstOrDefault(i => i.IsMain)
                     ?? product.Images.OrderBy(i => i.SortOrder).FirstOrDefault();
-                var imageUrl = mainImage is not null ? _urlBuilder.Build(mainImage.FileName.Value) : null;
-                snapshots.Add(new ProductNameImageDto(product.Id.Value, product.Name.Value, imageUrl));
+                var imageUrl = mainImage is not null ? _urlBuilder.Build(mainImage.Id.Value) : null;
+                snapshots.Add(new ProductNameImageDto(product.Id.Value, product.Name.Value, mainImage?.FileName?.Value, imageUrl, mainImage?.Id.Value));
             }
             return snapshots;
         }

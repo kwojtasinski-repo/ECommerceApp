@@ -1,15 +1,15 @@
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.Application.POCO;
-using ECommerceApp.Application.ViewModels.Image;
-using ECommerceApp.Domain.Interface;
-using ECommerceApp.Domain.Model;
+using ECommerceApp.Application.Catalog.Images.Models;
+using ECommerceApp.Application.Catalog.Images.ViewModels;
+using ECommerceApp.Domain.Catalog.Products;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.Catalog.Images.Services
 {
@@ -17,15 +17,17 @@ namespace ECommerceApp.Application.Catalog.Images.Services
     {
         private readonly IFileStore _fileStore;
         private readonly IImageRepository _imageRepository;
-        private readonly string FILE_DIR = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "Upload" + Path.DirectorySeparatorChar + "Files" + Path.DirectorySeparatorChar + Guid.NewGuid().ToString();
+        private readonly IProductRepository _productRepository;
+        private static readonly string UPLOAD_DIR = Path.Combine(Directory.GetCurrentDirectory(), "Upload", "Images");
 
-        public ImageService(IImageRepository repo, IFileStore fileStore)
+        public ImageService(IImageRepository repo, IFileStore fileStore, IProductRepository productRepository)
         {
             _imageRepository = repo;
             _fileStore = fileStore;
+            _productRepository = productRepository;
         }
 
-        public int Add(ImageVm objectVm)
+        public async Task<int> Add(ImageVm objectVm)
         {
             if (objectVm is null)
             {
@@ -47,94 +49,72 @@ namespace ECommerceApp.Application.Catalog.Images.Services
                 throw new BusinessException("Cannot add more than one images use another method");
             }
 
-            ValidImages(objectVm.Images);
-            if (objectVm.ItemId.HasValue)
+            if (!objectVm.ItemId.HasValue)
             {
-                ValidImageCount(objectVm.ItemId.Value, 1);
+                throw new BusinessException("Product id is required for adding images");
             }
 
-            var imageSrc = objectVm.Images.FirstOrDefault();
-            var image = CreateImage(imageSrc, objectVm.ItemId);
-            var id = _imageRepository.AddImage(image).GetAwaiter().GetResult();
-            return id;
+            ValidImages(objectVm.Images);
+
+            var product = await _productRepository.GetByIdWithDetailsAsync(new ProductId(objectVm.ItemId.Value)) 
+                ?? throw new BusinessException(
+                    $"Product with id '{objectVm.ItemId.Value}' was not found",
+                    ErrorCode.Create("productNotFound", new List<ErrorParameter> { ErrorParameter.Create("id", objectVm.ItemId.Value) }));
+
+            ValidImageCount(product, 1);
+
+            var fileDir = _fileStore.WriteFile(objectVm.Images.First(), UPLOAD_DIR);
+            product.AddImage(fileDir.SourcePath);
+            await _productRepository.UpdateAsync(product);
+
+            return product.Images.Last().Id?.Value ?? 0;
         }
 
-        public bool Delete(int id)
+        public async Task<bool> Delete(int id)
         {
-            var image = _imageRepository.GetImageById(id).GetAwaiter().GetResult();
+            var image = await _imageRepository.GetImageById(id);
             if (image is null)
             {
                 return false;
             }
 
-            var deleted = _imageRepository.DeleteImage(image);
-            _fileStore.DeleteFile(image.SourcePath);
-            return deleted;
-        }
-
-        public GetImageVm Get(int id)
-        {
-            var image = _imageRepository.GetImageById(id).GetAwaiter().GetResult();
-
-            GetImageVm imageVm = null;
-
-            if (image != null)
+            var product = await _productRepository.GetByIdWithDetailsAsync(new ProductId(image.ProductId.Value));
+            if (product is null)
             {
-                imageVm = new GetImageVm()
-                {
-                    Id = image.Id,
-                    ItemId = image.ItemId,
-                    Name = image.Name,
-                    ImageSource = Convert.ToBase64String(_fileStore.ReadFile(image.SourcePath))
-                };
+                return false;
             }
 
-            return imageVm;
-        }
-
-        public List<GetImageVm> GetAll()
-        {
-            var images = _imageRepository.GetAllImages();
-
-            var imagesVm = new List<GetImageVm>();
-
-            foreach (var image in images)
+            if (!product.RemoveImage(id))
             {
-                var img = new GetImageVm()
-                {
-                    Id = image.Id,
-                    ItemId = image.ItemId,
-                    Name = image.Name,
-                    ImageSource = Convert.ToBase64String(_fileStore.ReadFile(image.SourcePath))
-                };
-
-                imagesVm.Add(img);
+                return false;
             }
-            return imagesVm;
+
+            await _productRepository.UpdateAsync(product);
+            _fileStore.DeleteFile(image.FileName.Value);
+            return true;
         }
 
-        public List<GetImageVm> GetAll(string searchName)
+        public async Task<GetImageVm> Get(int id)
         {
-            var images = _imageRepository.GetAllImages().Where(i => i.Name.Contains(searchName)).ToList();
-
-            var imagesVm = new List<GetImageVm>();
-
-            foreach (var image in images)
+            var image = await _imageRepository.GetImageById(id);
+            if (image is null)
             {
-                var img = new GetImageVm()
-                {
-                    Id = image.Id,
-                    ItemId = image.ItemId,
-                    Name = image.Name,
-                    ImageSource = Convert.ToBase64String(_fileStore.ReadFile(image.SourcePath))
-                };
-
-                imagesVm.Add(img);
+                return null;
             }
-            return imagesVm;
+
+            return MapToGetImageVm(image);
         }
 
-        public List<int> AddImages(AddImagesPOCO imageVm)
+        public async Task<List<GetImageVm>> GetAll()
+            => (await _imageRepository.GetAllImages()).Select(MapToGetImageVm).ToList();
+
+        public async Task<List<GetImageVm>> GetAll(string searchName)
+            => (await _imageRepository.GetAllImages())
+                .Where(i => Path.GetFileName(i.FileName.Value).Contains(searchName))
+                .Select(MapToGetImageVm)
+                .ToList();
+
+        public async Task<List<int>> AddImages(AddImagesPOCO imageVm)
         {
             if (imageVm is null)
             {
@@ -146,48 +126,49 @@ namespace ECommerceApp.Application.Catalog.Images.Services
                 throw new BusinessException("Adding image without source is not allowed");
             }
 
+            if (!imageVm.ItemId.HasValue)
+            {
+                throw new BusinessException("Product id is required for adding images");
+            }
+
             ValidImages(imageVm.Files);
-            if (imageVm.ItemId.HasValue)
+
+            var product = await _productRepository.GetByIdWithDetailsAsync(new ProductId(imageVm.ItemId.Value)) 
+                ?? throw new BusinessException($"Product with id '{imageVm.ItemId.Value}' was not found",
+                    ErrorCode.Create("productNotFound", new List<ErrorParameter> { ErrorParameter.Create("id", imageVm.ItemId.Value) }));
+
+            ValidImageCount(product, imageVm.Files.Count);
+
+            var writtenPaths = new List<string>();
+            foreach (var file in imageVm.Files)
             {
-                ValidImageCount(imageVm.ItemId.Value, imageVm.Files.Count);
+                var fileDir = _fileStore.WriteFile(file, UPLOAD_DIR);
+                product.AddImage(fileDir.SourcePath);
+                writtenPaths.Add(fileDir.SourcePath);
             }
 
-            var images = new List<Image>();
+            await _productRepository.UpdateAsync(product);
 
-            foreach (var image in imageVm.Files)
-            {
-                images.Add(CreateImage(image, imageVm.ItemId));
-            }
-
-            var ids = _imageRepository.AddImages(images);
-
-            return ids;
+            return product.Images
+                .Where(i => writtenPaths.Contains(i.FileName.Value))
+                .Select(i => i.Id?.Value ?? 0)
+                .ToList();
         }
 
-        public List<GetImageVm> GetImagesByItemId(int itemId)
-        {
-            var images = _imageRepository.GetItemImages(itemId);
+        public async Task<List<GetImageVm>> GetImagesByItemId(int itemId)
+            => (await _imageRepository.GetProductImages(itemId)).Select(MapToGetImageVm).ToList();
 
-            var imagesVm = new List<GetImageVm>();
-            foreach (var image in images)
+        private GetImageVm MapToGetImageVm(Image image)
+            => new GetImageVm
             {
-                var img = new GetImageVm()
-                {
-                    Id = image.Id,
-                    ItemId = image.ItemId,
-                    Name = image.Name,
-                    ImageSource = Convert.ToBase64String(_fileStore.ReadFile(image.SourcePath))
-                };
-                imagesVm.Add(img);
-            }
-
-            return imagesVm;
-        }
+                Id = image.Id.Value,
+                ItemId = image.ProductId.Value,
+                Name = Path.GetFileName(image.FileName.Value),
+                ImageSource = Convert.ToBase64String(_fileStore.ReadFile(image.FileName.Value))
+            };
 
         private void ValidImages(ICollection<IFormFile> images)
-        {
-            ValidImages(images.Select(i => new ValidateFile(i.FileName, i.Length)));
-        }
+            => ValidImages(images.Select(i => new ValidateFile(i.FileName, i.Length)));
 
         private void ValidImages(IEnumerable<ValidateFile> images)
         {
@@ -200,19 +181,32 @@ namespace ECommerceApp.Application.Catalog.Images.Services
 
                 if (size > ImageConstraints.MaxFileSizeBytes)
                 {
-                    errorMessage.Message.Append("Image ").Append(fileName).Append(" is too big (").Append(size).Append(" bytes). Allowed ").Append(ImageConstraints.MaxFileSizeBytes).Append("bytes\r\n");
-                    errorMessage.ErrorCodes.Add(ErrorCode.Create("fileSizeTooBig", new List<ErrorParameter> { ErrorParameter.Create("name", fileName), ErrorParameter.Create("size", size), ErrorParameter.Create("allowedSize", ImageConstraints.MaxFileSizeBytes) }));
+                    errorMessage.Message.Append("Image ").Append(fileName).Append(" is too big (").Append(size)
+                        .Append(" bytes). Allowed ").Append(ImageConstraints.MaxFileSizeBytes).Append("bytes\r\n");
+                    errorMessage.ErrorCodes.Add(ErrorCode.Create("fileSizeTooBig", new List<ErrorParameter>
+                    {
+                        ErrorParameter.Create("name", fileName),
+                        ErrorParameter.Create("size", size),
+                        ErrorParameter.Create("allowedSize", ImageConstraints.MaxFileSizeBytes)
+                    }));
                 }
 
                 var extension = _fileStore.GetFileExtenstion(fileName) ?? string.Empty;
-                var containsExtension = ImageConstraints.AllowedExtensions.Contains(extension);
-
-                if (!containsExtension)
+                if (!ImageConstraints.AllowedExtensions.Contains(extension))
                 {
                     var sb = new StringBuilder();
-                    foreach (var ext in ImageConstraints.AllowedExtensions) sb.AppendLine(ext);
+                    foreach (var ext in ImageConstraints.AllowedExtensions)
+                    {
+                        sb.AppendLine(ext);
+                    }
+
                     errorMessage.Message.AppendLine($"Image {fileName} extension {extension} is not allowed. Allowed extensions {sb}");
-                    errorMessage.ErrorCodes.Add(ErrorCode.Create("fileExtensionNotAllowed", new List<ErrorParameter> { ErrorParameter.Create("name", fileName), ErrorParameter.Create("extension", extension), ErrorParameter.Create("extensions", sb.ToString()) }));
+                    errorMessage.ErrorCodes.Add(ErrorCode.Create("fileExtensionNotAllowed", new List<ErrorParameter>
+                    {
+                        ErrorParameter.Create("name", fileName),
+                        ErrorParameter.Create("extension", extension),
+                        ErrorParameter.Create("extensions", sb.ToString())
+                    }));
                 }
             }
 
@@ -222,28 +216,20 @@ namespace ECommerceApp.Application.Catalog.Images.Services
             }
         }
 
-        private void ValidImageCount(int itemId, int imagesToAdd)
+        private static void ValidImageCount(Product product, int imagesToAdd)
         {
-            var imageCount = _imageRepository.GetCountByItemId(itemId);
-            var count = imageCount + imagesToAdd;
-
+            var count = product.Images.Count + imagesToAdd;
             if (count > ImageConstraints.MaxImagesPerItem)
             {
-                throw new BusinessException($"Cannot add more than {ImageConstraints.MaxImagesPerItem} images. There are already '{imagesToAdd}' images for item with id '{itemId}'", ErrorCode.Create("tooManyImages", new List<ErrorParameter> { ErrorParameter.Create("allowedImagesCount", ImageConstraints.MaxImagesPerItem), ErrorParameter.Create("imageCount", imagesToAdd), ErrorParameter.Create("id", itemId) }));
+                throw new BusinessException(
+                    $"Cannot add more than {ImageConstraints.MaxImagesPerItem} images. There are already '{product.Images.Count}' images for product with id '{product.Id?.Value}'",
+                    ErrorCode.Create("tooManyImages", new List<ErrorParameter>
+                    {
+                        ErrorParameter.Create("allowedImagesCount", ImageConstraints.MaxImagesPerItem),
+                        ErrorParameter.Create("imageCount", product.Images.Count),
+                        ErrorParameter.Create("id", product.Id?.Value ?? 0)
+                    }));
             }
-        }
-
-        private Image CreateImage(IFormFile image, int? itemId)
-        {
-            var fileDir = _fileStore.WriteFile(image, FILE_DIR);
-
-            return new Image()
-            {
-                Id = 0,
-                ItemId = itemId,
-                Name = fileDir.Name,
-                SourcePath = fileDir.SourcePath
-            };
         }
 
         private record ValidateFile(string Name, long Size);

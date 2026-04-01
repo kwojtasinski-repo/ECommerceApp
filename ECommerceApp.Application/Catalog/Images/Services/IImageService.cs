@@ -1,17 +1,18 @@
-using ECommerceApp.Application.POCO;
-using ECommerceApp.Application.ViewModels.Image;
+using ECommerceApp.Application.Catalog.Images.Models;
+using ECommerceApp.Application.Catalog.Images.ViewModels;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.Catalog.Images.Services
 {
     public interface IImageService
     {
-        int Add(ImageVm objectVm);
-        bool Delete(int id);
-        GetImageVm Get(int id);
-        List<GetImageVm> GetAll();
-        List<GetImageVm> GetAll(string searchName);
-        List<int> AddImages(AddImagesPOCO imageVm);
-        List<GetImageVm> GetImagesByItemId(int imageId);
+        Task<int> Add(ImageVm objectVm);
+        Task<bool> Delete(int id);
+        Task<GetImageVm> Get(int id);
+        Task<List<GetImageVm>> GetAll();
+        Task<List<GetImageVm>> GetAll(string searchName);
+        Task<List<int>> AddImages(AddImagesPOCO imageVm);
+        Task<List<GetImageVm>> GetImagesByItemId(int imageId);
     }
 }

@@ -9,11 +9,7 @@
       data-profile-url="@Url.Action("GetProfileForCheckout", "Checkout", new { area = "Presale" })">
 
     <input asp-for="CustomerId" type="hidden" />
-
-    <div class="mb-3">
-        <label class="form-label">Id waluty</label>
-        <input asp-for="CurrencyId" type="number" class="form-control" style="max-width:180px;" required />
-    </div>
+    <input asp-for="CurrencyId" type="hidden" />
 
     <h4>Dane osobowe</h4>
 

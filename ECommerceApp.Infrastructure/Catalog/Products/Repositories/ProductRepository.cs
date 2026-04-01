@@ -42,7 +42,10 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
         {
             var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == id);
             if (product is null)
+            {
                 return false;
+            }
+
             _context.Products.Remove(product);
             return (await _context.SaveChangesAsync()) > 0;
         }

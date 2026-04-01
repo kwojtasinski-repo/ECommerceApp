@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
 
-namespace ECommerceApp.Application.POCO
+namespace ECommerceApp.Application.Catalog.Images.Models
 {
     public class AddImagesPOCO
     {

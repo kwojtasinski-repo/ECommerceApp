@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Domain.Interface;
+﻿using ECommerceApp.Domain.Catalog.Products;
+using ECommerceApp.Domain.Interface;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ECommerceApp.Infrastructure.Repositories

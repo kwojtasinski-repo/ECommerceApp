@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ECommerceApp.Application.Catalog.Images.ViewModels;
 using ECommerceApp.Application.DTO;
 using ECommerceApp.Application.Mapping;
 using FluentValidation;
@@ -20,7 +21,7 @@ namespace ECommerceApp.Application.ViewModels.Item
         public List<TypeDto> Types { get; set; } = new List<TypeDto>();
         public List<TagDto> Tags { get; set; } = new List<TagDto>();
         public List<int> ItemTags { get; set; } = new List<int>();
-        public List<Image.GetImageVm> Images { get; set; } = new List<Image.GetImageVm>();
+        public List<GetImageVm> Images { get; set; } = new List<GetImageVm>();
 
         public void Mapping(Profile profile)
         {

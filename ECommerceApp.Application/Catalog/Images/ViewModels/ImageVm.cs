@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Http;
-using System.Collections.Generic;
+using ECommerceApp.Application.ViewModels;
+using Microsoft.AspNetCore.Http;
 using Newtonsoft.Json;
+using System.Collections.Generic;
 
-namespace ECommerceApp.Application.ViewModels.Image
+namespace ECommerceApp.Application.Catalog.Images.ViewModels
 {
     public class ImageVm : BaseVm
     {

@@ -1,4 +1,5 @@
 using ECommerceApp.Application.Catalog.Products.Services;
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Sales.Orders.Contracts;
 using ECommerceApp.Domain.Sales.Orders;
 using System.Collections.Generic;
@@ -11,10 +12,12 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Adapters
     internal sealed class OrderProductResolver : IOrderProductResolver
     {
         private readonly IProductService _productService;
+        private readonly IImageUrlBuilder _urlBuilder;
 
-        public OrderProductResolver(IProductService productService)
+        public OrderProductResolver(IProductService productService, IImageUrlBuilder urlBuilder)
         {
             _productService = productService;
+            _urlBuilder = urlBuilder;
         }
 
         public async Task<OrderProductSnapshot?> ResolveAsync(int productId, CancellationToken ct = default)
@@ -29,7 +32,8 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Adapters
             var mainImage = product.Images.FirstOrDefault(i => i.IsMain)
                 ?? product.Images.OrderBy(i => i.SortOrder).FirstOrDefault();
 
-            return new OrderProductSnapshot(product.Name, mainImage?.Url);
+            var canonical = mainImage is not null ? _urlBuilder.GetCanonical(mainImage.Id) : null;
+            return new OrderProductSnapshot(product.Name, mainImage?.FileName, canonical);
         }
 
         public async Task<IReadOnlyDictionary<int, OrderProductSnapshot>> ResolveAllAsync(
@@ -38,7 +42,10 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Adapters
             var snapshots = await _productService.GetProductSnapshotsByIdsAsync(productIds, ct);
             var result = new Dictionary<int, OrderProductSnapshot>(snapshots.Count);
             foreach (var s in snapshots)
-                result[s.Id] = new OrderProductSnapshot(s.Name, s.ImageUrl);
+            {
+                var canonical = s.MainImageId.HasValue ? _urlBuilder.GetCanonical(s.MainImageId.Value) : null;
+                result[s.Id] = new OrderProductSnapshot(s.Name, s.ImageFileName, canonical);
+            }
             return result;
         }
     }

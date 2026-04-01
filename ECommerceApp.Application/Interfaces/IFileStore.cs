@@ -1,4 +1,4 @@
-﻿using ECommerceApp.Application.POCO;
+﻿using ECommerceApp.Application.FileManager;
 using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
 

@@ -5,7 +5,7 @@ namespace ECommerceApp.Domain.Catalog.Products
 {
     public class Image
     {
-        public ImageId Id { get; private set; } = new ImageId(0);
+        public ImageId Id { get; private set; }
         public ImageFileName FileName { get; private set; } = default!;
         public bool IsMain { get; private set; }
         public int SortOrder { get; private set; }
@@ -16,7 +16,9 @@ namespace ECommerceApp.Domain.Catalog.Products
         public static Image Create(ProductId productId, string fileName, bool isMain, int sortOrder)
         {
             if (sortOrder < 0)
+            {
                 throw new DomainException("SortOrder must not be negative.");
+            }
 
             return new Image
             {
@@ -30,7 +32,10 @@ namespace ECommerceApp.Domain.Catalog.Products
         public void Reorder(int sortOrder)
         {
             if (sortOrder < 0)
+            {
                 throw new DomainException("SortOrder must not be negative.");
+            }
+
             SortOrder = sortOrder;
         }
 
