@@ -13,7 +13,7 @@ namespace ECommerceApp.Domain.Catalog.Products
 
         private Image() { }
 
-        public static Image Create(ProductId productId, string fileName, bool isMain, int sortOrder)
+        public static Image Create(ProductId productId, string fileName, bool isMain, int sortOrder, ImageId imageId = null)
         {
             if (sortOrder < 0)
             {
@@ -22,6 +22,7 @@ namespace ECommerceApp.Domain.Catalog.Products
 
             return new Image
             {
+                Id = imageId,
                 ProductId = productId,
                 FileName = new ImageFileName(fileName),
                 IsMain = isMain,

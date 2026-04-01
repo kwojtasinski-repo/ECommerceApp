@@ -39,4 +39,9 @@
 
 <div>
     <a asp-area="Sales" asp-controller="Payments" asp-action="MyPayments">Moje płatności</a>
+    @if (Model.Status == "Pending")
+    {
+        <text> | </text>
+        <a asp-area="Sales" asp-controller="Payments" asp-action="Create" asp-route-id="@Model.OrderId" class="btn btn-sm btn-primary">Zapłać</a>
+    }
 </div>

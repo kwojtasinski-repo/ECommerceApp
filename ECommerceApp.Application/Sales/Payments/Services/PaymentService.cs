@@ -4,6 +4,8 @@ using ECommerceApp.Application.Sales.Payments.Messages;
 using ECommerceApp.Application.Sales.Payments.ViewModels;
 using ECommerceApp.Domain.Sales.Payments;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -42,6 +44,12 @@ namespace ECommerceApp.Application.Sales.Payments.Services
         {
             var payment = await _paymentRepo.GetPendingByOrderIdAsync(orderId, userId, ct);
             return payment is null ? null : MapToDetailsVm(payment);
+        }
+
+        public async Task<IReadOnlyList<PaymentVm>> GetByUserIdAsync(string userId, CancellationToken ct = default)
+        {
+            var payments = await _paymentRepo.GetByUserIdAsync(userId, ct);
+            return payments.Select(MapToVm).ToList();
         }
 
         public async Task<PaymentOperationResult> ConfirmAsync(ConfirmPaymentDto dto, CancellationToken ct = default)
@@ -85,6 +93,16 @@ namespace ECommerceApp.Application.Sales.Payments.Services
 
             return PaymentOperationResult.Success;
         }
+
+        private static PaymentVm MapToVm(Payment payment)
+            => new(
+                payment.Id.Value,
+                payment.OrderId.Value,
+                payment.TotalAmount,
+                payment.CurrencyId,
+                payment.Status.ToString(),
+                payment.ExpiresAt,
+                payment.ConfirmedAt);
 
         private static PaymentDetailsVm MapToDetailsVm(Payment payment)
             => new(

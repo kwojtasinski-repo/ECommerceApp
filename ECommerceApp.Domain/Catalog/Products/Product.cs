@@ -78,14 +78,16 @@ namespace ECommerceApp.Domain.Catalog.Products
             CategoryId = new CategoryId(categoryId);
         }
 
-        public void AddImage(string fileName)
+        public void AddImage(string fileName, int? imageId = null)
         {
             if (_images.Count >= 5)
+            {
                 throw new DomainException("A product can have at most 5 images.");
+            }
 
             var sortOrder = _images.Count;
             var isMain = _images.Count == 0;
-            _images.Add(Image.Create(Id, fileName, isMain, sortOrder));
+            _images.Add(Image.Create(Id, fileName, isMain, sortOrder, imageId.HasValue ? new ImageId(imageId.Value) : null));
         }
 
         public void SetMainImage(int imageId)

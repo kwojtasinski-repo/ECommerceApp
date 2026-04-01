@@ -24,6 +24,7 @@
 </dl>
 
 <form asp-area="Sales" asp-controller="Payments" asp-action="Create" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
     <input type="hidden" name="PaymentId" value="@Model.Id" />
 
     <div class="mb-3">

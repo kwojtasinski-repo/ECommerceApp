@@ -6,7 +6,41 @@
 
 <h1>Moje płatności</h1>
 
-@* IPaymentService.GetByUserIdAsync nie jest jeszcze zaimplementowane — lista będzie dostępna po dodaniu tej metody. *@
-<div class="alert alert-info">
-    Lista Twoich płatności jest niedostępna — metoda serwisu nie została jeszcze zaimplementowana.
-</div>
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Nie masz jeszcze żadnych płatności.</div>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Nr zamówienia</th>
+                <th>Kwota</th>
+                <th>Status</th>
+                <th>Ważna do</th>
+                <th>Potwierdzona</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in Model)
+            {
+                <tr>
+                    <td>@p.OrderId</td>
+                    <td>@p.TotalAmount.ToString("N2")</td>
+                    <td>@p.Status</td>
+                    <td>@p.ExpiresAt.ToLocalTime().ToString("g")</td>
+                    <td>@(p.ConfirmedAt.HasValue ? p.ConfirmedAt.Value.ToLocalTime().ToString("g") : "—")</td>
+                    <td>
+                        <a asp-action="Details" asp-route-id="@p.Id" class="btn btn-sm btn-outline-secondary">Szczegóły</a>
+                        @if (p.Status == "Pending")
+                        {
+                            <a asp-action="Create" asp-route-id="@p.OrderId" class="btn btn-sm btn-primary ms-1">Zapłać</a>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

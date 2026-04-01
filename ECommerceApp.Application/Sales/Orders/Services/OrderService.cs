@@ -41,14 +41,20 @@ namespace ECommerceApp.Application.Sales.Orders.Services
         {
             var customerExists = await _customerChecker.ExistsAsync(dto.CustomerId, ct);
             if (!customerExists)
+            {
                 return PlaceOrderResult.CustomerNotFound(dto.CustomerId);
+            }
 
             var cartItems = await _orderItemRepo.GetByIdsAsync(dto.CartItemIds, ct);
             if (cartItems.Count == 0)
+            {
                 return PlaceOrderResult.CartItemsNotFound();
+            }
 
             if (cartItems.Any(i => (string)i.UserId != dto.UserId))
+            {
                 return PlaceOrderResult.CartItemsNotOwnedByUser();
+            }
 
             var customer = await _customerResolver.ResolveAsync(dto.CustomerId, ct);
             var number = OrderNumber.Generate();
@@ -87,7 +93,9 @@ namespace ECommerceApp.Application.Sales.Orders.Services
         {
             var order = await _orderRepo.GetByIdAsync(dto.OrderId, ct);
             if (order is null)
+            {
                 return OrderOperationResult.OrderNotFound;
+            }
 
             order.Update(dto.CustomerId, dto.CurrencyId);
             await _orderRepo.UpdateAsync(order, ct);
@@ -98,7 +106,9 @@ namespace ECommerceApp.Application.Sales.Orders.Services
         {
             var order = await _orderRepo.GetByIdAsync(orderId, ct);
             if (order is null)
+            {
                 return OrderOperationResult.OrderNotFound;
+            }
 
             await _orderRepo.DeleteAsync(orderId, ct);
             return OrderOperationResult.Success;
@@ -133,7 +143,9 @@ namespace ECommerceApp.Application.Sales.Orders.Services
         {
             var order = await _orderRepo.GetByIdWithItemsAsync(orderId, ct);
             if (order is null)
+            {
                 return OrderOperationResult.OrderNotFound;
+            }
 
             order.AssignCoupon(couponUsedId, discountPercent);
             await _orderRepo.UpdateAsync(order, ct);
@@ -144,9 +156,14 @@ namespace ECommerceApp.Application.Sales.Orders.Services
         {
             var order = await _orderRepo.GetByIdWithItemsAsync(orderId, ct);
             if (order is null)
+            {
                 return OrderOperationResult.OrderNotFound;
+            }
+
             if (order.CouponUsedId is null)
+            {
                 return OrderOperationResult.CouponNotAssigned;
+            }
 
             order.RemoveCoupon();
             await _orderRepo.UpdateAsync(order, ct);
@@ -157,7 +174,9 @@ namespace ECommerceApp.Application.Sales.Orders.Services
         {
             var order = await _orderRepo.GetByIdAsync(orderId, ct);
             if (order is null)
+            {
                 return OrderOperationResult.OrderNotFound;
+            }
 
             order.AssignRefund(refundId);
             await _orderRepo.UpdateAsync(order, ct);
@@ -168,7 +187,9 @@ namespace ECommerceApp.Application.Sales.Orders.Services
         {
             var order = await _orderRepo.GetByRefundIdWithItemsAsync(refundId);
             if (order is null)
+            {
                 return OrderOperationResult.OrderNotFound;
+            }
 
             order.RemoveRefund();
             await _orderRepo.UpdateAsync(order, ct);
@@ -222,9 +243,14 @@ namespace ECommerceApp.Application.Sales.Orders.Services
         {
             var order = await _orderRepo.GetByIdAsync(orderId, ct);
             if (order is null)
+            {
                 return OrderOperationResult.OrderNotFound;
+            }
+
             if (order.Status != OrderStatus.Placed)
+            {
                 return OrderOperationResult.AlreadyPaid;
+            }
 
             order.ConfirmPayment(paymentId);
             await _orderRepo.UpdateAsync(order, ct);
@@ -235,11 +261,19 @@ namespace ECommerceApp.Application.Sales.Orders.Services
         {
             var order = await _orderRepo.GetByIdWithItemsAsync(orderId, ct);
             if (order is null)
+            {
                 return OrderOperationResult.OrderNotFound;
+            }
+
             if (order.Status == OrderStatus.Cancelled)
+            {
                 return OrderOperationResult.AlreadyCancelled;
+            }
+
             if (order.Status != OrderStatus.Placed)
+            {
                 return OrderOperationResult.AlreadyPaid;
+            }
 
             var items = order.OrderItems
                 .Select(i => new OrderCancelledItem(i.ItemId.Value, i.Quantity))

@@ -182,8 +182,8 @@ namespace ECommerceApp.UnitTests.Catalog.Products
         public void RemoveImage_MainImage_ShouldPromoteFirstRemainingAsMain()
         {
             var product = Product.Create("Test", 10m, "Desc", 1);
-            product.AddImage("items/1/first.jpg");
-            product.AddImage("items/1/second.jpg");
+            product.AddImage("items/1/first.jpg", 1);
+            product.AddImage("items/1/second.jpg", 2);
             var firstId = product.Images[0].Id.Value;
 
             product.RemoveImage(firstId);

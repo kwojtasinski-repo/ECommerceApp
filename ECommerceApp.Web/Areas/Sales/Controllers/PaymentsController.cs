@@ -50,8 +50,22 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ConfirmPaymentDto dto)
         {
-            await _paymentService.ConfirmAsync(dto);
-            return RedirectToAction(nameof(MyPayments));
+            var result = await _paymentService.ConfirmAsync(dto);
+            if (result == PaymentOperationResult.Success)
+                return RedirectToAction(nameof(MyPayments));
+
+            var payment = await _paymentService.GetByIdAsync(dto.PaymentId);
+            if (payment is null)
+                return NotFound();
+
+            ModelState.AddModelError(string.Empty, result switch
+            {
+                PaymentOperationResult.AlreadyConfirmed => "Płatność została już potwierdzona.",
+                PaymentOperationResult.AlreadyExpired   => "Płatność wygasła i nie może zostać potwierdzona.",
+                PaymentOperationResult.AlreadyRefunded  => "Płatność została już zwrócona.",
+                _                                       => "Nie udało się potwierdzić płatności."
+            });
+            return View(payment);
         }
 
         [HttpGet]
@@ -65,12 +79,12 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
             return View(payment);
         }
 
-        // User payments list — IPaymentService.GetByUserIdAsync is not yet implemented.
-        // Stub: returns an empty list until the service method is added.
+        // User payments list
         [HttpGet]
-        public IActionResult MyPayments()
+        public async Task<IActionResult> MyPayments()
         {
-            return View(Array.Empty<PaymentVm>());
+            var payments = await _paymentService.GetByUserIdAsync(GetUserId());
+            return View(payments);
         }
     }
 }
