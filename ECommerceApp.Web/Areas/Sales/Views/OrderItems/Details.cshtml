@@ -6,6 +6,11 @@
 
 <h1>Szczegóły pozycji zamówienia</h1>
 
+@if (Model.ImageUrl != null)
+{
+    <img src="@Model.ImageUrl" alt="@(Model.ProductName ?? "")" class="img-thumbnail mb-3" style="max-height:120px;" />
+}
+
 <dl class="row">
     <dt class="col-sm-3">Id</dt>
     <dd class="col-sm-9">@Model.Id</dd>

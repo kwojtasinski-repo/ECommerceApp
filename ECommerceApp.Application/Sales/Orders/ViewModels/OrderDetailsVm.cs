@@ -13,6 +13,7 @@ namespace ECommerceApp.Application.Sales.Orders.ViewModels
         public int? CouponUsedId { get; init; }
         public string? ProductName { get; init; }
         public string? ImageFileName { get; init; }
+        public string? ImageUrl { get; init; }
     }
 
     public sealed class OrderCustomerVm

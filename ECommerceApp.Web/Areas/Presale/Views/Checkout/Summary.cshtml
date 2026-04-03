@@ -10,11 +10,14 @@
     <p class="lead">Dziękujemy za zamówienie. Twoje zamówienie zostało przyjęte do realizacji.</p>
     <p>Nr zamówienia: <strong>@orderId</strong></p>
 
-    <div class="mt-4">
-        <a asp-area="Sales" asp-controller="Orders" asp-action="Details" asp-route-id="@orderId" class="btn btn-primary">
+    <div class="mt-4 d-flex justify-content-center gap-2 flex-wrap">
+        <a asp-area="Sales" asp-controller="Payments" asp-action="Create" asp-route-id="@orderId" class="btn btn-success btn-lg">
+            <i class="fa-solid fa-credit-card me-1"></i>Zapłać za zamówienie
+        </a>
+        <a asp-area="Sales" asp-controller="Orders" asp-action="Details" asp-route-id="@orderId" class="btn btn-outline-primary">
             Zobacz szczegóły zamówienia
         </a>
-        <a asp-area="Sales" asp-controller="Orders" asp-action="MyOrders" class="btn btn-secondary">
+        <a asp-area="Sales" asp-controller="Orders" asp-action="MyOrders" class="btn btn-outline-secondary">
             Moje zamówienia
         </a>
     </div>

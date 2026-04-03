@@ -1,3 +1,4 @@
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Sales.Orders.Contracts;
 using ECommerceApp.Application.Sales.Orders.DTOs;
@@ -22,19 +23,22 @@ namespace ECommerceApp.Application.Sales.Orders.Services
         private readonly ICustomerExistenceChecker _customerChecker;
         private readonly IOrderCustomerResolver _customerResolver;
         private readonly IMessageBroker _messageBroker;
+        private readonly IImageUrlBuilder _urlBuilder;
 
         public OrderService(
             IOrderRepository orderRepo,
             IOrderItemRepository orderItemRepo,
             ICustomerExistenceChecker customerChecker,
             IOrderCustomerResolver customerResolver,
-            IMessageBroker messageBroker)
+            IMessageBroker messageBroker,
+            IImageUrlBuilder urlBuilder)
         {
             _orderRepo = orderRepo;
             _orderItemRepo = orderItemRepo;
             _customerChecker = customerChecker;
             _customerResolver = customerResolver;
             _messageBroker = messageBroker;
+            _urlBuilder = urlBuilder;
         }
 
         public async Task<PlaceOrderResult> PlaceOrderAsync(PlaceOrderDto dto, CancellationToken ct = default)
@@ -340,7 +344,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             return PlaceOrderResult.Success(orderId);
         }
 
-        private static OrderDetailsVm MapToDetailsVm(Order order)
+        private OrderDetailsVm MapToDetailsVm(Order order)
             => new()
             {
                 Id = order.Id.Value,
@@ -377,7 +381,8 @@ namespace ECommerceApp.Application.Sales.Orders.Services
                     UnitCost = i.UnitCost.Amount,
                     CouponUsedId = i.CouponUsedId,
                     ProductName = i.Snapshot?.ProductName,
-                    ImageFileName = i.Snapshot?.ImageFileName
+                    ImageFileName = i.Snapshot?.ImageFileName,
+                    ImageUrl = BuildImageDisplayUrl(i.Snapshot?.ImageUrl)
                 }).ToList(),
                 Events = order.Events
                     .OrderBy(e => e.OccurredAt)
@@ -405,6 +410,14 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             OrderEventType.PartiallyFulfilled => "Częściowo zrealizowane",
             _ => eventType.ToString()
         };
+
+        private string? BuildImageDisplayUrl(string? imageIdStr)
+        {
+            if (imageIdStr is null) return null;
+            if (!int.TryParse(imageIdStr, out var id)) return null;
+            var url = _urlBuilder.Build(id);
+            return string.IsNullOrEmpty(url) ? null : url;
+        }
 
         private static OrderForListVm MapToForListVm(Order order)
             => new()

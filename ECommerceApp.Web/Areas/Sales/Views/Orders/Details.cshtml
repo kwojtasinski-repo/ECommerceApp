@@ -90,7 +90,14 @@
             {
                 <tr>
                     <td>@item.Id</td>
-                    <td>@(item.ProductName ?? item.ItemId.ToString())</td>
+                    <td class="d-flex align-items-center gap-2">
+                        @if (item.ImageUrl != null)
+                        {
+                            <img src="@item.ImageUrl" alt="@(item.ProductName ?? "")"
+                                 style="height:40px;width:40px;object-fit:cover;border-radius:4px;flex-shrink:0;" />
+                        }
+                        <span>@(item.ProductName ?? item.ItemId.ToString())</span>
+                    </td>
                     <td>@item.Quantity</td>
                     <td>@item.UnitCost.ToString("N2")</td>
                     <td>
@@ -124,11 +131,16 @@
     </table>
 }
 
-<div class="d-flex gap-2">
-    <a asp-area="Sales" asp-controller="Orders" asp-action="MyOrders">Wróć do moich zamówień</a>
-    @if (Model.Status == OrderStatus.PaymentConfirmed || Model.Status == OrderStatus.Fulfilled)
+<div class="d-flex gap-2 mt-3">
+    <a asp-area="Sales" asp-controller="Orders" asp-action="MyOrders" class="btn btn-outline-secondary btn-sm">Wróć do moich zamówień</a>
+    @if (Model.Status == OrderStatus.Placed)
     {
-        <text>|</text>
-        <a asp-area="Sales" asp-controller="Refund" asp-action="Request" asp-route-id="@Model.Id">Złóż wniosek o zwrot</a>
+        <a asp-area="Sales" asp-controller="Payments" asp-action="Create" asp-route-id="@Model.Id" class="btn btn-success btn-sm">
+            <i class="fa-solid fa-credit-card me-1"></i>Zapłać
+        </a>
+    }
+    @if (Model.Status == OrderStatus.PartiallyFulfilled || Model.Status == OrderStatus.Fulfilled)
+    {
+        <a asp-area="Sales" asp-controller="Refund" asp-action="Request" asp-route-id="@Model.Id" class="btn btn-outline-warning btn-sm">Złóż wniosek o zwrot</a>
     }
 </div>
