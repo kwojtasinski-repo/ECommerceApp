@@ -24,6 +24,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
         public async Task<Order?> GetByIdWithItemsAsync(int id, CancellationToken ct = default)
             => await _context.Orders
                 .Include(o => o.OrderItems)
+                .Include(o => o.Events)
                 .FirstOrDefaultAsync(o => o.Id == new OrderId(id), ct);
 
         public async Task<Order?> GetByRefundIdWithItemsAsync(int refundId, CancellationToken ct = default)
@@ -31,7 +32,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
             var payload = $"{{\"RefundId\":{refundId}}}";
             var orderId = await _context.OrderEvents
                 .Where(e => e.EventType == OrderEventType.RefundAssigned && e.Payload == payload)
-                .Select(e => (OrderId?)e.OrderId)
+                .Select(e => e.OrderId)
                 .FirstOrDefaultAsync(ct);
 
             if (orderId is null)

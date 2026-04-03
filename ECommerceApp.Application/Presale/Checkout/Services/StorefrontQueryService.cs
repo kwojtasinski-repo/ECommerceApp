@@ -35,7 +35,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
             {
                 snapshotByProductId.TryGetValue(p.Id, out var snapshot);
                 var available = snapshot?.AvailableQuantity ?? 0;
-                return new StorefrontProductVm(p.Id, p.Name, p.Cost, p.CategoryId, available, available > 0);
+                return new StorefrontProductVm(p.Id, p.Name, p.Cost, p.CategoryId, available, available > 0, p.MainImageUrl);
             }).ToList();
 
             return new StorefrontProductListVm(
@@ -62,7 +62,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
             {
                 snapshotByProductId.TryGetValue(p.Id, out var snapshot);
                 var available = snapshot?.AvailableQuantity ?? 0;
-                return new StorefrontProductVm(p.Id, p.Name, p.Cost, p.CategoryId, available, available > 0);
+                return new StorefrontProductVm(p.Id, p.Name, p.Cost, p.CategoryId, available, available > 0, p.MainImageUrl);
             }).ToList();
 
             return new StorefrontProductListVm(items, productList.Count, productList.PageSize, productList.CurrentPage, string.Empty);

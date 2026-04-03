@@ -77,6 +77,7 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
 
             return await _context.Products
                 .AsNoTracking()
+                .Include(p => p.Images)
                 .Where(p => p.Status == ProductStatus.Published
                          && (string.IsNullOrEmpty(searchString) || p.Description.Value.Contains(searchString)))
                 .OrderBy(p => p.Id)
@@ -97,6 +98,7 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
             var tagIdTyped = new TagId(tagId);
             return await _context.Products
                 .AsNoTracking()
+                .Include(p => p.Images)
                 .Where(p => p.Status == ProductStatus.Published
                          && p.ProductTags.Any(pt => pt.TagId == tagIdTyped))
                 .OrderBy(p => p.Id)

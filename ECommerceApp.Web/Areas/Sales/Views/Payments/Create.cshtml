@@ -35,3 +35,14 @@
     <button type="submit" class="btn btn-primary">Potwierdź płatność</button>
     <a asp-area="Sales" asp-controller="Orders" asp-action="Details" asp-route-id="@Model.OrderId" class="btn btn-secondary">Anuluj</a>
 </form>
+
+@section Scripts {
+    <script>
+        (function () {
+            var input = document.getElementById('TransactionRef');
+            if (input && !input.value) {
+                input.value = crypto.randomUUID();
+            }
+        })();
+    </script>
+}

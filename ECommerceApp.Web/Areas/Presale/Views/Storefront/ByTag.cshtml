@@ -27,6 +27,10 @@
             {
                 <div class="col">
                     <div class="card h-100">
+                        @if (product.MainImageUrl != null)
+                        {
+                            <img src="@product.MainImageUrl" class="card-img-top" style="height:180px;object-fit:cover" alt="@product.Name" />
+                        }
                         <div class="card-body">
                             <h5 class="card-title">@product.Name</h5>
                             <p class="card-text text-muted">@product.Price.ToString("C")</p>

@@ -83,7 +83,7 @@
             <form method="post" asp-action="Dispatch" class="d-flex gap-2">
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" value="@Model.Id" />
-                <input type="text" name="trackingNumber" class="form-control" style="max-width:220px;" placeholder="Nr śledzenia" required />
+                <input type="text" id="trackingNumber" name="trackingNumber" class="form-control" style="max-width:220px;" placeholder="Nr śledzenia" required />
                 <button type="submit" class="btn btn-primary text-nowrap">Wyślij</button>
             </form>
             <form method="post" asp-action="Fail">
@@ -108,3 +108,14 @@
         }
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            var input = document.getElementById('trackingNumber');
+            if (input && !input.value) {
+                input.value = crypto.randomUUID();
+            }
+        })();
+    </script>
+}

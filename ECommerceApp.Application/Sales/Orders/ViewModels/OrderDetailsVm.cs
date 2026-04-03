@@ -32,6 +32,12 @@ namespace ECommerceApp.Application.Sales.Orders.ViewModels
         public string Country { get; init; } = default!;
     }
 
+    public sealed class OrderEventVm
+    {
+        public string EventType { get; init; } = default!;
+        public DateTime OccurredAt { get; init; }
+    }
+
     public sealed class OrderDetailsVm
     {
         public int Id { get; init; }
@@ -46,5 +52,6 @@ namespace ECommerceApp.Application.Sales.Orders.ViewModels
         public int? DiscountPercent { get; init; }
         public OrderCustomerVm? Customer { get; init; }
         public IReadOnlyList<OrderItemVm> OrderItems { get; init; } = Array.Empty<OrderItemVm>();
+        public IReadOnlyList<OrderEventVm> Events { get; init; } = Array.Empty<OrderEventVm>();
     }
 }

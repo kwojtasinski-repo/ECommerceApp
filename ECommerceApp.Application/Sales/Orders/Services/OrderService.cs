@@ -378,8 +378,33 @@ namespace ECommerceApp.Application.Sales.Orders.Services
                     CouponUsedId = i.CouponUsedId,
                     ProductName = i.Snapshot?.ProductName,
                     ImageFileName = i.Snapshot?.ImageFileName
-                }).ToList()
+                }).ToList(),
+                Events = order.Events
+                    .OrderBy(e => e.OccurredAt)
+                    .Select(e => new OrderEventVm
+                    {
+                        EventType = GetEventLabel(e.EventType),
+                        OccurredAt = e.OccurredAt
+                    }).ToList()
             };
+
+        private static string GetEventLabel(OrderEventType eventType) => eventType switch
+        {
+            OrderEventType.OrderPlaced => "Zamówienie złożone",
+            OrderEventType.OrderPaymentConfirmed => "Płatność potwierdzona",
+            OrderEventType.OrderPaymentExpired => "Płatność wygasła",
+            OrderEventType.OrderFulfilled => "Zamówienie zrealizowane",
+            OrderEventType.CouponApplied => "Kupon zastosowany",
+            OrderEventType.CouponRemoved => "Kupon usunięty",
+            OrderEventType.RefundAssigned => "Zwrot przypisany",
+            OrderEventType.RefundRemoved => "Zwrot usunięty",
+            OrderEventType.OrderCancelled => "Zamówienie anulowane",
+            OrderEventType.PriceAdjusted => "Cena dostosowana",
+            OrderEventType.ShipmentDispatched => "Przesyłka wysłana",
+            OrderEventType.ShipmentFailed => "Przesyłka nieudana",
+            OrderEventType.PartiallyFulfilled => "Częściowo zrealizowane",
+            _ => eventType.ToString()
+        };
 
         private static OrderForListVm MapToForListVm(Order order)
             => new()

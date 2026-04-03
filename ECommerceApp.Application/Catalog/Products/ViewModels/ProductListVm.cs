@@ -11,6 +11,7 @@ namespace ECommerceApp.Application.Catalog.Products.ViewModels
         public decimal Cost { get; set; }
         public string Status { get; set; }
         public int CategoryId { get; set; }
+        public string? MainImageUrl { get; set; }
 
         public void Mapping(Profile profile)
         {
@@ -18,7 +19,8 @@ namespace ECommerceApp.Application.Catalog.Products.ViewModels
                 .ForMember(d => d.Name, opt => opt.MapFrom(s => s.Name.Value))
                 .ForMember(d => d.Cost, opt => opt.MapFrom(s => s.Cost.Amount))
                 .ForMember(d => d.CategoryId, opt => opt.MapFrom(s => s.CategoryId.Value))
-                .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()));
+                .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()))
+                .ForMember(d => d.MainImageUrl, opt => opt.Ignore());
         }
     }
 

@@ -29,7 +29,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         public async Task GetPublishedProductsAsync_MergesStockAvailability()
         {
             _catalog.Setup(p => p.GetPublishedProductsAsync(10, 1, "", It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ProductPageWith(new CatalogProductItem(5, "Bag", 49.99m, 2)));
+                .ReturnsAsync(ProductPageWith(new CatalogProductItem(5, "Bag", 49.99m, 2, null)));
             _stockSnapshots.Setup(s => s.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
                 .Returns(AsAsyncEnumerable(StockSnapshot.Create(5, 7, DateTime.UtcNow)));
 
@@ -47,7 +47,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         public async Task GetPublishedProductsAsync_NoStockEntry_ReturnsAvailableZeroAndInStockFalse()
         {
             _catalog.Setup(p => p.GetPublishedProductsAsync(10, 1, "", It.IsAny<CancellationToken>()))
-                .ReturnsAsync(ProductPageWith(new CatalogProductItem(3, "Hat", 20m, 1)));
+                .ReturnsAsync(ProductPageWith(new CatalogProductItem(3, "Hat", 20m, 1, null)));
             _stockSnapshots.Setup(s => s.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
                 .Returns(AsAsyncEnumerable());
 
@@ -95,8 +95,8 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetPublishedProductsAsync_MultipleProducts_PassesAllIdsInSingleBatchCall()
         {
-            var p1 = new CatalogProductItem(1, "A", 10m, 1);
-            var p2 = new CatalogProductItem(2, "B", 20m, 1);
+            var p1 = new CatalogProductItem(1, "A", 10m, 1, null);
+            var p2 = new CatalogProductItem(2, "B", 20m, 1, null);
             _catalog.Setup(p => p.GetPublishedProductsAsync(10, 1, "", It.IsAny<CancellationToken>()))
                 .ReturnsAsync(ProductPageWith(p1, p2));
             _stockSnapshots.Setup(s => s.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))

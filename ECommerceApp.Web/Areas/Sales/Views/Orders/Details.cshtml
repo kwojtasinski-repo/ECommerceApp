@@ -102,6 +102,28 @@
     </table>
 }
 
+@if (Model.Events != null && Model.Events.Count > 0)
+{
+    <h4>Historia zdarzeń</h4>
+    <table class="table table-sm">
+        <thead>
+            <tr>
+                <th>Zdarzenie</th>
+                <th>Data</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var ev in Model.Events)
+            {
+                <tr>
+                    <td>@ev.EventType</td>
+                    <td>@ev.OccurredAt.ToString("dd.MM.yyyy HH:mm:ss")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
 <div class="d-flex gap-2">
     <a asp-area="Sales" asp-controller="Orders" asp-action="MyOrders">Wróć do moich zamówień</a>
     @if (Model.Status == OrderStatus.PaymentConfirmed || Model.Status == OrderStatus.Fulfilled)

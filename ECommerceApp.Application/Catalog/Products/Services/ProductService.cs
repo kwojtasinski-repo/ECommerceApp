@@ -141,9 +141,18 @@ namespace ECommerceApp.Application.Catalog.Products.Services
         {
             var products = await _productRepo.GetPublishedAsync(pageSize, pageNo, searchString);
             var count = await _productRepo.CountPublishedAsync(searchString);
+            var mapped = _mapper.Map<List<ProductForListVm>>(products);
+            for (var i = 0; i < mapped.Count; i++)
+            {
+                var mainImage = products[i].Images.FirstOrDefault(img => img.IsMain);
+                if (mainImage is not null)
+                {
+                    mapped[i].MainImageUrl = _urlBuilder.Build(mainImage.Id.Value);
+                }
+            }
             return new ProductListVm
             {
-                Products = _mapper.Map<List<ProductForListVm>>(products),
+                Products = mapped,
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
@@ -155,9 +164,16 @@ namespace ECommerceApp.Application.Catalog.Products.Services
         {
             var products = await _productRepo.GetPublishedByTagAsync(tagId, pageSize, pageNo);
             var count = await _productRepo.CountPublishedByTagAsync(tagId);
+            var mapped = _mapper.Map<List<ProductForListVm>>(products);
+            for (var i = 0; i < mapped.Count; i++)
+            {
+                var main = products[i].Images.FirstOrDefault(img => img.IsMain);
+                if (main is not null)
+                    mapped[i].MainImageUrl = _urlBuilder.Build(main.Id.Value);
+            }
             return new ProductListVm
             {
-                Products = _mapper.Map<List<ProductForListVm>>(products),
+                Products = mapped,
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = string.Empty,

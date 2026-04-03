@@ -25,7 +25,7 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Adapters
             var result = await _productService.GetPublishedProducts(pageSize, pageNo, searchString);
 
             var items = result.Products
-                .Select(p => new CatalogProductItem(p.Id, p.Name, p.Cost, p.CategoryId))
+                .Select(p => new CatalogProductItem(p.Id, p.Name, p.Cost, p.CategoryId, p.MainImageUrl))
                 .ToList();
 
             return new CatalogProductPage(items, result.Count, result.PageSize, result.CurrentPage, result.SearchString ?? "");
@@ -37,7 +37,7 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Adapters
             var result = await _productService.GetPublishedProductsByTagAsync(tagId, pageSize, pageNo);
 
             var items = result.Products
-                .Select(p => new CatalogProductItem(p.Id, p.Name, p.Cost, p.CategoryId))
+                .Select(p => new CatalogProductItem(p.Id, p.Name, p.Cost, p.CategoryId, p.MainImageUrl))
                 .ToList();
 
             return new CatalogProductPage(items, result.Count, result.PageSize, result.CurrentPage, string.Empty);

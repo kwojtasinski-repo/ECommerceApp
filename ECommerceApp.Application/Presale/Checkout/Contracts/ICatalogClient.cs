@@ -22,7 +22,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Contracts
 
     public sealed record CatalogProductSummary(int Id, string Name);
 
-    public sealed record CatalogProductItem(int Id, string Name, decimal Cost, int CategoryId);
+    public sealed record CatalogProductItem(int Id, string Name, decimal Cost, int CategoryId, string? MainImageUrl);
 
     public sealed record CatalogProductPage(
         IReadOnlyList<CatalogProductItem> Products,

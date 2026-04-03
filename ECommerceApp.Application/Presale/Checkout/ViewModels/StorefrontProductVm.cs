@@ -9,7 +9,8 @@ namespace ECommerceApp.Application.Presale.Checkout.ViewModels
         decimal Price,
         int CategoryId,
         int AvailableQuantity,
-        bool InStock);
+        bool InStock,
+        string? MainImageUrl);
 
     public sealed record StorefrontProductListVm(
         IReadOnlyList<StorefrontProductVm> Products,
