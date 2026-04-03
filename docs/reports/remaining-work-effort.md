@@ -1,8 +1,9 @@
 # Remaining Work Effort
 
-> **Rev 5 — Generated 2026-06-05**
-> Test suite: **1023 / 1024** ✅ (839 unit + 177 integration · 1 pre-existing Catalog arch failure: `App_Catalog_ShouldOnlyDependOnOwnDomain`)
+> **Rev 6 — Generated 2026-06-05**
+> Test suite: **1024 / 1024** ✅ — architecture BC boundary fix (`App_Presale` was red; `ECommerceApp.Application.Constants` added to `SharedApplication` whitelist).
 > Previous priorities 1–4 (IAM switch, legacy view cleanup, Payments cleanup, Sales switch) are **all complete**.
+> Recent UX session: GUID auto-fill for Payment TransactionRef + Shipment tracking number; order event history on Details; main product image on all storefront listing surfaces.
 
 ---
 
@@ -18,6 +19,9 @@
 | 6 | Refresh Token expiry cleanup job | XS | ✅ Done — `RefreshTokenCleanupTask` (`IScheduledTask`), `IRefreshTokenRepository.DeleteExpiredAsync`, 4 unit tests |
 | 7 | Brand BC — no BC equivalent, legacy-only | — | ❌ Cancelled + cleaned — `BrandController`, `IBrandService`, `BrandService`, `BrandDto`, `ListForBrandVm`, views, tests all deleted; nav link removed; DI registration removed |
 | 8 | Coupons Slice 2 — DB migration approval + atomic switch | L | ✅ Done — All code complete, dead `AddCouponAsync` removed, DB migration wired via `IDbContextMigrator<CouponsDbContext>` |
+| 9 | UX polish — GUID auto-fill (Payment `TransactionRef`, Shipment tracking number) | XS | ✅ Done — `crypto.randomUUID()` in `@section Scripts` on both views |
+| 10 | Order event history — `OrderDetailsVm.Events` + `OrderRepository` Include + Polish labels | XS | ✅ Done — "Historia zdarzeń" table in `Orders/Details.cshtml` |
+| 11 | Main product image on listing surfaces | XS | ✅ Done — `StorefrontProductVm.MainImageUrl` surfaced on `Storefront/Index`, `Storefront/ByTag`, `Home/Index`; `CatalogProductItem.MainImageUrl` added to ACL contract |
 | 9 | Communication BC | TBD | ❌ Not started |
 | 10 | Backoffice BC | TBD | ❌ Blocked (ADR-0013) |
 | 11 | Per-BC DbContext interfaces (ADR-0013) | — | ❌ Gate: ~80–100% BCs complete |

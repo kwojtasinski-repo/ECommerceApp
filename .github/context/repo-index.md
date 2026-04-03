@@ -8,7 +8,7 @@
 > For confirmed bugs → see [`known-issues.md`](./known-issues.md)
 > For documentation lookup → see [`.github/instructions/docs-index.instructions.md`](../instructions/docs-index.instructions.md)
 
-_Last updated: 2026-03-26_
+_Last updated: 2026-06-05_
 
 ---
 
@@ -145,6 +145,7 @@ Each BC has code in up to 4 layers. "Legacy" means old flat code that coexists a
 | -------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------- |
 | Domain         | `Domain/Presale/Checkout/`                                      | `CartLine.cs`, `SoftReservation.cs`, `StockSnapshot.cs` (10 files)            |
 | Application    | `Application/Presale/Checkout/`                                 | Contracts, DTOs, Handlers, `PresaleOptions.cs`, Results, Services, ViewModels |
+| Application VM | `Application/Presale/Checkout/ViewModels/StorefrontProductVm.cs` | `StorefrontProductVm` — includes `MainImageUrl?` (main image URL, nullable)  |
 | Infrastructure | `Infrastructure/Presale/Checkout/`                              | `PresaleDbContext.cs`, Adapters, Configurations, Repositories, Migrations     |
 | API (V2)       | `API/Controllers/V2/CartController.cs`, `CheckoutController.cs` |                                                                               |
 | API (legacy)   | `API/Controllers/Presale/StorefrontController.cs`               |                                                                               |

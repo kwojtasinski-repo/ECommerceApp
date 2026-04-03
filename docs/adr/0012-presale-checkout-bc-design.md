@@ -1,4 +1,4 @@
-# ADR-0012: Presale/Checkout BC - CartLine, SoftReservation, StockSnapshot, and ACL-Based Pre-Sale Design
+﻿# ADR-0012: Presale/Checkout BC - CartLine, SoftReservation, StockSnapshot, and ACL-Based Pre-Sale Design
 
 ## Status
 Accepted
@@ -112,7 +112,16 @@ public interface ICatalogClient
 {
     // Returns the current unit price for a product, or null if not found/not visible.
     Task<decimal?> GetUnitPriceAsync(int productId, CancellationToken ct = default);
+
+    // Product listing (used by StorefrontQueryService for public browsing)
+    Task<CatalogProductPage> GetPublishedProductsAsync(int pageSize, int pageNo, string searchString, CancellationToken ct = default);
+    Task<CatalogProductPage> GetPublishedProductsByTagAsync(int tagId, int pageSize, int pageNo, CancellationToken ct = default);
+    Task<CatalogProductDetails?> GetProductDetailsAsync(int productId, CancellationToken ct = default);
+    Task<IReadOnlyList<CatalogProductSummary>> GetProductsByIdsAsync(IReadOnlyList<int> productIds, CancellationToken ct = default);
 }
+
+// Lean item for list views -- MainImageUrl is the URL of the IsMain product image (nullable)
+public sealed record CatalogProductItem(int Id, string Name, decimal Cost, int CategoryId, string? MainImageUrl);
 
 public interface IStockClient
 {
@@ -822,6 +831,7 @@ reservations and re-creates them with fresh prices and TTL.
 | 18 | `OrderPlacedHandler` scoped to `Committed` reservations only; `SoftReservationExpiredJob` skips `Committed` | ✅ Done |
 | 19 | Unit tests updated: `CheckoutServiceTests`, `OrderPlacedHandlerTests`, `SoftReservationExpiredJobTests` | ✅ Done |
 | 20 | `ICartService.RemoveRangeAsync` + `ICartLineRepository.DeleteRangeAsync`: batch cart-item removal; `OrderPlacedHandler` uses single call (preserves post-initiation cart items); `CartServiceTests` updated | ✅ Done |
+| 21 | `CatalogProductItem.MainImageUrl` (ACL contract) + `StorefrontProductVm.MainImageUrl` — main product image propagated through `ProductRepository` → `ProductService` → `CatalogClientAdapter` → `StorefrontQueryService`; surfaced in `Storefront/Index`, `Storefront/ByTag`, and `Home/Index` card grids | ✅ Done |
 
 ## References
 

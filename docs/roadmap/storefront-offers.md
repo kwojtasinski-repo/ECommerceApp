@@ -2,6 +2,7 @@
 
 > Status: ✅ §1 routing + §2 home page done — §3 category strip optional
 > Scope: `Web` project — `Presale` area + `Home` controller
+> Last updated: 2026-06-05 — main product image added to all three list surfaces
 
 ---
 
@@ -25,6 +26,7 @@ Replace the legacy `Item` controller flow with a clean public storefront using
 | `Presale/Storefront/ByTag.cshtml` — filtered grid + pagination | ✅ |
 | `Presale/Storefront/Details.cshtml` — details + stock quantity + tag links | ✅ |
 | `Home/Index.cshtml` — "Pokaż przedmioty" → Storefront `Index` | ✅ |
+| `StorefrontProductVm.MainImageUrl` — main product image on `Index`, `ByTag`, and `Home/Index` cards | ✅ |
 
 ---
 

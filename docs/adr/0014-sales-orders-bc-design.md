@@ -914,6 +914,7 @@ Parallel Change — existing code untouched until the atomic switch.
 | Inventory BC — update `PaymentConfirmedHandler` to use `ConfirmReservationsByOrderAsync` (Gap 3) | ✅ Done |
 | Controller migration (Web + API atomic switch) | ⬜ Not started |
 | Atomic switch (includes retiring Inventory `PaymentWindowTimeoutJob` — Gap 4) | ⬜ After integration tests and controller migration |
+| `OrderDetailsVm.Events` collection + `OrderRepository.GetByIdWithItemsAsync` includes `Events` + Polish event labels in `OrderService.GetEventLabel` — order event history surfaced in `Orders/Details.cshtml` | ✅ Done |
 
 ## Conformance checklist
 
