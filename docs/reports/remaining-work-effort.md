@@ -1,9 +1,8 @@
 # Remaining Work Effort
 
-> **Rev 6 — Generated 2026-06-05**
-> Test suite: **1024 / 1024** ✅ — architecture BC boundary fix (`App_Presale` was red; `ECommerceApp.Application.Constants` added to `SharedApplication` whitelist).
-> Previous priorities 1–4 (IAM switch, legacy view cleanup, Payments cleanup, Sales switch) are **all complete**.
-> Recent UX session: GUID auto-fill for Payment TransactionRef + Shipment tracking number; order event history on Details; main product image on all storefront listing surfaces.
+> **Rev 7 — Generated 2026-06-07**
+> Test suite: **1024 / 1024** ✅
+> Current session: `OrderProductSnapshot.ImageId` rename + migration; `KI-009` image deletion constraint documented; `roadmap/README.md` + `project-state.md` resynced; IAM Refresh Token confirmed ✅ complete.
 
 ---
 
@@ -16,18 +15,19 @@
 | 3 | R-2 — `RefundController.Report` action | — | ✅ Dropped (no requirement, API not needed) |
 | 4 | R-7 — `ShowItemConnectedWithTags` feature gap | S | ✅ Done — `ByTag` action + tag filter strip + clickable tag links in Details |
 | 5 | CurrencyRateSyncTask atomic switch (TimeManagement) | XS | ✅ Done — already using `ICurrencyRateService` from new BC; legacy `CurrencyRateDto` deleted |
-| 6 | Refresh Token expiry cleanup job | XS | ✅ Done — `RefreshTokenCleanupTask` (`IScheduledTask`), `IRefreshTokenRepository.DeleteExpiredAsync`, 4 unit tests |
-| 7 | Brand BC — no BC equivalent, legacy-only | — | ❌ Cancelled + cleaned — `BrandController`, `IBrandService`, `BrandService`, `BrandDto`, `ListForBrandVm`, views, tests all deleted; nav link removed; DI registration removed |
+| 6 | Refresh Token full implementation (Steps 1–8) + expiry cleanup job | M | ✅ Done — domain entity, EF migration, `IJwtManager` Jti, `AuthenticationService` (SignIn/Refresh/Revoke), `AuthController` (`POST /api/auth/refresh` + `POST /api/auth/revoke`), `auth.http`, unit + integration tests, `RefreshTokenCleanupTask` |
+| 7 | Brand BC — no BC equivalent, legacy-only | — | ✅ Cancelled + cleaned — `BrandController`, `IBrandService`, `BrandService`, `BrandDto`, `ListForBrandVm`, views, tests all deleted; nav link removed; DI registration removed |
 | 8 | Coupons Slice 2 — DB migration approval + atomic switch | L | ✅ Done — All code complete, dead `AddCouponAsync` removed, DB migration wired via `IDbContextMigrator<CouponsDbContext>` |
 | 9 | UX polish — GUID auto-fill (Payment `TransactionRef`, Shipment tracking number) | XS | ✅ Done — `crypto.randomUUID()` in `@section Scripts` on both views |
 | 10 | Order event history — `OrderDetailsVm.Events` + `OrderRepository` Include + Polish labels | XS | ✅ Done — "Historia zdarzeń" table in `Orders/Details.cshtml` |
 | 11 | Main product image on listing surfaces | XS | ✅ Done — `StorefrontProductVm.MainImageUrl` surfaced on `Storefront/Index`, `Storefront/ByTag`, `Home/Index`; `CatalogProductItem.MainImageUrl` added to ACL contract |
-| 9 | Communication BC | TBD | ❌ Not started |
-| 10 | Backoffice BC | TBD | ❌ Blocked (ADR-0013) |
-| 11 | Per-BC DbContext interfaces (ADR-0013) | — | ❌ Gate: ~80–100% BCs complete |
-| 12 | API: Move controllers into BC subfolders | XS | ✅ Done |
-| 13 | API: Remove `v2` from 3 route attributes + `.http` files | XS | ✅ Done |
-| 14 | API: Extract `TrustedApiUser` policy const | XS | ✅ Done |
+| 12 | `OrderProductSnapshot.ImageId` — rename + retype + migration | XS | ✅ Done — `ImageUrl string? nvarchar(2048)` → `ImageId int?`; EF migration with `TRY_CAST` data conversion; `OrderItemService` now injects `IImageUrlBuilder`; `KI-009` added |
+| 13 | API: Move controllers into BC subfolders | XS | ✅ Done |
+| 14 | API: Remove `v2` from 3 route attributes + `.http` files | XS | ✅ Done |
+| 15 | API: Extract `TrustedApiUser` policy const | XS | ✅ Done |
+| 16 | Communication BC | TBD | ❌ Not started |
+| 17 | Backoffice BC | TBD | ❌ Blocked (ADR-0013) |
+| 18 | Per-BC DbContext interfaces (ADR-0013) | — | ❌ Gate: ~80–100% BCs complete |
 
 ---
 

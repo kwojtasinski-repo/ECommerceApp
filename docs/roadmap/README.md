@@ -15,7 +15,7 @@
 | **Sales/Coupons — Slice 1 atomic switch** | — (see ADR) | [ADR-0016](../adr/0016-sales-coupons-bc-design.md) | ✅ Switch live — `CouponController` migrated to `Areas/Sales`, legacy UI controllers deleted, nav updated. Legacy service DI retained (Step 8). |
 | **Presale/Checkout — Slice 2** | [`presale-slice2.md`](./presale-slice2.md) | [ADR-0012](../adr/0012-presale-checkout-bc-design.md) §11–14 | ✅ Switch live — implementation complete, integration tests ✅, EC-001 decision ✅ |
 | **Identity/IAM — atomic switch** | [`iam-atomic-switch.md`](./iam-atomic-switch.md) | [ADR-0019](../adr/0019-identity-iam-bc-design.md) | ✅ Switch complete — `Context` → `DbContext`, `Domain.Model.ApplicationUser` deleted, legacy controllers/services/repos deleted |
-| **Identity/IAM — refresh token** | [`iam-refresh-token.md`](./iam-refresh-token.md) | ADR-0019 amendment pending | 🔵 Planned — design settled, not started |
+| **Identity/IAM — refresh token** | [`iam-refresh-token.md`](./iam-refresh-token.md) | [ADR-0019](../adr/0019-identity-iam-bc-design.md) | ✅ Complete — Steps 1–8 done; `POST /api/auth/refresh` + `POST /api/auth/revoke` live; `RefreshTokenCleanupTask` ✅ |
 | **Frontend error pipeline & JS migration** | [`frontend-pipeline.md`](./frontend-pipeline.md) | [ADR-0021](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) | ✅ Phase 1–4 complete |
 | **Storefront — `/offers` public browsing** | [`storefront-offers.md`](./storefront-offers.md) | — | ✅ §1 routing + §2 home page done — §3 category strip optional |
 | **Chunked image upload** | [`chunked-upload.md`](./chunked-upload.md) | — | 🔵 Planned — server-driven design agreed, v1 spike not started |
