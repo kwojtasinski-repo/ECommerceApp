@@ -41,4 +41,8 @@
     <ProjectReference Include="..\ECommerceApp.Application\ECommerceApp.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Supporting\Communication\Adapters\" />
+  </ItemGroup>
+
 </Project>

@@ -21,4 +21,8 @@
 	<FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Identity\IAM\Contracts\" />
+  </ItemGroup>
+
 </Project>

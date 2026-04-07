@@ -25,7 +25,7 @@
 | 13 | API: Move controllers into BC subfolders | XS | ✅ Done |
 | 14 | API: Remove `v2` from 3 route attributes + `.http` files | XS | ✅ Done |
 | 15 | API: Extract `TrustedApiUser` policy const | XS | ✅ Done |
-| 16 | Communication BC | TBD | ❌ Not started |
+| 16 | Communication BC | S | ✅ Done — 7 handlers + `INotificationService` stub + `IOrderUserResolver` port + `NullOrderUserResolver` + `AddCommunicationServices()` + 14 unit tests + architecture boundary rule; ADR-0018 Accepted |
 | 17 | Backoffice BC | TBD | ❌ Blocked (ADR-0013) |
 | 18 | Per-BC DbContext interfaces (ADR-0013) | — | ❌ Gate: ~80–100% BCs complete |
 

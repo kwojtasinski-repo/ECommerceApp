@@ -13,6 +13,7 @@ using ECommerceApp.Web.Filters;
 using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Application.Presale.Checkout.Options;
 using ECommerceApp.Web.Services;
+using ECommerceApp.Infrastructure.Supporting.Communication;
 
 namespace ECommerceApp.Web
 {
@@ -98,6 +99,7 @@ namespace ECommerceApp.Web
                     name: "default",
                     pattern: "{controller=Home}/{action=Index}/{id?}");
                 endpoints.MapRazorPages();
+                endpoints.MapCommunicationHubs();
             });
         }
     }

@@ -1,7 +1,7 @@
 # ADR-0018: Supporting/Communication BC — Customer Notification Design
 
 ## Status
-Proposed
+Accepted
 
 ## Date
 2026-03-12
@@ -34,9 +34,13 @@ clarified during implementation. A bottom-up / lean ADR is appropriate here.
 
 We will introduce a dedicated **Supporting/Communication BC** as a leaf-node BC that:
 - Subscribes to integration messages from the in-memory `IMessageBroker` (ADR-0010)
-- Sends customer notifications (email and/or SMS) in response to those messages
+- Pushes real-time notifications to connected browser clients via **SignalR** in response to those messages
 - Has **no domain model** — application-layer only
 - **Never publishes** messages back to any core BC — it is a pure consumer
+
+Email and SMS are deliberately excluded from this BC. They are a separate delivery channel with different
+infrastructure concerns (SMTP servers, templates, opt-out management, retry) and will be introduced
+as a separate supporting BC if and when needed.
 
 ### § 1 BC classification
 
@@ -52,12 +56,14 @@ We will introduce a dedicated **Supporting/Communication BC** as a leaf-node BC 
 
 | Message | Source BC | Notification trigger |
 |---|---|---|
-| `RefundApproved` | Fulfillment (ADR-0017) | Email: refund approved, items + amounts |
-| `RefundRejected` | Fulfillment (ADR-0017) | Email: refund rejected, reason |
-| `OrderPlaced` | Orders (ADR-0014) | Email: order confirmation |
-| `OrderCancelled` | Orders (ADR-0014) | Email: order cancellation |
-| `OrderRequiresAttention` | Orders (ADR-0014 §19) | Internal: operator alert — shipment failure or partial delivery |
-| `PaymentConfirmed` | Payments (ADR-0015) | Email: payment received |
+| `RefundApproved` | Fulfillment (ADR-0017) | Push: refund approved |
+| `RefundRejected` | Fulfillment (ADR-0017) | Push: refund rejected |
+| `OrderPlaced` | Orders (ADR-0014) | Push: order confirmation |
+| `OrderCancelled` | Orders (ADR-0014) | Push: order cancellation |
+| `OrderRequiresAttention` | Orders (ADR-0014 §19) | Internal: operator alert (logger only) |
+| `PaymentConfirmed` | Payments (ADR-0015) | Push: payment received |
+| `PaymentExpired` | Payments (ADR-0015) | Push: payment window expired |
+| `CouponExpired` | Coupons (ADR-0016 §9) | Push: coupon expired — deferred to Slice 2 |
 | `PaymentExpired` | Payments (ADR-0015) | Email: payment window expired |
 | `CouponExpired` | Coupons (ADR-0016 §9) | Email: coupon expired — deferred to Slice 2 |
 
@@ -82,41 +88,53 @@ Application/Supporting/Communication/
 
 ### § 4 Notification service contract
 
-The concrete notification delivery mechanism (SMTP, SendGrid, Twilio, etc.) is hidden behind
-`INotificationService`. The interface surface is deliberately minimal at this stage:
+The concrete notification delivery mechanism is hidden behind `INotificationService`. The interface is
+channel-agnostic — it carries a `userId`, an `eventType` discriminator, and a plain-text `message`:
 
 ```csharp
 public interface INotificationService
 {
-    Task SendEmailAsync(string recipientUserId, string subject, string body, CancellationToken ct);
+    Task NotifyAsync(string userId, string eventType, string message, CancellationToken ct = default);
 }
 ```
 
-The `recipientUserId` is resolved to an email address via a user query against `IamDbContext`
-(read-only, no cross-BC write coupling). Concrete implementation is deferred — a stub logging
-implementation is acceptable until delivery infrastructure is in place.
+The Infrastructure layer provides a `SignalRNotificationService` that pushes to the connected browser
+client via `IHubContext<NotificationHub>.Clients.User(userId).SendAsync("ReceiveNotification", payload)`.
+The Application stub (`LoggingNotificationService`) logs the event without any network call and
+is replaced at runtime by the Infrastructure registration (last-registration-wins DI).
+
+The `userId` is carried directly in `OrderPlaced` (no resolver needed for that event); for events
+carrying only an `orderId`, `IOrderUserResolver` performs a read-only projection against
+`OrdersDbContext` to obtain the `userId`.
 
 ### § 5 Folder structure
 
 ```
 Application/Supporting/Communication/
   Handlers/         ← one file per IMessageHandler<T>
-  Services/         ← INotificationService + impl
-  Extensions.cs     ← AddCommunication(IServiceCollection)
+  Services/         ← INotificationService + LoggingNotificationService (stub)
+  Contracts/        ← IOrderUserResolver + NullOrderUserResolver
+  Extensions.cs     ← AddCommunicationServices(IServiceCollection)
+
+Infrastructure/Supporting/Communication/
+  Hubs/
+    NotificationHub.cs           ← SignalR Hub (push-only, no client methods)
+  Services/
+    SignalRNotificationService.cs ← INotificationService impl via IHubContext<NotificationHub>
+  HubEndpointExtensions.cs       ← MapCommunicationHubs(IEndpointRouteBuilder)
+  Extensions.cs                  ← AddCommunicationInfrastructure: AddSignalR() + registers impl
 ```
 
-No `Domain/Supporting/Communication/` folder — there is no domain model.  
-No `Infrastructure/Supporting/Communication/` folder initially — if a notification log is
-added later, an `Infrastructure` folder and `NotificationLogDbContext` are introduced at that time.
+No domain model. No `DbContext`. `IOrderUserResolver` is implemented in the Orders BC's Infrastructure
+(`Infrastructure.Sales.Orders.Adapters.OrderUserResolverAdapter`) — the providing BC owns its adapter.
 
-### § 6 Delivery infrastructure (deferred)
+### § 6 Client-side integration
 
-Concrete email/SMS delivery, template engine, opt-out preference storage, and retry policy are
-implementation details to be decided bottom-up during Slice 1 implementation. This ADR does not
-prescribe them.
-
-If a notification audit log is needed, it will get its own `NotificationLogDbContext` with schema
-`communication`. That decision requires a migration policy approval per ADR migration policy.
+Clients connect to `/hubs/notifications` using the SignalR JavaScript client. They subscribe to
+the `"ReceiveNotification"` method which receives `{ EventType, Message }`. Authentication uses
+ASP.NET Core Identity cookies (Web) or JWT bearer (API). The hub uses the default
+`IUserIdProvider` (maps `ClaimTypes.NameIdentifier` → `userId`), so only the authenticated user
+receives their own notifications.
 
 ## Consequences
 
@@ -142,19 +160,20 @@ If a notification audit log is needed, it will get its own `NotificationLogDbCon
 ## Migration plan
 
 1. Implement `INotificationService` stub (logs to `ILogger` — no real delivery)
-2. Implement `IMessageHandler<T>` for each subscribed message — wire via `AddCommunication()` extensions
+2. Implement `IMessageHandler<T>` for each subscribed message — wire via `AddCommunicationServices()`
 3. Activate after Fulfillment Slice 1 is switched (provides `RefundApproved` / `RefundRejected`)
-4. Replace stub with concrete SMTP adapter when delivery infrastructure is selected
+4. Infrastructure layer provides `SignalRNotificationService` + `NotificationHub`; `AddCommunicationInfrastructure()` overrides stub with real SignalR impl
 5. Add `CouponExpired` handler after Coupons Slice 2
+6. Client-side: connect JS SignalR client to `/hubs/notifications`, subscribe to `ReceiveNotification`
 
 ## Conformance checklist
 
 - [ ] No `Domain/Supporting/Communication/` folder exists (no domain model)
 - [ ] All handlers implement `IMessageHandler<T>` — no direct service-to-service calls
-- [ ] `INotificationService` is the only external dependency injected into handlers
+- [ ] `INotificationService` is the only external delivery dependency injected into handlers
 - [ ] No message publishing from Communication BC handlers — consumer only
-- [ ] `Extensions.cs` registers all handlers via `AddCommunication(IServiceCollection)`
-- [ ] `recipientUserId` is resolved via read-only IAM query — no write coupling
+- [ ] `Extensions.cs` registers all handlers via `AddCommunicationServices(IServiceCollection)`
+- [ ] `IOrderUserResolver` implemented in providing BC (Orders Infrastructure) — no email resolver needed
 
 ## References
 

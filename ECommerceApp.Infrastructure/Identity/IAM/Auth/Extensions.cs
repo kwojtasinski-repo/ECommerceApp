@@ -1,7 +1,9 @@
 using ECommerceApp.Application.Identity.IAM.Services;
 using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Application.Supporting.Communication.Contracts;
 using ECommerceApp.Domain.Identity.IAM;
 using ECommerceApp.Infrastructure.Database;
+using ECommerceApp.Infrastructure.Identity.IAM.Adapters;
 using ECommerceApp.Infrastructure.Identity.IAM.Repositories;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
@@ -34,7 +36,8 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
                 .AddSingleton<IRefreshTokenOptions>(sp =>
                     sp.GetRequiredService<IOptions<AuthOptions>>().Value)
                 .AddScoped<IRefreshTokenRepository, RefreshTokenRepository>()
-                .AddScoped<IUserContext, UserContext>();
+                .AddScoped<IUserContext, UserContext>()
+                .AddScoped<IUserEmailResolver, UserEmailResolverAdapter>();
         }
     }
 }

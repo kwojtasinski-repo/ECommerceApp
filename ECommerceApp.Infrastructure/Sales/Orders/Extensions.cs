@@ -1,4 +1,5 @@
 using ECommerceApp.Application.Sales.Orders.Contracts;
+using ECommerceApp.Application.Supporting.Communication.Contracts;
 using ECommerceApp.Domain.Sales.Orders;
 using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Sales.Orders.Adapters;
@@ -23,6 +24,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders
             services.AddScoped<ICustomerExistenceChecker, CustomerExistenceChecker>();
             services.AddScoped<IOrderCustomerResolver, OrderCustomerResolver>();
             services.AddScoped<IOrderProductResolver, OrderProductResolver>();
+            services.AddScoped<IOrderUserResolver, OrderUserResolverAdapter>();
 
             return services;
         }

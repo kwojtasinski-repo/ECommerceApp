@@ -131,6 +131,9 @@ namespace ECommerceApp.UnitTests.Architecture
         private static readonly IObjectProvider<IType> AppIdentity =
             InNsTree("ECommerceApp.Application.Identity.IAM", "Application.Identity.IAM");
 
+        private static readonly IObjectProvider<IType> AppCommunication =
+            InNsTree("ECommerceApp.Application.Supporting.Communication", "Application.Supporting.Communication");
+
         // ── Message contracts (cross-BC consumption allowed) ────────────────────
 
         private static readonly IObjectProvider<IType> OrderMessages =
@@ -463,6 +466,24 @@ namespace ECommerceApp.UnitTests.Architecture
                 .Check(Architecture);
         }
 
+        [Fact]
+        public void App_Communication_ShouldOnlyDependOnMessageContracts()
+        {
+            // Communication handlers consume: OrderPlaced, OrderCancelled, OrderRequiresAttention,
+            // PaymentConfirmed, PaymentExpired, RefundApproved, RefundRejected
+            Types().That().Are(AppCommunication)
+                .Should().NotDependOnAny(
+                    Types().That().AreNot(AppCommunication)
+                        .And().AreNot(SharedDomain)
+                        .And().AreNot(SharedApplication)
+                        .And().AreNot(Messaging)
+                        .And().AreNot(OrderMessages)       // OrderPlaced, OrderCancelled, OrderRequiresAttention
+                        .And().AreNot(PaymentMessages)     // PaymentConfirmed, PaymentExpired
+                        .And().AreNot(FulfillmentMessages)) // RefundApproved, RefundRejected
+                .Because("Communication BC must only consume message contracts — never call other BCs directly")
+                .Check(Architecture);
+        }
+
         // ════════════════════════════════════════════════════════════════════════
         // Domain layer must not reference Application or Infrastructure
         // ════════════════════════════════════════════════════════════════════════
@@ -589,6 +610,21 @@ namespace ECommerceApp.UnitTests.Architecture
                         .Or().Are(AppCatalog)
                         .Or().Are(AppInventory))
                 .Because("Only Orders adapters should depend on other BC services — not repositories or DbContext")
+                .Check(Architecture);
+        }
+
+        [Fact]
+        public void Infrastructure_Communication_ShouldNotDependOnOtherBcServices()
+        {
+            // No adapters live in Communication Infrastructure anymore — providing BCs
+            // implement Communication ports directly in their own Adapters folders.
+            Types().That().FollowCustomPredicate(
+                    t => t.FullName.StartsWith("ECommerceApp.Infrastructure.Supporting.Communication."),
+                    "reside in Infrastructure.Supporting.Communication tree")
+                .Should().NotDependOnAny(
+                    Types().That().Are(AppOrders)
+                        .Or().Are(AppIdentity))
+                .Because("Communication Infrastructure must not depend on Orders/Identity services — adapters live in providing BCs")
                 .Check(Architecture);
         }
     }

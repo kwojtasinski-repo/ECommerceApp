@@ -5,7 +5,7 @@
 > For confirmed bugs see [`.github/context/known-issues.md`](./known-issues.md).
 > For planned work see [`docs/roadmap/README.md`](../docs/roadmap/README.md).
 
-*Last updated: 2026-06-07 (Current session: `OrderProductSnapshot.ImageId` — renamed column `ImageUrl→ImageId`, retyped `nvarchar(2048)→int`, EF migration with data conversion, domain + resolver + service cascade updated, `OrderItemService` now populates `ImageUrl` display URL. KI-009 added to known-issues.md. Docs updated: `roadmap/README.md` IAM Refresh Token marked ✅, `project-state.md` + `remaining-work-effort.md` resynced. Previous: Item 8 complete: Coupons Slice 2 atomic switch done — dead `AddCouponAsync` removed, `IDbContextMigrator<CouponsDbContext>` wired, no legacy code remains. Item 6 complete: `RefreshTokenCleanupTask` + `IRefreshTokenRepository.DeleteExpiredAsync` + 4 unit tests. 1024/1024 total tests passing.)*
+*Last updated: 2026-06-07 (Current session: Communication BC implemented — 7 handlers (`OrderPlaced`, `OrderCancelled`, `OrderRequiresAttention`, `PaymentConfirmed`, `PaymentExpired`, `RefundApproved`, `RefundRejected`) + `INotificationService` + `LoggingNotificationService` stub + `IOrderUserResolver` port + `NullOrderUserResolver` + `Extensions.cs` + 14 unit tests + `App_Communication` architecture test. ADR-0018 Accepted. `DependencyInjection.cs` wired. Previous: `OrderProductSnapshot.ImageId` — renamed column `ImageUrl→ImageId`, retyped `nvarchar(2048)→int`, EF migration with data conversion. KI-009 added. 1024/1024 total tests passing.)*
 
 ---
 
@@ -24,7 +24,8 @@
 
 | Area | Summary | ADR |
 |---|---|---|
-| **OrderProductSnapshot.ImageId rename** | `ImageUrl string? (nvarchar 2048)` → `ImageId int?` across domain, EF config, resolver, `OrderService.BuildImageDisplayUrl`, `OrderItemService` (now injects `IImageUrlBuilder`). EF migration `RenameImageUrlToImageIdInOrderItemSnapshot` with `TRY_CAST` data conversion. `KI-009` added to known-issues.md (image soft-delete recommended). 20/20 unit tests ✅. | [ADR-0014](../docs/adr/0014-sales-orders-bc-design.md) |
+| **Supporting/Communication BC** | `INotificationService` + `LoggingNotificationService` stub. `IOrderUserResolver` port + `NullOrderUserResolver` null-object stub. 7 handlers: `OrderPlaced/Cancelled/RequiresAttention` (Orders), `PaymentConfirmed/Expired` (Payments), `RefundApproved/Rejected` (Fulfillment). `AddCommunicationServices()` DI extension. `App_Communication` architecture boundary test. 871/871 unit tests ✅. ADR-0018 Accepted. | [ADR-0018](../docs/adr/0018-supporting-communication-bc-design.md) |
+| **OrderProductSnapshot.ImageId rename**
 | **IAM — Refresh Token (Steps 1–8)** | All steps complete — `RefreshToken` domain entity ✅, EF config + migration ✅, `IJwtManager` updated (Jti) ✅, `AuthenticationService.SignInAsync/RefreshAsync/RevokeAsync` ✅, `AuthController` (`POST /api/auth/refresh` + `POST /api/auth/revoke`) ✅, `auth.http` ✅, unit tests ✅, integration tests ✅, `RefreshTokenCleanupTask` ✅. | [ADR-0019](../docs/adr/0019-identity-iam-bc-design.md) |
 | **IAM — Refresh Token Steps 5–8** |
 | **Security / Route fixes (R-1, R-3, R-4, R-5, R-6)** | R-6: `DeleteUser` → `[HttpPost]` + `[ValidateAntiForgeryToken]` · R-1: `RefundController.Request` param renamed `orderId→id` + view/tag-helper fixes · R-5: `OrdersController.Details` → maintenance-bypass ownership check · R-4: `PaymentsController.Details` → ownership check + `UserId` added to `PaymentDetailsVm` · R-3: `PaymentsController.Create` → `GetPendingByOrderIdAsync(id, GetUserId())` (user-scope + Pending guard). Build ✅ · 21/21 unit tests ✅ | — |
