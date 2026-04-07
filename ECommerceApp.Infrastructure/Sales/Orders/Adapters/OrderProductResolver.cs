@@ -29,7 +29,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Adapters
             var mainImage = product.Images.FirstOrDefault(i => i.IsMain)
                 ?? product.Images.OrderBy(i => i.SortOrder).FirstOrDefault();
 
-            var imageId = mainImage is not null ? mainImage.Id.ToString() : null;
+            var imageId = mainImage?.Id;
             return new OrderProductSnapshot(product.Name, mainImage?.FileName, imageId);
         }
 
@@ -40,7 +40,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Adapters
             var result = new Dictionary<int, OrderProductSnapshot>(snapshots.Count);
             foreach (var s in snapshots)
             {
-                var imageId = s.MainImageId.HasValue ? s.MainImageId.Value.ToString() : null;
+                var imageId = s.MainImageId;
                 result[s.Id] = new OrderProductSnapshot(s.Name, s.ImageFileName, imageId);
             }
             return result;

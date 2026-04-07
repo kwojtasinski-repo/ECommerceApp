@@ -61,13 +61,13 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         public void SetSnapshot_ValidSnapshot_ShouldSetSnapshot()
         {
             var item = OrderItem.Create(1, 1, new UnitCost(10m), "user1");
-            var snapshot = new OrderProductSnapshot("Widget", "image.jpg", "/api/images/1");
+            var snapshot = new OrderProductSnapshot("Widget", "image.jpg", 1);
 
             item.SetSnapshot(snapshot);
 
             item.Snapshot!.ProductName.Should().Be("Widget");
             item.Snapshot.ImageFileName.Should().Be("image.jpg");
-            item.Snapshot.ImageUrl.Should().Be("/api/images/1");
+            item.Snapshot.ImageId.Should().Be(1);
         }
 
         [Fact]

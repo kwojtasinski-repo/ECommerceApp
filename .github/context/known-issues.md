@@ -12,6 +12,20 @@
 
 ## High
 
+### [KI-009] No guard against deleting catalog images referenced by order item snapshots
+- **Severity**: 🔴 High (silent data loss)
+- **Location**: `ECommerceApp.Application/Catalog/Images/Services/ImageService.cs` — `Delete(int id)`
+- **Symptom**: Deleting a catalog image that is referenced by one or more `OrderItemSnapshot.ImageId` rows causes those snapshots to silently lose their image. The `GET /catalog/images/{id}` endpoint returns `404` for any affected order item detail or order detail view.
+- **Root cause**: `ImageService.Delete` has no cross-BC check. `OrderItemSnapshots` (Sales BC) stores `ImageId int?` referencing `Images` (Catalog BC). There is no FK constraint between schemas, and no application-level guard.
+- **Impact**: All historical order items whose product image has been deleted will display with no thumbnail. The data loss is silent — no error, no warning.
+- **Constraint**: Images that have ever been used in an order item snapshot **must not be deleted**. This is a business invariant: order snapshots must remain self-consistent for audit and customer history purposes.
+- **Options for the fix**:
+  1. **Soft-delete images** — add `IsDeleted bool` to `Image`; `ImageService.Delete` marks as deleted but keeps the row and file. Display URLs continue to resolve; deleted images are hidden from catalog management UI only.
+  2. **Reference-count guard** — before hard-deleting, query `OrderItemSnapshots` for any row with matching `ImageId`. Requires Catalog → Sales cross-BC query (breaks isolation unless done via an Anti-Corruption Layer port).
+  3. **Graceful degradation only** — keep hard-delete as-is, but display a placeholder image in views when `Build(id)` returns `404`. Document as expected degradation.
+- **Recommended fix**: Option 1 (soft-delete) — keeps BC isolation, preserves file on disk, zero impact on snapshot rendering.
+- **Fix tracked in**: To be added to `docs/roadmap/README.md` as catalog image lifecycle work.
+
 ---
 
 ## Medium

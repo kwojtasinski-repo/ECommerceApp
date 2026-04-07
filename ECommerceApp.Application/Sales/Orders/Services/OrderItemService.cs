@@ -1,3 +1,4 @@
+using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Sales.Orders.DTOs;
 using ECommerceApp.Application.Sales.Orders.Results;
 using ECommerceApp.Application.Sales.Orders.ViewModels;
@@ -13,10 +14,12 @@ namespace ECommerceApp.Application.Sales.Orders.Services
     internal sealed class OrderItemService : IOrderItemService
     {
         private readonly IOrderItemRepository _repo;
+        private readonly IImageUrlBuilder _urlBuilder;
 
-        public OrderItemService(IOrderItemRepository repo)
+        public OrderItemService(IOrderItemRepository repo, IImageUrlBuilder urlBuilder)
         {
             _repo = repo;
+            _urlBuilder = urlBuilder;
         }
 
         public async Task<int> AddCartItemAsync(AddOrderItemDto dto, CancellationToken ct = default)
@@ -67,7 +70,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
         public Task<int> GetCartItemCountByUserIdAsync(string userId, CancellationToken ct = default)
             => _repo.GetCartItemCountByUserIdAsync(userId, ct);
 
-        private static OrderItemVm MapToVm(OrderItem item)
+        private OrderItemVm MapToVm(OrderItem item)
             => new()
             {
                 Id = item.Id.Value,
@@ -76,7 +79,10 @@ namespace ECommerceApp.Application.Sales.Orders.Services
                 UnitCost = item.UnitCost.Amount,
                 CouponUsedId = item.CouponUsedId,
                 ProductName = item.Snapshot?.ProductName,
-                ImageFileName = item.Snapshot?.ImageFileName
+                ImageFileName = item.Snapshot?.ImageFileName,
+                ImageUrl = item.Snapshot?.ImageId is int id
+                    ? (_urlBuilder.Build(id) is { Length: > 0 } url ? url : null)
+                    : null
             };
 
         private static OrderItemForListVm MapToForListVm(OrderItem item)

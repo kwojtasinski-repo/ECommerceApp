@@ -49,8 +49,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Configurations
                  .IsRequired();
                 s.Property(p => p.ImageFileName)
                  .HasMaxLength(255);
-                s.Property(p => p.ImageUrl)
-                 .HasMaxLength(2048);
+                s.Property(p => p.ImageId);
             });
 
             builder.HasIndex(oi => oi.UserId);

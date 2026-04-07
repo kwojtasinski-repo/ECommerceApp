@@ -382,7 +382,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
                     CouponUsedId = i.CouponUsedId,
                     ProductName = i.Snapshot?.ProductName,
                     ImageFileName = i.Snapshot?.ImageFileName,
-                    ImageUrl = BuildImageDisplayUrl(i.Snapshot?.ImageUrl)
+                    ImageUrl = BuildImageDisplayUrl(i.Snapshot?.ImageId)
                 }).ToList(),
                 Events = order.Events
                     .OrderBy(e => e.OccurredAt)
@@ -411,11 +411,10 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             _ => eventType.ToString()
         };
 
-        private string? BuildImageDisplayUrl(string? imageIdStr)
+        private string? BuildImageDisplayUrl(int? imageId)
         {
-            if (imageIdStr is null) return null;
-            if (!int.TryParse(imageIdStr, out var id)) return null;
-            var url = _urlBuilder.Build(id);
+            if (imageId is null) return null;
+            var url = _urlBuilder.Build(imageId.Value);
             return string.IsNullOrEmpty(url) ? null : url;
         }
 
