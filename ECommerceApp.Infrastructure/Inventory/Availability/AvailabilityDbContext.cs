@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Infrastructure.Inventory.Availability
 {
-    public class AvailabilityDbContext : DbContext
+    internal sealed class AvailabilityDbContext : DbContext, IAvailabilityDbContext
     {
         public DbSet<StockItem> StockItems => Set<StockItem>();
         public DbSet<StockHold> StockHolds => Set<StockHold>();

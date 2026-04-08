@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Infrastructure.Presale.Checkout
 {
-    internal sealed class PresaleDbContext : DbContext
+    internal sealed class PresaleDbContext : DbContext, IPresaleDbContext
     {
         public DbSet<CartLine> CartLines => Set<CartLine>();
         public DbSet<SoftReservation> SoftReservations => Set<SoftReservation>();

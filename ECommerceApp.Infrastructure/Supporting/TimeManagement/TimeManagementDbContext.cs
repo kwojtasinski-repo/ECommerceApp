@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
 {
-    public class TimeManagementDbContext : DbContext
+    internal sealed class TimeManagementDbContext : DbContext, ITimeManagementDbContext
     {
         public DbSet<ScheduledJob> ScheduledJobs => Set<ScheduledJob>();
         public DbSet<DeferredJobInstance> DeferredJobQueue => Set<DeferredJobInstance>();

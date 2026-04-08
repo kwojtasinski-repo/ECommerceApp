@@ -5,7 +5,7 @@
 > For confirmed bugs see [`.github/context/known-issues.md`](./known-issues.md).
 > For planned work see [`docs/roadmap/README.md`](../docs/roadmap/README.md).
 
-*Last updated: 2026-06-07 (Current session: Communication BC implemented — 7 handlers (`OrderPlaced`, `OrderCancelled`, `OrderRequiresAttention`, `PaymentConfirmed`, `PaymentExpired`, `RefundApproved`, `RefundRejected`) + `INotificationService` + `LoggingNotificationService` stub + `IOrderUserResolver` port + `NullOrderUserResolver` + `Extensions.cs` + 14 unit tests + `App_Communication` architecture test. ADR-0018 Accepted. `DependencyInjection.cs` wired. Previous: `OrderProductSnapshot.ImageId` — renamed column `ImageUrl→ImageId`, retyped `nvarchar(2048)→int`, EF migration with data conversion. KI-009 added. 1024/1024 total tests passing.)*
+*Last updated: 2026-06-07 (Current session: ADR-0013 implemented — per-BC DbContext interfaces for all 10 BCs. 10 `IXxxDbContext` interfaces created. 5 remaining `public` DbContexts flipped to `internal sealed`. All 27 repositories + `SpecialEventCache` + `ImageRepository` switched to interface injection. DI aliases registered in all 10 `Extensions.cs`. `DeferredJobPollerService` + `JobDispatcherService` updated (step 6). Build ✅ 1062/1066 tests passing (4 pre-existing `ImageControllerTests` flakes unrelated to this change). Previous: Communication BC implemented — 7 handlers + `INotificationService` + 14 unit tests + ADR-0018 Accepted.)*
 
 ---
 
@@ -73,8 +73,8 @@ Only the atomic switch (controller migration + remove legacy code) remains.
 2. **Sales/Coupons Slice 2** (ADR-0016 §9) — ✅ **Switch complete**; Domain ✅ Application ✅ (rules engine, 15 evaluators + auto-injected CouponOversizeGuard = 16 total, contracts, workflow builder) Infrastructure ✅ (5 adapters/repos: StockAvailabilityChecker, CompletedOrderCounter, SpecialEventCache, CouponApplicationRecordRepository, NullRuntimeCouponSource); **design amendments completed** (§10): CouponOversizeGuard — always-on constraint rule with per-coupon `BypassOversizeGuard` override (no global toggle), Catalog→Coupons name sync (3 messages: ProductNameChanged, CategoryNameChanged, TagNameChanged + 3 handlers + IScopeTargetRepository); **stacking strategy implemented** in `ApplyCouponAsync` (Rule A: fixed-value guard vs `OriginalTotal`, Rule B: `effectivePrice` fail-fast + reduction cap, `OrderPriceAdjusted.NewPrice` multi-coupon fix); **dead code cleanup**: `AddCouponAsync` removed from `ICouponService`/`CouponService`; **atomic switch done** — controller in `Areas/Sales`, DI wired, `IDbContextMigrator<CouponsDbContext>` registered, DB migration auto-applies, no legacy code remains. 44 unit tests passing.
 3. **Sales/Fulfillment Slice 2** (ADR-0017 §11) — ✅ **Switch live** — ShipmentController deployed to Areas/Sales, full shipment lifecycle UI (create/dispatch/deliver/fail). Domain ✅ Application ✅ Infrastructure ✅ Web ✅
 4. **Supporting/Communication BC** — ✅ unblocked (Fulfillment Slice 1 + Coupons Slice 1 both live)
-5. **Backoffice BC** — blocked by ADR-0013 (per-BC DbContext interfaces); gated by ~80% BC completion
-6. **Per-BC DbContext interfaces** (ADR-0013) — gate: ~80–100% BC implementations complete
+5. **Backoffice BC** — ✅ **unblocked** (ADR-0013 complete)
+6. **Per-BC DbContext interfaces** (ADR-0013) — ✅ **DONE** — 10 interfaces, 27 repos updated, DI aliases registered, background services updated
 
 ---
 

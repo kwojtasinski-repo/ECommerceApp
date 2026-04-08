@@ -9,9 +9,9 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Repositories
 {
     internal sealed class CartLineRepository : ICartLineRepository
     {
-        private readonly PresaleDbContext _context;
+        private readonly IPresaleDbContext _context;
 
-        public CartLineRepository(PresaleDbContext context)
+        public CartLineRepository(IPresaleDbContext context)
         {
             _context = context;
         }

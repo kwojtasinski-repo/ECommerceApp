@@ -9,9 +9,9 @@ namespace ECommerceApp.Infrastructure.Sales.Fulfillment.Repositories
 {
     internal sealed class ShipmentRepository : IShipmentRepository
     {
-        private readonly FulfillmentDbContext _context;
+        private readonly IFulfillmentDbContext _context;
 
-        public ShipmentRepository(FulfillmentDbContext context)
+        public ShipmentRepository(IFulfillmentDbContext context)
         {
             _context = context;
         }

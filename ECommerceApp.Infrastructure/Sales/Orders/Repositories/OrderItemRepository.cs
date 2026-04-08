@@ -9,9 +9,9 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
 {
     internal sealed class OrderItemRepository : IOrderItemRepository
     {
-        private readonly OrdersDbContext _context;
+        private readonly IOrdersDbContext _context;
 
-        public OrderItemRepository(OrdersDbContext context)
+        public OrderItemRepository(IOrdersDbContext context)
         {
             _context = context;
         }

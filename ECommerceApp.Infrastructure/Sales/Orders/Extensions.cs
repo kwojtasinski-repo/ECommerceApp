@@ -17,6 +17,8 @@ namespace ECommerceApp.Infrastructure.Sales.Orders
             services.AddDbContext<OrdersDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
+            services.AddScoped<IOrdersDbContext>(sp => sp.GetRequiredService<OrdersDbContext>());
+
             services.AddScoped<IDbContextMigrator, DbContextMigrator<OrdersDbContext>>();
 
             services.AddScoped<IOrderRepository, OrderRepository>();

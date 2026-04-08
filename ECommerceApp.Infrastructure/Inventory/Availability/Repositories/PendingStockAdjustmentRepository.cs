@@ -11,9 +11,9 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
 {
     internal sealed class PendingStockAdjustmentRepository : IPendingStockAdjustmentRepository
     {
-        private readonly AvailabilityDbContext _context;
+        private readonly IAvailabilityDbContext _context;
 
-        public PendingStockAdjustmentRepository(AvailabilityDbContext context)
+        public PendingStockAdjustmentRepository(IAvailabilityDbContext context)
         {
             _context = context;
         }

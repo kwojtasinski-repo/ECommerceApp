@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Infrastructure.Sales.Payments
 {
-    internal sealed class PaymentsDbContext : DbContext
+    internal sealed class PaymentsDbContext : DbContext, IPaymentsDbContext
     {
         public DbSet<Payment> Payments => Set<Payment>();
 

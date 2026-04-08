@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Infrastructure.Sales.Orders
 {
-    internal sealed class OrdersDbContext : DbContext
+    internal sealed class OrdersDbContext : DbContext, IOrdersDbContext
     {
         public DbSet<Order> Orders => Set<Order>();
         public DbSet<OrderItem> OrderItems => Set<OrderItem>();

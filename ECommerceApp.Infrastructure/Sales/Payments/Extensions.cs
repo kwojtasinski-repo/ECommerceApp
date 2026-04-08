@@ -14,6 +14,8 @@ namespace ECommerceApp.Infrastructure.Sales.Payments
             services.AddDbContext<PaymentsDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
+            services.AddScoped<IPaymentsDbContext>(sp => sp.GetRequiredService<PaymentsDbContext>());
+
             services.AddScoped<IDbContextMigrator, DbContextMigrator<PaymentsDbContext>>();
             services.AddScoped<IPaymentRepository, PaymentRepository>();
 

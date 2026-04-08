@@ -8,9 +8,9 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Repositories
 {
     internal sealed class UserProfileRepository : IUserProfileRepository
     {
-        private readonly UserProfileDbContext _context;
+        private readonly IUserProfileDbContext _context;
 
-        public UserProfileRepository(UserProfileDbContext context)
+        public UserProfileRepository(IUserProfileDbContext context)
         {
             _context = context;
         }
@@ -39,7 +39,9 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Repositories
             // Tracked entities: DetectChanges at SaveChangesAsync handles scalar and owned-entity changes.
             // Fallback for detached entities (e.g. scalar-only updates via an untracked load).
             if (_context.Entry(profile).State == EntityState.Detached)
+            {
                 _context.UserProfiles.Update(profile);
+            }
             await _context.SaveChangesAsync();
         }
 

@@ -19,6 +19,8 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout
             services.AddDbContext<PresaleDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
+            services.AddScoped<IPresaleDbContext>(sp => sp.GetRequiredService<PresaleDbContext>());
+
             services.AddScoped<IDbContextMigrator, DbContextMigrator<PresaleDbContext>>();
 
             return services

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Infrastructure.Supporting.Currencies
 {
-    public class CurrencyDbContext : DbContext
+    internal sealed class CurrencyDbContext : DbContext, ICurrencyDbContext
     {
         public DbSet<Currency> Currencies => Set<Currency>();
         public DbSet<CurrencyRate> CurrencyRates => Set<CurrencyRate>();

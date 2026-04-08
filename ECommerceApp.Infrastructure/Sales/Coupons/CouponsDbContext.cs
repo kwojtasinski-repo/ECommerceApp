@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Infrastructure.Sales.Coupons
 {
-    internal sealed class CouponsDbContext : DbContext
+    internal sealed class CouponsDbContext : DbContext, ICouponsDbContext
     {
         public DbSet<Coupon> Coupons => Set<Coupon>();
         public DbSet<CouponUsed> CouponUsed => Set<CouponUsed>();

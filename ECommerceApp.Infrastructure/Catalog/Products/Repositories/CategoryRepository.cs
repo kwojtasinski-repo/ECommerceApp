@@ -9,9 +9,9 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
 {
     internal sealed class CategoryRepository : ICategoryRepository
     {
-        private readonly CatalogDbContext _context;
+        private readonly ICatalogDbContext _context;
 
-        public CategoryRepository(CatalogDbContext context)
+        public CategoryRepository(ICatalogDbContext context)
         {
             _context = context;
         }

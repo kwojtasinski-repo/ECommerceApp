@@ -122,7 +122,7 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
         {
             try
             {
-                var dbContext = scope.ServiceProvider.GetRequiredService<TimeManagementDbContext>();
+                var dbContext = scope.ServiceProvider.GetRequiredService<ITimeManagementDbContext>();
 
                 // For recurring / manual jobs: update LastRunAt / NextRunAt on ScheduledJob
                 if (trigger.Source != JobTriggerSource.Deferred)

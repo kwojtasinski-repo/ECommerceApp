@@ -8,9 +8,9 @@ namespace ECommerceApp.Infrastructure.Supporting.Currencies.Repositories
 {
     internal sealed class CurrencyRepository : ICurrencyRepository
     {
-        private readonly CurrencyDbContext _context;
+        private readonly ICurrencyDbContext _context;
 
-        public CurrencyRepository(CurrencyDbContext context)
+        public CurrencyRepository(ICurrencyDbContext context)
         {
             _context = context;
         }

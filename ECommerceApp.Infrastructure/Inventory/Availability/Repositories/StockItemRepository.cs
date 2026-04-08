@@ -11,9 +11,9 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
 {
     internal sealed class StockItemRepository : IStockItemRepository
     {
-        private readonly AvailabilityDbContext _context;
+        private readonly IAvailabilityDbContext _context;
 
-        public StockItemRepository(AvailabilityDbContext context)
+        public StockItemRepository(IAvailabilityDbContext context)
         {
             _context = context;
         }

@@ -17,6 +17,8 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons
             services.AddDbContext<CouponsDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
+            services.AddScoped<ICouponsDbContext>(sp => sp.GetRequiredService<CouponsDbContext>());
+
             services.AddScoped<IDbContextMigrator, DbContextMigrator<CouponsDbContext>>();
             services.AddScoped<ICouponRepository, CouponRepository>();
             services.AddScoped<ICouponUsedRepository, CouponUsedRepository>();

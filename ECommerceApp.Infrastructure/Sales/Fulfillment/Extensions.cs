@@ -16,6 +16,8 @@ namespace ECommerceApp.Infrastructure.Sales.Fulfillment
             services.AddDbContext<FulfillmentDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
+            services.AddScoped<IFulfillmentDbContext>(sp => sp.GetRequiredService<FulfillmentDbContext>());
+
             services.AddScoped<IDbContextMigrator, DbContextMigrator<FulfillmentDbContext>>();
             services.AddScoped<IRefundRepository, RefundRepository>();
             services.AddScoped<IShipmentRepository, ShipmentRepository>();

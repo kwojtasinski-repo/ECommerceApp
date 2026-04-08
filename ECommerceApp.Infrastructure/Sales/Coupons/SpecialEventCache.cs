@@ -10,11 +10,11 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons
 {
     internal sealed class SpecialEventCache : ISpecialEventCache
     {
-        private readonly CouponsDbContext _context;
+        private readonly ICouponsDbContext _context;
         private readonly IMemoryCache _cache;
         private static readonly TimeSpan CacheDuration = TimeSpan.FromMinutes(10);
 
-        public SpecialEventCache(CouponsDbContext context, IMemoryCache cache)
+        public SpecialEventCache(ICouponsDbContext context, IMemoryCache cache)
         {
             _context = context;
             _cache = cache;

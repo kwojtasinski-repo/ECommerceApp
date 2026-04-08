@@ -7,11 +7,11 @@ using System.Threading.Tasks;
 
 namespace ECommerceApp.Infrastructure.Repositories
 {
-    public class ImageRepository : IImageRepository
+    internal class ImageRepository : IImageRepository
     {
-        private readonly CatalogDbContext _context;
+        private readonly ICatalogDbContext _context;
 
-        public ImageRepository(CatalogDbContext context)
+        public ImageRepository(ICatalogDbContext context)
         {
             _context = context;
         }

@@ -18,6 +18,8 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability
             services.AddDbContext<AvailabilityDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
+            services.AddScoped<IAvailabilityDbContext>(sp => sp.GetRequiredService<AvailabilityDbContext>());
+
             services.AddScoped<IDbContextMigrator, DbContextMigrator<AvailabilityDbContext>>();
 
             return services

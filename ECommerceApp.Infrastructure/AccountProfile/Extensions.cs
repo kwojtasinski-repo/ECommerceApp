@@ -14,6 +14,8 @@ namespace ECommerceApp.Infrastructure.AccountProfile
             services.AddDbContext<UserProfileDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
+            services.AddScoped<IUserProfileDbContext>(sp => sp.GetRequiredService<UserProfileDbContext>());
+
             services.AddScoped<IDbContextMigrator, DbContextMigrator<UserProfileDbContext>>();
 
             return services

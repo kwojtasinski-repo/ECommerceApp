@@ -10,9 +10,9 @@ namespace ECommerceApp.Infrastructure.Sales.Payments.Repositories
 {
     internal sealed class PaymentRepository : IPaymentRepository
     {
-        private readonly PaymentsDbContext _context;
+        private readonly IPaymentsDbContext _context;
 
-        public PaymentRepository(PaymentsDbContext context)
+        public PaymentRepository(IPaymentsDbContext context)
         {
             _context = context;
         }

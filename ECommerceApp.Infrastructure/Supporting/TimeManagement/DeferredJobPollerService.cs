@@ -44,7 +44,7 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
             try
             {
                 using var scope = _scopeFactory.CreateScope();
-                var context = scope.ServiceProvider.GetRequiredService<TimeManagementDbContext>();
+                var context = scope.ServiceProvider.GetRequiredService<ITimeManagementDbContext>();
                 var now = DateTime.UtcNow;
 
                 // A4: fetch both due-pending rows and zombie rows (Running with expired lock)

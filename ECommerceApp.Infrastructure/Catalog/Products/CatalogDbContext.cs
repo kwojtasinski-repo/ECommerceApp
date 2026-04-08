@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Catalog.Products
 {
-    public class CatalogDbContext : DbContext
+    internal sealed class CatalogDbContext : DbContext, ICatalogDbContext
     {
         public DbSet<Product> Products { get; set; }
         public DbSet<Category> Categories { get; set; }

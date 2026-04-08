@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Infrastructure.AccountProfile
 {
-    public class UserProfileDbContext : DbContext
+    internal sealed class UserProfileDbContext : DbContext, IUserProfileDbContext
     {
         public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
 

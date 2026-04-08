@@ -9,9 +9,9 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
 {
     internal sealed class ProductSnapshotRepository : IProductSnapshotRepository
     {
-        private readonly AvailabilityDbContext _context;
+        private readonly IAvailabilityDbContext _context;
 
-        public ProductSnapshotRepository(AvailabilityDbContext context)
+        public ProductSnapshotRepository(IAvailabilityDbContext context)
         {
             _context = context;
         }

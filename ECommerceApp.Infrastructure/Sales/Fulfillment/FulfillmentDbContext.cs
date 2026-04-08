@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Infrastructure.Sales.Fulfillment
 {
-    internal sealed class FulfillmentDbContext : DbContext
+    internal sealed class FulfillmentDbContext : DbContext, IFulfillmentDbContext
     {
         public DbSet<Refund> Refunds => Set<Refund>();
         public DbSet<Shipment> Shipments => Set<Shipment>();

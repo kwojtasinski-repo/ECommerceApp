@@ -10,10 +10,10 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Repositories
 {
     internal sealed class StockSnapshotRepository : IStockSnapshotRepository
     {
-        private readonly PresaleDbContext _context;
+        private readonly IPresaleDbContext _context;
         private const int BatchSize = 200;
 
-        public StockSnapshotRepository(PresaleDbContext context)
+        public StockSnapshotRepository(IPresaleDbContext context)
         {
             _context = context;
         }

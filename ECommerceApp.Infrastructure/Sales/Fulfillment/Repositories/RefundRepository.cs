@@ -9,9 +9,9 @@ namespace ECommerceApp.Infrastructure.Sales.Fulfillment.Repositories
 {
     internal sealed class RefundRepository : IRefundRepository
     {
-        private readonly FulfillmentDbContext _context;
+        private readonly IFulfillmentDbContext _context;
 
-        public RefundRepository(FulfillmentDbContext context)
+        public RefundRepository(IFulfillmentDbContext context)
         {
             _context = context;
         }

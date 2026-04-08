@@ -9,9 +9,9 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
 {
     internal sealed class ProductTagRepository : IProductTagRepository
     {
-        private readonly CatalogDbContext _context;
+        private readonly ICatalogDbContext _context;
 
-        public ProductTagRepository(CatalogDbContext context)
+        public ProductTagRepository(ICatalogDbContext context)
         {
             _context = context;
         }

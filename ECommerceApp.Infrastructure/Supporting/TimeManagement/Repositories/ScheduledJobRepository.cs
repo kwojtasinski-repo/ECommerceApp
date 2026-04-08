@@ -10,9 +10,9 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement.Repositories
 {
     internal sealed class ScheduledJobRepository : IScheduledJobRepository
     {
-        private readonly TimeManagementDbContext _context;
+        private readonly ITimeManagementDbContext _context;
 
-        public ScheduledJobRepository(TimeManagementDbContext context)
+        public ScheduledJobRepository(ITimeManagementDbContext context)
         {
             _context = context;
         }

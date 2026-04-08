@@ -10,9 +10,9 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement.Repositories
 {
     internal sealed class DeferredJobInstanceRepository : IDeferredJobInstanceRepository
     {
-        private readonly TimeManagementDbContext _context;
+        private readonly ITimeManagementDbContext _context;
 
-        public DeferredJobInstanceRepository(TimeManagementDbContext context)
+        public DeferredJobInstanceRepository(ITimeManagementDbContext context)
         {
             _context = context;
         }

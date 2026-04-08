@@ -9,9 +9,9 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons.Repositories
 {
     internal sealed class CouponRepository : ICouponRepository
     {
-        private readonly CouponsDbContext _context;
+        private readonly ICouponsDbContext _context;
 
-        public CouponRepository(CouponsDbContext context)
+        public CouponRepository(ICouponsDbContext context)
         {
             _context = context;
         }

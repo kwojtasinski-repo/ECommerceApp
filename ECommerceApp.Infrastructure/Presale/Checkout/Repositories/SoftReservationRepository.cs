@@ -9,9 +9,9 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Repositories
 {
     internal sealed class SoftReservationRepository : ISoftReservationRepository
     {
-        private readonly PresaleDbContext _context;
+        private readonly IPresaleDbContext _context;
 
-        public SoftReservationRepository(PresaleDbContext context)
+        public SoftReservationRepository(IPresaleDbContext context)
         {
             _context = context;
         }

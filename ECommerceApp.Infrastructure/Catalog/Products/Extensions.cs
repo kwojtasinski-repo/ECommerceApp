@@ -16,6 +16,8 @@ namespace ECommerceApp.Infrastructure.Catalog.Products
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"))
                        .AddInterceptors(sp.GetRequiredService<SoftDeleteInterceptor>()));
 
+            services.AddScoped<ICatalogDbContext>(sp => sp.GetRequiredService<CatalogDbContext>());
+
             services.AddScoped<IDbContextMigrator, DbContextMigrator<CatalogDbContext>>();
 
             return services

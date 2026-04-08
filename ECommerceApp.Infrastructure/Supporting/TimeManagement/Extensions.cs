@@ -17,7 +17,7 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
             services.AddDbContext<TimeManagementDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
-            services
+            services.AddScoped<ITimeManagementDbContext>(sp => sp.GetRequiredService<TimeManagementDbContext>())
                 .AddScoped<IScheduledJobRepository, ScheduledJobRepository>()
                 .AddScoped<IDeferredJobInstanceRepository, DeferredJobInstanceRepository>()
                 .AddScoped<IJobExecutionRepository, JobExecutionRepository>();

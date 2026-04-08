@@ -13,6 +13,8 @@ namespace ECommerceApp.Infrastructure.Supporting.Currencies
             services.AddDbContext<CurrencyDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
+            services.AddScoped<ICurrencyDbContext>(sp => sp.GetRequiredService<CurrencyDbContext>());
+
             services.AddScoped<IDbContextMigrator, DbContextMigrator<CurrencyDbContext>>();
 
             return services
