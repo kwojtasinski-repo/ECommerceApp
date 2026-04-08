@@ -8,12 +8,12 @@ namespace ECommerceApp.Application.Catalog.Images.Services
     internal sealed class UrlImageResolver : IUrlImageResolver
     {
         private readonly IImageRepository _imageRepository;
-        private readonly IFileStore _fileStore;
+        private readonly IFileStoreProvider _fileStoreProvider;
 
-        public UrlImageResolver(IImageRepository imageRepository, IFileStore fileStore)
+        public UrlImageResolver(IImageRepository imageRepository, IFileStoreProvider fileStoreProvider)
         {
             _imageRepository = imageRepository;
-            _fileStore = fileStore;
+            _fileStoreProvider = fileStoreProvider;
         }
 
         public async Task<ImageFileResult?> ResolveAsync(int imageId)
@@ -24,7 +24,7 @@ namespace ECommerceApp.Application.Catalog.Images.Services
                 return null;
             }
 
-            var bytes = _fileStore.ReadFile(image.FileName.Value);
+            var bytes = _fileStoreProvider.ReadFile(image.FileSource, image.Provider);
             var ext = Path.GetExtension(image.FileName.Value).ToLower();
             var contentType = ext switch
             {
@@ -34,7 +34,7 @@ namespace ECommerceApp.Application.Catalog.Images.Services
                 ".webp"           => "image/webp",
                 _                 => "application/octet-stream"
             };
-            return new ImageFileResult(bytes, contentType, Path.GetFileName(image.FileName.Value));
+            return new ImageFileResult(bytes, contentType, image.FileName.Value);
         }
     }
 }

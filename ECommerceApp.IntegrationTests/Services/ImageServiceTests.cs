@@ -6,7 +6,7 @@ using Xunit;
 
 namespace ECommerceApp.IntegrationTests.Services
 {
-    public class ImageServiceTests : BaseTest<IImageService>
+    public class ImageServiceTests : BcBaseTest<IImageService>
     {
         [Fact]
         public async Task given_valid_item_id_should_return_images()

@@ -20,14 +20,19 @@ namespace ECommerceApp.Infrastructure.Messaging
         public async Task PublishAsync(IMessage message)
         {
             var handlerType = typeof(IMessageHandler<>).MakeGenericType(message.GetType());
-            var handler = _serviceProvider.GetService(handlerType);
-            if (handler is null)
+            var handlers = _serviceProvider.GetServices(handlerType);
+            var dispatched = false;
+
+            foreach (var handler in handlers)
             {
-                _logger.LogWarning("No handler registered for message type {MessageType}", message.GetType().Name);
-                return;
+                await ((dynamic)handler).HandleAsync((dynamic)message);
+                dispatched = true;
             }
 
-            await ((dynamic)handler).HandleAsync((dynamic)message);
+            if (!dispatched)
+            {
+                _logger.LogWarning("No handler registered for message type {MessageType}", message.GetType().Name);
+            }
         }
     }
 }

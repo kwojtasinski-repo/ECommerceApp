@@ -17,7 +17,7 @@ namespace ECommerceApp.Domain.Catalog.Products
         public CategoryId CategoryId { get; private set; } = default!;
 
         private readonly List<Image> _images = new();
-        public IReadOnlyList<Image> Images => _images.AsReadOnly();
+        public IReadOnlyList<Image> Images => _images.Where(i => !i.IsDeleted).ToList().AsReadOnly();
 
         private readonly List<ProductTag> _productTags = new();
         public IReadOnlyList<ProductTag> ProductTags => _productTags.AsReadOnly();
@@ -78,25 +78,26 @@ namespace ECommerceApp.Domain.Catalog.Products
             CategoryId = new CategoryId(categoryId);
         }
 
-        public void AddImage(string fileName, int? imageId = null)
+        public void AddImage(string fileName, string fileSource, string provider, int? imageId = null)
         {
-            if (_images.Count >= 5)
+            var activeImages = _images.Where(i => !i.IsDeleted).ToList();
+            if (activeImages.Count >= 5)
             {
                 throw new DomainException("A product can have at most 5 images.");
             }
 
-            var sortOrder = _images.Count;
-            var isMain = _images.Count == 0;
-            _images.Add(Image.Create(Id, fileName, isMain, sortOrder, imageId.HasValue ? new ImageId(imageId.Value) : null));
+            var sortOrder = activeImages.Count;
+            var isMain = activeImages.Count == 0;
+            _images.Add(Image.Create(Id, fileName, fileSource, provider, isMain, sortOrder, imageId.HasValue ? new ImageId(imageId.Value) : null));
         }
 
         public void SetMainImage(int imageId)
         {
-            var target = _images.FirstOrDefault(i => i.Id == new ImageId(imageId));
+            var target = _images.FirstOrDefault(i => i.Id == new ImageId(imageId) && !i.IsDeleted);
             if (target is null)
                 throw new DomainException($"Image '{imageId}' not found on this product.");
 
-            foreach (var img in _images)
+            foreach (var img in _images.Where(i => !i.IsDeleted))
                 img.ClearMain();
 
             target.SetAsMain();
@@ -104,18 +105,19 @@ namespace ECommerceApp.Domain.Catalog.Products
 
         public bool RemoveImage(int imageId)
         {
-            var image = _images.FirstOrDefault(i => i.Id == new ImageId(imageId));
+            var image = _images.FirstOrDefault(i => i.Id == new ImageId(imageId) && !i.IsDeleted);
             if (image is null)
                 return false;
 
             var wasMain = image.IsMain;
-            _images.Remove(image);
+            image.SoftDelete();
 
-            if (wasMain && _images.Count > 0)
-                _images[0].SetAsMain();
+            var activeImages = _images.Where(i => !i.IsDeleted).ToList();
+            if (wasMain && activeImages.Count > 0)
+                activeImages[0].SetAsMain();
 
-            for (var i = 0; i < _images.Count; i++)
-                _images[i].Reorder(i);
+            for (var i = 0; i < activeImages.Count; i++)
+                activeImages[i].Reorder(i);
 
             return true;
         }
@@ -124,12 +126,14 @@ namespace ECommerceApp.Domain.Catalog.Products
         {
             if (orderedImageIds is null || orderedImageIds.Count == 0)
                 throw new DomainException("Image order list cannot be empty.");
-            if (orderedImageIds.Count != _images.Count)
+
+            var activeImages = _images.Where(i => !i.IsDeleted).ToList();
+            if (orderedImageIds.Count != activeImages.Count)
                 throw new DomainException("Image order list must contain all product image IDs.");
 
             for (var i = 0; i < orderedImageIds.Count; i++)
             {
-                var image = _images.FirstOrDefault(img => img.Id == new ImageId(orderedImageIds[i]));
+                var image = activeImages.FirstOrDefault(img => img.Id == new ImageId(orderedImageIds[i]));
                 if (image is null)
                     throw new DomainException($"Image '{orderedImageIds[i]}' not found on this product.");
                 image.Reorder(i);

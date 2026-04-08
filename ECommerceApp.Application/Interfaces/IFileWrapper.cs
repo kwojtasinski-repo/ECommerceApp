@@ -6,6 +6,7 @@ namespace ECommerceApp.Application.Interfaces
     public interface IFileWrapper
     {
         byte[] ReadFile(string path);
+        Task<byte[]> ReadFileAsync(string path);
         void WriteAllBytes(string outputFile, byte[] content);
         Task<string> WriteFileAsync(IFormFile file, string outputFile);
         void DeleteFile(string path);

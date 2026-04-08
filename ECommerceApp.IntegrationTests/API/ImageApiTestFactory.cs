@@ -114,9 +114,20 @@ namespace ECommerceApp.IntegrationTests.API
         private static readonly byte[] _testBytes = { 0xFF, 0xD8, 0xFF, 0xE0 };
 
         public byte[] ReadFile(string path) => _testBytes;
+        
+        public Task<byte[]> ReadFileAsync(string path) => Task.FromResult(_testBytes);
 
-        public FileDirectoryPOCO WriteFile(IFormFile file, string path) =>
-            new FileDirectoryPOCO { SourcePath = Path.Combine(path, $"{Guid.NewGuid()}_test.jpg"), Name = "test" };
+        public Task<FileDirectoryPOCO> WriteFileAsync(IFormFile file)
+        {
+            var path = Path.Combine(Directory.GetCurrentDirectory(), "Upload", "Images");
+            return WriteFileAsync(file, path);
+        }
+
+        public Task<FileDirectoryPOCO> WriteFileAsync(IFormFile file, string path)
+        {
+            var sourcePath = Path.Combine(path, $"{Guid.NewGuid()}_test.jpg");
+            return Task.FromResult(new FileDirectoryPOCO { SourcePath = sourcePath, Name = "test.jpg" });
+        }
 
         public FileDirectoryPOCO WriteFile(string fileName, byte[] file, string path) =>
             new FileDirectoryPOCO { SourcePath = Path.Combine(path, fileName), Name = Path.GetFileName(fileName) };
@@ -124,8 +135,15 @@ namespace ECommerceApp.IntegrationTests.API
         public string SafeWriteFile(byte[] content, string sourceFileName, string path) =>
             Path.Combine(path, sourceFileName);
 
-        public ICollection<FileDirectoryPOCO> WriteFiles(ICollection<IFormFile> files, string path) =>
-            files.Select(f => WriteFile(f, path)).ToList();
+        public ICollection<FileDirectoryPOCO> WriteFiles(ICollection<IFormFile> files, string path)
+        {
+            var path2 = path;
+            return files.Select(f =>
+            {
+                var sourcePath = Path.Combine(path2, $"{Guid.NewGuid()}_test.jpg");
+                return new FileDirectoryPOCO { SourcePath = sourcePath, Name = "test.jpg" };
+            }).ToList();
+        }
 
         public string GetFileExtenstion(string file) => Path.GetExtension(file);
 

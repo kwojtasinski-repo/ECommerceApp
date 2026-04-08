@@ -8,6 +8,7 @@ namespace ECommerceApp.Application.FileManager
         public static IServiceCollection AddFilesStore(this IServiceCollection services)
         {
             services.AddTransient<IFileStore, FileStore>();
+            services.AddTransient<IFileStoreProvider, FileStoreProvider>();
             services.AddTransient<IFileWrapper, FileWrapper>();
             services.AddTransient<IDirectoryWrapper, DirectoryWrapper>();
             return services;

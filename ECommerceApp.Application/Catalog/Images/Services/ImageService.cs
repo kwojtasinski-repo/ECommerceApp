@@ -6,7 +6,6 @@ using ECommerceApp.Domain.Catalog.Products;
 using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,15 +14,14 @@ namespace ECommerceApp.Application.Catalog.Images.Services
 {
     internal sealed class ImageService : IImageService
     {
-        private readonly IFileStore _fileStore;
+        private readonly IFileStoreProvider _fileStoreProvider;
         private readonly IImageRepository _imageRepository;
         private readonly IProductRepository _productRepository;
-        private static readonly string UPLOAD_DIR = Path.Combine(Directory.GetCurrentDirectory(), "Upload", "Images");
 
-        public ImageService(IImageRepository repo, IFileStore fileStore, IProductRepository productRepository)
+        public ImageService(IImageRepository repo, IFileStoreProvider fileStoreProvider, IProductRepository productRepository)
         {
             _imageRepository = repo;
-            _fileStore = fileStore;
+            _fileStoreProvider = fileStoreProvider;
             _productRepository = productRepository;
         }
 
@@ -63,8 +61,8 @@ namespace ECommerceApp.Application.Catalog.Images.Services
 
             ValidImageCount(product, 1);
 
-            var fileDir = _fileStore.WriteFile(objectVm.Images.First(), UPLOAD_DIR);
-            product.AddImage(fileDir.SourcePath);
+            var fileDir = await _fileStoreProvider.WriteFileAsync(objectVm.Images.First(), ImagesConstants.FileProvider.Local);
+            product.AddImage(fileDir.Name, fileDir.SourcePath, ImagesConstants.FileProvider.Local);
             await _productRepository.UpdateAsync(product);
 
             return product.Images.Last().Id?.Value ?? 0;
@@ -90,7 +88,6 @@ namespace ECommerceApp.Application.Catalog.Images.Services
             }
 
             await _productRepository.UpdateAsync(product);
-            _fileStore.DeleteFile(image.FileName.Value);
             return true;
         }
 
@@ -110,7 +107,7 @@ namespace ECommerceApp.Application.Catalog.Images.Services
 
         public async Task<List<GetImageVm>> GetAll(string searchName)
             => (await _imageRepository.GetAllImages())
-                .Where(i => Path.GetFileName(i.FileName.Value).Contains(searchName))
+                .Where(i => i.FileName.Value.Contains(searchName))
                 .Select(MapToGetImageVm)
                 .ToList();
 
@@ -139,18 +136,18 @@ namespace ECommerceApp.Application.Catalog.Images.Services
 
             ValidImageCount(product, imageVm.Files.Count);
 
-            var writtenPaths = new List<string>();
+            var writtenFileNames = new List<string>();
             foreach (var file in imageVm.Files)
             {
-                var fileDir = _fileStore.WriteFile(file, UPLOAD_DIR);
-                product.AddImage(fileDir.SourcePath);
-                writtenPaths.Add(fileDir.SourcePath);
+                var fileDir = await _fileStoreProvider.WriteFileAsync(file, ImagesConstants.FileProvider.Local);
+                product.AddImage(fileDir.Name, fileDir.SourcePath, ImagesConstants.FileProvider.Local);
+                writtenFileNames.Add(fileDir.Name);
             }
 
             await _productRepository.UpdateAsync(product);
 
             return product.Images
-                .Where(i => writtenPaths.Contains(i.FileName.Value))
+                .Where(i => writtenFileNames.Contains(i.FileName.Value))
                 .Select(i => i.Id?.Value ?? 0)
                 .ToList();
         }
@@ -163,8 +160,8 @@ namespace ECommerceApp.Application.Catalog.Images.Services
             {
                 Id = image.Id.Value,
                 ItemId = image.ProductId.Value,
-                Name = Path.GetFileName(image.FileName.Value),
-                ImageSource = Convert.ToBase64String(_fileStore.ReadFile(image.FileName.Value))
+                Name = image.FileName.Value,
+                ImageSource = Convert.ToBase64String(_fileStoreProvider.ReadFile(image.FileSource, image.Provider))
             };
 
         private void ValidImages(ICollection<IFormFile> images)
@@ -191,7 +188,7 @@ namespace ECommerceApp.Application.Catalog.Images.Services
                     }));
                 }
 
-                var extension = _fileStore.GetFileExtenstion(fileName) ?? string.Empty;
+                var extension = _fileStoreProvider.GetFileExtenstion(fileName, ImagesConstants.FileProvider.Local) ?? string.Empty;
                 if (!ImageConstraints.AllowedExtensions.Contains(extension))
                 {
                     var sb = new StringBuilder();

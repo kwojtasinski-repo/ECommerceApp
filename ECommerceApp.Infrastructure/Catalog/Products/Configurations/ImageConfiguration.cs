@@ -21,6 +21,14 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Configurations
                    .HasMaxLength(500)
                    .IsRequired();
 
+            builder.Property(i => i.FileSource)
+                   .HasMaxLength(1000)
+                   .IsRequired();
+
+            builder.Property(i => i.Provider)
+                   .HasMaxLength(100)
+                   .IsRequired();
+
             builder.Property(i => i.IsMain)
                    .IsRequired()
                    .HasDefaultValue(false);
@@ -28,6 +36,10 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Configurations
             builder.Property(i => i.SortOrder)
                    .IsRequired()
                    .HasDefaultValue(0);
+
+            builder.Property(i => i.IsDeleted)
+                   .IsRequired()
+                   .HasDefaultValue(false);
 
             builder.Property(i => i.ProductId)
                    .HasConversion(x => x.Value, v => new ProductId(v))

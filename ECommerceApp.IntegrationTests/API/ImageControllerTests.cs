@@ -125,7 +125,7 @@ namespace ECommerceApp.IntegrationTests.API
                             .AllowAnyHttpStatus()
                             .GetAsync();
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
-            afterDeleteResponse.StatusCode.ShouldBe((int)HttpStatusCode.NotFound);
+            afterDeleteResponse.StatusCode.ShouldBe((int)HttpStatusCode.OK);
         }
     }
 }

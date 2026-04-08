@@ -7,13 +7,23 @@ namespace ECommerceApp.Domain.Catalog.Products
     {
         public ImageId Id { get; private set; }
         public ImageFileName FileName { get; private set; } = default!;
+        public string FileSource { get; private set; } = default!;
+        public string Provider { get; private set; } = default!;
         public bool IsMain { get; private set; }
         public int SortOrder { get; private set; }
+        public bool IsDeleted { get; private set; }
         public ProductId ProductId { get; private set; } = default!;
 
         private Image() { }
 
-        public static Image Create(ProductId productId, string fileName, bool isMain, int sortOrder, ImageId imageId = null)
+        public static Image Create(
+            ProductId productId,
+            string fileName,
+            string fileSource,
+            string provider,
+            bool isMain,
+            int sortOrder,
+            ImageId imageId = null)
         {
             if (sortOrder < 0)
             {
@@ -25,8 +35,11 @@ namespace ECommerceApp.Domain.Catalog.Products
                 Id = imageId,
                 ProductId = productId,
                 FileName = new ImageFileName(fileName),
+                FileSource = fileSource ?? string.Empty,
+                Provider = provider ?? string.Empty,
                 IsMain = isMain,
-                SortOrder = sortOrder
+                SortOrder = sortOrder,
+                IsDeleted = false
             };
         }
 
@@ -48,6 +61,11 @@ namespace ECommerceApp.Domain.Catalog.Products
         internal void ClearMain()
         {
             IsMain = false;
+        }
+
+        internal void SoftDelete()
+        {
+            IsDeleted = true;
         }
     }
 }

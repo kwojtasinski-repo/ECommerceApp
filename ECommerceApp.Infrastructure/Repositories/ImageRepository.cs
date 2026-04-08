@@ -22,13 +22,13 @@ namespace ECommerceApp.Infrastructure.Repositories
 
         public async Task<List<Image>> GetAllImages()
         {
-            return await _context.Images.AsNoTracking().ToListAsync();
+            return await _context.Images.AsNoTracking().Where(i => !i.IsDeleted).ToListAsync();
         }
 
         public async Task<List<Image>> GetProductImages(int productId)
         {
             return await _context.Images.AsNoTracking()
-                .Where(i => i.ProductId == new ProductId(productId))
+                .Where(i => i.ProductId == new ProductId(productId) && !i.IsDeleted)
                 .ToListAsync();
         }
     }

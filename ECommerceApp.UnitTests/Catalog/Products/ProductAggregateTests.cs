@@ -137,7 +137,7 @@ namespace ECommerceApp.UnitTests.Catalog.Products
         {
             var product = Product.Create("Test", 10m, "Desc", 1);
 
-            product.AddImage("items/1/test.jpg");
+            product.AddImage("test.jpg", "items/1", "Local");
 
             product.Images.Should().HaveCount(1);
             product.Images[0].IsMain.Should().BeTrue();
@@ -148,9 +148,9 @@ namespace ECommerceApp.UnitTests.Catalog.Products
         public void AddImage_SecondImage_ShouldNotBeMainAndSortOrderIncremented()
         {
             var product = Product.Create("Test", 10m, "Desc", 1);
-            product.AddImage("items/1/first.jpg");
+            product.AddImage("first.jpg", "items/1", "Local");
 
-            product.AddImage("items/1/second.jpg");
+            product.AddImage("second.jpg", "items/1", "Local");
 
             product.Images[1].IsMain.Should().BeFalse();
             product.Images[1].SortOrder.Should().Be(1);
@@ -161,9 +161,9 @@ namespace ECommerceApp.UnitTests.Catalog.Products
         {
             var product = Product.Create("Test", 10m, "Desc", 1);
             for (int i = 0; i < 5; i++)
-                product.AddImage($"items/1/img{i}.jpg");
+                product.AddImage($"img{i}.jpg", "items/1", "Local");
 
-            var act = () => product.AddImage("items/1/extra.jpg");
+            var act = () => product.AddImage("extra.jpg", "items/1", "Local");
 
             act.Should().Throw<DomainException>().WithMessage("*at most 5*");
         }
@@ -182,8 +182,8 @@ namespace ECommerceApp.UnitTests.Catalog.Products
         public void RemoveImage_MainImage_ShouldPromoteFirstRemainingAsMain()
         {
             var product = Product.Create("Test", 10m, "Desc", 1);
-            product.AddImage("items/1/first.jpg", 1);
-            product.AddImage("items/1/second.jpg", 2);
+            product.AddImage("first.jpg", "items/1", "Local", 1);
+            product.AddImage("second.jpg", "items/1", "Local", 2);
             var firstId = product.Images[0].Id.Value;
 
             product.RemoveImage(firstId);
@@ -197,8 +197,8 @@ namespace ECommerceApp.UnitTests.Catalog.Products
         public void ReorderImages_WrongCount_ShouldThrowDomainException()
         {
             var product = Product.Create("Test", 10m, "Desc", 1);
-            product.AddImage("items/1/first.jpg");
-            product.AddImage("items/1/second.jpg");
+            product.AddImage("first.jpg", "items/1", "Local");
+            product.AddImage("second.jpg", "items/1", "Local");
 
             var act = () => product.ReorderImages(new[] { 0 });
 
@@ -209,7 +209,7 @@ namespace ECommerceApp.UnitTests.Catalog.Products
         public void ReorderImages_MissingImageId_ShouldThrowDomainException()
         {
             var product = Product.Create("Test", 10m, "Desc", 1);
-            product.AddImage("items/1/first.jpg");
+            product.AddImage("first.jpg", "items/1", "Local");
 
             var act = () => product.ReorderImages(new[] { 999 });
 
@@ -239,6 +239,43 @@ namespace ECommerceApp.UnitTests.Catalog.Products
 
             product.Status.Should().Be(ProductStatus.Published);
             @event.Should().NotBeNull();
+        }
+
+        [Fact]
+        public void RemoveImage_SoftDeletes_ImageNotVisibleButNotHardRemoved()
+        {
+            var product = Product.Create("Test", 10m, "Desc", 1);
+            product.AddImage("first.jpg", "items/1", "Local", 1);
+
+            var result = product.RemoveImage(1);
+
+            result.Should().BeTrue();
+            product.Images.Should().BeEmpty();
+        }
+
+        [Fact]
+        public void AddImage_AfterSoftDelete_CountsOnlyActiveImagesAgainstLimit()
+        {
+            var product = Product.Create("Test", 10m, "Desc", 1);
+            for (int i = 1; i <= 5; i++)
+                product.AddImage($"img{i}.jpg", "items/1", "Local", i);
+            product.RemoveImage(1);
+
+            product.AddImage("new.jpg", "items/1", "Local");
+
+            product.Images.Should().HaveCount(5);
+        }
+
+        [Fact]
+        public void RemoveImage_AlreadyDeleted_ReturnsFalse()
+        {
+            var product = Product.Create("Test", 10m, "Desc", 1);
+            product.AddImage("first.jpg", "items/1", "Local", 1);
+            product.RemoveImage(1);
+
+            var result = product.RemoveImage(1);
+
+            result.Should().BeFalse();
         }
     }
 }

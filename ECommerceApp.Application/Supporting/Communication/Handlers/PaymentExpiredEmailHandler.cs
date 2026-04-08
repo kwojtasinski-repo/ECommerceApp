@@ -27,11 +27,15 @@ namespace ECommerceApp.Application.Supporting.Communication.Handlers
         {
             var userId = await _userResolver.GetUserIdForOrderAsync(message.OrderId, ct);
             if (userId is null)
+            {
                 return;
+            }
 
             var toEmail = await _emailResolver.GetEmailForUserAsync(userId, ct);
             if (toEmail is null)
+            {
                 return;
+            }
 
             await _emails.SendAsync(new EmailTemplate(
                 To: toEmail,

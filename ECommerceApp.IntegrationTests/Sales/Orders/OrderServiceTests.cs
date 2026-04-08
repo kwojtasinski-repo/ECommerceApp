@@ -13,15 +13,12 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
     /// Integration tests for the new Sales/Orders BC <see cref="IOrderService"/>.
     ///
     /// Infrastructure notes:
-    /// - The legacy <c>Context</c> is replaced with an InMemory database (empty — no seed data).
-    /// - <c>OrdersDbContext</c> uses the real SQL Server connection string from
-    ///   appsettings.json / appsettings.docker.json. Tests marked [RequiresSqlServer] below
-    ///   will fail if the <c>sales.*</c> schema does not exist. Run
-    ///   <c>dotnet ef database update --context OrdersDbContext</c> before those tests.
-    /// - Guard-condition tests (CustomerNotFound, CartItemsNotFound) return before hitting
-    ///   OrdersDbContext and work in all environments.
+    /// - All DbContexts (including <c>OrdersDbContext</c>) use InMemory databases via
+    ///   <see cref="BcBaseTest{T}"/> — no SQL Server dependency.
+    /// - Guard-condition tests return before touching the DB; query tests operate on an
+    ///   empty InMemory store and assert null / empty / not-found results.
     /// </summary>
-    public class OrderServiceTests : BaseTest<IOrderService>
+    public class OrderServiceTests : BcBaseTest<IOrderService>
     {
         // ── PlaceOrderAsync — guard conditions (InMemory-safe) ────────────────
 

@@ -11,8 +11,10 @@ namespace ECommerceApp.Infrastructure.Catalog.Products
     {
         public static IServiceCollection AddCatalogInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddDbContext<CatalogDbContext>(options =>
-                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+            services.AddSingleton<SoftDeleteInterceptor>();
+            services.AddDbContext<CatalogDbContext>((sp, options) =>
+                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"))
+                       .AddInterceptors(sp.GetRequiredService<SoftDeleteInterceptor>()));
 
             services.AddScoped<IDbContextMigrator, DbContextMigrator<CatalogDbContext>>();
 

@@ -1,6 +1,7 @@
 using ECommerceApp.Domain.Catalog.Products;
 using ECommerceApp.Infrastructure.Database;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace ECommerceApp.Infrastructure.Catalog.Products
 {

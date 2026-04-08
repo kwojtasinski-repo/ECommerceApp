@@ -63,6 +63,34 @@ namespace ECommerceApp.Application.FileManager
             return bytes;
         }
 
+        public async Task<byte[]> ReadFileAsync(string path)
+        {
+            var fileInfo = new FileInfo(path);
+            var bytes = Array.Empty<byte>();
+
+            try
+            {
+                if (fileInfo.Exists)
+                {
+                    bytes = await File.ReadAllBytesAsync(path);
+                }
+            }
+            catch (IOException)
+            {
+                //the file is unavailable because it is:
+                //still being written to
+                //or being processed by another thread
+                //or does not exist (has already been processed)
+                return Array.Empty<byte>();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return bytes;
+        }
+
         public void WriteAllBytes(string outputFile, byte[] content)
         {
             File.WriteAllBytes(outputFile, content);

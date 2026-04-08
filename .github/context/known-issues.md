@@ -12,32 +12,15 @@
 
 ## High
 
-### [KI-009] No guard against deleting catalog images referenced by order item snapshots
-- **Severity**: 🔴 High (silent data loss)
-- **Location**: `ECommerceApp.Application/Catalog/Images/Services/ImageService.cs` — `Delete(int id)`
-- **Symptom**: Deleting a catalog image that is referenced by one or more `OrderItemSnapshot.ImageId` rows causes those snapshots to silently lose their image. The `GET /catalog/images/{id}` endpoint returns `404` for any affected order item detail or order detail view.
-- **Root cause**: `ImageService.Delete` has no cross-BC check. `OrderItemSnapshots` (Sales BC) stores `ImageId int?` referencing `Images` (Catalog BC). There is no FK constraint between schemas, and no application-level guard.
-- **Impact**: All historical order items whose product image has been deleted will display with no thumbnail. The data loss is silent — no error, no warning.
-- **Constraint**: Images that have ever been used in an order item snapshot **must not be deleted**. This is a business invariant: order snapshots must remain self-consistent for audit and customer history purposes.
-- **Options for the fix**:
-  1. **Soft-delete images** — add `IsDeleted bool` to `Image`; `ImageService.Delete` marks as deleted but keeps the row and file. Display URLs continue to resolve; deleted images are hidden from catalog management UI only.
-  2. **Reference-count guard** — before hard-deleting, query `OrderItemSnapshots` for any row with matching `ImageId`. Requires Catalog → Sales cross-BC query (breaks isolation unless done via an Anti-Corruption Layer port).
-  3. **Graceful degradation only** — keep hard-delete as-is, but display a placeholder image in views when `Build(id)` returns `404`. Document as expected degradation.
-- **Recommended fix**: Option 1 (soft-delete) — keeps BC isolation, preserves file on disk, zero impact on snapshot rendering.
-- **Fix tracked in**: To be added to `docs/roadmap/README.md` as catalog image lifecycle work.
+### ~~[KI-009] No guard against deleting catalog images referenced by order item snapshots~~ RESOLVED
+- **Resolution**: Soft-delete implemented. `Image.IsDeleted` bool added to domain entity. `ImageService.Delete` marks image as deleted (no file removal). `ImageRepository.GetAllImages` and `GetProductImages` filter `!IsDeleted`. `GetImageById` returns all rows including soft-deleted so snapshot URL resolution still works. `Image.FileName` now stores only the filename; `Image.FileSource` stores the directory; `Image.Provider` stores the storage label ("Local"). EF migration `20260408200548_AddImageFileSourceProviderAndSoftDelete` adds the new columns and migrates existing full-path `FileName` values to the split form.
 
 ---
 
 ## Medium
 
-### [KI-007] `ModuleClient.PublishAsync` — dispatches to only ONE handler per event type
-- **Severity**: 🟠 Medium
-- **Location**: `ECommerceApp.Infrastructure/Messaging/ModuleClient.cs` (line 23)
-- **Symptom**: When multiple BCs register `IMessageHandler<T>` for the same event type `T`, only the last-registered handler executes. All other subscribers are silently skipped.
-- **Root cause**: `_serviceProvider.GetService(handlerType)` resolves a **single** service. `GetServices()` (plural) is required to resolve all registered handlers. `BackgroundMessageDispatcher` uses `GetServices()` correctly but runs asynchronously via `Channel<T>`, making it unsuitable for synchronous test assertions.
-- **Impact**: In production (`UseBackgroundDispatcher = true`), the `BackgroundMessageDispatcher` path is used so this bug is masked. If `UseBackgroundDispatcher` is set to `false`, multi-consumer events (e.g., `OrderPlaced` consumed by Payments + Inventory + Presale) will only reach one handler.
-- **Workaround**: Production always uses the background dispatcher. Integration tests use `SynchronousMultiHandlerBroker` which resolves all handlers correctly.
-- **Fix tracked in**: [Roadmap F5](../../docs/roadmap/README.md) — ModuleClient evolution.
+### ~~[KI-007] `ModuleClient.PublishAsync` — dispatches to only ONE handler per event type~~ RESOLVED
+- **Resolution**: Replaced `_serviceProvider.GetService(handlerType)` with `_serviceProvider.GetServices(handlerType)` and a `foreach` loop. All registered `IMessageHandler<T>` implementations now execute. Warning is logged only when no handlers are found.
 
 ---
 

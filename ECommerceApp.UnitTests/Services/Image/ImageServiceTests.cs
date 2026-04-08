@@ -20,13 +20,13 @@ namespace ECommerceApp.Tests.Services.Image
     public class ImageServiceTests
     {
         private readonly Mock<IImageRepository> _imageRepository;
-        private readonly Mock<IFileStore> _fileStore;
+        private readonly Mock<IFileStoreProvider> _fileStoreProvider;
         private readonly Mock<IProductRepository> _productRepository;
 
         public ImageServiceTests()
         {
             _imageRepository = new Mock<IImageRepository>();
-            _fileStore = new Mock<IFileStore>();
+            _fileStoreProvider = new Mock<IFileStoreProvider>();
             _productRepository = new Mock<IProductRepository>();
         }
 
@@ -36,9 +36,9 @@ namespace ECommerceApp.Tests.Services.Image
             var image = CreateImageVm();
             image.Id = 0;
             var product = CreateProductWithImages(0);
-            _fileStore.Setup(f => f.GetFileExtenstion(It.IsAny<string>())).Returns(".jpg");
-            _fileStore.Setup(f => f.WriteFile(It.IsAny<IFormFile>(), It.IsAny<string>()))
-                .Returns(new FileDirectoryPOCO { Name = "Name", SourcePath = "/upload/file.jpg" });
+            _fileStoreProvider.Setup(p => p.GetFileExtenstion(It.IsAny<string>(), It.IsAny<string>())).Returns(".jpg");
+            _fileStoreProvider.Setup(p => p.WriteFileAsync(It.IsAny<IFormFile>(), It.IsAny<string>()))
+                .ReturnsAsync(new FileDirectoryPOCO { Name = "Name", SourcePath = "/upload/Name" });
             _productRepository.Setup(p => p.GetByIdWithDetailsAsync(It.IsAny<ProductId>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(product);
             _productRepository.Setup(p => p.UpdateAsync(It.IsAny<Product>())).Returns(Task.CompletedTask);
@@ -54,7 +54,7 @@ namespace ECommerceApp.Tests.Services.Image
         {
             var image = CreateImageVm();
             image.Id = 0;
-            _fileStore.Setup(f => f.GetFileExtenstion(It.IsAny<string>())).Returns(".bin");
+            _fileStoreProvider.Setup(p => p.GetFileExtenstion(It.IsAny<string>(), It.IsAny<string>())).Returns(".bin");
             var imageService = CreateService();
 
             Func<Task> action = () => imageService.Add(image);
@@ -68,7 +68,7 @@ namespace ECommerceApp.Tests.Services.Image
             var image = CreateImageVm();
             image.Images = new List<IFormFile>() { AddFileToIFormFile("abcsa2", 41943041) };
             image.Id = 0;
-            _fileStore.Setup(f => f.GetFileExtenstion(It.IsAny<string>())).Returns(".jpg");
+            _fileStoreProvider.Setup(p => p.GetFileExtenstion(It.IsAny<string>(), It.IsAny<string>())).Returns(".jpg");
             var imageService = CreateService();
 
             Func<Task> action = () => imageService.Add(image);
@@ -122,7 +122,7 @@ namespace ECommerceApp.Tests.Services.Image
             var image = CreateImageVm();
             image.Id = 0;
             var product = CreateProductWithImages(5);
-            _fileStore.Setup(f => f.GetFileExtenstion(It.IsAny<string>())).Returns(".jpg");
+            _fileStoreProvider.Setup(p => p.GetFileExtenstion(It.IsAny<string>(), It.IsAny<string>())).Returns(".jpg");
             _productRepository.Setup(p => p.GetByIdWithDetailsAsync(It.IsAny<ProductId>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(product);
             var imageService = CreateService();
@@ -138,9 +138,9 @@ namespace ECommerceApp.Tests.Services.Image
             int itemId = 1;
             var images = new AddImagesPOCO() { Files = new List<IFormFile> { AddFileToIFormFile("test1"), AddFileToIFormFile("test2") }, ItemId = itemId };
             var product = CreateProductWithImages(0);
-            _fileStore.Setup(f => f.GetFileExtenstion(It.IsAny<string>())).Returns(".jpg");
-            _fileStore.Setup(f => f.WriteFile(It.IsAny<IFormFile>(), It.IsAny<string>()))
-                .Returns(new FileDirectoryPOCO { Name = "Name", SourcePath = "/upload/file.jpg" });
+            _fileStoreProvider.Setup(p => p.GetFileExtenstion(It.IsAny<string>(), It.IsAny<string>())).Returns(".jpg");
+            _fileStoreProvider.Setup(p => p.WriteFileAsync(It.IsAny<IFormFile>(), It.IsAny<string>()))
+                .ReturnsAsync(new FileDirectoryPOCO { Name = "Name", SourcePath = "/upload/Name" });
             _productRepository.Setup(p => p.GetByIdWithDetailsAsync(It.IsAny<ProductId>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(product);
             _productRepository.Setup(p => p.UpdateAsync(It.IsAny<Product>())).Returns(Task.CompletedTask);
@@ -157,7 +157,7 @@ namespace ECommerceApp.Tests.Services.Image
             int itemId = 1;
             var images = new AddImagesPOCO() { Files = new List<IFormFile> { AddFileToIFormFile("test1"), AddFileToIFormFile("test2") }, ItemId = itemId };
             var product = CreateProductWithImages(5);
-            _fileStore.Setup(f => f.GetFileExtenstion(It.IsAny<string>())).Returns(".jpg");
+            _fileStoreProvider.Setup(p => p.GetFileExtenstion(It.IsAny<string>(), It.IsAny<string>())).Returns(".jpg");
             _productRepository.Setup(p => p.GetByIdWithDetailsAsync(It.IsAny<ProductId>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(product);
             var imageService = CreateService();
@@ -172,7 +172,7 @@ namespace ECommerceApp.Tests.Services.Image
         {
             int itemId = 1;
             var images = new AddImagesPOCO() { Files = new List<IFormFile> { AddFileToIFormFile("test1"), AddFileToIFormFile("test2", 41943041) }, ItemId = itemId };
-            _fileStore.Setup(f => f.GetFileExtenstion(It.IsAny<string>())).Returns(".jpg");
+            _fileStoreProvider.Setup(p => p.GetFileExtenstion(It.IsAny<string>(), It.IsAny<string>())).Returns(".jpg");
             var imageService = CreateService();
 
             Func<Task> action = () => imageService.AddImages(images);
@@ -241,13 +241,13 @@ namespace ECommerceApp.Tests.Services.Image
         }
 
         private ImageService CreateService()
-            => new ImageService(_imageRepository.Object, _fileStore.Object, _productRepository.Object);
+            => new ImageService(_imageRepository.Object, _fileStoreProvider.Object, _productRepository.Object);
 
         private static Product CreateProductWithImages(int imageCount)
         {
             var product = Product.Create("Test Product", 10m, "Description", 1);
             for (int i = 0; i < imageCount; i++)
-                product.AddImage($"/upload/image{i}.jpg");
+                product.AddImage($"image{i}.jpg", "/upload", "Local");
             return product;
         }
 

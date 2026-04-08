@@ -5,11 +5,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
+using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.FileManager
 {
     public class FileStore : IFileStore
     {
+        private static readonly string UPLOAD_DIR = Path.Combine(Directory.GetCurrentDirectory(), "Upload", "Images");
         private readonly IFileWrapper _fileWrapper;
         private readonly IDirectoryWrapper _directoryWrapper;
 
@@ -54,7 +56,10 @@ namespace ECommerceApp.Application.FileManager
             }
         }
 
-        public FileDirectoryPOCO WriteFile(IFormFile file, string path)
+        public Task<FileDirectoryPOCO> WriteFileAsync(IFormFile file)
+            => WriteFileAsync(file, UPLOAD_DIR);
+
+        public async Task<FileDirectoryPOCO> WriteFileAsync(IFormFile file, string path)
         {
             _directoryWrapper.CreateDirectory(path);
             if (file != null)
@@ -62,15 +67,12 @@ namespace ECommerceApp.Application.FileManager
                 string ext = GetFileExtenstion(file.FileName);
                 var fileName = ReplaceInvalidChars(file.FileName);
                 string uniqueFileName = Guid.NewGuid().ToString() + "_" + fileName + ext;
-                var fileDirectory = new FileDirectoryPOCO() { SourcePath = path + Path.DirectorySeparatorChar + uniqueFileName, Name = fileName };
                 var outputFile = Path.Combine(path, uniqueFileName);
-                _fileWrapper.WriteFileAsync(file, outputFile).GetAwaiter().GetResult();
-                return fileDirectory;
+                await _fileWrapper.WriteFileAsync(file, outputFile);
+                return new FileDirectoryPOCO { SourcePath = outputFile, Name = uniqueFileName };
             }
-            else
-            {
-                throw new Exceptions.FileException("File not found");
-            }
+
+            throw new Exceptions.FileException("File not found");
         }
 
         public byte[] ReadFile(string path)
@@ -136,7 +138,7 @@ namespace ECommerceApp.Application.FileManager
                 string ext = GetFileExtenstion(fileName);
                 var validFileName = ReplaceInvalidChars(fileName);
                 string uniqueFileName = Guid.NewGuid().ToString() + "_" + validFileName + ext;
-                var fileDirectory = new FileDirectoryPOCO() { SourcePath = path + Path.DirectorySeparatorChar + uniqueFileName, Name = validFileName };
+                var fileDirectory = new FileDirectoryPOCO() { SourcePath = path + Path.DirectorySeparatorChar + uniqueFileName, Name = uniqueFileName };
                 var outputFile = Path.Combine(path, uniqueFileName);
                 _fileWrapper.WriteFileAsync(file, outputFile);
                 return fileDirectory;
@@ -145,6 +147,11 @@ namespace ECommerceApp.Application.FileManager
             {
                 throw new Exceptions.FileException("File not found");
             }
+        }
+
+        public async Task<byte[]> ReadFileAsync(string path)
+        {
+            return await _fileWrapper.ReadFileAsync(path);
         }
     }
 }
