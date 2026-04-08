@@ -12,15 +12,9 @@
 
 ## High
 
-### ~~[KI-009] No guard against deleting catalog images referenced by order item snapshots~~ RESOLVED
-- **Resolution**: Soft-delete implemented. `Image.IsDeleted` bool added to domain entity. `ImageService.Delete` marks image as deleted (no file removal). `ImageRepository.GetAllImages` and `GetProductImages` filter `!IsDeleted`. `GetImageById` returns all rows including soft-deleted so snapshot URL resolution still works. `Image.FileName` now stores only the filename; `Image.FileSource` stores the directory; `Image.Provider` stores the storage label ("Local"). EF migration `20260408200548_AddImageFileSourceProviderAndSoftDelete` adds the new columns and migrates existing full-path `FileName` values to the split form.
-
 ---
 
 ## Medium
-
-### ~~[KI-007] `ModuleClient.PublishAsync` — dispatches to only ONE handler per event type~~ RESOLVED
-- **Resolution**: Replaced `_serviceProvider.GetService(handlerType)` with `_serviceProvider.GetServices(handlerType)` and a `foreach` loop. All registered `IMessageHandler<T>` implementations now execute. Warning is logged only when no handlers are found.
 
 ---
 
@@ -35,35 +29,9 @@
 - **Condition**: Do NOT execute this migration until the project targets .NET 8 or later. On .NET 7 the current FluentAssertions v6 works fine.
 - **Fix tracked in**: .NET 8+ upgrade roadmap (when created).
 
-### [KI-006]
-- **Severity**: 🔵 Low
-- **Location**: `ECommerceApp.IntegrationTests/API/OrderControllerTests.cs`
-- **Symptom**: Test fails with `should be 2026-03-15T19:20:03+01:00 but was 2026-03-15T18:20:03Z`. Same moment, different `DateTimeKind` — `DateTime` equality compares ticks directly; local ticks ≠ UTC ticks.
-- **Root cause**: `Ordered = DateTime.Now` serializes with `+01:00` offset. The API normalizes to UTC on the roundtrip, returning `Z`. The `.ShouldBe` comparison then fails because the tick values differ.
-- **Fix tracked in**: Resolved inline (no ADR needed).
-
-### [KI-005] `buttonTemplate.js` — invalid HTML button `type` attribute
-- **Severity**: 🔵 Low
-- **Location**: `ECommerceApp.Web/wwwroot/js/buttonTemplate.js`
-- **Symptom**: Buttons rendered by `createButton()` have `type="type"` — not a valid HTML button type. Browsers default to `type="submit"`, which may cause unintended form submissions inside modals.
-- **Root cause**: The string `"type"` is passed as the value of the `type` attribute instead of `"button"`.
-- **Fix tracked in**: [ADR-0021](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) Phase 2 bug #3 · [Roadmap](../roadmap/frontend-pipeline.md#phase-2--targeted-bug-fixes)
-
 ---
 
 ## Deferred Design Decisions
-
-### [DD-002] No quantity upper limit on cart/order — Web gap
-- **Severity**: 🟡 Medium (design debt)
-- **Location**: `ECommerceApp.Application/Presale/Checkout/DTOs/AddToCartDto.cs` — no validator exists
-- **Issue**: `Shared.Quantity` only validates `value > 0`. There is no maximum quantity cap enforced
-  anywhere — neither in the domain, the application layer, nor the Web controllers. A user on the Web
-  storefront can add an arbitrary quantity of any single product to the cart.
-- **Agreed fix**: Create `AddToCartDtoValidator` (FluentValidation) in the Application layer.
-  Web limit: `RuleFor(x => x.Quantity).InclusiveBetween(1, 99)` — sourced from `ApiPurchaseOptions.MaxWebQuantityPerOrderLine`.
-  The API limit (max 5 per line) is handled separately via `MaxApiQuantityFilter` — see [ADR-0025](../docs/adr/0025-api-tiered-access-trusted-purchase-policy.md).
-- **Future**: Both Web and API limits become backoffice-configurable via `backoffice.PurchaseLimitSettings` + `IMemoryCache`.
-- **Fix tracked in**: [orders-atomic-switch.md Step 4b](../../docs/roadmap/orders-atomic-switch.md)
 
 ### [DD-001] `StockHold` — missing `Withdrawn` status and non-reversible state transitions
 - **Severity**: 🟡 Medium (design debt)
@@ -107,6 +75,18 @@
 - **Fix**: Replaced 4000-char RFC 2822 regex with safe `/^[^\s@]+@[^\s@]+\.[^\s@]+$/`.
 - **Files changed**: `validations.js`
 
+### [KI-007] `ModuleClient.PublishAsync` — dispatches to only ONE handler per event type ✅
+- **Fix**: Replaced `_serviceProvider.GetService(handlerType)` with `_serviceProvider.GetServices(handlerType)` and a `foreach` loop. All registered `IMessageHandler<T>` implementations now execute. Warning is logged only when no handlers are found.
+- **Files changed**: `ModuleClient.cs`
+
+### [KI-009] No guard against deleting catalog images referenced by order item snapshots ✅
+- **Fix**: Soft-delete implemented. `Image.IsDeleted` flag added to domain entity. `ImageService.Delete` marks as deleted (no file removal). `GetAllImages`/`GetProductImages` filter `!IsDeleted`. `GetImageById` returns all rows including soft-deleted so snapshot URL resolution still works. `Image.FileName`/`FileSource`/`Provider` columns split. EF migration `20260408200548_AddImageFileSourceProviderAndSoftDelete` applied.
+- **Files changed**: `Image.cs`, `ImageService.cs`, `ImageRepository.cs`, migration.
+
+### [DD-002] No quantity upper limit on cart/order — Web gap ✅
+- **Fix**: `AddToCartDtoValidator` created in `Application.Presale.Checkout.Validators`. Web limit: `Quantity.LessThanOrEqualTo(CheckoutOptions.MaxWebQuantityPerOrderLine)`. API limit handled separately via `MaxApiQuantityFilter` (ADR-0025).
+- **Files changed**: `AddToCartDtoValidator.cs`
+
 ---
 
-*Last reviewed: 2026-03-22*
+*Last reviewed: 2026-04-09*

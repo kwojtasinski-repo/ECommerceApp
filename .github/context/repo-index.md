@@ -16,16 +16,16 @@ _Last updated: 2026-06-05_
 
 | Metric                    | Value                          |
 | ------------------------- | ------------------------------ |
-| **Total C# source files** | ~1,143 (excl. bin/obj)         |
+| **Total C# source files** | ~1,054 (excl. bin/obj)         |
 | **Total lines of C#**     | ~44,500 (excl. migrations)     |
-| **Razor views (.cshtml)** | 176                            |
-| **JavaScript modules**    | 11                             |
+| **Razor views (.cshtml)** | 103                            |
+| **JavaScript modules**    | 12                             |
 | **Identity Razor Pages**  | 14                             |
 | **ADRs**                  | 25                             |
 | **DbContexts**            | 12 (1 legacy + 11 per-BC)      |
 | **DB migration folders**  | 12                             |
-| **HTTP scenario files**   | 9                              |
-| **Test files**            | 149 (97 unit + 52 integration) |
+| **HTTP scenario files**   | 10                             |
+| **Test files**            | 116 (79 unit + 37 integration) |
 
 ---
 
@@ -33,13 +33,13 @@ _Last updated: 2026-06-05_
 
 | Project                         | Files                | Lines  | Role                                                 |
 | ------------------------------- | -------------------- | ------ | ---------------------------------------------------- |
-| `ECommerceApp.Domain`           | 191                  | 3,568  | Domain models, aggregates, interfaces, value objects |
-| `ECommerceApp.Application`      | 376                  | 12,721 | Services, DTOs, VMs, handlers, messaging, middleware |
-| `ECommerceApp.Infrastructure`   | 245                  | 6,857  | EF Core, repositories, DbContexts, external clients  |
-| `ECommerceApp.Web`              | 44 .cs + 130 .cshtml | 3,830  | MVC controllers, views, Identity pages, frontend     |
-| `ECommerceApp.API`              | 29                   | 1,889  | REST controllers, JWT auth                           |
-| `ECommerceApp.UnitTests`        | 96                   | 10,844 | xUnit unit tests                                     |
-| `ECommerceApp.IntegrationTests` | 65                   | 4,837  | xUnit integration tests                              |
+| `ECommerceApp.Domain`           | 163                  | 3,568  | Domain models, aggregates, interfaces, value objects |
+| `ECommerceApp.Application`      | 437                  | 12,721 | Services, DTOs, VMs, handlers, messaging, middleware |
+| `ECommerceApp.Infrastructure`   | 279                  | 6,857  | EF Core, repositories, DbContexts, external clients  |
+| `ECommerceApp.Web`              | 38 .cs + 103 .cshtml | 3,830  | MVC controllers, views, Identity pages, frontend     |
+| `ECommerceApp.API`              | 21                   | 1,889  | REST controllers, JWT auth                           |
+| `ECommerceApp.UnitTests`        | 79                   | 10,844 | xUnit unit tests                                     |
+| `ECommerceApp.IntegrationTests` | 37                   | 4,837  | xUnit integration tests                              |
 
 ---
 
@@ -141,15 +141,15 @@ Each BC has code in up to 4 layers. "Legacy" means old flat code that coexists a
 
 ### Presale / Checkout
 
-| Layer          | Path                                                            | Key files                                                                     |
-| -------------- | --------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| Domain         | `Domain/Presale/Checkout/`                                      | `CartLine.cs`, `SoftReservation.cs`, `StockSnapshot.cs` (10 files)            |
-| Application    | `Application/Presale/Checkout/`                                 | Contracts, DTOs, Handlers, `PresaleOptions.cs`, Results, Services, ViewModels |
-| Application VM | `Application/Presale/Checkout/ViewModels/StorefrontProductVm.cs` | `StorefrontProductVm` — includes `MainImageUrl?` (main image URL, nullable)  |
-| Infrastructure | `Infrastructure/Presale/Checkout/`                              | `PresaleDbContext.cs`, Adapters, Configurations, Repositories, Migrations     |
-| API (V2)       | `API/Controllers/V2/CartController.cs`, `CheckoutController.cs` |                                                                               |
-| API (legacy)   | `API/Controllers/Presale/StorefrontController.cs`               |                                                                               |
-| ADR            | `docs/adr/0012`                                                 |                                                                               |
+| Layer          | Path                                                             | Key files                                                                     |
+| -------------- | ---------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| Domain         | `Domain/Presale/Checkout/`                                       | `CartLine.cs`, `SoftReservation.cs`, `StockSnapshot.cs` (10 files)            |
+| Application    | `Application/Presale/Checkout/`                                  | Contracts, DTOs, Handlers, `PresaleOptions.cs`, Results, Services, ViewModels |
+| Application VM | `Application/Presale/Checkout/ViewModels/StorefrontProductVm.cs` | `StorefrontProductVm` — includes `MainImageUrl?` (main image URL, nullable)   |
+| Infrastructure | `Infrastructure/Presale/Checkout/`                               | `PresaleDbContext.cs`, Adapters, Configurations, Repositories, Migrations     |
+| API (V2)       | `API/Controllers/V2/CartController.cs`, `CheckoutController.cs`  |                                                                               |
+| API (legacy)   | `API/Controllers/Presale/StorefrontController.cs`                |                                                                               |
+| ADR            | `docs/adr/0012`                                                  |                                                                               |
 
 ### Supporting / Currencies
 
@@ -170,15 +170,15 @@ Each BC has code in up to 4 layers. "Legacy" means old flat code that coexists a
 
 ### Supporting / TimeManagement
 
-| Layer          | Path                                                               | Key files                                                                                                                                                               |
-| -------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Domain         | `Domain/Supporting/TimeManagement/`                                | `ScheduledJob.cs`, `JobExecution.cs`, `DeferredJobInstance.cs`, Events (17 files)                                                                                       |
-| Application    | `Application/Supporting/TimeManagement/`                           | Handlers, Models, Services, scheduler interfaces                                                                                                                        |
-| Infrastructure | `Infrastructure/Supporting/TimeManagement/`                        | `TimeManagementDbContext.cs`, `CronSchedulerService.cs`, `DeferredJobPollerService.cs`, `DeferredJobScheduler.cs`, poller/dispatcher services, Repositories, Migrations |
-| Web (Area) ✅  | `Web/Areas/Jobs/Controllers/JobManagementController.cs`            | 2 views: Index, History                                                                                                                                                 |
-| Web (V2)       | `Web/Controllers/V2JobController.cs`                               |                                                                                                                                                                         |
-| Views (V2)     | `Web/Views/V2Job/` (5)                                             |                                                                                                                                                                         |
-| ADR            | `docs/adr/0009`                                                    |                                                                                                                                                                         |
+| Layer          | Path                                                    | Key files                                                                                                                                                               |
+| -------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Domain         | `Domain/Supporting/TimeManagement/`                     | `ScheduledJob.cs`, `JobExecution.cs`, `DeferredJobInstance.cs`, Events (17 files)                                                                                       |
+| Application    | `Application/Supporting/TimeManagement/`                | Handlers, Models, Services, scheduler interfaces                                                                                                                        |
+| Infrastructure | `Infrastructure/Supporting/TimeManagement/`             | `TimeManagementDbContext.cs`, `CronSchedulerService.cs`, `DeferredJobPollerService.cs`, `DeferredJobScheduler.cs`, poller/dispatcher services, Repositories, Migrations |
+| Web (Area) ✅  | `Web/Areas/Jobs/Controllers/JobManagementController.cs` | 2 views: Index, History                                                                                                                                                 |
+| Web (V2)       | `Web/Controllers/V2JobController.cs`                    |                                                                                                                                                                         |
+| Views (V2)     | `Web/Views/V2Job/` (5)                                  |                                                                                                                                                                         |
+| ADR            | `docs/adr/0009`                                         |                                                                                                                                                                         |
 
 ### AccountProfile
 
@@ -200,17 +200,17 @@ Each BC has code in up to 4 layers. "Legacy" means old flat code that coexists a
 
 ### Identity / IAM
 
-| Layer          | Path                                          | Key files                                     |
-| -------------- | --------------------------------------------- | --------------------------------------------- |
-| Domain         | `Domain/Identity/IAM/`                        | `ApplicationUser.cs`, `RefreshToken.cs`, `IRefreshTokenRepository.cs` |
-| Application    | `Application/Identity/IAM/`                   | DTOs, Services, ViewModels                    |
-| Infrastructure | `Infrastructure/Identity/IAM/`                | `IamDbContext.cs`, Auth logic, `RefreshTokenRepository.cs`, Migrations (2) |
-| Web (Area) ✅  | `Web/Areas/IAM/Controllers/UserManagementController.cs` | 5 views: Index, AddUser, EditUser, ChangeUserPassword, AddRolesToUser |
-| Web (V2)       | `Web/Controllers/V2UserController.cs`         | 4 views: `Web/Views/V2User/` (Index, Add, Edit, Details) |
-| Web (legacy)   | `Web/Controllers/UserManagementController.cs` | — legacy, do not extend |
-| Web Areas      | `Web/Areas/Identity/Pages/Account/`           | Login, Register, ForgotPassword, Manage pages |
-| API (legacy)   | `API/Controllers/LoginController.cs`          | JWT sign-in — pending swap to new `IAuthenticationService` |
-| ADR            | `docs/adr/0019`                               |                                               |
+| Layer          | Path                                                    | Key files                                                                  |
+| -------------- | ------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Domain         | `Domain/Identity/IAM/`                                  | `ApplicationUser.cs`, `RefreshToken.cs`, `IRefreshTokenRepository.cs`      |
+| Application    | `Application/Identity/IAM/`                             | DTOs, Services, ViewModels                                                 |
+| Infrastructure | `Infrastructure/Identity/IAM/`                          | `IamDbContext.cs`, Auth logic, `RefreshTokenRepository.cs`, Migrations (2) |
+| Web (Area) ✅  | `Web/Areas/IAM/Controllers/UserManagementController.cs` | 5 views: Index, AddUser, EditUser, ChangeUserPassword, AddRolesToUser      |
+| Web (V2)       | `Web/Controllers/V2UserController.cs`                   | 4 views: `Web/Views/V2User/` (Index, Add, Edit, Details)                   |
+| Web (legacy)   | `Web/Controllers/UserManagementController.cs`           | — legacy, do not extend                                                    |
+| Web Areas      | `Web/Areas/Identity/Pages/Account/`                     | Login, Register, ForgotPassword, Manage pages                              |
+| API (legacy)   | `API/Controllers/LoginController.cs`                    | JWT sign-in — pending swap to new `IAuthenticationService`                 |
+| ADR            | `docs/adr/0019`                                         |                                                                            |
 
 ---
 

@@ -61,4 +61,4 @@ Context: `project-state.md`, `known-issues.md`, `repo-index.md`. Roadmaps: `docs
 ## 9. API Purchase Limits
 
 - Max 5 units/line via `MaxApiQuantityFilter` (`ApiPurchaseOptions`); Web max 99 (`AddToCartDtoValidator`). Never cap `Shared.Quantity`.
-- `TrustedApiUser` = authenticated + `api:purchase` claim OR `Service`/`Manager`/`Administrator` role. See [ADR-0025](docs/adr/0025-api-tiered-access-trusted-purchase-policy.md) and [DD-002](context/known-issues.md).
+- `TrustedApiUser` = authenticated + `api:purchase` claim OR `Service`/`Manager`/`Administrator` role. See [ADR-0025](docs/adr/0025-api-tiered-access-trusted-purchase-policy.md).

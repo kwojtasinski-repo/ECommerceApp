@@ -119,11 +119,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "roadmap", "roadmap", "{8FA6
 		docs\roadmap\payments-atomic-switch.md = docs\roadmap\payments-atomic-switch.md
 		docs\roadmap\presale-slice2.md = docs\roadmap\presale-slice2.md
 		docs\roadmap\README.md = docs\roadmap\README.md
+		docs\roadmap\storefront-offers.md = docs\roadmap\storefront-offers.md
+		docs\roadmap\chunked-upload.md = docs\roadmap\chunked-upload.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "context", "context", "{1064B208-B85A-4013-8C84-597303D43282}"
 	ProjectSection(SolutionItems) = preProject
-		.github\context\anti-patterns.context.md = .github\context\anti-patterns.context.md
+		.github\context\anti-patterns-critical.context.md = .github\context\anti-patterns-critical.context.md
 		.github\context\future-skills.md = .github\context\future-skills.md
 		.github\context\known-issues.md = .github\context\known-issues.md
 		.github\context\project-state.md = .github\context\project-state.md
@@ -146,6 +148,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HttpScenarios", "HttpScenarios", "{B3C4D5E6-F7A8-4B9C-8D0E-1F2A3B4C5D6E}"
 	ProjectSection(SolutionItems) = preProject
 		ECommerceApp.API\HttpScenarios\account-profile.http = ECommerceApp.API\HttpScenarios\account-profile.http
+		ECommerceApp.API\HttpScenarios\auth.http = ECommerceApp.API\HttpScenarios\auth.http
 		ECommerceApp.API\HttpScenarios\catalog.http = ECommerceApp.API\HttpScenarios\catalog.http
 		ECommerceApp.API\HttpScenarios\currencies.http = ECommerceApp.API\HttpScenarios\currencies.http
 		ECommerceApp.API\HttpScenarios\inventory.http = ECommerceApp.API\HttpScenarios\inventory.http

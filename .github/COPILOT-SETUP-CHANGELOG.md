@@ -11,12 +11,13 @@
 
 | Category                               | Count | Details                                                                        |
 | -------------------------------------- | ----- | ------------------------------------------------------------------------------ |
-| `copilot-instructions.md`              | 1     | ≤ 4,000 chars (3,724), repo-level policy                                       |
+| `copilot-instructions.md`              | 1     | ≤ 4,000 chars (~3,710), repo-level policy                                      |
 | Instruction files (`.instructions.md`) | 12    | All with `applyTo:` frontmatter (includes copilot-config-sync)                 |
 | Prompt files (`.prompt.md`)            | 3     | BC analysis, BC implementation, PR review                                      |
 | Agent files                            | 4     | adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer              |
 | Skills (`SKILL.md`)                    | 8     | Scaffolding templates for common artifacts                                     |
 | Context files                          | 5     | project-state, known-issues, repo-index, future-skills, anti-patterns-critical |
+| HTTP scenario files                    | 10    | +auth.http (was 9)                                                             |
 
 ---
 
@@ -83,16 +84,29 @@
 
 ## Change log
 
+### Session 13 — Full audit & sync (2026-04-09)
+
+| #   | Change                                                                                                                                                                | Files affected                                                        |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| 1   | Added `storefront-offers.md` and `chunked-upload.md` rows to roadmap table in docs-index                                                                              | `.github/instructions/docs-index.instructions.md`                     |
+| 2   | Removed stale `[DD-002]` link from `copilot-instructions.md` §9 (DD-002 is resolved)                                                                                  | `.github/copilot-instructions.md`                                     |
+| 3   | Fixed `.sln` context folder: `anti-patterns.context.md` → `anti-patterns-critical.context.md`                                                                         | `ECommerceApp.sln`                                                    |
+| 4   | Added `storefront-offers.md` and `chunked-upload.md` to `roadmap` solution folder                                                                                     | `ECommerceApp.sln`                                                    |
+| 5   | Added `auth.http` to `HttpScenarios` solution folder (was missing; file existed on disk)                                                                              | `ECommerceApp.sln`                                                    |
+| 6   | Updated `repo-index.md` At a Glance: CS ~1143→~1054, CSHTML 176→103, JS 11→12, HTTP 9→10, tests 149→116 (79+37)                                                       | `.github/context/repo-index.md`                                       |
+| 7   | Updated `repo-index.md` Solution Projects table: all 7 project file counts corrected                                                                                  | `.github/context/repo-index.md`                                       |
+| 8   | Updated `project-state.md` + `known-issues.md`: BrandService/ImageService legacy table corrected; KI-007/KI-009/DD-002 moved to Resolved; KI-005/KI-006 dupes removed | `.github/context/project-state.md`, `.github/context/known-issues.md` |
+
 ### Session 12 — Project status sync (2026-03-26)
 
-| #   | Change                                                                                                                          | Files affected                                              |
-| --- | ------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| 1   | Fixed `copilot-instructions.md` §2 instruction file count: 11 → 12 (copilot-config-sync was not counted)                       | `.github/copilot-instructions.md`                           |
-| 2   | Fixed `project-state.md` date: `2026-05-27` (typo) → `2026-03-26`; added IAM + refresh token active work row                  | `.github/context/project-state.md`                          |
-| 3   | Updated `iam-refresh-token.md`: status Planned → 🟡 In progress; Steps 1–4 marked done (entity, infra, service, unit tests)     | `docs/roadmap/iam-refresh-token.md`                         |
-| 4   | Updated `iam-atomic-switch.md`: status expanded; added refresh token + Area controller rows to "already done" table             | `docs/roadmap/iam-atomic-switch.md`                         |
-| 5   | Fixed changelog Session 5 date: `2026-06-27` (typo) → `2026-03-17`                                                             | `.github/COPILOT-SETUP-CHANGELOG.md`                        |
-| 6   | Updated `repo-index.md`: date, Razor views 153→176, test counts, IAM section (Area controller + RefreshToken), Jobs/TimeManagement section (Area controller) | `.github/context/repo-index.md` |
+| #   | Change                                                                                                                                                       | Files affected                       |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------ |
+| 1   | Fixed `copilot-instructions.md` §2 instruction file count: 11 → 12 (copilot-config-sync was not counted)                                                     | `.github/copilot-instructions.md`    |
+| 2   | Fixed `project-state.md` date: `2026-05-27` (typo) → `2026-03-26`; added IAM + refresh token active work row                                                 | `.github/context/project-state.md`   |
+| 3   | Updated `iam-refresh-token.md`: status Planned → 🟡 In progress; Steps 1–4 marked done (entity, infra, service, unit tests)                                  | `docs/roadmap/iam-refresh-token.md`  |
+| 4   | Updated `iam-atomic-switch.md`: status expanded; added refresh token + Area controller rows to "already done" table                                          | `docs/roadmap/iam-atomic-switch.md`  |
+| 5   | Fixed changelog Session 5 date: `2026-06-27` (typo) → `2026-03-17`                                                                                           | `.github/COPILOT-SETUP-CHANGELOG.md` |
+| 6   | Updated `repo-index.md`: date, Razor views 153→176, test counts, IAM section (Area controller + RefreshToken), Jobs/TimeManagement section (Area controller) | `.github/context/repo-index.md`      |
 
 ### Session 11 — Setup audit, anti-patterns rename, trigger phrases (2026-03-28)
 
