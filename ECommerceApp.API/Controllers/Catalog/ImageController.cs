@@ -6,6 +6,7 @@ using ECommerceApp.Application.POCO;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -17,11 +18,13 @@ namespace ECommerceApp.API.Controllers.Catalog
     {
         private readonly IImageService _service;
         private readonly IUrlImageResolver _resolver;
+        private readonly ILogger<ImageController> _logger;
 
-        public ImageController(IImageService service, IUrlImageResolver resolver)
+        public ImageController(IImageService service, IUrlImageResolver resolver, ILogger<ImageController> logger)
         {
             _service = service;
             _resolver = resolver;
+            _logger = logger;
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]
@@ -51,6 +54,7 @@ namespace ECommerceApp.API.Controllers.Catalog
         {
             var imageVm = new ImageVm { Id = 0, Images = new List<IFormFile>() { image.File }, ItemId = image.ItemId };
             var id = await _service.Add(imageVm);
+            _logger.LogInformation("Added image with id {Id} for item {ItemId}", id, image.ItemId);
             return id;
         }
 
