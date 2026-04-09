@@ -7,11 +7,14 @@ using Shouldly;
 using System;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.API
 {
     public class LoginControllerTests : BcBaseTest<IAuthenticationService>
     {
+        public LoginControllerTests(ITestOutputHelper output) : base(output) { }
+
         private const string Password = "Test@1234!";
 
         private async Task<string> CreateTestUserAsync()

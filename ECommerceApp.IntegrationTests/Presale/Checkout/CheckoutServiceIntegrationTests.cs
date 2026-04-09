@@ -13,11 +13,14 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Presale.Checkout
 {
     public class CheckoutServiceIntegrationTests : BcBaseTest<ICheckoutService>
     {
+        public CheckoutServiceIntegrationTests(ITestOutputHelper output) : base(output) { }
+
         private const int CustomerId = 1;
         private const int CurrencyId = 1;
 

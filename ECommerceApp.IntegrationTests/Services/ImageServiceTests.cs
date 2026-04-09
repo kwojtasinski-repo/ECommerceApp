@@ -3,11 +3,14 @@ using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Services
 {
     public class ImageServiceTests : BcBaseTest<IImageService>
     {
+        public ImageServiceTests(ITestOutputHelper output) : base(output) { }
+
         [Fact]
         public async Task given_valid_item_id_should_return_images()
         {

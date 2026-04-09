@@ -4,6 +4,7 @@ using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.CrossBC
 {
@@ -17,6 +18,8 @@ namespace ECommerceApp.IntegrationTests.CrossBC
     /// </summary>
     public class BcInfrastructureSmokeTests : BcBaseTest<IOrderService>
     {
+        public BcInfrastructureSmokeTests(ITestOutputHelper output) : base(output) { }
+
         [Fact]
         public void Service_ShouldResolveFromDI()
         {

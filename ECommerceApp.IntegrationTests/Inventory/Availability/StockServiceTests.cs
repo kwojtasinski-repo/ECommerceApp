@@ -8,11 +8,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Inventory.Availability
 {
     public class StockServiceTests : BcBaseTest<IStockService>
     {
+        public StockServiceTests(ITestOutputHelper output) : base(output) { }
+
         private const int TestProductId = 100;
 
         private async Task SeedProductSnapshotAsync(

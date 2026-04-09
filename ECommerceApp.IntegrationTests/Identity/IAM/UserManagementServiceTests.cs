@@ -1,18 +1,19 @@
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Identity.IAM.Services;
 using ECommerceApp.Application.Identity.IAM.ViewModels;
-using ECommerceApp.Domain.Identity.IAM;
 using ECommerceApp.IntegrationTests.Common;
-using Microsoft.AspNetCore.Identity;
 using Shouldly;
 using System;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Identity.IAM
 {
     public class UserManagementServiceTests : BcBaseTest<IUserManagementService>
     {
+        public UserManagementServiceTests(ITestOutputHelper output) : base(output) { }
+
         private const string UserRoleId = "User";
 
         private async Task<string> CreateTestUserAsync(string email = null)

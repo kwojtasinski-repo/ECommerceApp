@@ -7,11 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Sales.Payments
 {
     public class PaymentServiceTests : BcBaseTest<IPaymentService>
     {
+        public PaymentServiceTests(ITestOutputHelper output) : base(output) { }
+
         // ── Helpers ───────────────────────────────────────────────────────
 
         private async Task<int> SeedPaymentViaOrderPlacedAsync(

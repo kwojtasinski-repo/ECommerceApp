@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Common
 {
@@ -25,8 +26,9 @@ namespace ECommerceApp.IntegrationTests.Common
         protected readonly string PROPER_CUSTOMER_ID = "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e";
         protected readonly T _service;
 
-        protected BcBaseTest()
+        protected BcBaseTest(ITestOutputHelper output)
         {
+            Sink.SetOutput(output);
             _service = Services.GetRequiredService<T>();
         }
 
@@ -38,6 +40,7 @@ namespace ECommerceApp.IntegrationTests.Common
                 context.Database.EnsureDeleted();
                 context.Dispose();
             }
+            Sink.SetOutput(null);
             base.Dispose();
         }
 

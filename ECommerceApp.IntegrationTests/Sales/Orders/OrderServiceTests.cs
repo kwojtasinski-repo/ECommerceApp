@@ -6,6 +6,7 @@ using Shouldly;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Sales.Orders
 {
@@ -20,6 +21,8 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
     /// </summary>
     public class OrderServiceTests : BcBaseTest<IOrderService>
     {
+        public OrderServiceTests(ITestOutputHelper output) : base(output) { }
+
         // ── PlaceOrderAsync — guard conditions (InMemory-safe) ────────────────
 
         [Fact]

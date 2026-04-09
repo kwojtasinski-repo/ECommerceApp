@@ -22,6 +22,7 @@ namespace ECommerceApp.IntegrationTests.API
     public sealed class ImageApiTestFactory : CustomWebApplicationFactory<Startup>
     {
         private bool _seeded;
+        public int SeededItemId { get; private set; }
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
@@ -105,7 +106,8 @@ namespace ECommerceApp.IntegrationTests.API
             var categoryId = await categoryRepo.AddAsync(category);
 
             var product = Product.Create("Test Product", 100m, "Test description", categoryId.Value);
-            await productRepo.AddAsync(product);
+            var productId = await productRepo.AddAsync(product);
+            SeededItemId = productId.Value;
         }
     }
 

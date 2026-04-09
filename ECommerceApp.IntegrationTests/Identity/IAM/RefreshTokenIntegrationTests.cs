@@ -7,11 +7,14 @@ using Shouldly;
 using System;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Identity.IAM
 {
     public class RefreshTokenIntegrationTests : BcBaseTest<IAuthenticationService>
     {
+        public RefreshTokenIntegrationTests(ITestOutputHelper output) : base(output) { }
+
         private const string UserRoleId = "User";
         private const string Password = "Test@1234!";
 

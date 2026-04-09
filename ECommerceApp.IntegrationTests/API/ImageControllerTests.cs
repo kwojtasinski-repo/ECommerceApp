@@ -13,26 +13,27 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.API
 {
-    public class ImageControllerTests : IClassFixture<ImageApiTestFactory>, IAsyncLifetime
+    public class ImageControllerTests : ApiTestBase<ImageApiTestFactory>, IClassFixture<ImageApiTestFactory>
     {
-        private readonly ImageApiTestFactory _factory;
         private readonly DirectoryInfo _testData;
 
-        public ImageControllerTests(ImageApiTestFactory factory)
+        public ImageControllerTests(ImageApiTestFactory factory, ITestOutputHelper output)
+            : base(factory, output)
         {
-            _factory = factory;
             _testData = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.GetDirectories().Where(d => d.Name == "TestData").FirstOrDefault();
         }
 
-        public async Task InitializeAsync()
+        public override async Task InitializeAsync()
         {
+            await base.InitializeAsync();
             await _factory.EnsureSeedCatalogData();
         }
 
-        public async Task DisposeAsync()
+        public override async Task DisposeAsync()
         {
             var imageRepository = _factory.Services.GetService(typeof(IImageRepository)) as IImageRepository;
             var fileStore = _factory.Services.GetService(typeof(IFileStore)) as IFileStore;
@@ -44,15 +45,29 @@ namespace ECommerceApp.IntegrationTests.API
             }
 
             GC.SuppressFinalize(this);
+            await base.DisposeAsync();
+        }
+
+        private async Task<FlurlClient> GetLoggingClient()
+        {
+            var client = await _factory.GetAuthenticatedClient();
+            client.Settings.OnErrorAsync = async call =>
+            {
+                var body = call.Response?.ResponseMessage?.Content != null
+                    ? await call.Response.ResponseMessage.Content.ReadAsStringAsync()
+                    : string.Empty;
+                _output.WriteLine($"[HTTP {call.Response?.StatusCode}] {call.Request.Url}: {body}");
+            };
+            return client;
         }
 
         [Fact]
         public async Task given_valid_id_should_return_imageAsync()
         {
-            var client = await _factory.GetAuthenticatedClient();
+            var client = await GetLoggingClient();
             var filePath = _testData.GetFiles().First().FullName;
             var file = await Utilities.CreateIFormFileFrom(filePath);
-            var addPoco = new AddImagePOCO { File = file, ItemId = 1 };
+            var addPoco = new AddImagePOCO { File = file, ItemId = _factory.SeededItemId };
             var multiContent = Utilities.SerializeObjectWithImageToBytes<AddImagePOCO>(addPoco);
             var id = await client.Request("api/images")
                 .PostAsync(multiContent)
@@ -70,10 +85,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_image_should_add()
         {
-            var client = await _factory.GetAuthenticatedClient();
+            var client = await GetLoggingClient();
             var filePath = _testData.GetFiles().Where(f => f.Name == "apple-iphone-13.jpg").FirstOrDefault().FullName;
             var file = await Utilities.CreateIFormFileFrom(filePath);
-            var image = new AddImagePOCO { File = file, ItemId = 1 };
+            var image = new AddImagePOCO { File = file, ItemId = _factory.SeededItemId };
             var multiContent = Utilities.SerializeObjectWithImageToBytes<AddImagePOCO>(image);
 
             var id = await client.Request($"api/images")
@@ -86,7 +101,7 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_valid_images_should_add()
         {
-            var client = await _factory.GetAuthenticatedClient();
+            var client = await GetLoggingClient();
             var filePaths = _testData.GetFiles().ToList();
             var formFiles = new List<IFormFile>();
             foreach (var filePath in filePaths)
@@ -94,7 +109,7 @@ namespace ECommerceApp.IntegrationTests.API
                 var file = await Utilities.CreateIFormFileFrom(filePath.FullName);
                 formFiles.Add(file);
             }
-            var images = new AddImagesPOCO { ItemId = 1, Files = formFiles };
+            var images = new AddImagesPOCO { ItemId = _factory.SeededItemId, Files = formFiles };
             var multiContent = Utilities.SerializeObjectWithImageToBytes<AddImagesPOCO>(images);
 
             var ids = await client.Request($"api/images/multi-upload")
@@ -107,10 +122,10 @@ namespace ECommerceApp.IntegrationTests.API
         [Fact]
         public async Task given_id_image_should_delete()
         {
-            var client = await _factory.GetAuthenticatedClient();
+            var client = await GetLoggingClient();
             var filePath = _testData.GetFiles().Where(f => f.Name == "redmi-note-10.jpg").FirstOrDefault().FullName;
             var file = await Utilities.CreateIFormFileFrom(filePath);
-            var image = new AddImagePOCO { File = file, ItemId = 1 };
+            var image = new AddImagePOCO { File = file, ItemId = _factory.SeededItemId };
             var multiContent = Utilities.SerializeObjectWithImageToBytes<AddImagePOCO>(image);
             var id = await client.Request($"api/images")
                 .AllowHttpStatus(HttpStatusCode.OK, HttpStatusCode.Created)

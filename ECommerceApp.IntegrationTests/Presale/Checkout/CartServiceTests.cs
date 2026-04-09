@@ -7,11 +7,14 @@ using Shouldly;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Presale.Checkout
 {
     public class CartServiceTests : BcBaseTest<ICartService>
     {
+        public CartServiceTests(ITestOutputHelper output) : base(output) { }
+
         private const string TestUserId = "cart-test-user-001";
 
         // ── GetCartAsync ─────────────────────────────────────────────────

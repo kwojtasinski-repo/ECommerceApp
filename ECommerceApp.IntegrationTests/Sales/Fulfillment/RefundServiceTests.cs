@@ -6,11 +6,14 @@ using Shouldly;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
 {
     public class RefundServiceTests : BcBaseTest<IRefundService>
     {
+        public RefundServiceTests(ITestOutputHelper output) : base(output) { }
+
         // ── RequestRefundAsync ───────────────────────────────────────────
 
         [Fact]

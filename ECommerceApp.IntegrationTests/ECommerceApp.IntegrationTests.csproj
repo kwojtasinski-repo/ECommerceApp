@@ -34,6 +34,9 @@
 	<None Update="xunit.runner.json">
 		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	</None>
+	<None Update="appsettings.test.json">
+		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</None>
   </ItemGroup>
 
 </Project>

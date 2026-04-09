@@ -8,11 +8,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Catalog.Products
 {
     public class ProductServiceTests : BcBaseTest<IProductService>
     {
+        public ProductServiceTests(ITestOutputHelper output) : base(output) { }
+
         private async Task<int> SeedCategoryAsync(string name = "Elektronika")
         {
             var repo = GetRequiredService<ICategoryRepository>();

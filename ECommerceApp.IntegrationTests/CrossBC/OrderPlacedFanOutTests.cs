@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.CrossBC
 {
@@ -24,6 +25,8 @@ namespace ECommerceApp.IntegrationTests.CrossBC
     /// </summary>
     public class OrderPlacedFanOutTests : BcBaseTest<IMessageBroker>
     {
+        public OrderPlacedFanOutTests(ITestOutputHelper output) : base(output) { }
+
         private const int ProductId = 200;
         private const int OrderId = 1;
         private const int Quantity = 2;

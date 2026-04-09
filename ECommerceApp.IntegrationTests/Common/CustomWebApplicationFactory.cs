@@ -12,25 +12,30 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.IntegrationTests.Common
 {
-    public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStartup> where TStartup : class
+    public class CustomWebApplicationFactory<TStartup> : WebApplicationFactory<TStartup>, IHaveXunitSink where TStartup : class
     {
+        public XunitLogSink Sink { get; } = new();
+
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             try
             {
-                builder.ConfigureAppConfiguration(config =>
+                builder.ConfigureAppConfiguration((_, cfg) =>
                 {
-                    config.AddInMemoryCollection(new Dictionary<string, string>
-                    {
-                        ["Jwt:Key"] = "test-integration-signing-key-must-be-at-least-32-chars!",
-                        ["Jwt:Issuer"] = "test-issuer",
-                        ["Jwt:RefreshTokenTtlDays"] = "7"
-                    });
+                    cfg.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.test.json"), optional: false, reloadOnChange: false);
+                });
+
+                builder.ConfigureLogging(logging =>
+                {
+                    logging.AddConsole();
+                    logging.AddDebug();
+                    logging.AddProvider(new XunitLoggerProvider(Sink));
                 });
 
                 builder.ConfigureServices(services =>
@@ -98,7 +103,7 @@ namespace ECommerceApp.IntegrationTests.Common
                                             $"database with test messages. Error: {ex.Message}");
                     }
                 })
-                .UseEnvironment("Test");
+                .UseEnvironment("test");
             }
             catch (Exception)
             {

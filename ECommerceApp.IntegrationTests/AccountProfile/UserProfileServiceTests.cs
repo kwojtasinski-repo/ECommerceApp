@@ -5,11 +5,14 @@ using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.AccountProfile
 {
     public class UserProfileServiceTests : BcBaseTest<IUserProfileService>
     {
+        public UserProfileServiceTests(ITestOutputHelper output) : base(output) { }
+
         private const string TestUserId = "user-profile-test-001";
 
         private CreateUserProfileDto CreateValidDto(string userId = TestUserId) => new(

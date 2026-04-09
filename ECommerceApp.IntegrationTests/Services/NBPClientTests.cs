@@ -4,15 +4,17 @@ using Newtonsoft.Json;
 using Shouldly;
 using System;
 using System.Collections.Generic;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Services
 {
-    public class NBPClientTests : BaseTest<INBPClient> 
+    public class NBPClientTests : BaseTest<INBPClient>
     {
+        public NBPClientTests(ITestOutputHelper output) : base(output) { }
+
         [Fact]
         public async Task given_valid_currency_should_return_rate()
         {

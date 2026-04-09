@@ -9,11 +9,14 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Sales.Orders
 {
     public class OrderPaymentConfirmedHandlerTests : BcBaseTest<IMessageBroker>
     {
+        public OrderPaymentConfirmedHandlerTests(ITestOutputHelper output) : base(output) { }
+
         private static OrderCustomer CreateCustomer() => new(
             "Jan", "Kowalski", "jan@test.com", "123456789",
             false, null, null, "Główna", "1", null, "67-100", "Nowa Sól", "Polska");

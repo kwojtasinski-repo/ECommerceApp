@@ -9,11 +9,14 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Presale.Checkout
 {
     public class SoftReservationServiceTests : BcBaseTest<ISoftReservationService>
     {
+        public SoftReservationServiceTests(ITestOutputHelper output) : base(output) { }
+
         private async Task<int> SeedProductAsync(decimal price = 99.99m)
         {
             var categoryRepo = GetRequiredService<ICategoryRepository>();

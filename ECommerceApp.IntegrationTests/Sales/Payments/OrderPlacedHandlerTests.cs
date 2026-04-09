@@ -7,11 +7,14 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Sales.Payments
 {
     public class OrderPlacedHandlerTests : BcBaseTest<IMessageBroker>
     {
+        public OrderPlacedHandlerTests(ITestOutputHelper output) : base(output) { }
+
         private static OrderPlaced CreateMessage(
             int orderId = 1,
             decimal totalAmount = 150m,

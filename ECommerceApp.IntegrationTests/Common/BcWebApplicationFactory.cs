@@ -36,16 +36,6 @@ namespace ECommerceApp.IntegrationTests.Common
             // Let the base class handle the legacy Context → InMemory swap + seed data
             base.ConfigureWebHost(builder);
 
-            builder.ConfigureAppConfiguration(config =>
-            {
-                config.AddInMemoryCollection(new Dictionary<string, string>
-                {
-                    ["Jwt:Key"] = "test-integration-signing-key-must-be-at-least-32-chars!",
-                    ["Jwt:Issuer"] = "test-issuer",
-                    ["Jwt:RefreshTokenTtlDays"] = "7"
-                });
-            });
-
             builder.ConfigureServices(services =>
             {
                 ReplaceAllBcDbContextsWithInMemory(services);

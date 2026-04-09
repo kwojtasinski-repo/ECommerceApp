@@ -5,11 +5,14 @@ using ECommerceApp.IntegrationTests.Common;
 using Shouldly;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Supporting.Currencies
 {
     public class CurrencyServiceTests : BcBaseTest<ICurrencyService>
     {
+        public CurrencyServiceTests(ITestOutputHelper output) : base(output) { }
+
         // ── AddAsync ─────────────────────────────────────────────────────
 
         [Fact]

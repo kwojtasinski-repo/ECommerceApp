@@ -6,6 +6,7 @@ using Shouldly;
 using System;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.CrossBC
 {
@@ -18,6 +19,8 @@ namespace ECommerceApp.IntegrationTests.CrossBC
     /// </summary>
     public class CatalogInventorySyncTests : BcBaseTest<IMessageBroker>
     {
+        public CatalogInventorySyncTests(ITestOutputHelper output) : base(output) { }
+
         [Fact]
         public async Task ProductPublished_ShouldCreateProductSnapshotInInventoryBc()
         {

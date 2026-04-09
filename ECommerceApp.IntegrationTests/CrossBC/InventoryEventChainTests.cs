@@ -10,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.CrossBC
 {
@@ -24,6 +25,8 @@ namespace ECommerceApp.IntegrationTests.CrossBC
     /// </summary>
     public class InventoryEventChainTests : BcBaseTest<IMessageBroker>
     {
+        public InventoryEventChainTests(ITestOutputHelper output) : base(output) { }
+
         private const int ProductId = 300;
         private const int OrderId = 50;
         private const int Quantity = 5;

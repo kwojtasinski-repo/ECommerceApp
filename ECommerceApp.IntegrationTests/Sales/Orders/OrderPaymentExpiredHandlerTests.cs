@@ -8,11 +8,14 @@ using Shouldly;
 using System;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Sales.Orders
 {
     public class OrderPaymentExpiredHandlerTests : BcBaseTest<IMessageBroker>
     {
+        public OrderPaymentExpiredHandlerTests(ITestOutputHelper output) : base(output) { }
+
         private static OrderCustomer CreateCustomer() => new(
             "Jan", "Kowalski", "jan@test.com", "123456789",
             false, null, null, "Główna", "1", null, "67-100", "Nowa Sól", "Polska");

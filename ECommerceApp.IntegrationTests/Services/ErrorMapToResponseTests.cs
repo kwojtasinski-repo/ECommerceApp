@@ -7,11 +7,14 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Services
 {
     public class ErrorMapToResponseTests : BaseTest<IErrorMapToResponse>
     {
+        public ErrorMapToResponseTests(ITestOutputHelper output) : base(output) { }
+
         [Fact]
         public void given_save_file_exception_should_map_to_error_response()
         {

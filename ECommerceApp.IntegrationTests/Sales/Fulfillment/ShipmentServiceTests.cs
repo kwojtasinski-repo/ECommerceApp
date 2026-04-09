@@ -6,11 +6,14 @@ using Shouldly;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
 {
     public class ShipmentServiceTests : BcBaseTest<IShipmentService>
     {
+        public ShipmentServiceTests(ITestOutputHelper output) : base(output) { }
+
         // ── CreateShipmentAsync ──────────────────────────────────────────
 
         [Fact]

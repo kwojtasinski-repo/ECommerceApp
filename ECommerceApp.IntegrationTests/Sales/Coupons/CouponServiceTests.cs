@@ -6,11 +6,14 @@ using Shouldly;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Sales.Coupons
 {
     public class CouponServiceTests : BcBaseTest<ICouponService>
     {
+        public CouponServiceTests(ITestOutputHelper output) : base(output) { }
+
         // ── ApplyCouponAsync ─────────────────────────────────────────────
 
         [Fact]
