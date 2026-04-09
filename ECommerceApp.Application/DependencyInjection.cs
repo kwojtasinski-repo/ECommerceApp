@@ -16,6 +16,7 @@ using ECommerceApp.Application.Sales.Payments.Services;
 using ECommerceApp.Application.Sales.Orders.Services;
 using ECommerceApp.Application.Supporting.Communication;
 using ECommerceApp.Application.Supporting.TimeManagement.Services;
+using ECommerceApp.Application.Backoffice;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -47,6 +48,7 @@ namespace ECommerceApp.Application
             services.AddCouponServices();
             services.AddFulfillmentServices();
             services.AddCommunicationServices();
+            services.AddBackoffice();
             services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
             services.AddFluentValidationAutoValidation();
             services.AddFluentValidationClientsideAdapters();
