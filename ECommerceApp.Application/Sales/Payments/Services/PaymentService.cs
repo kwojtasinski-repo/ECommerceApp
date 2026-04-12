@@ -52,6 +52,20 @@ namespace ECommerceApp.Application.Sales.Payments.Services
             return payments.Select(MapToVm).ToList();
         }
 
+        public async Task<PaymentListVm> GetAllAsync(int pageSize, int pageNo, CancellationToken ct = default)
+        {
+            var payments = await _paymentRepo.GetPagedAsync(pageSize, pageNo, ct);
+            var count = await _paymentRepo.GetCountAsync(ct);
+            return new PaymentListVm(payments.Select(MapToVm).ToList(), pageNo, pageSize, count);
+        }
+
+        public async Task<PaymentListVm> GetAllUnpaidAsync(int pageSize, int pageNo, CancellationToken ct = default)
+        {
+            var payments = await _paymentRepo.GetPagedUnpaidAsync(pageSize, pageNo, ct);
+            var count = await _paymentRepo.GetUnpaidCountAsync(ct);
+            return new PaymentListVm(payments.Select(MapToVm).ToList(), pageNo, pageSize, count);
+        }
+
         public async Task<PaymentOperationResult> ConfirmAsync(ConfirmPaymentDto dto, CancellationToken ct = default)
         {
             var payment = await _paymentRepo.GetByIdAsync(dto.PaymentId, ct);

@@ -12,6 +12,10 @@ namespace ECommerceApp.Domain.Sales.Payments
         Task<Payment?> GetByPaymentIdAsync(Guid paymentId, string userId, CancellationToken ct = default);
         Task<Payment?> GetPendingByOrderIdAsync(int orderId, string userId, CancellationToken ct = default);
         Task<IReadOnlyList<Payment>> GetByUserIdAsync(string userId, CancellationToken ct = default);
+        Task<IReadOnlyList<Payment>> GetPagedAsync(int pageSize, int pageNo, CancellationToken ct = default);
+        Task<int> GetCountAsync(CancellationToken ct = default);
+        Task<IReadOnlyList<Payment>> GetPagedUnpaidAsync(int pageSize, int pageNo, CancellationToken ct = default);
+        Task<int> GetUnpaidCountAsync(CancellationToken ct = default);
         Task AddAsync(Payment payment, CancellationToken ct = default);
         Task UpdateAsync(Payment payment, CancellationToken ct = default);
     }

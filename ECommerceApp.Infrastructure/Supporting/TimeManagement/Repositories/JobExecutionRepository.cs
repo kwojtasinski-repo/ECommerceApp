@@ -29,6 +29,17 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement.Repositories
                 .ToListAsync(ct);
         }
 
+        public async Task<IReadOnlyList<JobExecution>> GetPagedAsync(int page, int pageSize, CancellationToken ct = default)
+            => await _context.JobExecutions
+                .AsNoTracking()
+                .OrderByDescending(e => e.StartedAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
+
+        public async Task<int> GetCountAsync(CancellationToken ct = default)
+            => await _context.JobExecutions.AsNoTracking().CountAsync(ct);
+
         public async Task AddAsync(JobExecution execution, CancellationToken ct = default)
         {
             _context.JobExecutions.Add(execution);

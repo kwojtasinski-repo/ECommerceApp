@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -123,6 +124,12 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
                 TotalCount = count,
                 SearchString = search
             };
+        }
+
+        public async Task<IReadOnlyList<RefundVm>> GetByOrderIdAsync(int orderId, CancellationToken ct = default)
+        {
+            var refunds = await _refunds.GetByOrderIdAsync(orderId, ct);
+            return refunds.Select(MapToVm).ToList();
         }
 
         private static RefundVm MapToVm(Refund refund)

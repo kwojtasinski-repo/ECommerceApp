@@ -46,6 +46,31 @@ namespace ECommerceApp.Infrastructure.Sales.Payments.Repositories
                 .OrderByDescending(p => p.ExpiresAt)
                 .ToListAsync(ct);
 
+        public async Task<IReadOnlyList<Payment>> GetPagedAsync(int pageSize, int pageNo, CancellationToken ct = default)
+            => await _context.Payments
+                .AsNoTracking()
+                .OrderByDescending(p => p.ExpiresAt)
+                .Skip((pageNo - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
+
+        public async Task<int> GetCountAsync(CancellationToken ct = default)
+            => await _context.Payments.AsNoTracking().CountAsync(ct);
+
+        public async Task<IReadOnlyList<Payment>> GetPagedUnpaidAsync(int pageSize, int pageNo, CancellationToken ct = default)
+            => await _context.Payments
+                .AsNoTracking()
+                .Where(p => p.Status == PaymentStatus.Pending)
+                .OrderByDescending(p => p.ExpiresAt)
+                .Skip((pageNo - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync(ct);
+
+        public async Task<int> GetUnpaidCountAsync(CancellationToken ct = default)
+            => await _context.Payments
+                .AsNoTracking()
+                .CountAsync(p => p.Status == PaymentStatus.Pending, ct);
+
         public async Task AddAsync(Payment payment, CancellationToken ct = default)
         {
             _context.Payments.Add(payment);

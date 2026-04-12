@@ -69,5 +69,13 @@ namespace ECommerceApp.Infrastructure.Sales.Fulfillment.Repositories
 
             return await query.CountAsync(ct);
         }
+
+        public async Task<IReadOnlyList<Refund>> GetByOrderIdAsync(int orderId, CancellationToken ct = default)
+            => await _context.Refunds
+                .AsNoTracking()
+                .Include(r => r.Items)
+                .Where(r => r.OrderId == orderId)
+                .OrderByDescending(r => r.RequestedAt)
+                .ToListAsync(ct);
     }
 }

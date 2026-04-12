@@ -66,6 +66,24 @@ namespace ECommerceApp.Application.Supporting.TimeManagement.Services
             }).ToList();
         }
 
+        public async Task<IReadOnlyList<JobExecutionRecord>> GetAllHistoryAsync(int page, int pageSize, CancellationToken ct = default)
+        {
+            var executions = await _executionRepo.GetPagedAsync(page, pageSize, ct);
+            return executions.Select(e => new JobExecutionRecord
+            {
+                JobName = e.JobName.Value,
+                ExecutionId = e.ExecutionId,
+                StartedAt = e.StartedAt,
+                CompletedAt = e.CompletedAt ?? e.StartedAt,
+                Succeeded = e.Succeeded,
+                Message = e.Message,
+                Source = e.Source
+            }).ToList();
+        }
+
+        public async Task<int> GetAllHistoryCountAsync(CancellationToken ct = default)
+            => await _executionRepo.GetCountAsync(ct);
+
         public async Task<IReadOnlyList<DeferredJobQueueVm>> GetDeferredQueueAsync(CancellationToken ct = default)
         {
             var rows = await _deferredRepo.GetAllAsync(ct);
