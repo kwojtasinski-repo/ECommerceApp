@@ -15,6 +15,7 @@ namespace ECommerceApp.Application.Sales.Payments.Services
                 .AddScoped<IPaymentService, PaymentService>()
                 .AddScoped<IScheduledTask, PaymentWindowExpiredJob>()
                 .AddScoped<IMessageHandler<OrderPlaced>, OrderPlacedHandler>()
+                .AddScoped<IMessageHandler<OrderPlacementFailed>, OrderPlacementFailedHandler>()
                 .AddScoped<IMessageHandler<RefundApproved>, PaymentRefundApprovedHandler>();
         }
     }

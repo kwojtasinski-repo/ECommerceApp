@@ -26,5 +26,8 @@ namespace ECommerceApp.Application.Sales.Orders.Results
 
         public static PlaceOrderResult CartItemsNotOwnedByUser()
             => new(false, null, null, "One or more cart items belong to a different user.");
+
+        public static PlaceOrderResult PlacementFailed(int orderId)
+            => new(false, orderId, null, "Order placement failed during handler fan-out.");
     }
 }

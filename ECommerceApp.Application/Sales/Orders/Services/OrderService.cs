@@ -9,6 +9,7 @@ using ECommerceApp.Domain.Sales.Orders;
 using ECommerceApp.Domain.Sales.Orders.ValueObjects;
 using ECommerceApp.Domain.Shared;
 using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -75,14 +76,25 @@ namespace ECommerceApp.Application.Sales.Orders.Services
                 .Select(i => new OrderPlacedItem(i.ItemId.Value, i.Quantity))
                 .ToList();
 
-            await _messageBroker.PublishAsync(new OrderPlaced(
+            var orderPlaced = new OrderPlaced(
                 orderId,
                 items,
                 dto.UserId,
                 DateTime.UtcNow.AddDays(3),
                 DateTime.UtcNow,
                 orderWithItems!.Cost,
-                orderWithItems.CurrencyId));
+                orderWithItems.CurrencyId);
+
+            try
+            {
+                await _messageBroker.PublishAsync(orderPlaced);
+            }
+            catch (Exception ex)
+            {
+                await _messageBroker.PublishAsync(
+                    new OrderPlacementFailed(orderId, ex.Message, items, dto.UserId));
+                return PlaceOrderResult.PlacementFailed(orderId);
+            }
 
             return PlaceOrderResult.Success(orderId);
         }

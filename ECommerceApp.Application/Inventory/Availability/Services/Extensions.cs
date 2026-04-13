@@ -26,6 +26,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
                 .AddScoped<IMessageHandler<OrderCancelled>, OrderCancelledHandler>()
                 // OrderShippedHandler unregistered — replaced by Fulfillment handlers (ADR-0017 §13.3)
                 .AddScoped<IMessageHandler<PaymentConfirmed>, PaymentConfirmedHandler>()
+                .AddScoped<IMessageHandler<OrderPlacementFailed>, OrderPlacementFailedHandler>()
                 .AddScoped<IMessageHandler<RefundApproved>, RefundApprovedHandler>()
                 .AddScoped<IMessageHandler<ProductPublished>, ProductPublishedHandler>()
                 .AddScoped<IMessageHandler<ProductUnpublished>, ProductUnpublishedHandler>()

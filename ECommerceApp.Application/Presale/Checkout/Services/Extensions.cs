@@ -22,7 +22,8 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
                 .AddScoped<ICheckoutService, CheckoutService>()
                 .AddScoped<IScheduledTask, SoftReservationExpiredJob>()
                 .AddScoped<IMessageHandler<StockAvailabilityChanged>, StockAvailabilityChangedHandler>()
-                .AddScoped<IMessageHandler<OrderPlaced>, OrderPlacedHandler>();
+                .AddScoped<IMessageHandler<OrderPlaced>, OrderPlacedHandler>()
+                .AddScoped<IMessageHandler<OrderPlacementFailed>, OrderPlacementFailedHandler>();
         }
     }
 }

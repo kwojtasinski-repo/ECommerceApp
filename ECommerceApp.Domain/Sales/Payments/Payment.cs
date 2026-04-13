@@ -143,5 +143,15 @@ namespace ECommerceApp.Domain.Sales.Payments
             Status = PaymentStatus.Refunded;
             return new PaymentRefundedEvent(Id.Value, OrderId.Value, refundId, DateTime.UtcNow);
         }
+
+        public void Cancel()
+        {
+            if (Status != PaymentStatus.Pending)
+            {
+                throw new DomainException($"Cannot cancel payment — current status is '{Status}'.");
+            }
+
+            Status = PaymentStatus.Cancelled;
+        }
     }
 }

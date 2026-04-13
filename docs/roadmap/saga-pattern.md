@@ -1,8 +1,8 @@
 # Saga / Orchestrator Pattern — Design Analysis
 
-> **Status**: Deferred — captured for future implementation.
+> **Status**: In Progress — Option A (choreography + compensation) skeleton implemented. ADR-0026 Accepted.
+> Option B (Process Manager) deferred pending Outbox pattern + F4 handler chain refactoring.
 > Linked from [`README.md` F3](./README.md#future-architectural-considerations).
-> An ADR is required before any implementation begins.
 
 ---
 
