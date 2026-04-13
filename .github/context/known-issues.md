@@ -33,25 +33,13 @@
 
 ## Deferred Design Decisions
 
-### [DD-001] `StockHold` — missing `Withdrawn` status and non-reversible state transitions
-- **Severity**: 🟡 Medium (design debt)
-- **Context**: Inventory/Availability BC — `StockHold.Status` enum (`StockHoldStatus`)
-- **Issue**: There is no `Withdrawn` status to distinguish a hold that was manually cancelled by an admin from a normal `Released` hold (which is triggered by an order cancellation or timeout). Without this distinction, audit trails and reporting cannot tell why a hold was terminated.
-- **Second issue**: The state machine has no enforcement of non-reversible transitions. Once a hold reaches `Released`, it should be permanently terminal because it means the courier has already taken the item (physical goods path). Re-confirming a released hold is currently not blocked at the domain level.
-- **Agreed next steps**:
-  1. Add `Withdrawn = 4` to `StockHoldStatus` enum.
-  2. Add a `Withdraw()` method on `StockHold` domain entity that transitions from `Guaranteed` or `Confirmed` → `Withdrawn`.
-  3. Add `CanWithdraw` flag to `StockHoldRowVm` and a "Wycofaj" button on the Reservations view.
-  4. Add guard in `StockHold` to throw `DomainException` on illegal reverse transitions (e.g. `Released → Confirmed`, `Fulfilled → Guaranteed`).
-  5. Update `StockAuditEntry.ChangeType` if needed (or reuse `Released`).
-- **Blocked by**: No current blocker — can be implemented independently.
-- **Do NOT implement** until this entry is reviewed and a PR is scoped.
-
 ---
 
 ## Resolved
 
-### [KI-001] `BusinessException._codes` silently discarded — no Polish error messages displayed ✅
+### [DD-001] `StockHold` — `Withdrawn` status and non-reversible state transitions ✅
+- **Fix**: `Withdrawn = 4` added to `StockHoldStatus`. `StockChangeType.Withdrawn = 6` added for audit entries. `StockHold.Withdraw()` transitions from `Guaranteed`/`Confirmed` → `Withdrawn`; throws `DomainException` from terminal states. Guards added to `Confirm`, `MarkAsReleased`, `MarkAsFulfilled` blocking illegal reverse transitions. `CanWithdraw` flag added to `StockHoldRowVm`; "Wycofaj" button added to `Reservations.cshtml`. `IStockService.WithdrawHoldAsync` + `StockService` implementation releases reserved stock and writes audit entry. `StockController.Withdraw` POST action added.
+- **Files changed**: `StockHoldStatus.cs`, `StockChangeType.cs`, `StockHold.cs`, `StockHoldsVm.cs`, `StockQueryService.cs`, `IStockService.cs`, `StockService.cs`, `StockController.cs`, `Reservations.cshtml`, `StockHoldAggregateTests.cs` (17 new tests).
 - **Fix**: `ExceptionResponse` now carries `IReadOnlyList<ErrorCodeDto>? Codes`. `ErrorMapToResponse.Map()` maps `BusinessException._codes` → `ErrorCodeDto` list. `errors.js:showErrorFromResponse` handles structured `data.codes` array + flat `data.response` fallback. `_Layout.cshtml:setGlobalError` missing `return` fixed.
 - **Files changed**: `ErrorCodeDto.cs` (new), `ExceptionResponse.cs`, `ErrorMapToResponse.cs`, `errors.js`, `_Layout.cshtml`
 

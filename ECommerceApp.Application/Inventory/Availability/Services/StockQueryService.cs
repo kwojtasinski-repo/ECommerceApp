@@ -113,6 +113,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
                     ExpiresAt   = h.ExpiresAt,
                     CanRelease  = h.Status == StockHoldStatus.Guaranteed,
                     CanConfirm  = h.Status == StockHoldStatus.Guaranteed,
+                    CanWithdraw = h.Status == StockHoldStatus.Guaranteed || h.Status == StockHoldStatus.Confirmed,
                 };
             }).ToList();
 

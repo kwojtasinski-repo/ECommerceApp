@@ -5,6 +5,7 @@ namespace ECommerceApp.Domain.Inventory.Availability
         Guaranteed = 0,
         Confirmed  = 1,
         Released   = 2,
-        Fulfilled  = 3
+        Fulfilled  = 3,
+        Withdrawn  = 4
     }
 }

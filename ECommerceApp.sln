@@ -112,6 +112,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "patterns", "patterns", "{DB
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "roadmap", "roadmap", "{8FA6F8D3-44D1-4AC3-9335-8B69F45EA3DD}"
 	ProjectSection(SolutionItems) = preProject
+		docs\roadmap\chunked-upload.md = docs\roadmap\chunked-upload.md
 		docs\roadmap\frontend-pipeline.md = docs\roadmap\frontend-pipeline.md
 		docs\roadmap\iam-atomic-switch.md = docs\roadmap\iam-atomic-switch.md
 		docs\roadmap\iam-refresh-token.md = docs\roadmap\iam-refresh-token.md
@@ -119,8 +120,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "roadmap", "roadmap", "{8FA6
 		docs\roadmap\payments-atomic-switch.md = docs\roadmap\payments-atomic-switch.md
 		docs\roadmap\presale-slice2.md = docs\roadmap\presale-slice2.md
 		docs\roadmap\README.md = docs\roadmap\README.md
+		docs\roadmap\saga-pattern.md = docs\roadmap\saga-pattern.md
 		docs\roadmap\storefront-offers.md = docs\roadmap\storefront-offers.md
-		docs\roadmap\chunked-upload.md = docs\roadmap\chunked-upload.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "context", "context", "{1064B208-B85A-4013-8C84-597303D43282}"

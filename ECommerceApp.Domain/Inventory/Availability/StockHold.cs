@@ -1,4 +1,5 @@
 using ECommerceApp.Domain.Inventory.Availability.ValueObjects;
+using ECommerceApp.Domain.Shared;
 using System;
 
 namespace ECommerceApp.Domain.Inventory.Availability
@@ -28,8 +29,32 @@ namespace ECommerceApp.Domain.Inventory.Availability
 
         public bool IsGuaranteed => Status == StockHoldStatus.Guaranteed;
 
-        public void Confirm()         => Status = StockHoldStatus.Confirmed;
-        public void MarkAsReleased()  => Status = StockHoldStatus.Released;
-        public void MarkAsFulfilled() => Status = StockHoldStatus.Fulfilled;
+        public void Confirm()
+        {
+            if (Status == StockHoldStatus.Released || Status == StockHoldStatus.Fulfilled || Status == StockHoldStatus.Withdrawn)
+                throw new DomainException($"Cannot confirm a hold in '{Status}' status.");
+            Status = StockHoldStatus.Confirmed;
+        }
+
+        public void MarkAsReleased()
+        {
+            if (Status == StockHoldStatus.Fulfilled || Status == StockHoldStatus.Withdrawn)
+                throw new DomainException($"Cannot release a hold in '{Status}' status.");
+            Status = StockHoldStatus.Released;
+        }
+
+        public void MarkAsFulfilled()
+        {
+            if (Status == StockHoldStatus.Released || Status == StockHoldStatus.Withdrawn)
+                throw new DomainException($"Cannot fulfill a hold in '{Status}' status.");
+            Status = StockHoldStatus.Fulfilled;
+        }
+
+        public void Withdraw()
+        {
+            if (Status == StockHoldStatus.Released || Status == StockHoldStatus.Fulfilled || Status == StockHoldStatus.Withdrawn)
+                throw new DomainException($"Cannot withdraw a hold in '{Status}' status.");
+            Status = StockHoldStatus.Withdrawn;
+        }
     }
 }

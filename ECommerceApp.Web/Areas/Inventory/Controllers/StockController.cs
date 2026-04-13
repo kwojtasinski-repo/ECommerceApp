@@ -69,5 +69,15 @@ namespace ECommerceApp.Web.Areas.Inventory.Controllers
             TempData["Success"] = $"Rezerwacja zamówienia #{orderId} produktu #{productId} potwierdzona.";
             return RedirectToAction(nameof(Reservations));
         }
+
+        [Authorize(Roles = ManagingRole)]
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Withdraw(int orderId, int productId)
+        {
+            await _stock.WithdrawHoldAsync(orderId, productId);
+            TempData["Success"] = $"Rezerwacja zamówienia #{orderId} produktu #{productId} wycofana.";
+            return RedirectToAction(nameof(Reservations));
+        }
     }
 }

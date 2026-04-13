@@ -24,5 +24,6 @@ namespace ECommerceApp.Application.Inventory.Availability.ViewModels
         public DateTime ExpiresAt { get; init; }
         public bool CanRelease { get; init; }
         public bool CanConfirm { get; init; }
+        public bool CanWithdraw { get; init; }
     }
 }

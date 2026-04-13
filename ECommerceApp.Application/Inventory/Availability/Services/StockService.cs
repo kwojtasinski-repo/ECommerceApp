@@ -226,5 +226,29 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             await _deferredScheduler.CancelAsync(StockAdjustmentJob.JobTaskName, dto.ProductId.ToString(), ct);
             await _deferredScheduler.ScheduleAsync(StockAdjustmentJob.JobTaskName, dto.ProductId.ToString(), DateTime.UtcNow, ct);
         }
+
+        public async Task<bool> WithdrawHoldAsync(int orderId, int productId, CancellationToken ct = default)
+        {
+            var stockHold = await _stockHoldRepo.GetByOrderAndProductAsync(orderId, productId, ct);
+            if (stockHold is null)
+            {
+                return false;
+            }
+
+            stockHold.Withdraw();
+
+            var stock = await _stockItemRepo.GetByProductIdAsync(productId, ct);
+            if (stock != null && stockHold.Quantity <= stock.ReservedQuantity.Value)
+            {
+                var before = stock.AvailableQuantity;
+                stock.Release(stockHold.Quantity);
+                await _stockItemRepo.UpdateAsync(stock, ct);
+                await _auditRepo.AddAsync(StockAuditEntry.Create(productId, StockChangeType.Withdrawn, before, stock.AvailableQuantity, orderId, DateTime.UtcNow), ct);
+                await _broker.PublishAsync(new StockAvailabilityChanged(productId, stock.AvailableQuantity, DateTime.UtcNow));
+            }
+
+            await _stockHoldRepo.UpdateAsync(stockHold, ct);
+            return true;
+        }
     }
 }

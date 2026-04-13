@@ -8,5 +8,6 @@ namespace ECommerceApp.Domain.Inventory.Availability
         Fulfilled   = 3,
         Returned    = 4,
         Adjusted    = 5,
+        Withdrawn   = 6,
     }
 }
