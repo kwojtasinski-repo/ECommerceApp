@@ -1,0 +1,69 @@
+@model ECommerceApp.Application.Backoffice.ViewModels.BackofficeCustomerListVm
+
+@{
+    ViewData["Title"] = "Backoffice — Klienci";
+}
+
+<h1>Klienci</h1>
+
+<form asp-area="Backoffice" asp-controller="Customers" asp-action="Index" method="post">
+    <div class="input-group mb-3">
+        <input type="number" name="pageSize" value="@Model.PageSize" class="form-control" style="max-width:80px;" placeholder="Rozmiar strony" />
+        <input type="number" name="pageNo" value="@Model.CurrentPage" class="form-control" style="max-width:80px;" placeholder="Strona" />
+        <input type="text" name="searchString" value="@Model.SearchString" class="form-control" placeholder="Wyszukaj..." />
+        <button type="submit" class="btn btn-outline-secondary">Wyszukaj</button>
+    </div>
+</form>
+
+@if (!Model.Customers.Any())
+{
+    <p><em>Brak klientów.</em></p>
+}
+else
+{
+    var pageCount = Model.PageSize > 0 ? (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize) : 1;
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Imię i nazwisko</th>
+                <th>Id użytkownika</th>
+                <th>Firma</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Customers)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.FullName</td>
+                    <td>@item.UserId</td>
+                    <td>@(item.IsCompany ? "Tak" : "Nie")</td>
+                    <td>
+                        <a asp-area="Backoffice" asp-controller="Customers" asp-action="Details" asp-route-id="@item.Id">Szczegóły</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (pageCount > 1)
+    {
+        <nav>
+            <ul class="pagination">
+                @for (int i = 1; i <= pageCount; i++)
+                {
+                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                        <form asp-area="Backoffice" asp-controller="Customers" asp-action="Index" method="post" class="d-inline">
+                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                            <input type="hidden" name="pageNo" value="@i" />
+                            <input type="hidden" name="searchString" value="@Model.SearchString" />
+                            <button type="submit" class="page-link">@i</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}

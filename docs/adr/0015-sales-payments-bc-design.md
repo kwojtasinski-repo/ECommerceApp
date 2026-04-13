@@ -1,7 +1,7 @@
 # ADR-0015: Sales/Payments BC — Payment Aggregate Design
 
 ## Status
-Proposed
+Accepted
 
 ## Date
 2026-03-09

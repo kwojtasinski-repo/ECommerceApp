@@ -1,0 +1,26 @@
+@model ECommerceApp.Application.Backoffice.ViewModels.BackofficeCustomerDetailVm
+
+@{
+    ViewData["Title"] = "Szczegóły klienta";
+}
+
+<h1>Szczegóły klienta</h1>
+
+<dl class="row">
+    <dt class="col-sm-3">Id</dt>
+    <dd class="col-sm-9">@Model.Id</dd>
+
+    <dt class="col-sm-3">Imię</dt>
+    <dd class="col-sm-9">@Model.FirstName</dd>
+
+    <dt class="col-sm-3">Nazwisko</dt>
+    <dd class="col-sm-9">@Model.LastName</dd>
+
+    <dt class="col-sm-3">Id użytkownika</dt>
+    <dd class="col-sm-9">@Model.UserId</dd>
+
+    <dt class="col-sm-3">Firma</dt>
+    <dd class="col-sm-9">@(Model.IsCompany ? "Tak" : "Nie")</dd>
+</dl>
+
+<a asp-area="Backoffice" asp-controller="Customers" asp-action="Index">← Wróć do listy</a>

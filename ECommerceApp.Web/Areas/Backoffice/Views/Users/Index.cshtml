@@ -1,0 +1,67 @@
+@model ECommerceApp.Application.Backoffice.ViewModels.BackofficeUserListVm
+
+@{
+    ViewData["Title"] = "Backoffice — Użytkownicy";
+}
+
+<h1>Użytkownicy</h1>
+
+<form asp-area="Backoffice" asp-controller="Users" asp-action="Index" method="post">
+    <div class="input-group mb-3">
+        <input type="number" name="pageSize" value="@Model.PageSize" class="form-control" style="max-width:80px;" placeholder="Rozmiar strony" />
+        <input type="number" name="pageNo" value="@Model.CurrentPage" class="form-control" style="max-width:80px;" placeholder="Strona" />
+        <input type="text" name="searchString" value="@Model.SearchString" class="form-control" placeholder="Wyszukaj..." />
+        <button type="submit" class="btn btn-outline-secondary">Wyszukaj</button>
+    </div>
+</form>
+
+@if (!Model.Users.Any())
+{
+    <p><em>Brak użytkowników.</em></p>
+}
+else
+{
+    var pageCount = Model.PageSize > 0 ? (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize) : 1;
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Login</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Users)
+            {
+                <tr>
+                    <td>@item.UserName</td>
+                    <td>@item.Email</td>
+                    <td>@string.Join(", ", item.Roles)</td>
+                    <td>
+                        <a asp-area="Backoffice" asp-controller="Users" asp-action="Details" asp-route-id="@item.Id">Szczegóły</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (pageCount > 1)
+    {
+        <nav>
+            <ul class="pagination">
+                @for (int i = 1; i <= pageCount; i++)
+                {
+                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                        <form asp-area="Backoffice" asp-controller="Users" asp-action="Index" method="post" class="d-inline">
+                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                            <input type="hidden" name="pageNo" value="@i" />
+                            <input type="hidden" name="searchString" value="@Model.SearchString" />
+                            <button type="submit" class="page-link">@i</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}

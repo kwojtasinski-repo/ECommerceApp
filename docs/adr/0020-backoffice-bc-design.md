@@ -1,7 +1,7 @@
 # ADR-0020: Backoffice BC — Admin Aggregation and Reporting Design
 
 ## Status
-Proposed
+Accepted
 
 ## Date
 2026-03-12

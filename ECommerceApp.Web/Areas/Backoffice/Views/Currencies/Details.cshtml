@@ -1,0 +1,44 @@
+@model ECommerceApp.Application.Backoffice.ViewModels.BackofficeCurrencyDetailVm
+
+@{
+    ViewData["Title"] = "Szczegóły waluty";
+}
+
+<h1>Szczegóły waluty</h1>
+
+<dl class="row">
+    <dt class="col-sm-3">Id</dt>
+    <dd class="col-sm-9">@Model.Id</dd>
+
+    <dt class="col-sm-3">Kod</dt>
+    <dd class="col-sm-9">@Model.Code</dd>
+
+    <dt class="col-sm-3">Opis</dt>
+    <dd class="col-sm-9">@Model.Description</dd>
+</dl>
+
+@if (Model.Rates.Any())
+{
+    <h4>Kursy waluty</h4>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Kurs</th>
+                <th>Data</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var rate in Model.Rates)
+            {
+                <tr>
+                    <td>@rate.Id</td>
+                    <td>@rate.Rate.ToString("N4")</td>
+                    <td>@rate.CurrencyDate</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<a asp-area="Backoffice" asp-controller="Currencies" asp-action="Index">← Wróć do listy</a>

@@ -1,7 +1,7 @@
 ﻿# ADR-0002: Post-Event-Storming Architectural Evolution Strategy
 
 ## Status
-Proposed
+Accepted
 
 ## Date
 2026-02-21

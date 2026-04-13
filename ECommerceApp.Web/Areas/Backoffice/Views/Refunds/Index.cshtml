@@ -1,0 +1,69 @@
+@model ECommerceApp.Application.Backoffice.ViewModels.BackofficeRefundListVm
+
+@{
+    ViewData["Title"] = "Backoffice — Zwroty";
+}
+
+<h1>Zwroty</h1>
+
+<form asp-area="Backoffice" asp-controller="Refunds" asp-action="Index" method="post">
+    <div class="input-group mb-3">
+        <input type="number" name="pageSize" value="@Model.PageSize" class="form-control" style="max-width:80px;" placeholder="Rozmiar strony" />
+        <input type="number" name="pageNo" value="@Model.CurrentPage" class="form-control" style="max-width:80px;" placeholder="Strona" />
+        <button type="submit" class="btn btn-outline-secondary">Filtruj</button>
+    </div>
+</form>
+
+@if (!Model.Refunds.Any())
+{
+    <p><em>Brak zwrotów.</em></p>
+}
+else
+{
+    var pageCount = Model.PageSize > 0 ? (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize) : 1;
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Id zamówienia</th>
+                <th>Powód</th>
+                <th>Status</th>
+                <th>Gwarancja</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Refunds)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.OrderId</td>
+                    <td>@item.Reason</td>
+                    <td>@item.Status</td>
+                    <td>@(item.OnWarranty ? "Tak" : "Nie")</td>
+                    <td>
+                        <a asp-area="Backoffice" asp-controller="Refunds" asp-action="Details" asp-route-id="@item.Id">Szczegóły</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (pageCount > 1)
+    {
+        <nav>
+            <ul class="pagination">
+                @for (int i = 1; i <= pageCount; i++)
+                {
+                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                        <form asp-area="Backoffice" asp-controller="Refunds" asp-action="Index" method="post" class="d-inline">
+                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                            <input type="hidden" name="pageNo" value="@i" />
+                            <button type="submit" class="page-link">@i</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}

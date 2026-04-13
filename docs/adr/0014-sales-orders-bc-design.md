@@ -1,7 +1,7 @@
 # ADR-0014: Sales/Orders BC — Order and OrderItem Aggregate Design
 
 ## Status
-Accepted — under revision (see §16–§18 for agreed design amendments)
+Accepted — Amended (§16–§18 design amendments implemented; see §16–§18 for details)
 
 ## Date
 2026-03-09

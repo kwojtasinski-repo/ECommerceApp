@@ -1,0 +1,38 @@
+@model ECommerceApp.Application.Backoffice.ViewModels.BackofficeCurrencyListVm
+
+@{
+    ViewData["Title"] = "Backoffice — Waluty";
+}
+
+<h1>Waluty</h1>
+
+@if (!Model.Currencies.Any())
+{
+    <p><em>Brak walut.</em></p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Kod</th>
+                <th>Opis</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Currencies)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.Code</td>
+                    <td>@item.Description</td>
+                    <td>
+                        <a asp-area="Backoffice" asp-controller="Currencies" asp-action="Details" asp-route-id="@item.Id">Szczegóły</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

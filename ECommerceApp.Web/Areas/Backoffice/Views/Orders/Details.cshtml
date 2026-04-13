@@ -1,0 +1,32 @@
+@model ECommerceApp.Application.Backoffice.ViewModels.BackofficeOrderDetailVm
+
+@{
+    ViewData["Title"] = "Szczegóły zamówienia";
+}
+
+<h1>Szczegóły zamówienia</h1>
+
+<dl class="row">
+    <dt class="col-sm-3">Id</dt>
+    <dd class="col-sm-9">@Model.Id</dd>
+
+    <dt class="col-sm-3">Nr zamówienia</dt>
+    <dd class="col-sm-9">@Model.Number</dd>
+
+    <dt class="col-sm-3">Koszt</dt>
+    <dd class="col-sm-9">@Model.Cost.ToString("N2")</dd>
+
+    <dt class="col-sm-3">Status</dt>
+    <dd class="col-sm-9">@Model.Status</dd>
+
+    <dt class="col-sm-3">Id klienta</dt>
+    <dd class="col-sm-9">@Model.CustomerId</dd>
+
+    <dt class="col-sm-3">Opłacone</dt>
+    <dd class="col-sm-9">@(Model.IsPaid ? "Tak" : "Nie")</dd>
+
+    <dt class="col-sm-3">Dostarczone</dt>
+    <dd class="col-sm-9">@(Model.IsDelivered ? "Tak" : "Nie")</dd>
+</dl>
+
+<a asp-area="Backoffice" asp-controller="Orders" asp-action="Index">← Wróć do listy</a>

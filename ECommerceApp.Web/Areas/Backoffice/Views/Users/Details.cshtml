@@ -1,0 +1,23 @@
+@model ECommerceApp.Application.Backoffice.ViewModels.BackofficeUserDetailVm
+
+@{
+    ViewData["Title"] = "Szczegóły użytkownika";
+}
+
+<h1>Szczegóły użytkownika</h1>
+
+<dl class="row">
+    <dt class="col-sm-3">Id</dt>
+    <dd class="col-sm-9">@Model.Id</dd>
+
+    <dt class="col-sm-3">Login</dt>
+    <dd class="col-sm-9">@Model.UserName</dd>
+
+    <dt class="col-sm-3">Email</dt>
+    <dd class="col-sm-9">@Model.Email</dd>
+
+    <dt class="col-sm-3">Role</dt>
+    <dd class="col-sm-9">@string.Join(", ", Model.Roles)</dd>
+</dl>
+
+<a asp-area="Backoffice" asp-controller="Users" asp-action="Index">← Wróć do listy</a>

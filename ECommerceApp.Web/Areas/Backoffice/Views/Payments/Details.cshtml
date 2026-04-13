@@ -1,0 +1,29 @@
+@model ECommerceApp.Application.Backoffice.ViewModels.BackofficePaymentDetailVm
+
+@{
+    ViewData["Title"] = "Szczegóły płatności";
+}
+
+<h1>Szczegóły płatności</h1>
+
+<dl class="row">
+    <dt class="col-sm-3">Id</dt>
+    <dd class="col-sm-9">@Model.Id</dd>
+
+    <dt class="col-sm-3">Nr płatności</dt>
+    <dd class="col-sm-9">@Model.Number</dd>
+
+    <dt class="col-sm-3">Kwota</dt>
+    <dd class="col-sm-9">@Model.Cost.ToString("N2")</dd>
+
+    <dt class="col-sm-3">Stan</dt>
+    <dd class="col-sm-9">@Model.State</dd>
+
+    <dt class="col-sm-3">Id zamówienia</dt>
+    <dd class="col-sm-9">@Model.OrderId</dd>
+
+    <dt class="col-sm-3">Id klienta</dt>
+    <dd class="col-sm-9">@Model.CustomerId</dd>
+</dl>
+
+<a asp-area="Backoffice" asp-controller="Payments" asp-action="Index">← Wróć do listy</a>

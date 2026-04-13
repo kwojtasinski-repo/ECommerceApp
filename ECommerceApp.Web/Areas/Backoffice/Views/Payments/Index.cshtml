@@ -1,0 +1,71 @@
+@model ECommerceApp.Application.Backoffice.ViewModels.BackofficePaymentListVm
+
+@{
+    ViewData["Title"] = "Backoffice — Płatności";
+}
+
+<h1>Płatności</h1>
+
+<a asp-area="Backoffice" asp-controller="Payments" asp-action="Unpaid" class="btn btn-outline-warning mb-3">Nieopłacone</a>
+
+<form asp-area="Backoffice" asp-controller="Payments" asp-action="Index" method="post">
+    <div class="input-group mb-3">
+        <input type="number" name="pageSize" value="@Model.PageSize" class="form-control" style="max-width:80px;" placeholder="Rozmiar strony" />
+        <input type="number" name="pageNo" value="@Model.CurrentPage" class="form-control" style="max-width:80px;" placeholder="Strona" />
+        <button type="submit" class="btn btn-outline-secondary">Filtruj</button>
+    </div>
+</form>
+
+@if (!Model.Payments.Any())
+{
+    <p><em>Brak płatności.</em></p>
+}
+else
+{
+    var pageCount = Model.PageSize > 0 ? (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize) : 1;
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Nr płatności</th>
+                <th>Kwota</th>
+                <th>Stan</th>
+                <th>Id zamówienia</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model.Payments)
+            {
+                <tr>
+                    <td>@item.Id</td>
+                    <td>@item.Number</td>
+                    <td>@item.Cost.ToString("N2")</td>
+                    <td>@item.State</td>
+                    <td>@item.OrderId</td>
+                    <td>
+                        <a asp-area="Backoffice" asp-controller="Payments" asp-action="Details" asp-route-id="@item.Id">Szczegóły</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (pageCount > 1)
+    {
+        <nav>
+            <ul class="pagination">
+                @for (int i = 1; i <= pageCount; i++)
+                {
+                    <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                        <form asp-area="Backoffice" asp-controller="Payments" asp-action="Index" method="post" class="d-inline">
+                            <input type="hidden" name="pageSize" value="@Model.PageSize" />
+                            <input type="hidden" name="pageNo" value="@i" />
+                            <button type="submit" class="page-link">@i</button>
+                        </form>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+}
