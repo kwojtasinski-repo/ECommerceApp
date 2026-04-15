@@ -25,7 +25,7 @@ _Last updated: 2026-06-05_
 | **DbContexts**            | 12 (1 legacy + 11 per-BC)      |
 | **DB migration folders**  | 12                             |
 | **HTTP scenario files**   | 10                             |
-| **Test files**            | 131 (92 unit + 39 integration) |
+| **Test files**            | 132 (92 unit + 40 integration) |
 
 ---
 
@@ -39,7 +39,7 @@ _Last updated: 2026-06-05_
 | `ECommerceApp.Web`              | 38 .cs + 103 .cshtml | 3,830  | MVC controllers, views, Identity pages, frontend     |
 | `ECommerceApp.API`              | 21                   | 1,889  | REST controllers, JWT auth                           |
 | `ECommerceApp.UnitTests`        | 79                   | 10,844 | xUnit unit tests                                     |
-| `ECommerceApp.IntegrationTests` | 37                   | 4,837  | xUnit integration tests                              |
+| `ECommerceApp.IntegrationTests` | 38                   | 4,837  | xUnit integration tests                              |
 
 ---
 

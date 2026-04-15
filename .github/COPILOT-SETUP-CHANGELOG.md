@@ -19,6 +19,7 @@
 | ADRs                                   | 26    | ADR-0026 (Order lifecycle saga) added                                          |
 | Context files                          | 5     | project-state, known-issues, repo-index, future-skills, anti-patterns-critical |
 | HTTP scenario files                    | 10    | +auth.http (was 9)                                                             |
+| Test files                             | 132   | 92 unit + 40 integration (+1 `OrderPlacementFailedFanOutTests.cs`)             |
 
 ---
 
@@ -84,6 +85,20 @@
 ---
 
 ## Change log
+
+### Session 15 — Saga implementation sync (2026-04-15)
+
+| #   | Change                                                                                                                                      | Files affected                                                                    |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| 1   | `PaymentStatus.Cancelled` added to enum (commit 030797a)                                                                                    | `ECommerceApp.Domain/Sales/Payments/PaymentStatus.cs`                             |
+| 2   | `Payment.Cancel()` domain method added — throws `DomainException` if status is not `Pending`                                                | `ECommerceApp.Domain/Sales/Payments/Payment.cs`                                   |
+| 3   | `PaymentOperationResult.AlreadyCancelled` added                                                                                             | `ECommerceApp.Application/Sales/Payments/Results/PaymentOperationResult.cs`       |
+| 4   | `PaymentService.ConfirmAsync` — guard added: returns `AlreadyCancelled` when payment status is `Cancelled`                                  | `ECommerceApp.Application/Sales/Payments/Services/PaymentService.cs`              |
+| 5   | `PaymentsController.ConfirmPayment` — Polish error message added for `AlreadyCancelled` case                                                | `ECommerceApp.Web/Areas/Sales/Controllers/PaymentsController.cs`                  |
+| 6   | `PaymentAggregateTests` — 3 new `Cancel` tests; `PaymentStatus.Cancelled` added as inline data to 2 existing non-Pending theories           | `ECommerceApp.UnitTests/Sales/Payments/PaymentAggregateTests.cs`                  |
+| 7   | `OrderPlacementFailedFanOutTests.cs` (NEW) — 6 cross-BC integration tests: Payments compensation (×2), Inventory compensation (×2), combined fan-out (×2) | `ECommerceApp.IntegrationTests/CrossBC/OrderPlacementFailedFanOutTests.cs` |
+| 8   | Updated repo-index test counts: 131→132 total (integration 39→40)                                                                          | `.github/context/repo-index.md`                                                   |
+| 9   | Updated project-state.md: Saga Option A (OrderPlacementFailed compensation — Payments + Inventory + Presale) marked complete                | `.github/context/project-state.md`                                                |
 
 ### Session 14 — Full audit & ADR-0026 sync (2026-04-15)
 
