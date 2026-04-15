@@ -95,6 +95,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         [InlineData(PaymentStatus.Confirmed)]
         [InlineData(PaymentStatus.Expired)]
         [InlineData(PaymentStatus.Refunded)]
+        [InlineData(PaymentStatus.Cancelled)]
         public void Confirm_NonPendingPayment_ShouldThrowDomainException(PaymentStatus initialStatus)
         {
             var payment = CreatePending();
@@ -123,6 +124,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         [InlineData(PaymentStatus.Confirmed)]
         [InlineData(PaymentStatus.Expired)]
         [InlineData(PaymentStatus.Refunded)]
+        [InlineData(PaymentStatus.Cancelled)]
         public void Expire_NonPendingPayment_ShouldThrowDomainException(PaymentStatus initialStatus)
         {
             var payment = CreatePending();
@@ -175,6 +177,32 @@ namespace ECommerceApp.UnitTests.Sales.Payments
             act.Should().Throw<DomainException>().WithMessage("*quantity*");
         }
 
+        // ── Cancel ────────────────────────────────────────────────────────────
+
+        [Fact]
+        public void Cancel_PendingPayment_ShouldSetStatusToCancelled()
+        {
+            var payment = CreatePending();
+
+            payment.Cancel();
+
+            payment.Status.Should().Be(PaymentStatus.Cancelled);
+        }
+
+        [Theory]
+        [InlineData(PaymentStatus.Confirmed)]
+        [InlineData(PaymentStatus.Expired)]
+        [InlineData(PaymentStatus.Refunded)]
+        public void Cancel_NonPendingPayment_ShouldThrowDomainException(PaymentStatus initialStatus)
+        {
+            var payment = CreatePending();
+            SetStatus(payment, initialStatus);
+
+            var act = () => payment.Cancel();
+
+            act.Should().Throw<DomainException>().WithMessage("*cancel*");
+        }
+
         // ── PaymentOrderId guard ──────────────────────────────────────────────
 
         [Fact]
@@ -209,6 +237,9 @@ namespace ECommerceApp.UnitTests.Sales.Payments
                 case PaymentStatus.Refunded:
                     payment.Confirm();
                     payment.IssueRefund(1, 1);
+                    break;
+                case PaymentStatus.Cancelled:
+                    payment.Cancel();
                     break;
             }
         }

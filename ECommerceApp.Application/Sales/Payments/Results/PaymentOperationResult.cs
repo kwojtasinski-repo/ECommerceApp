@@ -6,6 +6,7 @@ namespace ECommerceApp.Application.Sales.Payments.Services
         PaymentNotFound,
         AlreadyConfirmed,
         AlreadyExpired,
-        AlreadyRefunded
+        AlreadyRefunded,
+        AlreadyCancelled
     }
 }

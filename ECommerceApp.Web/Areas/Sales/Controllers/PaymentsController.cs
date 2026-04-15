@@ -60,10 +60,11 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
 
             ModelState.AddModelError(string.Empty, result switch
             {
-                PaymentOperationResult.AlreadyConfirmed => "Płatność została już potwierdzona.",
-                PaymentOperationResult.AlreadyExpired   => "Płatność wygasła i nie może zostać potwierdzona.",
-                PaymentOperationResult.AlreadyRefunded  => "Płatność została już zwrócona.",
-                _                                       => "Nie udało się potwierdzić płatności."
+                PaymentOperationResult.AlreadyConfirmed  => "Płatność została już potwierdzona.",
+                PaymentOperationResult.AlreadyExpired    => "Płatność wygasła i nie może zostać potwierdzona.",
+                PaymentOperationResult.AlreadyRefunded   => "Płatność została już zwrócona.",
+                PaymentOperationResult.AlreadyCancelled  => "Płatność została anulowana i nie może zostać potwierdzona.",
+                _                                        => "Nie udało się potwierdzić płatności."
             });
             return View(payment);
         }

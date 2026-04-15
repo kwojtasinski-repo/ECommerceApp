@@ -78,6 +78,8 @@ namespace ECommerceApp.Application.Sales.Payments.Services
                 return PaymentOperationResult.AlreadyExpired;
             if (payment.Status == PaymentStatus.Refunded)
                 return PaymentOperationResult.AlreadyRefunded;
+            if (payment.Status == PaymentStatus.Cancelled)
+                return PaymentOperationResult.AlreadyCancelled;
 
             var @event = payment.Confirm(dto.TransactionRef);
             await _paymentRepo.UpdateAsync(payment, ct);
