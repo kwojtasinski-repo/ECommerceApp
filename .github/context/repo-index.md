@@ -16,16 +16,16 @@ _Last updated: 2026-06-05_
 
 | Metric                    | Value                          |
 | ------------------------- | ------------------------------ |
-| **Total C# source files** | ~1,054 (excl. bin/obj)         |
+| **Total C# source files** | ~1,146 (excl. bin/obj)         |
 | **Total lines of C#**     | ~44,500 (excl. migrations)     |
-| **Razor views (.cshtml)** | 103                            |
+| **Razor views (.cshtml)** | 125                            |
 | **JavaScript modules**    | 12                             |
 | **Identity Razor Pages**  | 14                             |
-| **ADRs**                  | 25                             |
+| **ADRs**                  | 26                             |
 | **DbContexts**            | 12 (1 legacy + 11 per-BC)      |
 | **DB migration folders**  | 12                             |
 | **HTTP scenario files**   | 10                             |
-| **Test files**            | 116 (79 unit + 37 integration) |
+| **Test files**            | 131 (92 unit + 39 integration) |
 
 ---
 

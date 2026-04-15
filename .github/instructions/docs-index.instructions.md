@@ -88,6 +88,7 @@ Read an ADR **only** when the "When to read" condition matches the files you are
 | 0023 | Bootstrap 5 upgrade                                                       | Editing `_Layout.cshtml`, `modalService.js`, or any view with BS data attributes                                                                      |
 | 0024 | Controller routing strategy for BC atomic switches                        | Creating Area controllers, migrating Web/API controllers, editing `Startup.cs` routing                                                                |
 | 0025 | API tiered access — Trusted purchase policy, quantity limits, payment URL | Editing API V2 `CartController`, `CheckoutController`, `OrdersController`, `LoginController` JWT claims, `ApiPurchaseOptions`, `MaxApiQuantityFilter` |
+| 0026 | Order lifecycle saga — choreography + compensation | Implementing saga compensation, `OrderPlaced` fan-out error handling, cross-BC partial failure recovery |
 
 ## Architecture docs (`docs/architecture/`)
 
@@ -114,6 +115,7 @@ Read an ADR **only** when the "When to read" condition matches the files you are
 | `frontend-pipeline.md`      | Working on frontend JS/error pipeline (ADR-0021 phases)                  |
 | `storefront-offers.md`      | Working on public storefront `/offers` browsing (Presale area)           |
 | `chunked-upload.md`         | Implementing chunked image upload feature (server-driven design)         |
+| `saga-pattern.md`           | Working on Order Placement Saga, compensation design, or Process Manager evolution (ADR-0026) |
 
 ## Reference docs (`docs/reference/`)
 

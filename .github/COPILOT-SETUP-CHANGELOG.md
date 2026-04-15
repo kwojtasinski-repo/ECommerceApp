@@ -11,11 +11,12 @@
 
 | Category                               | Count | Details                                                                        |
 | -------------------------------------- | ----- | ------------------------------------------------------------------------------ |
-| `copilot-instructions.md`              | 1     | ≤ 4,000 chars (~3,710), repo-level policy                                      |
-| Instruction files (`.instructions.md`) | 12    | All with `applyTo:` frontmatter (includes copilot-config-sync)                 |
+| `copilot-instructions.md`              | 1     | ≤ 4,000 chars (~3,712), repo-level policy                                      |
+| Instruction files (`.instructions.md`) | 12    | All with `applyTo:` frontmatter; copilot-config-sync now also triggers on docs/ |
 | Prompt files (`.prompt.md`)            | 3     | BC analysis, BC implementation, PR review                                      |
 | Agent files                            | 4     | adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer              |
 | Skills (`SKILL.md`)                    | 8     | Scaffolding templates for common artifacts                                     |
+| ADRs                                   | 26    | ADR-0026 (Order lifecycle saga) added                                          |
 | Context files                          | 5     | project-state, known-issues, repo-index, future-skills, anti-patterns-critical |
 | HTTP scenario files                    | 10    | +auth.http (was 9)                                                             |
 
@@ -38,7 +39,7 @@
 | `safety.instructions.md`              | `**`                                                          | Session 1 (extracted from copilot-instructions) |
 | `pre-edit.instructions.md`            | `**`                                                          | Session 1 (extracted from copilot-instructions) |
 | `docs-index.instructions.md`          | `**`                                                          | Session 1 (new — docs lookup table)             |
-| `copilot-config-sync.instructions.md` | `.github/**`                                                  | Session 11 (new — auto-sync trigger)            |
+| `copilot-config-sync.instructions.md` | `.github/**, docs/**`                                         | Session 11 (new); Session 14 (extended to docs/**) |
 
 ### `.github/prompts/` (3 files)
 
@@ -83,6 +84,17 @@
 ---
 
 ## Change log
+
+### Session 14 — Full audit & ADR-0026 sync (2026-04-15)
+
+| #   | Change                                                                                                                                           | Files affected                                              |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| 1   | Added ADR-0026 (Order lifecycle saga) row to ADR table in docs-index                                                                             | `.github/instructions/docs-index.instructions.md`          |
+| 2   | Added `saga-pattern.md` row to roadmap table in docs-index (was missing — file existed on disk and in .sln)                                      | `.github/instructions/docs-index.instructions.md`          |
+| 3   | Incremented ADR count §2: 25 → 26                                                                                                               | `.github/copilot-instructions.md`                           |
+| 4   | Added `docs\adr\0026-order-lifecycle-saga.md` to `adr` solution folder                                                                          | `ECommerceApp.sln`                                          |
+| 5   | Extended `copilot-config-sync.instructions.md` `applyTo:` to `.github/**, docs/**`; added ADR/roadmap trigger sections for docs/ changes        | `.github/instructions/copilot-config-sync.instructions.md` |
+| 6   | Updated `repo-index.md` At a Glance: CS ~1054→~1146, CSHTML 103→125, ADRs 25→26, tests 116→131 (92+39)                                          | `.github/context/repo-index.md`                             |
 
 ### Session 13 — Full audit & sync (2026-04-09)
 

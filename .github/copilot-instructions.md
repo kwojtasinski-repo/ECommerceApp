@@ -16,7 +16,7 @@ ECommerceApp — ASP.NET Core MVC + Web API e-commerce platform. Clean/onion arc
 
 `docs-index.instructions.md` is the **single routing table** for all Copilot config. It indexes:
 
-- **12 instruction files**, **3 prompts**, **4 agents**, **8 skills**, **25 ADRs**, architecture docs, patterns, roadmaps, context files
+- **12 instruction files**, **3 prompts**, **4 agents**, **8 skills**, **26 ADRs**, architecture docs, patterns, roadmaps, context files
 
 Read `docs-index.instructions.md` to find the right file for any task. Follow its “When to read” columns.
 
