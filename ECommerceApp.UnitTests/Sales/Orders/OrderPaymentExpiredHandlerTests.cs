@@ -1,6 +1,4 @@
-using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Sales.Orders.Handlers;
-using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Application.Sales.Payments.Messages;
 using ECommerceApp.Domain.Sales.Orders;
 using ECommerceApp.Domain.Sales.Orders.ValueObjects;
@@ -16,16 +14,14 @@ namespace ECommerceApp.UnitTests.Sales.Orders
     public class OrderPaymentExpiredHandlerTests
     {
         private readonly Mock<IOrderRepository> _orderRepo;
-        private readonly Mock<IMessageBroker> _broker;
 
         public OrderPaymentExpiredHandlerTests()
         {
             _orderRepo = new Mock<IOrderRepository>();
-            _broker = new Mock<IMessageBroker>();
         }
 
         private OrderPaymentExpiredHandler CreateHandler()
-            => new(_orderRepo.Object, _broker.Object);
+            => new(_orderRepo.Object);
 
         private static PaymentExpired CreateMessage(int orderId = 1)
             => new(PaymentId: 10, OrderId: orderId, OccurredAt: DateTime.UtcNow);
@@ -49,7 +45,6 @@ namespace ECommerceApp.UnitTests.Sales.Orders
             await CreateHandler().HandleAsync(CreateMessage());
 
             _orderRepo.Verify(r => r.UpdateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<OrderCancelled>()), Times.Never);
         }
 
         [Fact]
@@ -64,7 +59,6 @@ namespace ECommerceApp.UnitTests.Sales.Orders
             await CreateHandler().HandleAsync(CreateMessage(orderId: 1));
 
             _orderRepo.Verify(r => r.UpdateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<OrderCancelled>()), Times.Never);
         }
 
         [Fact]
@@ -79,11 +73,10 @@ namespace ECommerceApp.UnitTests.Sales.Orders
             await CreateHandler().HandleAsync(CreateMessage(orderId: 1));
 
             _orderRepo.Verify(r => r.UpdateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<OrderCancelled>()), Times.Never);
         }
 
         [Fact]
-        public async Task HandleAsync_PlacedOrder_ShouldExpirePaymentAndPublishOrderCancelled()
+        public async Task HandleAsync_PlacedOrder_ShouldExpirePaymentAndUpdate()
         {
             var order = CreateOrder();
             _orderRepo
@@ -95,7 +88,6 @@ namespace ECommerceApp.UnitTests.Sales.Orders
             order.Status.Should().Be(OrderStatus.Cancelled);
             order.Events.Should().Contain(e => e.EventType == OrderEventType.OrderPaymentExpired);
             _orderRepo.Verify(r => r.UpdateAsync(order, It.IsAny<CancellationToken>()), Times.Once);
-            _broker.Verify(b => b.PublishAsync(It.Is<OrderCancelled>(msg => msg.OrderId == 1)), Times.Once);
         }
     }
 }

@@ -1,9 +1,6 @@
 using ECommerceApp.Application.Messaging;
-using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Application.Sales.Payments.Messages;
 using ECommerceApp.Domain.Sales.Orders;
-using System;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -12,12 +9,10 @@ namespace ECommerceApp.Application.Sales.Orders.Handlers
     internal sealed class OrderPaymentExpiredHandler : IMessageHandler<PaymentExpired>
     {
         private readonly IOrderRepository _orderRepo;
-        private readonly IMessageBroker _broker;
 
-        public OrderPaymentExpiredHandler(IOrderRepository orderRepo, IMessageBroker broker)
+        public OrderPaymentExpiredHandler(IOrderRepository orderRepo)
         {
             _orderRepo = orderRepo;
-            _broker = broker;
         }
 
         public async Task HandleAsync(PaymentExpired message, CancellationToken ct = default)
@@ -29,14 +24,8 @@ namespace ECommerceApp.Application.Sales.Orders.Handlers
             if (order.Status != OrderStatus.Placed)
                 return;
 
-            var items = order.OrderItems
-                .Select(i => new OrderCancelledItem(i.ItemId.Value, i.Quantity))
-                .ToList();
-
             order.ExpirePayment();
             await _orderRepo.UpdateAsync(order, ct);
-
-            await _broker.PublishAsync(new OrderCancelled(message.OrderId, items, DateTime.UtcNow));
         }
     }
 }

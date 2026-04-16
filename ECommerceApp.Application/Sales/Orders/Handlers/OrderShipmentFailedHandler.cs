@@ -1,9 +1,7 @@
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Sales.Fulfillment.Messages;
-using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Domain.Sales.Orders;
 using ECommerceApp.Domain.Sales.Orders.Events.Payloads;
-using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,12 +11,10 @@ namespace ECommerceApp.Application.Sales.Orders.Handlers
     internal sealed class OrderShipmentFailedHandler : IMessageHandler<ShipmentFailed>
     {
         private readonly IOrderRepository _orderRepo;
-        private readonly IMessageBroker _broker;
 
-        public OrderShipmentFailedHandler(IOrderRepository orderRepo, IMessageBroker broker)
+        public OrderShipmentFailedHandler(IOrderRepository orderRepo)
         {
             _orderRepo = orderRepo;
-            _broker = broker;
         }
 
         public async Task HandleAsync(ShipmentFailed message, CancellationToken ct = default)
@@ -34,11 +30,6 @@ namespace ECommerceApp.Application.Sales.Orders.Handlers
                 .ToList();
             order.RecordShipmentFailure(message.ShipmentId, failedItems);
             await _orderRepo.UpdateAsync(order, ct);
-
-            await _broker.PublishAsync(new OrderRequiresAttention(
-                message.OrderId,
-                $"Shipment {message.ShipmentId} failed — {failedItems.Count} item(s) affected.",
-                DateTime.UtcNow));
         }
     }
 }

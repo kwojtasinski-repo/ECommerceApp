@@ -26,6 +26,8 @@ namespace ECommerceApp.Application.Supporting.Communication
             services.AddScoped<IMessageHandler<PaymentExpired>, PaymentExpiredNotificationHandler>();
             services.AddScoped<IMessageHandler<FulfillmentMessages.RefundApproved>, RefundApprovedNotificationHandler>();
             services.AddScoped<IMessageHandler<FulfillmentMessages.RefundRejected>, RefundRejectedNotificationHandler>();
+            services.AddScoped<IMessageHandler<FulfillmentMessages.ShipmentFailed>, ShipmentFailedNotificationHandler>();
+            services.AddScoped<IMessageHandler<FulfillmentMessages.ShipmentPartiallyDelivered>, ShipmentPartiallyDeliveredNotificationHandler>();
             services.AddScoped<IMessageHandler<OrderPlaced>, OrderPlacedEmailHandler>();
             services.AddScoped<IMessageHandler<OrderCancelled>, OrderCancelledEmailHandler>();
             services.AddScoped<IMessageHandler<PaymentConfirmed>, PaymentConfirmedEmailHandler>();

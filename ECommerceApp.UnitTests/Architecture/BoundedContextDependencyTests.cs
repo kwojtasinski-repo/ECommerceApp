@@ -325,8 +325,8 @@ namespace ECommerceApp.UnitTests.Architecture
         [Fact]
         public void App_Coupons_ShouldOnlyDependOnOwnDomainAndMessageContracts()
         {
-            // Coupons handlers consume: OrderCancelled, ProductNameChanged,
-            // CategoryNameChanged, TagNameChanged
+            // Coupons handlers consume: OrderCancelled, PaymentExpired,
+            // ProductNameChanged, CategoryNameChanged, TagNameChanged
             Types().That().Are(AppCoupons)
                 .Should().NotDependOnAny(
                     Types().That().AreNot(AppCoupons)
@@ -335,6 +335,7 @@ namespace ECommerceApp.UnitTests.Architecture
                         .And().AreNot(SharedApplication)
                         .And().AreNot(Messaging)
                         .And().AreNot(OrderMessages)       // CouponsOrderCancelledHandler
+                        .And().AreNot(PaymentMessages)     // CouponsPaymentExpiredHandler
                         .And().AreNot(CatalogMessages))    // ProductNameChanged/CategoryNameChanged/TagNameChangedHandler
                 .Because("Coupons application must not depend on other BCs except via message contracts")
                 .Check(Architecture);
