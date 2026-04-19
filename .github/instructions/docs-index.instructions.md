@@ -6,13 +6,15 @@ applyTo: "**"
 
 > **Single entry point** for all Copilot configuration and project documentation.
 > Load files **on demand** — read only what the task requires, then follow connections.
-> Docs are human-owned — never modify them. Just look up and read.
+> This file is the **AI routing layer**. Human-oriented docs start at `docs/README.md`.
+> ADRs are folderized — open `docs/adr/<NNNN>/README.md` first, then follow that folder router.
 
 ## Quick navigation
 
 | Your task               | Read first                        | Then chain to                       |
 | ----------------------- | --------------------------------- | ----------------------------------- |
 | First-time orientation  | ADR-0001                          | `project-state.md`, `repo-index.md` |
+| Exploring docs          | `docs/README.md`                  | This file for AI routing            |
 | Writing/editing C# code | `dotnet.instructions.md` (auto)   | ADR for the target BC               |
 | Creating a BC artifact  | `implementation-patterns.md`      | Matching `create-*` skill           |
 | Fixing a bug            | `known-issues.md`                 | `project-state.md`                  |
@@ -37,7 +39,7 @@ Auto-loaded by `applyTo:` globs — Copilot reads these automatically when editi
 | `shared-primitives.instructions.md`   | `Domain/Shared/**`                  | TypedId, Money, Price, Quantity       |
 | `safety.instructions.md`              | `**`                                | Allowed/disallowed actions            |
 | `pre-edit.instructions.md`            | `**`                                | Pre-edit checklist, doc suggestions   |
-| `copilot-config-sync.instructions.md` | `.github/**`                        | Auto-sync trigger for config changes  |
+| `copilot-config-sync.instructions.md` | `.github/**, docs/**`               | Auto-sync trigger for docs and Copilot config |
 | `docs-index.instructions.md`          | `**`                                | This file — routing table             |
 
 ## Agents (`.github/agents/`)
@@ -60,35 +62,42 @@ Auto-loaded by `applyTo:` globs — Copilot reads these automatically when editi
 ## ADRs (`docs/adr/`)
 
 Read an ADR **only** when the "When to read" condition matches the files you are editing.
+Use the folder `README.md` as the first stop for every ADR.
 
 | ADR  | Title                                                                     | When to read                                                                                                                                          |
 | ---- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0001 | Project overview and technology stack                                     | First-time context; project-wide tech decisions                                                                                                       |
-| 0002 | Post-event-storming architectural evolution strategy                      | Any BC migration or parallel-change work                                                                                                              |
-| 0003 | Feature folder organization for new BC code                               | Creating new folders/namespaces for a BC                                                                                                              |
-| 0004 | Module taxonomy and bounded context grouping                              | BC grouping, module naming, namespace decisions                                                                                                       |
-| 0005 | AccountProfile BC — UserProfile aggregate design                          | Editing AccountProfile domain or services                                                                                                             |
-| 0006 | TypedId and value objects as shared domain primitives                     | Editing `Domain/Shared/**` (TypedId, Money, Price)                                                                                                    |
-| 0007 | Catalog BC — Product, Category, Tag aggregate design                      | Editing Catalog domain or services                                                                                                                    |
-| 0008 | Supporting/Currencies BC design                                           | Editing Currency, CurrencyRate, NBP integration                                                                                                       |
-| 0009 | Supporting/TimeManagement BC design                                       | Editing time-related domain logic                                                                                                                     |
-| 0010 | In-memory message broker for cross-BC communication                       | Adding domain events or cross-BC messaging                                                                                                            |
-| 0011 | Inventory/Availability BC design                                          | Editing Inventory domain or stock logic                                                                                                               |
-| 0012 | Presale/Checkout BC design                                                | Editing checkout flow, cart logic                                                                                                                     |
-| 0013 | Per-BC DbContext interfaces                                               | Adding new DbContext or per-BC data access                                                                                                            |
-| 0014 | Sales/Orders BC design                                                    | Editing Order, OrderItem domain or services                                                                                                           |
-| 0015 | Sales/Payments BC design                                                  | Editing Payment, PaymentState domain or services                                                                                                      |
-| 0016 | Sales/Coupons BC design                                                   | Editing Coupon, CouponType, CouponUsed                                                                                                                |
-| 0017 | Sales/Fulfillment BC design                                               | Editing fulfillment or shipping logic                                                                                                                 |
-| 0018 | Supporting/Communication BC design                                        | Editing notification or messaging features                                                                                                            |
-| 0019 | Identity/IAM BC design                                                    | Editing Identity, roles, authentication                                                                                                               |
-| 0020 | Backoffice BC design                                                      | Editing admin/backoffice features                                                                                                                     |
-| 0021 | Frontend error pipeline and JS migration strategy                         | Editing `wwwroot/js/**`, error handling in Views                                                                                                      |
-| 0022 | Navbar two-tier redesign                                                  | Editing navbar, `_Layout.cshtml`, navigation structure                                                                                                |
-| 0023 | Bootstrap 5 upgrade                                                       | Editing `_Layout.cshtml`, `modalService.js`, or any view with BS data attributes                                                                      |
-| 0024 | Controller routing strategy for BC atomic switches                        | Creating Area controllers, migrating Web/API controllers, editing `Startup.cs` routing                                                                |
-| 0025 | API tiered access — Trusted purchase policy, quantity limits, payment URL | Editing API V2 `CartController`, `CheckoutController`, `OrdersController`, `LoginController` JWT claims, `ApiPurchaseOptions`, `MaxApiQuantityFilter` |
-| 0026 | Order lifecycle saga — choreography + compensation | Implementing saga compensation, `OrderPlaced` fan-out error handling, cross-BC partial failure recovery |
+| 0001 | [Project overview and technology stack](../../docs/adr/0001/README.md)                                     | First-time context; project-wide tech decisions                                                                                                       |
+| 0002 | [Post-event-storming architectural evolution strategy](../../docs/adr/0002/README.md)                      | Any BC migration or parallel-change work                                                                                                              |
+| 0003 | [Feature folder organization for new BC code](../../docs/adr/0003/README.md)                               | Creating new folders/namespaces for a BC                                                                                                              |
+| 0004 | [Module taxonomy and bounded context grouping](../../docs/adr/0004/README.md)                              | BC grouping, module naming, namespace decisions                                                                                                       |
+| 0005 | [AccountProfile BC — UserProfile aggregate design](../../docs/adr/0005/README.md)                          | Editing AccountProfile domain or services                                                                                                             |
+| 0006 | [TypedId and value objects as shared domain primitives](../../docs/adr/0006/README.md)                     | Editing `Domain/Shared/**` (TypedId, Money, Price)                                                                                                    |
+| 0007 | [Catalog BC — Product, Category, Tag aggregate design](../../docs/adr/0007/README.md)                      | Editing Catalog domain or services                                                                                                                    |
+| 0008 | [Supporting/Currencies BC design](../../docs/adr/0008/README.md)                                           | Editing Currency, CurrencyRate, NBP integration                                                                                                       |
+| 0009 | [Supporting/TimeManagement BC design](../../docs/adr/0009/README.md)                                       | Editing time-related domain logic                                                                                                                     |
+| 0010 | [In-memory message broker for cross-BC communication](../../docs/adr/0010/README.md)                       | Adding domain events or cross-BC messaging                                                                                                            |
+| 0011 | [Inventory/Availability BC design](../../docs/adr/0011/README.md)                                          | Editing Inventory domain or stock logic                                                                                                               |
+| 0012 | [Presale/Checkout BC design](../../docs/adr/0012/README.md)                                                | Editing checkout flow, cart logic                                                                                                                     |
+| 0013 | [Per-BC DbContext interfaces](../../docs/adr/0013/README.md)                                               | Adding new DbContext or per-BC data access                                                                                                            |
+| 0014 | [Sales/Orders BC design](../../docs/adr/0014/README.md)                                                    | Editing Order, OrderItem domain or services                                                                                                           |
+| 0015 | [Sales/Payments BC design](../../docs/adr/0015/README.md)                                                  | Editing Payment, PaymentState domain or services                                                                                                      |
+| 0016 | [Sales/Coupons BC design](../../docs/adr/0016/README.md)                                                   | Editing Coupon, CouponType, CouponUsed                                                                                                                |
+| 0017 | [Sales/Fulfillment BC design](../../docs/adr/0017/README.md)                                               | Editing fulfillment or shipping logic                                                                                                                 |
+| 0018 | [Supporting/Communication BC design](../../docs/adr/0018/README.md)                                        | Editing notification or messaging features                                                                                                            |
+| 0019 | [Identity/IAM BC design](../../docs/adr/0019/README.md)                                                    | Editing Identity, roles, authentication                                                                                                               |
+| 0020 | [Backoffice BC design](../../docs/adr/0020/README.md)                                                      | Editing admin/backoffice features                                                                                                                     |
+| 0021 | [Frontend error pipeline and JS migration strategy](../../docs/adr/0021/README.md)                         | Editing `wwwroot/js/**`, error handling in Views                                                                                                      |
+| 0022 | [Navbar two-tier redesign](../../docs/adr/0022/README.md)                                                  | Editing navbar, `_Layout.cshtml`, navigation structure                                                                                                |
+| 0023 | [Bootstrap 5 upgrade](../../docs/adr/0023/README.md)                                                       | Editing `_Layout.cshtml`, `modalService.js`, or any view with BS data attributes                                                                      |
+| 0024 | [Controller routing strategy for BC atomic switches](../../docs/adr/0024/README.md)                        | Creating Area controllers, migrating Web/API controllers, editing `Startup.cs` routing                                                                |
+| 0025 | [API tiered access — Trusted purchase policy, quantity limits, payment URL](../../docs/adr/0025/README.md) | Editing API V2 `CartController`, `CheckoutController`, `OrdersController`, `LoginController` JWT claims, `ApiPurchaseOptions`, `MaxApiQuantityFilter` |
+| 0026 | [Order lifecycle saga — choreography + compensation](../../docs/adr/0026/README.md) | Implementing saga compensation, `OrderPlaced` fan-out error handling, cross-BC partial failure recovery |
+
+## Root docs (`docs/`)
+
+| File        | When to read                                                                 |
+| ----------- | ---------------------------------------------------------------------------- |
+| `README.md` | First human-oriented entry point to the docs tree and its relationship to `.github` routing |
 
 ## Architecture docs (`docs/architecture/`)
 

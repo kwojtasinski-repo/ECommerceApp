@@ -168,15 +168,15 @@ Domain/Sales/Orders/OrderSaga.cs
 Domain/Sales/Orders/OrderSagaStep.cs
 Infrastructure/Sales/Orders/Configurations/OrderSagaConfiguration.cs
 Application/Sales/Orders/Handlers/OrderLifecycleSagaManager.cs
-docs/adr/0026-order-lifecycle-saga.md
+docs/adr/0026/0026-order-lifecycle-saga.md
 ```
 
 ---
 
 ## References
 
-- [ADR-0002 — Parallel Change strategy](../adr/0002-post-event-storming-architectural-evolution-strategy.md)
-- [ADR-0014 §13 — OrderEvent audit log](../adr/0014-sales-orders-bc-design.md) — existing saga state in Orders BC
-- [ADR-0014 §18 — Integration flow gaps](../adr/0014-sales-orders-bc-design.md) — Gap 2 (CartLine/SoftReservation leak) directly related
+- [ADR-0002 — Parallel Change strategy](../adr/0002/README.md)
+- [ADR-0014 §13 — OrderEvent audit log](../adr/0014/0014-sales-orders-bc-design.md) — existing saga state in Orders BC
+- [ADR-0014 §18 — Integration flow gaps](../adr/0014/0014-sales-orders-bc-design.md) — Gap 2 (CartLine/SoftReservation leak) directly related
 - [Roadmap F4 — handler chain refactoring](./README.md) — prerequisite for Option B
 - [`bounded-context-map.md`](../architecture/bounded-context-map.md) — full BC event map

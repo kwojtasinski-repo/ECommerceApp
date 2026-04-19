@@ -185,7 +185,7 @@ Unit tests live in `ECommerceApp.UnitTests`, integration tests in `ECommerceApp.
 
 ## 16. Domain model richness policy
 
-> Strategic rationale: [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](../../docs/adr/0002-post-event-storming-architectural-evolution-strategy.md)
+> Strategic rationale: [ADR-0002 — Post-Event-Storming Architectural Evolution Strategy](../../docs/adr/0002/README.md)
 
 The codebase is evolving incrementally from an anemic domain model toward a rich OOP domain model.
 Apply the rules below whenever touching or creating domain models in `ECommerceApp.Domain/Model/`.
@@ -264,7 +264,7 @@ public static Payment Create(...) { return new Payment { ... }; }
 
 ## 17. Folder and namespace organization — new vs existing code
 
-> Decision record: [ADR-0003 — Feature-Folder Organization for New Bounded Context Code](../../docs/adr/0003-feature-folder-organization-for-new-bounded-context-code.md)
+> Decision record: [ADR-0003 — Feature-Folder Organization for New Bounded Context Code](../../docs/adr/0003/README.md)
 
 **Two structures coexist during the transition. The rule is simple:**
 - **Existing code** — stays in its current horizontal structure. Do NOT move existing files for structural reasons alone.

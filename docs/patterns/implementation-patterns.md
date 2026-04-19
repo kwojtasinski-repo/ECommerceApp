@@ -1,9 +1,9 @@
 # Reusable Implementation Patterns — ECommerceApp
 
 > Reference document for implementing new bounded contexts.
-> Used by: [`.github/prompts/bc-implementation.md`](../../.github/prompts/bc-implementation.md)
+> Used by: [`.github/prompts/bc-implementation.prompt.md`](../../.github/prompts/bc-implementation.prompt.md)
 > Architecture decisions: ADR-0002, ADR-0003, ADR-0004
-> Coding rules: [`.github/instructions/dotnet-instructions.md`](../../.github/instructions/dotnet-instructions.md)
+> Coding rules: [`.github/instructions/dotnet.instructions.md`](../../.github/instructions/dotnet.instructions.md)
 
 A practical guide to the OOP and DDD patterns for new bounded context code.
 Each section explains **when** to use the pattern, **how** to implement it,
@@ -32,8 +32,8 @@ and includes a minimal code template adapted to .NET 7 + MSSQL.
 
 ## 1. Module Structure
 
-> Folder convention and namespace rules: see [`dotnet-instructions.md §17`](../../.github/instructions/dotnet-instructions.md).
-> Module taxonomy (group names): see [ADR-0004](../../docs/adr/0004-module-taxonomy-and-bounded-context-grouping.md).
+> Folder convention and namespace rules: see [`dotnet.instructions.md §17`](../../.github/instructions/dotnet.instructions.md).
+> Module taxonomy (group names): see [ADR-0004](../adr/0004/README.md).
 
 ---
 

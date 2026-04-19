@@ -1,0 +1,22 @@
+﻿## Conformance checklist
+
+- [ ] `libman.json` contains no `bootstrap-select` entry.
+- [ ] `libman.json` Bootstrap version starts with `5.`.
+- [ ] `libman.json` contains a `tom-select` entry at v2.4.x.
+- [ ] `_Layout.cshtml` contains no `bootstrap-select` `<link>` or `<script>`.
+- [ ] `_Layout.cshtml` loads `tom-select.bootstrap5.min.css` in `<head>`.
+- [ ] `_Layout.cshtml` loads `tom-select.complete.min.js` after `bootstrap.bundle.min.js`.
+- [ ] `site.js` contains no `.selectpicker(` call.
+- [ ] `Item/AddItem.cshtml` and `Item/EditItem.cshtml` contain no `data-search` class.
+- [ ] `Item/AddItem.cshtml` and `Item/EditItem.cshtml` initialise `new TomSelect('#ItemTagsSelect', ...)` inside `DOMInitialized`.
+- [ ] Workspace-wide grep for `data-toggle=` returns zero results in `*.cshtml` files.
+- [ ] Workspace-wide grep for `data-target=` returns zero results in `*.cshtml` files.
+- [ ] Workspace-wide grep for `data-dismiss=` returns zero results in `*.cshtml` and `*.js` files.
+- [ ] Workspace-wide grep for `data-backdrop=` returns zero results in `*.cshtml` and `*.js` files.
+- [ ] Workspace-wide grep for `\$\(.*\)\.modal\(` returns zero results in `*.js` files.
+- [ ] `modalService.js` contains no `import` or reference to jQuery `$().modal`.
+- [ ] `modalService.js` contains `bootstrap.Modal` and `hidden.bs.modal`.
+- [ ] `showInformationModal` does not register a `denyAction`.
+- [ ] `showInformationModal` header × and footer Close button do not call `invokeActionAfterButtonClick`.
+- [ ] `showConfirmationModal` "Nie" button calls `closeButtonHandler` (which invokes `denyAction`).
+- [ ] `_modalInstance` is set to `null` in `closeModal()` after initiating hide.

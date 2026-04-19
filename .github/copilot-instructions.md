@@ -18,7 +18,7 @@ ECommerceApp — ASP.NET Core MVC + Web API e-commerce platform. Clean/onion arc
 
 - **12 instruction files**, **3 prompts**, **4 agents**, **8 skills**, **26 ADRs**, architecture docs, patterns, roadmaps, context files
 
-Read `docs-index.instructions.md` to find the right file for any task. Follow its “When to read” columns.
+Read `docs-index.instructions.md` to find the right file for any task. Follow its “When to read” columns. Human-facing docs start at `docs/README.md`.
 
 ## 3. AI developer profile
 
@@ -30,10 +30,11 @@ Read `docs-index.instructions.md` to find the right file for any task. Follow it
 ## 4. Key rules (do not bypass)
 
 - Read applicable ADRs in `docs/adr/` before design changes. Use `docs-index.instructions.md` to find the right ADR.
-- When creating a new ADR, copy `.github/templates/adr.template.md`. Save to `docs/adr/XXXX-short-title.md`.
+- When creating a new ADR, copy `.github/templates/adr.template.md`. Save the main file to `docs/adr/XXXX/XXXX-short-title.md` and add `docs/adr/XXXX/README.md` as the local router.
 - Read applicable per-stack instructions before writing code for that stack.
 - Detailed rules for AbstractService, Handler pattern, ExceptionMiddleware, IFileStore, NBP API → see `dotnet.instructions.md`.
 - **BC changes rule**: Before editing BC-related code, MUST read `.github/context/project-state.md` and verify it is not blocked. If blocked, STOP. Atomic switches deferred until 80–95% of migration is complete — never after individual BCs.
+- **Feed-forward rule**: When docs or ADR meaning changes, update the `.github` Copilot environment in the same task. When code and docs diverge, suggest a new ADR only if the decision is new; otherwise suggest updating the existing ADR/docs.
 
 ## 5. Communication & PRs
 
@@ -61,4 +62,4 @@ Context: `project-state.md`, `known-issues.md`, `repo-index.md`. Roadmaps: `docs
 ## 9. API Purchase Limits
 
 - Max 5 units/line via `MaxApiQuantityFilter` (`ApiPurchaseOptions`); Web max 99 (`AddToCartDtoValidator`). Never cap `Shared.Quantity`.
-- `TrustedApiUser` = authenticated + `api:purchase` claim OR `Service`/`Manager`/`Administrator` role. See [ADR-0025](docs/adr/0025-api-tiered-access-trusted-purchase-policy.md).
+- `TrustedApiUser` = authenticated + `api:purchase` claim OR `Service`/`Manager`/`Administrator` role. See [ADR-0025](../docs/adr/0025/README.md).

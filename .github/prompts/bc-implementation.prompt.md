@@ -10,7 +10,7 @@
 > Implement the Inventory/Availability bounded context.
 > ```
 >
-> Always run `bc-analysis.md` first to understand what exists before implementing.
+> Always run `bc-analysis.prompt.md` first to understand what exists before implementing.
 
 ---
 
@@ -196,7 +196,7 @@ Switch steps:
 ## References
 
 - Pattern templates: [`docs/patterns/implementation-patterns.md`](../../docs/patterns/implementation-patterns.md)
-- Folder/namespace rules: [ADR-0003](../../docs/adr/0003-feature-folder-organization-for-new-bounded-context-code.md)
-- Module taxonomy: [ADR-0004](../../docs/adr/0004-module-taxonomy-and-bounded-context-grouping.md)
+- Folder/namespace rules: [ADR-0003](../../docs/adr/0003/README.md)
+- Module taxonomy: [ADR-0004](../../docs/adr/0004/README.md)
 - Rich domain model rules: [`.github/instructions/dotnet.instructions.md`](../instructions/dotnet.instructions.md) § 16
 - BC map + progress tracker: [`docs/architecture/bounded-context-map.md`](../../docs/architecture/bounded-context-map.md)

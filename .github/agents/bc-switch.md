@@ -41,7 +41,7 @@ parallel-change strategy. Never skip a step. Never modify migration files.
 
 ## Step 2 — Read the BC's ADR
 
-1. Read `docs/adr/[XXXX]-[bc-name]-bc-design.md`.
+1. Read `docs/adr/[XXXX]/README.md` first, then the main ADR file inside that folder.
 2. Extract:
    - The new namespace/folder prefix (e.g. `Application/Sales/Orders/`, `Infrastructure/Sales/Orders/`)
    - The new service interface(s) (e.g. `IOrderService`)
@@ -123,7 +123,7 @@ Fix only failures caused by the switch. Report any pre-existing failures separat
 
 ## Step 8 — Update ADR and project state
 
-1. Open `docs/adr/[XXXX]-[bc-name]-bc-design.md`.
+1. Open the main ADR file under `docs/adr/[XXXX]/`.
 2. Find the `## Implementation Status` table.
 3. Mark these rows as `✅ Done`:
    - `Controller migration`
@@ -155,7 +155,7 @@ Controllers updated:
 Build: ✅ Green
 Tests: ✅ [N] passed, [M] skipped, 0 failed
 
-ADR updated: docs/adr/[XXXX]-[name].md
+ADR updated: docs/adr/[XXXX]/[XXXX]-[name].md
 BC map updated: docs/architecture/bounded-context-map.md
 Project state updated: .github/context/project-state.md
 

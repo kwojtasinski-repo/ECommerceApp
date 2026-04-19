@@ -5,7 +5,7 @@ applyTo: "ECommerceApp.Domain/Shared/**/*.cs"
 
 # Shared Domain Primitives — ECommerceApp
 
-> Source of truth: [ADR-0006](../../docs/adr/0006-typedid-and-value-objects-as-shared-domain-primitives.md)
+> Source of truth: [ADR-0006](../../docs/adr/0006/README.md)
 > Read before creating or modifying any type under `ECommerceApp.Domain/Shared/`.
 
 ## TypedId<T>

@@ -11,12 +11,12 @@
 
 | Category                               | Count | Details                                                                        |
 | -------------------------------------- | ----- | ------------------------------------------------------------------------------ |
-| `copilot-instructions.md`              | 1     | ≤ 4,000 chars (~3,712), repo-level policy                                      |
+| `copilot-instructions.md`              | 1     | ≤ 4,000 chars, repo-level policy                                                |
 | Instruction files (`.instructions.md`) | 12    | All with `applyTo:` frontmatter; copilot-config-sync now also triggers on docs/ |
 | Prompt files (`.prompt.md`)            | 3     | BC analysis, BC implementation, PR review                                      |
 | Agent files                            | 4     | adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer              |
 | Skills (`SKILL.md`)                    | 8     | Scaffolding templates for common artifacts                                     |
-| ADRs                                   | 26    | ADR-0026 (Order lifecycle saga) added                                          |
+| ADRs                                   | 26    | Folderized ADR routers under `docs/adr/<NNNN>/README.md`                       |
 | Context files                          | 5     | project-state, known-issues, repo-index, future-skills, anti-patterns-critical |
 | HTTP scenario files                    | 10    | +auth.http (was 9)                                                             |
 | Test files                             | 132   | 92 unit + 40 integration (+1 `OrderPlacementFailedFanOutTests.cs`)             |
@@ -85,6 +85,18 @@
 ---
 
 ## Change log
+
+### Session 16 — Docs router + ADR folder sync (2026-04-19)
+
+| #   | Change                                                                                                                | Files affected                                              |
+| --- | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| 1   | Added `docs/README.md` as the short human-facing router for the `docs/` tree                                         | `docs/README.md`                                            |
+| 2   | Updated docs-index to treat ADR folder `README.md` files as the Copilot entry points and added a root docs section   | `.github/instructions/docs-index.instructions.md`          |
+| 3   | Strengthened docs auto-sync rules so meaningful docs changes trigger `.github` environment refresh guidance and an explicit feed-forward loop | `.github/instructions/copilot-config-sync.instructions.md`, `.github/instructions/pre-edit.instructions.md` |
+| 4   | Updated Copilot prompts/instructions/agents for folderized ADR paths, new ADR output structure, and central feed-forward wording | `.github/copilot-instructions.md`, `.github/prompts/*.md`, `.github/instructions/*.md`, `.github/agents/*.md` |
+| 5   | Updated `project-state.md` ADR links to folder routers and fixed docs-relative paths                                  | `.github/context/project-state.md`                          |
+| 6   | Synced solution docs items: added `docs\README.md`; switched ADR solution items to per-ADR solution folders with nested folder-local files (`amendments`, `example-implementation`, checklist, migration plan where present) | `ECommerceApp.sln`                                          |
+| 7   | Tightened maintainer/auto-sync flow so nested ADR solution structure and an end-of-task repo sync close-out check are explicit | `.github/agents/copilot-setup-maintainer.md`, `.github/instructions/copilot-config-sync.instructions.md` |
 
 ### Session 15 — Saga implementation sync (2026-04-15)
 
@@ -198,7 +210,7 @@
 
 | #   | Change                                                                                 | Files affected                                    |
 | --- | -------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| 1   | Created ADR-0024 (controller routing strategy: Areas for Web, in-place swap for API)   | `docs/adr/0024-controller-routing-strategy.md`    |
+| 1   | Created ADR-0024 (controller routing strategy: Areas for Web, in-place swap for API)   | `docs/adr/0024/0024-controller-routing-strategy.md`    |
 | 2   | Added ADR-0024 row to docs-index ADR table                                             | `.github/instructions/docs-index.instructions.md` |
 | 3   | Added ADR-0024 routing strategy note to roadmap README                                 | `docs/roadmap/README.md`                          |
 | 4   | Updated `orders-atomic-switch.md` Steps 3–4 to Area-based approach + ADR-0024 ref      | `docs/roadmap/orders-atomic-switch.md`            |

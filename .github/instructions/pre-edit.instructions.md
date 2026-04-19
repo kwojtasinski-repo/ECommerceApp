@@ -55,6 +55,24 @@ While implementing or after completing a task, **suggest** (never auto-create) d
 - An ADR's `## Implementation Status` table is out of date after completing implementation steps.
 - An ADR should be marked as `Superseded by ADR-XXXX` after a newer decision replaced it.
 - A `## Conformance checklist` needs a new item based on a lesson learned during implementation.
+- The implementation still fits the same architectural decision, but the current ADR text or examples are stale.
+
+## When to suggest docs/ADR updates because code drifted
+
+- The implemented code differs meaningfully from the current ADR or docs wording.
+- The behavior is still covered by an existing ADR, but that ADR now needs amendment or clarification.
+- The behavior introduces a genuinely new architectural decision that no existing ADR covers.
+
+**How to suggest**: _"Implementation and docs diverged here. If this is a new decision, consider a new ADR. If the decision already exists, update the current ADR/docs so the repo and guidance match again."_
+
+## When to suggest updating the Copilot environment (`.github/`)
+
+- A docs change alters meaning, architecture guidance, workflow, or navigation.
+- A new human-facing router file is added under `docs/` (for example `docs/README.md`).
+- ADR structure, naming, or routing changed and prompts/agents/instructions still point at old paths.
+- A prompt, agent, or instruction now needs extra context because documentation evolved.
+
+**How to suggest**: _"This docs change affects how Copilot should route or interpret the repo. Consider updating the `.github` environment (usually `docs-index.instructions.md`, prompts, agents, `.sln`, and changelog) or run `@copilot-setup-maintainer`."_
 
 ## Rule: suggest, never auto-apply
 

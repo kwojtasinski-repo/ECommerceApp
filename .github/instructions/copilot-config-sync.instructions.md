@@ -8,21 +8,46 @@ applyTo: ".github/**, docs/**"
 > This file auto-loads when editing ANY file under `.github/` or `docs/`.
 > It ensures configuration changes cascade correctly.
 
+## Feed-forward loop (required mindset)
+
+- Treat meaningful `docs/` and ADR changes as **inputs** to the Copilot environment, not passive documentation only.
+- If docs meaning changes, update the relevant `.github/` routing/prompt/agent/instruction files in the **same task** or explicitly suggest that follow-up.
+- If code changes reveal that docs/ADRs are stale or no longer match implementation, suggest creating a new ADR when the decision is new; otherwise suggest updating the existing ADR/docs.
+- Before concluding a task with meaningful `docs/` or `.github/` changes, do a **close-out repo sync check**: verify whether `docs-index.instructions.md`, prompts/agents, `ECommerceApp.sln`, and `COPILOT-SETUP-CHANGELOG.md` also need updating.
+
 ## After adding or editing a `docs/` file, check these cascading impacts:
 
-### New ADR added (`docs/adr/*.md`)
+### Docs router or root docs changed (`docs/*.md`)
 
-If you created a new ADR file:
+If you added or changed a top-level docs file such as `docs/README.md`:
+1. **`docs-index.instructions.md`** — add or update the corresponding routing entry.
+2. **`copilot-instructions.md`** — verify the high-level navigation text still matches the docs layout.
+3. **`ECommerceApp.sln`** — add the file to the `docs` solution folder if it is new.
+4. **`COPILOT-SETUP-CHANGELOG.md`** — add an entry if the change affects repo navigation or Copilot workflow.
+5. Suggest: _"Docs router changed. Run `@copilot-setup-maintainer` to sync docs-index, `.sln`, and changelog."_
+
+### Meaningful docs content changed (`docs/**/*.md`)
+
+If a docs change alters architecture meaning, workflow, navigation, or how Copilot should interpret the repo:
+1. **Update the relevant `.github/` mirror** — usually `docs-index.instructions.md`, `copilot-instructions.md`, a prompt, or an agent file.
+2. **Check cross-references** — find stale filenames, moved ADRs, renamed folders, or outdated instructions.
+3. **Check `ECommerceApp.sln`** — if the docs structure changed, keep the relevant solution tree in sync, including nested ADR folders/files when applicable.
+4. **`COPILOT-SETUP-CHANGELOG.md`** — add an entry if the Copilot environment was updated.
+5. Suggest: _"Meaningful docs changed. Refresh the `.github` Copilot environment so AI routing stays in sync."_
+
+### New ADR added (`docs/adr/<NNNN>/`)
+
+If you created a new ADR folder or its main ADR file:
 
 1. **`docs-index.instructions.md`** — add a new row to the ADR table in the correct numerical position with a concise "When to read" description.
 2. **`copilot-instructions.md`** — increment the ADR count in § 2.
-3. **`ECommerceApp.sln`** — add the new file to the `adr` solution folder.
+3. **`ECommerceApp.sln`** — add the new folder router (`docs\adr\<NNNN>\README.md`) to the `adr` solution folder.
 4. **`COPILOT-SETUP-CHANGELOG.md`** — add an entry noting the new ADR.
 5. Suggest: _"New ADR added. Run `@copilot-setup-maintainer` to sync docs-index, copilot-instructions, .sln, and changelog."_
 
-### ADR renamed or removed (`docs/adr/*.md`)
+### ADR renamed or removed (`docs/adr/<NNNN>/`)
 
-If you renamed or deleted an ADR file:
+If you renamed or deleted an ADR folder or its main file:
 
 1. **`docs-index.instructions.md`** — update or remove the corresponding row.
 2. **`ECommerceApp.sln`** — update the `adr` solution folder entry.
@@ -72,3 +97,4 @@ If you added a new instruction file or changed its `applyTo:` glob:
 - **Always suggest** running `@copilot-setup-maintainer` for multi-file cascades.
 - **Never silently edit** other config files — the user must approve.
 - Single-file fixes (e.g., fixing a typo in one instruction file) don't need cascading.
+- Use the end-of-task close-out check to decide whether a cascade is required before you finish.

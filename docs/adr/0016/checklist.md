@@ -1,0 +1,42 @@
+﻿## Conformance checklist
+
+- [ ] `Coupon` aggregate lives under `Domain/Sales/Coupons/` — not `Domain/Model/`
+- [ ] `Coupon` has private setters and a `private` parameterless constructor for EF Core
+- [ ] `Coupon.Create(code, discountPercent, description)` static factory method present
+- [ ] `CouponId` and `CouponUsedId` follow the `TypedId<int>` pattern (ADR-0006)
+- [ ] `CouponStatus` enum has exactly `Available` and `Used` in Slice 1
+- [ ] `CouponUsed.OrderId` is a plain `int` — no navigation property to `Order`
+- [ ] `CouponUsed.CouponId` has a unique constraint in `CouponUsedConfiguration`
+- [ ] `CouponUsed.OrderId` has a unique constraint in `CouponUsedConfiguration`
+- [ ] No FK constraint from `sales.CouponUsed.OrderId` to Orders table — cross-BC boundary
+- [ ] `CouponService` is `internal sealed`
+- [ ] `ICouponService` has exactly `ApplyCouponAsync` and `RemoveCouponAsync` in Slice 1
+- [ ] `CouponApplyResult` and `CouponRemoveResult` are enums — expected outcomes are NOT `BusinessException`
+- [ ] `CouponApplied` and `CouponRemovedFromOrder` live in `Application/Sales/Coupons/Messages/`
+- [ ] `OrderCouponAppliedHandler` and `OrderCouponRemovedHandler` live in `Application/Sales/Orders/Handlers/`
+- [ ] Both Order-side handlers are registered in `Application/Sales/Orders/Services/Extensions.cs`
+- [ ] `CouponsOrderCancelledHandler` is `internal sealed`, lives in `Application/Sales/Coupons/Handlers/`
+- [ ] `CouponsOrderCancelledHandler` is a no-op (returns immediately) when no `CouponUsed` found
+- [ ] `CouponsOrderCancelledHandler` does NOT publish `CouponRemovedFromOrder` — cancelled order state is irrelevant
+- [ ] `IOrderExistenceChecker` lives in `Application/Sales/Coupons/Contracts/`
+- [ ] `OrderExistenceCheckerAdapter` lives in `Infrastructure/Sales/Coupons/Adapters/`
+- [ ] `CouponsDbContext` uses schema `"sales"` — DbSets: `Coupons`, `CouponUsed`
+- [ ] `CouponType` is NOT present anywhere in the Slice 1 domain or infrastructure
+- [ ] Legacy `CouponHandler` is NOT removed until atomic switch (step 10) is verified green with all tests passing
+
+**Slice 2 (rule-based model):**
+- [ ] `Coupon` has `RulesJson` (`nvarchar(max)`) and `Version` (`rowversion`) — `DiscountPercent` and `CouponStatus` removed
+- [ ] `Coupon.Create()` validates: exactly one scope rule, exactly one discount rule, scope ↔ targets consistency
+- [ ] `CouponUsed.CouponId` is nullable; `RuntimeCouponSnapshot` is nullable; exactly one must be non-null
+- [ ] `CouponUsed.UserId` is required (`nvarchar(450)`)
+- [ ] Unique constraints on `CouponUsed.CouponId` and `CouponUsed.OrderId` are removed
+- [ ] `CouponApplicationRecord` is never deleted — only `WasReversed` flag set
+- [ ] `ICouponRuleRegistry` is registered as singleton — immutable after startup
+- [ ] Each `DefineRule<T>()` registers both evaluator and parameter validator
+- [ ] `OrderPriceAdjusted` replaces `CouponApplied` as cross-BC message
+- [ ] `PriceAdjustmentLedger` on `Order` replaces scalar `CouponUsedId` + `DiscountPercent`
+- [ ] `CouponsOrderCancelledHandler` handles multi-coupon (list iteration, not single result)
+- [ ] `NullRuntimeCouponSource` is registered as default `IRuntimeCouponSource`
+- [ ] `CouponsOptions.MaxCouponsPerOrder` default is 5, hard ceiling 10
+- [ ] No FK from `CouponScopeTarget.TargetId` to Catalog tables — cross-BC boundary
+- [ ] `CouponApplicationRecord.CouponUsedId` has no DB FK constraint — plain `int` audit reference; survives `CouponUsed` deletion

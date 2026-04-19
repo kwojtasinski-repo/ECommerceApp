@@ -1,0 +1,49 @@
+﻿## Conformance checklist
+
+- [ ] `StockItem` aggregate lives under `Domain/Inventory/Availability/`
+- [ ] All `StockItem` properties use `private set`
+- [ ] Static `Create(...)` factory method present, returns `(StockItem, StockAdjusted)`
+- [ ] `StockItem` has a `private` parameterless constructor for EF Core
+- [ ] `StockItem.Quantity` and `StockItem.ReservedQuantity` use `StockQuantity` VO — non-negative invariant enforced by constructor; stored as `int` via EF `HasConversion`
+- [ ] `StockItem.ProductId` uses `StockProductId` typed ID (positive guard) — Inventory-local wrapper for the Catalog product PK
+- [ ] `Reservation.ProductId` uses `StockProductId` typed ID
+- [ ] `Reservation.OrderId` uses `ReservationOrderId` typed ID (positive guard) — Inventory-local wrapper for the Sales order PK
+- [ ] `PendingStockAdjustment.ProductId` uses `StockProductId` typed ID
+- [ ] `PendingStockAdjustment.NewQuantity` uses `StockQuantity` VO
+- [ ] `StockItem.CanRelease(int qty)` and `StockItem.CanFulfill(int qty)` are pure predicates — no side effects; call before `Release`/`Fulfill` to guard intent
+- [ ] `Reservation.IsGuaranteed` is a computed property (`Status == ReservationStatus.Guaranteed`) — pure predicate used by `PaymentWindowTimeoutJob`
+- [ ] `StockQuantity`, `StockProductId`, and `ReservationOrderId` live under `Domain/Inventory/Availability/ValueObjects/`
+- [ ] `Reserve`, `Release`, `Fulfill`, `Return`, `Adjust` are domain methods on `StockItem` — not in service
+- [ ] `Adjust` throws `DomainException` if `newQuantity < ReservedQuantity`
+- [ ] `StockService.AdjustAsync` queues `StockAdjustmentJob` via `IDeferredJobScheduler` — does NOT write inline
+- [ ] `StockService.AdjustAsync` upserts `PendingStockAdjustment` before scheduling — last-write-wins setpoint
+- [ ] `StockService.AdjustAsync` cancels any existing pending `StockAdjustmentJob` before scheduling a fresh one — at most one pending job per product
+- [ ] `StockAdjustmentJob` declares `string TaskName => StockAdjustmentJob.JobTaskName` — constant used in `ScheduleAsync` / `CancelAsync`
+- [ ] `PaymentWindowTimeoutJob` declares `string TaskName => PaymentWindowTimeoutJob.JobTaskName` — constant used in `ScheduleAsync`
+- [ ] `PaymentWindowTimeoutJob.EntityId` encodes `"{orderId}:{productId}:{quantity}"` (colon-delimited)
+- [ ] Both jobs guard `context.EntityId` for null and parse failure, calling `context.ReportFailure(...)` and returning early
+- [ ] Both jobs call `context.ReportSuccess(...)` on the happy path — required for `IJobStatusMonitor` to show a non-null `Outcome`
+- [ ] `StockAdjustmentJob` reads `PendingStockAdjustment` at execution time — no payload in the job record itself
+- [ ] `StockAdjustmentJob` uses `DeleteIfVersionMatchesAsync` after successful write — race-safe against concurrent admin submissions
+- [ ] `StockAdjustmentJob` application-level concurrency retry loop uses max **5 attempts** with `100ms * 2^attempt` backoff — this is independent of `DeferredJobInstance.MaxRetries` (infrastructure dead-letter threshold, default 3)
+- [ ] `StockItemId` and `ReservationId` extend `TypedId<int>` (per ADR-0006) — declared as `sealed record StockItemId(int Value) : TypedId<int>(Value)`
+- [ ] No cross-BC navigation properties — `ProductId` and `OrderId` are Inventory-local typed IDs (`StockProductId`, `ReservationOrderId`) wrapping the foreign BCs' PKs; no EF navigation properties between BCs
+- [ ] `Reservation` is never loaded as a collection inside `StockItem`
+- [ ] `ReservationStatus` has exactly two values: `Guaranteed`, `Confirmed`
+- [ ] `Reservation` table rows are deleted (not updated to a terminal status) on timeout, cancellation, and fulfillment
+- [ ] `ProductSnapshot.CanBeReserved` is checked in `StockService` before calling `StockItem.Reserve()`
+- [ ] Digital products (`IsDigital = true`) skip `StockItem.Reserve()` — Reservation row created for tracing only
+- [ ] `AvailabilityDbContext` uses schema `"inventory"`
+- [ ] `StockItemConfiguration` maps `RowVersion` with `.IsRowVersion()` (not `IsConcurrencyToken()` alone)
+- [ ] `StockService` implementation is `internal sealed`
+- [ ] No `IMemoryCache` dependency in any Inventory service — soft reservations belong in Presale/Checkout BC (ADR-0012)
+- [ ] `StockService` publishes `AvailabilityChanged` after every `Reserve`, `Release`, `Fulfill`, `Return`, and `Adjust` operation
+- [ ] `OrderPlaced.ExpiresAt` is used as both `Reservation.ExpiresAt` and `PaymentWindowTimeout` job fire time
+- [ ] `PaymentWindowTimeoutJob` is idempotent — checks `Reservation.Status` before acting
+- [ ] No direct `IStockService` injection from `OrderService` — cross-BC via `IMessageBroker` only
+- [ ] Message contracts implement `IMessage` marker interface (`ECommerceApp.Application.Messaging.IMessage`)
+- [ ] Message contracts live in the publisher's `Messages/` folder
+- [ ] Message handlers implement `IMessageHandler<TMessage>` (`Task HandleAsync(TMessage, CancellationToken)`)
+- [ ] Message handlers (`OrderPlacedHandler`, etc.) live in `Application/Inventory/Availability/Handlers/`
+- [ ] `AvailabilityChanged` message is defined in `Application/Inventory/Availability/Messages/` — properties: `ProductId`, `AvailableQuantity`, `IsOutOfStock`, `OccurredAt`; implements `IMessage`
+- [ ] Domain events live under `Domain/Inventory/Availability/Events/`

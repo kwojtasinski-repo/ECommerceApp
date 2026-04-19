@@ -155,7 +155,7 @@ Implementation complete at Domain + Application + Infrastructure + Web layers.
 | Dead code cleanup: `AddCouponAsync` removed from `ICouponService` + `CouponService` | ✅ Done |
 | Atomic switch | ✅ Done — controller in `Areas/Sales`, DI wired, `IDbContextMigrator<CouponsDbContext>` registered, no legacy code remains |
 
-See [ADR-0016](../../docs/adr/0016-sales-coupons-bc-design.md) §9.
+See [ADR-0016](../adr/0016/0016-sales-coupons-bc-design.md) §9.
 
 ---
 

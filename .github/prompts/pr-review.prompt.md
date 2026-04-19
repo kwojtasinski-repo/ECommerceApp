@@ -59,12 +59,12 @@ Load **only** the ADRs that apply to the scope identified in Step 1:
 
 | Condition | Load |
 |---|---|
-| Any new code in feature-folder structure | [ADR-0003](../../docs/adr/0003-feature-folder-organization-for-new-bounded-context-code.md) |
-| Any BC boundary change or parallel-change PR | [ADR-0002](../../docs/adr/0002-post-event-storming-architectural-evolution-strategy.md) |
-| BC grouping or namespace question | [ADR-0004](../../docs/adr/0004-module-taxonomy-and-bounded-context-grouping.md) |
-| AccountProfile BC touched | [ADR-0005](../../docs/adr/0005-accountprofile-bc-userprofile-aggregate-design.md) |
-| `Domain/Shared/` or typed IDs / VOs touched | [ADR-0006](../../docs/adr/0006-typedid-and-value-objects-as-shared-domain-primitives.md) |
-| Catalog BC touched | [ADR-0007](../../docs/adr/0007-catalog-bc-product-category-tag-aggregate-design.md) |
+| Any new code in feature-folder structure | [ADR-0003](../../docs/adr/0003/README.md) |
+| Any BC boundary change or parallel-change PR | [ADR-0002](../../docs/adr/0002/README.md) |
+| BC grouping or namespace question | [ADR-0004](../../docs/adr/0004/README.md) |
+| AccountProfile BC touched | [ADR-0005](../../docs/adr/0005/README.md) |
+| `Domain/Shared/` or typed IDs / VOs touched | [ADR-0006](../../docs/adr/0006/README.md) |
+| Catalog BC touched | [ADR-0007](../../docs/adr/0007/README.md) |
 | `Infrastructure/Migrations/` touched | [`migration-policy.instructions.md`](../instructions/migration-policy.instructions.md) |
 
 ### Step 3 — Architectural conformance
@@ -186,8 +186,8 @@ For items that look correct, confirm:
 
 ## References
 
-- Parallel change strategy: [ADR-0002](../../docs/adr/0002-post-event-storming-architectural-evolution-strategy.md)
-- Folder organization: [ADR-0003](../../docs/adr/0003-feature-folder-organization-for-new-bounded-context-code.md)
-- Module taxonomy: [ADR-0004](../../docs/adr/0004-module-taxonomy-and-bounded-context-grouping.md)
+- Parallel change strategy: [ADR-0002](../../docs/adr/0002/README.md)
+- Folder organization: [ADR-0003](../../docs/adr/0003/README.md)
+- Module taxonomy: [ADR-0004](../../docs/adr/0004/README.md)
 - Domain model rules: [`dotnet.instructions.md §16`](../instructions/dotnet.instructions.md)
 - BC map: [`bounded-context-map.md`](../../docs/architecture/bounded-context-map.md)

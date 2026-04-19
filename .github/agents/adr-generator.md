@@ -2,7 +2,7 @@
 description: >
   Use this agent to generate Architecture Decision Records (ADRs) for ECommerceApp.
   It reads the ADR template, scans the codebase for context, assigns the next ADR number,
-  and produces a fully filled ADR file saved under /docs/adr/.
+  and produces a fully filled ADR folder under /docs/adr/<NNNN>/ with a main ADR file and local README router.
   Trigger phrases: create ADR, new ADR, generate ADR, architecture decision record.
 name: adr-generator
 tools:
@@ -33,8 +33,8 @@ Always read `.github/templates/adr.template.md` before generating any ADR.
 Never create an ADR from scratch — always copy the template structure exactly.
 
 ### 3. Determine the next ADR number
-- List all files in `/docs/adr/`.
-- Find the highest existing ADR number (e.g. `0003-...`).
+- List all folders in `/docs/adr/`.
+- Find the highest existing ADR number (e.g. `0003`).
 - Increment by 1 for the new ADR number (e.g. `0004`).
 - If no ADRs exist yet, start at `0001`.
 
@@ -46,7 +46,7 @@ Before writing anything, search the codebase for real evidence to support the de
 - Always reference actual file paths and class names — never make up examples.
 
 ### 5. Read existing ADRs for cross-references
-- Read all existing files in `/docs/adr/` to find related decisions.
+- Read all existing ADR folder routers in `/docs/adr/<NNNN>/README.md` (and the main ADR file when needed) to find related decisions.
 - List them under `## References` → `Related ADRs`.
 
 ### 6. Fill the template
@@ -86,8 +86,8 @@ Rule: every item in `## Decision` that is a verifiable invariant must appear in 
 Prose-only consequences (rationale, trade-offs) stay in `## Consequences` — not in the checklist.
 
 ### 7. Save the ADR
-Save the filled ADR to `/docs/adr/XXXX-short-title.md` where `XXXX` is the zero-padded number
-determined in Step 3.
+Save the filled ADR to `/docs/adr/XXXX/XXXX-short-title.md` where `XXXX` is the zero-padded number
+determined in Step 3. Also create `/docs/adr/XXXX/README.md` as the local router for that ADR folder.
 
 ### 8. Confirm output
 After saving, confirm the file path, then immediately proceed to Step 9.
@@ -121,13 +121,13 @@ exists in the codebase. If a name is NOT found:
 - If it was cited as already existing → remove or replace with the real name found in Step 4
 
 **Check 3 — ADR number collision**
-Run `search/fileSearch` for the generated filename prefix (e.g. `0008-`).
-If any file in `/docs/adr/` already starts with that number → increment the number,
+Run `search/fileSearch` for the generated folder/filename prefix (e.g. `0008`).
+If any ADR folder in `/docs/adr/` already uses that number → increment the number,
 rename the file, and update all self-references inside the document.
 
 **Check 4 — Cross-reference integrity**
 For every ADR listed under `## References → Related ADRs`, run `search/fileSearch` to verify
-the referenced file exists in `/docs/adr/`. Remove any reference to an ADR that does not exist.
+the referenced ADR folder exists in `/docs/adr/`. Remove any reference to an ADR that does not exist.
 
 ---
 
@@ -185,7 +185,7 @@ Instruction files to reference in ADRs:
 - `.github/instructions/migration-policy.instructions.md`
 
 ADR template location: `.github/templates/adr.template.md`
-ADR output folder: `/docs/adr/`
+ADR output folder: `/docs/adr/<NNNN>/`
 Repository: https://github.com/kwojtasinski-repo/ECommerceApp
 
 ---
