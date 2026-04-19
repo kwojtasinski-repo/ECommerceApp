@@ -1,9 +1,11 @@
 using ECommerceApp.Application.Catalog.Products.DTOs;
 using ECommerceApp.Application.Catalog.Products.Services;
 using ECommerceApp.Application.Catalog.Products.ViewModels;
+using ECommerceApp.Web.Areas.Catalog.Options;
 using ECommerceApp.Web.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -13,15 +15,22 @@ namespace ECommerceApp.Web.Areas.Catalog.Controllers
     [Area("Catalog")]
     public class ProductController : BaseController
     {
+        private const string CreateView = "Create";
+        private const string CreateChunkedView = "AddItemNew";
+        private const string EditView = "Edit";
+        private const string EditChunkedView = "EditItemNew";
+
         private readonly IProductService _productService;
         private readonly ICategoryService _categoryService;
         private readonly IProductTagService _tagService;
+        private readonly CatalogOptions _catalogOptions;
 
-        public ProductController(IProductService productService, ICategoryService categoryService, IProductTagService tagService)
+        public ProductController(IProductService productService, ICategoryService categoryService, IProductTagService tagService, IOptions<CatalogOptions> catalogOptions)
         {
             _productService = productService;
             _categoryService = categoryService;
             _tagService = tagService;
+            _catalogOptions = catalogOptions.Value;
         }
 
         [HttpGet]
@@ -56,7 +65,7 @@ namespace ECommerceApp.Web.Areas.Catalog.Controllers
         public async Task<IActionResult> Create()
         {
             ViewBag.Categories = await _categoryService.GetAllCategories();
-            return View(new CreateProductFormVm());
+            return View(_catalogOptions.UseChunkedUpload ? CreateChunkedView : CreateView, new CreateProductFormVm());
         }
 
         [HttpPost]
@@ -66,7 +75,7 @@ namespace ECommerceApp.Web.Areas.Catalog.Controllers
             if (!ModelState.IsValid)
             {
                 ViewBag.Categories = await _categoryService.GetAllCategories();
-                return View(model);
+                return View(_catalogOptions.UseChunkedUpload ? CreateChunkedView : CreateView, model);
             }
             var tagIds = await ParseTagsAsync(model.Tags);
             var dto = new CreateProductDto(model.Name, model.Cost, model.Description, model.CategoryId, tagIds);
@@ -95,7 +104,7 @@ namespace ECommerceApp.Web.Areas.Catalog.Controllers
                 CategoryId = vm.CategoryId,
                 Tags = string.Join(", ", vm.TagNames)
             };
-            return View(model);
+            return View(_catalogOptions.UseChunkedUpload ? EditChunkedView : EditView, model);
         }
 
         [HttpPost]
@@ -108,7 +117,7 @@ namespace ECommerceApp.Web.Areas.Catalog.Controllers
                 ViewBag.Categories = await _categoryService.GetAllCategories();
                 ViewBag.AllTags = await _tagService.GetAllTags();
                 ViewBag.Images = new List<ProductImageVm>();
-                return View(model);
+                return View(_catalogOptions.UseChunkedUpload ? EditChunkedView : EditView, model);
             }
             var tagIds = await ParseTagsAsync(model.Tags);
             var dto = new UpdateProductDto(id, model.Name, model.Cost, model.Description, model.CategoryId, tagIds);

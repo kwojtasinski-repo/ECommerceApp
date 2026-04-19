@@ -1,5 +1,6 @@
 ﻿using ECommerceApp.Application.Catalog.Images.Models;
 using ECommerceApp.Application.Catalog.Images.Services;
+using ECommerceApp.Application.Catalog.Images.Upload;
 using ECommerceApp.Application.Catalog.Images.ViewModels;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.POCO;
@@ -18,12 +19,14 @@ namespace ECommerceApp.API.Controllers.Catalog
     {
         private readonly IImageService _service;
         private readonly IUrlImageResolver _resolver;
+        private readonly IChunkedUploadService _chunkedUpload;
         private readonly ILogger<ImageController> _logger;
 
-        public ImageController(IImageService service, IUrlImageResolver resolver, ILogger<ImageController> logger)
+        public ImageController(IImageService service, IUrlImageResolver resolver, IChunkedUploadService chunkedUpload, ILogger<ImageController> logger)
         {
             _service = service;
             _resolver = resolver;
+            _chunkedUpload = chunkedUpload;
             _logger = logger;
         }
 
@@ -64,6 +67,33 @@ namespace ECommerceApp.API.Controllers.Catalog
         {
             var ids = await _service.AddImages(images);
             return ids;
+        }
+
+        [Authorize(Roles = $"{MaintenanceRole}")]
+        [HttpPost("init-upload")]
+        public IActionResult InitUpload([FromBody] InitUploadRequest request)
+        {
+            if (request == null || string.IsNullOrWhiteSpace(request.FileName) || request.FileSizeBytes <= 0)
+                return BadRequest("Invalid request.");
+
+            return Ok(_chunkedUpload.InitUpload(request));
+        }
+
+        [Authorize(Roles = $"{MaintenanceRole}")]
+        [HttpPost("upload-chunk")]
+        public async Task<IActionResult> UploadChunk([FromForm] UploadChunkRequest request)
+        {
+            if (request?.Chunk == null)
+                return BadRequest("Missing chunk.");
+
+            try
+            {
+                return Ok(await _chunkedUpload.UploadChunkAsync(request));
+            }
+            catch (Application.Exceptions.BusinessException ex)
+            {
+                return BadRequest(new { error = ex.Message });
+            }
         }
 
         [Authorize(Roles = $"{MaintenanceRole}")]

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using ECommerceApp.Web.Areas.Catalog.Options;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Hosting;
@@ -33,6 +34,7 @@ namespace ECommerceApp.Web
         {
             services.AddSingleton<ICartRequirements>(new CartRequirements(CheckoutOptions.MaxWebQuantityPerOrderLine));
             services.AddSingleton<JsVersionProvider>();
+            services.Configure<CatalogOptions>(Configuration.GetSection(CatalogOptions.SectionName));
             services.AddApplication();
             services.AddInfrastructure(Configuration);
 

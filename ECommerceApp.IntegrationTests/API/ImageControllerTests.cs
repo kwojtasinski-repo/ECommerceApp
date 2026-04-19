@@ -1,4 +1,5 @@
 ﻿using ECommerceApp.Application.Catalog.Images.Models;
+using ECommerceApp.Application.Catalog.Images.Upload;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.POCO;
 using ECommerceApp.Domain.Catalog.Products;
@@ -11,6 +12,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
@@ -62,8 +66,7 @@ namespace ECommerceApp.IntegrationTests.API
         }
 
         [Fact]
-        public async Task given_valid_id_should_return_imageAsync()
-        {
+        public async Task given_valid_id_should_return_imageAsync()        {
             var client = await GetLoggingClient();
             var filePath = _testData.GetFiles().First().FullName;
             var file = await Utilities.CreateIFormFileFrom(filePath);
@@ -141,6 +144,119 @@ namespace ECommerceApp.IntegrationTests.API
                             .GetAsync();
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
             afterDeleteResponse.StatusCode.ShouldBe((int)HttpStatusCode.OK);
+        }
+
+        [Fact]
+        public async Task init_upload_given_valid_request_should_return_session()
+        {
+            var client = await GetLoggingClient();
+            var itemId = await _factory.CreateFreshItemAsync();
+            var filePath = _testData.GetFiles().First().FullName;
+            var fileBytes = await File.ReadAllBytesAsync(filePath);
+            var request = new InitUploadRequest
+            {
+                FileName = Path.GetFileName(filePath),
+                FileSizeBytes = fileBytes.Length,
+                ItemId = itemId
+            };
+
+            var response = await client.Request("api/images/init-upload")
+                .AllowAnyHttpStatus()
+                .WithHeader("Content-Type", "application/json")
+                .PostStringAsync(JsonSerializer.Serialize(request));
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
+            var body = await response.ResponseMessage.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<InitUploadResponse>(body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            result.ShouldNotBeNull();
+            result.SessionId.ShouldNotBe(Guid.Empty);
+            result.ChunkSize.ShouldBeGreaterThan(0);
+            result.TotalChunks.ShouldBeGreaterThan(0);
+            result.ChunkIds.ShouldNotBeNull();
+            result.ChunkIds.Length.ShouldBe(result.TotalChunks);
+        }
+
+        [Fact]
+        public async Task upload_chunk_single_chunk_file_should_complete()
+        {
+            var client = await GetLoggingClient();
+            var itemId = await _factory.CreateFreshItemAsync();
+            var filePath = _testData.GetFiles().Where(f => f.Name == "apple-iphone-13.jpg").FirstOrDefault().FullName;
+            var fileBytes = await File.ReadAllBytesAsync(filePath);
+            var fileName = Path.GetFileName(filePath);
+
+            // Init
+            var initRequest = new InitUploadRequest { FileName = fileName, FileSizeBytes = fileBytes.Length, ItemId = itemId };
+            var initResponse = await client.Request("api/images/init-upload")
+                .WithHeader("Content-Type", "application/json")
+                .PostStringAsync(JsonSerializer.Serialize(initRequest))
+                .ReceiveString();
+            var session = JsonSerializer.Deserialize<InitUploadResponse>(initResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            // Upload all chunks
+            UploadChunkResponse lastResponse = null;
+            foreach (var chunkId in session.ChunkIds)
+            {
+                var start = (chunkId - 1) * session.ChunkSize;
+                var slice = fileBytes.Skip(start).Take(session.ChunkSize).ToArray();
+
+                var fd = new MultipartFormDataContent();
+                fd.Add(new StringContent(session.SessionId.ToString()), "sessionId");
+                fd.Add(new StringContent(chunkId.ToString()), "chunkId");
+                fd.Add(new ByteArrayContent(slice) { Headers = { { "Content-Disposition", $"form-data; name=\"chunk\"; filename=\"{fileName}\"" } } }, "chunk", fileName);
+
+                var chunkRaw = await client.Request("api/images/upload-chunk")
+                    .AllowAnyHttpStatus()
+                    .PostAsync(fd)
+                    .ReceiveString();
+                lastResponse = JsonSerializer.Deserialize<UploadChunkResponse>(chunkRaw, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            }
+
+            lastResponse.ShouldNotBeNull();
+            lastResponse.Complete.ShouldBeTrue();
+            lastResponse.ReceivedCount.ShouldBe(session.TotalChunks);
+        }
+
+        [Fact]
+        public async Task upload_chunk_multi_chunk_file_should_complete_and_progress_monotonically()
+        {
+            var client = await GetLoggingClient();
+            var itemId = await _factory.CreateFreshItemAsync();
+            var filePath = _testData.GetFiles().Where(f => f.Name == "redmi-note-10.jpg").FirstOrDefault().FullName;
+            var fileBytes = await File.ReadAllBytesAsync(filePath);
+            var fileName = Path.GetFileName(filePath);
+
+            var initRequest = new InitUploadRequest { FileName = fileName, FileSizeBytes = fileBytes.Length, ItemId = itemId };
+            var initRaw = await client.Request("api/images/init-upload")
+                .WithHeader("Content-Type", "application/json")
+                .PostStringAsync(JsonSerializer.Serialize(initRequest))
+                .ReceiveString();
+            var session = JsonSerializer.Deserialize<InitUploadResponse>(initRaw, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            var receivedCounts = new List<int>();
+            foreach (var chunkId in session.ChunkIds)
+            {
+                var start = (chunkId - 1) * session.ChunkSize;
+                var slice = fileBytes.Skip(start).Take(session.ChunkSize).ToArray();
+
+                var fd = new MultipartFormDataContent();
+                fd.Add(new StringContent(session.SessionId.ToString()), "sessionId");
+                fd.Add(new StringContent(chunkId.ToString()), "chunkId");
+                fd.Add(new ByteArrayContent(slice) { Headers = { { "Content-Disposition", $"form-data; name=\"chunk\"; filename=\"{fileName}\"" } } }, "chunk", fileName);
+
+                var chunkRaw = await client.Request("api/images/upload-chunk")
+                    .AllowAnyHttpStatus()
+                    .PostAsync(fd)
+                    .ReceiveString();
+                var res = JsonSerializer.Deserialize<UploadChunkResponse>(chunkRaw, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                receivedCounts.Add(res.ReceivedCount);
+            }
+
+            // receivedCount must be strictly monotonically increasing
+            for (var i = 1; i < receivedCounts.Count; i++)
+                receivedCounts[i].ShouldBeGreaterThan(receivedCounts[i - 1]);
+
+            receivedCounts.Last().ShouldBe(session.TotalChunks);
         }
     }
 }

@@ -109,6 +109,19 @@ namespace ECommerceApp.IntegrationTests.API
             var productId = await productRepo.AddAsync(product);
             SeededItemId = productId.Value;
         }
+
+        public async Task<int> CreateFreshItemAsync()
+        {
+            using var scope = Services.CreateScope();
+            var sp = scope.ServiceProvider;
+            var categoryRepo = sp.GetRequiredService<ICategoryRepository>();
+            var productRepo = sp.GetRequiredService<IProductRepository>();
+            var category = Category.Create("Chunk Upload Test Category");
+            var categoryId = await categoryRepo.AddAsync(category);
+            var product = Product.Create("Chunk Upload Test Product", 50m, "Chunk test description", categoryId.Value);
+            var productId = await productRepo.AddAsync(product);
+            return productId.Value;
+        }
     }
 
     internal sealed class FakeFileStore : IFileStore

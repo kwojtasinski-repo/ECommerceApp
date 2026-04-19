@@ -59,4 +59,9 @@
     <ProjectReference Include="..\ECommerceApp.Infrastructure\ECommerceApp.Infrastructure.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Areas\Catalog\Models\" />
+    <Folder Include="Areas\Catalog\Upload\" />
+  </ItemGroup>
+
 </Project>
