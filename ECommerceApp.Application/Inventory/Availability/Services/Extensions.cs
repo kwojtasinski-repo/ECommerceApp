@@ -7,6 +7,7 @@ using ECommerceApp.Application.Supporting.TimeManagement;
 using Microsoft.Extensions.DependencyInjection;
 
 using PaymentConfirmed = ECommerceApp.Application.Sales.Payments.Messages.PaymentConfirmed;
+using PaymentExpired = ECommerceApp.Application.Sales.Payments.Messages.PaymentExpired;
 
 namespace ECommerceApp.Application.Inventory.Availability.Services
 {
@@ -26,6 +27,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
                 .AddScoped<IMessageHandler<OrderCancelled>, OrderCancelledHandler>()
                 // OrderShippedHandler unregistered — replaced by Fulfillment handlers (ADR-0017 §13.3)
                 .AddScoped<IMessageHandler<PaymentConfirmed>, PaymentConfirmedHandler>()
+                .AddScoped<IMessageHandler<PaymentExpired>, PaymentExpiredHandler>()
                 .AddScoped<IMessageHandler<OrderPlacementFailed>, OrderPlacementFailedHandler>()
                 .AddScoped<IMessageHandler<RefundApproved>, RefundApprovedHandler>()
                 .AddScoped<IMessageHandler<ProductPublished>, ProductPublishedHandler>()

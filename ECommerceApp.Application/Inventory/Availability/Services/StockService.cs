@@ -250,5 +250,14 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             await _stockHoldRepo.UpdateAsync(stockHold, ct);
             return true;
         }
+
+        public async Task ReleaseAllHoldsForOrderAsync(int orderId, CancellationToken ct = default)
+        {
+            var holds = await _stockHoldRepo.GetByOrderIdAsync(orderId, ct);
+            foreach (var hold in holds)
+            {
+                await ReleaseAsync(orderId, hold.ProductId.Value, hold.Quantity, ct);
+            }
+        }
     }
 }

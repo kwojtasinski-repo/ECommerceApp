@@ -90,3 +90,35 @@ returns `PlaceOrderResult.PlacementFailed(orderId)`.
 - **Status quo (timeout-based safety net only)**: the existing `SoftReservationExpiredJob` sweeper
   handles some cases but is a timeout, not a compensating transaction. Orphaned Payment records
   are not addressed until the `PaymentWindowExpiredJob` fires (up to 3 days later).
+
+---
+
+## Amendment — F4 handler chain refactoring (2026-04-XX)
+
+### `OrderCancelled` — reserved for manual-cancel path only
+
+As part of the F4 decoupling work, `OrderCancelled` is **no longer published on the `PaymentExpired`
+path**. The following change was made:
+
+| Before | After |
+|---|---|
+| `OrderPaymentExpiredHandler` cancelled the order → published `OrderCancelled` → Inventory + Coupons handled `OrderCancelled` | `PaymentExpired` fan-out dispatches directly to `Inventory.PaymentExpiredHandler` + `Coupons.CouponsPaymentExpiredHandler` alongside `Orders.OrderPaymentExpiredHandler` |
+
+**`OrderCancelled` is now reserved for the manual order cancellation path.** No handler or service
+currently publishes it — it is retained as a message contract for future use when a manual-cancel
+action is implemented (e.g., admin or customer cancels a Placed order before payment).
+
+**`IStockService.ReleaseAllHoldsForOrderAsync(orderId)`** was added to support
+`Inventory.PaymentExpiredHandler` — it retrieves all stock holds for the order via
+`IStockHoldRepository.GetByOrderIdAsync` and releases each one, without requiring the caller
+to know the item list.
+
+### Current `PaymentExpired` flat fan-out topology
+
+```
+PaymentExpired ──┬── Orders.OrderPaymentExpiredHandler    (expires the order — no downstream publish)
+                 ├── Inventory.PaymentExpiredHandler       (releases all stock holds via ReleaseAllHoldsForOrderAsync)
+                 └── Coupons.CouponsPaymentExpiredHandler  (restores coupon usage — mirrors OrderCancelled path)
+```
+
+Integration tests: `PaymentExpiredFanOutTests` (4 tests) verify the flat fan-out end-to-end.

@@ -18,5 +18,6 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
         Task<bool> ReturnAsync(int productId, int quantity, CancellationToken ct = default);
         Task AdjustAsync(AdjustStockDto dto, CancellationToken ct = default);
         Task<bool> WithdrawHoldAsync(int orderId, int productId, CancellationToken ct = default);
+        Task ReleaseAllHoldsForOrderAsync(int orderId, CancellationToken ct = default);
     }
 }
