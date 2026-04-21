@@ -5,6 +5,7 @@ description: >
   and produces a fully filled ADR folder under /docs/adr/<NNNN>/ with a main ADR file and local README router.
   Trigger phrases: create ADR, new ADR, generate ADR, architecture decision record.
 name: adr-generator
+max-iterations: 2
 tools:
   - read/readFile
   - search/fileSearch
@@ -86,7 +87,25 @@ Rule: every item in `## Decision` that is a verifiable invariant must appear in 
 Prose-only consequences (rationale, trade-offs) stay in `## Consequences` — not in the checklist.
 
 ### 7. Save the ADR
-Save the filled ADR to `/docs/adr/XXXX/XXXX-short-title.md` where `XXXX` is the zero-padded number
+
+## ═══════════ HITL CHECKPOINT — BEFORE WRITE ═══════════
+
+Before saving, output the **full draft** of the ADR (both files: main ADR + folder README router) inline, then output exactly:
+
+```
+═══════════ HITL: ADR DRAFT REVIEW ═══════════
+ADR: ADR-XXXX — <title>
+Status: Proposed | Accepted
+Files to write:
+  - docs/adr/XXXX/XXXX-short-title.md
+  - docs/adr/XXXX/README.md
+Reply: WRITE / REVISE <feedback> / ABORT
+═════════════════════════════════════════════
+```
+
+**STOP** until the human replies `WRITE`. Do NOT save to disk silently.
+
+After approval, save the filled ADR to `/docs/adr/XXXX/XXXX-short-title.md` where `XXXX` is the zero-padded number
 determined in Step 3. Also create `/docs/adr/XXXX/README.md` as the local router for that ADR folder.
 
 ### 8. Confirm output

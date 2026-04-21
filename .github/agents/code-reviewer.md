@@ -5,6 +5,7 @@ description: >
   test coverage, and cross-BC boundary rules. Reports BLOCKS MERGE or APPROVED.
   Trigger phrases: review code, check PR, code review, review changes, check anti-patterns.
 name: code-reviewer
+max-iterations: 3
 tools:
   - read/readFile
   - search/fileSearch
@@ -29,6 +30,7 @@ Always load these files **before** inspecting any changed code:
 2. `.github/context/project-state.md` — verify no changes touch blocked BCs or frozen legacy code.
 3. `.github/instructions/dotnet.instructions.md` — architecture and coding standards.
 4. `.github/instructions/safety.instructions.md` — allowed/disallowed actions.
+5. `.github/context/agent-decisions.md` — skim for prior corrections in the area being reviewed (don't bulk-load — search by area/agent).
 
 Then load **only the relevant** per-stack instructions based on which files changed:
 
@@ -95,6 +97,26 @@ Any match → mark as **BLOCKS MERGE** with the specific anti-pattern name and f
 1. Braces on all control flow (`if`, `foreach`, `for`, `while`) — even single-line bodies.
 2. No file-scoped namespaces (project convention).
 3. `async`/`await` used correctly — no `.Result` or `.Wait()`.
+
+### 8. Pipeline awareness (when invoked as part of multi-agent pipeline)
+
+If the change came through `@planner` → `@implementer` → `@verifier` (PASS) pipeline:
+
+1. **Trust verifier output for deterministic checks.** Do NOT re-run build/tests — the verifier verdict is the source of truth for compilation and test results.
+2. **Focus on semantic and architectural review.** Anti-patterns, ADR compliance, BC boundaries, security — things the verifier cannot judge.
+3. **Cross-check the plan vs. diff.** If files changed are not in the planner's plan, flag as **BLOCKS MERGE — scope creep**.
+4. **Verify HITL trail.** If a HITL CHECKPOINT was bypassed (no approval line in conversation), flag as **Advisory — pipeline integrity**.
+
+If the change is a standalone PR (no pipeline trail), skip this section and review normally.
+
+### 9. Refactor detection
+
+If the change came from `/refactor.prompt.md` (or the diff is structural-only):
+
+1. **No behavioral change** — verify pre-existing tests pass without modification. Test changes in a refactor PR → **BLOCKS MERGE — behavioral change in refactor**.
+2. **No public API change** unless explicitly listed in the refactor's Step 1 scope. Surprise public API changes → **BLOCKS MERGE**.
+3. **No new cross-BC dependencies** — refactors must stay within their BC.
+4. **No new entries in `Infrastructure/Migrations/`** — refactors never touch migrations.
 
 ---
 

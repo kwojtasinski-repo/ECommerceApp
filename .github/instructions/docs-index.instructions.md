@@ -27,45 +27,52 @@ applyTo: "**"
 
 Auto-loaded by `applyTo:` globs — Copilot reads these automatically when editing matching files.
 
-| File                                  | `applyTo:`                          | Scope                                 |
-| ------------------------------------- | ----------------------------------- | ------------------------------------- |
-| `dotnet.instructions.md`              | `**/*.cs, **/*.csproj`              | .NET architecture, services, DI, auth |
-| `web-api.instructions.md`             | `ECommerceApp.API/**`               | Web API controllers, DTOs             |
-| `razorpages.instructions.md`          | `ECommerceApp.Web/**`               | MVC, Views, Razor Pages               |
-| `frontend.instructions.md`            | `wwwroot/**, **/*.cshtml`           | LibMan, JS modules, require.js        |
-| `efcore.instructions.md`              | `ECommerceApp.Infrastructure/**`    | EF Core tracking, transactions        |
-| `migration-policy.instructions.md`    | `Infrastructure/Migrations/**`      | DB migration approval                 |
-| `testing.instructions.md`             | `UnitTests/**, IntegrationTests/**` | Unit/integration test patterns        |
-| `shared-primitives.instructions.md`   | `Domain/Shared/**`                  | TypedId, Money, Price, Quantity       |
-| `safety.instructions.md`              | `**`                                | Allowed/disallowed actions            |
-| `pre-edit.instructions.md`            | `**`                                | Pre-edit checklist, doc suggestions   |
+| File                                  | `applyTo:`                          | Scope                                         |
+| ------------------------------------- | ----------------------------------- | --------------------------------------------- |
+| `dotnet.instructions.md`              | `**/*.cs, **/*.csproj`              | .NET architecture, services, DI, auth         |
+| `web-api.instructions.md`             | `ECommerceApp.API/**`               | Web API controllers, DTOs                     |
+| `razorpages.instructions.md`          | `ECommerceApp.Web/**`               | MVC, Views, Razor Pages                       |
+| `frontend.instructions.md`            | `wwwroot/**, **/*.cshtml`           | LibMan, JS modules, require.js                |
+| `efcore.instructions.md`              | `ECommerceApp.Infrastructure/**`    | EF Core tracking, transactions                |
+| `migration-policy.instructions.md`    | `Infrastructure/Migrations/**`      | DB migration approval                         |
+| `testing.instructions.md`             | `UnitTests/**, IntegrationTests/**` | Unit/integration test patterns                |
+| `shared-primitives.instructions.md`   | `Domain/Shared/**`                  | TypedId, Money, Price, Quantity               |
+| `safety.instructions.md`              | `**`                                | Allowed/disallowed actions                    |
+| `pre-edit.instructions.md`            | `**`                                | Pre-edit checklist, doc suggestions           |
 | `copilot-config-sync.instructions.md` | `.github/**, docs/**`               | Auto-sync trigger for docs and Copilot config |
-| `docs-index.instructions.md`          | `**`                                | This file — routing table             |
+| `docs-index.instructions.md`          | `**`                                | This file — routing table                     |
 
 ## Agents (`.github/agents/`)
 
-| Agent            | Invoke                      | When to use                                   |
-| ---------------- | --------------------------- | --------------------------------------------- |
-| ADR Generator    | `@adr-generator`            | Generating a new Architecture Decision Record |
-| BC Switch        | `@bc-switch`                | Executing atomic BC legacy-to-new switch      |
-| Code Reviewer    | `@code-reviewer`            | Automated PR review against ADRs and rules    |
-| Setup Maintainer | `@copilot-setup-maintainer` | Syncing Copilot config and `.sln` structure   |
+| Agent            | Invoke                      | When to use                                                            |
+| ---------------- | --------------------------- | ---------------------------------------------------------------------- |
+| ADR Generator    | `@adr-generator`            | Generating a new Architecture Decision Record                          |
+| BC Switch        | `@bc-switch`                | Executing atomic BC legacy-to-new switch                               |
+| Code Reviewer    | `@code-reviewer`            | Automated PR review against ADRs and rules                             |
+| Setup Maintainer | `@copilot-setup-maintainer` | Syncing Copilot config and `.sln` structure                            |
+| Planner          | `@planner`                  | Pipeline stage 1 — produce file-level plan, STOP at HITL 1             |
+| Implementer      | `@implementer`              | Pipeline stage 2 — execute APPROVED plan, scope-limited                |
+| Verifier         | `@verifier`                 | Pipeline stage 3 — DETERMINISTIC build+test, no LLM judgment           |
+| PR/Commit        | `@pr-commit`                | Pipeline stage 5 — produce branch/commit/PR text after APPROVED review |
+
+> Pipeline orchestration spec → [`.github/AGENT-PIPELINE.md`](../AGENT-PIPELINE.md)
 
 ## Prompts (`.github/prompts/`)
 
-| Prompt                        | When to use                            |
-| ----------------------------- | -------------------------------------- |
-| `bc-analysis.prompt.md`       | Analyzing a BC for migration readiness |
-| `bc-implementation.prompt.md` | Planning BC implementation steps       |
-| `pr-review.prompt.md`         | Reviewing a pull request               |
+| Prompt                        | When to use                                               |
+| ----------------------------- | --------------------------------------------------------- |
+| `bc-analysis.prompt.md`       | Analyzing a BC for migration readiness                    |
+| `bc-implementation.prompt.md` | Planning BC implementation steps                          |
+| `pr-review.prompt.md`         | Reviewing a pull request                                  |
+| `refactor.prompt.md`          | Structural / readability refactor with no behavior change |
 
 ## ADRs (`docs/adr/`)
 
 Read an ADR **only** when the "When to read" condition matches the files you are editing.
 Use the folder `README.md` as the first stop for every ADR.
 
-| ADR  | Title                                                                     | When to read                                                                                                                                          |
-| ---- | ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ADR  | Title                                                                                                      | When to read                                                                                                                                          |
+| ---- | ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 0001 | [Project overview and technology stack](../../docs/adr/0001/README.md)                                     | First-time context; project-wide tech decisions                                                                                                       |
 | 0002 | [Post-event-storming architectural evolution strategy](../../docs/adr/0002/README.md)                      | Any BC migration or parallel-change work                                                                                                              |
 | 0003 | [Feature folder organization for new BC code](../../docs/adr/0003/README.md)                               | Creating new folders/namespaces for a BC                                                                                                              |
@@ -91,12 +98,12 @@ Use the folder `README.md` as the first stop for every ADR.
 | 0023 | [Bootstrap 5 upgrade](../../docs/adr/0023/README.md)                                                       | Editing `_Layout.cshtml`, `modalService.js`, or any view with BS data attributes                                                                      |
 | 0024 | [Controller routing strategy for BC atomic switches](../../docs/adr/0024/README.md)                        | Creating Area controllers, migrating Web/API controllers, editing `Startup.cs` routing                                                                |
 | 0025 | [API tiered access — Trusted purchase policy, quantity limits, payment URL](../../docs/adr/0025/README.md) | Editing API V2 `CartController`, `CheckoutController`, `OrdersController`, `LoginController` JWT claims, `ApiPurchaseOptions`, `MaxApiQuantityFilter` |
-| 0026 | [Order lifecycle saga — choreography + compensation](../../docs/adr/0026/README.md) | Implementing saga compensation, `OrderPlaced` fan-out error handling, cross-BC partial failure recovery |
+| 0026 | [Order lifecycle saga — choreography + compensation](../../docs/adr/0026/README.md)                        | Implementing saga compensation, `OrderPlaced` fan-out error handling, cross-BC partial failure recovery                                               |
 
 ## Root docs (`docs/`)
 
-| File        | When to read                                                                 |
-| ----------- | ---------------------------------------------------------------------------- |
+| File        | When to read                                                                                |
+| ----------- | ------------------------------------------------------------------------------------------- |
 | `README.md` | First human-oriented entry point to the docs tree and its relationship to `.github` routing |
 
 ## Architecture docs (`docs/architecture/`)
@@ -113,17 +120,17 @@ Use the folder `README.md` as the first stop for every ADR.
 
 ## Roadmaps (`docs/roadmap/`)
 
-| File                        | When to read                                                             |
-| --------------------------- | ------------------------------------------------------------------------ |
-| `README.md`                 | Before any BC implementation — shows dependency order and phase overview |
-| `orders-atomic-switch.md`   | Working on Sales/Orders BC (highest-priority unblocking item)            |
-| `payments-atomic-switch.md` | Working on Sales/Payments BC (blocked by Orders)                         |
-| `iam-atomic-switch.md`      | Working on Identity/IAM BC (coordinate with Orders switch)               |
-| `iam-refresh-token.md`      | Implementing refresh token feature for the API (design settled)          |
-| `presale-slice2.md`         | Working on Presale/Checkout Slice 2 (blocked by Orders)                  |
-| `frontend-pipeline.md`      | Working on frontend JS/error pipeline (ADR-0021 phases)                  |
-| `storefront-offers.md`      | Working on public storefront `/offers` browsing (Presale area)           |
-| `chunked-upload.md`         | Implementing chunked image upload feature (server-driven design)         |
+| File                        | When to read                                                                                  |
+| --------------------------- | --------------------------------------------------------------------------------------------- |
+| `README.md`                 | Before any BC implementation — shows dependency order and phase overview                      |
+| `orders-atomic-switch.md`   | Working on Sales/Orders BC (highest-priority unblocking item)                                 |
+| `payments-atomic-switch.md` | Working on Sales/Payments BC (blocked by Orders)                                              |
+| `iam-atomic-switch.md`      | Working on Identity/IAM BC (coordinate with Orders switch)                                    |
+| `iam-refresh-token.md`      | Implementing refresh token feature for the API (design settled)                               |
+| `presale-slice2.md`         | Working on Presale/Checkout Slice 2 (blocked by Orders)                                       |
+| `frontend-pipeline.md`      | Working on frontend JS/error pipeline (ADR-0021 phases)                                       |
+| `storefront-offers.md`      | Working on public storefront `/offers` browsing (Presale area)                                |
+| `chunked-upload.md`         | Implementing chunked image upload feature (server-driven design)                              |
 | `saga-pattern.md`           | Working on Order Placement Saga, compensation design, or Process Manager evolution (ADR-0026) |
 
 ## Reference docs (`docs/reference/`)
@@ -140,13 +147,14 @@ Use the folder `README.md` as the first stop for every ADR.
 
 ## Context files (`.github/context/`)
 
-| File                                | When to read                                                         |
-| ----------------------------------- | -------------------------------------------------------------------- |
-| `project-state.md`                  | **Always** before editing BC-related code — check if BC is blocked   |
-| `known-issues.md`                   | **Always** before fixing any bug — check if already tracked          |
-| `repo-index.md`                     | When you need to locate code across the repo — full codebase map     |
-| `future-skills.md`                  | When creating skills, adding cross-BC events, or planning automation |
-| `anti-patterns-critical.context.md` | Loaded by `@code-reviewer` — BLOCKS MERGE violations (critical only) |
+| File                                | When to read                                                                                         |
+| ----------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `project-state.md`                  | **Always** before editing BC-related code — check if BC is blocked                                   |
+| `known-issues.md`                   | **Always** before fixing any bug — check if already tracked                                          |
+| `agent-decisions.md`                | **Always** before non-trivial agent work — append after corrections (see `pre-edit.instructions.md`) |
+| `repo-index.md`                     | When you need to locate code across the repo — full codebase map                                     |
+| `future-skills.md`                  | When creating skills, adding cross-BC events, or planning automation                                 |
+| `anti-patterns-critical.context.md` | Loaded by `@code-reviewer` — BLOCKS MERGE violations (critical only)                                 |
 
 ## Skills (`.github/skills/`)
 

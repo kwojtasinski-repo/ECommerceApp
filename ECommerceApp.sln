@@ -28,6 +28,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerceApp.IntegrationTes
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Copilot", "Copilot", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
 	ProjectSection(SolutionItems) = preProject
+		.github\AGENT-PIPELINE.md = .github\AGENT-PIPELINE.md
 		.github\copilot-instructions.md = .github\copilot-instructions.md
 		.github\COPILOT-SETUP-CHANGELOG.md = .github\COPILOT-SETUP-CHANGELOG.md
 	EndProjectSection
@@ -58,6 +59,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "agents", "agents", "{D28679
 		.github\agents\bc-switch.md = .github\agents\bc-switch.md
 		.github\agents\code-reviewer.md = .github\agents\code-reviewer.md
 		.github\agents\copilot-setup-maintainer.md = .github\agents\copilot-setup-maintainer.md
+		.github\agents\implementer.md = .github\agents\implementer.md
+		.github\agents\planner.md = .github\agents\planner.md
+		.github\agents\pr-commit.md = .github\agents\pr-commit.md
+		.github\agents\verifier.md = .github\agents\verifier.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{908C6C00-47A3-455F-82C8-5BBECB045911}"
@@ -419,6 +424,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "prompts", "prompts", "{BAC4
 		.github\prompts\bc-analysis.prompt.md = .github\prompts\bc-analysis.prompt.md
 		.github\prompts\bc-implementation.prompt.md = .github\prompts\bc-implementation.prompt.md
 		.github\prompts\pr-review.prompt.md = .github\prompts\pr-review.prompt.md
+		.github\prompts\refactor.prompt.md = .github\prompts\refactor.prompt.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "patterns", "patterns", "{DB95CC21-7869-4EAC-8EB3-F5706D958E0A}"
@@ -440,8 +446,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "roadmap", "roadmap", "{8FA6
 		docs\roadmap\storefront-offers.md = docs\roadmap\storefront-offers.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{9F10C0A0-1700-0000-0000-000000000001}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\dotnet-ci.yml = .github\workflows\dotnet-ci.yml
+	EndProjectSection
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "context", "context", "{1064B208-B85A-4013-8C84-597303D43282}"
 	ProjectSection(SolutionItems) = preProject
+		.github\context\agent-decisions.md = .github\context\agent-decisions.md
 		.github\context\anti-patterns-critical.context.md = .github\context\anti-patterns-critical.context.md
 		.github\context\future-skills.md = .github\context\future-skills.md
 		.github\context\known-issues.md = .github\context\known-issues.md
@@ -627,6 +639,7 @@ Global
 		{DB95CC21-7869-4EAC-8EB3-F5706D958E0A} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 		{8FA6F8D3-44D1-4AC3-9335-8B69F45EA3DD} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 		{1064B208-B85A-4013-8C84-597303D43282} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{9F10C0A0-1700-0000-0000-000000000001} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 		{7C3E91A2-B4D5-4F68-9A1C-E2F30748D6B1} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 		{2FBD2A37-7C7A-4EE9-87FD-DECAC3085916} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}

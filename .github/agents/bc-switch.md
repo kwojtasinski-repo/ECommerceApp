@@ -6,6 +6,7 @@ description: >
   removes legacy code, runs build and tests, and reports a commit-ready summary.
   Trigger phrases: switch BC, atomic switch, legacy switch, BC migration, swap bounded context.
 name: bc-switch
+max-iterations: 10
 tools:
   - read/readFile
   - search/fileSearch
@@ -36,6 +37,23 @@ parallel-change strategy. Never skip a step. Never modify migration files.
 4. If ANY condition is false → **STOP**.
    Reply: *"BC [name] is not ready to switch: [exact status/blocker from project-state.md]. Switch cannot proceed."*
 5. Identify the ADR number for this BC from `project-state.md` (e.g. `ADR-0011`).
+
+## ═══════════ HITL CHECKPOINT — BC READINESS ═══════════
+
+Before continuing to Step 2, output exactly:
+
+```
+═══════════ HITL: BC SWITCH READINESS ═══════════
+BC: <name>
+ADR: <ADR-NNNN>
+project-state.md quote (verbatim line for this BC):
+  "<exact line>"
+Ready-to-switch checks: PASS
+Reply: PROCEED / ABORT / WAIT <reason>
+═════════════════════════════════════════════════════════════
+```
+
+**STOP** until the human replies `PROCEED`. Do NOT continue to Step 2 silently.
 
 ---
 
@@ -89,6 +107,23 @@ Search for legacy artifacts that must be removed after the switch:
 ---
 
 ## Step 6 — Remove legacy files
+
+## ═══════════ HITL CHECKPOINT — BEFORE DELETE ═══════════
+
+Before deleting anything, output the full list of files to delete (from Step 3) and the DI changes
+already performed in Steps 4–5. Then output exactly:
+
+```
+═══════════ HITL: PRE-DELETE CONFIRMATION ═══════════
+Files to delete (<N>):
+  - <path>
+  - ...
+DI swaps already done: <summary>
+Reply: DELETE / ABORT / SKIP <files>
+═════════════════════════════════════════════════════════════
+```
+
+**STOP** until the human replies `DELETE`. Do NOT delete a single file silently.
 
 Only after Steps 4–5 are complete and verified:
 

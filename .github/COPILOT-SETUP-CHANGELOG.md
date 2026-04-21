@@ -9,17 +9,19 @@
 
 ## Current state summary
 
-| Category                               | Count | Details                                                                        |
-| -------------------------------------- | ----- | ------------------------------------------------------------------------------ |
-| `copilot-instructions.md`              | 1     | ≤ 4,000 chars, repo-level policy                                                |
-| Instruction files (`.instructions.md`) | 12    | All with `applyTo:` frontmatter; copilot-config-sync now also triggers on docs/ |
-| Prompt files (`.prompt.md`)            | 3     | BC analysis, BC implementation, PR review                                      |
-| Agent files                            | 4     | adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer              |
-| Skills (`SKILL.md`)                    | 8     | Scaffolding templates for common artifacts                                     |
-| ADRs                                   | 26    | Folderized ADR routers under `docs/adr/<NNNN>/README.md`                       |
-| Context files                          | 5     | project-state, known-issues, repo-index, future-skills, anti-patterns-critical |
-| HTTP scenario files                    | 10    | +auth.http (was 9)                                                             |
-| Test files                             | 132   | 92 unit + 40 integration (+1 `OrderPlacementFailedFanOutTests.cs`)             |
+| Category                               | Count | Details                                                                                                      |
+| -------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------ |
+| `copilot-instructions.md`              | 1     | 4 110 chars (slightly over the 4K aspirational cap; net improved from 4 270)                                 |
+| Instruction files (`.instructions.md`) | 12    | All with `applyTo:` frontmatter; copilot-config-sync triggers on docs/ too                                   |
+| Prompt files (`.prompt.md`)            | 4     | BC analysis, BC implementation, PR review, refactor                                                          |
+| Agent files                            | 8     | adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer, planner, implementer, verifier, pr-commit |
+| Skills (`SKILL.md`)                    | 8     | Scaffolding templates for common artifacts                                                                   |
+| ADRs                                   | 26    | Folderized ADR routers under `docs/adr/<NNNN>/README.md`                                                     |
+| Context files                          | 6     | project-state, known-issues, agent-decisions, repo-index, future-skills, anti-patterns-critical              |
+| GitHub Actions workflows               | 1     | `dotnet-ci.yml` — manual trigger only (push/PR commented)                                                    |
+| Pipeline orchestration spec            | 1     | `.github/AGENT-PIPELINE.md`                                                                                  |
+| HTTP scenario files                    | 10    | +auth.http (was 9)                                                                                           |
+| Test files                             | 132   | 92 unit + 40 integration                                                                                     |
 
 ---
 
@@ -27,37 +29,42 @@
 
 ### `.github/instructions/` (12 files)
 
-| File                                  | `applyTo:`                                                    | Added                                           |
-| ------------------------------------- | ------------------------------------------------------------- | ----------------------------------------------- |
-| `dotnet.instructions.md`              | `**/*.cs, **/*.csproj`                                        | Session 1 (renamed)                             |
-| `efcore.instructions.md`              | `ECommerceApp.Infrastructure/**/*.cs, **/*.csproj`            | Session 1 (renamed)                             |
-| `frontend.instructions.md`            | `ECommerceApp.Web/wwwroot/**, **/*.cshtml`                    | Session 1 (renamed)                             |
-| `razorpages.instructions.md`          | `ECommerceApp.Web/**/*.cshtml, **/*.cshtml.cs, **/*.cs`       | Session 1 (renamed)                             |
-| `web-api.instructions.md`             | `ECommerceApp.API/**/*.cs`                                    | Session 1 (renamed)                             |
-| `testing.instructions.md`             | `ECommerceApp.UnitTests/**, ECommerceApp.IntegrationTests/**` | Session 1 (renamed)                             |
-| `migration-policy.instructions.md`    | `ECommerceApp.Infrastructure/Migrations/**`                   | Session 1 (renamed)                             |
-| `shared-primitives.instructions.md`   | `ECommerceApp.Domain/Shared/**/*.cs`                          | Pre-existing                                    |
-| `safety.instructions.md`              | `**`                                                          | Session 1 (extracted from copilot-instructions) |
-| `pre-edit.instructions.md`            | `**`                                                          | Session 1 (extracted from copilot-instructions) |
-| `docs-index.instructions.md`          | `**`                                                          | Session 1 (new — docs lookup table)             |
-| `copilot-config-sync.instructions.md` | `.github/**, docs/**`                                         | Session 11 (new); Session 14 (extended to docs/**) |
+| File                                  | `applyTo:`                                                    | Added                                                |
+| ------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------- |
+| `dotnet.instructions.md`              | `**/*.cs, **/*.csproj`                                        | Session 1 (renamed)                                  |
+| `efcore.instructions.md`              | `ECommerceApp.Infrastructure/**/*.cs, **/*.csproj`            | Session 1 (renamed)                                  |
+| `frontend.instructions.md`            | `ECommerceApp.Web/wwwroot/**, **/*.cshtml`                    | Session 1 (renamed)                                  |
+| `razorpages.instructions.md`          | `ECommerceApp.Web/**/*.cshtml, **/*.cshtml.cs, **/*.cs`       | Session 1 (renamed)                                  |
+| `web-api.instructions.md`             | `ECommerceApp.API/**/*.cs`                                    | Session 1 (renamed)                                  |
+| `testing.instructions.md`             | `ECommerceApp.UnitTests/**, ECommerceApp.IntegrationTests/**` | Session 1 (renamed)                                  |
+| `migration-policy.instructions.md`    | `ECommerceApp.Infrastructure/Migrations/**`                   | Session 1 (renamed)                                  |
+| `shared-primitives.instructions.md`   | `ECommerceApp.Domain/Shared/**/*.cs`                          | Pre-existing                                         |
+| `safety.instructions.md`              | `**`                                                          | Session 1 (extracted from copilot-instructions)      |
+| `pre-edit.instructions.md`            | `**`                                                          | Session 1 (extracted from copilot-instructions)      |
+| `docs-index.instructions.md`          | `**`                                                          | Session 1 (new — docs lookup table)                  |
+| `copilot-config-sync.instructions.md` | `.github/**, docs/**`                                         | Session 11 (new); Session 14 (extended to docs/\*\*) |
 
-### `.github/prompts/` (3 files)
+### `.github/prompts/` (4 files)
 
 | File                          | Added               |
 | ----------------------------- | ------------------- |
 | `bc-analysis.prompt.md`       | Session 1 (renamed) |
 | `bc-implementation.prompt.md` | Session 1 (renamed) |
 | `pr-review.prompt.md`         | Session 1 (renamed) |
+| `refactor.prompt.md`          | Session 17 (new)    |
 
-### `.github/agents/` (4 files)
+### `.github/agents/` (8 files)
 
-| File                          | Added                       |
-| ----------------------------- | --------------------------- |
-| `adr-generator.md`            | Pre-existing (refs updated) |
-| `bc-switch.md`                | Pre-existing                |
-| `code-reviewer.md`            | Session 3 (new)             |
-| `copilot-setup-maintainer.md` | Session 1 (new)             |
+| File                          | Added                                                                                                   |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `adr-generator.md`            | Pre-existing (Session 17: HITL before write + max-iter 2)                                               |
+| `bc-switch.md`                | Pre-existing (Session 17: HITL after Step 1, before Step 6 + max-iter 10)                               |
+| `code-reviewer.md`            | Session 3 (Session 17: pipeline awareness + refactor detection + max-iter 3, agent-decisions awareness) |
+| `copilot-setup-maintainer.md` | Session 1 (Session 17: Workflow 12 pipeline orchestration sync + AGENT-PIPELINE ownership)              |
+| `planner.md`                  | Session 17 (new — pipeline stage 1, HITL CHECKPOINT 1, max-iter 3)                                      |
+| `implementer.md`              | Session 17 (new — pipeline stage 2, scope-limited, max-iter 5)                                          |
+| `verifier.md`                 | Session 17 (new — pipeline stage 3, deterministic build+test, max-iter 1)                               |
+| `pr-commit.md`                | Session 17 (new — pipeline stage 5, Conventional Commits, max-iter 2)                                   |
 
 ### `.github/skills/` (8 skills)
 
@@ -72,56 +79,73 @@
 | `create-http-scenario`    | .http file for any API endpoint testing        | Session 2 |
 | `create-validator`        | FluentValidation AbstractValidator             | Session 2 |
 
-### `.github/context/` (5 files)
+### `.github/context/` (6 files)
 
-| File                                | Added                                             |
-| ----------------------------------- | ------------------------------------------------- |
-| `project-state.md`                  | Pre-existing                                      |
-| `known-issues.md`                   | Pre-existing                                      |
-| `repo-index.md`                     | Session 2 (new — full codebase map)               |
-| `future-skills.md`                  | Session 2 (new — skills roadmap)                  |
-| `anti-patterns-critical.context.md` | Session 3 (renamed from anti-patterns.context.md) |
+| File                                | Added                                                |
+| ----------------------------------- | ---------------------------------------------------- |
+| `project-state.md`                  | Pre-existing                                         |
+| `known-issues.md`                   | Pre-existing                                         |
+| `agent-decisions.md`                | Session 17 (new — append-only agent corrections log) |
+| `repo-index.md`                     | Session 2 (new — full codebase map)                  |
+| `future-skills.md`                  | Session 2 (new — skills roadmap)                     |
+| `anti-patterns-critical.context.md` | Session 3 (renamed from anti-patterns.context.md)    |
 
 ---
 
 ## Change log
 
+### Session 17 — Multi-agent pipeline + memory + CI (2026-04-21)
+
+| #   | Change                                                                                                                                                                                         | Files affected                                                                          |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| 1   | Added `agent-decisions.md` append-only log of in-session agent corrections; promotion path to ADR/anti-patterns                                                                                | `.github/context/agent-decisions.md`                                                    |
+| 2   | Pre-edit gate: added Step 0 (read agent-decisions) + post-edit append rule                                                                                                                     | `.github/instructions/pre-edit.instructions.md`                                         |
+| 3   | Added context-files row + agent memory rule for `agent-decisions.md`                                                                                                                           | `.github/instructions/docs-index.instructions.md`, `.github/copilot-instructions.md`    |
+| 4   | Added `.github/workflows/dotnet-ci.yml` (build + unit + integration + arch via UnitTests; manual trigger only, push/PR commented)                                                              | `.github/workflows/dotnet-ci.yml`                                                       |
+| 5   | New `/refactor.prompt.md` for structural / readability refactors with HITL after planning step                                                                                                 | `.github/prompts/refactor.prompt.md`, `.github/instructions/docs-index.instructions.md` |
+| 6   | Added 4 pipeline agents: `planner`, `implementer`, `verifier`, `pr-commit` with `max-iterations:` and explicit HITL checkpoints                                                                | `.github/agents/planner.md`, `implementer.md`, `verifier.md`, `pr-commit.md`            |
+| 7   | Pipeline orchestration spec with full HITL/max-iter table and failure-mode matrix                                                                                                              | `.github/AGENT-PIPELINE.md`                                                             |
+| 8   | Added `max-iterations:` and explicit HITL checkpoints to existing agents (`adr-generator` HITL before write, `bc-switch` HITL after Step 1 + before Step 6 delete, `code-reviewer` max-iter 3) | `.github/agents/adr-generator.md`, `bc-switch.md`, `code-reviewer.md`                   |
+| 9   | code-reviewer: added agent-decisions awareness, pipeline awareness section, refactor detection section                                                                                         | `.github/agents/code-reviewer.md`                                                       |
+| 10  | copilot-setup-maintainer: added Workflow 12 (pipeline orchestration sync) and ownership of `AGENT-PIPELINE.md`                                                                                 | `.github/agents/copilot-setup-maintainer.md`                                            |
+| 11  | docs-index: added pipeline agents (planner/implementer/verifier/pr-commit) to Agents table + AGENT-PIPELINE link                                                                               | `.github/instructions/docs-index.instructions.md`                                       |
+
 ### Session 16 — Docs router + ADR folder sync (2026-04-19)
 
-| #   | Change                                                                                                                | Files affected                                              |
-| --- | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| 1   | Added `docs/README.md` as the short human-facing router for the `docs/` tree                                         | `docs/README.md`                                            |
-| 2   | Updated docs-index to treat ADR folder `README.md` files as the Copilot entry points and added a root docs section   | `.github/instructions/docs-index.instructions.md`          |
-| 3   | Strengthened docs auto-sync rules so meaningful docs changes trigger `.github` environment refresh guidance and an explicit feed-forward loop | `.github/instructions/copilot-config-sync.instructions.md`, `.github/instructions/pre-edit.instructions.md` |
-| 4   | Updated Copilot prompts/instructions/agents for folderized ADR paths, new ADR output structure, and central feed-forward wording | `.github/copilot-instructions.md`, `.github/prompts/*.md`, `.github/instructions/*.md`, `.github/agents/*.md` |
-| 5   | Updated `project-state.md` ADR links to folder routers and fixed docs-relative paths                                  | `.github/context/project-state.md`                          |
-| 6   | Synced solution docs items: added `docs\README.md`; switched ADR solution items to per-ADR solution folders with nested folder-local files (`amendments`, `example-implementation`, checklist, migration plan where present) | `ECommerceApp.sln`                                          |
-| 7   | Tightened maintainer/auto-sync flow so nested ADR solution structure and an end-of-task repo sync close-out check are explicit | `.github/agents/copilot-setup-maintainer.md`, `.github/instructions/copilot-config-sync.instructions.md` |
+| #   | Change                                                                                                                                                                                                                       | Files affected                                                                                                |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| 1   | Added `docs/README.md` as the short human-facing router for the `docs/` tree                                                                                                                                                 | `docs/README.md`                                                                                              |
+| 2   | Updated docs-index to treat ADR folder `README.md` files as the Copilot entry points and added a root docs section                                                                                                           | `.github/instructions/docs-index.instructions.md`                                                             |
+| 3   | Strengthened docs auto-sync rules so meaningful docs changes trigger `.github` environment refresh guidance and an explicit feed-forward loop                                                                                | `.github/instructions/copilot-config-sync.instructions.md`, `.github/instructions/pre-edit.instructions.md`   |
+| 4   | Updated Copilot prompts/instructions/agents for folderized ADR paths, new ADR output structure, and central feed-forward wording                                                                                             | `.github/copilot-instructions.md`, `.github/prompts/*.md`, `.github/instructions/*.md`, `.github/agents/*.md` |
+| 5   | Updated `project-state.md` ADR links to folder routers and fixed docs-relative paths                                                                                                                                         | `.github/context/project-state.md`                                                                            |
+| 6   | Synced solution docs items: added `docs\README.md`; switched ADR solution items to per-ADR solution folders with nested folder-local files (`amendments`, `example-implementation`, checklist, migration plan where present) | `ECommerceApp.sln`                                                                                            |
+| 7   | Tightened maintainer/auto-sync flow so nested ADR solution structure and an end-of-task repo sync close-out check are explicit                                                                                               | `.github/agents/copilot-setup-maintainer.md`, `.github/instructions/copilot-config-sync.instructions.md`      |
 
 ### Session 15 — Saga implementation sync (2026-04-15)
 
-| #   | Change                                                                                                                                      | Files affected                                                                    |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| 1   | `PaymentStatus.Cancelled` added to enum (commit 030797a)                                                                                    | `ECommerceApp.Domain/Sales/Payments/PaymentStatus.cs`                             |
-| 2   | `Payment.Cancel()` domain method added — throws `DomainException` if status is not `Pending`                                                | `ECommerceApp.Domain/Sales/Payments/Payment.cs`                                   |
-| 3   | `PaymentOperationResult.AlreadyCancelled` added                                                                                             | `ECommerceApp.Application/Sales/Payments/Results/PaymentOperationResult.cs`       |
-| 4   | `PaymentService.ConfirmAsync` — guard added: returns `AlreadyCancelled` when payment status is `Cancelled`                                  | `ECommerceApp.Application/Sales/Payments/Services/PaymentService.cs`              |
-| 5   | `PaymentsController.ConfirmPayment` — Polish error message added for `AlreadyCancelled` case                                                | `ECommerceApp.Web/Areas/Sales/Controllers/PaymentsController.cs`                  |
-| 6   | `PaymentAggregateTests` — 3 new `Cancel` tests; `PaymentStatus.Cancelled` added as inline data to 2 existing non-Pending theories           | `ECommerceApp.UnitTests/Sales/Payments/PaymentAggregateTests.cs`                  |
-| 7   | `OrderPlacementFailedFanOutTests.cs` (NEW) — 6 cross-BC integration tests: Payments compensation (×2), Inventory compensation (×2), combined fan-out (×2) | `ECommerceApp.IntegrationTests/CrossBC/OrderPlacementFailedFanOutTests.cs` |
-| 8   | Updated repo-index test counts: 131→132 total (integration 39→40)                                                                          | `.github/context/repo-index.md`                                                   |
-| 9   | Updated project-state.md: Saga Option A (OrderPlacementFailed compensation — Payments + Inventory + Presale) marked complete                | `.github/context/project-state.md`                                                |
+| #   | Change                                                                                                                                                    | Files affected                                                              |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| 1   | `PaymentStatus.Cancelled` added to enum (commit 030797a)                                                                                                  | `ECommerceApp.Domain/Sales/Payments/PaymentStatus.cs`                       |
+| 2   | `Payment.Cancel()` domain method added — throws `DomainException` if status is not `Pending`                                                              | `ECommerceApp.Domain/Sales/Payments/Payment.cs`                             |
+| 3   | `PaymentOperationResult.AlreadyCancelled` added                                                                                                           | `ECommerceApp.Application/Sales/Payments/Results/PaymentOperationResult.cs` |
+| 4   | `PaymentService.ConfirmAsync` — guard added: returns `AlreadyCancelled` when payment status is `Cancelled`                                                | `ECommerceApp.Application/Sales/Payments/Services/PaymentService.cs`        |
+| 5   | `PaymentsController.ConfirmPayment` — Polish error message added for `AlreadyCancelled` case                                                              | `ECommerceApp.Web/Areas/Sales/Controllers/PaymentsController.cs`            |
+| 6   | `PaymentAggregateTests` — 3 new `Cancel` tests; `PaymentStatus.Cancelled` added as inline data to 2 existing non-Pending theories                         | `ECommerceApp.UnitTests/Sales/Payments/PaymentAggregateTests.cs`            |
+| 7   | `OrderPlacementFailedFanOutTests.cs` (NEW) — 6 cross-BC integration tests: Payments compensation (×2), Inventory compensation (×2), combined fan-out (×2) | `ECommerceApp.IntegrationTests/CrossBC/OrderPlacementFailedFanOutTests.cs`  |
+| 8   | Updated repo-index test counts: 131→132 total (integration 39→40)                                                                                         | `.github/context/repo-index.md`                                             |
+| 9   | Updated project-state.md: Saga Option A (OrderPlacementFailed compensation — Payments + Inventory + Presale) marked complete                              | `.github/context/project-state.md`                                          |
 
 ### Session 14 — Full audit & ADR-0026 sync (2026-04-15)
 
-| #   | Change                                                                                                                                           | Files affected                                              |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| 1   | Added ADR-0026 (Order lifecycle saga) row to ADR table in docs-index                                                                             | `.github/instructions/docs-index.instructions.md`          |
-| 2   | Added `saga-pattern.md` row to roadmap table in docs-index (was missing — file existed on disk and in .sln)                                      | `.github/instructions/docs-index.instructions.md`          |
-| 3   | Incremented ADR count §2: 25 → 26                                                                                                               | `.github/copilot-instructions.md`                           |
-| 4   | Added `docs\adr\0026-order-lifecycle-saga.md` to `adr` solution folder                                                                          | `ECommerceApp.sln`                                          |
-| 5   | Extended `copilot-config-sync.instructions.md` `applyTo:` to `.github/**, docs/**`; added ADR/roadmap trigger sections for docs/ changes        | `.github/instructions/copilot-config-sync.instructions.md` |
-| 6   | Updated `repo-index.md` At a Glance: CS ~1054→~1146, CSHTML 103→125, ADRs 25→26, tests 116→131 (92+39)                                          | `.github/context/repo-index.md`                             |
+| #   | Change                                                                                                                                   | Files affected                                             |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| 1   | Added ADR-0026 (Order lifecycle saga) row to ADR table in docs-index                                                                     | `.github/instructions/docs-index.instructions.md`          |
+| 2   | Added `saga-pattern.md` row to roadmap table in docs-index (was missing — file existed on disk and in .sln)                              | `.github/instructions/docs-index.instructions.md`          |
+| 3   | Incremented ADR count §2: 25 → 26                                                                                                        | `.github/copilot-instructions.md`                          |
+| 4   | Added `docs\adr\0026-order-lifecycle-saga.md` to `adr` solution folder                                                                   | `ECommerceApp.sln`                                         |
+| 5   | Extended `copilot-config-sync.instructions.md` `applyTo:` to `.github/**, docs/**`; added ADR/roadmap trigger sections for docs/ changes | `.github/instructions/copilot-config-sync.instructions.md` |
+| 6   | Updated `repo-index.md` At a Glance: CS ~1054→~1146, CSHTML 103→125, ADRs 25→26, tests 116→131 (92+39)                                   | `.github/context/repo-index.md`                            |
 
 ### Session 13 — Full audit & sync (2026-04-09)
 
@@ -208,17 +232,17 @@
 
 ### Session 6 — ADR-0024 + full audit (2026-03-22)
 
-| #   | Change                                                                                 | Files affected                                    |
-| --- | -------------------------------------------------------------------------------------- | ------------------------------------------------- |
-| 1   | Created ADR-0024 (controller routing strategy: Areas for Web, in-place swap for API)   | `docs/adr/0024/0024-controller-routing-strategy.md`    |
-| 2   | Added ADR-0024 row to docs-index ADR table                                             | `.github/instructions/docs-index.instructions.md` |
-| 3   | Added ADR-0024 routing strategy note to roadmap README                                 | `docs/roadmap/README.md`                          |
-| 4   | Updated `orders-atomic-switch.md` Steps 3–4 to Area-based approach + ADR-0024 ref      | `docs/roadmap/orders-atomic-switch.md`            |
-| 5   | Updated `payments-atomic-switch.md` Step 3 to Area-based approach + ADR-0024 ref       | `docs/roadmap/payments-atomic-switch.md`          |
-| 6   | Added routing strategy as key architectural invariant                                  | `.github/context/project-state.md`                |
-| 7   | ADR-0024 added to `ECommerceApp.sln` `adr` solution folder (auto by VS on file create) | `ECommerceApp.sln`                                |
-| 8   | Full audit (Workflow 6 + Workflow 8): repo-index At a Glance metrics updated           | `.github/context/repo-index.md`                   |
-| 9   | Updated changelog counts and added Session 6 entry                                     | `COPILOT-SETUP-CHANGELOG.md`                      |
+| #   | Change                                                                                 | Files affected                                      |
+| --- | -------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| 1   | Created ADR-0024 (controller routing strategy: Areas for Web, in-place swap for API)   | `docs/adr/0024/0024-controller-routing-strategy.md` |
+| 2   | Added ADR-0024 row to docs-index ADR table                                             | `.github/instructions/docs-index.instructions.md`   |
+| 3   | Added ADR-0024 routing strategy note to roadmap README                                 | `docs/roadmap/README.md`                            |
+| 4   | Updated `orders-atomic-switch.md` Steps 3–4 to Area-based approach + ADR-0024 ref      | `docs/roadmap/orders-atomic-switch.md`              |
+| 5   | Updated `payments-atomic-switch.md` Step 3 to Area-based approach + ADR-0024 ref       | `docs/roadmap/payments-atomic-switch.md`            |
+| 6   | Added routing strategy as key architectural invariant                                  | `.github/context/project-state.md`                  |
+| 7   | ADR-0024 added to `ECommerceApp.sln` `adr` solution folder (auto by VS on file create) | `ECommerceApp.sln`                                  |
+| 8   | Full audit (Workflow 6 + Workflow 8): repo-index At a Glance metrics updated           | `.github/context/repo-index.md`                     |
+| 9   | Updated changelog counts and added Session 6 entry                                     | `COPILOT-SETUP-CHANGELOG.md`                        |
 
 ### Session 5 — Full audit & .sln sync (2026-03-17)
 

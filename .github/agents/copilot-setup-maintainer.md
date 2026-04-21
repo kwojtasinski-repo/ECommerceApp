@@ -53,6 +53,7 @@ Three responsibilities:
 | `.github/instructions/docs-index.instructions.md` | Docs lookup table — ADR index, roadmap index, skills index |
 | `.github/instructions/safety.instructions.md`     | Allowed/disallowed actions                                 |
 | `.github/instructions/pre-edit.instructions.md`   | Pre-edit checklist                                         |
+| `.github/AGENT-PIPELINE.md`                       | Multi-agent pipeline orchestration spec (HITL, max-iter)   |
 | `.github/COPILOT-SETUP-CHANGELOG.md`              | Setup changelog & current state snapshot                   |
 | `.github/agents/code-reviewer.md`                 | Code reviewer — cascading context-loading updates only     |
 | `ECommerceApp.sln`                                | Solution folders and solution items for Copilot/docs       |
@@ -271,6 +272,29 @@ Steps:
 3. If yes, check the corresponding `.github` mirrors, `ECommerceApp.sln`, and `COPILOT-SETUP-CHANGELOG.md`.
 4. If sync is needed, either perform the owned-file updates or report exactly what remains.
 5. End with a concise "repo sync status" summary.
+
+### Workflow 12 — Pipeline orchestration sync
+
+Trigger: A pipeline agent file changed (`planner`, `implementer`, `verifier`, `code-reviewer`, `pr-commit`), or `.github/AGENT-PIPELINE.md` changed, or a max-iteration / HITL checkpoint policy was updated.
+
+Steps:
+
+1. Read `.github/AGENT-PIPELINE.md`.
+2. Cross-check that every pipeline agent file under `.github/agents/` referenced in the pipeline doc:
+   - Exists.
+   - Has `max-iterations:` in its frontmatter.
+   - The max-iter value matches the table in `AGENT-PIPELINE.md`.
+3. Cross-check HITL checkpoints:
+   - `planner.md` declares HITL CHECKPOINT 1.
+   - `verifier.md` declares HITL on FAIL (no auto-retry).
+   - `code-reviewer.md` BLOCKS MERGE → HITL.
+   - `pr-commit.md` requires HITL CHECKPOINT 2 confirmation as pre-condition.
+   - `bc-switch.md` declares HITL after Step 1 (readiness) and before Step 6 (delete).
+   - `adr-generator.md` declares HITL before Step 7 (write).
+4. Verify `docs-index.instructions.md` and `copilot-instructions.md` agent counts include all pipeline agents.
+5. Verify `ECommerceApp.sln` lists all pipeline agents and `AGENT-PIPELINE.md` under the `agents` solution folder.
+6. After any edit, run Workflow 7 (changelog).
+7. Report what was synced.
 
 ---
 

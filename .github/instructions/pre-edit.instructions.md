@@ -6,6 +6,7 @@ applyTo: "**"
 
 Before proposing or committing changes, perform these steps:
 
+0. **Read agent decisions log** — Open `.github/context/agent-decisions.md` and skim for prior corrections relevant to the area, agent, or skill being used. If a prior entry applies, follow it. This step prevents repeating corrections already given in earlier sessions.
 1. **Read context** — Read the entire target file(s) and relevant related files (Controllers, services, repository code, tests).
 2. **Read ADRs** — Read ADRs in `docs/adr/` that are directly relevant to the area being changed — not all of them.
 3. **Read instructions** — Read the relevant per-stack instructions under `.github/instructions/`.
@@ -16,6 +17,12 @@ Before proposing or committing changes, perform these steps:
 8. **PR for review** — Open a pull request for review; do not merge without human approval unless explicitly asked.
 
 Document completion of these steps in the PR description.
+
+## Post-edit — append to agent decisions log
+
+If during the task you were corrected on something not yet documented (forgot to read a context file, ignored an instruction, picked the wrong skill, recurring naming/format mistake, etc.), **append a new entry** to `.github/context/agent-decisions.md` using the Variant A format defined in that file. Skip this only when the correction is already covered by an existing entry, ADR, instruction, or anti-pattern.
+
+If the same correction appears for the **2nd time** in the log → **promote** it to a permanent rule (anti-pattern, instruction file, or ADR via `@adr-generator`) and mark the original entries `Status: Promoted → <ref>`.
 
 # During & After Work — Proactive Documentation Suggestions
 
