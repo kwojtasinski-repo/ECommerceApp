@@ -1,0 +1,10 @@
+# RAG MVP — Python dependencies
+# Install: pip install -r tools/rag/requirements.txt
+# Recommended: Python 3.10+ in a venv.
+
+sentence-transformers==3.0.1
+qdrant-client==1.10.1
+pyyaml==6.0.2
+tiktoken==0.7.0          # token counting for chunk size guard
+tqdm==4.66.5             # progress bar during ingest
+mcp==1.2.0               # MCP server SDK

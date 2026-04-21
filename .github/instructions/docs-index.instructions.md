@@ -28,7 +28,7 @@ applyTo: "**"
 Auto-loaded by `applyTo:` globs — Copilot reads these automatically when editing matching files.
 
 | File                                  | `applyTo:`                          | Scope                                         |
-| ------------------------------------- | ----------------------------------- | --------------------------------------------- |
+| ------------------------------------- | ----------------------------------- | --------------------------------------------- | --- | --------------------- | ---- | ----------------------------------------------------------------------------------- | --- | ---------------------------- | ---- | ------------------------- |
 | `dotnet.instructions.md`              | `**/*.cs, **/*.csproj`              | .NET architecture, services, DI, auth         |
 | `web-api.instructions.md`             | `ECommerceApp.API/**`               | Web API controllers, DTOs                     |
 | `razorpages.instructions.md`          | `ECommerceApp.Web/**`               | MVC, Views, Razor Pages                       |
@@ -39,8 +39,7 @@ Auto-loaded by `applyTo:` globs — Copilot reads these automatically when editi
 | `shared-primitives.instructions.md`   | `Domain/Shared/**`                  | TypedId, Money, Price, Quantity               |
 | `safety.instructions.md`              | `**`                                | Allowed/disallowed actions                    |
 | `pre-edit.instructions.md`            | `**`                                | Pre-edit checklist, doc suggestions           |
-| `copilot-config-sync.instructions.md` | `.github/**, docs/**`               | Auto-sync trigger for docs and Copilot config |
-| `docs-index.instructions.md`          | `**`                                | This file — routing table                     |
+| `copilot-config-sync.instructions.md` | `.github/**, docs/**`               | Auto-sync trigger for docs and Copilot config |     | `rag.instructions.md` | `**` | When to call the local RAG MCP tools (`query_docs`, `get_adr_history`, `list_adrs`) |     | `docs-index.instructions.md` | `**` | This file — routing table |
 
 ## Agents (`.github/agents/`)
 
@@ -102,9 +101,10 @@ Use the folder `README.md` as the first stop for every ADR.
 
 ## Root docs (`docs/`)
 
-| File        | When to read                                                                                |
-| ----------- | ------------------------------------------------------------------------------------------- |
-| `README.md` | First human-oriented entry point to the docs tree and its relationship to `.github` routing |
+| File            | When to read                                                                                 |
+| --------------- | -------------------------------------------------------------------------------------------- |
+| `README.md`     | First human-oriented entry point to the docs tree and its relationship to `.github` routing  |
+| `rag/README.md` | Setup, CLI usage, MCP wiring, eval, and troubleshooting for the local RAG index over `docs/` |
 
 ## Architecture docs (`docs/architecture/`)
 

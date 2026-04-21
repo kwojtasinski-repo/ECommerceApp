@@ -31,6 +31,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Copilot", "Copilot", "{02EA
 		.github\AGENT-PIPELINE.md = .github\AGENT-PIPELINE.md
 		.github\copilot-instructions.md = .github\copilot-instructions.md
 		.github\COPILOT-SETUP-CHANGELOG.md = .github\COPILOT-SETUP-CHANGELOG.md
+		.github\copilot\mcp.json = .github\copilot\mcp.json
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "instructions", "instructions", "{38F19132-871F-4C11-806B-B6FE77611219}"
@@ -41,6 +42,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "instructions", "instruction
 		.github\instructions\frontend.instructions.md = .github\instructions\frontend.instructions.md
 		.github\instructions\migration-policy.instructions.md = .github\instructions\migration-policy.instructions.md
 		.github\instructions\pre-edit.instructions.md = .github\instructions\pre-edit.instructions.md
+		.github\instructions\rag.instructions.md = .github\instructions\rag.instructions.md
 		.github\instructions\razorpages.instructions.md = .github\instructions\razorpages.instructions.md
 		.github\instructions\safety.instructions.md = .github\instructions\safety.instructions.md
 		.github\instructions\shared-primitives.instructions.md = .github\instructions\shared-primitives.instructions.md

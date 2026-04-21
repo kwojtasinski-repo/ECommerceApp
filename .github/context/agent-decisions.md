@@ -36,7 +36,7 @@ When promoted, mark the entry **Status: Promoted → ADR-NNNN** (or file ref) an
 ## YYYY-MM-DD — <agent-name> / <area>
 
 - **Context**: What the agent tried to do.
-- **Decision**: What the human decided instead (NIE / YES / different approach).
+- **Decision**: What the human decided instead (NO / YES / different approach).
 - **Rationale**: Why — link to project-state line, ADR, instruction file, or commit.
 - **Action**: What changes to instructions/agents/skills should follow (one concrete action).
 - **Promote?**: When does this graduate to a permanent rule (e.g. "after 2nd occurrence → anti-patterns-critical").

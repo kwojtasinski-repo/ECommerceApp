@@ -1,9 +1,11 @@
 ﻿# ADR-0021: Frontend Error Pipeline and JS Migration Strategy
 
 ## Status
+
 Accepted
 
 ## Date
+
 2026-03-12
 
 ## Context
@@ -30,6 +32,7 @@ MVC-routed `BusinessException`.
 inconsistency in error-handling callsites.
 
 **Existing JS module inventory:**
+
 - `ajaxRequest.js` — wraps `$.ajax` in a Promise; jQuery-based; FormData handling is broken
 - `forms.js` — client validation for runtime modal forms; no equivalent library alternative
 - `errors.js` — Polish error code interpolation dictionary; domain-specific, no library can replace it
@@ -75,11 +78,14 @@ BusinessException ex => new ExceptionResponse(
 ```
 
 HTTP response shape after this change:
+
 ```json
 {
-  "response": "Nie znaleziono zamówienia o id 42",
-  "statusCode": 400,
-  "codes": [{ "code": "orderNotFound", "parameters": [{ "name": "id", "value": "42" }] }]
+	"response": "Order with id 42 was not found",
+	"statusCode": 400,
+	"codes": [
+		{ "code": "orderNotFound", "parameters": [{ "name": "id", "value": "42" }] }
+	]
 }
 ```
 
@@ -93,24 +99,24 @@ legacy flat `response` fallback:
 
 ```javascript
 function showErrorFromResponse(error) {
-    if (!error.responseJSON) return;
-    const data = error.responseJSON;
+	if (!error.responseJSON) return;
+	const data = error.responseJSON;
 
-    // structured codes path (BusinessException with _codes)
-    if (Array.isArray(data.codes) && data.codes.length > 0) {
-        showError(data.codes);
-        return;
-    }
+	// structured codes path (BusinessException with _codes)
+	if (Array.isArray(data.codes) && data.codes.length > 0) {
+		showError(data.codes);
+		return;
+	}
 
-    // flat message fallback (non-BusinessException, or codes list empty)
-    if (data.response) {
-        const errorContainer = document.querySelector('#ErrorContainer');
-        const errorValue = document.querySelector('#ErrorValue');
-        if (errorContainer && errorValue) {
-            errorContainer.style.display = 'block';
-            errorValue.textContent = data.response;
-        }
-    }
+	// flat message fallback (non-BusinessException, or codes list empty)
+	if (data.response) {
+		const errorContainer = document.querySelector("#ErrorContainer");
+		const errorValue = document.querySelector("#ErrorValue");
+		if (errorContainer && errorValue) {
+			errorContainer.style.display = "block";
+			errorValue.textContent = data.response;
+		}
+	}
 }
 ```
 
@@ -149,6 +155,7 @@ will already require a rewrite pass.
 ## Consequences
 
 ### Positive
+
 - Polish error messages from `BusinessException._codes` reach the UI end-to-end for the
   first time — no more silent error swallowing for MVC-layer domain exceptions.
 - The HTTP error contract is backwards-compatible — existing API clients reading only
@@ -160,6 +167,7 @@ will already require a rewrite pass.
   scheduled milestone rather than left as implicit tech debt.
 
 ### Negative
+
 - Two HTTP client patterns (`ajaxRequest.js` and `fetch`) coexist indefinitely in the codebase
   until legacy views are rewritten.
 - `ExceptionResponse` grows a new field; integration test assertions that snapshot the full
@@ -168,6 +176,7 @@ will already require a rewrite pass.
   without updating the switch, their codes will be silently discarded again.
 
 ### Risks & mitigations
+
 - **Risk**: `BusinessException` is thrown with an empty `_codes` list. `Codes` array in
   response will be empty; `showErrorFromResponse` falls through to the flat `response` fallback.
   **Mitigation**: fallback path in `showErrorFromResponse` always displays `data.response` text.
@@ -199,8 +208,8 @@ will already require a rewrite pass.
 
 - [ADR-0001 — Technology Stack](./0001-project-overview-and-technology-stack.md)
 - [ADR-0022 — Navbar Two-Tier Redesign](./0022-navbar-two-tier-redesign.md)
-  *(The navbar redesign is the first large new-code surface governed by the fetch-first
-  standard from § 3 of this ADR)*
+  _(The navbar redesign is the first large new-code surface governed by the fetch-first
+  standard from § 3 of this ADR)_
 - [`ECommerceApp.Application/Middlewares/ExceptionMiddleware.cs`](../../ECommerceApp.Application/Middlewares/ExceptionMiddleware.cs)
 - [`ECommerceApp.Application/Exceptions/ErrorMapToResponse.cs`](../../ECommerceApp.Application/Exceptions/ErrorMapToResponse.cs)
 - [`ECommerceApp.Application/ViewModels/ExceptionResponse.cs`](../../ECommerceApp.Application/ViewModels/ExceptionResponse.cs)

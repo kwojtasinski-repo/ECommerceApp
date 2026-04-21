@@ -349,3 +349,7 @@ healthchecksdb
 /kopia
 /schemat_klas_Core.PNG
 /schemat_klas.pdf
+
+# RAG MVP
+tools/rag/.cache/
+tools/rag/.venv/

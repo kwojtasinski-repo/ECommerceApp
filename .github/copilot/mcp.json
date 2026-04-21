@@ -1,0 +1,15 @@
+{
+  "$schema": "https://aka.ms/copilot-mcp-schema",
+  "servers": {
+    "ecommerceapp-rag": {
+      "type": "stdio",
+      "command": "python",
+      "args": [
+        "${workspaceFolder}/tools/rag/mcp_server.py"
+      ],
+      "env": {
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  }
+}
