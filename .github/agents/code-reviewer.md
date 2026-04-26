@@ -3,6 +3,7 @@ description: >
   Code reviewer agent for ECommerceApp.
   Performs automated PR review: checks ADR compliance, anti-patterns, coding standards,
   test coverage, and cross-BC boundary rules. Reports BLOCKS MERGE or APPROVED.
+  **Standalone only** — NOT invoked during pipeline runs (@implementer embeds inline code review internally).
   Trigger phrases: review code, check PR, code review, review changes, check anti-patterns.
 name: code-reviewer
 max-iterations: 3

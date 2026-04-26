@@ -3,6 +3,7 @@ description: >
   Deterministic verification agent for ECommerceApp.
   Runs build + unit tests + integration tests + ArchUnitNET — returns hard PASS/FAIL.
   NO LLM judgment. NO retry on FAIL. NO code edits. Hands off to @code-reviewer on PASS.
+  **Standalone only** — NOT invoked during pipeline runs (@implementer embeds verification internally).
   Trigger phrases: verify, run verification, verifier, deterministic check.
 name: verifier
 max-iterations: 1

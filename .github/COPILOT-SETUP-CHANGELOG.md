@@ -9,40 +9,44 @@
 
 ## Current state summary
 
-| Category                               | Count | Details                                                                                                      |
-| -------------------------------------- | ----- | ------------------------------------------------------------------------------------------------------------ |
-| `copilot-instructions.md`              | 1     | 4 110 chars (slightly over the 4K aspirational cap; net improved from 4 270)                                 |
-| Instruction files (`.instructions.md`) | 12    | All with `applyTo:` frontmatter; copilot-config-sync triggers on docs/ too                                   |
-| Prompt files (`.prompt.md`)            | 4     | BC analysis, BC implementation, PR review, refactor                                                          |
-| Agent files                            | 8     | adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer, planner, implementer, verifier, pr-commit |
-| Skills (`SKILL.md`)                    | 8     | Scaffolding templates for common artifacts                                                                   |
-| ADRs                                   | 26    | Folderized ADR routers under `docs/adr/<NNNN>/README.md`                                                     |
-| Context files                          | 6     | project-state, known-issues, agent-decisions, repo-index, future-skills, anti-patterns-critical              |
-| GitHub Actions workflows               | 1     | `dotnet-ci.yml` — manual trigger only (push/PR commented)                                                    |
-| Pipeline orchestration spec            | 1     | `.github/AGENT-PIPELINE.md`                                                                                  |
-| HTTP scenario files                    | 10    | +auth.http (was 9)                                                                                           |
-| Test files                             | 132   | 92 unit + 40 integration                                                                                     |
+| Category                               | Count | Details                                                                                                                            |
+| -------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `copilot-instructions.md`              | 1     | ~3 980 chars (under 4K); Multi-option rule (§3), Sync rule (§4), agent-memory ref (§6) added                                       |
+| Instruction files (`.instructions.md`) | 16    | All with `applyTo:` frontmatter; `agent-memory` added; `pre-edit` split into core + `doc-suggestions`; `docs-index` scope narrowed |
+| Prompt files (`.prompt.md`)            | 4     | BC analysis, BC implementation, PR review, refactor                                                                                |
+| Agent files                            | 8     | adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer, planner, implementer, verifier, pr-commit                       |
+| Skills (`SKILL.md`)                    | 11    | Scaffolding templates for common artifacts; +3 new: cqrs-handler, dto-viewmodel, message-contract                                  |
+| ADRs                                   | 26    | Folderized ADR routers under `docs/adr/<NNNN>/README.md`                                                                           |
+| Context files                          | 6     | project-state, known-issues, agent-decisions, repo-index, future-skills, anti-patterns-critical                                    |
+| GitHub Actions workflows               | 1     | `dotnet-ci.yml` — manual trigger only (push/PR commented)                                                                          |
+| Pipeline orchestration spec            | 1     | `.github/AGENT-PIPELINE.md`; `@verifier`/`@code-reviewer` embedded inside `@implementer`; standalone-only for one-off use          |
+| HTTP scenario files                    | 10    | +auth.http (was 9)                                                                                                                 |
+| Test files                             | 135   | 94 unit + 41 integration                                                                                                           |
 
 ---
 
 ## File inventory
 
-### `.github/instructions/` (12 files)
+### `.github/instructions/` (16 files)
 
-| File                                  | `applyTo:`                                                    | Added                                                |
-| ------------------------------------- | ------------------------------------------------------------- | ---------------------------------------------------- |
-| `dotnet.instructions.md`              | `**/*.cs, **/*.csproj`                                        | Session 1 (renamed)                                  |
-| `efcore.instructions.md`              | `ECommerceApp.Infrastructure/**/*.cs, **/*.csproj`            | Session 1 (renamed)                                  |
-| `frontend.instructions.md`            | `ECommerceApp.Web/wwwroot/**, **/*.cshtml`                    | Session 1 (renamed)                                  |
-| `razorpages.instructions.md`          | `ECommerceApp.Web/**/*.cshtml, **/*.cshtml.cs, **/*.cs`       | Session 1 (renamed)                                  |
-| `web-api.instructions.md`             | `ECommerceApp.API/**/*.cs`                                    | Session 1 (renamed)                                  |
-| `testing.instructions.md`             | `ECommerceApp.UnitTests/**, ECommerceApp.IntegrationTests/**` | Session 1 (renamed)                                  |
-| `migration-policy.instructions.md`    | `ECommerceApp.Infrastructure/Migrations/**`                   | Session 1 (renamed)                                  |
-| `shared-primitives.instructions.md`   | `ECommerceApp.Domain/Shared/**/*.cs`                          | Pre-existing                                         |
-| `safety.instructions.md`              | `**`                                                          | Session 1 (extracted from copilot-instructions)      |
-| `pre-edit.instructions.md`            | `**`                                                          | Session 1 (extracted from copilot-instructions)      |
-| `docs-index.instructions.md`          | `**`                                                          | Session 1 (new — docs lookup table)                  |
-| `copilot-config-sync.instructions.md` | `.github/**, docs/**`                                         | Session 11 (new); Session 14 (extended to docs/\*\*) |
+| File                                  | `applyTo:`                                                    | Added                                                                       |
+| ------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| `dotnet.instructions.md`              | `**/*.cs, **/*.csproj`                                        | Session 1 (renamed)                                                         |
+| `efcore.instructions.md`              | `ECommerceApp.Infrastructure/**/*.cs, **/*.csproj`            | Session 1 (renamed)                                                         |
+| `frontend.instructions.md`            | `ECommerceApp.Web/wwwroot/**, **/*.cshtml`                    | Session 1 (renamed)                                                         |
+| `razorpages.instructions.md`          | `ECommerceApp.Web/**/*.cshtml, **/*.cshtml.cs, **/*.cs`       | Session 1 (renamed)                                                         |
+| `web-api.instructions.md`             | `ECommerceApp.API/**/*.cs`                                    | Session 1 (renamed)                                                         |
+| `testing.instructions.md`             | `ECommerceApp.UnitTests/**, ECommerceApp.IntegrationTests/**` | Session 1 (renamed)                                                         |
+| `migration-policy.instructions.md`    | `ECommerceApp.Infrastructure/Migrations/**`                   | Session 1 (renamed)                                                         |
+| `shared-primitives.instructions.md`   | `ECommerceApp.Domain/Shared/**/*.cs`                          | Pre-existing                                                                |
+| `safety.instructions.md`              | `**`                                                          | Session 1 (extracted from copilot-instructions)                             |
+| `pre-edit.instructions.md`            | `**`                                                          | Session 1 (extracted from copilot-instructions)                             |
+| `docs-index.instructions.md`          | `.github/**, docs/**`                                         | Session 1 (new — docs lookup table); Session 19 (scope narrowed from `**`)  |
+| `copilot-config-sync.instructions.md` | `.github/**, docs/**`                                         | Session 11 (new); Session 14 (extended to docs/\*\*)                        |
+| `rag.instructions.md`                 | `**`                                                          | Session 18 (new — RAG routing precedence + output discipline)               |
+| `bc-adr-map.instructions.md`          | `**/*.cs, **/*.csproj, **/*.cshtml`                           | Session 19 (new — BC → ADR quick map for code edits)                        |
+| `doc-suggestions.instructions.md`     | `**`                                                          | Session 19 (new — proactive doc suggestion triggers; split from `pre-edit`) |
+| `agent-memory.instructions.md`        | `**`                                                          | Session 19 (new — auto-loads `agent-decisions.md` read rule on every task)  |
 
 ### `.github/prompts/` (4 files)
 
@@ -68,16 +72,19 @@
 
 ### `.github/skills/` (8 skills)
 
-| Skill                     | Description                                    | Added     |
-| ------------------------- | ---------------------------------------------- | --------- |
-| `create-unit-test`        | xUnit test class (service, aggregate, handler) | Session 2 |
-| `create-dbcontext`        | Per-BC DbContext (4-file scaffold)             | Session 2 |
-| `create-ef-configuration` | EF Core entity configuration                   | Session 2 |
-| `create-di-extension`     | Application + Infrastructure DI extensions     | Session 2 |
-| `create-domain-event`     | Cross-BC IMessage + IMessageHandler (3 modes)  | Session 2 |
-| `create-integration-test` | Integration test with BaseTest + Shouldly      | Session 2 |
-| `create-http-scenario`    | .http file for any API endpoint testing        | Session 2 |
-| `create-validator`        | FluentValidation AbstractValidator             | Session 2 |
+| Skill                     | Description                                                     | Added      |
+| ------------------------- | --------------------------------------------------------------- | ---------- |
+| `create-unit-test`        | xUnit test class (service, aggregate, handler)                  | Session 2  |
+| `create-dbcontext`        | Per-BC DbContext (4-file scaffold)                              | Session 2  |
+| `create-ef-configuration` | EF Core entity configuration                                    | Session 2  |
+| `create-di-extension`     | Application + Infrastructure DI extensions                      | Session 2  |
+| `create-domain-event`     | Cross-BC IMessage + IMessageHandler (3 modes)                   | Session 2  |
+| `create-integration-test` | Integration test with BaseTest + Shouldly                       | Session 2  |
+| `create-http-scenario`    | .http file for any API endpoint testing                         | Session 2  |
+| `create-validator`        | FluentValidation AbstractValidator                              | Session 2  |
+| `create-cqrs-handler`     | ICommandHandler<TCommand,TResult> + command + result (Option B) | Session 20 |
+| `create-dto-viewmodel`    | DTO/VM + ToDto() extension method (AutoMapper removal path)     | Session 20 |
+| `create-message-contract` | Cross-BC IMessage event contract, publisher side only           | Session 20 |
 
 ### `.github/context/` (6 files)
 
@@ -93,6 +100,61 @@
 ---
 
 ## Change log
+
+### Session 21 — Full audit & metrics refresh (2026-04-26)
+
+| #   | Change                                                                                      | Files affected                           |
+| --- | ------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| 1   | Added `docs\rag\README.md` to `docs` solution folder in `.sln` (file existed, was missing)  | `ECommerceApp.sln`                        |
+| 2   | Updated repo-index.md At a Glance: CS ~1146→~1155, CSHTML 125→127, tests 132→135 (94+41)   | `.github/context/repo-index.md`           |
+| 3   | Updated changelog "Current state summary" test count: 132 → 135 (94 unit + 41 integration) | `.github/COPILOT-SETUP-CHANGELOG.md`      |
+
+### Session 20 — Gap fixes, Service vs CQRS guidance, skill option proposals (2026-04-26)
+
+| #   | Change                                                                                                                                                                                        | Files affected                                                                                                                                                           |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1   | `.sln` instructions solution folder: added 4 missing files — `copilot-config-sync`, `bc-adr-map`, `doc-suggestions`, `agent-memory` (gap 1 from gap analysis)                                 | `ECommerceApp.sln`                                                                                                                                                       |
+| 2   | `COPILOT-SETUP-CHANGELOG.md` count mismatch fixed: "15" → "16" in current state summary; "(14 files)" → "(16 files)" in inventory header (gap 2)                                              | `.github/COPILOT-SETUP-CHANGELOG.md`                                                                                                                                     |
+| 3   | `future-skills.md` updated: date 2026-03-15 → 2026-04-26; "Planned" table: Status column added; 3 skills marked 🟡 options proposed; multi-option rule noted                                  | `.github/context/future-skills.md`                                                                                                                                       |
+| 4   | `docs-index.instructions.md` agents table: `@code-reviewer` row updated to include "Standalone only" label (gap 5)                                                                            | `.github/instructions/docs-index.instructions.md`                                                                                                                        |
+| 5   | Gap 4 verified as false positive: `AGENT-PIPELINE.md` flow diagram correctly shows `@code-reviewer` embedded inside `@implementer`; no separate pipeline step                                 | _(no change needed)_                                                                                                                                                     |
+| 6   | 3 new skills created: `create-cqrs-handler` (Option B — command with result), `create-dto-viewmodel` (Option B — ToDto() extension), `create-message-contract` (Option A — event record only) | `.github/skills/create-cqrs-handler/SKILL.md` _(new)_, `.github/skills/create-dto-viewmodel/SKILL.md` _(new)_, `.github/skills/create-message-contract/SKILL.md` _(new)_ |
+| 7   | `docs-index.instructions.md` Skills table: 3 new skill rows added                                                                                                                             | `.github/instructions/docs-index.instructions.md`                                                                                                                        |
+| 8   | `ECommerceApp.sln` skills folder: 3 new skill solution items added                                                                                                                            | `ECommerceApp.sln`                                                                                                                                                       |
+| 9   | `future-skills.md` Planned table: 3 skills updated from 🟡 options proposed → ✅ implemented; moved to Implemented table                                                                      | `.github/context/future-skills.md`                                                                                                                                       |
+
+### Session 19 — Pipeline hardening, context budget, BC→ADR map (2026-04-26)
+
+| #   | Change                                                                                                                                                                                                                                        | Files affected                                                                                                  |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| 1   | `@implementer` rewritten: embedded 3-probe verification loop (build + unit + integration, 3 max) + embedded inline code review (anti-patterns, BC boundaries)                                                                                 | `.github/agents/implementer.md`                                                                                 |
+| 2   | `AGENT-PIPELINE.md` updated: flow diagram, HITL table, max-iter table — `@verifier`/`@code-reviewer` now embedded inside `@implementer`, standalone-only                                                                                      | `.github/AGENT-PIPELINE.md`                                                                                     |
+| 3   | `verifier.md` and `code-reviewer.md` YAML descriptions updated: marked **Standalone only** — not invoked during pipeline runs                                                                                                                 | `.github/agents/verifier.md`, `.github/agents/code-reviewer.md`                                                 |
+| 4   | `pre-edit.instructions.md`: added mandatory "Post-edit — invoke @copilot-setup-maintainer" section with workflow routing table                                                                                                                | `.github/instructions/pre-edit.instructions.md`                                                                 |
+| 5   | `copilot-instructions.md` trimmed from ~4 270 → ~3 670 chars; BC→ADR inline map removed (moved to dedicated file); duplicate §8 heading fixed; §7–§10 renumbered                                                                              | `.github/copilot-instructions.md`                                                                               |
+| 6   | `bc-adr-map.instructions.md` created: 680-char BC→ADR quick map, `applyTo: **/*.cs, **/*.csproj, **/*.cshtml` — auto-loads on every code edit                                                                                                 | `.github/instructions/bc-adr-map.instructions.md` _(new)_                                                       |
+| 7   | `docs-index.instructions.md` scope narrowed: `applyTo: **` → `.github/**, docs/**` (saves ~20K chars from context on C# edits); bc-adr-map row added; @verifier label corrected                                                               | `.github/instructions/docs-index.instructions.md`                                                               |
+| 8   | Fixed RAG commit corruption: 3 table rows that were collapsed into a pipe-string in `docs-index` restored as proper markdown rows                                                                                                             | `.github/instructions/docs-index.instructions.md`                                                               |
+| 9   | Restored over-trimmed "Architecture suggestion rule" line in `copilot-instructions.md` (suffix "for ADR, BC map, roadmap, or project-state updates" was lost)                                                                                 | `.github/copilot-instructions.md`                                                                               |
+| 10  | `pre-edit.instructions.md` split: mandatory checklist kept (steps 0–8 + post-edit rules + @copilot-setup-maintainer gate); doc-suggestion triggers moved to new `doc-suggestions.instructions.md`. `pre-edit` drops from 7 708 → ~2 600 chars | `.github/instructions/pre-edit.instructions.md`, `.github/instructions/doc-suggestions.instructions.md` _(new)_ |
+| 11  | `doc-suggestions.instructions.md` registered in `docs-index` and `COPILOT-SETUP-CHANGELOG.md` inventory                                                                                                                                       | `.github/instructions/docs-index.instructions.md`, `.github/COPILOT-SETUP-CHANGELOG.md`                         |
+| 12  | `copilot-instructions.md` §3: Multi-option rule added (propose 2–5 approaches before implementing architectural decisions)                                                                                                                    | `.github/copilot-instructions.md`                                                                               |
+| 13  | `copilot-instructions.md` §4: Sync rule added (mandatory @copilot-setup-maintainer after any `.github/` or `docs/` change)                                                                                                                    | `.github/copilot-instructions.md`                                                                               |
+| 14  | `agent-memory.instructions.md` created (`applyTo: **`): auto-loads the "read agent-decisions.md before any non-trivial task" rule                                                                                                             | `.github/instructions/agent-memory.instructions.md` _(new)_, `.github/instructions/docs-index.instructions.md`  |
+| 15  | `docs/rag/README.md`: "Planned improvements" section added — 7 items: CI re-index, multilingual embedder, persistent Qdrant, file-watcher, eval expansion, synthesis wiring, chunk explain flag                                               | `docs/rag/README.md`                                                                                            |
+
+### Session 18 — Local RAG MVP (2026-04-22)
+
+| #   | Change                                                                                                                                                              | Files affected                                                                                  |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| 1   | RAG pipeline core: `config.yaml` (all knobs), `common.py` (helpers + weight resolver), `chunker.py` (heading-aware + breadcrumb + overlap), `ingest.py`, `query.py` | `tools/rag/config.yaml`, `common.py`, `chunker.py`, `ingest.py`, `query.py`, `requirements.txt` |
+| 2   | Eval suite: 20 anchor questions + recall@k reporter (acceptance bar: recall@8 ≥ 80 %)                                                                               | `tools/rag/eval/questions.json`, `tools/rag/eval/eval.py`                                       |
+| 3   | MCP server with 3 tools: `query_docs`, `get_adr_history`, `list_adrs`; registered in VS Code via `mcp.json`                                                         | `tools/rag/mcp_server.py`, `.github/copilot/mcp.json`                                           |
+| 4   | `rag.instructions.md` — routing precedence (docs-index FIRST, RAG as fallback), output discipline, refresh policy                                                   | `.github/instructions/rag.instructions.md`, `.github/instructions/docs-index.instructions.md`   |
+| 5   | `docs/rag/README.md` — setup TL;DR, what's indexed, chunking, ranking weights, CLI usage, eval, MCP tools, troubleshooting                                          | `docs/rag/README.md`                                                                            |
+| 6   | Presentation slides on Decisions (ADR + agent-decisions.md) in Marp format; workflow/hierarchy section added                                                        | `docs/presentations/copilot-decisions-slides.md`                                                |
+| 7   | `.gitignore` updated: `tools/rag/.cache/` and `tools/rag/.venv/` excluded                                                                                           | `.gitignore`                                                                                    |
+| 8   | `.sln` updated: `mcp.json` added to Copilot folder; `rag.instructions.md` added to instructions items                                                               | `ECommerceApp.sln`                                                                              |
 
 ### Session 17 — Multi-agent pipeline + memory + CI (2026-04-21)
 

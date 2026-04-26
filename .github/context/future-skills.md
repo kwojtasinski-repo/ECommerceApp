@@ -3,7 +3,7 @@
 > **Planning & tracking document** — implemented skills and future plans.
 > Skills are task-specific, on-demand code generators stored in `.github/skills/<name>/SKILL.md`.
 
-_Last updated: 2026-03-15_
+_Last updated: 2026-04-26_
 
 ---
 
@@ -19,17 +19,19 @@ _Last updated: 2026-03-15_
 | `/create-integration-test` | `WebApplicationFactory` setup, test class inheriting `BaseTest<T>`, auth mocking                                                                       |
 | `/create-http-scenario`    | `.http` file with auth header, base URL variable, CRUD operations for a V2 controller                                                                  |
 | `/create-validator`        | `AbstractValidator<T>` for a DTO/command with standard FluentValidation rules                                                                          |
+| `/create-cqrs-handler`     | `ICommandHandler<TCommand, TResult>` + command `sealed record` + result type (`enum` or `sealed record` with factories) + DI registration              |
+| `/create-dto-viewmodel`    | DTO/VM (`sealed record` or class) + `internal static` Mappings extension class with `ToDto()` / `ToViewModel()` extension methods                      |
+| `/create-message-contract` | Cross-BC `IMessage` event `record` (publisher side only, event-only mode — pairs with `/create-domain-event handler-only`)                             |
 
 ---
 
 ## Planned — build when trigger condition is met
 
-| Skill                      | Trigger condition                                                                                        | Notes                                                                                                                                                    |
-| -------------------------- | -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/create-message-contract` | Cross-BC contract pattern stabilizes (3+ BCs using `Contracts/` folders) **or** user explicitly requests | Must also remind to update `docs/architecture/bounded-context-map.md` and relevant ADR                                                                   |
-| `/create-dto-viewmodel`    | AutoMapper is removed → manual mapping via extension methods (`ToDto()`, `ToViewModel()`)                | Very mechanical once the pattern is settled. Will need: `public static XxxDto ToDto(this Xxx entity)`                                                    |
-| `/create-cqrs-handler`     | First CQRS-based BC is implemented and the handler shape is finalized                                    | Split into `ICommandHandler<T>` + `IQueryHandler<T>`. Don't build before the pattern exists in code.                                                     |
-| `/create-service-repo`     | When a new BC explicitly needs classic service+repository pattern                                        | **Critical**: `disable-model-invocation: true` — Copilot must NEVER auto-suggest this. Only invoke explicitly. This is a design decision, not a default. |
+> **Multi-option rule** (added 2026-04-26): For any of these skills, before implementing, propose 2–5 approaches and ask the human to choose. See `copilot-instructions.md` §3.
+
+| Skill                  | Trigger condition                                                 | Status                               | Notes                                                                                                                                                    |
+| ---------------------- | ----------------------------------------------------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/create-service-repo` | When a new BC explicitly needs classic service+repository pattern | ⏸ **Blocked** — explicit invoke only | **Critical**: `disable-model-invocation: true` — Copilot must NEVER auto-suggest this. Only invoke explicitly. This is a design decision, not a default. |
 
 ---
 

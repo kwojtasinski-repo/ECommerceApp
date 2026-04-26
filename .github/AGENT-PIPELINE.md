@@ -1,7 +1,9 @@
 # Multi-Agent Pipeline — ECommerceApp
 
-> **Read this** before invoking any pipeline agent (`@planner`, `@implementer`, `@verifier`, `@code-reviewer`, `@pr-commit`).
+> **Read this** before invoking any pipeline agent (`@planner`, `@implementer`, `@pr-commit`).
 > This is the orchestration spec — agent files describe each stage; this file describes the **flow**.
+>
+> **Note**: `@verifier` and `@code-reviewer` are **embedded inside `@implementer`** — do NOT invoke them separately during a pipeline run. They remain available as standalone agents for one-off use outside the pipeline.
 
 ---
 
@@ -39,24 +41,30 @@ USER REQUEST
     │  No auto-handoff. Period.
     ▼
 @implementer ──► executes APPROVED plan
-    │             max-iter: 5
+    │             max-iter: 5 (passes)
     │             scope: limited to plan files
-    ▼
-@verifier ────► DETERMINISTIC: build + unit + integration + arch
-    │            max-iter: 1 (no auto-retry)
-    │            Verdict: PASS or FAIL (verbatim output)
     │
-    ├─ FAIL ──► HITL ──► human chooses: FIX / ABORT / REVISE PLAN
-    │                    routes back to @implementer or @planner
+    │  ┌─── EMBEDDED: 3-probe verification loop ────────────────────┐
+    │  │  Probe = build + unit tests + integration tests (full suite)│
+    │  │  Probe 1 → fix in scope → Probe 2 → fix → Probe 3          │
+    │  │  All 3 PASS → proceed to embedded review                    │
+    │  │  All 3 exhausted → FAIL REPORT → HITL (see below)          │
+    │  └────────────────────────────────────────────────────────────┘
     │
-    ▼ PASS
-@code-reviewer ► ADR + anti-patterns + BC boundaries + tests + security
-    │             max-iter: 3
-    │             Verdict: BLOCKS MERGE or APPROVED
+    │  ┌─── EMBEDDED: inline code review ───────────────────────────┐
+    │  │  Checks: anti-patterns, legacy, BC boundaries, security,   │
+    │  │          style (advisory), test coverage (advisory)         │
+    │  │  BLOCKS MERGE → surface immediately, NEVER auto-fix        │
+    │  └────────────────────────────────────────────────────────────┘
     │
-    ├─ BLOCKS MERGE ──► HITL ──► human fixes or routes back to @implementer
+    ├─ Probes exhausted ──► HITL ──► human chooses:
+    │                                FIX (manual) + RETRY / ABORT / REVISE PLAN → @planner
     │
-    ▼ APPROVED
+    ├─ BLOCKS MERGE ──────► HITL ──► human chooses:
+    │                                FIX description → @implementer applies + re-runs probes
+    │                                ABORT
+    │
+    ▼ APPROVED (probes PASS + no blocks)
 ═══════ HITL CHECKPOINT 2 ═══════
     │  Human: ready for commit?
     │  Last chance to inspect.
@@ -66,37 +74,43 @@ USER REQUEST
     │             does NOT run git
     ▼
 HUMAN runs git commands
+    │
+    ▼
+@copilot-setup-maintainer ── post-task sync (always)
+    Workflow 11 (close-out check) → Workflow 12 (pipeline sync) if agents changed
+    → Workflow 7 (changelog update)
 ```
 
 ---
 
 ## HITL checkpoints — which are mandatory
 
-| Checkpoint                    | Where                                  | Why                                                     |
-| ----------------------------- | -------------------------------------- | ------------------------------------------------------- |
-| **HITL 1 — Plan approval**    | After `@planner`                       | Catches scope creep / wrong approach before any edit    |
-| **HITL on FAIL**              | After `@verifier` if FAIL              | No auto-retry — flaky tests + LLM panic = infinite loop |
-| **HITL on BLOCKS MERGE**      | After `@code-reviewer` if blocks       | Human decides whether to fix or override                |
-| **HITL 2 — Commit readiness** | After `@code-reviewer` APPROVED        | Last inspection before commit text is generated         |
-| **HITL on bc-switch Step 1**  | Inside `@bc-switch` (domain agent)     | Pre-delete safety gate — never auto-delete legacy       |
-| **HITL on adr-generator**     | Inside `@adr-generator` (domain agent) | ADRs are permanent — review draft before write          |
+| Checkpoint                    | Where                                     | Why                                                                         |
+| ----------------------------- | ----------------------------------------- | --------------------------------------------------------------------------- |
+| **HITL 1 — Plan approval**    | After `@planner`                          | Catches scope creep / wrong approach before any edit                        |
+| **HITL on probes exhausted**  | Inside `@implementer` after probe 3 fails | 3 auto-fixes tried — human must decide: fix manually / revise plan / abort  |
+| **HITL on BLOCKS MERGE**      | Inside `@implementer` after inline review | Human decides fix description; implementer never auto-fixes review findings |
+| **HITL 2 — Commit readiness** | After `@implementer` APPROVED             | Last inspection before commit text is generated                             |
+| **HITL on bc-switch Step 1**  | Inside `@bc-switch` (domain agent)        | Pre-delete safety gate — never auto-delete legacy                           |
+| **HITL on adr-generator**     | Inside `@adr-generator` (domain agent)    | ADRs are permanent — review draft before write                              |
 
 > **Rule**: agents never call the next agent automatically. Every transition is a human handoff (paste, approve, or explicit `@` invocation).
+> **`@verifier` and `@code-reviewer` standalone**: still valid for one-off use outside the pipeline (e.g. reviewing an existing PR, running deterministic checks on a hotfix).
 
 ---
 
 ## Max iterations — full table
 
-| Agent                       | Max iter | Iteration definition                          |
-| --------------------------- | -------- | --------------------------------------------- |
-| `@planner`                  | 3        | One full plan revision (after REVISE)         |
-| `@implementer`              | 5        | One full pass of the plan                     |
-| `@verifier`                 | 1        | One full build + test sweep (no auto-retry)   |
-| `@code-reviewer`            | 3        | One full review pass (re-review after fix=+1) |
-| `@pr-commit`                | 2        | One commit/PR text revision                   |
-| `@bc-switch`                | 10       | One full switch attempt (Step 1 → report)     |
-| `@adr-generator`            | 2        | One ADR draft (revision after feedback=+1)    |
-| `@copilot-setup-maintainer` | n/a      | Per-workflow, audit can iterate per finding   |
+| Agent                           | Max iter | Iteration definition                                              |
+| ------------------------------- | -------- | ----------------------------------------------------------------- |
+| `@planner`                      | 3        | One full plan revision (after REVISE)                             |
+| `@implementer`                  | 5        | One full pass: impl steps + 3 probes + inline review              |
+| `@verifier` _(standalone)_      | 1        | One full build + test sweep — no auto-retry (standalone use only) |
+| `@code-reviewer` _(standalone)_ | 3        | One full review pass (re-review after fix = +1, standalone only)  |
+| `@pr-commit`                    | 2        | One commit/PR text revision                                       |
+| `@bc-switch`                    | 10       | One full switch attempt (Step 1 → report)                         |
+| `@adr-generator`                | 2        | One ADR draft (revision after feedback = +1)                      |
+| `@copilot-setup-maintainer`     | n/a      | Per-workflow; audit can iterate per finding                       |
 
 After hitting the cap → **STOP, report what was tried, ask the human**. No silent continuation.
 

@@ -24,65 +24,24 @@ If during the task you were corrected on something not yet documented (forgot to
 
 If the same correction appears for the **2nd time** in the log → **promote** it to a permanent rule (anti-pattern, instruction file, or ADR via `@adr-generator`) and mark the original entries `Status: Promoted → <ref>`.
 
-# During & After Work — Proactive Documentation Suggestions
+## Post-edit — invoke @copilot-setup-maintainer (mandatory last step)
 
-While implementing or after completing a task, **suggest** (never auto-create) documentation updates when any of these conditions is detected. Always phrase as a proposal — the human decides.
+After **every task** that changes any file under `.github/` or `docs/` — no matter how small — invoke `@copilot-setup-maintainer` as the final step before closing the task.
 
-## When to suggest a new ADR
+**Why this matters for teams:** Every agent, instruction file, ADR row, changelog entry, and `.sln` item must stay in sync for every team member. A single missed sync breaks routing for the next person who picks up the work — they read stale docs, load the wrong ADR, or invoke an agent that no longer matches the pipeline. `@copilot-setup-maintainer` is the shared consistency gate.
 
-- A significant architectural decision was made during implementation (new pattern, new integration, new cross-BC communication approach).
-- An existing ADR's rules were intentionally violated or bent — the deviation needs to be recorded.
-- A new bounded context, aggregate, or shared primitive was introduced that doesn't have a design ADR yet.
-- A technology or library was added/replaced (e.g., new auth provider, new message broker).
-- A decision was debated in the PR or chat and resolved — capture it before the context is lost.
+**What to run:**
 
-**How to suggest**: _"This change introduces [X]. Consider creating an ADR to record the decision and alternatives considered. Use `@adr-generator` or copy `.github/templates/adr.template.md`."_
+| Changed content                        | Workflows to invoke                        |
+| -------------------------------------- | ------------------------------------------ |
+| Agent file changed (pipeline agents)   | Workflow 12 → Workflow 7                   |
+| Instruction file added/removed/renamed | Workflow 9 → Workflow 7                    |
+| ADR added / renamed / archived         | Workflow 1 or 2 → Workflow 7               |
+| Roadmap file added                     | Workflow 3 → Workflow 7                    |
+| Any `.github/` or `docs/` file changed | Workflow 11 (close-out check) → Workflow 7 |
+| Unsure what changed or scope is wide   | Workflow 6 (full audit) → Workflow 7       |
 
-## When to suggest updating `docs/architecture/bounded-context-map.md`
+**Minimum always-run:** Workflow 11 + Workflow 7 — even for single-file edits.
 
-- A BC's implementation status changed (e.g., new layer completed, atomic switch done).
-- A new cross-BC dependency was introduced or an existing one was removed.
-- A new BC was created that isn't on the map yet.
-- Coupling hotspots changed (e.g., a shared dependency was decoupled).
-
-## When to suggest updating `.github/context/project-state.md`
-
-- A BC moved from "blocked" to "ready" or vice versa.
-- A blocker was resolved (e.g., DB migration approved).
-- New active work started on a BC that isn't listed.
-
-## When to suggest updating `docs/roadmap/` files
-
-- A roadmap step was completed but the file still shows it as pending.
-- A new blocker emerged that affects the roadmap dependency chain.
-- A new roadmap file is needed for a newly planned BC implementation.
-
-## When to suggest updating existing ADRs
-
-- An ADR's `## Implementation Status` table is out of date after completing implementation steps.
-- An ADR should be marked as `Superseded by ADR-XXXX` after a newer decision replaced it.
-- A `## Conformance checklist` needs a new item based on a lesson learned during implementation.
-- The implementation still fits the same architectural decision, but the current ADR text or examples are stale.
-
-## When to suggest docs/ADR updates because code drifted
-
-- The implemented code differs meaningfully from the current ADR or docs wording.
-- The behavior is still covered by an existing ADR, but that ADR now needs amendment or clarification.
-- The behavior introduces a genuinely new architectural decision that no existing ADR covers.
-
-**How to suggest**: _"Implementation and docs diverged here. If this is a new decision, consider a new ADR. If the decision already exists, update the current ADR/docs so the repo and guidance match again."_
-
-## When to suggest updating the Copilot environment (`.github/`)
-
-- A docs change alters meaning, architecture guidance, workflow, or navigation.
-- A new human-facing router file is added under `docs/` (for example `docs/README.md`).
-- ADR structure, naming, or routing changed and prompts/agents/instructions still point at old paths.
-- A prompt, agent, or instruction now needs extra context because documentation evolved.
-
-**How to suggest**: _"This docs change affects how Copilot should route or interpret the repo. Consider updating the `.github` environment (usually `docs-index.instructions.md`, prompts, agents, `.sln`, and changelog) or run `@copilot-setup-maintainer`."_
-
-## Rule: suggest, never auto-apply
-
-- Do NOT create or modify documentation files without explicit human approval.
-- Present the suggestion with: what file, what change, and why.
-- If multiple documentation updates are needed, list them all at once so the human can batch-approve.
+> `@copilot-setup-maintainer` owns: `docs-index.instructions.md`, `copilot-instructions.md`, `AGENT-PIPELINE.md`, `COPILOT-SETUP-CHANGELOG.md`, `code-reviewer.md` (cascade only), `ECommerceApp.sln` (Copilot/docs folders).
+> It never edits application code, ADR content, or migration files.

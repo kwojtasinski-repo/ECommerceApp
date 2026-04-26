@@ -1,5 +1,5 @@
 ---
-applyTo: "**"
+applyTo: ".github/**, docs/**"
 ---
 
 # Docs Index — Copilot Routing Table
@@ -27,32 +27,37 @@ applyTo: "**"
 
 Auto-loaded by `applyTo:` globs — Copilot reads these automatically when editing matching files.
 
-| File                                  | `applyTo:`                          | Scope                                         |
-| ------------------------------------- | ----------------------------------- | --------------------------------------------- | --- | --------------------- | ---- | ----------------------------------------------------------------------------------- | --- | ---------------------------- | ---- | ------------------------- |
-| `dotnet.instructions.md`              | `**/*.cs, **/*.csproj`              | .NET architecture, services, DI, auth         |
-| `web-api.instructions.md`             | `ECommerceApp.API/**`               | Web API controllers, DTOs                     |
-| `razorpages.instructions.md`          | `ECommerceApp.Web/**`               | MVC, Views, Razor Pages                       |
-| `frontend.instructions.md`            | `wwwroot/**, **/*.cshtml`           | LibMan, JS modules, require.js                |
-| `efcore.instructions.md`              | `ECommerceApp.Infrastructure/**`    | EF Core tracking, transactions                |
-| `migration-policy.instructions.md`    | `Infrastructure/Migrations/**`      | DB migration approval                         |
-| `testing.instructions.md`             | `UnitTests/**, IntegrationTests/**` | Unit/integration test patterns                |
-| `shared-primitives.instructions.md`   | `Domain/Shared/**`                  | TypedId, Money, Price, Quantity               |
-| `safety.instructions.md`              | `**`                                | Allowed/disallowed actions                    |
-| `pre-edit.instructions.md`            | `**`                                | Pre-edit checklist, doc suggestions           |
-| `copilot-config-sync.instructions.md` | `.github/**, docs/**`               | Auto-sync trigger for docs and Copilot config |     | `rag.instructions.md` | `**` | When to call the local RAG MCP tools (`query_docs`, `get_adr_history`, `list_adrs`) |     | `docs-index.instructions.md` | `**` | This file — routing table |
+| File                                  | `applyTo:`                          | Scope                                                                                            |
+| ------------------------------------- | ----------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `dotnet.instructions.md`              | `**/*.cs, **/*.csproj`              | .NET architecture, services, DI, auth                                                            |
+| `web-api.instructions.md`             | `ECommerceApp.API/**`               | Web API controllers, DTOs                                                                        |
+| `razorpages.instructions.md`          | `ECommerceApp.Web/**`               | MVC, Views, Razor Pages                                                                          |
+| `frontend.instructions.md`            | `wwwroot/**, **/*.cshtml`           | LibMan, JS modules, require.js                                                                   |
+| `efcore.instructions.md`              | `ECommerceApp.Infrastructure/**`    | EF Core tracking, transactions                                                                   |
+| `migration-policy.instructions.md`    | `Infrastructure/Migrations/**`      | DB migration approval                                                                            |
+| `testing.instructions.md`             | `UnitTests/**, IntegrationTests/**` | Unit/integration test patterns                                                                   |
+| `shared-primitives.instructions.md`   | `Domain/Shared/**`                  | TypedId, Money, Price, Quantity                                                                  |
+| `safety.instructions.md`              | `**`                                | Allowed/disallowed actions                                                                       |
+| `pre-edit.instructions.md`            | `**`                                | Pre-edit checklist (steps 0–8), post-edit agent-decisions append, @copilot-setup-maintainer gate |
+| `doc-suggestions.instructions.md`     | `**`                                | When to suggest ADR, BC map, roadmap, or project-state updates (advisory)                        |
+| `agent-memory.instructions.md`        | `**`                                | Auto-loads `agent-decisions.md` read rule before any non-trivial task                            |
+| `copilot-config-sync.instructions.md` | `.github/**, docs/**`               | Auto-sync trigger for docs and Copilot config                                                    |
+| `rag.instructions.md`                 | `**`                                | When to call the local RAG MCP tools (`query_docs`, `get_adr_history`, `list_adrs`)              |
+| `bc-adr-map.instructions.md`          | `**/*.cs, **/*.csproj, **/*.cshtml` | BC → ADR quick map (auto-loads when editing code)                                                |
+| `docs-index.instructions.md`          | `.github/**, docs/**`               | This file — routing table                                                                        |
 
 ## Agents (`.github/agents/`)
 
-| Agent            | Invoke                      | When to use                                                            |
-| ---------------- | --------------------------- | ---------------------------------------------------------------------- |
-| ADR Generator    | `@adr-generator`            | Generating a new Architecture Decision Record                          |
-| BC Switch        | `@bc-switch`                | Executing atomic BC legacy-to-new switch                               |
-| Code Reviewer    | `@code-reviewer`            | Automated PR review against ADRs and rules                             |
-| Setup Maintainer | `@copilot-setup-maintainer` | Syncing Copilot config and `.sln` structure                            |
-| Planner          | `@planner`                  | Pipeline stage 1 — produce file-level plan, STOP at HITL 1             |
-| Implementer      | `@implementer`              | Pipeline stage 2 — execute APPROVED plan, scope-limited                |
-| Verifier         | `@verifier`                 | Pipeline stage 3 — DETERMINISTIC build+test, no LLM judgment           |
-| PR/Commit        | `@pr-commit`                | Pipeline stage 5 — produce branch/commit/PR text after APPROVED review |
+| Agent            | Invoke                      | When to use                                                                              |
+| ---------------- | --------------------------- | ---------------------------------------------------------------------------------------- |
+| ADR Generator    | `@adr-generator`            | Generating a new Architecture Decision Record                                            |
+| BC Switch        | `@bc-switch`                | Executing atomic BC legacy-to-new switch                                                 |
+| Code Reviewer    | `@code-reviewer`            | **Standalone only** — PR review against ADRs and rules; NOT invoked during pipeline runs |
+| Setup Maintainer | `@copilot-setup-maintainer` | Syncing Copilot config and `.sln` structure                                              |
+| Planner          | `@planner`                  | Pipeline stage 1 — produce file-level plan, STOP at HITL 1                               |
+| Implementer      | `@implementer`              | Pipeline stage 2 — execute APPROVED plan, scope-limited                                  |
+| Verifier         | `@verifier`                 | **Standalone only** — DETERMINISTIC build+test outside the pipeline                      |
+| PR/Commit        | `@pr-commit`                | Pipeline stage 5 — produce branch/commit/PR text after APPROVED review                   |
 
 > Pipeline orchestration spec → [`.github/AGENT-PIPELINE.md`](../AGENT-PIPELINE.md)
 
@@ -160,13 +165,16 @@ Use the folder `README.md` as the first stop for every ADR.
 
 Read a skill **before** scaffolding the corresponding artifact.
 
-| Skill                     | When to read                                                     |
-| ------------------------- | ---------------------------------------------------------------- |
-| `create-unit-test`        | Scaffolding a new xUnit test class (service, aggregate, handler) |
-| `create-dbcontext`        | Creating a per-BC DbContext (4-file set)                         |
-| `create-ef-configuration` | Adding an EF Core entity configuration                           |
-| `create-di-extension`     | Adding Application or Infrastructure DI extension methods        |
-| `create-domain-event`     | Creating cross-BC IMessage events and/or IMessageHandler         |
-| `create-integration-test` | Scaffolding an integration test with BaseTest<T> + Shouldly      |
-| `create-http-scenario`    | Creating a .http file for any API endpoint testing               |
-| `create-validator`        | Adding a FluentValidation AbstractValidator<T>                   |
+| Skill                     | When to read                                                                                     |
+| ------------------------- | ------------------------------------------------------------------------------------------------ |
+| `create-unit-test`        | Scaffolding a new xUnit test class (service, aggregate, handler)                                 |
+| `create-dbcontext`        | Creating a per-BC DbContext (4-file set)                                                         |
+| `create-ef-configuration` | Adding an EF Core entity configuration                                                           |
+| `create-di-extension`     | Adding Application or Infrastructure DI extension methods                                        |
+| `create-domain-event`     | Creating cross-BC IMessage events and/or IMessageHandler                                         |
+| `create-integration-test` | Scaffolding an integration test with BaseTest<T> + Shouldly                                      |
+| `create-http-scenario`    | Creating a .http file for any API endpoint testing                                               |
+| `create-validator`        | Adding a FluentValidation AbstractValidator<T>                                                   |
+| `create-cqrs-handler`     | Scaffolding ICommandHandler<TCommand, TResult> + command record + result type (Option B)         |
+| `create-dto-viewmodel`    | Scaffolding DTO/VM + ToDto() extension method mapping (AutoMapper removal path)                  |
+| `create-message-contract` | Defining a cross-BC IMessage event contract (publisher side only; pair with create-domain-event) |

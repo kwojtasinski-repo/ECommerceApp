@@ -42,6 +42,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "instructions", "instruction
 		.github\instructions\frontend.instructions.md = .github\instructions\frontend.instructions.md
 		.github\instructions\migration-policy.instructions.md = .github\instructions\migration-policy.instructions.md
 		.github\instructions\pre-edit.instructions.md = .github\instructions\pre-edit.instructions.md
+		.github\instructions\doc-suggestions.instructions.md = .github\instructions\doc-suggestions.instructions.md
+		.github\instructions\agent-memory.instructions.md = .github\instructions\agent-memory.instructions.md
+		.github\instructions\bc-adr-map.instructions.md = .github\instructions\bc-adr-map.instructions.md
+		.github\instructions\copilot-config-sync.instructions.md = .github\instructions\copilot-config-sync.instructions.md
 		.github\instructions\rag.instructions.md = .github\instructions\rag.instructions.md
 		.github\instructions\razorpages.instructions.md = .github\instructions\razorpages.instructions.md
 		.github\instructions\safety.instructions.md = .github\instructions\safety.instructions.md
@@ -70,6 +74,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{908C6C00-47A3-455F-82C8-5BBECB045911}"
 	ProjectSection(SolutionItems) = preProject
 		docs\README.md = docs\README.md
+		docs\rag\README.md = docs\rag\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "adr", "adr", "{25B91C37-ECC3-46DC-8502-C91F85A1F7BC}"
@@ -530,6 +535,21 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "create-validator", "create-validator", "{F3E145DF-ADCD-4EFA-BC2C-8C4855A9E597}"
 	ProjectSection(SolutionItems) = preProject
 		.github\skills\create-validator\SKILL.md = .github\skills\create-validator\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "create-cqrs-handler", "create-cqrs-handler", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\create-cqrs-handler\SKILL.md = .github\skills\create-cqrs-handler\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "create-dto-viewmodel", "create-dto-viewmodel", "{B2C3D4E5-F6A7-8901-BCDE-F12345678901}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\create-dto-viewmodel\SKILL.md = .github\skills\create-dto-viewmodel\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "create-message-contract", "create-message-contract", "{C3D4E5F6-A7B8-9012-CDEF-012345678902}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\create-message-contract\SKILL.md = .github\skills\create-message-contract\SKILL.md
 	EndProjectSection
 EndProject
 Global

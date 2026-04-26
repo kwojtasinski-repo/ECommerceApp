@@ -182,6 +182,18 @@ If you forget, you'll see `query_docs` returning stale `text` snippets — `rag.
 | `recall@8` < 70 %                                        | Most likely chunking issue; try lowering `max_tokens` to 500              |
 | `sentence-transformers` download fails behind a proxy    | Set `HTTPS_PROXY` or pre-cache the model under `~/.cache/huggingface/hub` |
 
+## Planned improvements
+
+| #   | Improvement                                | Priority | Notes                                                                                                                                                                                                         |
+| --- | ------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **CI re-index step** (`workflow_dispatch`) | High     | Add a GitHub Actions job that runs `ingest.py` on demand; outputs snapshot artifact so team doesn't need Python locally. Pairs with CI push-trigger (currently `workflow_dispatch` only).                     |
+| 2   | **Multilingual embedder**                  | Medium   | `all-MiniLM-L6-v2` is EN-only. Polish UI labels in ADRs and roadmaps are not ranked well. Replace with `paraphrase-multilingual-MiniLM-L12-v2` (same 384 dims, drop-in swap in `config.yaml`).                |
+| 3   | **Persistent Qdrant (Docker)**             | Medium   | Current default is in-memory — index lost on restart. `config.yaml` already has a `qdrant_mode: docker` switch. Wire up Docker Compose service so index survives restarts.                                    |
+| 4   | **File-watcher auto re-index**             | Low      | Run `ingest.py --watch` (using `watchdog`) to auto-rebuild when `docs/` changes during active work. Useful for local dev sessions editing ADRs.                                                               |
+| 5   | **Eval anchor expansion**                  | Low      | Grow `eval/questions.json` from 20 → 50 questions, covering Polish-language queries, saga questions, and BC-boundary queries. Acceptance bar stays `recall@8 ≥ 80%`.                                          |
+| 6   | **synthesis.mode: local** wired up         | Low      | `query.py` does not call Ollama yet (intentionally). When needed for CLI-without-Copilot use cases, wire `qwen2.5:7b` in query pipeline. Do NOT enable by default — Copilot does synthesis for VS Code users. |
+| 7   | **Chunk scoring transparency**             | Low      | Add `explain=true` flag to `query_docs` that returns per-chunk weight breakdown (embedding score + keyword boost + recency). Useful for debugging low-recall queries.                                         |
+
 ## Layout
 
 ```
