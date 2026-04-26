@@ -48,6 +48,17 @@ Rules:
 - One H2 per entry. **Append, do not edit history**.
 - Date in `YYYY-MM-DD` format (today's real date).
 - Keep entries scannable — 5–10 lines each. Link, don't quote.
+
+---
+
+## 2026-04-27 — Copilot / RAG MCP server config location
+
+- **Context**: Agent created `.github/copilot/mcp.json` to register the RAG MCP server, then told the user the server was registered. VS Code's MCP browser showed no servers.
+- **Decision**: The correct location is `.vscode/mcp.json`. `.github/copilot/mcp.json` is not read by VS Code's MCP server browser — it is only relevant for GitHub Codespaces / future GitHub Copilot tooling.
+- **Rationale**: VS Code reads workspace MCP config from `.vscode/mcp.json`. The `.github/copilot/` path has no VS Code runtime effect.
+- **Action**: Always create `.vscode/mcp.json` for VS Code MCP registration. Keep `.github/copilot/mcp.json` as a secondary copy for Codespaces compatibility only.
+- **Promote?**: After 2nd occurrence → add to `docs-index.instructions.md` or a tooling note.
+- **Status**: Resolved
 - All entries in **English** for AI parsability.
 
 ---

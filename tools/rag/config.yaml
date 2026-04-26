@@ -11,8 +11,8 @@ source:
     - "**/.git/**"
 
 embedder:
-  # sentence-transformers model id. EN-only, 384 dims, fast.
-  model: "sentence-transformers/all-MiniLM-L6-v2"
+  # sentence-transformers model id. 768 dims, higher recall than MiniLM.
+  model: "sentence-transformers/all-mpnet-base-v2"
   device: "cpu"          # cpu | cuda — cpu is fine for this corpus size
   batch_size: 32
 
@@ -45,6 +45,7 @@ ranking:
     - { pattern: "docs/roadmap/**",                             weight: 0.70 }
     - { pattern: "docs/adr/*/checklist.md",                     weight: 0.40 }
     - { pattern: "docs/adr/*/migration-plan.md",                weight: 0.30 }
+    - { pattern: "docs/rag/**",                                   weight: 0.20 }   # RAG tool meta-docs, not project knowledge
   # Stub guard — files smaller than this contribute weight 0.05 (effectively buried).
   stub_byte_threshold: 400
 

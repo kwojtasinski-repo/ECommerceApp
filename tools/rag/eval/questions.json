@@ -1,0 +1,184 @@
+{
+  "questions": [
+    {
+      "q": "What is the overall project architecture and technology stack?",
+      "expect_any": ["docs/adr/0001/"]
+    },
+    {
+      "q": "What is the long-term architectural evolution strategy for event-driven work?",
+      "expect_any": ["docs/adr/0002/"]
+    },
+    {
+      "q": "How should new bounded context code be organized in folders?",
+      "expect_any": ["docs/adr/0003/"]
+    },
+    {
+      "q": "What is the canonical bounded context taxonomy and grouping?",
+      "expect_any": ["docs/adr/0004/"]
+    },
+    {
+      "q": "How is the AccountProfile / UserProfile aggregate designed?",
+      "expect_any": ["docs/adr/0005/"]
+    },
+    {
+      "q": "How are TypedId and value objects modeled as shared primitives?",
+      "expect_any": ["docs/adr/0006/"]
+    },
+    {
+      "q": "How is the Catalog Product aggregate and image ownership designed?",
+      "expect_any": ["docs/adr/0007/"]
+    },
+    {
+      "q": "How is the Supporting/Currencies bounded context designed?",
+      "expect_any": ["docs/adr/0008/"]
+    },
+    {
+      "q": "What does the bounded context map say about the target state?",
+      "expect_any": ["docs/architecture/bounded-context-map.md"]
+    },
+    {
+      "q": "What reusable implementation patterns should be used for new BC code?",
+      "expect_any": ["docs/patterns/implementation-patterns.md"]
+    },
+    {
+      "q": "Where is the endpoint map for the post-switch target state?",
+      "expect_any": ["docs/reference/endpoint-map.md"]
+    },
+    {
+      "q": "What is the design for the Inventory / Availability bounded context?",
+      "expect_any": ["docs/adr/0011/"]
+    },
+    {
+      "q": "What is the design for the Presale / Checkout bounded context?",
+      "expect_any": ["docs/adr/0012/"]
+    },
+    {
+      "q": "What are the per-BC DbContext interfaces?",
+      "expect_any": ["docs/adr/0013/"]
+    },
+    {
+      "q": "How is the Order and OrderItem aggregate designed?",
+      "expect_any": ["docs/adr/0014/"]
+    },
+    {
+      "q": "What is the Sales / Payments bounded context design?",
+      "expect_any": ["docs/adr/0015/"]
+    },
+    {
+      "q": "What is the Sales / Coupons bounded context design?",
+      "expect_any": ["docs/adr/0016/"]
+    },
+    {
+      "q": "What is the Sales / Fulfillment bounded context design?",
+      "expect_any": ["docs/adr/0017/"]
+    },
+    {
+      "q": "What is the Supporting / Communication bounded context design?",
+      "expect_any": ["docs/adr/0018/"]
+    },
+    {
+      "q": "What is the Identity / IAM bounded context design?",
+      "expect_any": ["docs/adr/0019/"]
+    },
+    {
+      "q": "What is the Backoffice bounded context design?",
+      "expect_any": ["docs/adr/0020/"]
+    },
+    {
+      "q": "What does the order lifecycle saga ADR decide?",
+      "expect_any": ["docs/adr/0026/"]
+    },
+    {
+      "q": "What is the Supporting/TimeManagement bounded context design?",
+      "expect_any": ["docs/adr/0009/"]
+    },
+    {
+      "q": "How is the in-memory message broker for cross-BC communication designed?",
+      "expect_any": ["docs/adr/0010/"]
+    },
+    {
+      "q": "What is the frontend error pipeline and JavaScript migration strategy?",
+      "expect_any": ["docs/adr/0021/"]
+    },
+    {
+      "q": "What is the navbar two-tier redesign decision?",
+      "expect_any": ["docs/adr/0022/"]
+    },
+    {
+      "q": "What are the decisions around the Bootstrap 5 upgrade?",
+      "expect_any": ["docs/adr/0023/"]
+    },
+    {
+      "q": "What is the controller routing strategy for the web project?",
+      "expect_any": ["docs/adr/0024/"]
+    },
+    {
+      "q": "How does the API tiered access and trusted purchase policy work?",
+      "expect_any": ["docs/adr/0025/"]
+    },
+    {
+      "q": "What design revisions were made to the TimeManagement BC after implementation review?",
+      "expect_any": ["docs/adr/0009/amendments/"]
+    },
+    {
+      "q": "What retry and dead-letter observability amendments were added to the message broker?",
+      "expect_any": ["docs/adr/0010/amendments/"]
+    },
+    {
+      "q": "What is the OrderStatus lifecycle column amendment that replaced scalar bool properties on the Sales/Orders aggregate?",
+      "expect_any": ["docs/adr/0014/amendments/"]
+    },
+    {
+      "q": "What is the CouponOversizeGuard constraint rule and catalog name sync amendment?",
+      "expect_any": ["docs/adr/0016/amendments/"]
+    },
+    {
+      "q": "What shipment integration and parallel fan-out amendments were made to Fulfillment?",
+      "expect_any": ["docs/adr/0017/amendments/"]
+    },
+    {
+      "q": "How is TypedId defined and used across domain aggregates?",
+      "expect_any": ["docs/adr/0006/"]
+    },
+    {
+      "q": "How should an Anti-Corruption Layer (ACL) be implemented between bounded contexts?",
+      "expect_any": ["docs/patterns/implementation-patterns.md"]
+    },
+    {
+      "q": "What is CouponsOptions.MaxCouponsPerOrder and what is its ceiling value?",
+      "expect_any": ["docs/adr/0016/"]
+    },
+    {
+      "q": "How does the order lifecycle saga handle compensation and rollback on payment failure?",
+      "expect_any": ["docs/adr/0026/"]
+    },
+    {
+      "q": "What cross-BC events flow between Inventory, Orders, and Payments during checkout?",
+      "expect_any": ["docs/adr/0026/"]
+    },
+    {
+      "q": "How does the message broker route events between bounded contexts?",
+      "expect_any": ["docs/adr/0010/"]
+    },
+    {
+      "q": "Jakie są znane problemy i blokery w projekcie?",
+      "expect_any": ["docs/"]
+    },
+    {
+      "q": "Jak wygląda mapa ograniczonych kontekstów i ich zależności?",
+      "expect_any": ["docs/"]
+    },
+    {
+      "q": "What is the current migration progress and which BCs are still on the legacy stack?",
+      "expect_any": ["docs/"]
+    },
+    {
+      "q": "What is the fulfillment message consumption amendment that changed how Inventory listens to order events?",
+      "expect_any": ["docs/adr/0011/amendments/"]
+    },
+    {
+      "q": "What operator notification decisions were added as amendments to the Orders aggregate?",
+      "expect_any": ["docs/adr/0014/amendments/"]
+    }
+  ]
+}

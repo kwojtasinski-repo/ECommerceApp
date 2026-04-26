@@ -3,7 +3,7 @@
   "servers": {
     "ecommerceapp-rag": {
       "type": "stdio",
-      "command": "python",
+      "command": "${workspaceFolder}/tools/rag/.venv/Scripts/python.exe",
       "args": [
         "${workspaceFolder}/tools/rag/mcp_server.py"
       ],

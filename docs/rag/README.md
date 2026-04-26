@@ -2,7 +2,7 @@
 
 Local, offline retrieval over `docs/`. Backed by:
 
-- **sentence-transformers** (`all-MiniLM-L6-v2`, 384 dims, EN) for embeddings
+- **sentence-transformers** (`all-mpnet-base-v2`, 768 dims, EN) for embeddings
 - **Qdrant** (in-memory by default) as the vector store
 - **MCP server** exposing 3 tools to VS Code Copilot
 
@@ -36,7 +36,7 @@ After step 3 you'll have:
 - `tools/rag/.cache/snapshot.qdrant` ← in-memory snapshot reload file
 - `tools/rag/.cache/manifest.json` ← summary of last build (file count, chunk count, model, dim)
 
-The MCP server (`tools/rag/mcp_server.py`) is started automatically by VS Code Copilot via [`.github/copilot/mcp.json`](../../.github/copilot/mcp.json) once the venv is on your PATH or you set `python.defaultInterpreterPath`.
+The MCP server (`tools/rag/mcp_server.py`) is started automatically by VS Code Copilot via [`.vscode/mcp.json`](../../.vscode/mcp.json) — no PATH setup needed, the entry points directly at the venv executable.
 
 ---
 
@@ -120,7 +120,7 @@ Sample output:
 
 ## MCP tools (VS Code Copilot)
 
-Defined in [`tools/rag/mcp_server.py`](../../tools/rag/mcp_server.py). Wired up in [`.github/copilot/mcp.json`](../../.github/copilot/mcp.json). Routing rules in [`.github/instructions/rag.instructions.md`](../../.github/instructions/rag.instructions.md).
+Defined in [`tools/rag/mcp_server.py`](../../tools/rag/mcp_server.py). Wired up in [`.vscode/mcp.json`](../../.vscode/mcp.json) (VS Code) and [`.github/copilot/mcp.json`](../../.github/copilot/mcp.json) (Codespaces). Routing rules in [`.github/instructions/rag.instructions.md`](../../.github/instructions/rag.instructions.md).
 
 | Tool                                | Returns                                                                         |
 | ----------------------------------- | ------------------------------------------------------------------------------- |
@@ -128,20 +128,89 @@ Defined in [`tools/rag/mcp_server.py`](../../tools/rag/mcp_server.py). Wired up 
 | `get_adr_history(adr_id)`           | JSON: main ADR content + all amendments in order (chronological by filename)    |
 | `list_adrs()`                       | JSON table of all ADRs with `id`, `title`, `amendments` count, `examples` count |
 
-## Eval
+## Architecture and query flow
 
-`tools/rag/eval/questions.json` holds 20 anchor questions, each with `expect_any: [path_substrings]`. The eval script reports recall@5 / recall@8 plus a list of failures with the actual top-3 hits, so you can adjust chunking, weights, or the embedder.
+```
+OFFLINE  (run once, or after docs change)
+─────────────────────────────────────────────────────────────────────
+docs/**/*.md ──► chunker.py ──► sentence-transformers ──► Qdrant
+(159 files)      (721 chunks)   all-mpnet-base-v2         (in-memory)
+                 heading-aware  768-dim vectors                │
+                 breadcrumbs    batch_size=32                  ▼
+                 overlap=80tok                    .cache/snapshot.qdrant
+                                                 .cache/manifest.json
 
-```powershell
-python tools\rag\eval\eval.py --top-k 8
+
+ONLINE  (every VS Code session)
+─────────────────────────────────────────────────────────────────────
+VS Code reads .vscode/mcp.json
+     │
+     ▼
+spawns: tools/rag/.venv/Scripts/python.exe  tools/rag/mcp_server.py
+     │
+     ▼
+mcp_server.py loads snapshot.qdrant into memory (no re-embedding)
+exposes 3 tools over stdio (MCP protocol):
+┌──────────────────┬──────────────────────────────────────────────┐
+│ list_adrs()      │ returns all 26 ADR ids + amendment counts    │
+│ query_docs(q)    │ embed q → cosine search → re-rank → top-k   │
+│ get_adr_history  │ returns main ADR + all amendments in order   │
+└──────────────────┴──────────────────────────────────────────────┘
+
+
+QUERY FLOW  (what happens when you ask Copilot something)
+─────────────────────────────────────────────────────────────────────
+You ask a question in Copilot Agent chat
+     │
+     ▼
+Copilot reads rag.instructions.md  (applyTo: **)
+     │
+     ├─► FIRST: check docs-index.instructions.md (deterministic router)
+     │          "does it point to an obvious file?" ──YES──► read_file()
+     │                                                │
+     │                                                NO
+     │                                                ▼
+     └─► THEN: call RAG MCP tool ◄───────────────────┘
+               │
+               ▼
+         query_docs("your question", top_k=5)
+               │
+               ▼
+         mcp_server.py:
+           1. embed question  → 768-dim vector
+           2. cosine search   → fetch top-20 from Qdrant
+           3. re-rank         → score × weight (amendment=1.2, main ADR=1.0, roadmap=0.7…)
+           4. truncate        → top-5 chunks returned
+               │
+               ▼
+         Copilot receives: rel_path + line range + score + text excerpt
+               │
+               ▼
+         Copilot calls read_file() on the 1-2 most relevant paths
+               │
+               ▼
+         Answer — grounded in docs, low token cost
 ```
 
-Acceptance bar for the MVP: **recall@8 ≥ 80 %**. Below that, tune in this order:
+> **What is NOT in this flow**: no LLM synthesis in `mcp_server.py` (Copilot does synthesis),
+> no automatic re-index (run `ingest.py` manually), no Polish query support (EN-only embedder).
+
+
+
+`tools/rag/eval/questions.json` holds 45 anchor questions (all 26 ADRs + amendments + cross-cutting + Polish), each with `expect_any: [path_substrings]`. The eval script reports recall@5 / recall@8 plus a list of failures with the actual top-3 hits, so you can adjust chunking, weights, or the embedder.
+
+```powershell
+python tools\rag\eval\eval.py
+```
+
+Current baseline (`all-mpnet-base-v2`, 45 questions): **recall@5=95.56%, recall@8=100%**, mean rank=1.33.
+
+Acceptance bar: **recall@8 ≥ 95 %**. Below that, tune in this order:
 
 1. Chunking (`max_tokens`, `min_tokens`, `overlap_tokens`)
 2. Weights for the document kind that's missing
 3. Add metadata filters (`bc` is the easy win)
-4. Last resort: try `bge-small-en-v1.5` (also 384d) — slightly better than MiniLM at the same cost
+4. Last resort: swap embedder in `config.yaml` (see Planned improvements)
 
 ## Optional: Docker mode
 
@@ -168,7 +237,7 @@ Then `ollama pull qwen2.5:7b`. The MVP query layer does NOT yet call the LLM (in
 
 ## Re-indexing
 
-There is no file watcher. Re-run `python tools\rag\ingest.py` after any meaningful change to `docs/`. Embedding the whole corpus takes ~30 seconds on CPU.
+There is no file watcher. Re-run `python tools\rag\ingest.py` after any meaningful change to `docs/`. Embedding the whole corpus takes ~140 seconds on CPU (all-mpnet-base-v2, 159 files, 721 chunks).
 
 If you forget, you'll see `query_docs` returning stale `text` snippets — `rag.instructions.md` tells Copilot to suggest a re-index in that case.
 
@@ -179,20 +248,20 @@ If you forget, you'll see `query_docs` returning stale `text` snippets — `rag.
 | `Snapshot not found at tools/rag/.cache/snapshot.qdrant` | Run `python tools/rag/ingest.py` (you're trying to query before building) |
 | Top hit has very low `final_score` (< 0.3)               | Query is too vague or the topic isn't in `docs/`. Try `list_adrs` first.  |
 | MCP server not appearing in VS Code                      | Reload window; check Output → "GitHub Copilot Chat" for MCP errors        |
-| `recall@8` < 70 %                                        | Most likely chunking issue; try lowering `max_tokens` to 500              |
+| `recall@8` < 95 %                                        | Most likely chunking issue; try lowering `max_tokens` to 500              |
 | `sentence-transformers` download fails behind a proxy    | Set `HTTPS_PROXY` or pre-cache the model under `~/.cache/huggingface/hub` |
 
 ## Planned improvements
 
-| #   | Improvement                                | Priority | Notes                                                                                                                                                                                                         |
-| --- | ------------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | **CI re-index step** (`workflow_dispatch`) | High     | Add a GitHub Actions job that runs `ingest.py` on demand; outputs snapshot artifact so team doesn't need Python locally. Pairs with CI push-trigger (currently `workflow_dispatch` only).                     |
-| 2   | **Multilingual embedder**                  | Medium   | `all-MiniLM-L6-v2` is EN-only. Polish UI labels in ADRs and roadmaps are not ranked well. Replace with `paraphrase-multilingual-MiniLM-L12-v2` (same 384 dims, drop-in swap in `config.yaml`).                |
-| 3   | **Persistent Qdrant (Docker)**             | Medium   | Current default is in-memory — index lost on restart. `config.yaml` already has a `qdrant_mode: docker` switch. Wire up Docker Compose service so index survives restarts.                                    |
-| 4   | **File-watcher auto re-index**             | Low      | Run `ingest.py --watch` (using `watchdog`) to auto-rebuild when `docs/` changes during active work. Useful for local dev sessions editing ADRs.                                                               |
-| 5   | **Eval anchor expansion**                  | Low      | Grow `eval/questions.json` from 20 → 50 questions, covering Polish-language queries, saga questions, and BC-boundary queries. Acceptance bar stays `recall@8 ≥ 80%`.                                          |
-| 6   | **synthesis.mode: local** wired up         | Low      | `query.py` does not call Ollama yet (intentionally). When needed for CLI-without-Copilot use cases, wire `qwen2.5:7b` in query pipeline. Do NOT enable by default — Copilot does synthesis for VS Code users. |
-| 7   | **Chunk scoring transparency**             | Low      | Add `explain=true` flag to `query_docs` that returns per-chunk weight breakdown (embedding score + keyword boost + recency). Useful for debugging low-recall queries.                                         |
+| #   | Improvement                                | Priority | Notes                                                                                                                                                                                                                                                 |
+| --- | ------------------------------------------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Incremental delta ingest**               | Medium   | Extend `manifest.json` to store `{rel_path: mtime}` per file. On re-run, skip unchanged files and reload their points from the existing snapshot. Drops re-index time from ~140s to ~5s for a single edited doc.                                     |
+| 2   | **CI re-index step** (`workflow_dispatch`) | Medium   | GitHub Actions job that runs `ingest.py` on `docs/**` push (fast once incremental ingest is done); outputs snapshot artifact. Pairs with incremental ingest — without it, CI cost is 140s per push.                                                  |
+| 3   | **Multilingual embedder**                  | Low      | `all-mpnet-base-v2` is EN-only. Polish UI labels in ADRs score ~0.25 (noise floor). Drop-in swap: `paraphrase-multilingual-mpnet-base-v2` (768 dims) in `config.yaml → embedder.model` + re-ingest.                                                   |
+| 4   | **Persistent Qdrant (Docker)**             | Low      | Current default is in-memory — index reloaded from snapshot on every VS Code session start. `config.yaml` already has `vector_store.mode: docker`. Wire up Docker Compose service for a persistent dashboard and faster startup.                      |
+| 5   | **File-watcher auto re-index**             | Low      | `ingest.py --watch` using `watchdog` — auto-rebuild when `docs/` changes during active ADR authoring sessions.                                                                                                                                        |
+| 6   | **synthesis.mode: local** wired up         | Deferred | `query.py` intentionally does not call Ollama. Wire `qwen2.5:7b` only for CLI-without-Copilot use cases. Do NOT enable by default — Copilot does synthesis for VS Code users.                                                                        |
+| 7   | **Chunk scoring transparency**             | Low      | Add `explain=true` flag to `query_docs` returning per-chunk weight breakdown (embedding score + weight multiplier). Useful for debugging low-recall queries.                                                                                           |
 
 ## Layout
 
