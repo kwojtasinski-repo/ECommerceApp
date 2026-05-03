@@ -17,6 +17,11 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+# Force UTF-8 output on Windows to avoid UnicodeEncodeError with special chars
+if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+
 from common import Config, load_config
 
 

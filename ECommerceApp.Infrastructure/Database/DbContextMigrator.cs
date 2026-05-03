@@ -19,20 +19,7 @@ namespace ECommerceApp.Infrastructure.Database
 
         public string ContextName => typeof(TContext).Name;
 
-        public async Task MigrateAsync(CancellationToken ct = default)
-        {
-            var migrations = await _context.Database.GetPendingMigrationsAsync(ct);
-            // logger log it
-            foreach (var migration in migrations)
-            {
-                _logger.LogInformation("Pending migration for {Context}: {Migration}", ContextName, migration);
-            }
-
-            var script = _context.Database.GenerateCreateScript();
-            // logger log it
-            _logger.LogInformation("Applying migrations for {Context}: {Migrations}", ContextName, string.Join(", ", script));
-
-            await _context.Database.MigrateAsync(ct);
-        }
+        public Task MigrateAsync(CancellationToken ct = default)
+            => _context.Database.MigrateAsync(ct);
     }
 }

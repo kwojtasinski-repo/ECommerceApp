@@ -5,14 +5,17 @@ source:
   # Roots to scan recursively for .md files.
   roots:
     - docs
+    - .github/context      # known-issues.md, agent-decisions.md, project-state.md, repo-index.md
   # Files matching any of these globs are excluded.
   exclude_globs:
-    - "docs/reports/**"  # session/transient reports — not project knowledge
+    - "docs/reports/**"          # session/transient reports — not project knowledge
     - "**/.git/**"
+    - ".github/context/anti-patterns-critical.context.md"  # loaded directly by @code-reviewer, not via RAG
 
 embedder:
-  # sentence-transformers model id. 768 dims, higher recall than MiniLM.
-  model: "sentence-transformers/all-mpnet-base-v2"
+  # Multilingual model — 50+ languages including Polish and English, 384 dims (same schema as all-MiniLM-L6-v2).
+  # Switch from all-MiniLM-L6-v2 (EN-only) to support mixed PL/EN queries against English docs.
+  model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
   device: "cpu"          # cpu | cuda — cpu is fine for this corpus size
   batch_size: 32
 
@@ -25,7 +28,7 @@ chunker:
 
 vector_store:
   backend: "qdrant"
-  mode: "memory"         # memory | docker
+  mode: "docker"         # memory | docker
   collection: "ecommerceapp_docs"
   # When mode = docker:
   url: "http://localhost:6333"
@@ -35,6 +38,11 @@ ranking:
   # Path patterns are matched as fnmatch globs against the relative file path.
   # First match wins. Default weight if no match: 1.00.
   weights:
+    - { pattern: ".github/context/known-issues.md",             weight: 1.25 }   # bug-fix gate — always high priority
+    - { pattern: ".github/context/agent-decisions.md",          weight: 1.20 }   # correction history — high signal
+    - { pattern: ".github/context/project-state.md",            weight: 1.15 }   # BC block status — critical
+    - { pattern: ".github/context/repo-index.md",               weight: 1.00 }   # full codebase map
+    - { pattern: ".github/context/future-skills.md",            weight: 0.80 }   # forward-looking, lower priority
     - { pattern: "docs/adr/*/amendments/**",                    weight: 1.20 }
     - { pattern: "docs/adr/*/example-implementation/**",        weight: 1.10 }
     - { pattern: "docs/adr/*/[0-9]*-*.md",                      weight: 1.00 }   # main ADR file

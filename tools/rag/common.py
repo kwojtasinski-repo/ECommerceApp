@@ -113,6 +113,8 @@ def detect_doc_kind(rel_path: str) -> str:
         return "adr_router"
     if "/adr/" in p:
         return "adr_main"
+    if p.startswith(".github/context/"):
+        return "context"
     if p.startswith("docs/architecture/"):
         return "architecture"
     if p.startswith("docs/patterns/"):
