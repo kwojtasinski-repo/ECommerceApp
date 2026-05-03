@@ -28,7 +28,7 @@ namespace ECommerceApp.IntegrationTests.Common
             IInMemoryDatabase inMemoryDatabase)
             : base(dependencies, inMemoryDatabase) { }
 
-        public override ValueGenerator Create(IProperty property, IEntityType entityType)
+        public override ValueGenerator Create(IProperty property, ITypeBase entityType)
         {
             var clrType = property.ClrType;
 

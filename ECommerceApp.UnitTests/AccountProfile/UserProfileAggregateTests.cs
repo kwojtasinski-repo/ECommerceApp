@@ -1,5 +1,5 @@
 using ECommerceApp.Domain.AccountProfile;
-using FluentAssertions;
+using AwesomeAssertions;
 using System;
 using Xunit;
 

@@ -3,7 +3,7 @@ using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Domain.Presale.Checkout;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Moq;

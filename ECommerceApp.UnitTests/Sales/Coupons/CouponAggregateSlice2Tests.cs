@@ -1,6 +1,6 @@
 using ECommerceApp.Domain.Sales.Coupons;
 using ECommerceApp.Domain.Shared;
-using FluentAssertions;
+using AwesomeAssertions;
 using System.Collections.Generic;
 using System.Text.Json;
 using Xunit;

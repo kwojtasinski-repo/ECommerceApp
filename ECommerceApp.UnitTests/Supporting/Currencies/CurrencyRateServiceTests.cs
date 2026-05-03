@@ -3,7 +3,7 @@ using ECommerceApp.Application.External.Client;
 using ECommerceApp.Application.Supporting.Currencies.Services;
 using ECommerceApp.Domain.Supporting.Currencies;
 using ECommerceApp.UnitTests.Common;
-using FluentAssertions;
+using AwesomeAssertions;
 using Moq;
 using System;
 using System.Collections.Generic;

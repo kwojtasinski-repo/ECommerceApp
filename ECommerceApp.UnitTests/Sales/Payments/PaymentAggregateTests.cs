@@ -1,7 +1,7 @@
 using ECommerceApp.Domain.Sales.Payments;
 using ECommerceApp.Domain.Sales.Payments.Events;
 using ECommerceApp.Domain.Shared;
-using FluentAssertions;
+using AwesomeAssertions;
 using System;
 using Xunit;
 

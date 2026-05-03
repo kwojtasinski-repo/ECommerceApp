@@ -1,6 +1,6 @@
 using ECommerceApp.Domain.Sales.Orders;
 using ECommerceApp.Domain.Shared;
-using FluentAssertions;
+using AwesomeAssertions;
 using Xunit;
 
 namespace ECommerceApp.UnitTests.Sales.Orders

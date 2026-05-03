@@ -4,7 +4,7 @@ using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Application.Supporting.TimeManagement.Models;
 using ECommerceApp.Domain.Sales.Orders;
 using ECommerceApp.Domain.Shared;
-using FluentAssertions;
+using AwesomeAssertions;
 using Moq;
 using System;
 using System.Collections.Generic;

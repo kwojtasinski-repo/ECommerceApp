@@ -1,5 +1,5 @@
 using ECommerceApp.Application.Sales.Coupons.Rules;
-using FluentAssertions;
+using AwesomeAssertions;
 using System.Collections.Generic;
 using System.Linq;
 using Xunit;

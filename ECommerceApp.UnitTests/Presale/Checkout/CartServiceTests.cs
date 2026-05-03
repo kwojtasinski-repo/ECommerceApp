@@ -4,7 +4,7 @@ using ECommerceApp.Application.Presale.Checkout.Results;
 using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Application.Presale.Checkout.ViewModels;
 using ECommerceApp.Domain.Presale.Checkout;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.Extensions.Caching.Memory;
 using Moq;
 using System;

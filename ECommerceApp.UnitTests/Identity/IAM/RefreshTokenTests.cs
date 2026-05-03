@@ -1,5 +1,5 @@
 using ECommerceApp.Domain.Identity.IAM;
-using FluentAssertions;
+using AwesomeAssertions;
 using System;
 using Xunit;
 

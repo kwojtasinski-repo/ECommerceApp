@@ -8,9 +8,7 @@ using ECommerceApp.IntegrationTests.Common;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ValueGeneration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -30,25 +28,18 @@ namespace ECommerceApp.IntegrationTests.API
 
             builder.ConfigureServices(services =>
             {
-                // Replace all per-BC DbContextOptions with in-memory databases
-                var bcContextOptions = services
+                var bcContextTypes = services
                     .Where(d => d.ServiceType.IsGenericType
                         && d.ServiceType.GetGenericTypeDefinition() == typeof(DbContextOptions<>)
                         && d.ServiceType != typeof(DbContextOptions<Context>)
                         && d.ServiceType != typeof(DbContextOptions<IamDbContext>))
+                    .Select(d => d.ServiceType.GetGenericArguments()[0])
                     .ToList();
 
-                foreach (var descriptor in bcContextOptions)
+                foreach (var dbContextType in bcContextTypes)
                 {
-                    var dbContextType = descriptor.ServiceType.GetGenericArguments()[0];
                     var dbName = $"ImageApiTest_{dbContextType.Name}_{Guid.NewGuid():N}";
-                    services.Remove(descriptor);
-
-                    var optionsBuilderType = typeof(DbContextOptionsBuilder<>).MakeGenericType(dbContextType);
-                    var optionsBuilder = (DbContextOptionsBuilder)Activator.CreateInstance(optionsBuilderType)!;
-                    optionsBuilder.UseInMemoryDatabase(dbName)
-                        .ReplaceService<IValueGeneratorSelector, TypedIdAwareValueGeneratorSelector>();
-                    services.AddSingleton(descriptor.ServiceType, optionsBuilder.Options);
+                    services.ReplaceDbContextWithInMemory(dbContextType, dbName);
                 }
 
                 // Make all scoped BC services transient to avoid EF change-tracker conflicts
@@ -62,17 +53,14 @@ namespace ECommerceApp.IntegrationTests.API
                 {
                     services.Remove(descriptor);
                     if (descriptor.ImplementationFactory != null)
+                    {
                         services.Add(new ServiceDescriptor(descriptor.ServiceType, descriptor.ImplementationFactory, ServiceLifetime.Transient));
+                    }
                     else
+                    {
                         services.Add(new ServiceDescriptor(descriptor.ServiceType, descriptor.ImplementationType ?? descriptor.ServiceType, ServiceLifetime.Transient));
+                    }
                 }
-
-                // Remove background message dispatcher to avoid interference with tests
-                var backgroundDispatchers = services
-                    .Where(d => d.ServiceType == typeof(IHostedService)
-                        && d.ImplementationType?.Name == "BackgroundMessageDispatcher")
-                    .ToList();
-                foreach (var d in backgroundDispatchers) services.Remove(d);
 
                 // NoOp migrators — InMemory databases don't support migrations
                 var migrators = services.Where(d => d.ServiceType == typeof(IDbContextMigrator)).ToList();
@@ -84,7 +72,11 @@ namespace ECommerceApp.IntegrationTests.API
         protected override void OverrideServicesImplementation(IServiceCollection services)
         {
             var fileStoreDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(IFileStore));
-            if (fileStoreDescriptor != null) services.Remove(fileStoreDescriptor);
+            if (fileStoreDescriptor != null)
+            {
+                services.Remove(fileStoreDescriptor);
+            }
+
             services.AddSingleton<IFileStore, FakeFileStore>();
         }
 

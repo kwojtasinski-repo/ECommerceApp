@@ -1,7 +1,7 @@
 using ECommerceApp.Domain.Catalog.Products;
 using ECommerceApp.Domain.Catalog.Products.ValueObjects;
 using ECommerceApp.Domain.Shared;
-using FluentAssertions;
+using AwesomeAssertions;
 using Xunit;
 
 namespace ECommerceApp.UnitTests.Catalog.Products

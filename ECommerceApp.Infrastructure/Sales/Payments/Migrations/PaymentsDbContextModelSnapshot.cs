@@ -44,6 +44,8 @@ namespace ECommerceApp.Infrastructure.Sales.Payments.Migrations
                         .HasColumnType("int");
 
                     b.Property<Guid>("PaymentId")
+                        .ValueGeneratedOnAdd()
+                        .HasDefaultValueSql("NEWID()")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<byte[]>("RowVersion")

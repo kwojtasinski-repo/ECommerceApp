@@ -5,7 +5,7 @@ using ECommerceApp.Application.Sales.Fulfillment.Messages;
 using ECommerceApp.Application.Sales.Fulfillment.Results;
 using ECommerceApp.Application.Sales.Fulfillment.Services;
 using ECommerceApp.Domain.Sales.Fulfillment;
-using FluentAssertions;
+using AwesomeAssertions;
 using Moq;
 using System.Collections.Generic;
 using System.Threading;

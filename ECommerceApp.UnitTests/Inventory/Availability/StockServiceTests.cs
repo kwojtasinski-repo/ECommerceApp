@@ -5,7 +5,7 @@ using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Domain.Inventory.Availability;
 using ECommerceApp.Domain.Inventory.Availability.ValueObjects;
-using FluentAssertions;
+using AwesomeAssertions;
 using Moq;
 using System;
 using System.Collections.Generic;

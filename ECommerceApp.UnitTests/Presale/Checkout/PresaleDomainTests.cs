@@ -1,6 +1,6 @@
 using ECommerceApp.Domain.Presale.Checkout;
 using ECommerceApp.Domain.Shared;
-using FluentAssertions;
+using AwesomeAssertions;
 using System;
 using Xunit;
 

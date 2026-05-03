@@ -28,11 +28,11 @@ namespace ECommerceApp.Infrastructure.Identity.IAM
         private static void SeedRoles(ModelBuilder builder)
         {
             builder.Entity<IdentityRole>().HasData(
-                new IdentityRole { Id = "Administrator", Name = "Administrator", NormalizedName = "ADMINISTRATOR" },
-                new IdentityRole { Id = "Manager", Name = "Manager", NormalizedName = "MANAGER" },
-                new IdentityRole { Id = "Service", Name = "Service", NormalizedName = "SERVICE" },
-                new IdentityRole { Id = "User", Name = "User", NormalizedName = "USER" },
-                new IdentityRole { Id = "NotRegister", Name = "NotRegister", NormalizedName = "NOTREGISTER" });
+                new IdentityRole { Id = "Administrator", Name = "Administrator", NormalizedName = "ADMINISTRATOR", ConcurrencyStamp = "a1b2c3d4-0001-0000-0000-000000000000" },
+                new IdentityRole { Id = "Manager",       Name = "Manager",       NormalizedName = "MANAGER",       ConcurrencyStamp = "a1b2c3d4-0002-0000-0000-000000000000" },
+                new IdentityRole { Id = "Service",       Name = "Service",       NormalizedName = "SERVICE",        ConcurrencyStamp = "a1b2c3d4-0003-0000-0000-000000000000" },
+                new IdentityRole { Id = "User",          Name = "User",          NormalizedName = "USER",           ConcurrencyStamp = "a1b2c3d4-0004-0000-0000-000000000000" },
+                new IdentityRole { Id = "NotRegister",   Name = "NotRegister",   NormalizedName = "NOTREGISTER",    ConcurrencyStamp = "a1b2c3d4-0005-0000-0000-000000000000" });
         }
     }
 }

@@ -1,11 +1,9 @@
-﻿using ECommerceApp.API;
-using ECommerceApp.Application.DTO;
+﻿using ECommerceApp.Application.DTO;
 using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Identity.IAM;
 using Flurl.Http;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -40,43 +38,8 @@ namespace ECommerceApp.IntegrationTests.Common
 
                 builder.ConfigureServices(services =>
                 {
-                    // remove only the legacy Context and its options; per-BC DbContexts keep their own options
-                    var contextDb = services.FirstOrDefault(descriptor => descriptor.ServiceType == typeof(Context));
-                    if (contextDb != null)
-                    {
-                        services.Remove(contextDb);
-                        var options = services.Where(r =>
-                            r.ServiceType == typeof(DbContextOptions) ||
-                            r.ServiceType == typeof(DbContextOptions<Context>)).ToList();
-
-                        foreach (var option in options)
-                        {
-                            services.Remove(option);
-                        }
-                    }
-
-                    // Also replace IamDbContext with InMemory
-                    var iamDb = services.FirstOrDefault(descriptor => descriptor.ServiceType == typeof(DbContextOptions<IamDbContext>));
-                    if (iamDb != null)
-                    {
-                        services.Remove(iamDb);
-                    }
-
-                    var servicesProvider = new ServiceCollection()
-                        .AddEntityFrameworkInMemoryDatabase()
-                        .BuildServiceProvider();
-
-                    services.AddDbContext<Context>(options =>
-                    {
-                        options.UseInMemoryDatabase("InMemoryDatabase");
-                        options.UseInternalServiceProvider(servicesProvider);
-                    });
-
-                    services.AddDbContext<IamDbContext>(options =>
-                    {
-                        options.UseInMemoryDatabase("InMemoryIamDatabase");
-                        options.UseInternalServiceProvider(servicesProvider);
-                    });
+                    services.ReplaceDbContextWithInMemory<Context>("InMemoryDatabase");
+                    services.ReplaceDbContextWithInMemory<IamDbContext>("InMemoryIamDatabase");
 
                     services.AddScoped<IDatabaseInitializer, TestDatabaseInitializer>();
                     OverrideServicesImplementation(services);
@@ -139,5 +102,6 @@ namespace ECommerceApp.IntegrationTests.Common
 
             return token;
         }
-    }
-}
+
+            }
+        }

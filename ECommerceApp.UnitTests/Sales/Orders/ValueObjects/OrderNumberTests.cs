@@ -1,6 +1,6 @@
 using ECommerceApp.Domain.Sales.Orders.ValueObjects;
 using ECommerceApp.Domain.Shared;
-using FluentAssertions;
+using AwesomeAssertions;
 using System.Text.RegularExpressions;
 using Xunit;
 

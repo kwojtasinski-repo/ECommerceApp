@@ -1,7 +1,7 @@
 using ECommerceApp.Domain.Shared;
 using ECommerceApp.Domain.Supporting.Currencies;
 using ECommerceApp.Domain.Supporting.Currencies.ValueObjects;
-using FluentAssertions;
+using AwesomeAssertions;
 using System;
 using Xunit;
 

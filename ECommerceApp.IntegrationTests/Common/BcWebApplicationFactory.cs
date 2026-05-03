@@ -3,8 +3,6 @@ using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Web;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.ValueGeneration;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -23,8 +21,6 @@ namespace ECommerceApp.IntegrationTests.Common
     ///         with InMemory databases — no SQL Server dependency.</item>
     ///   <item>Replaces <see cref="IMessageBroker"/> with <see cref="SynchronousMultiHandlerBroker"/>
     ///         — dispatches to ALL registered handlers synchronously.</item>
-    ///   <item>Removes <c>BackgroundMessageDispatcher</c> hosted service to avoid
-    ///         background dispatch competing with the synchronous broker.</item>
     ///   <item>Replaces <see cref="IDbContextMigrator"/> registrations with no-op stubs
     ///         (InMemory databases don't support migrations).</item>
     /// </list>
@@ -41,7 +37,6 @@ namespace ECommerceApp.IntegrationTests.Common
                 ReplaceAllBcDbContextsWithInMemory(services);
                 MakeAllBcDbContextsTransient(services);
                 ReplaceMessageBrokerWithSynchronous(services);
-                RemoveBackgroundMessageDispatcher(services);
                 ReplaceDbContextMigratorsWithNoOp(services);
                 EnsureAllBcDbContextsCreated(services);
             });
@@ -59,38 +54,17 @@ namespace ECommerceApp.IntegrationTests.Common
         /// </summary>
         private static void ReplaceAllBcDbContextsWithInMemory(IServiceCollection services)
         {
-            var optionsDescriptors = services
+            var bcContextTypes = services
                 .Where(d => d.ServiceType.IsGenericType
                     && d.ServiceType.GetGenericTypeDefinition() == typeof(DbContextOptions<>)
                     && d.ServiceType != typeof(DbContextOptions<Context>))
+                .Select(d => d.ServiceType.GetGenericArguments()[0])
                 .ToList();
 
-            foreach (var descriptor in optionsDescriptors)
+            foreach (var dbContextType in bcContextTypes)
             {
-                var dbContextType = descriptor.ServiceType.GetGenericArguments()[0];
                 var dbName = $"BcTestDb_{dbContextType.Name}_{Guid.NewGuid():N}";
-
-                services.Remove(descriptor);
-
-                // Build InMemory options for the specific DbContext type
-                var optionsBuilderType = typeof(DbContextOptionsBuilder<>).MakeGenericType(dbContextType);
-                var optionsBuilder = (DbContextOptionsBuilder)Activator.CreateInstance(optionsBuilderType)!;
-                optionsBuilder.UseInMemoryDatabase(dbName)
-                    .ReplaceService<IValueGeneratorSelector, TypedIdAwareValueGeneratorSelector>();
-
-                services.AddSingleton(descriptor.ServiceType, optionsBuilder.Options);
-            }
-
-            // Also remove any non-generic DbContextOptions that might conflict
-            var nonGenericOptions = services
-                .Where(d => d.ServiceType == typeof(DbContextOptions)
-                    && d.ImplementationType != null
-                    && d.ImplementationType != typeof(DbContextOptions<Context>))
-                .ToList();
-
-            foreach (var d in nonGenericOptions)
-            {
-                services.Remove(d);
+                services.ReplaceDbContextWithInMemory(dbContextType, dbName);
             }
         }
 
@@ -150,23 +124,6 @@ namespace ECommerceApp.IntegrationTests.Common
                 services.Remove(brokerDescriptor);
 
             services.AddScoped<IMessageBroker, SynchronousMultiHandlerBroker>();
-        }
-
-        /// <summary>
-        /// Removes the <c>BackgroundMessageDispatcher</c> hosted service so it doesn't
-        /// race with the synchronous broker reading from the same channel.
-        /// </summary>
-        private static void RemoveBackgroundMessageDispatcher(IServiceCollection services)
-        {
-            var backgroundDispatchers = services
-                .Where(d => d.ServiceType == typeof(IHostedService)
-                    && d.ImplementationType?.Name == "BackgroundMessageDispatcher")
-                .ToList();
-
-            foreach (var d in backgroundDispatchers)
-            {
-                services.Remove(d);
-            }
         }
 
         /// <summary>

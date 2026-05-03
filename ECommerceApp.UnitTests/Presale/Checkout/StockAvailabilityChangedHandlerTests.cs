@@ -1,7 +1,7 @@
 using ECommerceApp.Application.Inventory.Availability.Messages;
 using ECommerceApp.Application.Presale.Checkout.Handlers;
 using ECommerceApp.Domain.Presale.Checkout;
-using FluentAssertions;
+using AwesomeAssertions;
 using Moq;
 using System;
 using System.Threading;

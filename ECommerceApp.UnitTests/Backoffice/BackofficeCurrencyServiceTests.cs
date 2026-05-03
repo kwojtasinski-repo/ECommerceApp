@@ -2,7 +2,7 @@ using ECommerceApp.Application.Backoffice.Services;
 using ECommerceApp.Application.Backoffice.ViewModels;
 using ECommerceApp.Application.Supporting.Currencies.Services;
 using ECommerceApp.Application.Supporting.Currencies.ViewModels;
-using FluentAssertions;
+using AwesomeAssertions;
 using Moq;
 using System.Collections.Generic;
 using System.Threading;

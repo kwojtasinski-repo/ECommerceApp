@@ -2,7 +2,7 @@ using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Application.Sales.Payments.Handlers;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Domain.Sales.Payments;
-using FluentAssertions;
+using AwesomeAssertions;
 using Moq;
 using System;
 using System.Collections.Generic;

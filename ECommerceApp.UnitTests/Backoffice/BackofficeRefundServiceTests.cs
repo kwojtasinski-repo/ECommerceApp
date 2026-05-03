@@ -2,7 +2,7 @@ using ECommerceApp.Application.Backoffice.Services;
 using ECommerceApp.Application.Sales.Fulfillment.Services;
 using ECommerceApp.Application.Sales.Fulfillment.ViewModels;
 using ECommerceApp.Application.Sales.Orders.Services;
-using FluentAssertions;
+using AwesomeAssertions;
 using Moq;
 using System;
 using System.Collections.Generic;

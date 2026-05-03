@@ -1,7 +1,7 @@
 using ECommerceApp.Application.Sales.Coupons.Handlers;
 using ECommerceApp.Application.Sales.Payments.Messages;
 using ECommerceApp.Domain.Sales.Coupons;
-using FluentAssertions;
+using AwesomeAssertions;
 using Moq;
 using System;
 using System.Collections.Generic;

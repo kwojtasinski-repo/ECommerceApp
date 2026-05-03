@@ -1,7 +1,7 @@
 using ECommerceApp.Domain.Catalog.Products;
 using ECommerceApp.Domain.Catalog.Products.Events;
 using ECommerceApp.Domain.Shared;
-using FluentAssertions;
+using AwesomeAssertions;
 using System.Linq;
 using Xunit;
 

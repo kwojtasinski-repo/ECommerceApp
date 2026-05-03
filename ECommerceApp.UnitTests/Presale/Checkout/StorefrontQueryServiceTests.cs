@@ -1,7 +1,7 @@
-ï»¿using ECommerceApp.Application.Presale.Checkout.Contracts;
+using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Domain.Presale.Checkout;
-using FluentAssertions;
+using AwesomeAssertions;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -107,13 +107,13 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             var result = await _service.GetPublishedProductsAsync(10, 1, "");
 
             result.Products.Should().HaveCount(2);
-            // All product IDs collected and passed in one batch Ã¢â‚¬â€ not N separate calls
+            // All product IDs collected and passed in one batch â€” not N separate calls
             _stockSnapshots.Verify(s => s.GetByProductIdsAsync(
                 It.Is<IReadOnlyList<int>>(ids => ids.Count == 2),
                 It.IsAny<CancellationToken>()), Times.Once);
         }
 
-        // â”€â”€ helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // ¦¦ helpers ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
 
         private static async IAsyncEnumerable<StockSnapshot> AsAsyncEnumerable(
             [EnumeratorCancellation] CancellationToken ct = default,

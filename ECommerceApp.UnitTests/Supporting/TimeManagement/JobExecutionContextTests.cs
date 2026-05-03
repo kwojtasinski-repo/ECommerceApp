@@ -1,7 +1,7 @@
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Application.Supporting.TimeManagement.Models;
 using ECommerceApp.Domain.Supporting.TimeManagement;
-using FluentAssertions;
+using AwesomeAssertions;
 using System;
 using System.Threading;
 using System.Threading.Tasks;

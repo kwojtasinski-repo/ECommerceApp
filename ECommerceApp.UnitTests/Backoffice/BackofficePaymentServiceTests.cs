@@ -3,7 +3,7 @@ using ECommerceApp.Application.Backoffice.ViewModels;
 using ECommerceApp.Application.Sales.Orders.Services;
 using ECommerceApp.Application.Sales.Payments.Services;
 using ECommerceApp.Application.Sales.Payments.ViewModels;
-using FluentAssertions;
+using AwesomeAssertions;
 using Moq;
 using System;
 using System.Collections.Generic;

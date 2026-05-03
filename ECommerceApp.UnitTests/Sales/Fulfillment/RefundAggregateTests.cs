@@ -1,6 +1,6 @@
 using ECommerceApp.Domain.Sales.Fulfillment;
 using ECommerceApp.Domain.Shared;
-using FluentAssertions;
+using AwesomeAssertions;
 using System;
 using System.Linq;
 using Xunit;

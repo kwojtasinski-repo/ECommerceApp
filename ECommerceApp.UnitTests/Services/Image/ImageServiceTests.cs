@@ -5,7 +5,7 @@ using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Domain.Catalog.Products;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.AspNetCore.Http;
 using Moq;
 using System;

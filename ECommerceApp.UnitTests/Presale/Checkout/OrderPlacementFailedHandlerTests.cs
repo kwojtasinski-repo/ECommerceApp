@@ -1,6 +1,6 @@
 using ECommerceApp.Application.Presale.Checkout.Handlers;
 using ECommerceApp.Application.Sales.Orders.Messages;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using System.Collections.Generic;

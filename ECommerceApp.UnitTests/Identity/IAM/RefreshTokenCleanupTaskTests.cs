@@ -2,7 +2,7 @@ using ECommerceApp.Application.Identity.IAM.Services;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Application.Supporting.TimeManagement.Models;
 using ECommerceApp.Domain.Identity.IAM;
-using FluentAssertions;
+using AwesomeAssertions;
 using Moq;
 using System.Threading;
 using System.Threading.Tasks;

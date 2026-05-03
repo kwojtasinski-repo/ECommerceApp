@@ -3,7 +3,7 @@ using ECommerceApp.Application.Identity.IAM.DTOs;
 using ECommerceApp.Application.Identity.IAM.Services;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Domain.Identity.IAM;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.AspNetCore.Identity;
 using Moq;
 using System;

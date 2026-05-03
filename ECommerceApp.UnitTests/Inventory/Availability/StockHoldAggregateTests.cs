@@ -1,7 +1,7 @@
 using ECommerceApp.Domain.Inventory.Availability;
 using ECommerceApp.Domain.Inventory.Availability.ValueObjects;
 using ECommerceApp.Domain.Shared;
-using FluentAssertions;
+using AwesomeAssertions;
 using System;
 using Xunit;
 

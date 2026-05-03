@@ -117,8 +117,8 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Migrations
                 schema: "iam",
                 columns: table => new
                 {
-                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    ProviderKey = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    LoginProvider = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    ProviderKey = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     ProviderDisplayName = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false)
                 },
@@ -167,8 +167,8 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Migrations
                 columns: table => new
                 {
                     UserId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    LoginProvider = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    Name = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    LoginProvider = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
+                    Name = table.Column<string>(type: "nvarchar(128)", maxLength: 128, nullable: false),
                     Value = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
@@ -181,6 +181,19 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Migrations
                         principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.InsertData(
+                schema: "iam",
+                table: "Roles",
+                columns: new[] { "Id", "ConcurrencyStamp", "Name", "NormalizedName" },
+                values: new object[,]
+                {
+                    { "Administrator", "a1b2c3d4-0001-0000-0000-000000000000", "Administrator", "ADMINISTRATOR" },
+                    { "Manager",       "a1b2c3d4-0002-0000-0000-000000000000", "Manager",       "MANAGER"       },
+                    { "Service",       "a1b2c3d4-0003-0000-0000-000000000000", "Service",       "SERVICE"       },
+                    { "User",          "a1b2c3d4-0004-0000-0000-000000000000", "User",          "USER"          },
+                    { "NotRegister",   "a1b2c3d4-0005-0000-0000-000000000000", "NotRegister",   "NOTREGISTER"  }
                 });
 
             migrationBuilder.CreateIndex(
@@ -233,6 +246,12 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DeleteData(
+                schema: "iam",
+                table: "Roles",
+                keyColumn: "Id",
+                keyValues: new object[] { "Administrator", "Manager", "Service", "User", "NotRegister" });
+
             migrationBuilder.DropTable(
                 name: "RoleClaims",
                 schema: "iam");

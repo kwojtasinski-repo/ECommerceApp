@@ -5,7 +5,7 @@ using ECommerceApp.Application.AccountProfile.Services;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Mapping;
 using ECommerceApp.Domain.AccountProfile;
-using FluentAssertions;
+using AwesomeAssertions;
 using Moq;
 using System.Threading.Tasks;
 using Xunit;

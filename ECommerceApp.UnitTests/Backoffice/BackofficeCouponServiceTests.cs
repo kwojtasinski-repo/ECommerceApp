@@ -2,7 +2,7 @@ using ECommerceApp.Application.Backoffice.Services;
 using ECommerceApp.Application.Backoffice.ViewModels;
 using ECommerceApp.Application.Sales.Coupons.Services;
 using ECommerceApp.Application.Sales.Coupons.ViewModels;
-using FluentAssertions;
+using AwesomeAssertions;
 using Moq;
 using System.Collections.Generic;
 using System.Threading;

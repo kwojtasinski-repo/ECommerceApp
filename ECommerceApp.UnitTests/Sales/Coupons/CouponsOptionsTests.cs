@@ -1,5 +1,5 @@
 using ECommerceApp.Application.Sales.Coupons;
-using FluentAssertions;
+using AwesomeAssertions;
 using Xunit;
 
 namespace ECommerceApp.UnitTests.Sales.Coupons

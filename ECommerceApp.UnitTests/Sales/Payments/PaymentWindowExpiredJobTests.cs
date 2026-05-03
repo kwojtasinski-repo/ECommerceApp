@@ -4,7 +4,7 @@ using ECommerceApp.Application.Sales.Payments.Messages;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Application.Supporting.TimeManagement.Models;
 using ECommerceApp.Domain.Sales.Payments;
-using FluentAssertions;
+using AwesomeAssertions;
 using Moq;
 using System;
 using System.Threading;

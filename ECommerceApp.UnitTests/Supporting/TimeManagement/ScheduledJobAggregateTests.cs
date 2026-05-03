@@ -1,5 +1,5 @@
 using ECommerceApp.Domain.Supporting.TimeManagement;
-using FluentAssertions;
+using AwesomeAssertions;
 using System;
 using Xunit;
 

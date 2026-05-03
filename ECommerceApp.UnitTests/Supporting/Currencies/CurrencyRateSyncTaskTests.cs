@@ -2,7 +2,7 @@ using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Supporting.Currencies.Services;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Application.Supporting.TimeManagement.Models;
-using FluentAssertions;
+using AwesomeAssertions;
 using Moq;
 using System;
 using System.Threading;

@@ -4,7 +4,7 @@ using ECommerceApp.Application.Identity.IAM.ViewModels;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Domain.Identity.IAM;
 using ECommerceApp.UnitTests.Common;
-using FluentAssertions;
+using AwesomeAssertions;
 using Microsoft.AspNetCore.Identity;
 using Moq;
 using System;

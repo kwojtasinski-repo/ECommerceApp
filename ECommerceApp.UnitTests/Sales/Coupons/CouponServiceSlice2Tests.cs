@@ -7,7 +7,7 @@ using ECommerceApp.Application.Sales.Coupons.Results;
 using ECommerceApp.Application.Sales.Coupons.Rules;
 using ECommerceApp.Application.Sales.Coupons.Services;
 using ECommerceApp.Domain.Sales.Coupons;
-using FluentAssertions;
+using AwesomeAssertions;
 using Moq;
 using System.Collections.Generic;
 using System.Text.Json;

@@ -1,6 +1,6 @@
 using ECommerceApp.Application.Sales.Coupons.Rules;
 using ECommerceApp.Domain.Sales.Coupons;
-using FluentAssertions;
+using AwesomeAssertions;
 using System.Collections.Generic;
 using Xunit;
 

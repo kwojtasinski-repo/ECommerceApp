@@ -3,7 +3,7 @@ using ECommerceApp.Application.Backoffice.ViewModels;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Identity.IAM.Services;
 using ECommerceApp.Application.Identity.IAM.ViewModels;
-using FluentAssertions;
+using AwesomeAssertions;
 using Moq;
 using System.Collections.Generic;
 using System.Threading;
