@@ -21,7 +21,11 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
             services.AddDbContext<IamDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
-            services.AddDefaultIdentity<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = true)
+            services.AddDefaultIdentity<ApplicationUser>(options =>
+                {
+                    options.SignIn.RequireConfirmedAccount = true;
+                    options.Stores.SchemaVersion = IdentitySchemaVersions.Version2;
+                })
                 .AddRoles<IdentityRole>()
                 .AddEntityFrameworkStores<IamDbContext>();
 
