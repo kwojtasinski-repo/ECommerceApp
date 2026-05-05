@@ -1,9 +1,6 @@
-using AutoMapper;
-using AutoMapper.Internal;
 using ECommerceApp.Application.AccountProfile.DTOs;
 using ECommerceApp.Application.AccountProfile.Services;
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.Application.Mapping;
 using ECommerceApp.Domain.AccountProfile;
 using AwesomeAssertions;
 using Moq;
@@ -15,20 +12,13 @@ namespace ECommerceApp.UnitTests.AccountProfile
     public class UserProfileServiceTests
     {
         private readonly Mock<IUserProfileRepository> _repository;
-        private readonly IMapper _mapper;
 
         public UserProfileServiceTests()
         {
             _repository = new Mock<IUserProfileRepository>();
-            var config = new MapperConfiguration(cfg =>
-            {
-                cfg.AddProfile<MappingProfile>();
-                cfg.Internal().MethodMappingEnabled = false;
-            });
-            _mapper = config.CreateMapper();
         }
 
-        private UserProfileService CreateService() => new(_repository.Object, _mapper);
+        private UserProfileService CreateService() => new(_repository.Object);
 
         private static UserProfile CreateProfile()
         {

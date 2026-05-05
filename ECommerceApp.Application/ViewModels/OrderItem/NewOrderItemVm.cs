@@ -1,4 +1,4 @@
-﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.DTO;
 using FluentValidation;
 using System.Collections.Generic;
 using static ECommerceApp.Application.DTO.OrderItemDto;

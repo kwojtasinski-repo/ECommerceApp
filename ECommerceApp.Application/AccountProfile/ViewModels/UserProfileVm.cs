@@ -1,9 +1,6 @@
-using AutoMapper;
-using ECommerceApp.Application.Mapping;
-
 namespace ECommerceApp.Application.AccountProfile.ViewModels
 {
-    public class UserProfileVm : IMapFrom<global::ECommerceApp.Domain.AccountProfile.UserProfile>
+    public class UserProfileVm
     {
         public int Id { get; set; }
         public string UserId { get; set; } = default!;
@@ -15,9 +12,17 @@ namespace ECommerceApp.Application.AccountProfile.ViewModels
         public string Email { get; set; } = default!;
         public string PhoneNumber { get; set; } = default!;
 
-        public void Mapping(Profile profile)
+        public static UserProfileVm FromDomain(global::ECommerceApp.Domain.AccountProfile.UserProfile s) => new()
         {
-            profile.CreateMap<global::ECommerceApp.Domain.AccountProfile.UserProfile, UserProfileVm>();
-        }
+            Id = s.Id != null ? s.Id.Value : 0,
+            UserId = s.UserId,
+            FirstName = s.FirstName,
+            LastName = s.LastName,
+            IsCompany = s.IsCompany,
+            NIP = s.NIP?.Value,
+            CompanyName = s.CompanyName?.Value,
+            Email = s.Email.Value,
+            PhoneNumber = s.PhoneNumber.Value
+        };
     }
 }

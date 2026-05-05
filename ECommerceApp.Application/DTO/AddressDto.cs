@@ -1,11 +1,9 @@
-﻿using AutoMapper;
-using ECommerceApp.Application.Mapping;
 using ECommerceApp.Domain.Model;
 using FluentValidation;
 
 namespace ECommerceApp.Application.DTO
 {
-    public class AddressDto : IMapFrom<Address>
+    public class AddressDto
     {
         public int? Id { get; set; }
         public string Street { get; set; }
@@ -15,14 +13,6 @@ namespace ECommerceApp.Application.DTO
         public string City { get; set; }
         public string Country { get; set; }
         public int CustomerId { get; set; }
-
-        public void Mapping(Profile profile)
-        {
-            profile.CreateMap<AddressDto, Address>()
-                .ForMember(a => a.ZipCode, a => a.MapFrom(ad => MapToZipCodeNumber(ad.ZipCode)))
-                .ReverseMap()
-                .ForMember(a => a.ZipCode, a => a.MapFrom(ad => MapToZipCode(ad.ZipCode)));
-        }
 
         public static string MapToZipCode(int zipCodeNumber)
         {

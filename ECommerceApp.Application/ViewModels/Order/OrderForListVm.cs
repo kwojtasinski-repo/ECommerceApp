@@ -1,13 +1,11 @@
-﻿using AutoMapper;
 using ECommerceApp.Application.DTO;
-using ECommerceApp.Application.Mapping;
 using ECommerceApp.Application.ViewModels.OrderItem;
 using System;
 using System.Collections.Generic;
 
 namespace ECommerceApp.Application.ViewModels.Order
 {
-    public class OrderForListVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Order>
+    public class OrderForListVm : BaseVm
     {
         public string Number { get; set; }
         public decimal Cost { get; set; }
@@ -24,13 +22,6 @@ namespace ECommerceApp.Application.ViewModels.Order
         public string CurrencyCode { get; set; }
 
         public ICollection<OrderItemForListVm> OrderItems { get; set; }
-
-        public void Mapping(Profile profile)
-        {
-            profile.CreateMap<ECommerceApp.Domain.Model.Order, OrderForListVm>()
-                .ForMember(oi => oi.OrderItems, opt => opt.MapFrom(i => i.OrderItems))
-                .ForMember(o => o.CurrencyCode, opt => opt.MapFrom(or => or.Currency.Code));
-        }
 
         public NewOrderVm MapToNewOrderVm()
         {

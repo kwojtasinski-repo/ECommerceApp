@@ -1,9 +1,7 @@
-﻿using AutoMapper;
-using ECommerceApp.Application.Mapping;
 
 namespace ECommerceApp.Application.ViewModels.OrderItem
 {
-    public class OrderItemForListVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.OrderItem>
+    public class OrderItemForListVm : BaseVm
     {
         public int ItemId { get; set; }
         public int ItemOrderQuantity { get; set; }
@@ -16,15 +14,5 @@ namespace ECommerceApp.Application.ViewModels.OrderItem
         public string ItemBrand { get; set; }
         public string ItemType { get; set; }
         public decimal ItemCost { get; set; }
-
-        public void Mapping(Profile profile)
-        {
-            profile.CreateMap<OrderItemForListVm, ECommerceApp.Domain.Model.OrderItem>().ReverseMap()
-                .ForMember(i => i.ItemName, opt => opt.MapFrom(i => i.Item.Name))
-                .ForMember(i => i.ItemQuantityAvailable, opt => opt.MapFrom(i => i.Item.Quantity))
-                .ForMember(i => i.ItemBrand, opt => opt.MapFrom(i => i.Item.Brand.Name))
-                .ForMember(i => i.ItemType, opt => opt.MapFrom(i => i.Item.Type.Name))
-                .ForMember(i => i.ItemCost, opt => opt.MapFrom(i => i.Item.Cost));
-        }
     }
 }

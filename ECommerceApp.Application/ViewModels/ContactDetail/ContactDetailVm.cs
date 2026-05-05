@@ -1,11 +1,10 @@
-﻿using ECommerceApp.Application.DTO;
-using ECommerceApp.Application.Mapping;
+using ECommerceApp.Application.DTO;
 using FluentValidation;
 using static ECommerceApp.Application.DTO.ContactDetailDto;
 
 namespace ECommerceApp.Application.ViewModels.ContactDetail
 {
-    public class ContactDetailVm : BaseVm, IMapFrom<Domain.Model.ContactDetail>
+    public class ContactDetailVm : BaseVm
     {
         public ContactDetailDto ContactDetail { get; set; }
     }

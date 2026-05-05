@@ -20,7 +20,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
         public CurrencyServiceTests()
         {
             _currencyRepository = new Mock<ICurrencyRepository>();
-            _sut = new CurrencyService(_currencyRepository.Object, _mapper);
+            _sut = new CurrencyService(_currencyRepository.Object);
         }
 
         [Fact]

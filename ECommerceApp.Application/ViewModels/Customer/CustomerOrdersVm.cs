@@ -1,10 +1,8 @@
-﻿using AutoMapper;
-using ECommerceApp.Application.Mapping;
 using System;
 
 namespace ECommerceApp.Application.ViewModels.Customer
 {
-    public class CustomerOrdersVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Order>
+    public class CustomerOrdersVm : BaseVm
     {
         public string Number { get; set; }
         public decimal Cost { get; set; }
@@ -17,22 +15,5 @@ namespace ECommerceApp.Application.ViewModels.Customer
         public int? PaymentId { get; set; }
         public bool IsPaid { get; set; }
         public int? RefundId { get; set; }
-
-        public void Mapping(Profile profile)
-        {
-            profile.CreateMap<ECommerceApp.Domain.Model.Order, CustomerOrdersVm>()
-                .ForMember(o => o.Id, opt => opt.MapFrom(or => or.Id))
-                .ForMember(o => o.Number, opt => opt.MapFrom(or => or.Number))
-                .ForMember(o => o.Cost, opt => opt.MapFrom(or => or.Cost))
-                .ForMember(o => o.Ordered, opt => opt.MapFrom(or => or.Ordered))
-                .ForMember(o => o.Delivered, opt => opt.MapFrom(or => or.Delivered))
-                .ForMember(o => o.IsDelivered, opt => opt.MapFrom(or => or.IsDelivered))
-                .ForMember(o => o.CouponUsedId, opt => opt.MapFrom(or => or.CouponUsedId))
-                .ForMember(o => o.CustomerId, opt => opt.MapFrom(or => or.CustomerId))
-                .ForMember(o => o.UserId, opt => opt.MapFrom(or => or.UserId))
-                .ForMember(o => o.PaymentId, opt => opt.MapFrom(or => or.PaymentId))
-                .ForMember(o => o.IsPaid, opt => opt.MapFrom(or => or.IsPaid))
-                .ForMember(o => o.RefundId, opt => opt.MapFrom(or => or.RefundId));
-        }
     }
 }

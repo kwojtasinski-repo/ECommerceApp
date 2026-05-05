@@ -1,9 +1,6 @@
-using AutoMapper;
-using ECommerceApp.Application.Mapping;
-
 namespace ECommerceApp.Application.AccountProfile.ViewModels
 {
-    public class AddressVm : IMapFrom<global::ECommerceApp.Domain.AccountProfile.Address>
+    public class AddressVm
     {
         public int Id { get; set; }
         public string Street { get; set; } = default!;
@@ -13,10 +10,15 @@ namespace ECommerceApp.Application.AccountProfile.ViewModels
         public string City { get; set; } = default!;
         public string Country { get; set; } = default!;
 
-        public void Mapping(Profile profile)
+        public static AddressVm FromDomain(global::ECommerceApp.Domain.AccountProfile.Address s) => new()
         {
-            profile.CreateMap<global::ECommerceApp.Domain.AccountProfile.Address, AddressVm>()
-                .ForMember(d => d.FlatNumber, opt => opt.MapFrom(s => s.FlatNumber == null ? (int?)null : s.FlatNumber.Value));
-        }
+            Id = s.Id,
+            Street = s.Street.Value,
+            BuildingNumber = s.BuildingNumber.Value,
+            FlatNumber = s.FlatNumber == null ? null : s.FlatNumber.Value,
+            ZipCode = s.ZipCode.Value,
+            City = s.City.Value,
+            Country = s.Country.Value
+        };
     }
 }

@@ -1,11 +1,9 @@
-﻿using AutoMapper;
-using ECommerceApp.Application.Mapping;
 using FluentValidation;
 using System;
 
 namespace ECommerceApp.Application.ViewModels.Payment
 {
-    public class PaymentVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Payment>
+    public class PaymentVm : BaseVm
     {
         public string Number { get; set; }
         public DateTime DateOfOrderPayment { get; set; }
@@ -17,18 +15,6 @@ namespace ECommerceApp.Application.ViewModels.Payment
         public decimal Cost { get; set; }
         public string CurrencyName { get; set; }
         public Domain.Model.PaymentState State { get; set; }
-
-        public void Mapping(Profile profile)
-        {
-            profile.CreateMap<PaymentVm, ECommerceApp.Domain.Model.Payment>()
-                .ForMember(p => p.DateOfOrderPayment, opt => opt.MapFrom(p => SetFormat(p.DateOfOrderPayment)))
-                .ReverseMap()
-                .ForMember(o => o.OrderNumber, opt => opt.MapFrom(o => o.Order.Number))
-                .ForMember(c => c.CustomerName, opt => opt.MapFrom(c => (c.Customer.NIP != null && c.Customer.CompanyName != null) ?
-                            c.Customer.FirstName + " " + c.Customer.LastName + " " + c.Customer.NIP + " " + c.Customer.CompanyName
-                            : c.Customer.FirstName + " " + c.Customer.LastName))
-                .ForMember(p => p.CurrencyName, opt => opt.MapFrom(c => c.Currency.Code));
-        }
 
         private static DateTime SetFormat(DateTime dateTime)
         {

@@ -1,13 +1,11 @@
-﻿using AutoMapper;
 using ECommerceApp.Application.Catalog.Images.ViewModels;
 using ECommerceApp.Application.DTO;
-using ECommerceApp.Application.Mapping;
 using FluentValidation;
 using System.Collections.Generic;
 
 namespace ECommerceApp.Application.ViewModels.Item
 {
-    public class NewItemVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Item>
+    public class NewItemVm : BaseVm
     {
         public string Name { get; set; }
         public decimal Cost { get; set; }
@@ -22,13 +20,6 @@ namespace ECommerceApp.Application.ViewModels.Item
         public List<TagDto> Tags { get; set; } = new List<TagDto>();
         public List<int> ItemTags { get; set; } = new List<int>();
         public List<GetImageVm> Images { get; set; } = new List<GetImageVm>();
-
-        public void Mapping(Profile profile)
-        {
-            profile.CreateMap<NewItemVm, ECommerceApp.Domain.Model.Item>().ReverseMap()
-                .ForMember(p => p.ItemTags, opt => opt.MapFrom(ps => ps.ItemTags))
-                .ForMember(p => p.Images, opt => opt.Ignore());
-        }
     }
 
     public class NewItemValidation : AbstractValidator<NewItemVm>

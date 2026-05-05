@@ -1,4 +1,3 @@
-using AutoMapper;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.External.Client;
 using ECommerceApp.Application.External.POCO;
@@ -15,7 +14,6 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
 {
     internal sealed class CurrencyRateService : ICurrencyRateService
     {
-        private readonly IMapper _mapper;
         private readonly ICurrencyRateRepository _currencyRateRepo;
         private readonly ICurrencyRepository _currencyRepo;
         private readonly INBPClient _nbpClient;
@@ -25,12 +23,10 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
         public CurrencyRateService(
             ICurrencyRateRepository currencyRateRepo,
             ICurrencyRepository currencyRepo,
-            IMapper mapper,
             INBPClient nbpClient)
         {
             _currencyRateRepo = currencyRateRepo;
             _currencyRepo = currencyRepo;
-            _mapper = mapper;
             _nbpClient = nbpClient;
         }
 
@@ -48,11 +44,11 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
             if (id == Currency.PlnId)
             {
                 var plnRate = await GetOrCreatePlnRateAsync(id, date);
-                return _mapper.Map<CurrencyRateVm>(plnRate);
+                return CurrencyRateVm.FromDomain(plnRate);
             }
 
             var currencyRate = await GetOrFetchRateAsync(currency, id, date);
-            return _mapper.Map<CurrencyRateVm>(currencyRate);
+            return CurrencyRateVm.FromDomain(currencyRate);
         }
 
         public async Task<CurrencyRateVm> GetLatestRateAsync(int currencyId)
@@ -66,11 +62,11 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
             if (id == Currency.PlnId)
             {
                 var plnRate = await GetOrCreatePlnRateAsync(id, date);
-                return _mapper.Map<CurrencyRateVm>(plnRate);
+                return CurrencyRateVm.FromDomain(plnRate);
             }
 
             var currencyRate = await GetOrFetchRateAsync(currency, id, date);
-            return _mapper.Map<CurrencyRateVm>(currencyRate);
+            return CurrencyRateVm.FromDomain(currencyRate);
         }
 
         private async Task<CurrencyRate> GetOrCreatePlnRateAsync(CurrencyId currencyId, DateTime date)        {

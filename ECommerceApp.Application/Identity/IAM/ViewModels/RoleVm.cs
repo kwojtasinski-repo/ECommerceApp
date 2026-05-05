@@ -1,17 +1,16 @@
-using AutoMapper;
-using ECommerceApp.Application.Mapping;
 using Microsoft.AspNetCore.Identity;
 
 namespace ECommerceApp.Application.Identity.IAM.ViewModels
 {
-    public class RoleVm : IMapFrom<IdentityRole>
+    public class RoleVm
     {
         public string Id { get; set; }
         public string Name { get; set; }
 
-        public void Mapping(Profile profile)
+        public static RoleVm FromDomain(IdentityRole s) => new()
         {
-            profile.CreateMap<IdentityRole, RoleVm>();
-        }
+            Id = s.Id,
+            Name = s.Name
+        };
     }
 }

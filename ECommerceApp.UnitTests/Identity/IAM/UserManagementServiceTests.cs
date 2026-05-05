@@ -28,7 +28,7 @@ namespace ECommerceApp.UnitTests.Identity.IAM
         }
 
         private UserManagementService CreateService()
-            => new(_userManager.Object, _roleManager.Object, _mapper);
+            => new(_userManager.Object, _roleManager.Object);
 
         [Fact]
         public async Task GetUserByIdAsync_NonExistentId_ShouldThrowBusinessException()

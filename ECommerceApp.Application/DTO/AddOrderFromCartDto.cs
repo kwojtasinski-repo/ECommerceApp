@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ECommerceApp.Application.DTO

@@ -1,11 +1,9 @@
-using AutoMapper;
-using ECommerceApp.Application.Mapping;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace ECommerceApp.Application.Catalog.Products.ViewModels
 {
-    public class ProductDetailsVm : IMapFrom<Domain.Catalog.Products.Product>
+    public class ProductDetailsVm
     {
         public int Id { get; set; }
         public string Name { get; set; }
@@ -18,19 +16,16 @@ namespace ECommerceApp.Application.Catalog.Products.ViewModels
         public List<int> TagIds { get; set; } = new();
         public List<string> TagNames { get; set; } = new();
 
-        public void Mapping(Profile profile)
+        public static ProductDetailsVm FromDomain(Domain.Catalog.Products.Product s) => new()
         {
-            profile.CreateMap<Domain.Catalog.Products.Product, ProductDetailsVm>()
-                .ForMember(d => d.Name, opt => opt.MapFrom(s => s.Name.Value))
-                .ForMember(d => d.Cost, opt => opt.MapFrom(s => s.Cost.Amount))
-                .ForMember(d => d.Description, opt => opt.MapFrom(s => s.Description.Value))
-                .ForMember(d => d.CategoryId, opt => opt.MapFrom(s => s.CategoryId.Value))
-                .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()))
-                .ForMember(d => d.Images, opt => opt.Ignore())
-                .ForMember(d => d.CategoryName, opt => opt.Ignore())
-                .ForMember(d => d.TagNames, opt => opt.Ignore())
-                .ForMember(d => d.TagIds, opt => opt.MapFrom(s => s.ProductTags.Select(t => t.TagId.Value).ToList()));
-        }
+            Id = s.Id.Value,
+            Name = s.Name.Value,
+            Cost = s.Cost.Amount,
+            Description = s.Description.Value,
+            CategoryId = s.CategoryId.Value,
+            Status = s.Status.ToString(),
+            TagIds = s.ProductTags.Select(t => t.TagId.Value).ToList()
+        };
     }
 
     public class ProductImageVm

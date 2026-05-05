@@ -28,7 +28,6 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
             _sut = new CurrencyRateService(
                 _currencyRateRepository.Object,
                 _currencyRepository.Object,
-                _mapper,
                 _nbpClient.Object);
         }
 

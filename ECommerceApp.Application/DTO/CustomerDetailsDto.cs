@@ -1,5 +1,3 @@
-﻿using AutoMapper;
-using ECommerceApp.Application.Mapping;
 using FluentValidation;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,7 +5,7 @@ using static ECommerceApp.Application.DTO.ContactDetailDto;
 
 namespace ECommerceApp.Application.DTO
 {
-    public class CustomerDetailsDto : IMapFrom<CustomerDetailsDto>
+    public class CustomerDetailsDto
     {
         public int Id { get; set; }
         public string UserId { get; set; }
@@ -19,13 +17,6 @@ namespace ECommerceApp.Application.DTO
 
         public List<ContactDetailDto> ContactDetails { get; set; } = new();
         public virtual List<AddressDto> Addresses { get; set; } = new();
-
-        public void Mapping(Profile profile)
-        {
-            profile.CreateMap<CustomerDetailsDto, Domain.Model.Customer>().ReverseMap()
-                .ForMember(p => p.ContactDetails, opt => opt.MapFrom(ps => ps.ContactDetails))
-                .ForMember(p => p.Addresses, opt => opt.MapFrom(ps => ps.Addresses));
-        }
     }
 
     public class CustomerDetailsDtoValidator : AbstractValidator<CustomerDetailsDto>

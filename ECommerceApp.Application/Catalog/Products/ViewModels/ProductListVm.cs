@@ -1,10 +1,8 @@
-using AutoMapper;
-using ECommerceApp.Application.Mapping;
 using System.Collections.Generic;
 
 namespace ECommerceApp.Application.Catalog.Products.ViewModels
 {
-    public class ProductForListVm : IMapFrom<Domain.Catalog.Products.Product>
+    public class ProductForListVm
     {
         public int Id { get; set; }
         public string Name { get; set; }
@@ -13,15 +11,14 @@ namespace ECommerceApp.Application.Catalog.Products.ViewModels
         public int CategoryId { get; set; }
         public string? MainImageUrl { get; set; }
 
-        public void Mapping(Profile profile)
+        public static ProductForListVm FromDomain(Domain.Catalog.Products.Product s) => new()
         {
-            profile.CreateMap<Domain.Catalog.Products.Product, ProductForListVm>()
-                .ForMember(d => d.Name, opt => opt.MapFrom(s => s.Name.Value))
-                .ForMember(d => d.Cost, opt => opt.MapFrom(s => s.Cost.Amount))
-                .ForMember(d => d.CategoryId, opt => opt.MapFrom(s => s.CategoryId.Value))
-                .ForMember(d => d.Status, opt => opt.MapFrom(s => s.Status.ToString()))
-                .ForMember(d => d.MainImageUrl, opt => opt.Ignore());
-        }
+            Id = s.Id.Value,
+            Name = s.Name.Value,
+            Cost = s.Cost.Amount,
+            CategoryId = s.CategoryId.Value,
+            Status = s.Status.ToString()
+        };
     }
 
     public class ProductListVm

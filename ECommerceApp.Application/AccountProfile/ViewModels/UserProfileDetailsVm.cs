@@ -1,10 +1,9 @@
-using AutoMapper;
-using ECommerceApp.Application.Mapping;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace ECommerceApp.Application.AccountProfile.ViewModels
 {
-    public class UserProfileDetailsVm : IMapFrom<global::ECommerceApp.Domain.AccountProfile.UserProfile>
+    public class UserProfileDetailsVm
     {
         public int Id { get; set; }
         public string UserId { get; set; } = default!;
@@ -17,11 +16,18 @@ namespace ECommerceApp.Application.AccountProfile.ViewModels
         public string PhoneNumber { get; set; } = default!;
         public List<AddressVm> Addresses { get; set; } = new();
 
-        public void Mapping(Profile profile)
+        public static UserProfileDetailsVm FromDomain(global::ECommerceApp.Domain.AccountProfile.UserProfile s) => new()
         {
-            profile.CreateMap<global::ECommerceApp.Domain.AccountProfile.UserProfile, UserProfileDetailsVm>()
-                .ForMember(d => d.Id, opt => opt.MapFrom(s => s.Id != null ? s.Id.Value : 0))
-                .ForMember(d => d.Addresses, opt => opt.MapFrom(s => s.Addresses));
-        }
+            Id = s.Id != null ? s.Id.Value : 0,
+            UserId = s.UserId,
+            FirstName = s.FirstName,
+            LastName = s.LastName,
+            IsCompany = s.IsCompany,
+            NIP = s.NIP?.Value,
+            CompanyName = s.CompanyName?.Value,
+            Email = s.Email.Value,
+            PhoneNumber = s.PhoneNumber.Value,
+            Addresses = s.Addresses?.Select(AddressVm.FromDomain).ToList() ?? new()
+        };
     }
 }

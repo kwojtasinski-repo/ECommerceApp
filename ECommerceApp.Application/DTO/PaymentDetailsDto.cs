@@ -1,10 +1,8 @@
-﻿using AutoMapper;
-using ECommerceApp.Application.Mapping;
 using System;
 
 namespace ECommerceApp.Application.DTO
 {
-    public class PaymentDetailsDto : IMapFrom<Domain.Model.Payment>
+    public class PaymentDetailsDto
     {
         public int Id { get; set; }
         public string Number { get; set; }
@@ -18,15 +16,5 @@ namespace ECommerceApp.Application.DTO
         public decimal Cost { get; set; }
         public int CurrencyId { get; set; }
         public string CurrencyName { get; set; }
-
-        public void Mapping(Profile profile)
-        {
-            profile.CreateMap<Domain.Model.Payment, PaymentDetailsDto>()
-                .ForMember(p => p.Status, opt => opt.MapFrom(src => src.State.ToString()))
-                .ForMember(p => p.FirstName, opt => opt.MapFrom(src => src.Customer.FirstName))
-                .ForMember(p => p.LastName, opt => opt.MapFrom(src => src.Customer.LastName))
-                .ForMember(p => p.OrderNumber, opt => opt.MapFrom(src => src.Order.Number))
-                .ForMember(p => p.CurrencyName, opt => opt.MapFrom(src => src.Currency.Code));
-        }
     }
 }

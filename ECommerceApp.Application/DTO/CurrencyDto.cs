@@ -1,19 +1,12 @@
-﻿using AutoMapper;
-using ECommerceApp.Application.Mapping;
 using FluentValidation;
 
 namespace ECommerceApp.Application.DTO
 {
-    public class CurrencyDto : IMapFrom<ECommerceApp.Domain.Model.Currency>
+    public class CurrencyDto
     {
         public int Id { get; set; }
         public string Code { get; set; }
         public string Description { get; set; }
-
-        public void Mapping(Profile profile)
-        {
-            profile.CreateMap<CurrencyDto, ECommerceApp.Domain.Model.Currency>().ReverseMap();
-        }
     }
 
     public class CurrencyDtoValidator : AbstractValidator<CurrencyDto>

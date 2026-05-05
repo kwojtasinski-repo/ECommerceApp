@@ -1,4 +1,4 @@
-﻿namespace ECommerceApp.Application.DTO
+namespace ECommerceApp.Application.DTO
 {
     public class ImageInfoDto
     {

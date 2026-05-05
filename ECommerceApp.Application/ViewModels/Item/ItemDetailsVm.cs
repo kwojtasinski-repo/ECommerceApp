@@ -1,11 +1,9 @@
-﻿using AutoMapper;
 using ECommerceApp.Application.Catalog.Images.ViewModels;
-using ECommerceApp.Application.Mapping;
 using System.Collections.Generic;
 
 namespace ECommerceApp.Application.ViewModels.Item
 {
-    public class ItemDetailsVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Item>
+    public class ItemDetailsVm : BaseVm
     {
         public string Name { get; set; }
         public decimal Cost { get; set; }
@@ -21,14 +19,5 @@ namespace ECommerceApp.Application.ViewModels.Item
 
         public List<ItemTagForListVm> ItemTags { get; set; }
         public List<GetImageVm> Images { get; set; }
-
-        public void Mapping(Profile profile)
-        {
-            profile.CreateMap<ECommerceApp.Domain.Model.Item, ItemDetailsVm>()
-                .ForMember(i => i.BrandName, opt => opt.MapFrom(d => d.Brand.Name))
-                .ForMember(i => i.TypeName, opt => opt.MapFrom(d => d.Type.Name))
-                .ForMember(i => i.CurrencyName, opt => opt.MapFrom(d => d.Currency.Code))
-                .ForMember(i => i.Images, opt => opt.Ignore());
-        }
     }
 }

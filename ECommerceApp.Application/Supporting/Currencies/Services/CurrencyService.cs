@@ -1,9 +1,9 @@
-using AutoMapper;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Supporting.Currencies.DTOs;
 using ECommerceApp.Application.Supporting.Currencies.ViewModels;
 using ECommerceApp.Domain.Supporting.Currencies;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.Supporting.Currencies.Services
@@ -11,12 +11,10 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
     internal sealed class CurrencyService : ICurrencyService
     {
         private readonly ICurrencyRepository _repo;
-        private readonly IMapper _mapper;
 
-        public CurrencyService(ICurrencyRepository repo, IMapper mapper)
+        public CurrencyService(ICurrencyRepository repo)
         {
             _repo = repo;
-            _mapper = mapper;
         }
 
         public async Task<int> AddAsync(CreateCurrencyDto dto)
@@ -60,13 +58,13 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
         public async Task<CurrencyVm> GetByIdAsync(int id)
         {
             var currency = await _repo.GetByIdAsync(new CurrencyId(id));
-            return currency is null ? null : _mapper.Map<CurrencyVm>(currency);
+            return currency is null ? null : CurrencyVm.FromDomain(currency);
         }
 
         public async Task<List<CurrencyVm>> GetAllAsync()
         {
             var currencies = await _repo.GetAllAsync();
-            return _mapper.Map<List<CurrencyVm>>(currencies);
+            return currencies.Select(CurrencyVm.FromDomain).ToList();
         }
 
         public async Task<CurrencyListVm> GetAllAsync(int pageSize, int pageNo, string searchString)
@@ -76,7 +74,7 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
 
             return new CurrencyListVm
             {
-                Currencies = _mapper.Map<List<CurrencyVm>>(currencies),
+                Currencies = currencies.Select(CurrencyVm.FromDomain).ToList(),
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,

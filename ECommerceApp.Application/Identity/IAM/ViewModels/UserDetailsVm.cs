@@ -1,12 +1,10 @@
-using AutoMapper;
-using ECommerceApp.Application.Mapping;
 using ECommerceApp.Domain.Identity.IAM;
 using FluentValidation;
 using System.Collections.Generic;
 
 namespace ECommerceApp.Application.Identity.IAM.ViewModels
 {
-    public class UserDetailsVm : IMapFrom<ApplicationUser>
+    public class UserDetailsVm
     {
         public string Id { get; set; }
         public string UserName { get; set; }
@@ -16,10 +14,13 @@ namespace ECommerceApp.Application.Identity.IAM.ViewModels
         public IReadOnlyList<RoleVm> AvailableRoles { get; set; } = new List<RoleVm>();
         public string NewPassword { get; set; }
 
-        public void Mapping(Profile profile)
+        public static UserDetailsVm FromDomain(ApplicationUser s) => new()
         {
-            profile.CreateMap<ApplicationUser, UserDetailsVm>();
-        }
+            Id = s.Id,
+            UserName = s.UserName,
+            Email = s.Email,
+            EmailConfirmed = s.EmailConfirmed
+        };
     }
 
     public class UserDetailsVmValidator : AbstractValidator<UserDetailsVm>

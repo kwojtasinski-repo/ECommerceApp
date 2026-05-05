@@ -1,9 +1,9 @@
-using AutoMapper;
 using ECommerceApp.Application.Catalog.Products.DTOs;
 using ECommerceApp.Application.Catalog.Products.ViewModels;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Domain.Catalog.Products;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.Catalog.Products.Services
@@ -11,12 +11,10 @@ namespace ECommerceApp.Application.Catalog.Products.Services
     internal sealed class CategoryService : ICategoryService
     {
         private readonly ICategoryRepository _repo;
-        private readonly IMapper _mapper;
 
-        public CategoryService(ICategoryRepository repo, IMapper mapper)
+        public CategoryService(ICategoryRepository repo)
         {
             _repo = repo;
-            _mapper = mapper;
         }
 
         public async Task<int> AddCategory(CreateCategoryDto dto)
@@ -51,13 +49,13 @@ namespace ECommerceApp.Application.Catalog.Products.Services
         public async Task<CategoryVm> GetCategory(int id)
         {
             var category = await _repo.GetByIdAsync(new CategoryId(id));
-            return category is null ? null : _mapper.Map<CategoryVm>(category);
+            return category is null ? null : CategoryVm.FromDomain(category);
         }
 
         public async Task<List<CategoryVm>> GetAllCategories()
         {
             var categories = await _repo.GetAllAsync();
-            return _mapper.Map<List<CategoryVm>>(categories);
+            return categories.Select(CategoryVm.FromDomain).ToList();
         }
     }
 }

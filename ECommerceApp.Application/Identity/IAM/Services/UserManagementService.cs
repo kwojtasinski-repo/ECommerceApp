@@ -1,5 +1,3 @@
-using AutoMapper;
-using AutoMapper.QueryableExtensions;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Identity.IAM.ViewModels;
 using ECommerceApp.Application.Interfaces;
@@ -16,22 +14,20 @@ namespace ECommerceApp.Application.Identity.IAM.Services
     {
         private readonly IUserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
-        private readonly IMapper _mapper;
 
-        public UserManagementService(IUserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, IMapper mapper)
+        public UserManagementService(IUserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
         {
             _userManager = userManager;
             _roleManager = roleManager;
-            _mapper = mapper;
         }
 
         public async Task<UserListVm> GetUsersAsync(int pageSize, int pageNo, string searchString)
         {
             var query = _userManager.Users.Where(u => u.UserName.StartsWith(searchString));
             var users = await query
-                .ProjectTo<UserForListVm>(_mapper.ConfigurationProvider)
                 .Skip(pageSize * (pageNo - 1))
                 .Take(pageSize)
+                .Select(u => UserForListVm.FromDomain(u))
                 .ToListAsync();
             return new UserListVm
             {
@@ -48,7 +44,7 @@ namespace ECommerceApp.Application.Identity.IAM.Services
             var user = await _userManager.FindByIdAsync(id)
                 ?? throw new BusinessException($"User with id '{id}' was not found",
                     ErrorCode.Create("userNotFound", ErrorParameter.Create("id", id)));
-            var vm = _mapper.Map<UserDetailsVm>(user);
+            var vm = UserDetailsVm.FromDomain(user);
             vm.UserRole = await GetUserRoleAsync(id);
             vm.AvailableRoles = await GetRolesAsync();
             return vm;
@@ -64,7 +60,7 @@ namespace ECommerceApp.Application.Identity.IAM.Services
 
         public async Task<IReadOnlyList<RoleVm>> GetRolesAsync()
         {
-            return _mapper.Map<List<RoleVm>>(await _roleManager.Roles.ToListAsync());
+            return (await _roleManager.Roles.ToListAsync()).Select(RoleVm.FromDomain).ToList();
         }
 
         public async Task ChangeUserRoleAsync(string userId, string roleId)

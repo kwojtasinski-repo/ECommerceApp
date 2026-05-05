@@ -1,4 +1,3 @@
-using AutoMapper;
 using ECommerceApp.Application.Catalog.Products.DTOs;
 using ECommerceApp.Application.Catalog.Products.Messages;
 using ECommerceApp.Application.Catalog.Products.ViewModels;
@@ -20,7 +19,6 @@ namespace ECommerceApp.Application.Catalog.Products.Services
         private readonly ICategoryRepository _categoryRepo;
         private readonly IProductTagRepository _tagRepo;
         private readonly IImageUrlBuilder _urlBuilder;
-        private readonly IMapper _mapper;
         private readonly IMessageBroker _broker;
 
         public ProductService(
@@ -28,14 +26,12 @@ namespace ECommerceApp.Application.Catalog.Products.Services
             ICategoryRepository categoryRepo,
             IProductTagRepository tagRepo,
             IImageUrlBuilder urlBuilder,
-            IMapper mapper,
             IMessageBroker broker)
         {
             _productRepo = productRepo;
             _categoryRepo = categoryRepo;
             _tagRepo = tagRepo;
             _urlBuilder = urlBuilder;
-            _mapper = mapper;
             _broker = broker;
         }
 
@@ -97,7 +93,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
                 return null;
             }
 
-            var vm = _mapper.Map<ProductDetailsVm>(product);
+            var vm = ProductDetailsVm.FromDomain(product);
             vm.Images = product.Images
                 .OrderBy(i => i.SortOrder)
                 .Select(i => new ProductImageVm
@@ -129,7 +125,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
             var count = await _productRepo.CountAsync(searchString);
             return new ProductListVm
             {
-                Products = _mapper.Map<List<ProductForListVm>>(products),
+                Products = products.Select(ProductForListVm.FromDomain).ToList(),
                 PageSize = pageSize,
                 CurrentPage = pageNo,
                 SearchString = searchString,
@@ -141,7 +137,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
         {
             var products = await _productRepo.GetPublishedAsync(pageSize, pageNo, searchString);
             var count = await _productRepo.CountPublishedAsync(searchString);
-            var mapped = _mapper.Map<List<ProductForListVm>>(products);
+            var mapped = products.Select(ProductForListVm.FromDomain).ToList();
             for (var i = 0; i < mapped.Count; i++)
             {
                 var mainImage = products[i].Images.FirstOrDefault(img => img.IsMain);
@@ -164,7 +160,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
         {
             var products = await _productRepo.GetPublishedByTagAsync(tagId, pageSize, pageNo);
             var count = await _productRepo.CountPublishedByTagAsync(tagId);
-            var mapped = _mapper.Map<List<ProductForListVm>>(products);
+            var mapped = products.Select(ProductForListVm.FromDomain).ToList();
             for (var i = 0; i < mapped.Count; i++)
             {
                 var main = products[i].Images.FirstOrDefault(img => img.IsMain);

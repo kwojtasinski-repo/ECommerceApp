@@ -1,9 +1,8 @@
-using AutoMapper;
 using ECommerceApp.Application.AccountProfile.DTOs;
 using ECommerceApp.Application.AccountProfile.ViewModels;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Domain.AccountProfile;
-using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Application.AccountProfile.Services
@@ -11,12 +10,10 @@ namespace ECommerceApp.Application.AccountProfile.Services
     internal sealed class UserProfileService : IUserProfileService
     {
         private readonly IUserProfileRepository _repository;
-        private readonly IMapper _mapper;
 
-        public UserProfileService(IUserProfileRepository repository, IMapper mapper)
+        public UserProfileService(IUserProfileRepository repository)
         {
             _repository = repository;
-            _mapper = mapper;
         }
 
         public async Task<int> CreateAsync(CreateUserProfileDto dto)
@@ -62,25 +59,25 @@ namespace ECommerceApp.Application.AccountProfile.Services
         public async Task<UserProfileDetailsVm?> GetDetailsAsync(int id)
         {
             var profile = await _repository.GetByIdAsync(new UserProfileId(id));
-            return profile is null ? null : _mapper.Map<UserProfileDetailsVm>(profile);
+            return profile is null ? null : UserProfileDetailsVm.FromDomain(profile);
         }
 
         public async Task<UserProfileDetailsVm?> GetDetailsByUserIdAsync(string userId)
         {
             var profile = await _repository.GetByUserIdAsync(userId);
-            return profile is null ? null : _mapper.Map<UserProfileDetailsVm>(profile);
+            return profile is null ? null : UserProfileDetailsVm.FromDomain(profile);
         }
 
         public async Task<UserProfileVm?> GetAsync(int id, string userId)
         {
             var profile = await _repository.GetByIdAndUserIdAsync(new UserProfileId(id), userId);
-            return profile is null ? null : _mapper.Map<UserProfileVm>(profile);
+            return profile is null ? null : UserProfileVm.FromDomain(profile);
         }
 
         public async Task<UserProfileVm?> GetByUserIdAsync(string userId)
         {
             var profile = await _repository.GetByUserIdAsync(userId);
-            return profile is null ? null : _mapper.Map<UserProfileVm>(profile);
+            return profile is null ? null : UserProfileVm.FromDomain(profile);
         }
 
         public async Task<UserProfileListVm> GetAllAsync(int pageSize, int pageNo, string searchString)
@@ -88,7 +85,7 @@ namespace ECommerceApp.Application.AccountProfile.Services
             var profiles = await _repository.GetAllAsync(pageSize, pageNo, searchString);
             return new UserProfileListVm
             {
-                Profiles = _mapper.Map<List<UserProfileForListVm>>(profiles),
+                Profiles = profiles.Select(UserProfileForListVm.FromDomain).ToList(),
                 CurrentPage = pageNo,
                 PageSize = pageSize,
                 SearchString = searchString,
@@ -101,7 +98,7 @@ namespace ECommerceApp.Application.AccountProfile.Services
             var profiles = await _repository.GetAllByUserIdAsync(userId, pageSize, pageNo, searchString);
             return new UserProfileListVm
             {
-                Profiles = _mapper.Map<List<UserProfileForListVm>>(profiles),
+                Profiles = profiles.Select(UserProfileForListVm.FromDomain).ToList(),
                 CurrentPage = pageNo,
                 PageSize = pageSize,
                 SearchString = searchString,

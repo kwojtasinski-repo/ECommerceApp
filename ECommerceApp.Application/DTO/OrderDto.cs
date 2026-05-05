@@ -1,11 +1,9 @@
-﻿using AutoMapper;
-using ECommerceApp.Application.Mapping;
 using System.Collections.Generic;
 using System;
 
 namespace ECommerceApp.Application.DTO
 {
-    public class OrderDto : IMapFrom<Domain.Model.Order>
+    public class OrderDto
     {
         public int Id { get; set; }
         public string Number { get; set; }
@@ -22,10 +20,5 @@ namespace ECommerceApp.Application.DTO
         public int CurrencyId { get; set; }
 
         public List<OrderItemDto> OrderItems { get; set; }
-
-        public void Mapping(Profile profile)
-        {
-            profile.CreateMap<OrderDto, ECommerceApp.Domain.Model.Order>().ReverseMap();
-        }
     }
 }

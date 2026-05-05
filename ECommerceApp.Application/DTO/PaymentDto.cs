@@ -1,11 +1,9 @@
-﻿using AutoMapper;
-using ECommerceApp.Application.Mapping;
 using FluentValidation;
 using System;
 
 namespace ECommerceApp.Application.DTO
 {
-    public class PaymentDto : IMapFrom<ECommerceApp.Domain.Model.Payment>
+    public class PaymentDto
     {
         public int Id { get; set; }
         public string Number { get; set; }
@@ -16,13 +14,6 @@ namespace ECommerceApp.Application.DTO
         public string CurrencyName { get; set; }
         public decimal Cost { get; set; }
         public string State { get; set; }
-
-        public void Mapping(Profile profile)
-        {
-            profile.CreateMap<ECommerceApp.Domain.Model.Payment, PaymentDto>()
-                .ForMember(p => p.CurrencyName, src => src.MapFrom(p => p.Currency.Code))
-                .ForMember(p => p.State, src => src.MapFrom(p => Enum.GetName(p.State)));
-        }
     }
 
     public class PaymentDtoValidation : AbstractValidator<PaymentDto>

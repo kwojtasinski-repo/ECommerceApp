@@ -1,13 +1,11 @@
-﻿using AutoMapper;
 using ECommerceApp.Application.DTO;
-using ECommerceApp.Application.Mapping;
 using FluentValidation;
 using System;
 using System.Collections.Generic;
 
 namespace ECommerceApp.Application.ViewModels.Order
 {
-    public class NewOrderVm : BaseVm, IMapFrom<ECommerceApp.Domain.Model.Order>
+    public class NewOrderVm : BaseVm
     {
         public NewOrderVm()
         {
@@ -46,32 +44,6 @@ namespace ECommerceApp.Application.ViewModels.Order
         public string CustomerInformation { get; set; }
         public string PaymentNumber { get; set; }
         public string PromoCode { get; set; }
-
-        public void Mapping(Profile profile)
-        {
-            profile.CreateMap<NewOrderVm, ECommerceApp.Domain.Model.Order>().ReverseMap()
-                .ForMember(r => r.Discount, opt => opt.MapFrom(r => r.CouponUsed != null && r.CouponUsed.Coupon != null ? r.CouponUsed.Coupon.Discount : 0))
-                .ForMember(r => r.PromoCodeUsed, opt => opt.MapFrom(r => r.CouponUsed != null && r.CouponUsed.Coupon != null ? r.CouponUsed.Coupon.Code : null))
-                .ForMember(c => c.CouponId, opt => opt.MapFrom(r => r.CouponUsed != null && r.CouponUsed.Coupon != null ? r.CouponUsed.Coupon.Id : 0))
-                .ForMember(i => i.Items, opt => opt.Ignore())
-                .ForMember(rf => rf.ReasonRefund, opt => opt.MapFrom(r => r.Refund != null ? r.Refund.Reason : ""))
-                .ForMember(af => af.AcceptedRefund, opt => opt.MapFrom(a => a.Refund != null && a.Refund.Accepted))
-                .ForMember(rd => rd.RefundDate, opt => opt.MapFrom(rd => rd.Refund != null ? rd.Refund.RefundDate : new DateTime()))
-                .ForMember(ow => ow.OnWarranty, opt => opt.MapFrom(ow => ow.Refund != null && ow.Refund.OnWarranty))
-                .ForMember(cc => cc.ChangedCode, opt => opt.Ignore())
-                .ForMember(cr => cr.ChangedRefund, opt => opt.Ignore())
-                .ForMember(c => c.NewCustomer, opt => opt.Ignore())
-                .ForMember(c => c.CustomerData, opt => opt.Ignore())
-                .ForMember(c => c.CurrencyName, opt => opt.MapFrom(c => c.Currency.Code))
-                .ForMember(p => p.PaymentNumber, opt => opt.MapFrom(p => p.Payment != null ? p.Payment.Number : ""))
-                .ForMember(i => i.CustomerInformation, opt => opt.MapFrom(c => 
-                    c.Customer != null
-                    ? ((c.Customer.NIP != null && c.Customer.CompanyName != null)
-                         ? c.Customer.FirstName + " " + c.Customer.LastName + " " + c.Customer.NIP + " " + c.Customer.CompanyName
-                         : c.Customer.FirstName + " " + c.Customer.LastName)
-                    : "")
-                );
-        }
     }
 
     public class NewOrderValidation : AbstractValidator<NewOrderVm>

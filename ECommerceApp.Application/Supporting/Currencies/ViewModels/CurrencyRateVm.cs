@@ -1,21 +1,20 @@
-using AutoMapper;
-using ECommerceApp.Application.Mapping;
 using System;
 
 namespace ECommerceApp.Application.Supporting.Currencies.ViewModels
 {
-    public class CurrencyRateVm : IMapFrom<Domain.Supporting.Currencies.CurrencyRate>
+    public class CurrencyRateVm
     {
         public int Id { get; set; }
         public int CurrencyId { get; set; }
         public decimal Rate { get; set; }
         public DateTime CurrencyDate { get; set; }
 
-        public void Mapping(Profile profile)
+        public static CurrencyRateVm FromDomain(Domain.Supporting.Currencies.CurrencyRate s) => new()
         {
-            profile.CreateMap<Domain.Supporting.Currencies.CurrencyRate, CurrencyRateVm>()
-                .ForMember(d => d.Id, opt => opt.MapFrom(s => s.Id.Value))
-                .ForMember(d => d.CurrencyId, opt => opt.MapFrom(s => s.CurrencyId.Value));
-        }
+            Id = s.Id?.Value ?? 0,
+            CurrencyId = s.CurrencyId?.Value ?? 0,
+            Rate = s.Rate,
+            CurrencyDate = s.CurrencyDate
+        };
     }
 }

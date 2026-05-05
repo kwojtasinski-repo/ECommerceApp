@@ -8,10 +8,11 @@ namespace ECommerceApp.Application.Exceptions
 {
     public class BusinessException : Exception
     {
+        private readonly List<ErrorCode> _codes = [];
+
         public string ErrorCode { get; }
         public IDictionary<string, string> Arguments { get; } = new Dictionary<string, string>();
         public IEnumerable<ErrorCode> Codes => _codes;
-        public List<ErrorCode> _codes = new ();
 
         public BusinessException() : base()
         {

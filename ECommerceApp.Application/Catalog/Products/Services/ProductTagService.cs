@@ -1,4 +1,3 @@
-using AutoMapper;
 using ECommerceApp.Application.Catalog.Products.DTOs;
 using ECommerceApp.Application.Catalog.Products.ViewModels;
 using ECommerceApp.Application.Exceptions;
@@ -12,12 +11,10 @@ namespace ECommerceApp.Application.Catalog.Products.Services
     internal sealed class ProductTagService : IProductTagService
     {
         private readonly IProductTagRepository _repo;
-        private readonly IMapper _mapper;
 
-        public ProductTagService(IProductTagRepository repo, IMapper mapper)
+        public ProductTagService(IProductTagRepository repo)
         {
             _repo = repo;
-            _mapper = mapper;
         }
 
         public async Task<int> AddTag(CreateTagDto dto)
@@ -52,13 +49,13 @@ namespace ECommerceApp.Application.Catalog.Products.Services
         public async Task<ProductTagVm> GetTag(int id)
         {
             var tag = await _repo.GetByIdAsync(new TagId(id));
-            return tag is null ? null : _mapper.Map<ProductTagVm>(tag);
+            return tag is null ? null : ProductTagVm.FromDomain(tag);
         }
 
         public async Task<List<ProductTagVm>> GetAllTags()
         {
             var tags = await _repo.GetAllAsync();
-            return _mapper.Map<List<ProductTagVm>>(tags);
+            return tags.Select(ProductTagVm.FromDomain).ToList();
         }
 
         public async Task<List<ProductTagVm>> SearchTags(string query, int maxResults = 10)
@@ -67,7 +64,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
                 return new List<ProductTagVm>();
 
             var tags = await _repo.SearchByNameAsync(query.Trim(), maxResults);
-            return _mapper.Map<List<ProductTagVm>>(tags);
+            return tags.Select(ProductTagVm.FromDomain).ToList();
         }
 
         public async Task<ProductTagVm> GetOrCreateTag(string name)
@@ -76,7 +73,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
                 throw new BusinessException("Tag name cannot be empty");
 
             var tag = await _repo.GetOrCreateAsync(name.Trim());
-            return _mapper.Map<ProductTagVm>(tag);
+            return ProductTagVm.FromDomain(tag);
         }
 
         public async Task<List<TagWithUsageVm>> GetTagsWithUsageAsync(int maxProductsPerTag = 10)

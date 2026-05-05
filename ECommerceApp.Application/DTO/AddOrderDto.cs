@@ -1,4 +1,4 @@
-﻿using FluentValidation;
+using FluentValidation;
 using System.Collections.Generic;
 
 namespace ECommerceApp.Application.DTO
