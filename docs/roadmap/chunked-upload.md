@@ -1,7 +1,7 @@
 # Roadmap: Chunked Image Upload
 
-> Status: 🔵 Planned — v1 spike not started
-> Scope: `Web` project only (Catalog Image upload flow)
+> Status: ✅ V1 complete — `IChunkedUploadService` + `UploadSessionStore` + `InitUpload`/`UploadChunk` endpoints live in Web and API; `AddItemNew.cshtml` + `EditItemNew.cshtml` include progress UI
+> Scope: `Web` + `API` projects (Catalog Image upload flow)
 > TUS upgrade path: v2
 
 ---
@@ -59,15 +59,15 @@ The server owns the chunking math. The client just follows instructions.
 
 ### What to build
 
-| Layer | File | Action |
-|---|---|---|
-| Controller | `Web/Areas/Catalog/Controllers/ImageController.cs` | Add `POST InitUpload` + `POST UploadChunk` actions |
-| DTO | `Web/Areas/Catalog/Models/ChunkUploadDtos.cs` | `InitUploadRequest`, `InitUploadResponse`, `UploadChunkRequest` |
-| Session store | `Web/Areas/Catalog/Upload/UploadSessionStore.cs` | `ConcurrentDictionary<Guid, UploadSession>` — registered as `Singleton` |
-| Temp storage | `Upload/Temp/{sessionId}/{chunkId}.part` | Plain filesystem, created by controller |
-| View | `Web/Areas/Catalog/Views/Product/AddItemNew.cshtml` | Copy of `Create.cshtml`, image section replaced with chunk upload widget |
-| View | `Web/Areas/Catalog/Views/Product/EditItemNew.cshtml` | Copy of `Edit.cshtml`, image section replaced with chunk upload widget |
-| JS | Inline `<script>` in the two views above | `fetch` loop — no AMD module yet |
+| Layer         | File                                                 | Action                                                                   |
+| ------------- | ---------------------------------------------------- | ------------------------------------------------------------------------ |
+| Controller    | `Web/Areas/Catalog/Controllers/ImageController.cs`   | Add `POST InitUpload` + `POST UploadChunk` actions                       |
+| DTO           | `Web/Areas/Catalog/Models/ChunkUploadDtos.cs`        | `InitUploadRequest`, `InitUploadResponse`, `UploadChunkRequest`          |
+| Session store | `Web/Areas/Catalog/Upload/UploadSessionStore.cs`     | `ConcurrentDictionary<Guid, UploadSession>` — registered as `Singleton`  |
+| Temp storage  | `Upload/Temp/{sessionId}/{chunkId}.part`             | Plain filesystem, created by controller                                  |
+| View          | `Web/Areas/Catalog/Views/Product/AddItemNew.cshtml`  | Copy of `Create.cshtml`, image section replaced with chunk upload widget |
+| View          | `Web/Areas/Catalog/Views/Product/EditItemNew.cshtml` | Copy of `Edit.cshtml`, image section replaced with chunk upload widget   |
+| JS            | Inline `<script>` in the two views above             | `fetch` loop — no AMD module yet                                         |
 
 ### Session model
 
@@ -87,33 +87,43 @@ internal sealed class UploadSession
 
 ### What we intentionally skip in v1
 
-| Skip | Why |
-|---|---|
-| Resumable uploads (retry from last chunk) | Session-state complexity |
-| Parallel chunk sending | Race conditions, ordering headache |
-| DB session tracking | Filesystem is enough for a spike |
-| Background cleanup job | Manual cleanup for now — `Upload/Temp/` wiped on app restart |
-| TUS protocol | That is the v2 upgrade path |
+| Skip                                      | Why                                                          |
+| ----------------------------------------- | ------------------------------------------------------------ |
+| Resumable uploads (retry from last chunk) | Session-state complexity                                     |
+| Parallel chunk sending                    | Race conditions, ordering headache                           |
+| DB session tracking                       | Filesystem is enough for a spike                             |
+| Background cleanup job                    | Manual cleanup for now — `Upload/Temp/` wiped on app restart |
+| TUS protocol                              | That is the v2 upgrade path                                  |
 
 ### JS contract (inline, thin)
 
 ```js
 // 1. init
-const { sessionId, chunkSize, totalChunks, chunkIds } = await fetch('/Catalog/Image/InitUpload', {
-    method: 'POST', body: JSON.stringify({ fileName, fileSizeBytes, itemId })
-}).then(r => r.json());
+const { sessionId, chunkSize, totalChunks, chunkIds } = await fetch(
+	"/Catalog/Image/InitUpload",
+	{
+		method: "POST",
+		body: JSON.stringify({ fileName, fileSizeBytes, itemId }),
+	},
+).then((r) => r.json());
 
 // 2. send chunks
 for (const chunkId of chunkIds) {
-    const start = (chunkId - 1) * chunkSize;
-    const slice = file.slice(start, start + chunkSize);
-    const fd = new FormData();
-    fd.append('sessionId', sessionId);
-    fd.append('chunkId', chunkId);
-    fd.append('chunk', slice, file.name);
-    const res = await fetch('/Catalog/Image/UploadChunk', { method: 'POST', body: fd }).then(r => r.json());
-    updateProgress(res.receivedCount / totalChunks);
-    if (res.complete) { showThumbnail(res.imageId); break; }
+	const start = (chunkId - 1) * chunkSize;
+	const slice = file.slice(start, start + chunkSize);
+	const fd = new FormData();
+	fd.append("sessionId", sessionId);
+	fd.append("chunkId", chunkId);
+	fd.append("chunk", slice, file.name);
+	const res = await fetch("/Catalog/Image/UploadChunk", {
+		method: "POST",
+		body: fd,
+	}).then((r) => r.json());
+	updateProgress(res.receivedCount / totalChunks);
+	if (res.complete) {
+		showThumbnail(res.imageId);
+		break;
+	}
 }
 ```
 
@@ -121,14 +131,14 @@ for (const chunkId of chunkIds) {
 
 ## V2 — TUS upgrade path
 
-| Step | What |
-|---|---|
-| 1 | Add `tusdotnet` NuGet to `Web` project |
-| 2 | Register TUS middleware on `/tus-uploads` |
-| 3 | Replace inline JS with `tus-js-client` via LibMan |
-| 4 | Remove `InitUpload` + `UploadChunk` controller actions |
-| 5 | Remove `UploadSessionStore` + `Upload/Temp/` logic |
-| 6 | Resumable uploads come for free |
+| Step | What                                                   |
+| ---- | ------------------------------------------------------ |
+| 1    | Add `tusdotnet` NuGet to `Web` project                 |
+| 2    | Register TUS middleware on `/tus-uploads`              |
+| 3    | Replace inline JS with `tus-js-client` via LibMan      |
+| 4    | Remove `InitUpload` + `UploadChunk` controller actions |
+| 5    | Remove `UploadSessionStore` + `Upload/Temp/` logic     |
+| 6    | Resumable uploads come for free                        |
 
 ---
 
