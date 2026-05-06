@@ -85,7 +85,7 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
         {
             var tags = await _context.Tags
                 .AsNoTracking()
-                .OrderBy(t => EF.Property<string>(t, "Name"))
+                .OrderBy(t => t.Name.Value)
                 .ToListAsync();
 
             if (tags.Count == 0)

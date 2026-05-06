@@ -8,6 +8,7 @@ using ECommerceApp.Domain.Presale.Checkout;
 using ECommerceApp.Web.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Linq;
 using System.Threading.Tasks;
 
@@ -31,9 +32,15 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         [HttpGet]
         public async Task<IActionResult> Cart()
         {
+            var requestStartedAt = DateTime.UtcNow;
             var userId = new PresaleUserId(GetUserId());
             var cart = await _cartService.GetCartAsync(userId);
-            return View(cart);
+            var secondsRemaining = await _checkoutService.GetSecondsRemainingAsync(userId, requestStartedAt);
+            var hasActive = secondsRemaining.HasValue;
+            var vm = cart is not null
+                ? cart with { HasActiveCheckout = hasActive, SecondsRemaining = secondsRemaining }
+                : new CartVm(userId.Value, System.Array.Empty<CartLineVm>(), hasActive, secondsRemaining);
+            return View(vm);
         }
 
         [HttpGet]
@@ -41,12 +48,25 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         {
             var userId = new PresaleUserId(GetUserId());
             var result = await _checkoutService.InitiateAsync(userId);
-            if (result is InitiateCheckoutResult.CartEmpty || result is InitiateCheckoutResult.NothingReserved)
-            {
-                return RedirectToAction(nameof(Cart));
-            }
 
-            return View(new PlaceOrderVm());
+            return result switch
+            {
+                InitiateCheckoutResult.CartEmpty => RedirectToAction(nameof(Cart)),
+                InitiateCheckoutResult.NothingReserved => RedirectToAction(nameof(Cart)),
+                InitiateCheckoutResult.AlreadyInProgress => RedirectToAction(nameof(Cart)),
+                InitiateCheckoutResult.Completed => View(new PlaceOrderVm()),
+                _ => RedirectToAction(nameof(Cart))
+            };
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ResumeOrder()
+        {
+            var userId = new PresaleUserId(GetUserId());
+            var hasActive = await _checkoutService.HasActiveCheckoutAsync(userId);
+            if (!hasActive)
+                return RedirectToAction(nameof(Cart));
+            return View(nameof(PlaceOrder), new PlaceOrderVm());
         }
 
         [HttpGet]
@@ -54,6 +74,17 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         {
             var profile = await _accountProfileClient.GetProfileAsync(GetUserId());
             return Json(profile);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> CheckoutStatus()
+        {
+            var requestStartedAt = DateTime.UtcNow;
+            var userId = new PresaleUserId(GetUserId());
+            var secondsRemaining = await _checkoutService.GetSecondsRemainingAsync(userId, requestStartedAt);
+            if (secondsRemaining is null)
+                return Json(new { active = false, secondsRemaining = (int?)null });
+            return Json(new { active = true, secondsRemaining = secondsRemaining.Value });
         }
 
         [HttpPost]
@@ -70,8 +101,19 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
             return result switch
             {
                 CheckoutResult.Success s => RedirectToAction(nameof(Summary), new { id = s.OrderId }),
-                _ => RedirectToAction(nameof(Cart))
+                CheckoutResult.NoSoftReservations => RedirectToAction(nameof(Cart)),
+                CheckoutResult.ReservationsExpired => RedirectToAction(nameof(Cart)),
+                _ => View(vm)
             };
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelCheckout()
+        {
+            var userId = new PresaleUserId(GetUserId());
+            await _checkoutService.CancelAsync(userId);
+            return RedirectToAction(nameof(Cart));
         }
 
         [HttpGet]

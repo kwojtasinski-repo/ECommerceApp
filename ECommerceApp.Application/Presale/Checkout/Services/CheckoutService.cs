@@ -1,6 +1,8 @@
 using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Application.Presale.Checkout.Results;
 using ECommerceApp.Domain.Presale.Checkout;
+using Microsoft.Extensions.Options;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -13,15 +15,18 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
         private readonly ISoftReservationService _softReservationService;
         private readonly IOrderClient _orderClient;
         private readonly ICartService _cartService;
+        private readonly IOptionsMonitor<PresaleOptions> _options;
 
         public CheckoutService(
             ISoftReservationService softReservationService,
             IOrderClient orderClient,
-            ICartService cartService)
+            ICartService cartService,
+            IOptionsMonitor<PresaleOptions> options)
         {
             _softReservationService = softReservationService;
             _orderClient = orderClient;
             _cartService = cartService;
+            _options = options;
         }
 
         public async Task<InitiateCheckoutResult> InitiateAsync(PresaleUserId userId, CancellationToken ct = default)
@@ -69,6 +74,12 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
             if (reservations.Count == 0)
                 return CheckoutResult.NoReservations();
 
+            var acceptanceWindow = _options.CurrentValue.PlaceOrderAcceptanceWindow;
+            var now = DateTime.UtcNow;
+            var activeReservations = reservations.Where(r => r.Status == SoftReservationStatus.Active).ToList();
+            if (activeReservations.Count == 0 || activeReservations.All(r => r.ExpiresAt.Add(acceptanceWindow) < now))
+                return CheckoutResult.Expired();
+
             await _softReservationService.CommitAllForUserAsync(userId, ct);
 
             var lines = reservations
@@ -83,6 +94,30 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
             }
 
             return CheckoutResult.Succeeded(result.OrderId!.Value);
+        }
+
+        public async Task CancelAsync(PresaleUserId userId, CancellationToken ct = default)
+        {
+            await _softReservationService.RemoveActiveForUserAsync(userId.Value, ct);
+        }
+
+        public async Task<bool> HasActiveCheckoutAsync(PresaleUserId userId, CancellationToken ct = default)
+        {
+            var existing = await _softReservationService.GetAllForUserAsync(userId, ct);
+            return existing.Any(r => r.Status == SoftReservationStatus.Active);
+        }
+
+        public async Task<int?> GetSecondsRemainingAsync(PresaleUserId userId, DateTime requestStartedAt, CancellationToken ct = default)
+        {
+            var existing = await _softReservationService.GetAllForUserAsync(userId, ct);
+            var active = existing.Where(r => r.Status == SoftReservationStatus.Active).ToList();
+            if (active.Count == 0)
+                return null;
+            var earliest = active.Min(r => r.ExpiresAt);
+            var countdown = ReservationCountdown.From(earliest, requestStartedAt);
+            // Return null when expired so the UI treats it as no active checkout.
+            // The grace period job will clean up the DB record within the next minute.
+            return countdown.IsExpired ? null : countdown.Seconds;
         }
     }
 }

@@ -25,10 +25,13 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
 
         public async Task<IReadOnlyList<PendingStockAdjustment>> GetByProductIdsAsync(
             IReadOnlyList<int> productIds, CancellationToken ct = default)
-            => await _context.PendingStockAdjustments
+        {
+            var typedIds = productIds.Select(id => new StockProductId(id)).ToList();
+            return await _context.PendingStockAdjustments
                 .AsNoTracking()
-                .Where(p => productIds.Contains(p.ProductId.Value))
+                .Where(p => typedIds.Contains(p.ProductId))
                 .ToListAsync(ct);
+        }
 
         public async Task<IReadOnlyList<PendingStockAdjustment>> GetAllAsync(CancellationToken ct = default)
             => await _context.PendingStockAdjustments

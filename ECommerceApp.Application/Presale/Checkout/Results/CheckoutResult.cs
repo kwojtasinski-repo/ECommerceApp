@@ -27,9 +27,15 @@ namespace ECommerceApp.Application.Presale.Checkout.Results
             internal OrderFailed(string reason) => Reason = reason;
         }
 
+        public sealed class ReservationsExpired : CheckoutResult
+        {
+            internal ReservationsExpired() { }
+        }
+
         public static Success Succeeded(int orderId) => new(orderId);
         public static NoSoftReservations NoReservations() => new();
         public static StockUnavailable StockNotAvailable(int productId) => new(productId);
         public static OrderFailed Failed(string reason) => new(reason);
+        public static ReservationsExpired Expired() => new();
     }
 }

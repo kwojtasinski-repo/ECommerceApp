@@ -194,7 +194,8 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             const int productId = 4;
             const string userId = "user-4";
-            var expectedTtl = TimeSpan.FromMinutes(15);
+            // Job fires at TTL + GracePeriod (15 min + 1 min = 16 min)
+            var expectedJobDelay = TimeSpan.FromMinutes(15) + TimeSpan.FromMinutes(1);
             var before = DateTime.UtcNow;
 
             var snapshot = StockSnapshot.Create(productId, 10, DateTime.UtcNow);
@@ -214,7 +215,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _deferredScheduler.Verify(d => d.ScheduleAsync(
                 It.IsAny<string>(),
                 It.IsAny<string>(),
-                It.Is<DateTime>(dt => dt >= before.Add(expectedTtl) && dt <= after.Add(expectedTtl)),
+                It.Is<DateTime>(dt => dt >= before.Add(expectedJobDelay) && dt <= after.Add(expectedJobDelay)),
                 It.IsAny<CancellationToken>()), Times.Once);
         }
     }

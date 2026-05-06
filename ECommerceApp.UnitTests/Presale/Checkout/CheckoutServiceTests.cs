@@ -1,9 +1,11 @@
+using ECommerceApp.Application.Presale.Checkout;
 using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Application.Presale.Checkout.Results;
 using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Application.Presale.Checkout.ViewModels;
 using ECommerceApp.Domain.Presale.Checkout;
 using AwesomeAssertions;
+using Microsoft.Extensions.Options;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -31,10 +33,18 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
 
         public CheckoutServiceTests()
         {
+            var options = new PresaleOptions
+            {
+                SoftReservationTtl = TimeSpan.FromMinutes(15),
+                SoftReservationGracePeriod = TimeSpan.FromMinutes(1),
+                PlaceOrderAcceptanceWindow = TimeSpan.FromSeconds(15)
+            };
+            var optionsMonitor = Mock.Of<IOptionsMonitor<PresaleOptions>>(m => m.CurrentValue == options);
             _sut = new CheckoutService(
                 _softReservationService.Object,
                 _orderClient.Object,
-                _cartService.Object);
+                _cartService.Object,
+                optionsMonitor);
         }
 
         private static int _nextId = 1;
@@ -407,10 +417,10 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             capturedIds!.Select(p => p.Value).Should().BeEquivalentTo(new[] { 1, 2 });
         }
 
-        // ?? AC: Partial reservation ? only succeeded products removed from cart ?
+        // AC: Cart removal on partial reservation is now handled by OrderPlacedHandler after order success.
 
         [Fact]
-        public async Task InitiateAsync_PartialReservation_RemovesOnlySucceededFromCart()
+        public async Task InitiateAsync_PartialReservation_DoesNotRemoveFromCart()
         {
             _cartService
                 .Setup(c => c.GetCartAsync(UserId, It.IsAny<CancellationToken>()))

@@ -66,3 +66,12 @@ Loaded automatically when editing `.cs`/`.csproj`/`.cshtml` via `bc-adr-map.inst
 
 - Max 5 units/line via `MaxApiQuantityFilter` (`ApiPurchaseOptions`); Web max 99 (`AddToCartDtoValidator`). Never cap `Shared.Quantity`.
 - `TrustedApiUser` = authenticated + `api:purchase` claim OR `Service`/`Manager`/`Administrator` role.
+
+## 11. Flow analysis
+
+When asked to **analyze** a user-facing flow, trace it in **both directions**:
+- **Start → End**: happy path + every failure branch
+- **End → Start**: verify every state has a valid predecessor, all guards exist, no dead ends
+
+Use `#file:.github/prompts/flow-analysis.prompt.md` to run a structured bidirectional trace.
+This catches races, missing redirects, re-entrant states, and TTL edge cases that forward-only analysis misses.

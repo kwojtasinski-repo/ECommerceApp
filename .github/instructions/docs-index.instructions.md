@@ -35,3 +35,13 @@ query_docs(question, bc?, top_k?)   -- semantic search across docs + .github/con
 get_adr_history(adr_id)             -- main ADR + amendments in order
 list_adrs()                         -- all ADR ids and titles
 ```
+
+## Prompt files
+
+| Need | File |
+|---|---|
+| Analyze a BC structure | `.github/prompts/bc-analysis.prompt.md` |
+| Implement a BC slice | `.github/prompts/bc-implementation.prompt.md` |
+| Review a PR | `.github/prompts/pr-review.prompt.md` |
+| Refactor guidance | `.github/prompts/refactor.prompt.md` |
+| **Analyze a user-facing flow (bidirectional)** | `.github/prompts/flow-analysis.prompt.md` |

@@ -61,15 +61,16 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
                 return false;
             }
 
-            var ttl = _options.CurrentValue.SoftReservationTtl;
-            var expiresAt = DateTime.UtcNow.Add(ttl);
+            var opts = _options.CurrentValue;
+            var expiresAt = DateTime.UtcNow.Add(opts.SoftReservationTtl);
+            var jobFiresAt = expiresAt.Add(opts.SoftReservationGracePeriod);
 
             var stale = await _reservationRepo.FindAsync(productId, userId, ct);
             if (stale is not null)
             {
                 if (stale.Status == SoftReservationStatus.Active)
                 {
-                    _cache.Set(CacheKey(productId, userId), stale, ttl);
+                    _cache.Set(CacheKey(productId, userId), stale, opts.SoftReservationTtl);
                     return true;
                 }
 
@@ -84,9 +85,9 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
             var reservation = SoftReservation.Create(productId, userId, quantity, unitPrice.Value, expiresAt);
             await _reservationRepo.AddAsync(reservation, ct);
 
-            await _deferredScheduler.ScheduleAsync(SoftReservationExpiredJob.JobTaskName, reservation.Id?.Value.ToString() ?? "", expiresAt, ct);
+            await _deferredScheduler.ScheduleAsync(SoftReservationExpiredJob.JobTaskName, reservation.Id?.Value.ToString() ?? "", jobFiresAt, ct);
 
-            _cache.Set(CacheKey(productId, userId), reservation, ttl);
+            _cache.Set(CacheKey(productId, userId), reservation, opts.SoftReservationTtl);
             _productUserIndex.AddOrUpdate(
                 productId,
                 _ => new HashSet<string> { userId },

@@ -86,7 +86,11 @@
     </div>
 
     <button type="submit" class="btn btn-primary">Zamów</button>
-    <a asp-area="Presale" asp-controller="Checkout" asp-action="Cart" class="btn btn-secondary">Wróć do koszyka</a>
+</form>
+
+<form asp-area="Presale" asp-controller="Checkout" asp-action="CancelCheckout" method="post" class="d-inline">
+    @Html.AntiForgeryToken()
+    <button type="submit" class="btn btn-secondary">Wróć do koszyka</button>
 </form>
 
 @section Scripts {

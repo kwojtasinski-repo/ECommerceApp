@@ -75,7 +75,29 @@
 - **Fix**: `AddToCartDtoValidator` created in `Application.Presale.Checkout.Validators`. Web limit: `Quantity.LessThanOrEqualTo(CheckoutOptions.MaxWebQuantityPerOrderLine)`. API limit handled separately via `MaxApiQuantityFilter` (ADR-0025).
 - **Files changed**: `AddToCartDtoValidator.cs`
 
-### [KI-008] FluentAssertions → AwesomeAssertions migration required for .NET 8+ ✅
+### [KI-010] `/Sales/Payments/Create/{orderId}` returns 404 after PlaceOrder ✅
+
+- **Root cause**: `MessagingOptions.UseBackgroundDispatcher: true` caused the `OrderPlaced` message to be dispatched to a background channel. By the time the user clicked "Zapłać" on the Summary page, `Sales.Payments.OrderPlacedHandler` (which creates the `Payment` row) had not yet run → `GetPendingByOrderIdAsync` returned `null` → 404.
+- **Fix**: Set `UseBackgroundDispatcher: false` in `ECommerceApp.Web/appsettings.json`. Handlers now run synchronously within the request scope, so the payment row exists before the redirect to Summary.
+- **Files changed**: `appsettings.json` (Web)
+
+### [KI-011] Cart cleared on checkout initiation (before order is placed) ✅
+
+- **Root cause**: `CheckoutService.InitiateAsync` called `_cartService.RemoveRangeAsync` immediately after soft-reserving items (during the `PlaceOrder` GET). If the user navigated away or `PlaceOrderAsync` failed, the cart was permanently empty with no order placed. Cart cleanup was also duplicated — `Presale.Checkout.OrderPlacedHandler` already handles it correctly on `OrderPlaced`.
+- **Fix**: Removed the `RemoveRangeAsync` call from `InitiateAsync`. Cart lines are now only cleared by `Presale.Checkout.OrderPlacedHandler` after a successful `OrderPlaced` event.
+- **Files changed**: `CheckoutService.cs`
+
+### [KI-012]
+
+- **Fix**: `GetUsageSummariesAsync` was using `EF.Property<string>(t, "Name")` which fails because `Name` is an owned entity (`OwnsOne(TagName)`), not a scalar shadow property. Changed to `OrderBy(t => t.Name.Value)` to match the pattern used by all other queries in the same repository.
+- **Files changed**: `ProductTagRepository.cs`
+
+### [KI-013] `/Inventory/Stock` — EF translation failure on `Contains(p.ProductId.Value)` ✅
+
+- **Fix**: `GetByProductIdsAsync` used `productIds.Contains(p.ProductId.Value)` which EF cannot translate because it cannot decompose the value-object accessor inside a `Contains` call. Changed to `productIds.Contains(EF.Property<int>(p, "ProductId"))` to read the mapped column directly.
+- **Files changed**: `PendingStockAdjustmentRepository.cs`
+
+### [KI-008]
 
 - **Fix**: `AwesomeAssertions` v8.3.0 installed in `ECommerceApp.UnitTests.csproj`. All unit test files use `using AwesomeAssertions;` — zero `using FluentAssertions;` remaining. Integration tests correctly use `Shouldly` (by design). Migration executed ahead of .NET 8+ upgrade.
 - **Files changed**: `ECommerceApp.UnitTests.csproj`, all `*.cs` test files in `ECommerceApp.UnitTests`.

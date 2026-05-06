@@ -58,9 +58,15 @@
                         @if (isSignedIn)
                         {
                             <li class="nav-item me-2">
-                                <a class="nav-link position-relative" asp-area="Presale" asp-controller="Checkout" asp-action="Cart">
+                                <a class="nav-link position-relative" asp-area="Presale" asp-controller="Checkout" asp-action="Cart" title="Koszyk">
                                     <i class="fas fa-shopping-cart fa-lg"></i>
                                     <span id="itemCount" class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-light"></span>
+                                </a>
+                            </li>
+                            <li class="nav-item me-2" id="activeCheckoutNav" style="display:none;">
+                                <a class="nav-link text-warning position-relative" asp-area="Presale" asp-controller="Checkout" asp-action="Cart" title="Aktywna rezerwacja — kliknij aby wrócić">
+                                    <i class="fa-solid fa-clock fa-lg"></i>
+                                    <span id="navCheckoutCountdown" class="ms-1 fw-bold small"></span>
                                 </a>
                             </li>
                         }
@@ -230,16 +236,59 @@
 
             var itemCount = document.getElementById("itemCount");
 
-            if (!itemCount) {
-                return;
+            if (itemCount) {
+                ajaxRequest.send("/Presale/Checkout/CartCount", "GET", undefined, "application/json", "json")
+                           .then(response => {
+                               if (response.count > 0) {
+                                   itemCount.innerHTML = response.count;
+                               }
+                           });
             }
 
-            ajaxRequest.send("/Presale/Checkout/CartCount", "GET", undefined, "application/json", "json")
-                        .then(response => { 
-                            if (response.count > 0) {
-                                itemCount.innerHTML = response.count;
+            var navCheckout = document.getElementById("activeCheckoutNav");
+            var navCountdownEl = document.getElementById("navCheckoutCountdown");
+            if (navCheckout && navCountdownEl) {
+                var _checkoutExpiry = null;
+                var _checkoutTimer = null;
+                function updateNavCountdown() {
+                    if (_checkoutExpiry === null) return;
+                    if (_checkoutExpiry <= 0) {
+                        navCheckout.style.display = 'none';
+                        navCountdownEl.textContent = '';
+                        _checkoutExpiry = null;
+                        clearInterval(_checkoutTimer);
+                        _checkoutTimer = null;
+                        return;
+                    }
+                    var m = Math.floor(_checkoutExpiry / 60);
+                    var s = _checkoutExpiry % 60;
+                    navCountdownEl.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+                    _checkoutExpiry--;
+                }
+                function pollCheckoutStatus() {
+                    fetch('/Presale/Checkout/CheckoutStatus')
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.active && data.secondsRemaining > 0) {
+                                _checkoutExpiry = data.secondsRemaining;
+                                navCheckout.style.display = '';
+                                if (!_checkoutTimer) {
+                                    updateNavCountdown();
+                                    _checkoutTimer = setInterval(updateNavCountdown, 1000);
+                                }
+                            } else {
+                                navCheckout.style.display = 'none';
+                                navCountdownEl.textContent = '';
+                                _checkoutExpiry = null;
+                                clearInterval(_checkoutTimer);
+                                _checkoutTimer = null;
                             }
-                        });
+                        })
+                        .catch(function () {});
+                }
+                pollCheckoutStatus();
+                setInterval(pollCheckoutStatus, 30000);
+            }
         });
 
         document.querySelectorAll('.category-filter-item').forEach(function (el) {
