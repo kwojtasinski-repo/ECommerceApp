@@ -1,7 +1,7 @@
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Application.Sales.Payments.Services;
-using ECommerceApp.IntegrationTests.Common;
+using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System;
 using System.Collections.Generic;
@@ -66,3 +66,4 @@ namespace ECommerceApp.IntegrationTests.Sales.Payments
         }
     }
 }
+

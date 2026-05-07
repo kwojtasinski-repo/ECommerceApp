@@ -1,7 +1,7 @@
 using ECommerceApp.Application.Sales.Fulfillment.DTOs;
 using ECommerceApp.Application.Sales.Fulfillment.Results;
 using ECommerceApp.Application.Sales.Fulfillment.Services;
-using ECommerceApp.IntegrationTests.Common;
+using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -91,3 +91,4 @@ namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
         }
     }
 }
+

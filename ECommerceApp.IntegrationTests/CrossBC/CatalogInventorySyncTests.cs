@@ -1,7 +1,7 @@
 using ECommerceApp.Application.Catalog.Products.Messages;
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Domain.Inventory.Availability;
-using ECommerceApp.IntegrationTests.Common;
+using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System;
 using System.Threading.Tasks;
@@ -56,3 +56,4 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         }
     }
 }
+

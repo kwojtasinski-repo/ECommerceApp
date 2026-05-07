@@ -1,5 +1,5 @@
-﻿using ECommerceApp.Application.External.Client;
-using ECommerceApp.IntegrationTests.Common;
+using ECommerceApp.Application.External.Client;
+using ECommerceApp.Shared.TestInfrastructure;
 using Newtonsoft.Json;
 using Shouldly;
 using System;
@@ -65,3 +65,4 @@ namespace ECommerceApp.IntegrationTests.Services
         public decimal Mid { get; set; }
     }
 }
+

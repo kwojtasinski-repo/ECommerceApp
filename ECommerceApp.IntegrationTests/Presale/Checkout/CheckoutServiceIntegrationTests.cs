@@ -7,7 +7,7 @@ using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Application.Sales.Orders.Services;
 using ECommerceApp.Domain.Catalog.Products;
 using ECommerceApp.Domain.Presale.Checkout;
-using ECommerceApp.IntegrationTests.Common;
+using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System;
 using System.Collections.Generic;
@@ -116,3 +116,4 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
         }
     }
 }
+

@@ -2,7 +2,7 @@ using ECommerceApp.Application.Presale.Checkout.DTOs;
 using ECommerceApp.Application.Presale.Checkout.Results;
 using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Domain.Presale.Checkout;
-using ECommerceApp.IntegrationTests.Common;
+using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -150,3 +150,4 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
         }
     }
 }
+

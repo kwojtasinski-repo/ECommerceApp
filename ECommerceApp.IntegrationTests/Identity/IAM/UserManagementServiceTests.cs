@@ -1,7 +1,7 @@
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Identity.IAM.Services;
 using ECommerceApp.Application.Identity.IAM.ViewModels;
-using ECommerceApp.IntegrationTests.Common;
+using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System;
 using System.Threading.Tasks;
@@ -152,3 +152,4 @@ namespace ECommerceApp.IntegrationTests.Identity.IAM
         }
     }
 }
+

@@ -1,7 +1,7 @@
 using ECommerceApp.Application.AccountProfile.DTOs;
 using ECommerceApp.Application.AccountProfile.Services;
 using ECommerceApp.Application.Exceptions;
-using ECommerceApp.IntegrationTests.Common;
+using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System.Threading.Tasks;
 using Xunit;
@@ -250,3 +250,4 @@ namespace ECommerceApp.IntegrationTests.AccountProfile
         }
     }
 }
+

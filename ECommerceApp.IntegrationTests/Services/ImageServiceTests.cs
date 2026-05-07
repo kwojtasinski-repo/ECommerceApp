@@ -1,5 +1,5 @@
-﻿using ECommerceApp.Application.Catalog.Images.Services;
-using ECommerceApp.IntegrationTests.Common;
+using ECommerceApp.Application.Catalog.Images.Services;
+using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System.Threading.Tasks;
 using Xunit;
@@ -50,3 +50,4 @@ namespace ECommerceApp.IntegrationTests.Services
         }
     }
 }
+

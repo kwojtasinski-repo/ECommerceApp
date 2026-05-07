@@ -4,7 +4,7 @@ using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Domain.Catalog.Products;
 using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Identity.IAM;
-using ECommerceApp.IntegrationTests.Common;
+using ECommerceApp.Shared.TestInfrastructure;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -163,3 +163,4 @@ namespace ECommerceApp.IntegrationTests.API
         public void DeleteFile(string path) { }
     }
 }
+

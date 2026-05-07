@@ -4,7 +4,7 @@ using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Application.Sales.Payments.Services;
 using ECommerceApp.Domain.Inventory.Availability;
 using ECommerceApp.Domain.Sales.Payments;
-using ECommerceApp.IntegrationTests.Common;
+using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System;
 using System.Collections.Generic;
@@ -130,3 +130,4 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         }
     }
 }
+

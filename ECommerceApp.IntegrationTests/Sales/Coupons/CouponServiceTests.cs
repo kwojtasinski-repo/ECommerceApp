@@ -1,7 +1,7 @@
 using ECommerceApp.Application.Sales.Coupons.Results;
 using ECommerceApp.Application.Sales.Coupons.Rules;
 using ECommerceApp.Application.Sales.Coupons.Services;
-using ECommerceApp.IntegrationTests.Common;
+using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -35,3 +35,4 @@ namespace ECommerceApp.IntegrationTests.Sales.Coupons
         }
     }
 }
+

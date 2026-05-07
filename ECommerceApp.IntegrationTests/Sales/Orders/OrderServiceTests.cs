@@ -1,7 +1,7 @@
 using ECommerceApp.Application.Sales.Orders.DTOs;
 using ECommerceApp.Application.Sales.Orders.Results;
 using ECommerceApp.Application.Sales.Orders.Services;
-using ECommerceApp.IntegrationTests.Common;
+using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -118,3 +118,4 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
         }
     }
 }
+

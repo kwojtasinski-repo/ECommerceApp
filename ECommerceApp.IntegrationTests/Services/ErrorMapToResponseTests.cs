@@ -1,6 +1,6 @@
-﻿using ECommerceApp.Application.Exceptions;
+using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
-using ECommerceApp.IntegrationTests.Common;
+using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System;
 using System.Collections.Generic;
@@ -123,3 +123,4 @@ namespace ECommerceApp.IntegrationTests.Services
         }
     }
 }
+

@@ -3,7 +3,7 @@ using ECommerceApp.Application.Sales.Orders.Services;
 using ECommerceApp.Application.Sales.Payments.Messages;
 using ECommerceApp.Domain.Sales.Orders;
 using ECommerceApp.Domain.Sales.Orders.ValueObjects;
-using ECommerceApp.IntegrationTests.Common;
+using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System;
 using System.Threading.Tasks;
@@ -57,3 +57,4 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
         }
     }
 }
+

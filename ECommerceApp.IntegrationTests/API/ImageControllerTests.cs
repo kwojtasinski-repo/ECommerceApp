@@ -1,9 +1,9 @@
-﻿using ECommerceApp.Application.Catalog.Images.Models;
+using ECommerceApp.Application.Catalog.Images.Models;
 using ECommerceApp.Application.Catalog.Images.Upload;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.POCO;
 using ECommerceApp.Domain.Catalog.Products;
-using ECommerceApp.IntegrationTests.Common;
+using ECommerceApp.Shared.TestInfrastructure;
 using Flurl.Http;
 using Microsoft.AspNetCore.Http;
 using Shouldly;
@@ -260,3 +260,4 @@ namespace ECommerceApp.IntegrationTests.API
         }
     }
 }
+

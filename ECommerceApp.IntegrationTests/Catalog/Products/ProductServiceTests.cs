@@ -2,7 +2,7 @@ using ECommerceApp.Application.Catalog.Products.DTOs;
 using ECommerceApp.Application.Catalog.Products.Services;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Domain.Catalog.Products;
-using ECommerceApp.IntegrationTests.Common;
+using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System.Collections.Generic;
 using System.Linq;
@@ -191,3 +191,4 @@ namespace ECommerceApp.IntegrationTests.Catalog.Products
         }
     }
 }
+

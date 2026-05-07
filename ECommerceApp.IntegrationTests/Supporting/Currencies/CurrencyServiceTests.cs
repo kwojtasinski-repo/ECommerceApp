@@ -1,7 +1,7 @@
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Supporting.Currencies.DTOs;
 using ECommerceApp.Application.Supporting.Currencies.Services;
-using ECommerceApp.IntegrationTests.Common;
+using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System.Threading.Tasks;
 using Xunit;
@@ -178,3 +178,4 @@ namespace ECommerceApp.IntegrationTests.Supporting.Currencies
         }
     }
 }
+

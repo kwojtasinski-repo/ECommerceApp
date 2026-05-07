@@ -1,6 +1,6 @@
 using ECommerceApp.Application.Sales.Orders.Services;
 using ECommerceApp.Application.Messaging;
-using ECommerceApp.IntegrationTests.Common;
+using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System.Threading.Tasks;
 using Xunit;
@@ -46,3 +46,4 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         }
     }
 }
+

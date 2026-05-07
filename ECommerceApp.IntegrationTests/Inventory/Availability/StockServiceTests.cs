@@ -1,7 +1,7 @@
 using ECommerceApp.Application.Inventory.Availability.DTOs;
 using ECommerceApp.Application.Inventory.Availability.Services;
 using ECommerceApp.Domain.Inventory.Availability;
-using ECommerceApp.IntegrationTests.Common;
+using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System;
 using System.Collections.Generic;
@@ -238,3 +238,4 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
         }
     }
 }
+
