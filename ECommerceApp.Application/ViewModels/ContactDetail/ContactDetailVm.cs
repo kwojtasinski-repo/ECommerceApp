@@ -13,7 +13,7 @@ namespace ECommerceApp.Application.ViewModels.ContactDetail
     {
         public ContactDetailVmValidation()
         {
-            RuleFor(a => a.ContactDetail).SetValidator(new ContactDetailDtoValidation());
+            RuleFor(a => a.ContactDetail).NotNull().SetValidator(new ContactDetailDtoValidation());
         }
     }
 }

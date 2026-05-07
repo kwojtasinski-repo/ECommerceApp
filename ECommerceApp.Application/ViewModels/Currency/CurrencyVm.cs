@@ -12,7 +12,7 @@ namespace ECommerceApp.Application.ViewModels.Currency
     {
         public CurrencyVmValidator()
         {
-            RuleFor(c => c.Currency).SetValidator(new CurrencyDtoValidator());
+            RuleFor(c => c.Currency).NotNull().SetValidator(new CurrencyDtoValidator());
         }
     }
 }

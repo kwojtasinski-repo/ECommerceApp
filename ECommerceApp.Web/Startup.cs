@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ECommerceApp.Infrastructure;
 using ECommerceApp.Application;
+using FluentValidation.AspNetCore;
 using System.Globalization;
 using Microsoft.AspNetCore.Localization;
 using ECommerceApp.Web.Filters;
@@ -36,6 +37,7 @@ namespace ECommerceApp.Web
             services.AddSingleton<JsVersionProvider>();
             services.Configure<CatalogOptions>(Configuration.GetSection(CatalogOptions.SectionName));
             services.AddApplication();
+            services.AddFluentValidationAutoValidation();
             services.AddInfrastructure(Configuration);
 
             services.AddControllersWithViews(options =>

@@ -16,7 +16,7 @@ namespace ECommerceApp.Application.ViewModels.Customer
     {
         public CustomerVmValidation()
         {
-            RuleFor(x => x.Customer).SetValidator(new CustomerDtoValidator());
+            RuleFor(x => x.Customer).NotNull().SetValidator(new CustomerDtoValidator());
         }
     }
 }

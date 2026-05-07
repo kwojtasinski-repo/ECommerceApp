@@ -12,7 +12,7 @@ namespace ECommerceApp.Application.ViewModels.Address
     {
         public AddressVmValidation()
         {
-            RuleFor(a => a.Address).SetValidator(new AddressDtoValidation());
+            RuleFor(a => a.Address).NotNull().SetValidator(new AddressDtoValidation());
         }
     }
 }
