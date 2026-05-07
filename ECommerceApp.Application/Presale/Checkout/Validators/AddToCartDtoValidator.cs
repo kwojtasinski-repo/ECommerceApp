@@ -8,6 +8,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Validators
     {
         public AddToCartDtoValidator()
         {
+            RuleFor(x => x.UserId).NotEmpty();
             RuleFor(x => x.Quantity)
                 .GreaterThan(0)
                 .WithMessage("Quantity must be positive.")

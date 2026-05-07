@@ -426,6 +426,295 @@ namespace ECommerceApp.IntegrationTests.API
             var body = await response.GetStringAsync();
             body.ShouldNotBeNullOrWhiteSpace();
         }
+
+        [Fact]
+        public async Task UpdateAddress_EmptyStreet_Returns400()
+        {
+            var client = await AuthenticatedClient();
+            var dto = new UpdateAddressDto(
+                AddressId: 1,
+                Street: "",
+                BuildingNumber: "10",
+                FlatNumber: null,
+                ZipCode: "12-345",
+                City: "Warsaw",
+                Country: "PL");
+
+            var response = await client.Request("api/addresses/1")
+                .AllowAnyHttpStatus()
+                .PutJsonAsync(dto);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
+            var body = await response.GetStringAsync();
+            body.ShouldNotBeNullOrWhiteSpace();
+        }
+
+        [Fact]
+        public async Task UpdateAddress_InvalidCountryLength_Returns400()
+        {
+            var client = await AuthenticatedClient();
+            // Country must be exactly 2 chars
+            var dto = new UpdateAddressDto(
+                AddressId: 1,
+                Street: "Main St",
+                BuildingNumber: "10",
+                FlatNumber: null,
+                ZipCode: "12-345",
+                City: "Warsaw",
+                Country: "Poland");
+
+            var response = await client.Request("api/addresses/1")
+                .AllowAnyHttpStatus()
+                .PutJsonAsync(dto);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
+            var body = await response.GetStringAsync();
+            body.ShouldNotBeNullOrWhiteSpace();
+        }
+
+        [Fact]
+        public async Task AddAddress_EmptyBuildingNumber_Returns400()
+        {
+            var client = await AuthenticatedClient();
+            var dto = new AddAddressDto(
+                UserProfileId: 1,
+                Street: "Main St",
+                BuildingNumber: "",
+                FlatNumber: null,
+                ZipCode: "12-345",
+                City: "Warsaw",
+                Country: "PL");
+
+            var response = await client.Request("api/addresses")
+                .AllowAnyHttpStatus()
+                .PostJsonAsync(dto);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
+            var body = await response.GetStringAsync();
+            body.ShouldNotBeNullOrWhiteSpace();
+        }
+
+        [Fact]
+        public async Task AddAddress_EmptyCity_Returns400()
+        {
+            var client = await AuthenticatedClient();
+            var dto = new AddAddressDto(
+                UserProfileId: 1,
+                Street: "Main St",
+                BuildingNumber: "10",
+                FlatNumber: null,
+                ZipCode: "12-345",
+                City: "",
+                Country: "PL");
+
+            var response = await client.Request("api/addresses")
+                .AllowAnyHttpStatus()
+                .PostJsonAsync(dto);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
+            var body = await response.GetStringAsync();
+            body.ShouldNotBeNullOrWhiteSpace();
+        }
+
+        [Fact]
+        public async Task AddAddress_ZeroUserProfileId_Returns400()
+        {
+            var client = await AuthenticatedClient();
+            var dto = new AddAddressDto(
+                UserProfileId: 0,
+                Street: "Main St",
+                BuildingNumber: "10",
+                FlatNumber: null,
+                ZipCode: "12-345",
+                City: "Warsaw",
+                Country: "PL");
+
+            var response = await client.Request("api/addresses")
+                .AllowAnyHttpStatus()
+                .PostJsonAsync(dto);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
+            var body = await response.GetStringAsync();
+            body.ShouldNotBeNullOrWhiteSpace();
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // POST /api/customers — CreateUserProfileDtoValidator (extra rules)
+        // ─────────────────────────────────────────────────────────────────
+
+        [Fact]
+        public async Task CreateUserProfile_EmptyUserId_Returns400()
+        {
+            var client = await AuthenticatedClient();
+            var dto = new CreateUserProfileDto(
+                UserId: "",
+                FirstName: "Test",
+                LastName: "Tester",
+                IsCompany: false,
+                NIP: null,
+                CompanyName: null,
+                Email: "valid@test.com",
+                PhoneNumber: "123456789");
+
+            var response = await client.Request("api/customers")
+                .AllowAnyHttpStatus()
+                .PostJsonAsync(dto);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
+            var body = await response.GetStringAsync();
+            body.ShouldNotBeNullOrWhiteSpace();
+        }
+
+        [Fact]
+        public async Task CreateUserProfile_EmptyLastName_Returns400()
+        {
+            var client = await AuthenticatedClient();
+            var dto = new CreateUserProfileDto(
+                UserId: "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e",
+                FirstName: "Test",
+                LastName: "",
+                IsCompany: false,
+                NIP: null,
+                CompanyName: null,
+                Email: "valid@test.com",
+                PhoneNumber: "123456789");
+
+            var response = await client.Request("api/customers")
+                .AllowAnyHttpStatus()
+                .PostJsonAsync(dto);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
+            var body = await response.GetStringAsync();
+            body.ShouldNotBeNullOrWhiteSpace();
+        }
+
+        [Fact]
+        public async Task CreateUserProfile_EmptyPhoneNumber_Returns400()
+        {
+            var client = await AuthenticatedClient();
+            var dto = new CreateUserProfileDto(
+                UserId: "a85e6eb8-242d-4bbe-9ce6-b2fbb2ddbb4e",
+                FirstName: "Test",
+                LastName: "Tester",
+                IsCompany: false,
+                NIP: null,
+                CompanyName: null,
+                Email: "valid@test.com",
+                PhoneNumber: "");
+
+            var response = await client.Request("api/customers")
+                .AllowAnyHttpStatus()
+                .PostJsonAsync(dto);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
+            var body = await response.GetStringAsync();
+            body.ShouldNotBeNullOrWhiteSpace();
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // PUT /api/customers/{id} — UpdateUserProfileDtoValidator (extra rules)
+        // ─────────────────────────────────────────────────────────────────
+
+        [Fact]
+        public async Task UpdateUserProfile_EmptyFirstName_Returns400()
+        {
+            var client = await AuthenticatedClient();
+            var dto = new UpdateUserProfileDto(
+                Id: 1,
+                FirstName: "",
+                LastName: "Tester",
+                IsCompany: false,
+                NIP: null,
+                CompanyName: null);
+
+            var response = await client.Request("api/customers/1")
+                .AllowAnyHttpStatus()
+                .PutJsonAsync(dto);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
+            var body = await response.GetStringAsync();
+            body.ShouldNotBeNullOrWhiteSpace();
+        }
+
+        [Fact]
+        public async Task UpdateUserProfile_ZeroId_Returns400()
+        {
+            var client = await AuthenticatedClient();
+            var dto = new UpdateUserProfileDto(
+                Id: 0,
+                FirstName: "Test",
+                LastName: "Tester",
+                IsCompany: false,
+                NIP: null,
+                CompanyName: null);
+
+            var response = await client.Request("api/customers/0")
+                .AllowAnyHttpStatus()
+                .PutJsonAsync(dto);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
+            var body = await response.GetStringAsync();
+            body.ShouldNotBeNullOrWhiteSpace();
+        }
+
+        [Fact]
+        public async Task UpdateUserProfile_CompanyWithoutCompanyName_Returns400()
+        {
+            var client = await AuthenticatedClient();
+            var dto = new UpdateUserProfileDto(
+                Id: 1,
+                FirstName: "Test",
+                LastName: "Tester",
+                IsCompany: true,
+                NIP: null,
+                CompanyName: null);
+
+            var response = await client.Request("api/customers/1")
+                .AllowAnyHttpStatus()
+                .PutJsonAsync(dto);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
+            var body = await response.GetStringAsync();
+            body.ShouldNotBeNullOrWhiteSpace();
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // PUT /api/currencies — UpdateCurrencyDtoValidator (extra rules)
+        // ─────────────────────────────────────────────────────────────────
+
+        [Fact]
+        public async Task UpdateCurrency_EmptyDescription_Returns400()
+        {
+            var client = await AuthenticatedClient();
+            var dto = new UpdateCurrencyDto(2, "EUR", "");
+
+            var response = await client.Request("api/currencies")
+                .AllowAnyHttpStatus()
+                .PutJsonAsync(dto);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
+            var body = await response.GetStringAsync();
+            body.ShouldNotBeNullOrWhiteSpace();
+        }
+
+        // ─────────────────────────────────────────────────────────────────
+        // POST /api/cart/items — AddToCartDtoValidator (extra rules)
+        // ─────────────────────────────────────────────────────────────────
+
+        [Fact]
+        public async Task AddToCart_EmptyUserId_Returns400()
+        {
+            var client = await AuthenticatedClient();
+            var dto = new AddToCartDto("", 1, 1);
+
+            var response = await client.Request("api/cart/items")
+                .AllowAnyHttpStatus()
+                .PostJsonAsync(dto);
+
+            response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
+            var body = await response.GetStringAsync();
+            body.ShouldNotBeNullOrWhiteSpace();
+        }
     }
 }
 
