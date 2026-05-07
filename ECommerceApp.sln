@@ -36,16 +36,16 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Copilot", "Copilot", "{02EA
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "instructions", "instructions", "{38F19132-871F-4C11-806B-B6FE77611219}"
 	ProjectSection(SolutionItems) = preProject
+		.github\instructions\agent-memory.instructions.md = .github\instructions\agent-memory.instructions.md
+		.github\instructions\bc-adr-map.instructions.md = .github\instructions\bc-adr-map.instructions.md
+		.github\instructions\copilot-config-sync.instructions.md = .github\instructions\copilot-config-sync.instructions.md
+		.github\instructions\doc-suggestions.instructions.md = .github\instructions\doc-suggestions.instructions.md
 		.github\instructions\docs-index.instructions.md = .github\instructions\docs-index.instructions.md
 		.github\instructions\dotnet.instructions.md = .github\instructions\dotnet.instructions.md
 		.github\instructions\efcore.instructions.md = .github\instructions\efcore.instructions.md
 		.github\instructions\frontend.instructions.md = .github\instructions\frontend.instructions.md
 		.github\instructions\migration-policy.instructions.md = .github\instructions\migration-policy.instructions.md
 		.github\instructions\pre-edit.instructions.md = .github\instructions\pre-edit.instructions.md
-		.github\instructions\doc-suggestions.instructions.md = .github\instructions\doc-suggestions.instructions.md
-		.github\instructions\agent-memory.instructions.md = .github\instructions\agent-memory.instructions.md
-		.github\instructions\bc-adr-map.instructions.md = .github\instructions\bc-adr-map.instructions.md
-		.github\instructions\copilot-config-sync.instructions.md = .github\instructions\copilot-config-sync.instructions.md
 		.github\instructions\rag.instructions.md = .github\instructions\rag.instructions.md
 		.github\instructions\razorpages.instructions.md = .github\instructions\razorpages.instructions.md
 		.github\instructions\safety.instructions.md = .github\instructions\safety.instructions.md
@@ -82,25 +82,25 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0001", "0001", "{00010000-0000-0000-0000-000000000001}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0001\0001-project-overview-and-technology-stack.md = docs\adr\0001\0001-project-overview-and-technology-stack.md
-		docs\adr\0001\README.md = docs\adr\0001\README.md
 		docs\adr\0001\checklist.md = docs\adr\0001\checklist.md
 		docs\adr\0001\migration-plan.md = docs\adr\0001\migration-plan.md
+		docs\adr\0001\README.md = docs\adr\0001\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0002", "0002", "{00020000-0000-0000-0000-000000000002}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0002\0002-post-event-storming-architectural-evolution-strategy.md = docs\adr\0002\0002-post-event-storming-architectural-evolution-strategy.md
-		docs\adr\0002\README.md = docs\adr\0002\README.md
 		docs\adr\0002\checklist.md = docs\adr\0002\checklist.md
 		docs\adr\0002\migration-plan.md = docs\adr\0002\migration-plan.md
+		docs\adr\0002\README.md = docs\adr\0002\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0003", "0003", "{00030000-0000-0000-0000-000000000003}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0003\0003-feature-folder-organization-for-new-bounded-context-code.md = docs\adr\0003\0003-feature-folder-organization-for-new-bounded-context-code.md
-		docs\adr\0003\README.md = docs\adr\0003\README.md
 		docs\adr\0003\checklist.md = docs\adr\0003\checklist.md
 		docs\adr\0003\migration-plan.md = docs\adr\0003\migration-plan.md
+		docs\adr\0003\README.md = docs\adr\0003\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example-implementation", "example-implementation", "{0003E001-0000-0000-0000-000000000003}"
@@ -111,25 +111,25 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0004", "0004", "{00040000-0000-0000-0000-000000000004}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0004\0004-module-taxonomy-and-bounded-context-grouping.md = docs\adr\0004\0004-module-taxonomy-and-bounded-context-grouping.md
-		docs\adr\0004\README.md = docs\adr\0004\README.md
 		docs\adr\0004\checklist.md = docs\adr\0004\checklist.md
 		docs\adr\0004\migration-plan.md = docs\adr\0004\migration-plan.md
+		docs\adr\0004\README.md = docs\adr\0004\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0005", "0005", "{00050000-0000-0000-0000-000000000005}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0005\0005-accountprofile-bc-userprofile-aggregate-design.md = docs\adr\0005\0005-accountprofile-bc-userprofile-aggregate-design.md
-		docs\adr\0005\README.md = docs\adr\0005\README.md
 		docs\adr\0005\checklist.md = docs\adr\0005\checklist.md
 		docs\adr\0005\migration-plan.md = docs\adr\0005\migration-plan.md
+		docs\adr\0005\README.md = docs\adr\0005\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0006", "0006", "{00060000-0000-0000-0000-000000000006}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0006\0006-typedid-and-value-objects-as-shared-domain-primitives.md = docs\adr\0006\0006-typedid-and-value-objects-as-shared-domain-primitives.md
-		docs\adr\0006\README.md = docs\adr\0006\README.md
 		docs\adr\0006\checklist.md = docs\adr\0006\checklist.md
 		docs\adr\0006\migration-plan.md = docs\adr\0006\migration-plan.md
+		docs\adr\0006\README.md = docs\adr\0006\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example-implementation", "example-implementation", "{0006E001-0000-0000-0000-000000000006}"
@@ -141,9 +141,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0007", "0007", "{00070000-0000-0000-0000-000000000007}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0007\0007-catalog-bc-product-category-tag-aggregate-design.md = docs\adr\0007\0007-catalog-bc-product-category-tag-aggregate-design.md
-		docs\adr\0007\README.md = docs\adr\0007\README.md
 		docs\adr\0007\checklist.md = docs\adr\0007\checklist.md
 		docs\adr\0007\migration-plan.md = docs\adr\0007\migration-plan.md
+		docs\adr\0007\README.md = docs\adr\0007\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example-implementation", "example-implementation", "{0007E001-0000-0000-0000-000000000007}"
@@ -154,9 +154,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0008", "0008", "{00080000-0000-0000-0000-000000000008}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0008\0008-supporting-currencies-bc-design.md = docs\adr\0008\0008-supporting-currencies-bc-design.md
-		docs\adr\0008\README.md = docs\adr\0008\README.md
 		docs\adr\0008\checklist.md = docs\adr\0008\checklist.md
 		docs\adr\0008\migration-plan.md = docs\adr\0008\migration-plan.md
+		docs\adr\0008\README.md = docs\adr\0008\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example-implementation", "example-implementation", "{0008E001-0000-0000-0000-000000000008}"
@@ -167,9 +167,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0009", "0009", "{00090000-0000-0000-0000-000000000009}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0009\0009-supporting-timemanagement-bc-design.md = docs\adr\0009\0009-supporting-timemanagement-bc-design.md
-		docs\adr\0009\README.md = docs\adr\0009\README.md
 		docs\adr\0009\checklist.md = docs\adr\0009\checklist.md
 		docs\adr\0009\migration-plan.md = docs\adr\0009\migration-plan.md
+		docs\adr\0009\README.md = docs\adr\0009\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "amendments", "amendments", "{0009A001-0000-0000-0000-000000000009}"
@@ -179,17 +179,17 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "amendments", "amendments", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example-implementation", "example-implementation", "{0009E001-0000-0000-0000-000000000009}"
 	ProjectSection(SolutionItems) = preProject
-		docs\adr\0009\example-implementation\ischeduledtask-implementation.md = docs\adr\0009\example-implementation\ischeduledtask-implementation.md
 		docs\adr\0009\example-implementation\ideferred-job-scheduler-usage.md = docs\adr\0009\example-implementation\ideferred-job-scheduler-usage.md
+		docs\adr\0009\example-implementation\ischeduledtask-implementation.md = docs\adr\0009\example-implementation\ischeduledtask-implementation.md
 		docs\adr\0009\example-implementation\job-registration-di.md = docs\adr\0009\example-implementation\job-registration-di.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0010", "0010", "{00100000-0000-0000-0000-000000000010}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0010\0010-in-memory-message-broker-for-cross-bc-communication.md = docs\adr\0010\0010-in-memory-message-broker-for-cross-bc-communication.md
-		docs\adr\0010\README.md = docs\adr\0010\README.md
 		docs\adr\0010\checklist.md = docs\adr\0010\checklist.md
 		docs\adr\0010\migration-plan.md = docs\adr\0010\migration-plan.md
+		docs\adr\0010\README.md = docs\adr\0010\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "amendments", "amendments", "{0010A001-0000-0000-0000-000000000010}"
@@ -199,17 +199,17 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "amendments", "amendments", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example-implementation", "example-implementation", "{0010E001-0000-0000-0000-000000000010}"
 	ProjectSection(SolutionItems) = preProject
+		docs\adr\0010\example-implementation\multi-handler-pattern.md = docs\adr\0010\example-implementation\multi-handler-pattern.md
 		docs\adr\0010\example-implementation\publish-message-example.md = docs\adr\0010\example-implementation\publish-message-example.md
 		docs\adr\0010\example-implementation\register-handler-example.md = docs\adr\0010\example-implementation\register-handler-example.md
-		docs\adr\0010\example-implementation\multi-handler-pattern.md = docs\adr\0010\example-implementation\multi-handler-pattern.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0011", "0011", "{00110000-0000-0000-0000-000000000011}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0011\0011-inventory-availability-bc-design.md = docs\adr\0011\0011-inventory-availability-bc-design.md
-		docs\adr\0011\README.md = docs\adr\0011\README.md
 		docs\adr\0011\checklist.md = docs\adr\0011\checklist.md
 		docs\adr\0011\migration-plan.md = docs\adr\0011\migration-plan.md
+		docs\adr\0011\README.md = docs\adr\0011\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "amendments", "amendments", "{0011A001-0000-0000-0000-000000000011}"
@@ -219,32 +219,32 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "amendments", "amendments", 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example-implementation", "example-implementation", "{0011E001-0000-0000-0000-000000000011}"
 	ProjectSection(SolutionItems) = preProject
+		docs\adr\0011\example-implementation\cross-bc-message-wiring.md = docs\adr\0011\example-implementation\cross-bc-message-wiring.md
 		docs\adr\0011\example-implementation\stock-adjustment-algorithm.md = docs\adr\0011\example-implementation\stock-adjustment-algorithm.md
 		docs\adr\0011\example-implementation\two-phase-reservation-flow.md = docs\adr\0011\example-implementation\two-phase-reservation-flow.md
-		docs\adr\0011\example-implementation\cross-bc-message-wiring.md = docs\adr\0011\example-implementation\cross-bc-message-wiring.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0012", "0012", "{00120000-0000-0000-0000-000000000012}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0012\0012-presale-checkout-bc-design.md = docs\adr\0012\0012-presale-checkout-bc-design.md
-		docs\adr\0012\README.md = docs\adr\0012\README.md
 		docs\adr\0012\checklist.md = docs\adr\0012\checklist.md
 		docs\adr\0012\migration-plan.md = docs\adr\0012\migration-plan.md
+		docs\adr\0012\README.md = docs\adr\0012\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example-implementation", "example-implementation", "{0012E001-0000-0000-0000-000000000012}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0012\example-implementation\checkout-confirm-flow.md = docs\adr\0012\example-implementation\checkout-confirm-flow.md
-		docs\adr\0012\example-implementation\soft-reservation-lifecycle.md = docs\adr\0012\example-implementation\soft-reservation-lifecycle.md
 		docs\adr\0012\example-implementation\price-change-detection.md = docs\adr\0012\example-implementation\price-change-detection.md
+		docs\adr\0012\example-implementation\soft-reservation-lifecycle.md = docs\adr\0012\example-implementation\soft-reservation-lifecycle.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0013", "0013", "{00130000-0000-0000-0000-000000000013}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0013\0013-per-bc-dbcontext-interfaces.md = docs\adr\0013\0013-per-bc-dbcontext-interfaces.md
-		docs\adr\0013\README.md = docs\adr\0013\README.md
 		docs\adr\0013\checklist.md = docs\adr\0013\checklist.md
 		docs\adr\0013\migration-plan.md = docs\adr\0013\migration-plan.md
+		docs\adr\0013\README.md = docs\adr\0013\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example-implementation", "example-implementation", "{0013E001-0000-0000-0000-000000000013}"
@@ -255,9 +255,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0014", "0014", "{00140000-0000-0000-0000-000000000014}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0014\0014-sales-orders-bc-design.md = docs\adr\0014\0014-sales-orders-bc-design.md
-		docs\adr\0014\README.md = docs\adr\0014\README.md
 		docs\adr\0014\checklist.md = docs\adr\0014\checklist.md
 		docs\adr\0014\migration-plan.md = docs\adr\0014\migration-plan.md
+		docs\adr\0014\README.md = docs\adr\0014\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "amendments", "amendments", "{0014A001-0000-0000-0000-000000000014}"
@@ -271,32 +271,32 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example-implementation", "example-implementation", "{0014E001-0000-0000-0000-000000000014}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0014\example-implementation\order-aggregate-usage.md = docs\adr\0014\example-implementation\order-aggregate-usage.md
+		docs\adr\0014\example-implementation\order-product-snapshot.md = docs\adr\0014\example-implementation\order-product-snapshot.md
 		docs\adr\0014\example-implementation\place-order-flow.md = docs\adr\0014\example-implementation\place-order-flow.md
 		docs\adr\0014\example-implementation\result-handling-pattern.md = docs\adr\0014\example-implementation\result-handling-pattern.md
-		docs\adr\0014\example-implementation\order-product-snapshot.md = docs\adr\0014\example-implementation\order-product-snapshot.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0015", "0015", "{00150000-0000-0000-0000-000000000015}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0015\0015-sales-payments-bc-design.md = docs\adr\0015\0015-sales-payments-bc-design.md
-		docs\adr\0015\README.md = docs\adr\0015\README.md
 		docs\adr\0015\checklist.md = docs\adr\0015\checklist.md
 		docs\adr\0015\migration-plan.md = docs\adr\0015\migration-plan.md
+		docs\adr\0015\README.md = docs\adr\0015\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example-implementation", "example-implementation", "{0015E001-0000-0000-0000-000000000015}"
 	ProjectSection(SolutionItems) = preProject
+		docs\adr\0015\example-implementation\order-cancel-flow.md = docs\adr\0015\example-implementation\order-cancel-flow.md
 		docs\adr\0015\example-implementation\payment-state-machine.md = docs\adr\0015\example-implementation\payment-state-machine.md
 		docs\adr\0015\example-implementation\payment-window-expiry-flow.md = docs\adr\0015\example-implementation\payment-window-expiry-flow.md
-		docs\adr\0015\example-implementation\order-cancel-flow.md = docs\adr\0015\example-implementation\order-cancel-flow.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0016", "0016", "{00160000-0000-0000-0000-000000000016}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0016\0016-sales-coupons-bc-design.md = docs\adr\0016\0016-sales-coupons-bc-design.md
-		docs\adr\0016\README.md = docs\adr\0016\README.md
 		docs\adr\0016\checklist.md = docs\adr\0016\checklist.md
 		docs\adr\0016\migration-plan.md = docs\adr\0016\migration-plan.md
+		docs\adr\0016\README.md = docs\adr\0016\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "amendments", "amendments", "{0016A001-0000-0000-0000-000000000016}"
@@ -307,16 +307,16 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example-implementation", "example-implementation", "{0016E001-0000-0000-0000-000000000016}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0016\example-implementation\apply-coupon-flow.md = docs\adr\0016\example-implementation\apply-coupon-flow.md
-		docs\adr\0016\example-implementation\new-coupon-rule-guide.md = docs\adr\0016\example-implementation\new-coupon-rule-guide.md
 		docs\adr\0016\example-implementation\coupon-evaluation-context.md = docs\adr\0016\example-implementation\coupon-evaluation-context.md
+		docs\adr\0016\example-implementation\new-coupon-rule-guide.md = docs\adr\0016\example-implementation\new-coupon-rule-guide.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0017", "0017", "{00170000-0000-0000-0000-000000000017}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0017\0017-sales-fulfillment-bc-design.md = docs\adr\0017\0017-sales-fulfillment-bc-design.md
-		docs\adr\0017\README.md = docs\adr\0017\README.md
 		docs\adr\0017\checklist.md = docs\adr\0017\checklist.md
 		docs\adr\0017\migration-plan.md = docs\adr\0017\migration-plan.md
+		docs\adr\0017\README.md = docs\adr\0017\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "amendments", "amendments", "{0017A001-0000-0000-0000-000000000017}"
@@ -333,33 +333,33 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0018", "0018", "{00180000-0000-0000-0000-000000000018}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0018\0018-supporting-communication-bc-design.md = docs\adr\0018\0018-supporting-communication-bc-design.md
-		docs\adr\0018\README.md = docs\adr\0018\README.md
 		docs\adr\0018\checklist.md = docs\adr\0018\checklist.md
 		docs\adr\0018\migration-plan.md = docs\adr\0018\migration-plan.md
+		docs\adr\0018\README.md = docs\adr\0018\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0019", "0019", "{00190000-0000-0000-0000-000000000019}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0019\0019-identity-iam-bc-design.md = docs\adr\0019\0019-identity-iam-bc-design.md
-		docs\adr\0019\README.md = docs\adr\0019\README.md
 		docs\adr\0019\checklist.md = docs\adr\0019\checklist.md
 		docs\adr\0019\migration-plan.md = docs\adr\0019\migration-plan.md
+		docs\adr\0019\README.md = docs\adr\0019\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0020", "0020", "{00200000-0000-0000-0000-000000000020}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0020\0020-backoffice-bc-design.md = docs\adr\0020\0020-backoffice-bc-design.md
-		docs\adr\0020\README.md = docs\adr\0020\README.md
 		docs\adr\0020\checklist.md = docs\adr\0020\checklist.md
 		docs\adr\0020\migration-plan.md = docs\adr\0020\migration-plan.md
+		docs\adr\0020\README.md = docs\adr\0020\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0021", "0021", "{00210000-0000-0000-0000-000000000021}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0021\0021-frontend-error-pipeline-and-js-migration-strategy.md = docs\adr\0021\0021-frontend-error-pipeline-and-js-migration-strategy.md
-		docs\adr\0021\README.md = docs\adr\0021\README.md
 		docs\adr\0021\checklist.md = docs\adr\0021\checklist.md
 		docs\adr\0021\migration-plan.md = docs\adr\0021\migration-plan.md
+		docs\adr\0021\README.md = docs\adr\0021\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example-implementation", "example-implementation", "{0021E001-0000-0000-0000-000000000021}"
@@ -370,9 +370,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0022", "0022", "{00220000-0000-0000-0000-000000000022}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0022\0022-navbar-two-tier-redesign.md = docs\adr\0022\0022-navbar-two-tier-redesign.md
-		docs\adr\0022\README.md = docs\adr\0022\README.md
 		docs\adr\0022\checklist.md = docs\adr\0022\checklist.md
 		docs\adr\0022\migration-plan.md = docs\adr\0022\migration-plan.md
+		docs\adr\0022\README.md = docs\adr\0022\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example-implementation", "example-implementation", "{0022E001-0000-0000-0000-000000000022}"
@@ -383,9 +383,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0023", "0023", "{00230000-0000-0000-0000-000000000023}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0023\0023-bootstrap-5-upgrade.md = docs\adr\0023\0023-bootstrap-5-upgrade.md
-		docs\adr\0023\README.md = docs\adr\0023\README.md
 		docs\adr\0023\checklist.md = docs\adr\0023\checklist.md
 		docs\adr\0023\migration-plan.md = docs\adr\0023\migration-plan.md
+		docs\adr\0023\README.md = docs\adr\0023\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example-implementation", "example-implementation", "{0023E001-0000-0000-0000-000000000023}"
@@ -396,9 +396,9 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0024", "0024", "{00240000-0000-0000-0000-000000000024}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0024\0024-controller-routing-strategy.md = docs\adr\0024\0024-controller-routing-strategy.md
-		docs\adr\0024\README.md = docs\adr\0024\README.md
 		docs\adr\0024\checklist.md = docs\adr\0024\checklist.md
 		docs\adr\0024\migration-plan.md = docs\adr\0024\migration-plan.md
+		docs\adr\0024\README.md = docs\adr\0024\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "example-implementation", "example-implementation", "{0024E001-0000-0000-0000-000000000024}"
@@ -409,8 +409,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0025", "0025", "{00250000-0000-0000-0000-000000000025}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0025\0025-api-tiered-access-trusted-purchase-policy.md = docs\adr\0025\0025-api-tiered-access-trusted-purchase-policy.md
-		docs\adr\0025\README.md = docs\adr\0025\README.md
 		docs\adr\0025\migration-plan.md = docs\adr\0025\migration-plan.md
+		docs\adr\0025\README.md = docs\adr\0025\README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0026", "0026", "{00260000-0000-0000-0000-000000000026}"
@@ -537,7 +537,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "create-validator", "create-
 		.github\skills\create-validator\SKILL.md = .github\skills\create-validator\SKILL.md
 	EndProjectSection
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "create-cqrs-handler", "create-cqrs-handler", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "create-cqrs-handler", "create-cqrs-handler", "{C634830C-B5EE-49F0-B6FB-42BBFAB31741}"
 	ProjectSection(SolutionItems) = preProject
 		.github\skills\create-cqrs-handler\SKILL.md = .github\skills\create-cqrs-handler\SKILL.md
 	EndProjectSection
@@ -551,6 +551,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "create-message-contract", "
 	ProjectSection(SolutionItems) = preProject
 		.github\skills\create-message-contract\SKILL.md = .github\skills\create-message-contract\SKILL.md
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerceApp.Web.IntegrationTests", "ECommerceApp.Web.IntegrationTests\ECommerceApp.Web.IntegrationTests.csproj", "{C77D9490-CF88-A4B6-F7E6-3B869D2FECDE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerceApp.Shared.TestInfrastructure", "ECommerceApp.Shared.TestInfrastructure\ECommerceApp.Shared.TestInfrastructure.csproj", "{3F58C385-DAF9-D146-2747-EDFCAABDD44D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -586,6 +590,14 @@ Global
 		{270EE226-CC66-4548-9BD1-469091FE8580}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{270EE226-CC66-4548-9BD1-469091FE8580}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{270EE226-CC66-4548-9BD1-469091FE8580}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C77D9490-CF88-A4B6-F7E6-3B869D2FECDE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C77D9490-CF88-A4B6-F7E6-3B869D2FECDE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C77D9490-CF88-A4B6-F7E6-3B869D2FECDE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C77D9490-CF88-A4B6-F7E6-3B869D2FECDE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F58C385-DAF9-D146-2747-EDFCAABDD44D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F58C385-DAF9-D146-2747-EDFCAABDD44D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F58C385-DAF9-D146-2747-EDFCAABDD44D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F58C385-DAF9-D146-2747-EDFCAABDD44D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -660,8 +672,8 @@ Global
 		{BAC45AC5-6905-4FAF-956C-CD73D03DB4BD} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{DB95CC21-7869-4EAC-8EB3-F5706D958E0A} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 		{8FA6F8D3-44D1-4AC3-9335-8B69F45EA3DD} = {908C6C00-47A3-455F-82C8-5BBECB045911}
-		{1064B208-B85A-4013-8C84-597303D43282} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{9F10C0A0-1700-0000-0000-000000000001} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
+		{1064B208-B85A-4013-8C84-597303D43282} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567890} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 		{7C3E91A2-B4D5-4F68-9A1C-E2F30748D6B1} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 		{2FBD2A37-7C7A-4EE9-87FD-DECAC3085916} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
@@ -673,6 +685,8 @@ Global
 		{3F4FB488-668E-45EE-BCE3-6A5B4B55B5C9} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
 		{0812F74D-3AE1-492C-BFB1-2F8FFA4FC97A} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
 		{F3E145DF-ADCD-4EFA-BC2C-8C4855A9E597} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{C77D9490-CF88-A4B6-F7E6-3B869D2FECDE} = {10D50F1A-6B65-4B28-B3E1-B064B6EBF967}
+		{3F58C385-DAF9-D146-2747-EDFCAABDD44D} = {10D50F1A-6B65-4B28-B3E1-B064B6EBF967}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C833E166-660D-4E9D-85E1-0ED811E2828E}
