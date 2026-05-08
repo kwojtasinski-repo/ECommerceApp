@@ -6,7 +6,6 @@ using Shouldly;
 using System;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Identity.IAM
 {

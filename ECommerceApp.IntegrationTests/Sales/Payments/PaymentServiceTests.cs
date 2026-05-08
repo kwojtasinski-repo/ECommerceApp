@@ -5,9 +5,9 @@ using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Sales.Payments
 {
@@ -17,7 +17,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Payments
 
         // ── Helpers ───────────────────────────────────────────────────────
 
-        private async Task<int> SeedPaymentViaOrderPlacedAsync(
+        private async Task<int> SeedPaymentViaOrderPlacedAsync(CancellationToken ct = default,
             int orderId = 1,
             decimal totalAmount = 100m,
             int currencyId = 1)
@@ -31,7 +31,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Payments
                 TotalAmount: totalAmount,
                 CurrencyId: currencyId);
 
-            await PublishAsync(orderPlaced);
+            await PublishAsync(orderPlaced, CancellationToken);
             // OrderPlacedHandler creates a Payment with auto-generated ID (1 for first)
             return orderId;
         }
@@ -41,7 +41,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Payments
         [Fact]
         public async Task GetByIdAsync_NonExistentPayment_ShouldReturnNull()
         {
-            var result = await _service.GetByIdAsync(int.MaxValue);
+            var result = await _service.GetByIdAsync(int.MaxValue, CancellationToken);
 
             result.ShouldBeNull();
         }
@@ -49,12 +49,12 @@ namespace ECommerceApp.IntegrationTests.Sales.Payments
         [Fact]
         public async Task GetByIdAsync_ExistingPayment_ShouldReturnPaymentDetails()
         {
-            var orderId = await SeedPaymentViaOrderPlacedAsync();
+            var orderId = await SeedPaymentViaOrderPlacedAsync(ct: CancellationToken);
 
-            var result = await _service.GetByOrderIdAsync(orderId);
+            var result = await _service.GetByOrderIdAsync(orderId, CancellationToken);
 
             result.ShouldNotBeNull();
-            var payment = await _service.GetByIdAsync(result.Id);
+            var payment = await _service.GetByIdAsync(result.Id, CancellationToken);
 
             payment.ShouldNotBeNull();
             payment.OrderId.ShouldBe(orderId);
@@ -68,7 +68,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Payments
         [Fact]
         public async Task GetByOrderIdAsync_NonExistentOrder_ShouldReturnNull()
         {
-            var result = await _service.GetByOrderIdAsync(int.MaxValue);
+            var result = await _service.GetByOrderIdAsync(int.MaxValue, CancellationToken);
 
             result.ShouldBeNull();
         }
@@ -76,9 +76,9 @@ namespace ECommerceApp.IntegrationTests.Sales.Payments
         [Fact]
         public async Task GetByOrderIdAsync_ExistingPayment_ShouldReturnPaymentDetails()
         {
-            var orderId = await SeedPaymentViaOrderPlacedAsync(orderId: 42, totalAmount: 250.50m, currencyId: 2);
+            var orderId = await SeedPaymentViaOrderPlacedAsync(orderId: 42, totalAmount: 250.50m, currencyId: 2, ct: CancellationToken);
 
-            var result = await _service.GetByOrderIdAsync(42);
+            var result = await _service.GetByOrderIdAsync(42, CancellationToken);
 
             result.ShouldNotBeNull();
             result.OrderId.ShouldBe(42);
@@ -93,7 +93,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Payments
         [Fact]
         public async Task ConfirmAsync_NonExistentPayment_ShouldReturnPaymentNotFound()
         {
-            var result = await _service.ConfirmAsync(new ConfirmPaymentDto(int.MaxValue, "TX-001"));
+            var result = await _service.ConfirmAsync(new ConfirmPaymentDto(int.MaxValue, "TX-001"), CancellationToken);
 
             result.ShouldBe(PaymentOperationResult.PaymentNotFound);
         }
@@ -101,14 +101,14 @@ namespace ECommerceApp.IntegrationTests.Sales.Payments
         [Fact]
         public async Task ConfirmAsync_PendingPayment_ShouldReturnSuccess()
         {
-            var orderId = await SeedPaymentViaOrderPlacedAsync();
-            var payment = await _service.GetByOrderIdAsync(orderId);
+            var orderId = await SeedPaymentViaOrderPlacedAsync(ct: CancellationToken);
+            var payment = await _service.GetByOrderIdAsync(orderId, CancellationToken);
 
-            var result = await _service.ConfirmAsync(new ConfirmPaymentDto(payment!.Id, "TX-CONFIRM"));
+            var result = await _service.ConfirmAsync(new ConfirmPaymentDto(payment!.Id, "TX-CONFIRM"), CancellationToken);
 
             result.ShouldBe(PaymentOperationResult.Success);
 
-            var confirmed = await _service.GetByIdAsync(payment.Id);
+            var confirmed = await _service.GetByIdAsync(payment.Id, CancellationToken);
             confirmed.ShouldNotBeNull();
             confirmed.Status.ShouldBe("Confirmed");
             confirmed.TransactionRef.ShouldBe("TX-CONFIRM");
@@ -118,11 +118,11 @@ namespace ECommerceApp.IntegrationTests.Sales.Payments
         [Fact]
         public async Task ConfirmAsync_AlreadyConfirmedPayment_ShouldReturnAlreadyConfirmed()
         {
-            var orderId = await SeedPaymentViaOrderPlacedAsync();
-            var payment = await _service.GetByOrderIdAsync(orderId);
-            await _service.ConfirmAsync(new ConfirmPaymentDto(payment!.Id, "TX-1"));
+            var orderId = await SeedPaymentViaOrderPlacedAsync(ct: CancellationToken);
+            var payment = await _service.GetByOrderIdAsync(orderId, CancellationToken);
+            await _service.ConfirmAsync(new ConfirmPaymentDto(payment!.Id, "TX-1"), CancellationToken);
 
-            var result = await _service.ConfirmAsync(new ConfirmPaymentDto(payment.Id, "TX-2"));
+            var result = await _service.ConfirmAsync(new ConfirmPaymentDto(payment.Id, "TX-2"), CancellationToken);
 
             result.ShouldBe(PaymentOperationResult.AlreadyConfirmed);
         }
@@ -132,7 +132,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Payments
         [Fact]
         public async Task ProcessRefundAsync_NonExistentPayment_ShouldReturnPaymentNotFound()
         {
-            var result = await _service.ProcessRefundAsync(orderId: int.MaxValue, refundId: 1);
+            var result = await _service.ProcessRefundAsync(orderId: int.MaxValue, refundId: 1, CancellationToken);
 
             result.ShouldBe(PaymentOperationResult.PaymentNotFound);
         }
@@ -140,15 +140,15 @@ namespace ECommerceApp.IntegrationTests.Sales.Payments
         [Fact]
         public async Task ProcessRefundAsync_ConfirmedPayment_ShouldReturnSuccess()
         {
-            var orderId = await SeedPaymentViaOrderPlacedAsync();
-            var payment = await GetRequiredService<IPaymentService>().GetByOrderIdAsync(orderId);
-            await GetRequiredService<IPaymentService>().ConfirmAsync(new ConfirmPaymentDto(payment!.Id, "TX-REF"));
+            var orderId = await SeedPaymentViaOrderPlacedAsync(ct: CancellationToken);
+            var payment = await GetRequiredService<IPaymentService>().GetByOrderIdAsync(orderId, CancellationToken);
+            await GetRequiredService<IPaymentService>().ConfirmAsync(new ConfirmPaymentDto(payment!.Id, "TX-REF"), CancellationToken);
 
-            var result = await GetRequiredService<IPaymentService>().ProcessRefundAsync(orderId, refundId: 99);
+            var result = await GetRequiredService<IPaymentService>().ProcessRefundAsync(orderId, refundId: 99, CancellationToken);
 
             result.ShouldBe(PaymentOperationResult.Success);
 
-            var refunded = await GetRequiredService<IPaymentService>().GetByOrderIdAsync(orderId);
+            var refunded = await GetRequiredService<IPaymentService>().GetByOrderIdAsync(orderId, CancellationToken);
             refunded.ShouldNotBeNull();
             refunded.Status.ShouldBe("Refunded");
         }
@@ -156,12 +156,12 @@ namespace ECommerceApp.IntegrationTests.Sales.Payments
         [Fact]
         public async Task ProcessRefundAsync_AlreadyRefundedPayment_ShouldReturnAlreadyRefunded()
         {
-            var orderId = await SeedPaymentViaOrderPlacedAsync();
-            var payment = await GetRequiredService<IPaymentService>().GetByOrderIdAsync(orderId);
-            await GetRequiredService<IPaymentService>().ConfirmAsync(new ConfirmPaymentDto(payment!.Id, "TX-1"));
-            await GetRequiredService<IPaymentService>().ProcessRefundAsync(orderId, refundId: 1);
+            var orderId = await SeedPaymentViaOrderPlacedAsync(ct: CancellationToken);
+            var payment = await GetRequiredService<IPaymentService>().GetByOrderIdAsync(orderId, CancellationToken);
+            await GetRequiredService<IPaymentService>().ConfirmAsync(new ConfirmPaymentDto(payment!.Id, "TX-1"), CancellationToken);
+            await GetRequiredService<IPaymentService>().ProcessRefundAsync(orderId, refundId: 1, CancellationToken);
 
-            var result = await GetRequiredService<IPaymentService>().ProcessRefundAsync(orderId, refundId: 2);
+            var result = await GetRequiredService<IPaymentService>().ProcessRefundAsync(orderId, refundId: 2, CancellationToken);
 
             result.ShouldBe(PaymentOperationResult.AlreadyRefunded);
         }

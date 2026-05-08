@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Net;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.Web.IntegrationTests.Currencies
 {

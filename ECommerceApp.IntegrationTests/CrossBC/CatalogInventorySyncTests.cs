@@ -6,7 +6,6 @@ using Shouldly;
 using System;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.CrossBC
 {
@@ -30,10 +29,10 @@ namespace ECommerceApp.IntegrationTests.CrossBC
                 IsDigital: false,
                 OccurredAt: DateTime.UtcNow);
 
-            await _service.PublishAsync(msg);
+            await PublishAsync(msg, CancellationToken);
 
             var repo = GetRequiredService<IProductSnapshotRepository>();
-            var snapshot = await repo.GetByProductIdAsync(42);
+            var snapshot = await repo.GetByProductIdAsync(42, CancellationToken);
             snapshot.ShouldNotBeNull();
             snapshot.ProductId.ShouldBe(42);
         }
@@ -47,10 +46,10 @@ namespace ECommerceApp.IntegrationTests.CrossBC
                 IsDigital: true,
                 OccurredAt: DateTime.UtcNow);
 
-            await _service.PublishAsync(msg);
+            await PublishAsync(msg, CancellationToken);
 
             var repo = GetRequiredService<IProductSnapshotRepository>();
-            var snapshot = await repo.GetByProductIdAsync(43);
+            var snapshot = await repo.GetByProductIdAsync(43, CancellationToken);
             snapshot.ShouldNotBeNull();
             snapshot.IsDigital.ShouldBeTrue();
         }

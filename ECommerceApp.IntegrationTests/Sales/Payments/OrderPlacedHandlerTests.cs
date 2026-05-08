@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Sales.Payments
 {
@@ -33,9 +32,9 @@ namespace ECommerceApp.IntegrationTests.Sales.Payments
         [Fact]
         public async Task HandleAsync_OrderPlaced_ShouldCreatePendingPayment()
         {
-            await _service.PublishAsync(CreateMessage(orderId: 1));
+            await PublishAsync(CreateMessage(orderId: 1), CancellationToken);
 
-            var payment = await GetRequiredService<IPaymentService>().GetByOrderIdAsync(1);
+            var payment = await GetRequiredService<IPaymentService>().GetByOrderIdAsync(1, CancellationToken);
 
             payment.ShouldNotBeNull();
             payment.OrderId.ShouldBe(1);
@@ -45,9 +44,9 @@ namespace ECommerceApp.IntegrationTests.Sales.Payments
         [Fact]
         public async Task HandleAsync_OrderPlaced_ShouldCaptureCorrectTotalAmountAndCurrency()
         {
-            await _service.PublishAsync(CreateMessage(orderId: 2, totalAmount: 299.99m, currencyId: 2));
+            await PublishAsync(CreateMessage(orderId: 2, totalAmount: 299.99m, currencyId: 2), CancellationToken);
 
-            var payment = await GetRequiredService<IPaymentService>().GetByOrderIdAsync(2);
+            var payment = await GetRequiredService<IPaymentService>().GetByOrderIdAsync(2, CancellationToken);
 
             payment.ShouldNotBeNull();
             payment.TotalAmount.ShouldBe(299.99m);
@@ -57,9 +56,9 @@ namespace ECommerceApp.IntegrationTests.Sales.Payments
         [Fact]
         public async Task HandleAsync_OrderPlaced_ConfirmedAtShouldBeNull()
         {
-            await _service.PublishAsync(CreateMessage(orderId: 3));
+            await PublishAsync(CreateMessage(orderId: 3), CancellationToken);
 
-            var payment = await GetRequiredService<IPaymentService>().GetByOrderIdAsync(3);
+            var payment = await GetRequiredService<IPaymentService>().GetByOrderIdAsync(3, CancellationToken);
 
             payment.ShouldNotBeNull();
             payment.ConfirmedAt.ShouldBeNull();

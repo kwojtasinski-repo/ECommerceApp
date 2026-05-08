@@ -11,9 +11,9 @@ using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Presale.Checkout
 {
@@ -30,7 +30,7 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
             "ul. Testowa", "1", null,
             "00-001", "Warszawa", "Poland");
 
-        private async Task<int> SeedProductAsync(decimal price = 49.99m)
+        private async Task<int> SeedProductAsync(decimal price = 49.99m, CancellationToken ct = default)
         {
             var categoryRepo = GetRequiredService<ICategoryRepository>();
             var categoryId = await categoryRepo.AddAsync(Category.Create("CheckoutIntTest Category"));
@@ -42,10 +42,10 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
             return productId;
         }
 
-        private async Task SeedStockSnapshotAsync(int productId, int qty = 100)
+        private async Task SeedStockSnapshotAsync(int productId, int qty = 100, CancellationToken ct = default)
         {
             var snapshotRepo = GetRequiredService<IStockSnapshotRepository>();
-            await snapshotRepo.AddAsync(StockSnapshot.Create(productId, qty, DateTime.UtcNow));
+            await snapshotRepo.AddAsync(StockSnapshot.Create(productId, qty, DateTime.UtcNow), CancellationToken);
         }
 
         // ── PlaceOrderAsync ───────────────────────────────────────────────
@@ -55,7 +55,7 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
         {
             var userId = new PresaleUserId("co-user-nosr");
 
-            var result = await _service.PlaceOrderAsync(userId, CustomerId, CurrencyId, DefaultCustomer);
+            var result = await _service.PlaceOrderAsync(userId, CustomerId, CurrencyId, DefaultCustomer, CancellationToken);
 
             result.ShouldBeOfType<CheckoutResult.NoSoftReservations>();
         }
@@ -66,23 +66,23 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
             var userId = "co-user-success";
             var presaleUserId = new PresaleUserId(userId);
 
-            var productId = await SeedProductAsync();
-            await SeedStockSnapshotAsync(productId);
+            var productId = await SeedProductAsync(ct: CancellationToken);
+            await SeedStockSnapshotAsync(productId, ct: CancellationToken);
 
             var cartService = GetRequiredService<ICartService>();
-            await cartService.SetCartItemAsync(new AddToCartDto(userId, productId, 2));
+            await cartService.SetCartItemAsync(new AddToCartDto(userId, productId, 2), CancellationToken);
 
-            var initiateResult = await _service.InitiateAsync(presaleUserId);
+            var initiateResult = await _service.InitiateAsync(presaleUserId, CancellationToken);
             initiateResult.ShouldBeOfType<InitiateCheckoutResult.Completed>();
 
-            var result = await _service.PlaceOrderAsync(presaleUserId, CustomerId, CurrencyId, DefaultCustomer);
+            var result = await _service.PlaceOrderAsync(presaleUserId, CustomerId, CurrencyId, DefaultCustomer, CancellationToken);
 
             result.ShouldBeOfType<CheckoutResult.Success>();
             var success = (CheckoutResult.Success)result;
             success.OrderId.ShouldBeGreaterThan(0);
 
             var orderService = GetRequiredService<IOrderService>();
-            var orders = await orderService.GetOrdersByUserIdAsync(userId);
+            var orders = await orderService.GetOrdersByUserIdAsync(userId, CancellationToken);
             orders.ShouldNotBeEmpty();
             orders.ShouldContain(o => o.Id == success.OrderId);
         }
@@ -94,7 +94,7 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
         {
             var userId = new PresaleUserId("co-user-emptycart");
 
-            var result = await _service.InitiateAsync(userId);
+            var result = await _service.InitiateAsync(userId, CancellationToken);
 
             result.ShouldBeOfType<InitiateCheckoutResult.CartEmpty>();
         }
@@ -104,13 +104,13 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
         {
             var userId = "co-user-unavail";
             var presaleUserId = new PresaleUserId(userId);
-            var productId = await SeedProductAsync();
+            var productId = await SeedProductAsync(ct: CancellationToken);
             // No snapshot seeded — HoldAsync will return false for this product
 
             var cartService = GetRequiredService<ICartService>();
-            await cartService.SetCartItemAsync(new AddToCartDto(userId, productId, 1));
+            await cartService.SetCartItemAsync(new AddToCartDto(userId, productId, 1), CancellationToken);
 
-            var result = await _service.InitiateAsync(presaleUserId);
+            var result = await _service.InitiateAsync(presaleUserId, CancellationToken);
 
             result.ShouldBeOfType<InitiateCheckoutResult.NothingReserved>();
         }

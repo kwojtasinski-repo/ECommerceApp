@@ -15,9 +15,9 @@ using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.API
 {
@@ -31,13 +31,13 @@ namespace ECommerceApp.IntegrationTests.API
             _testData = Directory.GetParent(Directory.GetCurrentDirectory()).Parent.Parent.GetDirectories().Where(d => d.Name == "TestData").FirstOrDefault();
         }
 
-        public override async Task InitializeAsync()
+        public override async ValueTask InitializeAsync()
         {
             await base.InitializeAsync();
-            await _factory.EnsureSeedCatalogData();
+            await _factory.EnsureSeedCatalogData(CancellationToken);
         }
 
-        public override async Task DisposeAsync()
+        public override async ValueTask DisposeAsync()
         {
             var imageRepository = _factory.Services.GetService(typeof(IImageRepository)) as IImageRepository;
             var fileStore = _factory.Services.GetService(typeof(IFileStore)) as IFileStore;
@@ -54,7 +54,7 @@ namespace ECommerceApp.IntegrationTests.API
 
         private async Task<FlurlClient> GetLoggingClient()
         {
-            var client = await _factory.GetAuthenticatedClient();
+            var client = await _factory.GetAuthenticatedClient(CancellationToken);
             client.Settings.OnErrorAsync = async call =>
             {
                 var body = call.Response?.ResponseMessage?.Content != null
@@ -73,13 +73,13 @@ namespace ECommerceApp.IntegrationTests.API
             var addPoco = new AddImagePOCO { File = file, ItemId = _factory.SeededItemId };
             var multiContent = Utilities.SerializeObjectWithImageToBytes<AddImagePOCO>(addPoco);
             var id = await client.Request("api/images")
-                .PostAsync(multiContent)
+                .PostAsync(multiContent, CancellationToken)
                 .ReceiveJson<int>();
 
             var response = await client.Request($"api/images/{id}")
                 .AllowAnyHttpStatus()
-                .GetAsync();
-            var bytes = await response.ResponseMessage.Content.ReadAsByteArrayAsync();
+                .GetAsync(CancellationToken);
+            var bytes = await response.ResponseMessage.Content.ReadAsByteArrayAsync(CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
             bytes.ShouldNotBeEmpty();
@@ -95,7 +95,7 @@ namespace ECommerceApp.IntegrationTests.API
             var multiContent = Utilities.SerializeObjectWithImageToBytes<AddImagePOCO>(image);
 
             var id = await client.Request($"api/images")
-                .PostAsync(multiContent)
+                .PostAsync(multiContent, cancellationToken: CancellationToken)
                 .ReceiveJson<int>();
 
             id.ShouldBeGreaterThan(0);
@@ -116,7 +116,7 @@ namespace ECommerceApp.IntegrationTests.API
             var multiContent = Utilities.SerializeObjectWithImageToBytes<AddImagesPOCO>(images);
 
             var ids = await client.Request($"api/images/multi-upload")
-                .PostAsync(multiContent)
+                .PostAsync(multiContent, cancellationToken: CancellationToken)
                 .ReceiveJson<List<int>>();
 
             ids.Count.ShouldBeGreaterThan(0);
@@ -132,16 +132,16 @@ namespace ECommerceApp.IntegrationTests.API
             var multiContent = Utilities.SerializeObjectWithImageToBytes<AddImagePOCO>(image);
             var id = await client.Request($"api/images")
                 .AllowHttpStatus(HttpStatusCode.OK, HttpStatusCode.Created)
-                .PostAsync(multiContent)
+                .PostAsync(multiContent, cancellationToken: CancellationToken)
                 .ReceiveJson<int>();
 
             var response = await client.Request($"api/images/{id}")
                 .AllowAnyHttpStatus()
-                .DeleteAsync();
+                .DeleteAsync(cancellationToken: CancellationToken);
 
             var afterDeleteResponse = await client.Request($"api/images/{id}")
                             .AllowAnyHttpStatus()
-                            .GetAsync();
+                            .GetAsync(cancellationToken: CancellationToken);
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
             afterDeleteResponse.StatusCode.ShouldBe((int)HttpStatusCode.OK);
         }
@@ -150,9 +150,9 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task init_upload_given_valid_request_should_return_session()
         {
             var client = await GetLoggingClient();
-            var itemId = await _factory.CreateFreshItemAsync();
+            var itemId = await _factory.CreateFreshItemAsync(CancellationToken);
             var filePath = _testData.GetFiles().First().FullName;
-            var fileBytes = await File.ReadAllBytesAsync(filePath);
+            var fileBytes = await File.ReadAllBytesAsync(filePath, CancellationToken);
             var request = new InitUploadRequest
             {
                 FileName = Path.GetFileName(filePath),
@@ -163,10 +163,10 @@ namespace ECommerceApp.IntegrationTests.API
             var response = await client.Request("api/images/init-upload")
                 .AllowAnyHttpStatus()
                 .WithHeader("Content-Type", "application/json")
-                .PostStringAsync(JsonSerializer.Serialize(request));
+                .PostStringAsync(JsonSerializer.Serialize(request), cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
-            var body = await response.ResponseMessage.Content.ReadAsStringAsync();
+            var body = await response.ResponseMessage.Content.ReadAsStringAsync(CancellationToken);
             var result = JsonSerializer.Deserialize<InitUploadResponse>(body, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             result.ShouldNotBeNull();
             result.SessionId.ShouldNotBe(Guid.Empty);
@@ -180,16 +180,16 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task upload_chunk_single_chunk_file_should_complete()
         {
             var client = await GetLoggingClient();
-            var itemId = await _factory.CreateFreshItemAsync();
+            var itemId = await _factory.CreateFreshItemAsync(CancellationToken);
             var filePath = _testData.GetFiles().Where(f => f.Name == "apple-iphone-13.jpg").FirstOrDefault().FullName;
-            var fileBytes = await File.ReadAllBytesAsync(filePath);
+            var fileBytes = await File.ReadAllBytesAsync(filePath, CancellationToken);
             var fileName = Path.GetFileName(filePath);
 
             // Init
             var initRequest = new InitUploadRequest { FileName = fileName, FileSizeBytes = fileBytes.Length, ItemId = itemId };
             var initResponse = await client.Request("api/images/init-upload")
                 .WithHeader("Content-Type", "application/json")
-                .PostStringAsync(JsonSerializer.Serialize(initRequest))
+                .PostStringAsync(JsonSerializer.Serialize(initRequest), cancellationToken: CancellationToken)
                 .ReceiveString();
             var session = JsonSerializer.Deserialize<InitUploadResponse>(initResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
@@ -200,14 +200,16 @@ namespace ECommerceApp.IntegrationTests.API
                 var start = (chunkId - 1) * session.ChunkSize;
                 var slice = fileBytes.Skip(start).Take(session.ChunkSize).ToArray();
 
-                var fd = new MultipartFormDataContent();
-                fd.Add(new StringContent(session.SessionId.ToString()), "sessionId");
-                fd.Add(new StringContent(chunkId.ToString()), "chunkId");
-                fd.Add(new ByteArrayContent(slice) { Headers = { { "Content-Disposition", $"form-data; name=\"chunk\"; filename=\"{fileName}\"" } } }, "chunk", fileName);
+                var multipartData = new MultipartFormDataContent
+                {
+                    { new StringContent(session.SessionId.ToString()), "sessionId" },
+                    { new StringContent(chunkId.ToString()), "chunkId" },
+                    { new ByteArrayContent(slice) { Headers = { { "Content-Disposition", $"form-data; name=\"chunk\"; filename=\"{fileName}\"" } } }, "chunk", fileName }
+                };
 
                 var chunkRaw = await client.Request("api/images/upload-chunk")
                     .AllowAnyHttpStatus()
-                    .PostAsync(fd)
+                    .PostAsync(multipartData, cancellationToken: CancellationToken)
                     .ReceiveString();
                 lastResponse = JsonSerializer.Deserialize<UploadChunkResponse>(chunkRaw, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
             }
@@ -221,15 +223,15 @@ namespace ECommerceApp.IntegrationTests.API
         public async Task upload_chunk_multi_chunk_file_should_complete_and_progress_monotonically()
         {
             var client = await GetLoggingClient();
-            var itemId = await _factory.CreateFreshItemAsync();
+            var itemId = await _factory.CreateFreshItemAsync(CancellationToken);
             var filePath = _testData.GetFiles().Where(f => f.Name == "redmi-note-10.jpg").FirstOrDefault().FullName;
-            var fileBytes = await File.ReadAllBytesAsync(filePath);
+            var fileBytes = await File.ReadAllBytesAsync(filePath, CancellationToken);
             var fileName = Path.GetFileName(filePath);
 
             var initRequest = new InitUploadRequest { FileName = fileName, FileSizeBytes = fileBytes.Length, ItemId = itemId };
             var initRaw = await client.Request("api/images/init-upload")
                 .WithHeader("Content-Type", "application/json")
-                .PostStringAsync(JsonSerializer.Serialize(initRequest))
+                .PostStringAsync(JsonSerializer.Serialize(initRequest), cancellationToken: CancellationToken)
                 .ReceiveString();
             var session = JsonSerializer.Deserialize<InitUploadResponse>(initRaw, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
@@ -246,7 +248,7 @@ namespace ECommerceApp.IntegrationTests.API
 
                 var chunkRaw = await client.Request("api/images/upload-chunk")
                     .AllowAnyHttpStatus()
-                    .PostAsync(fd)
+                    .PostAsync(fd, cancellationToken: CancellationToken)
                     .ReceiveString();
                 var res = JsonSerializer.Deserialize<UploadChunkResponse>(chunkRaw, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
                 receivedCounts.Add(res.ReceivedCount);

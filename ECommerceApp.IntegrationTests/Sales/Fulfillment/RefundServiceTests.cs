@@ -6,7 +6,6 @@ using Shouldly;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
 {
@@ -26,7 +25,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
                 Items: new List<RequestRefundItemDto> { new(ProductId: 1, Quantity: 1) },
                 UserId: "test-user");
 
-            var result = await _service.RequestRefundAsync(dto);
+            var result = await _service.RequestRefundAsync(dto, CancellationToken);
 
             result.ShouldBe(RefundRequestResult.OrderNotFound);
         }
@@ -36,7 +35,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
         [Fact]
         public async Task ApproveRefundAsync_NonExistentRefund_ShouldReturnRefundNotFound()
         {
-            var result = await _service.ApproveRefundAsync(int.MaxValue);
+            var result = await _service.ApproveRefundAsync(int.MaxValue, CancellationToken);
 
             result.ShouldBe(RefundOperationResult.RefundNotFound);
         }
@@ -46,7 +45,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
         [Fact]
         public async Task RejectRefundAsync_NonExistentRefund_ShouldReturnRefundNotFound()
         {
-            var result = await _service.RejectRefundAsync(int.MaxValue);
+            var result = await _service.RejectRefundAsync(int.MaxValue, CancellationToken);
 
             result.ShouldBe(RefundOperationResult.RefundNotFound);
         }
@@ -56,7 +55,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
         [Fact]
         public async Task GetRefundAsync_NonExistentRefund_ShouldReturnNull()
         {
-            var result = await _service.GetRefundAsync(int.MaxValue);
+            var result = await _service.GetRefundAsync(int.MaxValue, CancellationToken);
 
             result.ShouldBeNull();
         }
@@ -66,7 +65,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
         [Fact]
         public async Task GetRefundsAsync_EmptyDatabase_ShouldReturnEmptyPage()
         {
-            var result = await _service.GetRefundsAsync(pageSize: 10, pageNo: 1, search: null);
+            var result = await _service.GetRefundsAsync(pageSize: 10, pageNo: 1, search: null, CancellationToken);
 
             result.ShouldNotBeNull();
             result.PageSize.ShouldBe(10);

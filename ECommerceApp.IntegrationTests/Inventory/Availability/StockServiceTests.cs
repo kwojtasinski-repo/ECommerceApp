@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Inventory.Availability
 {
@@ -33,11 +32,11 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
         [Fact]
         public async Task InitializeStockAsync_NewProduct_ShouldReturnTrue()
         {
-            var result = await _service.InitializeStockAsync(TestProductId, initialQuantity: 50);
+            var result = await _service.InitializeStockAsync(TestProductId, initialQuantity: 50, CancellationToken);
 
             result.ShouldBeTrue();
 
-            var stock = await _service.GetByProductIdAsync(TestProductId);
+            var stock = await _service.GetByProductIdAsync(TestProductId, CancellationToken);
             stock.ShouldNotBeNull();
             stock.ProductId.ShouldBe(TestProductId);
             stock.Quantity.ShouldBe(50);
@@ -48,9 +47,9 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
         [Fact]
         public async Task InitializeStockAsync_AlreadyExisting_ShouldReturnFalse()
         {
-            await _service.InitializeStockAsync(TestProductId, initialQuantity: 10);
+            await _service.InitializeStockAsync(TestProductId, initialQuantity: 10, CancellationToken);
 
-            var result = await _service.InitializeStockAsync(TestProductId, initialQuantity: 20);
+            var result = await _service.InitializeStockAsync(TestProductId, initialQuantity: 20, CancellationToken);
 
             result.ShouldBeFalse();
         }
@@ -60,7 +59,7 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
         [Fact]
         public async Task GetByProductIdAsync_NonExistent_ShouldReturnNull()
         {
-            var result = await _service.GetByProductIdAsync(int.MaxValue);
+            var result = await _service.GetByProductIdAsync(int.MaxValue, CancellationToken);
 
             result.ShouldBeNull();
         }
@@ -71,7 +70,7 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
         public async Task GetByProductIdsAsync_NoMatchingProducts_ShouldReturnEmpty()
         {
             var result = new List<StockItemDto>();
-            await foreach (var item in _service.GetByProductIdsAsync(new List<int> { 999, 998 }))
+            await foreach (var item in _service.GetByProductIdsAsync(new List<int> { 999, 998 }, CancellationToken))
             {
                 result.Add(item);
             }
@@ -82,12 +81,12 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
         [Fact]
         public async Task GetByProductIdsAsync_WithMatchingProducts_ShouldReturnMatchingItems()
         {
-            await _service.InitializeStockAsync(201, initialQuantity: 10);
-            await _service.InitializeStockAsync(202, initialQuantity: 20);
-            await _service.InitializeStockAsync(203, initialQuantity: 30);
+            await _service.InitializeStockAsync(201, initialQuantity: 10, CancellationToken);
+            await _service.InitializeStockAsync(202, initialQuantity: 20, CancellationToken);
+            await _service.InitializeStockAsync(203, initialQuantity: 30, CancellationToken);
 
             var result = new List<StockItemDto>();
-            await foreach (var item in _service.GetByProductIdsAsync(new List<int> { 201, 203 }))
+            await foreach (var item in _service.GetByProductIdsAsync(new List<int> { 201, 203 }, CancellationToken))
             {
                 result.Add(item);
             }
@@ -102,12 +101,12 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
         [Fact]
         public async Task ReserveAsync_NoProductSnapshot_ShouldReturnProductSnapshotNotFound()
         {
-            await _service.InitializeStockAsync(TestProductId, 50);
+            await _service.InitializeStockAsync(TestProductId, 50, CancellationToken);
 
             var dto = new ReserveStockDto(TestProductId, OrderId: 1, Quantity: 5,
                 UserId: PROPER_CUSTOMER_ID, ExpiresAt: DateTime.UtcNow.AddHours(24));
 
-            var result = await _service.ReserveAsync(dto);
+            var result = await _service.ReserveAsync(dto, CancellationToken);
 
             result.ShouldBe(ReserveStockResult.ProductSnapshotNotFound);
         }
@@ -116,12 +115,12 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
         public async Task ReserveAsync_SuspendedProduct_ShouldReturnProductNotAvailable()
         {
             await SeedProductSnapshotAsync(TestProductId, CatalogProductStatus.Suspended);
-            await _service.InitializeStockAsync(TestProductId, 50);
+            await _service.InitializeStockAsync(TestProductId, 50, CancellationToken);
 
             var dto = new ReserveStockDto(TestProductId, OrderId: 1, Quantity: 5,
                 UserId: PROPER_CUSTOMER_ID, ExpiresAt: DateTime.UtcNow.AddHours(24));
 
-            var result = await _service.ReserveAsync(dto);
+            var result = await _service.ReserveAsync(dto, CancellationToken);
 
             result.ShouldBe(ReserveStockResult.ProductNotAvailable);
         }
@@ -135,7 +134,7 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
             var dto = new ReserveStockDto(TestProductId, OrderId: 1, Quantity: 5,
                 UserId: PROPER_CUSTOMER_ID, ExpiresAt: DateTime.UtcNow.AddHours(24));
 
-            var result = await _service.ReserveAsync(dto);
+            var result = await _service.ReserveAsync(dto, CancellationToken);
 
             result.ShouldBe(ReserveStockResult.StockNotFound);
         }
@@ -144,12 +143,12 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
         public async Task ReserveAsync_InsufficientStock_ShouldReturnInsufficientStock()
         {
             await SeedProductSnapshotAsync(TestProductId, CatalogProductStatus.Orderable);
-            await _service.InitializeStockAsync(TestProductId, initialQuantity: 5);
+            await _service.InitializeStockAsync(TestProductId, initialQuantity: 5, CancellationToken);
 
             var dto = new ReserveStockDto(TestProductId, OrderId: 1, Quantity: 10,
                 UserId: PROPER_CUSTOMER_ID, ExpiresAt: DateTime.UtcNow.AddHours(24));
 
-            var result = await _service.ReserveAsync(dto);
+            var result = await _service.ReserveAsync(dto, CancellationToken);
 
             result.ShouldBe(ReserveStockResult.InsufficientStock);
         }
@@ -158,16 +157,16 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
         public async Task ReserveAsync_SufficientStock_ShouldReturnSuccessAndReduceAvailability()
         {
             await SeedProductSnapshotAsync(TestProductId, CatalogProductStatus.Orderable);
-            await _service.InitializeStockAsync(TestProductId, initialQuantity: 50);
+            await _service.InitializeStockAsync(TestProductId, initialQuantity: 50, CancellationToken);
 
             var dto = new ReserveStockDto(TestProductId, OrderId: 1, Quantity: 10,
                 UserId: PROPER_CUSTOMER_ID, ExpiresAt: DateTime.UtcNow.AddHours(24));
 
-            var result = await _service.ReserveAsync(dto);
+            var result = await _service.ReserveAsync(dto, CancellationToken);
 
             result.ShouldBe(ReserveStockResult.Success);
 
-            var stock = await _service.GetByProductIdAsync(TestProductId);
+            var stock = await _service.GetByProductIdAsync(TestProductId, CancellationToken);
             stock.ShouldNotBeNull();
             stock.Quantity.ShouldBe(50);
             stock.ReservedQuantity.ShouldBe(10);
@@ -179,7 +178,7 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
         [Fact]
         public async Task ReleaseAsync_NoStockHold_ShouldReturnFalse()
         {
-            var result = await _service.ReleaseAsync(orderId: 999, productId: 999, quantity: 5);
+            var result = await _service.ReleaseAsync(orderId: 999, productId: 999, quantity: 5, CancellationToken);
 
             result.ShouldBeFalse();
         }
@@ -189,7 +188,7 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
         [Fact]
         public async Task ConfirmAsync_NoStockHold_ShouldReturnFalse()
         {
-            var result = await _service.ConfirmAsync(orderId: 999, productId: 999);
+            var result = await _service.ConfirmAsync(orderId: 999, productId: 999, CancellationToken);
 
             result.ShouldBeFalse();
         }
@@ -199,7 +198,7 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
         [Fact]
         public async Task FulfillAsync_NoStockItem_ShouldReturnFalse()
         {
-            var result = await _service.FulfillAsync(orderId: 999, productId: 999, quantity: 5);
+            var result = await _service.FulfillAsync(orderId: 999, productId: 999, quantity: 5, CancellationToken);
 
             result.ShouldBeFalse();
         }
@@ -209,7 +208,7 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
         [Fact]
         public async Task ReturnAsync_NoStockItem_ShouldReturnFalse()
         {
-            var result = await _service.ReturnAsync(productId: 999, quantity: 5);
+            var result = await _service.ReturnAsync(productId: 999, quantity: 5, CancellationToken);
 
             result.ShouldBeFalse();
         }
@@ -220,20 +219,20 @@ namespace ECommerceApp.IntegrationTests.Inventory.Availability
         public async Task FullLifecycle_ReserveConfirmRelease_ShouldTrackQuantitiesCorrectly()
         {
             await SeedProductSnapshotAsync(TestProductId, CatalogProductStatus.Orderable);
-            await _service.InitializeStockAsync(TestProductId, initialQuantity: 100);
+            await _service.InitializeStockAsync(TestProductId, initialQuantity: 100, CancellationToken);
 
             // Reserve 20 units for order 1
             var reserveResult = await _service.ReserveAsync(new ReserveStockDto(
                 TestProductId, OrderId: 1, Quantity: 20,
-                UserId: PROPER_CUSTOMER_ID, ExpiresAt: DateTime.UtcNow.AddHours(24)));
+                UserId: PROPER_CUSTOMER_ID, ExpiresAt: DateTime.UtcNow.AddHours(24)), CancellationToken);
             reserveResult.ShouldBe(ReserveStockResult.Success);
 
-            var afterReserve = await _service.GetByProductIdAsync(TestProductId);
+            var afterReserve = await _service.GetByProductIdAsync(TestProductId, CancellationToken);
             afterReserve!.AvailableQuantity.ShouldBe(80);
             afterReserve.ReservedQuantity.ShouldBe(20);
 
             // Confirm the hold
-            var confirmResult = await _service.ConfirmAsync(orderId: 1, productId: TestProductId);
+            var confirmResult = await _service.ConfirmAsync(orderId: 1, productId: TestProductId, CancellationToken);
             confirmResult.ShouldBeTrue();
         }
     }

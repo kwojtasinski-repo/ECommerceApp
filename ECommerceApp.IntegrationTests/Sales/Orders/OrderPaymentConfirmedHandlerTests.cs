@@ -7,9 +7,9 @@ using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Sales.Orders
 {
@@ -21,7 +21,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
             "Jan", "Kowalski", "jan@test.com", "123456789",
             false, null, null, "Główna", "1", null, "67-100", "Nowa Sól", "Polska");
 
-        private async Task<int> SeedOrderAsync()
+        private async Task<int> SeedOrderAsync(CancellationToken ct = default)
         {
             var repo = GetRequiredService<IOrderRepository>();
             var order = Order.Create(1, 1, PROPER_CUSTOMER_ID, OrderNumber.Generate(), CreateCustomer());
@@ -33,16 +33,16 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
         [Fact]
         public async Task HandleAsync_PaymentConfirmed_ShouldTransitionOrderToPaymentConfirmed()
         {
-            var orderId = await SeedOrderAsync();
+            var orderId = await SeedOrderAsync(ct: CancellationToken);
             var message = new PaymentConfirmed(
                 PaymentId: 10,
                 OrderId: orderId,
                 Items: new List<PaymentConfirmedItem>(),
                 OccurredAt: DateTime.UtcNow);
 
-            await _service.PublishAsync(message);
+            await PublishAsync(message, CancellationToken);
 
-            var order = await GetRequiredService<IOrderService>().GetOrderDetailsAsync(orderId);
+            var order = await GetRequiredService<IOrderService>().GetOrderDetailsAsync(orderId, CancellationToken);
             order.ShouldNotBeNull();
             order.Status.ShouldBe(OrderStatus.PaymentConfirmed);
         }
@@ -56,7 +56,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
                 Items: new List<PaymentConfirmedItem>(),
                 OccurredAt: DateTime.UtcNow);
 
-            await _service.PublishAsync(message);
+            await PublishAsync(message, CancellationToken);
         }
     }
 }

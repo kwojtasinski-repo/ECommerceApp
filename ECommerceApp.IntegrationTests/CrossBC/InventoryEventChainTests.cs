@@ -8,9 +8,9 @@ using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.CrossBC
 {
@@ -31,18 +31,18 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         private const int OrderId = 50;
         private const int Quantity = 5;
 
-        private async Task SeedStockAsync(int productId = ProductId, int initialQuantity = 100)
+        private async Task SeedStockAsync(int productId = ProductId, int initialQuantity = 100, CancellationToken ct = default)
         {
             var snapshotRepo = GetRequiredService<IProductSnapshotRepository>();
             await snapshotRepo.UpsertAsync(
                 ProductSnapshot.Create(productId, $"Product-{productId}", false, CatalogProductStatus.Orderable));
 
             var stockService = GetRequiredService<IStockService>();
-            await stockService.InitializeStockAsync(productId, initialQuantity);
+            await stockService.InitializeStockAsync(productId, initialQuantity, CancellationToken);
         }
 
         private async Task ReserveStockViaOrderPlacedAsync(
-            int orderId = OrderId, int productId = ProductId, int quantity = Quantity)
+            int orderId = OrderId, int productId = ProductId, int quantity = Quantity, CancellationToken ct = default)
         {
             var orderPlaced = new OrderPlaced(
                 OrderId: orderId,
@@ -53,7 +53,7 @@ namespace ECommerceApp.IntegrationTests.CrossBC
                 TotalAmount: 100m,
                 CurrencyId: 1);
 
-            await _service.PublishAsync(orderPlaced);
+            await PublishAsync(orderPlaced, CancellationToken);
         }
 
         // ── PaymentConfirmed → Inventory stock confirmation ──────────────
@@ -61,8 +61,8 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         [Fact]
         public async Task PaymentConfirmed_AfterOrderPlaced_ShouldConfirmStockHoldsInInventory()
         {
-            await SeedStockAsync();
-            await ReserveStockViaOrderPlacedAsync();
+            await SeedStockAsync(ct: CancellationToken);
+            await ReserveStockViaOrderPlacedAsync(ct: CancellationToken);
 
             var paymentConfirmed = new PaymentConfirmed(
                 PaymentId: 1,
@@ -70,11 +70,11 @@ namespace ECommerceApp.IntegrationTests.CrossBC
                 Items: new List<PaymentConfirmedItem> { new(ProductId: ProductId, Quantity: Quantity) },
                 OccurredAt: DateTime.UtcNow);
 
-            await _service.PublishAsync(paymentConfirmed);
+            await PublishAsync(paymentConfirmed, CancellationToken);
 
             // Stock should still show reserved (confirmed holds are still "reserved" until fulfilled)
             var stockService = GetRequiredService<IStockService>();
-            var stock = await stockService.GetByProductIdAsync(ProductId);
+            var stock = await stockService.GetByProductIdAsync(ProductId, CancellationToken);
             stock.ShouldNotBeNull();
             stock.AvailableQuantity.ShouldBe(100 - Quantity);
         }
@@ -84,11 +84,11 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         [Fact]
         public async Task OrderCancelled_WithReservedStock_ShouldReleaseStockInInventory()
         {
-            await SeedStockAsync();
-            await ReserveStockViaOrderPlacedAsync();
+            await SeedStockAsync(ct: CancellationToken);
+            await ReserveStockViaOrderPlacedAsync(ct: CancellationToken);
 
             // Verify stock is reserved
-            var stockBefore = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId);
+            var stockBefore = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId, CancellationToken);
             stockBefore.ShouldNotBeNull();
             stockBefore.ReservedQuantity.ShouldBe(Quantity);
 
@@ -97,10 +97,10 @@ namespace ECommerceApp.IntegrationTests.CrossBC
                 Items: new List<OrderCancelledItem> { new(ProductId: ProductId, Quantity: Quantity) },
                 OccurredAt: DateTime.UtcNow);
 
-            await _service.PublishAsync(orderCancelled);
+            await PublishAsync(orderCancelled, CancellationToken);
 
             // Stock should be released (available quantity restored)
-            var stockAfter = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId);
+            var stockAfter = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId, CancellationToken);
             stockAfter.ShouldNotBeNull();
             stockAfter.AvailableQuantity.ShouldBe(100);
             stockAfter.ReservedQuantity.ShouldBe(0);
@@ -111,8 +111,8 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         [Fact]
         public async Task ShipmentDelivered_WithConfirmedStock_ShouldFulfillStockInInventory()
         {
-            await SeedStockAsync();
-            await ReserveStockViaOrderPlacedAsync();
+            await SeedStockAsync(ct: CancellationToken);
+            await ReserveStockViaOrderPlacedAsync(ct: CancellationToken);
 
             // Confirm stock holds (simulating PaymentConfirmed)
             var paymentConfirmed = new PaymentConfirmed(
@@ -120,7 +120,7 @@ namespace ECommerceApp.IntegrationTests.CrossBC
                 OrderId: OrderId,
                 Items: new List<PaymentConfirmedItem> { new(ProductId: ProductId, Quantity: Quantity) },
                 OccurredAt: DateTime.UtcNow);
-            await _service.PublishAsync(paymentConfirmed);
+            await PublishAsync(paymentConfirmed, CancellationToken);
 
             // Now deliver the shipment
             var shipmentDelivered = new ShipmentDelivered(
@@ -129,10 +129,10 @@ namespace ECommerceApp.IntegrationTests.CrossBC
                 Items: new List<ShipmentLineItem> { new(ProductId: ProductId, Quantity: Quantity) },
                 OccurredAt: DateTime.UtcNow);
 
-            await _service.PublishAsync(shipmentDelivered);
+            await PublishAsync(shipmentDelivered, CancellationToken);
 
             // Stock should be fulfilled — total quantity decreased, no longer reserved
-            var stock = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId);
+            var stock = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId, CancellationToken);
             stock.ShouldNotBeNull();
             stock.Quantity.ShouldBe(100 - Quantity);
             stock.ReservedQuantity.ShouldBe(0);
@@ -143,8 +143,8 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         [Fact]
         public async Task ShipmentFailed_WithConfirmedStock_ShouldTriggerReconciliationAlert()
         {
-            await SeedStockAsync();
-            await ReserveStockViaOrderPlacedAsync();
+            await SeedStockAsync(ct: CancellationToken);
+            await ReserveStockViaOrderPlacedAsync(ct: CancellationToken);
 
             // Confirm stock holds (transitions from Reserved → Confirmed)
             var paymentConfirmed = new PaymentConfirmed(
@@ -152,7 +152,7 @@ namespace ECommerceApp.IntegrationTests.CrossBC
                 OrderId: OrderId,
                 Items: new List<PaymentConfirmedItem> { new(ProductId: ProductId, Quantity: Quantity) },
                 OccurredAt: DateTime.UtcNow);
-            await _service.PublishAsync(paymentConfirmed);
+            await PublishAsync(paymentConfirmed, CancellationToken);
 
             // Shipment fails — ReleaseAsync returns false for confirmed holds,
             // handler publishes StockReconciliationRequired (correct behavior per ADR-0011)
@@ -162,11 +162,11 @@ namespace ECommerceApp.IntegrationTests.CrossBC
                 Items: new List<ShipmentLineItem> { new(ProductId: ProductId, Quantity: Quantity) },
                 OccurredAt: DateTime.UtcNow);
 
-            await _service.PublishAsync(shipmentFailed);
+            await PublishAsync(shipmentFailed, CancellationToken);
 
             // Confirmed holds cannot be released via ReleaseAsync — stock stays reserved
             // Manual reconciliation required (StockReconciliationRequired published)
-            var stock = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId);
+            var stock = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId, CancellationToken);
             stock.ShouldNotBeNull();
             stock.AvailableQuantity.ShouldBe(100 - Quantity);
         }
@@ -176,33 +176,33 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         [Fact]
         public async Task FullHappyPath_OrderPlacedToDelivery_ShouldTrackStockThroughAllStages()
         {
-            await SeedStockAsync();
+            await SeedStockAsync(ct: CancellationToken);
 
             // Stage 1: OrderPlaced → stock reserved
-            await ReserveStockViaOrderPlacedAsync();
-            var stage1 = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId);
+            await ReserveStockViaOrderPlacedAsync(ct: CancellationToken);
+            var stage1 = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId, CancellationToken);
             stage1.ShouldNotBeNull();
             stage1.Quantity.ShouldBe(100);
             stage1.ReservedQuantity.ShouldBe(Quantity);
             stage1.AvailableQuantity.ShouldBe(100 - Quantity);
 
             // Stage 2: PaymentConfirmed → holds confirmed (reserved qty stays)
-            await _service.PublishAsync(new PaymentConfirmed(
+            await PublishAsync(new PaymentConfirmed(
                 PaymentId: 1, OrderId: OrderId,
                 Items: new List<PaymentConfirmedItem> { new(ProductId, Quantity) },
-                OccurredAt: DateTime.UtcNow));
+                OccurredAt: DateTime.UtcNow), CancellationToken);
 
-            var stage2 = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId);
+            var stage2 = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId, CancellationToken);
             stage2.ShouldNotBeNull();
             stage2.AvailableQuantity.ShouldBe(100 - Quantity);
 
             // Stage 3: ShipmentDelivered → stock fulfilled (total decreases, reserved cleared)
-            await _service.PublishAsync(new ShipmentDelivered(
+            await PublishAsync(new ShipmentDelivered(
                 ShipmentId: 1, OrderId: OrderId,
                 Items: new List<ShipmentLineItem> { new(ProductId, Quantity) },
-                OccurredAt: DateTime.UtcNow));
+                OccurredAt: DateTime.UtcNow), CancellationToken);
 
-            var stage3 = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId);
+            var stage3 = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId, CancellationToken);
             stage3.ShouldNotBeNull();
             stage3.Quantity.ShouldBe(100 - Quantity);
             stage3.ReservedQuantity.ShouldBe(0);

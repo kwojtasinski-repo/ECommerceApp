@@ -8,9 +8,9 @@ using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.CrossBC
 {
@@ -47,14 +47,14 @@ namespace ECommerceApp.IntegrationTests.CrossBC
                    new List<OrderPlacedItem> { new(productId, quantity) },
                    UserId: "user-1");
 
-        private async Task SeedInventoryAsync(int productId = ProductId, int initialQuantity = 100)
+        private async Task SeedInventoryAsync(int productId = ProductId, int initialQuantity = 100, CancellationToken ct = default)
         {
             var snapshotRepo = GetRequiredService<IProductSnapshotRepository>();
             await snapshotRepo.UpsertAsync(
                 ProductSnapshot.Create(productId, $"Product-{productId}", false, CatalogProductStatus.Orderable));
 
             var stockService = GetRequiredService<IStockService>();
-            await stockService.InitializeStockAsync(productId, initialQuantity);
+            await stockService.InitializeStockAsync(productId, initialQuantity, CancellationToken);
         }
 
         // ── Payments BC compensation ──────────────────────────────────────────
@@ -62,12 +62,12 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         [Fact]
         public async Task OrderPlacementFailed_AfterOrderPlaced_ShouldCancelPaymentInPaymentsBc()
         {
-            await _service.PublishAsync(CreateOrderPlaced());
+            await PublishAsync(CreateOrderPlaced(), CancellationToken);
 
-            await _service.PublishAsync(CreateOrderPlacementFailed());
+            await PublishAsync(CreateOrderPlacementFailed(), CancellationToken);
 
             var paymentService = GetRequiredService<IPaymentService>();
-            var payment = await paymentService.GetByOrderIdAsync(OrderId);
+            var payment = await paymentService.GetByOrderIdAsync(OrderId, CancellationToken);
             payment.ShouldNotBeNull();
             payment.Status.ShouldBe(PaymentStatus.Cancelled.ToString());
         }
@@ -75,7 +75,7 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         [Fact]
         public async Task OrderPlacementFailed_WhenPaymentNotYetCreated_ShouldCompleteWithoutError()
         {
-            var act = async () => await _service.PublishAsync(CreateOrderPlacementFailed());
+            var act = async () => await PublishAsync(CreateOrderPlacementFailed(), CancellationToken);
 
             await act.ShouldNotThrowAsync();
         }
@@ -85,16 +85,16 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         [Fact]
         public async Task OrderPlacementFailed_AfterOrderPlaced_ShouldReleaseStockHoldsInInventoryBc()
         {
-            await SeedInventoryAsync(initialQuantity: 100);
-            await _service.PublishAsync(CreateOrderPlaced());
+            await SeedInventoryAsync(initialQuantity: 100, ct: CancellationToken);
+            await PublishAsync(CreateOrderPlaced(), CancellationToken);
 
-            var stockAfterPlaced = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId);
+            var stockAfterPlaced = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId, CancellationToken);
             stockAfterPlaced!.ReservedQuantity.ShouldBe(Quantity);
 
-            await _service.PublishAsync(CreateOrderPlacementFailed());
+            await PublishAsync(CreateOrderPlacementFailed(), CancellationToken);
 
             // Resolve a fresh service to avoid stale EF change-tracker returning cached pre-release values.
-            var stockAfterFailed = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId);
+            var stockAfterFailed = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId, CancellationToken);
             stockAfterFailed!.ReservedQuantity.ShouldBe(0);
             stockAfterFailed.AvailableQuantity.ShouldBe(100);
         }
@@ -102,7 +102,7 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         [Fact]
         public async Task OrderPlacementFailed_WhenNoStockHoldsExist_ShouldCompleteWithoutError()
         {
-            var act = async () => await _service.PublishAsync(CreateOrderPlacementFailed());
+            var act = async () => await PublishAsync(CreateOrderPlacementFailed(), CancellationToken);
 
             await act.ShouldNotThrowAsync();
         }
@@ -112,18 +112,18 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         [Fact]
         public async Task OrderPlacementFailed_ShouldCompensateBothPaymentsAndInventory()
         {
-            await SeedInventoryAsync(initialQuantity: 100);
-            await _service.PublishAsync(CreateOrderPlaced());
+            await SeedInventoryAsync(initialQuantity: 100, ct: CancellationToken);
+            await PublishAsync(CreateOrderPlaced(), CancellationToken);
 
-            await _service.PublishAsync(CreateOrderPlacementFailed());
+            await PublishAsync(CreateOrderPlacementFailed(), CancellationToken);
 
             var paymentService = GetRequiredService<IPaymentService>();
-            var payment = await paymentService.GetByOrderIdAsync(OrderId);
+            var payment = await paymentService.GetByOrderIdAsync(OrderId, CancellationToken);
             payment.ShouldNotBeNull();
             payment.Status.ShouldBe(PaymentStatus.Cancelled.ToString());
 
             var stockService = GetRequiredService<IStockService>();
-            var stock = await stockService.GetByProductIdAsync(ProductId);
+            var stock = await stockService.GetByProductIdAsync(ProductId, CancellationToken);
             stock.ShouldNotBeNull();
             stock.ReservedQuantity.ShouldBe(0);
             stock.AvailableQuantity.ShouldBe(100);

@@ -6,7 +6,6 @@ using Shouldly;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Sales.Orders
 {
@@ -36,7 +35,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
                 UserId: PROPER_CUSTOMER_ID,
                 CartItemIds: new List<int> { 1 });
 
-            var result = await _service.PlaceOrderAsync(dto);
+            var result = await _service.PlaceOrderAsync(dto, CancellationToken);
 
             result.IsSuccess.ShouldBeFalse();
             result.CustomerId.ShouldBe(99999);
@@ -48,7 +47,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
         [Fact]
         public async Task GetOrderDetailsAsync_NonExistentOrder_ShouldReturnNull()
         {
-            var result = await _service.GetOrderDetailsAsync(int.MaxValue);
+            var result = await _service.GetOrderDetailsAsync(int.MaxValue, CancellationToken);
 
             result.ShouldBeNull();
         }
@@ -58,7 +57,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
         [Fact]
         public async Task GetAllOrdersAsync_ValidPagination_ShouldReturnPagedResult()
         {
-            var result = await _service.GetAllOrdersAsync(pageSize: 10, pageNo: 1, search: null);
+            var result = await _service.GetAllOrdersAsync(pageSize: 10, pageNo: 1, search: null, CancellationToken);
 
             result.ShouldNotBeNull();
             result.PageSize.ShouldBe(10);
@@ -71,7 +70,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
         [Fact]
         public async Task GetOrdersByUserIdAsync_NonExistentUser_ShouldReturnEmptyList()
         {
-            var result = await _service.GetOrdersByUserIdAsync("non-existent-user-id");
+            var result = await _service.GetOrdersByUserIdAsync("non-existent-user-id", CancellationToken);
 
             result.ShouldNotBeNull();
             result.ShouldBeEmpty();
@@ -82,7 +81,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
         [Fact]
         public async Task MarkAsDeliveredAsync_NonExistentOrder_ShouldReturnOrderNotFound()
         {
-            var result = await _service.MarkAsDeliveredAsync(int.MaxValue);
+            var result = await _service.MarkAsDeliveredAsync(int.MaxValue, CancellationToken);
 
             result.ShouldBe(OrderOperationResult.OrderNotFound);
         }
@@ -92,7 +91,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
         [Fact]
         public async Task DeleteOrderAsync_NonExistentOrder_ShouldReturnOrderNotFound()
         {
-            var result = await _service.DeleteOrderAsync(int.MaxValue);
+            var result = await _service.DeleteOrderAsync(int.MaxValue, CancellationToken);
 
             result.ShouldBe(OrderOperationResult.OrderNotFound);
         }
@@ -102,7 +101,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
         [Fact]
         public async Task RemoveCouponAsync_NonExistentOrder_ShouldReturnOrderNotFound()
         {
-            var result = await _service.RemoveCouponAsync(int.MaxValue);
+            var result = await _service.RemoveCouponAsync(int.MaxValue, CancellationToken);
 
             result.ShouldBe(OrderOperationResult.OrderNotFound);
         }
@@ -112,7 +111,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Orders
         [Fact]
         public async Task GetCustomerIdAsync_NonExistentOrder_ShouldReturnNull()
         {
-            var result = await _service.GetCustomerIdAsync(int.MaxValue);
+            var result = await _service.GetCustomerIdAsync(int.MaxValue, CancellationToken);
 
             result.ShouldBeNull();
         }

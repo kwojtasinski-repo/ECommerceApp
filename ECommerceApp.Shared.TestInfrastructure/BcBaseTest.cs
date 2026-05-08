@@ -6,7 +6,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
-using Xunit.Abstractions;
+using System.Threading;
+using Xunit;
 
 namespace ECommerceApp.Shared.TestInfrastructure
 {
@@ -54,14 +55,24 @@ namespace ECommerceApp.Shared.TestInfrastructure
         }
 
         /// <summary>
+        /// CancellationToken tied to the current xUnit v3 test run.
+        /// Cancelled automatically when the test is stopped/aborted.
+        /// </summary>
+        protected static CancellationToken CancellationToken => TestContext.Current.CancellationToken;
+
+        /// <summary>
         /// Publishes a message through the synchronous multi-handler broker.
         /// All registered handlers fire synchronously — assertions are safe immediately after.
         /// </summary>
-        protected async System.Threading.Tasks.Task PublishAsync(params IMessage[] messages)
+        protected async System.Threading.Tasks.Task PublishAsync(IMessage[] messages, CancellationToken cancellationToken = default)
         {
             var broker = GetRequiredService<IMessageBroker>();
             await broker.PublishAsync(messages);
         }
+
+        /// <inheritdoc cref="PublishAsync(IMessage[], CancellationToken)"/>
+        protected System.Threading.Tasks.Task PublishAsync(IMessage message, CancellationToken cancellationToken = default)
+            => PublishAsync([message], cancellationToken);
 
         protected void SetHttpContextUserId(string userId)
         {

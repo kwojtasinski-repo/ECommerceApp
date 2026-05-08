@@ -1,6 +1,6 @@
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.Shared.TestInfrastructure
 {
@@ -30,16 +30,22 @@ namespace ECommerceApp.Shared.TestInfrastructure
             _output = output;
         }
 
-        public virtual Task InitializeAsync()
+        /// <summary>
+        /// CancellationToken tied to the current xUnit v3 test run.
+        /// Cancelled automatically when the test is stopped/aborted.
+        /// </summary>
+        protected static CancellationToken CancellationToken => TestContext.Current.CancellationToken;
+
+        public virtual ValueTask InitializeAsync()
         {
             _factory.Sink.SetOutput(_output);
-            return Task.CompletedTask;
+            return ValueTask.CompletedTask;
         }
 
-        public virtual Task DisposeAsync()
+        public virtual ValueTask DisposeAsync()
         {
             _factory.Sink.SetOutput(null);
-            return Task.CompletedTask;
+            return ValueTask.CompletedTask;
         }
     }
 }

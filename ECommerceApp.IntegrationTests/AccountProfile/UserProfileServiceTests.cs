@@ -5,7 +5,6 @@ using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.AccountProfile
 {

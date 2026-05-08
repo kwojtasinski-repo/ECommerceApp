@@ -52,7 +52,7 @@ namespace ECommerceApp.API
                               ctx.User.IsInRole(UserPermissions.Roles.Service) ||
                               ctx.User.IsInRole(UserPermissions.Roles.Manager) ||
                               ctx.User.IsInRole(UserPermissions.Roles.Administrator)));
-            services.Configure<WebOptions>(Configuration.GetSection("WebOptions"));
+            services.Configure<WebOptions>(Configuration.GetSection(nameof(WebOptions)));
             services.AddScoped<MaxApiQuantityFilter>();
             services.AddSingleton<ICartRequirements>(new CartRequirements(ApiPurchaseOptions.MaxQuantityPerOrderLine));
             services.AddApplication();

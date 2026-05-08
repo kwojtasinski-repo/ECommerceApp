@@ -1,13 +1,12 @@
 using AngleSharp;
 using ECommerceApp.Shared.TestInfrastructure;
-using ECommerceApp.Web;
 using Microsoft.AspNetCore.Mvc.Testing;
 using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.Web.IntegrationTests
 {
@@ -35,16 +34,22 @@ namespace ECommerceApp.Web.IntegrationTests
             _output = output;
         }
 
-        public virtual Task InitializeAsync()
+        /// <summary>
+        /// CancellationToken tied to the current xUnit v3 test run.
+        /// Cancelled automatically when the test is stopped/aborted.
+        /// </summary>
+        protected static CancellationToken CancellationToken => TestContext.Current.CancellationToken;
+
+        public virtual ValueTask InitializeAsync()
         {
             _factory.Sink.SetOutput(_output);
-            return Task.CompletedTask;
+            return ValueTask.CompletedTask;
         }
 
-        public virtual Task DisposeAsync()
+        public virtual ValueTask DisposeAsync()
         {
             _factory.Sink.SetOutput(null);
-            return Task.CompletedTask;
+            return ValueTask.CompletedTask;
         }
 
         // ─── HTTP helpers ────────────────────────────────────────────────
@@ -64,7 +69,7 @@ namespace ECommerceApp.Web.IntegrationTests
             var client = CreateClient();
 
             // GET the login page to obtain the AntiForgery token
-            var getResponse = await client.GetAsync("/Identity/Account/Login");
+            var getResponse = await client.GetAsync("/Identity/Account/Login", CancellationToken);
             getResponse.EnsureSuccessStatusCode();
             var loginHtml = await getResponse.Content.ReadAsStringAsync();
             var token = ExtractAntiForgeryToken(loginHtml);
@@ -79,7 +84,7 @@ namespace ECommerceApp.Web.IntegrationTests
 
             var postResponse = await client.PostAsync(
                 "/Identity/Account/Login",
-                new FormUrlEncodedContent(loginForm));
+                new FormUrlEncodedContent(loginForm), CancellationToken);
 
             // The page redirects (302 → 200) on success; ensure we did not land back on the login page
             var finalUrl = postResponse.RequestMessage?.RequestUri?.AbsolutePath ?? "/";
@@ -97,7 +102,7 @@ namespace ECommerceApp.Web.IntegrationTests
         /// </summary>
         protected async Task<string> FetchAntiForgeryTokenAsync(HttpClient client, string url)
         {
-            var html = await client.GetStringAsync(url);
+            var html = await client.GetStringAsync(url, CancellationToken);
             return ExtractAntiForgeryToken(html);
         }
 
@@ -156,7 +161,7 @@ namespace ECommerceApp.Web.IntegrationTests
         protected async Task<(HttpResponseMessage Response, IEnumerable<string> Errors)>
             PostFormAndGetValidationErrorsAsync(HttpClient client, string url, Dictionary<string, string> form)
         {
-            var response = await client.PostAsync(url, new FormUrlEncodedContent(form));
+            var response = await client.PostAsync(url, new FormUrlEncodedContent(form), CancellationToken);
             var html = await response.Content.ReadAsStringAsync();
             var errors = await ParseValidationErrorsAsync(html);
             return (response, errors);

@@ -8,9 +8,9 @@ using ECommerceApp.Shared.TestInfrastructure;
 using Flurl.Http;
 using Shouldly;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.API
 {
@@ -38,7 +38,7 @@ namespace ECommerceApp.IntegrationTests.API
             => new(_factory.CreateClient());
 
         private async Task<FlurlClient> AuthenticatedClient()
-            => await _factory.GetAuthenticatedClient();
+            => await _factory.GetAuthenticatedClient(CancellationToken);
 
         // ─────────────────────────────────────────────────────────────────
         // POST /api/auth/login — SignInDtoValidator
@@ -52,7 +52,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/auth/login")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -67,7 +67,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/auth/login")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -82,7 +82,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/auth/login")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -97,7 +97,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/auth/login")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
         }
@@ -115,7 +115,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/currencies")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -130,7 +130,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/currencies")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -145,7 +145,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/currencies")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -165,7 +165,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/cart/items")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -180,7 +180,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/cart/items")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -196,7 +196,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/cart/items")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -212,7 +212,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/cart/items")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -231,7 +231,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/currencies")
                 .AllowAnyHttpStatus()
-                .PutJsonAsync(dto);
+                .PutJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -246,7 +246,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/currencies")
                 .AllowAnyHttpStatus()
-                .PutJsonAsync(dto);
+                .PutJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -273,7 +273,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/customers")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -296,7 +296,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/customers")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -320,7 +320,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/customers")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -345,7 +345,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/customers/1")
                 .AllowAnyHttpStatus()
-                .PutJsonAsync(dto);
+                .PutJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -371,7 +371,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/addresses")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -394,7 +394,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/addresses")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -420,7 +420,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/addresses/1")
                 .AllowAnyHttpStatus()
-                .PutJsonAsync(dto);
+                .PutJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -442,7 +442,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/addresses/1")
                 .AllowAnyHttpStatus()
-                .PutJsonAsync(dto);
+                .PutJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -465,7 +465,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/addresses/1")
                 .AllowAnyHttpStatus()
-                .PutJsonAsync(dto);
+                .PutJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -487,7 +487,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/addresses")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -509,7 +509,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/addresses")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -531,7 +531,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/addresses")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -558,7 +558,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/customers")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -581,7 +581,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/customers")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -604,7 +604,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/customers")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -629,7 +629,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/customers/1")
                 .AllowAnyHttpStatus()
-                .PutJsonAsync(dto);
+                .PutJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -650,7 +650,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/customers/0")
                 .AllowAnyHttpStatus()
-                .PutJsonAsync(dto);
+                .PutJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -671,7 +671,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/customers/1")
                 .AllowAnyHttpStatus()
-                .PutJsonAsync(dto);
+                .PutJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -690,7 +690,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/currencies")
                 .AllowAnyHttpStatus()
-                .PutJsonAsync(dto);
+                .PutJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();
@@ -709,7 +709,7 @@ namespace ECommerceApp.IntegrationTests.API
 
             var response = await client.Request("api/cart/items")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(dto);
+                .PostJsonAsync(dto, cancellationToken: CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.BadRequest);
             var body = await response.GetStringAsync();

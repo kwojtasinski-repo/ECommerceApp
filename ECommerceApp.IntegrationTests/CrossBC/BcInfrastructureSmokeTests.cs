@@ -4,7 +4,6 @@ using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.CrossBC
 {
@@ -38,7 +37,7 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         [Fact]
         public async Task OrderService_EmptyDb_GetAllShouldReturnEmptyPage()
         {
-            var result = await _service.GetAllOrdersAsync(pageSize: 10, pageNo: 1, search: null);
+            var result = await _service.GetAllOrdersAsync(pageSize: 10, pageNo: 1, search: null, CancellationToken);
 
             result.ShouldNotBeNull();
             result.Orders.ShouldNotBeNull();

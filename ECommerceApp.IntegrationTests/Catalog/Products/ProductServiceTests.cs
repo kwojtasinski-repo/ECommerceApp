@@ -6,9 +6,9 @@ using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Catalog.Products
 {
@@ -16,7 +16,7 @@ namespace ECommerceApp.IntegrationTests.Catalog.Products
     {
         public ProductServiceTests(ITestOutputHelper output) : base(output) { }
 
-        private async Task<int> SeedCategoryAsync(string name = "Elektronika")
+        private async Task<int> SeedCategoryAsync(string name = "Elektronika", CancellationToken ct = default)
         {
             var repo = GetRequiredService<ICategoryRepository>();
             var category = Category.Create(name);
@@ -50,7 +50,7 @@ namespace ECommerceApp.IntegrationTests.Catalog.Products
         [Fact]
         public async Task AddProduct_ValidDto_ShouldReturnProductId()
         {
-            var categoryId = await SeedCategoryAsync();
+            var categoryId = await SeedCategoryAsync(ct: CancellationToken);
 
             var id = await _service.AddProduct(new CreateProductDto(
                 Name: "Laptop",
@@ -67,7 +67,7 @@ namespace ECommerceApp.IntegrationTests.Catalog.Products
         [Fact]
         public async Task GetProductDetails_NonExistent_ShouldReturnNull()
         {
-            var result = await _service.GetProductDetails(int.MaxValue);
+            var result = await _service.GetProductDetails(int.MaxValue, CancellationToken);
 
             result.ShouldBeNull();
         }
@@ -97,7 +97,7 @@ namespace ECommerceApp.IntegrationTests.Catalog.Products
         [Fact]
         public async Task ProductExists_Existing_ShouldReturnTrue()
         {
-            var categoryId = await SeedCategoryAsync();
+            var categoryId = await SeedCategoryAsync(ct: CancellationToken);
             var id = await _service.AddProduct(new CreateProductDto("Mouse", 49.99m, "Gaming", categoryId, Enumerable.Empty<int>()));
 
             var result = await _service.ProductExists(id);
@@ -110,7 +110,7 @@ namespace ECommerceApp.IntegrationTests.Catalog.Products
         [Fact]
         public async Task GetUnitPriceAsync_NonExistent_ShouldReturnNull()
         {
-            var result = await _service.GetUnitPriceAsync(int.MaxValue);
+            var result = await _service.GetUnitPriceAsync(int.MaxValue, CancellationToken);
 
             result.ShouldBeNull();
         }
@@ -128,7 +128,7 @@ namespace ECommerceApp.IntegrationTests.Catalog.Products
         [Fact]
         public async Task DeleteProduct_Existing_ShouldReturnTrueAndRemoveProduct()
         {
-            var categoryId = await SeedCategoryAsync();
+            var categoryId = await SeedCategoryAsync(ct: CancellationToken);
             var id = await _service.AddProduct(new CreateProductDto("ToDelete", 10m, "Desc", categoryId, Enumerable.Empty<int>()));
 
             var result = await _service.DeleteProduct(id);
@@ -163,7 +163,7 @@ namespace ECommerceApp.IntegrationTests.Catalog.Products
         [Fact]
         public async Task FullLifecycle_AddUpdateDelete_ShouldWorkCorrectly()
         {
-            var categoryId = await SeedCategoryAsync();
+            var categoryId = await SeedCategoryAsync(ct: CancellationToken);
 
             // Add
             var id = await _service.AddProduct(new CreateProductDto(

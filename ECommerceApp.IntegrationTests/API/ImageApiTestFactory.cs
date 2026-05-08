@@ -13,6 +13,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.IntegrationTests.API
@@ -80,9 +81,9 @@ namespace ECommerceApp.IntegrationTests.API
             services.AddSingleton<IFileStore, FakeFileStore>();
         }
 
-        public async Task EnsureSeedCatalogData()
+        public async Task EnsureSeedCatalogData(CancellationToken ct = default)
         {
-            if (_seeded) 
+            if (_seeded)
             {
                 return;
             }
@@ -102,7 +103,7 @@ namespace ECommerceApp.IntegrationTests.API
             SeededItemId = productId.Value;
         }
 
-        public async Task<int> CreateFreshItemAsync()
+        public async Task<int> CreateFreshItemAsync(CancellationToken ct = default)
         {
             using var scope = Services.CreateScope();
             var sp = scope.ServiceProvider;

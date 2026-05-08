@@ -7,9 +7,9 @@ using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.CrossBC
 {
@@ -44,14 +44,14 @@ namespace ECommerceApp.IntegrationTests.CrossBC
                 CurrencyId: 1);
         }
 
-        private async Task SeedInventoryAsync(int productId = ProductId, int initialQuantity = 100)
+        private async Task SeedInventoryAsync(int productId = ProductId, int initialQuantity = 100, CancellationToken ct = default)
         {
             var snapshotRepo = GetRequiredService<IProductSnapshotRepository>();
             await snapshotRepo.UpsertAsync(
                 ProductSnapshot.Create(productId, $"Product-{productId}", false, CatalogProductStatus.Orderable));
 
             var stockService = GetRequiredService<IStockService>();
-            await stockService.InitializeStockAsync(productId, initialQuantity);
+            await stockService.InitializeStockAsync(productId, initialQuantity, CancellationToken);
         }
 
         // ── Payments BC ──────────────────────────────────────────────────
@@ -61,10 +61,10 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         {
             var orderPlaced = CreateOrderPlaced();
 
-            await _service.PublishAsync(orderPlaced);
+            await PublishAsync(orderPlaced, CancellationToken);
 
             var paymentService = GetRequiredService<IPaymentService>();
-            var payment = await paymentService.GetByOrderIdAsync(OrderId);
+            var payment = await paymentService.GetByOrderIdAsync(OrderId, CancellationToken);
             payment.ShouldNotBeNull();
             payment.OrderId.ShouldBe(OrderId);
         }
@@ -74,13 +74,13 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         [Fact]
         public async Task OrderPlaced_WithAvailableStock_ShouldReserveStockInInventoryBc()
         {
-            await SeedInventoryAsync();
+            await SeedInventoryAsync(ct: CancellationToken);
             var orderPlaced = CreateOrderPlaced();
 
-            await _service.PublishAsync(orderPlaced);
+            await PublishAsync(orderPlaced, CancellationToken);
 
             var stockService = GetRequiredService<IStockService>();
-            var stock = await stockService.GetByProductIdAsync(ProductId);
+            var stock = await stockService.GetByProductIdAsync(ProductId, CancellationToken);
             stock.ShouldNotBeNull();
             stock.AvailableQuantity.ShouldBe(100 - Quantity);
             stock.ReservedQuantity.ShouldBe(Quantity);
@@ -91,19 +91,19 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         [Fact]
         public async Task OrderPlaced_ShouldFanOutToPaymentsAndInventorySimultaneously()
         {
-            await SeedInventoryAsync();
+            await SeedInventoryAsync(ct: CancellationToken);
             var orderPlaced = CreateOrderPlaced();
 
-            await _service.PublishAsync(orderPlaced);
+            await PublishAsync(orderPlaced, CancellationToken);
 
             // Payments BC: payment should exist
             var paymentService = GetRequiredService<IPaymentService>();
-            var payment = await paymentService.GetByOrderIdAsync(OrderId);
+            var payment = await paymentService.GetByOrderIdAsync(OrderId, CancellationToken);
             payment.ShouldNotBeNull();
 
             // Inventory BC: stock should be reserved
             var stockService = GetRequiredService<IStockService>();
-            var stock = await stockService.GetByProductIdAsync(ProductId);
+            var stock = await stockService.GetByProductIdAsync(ProductId, CancellationToken);
             stock.ShouldNotBeNull();
             stock.ReservedQuantity.ShouldBe(Quantity);
         }

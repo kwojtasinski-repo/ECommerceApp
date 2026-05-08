@@ -6,7 +6,6 @@ using Shouldly;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
 {
@@ -23,7 +22,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
                 OrderId: int.MaxValue,
                 Lines: new List<CreateShipmentLineDto> { new(ProductId: 1, Quantity: 2) });
 
-            var result = await _service.CreateShipmentAsync(dto);
+            var result = await _service.CreateShipmentAsync(dto, CancellationToken);
 
             result.ShouldBe(ShipmentOperationResult.OrderNotFound);
         }
@@ -33,7 +32,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsInTransitAsync_NonExistentShipment_ShouldReturnNotFound()
         {
-            var result = await _service.MarkAsInTransitAsync(int.MaxValue, "TRACK-001");
+            var result = await _service.MarkAsInTransitAsync(int.MaxValue, "TRACK-001", CancellationToken);
 
             result.ShouldBe(ShipmentOperationResult.NotFound);
         }
@@ -43,7 +42,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsDeliveredAsync_NonExistentShipment_ShouldReturnNotFound()
         {
-            var result = await _service.MarkAsDeliveredAsync(int.MaxValue);
+            var result = await _service.MarkAsDeliveredAsync(int.MaxValue, CancellationToken);
 
             result.ShouldBe(ShipmentOperationResult.NotFound);
         }
@@ -53,7 +52,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsFailedAsync_NonExistentShipment_ShouldReturnNotFound()
         {
-            var result = await _service.MarkAsFailedAsync(int.MaxValue);
+            var result = await _service.MarkAsFailedAsync(int.MaxValue, CancellationToken);
 
             result.ShouldBe(ShipmentOperationResult.NotFound);
         }
@@ -63,7 +62,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
         [Fact]
         public async Task MarkAsPartiallyDeliveredAsync_NonExistentShipment_ShouldReturnNotFound()
         {
-            var result = await _service.MarkAsPartiallyDeliveredAsync(int.MaxValue, new List<int> { 1 });
+            var result = await _service.MarkAsPartiallyDeliveredAsync(int.MaxValue, new List<int> { 1 }, CancellationToken);
 
             result.ShouldBe(ShipmentOperationResult.NotFound);
         }
@@ -73,7 +72,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
         [Fact]
         public async Task GetShipmentAsync_NonExistentShipment_ShouldReturnNull()
         {
-            var result = await _service.GetShipmentAsync(int.MaxValue);
+            var result = await _service.GetShipmentAsync(int.MaxValue, CancellationToken);
 
             result.ShouldBeNull();
         }
@@ -83,7 +82,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Fulfillment
         [Fact]
         public async Task GetShipmentsByOrderIdAsync_NonExistentOrder_ShouldReturnEmptyList()
         {
-            var result = await _service.GetShipmentsByOrderIdAsync(int.MaxValue);
+            var result = await _service.GetShipmentsByOrderIdAsync(int.MaxValue, CancellationToken);
 
             result.ShouldNotBeNull();
             result.Shipments.ShouldNotBeNull();

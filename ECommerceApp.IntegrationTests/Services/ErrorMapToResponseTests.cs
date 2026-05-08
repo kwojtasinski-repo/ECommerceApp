@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.Net;
 using System.Text;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Services
 {

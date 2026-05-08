@@ -7,9 +7,9 @@ using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Presale.Checkout
 {
@@ -17,7 +17,7 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
     {
         public SoftReservationServiceTests(ITestOutputHelper output) : base(output) { }
 
-        private async Task<int> SeedProductAsync(decimal price = 99.99m)
+        private async Task<int> SeedProductAsync(decimal price = 99.99m, CancellationToken ct = default)
         {
             var categoryRepo = GetRequiredService<ICategoryRepository>();
             var categoryId = await categoryRepo.AddAsync(Category.Create("SoftResTest Category"));
@@ -29,10 +29,10 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
             return productId;
         }
 
-        private async Task SeedStockSnapshotAsync(int productId, int availableQty = 100)
+        private async Task SeedStockSnapshotAsync(int productId, int availableQty = 100, CancellationToken ct = default)
         {
             var snapshotRepo = GetRequiredService<IStockSnapshotRepository>();
-            await snapshotRepo.AddAsync(StockSnapshot.Create(productId, availableQty, DateTime.UtcNow));
+            await snapshotRepo.AddAsync(StockSnapshot.Create(productId, availableQty, DateTime.UtcNow), CancellationToken);
         }
 
         // ── GetAllForUserAsync ────────────────────────────────────────────
@@ -40,7 +40,7 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
         [Fact]
         public async Task GetAllForUserAsync_NoReservations_ReturnsEmpty()
         {
-            var result = await _service.GetAllForUserAsync(new PresaleUserId("sr-user-norel"));
+            var result = await _service.GetAllForUserAsync(new PresaleUserId("sr-user-norel"), CancellationToken);
 
             result.ShouldBeEmpty();
         }
@@ -50,10 +50,10 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
         [Fact]
         public async Task HoldAsync_NoStockSnapshotExists_ReturnsFalse()
         {
-            var productId = await SeedProductAsync();
+            var productId = await SeedProductAsync(ct: CancellationToken);
             // No snapshot seeded for this product
 
-            var result = await _service.HoldAsync(productId, "sr-user-nosnap", 1);
+            var result = await _service.HoldAsync(productId, "sr-user-nosnap", 1, CancellationToken);
 
             result.ShouldBeFalse();
         }
@@ -61,10 +61,10 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
         [Fact]
         public async Task HoldAsync_WithAvailableStockAndPrice_ReturnsTrue()
         {
-            var productId = await SeedProductAsync();
-            await SeedStockSnapshotAsync(productId);
+            var productId = await SeedProductAsync(ct: CancellationToken);
+            await SeedStockSnapshotAsync(productId, ct: CancellationToken);
 
-            var result = await _service.HoldAsync(productId, "sr-user-holdok", 2);
+            var result = await _service.HoldAsync(productId, "sr-user-holdok", 2, CancellationToken);
 
             result.ShouldBeTrue();
         }
@@ -72,10 +72,10 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
         [Fact]
         public async Task HoldAsync_InsufficientStock_ReturnsFalse()
         {
-            var productId = await SeedProductAsync();
-            await SeedStockSnapshotAsync(productId, availableQty: 1);
+            var productId = await SeedProductAsync(ct: CancellationToken);
+            await SeedStockSnapshotAsync(productId, availableQty: 1, ct: CancellationToken);
 
-            var result = await _service.HoldAsync(productId, "sr-user-nostock", quantity: 5);
+            var result = await _service.HoldAsync(productId, "sr-user-nostock", quantity: 5, CancellationToken);
 
             result.ShouldBeFalse();
         }
@@ -85,12 +85,12 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
         [Fact]
         public async Task GetAllForUserAsync_AfterSuccessfulHold_ReturnsReservation()
         {
-            var productId = await SeedProductAsync();
-            await SeedStockSnapshotAsync(productId);
+            var productId = await SeedProductAsync(ct: CancellationToken);
+            await SeedStockSnapshotAsync(productId, ct: CancellationToken);
 
-            await _service.HoldAsync(productId, "sr-user-getall", 3);
+            await _service.HoldAsync(productId, "sr-user-getall", 3, CancellationToken);
 
-            var result = await _service.GetAllForUserAsync(new PresaleUserId("sr-user-getall"));
+            var result = await _service.GetAllForUserAsync(new PresaleUserId("sr-user-getall"), CancellationToken);
             result.Count.ShouldBe(1);
             result[0].ProductId.Value.ShouldBe(productId);
             result[0].Quantity.Value.ShouldBe(3);
@@ -102,11 +102,11 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
         [Fact]
         public async Task GetPriceChangesAsync_WhenPriceNotChanged_ReturnsEmpty()
         {
-            var productId = await SeedProductAsync(price: 55.00m);
-            await SeedStockSnapshotAsync(productId);
-            await _service.HoldAsync(productId, "sr-user-priceok", 1);
+            var productId = await SeedProductAsync(price: 55.00m, CancellationToken);
+            await SeedStockSnapshotAsync(productId, ct: CancellationToken);
+            await _service.HoldAsync(productId, "sr-user-priceok", 1, CancellationToken);
 
-            var changes = await _service.GetPriceChangesAsync(new PresaleUserId("sr-user-priceok"));
+            var changes = await _service.GetPriceChangesAsync(new PresaleUserId("sr-user-priceok"), CancellationToken);
 
             // Catalog still returns the same price that was locked at hold time
             changes.ShouldBeEmpty();
@@ -117,13 +117,13 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
         [Fact]
         public async Task CommitAllForUserAsync_SetsReservationStatusToCommitted()
         {
-            var productId = await SeedProductAsync();
-            await SeedStockSnapshotAsync(productId);
-            await _service.HoldAsync(productId, "sr-user-commit", 2);
+            var productId = await SeedProductAsync(ct: CancellationToken);
+            await SeedStockSnapshotAsync(productId, ct: CancellationToken);
+            await _service.HoldAsync(productId, "sr-user-commit", 2, CancellationToken);
 
-            await _service.CommitAllForUserAsync(new PresaleUserId("sr-user-commit"));
+            await _service.CommitAllForUserAsync(new PresaleUserId("sr-user-commit"), CancellationToken);
 
-            var reservations = await _service.GetAllForUserAsync(new PresaleUserId("sr-user-commit"));
+            var reservations = await _service.GetAllForUserAsync(new PresaleUserId("sr-user-commit"), CancellationToken);
             reservations.ShouldNotBeEmpty();
             reservations[0].Status.ShouldBe(SoftReservationStatus.Committed);
         }
@@ -133,14 +133,14 @@ namespace ECommerceApp.IntegrationTests.Presale.Checkout
         [Fact]
         public async Task RevertAllForUserAsync_AfterCommit_RevertsToActive()
         {
-            var productId = await SeedProductAsync();
-            await SeedStockSnapshotAsync(productId);
-            await _service.HoldAsync(productId, "sr-user-revert", 1);
-            await _service.CommitAllForUserAsync(new PresaleUserId("sr-user-revert"));
+            var productId = await SeedProductAsync(ct: CancellationToken);
+            await SeedStockSnapshotAsync(productId, ct: CancellationToken);
+            await _service.HoldAsync(productId, "sr-user-revert", 1, CancellationToken);
+            await _service.CommitAllForUserAsync(new PresaleUserId("sr-user-revert"), CancellationToken);
 
-            await _service.RevertAllForUserAsync(new PresaleUserId("sr-user-revert"));
+            await _service.RevertAllForUserAsync(new PresaleUserId("sr-user-revert"), CancellationToken);
 
-            var reservations = await _service.GetAllForUserAsync(new PresaleUserId("sr-user-revert"));
+            var reservations = await _service.GetAllForUserAsync(new PresaleUserId("sr-user-revert"), CancellationToken);
             reservations.ShouldNotBeEmpty();
             reservations[0].Status.ShouldBe(SoftReservationStatus.Active);
         }

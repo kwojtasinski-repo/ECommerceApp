@@ -11,7 +11,7 @@ using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Shared.TestInfrastructure
@@ -62,8 +62,7 @@ namespace ECommerceApp.Shared.TestInfrastructure
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError(ex, "An error occurred seeding the " +
-                                            $"database with test messages. Error: {ex.Message}");
+                        logger.LogError(ex, "An error occurred seeding the database with test messages. Error: {Error}", ex.Message);
                     }
                 })
                 .UseEnvironment("test");
@@ -79,22 +78,22 @@ namespace ECommerceApp.Shared.TestInfrastructure
 
         }
 
-        public async Task<FlurlClient> GetAuthenticatedClient()
+        public async Task<FlurlClient> GetAuthenticatedClient(CancellationToken ct = default)
         {
             var httpClient = CreateClient();
             var client = new FlurlClient(httpClient);
-            var token = await GetTokenAsync(client);
+            var token = await GetTokenAsync(client, ct);
             client.WithHeader("Authorization", $"Bearer {token}");
             return client;
         }
 
-        private async Task<string> GetTokenAsync(FlurlClient client)
+        private async Task<string> GetTokenAsync(FlurlClient client, CancellationToken ct = default)
         {
             var testUser = new SignInDto("test@test", "Test@test12");
             var jsonToken = await client.Request("api/auth/login")
                 .WithHeader("content-type", "application/json")
                 .AllowAnyHttpStatus()
-                .PostJsonAsync(testUser)
+                .PostJsonAsync(testUser, cancellationToken: ct)
                 .ReceiveString();
 
             var deserializedToken = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonToken);

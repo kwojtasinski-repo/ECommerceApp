@@ -6,7 +6,6 @@ using Shouldly;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.Sales.Coupons
 {
@@ -19,7 +18,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Coupons
         [Fact]
         public async Task ApplyCouponAsync_NonExistentOrder_ShouldReturnOrderNotFound()
         {
-            var result = await _service.ApplyCouponAsync("PROMO-123", new CouponEvaluationContext(int.MaxValue, "user-1", 0m, new List<CouponEvaluationItem>()));
+            var result = await _service.ApplyCouponAsync("PROMO-123", new CouponEvaluationContext(int.MaxValue, "user-1", 0m, new List<CouponEvaluationItem>()), CancellationToken);
 
             result.ShouldBe(CouponApplyResult.OrderNotFound);
         }
@@ -29,7 +28,7 @@ namespace ECommerceApp.IntegrationTests.Sales.Coupons
         [Fact]
         public async Task RemoveCouponAsync_NoCouponApplied_ShouldReturnNoCouponApplied()
         {
-            var result = await _service.RemoveCouponAsync(orderId: int.MaxValue);
+            var result = await _service.RemoveCouponAsync(orderId: int.MaxValue, CancellationToken);
 
             result.ShouldBe(CouponRemoveResult.NoCouponApplied);
         }

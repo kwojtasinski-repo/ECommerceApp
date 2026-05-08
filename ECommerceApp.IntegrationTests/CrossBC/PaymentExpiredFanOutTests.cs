@@ -7,9 +7,9 @@ using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace ECommerceApp.IntegrationTests.CrossBC
 {
@@ -44,12 +44,12 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         private static PaymentExpired CreatePaymentExpired()
             => new(PaymentId: 99, OrderId: OrderId, OccurredAt: DateTime.UtcNow);
 
-        private async Task SeedInventoryAsync(int quantity = 100)
+        private async Task SeedInventoryAsync(int quantity = 100, CancellationToken ct = default)
         {
             var snapshotRepo = GetRequiredService<IProductSnapshotRepository>();
             await snapshotRepo.UpsertAsync(
                 ProductSnapshot.Create(ProductId, $"Product-{ProductId}", false, CatalogProductStatus.Orderable));
-            await GetRequiredService<IStockService>().InitializeStockAsync(ProductId, quantity);
+            await GetRequiredService<IStockService>().InitializeStockAsync(ProductId, quantity, CancellationToken);
         }
 
         // ── Inventory BC ──────────────────────────────────────────────────────
@@ -57,15 +57,15 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         [Fact]
         public async Task PaymentExpired_AfterOrderPlaced_ShouldWithdrawStockHoldsInInventoryBc()
         {
-            await SeedInventoryAsync(quantity: 100);
-            await _service.PublishAsync(CreateOrderPlaced());
+            await SeedInventoryAsync(quantity: 100, CancellationToken);
+            await PublishAsync(CreateOrderPlaced(), CancellationToken);
 
-            var stockAfterPlaced = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId);
+            var stockAfterPlaced = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId, CancellationToken);
             stockAfterPlaced!.ReservedQuantity.ShouldBe(Quantity);
 
-            await _service.PublishAsync(CreatePaymentExpired());
+            await PublishAsync(CreatePaymentExpired(), CancellationToken);
 
-            var stockAfterExpired = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId);
+            var stockAfterExpired = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId, CancellationToken);
             stockAfterExpired!.ReservedQuantity.ShouldBe(0);
             stockAfterExpired.AvailableQuantity.ShouldBe(100);
         }
@@ -73,7 +73,7 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         [Fact]
         public async Task PaymentExpired_WhenNoHoldsExist_ShouldCompleteWithoutError()
         {
-            var act = async () => await _service.PublishAsync(CreatePaymentExpired());
+            var act = async () => await PublishAsync(CreatePaymentExpired(), CancellationToken);
 
             await act.ShouldNotThrowAsync();
         }
@@ -83,7 +83,7 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         [Fact]
         public async Task PaymentExpired_WhenNoCouponsApplied_ShouldCompleteWithoutError()
         {
-            var act = async () => await _service.PublishAsync(CreatePaymentExpired());
+            var act = async () => await PublishAsync(CreatePaymentExpired(), CancellationToken);
 
             await act.ShouldNotThrowAsync();
         }
@@ -95,15 +95,15 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         {
             // OrderCancelled path (manual cancel) goes through a different code path.
             // Verify: no OrderCancelled-bound Inventory handler fires (stock not double-released).
-            await SeedInventoryAsync(quantity: 100);
-            await _service.PublishAsync(CreateOrderPlaced());
+            await SeedInventoryAsync(quantity: 100, CancellationToken);
+            await PublishAsync(CreateOrderPlaced(), CancellationToken);
 
-            await _service.PublishAsync(CreatePaymentExpired());
+            await PublishAsync(CreatePaymentExpired(), CancellationToken);
 
             // If OrderCancelled were also published, ReleaseAsync would be called on an already-withdrawn
             // hold — which would return false (no-op) but increment reserved-release stats incorrectly.
             // Asserting reserved = 0 (not negative) proves only one release path ran.
-            var stock = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId);
+            var stock = await GetRequiredService<IStockService>().GetByProductIdAsync(ProductId, CancellationToken);
             stock!.ReservedQuantity.ShouldBe(0);
             stock.AvailableQuantity.ShouldBe(100);
         }
