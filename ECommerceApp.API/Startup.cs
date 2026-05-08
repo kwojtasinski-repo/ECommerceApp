@@ -1,4 +1,4 @@
-using System;
+using System.Collections.Generic;
 using System.Text;
 using ECommerceApp.API.Filters;
 using ECommerceApp.API.Options;
@@ -14,7 +14,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi.Models;
+using Microsoft.OpenApi;
 
 namespace ECommerceApp.API
 {
@@ -44,16 +44,14 @@ namespace ECommerceApp.API
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["Jwt:Key"]))
                     };
                 });
-            services.AddAuthorization(options =>
-            {
-                options.AddPolicy(ApiPolicies.TrustedApiUser, policy =>
+            services.AddAuthorizationBuilder()
+                .AddPolicy(ApiPolicies.TrustedApiUser, policy =>
                     policy.RequireAuthenticatedUser()
                           .RequireAssertion(ctx =>
                               ctx.User.HasClaim("api:purchase", "true") ||
                               ctx.User.IsInRole(UserPermissions.Roles.Service) ||
                               ctx.User.IsInRole(UserPermissions.Roles.Manager) ||
                               ctx.User.IsInRole(UserPermissions.Roles.Administrator)));
-            });
             services.Configure<WebOptions>(Configuration.GetSection("WebOptions"));
             services.AddScoped<MaxApiQuantityFilter>();
             services.AddSingleton<ICartRequirements>(new CartRequirements(ApiPurchaseOptions.MaxQuantityPerOrderLine));
@@ -67,30 +65,27 @@ namespace ECommerceApp.API
 
             services.AddSwaggerGen(setup =>
             {
+                setup.SwaggerDoc("v1", new OpenApiInfo { Title = "Ecommerce.API", Version = "v1" });
+
                 // Include 'SecurityScheme' to use JWT Authentication
                 var jwtSecurityScheme = new OpenApiSecurityScheme
                 {
-                    Scheme = "bearer",
+                    Scheme = JwtBearerDefaults.AuthenticationScheme,
                     BearerFormat = "JWT",
                     Name = "JWT Authentication",
                     In = ParameterLocation.Header,
                     Type = SecuritySchemeType.Http,
                     Description = "Put **_ONLY_** your JWT Bearer token on textbox below!",
-
-                    Reference = new OpenApiReference
-                    {
-                        Id = JwtBearerDefaults.AuthenticationScheme,
-                        Type = ReferenceType.SecurityScheme
-                    }
                 };
 
-                setup.AddSecurityDefinition(jwtSecurityScheme.Reference.Id, jwtSecurityScheme);
-
-                setup.AddSecurityRequirement(new OpenApiSecurityRequirement
+                setup.AddSecurityDefinition(JwtBearerDefaults.AuthenticationScheme, jwtSecurityScheme);
+                setup.AddSecurityRequirement(_ => new OpenApiSecurityRequirement
                 {
-                    { jwtSecurityScheme, Array.Empty<string>() }
+                    {
+                        new OpenApiSecuritySchemeReference(JwtBearerDefaults.AuthenticationScheme),
+                        new List<string>()
+                    }
                 });
-
             });
         }
 
