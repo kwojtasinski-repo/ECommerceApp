@@ -81,7 +81,7 @@ namespace ECommerceApp.Shared.TestInfrastructure
         public async Task<FlurlClient> GetAuthenticatedClient(CancellationToken ct = default)
         {
             var httpClient = CreateClient();
-            var client = new FlurlClient(httpClient);
+            var client = new FlurlClient(httpClient, httpClient.BaseAddress?.ToString() ?? "/");
             var token = await GetTokenAsync(client, ct);
             client.WithHeader("Authorization", $"Bearer {token}");
             return client;

@@ -55,13 +55,13 @@ namespace ECommerceApp.IntegrationTests.API
         private async Task<FlurlClient> GetLoggingClient()
         {
             var client = await _factory.GetAuthenticatedClient(CancellationToken);
-            client.Settings.OnErrorAsync = async call =>
+            client.OnError(async call =>
             {
                 var body = call.Response?.ResponseMessage?.Content != null
-                    ? await call.Response.ResponseMessage.Content.ReadAsStringAsync()
+                    ? await call.Response.ResponseMessage.Content.ReadAsStringAsync(CancellationToken)
                     : string.Empty;
                 _output.WriteLine($"[HTTP {call.Response?.StatusCode}] {call.Request.Url}: {body}");
-            };
+            });
             return client;
         }
 
@@ -73,12 +73,12 @@ namespace ECommerceApp.IntegrationTests.API
             var addPoco = new AddImagePOCO { File = file, ItemId = _factory.SeededItemId };
             var multiContent = Utilities.SerializeObjectWithImageToBytes<AddImagePOCO>(addPoco);
             var id = await client.Request("api/images")
-                .PostAsync(multiContent, CancellationToken)
+                .PostAsync(multiContent, cancellationToken: CancellationToken)
                 .ReceiveJson<int>();
 
             var response = await client.Request($"api/images/{id}")
                 .AllowAnyHttpStatus()
-                .GetAsync(CancellationToken);
+                .GetAsync(cancellationToken: CancellationToken);
             var bytes = await response.ResponseMessage.Content.ReadAsByteArrayAsync(CancellationToken);
 
             response.StatusCode.ShouldBe((int)HttpStatusCode.OK);
@@ -131,7 +131,7 @@ namespace ECommerceApp.IntegrationTests.API
             var image = new AddImagePOCO { File = file, ItemId = _factory.SeededItemId };
             var multiContent = Utilities.SerializeObjectWithImageToBytes<AddImagePOCO>(image);
             var id = await client.Request($"api/images")
-                .AllowHttpStatus(HttpStatusCode.OK, HttpStatusCode.Created)
+                .AllowHttpStatus((int)HttpStatusCode.OK, (int)HttpStatusCode.Created)
                 .PostAsync(multiContent, cancellationToken: CancellationToken)
                 .ReceiveJson<int>();
 
