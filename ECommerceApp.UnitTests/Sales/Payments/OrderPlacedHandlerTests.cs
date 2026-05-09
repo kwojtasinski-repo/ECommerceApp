@@ -37,13 +37,13 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         [Fact]
         public async Task HandleAsync_ValidMessage_ShouldCreatePaymentAndPersist()
         {
-            Payment? savedPayment = null;
+            Payment savedPayment = null;
             _paymentRepo
                 .Setup(r => r.AddAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()))
                 .Callback<Payment, CancellationToken>((p, _) => savedPayment = p)
                 .Returns(Task.CompletedTask);
 
-            await CreateHandler().HandleAsync(CreateMessage(orderId: 7, total: 49.99m, currencyId: 2));
+            await CreateHandler().HandleAsync(CreateMessage(orderId: 7, total: 49.99m, currencyId: 2), TestContext.Current.CancellationToken);
 
             savedPayment.Should().NotBeNull();
             savedPayment!.OrderId.Value.Should().Be(7);
@@ -57,13 +57,13 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         [Fact]
         public async Task HandleAsync_ValidMessage_ShouldScheduleJobWithPaymentWindowExpiredJobName()
         {
-            string? scheduledJobName = null;
+            string scheduledJobName = null;
             _scheduler
                 .Setup(s => s.ScheduleAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
                 .Callback<string, string, DateTime, CancellationToken>((name, _, _, _) => scheduledJobName = name)
                 .Returns(Task.CompletedTask);
 
-            await CreateHandler().HandleAsync(CreateMessage());
+            await CreateHandler().HandleAsync(CreateMessage(), TestContext.Current.CancellationToken);
 
             scheduledJobName.Should().Be(PaymentWindowExpiredJob.JobTaskName);
         }
@@ -79,7 +79,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
                 .Callback<string, string, DateTime, CancellationToken>((_, _, at, _) => scheduledAt = at)
                 .Returns(Task.CompletedTask);
 
-            await CreateHandler().HandleAsync(message);
+            await CreateHandler().HandleAsync(message, TestContext.Current.CancellationToken);
 
             scheduledAt.Should().Be(expiresAt);
         }

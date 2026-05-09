@@ -56,25 +56,25 @@ namespace ECommerceApp.Application.AccountProfile.Services
         public async Task<bool> DeleteAsync(int id)
             => await _repository.DeleteAsync(new UserProfileId(id));
 
-        public async Task<UserProfileDetailsVm?> GetDetailsAsync(int id)
+        public async Task<UserProfileDetailsVm> GetDetailsAsync(int id)
         {
             var profile = await _repository.GetByIdAsync(new UserProfileId(id));
             return profile is null ? null : UserProfileDetailsVm.FromDomain(profile);
         }
 
-        public async Task<UserProfileDetailsVm?> GetDetailsByUserIdAsync(string userId)
+        public async Task<UserProfileDetailsVm> GetDetailsByUserIdAsync(string userId)
         {
             var profile = await _repository.GetByUserIdAsync(userId);
             return profile is null ? null : UserProfileDetailsVm.FromDomain(profile);
         }
 
-        public async Task<UserProfileVm?> GetAsync(int id, string userId)
+        public async Task<UserProfileVm> GetAsync(int id, string userId)
         {
             var profile = await _repository.GetByIdAndUserIdAsync(new UserProfileId(id), userId);
             return profile is null ? null : UserProfileVm.FromDomain(profile);
         }
 
-        public async Task<UserProfileVm?> GetByUserIdAsync(string userId)
+        public async Task<UserProfileVm> GetByUserIdAsync(string userId)
         {
             var profile = await _repository.GetByUserIdAsync(userId);
             return profile is null ? null : UserProfileVm.FromDomain(profile);

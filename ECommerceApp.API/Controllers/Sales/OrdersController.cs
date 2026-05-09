@@ -39,7 +39,7 @@ namespace ECommerceApp.API.Controllers.Sales
                 vm.UserId != userId)
                 return Forbid();
 
-            string? paymentUrl = null;
+            string paymentUrl = null;
             if (vm.Status == OrderStatus.Placed)
             {
                 var payment = await _payments.GetPendingByOrderIdAsync(vm.Id, userId, ct);

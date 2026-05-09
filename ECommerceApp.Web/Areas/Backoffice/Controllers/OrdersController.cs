@@ -25,7 +25,7 @@ namespace ECommerceApp.Web.Areas.Backoffice.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Index(int pageSize, int? pageNo, string? searchString)
+        public async Task<IActionResult> Index(int pageSize, int? pageNo, string searchString)
         {
             pageNo ??= 1;
             var model = await _service.GetOrdersAsync(pageSize, pageNo.Value, searchString);

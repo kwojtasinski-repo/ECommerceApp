@@ -167,7 +167,7 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
             return ShipmentOperationResult.Success;
         }
 
-        public async Task<ShipmentDetailsVm?> GetShipmentAsync(int shipmentId, CancellationToken ct = default)
+        public async Task<ShipmentDetailsVm> GetShipmentAsync(int shipmentId, CancellationToken ct = default)
         {
             var shipment = await _shipments.GetByIdAsync(shipmentId, ct);
             if (shipment is null)

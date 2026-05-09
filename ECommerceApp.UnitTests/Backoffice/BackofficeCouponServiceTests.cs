@@ -45,7 +45,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(source);
 
             // Act
-            var result = await CreateSut().GetCouponsAsync(10, 1, "off");
+            var result = await CreateSut().GetCouponsAsync(10, 1, "off", TestContext.Current.CancellationToken);
 
             // Assert
             result.Should().NotBeNull();
@@ -74,7 +74,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(new CouponListVm { Coupons = new List<CouponForListVm>(), TotalCount = 0 });
 
             // Act
-            var result = await CreateSut().GetCouponsAsync(10, 1, null);
+            var result = await CreateSut().GetCouponsAsync(10, 1, null, TestContext.Current.CancellationToken);
 
             // Assert
             result.Coupons.Should().BeEmpty();
@@ -90,7 +90,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(new CouponListVm { Coupons = new List<CouponForListVm>() });
 
             // Act
-            await CreateSut().GetCouponsAsync(5, 2, null);
+            await CreateSut().GetCouponsAsync(5, 2, null, TestContext.Current.CancellationToken);
 
             // Assert
             _couponService.Verify(
@@ -117,7 +117,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(source);
 
             // Act
-            var result = await CreateSut().GetCouponDetailAsync(7);
+            var result = await CreateSut().GetCouponDetailAsync(7, TestContext.Current.CancellationToken);
 
             // Assert
             result.Should().NotBeNull();
@@ -134,10 +134,10 @@ namespace ECommerceApp.UnitTests.Backoffice
             // Arrange
             _couponService
                 .Setup(s => s.GetCouponAsync(99, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((CouponDetailVm?)null);
+                .ReturnsAsync((CouponDetailVm)null);
 
             // Act
-            var result = await CreateSut().GetCouponDetailAsync(99);
+            var result = await CreateSut().GetCouponDetailAsync(99, TestContext.Current.CancellationToken);
 
             // Assert
             result.Should().BeNull();

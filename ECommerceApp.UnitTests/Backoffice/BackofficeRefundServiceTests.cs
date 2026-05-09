@@ -48,7 +48,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(source);
 
             // Act
-            var result = await CreateSut().GetRefundsAsync(10, 1);
+            var result = await CreateSut().GetRefundsAsync(10, 1, TestContext.Current.CancellationToken);
 
             // Assert
             result.CurrentPage.Should().Be(1);
@@ -75,7 +75,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(new RefundListVm { Refunds = new List<RefundVm>(), TotalCount = 0 });
 
             // Act
-            var result = await CreateSut().GetRefundsAsync(10, 1);
+            var result = await CreateSut().GetRefundsAsync(10, 1, TestContext.Current.CancellationToken);
 
             // Assert
             result.Refunds.Should().BeEmpty();
@@ -99,7 +99,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(99);
 
             // Act
-            var result = await CreateSut().GetRefundDetailAsync(5);
+            var result = await CreateSut().GetRefundDetailAsync(5, TestContext.Current.CancellationToken);
 
             // Assert
             result.Should().NotBeNull();
@@ -124,7 +124,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync((int?)null);
 
             // Act
-            var result = await CreateSut().GetRefundDetailAsync(5);
+            var result = await CreateSut().GetRefundDetailAsync(5, TestContext.Current.CancellationToken);
 
             // Assert
             result!.CustomerId.Should().Be(0);
@@ -136,10 +136,10 @@ namespace ECommerceApp.UnitTests.Backoffice
             // Arrange
             _refundService
                 .Setup(s => s.GetRefundAsync(99, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((RefundDetailsVm?)null);
+                .ReturnsAsync((RefundDetailsVm)null);
 
             // Act
-            var result = await CreateSut().GetRefundDetailAsync(99);
+            var result = await CreateSut().GetRefundDetailAsync(99, TestContext.Current.CancellationToken);
 
             // Assert
             result.Should().BeNull();
@@ -160,7 +160,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 });
 
             // Act
-            var result = await CreateSut().GetRefundsByOrderAsync(10);
+            var result = await CreateSut().GetRefundsByOrderAsync(10, TestContext.Current.CancellationToken);
 
             // Assert
             result.Refunds.Should().HaveCount(2);
@@ -179,7 +179,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(new List<RefundVm>());
 
             // Act
-            var result = await CreateSut().GetRefundsByOrderAsync(99);
+            var result = await CreateSut().GetRefundsByOrderAsync(99, TestContext.Current.CancellationToken);
 
             // Assert
             result.Refunds.Should().BeEmpty();

@@ -192,7 +192,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
             };
         }
 
-        public async Task<CouponDetailVm?> GetCouponAsync(int id, CancellationToken ct = default)
+        public async Task<CouponDetailVm> GetCouponAsync(int id, CancellationToken ct = default)
         {
             var coupon = await _coupons.GetByIdAsync(id, ct);
             if (coupon is null)

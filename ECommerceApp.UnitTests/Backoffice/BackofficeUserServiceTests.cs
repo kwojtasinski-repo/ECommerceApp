@@ -48,7 +48,7 @@ namespace ECommerceApp.UnitTests.Backoffice
             _userManagement.Setup(s => s.GetUserRoleAsync("u2")).ReturnsAsync("User");
 
             // Act
-            var result = await CreateSut().GetUsersAsync(10, 1, "test");
+            var result = await CreateSut().GetUsersAsync(10, 1, "test", TestContext.Current.CancellationToken);
 
             // Assert
             result.CurrentPage.Should().Be(1);
@@ -74,7 +74,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(new UserListVm { Users = new List<UserForListVm>() });
 
             // Act
-            var result = await CreateSut().GetUsersAsync(10, 1, null);
+            var result = await CreateSut().GetUsersAsync(10, 1, null, TestContext.Current.CancellationToken);
 
             // Assert
             result.Users.Should().BeEmpty();
@@ -94,7 +94,7 @@ namespace ECommerceApp.UnitTests.Backoffice
             _userManagement.Setup(s => s.GetUserRoleAsync("u1")).ReturnsAsync(string.Empty);
 
             // Act
-            var result = await CreateSut().GetUsersAsync(10, 1, null);
+            var result = await CreateSut().GetUsersAsync(10, 1, null, TestContext.Current.CancellationToken);
 
             // Assert
             result.Users[0].Roles.Should().BeEmpty();
@@ -112,7 +112,7 @@ namespace ECommerceApp.UnitTests.Backoffice
             _userManagement.Setup(s => s.GetUserRoleAsync("u1")).ReturnsAsync("Manager");
 
             // Act
-            var result = await CreateSut().GetUserDetailAsync("u1");
+            var result = await CreateSut().GetUserDetailAsync("u1", TestContext.Current.CancellationToken);
 
             // Assert
             result.Should().NotBeNull();
@@ -131,7 +131,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ThrowsAsync(new BusinessException());
 
             // Act
-            var result = await CreateSut().GetUserDetailAsync("missing");
+            var result = await CreateSut().GetUserDetailAsync("missing", TestContext.Current.CancellationToken);
 
             // Assert
             result.Should().BeNull();

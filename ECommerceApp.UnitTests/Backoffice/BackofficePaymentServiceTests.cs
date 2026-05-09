@@ -48,7 +48,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(list);
 
             // Act
-            var result = await CreateSut().GetPaymentsAsync(10, 1);
+            var result = await CreateSut().GetPaymentsAsync(10, 1, TestContext.Current.CancellationToken);
 
             // Assert
             result.CurrentPage.Should().Be(1);
@@ -71,7 +71,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(new PaymentListVm(new List<PaymentVm>(), 1, 10, 0));
 
             // Act
-            var result = await CreateSut().GetPaymentsAsync(10, 1);
+            var result = await CreateSut().GetPaymentsAsync(10, 1, TestContext.Current.CancellationToken);
 
             // Assert
             result.Payments.Should().BeEmpty();
@@ -95,7 +95,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(77);
 
             // Act
-            var result = await CreateSut().GetPaymentDetailAsync(5);
+            var result = await CreateSut().GetPaymentDetailAsync(5, TestContext.Current.CancellationToken);
 
             // Assert
             result.Should().NotBeNull();
@@ -113,10 +113,10 @@ namespace ECommerceApp.UnitTests.Backoffice
             // Arrange
             _paymentService
                 .Setup(s => s.GetByIdAsync(99, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((PaymentDetailsVm?)null);
+                .ReturnsAsync((PaymentDetailsVm)null);
 
             // Act
-            var result = await CreateSut().GetPaymentDetailAsync(99);
+            var result = await CreateSut().GetPaymentDetailAsync(99, TestContext.Current.CancellationToken);
 
             // Assert
             result.Should().BeNull();
@@ -139,7 +139,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(list);
 
             // Act
-            var result = await CreateSut().GetUnpaidOrderPaymentsAsync(10, 1);
+            var result = await CreateSut().GetUnpaidOrderPaymentsAsync(10, 1, TestContext.Current.CancellationToken);
 
             // Assert
             result.TotalCount.Should().Be(1);

@@ -15,6 +15,6 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
         Task RemoveAsync(PresaleUserId userId, PresaleProductId productId, CancellationToken ct = default);
         Task RemoveRangeAsync(PresaleUserId userId, IReadOnlyList<PresaleProductId> productIds, CancellationToken ct = default);
         Task ClearAsync(PresaleUserId userId, CancellationToken ct = default);
-        Task<CartVm?> GetCartAsync(PresaleUserId userId, CancellationToken ct = default);
+        Task<CartVm> GetCartAsync(PresaleUserId userId, CancellationToken ct = default);
     }
 }

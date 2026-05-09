@@ -16,7 +16,7 @@ namespace ECommerceApp.Application.Catalog.Images.Services
             _fileStoreProvider = fileStoreProvider;
         }
 
-        public async Task<ImageFileResult?> ResolveAsync(int imageId)
+        public async Task<ImageFileResult> ResolveAsync(int imageId)
         {
             var image = await _imageRepository.GetImageById(imageId);
             if (image is null)

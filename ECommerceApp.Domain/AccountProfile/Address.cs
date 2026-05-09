@@ -7,13 +7,13 @@ namespace ECommerceApp.Domain.AccountProfile
         public AddressId Id { get; private set; } = default!;
         public Street Street { get; }
         public BuildingNumber BuildingNumber { get; }
-        public FlatNumber? FlatNumber { get; }
+        public FlatNumber FlatNumber { get; }
         public ZipCode ZipCode { get; }
         public City City { get; }
         public Country Country { get; }
 
         // Used by EF Core constructor injection (parameters match property names/types after value converters)
-        private Address(AddressId id, Street street, BuildingNumber buildingNumber, FlatNumber? flatNumber, ZipCode zipCode, City city, Country country)
+        private Address(AddressId id, Street street, BuildingNumber buildingNumber, FlatNumber flatNumber, ZipCode zipCode, City city, Country country)
         {
             Id = id;
             Street = street;

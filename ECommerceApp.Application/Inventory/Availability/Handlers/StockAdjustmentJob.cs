@@ -54,7 +54,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
             }
 
             var version = pending.Version;
-            StockItem? stock = null;
+            StockItem stock = null;
             int adjustBefore = 0;
 
             const int maxAttempts = 5;

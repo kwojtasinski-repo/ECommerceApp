@@ -15,7 +15,7 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Adapters
             _userManager = userManager;
         }
 
-        public async Task<string?> GetEmailForUserAsync(string userId, CancellationToken ct = default)
+        public async Task<string> GetEmailForUserAsync(string userId, CancellationToken ct = default)
         {
             var user = await _userManager.FindByIdAsync(userId);
             return user?.Email;

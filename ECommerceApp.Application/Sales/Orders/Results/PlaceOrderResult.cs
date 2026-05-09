@@ -5,9 +5,9 @@ namespace ECommerceApp.Application.Sales.Orders.Results
         public bool IsSuccess { get; }
         public int? OrderId { get; }
         public int? CustomerId { get; }
-        public string? FailureReason { get; }
+        public string FailureReason { get; }
 
-        private PlaceOrderResult(bool isSuccess, int? orderId, int? customerId, string? failureReason)
+        private PlaceOrderResult(bool isSuccess, int? orderId, int? customerId, string failureReason)
         {
             IsSuccess = isSuccess;
             OrderId = orderId;

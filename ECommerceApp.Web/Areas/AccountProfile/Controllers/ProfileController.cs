@@ -29,7 +29,7 @@ namespace ECommerceApp.Web.Areas.AccountProfile.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Index(int pageSize, int? pageNo, string? searchString)
+        public async Task<IActionResult> Index(int pageSize, int? pageNo, string searchString)
         {
             pageNo ??= 1;
             searchString ??= string.Empty;
@@ -222,7 +222,7 @@ namespace ECommerceApp.Web.Areas.AccountProfile.Controllers
 
         [HttpPost]
         [Authorize(Roles = MaintenanceRole)]
-        public async Task<IActionResult> All(int pageSize, int? pageNo, string? searchString)
+        public async Task<IActionResult> All(int pageSize, int? pageNo, string searchString)
         {
             pageNo ??= 1;
             searchString ??= string.Empty;

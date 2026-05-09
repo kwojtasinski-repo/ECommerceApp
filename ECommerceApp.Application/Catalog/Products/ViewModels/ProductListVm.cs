@@ -9,7 +9,7 @@ namespace ECommerceApp.Application.Catalog.Products.ViewModels
         public decimal Cost { get; set; }
         public string Status { get; set; }
         public int CategoryId { get; set; }
-        public string? MainImageUrl { get; set; }
+        public string MainImageUrl { get; set; }
 
         public static ProductForListVm FromDomain(Domain.Catalog.Products.Product s) => new()
         {

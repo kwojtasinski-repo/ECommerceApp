@@ -51,7 +51,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(source);
 
             // Act
-            var result = await CreateSut().GetCustomersAsync(10, 1, "Jan");
+            var result = await CreateSut().GetCustomersAsync(10, 1, "Jan", TestContext.Current.CancellationToken);
 
             // Assert
             result.CurrentPage.Should().Be(1);
@@ -77,7 +77,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(new UserProfileListVm { Profiles = new List<UserProfileForListVm>() });
 
             // Act
-            var result = await CreateSut().GetCustomersAsync(10, 1, null);
+            var result = await CreateSut().GetCustomersAsync(10, 1, null, TestContext.Current.CancellationToken);
 
             // Assert
             result.Customers.Should().BeEmpty();
@@ -102,7 +102,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 });
 
             // Act
-            var result = await CreateSut().GetCustomerDetailAsync(5);
+            var result = await CreateSut().GetCustomerDetailAsync(5, TestContext.Current.CancellationToken);
 
             // Assert
             result.Should().NotBeNull();
@@ -119,10 +119,10 @@ namespace ECommerceApp.UnitTests.Backoffice
             // Arrange
             _profileService
                 .Setup(s => s.GetDetailsAsync(99))
-                .ReturnsAsync((UserProfileDetailsVm?)null);
+                .ReturnsAsync((UserProfileDetailsVm)null);
 
             // Act
-            var result = await CreateSut().GetCustomerDetailAsync(99);
+            var result = await CreateSut().GetCustomerDetailAsync(99, TestContext.Current.CancellationToken);
 
             // Assert
             result.Should().BeNull();
@@ -147,7 +147,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(all);
 
             // Act
-            var result = await CreateSut().GetOrdersByCustomerAsync(7, pageSize: 2, pageNo: 2);
+            var result = await CreateSut().GetOrdersByCustomerAsync(7, pageSize: 2, pageNo: 2, TestContext.Current.CancellationToken);
 
             // Assert
             result.TotalCount.Should().Be(5);
@@ -169,7 +169,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(new List<OrderForListVm>());
 
             // Act
-            var result = await CreateSut().GetOrdersByCustomerAsync(99, pageSize: 10, pageNo: 1);
+            var result = await CreateSut().GetOrdersByCustomerAsync(99, pageSize: 10, pageNo: 1, TestContext.Current.CancellationToken);
 
             // Assert
             result.Orders.Should().BeEmpty();

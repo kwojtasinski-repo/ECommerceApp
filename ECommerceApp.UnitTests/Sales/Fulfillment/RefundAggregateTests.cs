@@ -47,7 +47,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public void Create_InvalidReason_ShouldThrowDomainException(string? reason)
+        public void Create_InvalidReason_ShouldThrowDomainException(string reason)
         {
             var act = () => Refund.Create(1, reason!, false, DefaultItems(), "user-1");
 

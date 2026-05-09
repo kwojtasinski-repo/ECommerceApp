@@ -40,7 +40,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
         public async Task<StockOverviewVm> GetOverviewAsync(int page, int pageSize, CancellationToken ct = default)
         {
             var cacheKey = $"inventory:overview:p{page}:s{pageSize}";
-            if (_cache.TryGetValue(cacheKey, out StockOverviewVm? cached) && cached is not null)
+            if (_cache.TryGetValue(cacheKey, out StockOverviewVm cached) && cached is not null)
             {
                 return cached;
             }
@@ -130,7 +130,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
         public async Task<StockAuditVm> GetAuditAsync(int page, int pageSize, CancellationToken ct = default)
         {
             var cacheKey = $"inventory:audit:p{page}:s{pageSize}";
-            if (page > 1 && _cache.TryGetValue(cacheKey, out StockAuditVm? cached) && cached is not null)
+            if (page > 1 && _cache.TryGetValue(cacheKey, out StockAuditVm cached) && cached is not null)
             {
                 return cached;
             }

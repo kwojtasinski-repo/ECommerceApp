@@ -7,8 +7,8 @@ namespace ECommerceApp.Application.AccountProfile.DTOs
         string FirstName,
         string LastName,
         bool IsCompany,
-        string? NIP,
-        string? CompanyName);
+        string NIP,
+        string CompanyName);
 
     public record UpdateContactInfoDto(int Id, string Email, string PhoneNumber);
 

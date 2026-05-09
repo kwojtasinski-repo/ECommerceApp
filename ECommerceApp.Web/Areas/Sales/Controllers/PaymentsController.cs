@@ -32,7 +32,7 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
 
         [Authorize(Roles = MaintenanceRole)]
         [HttpPost]
-        public IActionResult Index(int pageSize, int? pageNo, string? searchString)
+        public IActionResult Index(int pageSize, int? pageNo, string searchString)
         {
             return View(new PaymentListVm(Array.Empty<PaymentVm>(), pageNo ?? 1, pageSize, 0));
         }

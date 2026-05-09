@@ -17,22 +17,22 @@ namespace ECommerceApp.Infrastructure.Sales.Payments.Repositories
             _context = context;
         }
 
-        public async Task<Payment?> GetByIdAsync(int id, CancellationToken ct = default)
+        public async Task<Payment> GetByIdAsync(int id, CancellationToken ct = default)
             => await _context.Payments
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == new PaymentId(id), ct);
 
-        public async Task<Payment?> GetByOrderIdAsync(int orderId, CancellationToken ct = default)
+        public async Task<Payment> GetByOrderIdAsync(int orderId, CancellationToken ct = default)
             => await _context.Payments
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.OrderId == new PaymentOrderId(orderId), ct);
 
-        public async Task<Payment?> GetByPaymentIdAsync(Guid paymentId, string userId, CancellationToken ct = default)
+        public async Task<Payment> GetByPaymentIdAsync(Guid paymentId, string userId, CancellationToken ct = default)
             => await _context.Payments
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.PaymentId == paymentId && p.UserId == userId, ct);
 
-        public async Task<Payment?> GetPendingByOrderIdAsync(int orderId, string userId, CancellationToken ct = default)
+        public async Task<Payment> GetPendingByOrderIdAsync(int orderId, string userId, CancellationToken ct = default)
             => await _context.Payments
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.OrderId == new PaymentOrderId(orderId)

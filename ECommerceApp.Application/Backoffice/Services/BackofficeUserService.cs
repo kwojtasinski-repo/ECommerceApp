@@ -17,7 +17,7 @@ namespace ECommerceApp.Application.Backoffice.Services
             _userManagement = userManagement;
         }
 
-        public async Task<BackofficeUserListVm> GetUsersAsync(int pageSize, int pageNo, string? searchString, CancellationToken ct = default)
+        public async Task<BackofficeUserListVm> GetUsersAsync(int pageSize, int pageNo, string searchString, CancellationToken ct = default)
         {
             var source = await _userManagement.GetUsersAsync(pageSize, pageNo, searchString ?? string.Empty);
             var roles = await Task.WhenAll(source.Users.Select(u => _userManagement.GetUserRoleAsync(u.Id)));
@@ -44,7 +44,7 @@ namespace ECommerceApp.Application.Backoffice.Services
             };
         }
 
-        public async Task<BackofficeUserDetailVm?> GetUserDetailAsync(string userId, CancellationToken ct = default)
+        public async Task<BackofficeUserDetailVm> GetUserDetailAsync(string userId, CancellationToken ct = default)
         {
             try
             {

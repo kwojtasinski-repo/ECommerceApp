@@ -9,9 +9,9 @@ namespace ECommerceApp.Domain.Sales.Orders
         public int Quantity { get; private set; }
         public UnitCost UnitCost { get; private set; } = default!;
         public OrderUserId UserId { get; private set; }
-        public OrderId? OrderId { get; private set; }
+        public OrderId OrderId { get; private set; }
         public int? CouponUsedId { get; private set; }
-        public OrderProductSnapshot? Snapshot { get; private set; }
+        public OrderProductSnapshot Snapshot { get; private set; }
 
         private OrderItem() { }
 

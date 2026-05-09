@@ -24,7 +24,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
                 Items: new List<ShipmentLineItem> { new(ProductId: 1, Quantity: 2) },
                 OccurredAt: DateTime.UtcNow);
 
-            await handler.HandleAsync(message);
+            await handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             logger.Verify(
                 l => l.Log(
@@ -32,7 +32,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("42") && v.ToString()!.Contains("7")),
                     null,
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
                 Times.Once);
         }
 
@@ -43,7 +43,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
                 new Mock<ILogger<ShipmentFailedNotificationHandler>>().Object);
             var message = new ShipmentFailed(1, 1, new List<ShipmentLineItem>(), DateTime.UtcNow);
 
-            var act = async () => await handler.HandleAsync(message);
+            var act = async () => await handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             await act.Invoke();
         }
@@ -62,7 +62,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
                 FailedItems: new List<ShipmentLineItem> { new(ProductId: 2, Quantity: 3) },
                 OccurredAt: DateTime.UtcNow);
 
-            await handler.HandleAsync(message);
+            await handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             logger.Verify(
                 l => l.Log(
@@ -70,7 +70,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
                     It.IsAny<EventId>(),
                     It.Is<It.IsAnyType>((v, _) => v.ToString()!.Contains("55") && v.ToString()!.Contains("8")),
                     null,
-                    It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+                    It.IsAny<Func<It.IsAnyType, Exception, string>>()),
                 Times.Once);
         }
 
@@ -85,7 +85,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
                 new List<ShipmentLineItem>(),
                 DateTime.UtcNow);
 
-            var act = async () => await handler.HandleAsync(message);
+            var act = async () => await handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             await act.Invoke();
         }

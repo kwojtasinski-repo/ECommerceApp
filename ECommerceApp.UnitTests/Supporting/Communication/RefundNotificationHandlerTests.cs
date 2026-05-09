@@ -28,7 +28,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _resolver.Setup(r => r.GetUserIdForOrderAsync(10, It.IsAny<CancellationToken>()))
                      .ReturnsAsync("user-10");
 
-            await CreateHandler().HandleAsync(Message(refundId: 3, orderId: 10));
+            await CreateHandler().HandleAsync(Message(refundId: 3, orderId: 10), TestContext.Current.CancellationToken);
 
             _notifications.Verify(n => n.NotifyAsync(
                 "user-10",
@@ -41,9 +41,9 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         public async Task HandleAsync_WhenUserNotResolved_SkipsNotification()
         {
             _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync((string?)null);
+                     .ReturnsAsync((string)null);
 
-            await CreateHandler().HandleAsync(Message());
+            await CreateHandler().HandleAsync(Message(), TestContext.Current.CancellationToken);
 
             _notifications.Verify(n => n.NotifyAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -67,7 +67,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _resolver.Setup(r => r.GetUserIdForOrderAsync(10, It.IsAny<CancellationToken>()))
                      .ReturnsAsync("user-10");
 
-            await CreateHandler().HandleAsync(Message(refundId: 5, orderId: 10));
+            await CreateHandler().HandleAsync(Message(refundId: 5, orderId: 10), TestContext.Current.CancellationToken);
 
             _notifications.Verify(n => n.NotifyAsync(
                 "user-10",
@@ -80,9 +80,9 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         public async Task HandleAsync_WhenUserNotResolved_SkipsNotification()
         {
             _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync((string?)null);
+                     .ReturnsAsync((string)null);
 
-            await CreateHandler().HandleAsync(Message());
+            await CreateHandler().HandleAsync(Message(), TestContext.Current.CancellationToken);
 
             _notifications.Verify(n => n.NotifyAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);

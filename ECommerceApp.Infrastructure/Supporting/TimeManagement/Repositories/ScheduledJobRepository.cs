@@ -17,7 +17,7 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement.Repositories
             _context = context;
         }
 
-        public async Task<ScheduledJob?> GetByNameAsync(string name, CancellationToken ct = default)
+        public async Task<ScheduledJob> GetByNameAsync(string name, CancellationToken ct = default)
             => await _context.ScheduledJobs
                 .FirstOrDefaultAsync(j => j.Name == new JobName(name), ct);
 

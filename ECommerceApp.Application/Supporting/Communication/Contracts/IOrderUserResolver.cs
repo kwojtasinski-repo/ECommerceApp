@@ -10,6 +10,6 @@ namespace ECommerceApp.Application.Supporting.Communication.Contracts
     /// </summary>
     public interface IOrderUserResolver
     {
-        Task<string?> GetUserIdForOrderAsync(int orderId, CancellationToken ct = default);
+        Task<string> GetUserIdForOrderAsync(int orderId, CancellationToken ct = default);
     }
 }

@@ -17,7 +17,7 @@ namespace ECommerceApp.Application.Backoffice.Services
             _orderService = orderService;
         }
 
-        public async Task<BackofficeOrderListVm> GetOrdersAsync(int pageSize, int pageNo, string? searchString, CancellationToken ct = default)
+        public async Task<BackofficeOrderListVm> GetOrdersAsync(int pageSize, int pageNo, string searchString, CancellationToken ct = default)
         {
             var result = await _orderService.GetAllOrdersAsync(pageSize, pageNo, searchString, ct);
             return new BackofficeOrderListVm
@@ -30,7 +30,7 @@ namespace ECommerceApp.Application.Backoffice.Services
             };
         }
 
-        public async Task<BackofficeOrderDetailVm?> GetOrderDetailAsync(int orderId, CancellationToken ct = default)
+        public async Task<BackofficeOrderDetailVm> GetOrderDetailAsync(int orderId, CancellationToken ct = default)
         {
             var order = await _orderService.GetOrderDetailsAsync(orderId, ct);
             if (order is null)

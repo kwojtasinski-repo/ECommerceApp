@@ -33,7 +33,7 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
 
         [Authorize(Roles = MaintenanceRole)]
         [HttpPost]
-        public async Task<IActionResult> Index(int pageSize, int? pageNo, string? searchString)
+        public async Task<IActionResult> Index(int pageSize, int? pageNo, string searchString)
         {
             pageNo ??= 1;
             searchString ??= string.Empty;
@@ -85,7 +85,7 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Request(int id)
+        public new async Task<IActionResult> Request(int id)
         {
             var order = await _orderService.GetOrderDetailsAsync(id);
             if (order is null)
@@ -97,7 +97,7 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Request(int id, string reason, bool onWarranty, int[] productIds, int[] quantities)
+        public new async Task<IActionResult> Request(int id, string reason, bool onWarranty, int[] productIds, int[] quantities)
         {
             var userId = GetUserId();
             var order = await _orderService.GetOrderDetailsAsync(id);

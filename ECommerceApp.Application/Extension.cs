@@ -1,4 +1,4 @@
-﻿using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.DTO;
 using Microsoft.AspNetCore.Http;
 using System.Collections.Generic;
 using System.Linq;
@@ -31,7 +31,7 @@ namespace ECommerceApp.Application
             {
                 Id = dto.Id,
                 CustomerId = dto.CustomerId,
-                OrderItems = dto.OrderItems?
+                OrderItems = dto.OrderItems
                                 .Select(oi => new OrderItemDto { Id = oi.Id })?
                                 .ToList() ?? new List<OrderItemDto>()
             };
@@ -46,13 +46,13 @@ namespace ECommerceApp.Application
 
         public static string GetUserId(this ClaimsPrincipal claimsPrincipal)
         {
-            return claimsPrincipal.Claims?
+            return claimsPrincipal.Claims
                         .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
         }
 
         public static string GetUserRole(this IHttpContextAccessor httpContextAccessor)
         {
-            return httpContextAccessor.HttpContext?.User?.Claims?
+            return httpContextAccessor.HttpContext?.User?.Claims
                         .FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
         }
     }

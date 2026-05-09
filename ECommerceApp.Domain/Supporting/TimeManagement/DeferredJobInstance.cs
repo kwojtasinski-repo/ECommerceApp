@@ -14,7 +14,7 @@ namespace ECommerceApp.Domain.Supporting.TimeManagement
         public int RetryCount { get; private set; }
         public int MaxRetries { get; private set; }
         public DateTime? LockExpiresAt { get; private set; }
-        public string? ErrorMessage { get; private set; }
+        public string ErrorMessage { get; private set; }
         public DateTime CreatedAt { get; private set; }
 
         private DeferredJobInstance() { }

@@ -16,10 +16,10 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons.Repositories
             _context = context;
         }
 
-        public Task<Coupon?> GetByCodeAsync(string code, CancellationToken ct = default)
+        public Task<Coupon> GetByCodeAsync(string code, CancellationToken ct = default)
             => _context.Coupons.FirstOrDefaultAsync(c => c.Code.Value == code, ct);
 
-        public Task<Coupon?> GetByIdAsync(int id, CancellationToken ct = default)
+        public Task<Coupon> GetByIdAsync(int id, CancellationToken ct = default)
             => _context.Coupons.FirstOrDefaultAsync(c => c.Id == new CouponId(id), ct);
 
         public async Task<IReadOnlyList<Coupon>> GetAllAsync(int pageSize, int pageNo, string searchString, CancellationToken ct = default)

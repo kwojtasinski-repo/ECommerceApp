@@ -29,7 +29,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 Items: new List<OrderPlacedItem> { new OrderPlacedItem(ProductId: 10, Quantity: 1) },
                 UserId: "user-1");
 
-            var act = async () => await _handler.HandleAsync(message);
+            var act = async () => await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             await act.Should().NotThrowAsync();
         }
@@ -43,7 +43,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 Items: new List<OrderPlacedItem>(),
                 UserId: "user-1");
 
-            var result = _handler.HandleAsync(message);
+            var result = _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             result.Should().BeSameAs(Task.CompletedTask);
             await result;

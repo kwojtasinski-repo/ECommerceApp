@@ -65,7 +65,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 .Setup(r => r.GetByUserIdAsync(UserId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(reservations);
 
-            var result = await _sut.GetAllForUserAsync(UserId);
+            var result = await _sut.GetAllForUserAsync(UserId, TestContext.Current.CancellationToken);
 
             result.Should().HaveCount(2);
         }
@@ -77,7 +77,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 .Setup(r => r.GetByUserIdAsync(UserId, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<SoftReservation>());
 
-            var result = await _sut.GetAllForUserAsync(UserId);
+            var result = await _sut.GetAllForUserAsync(UserId, TestContext.Current.CancellationToken);
 
             result.Should().BeEmpty();
         }
@@ -96,7 +96,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 .Setup(c => c.GetUnitPriceAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(price);
 
-            var result = await _sut.GetPriceChangesAsync(UserId);
+            var result = await _sut.GetPriceChangesAsync(UserId, TestContext.Current.CancellationToken);
 
             result.Should().BeEmpty();
         }
@@ -112,7 +112,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 .Setup(c => c.GetUnitPriceAsync(2, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(60m);
 
-            var result = await _sut.GetPriceChangesAsync(UserId);
+            var result = await _sut.GetPriceChangesAsync(UserId, TestContext.Current.CancellationToken);
 
             result.Should().ContainSingle()
                 .Which.Should().Match<Application.Presale.Checkout.ViewModels.SoftReservationPriceChangeVm>(
@@ -130,7 +130,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 .Setup(c => c.GetUnitPriceAsync(3, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(80m);
 
-            var result = await _sut.GetPriceChangesAsync(UserId);
+            var result = await _sut.GetPriceChangesAsync(UserId, TestContext.Current.CancellationToken);
 
             result.Should().ContainSingle()
                 .Which.Should().Match<Application.Presale.Checkout.ViewModels.SoftReservationPriceChangeVm>(
@@ -152,7 +152,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 .Setup(c => c.GetUnitPriceAsync(2, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(35m);
 
-            var result = await _sut.GetPriceChangesAsync(UserId);
+            var result = await _sut.GetPriceChangesAsync(UserId, TestContext.Current.CancellationToken);
 
             result.Should().ContainSingle()
                 .Which.ProductId.Should().Be(2);
@@ -169,7 +169,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 .Setup(c => c.GetUnitPriceAsync(4, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((decimal?)null);
 
-            var result = await _sut.GetPriceChangesAsync(UserId);
+            var result = await _sut.GetPriceChangesAsync(UserId, TestContext.Current.CancellationToken);
 
             result.Should().BeEmpty();
         }

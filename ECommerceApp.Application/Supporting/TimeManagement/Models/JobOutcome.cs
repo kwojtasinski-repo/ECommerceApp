@@ -6,8 +6,8 @@ namespace ECommerceApp.Application.Supporting.TimeManagement.Models
 
         public sealed class Success : JobOutcome
         {
-            public string? Message { get; }
-            internal Success(string? message) { Message = message; }
+            public string Message { get; }
+            internal Success(string message) { Message = message; }
         }
 
         public sealed class Failure : JobOutcome
@@ -22,7 +22,7 @@ namespace ECommerceApp.Application.Supporting.TimeManagement.Models
             internal Progress(string message) { Message = message; }
         }
 
-        internal static Success Succeeded(string? message = null) => new(message);
+        internal static Success Succeeded(string message = null) => new(message);
         internal static Failure Failed(string error) => new(error);
         internal static Progress InProgress(string message) => new(message);
     }

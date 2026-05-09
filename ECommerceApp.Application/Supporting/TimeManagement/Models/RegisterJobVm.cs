@@ -4,7 +4,7 @@ namespace ECommerceApp.Application.Supporting.TimeManagement.Models
     {
         public string JobName { get; set; } = default!;
         public string Schedule { get; set; } = default!;
-        public string? TimeZoneId { get; set; }
+        public string TimeZoneId { get; set; }
         public int MaxRetries { get; set; } = 3;
     }
 }

@@ -96,7 +96,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
             return true;
         }
 
-        public Task<SoftReservation?> GetAsync(int productId, string userId, CancellationToken ct = default)
+        public Task<SoftReservation> GetAsync(int productId, string userId, CancellationToken ct = default)
         {
             _cache.TryGetValue<SoftReservation>(CacheKey(productId, userId), out var reservation);
             return Task.FromResult(reservation);

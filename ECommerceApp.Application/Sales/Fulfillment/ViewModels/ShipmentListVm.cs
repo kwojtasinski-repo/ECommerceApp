@@ -6,7 +6,7 @@ namespace ECommerceApp.Application.Sales.Fulfillment.ViewModels
     public sealed record ShipmentVm(
         int Id,
         int OrderId,
-        string? TrackingNumber,
+        string TrackingNumber,
         string Status,
         DateTime? ShippedAt,
         DateTime? DeliveredAt);
@@ -17,6 +17,6 @@ namespace ECommerceApp.Application.Sales.Fulfillment.ViewModels
         public int CurrentPage { get; init; }
         public int PageSize { get; init; }
         public int TotalCount { get; init; }
-        public string? SearchString { get; init; }
+        public string SearchString { get; init; }
     }
 }

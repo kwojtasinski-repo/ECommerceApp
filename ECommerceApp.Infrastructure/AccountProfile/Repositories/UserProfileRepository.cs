@@ -25,13 +25,13 @@ namespace ECommerceApp.Infrastructure.AccountProfile.Repositories
         private IQueryable<UserProfile> Query(bool track)
             => track ? _context.UserProfiles : _context.UserProfiles.AsNoTracking();
 
-        public async Task<UserProfile?> GetByIdAsync(UserProfileId id, bool track = false)
+        public async Task<UserProfile> GetByIdAsync(UserProfileId id, bool track = false)
             => await Query(track).FirstOrDefaultAsync(p => p.Id == id);
 
-        public async Task<UserProfile?> GetByIdAndUserIdAsync(UserProfileId id, string userId, bool track = false)
+        public async Task<UserProfile> GetByIdAndUserIdAsync(UserProfileId id, string userId, bool track = false)
             => await Query(track).FirstOrDefaultAsync(p => p.Id == id && p.UserId == userId);
 
-        public async Task<UserProfile?> GetByUserIdAsync(string userId, bool track = false)
+        public async Task<UserProfile> GetByUserIdAsync(string userId, bool track = false)
             => await Query(track).FirstOrDefaultAsync(p => p.UserId == userId);
 
         public async Task UpdateAsync(UserProfile profile)

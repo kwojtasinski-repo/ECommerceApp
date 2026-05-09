@@ -17,12 +17,12 @@ namespace ECommerceApp.Application.Supporting.Communication.Contracts
             _logger = logger;
         }
 
-        public Task<string?> GetEmailForUserAsync(string userId, CancellationToken ct = default)
+        public Task<string> GetEmailForUserAsync(string userId, CancellationToken ct = default)
         {
             _logger.LogWarning(
                 "[Communication] No IUserEmailResolver configured — cannot resolve email for UserId={UserId}",
                 userId);
-            return Task.FromResult<string?>(null);
+            return Task.FromResult<string>(null);
         }
     }
 }

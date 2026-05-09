@@ -8,6 +8,6 @@ namespace ECommerceApp.Application.Sales.Orders.ViewModels
         public int CurrentPage { get; init; }
         public int PageSize { get; init; }
         public int TotalCount { get; init; }
-        public string? SearchString { get; init; }
+        public string SearchString { get; init; }
     }
 }

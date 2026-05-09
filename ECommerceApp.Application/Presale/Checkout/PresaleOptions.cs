@@ -21,7 +21,7 @@ namespace ECommerceApp.Application.Presale.Checkout
 
     internal sealed class PresaleOptionsValidator : IValidateOptions<PresaleOptions>
     {
-        public ValidateOptionsResult Validate(string? name, PresaleOptions options)
+        public ValidateOptionsResult Validate(string name, PresaleOptions options)
         {
             if (options.SoftReservationTtl <= TimeSpan.Zero)
                 return ValidateOptionsResult.Fail("Presale:SoftReservationTtl must be a positive duration.");

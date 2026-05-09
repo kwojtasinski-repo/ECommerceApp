@@ -9,11 +9,11 @@ namespace ECommerceApp.Domain.Sales.Orders
         public string Email { get; private set; } = default!;
         public string PhoneNumber { get; private set; } = default!;
         public bool IsCompany { get; private set; }
-        public string? CompanyName { get; private set; }
-        public string? Nip { get; private set; }
+        public string CompanyName { get; private set; }
+        public string Nip { get; private set; }
         public string Street { get; private set; } = default!;
         public string BuildingNumber { get; private set; } = default!;
-        public string? FlatNumber { get; private set; }
+        public string FlatNumber { get; private set; }
         public string ZipCode { get; private set; } = default!;
         public string City { get; private set; } = default!;
         public string Country { get; private set; } = default!;
@@ -26,11 +26,11 @@ namespace ECommerceApp.Domain.Sales.Orders
             string email,
             string phoneNumber,
             bool isCompany,
-            string? companyName,
-            string? nip,
+            string companyName,
+            string nip,
             string street,
             string buildingNumber,
-            string? flatNumber,
+            string flatNumber,
             string zipCode,
             string city,
             string country)

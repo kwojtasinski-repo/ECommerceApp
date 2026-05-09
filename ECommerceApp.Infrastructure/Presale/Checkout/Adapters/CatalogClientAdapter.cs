@@ -43,7 +43,7 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Adapters
             return new CatalogProductPage(items, result.Count, result.PageSize, result.CurrentPage, string.Empty);
         }
 
-        public async Task<CatalogProductDetails?> GetProductDetailsAsync(int productId, CancellationToken ct = default)
+        public async Task<CatalogProductDetails> GetProductDetailsAsync(int productId, CancellationToken ct = default)
         {
             if (!await _productService.ProductExists(productId))
                 return null;

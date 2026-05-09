@@ -15,7 +15,7 @@ namespace ECommerceApp.Application.Backoffice.Services
             _productService = productService;
         }
 
-        public async Task<BackofficeCatalogListVm> GetProductsAsync(int pageSize, int pageNo, string? searchString, CancellationToken ct = default)
+        public async Task<BackofficeCatalogListVm> GetProductsAsync(int pageSize, int pageNo, string searchString, CancellationToken ct = default)
         {
             var result = await _productService.GetAllProducts(pageSize, pageNo, searchString ?? string.Empty);
             return new BackofficeCatalogListVm
@@ -35,7 +35,7 @@ namespace ECommerceApp.Application.Backoffice.Services
             };
         }
 
-        public async Task<BackofficeCatalogDetailVm?> GetProductDetailAsync(int productId, CancellationToken ct = default)
+        public async Task<BackofficeCatalogDetailVm> GetProductDetailAsync(int productId, CancellationToken ct = default)
         {
             if (!await _productService.ProductExists(productId))
             {

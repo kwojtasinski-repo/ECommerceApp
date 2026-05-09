@@ -5,12 +5,12 @@ namespace ECommerceApp.Domain.Sales.Orders
     public sealed class OrderProductSnapshot
     {
         public string ProductName { get; private set; } = default!;
-        public string? ImageFileName { get; private set; }
+        public string ImageFileName { get; private set; }
         public int? ImageId { get; private set; }
 
         private OrderProductSnapshot() { }
 
-        public OrderProductSnapshot(string productName, string? imageFileName, int? imageId)
+        public OrderProductSnapshot(string productName, string imageFileName, int? imageId)
         {
             if (string.IsNullOrWhiteSpace(productName))
             {

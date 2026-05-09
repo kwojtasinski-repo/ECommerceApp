@@ -32,7 +32,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
                 Items: new List<RefundApprovedItem> { new(10, 2) },
                 OccurredAt: DateTime.UtcNow);
 
-            await CreateHandler().HandleAsync(message);
+            await CreateHandler().HandleAsync(message, TestContext.Current.CancellationToken);
 
             _payments.Verify(s => s.ProcessRefundAsync(99, 5, It.IsAny<CancellationToken>()), Times.Once);
         }

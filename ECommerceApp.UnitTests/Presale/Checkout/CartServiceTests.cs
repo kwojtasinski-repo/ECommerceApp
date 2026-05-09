@@ -49,7 +49,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _cartRepo.Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
                 .ReturnsAsync(lines);
 
-            await _service.SetCartItemAsync(new AddToCartDto("user-1", 1, 2));
+            await _service.SetCartItemAsync(new AddToCartDto("user-1", 1, 2), TestContext.Current.CancellationToken);
 
             _cartRepo.Verify(r => r.UpsertAsync(
                 It.Is<CartLine>(l => l.UserId.Value == "user-1" && l.ProductId.Value == 1 && l.Quantity.Value == 2),
@@ -65,9 +65,9 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _cartRepo.Setup(r => r.GetByUserIdAsync(It.Is<PresaleUserId>(p => p.Value == "user-1"), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(lines);
 
-            await _service.SetCartItemAsync(new AddToCartDto("user-1", 1, 2));
+            await _service.SetCartItemAsync(new AddToCartDto("user-1", 1, 2), TestContext.Current.CancellationToken);
 
-            var cart = await _service.GetCartAsync("user-1");
+            var cart = await _service.GetCartAsync("user-1", TestContext.Current.CancellationToken);
             cart.Should().NotBeNull();
             _cartRepo.Verify(r => r.GetByUserIdAsync(It.IsAny<PresaleUserId>(), It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -82,7 +82,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _cartRepo.Setup(r => r.GetByUserIdAsync(It.IsAny<PresaleUserId>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<CartLine>());
 
-            var result = await _service.AddToCartAsync(new AddToCartDto("user-1", 1, 3));
+            var result = await _service.AddToCartAsync(new AddToCartDto("user-1", 1, 3), TestContext.Current.CancellationToken);
 
             result.Should().BeOfType<AddToCartResult.Success>();
             _cartRepo.Verify(r => r.UpsertAsync(
@@ -99,7 +99,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _cartRepo.Setup(r => r.GetByUserIdAsync(It.IsAny<PresaleUserId>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(existing);
 
-            var result = await _service.AddToCartAsync(new AddToCartDto("user-1", 1, 3));
+            var result = await _service.AddToCartAsync(new AddToCartDto("user-1", 1, 3), TestContext.Current.CancellationToken);
 
             result.Should().BeOfType<AddToCartResult.Success>();
             _cartRepo.Verify(r => r.UpsertAsync(
@@ -114,7 +114,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _cartRepo.Setup(r => r.GetByUserIdAsync(It.IsAny<PresaleUserId>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(existing);
 
-            var result = await _service.AddToCartAsync(new AddToCartDto("user-1", 1, 5));
+            var result = await _service.AddToCartAsync(new AddToCartDto("user-1", 1, 5), TestContext.Current.CancellationToken);
 
             result.Should().BeOfType<AddToCartResult.QuantityExceeded>()
                 .Which.MaxAllowed.Should().Be(10);
@@ -131,7 +131,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _cartRepo.Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<CartLine>());
 
-            await _service.RemoveAsync("user-1", 1);
+            await _service.RemoveAsync("user-1", 1, TestContext.Current.CancellationToken);
 
             _cartRepo.Verify(r => r.DeleteAsync("user-1", 1, It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -148,7 +148,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _cartRepo.Setup(r => r.GetByUserIdAsync(It.IsAny<PresaleUserId>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<CartLine>());
 
-            await _service.RemoveRangeAsync("user-1", productIds);
+            await _service.RemoveRangeAsync("user-1", productIds, TestContext.Current.CancellationToken);
 
             _cartRepo.Verify(r => r.DeleteRangeAsync(
                 It.Is<PresaleUserId>(id => id.Value == "user-1"),
@@ -167,7 +167,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 .Returns(Task.CompletedTask);
             _cache.Set("cart:user-1", new CartVm("user-1", new List<CartLineVm>()));
 
-            await _service.ClearAsync("user-1");
+            await _service.ClearAsync("user-1", TestContext.Current.CancellationToken);
 
             _cartRepo.Verify(r => r.DeleteAllForUserAsync("user-1", It.IsAny<CancellationToken>()), Times.Once);
             _cache.TryGetValue("cart:user-1", out _).Should().BeFalse();
@@ -182,7 +182,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _cartRepo.Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
                 .ReturnsAsync(lines);
 
-            var result = await _service.GetCartAsync("user-1");
+            var result = await _service.GetCartAsync("user-1", TestContext.Current.CancellationToken);
 
             result.Should().NotBeNull();
             result!.UserId.Should().Be("user-1");
@@ -197,7 +197,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             var vm = new CartVm("user-1", new List<CartLineVm> { new(1, 3, null) });
             _cache.Set("cart:user-1", vm, TimeSpan.FromMinutes(30));
 
-            var result = await _service.GetCartAsync("user-1");
+            var result = await _service.GetCartAsync("user-1", TestContext.Current.CancellationToken);
 
             result.Should().BeSameAs(vm);
             _cartRepo.Verify(r => r.GetByUserIdAsync(It.IsAny<PresaleUserId>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -209,7 +209,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _cartRepo.Setup(r => r.GetByUserIdAsync("user-1", It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<CartLine>());
 
-            var result = await _service.GetCartAsync("user-1");
+            var result = await _service.GetCartAsync("user-1", TestContext.Current.CancellationToken);
 
             result.Should().BeNull();
         }
@@ -220,7 +220,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _cartRepo.Setup(r => r.GetByUserIdAsync(It.Is<PresaleUserId>(p => p.Value == "user-1"), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<CartLine>());
 
-            await _service.GetCartAsync("user-1"); // cache miss → DB → empty
+            await _service.GetCartAsync("user-1", TestContext.Current.CancellationToken); // cache miss → DB → empty
 
             _cache.TryGetValue("cart:user-1", out _).Should().BeFalse();
         }

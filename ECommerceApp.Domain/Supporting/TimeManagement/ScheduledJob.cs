@@ -9,7 +9,7 @@ namespace ECommerceApp.Domain.Supporting.TimeManagement
         public ScheduledJobId Id { get; private set; } = default!;
         public JobName Name { get; private set; } = default!;
         public CronSchedule Schedule { get; private set; } = default!;
-        public string? TimeZoneId { get; private set; }
+        public string TimeZoneId { get; private set; }
         public bool IsEnabled { get; private set; }
         public int MaxRetries { get; private set; }
         public DateTime? LastRunAt { get; private set; }
@@ -17,7 +17,7 @@ namespace ECommerceApp.Domain.Supporting.TimeManagement
 
         private ScheduledJob() { }
 
-        public static ScheduledJob Create(string name, string schedule, string? timeZoneId, int maxRetries)
+        public static ScheduledJob Create(string name, string schedule, string timeZoneId, int maxRetries)
         {
             if (maxRetries < 0)
                 throw new DomainException("Max retries must be non-negative.");

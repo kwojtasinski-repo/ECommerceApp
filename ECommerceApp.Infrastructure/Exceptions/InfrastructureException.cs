@@ -21,10 +21,5 @@ namespace ECommerceApp.Infrastructure.Exceptions
         {
 
         }
-
-        public InfrastructureException(SerializationInfo serialization, StreamingContext streamingContext) : base(serialization, streamingContext)
-        {
-
-        }
     }
 }

@@ -16,7 +16,7 @@ namespace ECommerceApp.Infrastructure.Sales.Fulfillment.Repositories
             _context = context;
         }
 
-        public async Task<Shipment?> GetByIdAsync(int id, CancellationToken ct = default)
+        public async Task<Shipment> GetByIdAsync(int id, CancellationToken ct = default)
             => await _context.Shipments
                 .Include(s => s.Lines)
                 .FirstOrDefaultAsync(s => s.Id == new ShipmentId(id), ct);

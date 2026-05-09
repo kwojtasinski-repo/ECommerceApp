@@ -34,7 +34,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 },
                 OccurredAt: DateTime.UtcNow);
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _stockService.Verify(s => s.ReturnAsync(42, 3, It.IsAny<CancellationToken>()), Times.Once);
             _stockService.Verify(s => s.ReturnAsync(10, 1, It.IsAny<CancellationToken>()), Times.Once);
@@ -52,7 +52,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 },
                 OccurredAt: DateTime.UtcNow);
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _stockService.Verify(s => s.ReturnAsync(10, 1, It.IsAny<CancellationToken>()), Times.Once);
             _stockService.VerifyNoOtherCalls();

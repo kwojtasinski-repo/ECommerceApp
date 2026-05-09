@@ -20,7 +20,7 @@ namespace ECommerceApp.Application.Backoffice.Services
             _orderService = orderService;
         }
 
-        public async Task<BackofficeCustomerListVm> GetCustomersAsync(int pageSize, int pageNo, string? searchString, CancellationToken ct = default)
+        public async Task<BackofficeCustomerListVm> GetCustomersAsync(int pageSize, int pageNo, string searchString, CancellationToken ct = default)
         {
             var source = await _profileService.GetAllAsync(pageSize, pageNo, searchString ?? string.Empty);
             return new BackofficeCustomerListVm
@@ -39,7 +39,7 @@ namespace ECommerceApp.Application.Backoffice.Services
             };
         }
 
-        public async Task<BackofficeCustomerDetailVm?> GetCustomerDetailAsync(int customerId, CancellationToken ct = default)
+        public async Task<BackofficeCustomerDetailVm> GetCustomerDetailAsync(int customerId, CancellationToken ct = default)
         {
             var detail = await _profileService.GetDetailsAsync(customerId);
             if (detail is null)

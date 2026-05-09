@@ -1,13 +1,6 @@
 ﻿using System;
 using Microsoft.EntityFrameworkCore.Migrations;
 
-#nullable disable
-
-using System;
-using Microsoft.EntityFrameworkCore.Migrations;
-
-#nullable disable
-
 namespace ECommerceApp.Infrastructure.Sales.Coupons.Migrations
 {
     /// <summary>

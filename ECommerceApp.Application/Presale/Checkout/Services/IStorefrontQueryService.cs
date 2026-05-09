@@ -12,6 +12,6 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
         Task<StorefrontProductListVm> GetPublishedProductsByTagAsync(
             int tagId, int pageSize, int pageNo, CancellationToken ct = default);
 
-        Task<StorefrontProductDetailsVm?> GetProductDetailsAsync(int productId, CancellationToken ct = default);
+        Task<StorefrontProductDetailsVm> GetProductDetailsAsync(int productId, CancellationToken ct = default);
     }
 }

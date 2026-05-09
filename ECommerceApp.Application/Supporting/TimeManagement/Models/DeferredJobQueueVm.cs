@@ -13,6 +13,6 @@ namespace ECommerceApp.Application.Supporting.TimeManagement.Models
         public int RetryCount { get; init; }
         public int MaxRetries { get; init; }
         public DateTime CreatedAt { get; init; }
-        public string? ErrorMessage { get; init; }
+        public string ErrorMessage { get; init; }
     }
 }

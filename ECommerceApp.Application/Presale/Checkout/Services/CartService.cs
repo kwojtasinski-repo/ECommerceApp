@@ -65,7 +65,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
             _cache.Remove(CacheKey(userId.Value));
         }
 
-        public async Task<CartVm?> GetCartAsync(PresaleUserId userId, CancellationToken ct = default)
+        public async Task<CartVm> GetCartAsync(PresaleUserId userId, CancellationToken ct = default)
         {
             if (_cache.TryGetValue<CartVm>(CacheKey(userId.Value), out var cached))
             {
@@ -75,7 +75,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
             return await RefreshCacheAsync(userId, ct);
         }
 
-        private async Task<CartVm?> RefreshCacheAsync(PresaleUserId userId, CancellationToken ct)
+        private async Task<CartVm> RefreshCacheAsync(PresaleUserId userId, CancellationToken ct)
         {
             var lines = await _cartRepo.GetByUserIdAsync(userId, ct);
             if (lines.Count == 0)

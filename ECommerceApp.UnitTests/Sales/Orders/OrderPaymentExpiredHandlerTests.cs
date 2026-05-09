@@ -40,9 +40,9 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         {
             _orderRepo
                 .Setup(r => r.GetByIdWithItemsAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Order?)null);
+                .ReturnsAsync((Order)null);
 
-            await CreateHandler().HandleAsync(CreateMessage());
+            await CreateHandler().HandleAsync(CreateMessage(), TestContext.Current.CancellationToken);
 
             _orderRepo.Verify(r => r.UpdateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -56,7 +56,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
                 .Setup(r => r.GetByIdWithItemsAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(order);
 
-            await CreateHandler().HandleAsync(CreateMessage(orderId: 1));
+            await CreateHandler().HandleAsync(CreateMessage(orderId: 1), TestContext.Current.CancellationToken);
 
             _orderRepo.Verify(r => r.UpdateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -70,7 +70,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
                 .Setup(r => r.GetByIdWithItemsAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(order);
 
-            await CreateHandler().HandleAsync(CreateMessage(orderId: 1));
+            await CreateHandler().HandleAsync(CreateMessage(orderId: 1), TestContext.Current.CancellationToken);
 
             _orderRepo.Verify(r => r.UpdateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -83,7 +83,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
                 .Setup(r => r.GetByIdWithItemsAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(order);
 
-            await CreateHandler().HandleAsync(CreateMessage(orderId: 1));
+            await CreateHandler().HandleAsync(CreateMessage(orderId: 1), TestContext.Current.CancellationToken);
 
             order.Status.Should().Be(OrderStatus.Cancelled);
             order.Events.Should().Contain(e => e.EventType == OrderEventType.OrderPaymentExpired);

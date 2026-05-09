@@ -8,7 +8,7 @@ namespace ECommerceApp.Application.Sales.Fulfillment.ViewModels
     public sealed record ShipmentDetailsVm(
         int Id,
         int OrderId,
-        string? TrackingNumber,
+        string TrackingNumber,
         string Status,
         DateTime? ShippedAt,
         DateTime? DeliveredAt,

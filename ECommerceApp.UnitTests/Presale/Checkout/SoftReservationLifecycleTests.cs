@@ -73,7 +73,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
 
             // Capture the reservation created during HoldAsync and assign an Id
             // (simulating what EF Core does after AddAsync in production).
-            SoftReservation? capturedReservation = null;
+            SoftReservation capturedReservation = null;
             _reservationRepo.Setup(r => r.AddAsync(It.IsAny<SoftReservation>(), It.IsAny<CancellationToken>()))
                 .Callback<SoftReservation, CancellationToken>((res, _) =>
                 {
@@ -83,14 +83,14 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 })
                 .Returns(Task.CompletedTask);
 
-            string? scheduledEntityId = null;
+            string scheduledEntityId = null;
             _deferredScheduler.Setup(d => d.ScheduleAsync(
                     SoftReservationExpiredJob.JobTaskName, It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
                 .Callback<string, string, DateTime, CancellationToken>((_, entityId, _, _) => scheduledEntityId = entityId)
                 .Returns(Task.CompletedTask);
 
             // Act — step 1: hold the reservation
-            var held = await _service.HoldAsync(productId, userId, 2);
+            var held = await _service.HoldAsync(productId, userId, 2, TestContext.Current.CancellationToken);
 
             held.Should().BeTrue();
             scheduledEntityId.Should().Be(reservationId.ToString());
@@ -104,7 +104,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 .ReturnsAsync(capturedReservation!);
 
             var jobContext = new JobExecutionContext(scheduledEntityId, Guid.NewGuid().ToString());
-            await _expiredJob.ExecuteAsync(jobContext, default);
+            await _expiredJob.ExecuteAsync(jobContext, TestContext.Current.CancellationToken);
 
             // Assert — reservation removed from DB and cache
             _reservationRepo.Verify(r => r.DeleteAsync(capturedReservation!, It.IsAny<CancellationToken>()), Times.Once);
@@ -138,7 +138,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 .Returns(Task.CompletedTask);
 
             // Hold the reservation
-            await _service.HoldAsync(productId, userId, 1);
+            await _service.HoldAsync(productId, userId, 1, TestContext.Current.CancellationToken);
 
             // Simulate user removing reservation before the TTL fires (e.g. item removed from cart)
             var reservation = SoftReservation.Create(productId, userId, 1, 20m, DateTime.UtcNow.AddMinutes(15));
@@ -147,14 +147,14 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _reservationRepo.Setup(r => r.DeleteAsync(It.IsAny<SoftReservation>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            await _service.RemoveAsync(productId, userId);
+            await _service.RemoveAsync(productId, userId, TestContext.Current.CancellationToken);
 
             // When the deferred job fires late, the reservation is already gone → no-op
             _reservationRepo.Setup(r => r.GetByIdAsync(new SoftReservationId(reservationId), It.IsAny<CancellationToken>()))
                 .ReturnsAsync((SoftReservation)null!);
 
             var jobContext = new JobExecutionContext(reservationId.ToString(), Guid.NewGuid().ToString());
-            await _expiredJob.ExecuteAsync(jobContext, default);
+            await _expiredJob.ExecuteAsync(jobContext, TestContext.Current.CancellationToken);
 
             jobContext.Outcome.Should().BeOfType<JobOutcome.Success>()
                 .Which.Message.Should().Contain("No-op");
@@ -180,7 +180,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                         .SetValue(res, new SoftReservationId(reservationId)))
                 .Returns(Task.CompletedTask);
 
-            await _service.HoldAsync(productId, userId, 1);
+            await _service.HoldAsync(productId, userId, 1, TestContext.Current.CancellationToken);
 
             _deferredScheduler.Verify(d => d.ScheduleAsync(
                 SoftReservationExpiredJob.JobTaskName,
@@ -208,7 +208,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _reservationRepo.Setup(r => r.AddAsync(It.IsAny<SoftReservation>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            await _service.HoldAsync(productId, userId, 1);
+            await _service.HoldAsync(productId, userId, 1, TestContext.Current.CancellationToken);
 
             var after = DateTime.UtcNow;
 

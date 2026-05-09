@@ -15,7 +15,7 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Adapters
             _userProfileService = userProfileService;
         }
 
-        public async Task<CheckoutProfileVm?> GetProfileAsync(string userId, CancellationToken ct = default)
+        public async Task<CheckoutProfileVm> GetProfileAsync(string userId, CancellationToken ct = default)
         {
             var profile = await _userProfileService.GetDetailsByUserIdAsync(userId);
             if (profile is null)

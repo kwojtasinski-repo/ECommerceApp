@@ -11,8 +11,8 @@ namespace ECommerceApp.Domain.AccountProfile
         public string FirstName { get; private set; } = default!;
         public string LastName { get; private set; } = default!;
         public bool IsCompany { get; private set; }
-        public Nip? NIP { get; private set; }
-        public CompanyName? CompanyName { get; private set; }
+        public Nip NIP { get; private set; }
+        public CompanyName CompanyName { get; private set; }
         public Email Email { get; private set; } = default!;
         public PhoneNumber PhoneNumber { get; private set; } = default!;
 
@@ -26,8 +26,8 @@ namespace ECommerceApp.Domain.AccountProfile
             string firstName,
             string lastName,
             bool isCompany,
-            string? nip,
-            string? companyName,
+            string nip,
+            string companyName,
             string email,
             string phoneNumber)
         {
@@ -61,8 +61,8 @@ namespace ECommerceApp.Domain.AccountProfile
             string firstName,
             string lastName,
             bool isCompany,
-            string? nip,
-            string? companyName)
+            string nip,
+            string companyName)
         {
             if (string.IsNullOrWhiteSpace(firstName))
                 throw new ArgumentException("FirstName cannot be empty", nameof(firstName));

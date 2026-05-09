@@ -37,7 +37,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             var context = new JobExecutionContext(null, Guid.NewGuid().ToString());
 
-            await _job.ExecuteAsync(context, default);
+            await _job.ExecuteAsync(context, TestContext.Current.CancellationToken);
 
             context.Outcome.Should().BeOfType<JobOutcome.Failure>()
                 .Which.Error.Should().Contain("Missing EntityId");
@@ -48,7 +48,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             var context = new JobExecutionContext("not-an-int", Guid.NewGuid().ToString());
 
-            await _job.ExecuteAsync(context, default);
+            await _job.ExecuteAsync(context, TestContext.Current.CancellationToken);
 
             context.Outcome.Should().BeOfType<JobOutcome.Failure>()
                 .Which.Error.Should().Contain("not-an-int");
@@ -61,7 +61,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 .ReturnsAsync((SoftReservation)null!);
             var context = new JobExecutionContext("42", Guid.NewGuid().ToString());
 
-            await _job.ExecuteAsync(context, default);
+            await _job.ExecuteAsync(context, TestContext.Current.CancellationToken);
 
             context.Outcome.Should().BeOfType<JobOutcome.Success>()
                 .Which.Message.Should().Contain("No-op");
@@ -78,7 +78,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 .ReturnsAsync(reservation);
             var context = new JobExecutionContext("1", Guid.NewGuid().ToString());
 
-            await _job.ExecuteAsync(context, default);
+            await _job.ExecuteAsync(context, TestContext.Current.CancellationToken);
 
             _reservationRepo.Verify(r => r.DeleteAsync(reservation, It.IsAny<System.Threading.CancellationToken>()), Times.Once);
             _cache.TryGetValue("sr:1:user-1", out _).Should().BeFalse();
@@ -90,7 +90,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             var context = new JobExecutionContext(null, Guid.NewGuid().ToString());
 
-            await _job.ExecuteAsync(context, default);
+            await _job.ExecuteAsync(context, TestContext.Current.CancellationToken);
 
             _reservationRepo.Verify(r => r.DeleteAsync(It.IsAny<SoftReservation>(), It.IsAny<System.Threading.CancellationToken>()), Times.Never);
         }
@@ -105,7 +105,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 .ReturnsAsync(reservation);
             var context = new JobExecutionContext("1", Guid.NewGuid().ToString());
 
-            await _job.ExecuteAsync(context, default);
+            await _job.ExecuteAsync(context, TestContext.Current.CancellationToken);
 
             _reservationRepo.Verify(r => r.DeleteAsync(It.IsAny<SoftReservation>(), It.IsAny<System.Threading.CancellationToken>()), Times.Never);
             context.Outcome.Should().BeOfType<JobOutcome.Success>()

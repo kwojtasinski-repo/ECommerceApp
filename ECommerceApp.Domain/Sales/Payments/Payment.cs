@@ -15,7 +15,7 @@ namespace ECommerceApp.Domain.Sales.Payments
         public PaymentStatus Status { get; private set; }
         public DateTime ExpiresAt { get; private set; }
         public DateTime? ConfirmedAt { get; private set; }
-        public string? TransactionRef { get; private set; }
+        public string TransactionRef { get; private set; }
         public byte[] RowVersion { get; private set; } = default!;
 
         private Payment() { }
@@ -94,7 +94,7 @@ namespace ECommerceApp.Domain.Sales.Payments
             };
         }
 
-        public PaymentConfirmedEvent Confirm(string? transactionRef = null)
+        public PaymentConfirmedEvent Confirm(string transactionRef = null)
         {
             if (Status != PaymentStatus.Pending)
             {

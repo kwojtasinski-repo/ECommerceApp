@@ -6,7 +6,7 @@ namespace ECommerceApp.Application.Backoffice.Services
 {
     public interface IBackofficeCatalogService
     {
-        Task<BackofficeCatalogListVm> GetProductsAsync(int pageSize, int pageNo, string? searchString, CancellationToken ct = default);
-        Task<BackofficeCatalogDetailVm?> GetProductDetailAsync(int productId, CancellationToken ct = default);
+        Task<BackofficeCatalogListVm> GetProductsAsync(int pageSize, int pageNo, string searchString, CancellationToken ct = default);
+        Task<BackofficeCatalogDetailVm> GetProductDetailAsync(int productId, CancellationToken ct = default);
     }
 }

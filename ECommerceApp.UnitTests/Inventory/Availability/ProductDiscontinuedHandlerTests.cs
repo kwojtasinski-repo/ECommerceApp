@@ -29,7 +29,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
 
             var message = new ProductDiscontinued(ProductId: 42, OccurredAt: DateTime.UtcNow);
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _snapshotRepo.Verify(r => r.UpsertAsync(
                 It.Is<ProductSnapshot>(s =>
@@ -44,11 +44,11 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         public async Task HandleAsync_NoExistingSnapshot_ShouldNotUpsert()
         {
             _snapshotRepo.Setup(r => r.GetByProductIdAsync(99, It.IsAny<CancellationToken>()))
-                         .ReturnsAsync((ProductSnapshot?)null);
+                         .ReturnsAsync((ProductSnapshot)null);
 
             var message = new ProductDiscontinued(ProductId: 99, OccurredAt: DateTime.UtcNow);
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _snapshotRepo.Verify(r => r.UpsertAsync(
                 It.IsAny<ProductSnapshot>(), It.IsAny<CancellationToken>()), Times.Never);

@@ -21,10 +21,5 @@ namespace ECommerceApp.Application.Exceptions
         {
 
         }
-
-        public FileException(SerializationInfo serialization, StreamingContext streamingContext) : base(serialization, streamingContext)
-        {
-
-        }
     }
 }

@@ -40,7 +40,7 @@ namespace ECommerceApp.Application.Backoffice.Services
             };
         }
 
-        public async Task<BackofficeJobDetailVm?> GetJobDetailAsync(string jobName, CancellationToken ct = default)
+        public async Task<BackofficeJobDetailVm> GetJobDetailAsync(string jobName, CancellationToken ct = default)
         {
             var all = await _jobManagement.GetAllJobsAsync(ct);
             var job = all.FirstOrDefault(j => j.JobName == jobName);

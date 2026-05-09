@@ -54,7 +54,7 @@ namespace ECommerceApp.Web.Areas.Catalog.Controllers
 
         [HttpPost]
         [Authorize(Roles = MaintenanceRole)]
-        public async Task<IActionResult> All(int pageSize, int pageNo, string? searchString)
+        public async Task<IActionResult> All(int pageSize, int pageNo, string searchString)
         {
             var model = await _productService.GetAllProducts(pageSize, pageNo, searchString ?? string.Empty);
             return View(model);
@@ -149,7 +149,7 @@ namespace ECommerceApp.Web.Areas.Catalog.Controllers
             return RedirectToAction(nameof(Details), new { id });
         }
 
-        private async Task<List<int>> ParseTagsAsync(string? tags)
+        private async Task<List<int>> ParseTagsAsync(string tags)
         {
             var ids = new List<int>();
             if (string.IsNullOrWhiteSpace(tags))

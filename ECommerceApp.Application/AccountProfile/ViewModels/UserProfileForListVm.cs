@@ -7,7 +7,7 @@ namespace ECommerceApp.Application.AccountProfile.ViewModels
         public string FirstName { get; set; } = default!;
         public string LastName { get; set; } = default!;
         public bool IsCompany { get; set; }
-        public string? CompanyName { get; set; }
+        public string CompanyName { get; set; }
         public string Email { get; set; } = default!;
 
         public static UserProfileForListVm FromDomain(global::ECommerceApp.Domain.AccountProfile.UserProfile s) => new()

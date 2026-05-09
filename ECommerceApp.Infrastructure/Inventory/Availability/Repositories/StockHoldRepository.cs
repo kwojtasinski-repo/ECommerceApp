@@ -17,7 +17,7 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
             _context = context;
         }
 
-        public async Task<StockHold?> GetByOrderAndProductAsync(int orderId, int productId, CancellationToken ct = default)
+        public async Task<StockHold> GetByOrderAndProductAsync(int orderId, int productId, CancellationToken ct = default)
             => await _context.StockHolds
                 .FirstOrDefaultAsync(r => r.OrderId == new ReservationOrderId(orderId) && r.ProductId == new StockProductId(productId), ct);
 
@@ -28,7 +28,7 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
                 .ToListAsync(ct);
 
         public async Task<IReadOnlyList<StockHold>> GetPagedAsync(
-            int page, int pageSize, StockHoldStatus[]? statuses, CancellationToken ct = default)
+            int page, int pageSize, StockHoldStatus[] statuses, CancellationToken ct = default)
         {
             var query = _context.StockHolds.AsNoTracking();
             if (statuses != null)
@@ -40,7 +40,7 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
                 .ToListAsync(ct);
         }
 
-        public async Task<int> GetCountAsync(StockHoldStatus[]? statuses, CancellationToken ct = default)
+        public async Task<int> GetCountAsync(StockHoldStatus[] statuses, CancellationToken ct = default)
         {
             var query = _context.StockHolds.AsNoTracking();
             if (statuses != null)

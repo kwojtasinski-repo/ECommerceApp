@@ -30,7 +30,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             };
             var message = new OrderCancelled(OrderId: 1, Items: items, OccurredAt: DateTime.UtcNow);
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _stockService.Verify(s => s.ReleaseAsync(1, 10, 2, It.IsAny<CancellationToken>()), Times.Once);
             _stockService.Verify(s => s.ReleaseAsync(1, 20, 5, It.IsAny<CancellationToken>()), Times.Once);
@@ -42,7 +42,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             var items = new[] { new OrderCancelledItem(30, 1) };
             var message = new OrderCancelled(OrderId: 7, Items: items, OccurredAt: DateTime.UtcNow);
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _stockService.Verify(s => s.ReleaseAsync(7, 30, 1, It.IsAny<CancellationToken>()), Times.Once);
             _stockService.VerifyNoOtherCalls();
@@ -53,7 +53,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         {
             var message = new OrderCancelled(OrderId: 1, Items: Array.Empty<OrderCancelledItem>(), OccurredAt: DateTime.UtcNow);
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _stockService.Verify(s => s.ReleaseAsync(
                 It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);

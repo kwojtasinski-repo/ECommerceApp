@@ -38,7 +38,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             return OrderOperationResult.Success;
         }
 
-        public async Task<OrderItemVm?> GetByIdAsync(int itemId, CancellationToken ct = default)
+        public async Task<OrderItemVm> GetByIdAsync(int itemId, CancellationToken ct = default)
         {
             var item = await _repo.GetByIdAsync(itemId, ct);
             return item is null ? null : MapToVm(item);
@@ -53,7 +53,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
         public Task<IReadOnlyList<int>> GetCartItemIdsByUserIdAsync(string userId, CancellationToken ct = default)
             => _repo.GetCartItemIdsByUserIdAsync(userId, ct);
 
-        public async Task<OrderItemListVm> GetAllPagedAsync(int pageSize, int pageNo, string? search, CancellationToken ct = default)
+        public async Task<OrderItemListVm> GetAllPagedAsync(int pageSize, int pageNo, string search, CancellationToken ct = default)
         {
             var items = await _repo.GetAllPagedAsync(pageSize, pageNo, search, ct);
             var count = await _repo.GetAllPagedCountAsync(search, ct);

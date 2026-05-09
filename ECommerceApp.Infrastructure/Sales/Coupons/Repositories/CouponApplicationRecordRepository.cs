@@ -22,7 +22,7 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons.Repositories
             await _context.SaveChangesAsync(ct);
         }
 
-        public Task<CouponApplicationRecord?> FindByCouponUsedIdAsync(int couponUsedId, CancellationToken ct = default)
+        public Task<CouponApplicationRecord> FindByCouponUsedIdAsync(int couponUsedId, CancellationToken ct = default)
             => _context.CouponApplicationRecords
                 .FirstOrDefaultAsync(r => r.CouponUsedId == couponUsedId, ct);
 

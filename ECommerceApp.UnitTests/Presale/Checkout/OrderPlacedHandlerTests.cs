@@ -2,6 +2,7 @@ using ECommerceApp.Application.Presale.Checkout.Handlers;
 using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Domain.Presale.Checkout;
+using AwesomeAssertions;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -30,7 +31,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             var message = CreateMessage("user-1", new OrderPlacedItem(10, 2), new OrderPlacedItem(20, 1));
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _cartService.Verify(s => s.RemoveRangeAsync(
                 It.Is<PresaleUserId>(id => id.Value == "user-1"),
@@ -49,7 +50,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             var message = CreateMessage("user-1");
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _softReservationService.Verify(s => s.RemoveCommittedForUserAsync(
                 "user-1",
@@ -69,9 +70,9 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
 
             var message = CreateMessage("user-1");
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
-            Assert.Equal(new[] { "cart", "reservation" }, callOrder);
+            callOrder.Should().Equal(new[] { "cart", "reservation" });
         }
 
         [Fact]
@@ -79,7 +80,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             var message = CreateMessage("user-42");
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _cartService.Verify(s => s.RemoveRangeAsync(
                 It.Is<PresaleUserId>(id => id.Value == "user-42"),

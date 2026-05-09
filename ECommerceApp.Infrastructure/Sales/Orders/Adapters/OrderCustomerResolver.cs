@@ -33,10 +33,10 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Adapters
                 throw new BusinessException($"Customer with id {customerId} was not found.");
 
             var address = customer.Addresses?.FirstOrDefault();
-            var phone = customer.ContactDetails?
+            var phone = customer.ContactDetails
                 .FirstOrDefault(cd => cd.ContactDetailTypeId == PhoneContactTypeId)
                 ?.ContactDetailInformation ?? string.Empty;
-            var email = customer.ContactDetails?
+            var email = customer.ContactDetails
                 .FirstOrDefault(cd => cd.ContactDetailTypeId == EmailContactTypeId)
                 ?.ContactDetailInformation ?? string.Empty;
 

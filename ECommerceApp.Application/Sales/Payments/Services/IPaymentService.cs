@@ -10,10 +10,10 @@ namespace ECommerceApp.Application.Sales.Payments.Services
 {
     public interface IPaymentService
     {
-        Task<PaymentDetailsVm?> GetByIdAsync(int paymentId, CancellationToken ct = default);
-        Task<PaymentDetailsVm?> GetByOrderIdAsync(int orderId, CancellationToken ct = default);
-        Task<PaymentDetailsVm?> GetByTokenAsync(Guid paymentId, string userId, CancellationToken ct = default);
-        Task<PaymentDetailsVm?> GetPendingByOrderIdAsync(int orderId, string userId, CancellationToken ct = default);
+        Task<PaymentDetailsVm> GetByIdAsync(int paymentId, CancellationToken ct = default);
+        Task<PaymentDetailsVm> GetByOrderIdAsync(int orderId, CancellationToken ct = default);
+        Task<PaymentDetailsVm> GetByTokenAsync(Guid paymentId, string userId, CancellationToken ct = default);
+        Task<PaymentDetailsVm> GetPendingByOrderIdAsync(int orderId, string userId, CancellationToken ct = default);
         Task<IReadOnlyList<PaymentVm>> GetByUserIdAsync(string userId, CancellationToken ct = default);
         Task<PaymentListVm> GetAllAsync(int pageSize, int pageNo, CancellationToken ct = default);
         Task<PaymentListVm> GetAllUnpaidAsync(int pageSize, int pageNo, CancellationToken ct = default);

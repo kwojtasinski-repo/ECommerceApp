@@ -15,7 +15,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Contracts
             CancellationToken ct = default);
     }
 
-    public sealed record OrderPlacementResult(bool IsSuccess, int? OrderId, string? FailureReason)
+    public sealed record OrderPlacementResult(bool IsSuccess, int? OrderId, string FailureReason)
     {
         public static OrderPlacementResult Succeeded(int orderId) => new(true, orderId, null);
         public static OrderPlacementResult Failed(string reason) => new(false, null, reason);
@@ -29,11 +29,11 @@ namespace ECommerceApp.Application.Presale.Checkout.Contracts
         string Email,
         string PhoneNumber,
         bool IsCompany,
-        string? CompanyName,
-        string? Nip,
+        string CompanyName,
+        string Nip,
         string Street,
         string BuildingNumber,
-        string? FlatNumber,
+        string FlatNumber,
         string ZipCode,
         string City,
         string Country);

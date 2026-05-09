@@ -55,7 +55,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(stock);
 
-            var result = await CreateService().GetByProductIdAsync(1);
+            var result = await CreateService().GetByProductIdAsync(1, TestContext.Current.CancellationToken);
 
             result.Should().NotBeNull();
             result.ProductId.Should().Be(1);
@@ -69,7 +69,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(99, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((StockItem)null);
 
-            var result = await CreateService().GetByProductIdAsync(99);
+            var result = await CreateService().GetByProductIdAsync(99, TestContext.Current.CancellationToken);
 
             result.Should().BeNull();
         }
@@ -86,7 +86,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 .Returns(AsAsyncEnumerable(s1, s2));
 
             var result = new List<StockItemDto>();
-            await foreach (var dto in CreateService().GetByProductIdsAsync(new[] { 1, 2 }))
+            await foreach (var dto in CreateService().GetByProductIdsAsync(new[] { 1, 2 }, TestContext.Current.CancellationToken))
                 result.Add(dto);
 
             result.Should().HaveCount(2);
@@ -102,7 +102,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 .Returns(AsAsyncEnumerable());
 
             var result = new List<StockItemDto>();
-            await foreach (var dto in CreateService().GetByProductIdsAsync(System.Array.Empty<int>()))
+            await foreach (var dto in CreateService().GetByProductIdsAsync(System.Array.Empty<int>(), TestContext.Current.CancellationToken))
                 result.Add(dto);
 
             result.Should().BeEmpty();
@@ -116,7 +116,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((StockItem)null);
 
-            var result = await CreateService().InitializeStockAsync(1, 20);
+            var result = await CreateService().InitializeStockAsync(1, 20, TestContext.Current.CancellationToken);
 
             result.Should().BeTrue();
             _stockItemRepo.Verify(r => r.AddAsync(It.Is<StockItem>(s => s.ProductId.Value == 1 && s.Quantity.Value == 20), It.IsAny<CancellationToken>()), Times.Once);
@@ -129,7 +129,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(stock);
 
-            var result = await CreateService().InitializeStockAsync(1, 10);
+            var result = await CreateService().InitializeStockAsync(1, 10, TestContext.Current.CancellationToken);
 
             result.Should().BeFalse();
         }
@@ -148,7 +148,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(stock);
 
-            var result = await CreateService().ReserveAsync(dto);
+            var result = await CreateService().ReserveAsync(dto, TestContext.Current.CancellationToken);
 
             result.Should().Be(ReserveStockResult.Success);
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -168,7 +168,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _productSnapshotRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(snapshot);
 
-            var result = await CreateService().ReserveAsync(dto);
+            var result = await CreateService().ReserveAsync(dto, TestContext.Current.CancellationToken);
 
             result.Should().Be(ReserveStockResult.Success);
             _stockItemRepo.Verify(r => r.GetByProductIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -183,7 +183,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 .ReturnsAsync((ProductSnapshot)null);
             var dto = new ReserveStockDto(1, 42, 3, "user-1", DateTime.UtcNow.AddHours(1));
 
-            var result = await CreateService().ReserveAsync(dto);
+            var result = await CreateService().ReserveAsync(dto, TestContext.Current.CancellationToken);
 
             result.Should().Be(ReserveStockResult.ProductSnapshotNotFound);
         }
@@ -196,7 +196,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 .ReturnsAsync(snapshot);
             var dto = new ReserveStockDto(1, 42, 3, "user-1", DateTime.UtcNow.AddHours(1));
 
-            var result = await CreateService().ReserveAsync(dto);
+            var result = await CreateService().ReserveAsync(dto, TestContext.Current.CancellationToken);
 
             result.Should().Be(ReserveStockResult.ProductNotAvailable);
         }
@@ -215,7 +215,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(stock);
 
-            var result = await CreateService().ReleaseAsync(42, 1, 3);
+            var result = await CreateService().ReleaseAsync(42, 1, 3, TestContext.Current.CancellationToken);
 
             result.Should().BeTrue();
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -228,7 +228,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockHoldRepo.Setup(r => r.GetByOrderAndProductAsync(99, 1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((StockHold)null);
 
-            var result = await CreateService().ReleaseAsync(99, 1, 3);
+            var result = await CreateService().ReleaseAsync(99, 1, 3, TestContext.Current.CancellationToken);
 
             result.Should().BeFalse();
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -246,7 +246,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(stock);
 
-            var result = await CreateService().ReleaseAsync(42, 1, 5);
+            var result = await CreateService().ReleaseAsync(42, 1, 5, TestContext.Current.CancellationToken);
 
             result.Should().BeTrue();
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -262,7 +262,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockHoldRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(stockHold);
 
-            var result = await CreateService().ConfirmAsync(42, 1);
+            var result = await CreateService().ConfirmAsync(42, 1, TestContext.Current.CancellationToken);
 
             result.Should().BeTrue();
             stockHold.Status.Should().Be(StockHoldStatus.Confirmed);
@@ -275,7 +275,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockHoldRepo.Setup(r => r.GetByOrderAndProductAsync(99, 1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((StockHold)null);
 
-            var result = await CreateService().ConfirmAsync(99, 1);
+            var result = await CreateService().ConfirmAsync(99, 1, TestContext.Current.CancellationToken);
 
             result.Should().BeFalse();
         }
@@ -290,7 +290,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockHoldRepo.Setup(r => r.GetByOrderIdAsync(42, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<StockHold> { r1, r2 });
 
-            await CreateService().ConfirmHoldsByOrderAsync(42);
+            await CreateService().ConfirmHoldsByOrderAsync(42, TestContext.Current.CancellationToken);
 
             r1.Status.Should().Be(StockHoldStatus.Confirmed);
             r2.Status.Should().Be(StockHoldStatus.Confirmed);
@@ -303,7 +303,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockHoldRepo.Setup(r => r.GetByOrderIdAsync(99, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<StockHold>());
 
-            await CreateService().ConfirmHoldsByOrderAsync(99);
+            await CreateService().ConfirmHoldsByOrderAsync(99, TestContext.Current.CancellationToken);
 
             _stockHoldRepo.Verify(r => r.UpdateAsync(It.IsAny<StockHold>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -315,7 +315,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockHoldRepo.Setup(r => r.GetByOrderIdAsync(10, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<StockHold> { stockHold });
 
-            await CreateService().ConfirmHoldsByOrderAsync(10);
+            await CreateService().ConfirmHoldsByOrderAsync(10, TestContext.Current.CancellationToken);
 
             stockHold.Status.Should().Be(StockHoldStatus.Confirmed);
             _stockHoldRepo.Verify(r => r.UpdateAsync(stockHold, It.IsAny<CancellationToken>()), Times.Once);
@@ -335,7 +335,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockHoldRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(stockHold);
 
-            var result = await CreateService().FulfillAsync(42, 1, 5);
+            var result = await CreateService().FulfillAsync(42, 1, 5, TestContext.Current.CancellationToken);
 
             result.Should().BeTrue();
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -348,7 +348,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((StockItem)null);
 
-            var result = await CreateService().FulfillAsync(42, 1, 5);
+            var result = await CreateService().FulfillAsync(42, 1, 5, TestContext.Current.CancellationToken);
 
             result.Should().BeFalse();
         }
@@ -362,7 +362,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(stock);
 
-            var result = await CreateService().FulfillAsync(42, 1, 5);
+            var result = await CreateService().FulfillAsync(42, 1, 5, TestContext.Current.CancellationToken);
 
             result.Should().BeFalse();
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -379,7 +379,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(stock);
 
-            var result = await CreateService().ReturnAsync(1, 3);
+            var result = await CreateService().ReturnAsync(1, 3, TestContext.Current.CancellationToken);
 
             result.Should().BeTrue();
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -392,7 +392,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((StockItem)null);
 
-            var result = await CreateService().ReturnAsync(1, 3);
+            var result = await CreateService().ReturnAsync(1, 3, TestContext.Current.CancellationToken);
 
             result.Should().BeFalse();
         }
@@ -404,7 +404,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         {
             var dto = new AdjustStockDto(1, 15);
 
-            await CreateService().AdjustAsync(dto);
+            await CreateService().AdjustAsync(dto, TestContext.Current.CancellationToken);
 
             _pendingAdjustmentRepo.Verify(r => r.UpsertAsync(1, 15, It.IsAny<CancellationToken>()), Times.Once);
             _deferredScheduler.Verify(s => s.CancelAsync(

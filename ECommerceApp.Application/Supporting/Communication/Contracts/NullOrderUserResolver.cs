@@ -17,12 +17,12 @@ namespace ECommerceApp.Application.Supporting.Communication.Contracts
             _logger = logger;
         }
 
-        public Task<string?> GetUserIdForOrderAsync(int orderId, CancellationToken ct = default)
+        public Task<string> GetUserIdForOrderAsync(int orderId, CancellationToken ct = default)
         {
             _logger.LogWarning(
                 "[Communication] No IOrderUserResolver configured — skipping notification for OrderId={OrderId}",
                 orderId);
-            return Task.FromResult<string?>(null);
+            return Task.FromResult<string>(null);
         }
     }
 }

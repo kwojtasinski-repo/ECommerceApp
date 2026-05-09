@@ -26,7 +26,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         {
             var message = new CouponApplied(OrderId: 7, CouponUsedId: 3, DiscountPercent: 15);
 
-            await CreateHandler().HandleAsync(message);
+            await CreateHandler().HandleAsync(message, TestContext.Current.CancellationToken);
 
             _orders.Verify(s => s.AddCouponAsync(7, 3, 15, It.IsAny<CancellationToken>()), Times.Once);
         }

@@ -33,7 +33,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 },
                 UserId: "user-1");
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _stockService.Verify(s => s.ReleaseAsync(5, 10, 2, It.IsAny<CancellationToken>()), Times.Once);
             _stockService.Verify(s => s.ReleaseAsync(5, 20, 1, It.IsAny<CancellationToken>()), Times.Once);
@@ -48,7 +48,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 Items: new List<OrderPlacedItem>(),
                 UserId: "user-1");
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _stockService.Verify(s => s.ReleaseAsync(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -62,7 +62,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 Items: new List<OrderPlacedItem> { new OrderPlacedItem(ProductId: 10, Quantity: 2) },
                 UserId: "user-1");
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _stockService.Verify(s => s.ReleaseAsync(5, 10, 2, It.IsAny<CancellationToken>()), Times.Once);
             _stockService.VerifyNoOtherCalls();

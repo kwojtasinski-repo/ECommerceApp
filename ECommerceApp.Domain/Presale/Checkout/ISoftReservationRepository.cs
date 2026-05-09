@@ -6,8 +6,8 @@ namespace ECommerceApp.Domain.Presale.Checkout
 {
     public interface ISoftReservationRepository
     {
-        Task<SoftReservation?> GetByIdAsync(SoftReservationId id, CancellationToken ct = default);
-        Task<SoftReservation?> FindAsync(PresaleProductId productId, PresaleUserId userId, CancellationToken ct = default);
+        Task<SoftReservation> GetByIdAsync(SoftReservationId id, CancellationToken ct = default);
+        Task<SoftReservation> FindAsync(PresaleProductId productId, PresaleUserId userId, CancellationToken ct = default);
         Task<IReadOnlyList<SoftReservation>> GetByProductIdAsync(PresaleProductId productId, CancellationToken ct = default);
         Task<IReadOnlyList<SoftReservation>> GetByUserIdAsync(PresaleUserId userId, CancellationToken ct = default);
         Task<IReadOnlyList<SoftReservation>> GetActiveByUserIdAsync(PresaleUserId userId, CancellationToken ct = default);

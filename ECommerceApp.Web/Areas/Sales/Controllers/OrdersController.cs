@@ -29,7 +29,7 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
 
         [Authorize(Roles = MaintenanceRole)]
         [HttpPost]
-        public async Task<IActionResult> Index(int pageSize, int? pageNo, string? searchString)
+        public async Task<IActionResult> Index(int pageSize, int? pageNo, string searchString)
         {
             pageNo ??= 1;
             searchString ??= string.Empty;
@@ -93,7 +93,7 @@ namespace ECommerceApp.Web.Areas.Sales.Controllers
 
         [Authorize(Roles = MaintenanceRole)]
         [HttpPost]
-        public async Task<IActionResult> PaidOrders(int pageSize, int? pageNo, string? searchString)
+        public async Task<IActionResult> PaidOrders(int pageSize, int? pageNo, string searchString)
         {
             pageNo ??= 1;
             searchString ??= string.Empty;

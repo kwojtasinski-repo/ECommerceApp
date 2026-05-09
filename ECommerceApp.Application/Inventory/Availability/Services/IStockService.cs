@@ -7,7 +7,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
 {
     public interface IStockService
     {
-        Task<StockItemDto?> GetByProductIdAsync(int productId, CancellationToken ct = default);
+        Task<StockItemDto> GetByProductIdAsync(int productId, CancellationToken ct = default);
         IAsyncEnumerable<StockItemDto> GetByProductIdsAsync(IReadOnlyList<int> productIds, CancellationToken ct = default);
         Task<bool> InitializeStockAsync(int productId, int initialQuantity, CancellationToken ct = default);
         Task<ReserveStockResult> ReserveAsync(ReserveStockDto dto, CancellationToken ct = default);

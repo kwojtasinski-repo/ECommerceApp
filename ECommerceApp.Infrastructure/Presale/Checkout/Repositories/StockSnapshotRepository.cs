@@ -18,7 +18,7 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Repositories
             _context = context;
         }
 
-        public async Task<StockSnapshot?> FindByProductIdAsync(PresaleProductId productId, CancellationToken ct = default)
+        public async Task<StockSnapshot> FindByProductIdAsync(PresaleProductId productId, CancellationToken ct = default)
             => await _context.StockSnapshots
                 .FirstOrDefaultAsync(s => s.ProductId == productId, ct);
 

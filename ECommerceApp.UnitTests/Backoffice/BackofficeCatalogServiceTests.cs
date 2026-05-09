@@ -45,7 +45,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(source);
 
             // Act
-            var result = await CreateSut().GetProductsAsync(10, 1, "get");
+            var result = await CreateSut().GetProductsAsync(10, 1, "get", TestContext.Current.CancellationToken);
 
             // Assert
             result.Should().NotBeNull();
@@ -83,7 +83,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 });
 
             // Act
-            var result = await CreateSut().GetProductsAsync(5, 1, null);
+            var result = await CreateSut().GetProductsAsync(5, 1, null, TestContext.Current.CancellationToken);
 
             // Assert — CategoryName not available in ProductForListVm; always empty
             result.Products[0].CategoryName.Should().BeEmpty();
@@ -98,7 +98,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(new ProductListVm { Products = new List<ProductForListVm>(), Count = 0 });
 
             // Act
-            var result = await CreateSut().GetProductsAsync(10, 1, null);
+            var result = await CreateSut().GetProductsAsync(10, 1, null, TestContext.Current.CancellationToken);
 
             // Assert
             result.Products.Should().BeEmpty();
@@ -114,7 +114,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(new ProductListVm { Products = new List<ProductForListVm>() });
 
             // Act
-            await CreateSut().GetProductsAsync(10, 1, null);
+            await CreateSut().GetProductsAsync(10, 1, null, TestContext.Current.CancellationToken);
 
             // Assert
             _productService.Verify(s => s.GetAllProducts(10, 1, string.Empty), Times.Once);
@@ -139,7 +139,7 @@ namespace ECommerceApp.UnitTests.Backoffice
             _productService.Setup(s => s.GetProductDetails(7, It.IsAny<CancellationToken>())).ReturnsAsync(detail);
 
             // Act
-            var result = await CreateSut().GetProductDetailAsync(7);
+            var result = await CreateSut().GetProductDetailAsync(7, TestContext.Current.CancellationToken);
 
             // Assert
             result.Should().NotBeNull();
@@ -158,7 +158,7 @@ namespace ECommerceApp.UnitTests.Backoffice
             _productService.Setup(s => s.ProductExists(99)).ReturnsAsync(false);
 
             // Act
-            var result = await CreateSut().GetProductDetailAsync(99);
+            var result = await CreateSut().GetProductDetailAsync(99, TestContext.Current.CancellationToken);
 
             // Assert
             result.Should().BeNull();

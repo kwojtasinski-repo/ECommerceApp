@@ -55,7 +55,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _snapshotRepo.Setup(r => r.FindByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((StockSnapshot)null!);
 
-            var result = await _service.HoldAsync(1, "user-1", 2);
+            var result = await _service.HoldAsync(1, "user-1", 2, TestContext.Current.CancellationToken);
 
             result.Should().BeFalse();
             _reservationRepo.Verify(r => r.AddAsync(It.IsAny<SoftReservation>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -75,7 +75,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _reservationRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(existing);
 
-            var result = await _service.HoldAsync(1, "user-1", 3); // 3 - 2 = 1 available, needs 3
+            var result = await _service.HoldAsync(1, "user-1", 3, TestContext.Current.CancellationToken); // 3 - 2 = 1 available, needs 3
 
             result.Should().BeFalse();
         }
@@ -92,7 +92,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _catalogClient.Setup(c => c.GetUnitPriceAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync((decimal?)null);
 
-            var result = await _service.HoldAsync(1, "user-1", 2);
+            var result = await _service.HoldAsync(1, "user-1", 2, TestContext.Current.CancellationToken);
 
             result.Should().BeFalse();
         }
@@ -111,7 +111,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var result = await _service.HoldAsync(1, "user-1", 2);
+            var result = await _service.HoldAsync(1, "user-1", 2, TestContext.Current.CancellationToken);
 
             result.Should().BeTrue();
             _reservationRepo.Verify(r => r.AddAsync(
@@ -138,9 +138,9 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<DateTime>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            await _service.HoldAsync(1, "user-1", 1);
+            await _service.HoldAsync(1, "user-1", 1, TestContext.Current.CancellationToken);
 
-            var cached = await _service.GetAsync(1, "user-1");
+            var cached = await _service.GetAsync(1, "user-1", TestContext.Current.CancellationToken);
             cached.Should().NotBeNull();
             cached!.ProductId.Value.Should().Be(1);
         }
@@ -153,7 +153,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             var reservation = SoftReservation.Create(1, "user-1", 2, 10m, DateTime.UtcNow.AddMinutes(15));
             _cache.Set("sr:1:user-1", reservation, TimeSpan.FromMinutes(15));
 
-            var result = await _service.GetAsync(1, "user-1");
+            var result = await _service.GetAsync(1, "user-1", TestContext.Current.CancellationToken);
 
             result.Should().NotBeNull();
             result!.ProductId.Value.Should().Be(1);
@@ -163,7 +163,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         [Fact]
         public async Task GetAsync_ReservationNotInCache_ShouldReturnNull()
         {
-            var result = await _service.GetAsync(99, "nobody");
+            var result = await _service.GetAsync(99, "nobody", TestContext.Current.CancellationToken);
 
             result.Should().BeNull();
         }
@@ -180,7 +180,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            await _service.RemoveAsync(1, "user-1");
+            await _service.RemoveAsync(1, "user-1", TestContext.Current.CancellationToken);
 
             _deferredScheduler.Verify(d => d.CancelAsync(
                 SoftReservationExpiredJob.JobTaskName, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -193,7 +193,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _reservationRepo.Setup(r => r.FindAsync(99, "nobody", It.IsAny<CancellationToken>()))
                 .ReturnsAsync((SoftReservation)null!);
 
-            var act = async () => await _service.RemoveAsync(99, "nobody");
+            var act = async () => await _service.RemoveAsync(99, "nobody", TestContext.Current.CancellationToken);
 
             await act.Should().NotThrowAsync();
             _deferredScheduler.Verify(d => d.CancelAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -216,7 +216,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            await _service.RemoveAllForProductAsync(1);
+            await _service.RemoveAllForProductAsync(1, TestContext.Current.CancellationToken);
 
             _deferredScheduler.Verify(d => d.CancelAsync(
                 SoftReservationExpiredJob.JobTaskName, It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
@@ -229,7 +229,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _reservationRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new List<SoftReservation>());
 
-            var act = async () => await _service.RemoveAllForProductAsync(1);
+            var act = async () => await _service.RemoveAllForProductAsync(1, TestContext.Current.CancellationToken);
 
             await act.Should().NotThrowAsync();
         }

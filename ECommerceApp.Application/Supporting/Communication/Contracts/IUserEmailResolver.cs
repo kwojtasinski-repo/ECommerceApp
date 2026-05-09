@@ -10,6 +10,6 @@ namespace ECommerceApp.Application.Supporting.Communication.Contracts
     /// </summary>
     public interface IUserEmailResolver
     {
-        Task<string?> GetEmailForUserAsync(string userId, CancellationToken ct = default);
+        Task<string> GetEmailForUserAsync(string userId, CancellationToken ct = default);
     }
 }

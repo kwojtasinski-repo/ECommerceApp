@@ -35,7 +35,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
                 .ReturnsAsync(3);
             var context = new JobExecutionContext(null, Guid.NewGuid().ToString());
 
-            await _task.ExecuteAsync(context, default);
+            await _task.ExecuteAsync(context, TestContext.Current.CancellationToken);
 
             _currencyRateService.Verify(s => s.SyncAllRatesAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -47,7 +47,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
                 .ReturnsAsync(2);
             var context = new JobExecutionContext(null, Guid.NewGuid().ToString());
 
-            await _task.ExecuteAsync(context, default);
+            await _task.ExecuteAsync(context, TestContext.Current.CancellationToken);
 
             _currencyRateService.Verify(s => s.GetLatestRateAsync(It.IsAny<int>()), Times.Never);
         }
@@ -59,7 +59,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
                 .ReturnsAsync(3);
             var context = new JobExecutionContext(null, Guid.NewGuid().ToString());
 
-            await _task.ExecuteAsync(context, default);
+            await _task.ExecuteAsync(context, TestContext.Current.CancellationToken);
 
             context.Outcome.Should().BeOfType<JobOutcome.Success>()
                 .Which.Message.Should().Contain("3");
@@ -72,7 +72,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
                 .ReturnsAsync(0);
             var context = new JobExecutionContext(null, Guid.NewGuid().ToString());
 
-            await _task.ExecuteAsync(context, default);
+            await _task.ExecuteAsync(context, TestContext.Current.CancellationToken);
 
             context.Outcome.Should().BeOfType<JobOutcome.Success>()
                 .Which.Message.Should().Contain("0");
@@ -85,7 +85,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
                 .ThrowsAsync(new BusinessException("NBP unavailable"));
             var context = new JobExecutionContext(null, Guid.NewGuid().ToString());
 
-            await _task.ExecuteAsync(context, default);
+            await _task.ExecuteAsync(context, TestContext.Current.CancellationToken);
 
             context.Outcome.Should().BeOfType<JobOutcome.Failure>()
                 .Which.Error.Should().Contain("NBP unavailable");

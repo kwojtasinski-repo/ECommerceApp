@@ -7,13 +7,13 @@ namespace ECommerceApp.Domain.Supporting.TimeManagement
     {
         public JobExecutionId Id { get; private set; } = default!;
         public JobName JobName { get; private set; } = default!;
-        public DeferredJobInstanceId? DeferredQueueId { get; private set; }
+        public DeferredJobInstanceId DeferredQueueId { get; private set; }
         public JobTriggerSource Source { get; private set; }
         public string ExecutionId { get; private set; } = default!;
         public DateTime StartedAt { get; private set; }
         public DateTime? CompletedAt { get; private set; }
         public bool Succeeded { get; private set; }
-        public string? Message { get; private set; }
+        public string Message { get; private set; }
 
         private JobExecution() { }
 
@@ -25,7 +25,7 @@ namespace ECommerceApp.Domain.Supporting.TimeManagement
             DateTime startedAt,
             DateTime completedAt,
             bool succeeded,
-            string? message)
+            string message)
         {
             return new JobExecution
             {

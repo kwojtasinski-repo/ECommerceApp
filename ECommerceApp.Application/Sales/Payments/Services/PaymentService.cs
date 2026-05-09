@@ -22,25 +22,25 @@ namespace ECommerceApp.Application.Sales.Payments.Services
             _broker = broker;
         }
 
-        public async Task<PaymentDetailsVm?> GetByIdAsync(int paymentId, CancellationToken ct = default)
+        public async Task<PaymentDetailsVm> GetByIdAsync(int paymentId, CancellationToken ct = default)
         {
             var payment = await _paymentRepo.GetByIdAsync(paymentId, ct);
             return payment is null ? null : MapToDetailsVm(payment);
         }
 
-        public async Task<PaymentDetailsVm?> GetByOrderIdAsync(int orderId, CancellationToken ct = default)
+        public async Task<PaymentDetailsVm> GetByOrderIdAsync(int orderId, CancellationToken ct = default)
         {
             var payment = await _paymentRepo.GetByOrderIdAsync(orderId, ct);
             return payment is null ? null : MapToDetailsVm(payment);
         }
 
-        public async Task<PaymentDetailsVm?> GetByTokenAsync(Guid paymentId, string userId, CancellationToken ct = default)
+        public async Task<PaymentDetailsVm> GetByTokenAsync(Guid paymentId, string userId, CancellationToken ct = default)
         {
             var payment = await _paymentRepo.GetByPaymentIdAsync(paymentId, userId, ct);
             return payment is null ? null : MapToDetailsVm(payment);
         }
 
-        public async Task<PaymentDetailsVm?> GetPendingByOrderIdAsync(int orderId, string userId, CancellationToken ct = default)
+        public async Task<PaymentDetailsVm> GetPendingByOrderIdAsync(int orderId, string userId, CancellationToken ct = default)
         {
             var payment = await _paymentRepo.GetPendingByOrderIdAsync(orderId, userId, ct);
             return payment is null ? null : MapToDetailsVm(payment);

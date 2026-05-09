@@ -26,7 +26,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         {
             var message = new CouponRemovedFromOrder(OrderId: 42);
 
-            await CreateHandler().HandleAsync(message);
+            await CreateHandler().HandleAsync(message, TestContext.Current.CancellationToken);
 
             _orders.Verify(s => s.RemoveCouponAsync(42, It.IsAny<CancellationToken>()), Times.Once);
         }

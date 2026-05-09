@@ -29,7 +29,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 Items: new[] { new PaymentConfirmedItem(10, 2), new PaymentConfirmedItem(20, 1) },
                 OccurredAt: DateTime.UtcNow);
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _stockService.Verify(s => s.ConfirmHoldsByOrderAsync(
                 42, It.IsAny<CancellationToken>()), Times.Once);
@@ -44,7 +44,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 Items: new[] { new PaymentConfirmedItem(10, 2) },
                 OccurredAt: DateTime.UtcNow);
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _stockService.Verify(s => s.ConfirmAsync(
                 It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -59,7 +59,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 Items: Array.Empty<PaymentConfirmedItem>(),
                 OccurredAt: DateTime.UtcNow);
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _stockService.Verify(s => s.ConfirmHoldsByOrderAsync(
                 99, It.IsAny<CancellationToken>()), Times.Once);

@@ -25,7 +25,7 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
             }
         }
 
-        public JobExecutionRecord? GetLatest(string jobName)
+        public JobExecutionRecord GetLatest(string jobName)
         {
             lock (_lock)
             {

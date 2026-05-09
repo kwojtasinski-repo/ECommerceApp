@@ -23,7 +23,7 @@ namespace ECommerceApp.Infrastructure.Identity.IAM.Auth
                 SecurityAlgorithms.HmacSha256);
         }
 
-        public IssuedJwt IssueToken(string userId, string email, IEnumerable<string> roles, IEnumerable<Claim>? extraClaims = null)
+        public IssuedJwt IssueToken(string userId, string email, IEnumerable<string> roles, IEnumerable<Claim> extraClaims = null)
         {
             var jti = Guid.NewGuid().ToString();
             var claims = new List<Claim>

@@ -37,7 +37,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 });
 
             // Act
-            var result = await CreateSut().GetCurrenciesAsync();
+            var result = await CreateSut().GetCurrenciesAsync(TestContext.Current.CancellationToken);
 
             // Assert
             result.Currencies.Should().HaveCount(2);
@@ -56,7 +56,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(new List<CurrencyVm>());
 
             // Act
-            var result = await CreateSut().GetCurrenciesAsync();
+            var result = await CreateSut().GetCurrenciesAsync(TestContext.Current.CancellationToken);
 
             // Assert
             result.Currencies.Should().BeEmpty();
@@ -73,7 +73,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(new CurrencyVm { Id = 1, Code = "PLN", Description = "Polish Zloty" });
 
             // Act
-            var result = await CreateSut().GetCurrencyDetailAsync(1);
+            var result = await CreateSut().GetCurrencyDetailAsync(1, TestContext.Current.CancellationToken);
 
             // Assert
             result.Should().NotBeNull();
@@ -89,10 +89,10 @@ namespace ECommerceApp.UnitTests.Backoffice
             // Arrange
             _currencyService
                 .Setup(s => s.GetByIdAsync(99))
-                .ReturnsAsync((CurrencyVm?)null);
+                .ReturnsAsync((CurrencyVm)null);
 
             // Act
-            var result = await CreateSut().GetCurrencyDetailAsync(99);
+            var result = await CreateSut().GetCurrencyDetailAsync(99, TestContext.Current.CancellationToken);
 
             // Assert
             result.Should().BeNull();

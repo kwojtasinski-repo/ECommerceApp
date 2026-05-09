@@ -18,7 +18,7 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
             _context = context;
         }
 
-        public async Task<PendingStockAdjustment?> GetByProductIdAsync(int productId, CancellationToken ct = default)
+        public async Task<PendingStockAdjustment> GetByProductIdAsync(int productId, CancellationToken ct = default)
             => await _context.PendingStockAdjustments
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.ProductId == new StockProductId(productId), ct);

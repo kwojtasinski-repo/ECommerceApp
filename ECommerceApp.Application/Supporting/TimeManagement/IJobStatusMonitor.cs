@@ -5,7 +5,7 @@ namespace ECommerceApp.Application.Supporting.TimeManagement
 {
     public interface IJobStatusMonitor
     {
-        JobExecutionRecord? GetLatest(string jobName);
+        JobExecutionRecord GetLatest(string jobName);
         IReadOnlyList<JobExecutionRecord> GetRecent(string jobName, int count);
         void Record(JobExecutionRecord record);
     }

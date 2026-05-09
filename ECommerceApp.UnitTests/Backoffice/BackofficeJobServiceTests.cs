@@ -52,7 +52,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 });
 
             // Act
-            var result = await CreateSut().GetJobsAsync(pageSize: 2, pageNo: 1);
+            var result = await CreateSut().GetJobsAsync(pageSize: 2, pageNo: 1, TestContext.Current.CancellationToken);
 
             // Assert
             result.TotalCount.Should().Be(3);
@@ -80,7 +80,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 });
 
             // Act
-            var result = await CreateSut().GetJobsAsync(pageSize: 2, pageNo: 2);
+            var result = await CreateSut().GetJobsAsync(pageSize: 2, pageNo: 2, TestContext.Current.CancellationToken);
 
             // Assert
             result.Jobs.Should().HaveCount(1);
@@ -96,7 +96,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(new List<JobStatusSummary>());
 
             // Act
-            var result = await CreateSut().GetJobsAsync(10, 1);
+            var result = await CreateSut().GetJobsAsync(10, 1, TestContext.Current.CancellationToken);
 
             // Assert
             result.Jobs.Should().BeEmpty();
@@ -125,7 +125,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 });
 
             // Act
-            var result = await CreateSut().GetJobDetailAsync("TargetJob");
+            var result = await CreateSut().GetJobDetailAsync("TargetJob", TestContext.Current.CancellationToken);
 
             // Assert
             result.Should().NotBeNull();
@@ -143,7 +143,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(new List<JobStatusSummary> { MakeJob("OtherJob", true) });
 
             // Act
-            var result = await CreateSut().GetJobDetailAsync("MissingJob");
+            var result = await CreateSut().GetJobDetailAsync("MissingJob", TestContext.Current.CancellationToken);
 
             // Assert
             result.Should().BeNull();
@@ -168,7 +168,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(2);
 
             // Act
-            var result = await CreateSut().GetJobHistoryAsync(10, 1);
+            var result = await CreateSut().GetJobHistoryAsync(10, 1, TestContext.Current.CancellationToken);
 
             // Assert
             result.TotalCount.Should().Be(2);
@@ -194,7 +194,7 @@ namespace ECommerceApp.UnitTests.Backoffice
                 .ReturnsAsync(0);
 
             // Act
-            var result = await CreateSut().GetJobHistoryAsync(10, 1);
+            var result = await CreateSut().GetJobHistoryAsync(10, 1, TestContext.Current.CancellationToken);
 
             // Assert
             result.Jobs.Should().BeEmpty();

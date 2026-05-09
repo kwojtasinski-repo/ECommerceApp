@@ -6,5 +6,5 @@ namespace ECommerceApp.Domain.Supporting.TimeManagement.Events
         int ScheduledJobId,
         string ExecutionId,
         DateTime CompletedAt,
-        string? Message);
+        string Message);
 }

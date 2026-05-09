@@ -25,7 +25,7 @@ namespace ECommerceApp.Application.Backoffice.Services
             return MapToListVm(source);
         }
 
-        public async Task<BackofficePaymentDetailVm?> GetPaymentDetailAsync(int paymentId, CancellationToken ct = default)
+        public async Task<BackofficePaymentDetailVm> GetPaymentDetailAsync(int paymentId, CancellationToken ct = default)
         {
             var detail = await _paymentService.GetByIdAsync(paymentId, ct);
             if (detail is null)

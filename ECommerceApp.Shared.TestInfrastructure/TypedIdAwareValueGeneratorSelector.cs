@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.ValueGeneration;
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Threading;
+using System;
 
 namespace ECommerceApp.Shared.TestInfrastructure
 {
@@ -28,6 +29,7 @@ namespace ECommerceApp.Shared.TestInfrastructure
             IInMemoryDatabase inMemoryDatabase)
             : base(dependencies, inMemoryDatabase) { }
 
+        [Obsolete]
         public override ValueGenerator Create(IProperty property, ITypeBase entityType)
         {
             var clrType = property.ClrType;

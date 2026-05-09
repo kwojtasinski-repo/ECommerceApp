@@ -14,7 +14,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Contracts
         Task<CatalogProductPage> GetPublishedProductsByTagAsync(
             int tagId, int pageSize, int pageNo, CancellationToken ct = default);
 
-        Task<CatalogProductDetails?> GetProductDetailsAsync(int productId, CancellationToken ct = default);
+        Task<CatalogProductDetails> GetProductDetailsAsync(int productId, CancellationToken ct = default);
 
         Task<IReadOnlyList<CatalogProductSummary>> GetProductsByIdsAsync(
             IReadOnlyList<int> productIds, CancellationToken ct = default);
@@ -22,7 +22,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Contracts
 
     public sealed record CatalogProductSummary(int Id, string Name);
 
-    public sealed record CatalogProductItem(int Id, string Name, decimal Cost, int CategoryId, string? MainImageUrl);
+    public sealed record CatalogProductItem(int Id, string Name, decimal Cost, int CategoryId, string MainImageUrl);
 
     public sealed record CatalogProductPage(
         IReadOnlyList<CatalogProductItem> Products,

@@ -25,7 +25,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_PushesNotificationToOrderOwner()
         {
-            await CreateHandler().HandleAsync(Message(orderId: 42, userId: "user-42"));
+            await CreateHandler().HandleAsync(Message(orderId: 42, userId: "user-42"), TestContext.Current.CancellationToken);
 
             _notifications.Verify(n => n.NotifyAsync(
                 "user-42",
@@ -37,7 +37,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         [Fact]
         public async Task HandleAsync_MessageContainsOrderId()
         {
-            await CreateHandler().HandleAsync(Message(orderId: 7));
+            await CreateHandler().HandleAsync(Message(orderId: 7), TestContext.Current.CancellationToken);
 
             _notifications.Verify(n => n.NotifyAsync(
                 It.IsAny<string>(),
@@ -64,7 +64,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _resolver.Setup(r => r.GetUserIdForOrderAsync(5, It.IsAny<CancellationToken>()))
                      .ReturnsAsync("user-5");
 
-            await CreateHandler().HandleAsync(Message(orderId: 5));
+            await CreateHandler().HandleAsync(Message(orderId: 5), TestContext.Current.CancellationToken);
 
             _notifications.Verify(n => n.NotifyAsync(
                 "user-5",
@@ -77,9 +77,9 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         public async Task HandleAsync_WhenUserNotResolved_SkipsNotification()
         {
             _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                     .ReturnsAsync((string?)null);
+                     .ReturnsAsync((string)null);
 
-            await CreateHandler().HandleAsync(Message());
+            await CreateHandler().HandleAsync(Message(), TestContext.Current.CancellationToken);
 
             _notifications.Verify(n => n.NotifyAsync(
                 It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -94,7 +94,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             var handler = new OrderRequiresAttentionNotificationHandler(NullLogger<OrderRequiresAttentionNotificationHandler>.Instance);
             var message = new OrderRequiresAttention(99, "Shipment failed", DateTime.UtcNow);
 
-            await handler.HandleAsync(message);
+            await handler.HandleAsync(message, TestContext.Current.CancellationToken);
         }
     }
 }

@@ -11,9 +11,9 @@ namespace ECommerceApp.Application.Sales.Orders.ViewModels
         public int Quantity { get; init; }
         public decimal UnitCost { get; init; }
         public int? CouponUsedId { get; init; }
-        public string? ProductName { get; init; }
-        public string? ImageFileName { get; init; }
-        public string? ImageUrl { get; init; }
+        public string ProductName { get; init; }
+        public string ImageFileName { get; init; }
+        public string ImageUrl { get; init; }
     }
 
     public sealed class OrderCustomerVm
@@ -23,11 +23,11 @@ namespace ECommerceApp.Application.Sales.Orders.ViewModels
         public string Email { get; init; } = default!;
         public string PhoneNumber { get; init; } = default!;
         public bool IsCompany { get; init; }
-        public string? CompanyName { get; init; }
-        public string? Nip { get; init; }
+        public string CompanyName { get; init; }
+        public string Nip { get; init; }
         public string Street { get; init; } = default!;
         public string BuildingNumber { get; init; } = default!;
-        public string? FlatNumber { get; init; }
+        public string FlatNumber { get; init; } = default!;
         public string ZipCode { get; init; } = default!;
         public string City { get; init; } = default!;
         public string Country { get; init; } = default!;
@@ -51,7 +51,7 @@ namespace ECommerceApp.Application.Sales.Orders.ViewModels
         public string UserId { get; init; } = default!;
         public int? CouponUsedId { get; init; }
         public int? DiscountPercent { get; init; }
-        public OrderCustomerVm? Customer { get; init; }
+        public OrderCustomerVm Customer { get; init; }
         public IReadOnlyList<OrderItemVm> OrderItems { get; init; } = Array.Empty<OrderItemVm>();
         public IReadOnlyList<OrderEventVm> Events { get; init; } = Array.Empty<OrderEventVm>();
     }

@@ -27,7 +27,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         private PaymentWindowExpiredJob CreateJob()
             => new(_paymentRepo.Object, _broker.Object);
 
-        private static JobExecutionContext Context(string? entityId)
+        private static JobExecutionContext Context(string entityId)
             => new(entityId, Guid.NewGuid().ToString());
 
         private static Payment CreatePendingPayment(int paymentId = 1, int orderId = 10)
@@ -70,7 +70,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         {
             _paymentRepo
                 .Setup(r => r.GetByIdAsync(42, It.IsAny<CancellationToken>()))
-                .ReturnsAsync((Payment?)null);
+                .ReturnsAsync((Payment)null);
             var ctx = Context("42");
 
             await CreateJob().ExecuteAsync(ctx, CancellationToken.None);

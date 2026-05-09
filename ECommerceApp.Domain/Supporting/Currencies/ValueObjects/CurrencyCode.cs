@@ -9,7 +9,7 @@ namespace ECommerceApp.Domain.Supporting.Currencies.ValueObjects
     {
         public string Value { get; }
 
-        public static bool IsKnownIso4217Code(string? code)
+        public static bool IsKnownIso4217Code(string code)
         {
             var normalized = code?.Trim().ToUpperInvariant();
             if (string.IsNullOrEmpty(normalized))

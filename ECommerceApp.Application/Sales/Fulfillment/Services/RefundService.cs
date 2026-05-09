@@ -102,7 +102,7 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
             return RefundOperationResult.Success;
         }
 
-        public async Task<RefundDetailsVm?> GetRefundAsync(int refundId, CancellationToken ct = default)
+        public async Task<RefundDetailsVm> GetRefundAsync(int refundId, CancellationToken ct = default)
         {
             var refund = await _refunds.GetByIdAsync(refundId, ct);
             if (refund is null)
@@ -111,7 +111,7 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
             return MapToDetailsVm(refund);
         }
 
-        public async Task<RefundListVm> GetRefundsAsync(int pageSize, int pageNo, string? search, CancellationToken ct = default)
+        public async Task<RefundListVm> GetRefundsAsync(int pageSize, int pageNo, string search, CancellationToken ct = default)
         {
             var refunds = await _refunds.GetPagedAsync(pageSize, pageNo, search, ct);
             var count = await _refunds.GetCountAsync(search, ct);

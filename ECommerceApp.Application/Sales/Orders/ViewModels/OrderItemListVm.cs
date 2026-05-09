@@ -4,11 +4,11 @@ namespace ECommerceApp.Application.Sales.Orders.ViewModels
 {
     public sealed class OrderItemListVm
     {
-        public IReadOnlyList<OrderItemForListVm> Items { get; init; } = new List<OrderItemForListVm>();
+        public IReadOnlyList<OrderItemForListVm> Items { get; init; } = [];
         public int CurrentPage { get; init; }
         public int PageSize { get; init; }
         public int TotalCount { get; init; }
-        public string? SearchString { get; init; }
+        public string SearchString { get; init; }
     }
 
     public sealed class OrderItemForListVm
@@ -19,7 +19,7 @@ namespace ECommerceApp.Application.Sales.Orders.ViewModels
         public decimal UnitCost { get; init; }
         public string UserId { get; init; } = default!;
         public int? OrderId { get; init; }
-        public string? ProductName { get; init; }
-        public string? ImageFileName { get; init; }
+        public string ProductName { get; init; }
+        public string ImageFileName { get; init; }
     }
 }

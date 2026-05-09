@@ -28,7 +28,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 .ReturnsAsync((StockSnapshot)null!);
             var message = new StockAvailabilityChanged(1, 50, DateTime.UtcNow);
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _snapshotRepo.Verify(r => r.AddAsync(
                 It.Is<StockSnapshot>(s => s.ProductId.Value == 1 && s.AvailableQuantity == 50),
@@ -44,7 +44,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 .ReturnsAsync(snapshot);
             var message = new StockAvailabilityChanged(1, 80, DateTime.UtcNow);
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             snapshot.AvailableQuantity.Should().Be(80);
             _snapshotRepo.Verify(r => r.UpdateAsync(snapshot, It.IsAny<CancellationToken>()), Times.Once);
@@ -61,7 +61,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             var newOccurredAt = DateTime.UtcNow;
             var message = new StockAvailabilityChanged(1, 60, newOccurredAt);
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             snapshot.LastSyncedAt.Should().Be(newOccurredAt);
         }
@@ -73,7 +73,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 .ReturnsAsync((StockSnapshot)null!);
             var message = new StockAvailabilityChanged(1, 0, DateTime.UtcNow);
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _snapshotRepo.Verify(r => r.AddAsync(
                 It.Is<StockSnapshot>(s => s.AvailableQuantity == 0),

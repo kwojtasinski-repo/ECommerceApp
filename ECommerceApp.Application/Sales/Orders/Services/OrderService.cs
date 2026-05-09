@@ -9,7 +9,6 @@ using ECommerceApp.Domain.Sales.Orders;
 using ECommerceApp.Domain.Sales.Orders.ValueObjects;
 using ECommerceApp.Domain.Shared;
 using System;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -99,7 +98,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             return PlaceOrderResult.Success(orderId);
         }
 
-        public async Task<OrderDetailsVm?> GetOrderDetailsAsync(int orderId, CancellationToken ct = default)
+        public async Task<OrderDetailsVm> GetOrderDetailsAsync(int orderId, CancellationToken ct = default)
         {
             var order = await _orderRepo.GetByIdWithItemsAsync(orderId, ct);
             return order is null ? null : MapToDetailsVm(order);
@@ -212,7 +211,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             return OrderOperationResult.Success;
         }
 
-        public async Task<OrderListVm> GetAllOrdersAsync(int pageSize, int pageNo, string? search, CancellationToken ct = default)
+        public async Task<OrderListVm> GetAllOrdersAsync(int pageSize, int pageNo, string search, CancellationToken ct = default)
         {
             var orders = await _orderRepo.GetAllAsync(pageSize, pageNo, search, ct);
             var count = await _orderRepo.GetAllCountAsync(search, ct);
@@ -238,7 +237,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             return orders.Select(MapToForListVm).ToList();
         }
 
-        public async Task<OrderListVm> GetAllPaidOrdersAsync(int pageSize, int pageNo, string? search, CancellationToken ct = default)
+        public async Task<OrderListVm> GetAllPaidOrdersAsync(int pageSize, int pageNo, string search, CancellationToken ct = default)
         {
             var orders = await _orderRepo.GetAllPaidAsync(pageSize, pageNo, search, ct);
             var count = await _orderRepo.GetAllPaidCountAsync(search, ct);
@@ -423,7 +422,7 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             _ => eventType.ToString()
         };
 
-        private string? BuildImageDisplayUrl(int? imageId)
+        private string BuildImageDisplayUrl(int? imageId)
         {
             if (imageId is null) return null;
             var url = _urlBuilder.Build(imageId.Value);

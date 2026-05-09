@@ -39,7 +39,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 TotalAmount: 100m,
                 CurrencyId: 1);
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _stockService.Verify(s => s.ReserveAsync(
                 It.Is<ReserveStockDto>(d =>
@@ -73,7 +73,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 TotalAmount: 50m,
                 CurrencyId: 1);
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _stockService.Verify(s => s.ReserveAsync(
                 It.Is<ReserveStockDto>(d => d.ProductId == 30 && d.OrderId == 7 && d.Quantity == 1),
@@ -92,7 +92,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 TotalAmount: 0m,
                 CurrencyId: 1);
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _stockService.Verify(s => s.ReserveAsync(
                 It.IsAny<ReserveStockDto>(), It.IsAny<CancellationToken>()), Times.Never);

@@ -16,11 +16,11 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Repositories
             _context = context;
         }
 
-        public async Task<SoftReservation?> GetByIdAsync(SoftReservationId id, CancellationToken ct = default)
+        public async Task<SoftReservation> GetByIdAsync(SoftReservationId id, CancellationToken ct = default)
             => await _context.SoftReservations
                 .FirstOrDefaultAsync(r => r.Id == id, ct);
 
-        public async Task<SoftReservation?> FindAsync(PresaleProductId productId, PresaleUserId userId, CancellationToken ct = default)
+        public async Task<SoftReservation> FindAsync(PresaleProductId productId, PresaleUserId userId, CancellationToken ct = default)
             => await _context.SoftReservations
                 .FirstOrDefaultAsync(r => r.ProductId == productId
                                        && r.UserId == userId, ct);

@@ -2,7 +2,6 @@ using Cronos;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Application.Supporting.TimeManagement.Models;
 using ECommerceApp.Domain.Supporting.TimeManagement;
-using ECommerceApp.Domain.Supporting.TimeManagement;
 using ECommerceApp.Domain.Supporting.TimeManagement.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -117,7 +116,7 @@ namespace ECommerceApp.Infrastructure.Supporting.TimeManagement
             DateTime startedAt,
             DateTime completedAt,
             bool succeeded,
-            string? message,
+            string message,
             CancellationToken ct)
         {
             try

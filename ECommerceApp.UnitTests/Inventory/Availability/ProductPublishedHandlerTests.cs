@@ -29,7 +29,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 IsDigital: false,
                 OccurredAt: DateTime.UtcNow);
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _snapshotRepo.Verify(r => r.UpsertAsync(
                 It.Is<ProductSnapshot>(s =>
@@ -49,7 +49,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 IsDigital: true,
                 OccurredAt: DateTime.UtcNow);
 
-            await _handler.HandleAsync(message);
+            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
 
             _snapshotRepo.Verify(r => r.UpsertAsync(
                 It.Is<ProductSnapshot>(s =>

@@ -199,7 +199,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
             _nbpClient.Setup(n => n.GetCurrencyTable(It.IsAny<CancellationToken>()))
                 .ReturnsAsync((string)null);
 
-            var result = await _sut.SyncAllRatesAsync();
+            var result = await _sut.SyncAllRatesAsync(TestContext.Current.CancellationToken);
 
             result.Should().Be(0);
             _currencyRateRepository.Verify(r => r.AddAsync(It.IsAny<CurrencyRate>()), Times.Never);
@@ -211,7 +211,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
             _nbpClient.Setup(n => n.GetCurrencyTable(It.IsAny<CancellationToken>()))
                 .ReturnsAsync("[]");
 
-            var result = await _sut.SyncAllRatesAsync();
+            var result = await _sut.SyncAllRatesAsync(TestContext.Current.CancellationToken);
 
             result.Should().Be(0);
             _currencyRateRepository.Verify(r => r.AddAsync(It.IsAny<CurrencyRate>()), Times.Never);
@@ -226,7 +226,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
             _nbpClient.Setup(n => n.GetCurrencyTable(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(GetDefaultTableResponse("EUR", 4.5m));
 
-            var result = await _sut.SyncAllRatesAsync();
+            var result = await _sut.SyncAllRatesAsync(TestContext.Current.CancellationToken);
 
             result.Should().Be(0);
         }
@@ -239,7 +239,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
             _nbpClient.Setup(n => n.GetCurrencyTable(It.IsAny<CancellationToken>()))
                 .ReturnsAsync(GetDefaultTableResponse("EUR", 4.5m)); // table has EUR, not USD
 
-            var result = await _sut.SyncAllRatesAsync();
+            var result = await _sut.SyncAllRatesAsync(TestContext.Current.CancellationToken);
 
             result.Should().Be(0);
             _currencyRateRepository.Verify(r => r.AddAsync(It.IsAny<CurrencyRate>()), Times.Never);
@@ -256,7 +256,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
             _currencyRateRepository.Setup(r => r.GetRateForDateAsync(It.IsAny<CurrencyId>(), It.IsAny<DateTime>()))
                 .ReturnsAsync(existingRate);
 
-            var result = await _sut.SyncAllRatesAsync();
+            var result = await _sut.SyncAllRatesAsync(TestContext.Current.CancellationToken);
 
             result.Should().Be(0);
             _currencyRateRepository.Verify(r => r.AddAsync(It.IsAny<CurrencyRate>()), Times.Never);
@@ -274,7 +274,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
             _currencyRateRepository.Setup(r => r.AddAsync(It.IsAny<CurrencyRate>()))
                 .ReturnsAsync(new CurrencyRateId(1));
 
-            var result = await _sut.SyncAllRatesAsync();
+            var result = await _sut.SyncAllRatesAsync(TestContext.Current.CancellationToken);
 
             result.Should().Be(1);
             _currencyRateRepository.Verify(r => r.AddAsync(
@@ -298,7 +298,7 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
             _currencyRateRepository.Setup(r => r.AddAsync(It.IsAny<CurrencyRate>()))
                 .ReturnsAsync(new CurrencyRateId(1));
 
-            var result = await _sut.SyncAllRatesAsync();
+            var result = await _sut.SyncAllRatesAsync(TestContext.Current.CancellationToken);
 
             result.Should().Be(3);
             _nbpClient.Verify(n => n.GetCurrencyTable(It.IsAny<CancellationToken>()), Times.Once);

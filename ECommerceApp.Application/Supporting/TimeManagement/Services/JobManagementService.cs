@@ -2,8 +2,6 @@ using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Supporting.TimeManagement.Models;
 using ECommerceApp.Domain.Supporting.TimeManagement;
 using ECommerceApp.Domain.Shared;
-using ECommerceApp.Domain.Supporting.TimeManagement;
-using ECommerceApp.Domain.Supporting.TimeManagement.ValueObjects;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;

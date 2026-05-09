@@ -15,7 +15,7 @@ namespace ECommerceApp.Application.Backoffice.Services
             _couponService = couponService;
         }
 
-        public async Task<BackofficeCouponListVm> GetCouponsAsync(int pageSize, int pageNo, string? searchString, CancellationToken ct = default)
+        public async Task<BackofficeCouponListVm> GetCouponsAsync(int pageSize, int pageNo, string searchString, CancellationToken ct = default)
         {
             var result = await _couponService.GetCouponsAsync(pageSize, pageNo, searchString ?? string.Empty, ct);
             return new BackofficeCouponListVm
@@ -35,7 +35,7 @@ namespace ECommerceApp.Application.Backoffice.Services
             };
         }
 
-        public async Task<BackofficeCouponDetailVm?> GetCouponDetailAsync(int couponId, CancellationToken ct = default)
+        public async Task<BackofficeCouponDetailVm> GetCouponDetailAsync(int couponId, CancellationToken ct = default)
         {
             var coupon = await _couponService.GetCouponAsync(couponId, ct);
             if (coupon is null)

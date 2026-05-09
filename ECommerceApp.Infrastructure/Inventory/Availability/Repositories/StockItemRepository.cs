@@ -18,7 +18,7 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
             _context = context;
         }
 
-        public async Task<StockItem?> GetByProductIdAsync(int productId, CancellationToken ct = default)
+        public async Task<StockItem> GetByProductIdAsync(int productId, CancellationToken ct = default)
             => await _context.StockItems
                 .FirstOrDefaultAsync(s => s.ProductId == new StockProductId(productId), ct);
 
@@ -49,7 +49,7 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
 
         private const int BatchSize = 200;
 
-        public async Task<StockItem?> GetByIdAsync(StockItemId id, CancellationToken ct = default)
+        public async Task<StockItem> GetByIdAsync(StockItemId id, CancellationToken ct = default)
             => await _context.StockItems
                 .FirstOrDefaultAsync(s => s.Id == id, ct);
 

@@ -6,7 +6,7 @@ namespace ECommerceApp.Application.Backoffice.Services
 {
     public interface IBackofficeUserService
     {
-        Task<BackofficeUserListVm> GetUsersAsync(int pageSize, int pageNo, string? searchString, CancellationToken ct = default);
-        Task<BackofficeUserDetailVm?> GetUserDetailAsync(string userId, CancellationToken ct = default);
+        Task<BackofficeUserListVm> GetUsersAsync(int pageSize, int pageNo, string searchString, CancellationToken ct = default);
+        Task<BackofficeUserDetailVm> GetUserDetailAsync(string userId, CancellationToken ct = default);
     }
 }

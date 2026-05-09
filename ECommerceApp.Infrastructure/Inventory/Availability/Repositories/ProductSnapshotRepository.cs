@@ -16,7 +16,7 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability.Repositories
             _context = context;
         }
 
-        public async Task<ProductSnapshot?> GetByProductIdAsync(int productId, CancellationToken ct = default)
+        public async Task<ProductSnapshot> GetByProductIdAsync(int productId, CancellationToken ct = default)
             => await _context.ProductSnapshots
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.ProductId == productId, ct);

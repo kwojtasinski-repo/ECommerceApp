@@ -56,7 +56,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         {
             _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(new List<CouponUsed>());
 
-            await CreateHandler().HandleAsync(CreateMessage(orderId: 99));
+            await CreateHandler().HandleAsync(CreateMessage(orderId: 99), TestContext.Current.CancellationToken);
 
             _coupons.Verify(r => r.GetByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
             _coupons.Verify(r => r.UpdateAsync(It.IsAny<Coupon>(), It.IsAny<CancellationToken>()), Times.Never);
@@ -71,7 +71,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             _couponUsed.Setup(x => x.FindAllByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(new List<CouponUsed> { couponUsed });
             _coupons.Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(coupon);
 
-            await CreateHandler().HandleAsync(CreateMessage(orderId: 99));
+            await CreateHandler().HandleAsync(CreateMessage(orderId: 99), TestContext.Current.CancellationToken);
 
             coupon.Status.Should().Be(CouponStatus.Available);
             _coupons.Verify(r => r.UpdateAsync(coupon, It.IsAny<CancellationToken>()), Times.Once);

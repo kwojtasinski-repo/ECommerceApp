@@ -37,7 +37,7 @@ namespace ECommerceApp.Application.Backoffice.Services
             };
         }
 
-        public async Task<BackofficeRefundDetailVm?> GetRefundDetailAsync(int refundId, CancellationToken ct = default)
+        public async Task<BackofficeRefundDetailVm> GetRefundDetailAsync(int refundId, CancellationToken ct = default)
         {
             var detail = await _refundService.GetRefundAsync(refundId, ct);
             if (detail is null)

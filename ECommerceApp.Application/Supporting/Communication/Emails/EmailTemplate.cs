@@ -11,5 +11,5 @@ namespace ECommerceApp.Application.Supporting.Communication.Emails
         string To,
         string Subject,
         string Body,
-        IReadOnlyList<EmailAction>? Actions = null);
+        IReadOnlyList<EmailAction> Actions = null);
 }

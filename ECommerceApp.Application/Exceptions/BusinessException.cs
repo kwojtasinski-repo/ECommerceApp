@@ -35,11 +35,6 @@ namespace ECommerceApp.Application.Exceptions
 
         }
 
-        public BusinessException(SerializationInfo serialization, StreamingContext streamingContext) : base(serialization, streamingContext)
-        {
-
-        }
-
         public BusinessException(ErrorMessage errorMessage) : base(errorMessage.Message.ToString())
         {
             _codes = errorMessage.ErrorCodes ?? new List<ErrorCode>();

@@ -41,7 +41,7 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             _auditRepo = auditRepo;
         }
 
-        public async Task<StockItemDto?> GetByProductIdAsync(int productId, CancellationToken ct = default)
+        public async Task<StockItemDto> GetByProductIdAsync(int productId, CancellationToken ct = default)
         {
             var stock = await _stockItemRepo.GetByProductIdAsync(productId, ct);
             if (stock is null)

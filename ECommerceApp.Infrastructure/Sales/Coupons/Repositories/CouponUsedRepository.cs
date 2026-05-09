@@ -16,7 +16,7 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons.Repositories
             _context = context;
         }
 
-        public Task<CouponUsed?> FindByOrderIdAsync(int orderId, CancellationToken ct = default)
+        public Task<CouponUsed> FindByOrderIdAsync(int orderId, CancellationToken ct = default)
             => _context.CouponUsed.FirstOrDefaultAsync(cu => cu.OrderId == orderId, ct);
 
         public async Task AddAsync(CouponUsed couponUsed, CancellationToken ct = default)

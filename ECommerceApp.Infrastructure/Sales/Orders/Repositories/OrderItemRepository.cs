@@ -16,7 +16,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
             _context = context;
         }
 
-        public async Task<OrderItem?> GetByIdAsync(int id, CancellationToken ct = default)
+        public async Task<OrderItem> GetByIdAsync(int id, CancellationToken ct = default)
             => await _context.OrderItems
                 .AsNoTracking()
                 .FirstOrDefaultAsync(oi => oi.Id == new OrderItemId(id), ct);
@@ -105,7 +105,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
                 .ToListAsync(ct);
         }
 
-        public async Task<IReadOnlyList<OrderItem>> GetAllPagedAsync(int pageSize, int pageNo, string? search, CancellationToken ct = default)
+        public async Task<IReadOnlyList<OrderItem>> GetAllPagedAsync(int pageSize, int pageNo, string search, CancellationToken ct = default)
         {
             var query = _context.OrderItems.AsNoTracking();
             return await query
@@ -115,7 +115,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Repositories
                 .ToListAsync(ct);
         }
 
-        public async Task<int> GetAllPagedCountAsync(string? search, CancellationToken ct = default)
+        public async Task<int> GetAllPagedCountAsync(string search, CancellationToken ct = default)
         {
             var query = _context.OrderItems.AsNoTracking();
             return await query.CountAsync(ct);

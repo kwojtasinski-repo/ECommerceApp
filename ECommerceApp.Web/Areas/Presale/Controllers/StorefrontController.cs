@@ -21,7 +21,7 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         }
 
         [HttpGet("")]
-        public async Task<IActionResult> Index(string? searchString = null, CancellationToken ct = default)
+        public async Task<IActionResult> Index(string searchString = null, CancellationToken ct = default)
         {
             var model = await _storefront.GetPublishedProductsAsync(12, 1, searchString ?? string.Empty, ct);
             ViewBag.AllTags = await _tagService.GetAllTags();
@@ -29,7 +29,7 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         }
 
         [HttpPost("")]
-        public async Task<IActionResult> Index(int pageSize, int pageNo, string? searchString, CancellationToken ct = default)
+        public async Task<IActionResult> Index(int pageSize, int pageNo, string searchString, CancellationToken ct = default)
         {
             var model = await _storefront.GetPublishedProductsAsync(pageSize, pageNo, searchString ?? string.Empty, ct);
             ViewBag.AllTags = await _tagService.GetAllTags();

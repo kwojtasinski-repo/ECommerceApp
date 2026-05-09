@@ -15,10 +15,10 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Adapters
             _context = context;
         }
 
-        public Task<string?> GetUserIdForOrderAsync(int orderId, CancellationToken ct = default)
+        public Task<string> GetUserIdForOrderAsync(int orderId, CancellationToken ct = default)
             => _context.Orders
                 .Where(o => o.Id.Value == orderId)
-                .Select(o => (string?)o.UserId.Value)
+                .Select(o => (string)o.UserId.Value)
                 .FirstOrDefaultAsync(ct);
     }
 }

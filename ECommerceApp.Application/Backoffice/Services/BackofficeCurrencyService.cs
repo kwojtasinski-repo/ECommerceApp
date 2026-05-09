@@ -30,7 +30,7 @@ namespace ECommerceApp.Application.Backoffice.Services
             };
         }
 
-        public async Task<BackofficeCurrencyDetailVm?> GetCurrencyDetailAsync(int currencyId, CancellationToken ct = default)
+        public async Task<BackofficeCurrencyDetailVm> GetCurrencyDetailAsync(int currencyId, CancellationToken ct = default)
         {
             var vm = await _currencyService.GetByIdAsync(currencyId);
             if (vm is null)

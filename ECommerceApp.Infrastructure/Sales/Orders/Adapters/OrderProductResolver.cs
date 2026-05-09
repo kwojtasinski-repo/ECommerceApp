@@ -17,7 +17,7 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Adapters
             _productService = productService;
         }
 
-        public async Task<OrderProductSnapshot?> ResolveAsync(int productId, CancellationToken ct = default)
+        public async Task<OrderProductSnapshot> ResolveAsync(int productId, CancellationToken ct = default)
         {
             var product = await _productService.GetProductDetails(productId, ct);
 
