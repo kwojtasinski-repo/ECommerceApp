@@ -1,5 +1,4 @@
 using ECommerceApp.Application.Messaging;
-using ECommerceApp.Application.Sales.Shared.Contracts;
 using ECommerceApp.Application.Sales.Fulfillment.DTOs;
 using ECommerceApp.Application.Sales.Fulfillment.Messages;
 using ECommerceApp.Application.Sales.Fulfillment.Results;
@@ -17,18 +16,18 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
     public class ShipmentServiceTests
     {
         private readonly Mock<IShipmentRepository> _shipments;
-        private readonly Mock<IOrderExistenceChecker> _orderExistence;
+        private readonly Mock<IModuleClient> _moduleClient;
         private readonly Mock<IMessageBroker> _broker;
 
         public ShipmentServiceTests()
         {
             _shipments = new Mock<IShipmentRepository>();
-            _orderExistence = new Mock<IOrderExistenceChecker>();
+            _moduleClient = new Mock<IModuleClient>();
             _broker = new Mock<IMessageBroker>();
         }
 
         private IShipmentService CreateService()
-            => new ShipmentService(_shipments.Object, _orderExistence.Object, _broker.Object);
+            => new ShipmentService(_shipments.Object, _moduleClient.Object, _broker.Object);
 
         private static Shipment CreateShipment(
             int id = 1,
@@ -68,7 +67,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task CreateShipmentAsync_OrderNotFound_ShouldReturnOrderNotFound()
         {
-            _orderExistence.Setup(x => x.ExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            _moduleClient.Setup(x => x.SendAsync(It.IsAny<OrderExistsQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             var result = await CreateService().CreateShipmentAsync(CreateDto(), TestContext.Current.CancellationToken);
 
@@ -79,7 +78,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task CreateShipmentAsync_ValidRequest_WithSingleLine_ShouldReturnSuccess()
         {
-            _orderExistence.Setup(x => x.ExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _moduleClient.Setup(x => x.SendAsync(It.IsAny<OrderExistsQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             var result = await CreateService().CreateShipmentAsync(CreateDto(
                 lines: new List<CreateShipmentLineDto> { new(10, 1) }), TestContext.Current.CancellationToken);
@@ -90,7 +89,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task CreateShipmentAsync_ValidRequest_ShouldPersistShipmentWithCorrectData()
         {
-            _orderExistence.Setup(x => x.ExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _moduleClient.Setup(x => x.SendAsync(It.IsAny<OrderExistsQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             var result = await CreateService().CreateShipmentAsync(CreateDto(), TestContext.Current.CancellationToken);
 
@@ -108,7 +107,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task CreateShipmentAsync_ValidRequest_ShouldNotPublishAnyMessage()
         {
-            _orderExistence.Setup(x => x.ExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _moduleClient.Setup(x => x.SendAsync(It.IsAny<OrderExistsQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
 
             await CreateService().CreateShipmentAsync(CreateDto(), TestContext.Current.CancellationToken);
 

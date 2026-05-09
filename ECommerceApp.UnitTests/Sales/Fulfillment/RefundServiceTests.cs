@@ -1,5 +1,4 @@
 using ECommerceApp.Application.Messaging;
-using ECommerceApp.Application.Sales.Shared.Contracts;
 using ECommerceApp.Application.Sales.Fulfillment.DTOs;
 using ECommerceApp.Application.Sales.Fulfillment.Messages;
 using ECommerceApp.Application.Sales.Fulfillment.Results;
@@ -18,18 +17,18 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
     public class RefundServiceTests
     {
         private readonly Mock<IRefundRepository> _refunds;
-        private readonly Mock<IOrderExistenceChecker> _orderExistence;
+        private readonly Mock<IModuleClient> _moduleClient;
         private readonly Mock<IMessageBroker> _broker;
 
         public RefundServiceTests()
         {
             _refunds = new Mock<IRefundRepository>();
-            _orderExistence = new Mock<IOrderExistenceChecker>();
+            _moduleClient = new Mock<IModuleClient>();
             _broker = new Mock<IMessageBroker>();
         }
 
         private IRefundService CreateService()
-            => new RefundService(_refunds.Object, _orderExistence.Object, _broker.Object);
+            => new RefundService(_refunds.Object, _moduleClient.Object, _broker.Object);
 
         private static Refund CreateRequestedRefund(int id = 1, int orderId = 99)
         {
@@ -53,7 +52,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task RequestRefundAsync_OrderNotFound_ShouldReturnOrderNotFound()
         {
-            _orderExistence.Setup(x => x.ExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(false);
+            _moduleClient.Setup(x => x.SendAsync(It.IsAny<OrderExistsQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(false);
 
             var result = await CreateService().RequestRefundAsync(CreateDto(), TestContext.Current.CancellationToken);
 
@@ -64,7 +63,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task RequestRefundAsync_RefundAlreadyExists_ShouldReturnRefundAlreadyExists()
         {
-            _orderExistence.Setup(x => x.ExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _moduleClient.Setup(x => x.SendAsync(It.IsAny<OrderExistsQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _refunds.Setup(x => x.FindActiveByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(CreateRequestedRefund());
 
             var result = await CreateService().RequestRefundAsync(CreateDto(), TestContext.Current.CancellationToken);
@@ -76,7 +75,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
         [Fact]
         public async Task RequestRefundAsync_HappyPath_ShouldCreateAndPersistRefund()
         {
-            _orderExistence.Setup(x => x.ExistsAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _moduleClient.Setup(x => x.SendAsync(It.IsAny<OrderExistsQuery>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
             _refunds.Setup(x => x.FindActiveByOrderIdAsync(99, It.IsAny<CancellationToken>())).ReturnsAsync((Refund)null);
 
             var result = await CreateService().RequestRefundAsync(CreateDto(), TestContext.Current.CancellationToken);

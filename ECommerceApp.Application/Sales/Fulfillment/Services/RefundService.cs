@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ECommerceApp.Application.Messaging;
-using ECommerceApp.Application.Sales.Shared.Contracts;
 using ECommerceApp.Application.Sales.Fulfillment.DTOs;
 using ECommerceApp.Application.Sales.Fulfillment.Messages;
 using ECommerceApp.Application.Sales.Fulfillment.Results;
@@ -16,22 +15,22 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
     internal sealed class RefundService : IRefundService
     {
         private readonly IRefundRepository _refunds;
-        private readonly IOrderExistenceChecker _orderExistence;
+        private readonly IModuleClient _moduleClient;
         private readonly IMessageBroker _broker;
 
         public RefundService(
             IRefundRepository refunds,
-            IOrderExistenceChecker orderExistence,
+            IModuleClient moduleClient,
             IMessageBroker broker)
         {
             _refunds = refunds;
-            _orderExistence = orderExistence;
+            _moduleClient = moduleClient;
             _broker = broker;
         }
 
         public async Task<RefundRequestResult> RequestRefundAsync(RequestRefundDto dto, CancellationToken ct = default)
         {
-            if (!await _orderExistence.ExistsAsync(dto.OrderId, ct))
+            if (!await _moduleClient.SendAsync(new OrderExistsQuery(dto.OrderId), ct))
             {
                 return RefundRequestResult.OrderNotFound;
             }

@@ -1,7 +1,9 @@
 using ECommerceApp.Application.Inventory.Availability;
+using ECommerceApp.Application.Messaging;
 using ECommerceApp.Domain.Inventory.Availability;
 using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Inventory.Availability.Repositories;
+using ECommerceApp.Infrastructure.Inventory.Handlers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,7 +29,8 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability
                 .AddScoped<IStockHoldRepository, StockHoldRepository>()
                 .AddScoped<IProductSnapshotRepository, ProductSnapshotRepository>()
                 .AddScoped<IPendingStockAdjustmentRepository, PendingStockAdjustmentRepository>()
-                .AddScoped<IStockAuditRepository, StockAuditRepository>();
+                .AddScoped<IStockAuditRepository, StockAuditRepository>()
+                .AddScoped<IQueryHandler<StockAvailableQuery, bool>, StockAvailableQueryHandler>();
         }
     }
 }

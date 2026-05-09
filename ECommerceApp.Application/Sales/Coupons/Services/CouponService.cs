@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ECommerceApp.Application.Messaging;
-using ECommerceApp.Application.Sales.Shared.Contracts;
 using ECommerceApp.Application.Sales.Coupons.DTOs;
 using ECommerceApp.Application.Sales.Coupons.Messages;
 using ECommerceApp.Application.Sales.Coupons.Results;
@@ -19,7 +18,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
     {
         private readonly ICouponRepository _coupons;
         private readonly ICouponUsedRepository _couponUsed;
-        private readonly IOrderExistenceChecker _orderExistence;
+        private readonly IModuleClient _moduleClient;
         private readonly IMessageBroker _broker;
         private readonly IScopeTargetRepository _scopeTargets;
         private readonly ICouponRulePipeline _pipeline;
@@ -29,7 +28,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
         public CouponService(
             ICouponRepository coupons,
             ICouponUsedRepository couponUsed,
-            IOrderExistenceChecker orderExistence,
+            IModuleClient moduleClient,
             IMessageBroker broker,
             IScopeTargetRepository scopeTargets,
             ICouponRulePipeline pipeline,
@@ -38,7 +37,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
         {
             _coupons = coupons;
             _couponUsed = couponUsed;
-            _orderExistence = orderExistence;
+            _moduleClient = moduleClient;
             _broker = broker;
             _scopeTargets = scopeTargets;
             _pipeline = pipeline;
@@ -48,7 +47,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
 
         public async Task<CouponApplyResult> ApplyCouponAsync(string couponCode, CouponEvaluationContext context, CancellationToken ct = default)
         {
-            if (!await _orderExistence.ExistsAsync(context.OrderId, ct))
+            if (!await _moduleClient.SendAsync(new OrderExistsQuery(context.OrderId), ct))
             {
                 return CouponApplyResult.OrderNotFound;
             }

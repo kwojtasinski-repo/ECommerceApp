@@ -1,8 +1,10 @@
+using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Sales.Orders.Contracts;
 using ECommerceApp.Application.Supporting.Communication.Contracts;
 using ECommerceApp.Domain.Sales.Orders;
 using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Sales.Orders.Adapters;
+using ECommerceApp.Infrastructure.Sales.Orders.Handlers;
 using ECommerceApp.Infrastructure.Sales.Orders.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -27,6 +29,8 @@ namespace ECommerceApp.Infrastructure.Sales.Orders
             services.AddScoped<IOrderCustomerResolver, OrderCustomerResolver>();
             services.AddScoped<IOrderProductResolver, OrderProductResolver>();
             services.AddScoped<IOrderUserResolver, OrderUserResolverAdapter>();
+            services.AddScoped<IQueryHandler<OrderExistsQuery, bool>, OrderExistsQueryHandler>();
+            services.AddScoped<IQueryHandler<CompletedOrderCountQuery, int>, CompletedOrderCountQueryHandler>();
 
             return services;
         }

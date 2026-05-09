@@ -57,7 +57,6 @@ namespace ECommerceApp.UnitTests.Architecture
                      t.FullName.StartsWith("ECommerceApp.Application.Utils.") ||
                      t.FullName.StartsWith("ECommerceApp.Application.Abstracts.") ||
                      t.FullName.StartsWith("ECommerceApp.Application.Constants.") ||
-                     t.FullName.StartsWith("ECommerceApp.Application.Sales.Shared.") ||
                      t.FullName.StartsWith("ECommerceApp.Application.ViewModels.BaseVm"),
                 "reside in shared application infrastructure")
             .As("Application.Shared");

@@ -1,5 +1,4 @@
 using ECommerceApp.Application.Sales.Coupons.Contracts;
-using ECommerceApp.Application.Sales.Shared.Contracts;
 using ECommerceApp.Domain.Sales.Coupons;
 using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Sales.Coupons.Adapters;
@@ -24,7 +23,6 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons
             services.AddScoped<ICouponRepository, CouponRepository>();
             services.AddScoped<ICouponUsedRepository, CouponUsedRepository>();
             services.AddScoped<ICouponApplicationRecordRepository, CouponApplicationRecordRepository>();
-            services.AddScoped<IOrderExistenceChecker, ECommerceApp.Infrastructure.Sales.Shared.Adapters.OrderExistenceCheckerAdapter>();
             services.AddScoped<IStockAvailabilityChecker, StockAvailabilityCheckerAdapter>();
             services.AddScoped<ICompletedOrderCounter, CompletedOrderCounterAdapter>();
             services.AddScoped<ISpecialEventCache, SpecialEventCache>();

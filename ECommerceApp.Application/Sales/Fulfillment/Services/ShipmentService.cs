@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ECommerceApp.Application.Messaging;
-using ECommerceApp.Application.Sales.Shared.Contracts;
 using ECommerceApp.Application.Sales.Fulfillment.DTOs;
 using ECommerceApp.Application.Sales.Fulfillment.Messages;
 using ECommerceApp.Application.Sales.Fulfillment.Results;
@@ -17,22 +16,22 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
     internal sealed class ShipmentService : IShipmentService
     {
         private readonly IShipmentRepository _shipments;
-        private readonly IOrderExistenceChecker _orderExistence;
+        private readonly IModuleClient _moduleClient;
         private readonly IMessageBroker _broker;
 
         public ShipmentService(
             IShipmentRepository shipments,
-            IOrderExistenceChecker orderExistence,
+            IModuleClient moduleClient,
             IMessageBroker broker)
         {
             _shipments = shipments;
-            _orderExistence = orderExistence;
+            _moduleClient = moduleClient;
             _broker = broker;
         }
 
         public async Task<ShipmentOperationResult> CreateShipmentAsync(CreateShipmentDto dto, CancellationToken ct = default)
         {
-            if (!await _orderExistence.ExistsAsync(dto.OrderId, ct))
+            if (!await _moduleClient.SendAsync(new OrderExistsQuery(dto.OrderId), ct))
             {
                 return ShipmentOperationResult.OrderNotFound;
             }
