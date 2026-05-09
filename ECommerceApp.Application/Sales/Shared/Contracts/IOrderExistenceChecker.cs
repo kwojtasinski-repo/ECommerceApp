@@ -1,7 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace ECommerceApp.Application.Sales.Fulfillment.Contracts
+namespace ECommerceApp.Application.Sales.Shared.Contracts
 {
     public interface IOrderExistenceChecker
     {

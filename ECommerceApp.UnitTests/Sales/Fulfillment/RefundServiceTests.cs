@@ -1,5 +1,5 @@
 using ECommerceApp.Application.Messaging;
-using ECommerceApp.Application.Sales.Fulfillment.Contracts;
+using ECommerceApp.Application.Sales.Shared.Contracts;
 using ECommerceApp.Application.Sales.Fulfillment.DTOs;
 using ECommerceApp.Application.Sales.Fulfillment.Messages;
 using ECommerceApp.Application.Sales.Fulfillment.Results;

@@ -1,9 +1,9 @@
 using System.Threading;
 using System.Threading.Tasks;
-using ECommerceApp.Application.Sales.Coupons.Contracts;
 using ECommerceApp.Application.Sales.Orders.Services;
+using ECommerceApp.Application.Sales.Shared.Contracts;
 
-namespace ECommerceApp.Infrastructure.Sales.Coupons.Adapters
+namespace ECommerceApp.Infrastructure.Sales.Shared.Adapters
 {
     internal sealed class OrderExistenceCheckerAdapter : IOrderExistenceChecker
     {

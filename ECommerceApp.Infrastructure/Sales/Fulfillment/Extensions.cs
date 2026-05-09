@@ -1,7 +1,5 @@
-using ECommerceApp.Application.Sales.Fulfillment.Contracts;
 using ECommerceApp.Domain.Sales.Fulfillment;
 using ECommerceApp.Infrastructure.Database;
-using ECommerceApp.Infrastructure.Sales.Fulfillment.Adapters;
 using ECommerceApp.Infrastructure.Sales.Fulfillment.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -21,7 +19,6 @@ namespace ECommerceApp.Infrastructure.Sales.Fulfillment
             services.AddScoped<IDbContextMigrator, DbContextMigrator<FulfillmentDbContext>>();
             services.AddScoped<IRefundRepository, RefundRepository>();
             services.AddScoped<IShipmentRepository, ShipmentRepository>();
-            services.AddScoped<IOrderExistenceChecker, OrderExistenceCheckerAdapter>();
 
             return services;
         }

@@ -1,3 +1,4 @@
+using ECommerceApp.Application.Catalog.Products.Services;
 using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Web.Controllers;
 using Microsoft.AspNetCore.Mvc;
@@ -11,10 +12,12 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
     public class StorefrontController : BaseController
     {
         private readonly IStorefrontQueryService _storefront;
+        private readonly ICatalogNavigationService _navigation;
 
-        public StorefrontController(IStorefrontQueryService storefront)
+        public StorefrontController(IStorefrontQueryService storefront, ICatalogNavigationService navigation)
         {
             _storefront = storefront;
+            _navigation = navigation;
         }
 
         [HttpGet("")]
@@ -22,6 +25,7 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         {
             var model = await _storefront.GetPublishedProductsAsync(12, 1, searchString ?? string.Empty, categoryId, ct);
             ViewBag.AllTags = await _storefront.GetAllTagsAsync(ct);
+            ViewBag.AllCategories = await _navigation.GetAllCategories();
             ViewBag.SelectedCategoryId = categoryId;
             return View(model);
         }
@@ -31,6 +35,7 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         {
             var model = await _storefront.GetPublishedProductsAsync(pageSize, pageNo, searchString ?? string.Empty, categoryId, ct);
             ViewBag.AllTags = await _storefront.GetAllTagsAsync(ct);
+            ViewBag.AllCategories = await _navigation.GetAllCategories();
             ViewBag.SelectedCategoryId = categoryId;
             return View(model);
         }

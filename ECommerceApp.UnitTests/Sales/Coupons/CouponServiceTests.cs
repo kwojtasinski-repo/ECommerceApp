@@ -1,6 +1,6 @@
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Sales.Coupons;
-using ECommerceApp.Application.Sales.Coupons.Contracts;
+using ECommerceApp.Application.Sales.Shared.Contracts;
 using ECommerceApp.Application.Sales.Coupons.Messages;
 using ECommerceApp.Application.Sales.Coupons.Results;
 using ECommerceApp.Application.Sales.Coupons.Rules;

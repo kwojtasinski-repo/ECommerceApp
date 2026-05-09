@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ECommerceApp.Application.Messaging;
-using ECommerceApp.Application.Sales.Coupons.Contracts;
+using ECommerceApp.Application.Sales.Shared.Contracts;
 using ECommerceApp.Application.Sales.Coupons.DTOs;
 using ECommerceApp.Application.Sales.Coupons.Messages;
 using ECommerceApp.Application.Sales.Coupons.Results;
@@ -260,7 +260,7 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
         private static decimal ExtractDiscountValue(CouponRuleDefinition discountRule)
         {
             if (discountRule is null)
-            { 
+            {
                 return 0m;
             }
 

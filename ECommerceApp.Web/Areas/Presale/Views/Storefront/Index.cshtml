@@ -1,13 +1,33 @@
 @model StorefrontProductListVm
 @using ECommerceApp.Application.Presale.Checkout.Contracts
+@using ECommerceApp.Application.Catalog.Products.ViewModels
 @{
     ViewData["Title"] = "Produkty";
     var totalPages = Model.TotalCount == 0 ? 1 : (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize);
     var allTags = ViewBag.AllTags as IReadOnlyList<CatalogTagSummary> ?? new List<CatalogTagSummary>();
+    var allCategories = ViewBag.AllCategories as List<CategoryVm> ?? new List<CategoryVm>();
+    var selectedCategoryId = ViewBag.SelectedCategoryId as int?;
 }
 
 <div class="container mt-4">
     <h2><i class="fa-solid fa-box-open me-2"></i>Produkty</h2>
+
+    @if (allCategories.Count > 0)
+    {
+        <div class="mb-2">
+            <a asp-area="Presale" asp-controller="Storefront" asp-action="Index"
+                   class="badge text-decoration-none me-1 mb-1 @(selectedCategoryId == null ? "bg-primary" : "bg-light text-dark border")">
+                Wszystkie
+            </a>
+            @foreach (var cat in allCategories)
+            {
+                <a asp-area="Presale" asp-controller="Storefront" asp-action="Index" asp-route-categoryId="@cat.Id"
+                       class="badge text-decoration-none me-1 mb-1 @(selectedCategoryId == cat.Id ? "bg-primary" : "bg-light text-dark border")">
+                    @cat.Name
+                </a>
+            }
+        </div>
+    }
 
     @if (allTags.Count > 0)
     {
