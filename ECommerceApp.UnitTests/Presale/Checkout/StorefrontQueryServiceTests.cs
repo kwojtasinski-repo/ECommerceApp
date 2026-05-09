@@ -33,7 +33,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _stockSnapshots.Setup(s => s.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
                 .Returns(AsAsyncEnumerable(StockSnapshot.Create(5, 7, DateTime.UtcNow)));
 
-            var result = await _service.GetPublishedProductsAsync(10, 1, "", TestContext.Current.CancellationToken);
+            var result = await _service.GetPublishedProductsAsync(10, 1, "", null, TestContext.Current.CancellationToken);
 
             result.Products.Should().ContainSingle(i =>
                 i.ProductId == 5 &&
@@ -51,7 +51,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _stockSnapshots.Setup(s => s.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
                 .Returns(AsAsyncEnumerable());
 
-            var result = await _service.GetPublishedProductsAsync(10, 1, "", TestContext.Current.CancellationToken);
+            var result = await _service.GetPublishedProductsAsync(10, 1, "", null, TestContext.Current.CancellationToken);
 
             result.Products.Should().ContainSingle(i =>
                 i.ProductId == 3 &&
@@ -67,7 +67,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _stockSnapshots.Setup(s => s.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
                 .Returns(AsAsyncEnumerable());
 
-            var result = await _service.GetPublishedProductsAsync(10, 1, "", TestContext.Current.CancellationToken);
+            var result = await _service.GetPublishedProductsAsync(10, 1, "", null, TestContext.Current.CancellationToken);
 
             result.Products.Should().BeEmpty();
             result.TotalCount.Should().Be(0);
@@ -84,7 +84,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
             _stockSnapshots.Setup(s => s.GetByProductIdsAsync(It.IsAny<IReadOnlyList<int>>(), It.IsAny<CancellationToken>()))
                 .Returns(AsAsyncEnumerable());
 
-            var result = await _service.GetPublishedProductsAsync(5, 2, "coat", TestContext.Current.CancellationToken);
+            var result = await _service.GetPublishedProductsAsync(5, 2, "coat", null, TestContext.Current.CancellationToken);
 
             result.TotalCount.Should().Be(42);
             result.PageSize.Should().Be(5);
@@ -104,7 +104,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                     StockSnapshot.Create(1, 5, DateTime.UtcNow),
                     StockSnapshot.Create(2, 2, DateTime.UtcNow)));
 
-            var result = await _service.GetPublishedProductsAsync(10, 1, "", TestContext.Current.CancellationToken);
+            var result = await _service.GetPublishedProductsAsync(10, 1, "", null, TestContext.Current.CancellationToken);
 
             result.Products.Should().HaveCount(2);
             // All product IDs collected and passed in one batch â€” not N separate calls
@@ -113,7 +113,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
                 It.IsAny<CancellationToken>()), Times.Once);
         }
 
-        // ¦¦ helpers ¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦¦
+        // ï¿½ï¿½ helpers ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
 
         private static async IAsyncEnumerable<StockSnapshot> AsAsyncEnumerable(
             [EnumeratorCancellation] CancellationToken ct = default,

@@ -1,9 +1,9 @@
 @model StorefrontProductListVm
-@using ECommerceApp.Application.Catalog.Products.ViewModels
+@using ECommerceApp.Application.Presale.Checkout.Contracts
 @{
     ViewData["Title"] = "Produkty";
     var totalPages = Model.TotalCount == 0 ? 1 : (int)Math.Ceiling((double)Model.TotalCount / Model.PageSize);
-    var allTags = ViewBag.AllTags as List<ProductTagVm> ?? new List<ProductTagVm>();
+    var allTags = ViewBag.AllTags as IReadOnlyList<CatalogTagSummary> ?? new List<CatalogTagSummary>();
 }
 
 <div class="container mt-4">
@@ -31,6 +31,7 @@
         </div>
         <input type="hidden" name="searchString" value="@Model.SearchString" />
         <input type="hidden" name="pageNo" value="1" />
+        <input type="hidden" name="categoryId" value="@ViewBag.SelectedCategoryId" />
     </form>
 
     @if (Model.Products.Count == 0)
@@ -46,7 +47,8 @@
                     <div class="card h-100">
                         @if (product.MainImageUrl != null)
                         {
-                            <img src="@product.MainImageUrl" class="card-img-top" style="height:180px;object-fit:cover" alt="@product.Name" />
+                            <img src="@product.MainImageUrl" class="card-img-top" style="height:180px;object-fit:cover"
+                                 alt="@product.Name" />
                         }
                         <div class="card-body">
                             <h5 class="card-title">@product.Name</h5>
@@ -62,19 +64,20 @@
                         </div>
                         <div class="card-footer bg-transparent p-2">
                             <div class="d-grid gap-1">
-                                <a asp-area="Presale" asp-controller="Storefront" asp-action="Details" asp-route-id="@product.ProductId"
-                                   class="btn btn-outline-primary btn-sm">Szczegóły</a>
+                                <a asp-area="Presale" asp-controller="Storefront" asp-action="Details"
+                                   asp-route-id="@product.ProductId" class="btn btn-outline-primary btn-sm">Szczegóły</a>
                                 @if (product.InStock)
                                 {
                                     <form asp-area="Presale" asp-controller="Checkout" asp-action="AddToCart" method="post"
                                           class="js-add-to-cart-form">
-                                            <input type="hidden" name="productId" value="@product.ProductId" />
-                                            <input type="hidden" name="quantity" value="1" />
-                                            <input type="hidden" name="returnUrl" value="@Context.Request.Path@Context.Request.QueryString" />
-                                            <button type="submit" class="btn btn-primary btn-sm w-100">
-                                                <i class="fa-solid fa-cart-plus me-1"></i>Do koszyka
-                                            </button>
-                                        </form>
+                                        <input type="hidden" name="productId" value="@product.ProductId" />
+                                        <input type="hidden" name="quantity" value="1" />
+                                        <input type="hidden" name="returnUrl"
+                                               value="@Context.Request.Path@Context.Request.QueryString" />
+                                        <button type="submit" class="btn btn-primary btn-sm w-100">
+                                            <i class="fa-solid fa-cart-plus me-1"></i>Do koszyka
+                                        </button>
+                                    </form>
                                 }
                             </div>
                         </div>
@@ -102,7 +105,7 @@
             </ul>
         </nav>
     }
-        </div>
+</div>
 
 @section Scripts {
     <script>

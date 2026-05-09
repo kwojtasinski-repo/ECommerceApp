@@ -5,9 +5,10 @@
 @using System.Security.Claims
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
-@inject ICategoryService CategoryService
+@inject ICatalogNavigationService CatalogNavigationService
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -16,393 +17,463 @@
     <link rel="stylesheet" href="~/css/site.css" />
     <link rel="stylesheet" href="~/lib/fontawesome/css/fontawesome.min.css" />
     <link rel="stylesheet" href="~/lib/fontawesome/css/brands.min.css">
-    <link rel="stylesheet" href="~/lib/fontawesome/css/solid.min.css">
-    <link rel="stylesheet" href="~/lib/tom-select/css/tom-select.bootstrap5.min.css" />
-</head>
-<body>
-    <header>
-        @{
-            var categories = await CategoryService.GetAllCategories();
-            var isSignedIn = SignInManager.IsSignedIn(User);
-            var isMaintenanceRole = User.IsInRole(UserPermissions.Roles.Administrator)
-                || User.IsInRole(UserPermissions.Roles.Manager)
-                || User.IsInRole(UserPermissions.Roles.Service);
-            var isManagingRole = User.IsInRole(UserPermissions.Roles.Administrator)
-                || User.IsInRole(UserPermissions.Roles.Manager);
-        }
-        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow">
-            <div class="container">
-                <a class="navbar-brand navbar-title-app" asp-area="" asp-controller="Home" asp-action="Index">ECommerceApp</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topbarCollapse"
-                        aria-controls="topbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="topbarCollapse">
-                    <form class="d-flex flex-grow-1 mx-3" asp-area="Presale" asp-controller="Storefront" asp-action="Index" method="get">
-                        <div class="input-group">
-                            <input name="searchString" type="text" class="form-control" placeholder="Szukaj produktów..." />
-                            <div class="dropdown">
-                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="categoryFilterBtn" data-bs-toggle="dropdown"><i class="fa-solid fa-filter me-1"></i>Kategoria</button>
-                                <div class="dropdown-menu">
-                                    @foreach (var cat in categories)
-                                    {
-                                        <a class="dropdown-item category-filter-item" href="#" data-type-id="@cat.Id">@cat.Name</a>
-                                    }
-                                </div>
-                            </div>
-                            <input type="hidden" name="typeId" id="searchTypeId" />
-                            <button type="submit" class="btn btn-outline-secondary"><i class="fa-solid fa-magnifying-glass"></i></button>
-                        </div>
-                    </form>
-                    <ul class="navbar-nav ms-auto align-items-center">
-                        @if (isSignedIn)
-                        {
-                            <li class="nav-item me-2">
-                                <a class="nav-link position-relative" asp-area="Presale" asp-controller="Checkout" asp-action="Cart" title="Koszyk">
-                                    <i class="fas fa-shopping-cart fa-lg"></i>
-                                    <span id="itemCount" class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-light"></span>
-                                </a>
-                            </li>
-                            <li class="nav-item me-2" id="activeCheckoutNav" style="display:none;">
-                                <a class="nav-link text-warning position-relative" asp-area="Presale" asp-controller="Checkout" asp-action="Cart" title="Aktywna rezerwacja — kliknij aby wrócić">
-                                    <i class="fa-solid fa-clock fa-lg"></i>
-                                    <span id="navCheckoutCountdown" class="ms-1 fw-bold small"></span>
-                                </a>
-                            </li>
-                        }
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="userMenuToggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i class="fa-solid fa-user fa-lg"></i>
-                            </a>
-                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuToggle">
-                                @if (isSignedIn)
-                                {
-                                    <a class="dropdown-item" asp-area="Sales" asp-controller="Orders" asp-action="MyOrders">Moje zamówienia</a>
-                                    <a class="dropdown-item" asp-area="Sales" asp-controller="Payments" asp-action="MyPayments">Moje płatności</a>
-                                    <a class="dropdown-item" asp-area="Sales" asp-controller="Refund" asp-action="MyRefunds">Moje zwroty</a>
-                                    <a class="dropdown-item" asp-area="AccountProfile" asp-controller="Profile" asp-action="Index">Dane kontaktowe</a>
-                                    <div class="dropdown-divider"></div>
-                                    <form asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-                                        <button type="submit" class="dropdown-item btn btn-link">Wyloguj</button>
+        <link rel="stylesheet" href="~/lib/fontawesome/css/solid.min.css">
+            <link rel="stylesheet" href="~/lib/tom-select/css/tom-select.bootstrap5.min.css" />
+        </head>
+
+        <body>
+            <header>
+                @{
+                    var categories = await CatalogNavigationService.GetAllCategories();
+                    var isSignedIn = SignInManager.IsSignedIn(User);
+                    var isMaintenanceRole = User.IsInRole(UserPermissions.Roles.Administrator)
+                        || User.IsInRole(UserPermissions.Roles.Manager)
+                        || User.IsInRole(UserPermissions.Roles.Service);
+                    var isManagingRole = User.IsInRole(UserPermissions.Roles.Administrator)
+                        || User.IsInRole(UserPermissions.Roles.Manager);
+                    var selectedCategoryIdStr = Context.Request.Query["categoryId"].ToString();
+                    var selectedCategoryName = !string.IsNullOrEmpty(selectedCategoryIdStr)
+                        ? categories.FirstOrDefault(c => c.Id.ToString() == selectedCategoryIdStr)?.Name
+                        : null;
+                }
+                <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow">
+                    <div class="container">
+                        <a class="navbar-brand navbar-title-app" asp-area="" asp-controller="Home"
+                           asp-action="Index">ECommerceApp</a>
+                        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topbarCollapse"
+                                aria-controls="topbarCollapse" aria-expanded="false" aria-label="Toggle navigation">
+                            <span class="navbar-toggler-icon"></span>
+                        </button>
+                        <div class="collapse navbar-collapse" id="topbarCollapse">
+                            <form class="d-flex flex-grow-1 mx-3" asp-area="Presale" asp-controller="Storefront"
+                                  asp-action="Index" method="get">
+                                <div class="input-group">
+                                    <input name="searchString" type="text" class="form-control"
+                                           placeholder="Szukaj produktów..." />
+                                    <div class="dropdown">
+                                        <button class="btn btn-outline-secondary dropdown-toggle" type="button"
+                                                id="categoryFilterBtn" data-bs-toggle="dropdown"><i
+                                            class="fa-solid fa-filter me-1"></i>@(selectedCategoryName ??
+                                                                                                          "Kategoria")</button>
+                                            <div class="dropdown-menu">
+                                                @foreach (var cat in categories)
+                                                {
+                                                    <a class="dropdown-item category-filter-item" href="#"
+                                                       data-category-id="@cat.Id">@cat.Name</a>
+                                                }
+                                            </div>
+                                        </div>
+                                        <input type="hidden" name="categoryId" id="searchCategoryId" />
+                                        <button type="submit" class="btn btn-outline-secondary"><i
+                                            class="fa-solid fa-magnifying-glass"></i></button>
+                                        </div>
                                     </form>
-                                }
-                                else
-                                {
-                                    <a class="dropdown-item" asp-area="Identity" asp-page="/Account/Login">Logowanie</a>
-                                    <a class="dropdown-item" asp-area="Identity" asp-page="/Account/Register">Rejestracja</a>
-                                }
-                            </div>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-        <nav class="navbar navbar-expand-sm navbar-light bg-light border-bottom">
-            <div class="container">
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#secondaryNavCollapse"
-                        aria-controls="secondaryNavCollapse" aria-expanded="false" aria-label="Toggle secondary navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="secondaryNavCollapse">
-                    @if (isMaintenanceRole)
-                    {
-                        <ul class="navbar-nav gap-2">
-                            @if (isManagingRole)
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link text-dark" asp-area="Sales" asp-controller="Coupon" asp-action="Index"><i class="fa-solid fa-ticket me-1"></i>Kupony</a>
-                                </li>
-                            }
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown"><i class="fa-solid fa-box-open me-1"></i>Katalog</a>
-                                <div class="dropdown-menu">
-                                    <a class="dropdown-item" asp-area="Catalog" asp-controller="Product" asp-action="All">Produkty</a>
-                                    <a class="dropdown-item" asp-area="Catalog" asp-controller="Category" asp-action="Index">Kategorie</a>
-                                    <a class="dropdown-item" asp-area="Catalog" asp-controller="Tag" asp-action="Index">Tagi</a>
-                                </div>
-                            </li>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown"><i class="fa-solid fa-warehouse me-1"></i>Magazyn</a>
-                                <div class="dropdown-menu">
-                                    <a class="dropdown-item" asp-area="Inventory" asp-controller="Stock" asp-action="Index">Przegląd stanu</a>
-                                    <a class="dropdown-item" asp-area="Inventory" asp-controller="Stock" asp-action="Reservations">Rezerwacje</a>
-                                    <a class="dropdown-item" asp-area="Inventory" asp-controller="Stock" asp-action="AdjustStock">Korekta stanu</a>
-                                    <a class="dropdown-item" asp-area="Inventory" asp-controller="Stock" asp-action="PendingAdjustments">Oczekujące korekty</a>
-                                    <a class="dropdown-item" asp-area="Inventory" asp-controller="Stock" asp-action="Audit">Historia zmian</a>
-                                </div>
-                            </li>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown"><i class="fa-solid fa-truck me-1"></i>Realizacja</a>
-                                <div class="dropdown-menu">
-                                    <a class="dropdown-item" asp-area="Sales" asp-controller="Orders" asp-action="Index">Zamówienia</a>
-                                    <a class="dropdown-item" asp-area="Sales" asp-controller="Orders" asp-action="PaidOrders">Wydania</a>
-                                    <a class="dropdown-item" asp-area="Sales" asp-controller="Shipment" asp-action="Index">Przesyłki</a>
-                                    <a class="dropdown-item" asp-area="Sales" asp-controller="Refund" asp-action="Index">Zwroty</a>
-                                </div>
-                            </li>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown"><i class="fa-solid fa-gears me-1"></i>Zaplecze</a>
-                                <div class="dropdown-menu">
-                                    @if (isManagingRole)
-                                    {
-                                        <a class="dropdown-item" asp-area="IAM" asp-controller="UserManagement" asp-action="Index">Użytkownicy</a>
-                                        <a class="dropdown-item" asp-area="AccountProfile" asp-controller="Profile" asp-action="All">Klienci</a>
+                                    <ul class="navbar-nav ms-auto align-items-center">
+                                        @if (isSignedIn)
+                                        {
+                                            <li class="nav-item me-2">
+                                                <a class="nav-link position-relative" asp-area="Presale" asp-controller="Checkout"
+                                                       asp-action="Cart" title="Koszyk">
+                                                    <i class="fas fa-shopping-cart fa-lg"></i>
+                                                    <span id="itemCount"
+                                                          class="position-absolute top-0 start-100 translate-middle badge rounded-pill text-bg-light"></span>
+                                                </a>
+                                            </li>
+                                            <li class="nav-item me-2" id="activeCheckoutNav" style="display:none;">
+                                                <a class="nav-link text-warning position-relative" asp-area="Presale"
+                                                       asp-controller="Checkout" asp-action="Cart"
+                                                       title="Aktywna rezerwacja — kliknij aby wrócić">
+                                                    <i class="fa-solid fa-clock fa-lg"></i>
+                                                    <span id="navCheckoutCountdown" class="ms-1 fw-bold small"></span>
+                                                </a>
+                                            </li>
                                         }
-                                    <a class="dropdown-item" asp-area="Currencies" asp-controller="Currency" asp-action="Index">Waluty</a>
-                                    <a class="dropdown-item" asp-area="Jobs" asp-controller="JobManagement" asp-action="Index">Zadania</a>
+                                        <li class="nav-item dropdown">
+                                            <a class="nav-link dropdown-toggle" href="#" id="userMenuToggle" data-bs-toggle="dropdown"
+                                                   aria-haspopup="true" aria-expanded="false">
+                                                <i class="fa-solid fa-user fa-lg"></i>
+                                            </a>
+                                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenuToggle">
+                                                @if (isSignedIn)
+                                                {
+                                                    <a class="dropdown-item" asp-area="Sales" asp-controller="Orders"
+                                                       asp-action="MyOrders">Moje zamówienia</a>
+                                                    <a class="dropdown-item" asp-area="Sales" asp-controller="Payments"
+                                                       asp-action="MyPayments">Moje płatności</a>
+                                                    <a class="dropdown-item" asp-area="Sales" asp-controller="Refund"
+                                                       asp-action="MyRefunds">Moje zwroty</a>
+                                                    <a class="dropdown-item" asp-area="AccountProfile" asp-controller="Profile"
+                                                       asp-action="Index">Dane kontaktowe</a>
+                                                    <div class="dropdown-divider"></div>
+                                                    <form asp-area="Identity" asp-page="/Account/Logout"
+                                                          asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                                                        <button type="submit" class="dropdown-item btn btn-link">Wyloguj</button>
+                                                    </form>
+                                                }
+                                                else
+                                                {
+                                                    <a class="dropdown-item" asp-area="Identity" asp-page="/Account/Login">Logowanie</a>
+                                                    <a class="dropdown-item" asp-area="Identity"
+                                                       asp-page="/Account/Register">Rejestracja</a>
+                                                }
+                                            </div>
+                                        </li>
+                                    </ul>
                                 </div>
-                            </li>
-                            @if (isManagingRole)
-                            {
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown"><i class="fa-solid fa-chart-bar me-1"></i>Backoffice</a>
-                                    <div class="dropdown-menu">
-                                        <a class="dropdown-item" asp-area="Backoffice" asp-controller="Coupons" asp-action="Index">Kupony</a>
-                                        <a class="dropdown-item" asp-area="Backoffice" asp-controller="Catalog" asp-action="Index">Katalog</a>
-                                        <a class="dropdown-item" asp-area="Backoffice" asp-controller="Orders" asp-action="Index">Zamówienia</a>
-                                        <a class="dropdown-item" asp-area="Backoffice" asp-controller="Refunds" asp-action="Index">Zwroty</a>
-                                        <a class="dropdown-item" asp-area="Backoffice" asp-controller="Currencies" asp-action="Index">Waluty</a>
-                                        <a class="dropdown-item" asp-area="Backoffice" asp-controller="Customers" asp-action="Index">Klienci</a>
-                                        <a class="dropdown-item" asp-area="Backoffice" asp-controller="Payments" asp-action="Index">Płatności</a>
-                                        <a class="dropdown-item" asp-area="Backoffice" asp-controller="Users" asp-action="Index">Użytkownicy</a>
-                                        <a class="dropdown-item" asp-area="Backoffice" asp-controller="Jobs" asp-action="Index">Zadania</a>
-                                    </div>
-                                </li>
-                            }
-                        </ul>
-                    }
-                    else
-                    {
-                        <ul class="navbar-nav gap-2">
-                            <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="Presale" asp-controller="Storefront" asp-action="Index"><i class="fa-solid fa-tag me-1"></i>Oferty</a>
-                            </li>
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown"><i class="fa-solid fa-list me-1"></i>Kategorie</a>
-                                <div class="dropdown-menu">
-                                    @foreach (var cat in categories)
+                            </div>
+                        </nav>
+                        <nav class="navbar navbar-expand-sm navbar-light bg-light border-bottom">
+                            <div class="container">
+                                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                                        data-bs-target="#secondaryNavCollapse" aria-controls="secondaryNavCollapse" aria-expanded="false"
+                                        aria-label="Toggle secondary navigation">
+                                    <span class="navbar-toggler-icon"></span>
+                                </button>
+                                <div class="collapse navbar-collapse" id="secondaryNavCollapse">
+                                    @if (isMaintenanceRole)
                                     {
-                                        <a class="dropdown-item" asp-area="Presale" asp-controller="Storefront" asp-action="Index">@cat.Name</a>
-                                    }
-                                </div>
-                            </li>
-                        </ul>
-                    }
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            <div id="ErrorContainer" style="display: none;">
-                <div class="alert alert-danger w-100">
-                    <span id="ErrorValue" style="white-space: pre-line;">
-                    </span>
-                </div>
-            </div>
-            @RenderBody()
-        </main>
-    </div>
+                                        <ul class="navbar-nav gap-2">
+                                            @if (isManagingRole)
+                                            {
+                                                <li class="nav-item">
+                                                    <a class="nav-link text-dark" asp-area="Sales" asp-controller="Coupon" asp-action="Index"><i
+                                                        class="fa-solid fa-ticket me-1"></i>Kupony</a>
+                                                    </li>
+                                                }
+                                                <li class="nav-item dropdown">
+                                                    <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown"><i
+                                                        class="fa-solid fa-box-open me-1"></i>Katalog</a>
+                                                        <div class="dropdown-menu">
+                                                            <a class="dropdown-item" asp-area="Catalog" asp-controller="Product"
+                                                               asp-action="All">Produkty</a>
+                                                            <a class="dropdown-item" asp-area="Catalog" asp-controller="Category"
+                                                               asp-action="Index">Kategorie</a>
+                                                            <a class="dropdown-item" asp-area="Catalog" asp-controller="Tag"
+                                                               asp-action="Index">Tagi</a>
+                                                        </div>
+                                                    </li>
+                                                    <li class="nav-item dropdown">
+                                                        <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown"><i
+                                                            class="fa-solid fa-warehouse me-1"></i>Magazyn</a>
+                                                            <div class="dropdown-menu">
+                                                                <a class="dropdown-item" asp-area="Inventory" asp-controller="Stock"
+                                                                   asp-action="Index">Przegląd stanu</a>
+                                                                <a class="dropdown-item" asp-area="Inventory" asp-controller="Stock"
+                                                                   asp-action="Reservations">Rezerwacje</a>
+                                                                <a class="dropdown-item" asp-area="Inventory" asp-controller="Stock"
+                                                                   asp-action="AdjustStock">Korekta stanu</a>
+                                                                <a class="dropdown-item" asp-area="Inventory" asp-controller="Stock"
+                                                                   asp-action="PendingAdjustments">Oczekujące korekty</a>
+                                                                <a class="dropdown-item" asp-area="Inventory" asp-controller="Stock"
+                                                                   asp-action="Audit">Historia zmian</a>
+                                                            </div>
+                                                        </li>
+                                                        <li class="nav-item dropdown">
+                                                            <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown"><i
+                                                                class="fa-solid fa-truck me-1"></i>Realizacja</a>
+                                                                <div class="dropdown-menu">
+                                                                    <a class="dropdown-item" asp-area="Sales" asp-controller="Orders"
+                                                                       asp-action="Index">Zamówienia</a>
+                                                                    <a class="dropdown-item" asp-area="Sales" asp-controller="Orders"
+                                                                       asp-action="PaidOrders">Wydania</a>
+                                                                    <a class="dropdown-item" asp-area="Sales" asp-controller="Shipment"
+                                                                       asp-action="Index">Przesyłki</a>
+                                                                    <a class="dropdown-item" asp-area="Sales" asp-controller="Refund"
+                                                                       asp-action="Index">Zwroty</a>
+                                                                </div>
+                                                            </li>
+                                                            <li class="nav-item dropdown">
+                                                                <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown"><i
+                                                                    class="fa-solid fa-gears me-1"></i>Zaplecze</a>
+                                                                    <div class="dropdown-menu">
+                                                                        @if (isManagingRole)
+                                                                        {
+                                                                            <a class="dropdown-item" asp-area="IAM" asp-controller="UserManagement"
+                                                                               asp-action="Index">Użytkownicy</a>
+                                                                            <a class="dropdown-item" asp-area="AccountProfile" asp-controller="Profile"
+                                                                               asp-action="All">Klienci</a>
+                                                                        }
+                                                                        <a class="dropdown-item" asp-area="Currencies" asp-controller="Currency"
+                                                                           asp-action="Index">Waluty</a>
+                                                                        <a class="dropdown-item" asp-area="Jobs" asp-controller="JobManagement"
+                                                                           asp-action="Index">Zadania</a>
+                                                                    </div>
+                                                                </li>
+                                                                @if (isManagingRole)
+                                                                {
+                                                                    <li class="nav-item dropdown">
+                                                                        <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown"><i
+                                                                            class="fa-solid fa-chart-bar me-1"></i>Backoffice</a>
+                                                                            <div class="dropdown-menu">
+                                                                                <a class="dropdown-item" asp-area="Backoffice" asp-controller="Coupons"
+                                                                                   asp-action="Index">Kupony</a>
+                                                                                <a class="dropdown-item" asp-area="Backoffice" asp-controller="Catalog"
+                                                                                   asp-action="Index">Katalog</a>
+                                                                                <a class="dropdown-item" asp-area="Backoffice" asp-controller="Orders"
+                                                                                   asp-action="Index">Zamówienia</a>
+                                                                                <a class="dropdown-item" asp-area="Backoffice" asp-controller="Refunds"
+                                                                                   asp-action="Index">Zwroty</a>
+                                                                                <a class="dropdown-item" asp-area="Backoffice" asp-controller="Currencies"
+                                                                                   asp-action="Index">Waluty</a>
+                                                                                <a class="dropdown-item" asp-area="Backoffice" asp-controller="Customers"
+                                                                                   asp-action="Index">Klienci</a>
+                                                                                <a class="dropdown-item" asp-area="Backoffice" asp-controller="Payments"
+                                                                                   asp-action="Index">Płatności</a>
+                                                                                <a class="dropdown-item" asp-area="Backoffice" asp-controller="Users"
+                                                                                   asp-action="Index">Użytkownicy</a>
+                                                                                <a class="dropdown-item" asp-area="Backoffice" asp-controller="Jobs"
+                                                                                   asp-action="Index">Zadania</a>
+                                                                            </div>
+                                                                        </li>
+                                                                    }
+                                                                </ul>
+                                                            }
+                    else
+                                                            {
+                                                                <ul class="navbar-nav gap-2">
+                                                                    <li class="nav-item">
+                                                                        <a class="nav-link text-dark" asp-area="Presale" asp-controller="Storefront"
+                                                                           asp-action="Index"><i class="fa-solid fa-tag me-1"></i>Oferty</a>
+                                                                    </li>
+                                                                    <li class="nav-item dropdown">
+                                                                        <a class="nav-link dropdown-toggle text-dark" href="#" data-bs-toggle="dropdown"><i
+                                                                            class="fa-solid fa-list me-1"></i>Kategorie</a>
+                                                                            <div class="dropdown-menu">
+                                                                                @foreach (var cat in categories)
+                                                                                {
+                                                                                    <a class="dropdown-item" asp-area="Presale" asp-controller="Storefront"
+                                                                                       asp-action="Index" asp-route-categoryId="@cat.Id">@cat.Name</a>
+                                                                                }
+                                                                            </div>
+                                                                        </li>
+                                                                    </ul>
+                                                                }
+                                                            </div>
+                                                        </div>
+                                                    </nav>
+                                                </header>
+                                                <div class="container">
+                                                    <main role="main" class="pb-3">
+                                                        <div id="ErrorContainer" style="display: none;">
+                                                            <div class="alert alert-danger w-100">
+                                                                <span id="ErrorValue" style="white-space: pre-line;">
+                                                                </span>
+                                                            </div>
+                                                        </div>
+                                                        @RenderBody()
+                                                    </main>
+                                                </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            <div class="container-fluid row">
-                <div class="col text-start">
-                    &copy; 2021 - 2026 - ECommerceApp.Web
-                </div>
+                                                <footer class="border-top footer text-muted">
+                                                    <div class="container">
+                                                        <div class="container-fluid row">
+                                                            <div class="col text-start">
+                                                                &copy; 2021 - 2026 - ECommerceApp.Web
+                                                            </div>
 
-                <div class="col text-center">
-                    Created by Kamil Wojtasinski
-                </div>
-            </div>
-        </div>
-    </footer>
+                                                            <div class="col text-center">
+                                                                Created by Kamil Wojtasinski
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </footer>
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
-    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js"></script>
-    <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="~/lib/tom-select/js/tom-select.complete.min.js"></script>
-    @RenderSection("PreScripts", required: false)
-    <script src="~/lib/require-js/require.js"></script>
-    @{ var jsVersion = (ECommerceApp.Web.Services.JsVersionProvider)Context.RequestServices.GetService(typeof(ECommerceApp.Web.Services.JsVersionProvider)); }
-    <script>window.__jsVersion = '@jsVersion?.GetVersion()';</script>
-    <script src="~/js/config.js" asp-append-version="true"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    <script>
+                                                <script src="~/lib/jquery/dist/jquery.min.js"></script>
+                                                <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+                                                <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.js"></script>
+                                                <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+                                                <script src="~/lib/tom-select/js/tom-select.complete.min.js"></script>
+                                                @RenderSection("PreScripts", required: false)
+                                                <script src="~/lib/require-js/require.js"></script>
+                                                @{
+                                                    var jsVersion =
+                                                    (ECommerceApp.Web.Services.JsVersionProvider)Context.RequestServices.GetService(typeof(ECommerceApp.Web.Services.JsVersionProvider));
+                                                }
+                                                <script>window.__jsVersion = '@jsVersion?.GetVersion()';</script>
+                                                <script src="~/js/config.js" asp-append-version="true"></script>
+                                                <script src="~/js/site.js" asp-append-version="true"></script>
+                                                <script>
 
-        $(document).on('DOMInitialized', function (event, { ajaxRequest, showError, he }) {
-            setGlobalError('@Context.Request.Query["Error"]', showError, he);
+                                                    $(document).on('DOMInitialized', function (event, { ajaxRequest, showError, he }) {
+                                                    setGlobalError('@Context.Request.Query["Error"]', showError, he);
 
-            var itemCount = document.getElementById("itemCount");
+                                                    var itemCount = document.getElementById("itemCount");
 
-            if (itemCount) {
-                ajaxRequest.send("/Presale/Checkout/CartCount", "GET", undefined, "application/json", "json")
-                           .then(response => {
-                               if (response.count > 0) {
-                                   itemCount.innerHTML = response.count;
-                               }
-                           });
-            }
+                                                    if (itemCount) {
+                                                    ajaxRequest.send("/Presale/Checkout/CartCount", "GET", undefined, "application/json", "json")
+                                                    .then(response => {
+                                                    if (response.count > 0) {
+                                                    itemCount.innerHTML = response.count;
+                                                    }
+                                                    });
+                                                    }
 
-            var navCheckout = document.getElementById("activeCheckoutNav");
-            var navCountdownEl = document.getElementById("navCheckoutCountdown");
-            if (navCheckout && navCountdownEl) {
-                var _checkoutExpiry = null;
-                var _checkoutTimer = null;
-                function updateNavCountdown() {
-                    if (_checkoutExpiry === null) return;
-                    if (_checkoutExpiry <= 0) {
-                        navCheckout.style.display = 'none';
-                        navCountdownEl.textContent = '';
-                        _checkoutExpiry = null;
-                        clearInterval(_checkoutTimer);
-                        _checkoutTimer = null;
-                        return;
-                    }
-                    var m = Math.floor(_checkoutExpiry / 60);
-                    var s = _checkoutExpiry % 60;
-                    navCountdownEl.textContent = m + ':' + (s < 10 ? '0' : '') + s;
-                    _checkoutExpiry--;
-                }
-                function pollCheckoutStatus() {
-                    fetch('/Presale/Checkout/CheckoutStatus')
-                        .then(r => r.json())
-                        .then(data => {
-                            if (data.active && data.secondsRemaining > 0) {
-                                _checkoutExpiry = data.secondsRemaining;
-                                navCheckout.style.display = '';
-                                if (!_checkoutTimer) {
-                                    updateNavCountdown();
-                                    _checkoutTimer = setInterval(updateNavCountdown, 1000);
-                                }
-                            } else {
-                                navCheckout.style.display = 'none';
-                                navCountdownEl.textContent = '';
-                                _checkoutExpiry = null;
-                                clearInterval(_checkoutTimer);
-                                _checkoutTimer = null;
-                            }
-                        })
-                        .catch(function () {});
-                }
-                pollCheckoutStatus();
-                setInterval(pollCheckoutStatus, 30000);
-            }
-        });
+                                                    var navCheckout = document.getElementById("activeCheckoutNav");
+                                                    var navCountdownEl = document.getElementById("navCheckoutCountdown");
+                                                    if (navCheckout && navCountdownEl) {
+                                                    var _checkoutExpiry = null;
+                                                    var _checkoutTimer = null;
+                                                    function updateNavCountdown() {
+                                                    if (_checkoutExpiry === null) return;
+                                                    if (_checkoutExpiry <= 0) {
+                                                    navCheckout.style.display = 'none';
+                                                    navCountdownEl.textContent = '';
+                                                    _checkoutExpiry = null;
+                                                    clearInterval(_checkoutTimer);
+                                                    _checkoutTimer = null;
+                                                    return;
+                                                    }
+                                                    var m = Math.floor(_checkoutExpiry / 60);
+                                                    var s = _checkoutExpiry % 60;
+                                                    navCountdownEl.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+                                                    _checkoutExpiry--;
+                                                    }
+                                                    function pollCheckoutStatus() {
+                                                    fetch('/Presale/Checkout/CheckoutStatus')
+                                                    .then(r => r.json())
+                                                    .then(data => {
+                                                    if (data.active && data.secondsRemaining > 0) {
+                                                    _checkoutExpiry = data.secondsRemaining;
+                                                    navCheckout.style.display = '';
+                                                    if (!_checkoutTimer) {
+                                                    updateNavCountdown();
+                                                    _checkoutTimer = setInterval(updateNavCountdown, 1000);
+                                                    }
+                                                    } else {
+                                                    navCheckout.style.display = 'none';
+                                                    navCountdownEl.textContent = '';
+                                                    _checkoutExpiry = null;
+                                                    clearInterval(_checkoutTimer);
+                                                    _checkoutTimer = null;
+                                                    }
+                                                    })
+                                                    .catch(function () { });
+                                                    }
+                                                    pollCheckoutStatus();
+                                                    setInterval(pollCheckoutStatus, 30000);
+                                                    }
+                                                    });
 
-        document.querySelectorAll('.category-filter-item').forEach(function (el) {
-            el.addEventListener('click', function (e) {
-                e.preventDefault();
-                document.getElementById('searchTypeId').value = this.dataset.typeId;
-                document.getElementById('categoryFilterBtn').textContent = this.textContent;
-            });
-        });
+                                                    document.querySelectorAll('.category-filter-item').forEach(function (el) {
+                                                    el.addEventListener('click', function (e) {
+                                                    e.preventDefault();
+                                                    document.getElementById('searchCategoryId').value = this.dataset.categoryId;
+                                                    document.getElementById('categoryFilterBtn').textContent = this.textContent;
+                                                    });
+                                                    });
 
-        function setGlobalError(error, showError, he) {
-            if (!error) {
-                showError();
-                return;
-            }
+                                                    function setGlobalError(error, showError, he) {
+                                                    if (!error) {
+                                                    showError();
+                                                    return;
+                                                    }
 
-            try {
-                const errorParsed = JSON.parse(he.decode(error));
-                showError(errorParsed);
-            } catch {
-                showError();
-            }
-        }
+                                                    try {
+                                                    const errorParsed = JSON.parse(he.decode(error));
+                                                    showError(errorParsed);
+                                                    } catch {
+                                                    showError();
+                                                    }
+                                                    }
 
-        $.validator.methods.range = function (value, element, param) {
-            var globalizedValue = value.replace(",", ".");
-            return this.optional(element) || (globalizedValue >= param[0] && globalizedValue <= param[1]);
-        }
+                                                    $.validator.methods.range = function (value, element, param) {
+                                                    var globalizedValue = value.replace(",", ".");
+                                                    return this.optional(element) || (globalizedValue >= param[0] && globalizedValue <= param[1]);
+                                                    }
 
-        $.validator.methods.number = function (value, element) {
-            return this.optional(element) || /-?(?:\d+|\d{1,3}(?:[\s\.,]\d{3})+)(?:[\.,]\d+)?$/.test(value);
-        }
-        //Date dd/MM/yyyy
-        $.validator.methods.date = function (value, element) {
-            var date = value.split("/");
-            return this.optional(element) || !/Invalid|NaN/.test(new Date(date[2], date[1], date[0]).toString());
-        }
+                                                    $.validator.methods.number = function (value, element) {
+                                                    return this.optional(element) || /-?(?:\d+|\d{1,3}(?:[\s\.,]\d{3})+)(?:[\.,]\d+)?$/.test(value);
+                                                    }
+                                                    //Date dd/MM/yyyy
+                                                    $.validator.methods.date = function (value, element) {
+                                                    var date = value.split("/");
+                                                    return this.optional(element) || !/Invalid|NaN/.test(new Date(date[2], date[1], date[0]).toString());
+                                                    }
 
-        var iso4217Codes = [];
-        var iso4217Message = 'Podaj prawidłowy kod waluty (np. EUR, USD, PLN).';
-        $.validator.addMethod("iso4217", function (value, element) {
-            return this.optional(element) || iso4217Codes.indexOf(value.toUpperCase()) >= 0;
-        }, function () { return iso4217Message; });
-        $.validator.unobtrusive.adapters.add("iso4217", function (options) {
-            options.rules["iso4217"] = true;
-        });
-        require(['errors'], function (e) { iso4217Message = e.errors.getError('invalidCurrencyCode'); });
-    </script>
-    <style type="text/css">
-        .badge.text-bg-light {
-            color: #0077cc
-        }
+                                                    var iso4217Codes = [];
+                                                    var iso4217Message = 'Podaj prawidłowy kod waluty (np. EUR, USD, PLN).';
+                                                    $.validator.addMethod("iso4217", function (value, element) {
+                                                    return this.optional(element) || iso4217Codes.indexOf(value.toUpperCase()) >= 0;
+                                                    }, function () { return iso4217Message; });
+                                                    $.validator.unobtrusive.adapters.add("iso4217", function (options) {
+                                                    options.rules["iso4217"] = true;
+                                                    });
+                                                    require(['errors'], function (e) { iso4217Message = e.errors.getError('invalidCurrencyCode'); });
+                                                </script>
+                                                <style type="text/css">
+                                                    .badge.text-bg-light {
+                                                    color: #0077cc
+                                                    }
 
-        ul {
-            padding: 0;
-            list-style: none;
-        }
-        ul li {
-            display: inline-block;
-            position: relative;
-            line-height: 21px;
-            text-align: left;
-        }
-        ul li a {
-            display: block;
-            padding: 8px 25px;
-            color: #333;
-            text-decoration: none;
-        }
-        ul li a:hover {
-            color: #fff;
-        }
-        ul li ul.dropdown {
-            min-width: 100%; /* Set width of the dropdown */
-            background: #939393;
-            display: none;
-            position: absolute;
-            z-index: 999;
-            left: 0;
-        }
-        ul li:hover ul.dropdown {
-            display: block; /* Display the dropdown */
-        }
-        ul li ul.dropdown li {
-            display: block;
-        }
+                                                    ul {
+                                                    padding: 0;
+                                                    list-style: none;
+                                                    }
 
-        @@media (min-width: 576px) {
-            .left-position {
-                left: 60% !important;
-            }
-        }
+                                                    ul li {
+                                                    display: inline-block;
+                                                    position: relative;
+                                                    line-height: 21px;
+                                                    text-align: left;
+                                                    }
 
-        .left-position {
-            left: 50%;
-        }
+                                                    ul li a {
+                                                    display: block;
+                                                    padding: 8px 25px;
+                                                    color: #333;
+                                                    text-decoration: none;
+                                                    }
 
-        .top-0 {
-            top: 0 !important;
-        }
+                                                    ul li a:hover {
+                                                    color: #fff;
+                                                    }
 
-        @@media (max-width: 1200px) {
-            .wrap-items {
-                flex-wrap: wrap;
-            }
-        }
+                                                    ul li ul.dropdown {
+                                                    min-width: 100%;
+                                                    /* Set width of the dropdown */
+                                                    background: #939393;
+                                                    display: none;
+                                                    position: absolute;
+                                                    z-index: 999;
+                                                    left: 0;
+                                                    }
 
-        .navbar-title-app {
-            white-space: normal;
-            text-align: center;
-            word-break: normal !important;
-        }
+                                                    ul li:hover ul.dropdown {
+                                                    display: block;
+                                                    /* Display the dropdown */
+                                                    }
 
-    </style>
-    @RenderSection("Scripts", required: false)
-</body>
-</html>
+                                                    ul li ul.dropdown li {
+                                                    display: block;
+                                                    }
+
+                                                    @@media (min-width: 576px) {
+                                                    .left-position {
+                                                    left: 60% !important;
+                                                    }
+                                                    }
+
+                                                    .left-position {
+                                                    left: 50%;
+                                                    }
+
+                                                    .top-0 {
+                                                    top: 0 !important;
+                                                    }
+
+                                                    @@media (max-width: 1200px) {
+                                                    .wrap-items {
+                                                    flex-wrap: wrap;
+                                                    }
+                                                    }
+
+                                                    .navbar-title-app {
+                                                    white-space: normal;
+                                                    text-align: center;
+                                                    word-break: normal !important;
+                                                    }
+                                                </style>
+                                                @RenderSection("Scripts", required: false)
+                                            </body>
+
+                                        </html>

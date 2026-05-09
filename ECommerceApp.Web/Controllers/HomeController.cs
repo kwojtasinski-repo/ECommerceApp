@@ -21,7 +21,7 @@ namespace ECommerceApp.Web.Controllers
 
         public async Task<IActionResult> Index(CancellationToken ct = default)
         {
-            var featured = await _storefront.GetPublishedProductsAsync(10, 1, string.Empty, ct);
+            var featured = await _storefront.GetPublishedProductsAsync(10, 1, string.Empty, null, ct);
             return View(featured);
         }
 

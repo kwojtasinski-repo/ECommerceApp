@@ -10,19 +10,21 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Adapters
     internal sealed class CatalogClientAdapter : ICatalogClient
     {
         private readonly IProductService _productService;
+        private readonly IProductTagService _tagService;
 
-        public CatalogClientAdapter(IProductService productService)
+        public CatalogClientAdapter(IProductService productService, IProductTagService tagService)
         {
             _productService = productService;
+            _tagService = tagService;
         }
 
         public Task<decimal?> GetUnitPriceAsync(int productId, CancellationToken ct = default)
             => _productService.GetUnitPriceAsync(productId, ct);
 
         public async Task<CatalogProductPage> GetPublishedProductsAsync(
-            int pageSize, int pageNo, string searchString, CancellationToken ct = default)
+            int pageSize, int pageNo, string searchString, CancellationToken ct = default, int? categoryId = null)
         {
-            var result = await _productService.GetPublishedProducts(pageSize, pageNo, searchString);
+            var result = await _productService.GetPublishedProducts(pageSize, pageNo, searchString, categoryId);
 
             var items = result.Products
                 .Select(p => new CatalogProductItem(p.Id, p.Name, p.Cost, p.CategoryId, p.MainImageUrl))
@@ -63,6 +65,18 @@ namespace ECommerceApp.Infrastructure.Presale.Checkout.Adapters
         {
             var snapshots = await _productService.GetProductSnapshotsByIdsAsync(productIds, ct);
             return snapshots.Select(s => new CatalogProductSummary(s.Id, s.Name)).ToList();
+        }
+
+        public async Task<IReadOnlyList<CatalogTagSummary>> GetAllTagsAsync(CancellationToken ct = default)
+        {
+            var tags = await _tagService.GetAllTags();
+            return tags.Select(t => new CatalogTagSummary(t.Id, t.Name)).ToList();
+        }
+
+        public async Task<CatalogTagSummary> GetTagByIdAsync(int tagId, CancellationToken ct = default)
+        {
+            var tag = await _tagService.GetTag(tagId);
+            return tag is null ? null : new CatalogTagSummary(tag.Id, tag.Name);
         }
     }
 }

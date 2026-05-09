@@ -133,10 +133,10 @@ namespace ECommerceApp.Application.Catalog.Products.Services
             };
         }
 
-        public async Task<ProductListVm> GetPublishedProducts(int pageSize, int pageNo, string searchString)
+        public async Task<ProductListVm> GetPublishedProducts(int pageSize, int pageNo, string searchString, int? categoryId = null)
         {
-            var products = await _productRepo.GetPublishedAsync(pageSize, pageNo, searchString);
-            var count = await _productRepo.CountPublishedAsync(searchString);
+            var products = await _productRepo.GetPublishedAsync(pageSize, pageNo, searchString, categoryId);
+            var count = await _productRepo.CountPublishedAsync(searchString, categoryId);
             var mapped = products.Select(ProductForListVm.FromDomain).ToList();
             for (var i = 0; i < mapped.Count; i++)
             {

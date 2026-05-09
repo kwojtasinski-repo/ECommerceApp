@@ -13,6 +13,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
             return services
                 .AddScoped<IProductService, ProductService>()
                 .AddScoped<ICategoryService, CategoryService>()
+                .AddScoped<ICatalogNavigationService, CachedCatalogNavigationService>()
                 .AddScoped<IProductTagService, ProductTagService>()
                 .AddSingleton<IImageUrlBuilder, RelativeImageUrlBuilder>()
                 .AddTransient<IImageService, ImageService>()

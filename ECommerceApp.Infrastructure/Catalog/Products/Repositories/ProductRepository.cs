@@ -71,7 +71,7 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
                 .AsNoTracking()
                 .CountAsync(p => string.IsNullOrEmpty(searchString) || p.Description.Value.Contains(searchString));
 
-        public async Task<List<Product>> GetPublishedAsync(int pageSize, int pageNo, string searchString)
+        public async Task<List<Product>> GetPublishedAsync(int pageSize, int pageNo, string searchString, int? categoryId = null)
         {
             if (pageNo < 1) pageNo = 1;
 
@@ -79,6 +79,7 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
                 .AsNoTracking()
                 .Include(p => p.Images)
                 .Where(p => p.Status == ProductStatus.Published
+                         && (!categoryId.HasValue || p.CategoryId == new CategoryId(categoryId.Value))
                          && (string.IsNullOrEmpty(searchString) || p.Description.Value.Contains(searchString)))
                 .OrderBy(p => p.Id)
                 .Skip((pageNo - 1) * pageSize)
@@ -86,10 +87,11 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
                 .ToListAsync();
         }
 
-        public async Task<int> CountPublishedAsync(string searchString)
+        public async Task<int> CountPublishedAsync(string searchString, int? categoryId = null)
             => await _context.Products
                 .AsNoTracking()
                 .CountAsync(p => p.Status == ProductStatus.Published
+                              && (!categoryId.HasValue || p.CategoryId == new CategoryId(categoryId.Value))
                               && (string.IsNullOrEmpty(searchString) || p.Description.Value.Contains(searchString)));
 
         public async Task<List<Product>> GetPublishedByTagAsync(int tagId, int pageSize, int pageNo)

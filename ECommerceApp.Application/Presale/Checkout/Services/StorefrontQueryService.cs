@@ -20,9 +20,9 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
         }
 
         public async Task<StorefrontProductListVm> GetPublishedProductsAsync(
-            int pageSize, int pageNo, string searchString, CancellationToken ct = default)
+            int pageSize, int pageNo, string searchString, int? categoryId = null, CancellationToken ct = default)
         {
-            var productList = await _catalog.GetPublishedProductsAsync(pageSize, pageNo, searchString, ct);
+            var productList = await _catalog.GetPublishedProductsAsync(pageSize, pageNo, searchString, ct, categoryId);
 
             var productIds = productList.Products.Select(p => p.Id).ToList();
             var snapshotByProductId = new Dictionary<int, StockSnapshot>(productIds.Count);
@@ -67,22 +67,28 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
 
             return new StorefrontProductListVm(items, productList.Count, productList.PageSize, productList.CurrentPage, string.Empty);
         }
-            public async Task<StorefrontProductDetailsVm> GetProductDetailsAsync(int productId, CancellationToken ct = default)
+        public async Task<StorefrontProductDetailsVm> GetProductDetailsAsync(int productId, CancellationToken ct = default)
+        {
+            var product = await _catalog.GetProductDetailsAsync(productId, ct);
+            if (product is null)
+                return null;
+
+            StockSnapshot snapshot = null;
+            await foreach (var s in _stockSnapshots.GetByProductIdsAsync(new List<int> { productId }, ct))
             {
-                var product = await _catalog.GetProductDetailsAsync(productId, ct);
-                if (product is null)
-                    return null;
-
-                StockSnapshot snapshot = null;
-                await foreach (var s in _stockSnapshots.GetByProductIdsAsync(new List<int> { productId }, ct))
-                {
-                    snapshot = s;
-                }
-
-                var available = snapshot?.AvailableQuantity ?? 0;
-                return new StorefrontProductDetailsVm(
-                    product.Id, product.Name, product.Cost, product.Description, product.CategoryName,
-                    product.Images, product.TagIds, product.TagNames, available, available > 0);
+                snapshot = s;
             }
+
+            var available = snapshot?.AvailableQuantity ?? 0;
+            return new StorefrontProductDetailsVm(
+                product.Id, product.Name, product.Cost, product.Description, product.CategoryName,
+                product.Images, product.TagIds, product.TagNames, available, available > 0);
         }
+
+        public Task<IReadOnlyList<CatalogTagSummary>> GetAllTagsAsync(CancellationToken ct = default)
+            => _catalog.GetAllTagsAsync(ct);
+
+        public Task<CatalogTagSummary> GetTagByIdAsync(int tagId, CancellationToken ct = default)
+            => _catalog.GetTagByIdAsync(tagId, ct);
     }
+}

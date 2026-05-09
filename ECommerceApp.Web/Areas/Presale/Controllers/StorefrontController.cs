@@ -1,4 +1,3 @@
-using ECommerceApp.Application.Catalog.Products.Services;
 using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Web.Controllers;
 using Microsoft.AspNetCore.Mvc;
@@ -12,34 +11,34 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
     public class StorefrontController : BaseController
     {
         private readonly IStorefrontQueryService _storefront;
-        private readonly IProductTagService _tagService;
 
-        public StorefrontController(IStorefrontQueryService storefront, IProductTagService tagService)
+        public StorefrontController(IStorefrontQueryService storefront)
         {
             _storefront = storefront;
-            _tagService = tagService;
         }
 
         [HttpGet("")]
-        public async Task<IActionResult> Index(string searchString = null, CancellationToken ct = default)
+        public async Task<IActionResult> Index(string searchString = null, int? categoryId = null, CancellationToken ct = default)
         {
-            var model = await _storefront.GetPublishedProductsAsync(12, 1, searchString ?? string.Empty, ct);
-            ViewBag.AllTags = await _tagService.GetAllTags();
+            var model = await _storefront.GetPublishedProductsAsync(12, 1, searchString ?? string.Empty, categoryId, ct);
+            ViewBag.AllTags = await _storefront.GetAllTagsAsync(ct);
+            ViewBag.SelectedCategoryId = categoryId;
             return View(model);
         }
 
         [HttpPost("")]
-        public async Task<IActionResult> Index(int pageSize, int pageNo, string searchString, CancellationToken ct = default)
+        public async Task<IActionResult> Index(int pageSize, int pageNo, string searchString, int? categoryId, CancellationToken ct = default)
         {
-            var model = await _storefront.GetPublishedProductsAsync(pageSize, pageNo, searchString ?? string.Empty, ct);
-            ViewBag.AllTags = await _tagService.GetAllTags();
+            var model = await _storefront.GetPublishedProductsAsync(pageSize, pageNo, searchString ?? string.Empty, categoryId, ct);
+            ViewBag.AllTags = await _storefront.GetAllTagsAsync(ct);
+            ViewBag.SelectedCategoryId = categoryId;
             return View(model);
         }
 
         [HttpGet("tag/{tagId:int}")]
         public async Task<IActionResult> ByTag(int tagId, int pageSize = 12, int pageNo = 1, CancellationToken ct = default)
         {
-            var tag = await _tagService.GetTag(tagId);
+            var tag = await _storefront.GetTagByIdAsync(tagId, ct);
             if (tag is null)
             {
                 return NotFound();

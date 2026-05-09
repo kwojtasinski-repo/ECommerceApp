@@ -9,7 +9,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Contracts
         Task<decimal?> GetUnitPriceAsync(int productId, CancellationToken ct = default);
 
         Task<CatalogProductPage> GetPublishedProductsAsync(
-            int pageSize, int pageNo, string searchString, CancellationToken ct = default);
+            int pageSize, int pageNo, string searchString, CancellationToken ct = default, int? categoryId = null);
 
         Task<CatalogProductPage> GetPublishedProductsByTagAsync(
             int tagId, int pageSize, int pageNo, CancellationToken ct = default);
@@ -18,9 +18,15 @@ namespace ECommerceApp.Application.Presale.Checkout.Contracts
 
         Task<IReadOnlyList<CatalogProductSummary>> GetProductsByIdsAsync(
             IReadOnlyList<int> productIds, CancellationToken ct = default);
+
+        Task<IReadOnlyList<CatalogTagSummary>> GetAllTagsAsync(CancellationToken ct = default);
+
+        Task<CatalogTagSummary> GetTagByIdAsync(int tagId, CancellationToken ct = default);
     }
 
     public sealed record CatalogProductSummary(int Id, string Name);
+
+    public sealed record CatalogTagSummary(int Id, string Name);
 
     public sealed record CatalogProductItem(int Id, string Name, decimal Cost, int CategoryId, string MainImageUrl);
 

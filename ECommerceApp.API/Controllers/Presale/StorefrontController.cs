@@ -27,7 +27,7 @@ namespace ECommerceApp.API.Controllers.Presale
             [FromQuery] string searchString = "",
             CancellationToken ct = default)
         {
-            var result = await _storefront.GetPublishedProductsAsync(pageSize, pageNo, searchString ?? "", ct);
+            var result = await _storefront.GetPublishedProductsAsync(pageSize, pageNo, searchString ?? "", null, ct);
             return Ok(result);
         }
 

@@ -13,7 +13,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
         Task<bool> DeleteProduct(int id);
         Task<ProductDetailsVm> GetProductDetails(int id, CancellationToken cancellationToken = default);
         Task<ProductListVm> GetAllProducts(int pageSize, int pageNo, string searchString);
-        Task<ProductListVm> GetPublishedProducts(int pageSize, int pageNo, string searchString);
+        Task<ProductListVm> GetPublishedProducts(int pageSize, int pageNo, string searchString, int? categoryId = null);
         Task<ProductListVm> GetPublishedProductsByTagAsync(int tagId, int pageSize, int pageNo);
         Task PublishProduct(int id);
         Task UnpublishProduct(int id);
