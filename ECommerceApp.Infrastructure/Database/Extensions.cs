@@ -11,20 +11,8 @@ namespace ECommerceApp.Infrastructure.Database
     {
         public static IServiceCollection AddDatabase(this IServiceCollection services, IConfiguration configuration)
         {
-            services.AddDbContext<Context>(options =>
-                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection"))
-                       .LogTo(Console.WriteLine,
-                                                                // if want more info change to debug
-                            (eventId, logLevel) => logLevel >= LogLevel.Information
-                                                   || eventId == RelationalEventId.ConnectionOpened
-                                                   || eventId == RelationalEventId.ConnectionClosed)
-                       .EnableSensitiveDataLogging()
-                );
-
             services.AddHostedService<DbInitializer>();
             services.AddScoped<IDatabaseInitializer, DatabaseInitalizer>();
-            services.AddScoped<IDbContextMigrator, DbContextMigrator<Context>>();
-
             return services;
         }
     }

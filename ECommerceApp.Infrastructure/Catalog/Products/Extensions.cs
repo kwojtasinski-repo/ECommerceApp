@@ -23,7 +23,8 @@ namespace ECommerceApp.Infrastructure.Catalog.Products
             return services
                 .AddScoped<IProductRepository, ProductRepository>()
                 .AddScoped<ICategoryRepository, CategoryRepository>()
-                .AddScoped<IProductTagRepository, ProductTagRepository>();
+                .AddScoped<IProductTagRepository, ProductTagRepository>()
+                .AddScoped<IImageRepository, ImageRepository>();
         }
     }
 }

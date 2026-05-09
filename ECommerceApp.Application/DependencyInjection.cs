@@ -4,7 +4,6 @@ using ECommerceApp.Application.External;
 using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Identity.IAM.Services;
 using ECommerceApp.Application.Middlewares;
-using ECommerceApp.Application.Services;
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Supporting.Currencies.Services;
 using ECommerceApp.Application.Inventory.Availability.Services;
@@ -30,7 +29,6 @@ namespace ECommerceApp.Application
             services.AddFilesStore();
             services.AddErrorHandling();
             services.AddNbpClient();
-            services.AddServices();
             services.AddIamServices();
             services.AddUserProfileServices();
             services.AddCatalogServices();
@@ -46,6 +44,7 @@ namespace ECommerceApp.Application
             services.AddCommunicationServices();
             services.AddBackoffice();
             services.AddValidatorsFromAssembly(typeof(DependencyInjection).Assembly);
+            services.AddHttpContextAccessor();
             return services;
         }
     }

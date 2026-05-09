@@ -1,6 +1,5 @@
 using ECommerceApp.Application.Sales.Orders.Contracts;
-using ECommerceApp.Infrastructure.Database;
-using Microsoft.EntityFrameworkCore;
+using ECommerceApp.Domain.AccountProfile;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,14 +7,14 @@ namespace ECommerceApp.Infrastructure.Sales.Orders.Adapters
 {
     internal sealed class CustomerExistenceChecker : ICustomerExistenceChecker
     {
-        private readonly Context _context;
+        private readonly IUserProfileRepository _userProfiles;
 
-        public CustomerExistenceChecker(Context context)
+        public CustomerExistenceChecker(IUserProfileRepository userProfiles)
         {
-            _context = context;
+            _userProfiles = userProfiles;
         }
 
         public Task<bool> ExistsAsync(int customerId, CancellationToken ct = default)
-            => _context.Customers.AnyAsync(c => c.Id == customerId, ct);
+            => _userProfiles.ExistsByIdAsync(new UserProfileId(customerId));
     }
 }

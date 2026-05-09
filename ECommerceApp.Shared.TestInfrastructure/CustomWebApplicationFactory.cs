@@ -1,4 +1,4 @@
-using ECommerceApp.Application.DTO;
+using ECommerceApp.Application.Identity.IAM.DTOs;
 using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Identity.IAM;
 using Flurl.Http;
@@ -38,7 +38,6 @@ namespace ECommerceApp.Shared.TestInfrastructure
 
                 builder.ConfigureServices(services =>
                 {
-                    services.ReplaceDbContextWithInMemory<Context>("InMemoryDatabase");
                     services.ReplaceDbContextWithInMemory<IamDbContext>("InMemoryIamDatabase");
 
                     services.AddScoped<IDatabaseInitializer, TestDatabaseInitializer>();
@@ -48,16 +47,13 @@ namespace ECommerceApp.Shared.TestInfrastructure
 
                     using var scope = sp.CreateScope();
                     var scopedServices = scope.ServiceProvider;
-                    var context = scopedServices.GetRequiredService<Context>();
                     var iamContext = scopedServices.GetRequiredService<IamDbContext>();
                     var logger = scopedServices.GetRequiredService<ILogger<CustomWebApplicationFactory<TStartup>>>();
 
-                    context.Database.EnsureCreated();
                     iamContext.Database.EnsureCreated();
 
                     try
                     {
-                        Utilities.InitilizeDbForTests(context);
                         Utilities.InitializeIamUsers(scopedServices).GetAwaiter().GetResult();
                     }
                     catch (Exception ex)
@@ -102,6 +98,6 @@ namespace ECommerceApp.Shared.TestInfrastructure
             return token;
         }
 
-            }
-        }
+    }
+}
 
