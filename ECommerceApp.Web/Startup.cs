@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 using ECommerceApp.Infrastructure;
 using ECommerceApp.Application;
 using System.Globalization;
@@ -63,10 +64,11 @@ namespace ECommerceApp.Web
             });
             services.AddDatabaseDeveloperPageExceptionFilter();
             services.AddWebCaching(Configuration);
+            services.AddTusServices(Configuration);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env, IOptions<CatalogOptions> catalogOptions)
         {
             if (env.IsDevelopment())
             {
@@ -94,6 +96,9 @@ namespace ECommerceApp.Web
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            if (catalogOptions.Value.UseTusUpload)
+                app.UseTusUpload();
 
             app.UseEndpoints(endpoints =>
             {
