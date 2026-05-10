@@ -1,8 +1,8 @@
 # Roadmap: Chunked Image Upload
 
-> Status: ✅ V1 complete — `IChunkedUploadService` + `UploadSessionStore` + `InitUpload`/`UploadChunk` endpoints live in Web and API; `AddItemNew.cshtml` + `EditItemNew.cshtml` include progress UI
+> Status: ✅ V2 complete (2026-05-10) — TUS (tusdotnet) middleware live; `CompleteUpload` bridge endpoint live; 13 integration tests green. V1 classic chunked upload retained in parallel.
 > Scope: `Web` + `API` projects (Catalog Image upload flow)
-> TUS upgrade path: v2
+> TUS upgrade path: ✅ complete
 
 ---
 
@@ -129,21 +129,42 @@ for (const chunkId of chunkIds) {
 
 ---
 
-## V2 — TUS upgrade path
+## V2 — TUS upgrade path — ✅ Complete (2026-05-10)
 
-| Step | What                                                   |
-| ---- | ------------------------------------------------------ |
-| 1    | Add `tusdotnet` NuGet to `Web` project                 |
-| 2    | Register TUS middleware on `/tus-uploads`              |
-| 3    | Replace inline JS with `tus-js-client` via LibMan      |
-| 4    | Remove `InitUpload` + `UploadChunk` controller actions |
-| 5    | Remove `UploadSessionStore` + `Upload/Temp/` logic     |
-| 6    | Resumable uploads come for free                        |
+| Step | What                                                                                  | Status |
+| ---- | ------------------------------------------------------------------------------------- | ------ |
+| 1    | Add `tusdotnet 2.4.0` NuGet to `Web` project                                          | ✅     |
+| 2    | Register TUS middleware at `/tus` via `WebExtensions.UseTusUpload()`                  | ✅     |
+| 3    | Auth enforced inside middleware via `OnAuthorizeAsync` (→ 401 for anon)               | ✅     |
+| 4    | `ITusStore` (TusDiskStore) registered as singleton via `AddTusServices()`             | ✅     |
+| 5    | `CatalogOptions.ChunkedUploadImplementation` flag (`Classic` \| `TUS`)                | ✅     |
+| 6    | `POST /Catalog/Image/CompleteUpload` bridge — reads TUS store → `IImageService.Add()` | ✅     |
+| 7    | 13 integration tests (TDD: red → green) in `ECommerceApp.Web.IntegrationTests`        | ✅     |
+| 8    | Resumable uploads via tusdotnet HEAD + PATCH (resume offset, conflict 409)            | ✅     |
+
+### Design decisions made during V2
+
+- **V1 and V2 coexist**: `CatalogOptions.UseTusUpload` controls which engine is active. Classic `InitUpload`/`UploadChunk` actions are retained — not deleted.
+- **Store path**: `Catalog:TusStorePath` in appsettings (default: system temp). No disk I/O in tests — `TusFakeFileStore` used in `TusUploadTestFactory`.
+- **`CompleteUpload` is `[IgnoreAntiforgeryToken]`**: JSON endpoint called by JS after `tus-js-client` finishes; auth enforced by `[Authorize]` cookie session.
+- **TTL configurable**: All 6 cache TTLs live in `CacheOptions` (bound from `Cache:` section in appsettings via `IOptions<CacheOptions>`). `StorefrontIndexTtlSeconds` is Web-only (OutputCache).
+
+### Cache layer (implemented alongside V2 — 2026-05-10)
+
+| Service                          | Cache type   | Key pattern                                         | TTL (default) |
+| -------------------------------- | ------------ | --------------------------------------------------- | ------------- |
+| `ProductService`                 | IMemoryCache | `CatalogList`, `CatalogProduct:{id}`                | 15 s / 2 min  |
+| `CachedCatalogNavigationService` | IMemoryCache | `AllCategories`                                     | 15 min        |
+| `StorefrontQueryService`         | IMemoryCache | `ProductDetails:{id}`                               | 5 min         |
+| `CurrencyRateService`            | IMemoryCache | `LatestRate:{code}`, `HistoricalRate:{code}:{date}` | 60 min / 24 h |
+| `StorefrontController`           | IOutputCache | `StorefrontIndex` (tag-based, anon-only)            | 60 s          |
+
+Invalidation: `ProductCacheInvalidationHandler` (Catalog), `ProductDetailsCacheInvalidationHandler` (Presale), `StorefrontOutputCacheHandler` (Web OutputCache tag eviction) — all wired to `ProductUpdated` / product lifecycle messages.
 
 ---
 
-## Open questions before v1 start
+## Open questions — resolved
 
-- [ ] Where do `AddItemNew` / `EditItemNew` link from? Replace current Create/Edit or keep both?
-- [ ] `UploadSessionStore` lifetime — `Singleton` is fine for v1, but needs expiry strategy before v2
-- [ ] Max concurrent sessions per user — unlimited for v1?
+- [x] Where do `AddItemNew` / `EditItemNew` link from? → `CatalogOptions.UseChunkedUpload` flag controls view selection in `ProductController`.
+- [x] `UploadSessionStore` lifetime — Singleton retained for V1 classic path. TUS store has no session state.
+- [x] Max concurrent sessions — TusDiskStore handles concurrency natively.

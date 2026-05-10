@@ -13,7 +13,7 @@
 | -------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `copilot-instructions.md`              | 1     | ~3 980 chars (under 4K); Multi-option rule (§3), Sync rule (§4), agent-memory ref (§6) added                                       |
 | Instruction files (`.instructions.md`) | 16    | All with `applyTo:` frontmatter; `agent-memory` added; `pre-edit` split into core + `doc-suggestions`; `docs-index` scope narrowed |
-| Prompt files (`.prompt.md`)            | 4     | BC analysis, BC implementation, PR review, refactor                                                                                |
+| Prompt files (`.prompt.md`)            | 5     | BC analysis, BC implementation, PR review, refactor, flow-analysis                                                                 |
 | Agent files                            | 8     | adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer, planner, implementer, verifier, pr-commit                       |
 | Skills (`SKILL.md`)                    | 11    | Scaffolding templates for common artifacts; +3 new: cqrs-handler, dto-viewmodel, message-contract                                  |
 | ADRs                                   | 26    | Folderized ADR routers under `docs/adr/<NNNN>/README.md`                                                                           |
@@ -48,14 +48,15 @@
 | `doc-suggestions.instructions.md`     | `**`                                                          | Session 19 (new — proactive doc suggestion triggers; split from `pre-edit`) |
 | `agent-memory.instructions.md`        | `**`                                                          | Session 19 (new — auto-loads `agent-decisions.md` read rule on every task)  |
 
-### `.github/prompts/` (4 files)
+### `.github/prompts/` (5 files)
 
-| File                          | Added               |
-| ----------------------------- | ------------------- |
-| `bc-analysis.prompt.md`       | Session 1 (renamed) |
-| `bc-implementation.prompt.md` | Session 1 (renamed) |
-| `pr-review.prompt.md`         | Session 1 (renamed) |
-| `refactor.prompt.md`          | Session 17 (new)    |
+| File                          | Added                                                                                                                                   |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `bc-analysis.prompt.md`       | Session 1 (renamed)                                                                                                                     |
+| `bc-implementation.prompt.md` | Session 1 (renamed)                                                                                                                     |
+| `pr-review.prompt.md`         | Session 1 (renamed)                                                                                                                     |
+| `refactor.prompt.md`          | Session 17 (new)                                                                                                                        |
+| `flow-analysis.prompt.md`     | Session 22 (registered — file existed on disk, referenced in `copilot-instructions.md` §11 and `docs-index`, omitted from prior counts) |
 
 ### `.github/agents/` (8 files)
 
@@ -101,13 +102,25 @@
 
 ## Change log
 
+### Session 22 — Docs: TUS V2 complete + close-out sync (2026-05-10)
+
+| #   | Change                                                                                                                                                                                         | Files affected                       |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| 1   | `chunked-upload.md` — V2 TUS section rewritten: tusdotnet 2.4.0, `CompleteUpload` bridge, 13 integration tests, cache layer table                                                              | `docs/roadmap/chunked-upload.md`     |
+| 2   | `roadmap/README.md` — chunked-upload row updated to "✅ V2 TUS complete (2026-05-10)"                                                                                                          | `docs/roadmap/README.md`             |
+| 3   | `project-state.md` — last-updated set to 2026-05-10; TUS Phase 1+2 + hybrid cache layer (`IOutputCache` + `IMemoryCache`, 5 services, `CacheOptions`) summary added                            | `.github/context/project-state.md`   |
+| 4   | `agent-decisions.md` — new entry: stash-before-commit correction (2026-05-10)                                                                                                                  | `.github/context/agent-decisions.md` |
+| 5   | **Gap fix (Workflow 11)**: `flow-analysis.prompt.md` registered — file existed on disk, referenced in `copilot-instructions.md` §11 and `docs-index`, but missing from CHANGELOG count (4 → 5) | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+---
+
 ### Session 21 — Full audit & metrics refresh (2026-04-26)
 
-| #   | Change                                                                                      | Files affected                           |
-| --- | ------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| 1   | Added `docs\rag\README.md` to `docs` solution folder in `.sln` (file existed, was missing)  | `ECommerceApp.sln`                        |
-| 2   | Updated repo-index.md At a Glance: CS ~1146→~1155, CSHTML 125→127, tests 132→135 (94+41)   | `.github/context/repo-index.md`           |
-| 3   | Updated changelog "Current state summary" test count: 132 → 135 (94 unit + 41 integration) | `.github/COPILOT-SETUP-CHANGELOG.md`      |
+| #   | Change                                                                                     | Files affected                       |
+| --- | ------------------------------------------------------------------------------------------ | ------------------------------------ |
+| 1   | Added `docs\rag\README.md` to `docs` solution folder in `.sln` (file existed, was missing) | `ECommerceApp.sln`                   |
+| 2   | Updated repo-index.md At a Glance: CS ~1146→~1155, CSHTML 125→127, tests 132→135 (94+41)   | `.github/context/repo-index.md`      |
+| 3   | Updated changelog "Current state summary" test count: 132 → 135 (94 unit + 41 integration) | `.github/COPILOT-SETUP-CHANGELOG.md` |
 
 ### Session 20 — Gap fixes, Service vs CQRS guidance, skill option proposals (2026-04-26)
 
