@@ -3,6 +3,7 @@ using ECommerceApp.Application.Sales.Payments.Messages;
 using ECommerceApp.Domain.Sales.Orders;
 using ECommerceApp.Domain.Sales.Orders.ValueObjects;
 using AwesomeAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
 using System.Threading;
@@ -21,7 +22,7 @@ namespace ECommerceApp.UnitTests.Sales.Orders
         }
 
         private OrderPaymentExpiredHandler CreateHandler()
-            => new(_orderRepo.Object);
+            => new(_orderRepo.Object, NullLogger<OrderPaymentExpiredHandler>.Instance);
 
         private static PaymentExpired CreateMessage(int orderId = 1)
             => new(PaymentId: 10, OrderId: orderId, OccurredAt: DateTime.UtcNow);
@@ -87,6 +88,58 @@ namespace ECommerceApp.UnitTests.Sales.Orders
 
             order.Status.Should().Be(OrderStatus.Cancelled);
             order.Events.Should().Contain(e => e.EventType == OrderEventType.OrderPaymentExpired);
+            _orderRepo.Verify(r => r.UpdateAsync(order, It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        // ── State-machine guards (non-Placed statuses must be no-ops) ─────────
+
+        [Fact]
+        public async Task HandleAsync_FulfilledOrder_ShouldNotExpireOrUpdate()
+        {
+            var order = CreateOrder();
+            order.ConfirmPayment(3);
+            order.Fulfill();
+            _orderRepo
+                .Setup(r => r.GetByIdWithItemsAsync(1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(order);
+
+            await CreateHandler().HandleAsync(CreateMessage(orderId: 1), TestContext.Current.CancellationToken);
+
+            order.Status.Should().Be(OrderStatus.Fulfilled);
+            _orderRepo.Verify(r => r.UpdateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task HandleAsync_PaymentConfirmedOrder_ShouldNotExpireOrUpdate()
+        {
+            var order = CreateOrder();
+            order.ConfirmPayment(7);
+            _orderRepo
+                .Setup(r => r.GetByIdWithItemsAsync(1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(order);
+
+            await CreateHandler().HandleAsync(CreateMessage(orderId: 1), TestContext.Current.CancellationToken);
+
+            order.Status.Should().Be(OrderStatus.PaymentConfirmed);
+            _orderRepo.Verify(r => r.UpdateAsync(It.IsAny<Order>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        // ── CorrelationId travels through message ──────────────────────────────
+
+        [Fact]
+        public async Task HandleAsync_PlacedOrder_ShouldAcceptNonDefaultCorrelationId()
+        {
+            var order = CreateOrder();
+            _orderRepo
+                .Setup(r => r.GetByIdWithItemsAsync(1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(order);
+            var message = new PaymentExpired(PaymentId: 10, OrderId: 1, OccurredAt: DateTime.UtcNow,
+                CorrelationId: Guid.NewGuid());
+
+            await CreateHandler().HandleAsync(message, TestContext.Current.CancellationToken);
+
+            // Handler must still apply the state transition regardless of CorrelationId value.
+            order.Status.Should().Be(OrderStatus.Cancelled);
             _orderRepo.Verify(r => r.UpdateAsync(order, It.IsAny<CancellationToken>()), Times.Once);
         }
     }

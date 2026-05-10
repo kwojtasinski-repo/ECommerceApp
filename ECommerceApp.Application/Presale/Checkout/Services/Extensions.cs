@@ -1,3 +1,4 @@
+using ECommerceApp.Application.Catalog.Products.Messages;
 using ECommerceApp.Application.Inventory.Availability.Messages;
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Presale.Checkout.Handlers;
@@ -23,7 +24,12 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
                 .AddScoped<IScheduledTask, SoftReservationExpiredJob>()
                 .AddScoped<IMessageHandler<StockAvailabilityChanged>, StockAvailabilityChangedHandler>()
                 .AddScoped<IMessageHandler<OrderPlaced>, OrderPlacedHandler>()
-                .AddScoped<IMessageHandler<OrderPlacementFailed>, OrderPlacementFailedHandler>();
+                .AddScoped<IMessageHandler<OrderPlacementFailed>, OrderPlacementFailedHandler>()
+                // Product metadata changes → evict storefront product-details cache
+                .AddScoped<IMessageHandler<ProductUpdated>, ProductDetailsCacheInvalidationHandler>()
+                .AddScoped<IMessageHandler<ProductPublished>, ProductDetailsCacheInvalidationHandler>()
+                .AddScoped<IMessageHandler<ProductUnpublished>, ProductDetailsCacheInvalidationHandler>()
+                .AddScoped<IMessageHandler<ProductDiscontinued>, ProductDetailsCacheInvalidationHandler>();
         }
     }
 }

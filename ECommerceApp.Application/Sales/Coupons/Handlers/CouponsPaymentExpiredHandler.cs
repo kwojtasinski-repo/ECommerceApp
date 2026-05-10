@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Sales.Payments.Messages;
 using ECommerceApp.Domain.Sales.Coupons;
+using Microsoft.Extensions.Logging;
 
 namespace ECommerceApp.Application.Sales.Coupons.Handlers
 {
@@ -11,19 +12,26 @@ namespace ECommerceApp.Application.Sales.Coupons.Handlers
         private readonly ICouponUsedRepository _couponUsed;
         private readonly ICouponRepository _coupons;
         private readonly ICouponApplicationRecordRepository _applicationRecords;
+        private readonly ILogger<CouponsPaymentExpiredHandler> _logger;
 
         public CouponsPaymentExpiredHandler(
             ICouponUsedRepository couponUsed,
             ICouponRepository coupons,
-            ICouponApplicationRecordRepository applicationRecords)
+            ICouponApplicationRecordRepository applicationRecords,
+            ILogger<CouponsPaymentExpiredHandler> logger)
         {
             _couponUsed = couponUsed;
             _coupons = coupons;
             _applicationRecords = applicationRecords;
+            _logger = logger;
         }
 
         public async Task HandleAsync(PaymentExpired message, CancellationToken ct = default)
         {
+            _logger.LogInformation(
+                "[Coupons][CouponsPaymentExpiredHandler] Received PaymentExpired. PaymentId={PaymentId} OrderId={OrderId} CorrelationId={CorrelationId}",
+                message.PaymentId, message.OrderId, message.CorrelationId);
+
             var couponsUsed = await _couponUsed.FindAllByOrderIdAsync(message.OrderId, ct);
             if (couponsUsed.Count == 0)
                 return;

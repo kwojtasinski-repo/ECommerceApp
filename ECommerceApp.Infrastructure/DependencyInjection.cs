@@ -1,4 +1,5 @@
-﻿using ECommerceApp.Infrastructure.AccountProfile;
+﻿using ECommerceApp.Application.Constants;
+using ECommerceApp.Infrastructure.AccountProfile;
 using ECommerceApp.Infrastructure.Catalog.Products;
 using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Identity.IAM.Auth;
@@ -21,6 +22,8 @@ namespace ECommerceApp.Infrastructure
     {
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
+            // Override Application-layer defaults with values from appsettings.
+            services.Configure<CacheOptions>(configuration.GetSection(CacheOptions.SectionName));
             services.AddDatabase(configuration);
             services.AddIamInfrastructure(configuration);
             services.AddUserProfileInfrastructure(configuration);

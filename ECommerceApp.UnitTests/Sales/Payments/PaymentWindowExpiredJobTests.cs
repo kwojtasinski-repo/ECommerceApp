@@ -5,6 +5,7 @@ using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Application.Supporting.TimeManagement.Models;
 using ECommerceApp.Domain.Sales.Payments;
 using AwesomeAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
 using System.Threading;
@@ -25,7 +26,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         }
 
         private PaymentWindowExpiredJob CreateJob()
-            => new(_paymentRepo.Object, _broker.Object);
+            => new(_paymentRepo.Object, _broker.Object, NullLogger<PaymentWindowExpiredJob>.Instance);
 
         private static JobExecutionContext Context(string entityId)
             => new(entityId, Guid.NewGuid().ToString());

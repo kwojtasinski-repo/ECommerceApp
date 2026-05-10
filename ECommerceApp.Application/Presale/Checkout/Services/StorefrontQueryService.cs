@@ -1,6 +1,10 @@
+using ECommerceApp.Application.Constants;
 using ECommerceApp.Application.Presale.Checkout.Contracts;
+using ECommerceApp.Application.Presale.Checkout.Handlers;
 using ECommerceApp.Application.Presale.Checkout.ViewModels;
 using ECommerceApp.Domain.Presale.Checkout;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -12,11 +16,15 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
     {
         private readonly ICatalogClient _catalog;
         private readonly IStockSnapshotRepository _stockSnapshots;
+        private readonly IMemoryCache _cache;
+        private readonly CacheOptions _cacheOptions;
 
-        public StorefrontQueryService(ICatalogClient catalog, IStockSnapshotRepository stockSnapshots)
+        public StorefrontQueryService(ICatalogClient catalog, IStockSnapshotRepository stockSnapshots, IMemoryCache cache, IOptions<CacheOptions> cacheOptions)
         {
             _catalog = catalog;
             _stockSnapshots = stockSnapshots;
+            _cache = cache;
+            _cacheOptions = cacheOptions.Value;
         }
 
         public async Task<StorefrontProductListVm> GetPublishedProductsAsync(
@@ -69,6 +77,10 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
         }
         public async Task<StorefrontProductDetailsVm> GetProductDetailsAsync(int productId, CancellationToken ct = default)
         {
+            var cacheKey = $"{ProductDetailsCacheInvalidationHandler.ProductDetailsCacheKeyPrefix}{productId}";
+            if (_cache.TryGetValue(cacheKey, out StorefrontProductDetailsVm cachedVm))
+                return cachedVm;
+
             var product = await _catalog.GetProductDetailsAsync(productId, ct);
             if (product is null)
                 return null;
@@ -80,9 +92,12 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
             }
 
             var available = snapshot?.AvailableQuantity ?? 0;
-            return new StorefrontProductDetailsVm(
+            var vm = new StorefrontProductDetailsVm(
                 product.Id, product.Name, product.Cost, product.Description, product.CategoryName,
                 product.Images, product.TagIds, product.TagNames, available, available > 0);
+
+            _cache.Set(cacheKey, vm, _cacheOptions.ProductDetailsTtl);
+            return vm;
         }
 
         public Task<IReadOnlyList<CatalogTagSummary>> GetAllTagsAsync(CancellationToken ct = default)

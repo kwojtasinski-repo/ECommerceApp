@@ -1,9 +1,12 @@
+using ECommerceApp.Application.Constants;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.External.Client;
 using ECommerceApp.Application.Supporting.Currencies.Services;
 using ECommerceApp.Domain.Supporting.Currencies;
 using ECommerceApp.UnitTests.Common;
 using AwesomeAssertions;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -28,7 +31,9 @@ namespace ECommerceApp.UnitTests.Supporting.Currencies
             _sut = new CurrencyRateService(
                 _currencyRateRepository.Object,
                 _currencyRepository.Object,
-                _nbpClient.Object);
+                _nbpClient.Object,
+                new MemoryCache(new MemoryCacheOptions()),
+                Options.Create(new CacheOptions()));
         }
 
         [Fact]

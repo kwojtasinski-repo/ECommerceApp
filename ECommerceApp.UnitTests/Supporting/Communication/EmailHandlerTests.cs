@@ -4,6 +4,7 @@ using ECommerceApp.Application.Sales.Payments.Messages;
 using ECommerceApp.Application.Supporting.Communication.Contracts;
 using ECommerceApp.Application.Supporting.Communication.Emails;
 using ECommerceApp.Application.Supporting.Communication.Handlers;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -282,7 +283,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private readonly Mock<IUserEmailResolver> _emailResolver = new();
 
         private PaymentExpiredEmailHandler CreateHandler()
-            => new(_emails.Object, _resolver.Object, _emailResolver.Object);
+            => new(_emails.Object, _resolver.Object, _emailResolver.Object, NullLogger<PaymentExpiredEmailHandler>.Instance);
 
         private static PaymentExpired Message(int paymentId = 1, int orderId = 10)
             => new(paymentId, orderId, DateTime.UtcNow);

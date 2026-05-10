@@ -2,6 +2,7 @@ using ECommerceApp.Application.Sales.Payments.Messages;
 using ECommerceApp.Application.Supporting.Communication.Contracts;
 using ECommerceApp.Application.Supporting.Communication.Handlers;
 using ECommerceApp.Application.Supporting.Communication.Services;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -56,7 +57,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private readonly Mock<IOrderUserResolver> _resolver = new();
 
         private PaymentExpiredNotificationHandler CreateHandler()
-            => new(_notifications.Object, _resolver.Object);
+            => new(_notifications.Object, _resolver.Object, NullLogger<PaymentExpiredNotificationHandler>.Instance);
 
         private static PaymentExpired Message(int paymentId = 1, int orderId = 10)
             => new(paymentId, orderId, DateTime.UtcNow);

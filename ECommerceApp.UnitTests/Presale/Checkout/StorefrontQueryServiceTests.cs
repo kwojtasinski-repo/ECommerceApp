@@ -1,7 +1,10 @@
+using ECommerceApp.Application.Constants;
 using ECommerceApp.Application.Presale.Checkout.Contracts;
 using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Domain.Presale.Checkout;
 using AwesomeAssertions;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -22,7 +25,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         {
             _catalog = new Mock<ICatalogClient>();
             _stockSnapshots = new Mock<IStockSnapshotRepository>();
-            _service = new StorefrontQueryService(_catalog.Object, _stockSnapshots.Object);
+            _service = new StorefrontQueryService(_catalog.Object, _stockSnapshots.Object, new Mock<IMemoryCache>().Object, Options.Create(new CacheOptions()));
         }
 
         [Fact]

@@ -1,9 +1,12 @@
+using ECommerceApp.Application.Constants;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.External.Client;
 using ECommerceApp.Application.External.POCO;
 using ECommerceApp.Application.Supporting.Currencies.ViewModels;
 using ECommerceApp.Application.Utils;
 using ECommerceApp.Domain.Supporting.Currencies;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,17 +20,23 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
         private readonly ICurrencyRateRepository _currencyRateRepo;
         private readonly ICurrencyRepository _currencyRepo;
         private readonly INBPClient _nbpClient;
+        private readonly IMemoryCache _cache;
+        private readonly CacheOptions _cacheOptions;
         private static readonly DateTime ArchiveDate = new(2002, 1, 2);
         private static readonly int AllowedRequests = 15;
 
         public CurrencyRateService(
             ICurrencyRateRepository currencyRateRepo,
             ICurrencyRepository currencyRepo,
-            INBPClient nbpClient)
+            INBPClient nbpClient,
+            IMemoryCache cache,
+            IOptions<CacheOptions> cacheOptions)
         {
             _currencyRateRepo = currencyRateRepo;
             _currencyRepo = currencyRepo;
             _nbpClient = nbpClient;
+            _cache = cache;
+            _cacheOptions = cacheOptions.Value;
         }
 
         public async Task<CurrencyRateVm> GetRateForDayAsync(int currencyId, DateTime dateTime)
@@ -35,41 +44,67 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
             if (dateTime < ArchiveDate)
                 throw new BusinessException($"There is no rate for {dateTime}");
 
+            var date = dateTime.Date;
+            var cacheKey = $"CurrencyRate:{currencyId}:{date:yyyy-MM-dd}";
+
+            // Only use the cache for historical (immutable) dates.
+            if (date < DateTime.UtcNow.Date && _cache.TryGetValue(cacheKey, out CurrencyRateVm historicalCached))
+                return historicalCached;
+
             var id = new CurrencyId(currencyId);
             var currency = await _currencyRepo.GetByIdAsync(id)
                 ?? throw new BusinessException($"Currency with id: {currencyId} not found");
 
-            var date = dateTime.Date;
+            CurrencyRateVm vm;
 
             if (id == Currency.PlnId)
             {
                 var plnRate = await GetOrCreatePlnRateAsync(id, date);
-                return CurrencyRateVm.FromDomain(plnRate);
+                vm = CurrencyRateVm.FromDomain(plnRate);
+            }
+            else
+            {
+                var currencyRate = await GetOrFetchRateAsync(currency, id, date);
+                vm = CurrencyRateVm.FromDomain(currencyRate);
             }
 
-            var currencyRate = await GetOrFetchRateAsync(currency, id, date);
-            return CurrencyRateVm.FromDomain(currencyRate);
+            // Cache historical dates (rates never change retroactively).
+            if (date < DateTime.UtcNow.Date)
+                _cache.Set(cacheKey, vm, _cacheOptions.CurrencyRateHistoricalTtl);
+
+            return vm;
         }
 
         public async Task<CurrencyRateVm> GetLatestRateAsync(int currencyId)
         {
+            var cacheKey = $"CurrencyRate:Latest:{currencyId}";
+            if (_cache.TryGetValue(cacheKey, out CurrencyRateVm latestCached))
+                return latestCached;
+
             var id = new CurrencyId(currencyId);
             var currency = await _currencyRepo.GetByIdAsync(id)
                 ?? throw new BusinessException($"Currency with id: {currencyId} not found");
 
             var date = DateTime.Now.Date;
+            CurrencyRateVm vm;
 
             if (id == Currency.PlnId)
             {
                 var plnRate = await GetOrCreatePlnRateAsync(id, date);
-                return CurrencyRateVm.FromDomain(plnRate);
+                vm = CurrencyRateVm.FromDomain(plnRate);
+            }
+            else
+            {
+                var currencyRate = await GetOrFetchRateAsync(currency, id, date);
+                vm = CurrencyRateVm.FromDomain(currencyRate);
             }
 
-            var currencyRate = await GetOrFetchRateAsync(currency, id, date);
-            return CurrencyRateVm.FromDomain(currencyRate);
+            _cache.Set(cacheKey, vm, _cacheOptions.CurrencyRateLatestTtl);
+            return vm;
         }
 
-        private async Task<CurrencyRate> GetOrCreatePlnRateAsync(CurrencyId currencyId, DateTime date)        {
+        private async Task<CurrencyRate> GetOrCreatePlnRateAsync(CurrencyId currencyId, DateTime date)
+        {
             var rate = await _currencyRateRepo.GetRateForDateAsync(currencyId, date);
             if (rate != null)
                 return rate;

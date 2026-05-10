@@ -380,7 +380,8 @@ namespace ECommerceApp.UnitTests.Architecture
         [Fact]
         public void App_Presale_ShouldOnlyDependOnOwnDomainAndMessageContracts()
         {
-            // Presale handlers consume: OrderPlaced, StockAvailabilityChanged
+            // Presale handlers consume: OrderPlaced, StockAvailabilityChanged,
+            // ProductUpdated/Published/Unpublished/Discontinued (product details cache invalidation)
             Types().That().Are(AppPresale)
                 .Should().NotDependOnAny(
                     Types().That().AreNot(AppPresale)
@@ -390,6 +391,7 @@ namespace ECommerceApp.UnitTests.Architecture
                         .And().AreNot(Messaging)
                         .And().AreNot(OrderMessages)       // OrderPlacedHandler
                         .And().AreNot(InventoryMessages)   // StockAvailabilityChangedHandler
+                        .And().AreNot(CatalogMessages)     // ProductDetailsCacheInvalidationHandler
                         .And().AreNot(AppTimeManagement))  // SoftReservationExpiredJob
                 .Because("Presale application must not depend on other BCs except via message contracts")
                 .Check(Architecture);

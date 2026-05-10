@@ -1,10 +1,13 @@
 using ECommerceApp.Application.Catalog.Products.DTOs;
 using ECommerceApp.Application.Catalog.Products.Messages;
 using ECommerceApp.Application.Catalog.Products.ViewModels;
+using ECommerceApp.Application.Constants;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Domain.Catalog.Products;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,24 +18,34 @@ namespace ECommerceApp.Application.Catalog.Products.Services
 {
     internal sealed class ProductService : IProductService
     {
+        // Keep in sync with ProductCacheInvalidationHandler.CatalogProductKeyPrefix
+        private const string CatalogProductCacheKeyPrefix = "CatalogProduct:";
+        private const string CatalogListCacheKeyPrefix = "CatalogList:";
+
         private readonly IProductRepository _productRepo;
         private readonly ICategoryRepository _categoryRepo;
         private readonly IProductTagRepository _tagRepo;
         private readonly IImageUrlBuilder _urlBuilder;
         private readonly IMessageBroker _broker;
+        private readonly IMemoryCache _cache;
+        private readonly CacheOptions _cacheOptions;
 
         public ProductService(
             IProductRepository productRepo,
             ICategoryRepository categoryRepo,
             IProductTagRepository tagRepo,
             IImageUrlBuilder urlBuilder,
-            IMessageBroker broker)
+            IMessageBroker broker,
+            IMemoryCache cache,
+            IOptions<CacheOptions> cacheOptions)
         {
             _productRepo = productRepo;
             _categoryRepo = categoryRepo;
             _tagRepo = tagRepo;
             _urlBuilder = urlBuilder;
             _broker = broker;
+            _cache = cache;
+            _cacheOptions = cacheOptions.Value;
         }
 
         public async Task<int> AddProduct(CreateProductDto dto)
@@ -77,6 +90,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
                 product.ReplaceTags(dto.TagIds.Select(id => new TagId(id)));
 
             await _productRepo.UpdateAsync(product);
+            await _broker.PublishAsync(new ProductUpdated(product.Id.Value, DateTime.UtcNow));
             return true;
         }
 
@@ -87,11 +101,13 @@ namespace ECommerceApp.Application.Catalog.Products.Services
 
         public async Task<ProductDetailsVm> GetProductDetails(int id, CancellationToken cancellationToken = default)
         {
+            var cacheKey = $"{CatalogProductCacheKeyPrefix}{id}";
+            if (_cache.TryGetValue(cacheKey, out ProductDetailsVm cachedVm))
+                return cachedVm;
+
             var product = await _productRepo.GetByIdWithDetailsAsync(new ProductId(id), cancellationToken);
             if (product is null)
-            {
                 return null;
-            }
 
             var vm = ProductDetailsVm.FromDomain(product);
             vm.Images = product.Images
@@ -116,6 +132,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
                 vm.TagNames = tags.Select(t => t.Name.Value).ToList();
             }
 
+            _cache.Set(cacheKey, vm, _cacheOptions.CatalogProductTtl);
             return vm;
         }
 
@@ -135,6 +152,10 @@ namespace ECommerceApp.Application.Catalog.Products.Services
 
         public async Task<ProductListVm> GetPublishedProducts(int pageSize, int pageNo, string searchString, int? categoryId = null)
         {
+            var cacheKey = $"{CatalogListCacheKeyPrefix}{pageNo}:{pageSize}:{searchString}:{categoryId}";
+            if (_cache.TryGetValue(cacheKey, out ProductListVm cachedList))
+                return cachedList;
+
             var products = await _productRepo.GetPublishedAsync(pageSize, pageNo, searchString, categoryId);
             var count = await _productRepo.CountPublishedAsync(searchString, categoryId);
             var mapped = products.Select(ProductForListVm.FromDomain).ToList();
@@ -146,7 +167,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
                     mapped[i].MainImageUrl = _urlBuilder.Build(mainImage.Id.Value);
                 }
             }
-            return new ProductListVm
+            var result = new ProductListVm
             {
                 Products = mapped,
                 PageSize = pageSize,
@@ -154,6 +175,8 @@ namespace ECommerceApp.Application.Catalog.Products.Services
                 SearchString = searchString,
                 Count = count
             };
+            _cache.Set(cacheKey, result, _cacheOptions.CatalogListTtl);
+            return result;
         }
 
         public async Task<ProductListVm> GetPublishedProductsByTagAsync(int tagId, int pageSize, int pageNo)

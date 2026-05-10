@@ -2,6 +2,7 @@ using ECommerceApp.Application.Catalog.Products.Services;
 using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Web.Controllers;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OutputCaching;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -21,6 +22,7 @@ namespace ECommerceApp.Web.Areas.Presale.Controllers
         }
 
         [HttpGet("")]
+        [OutputCache(PolicyName = "StorefrontIndex")]
         public async Task<IActionResult> Index(string searchString = null, int? categoryId = null, CancellationToken ct = default)
         {
             var model = await _storefront.GetPublishedProductsAsync(12, 1, searchString ?? string.Empty, categoryId, ct);

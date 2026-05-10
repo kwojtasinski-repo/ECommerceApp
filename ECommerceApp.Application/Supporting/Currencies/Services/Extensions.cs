@@ -7,6 +7,7 @@ namespace ECommerceApp.Application.Supporting.Currencies.Services
     {
         public static IServiceCollection AddCurrencyServices(this IServiceCollection services)
         {
+            services.AddMemoryCache();
             return services
                 .AddScoped<ICurrencyService, CurrencyService>()
                 .AddScoped<ICurrencyRateService, CurrencyRateService>()

@@ -2,6 +2,7 @@ using ECommerceApp.Application.Catalog.Products.DTOs;
 using ECommerceApp.Application.Catalog.Products.ViewModels;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Domain.Catalog.Products;
+using Microsoft.Extensions.Caching.Memory;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,10 +12,12 @@ namespace ECommerceApp.Application.Catalog.Products.Services
     internal sealed class CategoryService : ICategoryService
     {
         private readonly ICategoryRepository _repo;
+        private readonly IMemoryCache _cache;
 
-        public CategoryService(ICategoryRepository repo)
+        public CategoryService(ICategoryRepository repo, IMemoryCache cache)
         {
             _repo = repo;
+            _cache = cache;
         }
 
         public async Task<int> AddCategory(CreateCategoryDto dto)
@@ -24,6 +27,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
 
             var category = Category.Create(dto.Name);
             var id = await _repo.AddAsync(category);
+            _cache.Remove(CachedCatalogNavigationService.AllCategoriesCacheKey);
             return id.Value;
         }
 
@@ -38,12 +42,16 @@ namespace ECommerceApp.Application.Catalog.Products.Services
 
             category.Update(dto.Name);
             await _repo.UpdateAsync(category);
+            _cache.Remove(CachedCatalogNavigationService.AllCategoriesCacheKey);
             return true;
         }
 
         public async Task<bool> DeleteCategory(int id)
         {
-            return await _repo.DeleteAsync(new CategoryId(id));
+            var deleted = await _repo.DeleteAsync(new CategoryId(id));
+            if (deleted)
+                _cache.Remove(CachedCatalogNavigationService.AllCategoriesCacheKey);
+            return deleted;
         }
 
         public async Task<CategoryVm> GetCategory(int id)

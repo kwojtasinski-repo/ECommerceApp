@@ -1,6 +1,7 @@
 using ECommerceApp.Application.Catalog.Products.ViewModels;
+using ECommerceApp.Application.Constants;
 using Microsoft.Extensions.Caching.Memory;
-using System;
+using Microsoft.Extensions.Options;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -10,13 +11,14 @@ namespace ECommerceApp.Application.Catalog.Products.Services
     {
         private readonly ICategoryService _categoryService;
         private readonly IMemoryCache _cache;
-        private static readonly TimeSpan CacheDuration = TimeSpan.FromSeconds(30);
-        private const string AllCategoriesCacheKey = "CatalogNavigation:AllCategories";
+        private readonly CacheOptions _cacheOptions;
+        public const string AllCategoriesCacheKey = "CatalogNavigation:AllCategories";
 
-        public CachedCatalogNavigationService(ICategoryService categoryService, IMemoryCache cache)
+        public CachedCatalogNavigationService(ICategoryService categoryService, IMemoryCache cache, IOptions<CacheOptions> cacheOptions)
         {
             _categoryService = categoryService;
             _cache = cache;
+            _cacheOptions = cacheOptions.Value;
         }
 
         public async Task<List<CategoryVm>> GetAllCategories()
@@ -24,7 +26,7 @@ namespace ECommerceApp.Application.Catalog.Products.Services
             if (!_cache.TryGetValue(AllCategoriesCacheKey, out List<CategoryVm> categories))
             {
                 categories = await _categoryService.GetAllCategories();
-                _cache.Set(AllCategoriesCacheKey, categories, CacheDuration);
+                _cache.Set(AllCategoriesCacheKey, categories, _cacheOptions.CatalogNavigationTtl);
             }
             return categories;
         }

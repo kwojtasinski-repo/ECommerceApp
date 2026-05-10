@@ -62,6 +62,7 @@ namespace ECommerceApp.Web
                 options.ClientSecret = configurationSection["ClientSecret"];
             });
             services.AddDatabaseDeveloperPageExceptionFilter();
+            services.AddWebCaching(Configuration);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -79,6 +80,7 @@ namespace ECommerceApp.Web
             }
             app.UseHttpsRedirection();
             app.UseStaticFiles();
+            app.UseOutputCache(); // must be after UseStaticFiles, before UseRouting
 
             var defaultCulture = new CultureInfo("pl-PL");
             var localizationOptions = new RequestLocalizationOptions

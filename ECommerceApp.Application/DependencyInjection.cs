@@ -1,5 +1,6 @@
 ﻿using ECommerceApp.Application.AccountProfile.Services;
 using ECommerceApp.Application.Catalog.Products.Services;
+using ECommerceApp.Application.Constants;
 using ECommerceApp.Application.External;
 using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Identity.IAM.Services;
@@ -22,10 +23,12 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 namespace ECommerceApp.Application
 {
-    public static class DependencyInjection 
+    public static class DependencyInjection
     {
         public static IServiceCollection AddApplication(this IServiceCollection services)
         {
+            // Register with class defaults; Infrastructure will override from appsettings.
+            services.Configure<CacheOptions>(_ => { });
             services.AddFilesStore();
             services.AddErrorHandling();
             services.AddNbpClient();

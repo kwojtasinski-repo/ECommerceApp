@@ -2,6 +2,7 @@ using ECommerceApp.Application.Sales.Coupons.Handlers;
 using ECommerceApp.Application.Sales.Payments.Messages;
 using ECommerceApp.Domain.Sales.Coupons;
 using AwesomeAssertions;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -25,7 +26,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         }
 
         private CouponsPaymentExpiredHandler CreateHandler()
-            => new(_couponUsed.Object, _coupons.Object, _applicationRecords.Object);
+            => new(_couponUsed.Object, _coupons.Object, _applicationRecords.Object, NullLogger<CouponsPaymentExpiredHandler>.Instance);
 
         private static PaymentExpired CreateMessage(int orderId = 99)
             => new(PaymentId: 10, OrderId: orderId, OccurredAt: DateTime.UtcNow);

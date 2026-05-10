@@ -2,6 +2,7 @@ using ECommerceApp.Application.Inventory.Availability.Messages;
 using ECommerceApp.Application.Presale.Checkout.Handlers;
 using ECommerceApp.Domain.Presale.Checkout;
 using AwesomeAssertions;
+using Microsoft.Extensions.Caching.Memory;
 using Moq;
 using System;
 using System.Threading;
@@ -18,7 +19,7 @@ namespace ECommerceApp.UnitTests.Presale.Checkout
         public StockAvailabilityChangedHandlerTests()
         {
             _snapshotRepo = new Mock<IStockSnapshotRepository>();
-            _handler = new StockAvailabilityChangedHandler(_snapshotRepo.Object);
+            _handler = new StockAvailabilityChangedHandler(_snapshotRepo.Object, new Mock<IMemoryCache>().Object);
         }
 
         [Fact]
