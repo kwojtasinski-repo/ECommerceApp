@@ -23,9 +23,6 @@ namespace ECommerceApp.Shared.TestInfrastructure
 
         public new virtual void Dispose()
         {
-            var context = Services.GetService(typeof(Context)) as Context;
-            context.Database.EnsureDeleted();
-            context.Dispose();
             Sink.SetOutput(null);
             base.Dispose();
         }
