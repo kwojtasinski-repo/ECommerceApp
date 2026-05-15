@@ -3,13 +3,17 @@
   "servers": {
     "ecommerceapp-rag": {
       "type": "stdio",
-      "command": "${workspaceFolder}/tools/rag/.venv/Scripts/python.exe",
+      "command": "docker",
       "args": [
-        "${workspaceFolder}/tools/rag/mcp_server.py"
-      ],
-      "env": {
-        "PYTHONUNBUFFERED": "1"
-      }
+        "run", "--rm", "--interactive",
+        "--volume", "${workspaceFolder}:/workspace",
+        "--volume", "qdrant_data:/data/qdrant",
+        "--env", "RAG_WORKSPACE=/workspace",
+        "--env", "PYTHONUNBUFFERED=1",
+        "rag-tools",
+        "python", "/app/mcp_server.py"
+      ]
     }
   }
 }
+

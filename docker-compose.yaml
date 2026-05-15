@@ -12,9 +12,59 @@ services:
     
     web:
         build:
-            context: .
+            context: .  
             dockerfile: Dockerfile-web
         container_name: web
         restart: unless-stopped
         ports:
-          - 5000:80 
+          - 5000:80
+
+    # RAG tools service — embedded Qdrant + Python MCP server.
+    # VS Code starts the MCP server automatically via .vscode/mcp.json (docker run, not compose).
+    # Use this service for convenience: docker compose run rag-tools python ingest.py
+    rag-tools:
+        build:
+            context: tools/rag
+            dockerfile: Dockerfile
+        image: rag-tools
+        environment:
+          - RAG_WORKSPACE=/workspace
+          - PYTHONUNBUFFERED=1
+        volumes:
+          - .:/workspace              # repo root → /workspace (docs, .github, manifest cache)
+          - qdrant_data:/data/qdrant  # persistent embedded Qdrant storage
+        profiles:
+          - rag                       # opt-in: docker compose --profile rag up
+
+    # Qdrant HTTP server — required by rag-dotnet (.NET gRPC client, no embedded mode).
+    qdrant:
+        image: qdrant/qdrant:v1.13.6
+        ports:
+          - "6333:6333"   # HTTP REST (health check, dashboard)
+          - "6334:6334"   # gRPC (used by .NET Qdrant.Client)
+        volumes:
+          - qdrant_data:/qdrant/storage
+        profiles:
+          - rag-dotnet                # opt-in: docker compose --profile rag-dotnet up
+
+    # .NET RAG tools — ONNX embedder + Qdrant.Client + MCP server.
+    # Requires 'qdrant' service (started via --profile rag-dotnet).
+    rag-dotnet:
+        build:
+            context: tools/rag-dotnet
+            dockerfile: Dockerfile
+        image: rag-dotnet
+        depends_on:
+          - qdrant
+        environment:
+          - RAG_WORKSPACE=/workspace
+          - QDRANT_URL=http://qdrant:6333
+          - RAG_COLLECTION=ecommerceapp_docs_dotnet
+          - DOTNET_CLI_TELEMETRY_OPTOUT=1
+        volumes:
+          - .:/workspace:ro           # repo root → /workspace (read-only)
+        profiles:
+          - rag-dotnet
+
+volumes:
+    qdrant_data:
