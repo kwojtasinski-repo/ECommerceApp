@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>mcp_server</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RagTools.Core\RagTools.Core.csproj" />
+
+    <!-- MCP SDK — stdio transport, tool registration -->
+    <PackageReference Include="ModelContextProtocol" Version="0.2.0-preview.3" />
+
+    <!-- Hosting for graceful shutdown support -->
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.0-preview.4.25258.110" />
+  </ItemGroup>
+
+</Project>
