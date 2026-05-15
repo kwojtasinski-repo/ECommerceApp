@@ -1,0 +1,178 @@
+# queries.yaml — named queries for the ECommerceApp RAG index.
+# Loaded by the RAG ingest and MCP server via config.yaml → config_files.queries.
+# Override per-repo without modifying config.yaml or the Docker image.
+#
+# Format:
+#   name:     unique identifier (used by eval.py and MCP tool arguments)
+#   question: the natural-language query to embed and search
+#   doc_kind: optional — filter results to this doc_kind only
+#   adr_id:   optional — filter results to a specific ADR (4-digit zero-padded)
+#   top_k:    optional — override default_top_k from config.yaml
+
+# ── ADR by kind ───────────────────────────────────────────────────────────────
+named_queries:
+
+  - name: "adr-amendments"
+    question: "ADR amendments corrections and changes to architectural decisions"
+    doc_kind: "adr_amendment"
+    top_k: 20
+
+  - name: "adr-examples"
+    question: "example implementation code showing ADR in practice"
+    doc_kind: "adr_example"
+    top_k: 10
+
+  - name: "adr-checklists"
+    question: "ADR conformance checklist items and review criteria"
+    doc_kind: "adr_checklist"
+    top_k: 10
+
+  - name: "adr-migration-plans"
+    question: "ADR migration plan steps and sequence"
+    doc_kind: "adr_migration_plan"
+    top_k: 10
+
+  - name: "adr-routers"
+    question: "ADR index routing table links to decision records"
+    doc_kind: "adr_router"
+    top_k: 5
+
+  # ── ADR main content by domain ─────────────────────────────────────────────
+  - name: "pricing-strategy"
+    question: "pricing strategy interface implementation and pattern"
+    doc_kind: "adr_main"
+    top_k: 8
+
+  - name: "session-lifecycle"
+    question: "session entry exit completion fee calculation status lifecycle"
+    doc_kind: "adr_main"
+    top_k: 10
+
+  - name: "coupon-rules"
+    question: "coupon rules maximum coupons per order limits validation"
+    doc_kind: "adr_main"
+    top_k: 8
+
+  - name: "identity-auth"
+    question: "identity authentication JWT claims roles permissions"
+    doc_kind: "adr_main"
+    top_k: 8
+
+  - name: "catalog-domain"
+    question: "product catalog domain entity aggregate"
+    doc_kind: "adr_main"
+    top_k: 8
+
+  - name: "orders-domain"
+    question: "order creation processing payment refund"
+    doc_kind: "adr_main"
+    top_k: 8
+
+  - name: "currency-exchange"
+    question: "currency exchange NBP API rate conversion"
+    doc_kind: "adr_main"
+    top_k: 8
+
+  - name: "cqrs-handler-pattern"
+    question: "CQRS command handler ICommandHandler pattern implementation"
+    doc_kind: "adr_main"
+    top_k: 8
+
+  - name: "domain-events"
+    question: "domain event IMessage cross bounded context messaging"
+    doc_kind: "adr_main"
+    top_k: 8
+
+  - name: "bounded-context-migration"
+    question: "bounded context migration switch legacy new implementation"
+    doc_kind: "adr_main"
+    top_k: 8
+
+  # ── Context files ──────────────────────────────────────────────────────────
+  - name: "bc-blockers"
+    question: "bounded context blocked status migration readiness"
+    doc_kind: "context"
+    top_k: 5
+
+  - name: "agent-decisions"
+    question: "agent corrections past mistakes decisions to avoid repeating"
+    doc_kind: "context"
+    top_k: 10
+
+  - name: "known-issues"
+    question: "known bugs issues workarounds and limitations"
+    doc_kind: "context"
+    top_k: 10
+
+  - name: "repo-structure"
+    question: "repository structure file locations project layout"
+    doc_kind: "context"
+    top_k: 5
+
+  # ── Architecture docs ──────────────────────────────────────────────────────
+  - name: "bounded-context-map"
+    question: "bounded context map dependencies coupling relationships"
+    doc_kind: "architecture"
+    top_k: 5
+
+  - name: "clean-architecture-layers"
+    question: "clean architecture onion layers dependencies domain application infrastructure"
+    doc_kind: "architecture"
+    top_k: 8
+
+  # ── Patterns ───────────────────────────────────────────────────────────────
+  - name: "repository-pattern"
+    question: "repository pattern interface implementation unit of work"
+    doc_kind: "pattern"
+    top_k: 8
+
+  - name: "exception-handling"
+    question: "exception middleware error handling HTTP status mapping"
+    doc_kind: "pattern"
+    top_k: 8
+
+  # ── Reference docs ─────────────────────────────────────────────────────────
+  - name: "api-conventions"
+    question: "API controller route conventions HTTP status codes response format"
+    doc_kind: "reference"
+    top_k: 8
+
+  - name: "ef-core-conventions"
+    question: "EF Core configuration entity type migrations tracking"
+    doc_kind: "reference"
+    top_k: 8
+
+  # ── Roadmap ────────────────────────────────────────────────────────────────
+  - name: "roadmap-next-steps"
+    question: "roadmap next steps planned features and dependencies"
+    doc_kind: "roadmap"
+    top_k: 10
+
+  # ── Copilot config ─────────────────────────────────────────────────────────
+  - name: "instructions-dotnet"
+    question: ".NET C# coding conventions nullable async DI patterns"
+    doc_kind: "instruction"
+    top_k: 5
+
+  - name: "skills-available"
+    question: "available skills scaffolding commands how to create new artifacts"
+    doc_kind: "skill"
+    top_k: 10
+
+  - name: "prompts-available"
+    question: "available prompts agent workflows how to run tasks"
+    doc_kind: "prompt"
+    top_k: 10
+
+  # ── Cross-kind / broad ─────────────────────────────────────────────────────
+  - name: "shared-primitives"
+    question: "TypedId Money Price Quantity shared domain primitives value objects"
+    top_k: 8
+
+  - name: "inventory-management"
+    question: "inventory stock quantity reservation"
+    top_k: 8
+
+  - name: "file-upload"
+    question: "file upload storage IFileStore image product"
+    top_k: 8

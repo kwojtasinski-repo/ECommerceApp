@@ -1,0 +1,70 @@
+# metadata-rules.yaml — repo-specific document classification rules.
+# Loaded by the RAG ingest and MCP server via config.yaml → config_files.metadata_rules.
+# Override per-repo without modifying config.yaml or the Docker image.
+#
+# All paths below are relative file paths matched against each markdown file's
+# repo-relative path (forward-slash, no leading slash).
+
+# ── ADR ID extraction ─────────────────────────────────────────────────────────
+# adr_id_patterns: first matching regex wins.
+# Each pattern MUST have a named capture group 'id'.
+# Add/remove patterns to match your repo's ADR naming convention.
+adr_id_patterns:
+  - pattern: "adr/(?P<id>\\d{4})/"
+    # folder style: docs/adr/0011/0011-some-title.md
+
+  - pattern: "(?:ADR-|adr-)(?P<id>\\d{4})"
+    # file-name prefix: docs/adr/ADR-0011.md
+
+  - pattern: "/(?P<id>\\d{4})-"
+    # numeric prefix: docs/adr/0011-some-title.md
+
+# ── Document kind classification ──────────────────────────────────────────────
+# doc_kind_rules: first matching glob wins.
+# 'kind' is stored as Qdrant payload metadata and used for filtering in named_queries.
+# Order matters — put more specific globs before broader ones.
+doc_kind_rules:
+  - glob: "**/amendments/**"
+    kind: "adr_amendment"
+
+  - glob: "**/example-implementation/**"
+    kind: "adr_example"
+
+  - glob: "**/adr/**/checklist.md"
+    kind: "adr_checklist"
+
+  - glob: "**/adr/**/migration-plan.md"
+    kind: "adr_migration_plan"
+
+  - glob: "**/adr/**/README.md"
+    kind: "adr_router"
+
+  - glob: "docs/adr/**"
+    kind: "adr_main"
+
+  - glob: ".github/context/**"
+    kind: "context"
+
+  - glob: "docs/architecture/**"
+    kind: "architecture"
+
+  - glob: "docs/patterns/**"
+    kind: "pattern"
+
+  - glob: "docs/reference/**"
+    kind: "reference"
+
+  - glob: "docs/roadmap/**"
+    kind: "roadmap"
+
+  - glob: "docs/rag/**"
+    kind: "rag_meta"
+
+  - glob: ".github/instructions/**"
+    kind: "instruction"
+
+  - glob: ".github/skills/**"
+    kind: "skill"
+
+  - glob: ".github/prompts/**"
+    kind: "prompt"
