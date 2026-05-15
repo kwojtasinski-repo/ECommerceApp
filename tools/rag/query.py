@@ -79,7 +79,9 @@ class QueryEngine:
             ]
             for i in range(0, len(points), BATCH):
                 self._client.upsert(collection_name=snap["collection"], points=points[i : i + BATCH])
-        else:
+        elif self._mode == "local":
+            self._client = QdrantClient(path=self.cfg.vector_local_path)
+        else:  # docker
             self._client = QdrantClient(url=self.cfg.vector_url)
 
     def search(

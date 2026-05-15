@@ -39,7 +39,12 @@ def main() -> int:
     args = parser.parse_args()
 
     data = json.loads(QUESTIONS_PATH.read_text(encoding="utf-8"))
-    questions = data["questions"]
+    all_questions = data["questions"]
+    # Skip auto-generated questions not yet confirmed by a human.
+    questions = [q for q in all_questions if q.get("reviewed", True) is not False]
+    skipped = len(all_questions) - len(questions)
+    if skipped:
+        print(f"[eval] Skipping {skipped} unreviewed auto-generated question(s)")
 
     engine = QueryEngine()
     hits_at_k = []
