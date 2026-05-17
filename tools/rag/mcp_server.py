@@ -1,11 +1,19 @@
-"""MCP server exposing 3 tools backed by the RAG index.
+"""MCP server exposing 4 tools backed by the RAG index.
 
 Tools:
-- query_docs(question, bc=None, top_k=5) -> structured hits (rel_path + breadcrumb + line range + score + text)
-- get_adr_history(adr_id) -> main ADR + amendments in chronological order
-- list_adrs() -> table of all ADRs (id, title, kind counts)
+- query_docs(question, bc=None, top_k=5)  -> ranked chunks: rel_path + breadcrumb + score + text snippet
+- read_docs(question, bc=None, top_files=3) -> relevant chunks grouped by file (default) OR full file content
+                                              when query signals full-content intent ("show me all details", etc.)
+- get_adr_history(adr_id)                 -> main ADR + amendments in chronological order
+- list_adrs()                             -> table of all ADRs (id, title, kind counts)
 
-Run (VS Code Copilot will start this automatically via .github/copilot/mcp.json):
+Typical agent flow:
+  1. list_adrs()           — orientation: what exists?
+  2. query_docs(question)  — discovery: which files are relevant?
+  3. read_docs(question)   — depth: best chunks per file (or full file when "show me all details about...")
+  4. get_adr_history(id)   — evolution: how did a specific ADR change over time?
+
+Run (VS Code Copilot will start this automatically via .vscode/mcp.json):
     python tools/rag/mcp_server.py
 """
 from __future__ import annotations
@@ -61,10 +69,10 @@ def _startup_check() -> None:
         if not local_path.exists():
             print(
                 f"[rag-mcp] WARNING: Qdrant local storage path does not exist: {local_path}\n"
-                "[rag-mcp] It will be created on first ingest. Run /rag-sync to initialise.",
+                "[rag-mcp] Run: python tools/rag/ingest.py to initialise the index.",
                 file=sys.stderr,
             )
-            # Do not return — ingest will create the path.
+            return  # Nothing to sync — storage doesn't exist yet.
     else:
         # docker mode — check Qdrant HTTP server is reachable.
         import urllib.request
@@ -104,9 +112,40 @@ def _startup_check() -> None:
 
     print(f"[rag-mcp] {len(changed)} file(s) changed — running incremental ingest...", file=sys.stderr)
     script = Path(__file__).parent / "ingest.py"
-    result = subprocess.run([sys.executable, str(script), "--mode", "docker"])
-    if result.returncode != 0:
-        print(f"[rag-mcp] WARNING: ingest exited with code {result.returncode}", file=sys.stderr)
+    ingest_mode = CFG.vector_mode if CFG.vector_mode in {"local", "docker", "memory"} else "local"
+    # IMPORTANT: keep stdout reserved for MCP framed JSON-RPC messages.
+    # Any plain-text logs during startup must go to stderr.
+    try:
+        # Do not stream ingest logs through MCP stderr directly.
+        # In console smoke tests stderr may be unread until process exit,
+        # which can deadlock the child process on a full pipe buffer.
+        result = subprocess.run(
+            [sys.executable, str(script), "--mode", ingest_mode],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            timeout=300,
+        )
+        if result.returncode != 0:
+            print(f"[rag-mcp] WARNING: ingest exited with code {result.returncode}", file=sys.stderr)
+    except subprocess.TimeoutExpired:
+        print("[rag-mcp] WARNING: ingest timed out after 300s; continuing without startup sync", file=sys.stderr)
+
+
+# ---------------------------- full-content intent detection ----------------------------
+
+_FULL_INTENT_RE = re.compile(
+    r"\b("
+    r"all details|full details|full content|full text|entire|whole file"
+    r"|show me all|explain everything|everything about|complete picture"
+    r"|all about|deep dive|in full|from start to finish"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def _wants_full_content(question: str) -> bool:
+    """Return True when the question words signal the caller wants the whole file, not just chunks."""
+    return bool(_FULL_INTENT_RE.search(question))
 
 
 # ---------------------------- tool: query_docs ----------------------------
@@ -120,8 +159,10 @@ async def list_tools() -> list[Tool]:
             description=(
                 "Semantic search across project documentation (ADRs, architecture, patterns, "
                 "reference, roadmap). Returns the top-k retrieved chunks with breadcrumb, "
-                "file path, line range, weighted score, and text. Use bc to substring-filter "
-                "by bounded context name (e.g. 'Sales/Orders')."
+                "file path, line range, weighted score, and text snippet. "
+                "Use this for orientation — to discover which files are relevant. "
+                "Follow up with read_docs to get full file content. "
+                "Use bc to substring-filter by bounded context name (e.g. 'Sales/Orders')."
             ),
             inputSchema={
                 "type": "object",
@@ -129,6 +170,28 @@ async def list_tools() -> list[Tool]:
                     "question": {"type": "string"},
                     "bc": {"type": "string", "description": "Optional substring filter on breadcrumb / doc title"},
                     "top_k": {"type": "integer", "default": 5, "minimum": 1, "maximum": 15},
+                },
+                "required": ["question"],
+            },
+        ),
+        Tool(
+            name="read_docs",
+            description=(
+                "Semantic search that returns the best matching chunks grouped by file. "
+                "When the question contains explicit full-content intent phrases "
+                "(e.g. 'show me all details about', 'full content of', 'explain everything about', "
+                "'entire', 'whole file', 'in full', 'complete picture') the server instead reads "
+                "the whole file from disk and returns the complete text. "
+                "Use this over query_docs when you need to reason over document context, not "
+                "just a single fragment. Use bc to substring-filter by bounded context."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "question": {"type": "string"},
+                    "bc": {"type": "string", "description": "Optional substring filter on breadcrumb / doc title"},
+                    "top_files": {"type": "integer", "default": 3, "minimum": 1, "maximum": 5,
+                                  "description": "Max unique files to return (each may be large)"},
                 },
                 "required": ["question"],
             },
@@ -163,6 +226,8 @@ async def list_tools() -> list[Tool]:
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     if name == "query_docs":
         return await _tool_query_docs(arguments)
+    if name == "read_docs":
+        return await _tool_read_docs(arguments)
     if name == "get_adr_history":
         return await _tool_get_adr_history(arguments)
     if name == "list_adrs":
@@ -192,6 +257,91 @@ async def _tool_query_docs(args: dict) -> list[TextContent]:
             }
             for h in hits
         ],
+    }
+    return [TextContent(type="text", text=json.dumps(payload, indent=2))]
+
+
+# ---------------------------- tool: read_docs ----------------------------
+
+
+async def _tool_read_docs(args: dict) -> list[TextContent]:
+    """Return relevant content for the top-ranked unique files matching the query.
+
+    Strategy (two modes, detected from question text):
+
+    DEFAULT — chunk mode (question does NOT signal full-content intent):
+      1. Run vector search with a generous top_k.
+      2. Group hits by file, keep all chunks per file sorted by score.
+      3. Return the top chunks per file — no disk read, minimal tokens.
+
+    FULL mode — question contains explicit full-content intent phrases
+    (e.g. "show me all details", "full content of", "explain everything about"):
+      1. Same vector search to rank files.
+      2. Read each top-ranked file in full from disk.
+      3. Return complete text — caller gets every section including Alternatives/Consequences.
+    """
+    question = args["question"]
+    bc = args.get("bc")
+    top_files = min(int(args.get("top_files", 3)), 5)
+    full_mode = _wants_full_content(question)
+
+    # Fetch enough chunks globally so that each file gets good per-file coverage.
+    # Multiplier of 15 ensures that even later-ranked chunks within a file (e.g. the
+    # "Alternatives considered" section at the end of an ADR) make the global top-k
+    # cutoff when there are competing chunks from other files.
+    hits = ENGINE.search(question, top_k=max(30, top_files * 15), bc_filter=bc)
+
+    # Group hits by file, tracking best score and all chunks per file.
+    from collections import defaultdict
+    chunks_per_file: dict[str, list] = defaultdict(list)
+    best_score_per_file: dict[str, float] = {}
+    for h in hits:
+        chunks_per_file[h.rel_path].append(h)
+        if h.final_score > best_score_per_file.get(h.rel_path, 0.0):
+            best_score_per_file[h.rel_path] = h.final_score
+
+    ranked_files = sorted(best_score_per_file.items(), key=lambda x: x[1], reverse=True)[:top_files]
+
+    files_out = []
+    for rel_path, score in ranked_files:
+        file_hits = sorted(chunks_per_file[rel_path], key=lambda h: h.final_score, reverse=True)
+        if full_mode:
+            abs_path = REPO_ROOT / rel_path
+            try:
+                content = abs_path.read_text(encoding="utf-8")
+            except OSError as exc:
+                content = f"[ERROR: could not read file — {exc}]"
+            files_out.append({
+                "rel_path": rel_path,
+                "score": round(score, 4),
+                "mode": "full",
+                "size_chars": len(content),
+                "content": content,
+            })
+        else:
+            # Return the top chunks for this file — no disk read.
+            chunks_out = [
+                {
+                    "lines": f"{h.start_line}-{h.end_line}",
+                    "score": round(h.final_score, 4),
+                    "text": h.text,
+                }
+                for h in file_hits[:8]  # at most 8 chunks per file
+            ]
+            files_out.append({
+                "rel_path": rel_path,
+                "score": round(score, 4),
+                "mode": "chunks",
+                "chunks_returned": len(chunks_out),
+                "chunks": chunks_out,
+            })
+
+    payload = {
+        "query": question,
+        "bc_filter": bc,
+        "mode": "full" if full_mode else "chunks",
+        "files_returned": len(files_out),
+        "files": files_out,
     }
     return [TextContent(type="text", text=json.dumps(payload, indent=2))]
 
@@ -267,10 +417,15 @@ async def _tool_list_adrs(_: dict) -> list[TextContent]:
 
 
 async def _run() -> None:
-    _startup_check()
     async with stdio_server() as (read, write):
         await SERVER.run(read, write, SERVER.create_initialization_options())
 
 
 if __name__ == "__main__":
+    # Run startup sync in a plain daemon thread BEFORE entering the asyncio loop.
+    # Using asyncio.create_task / asyncio.to_thread caused Python 3.14 compatibility
+    # issues (CancelledError propagating into the MCP session before initialize completes).
+    # A plain thread is simpler and avoids any interaction with the event loop.
+    import threading
+    threading.Thread(target=_startup_check, daemon=True, name="rag-startup-sync").start()
     asyncio.run(_run())

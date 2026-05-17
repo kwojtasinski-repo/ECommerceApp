@@ -52,11 +52,13 @@ class Config:
 
     @property
     def vector_mode(self) -> str:
-        return self.raw["vector_store"].get("mode", "memory")
+        """VECTOR_MODE env var overrides config.yaml (allows docker-compose env injection)."""
+        return os.environ.get("VECTOR_MODE") or self.raw["vector_store"].get("mode", "memory")
 
     @property
     def vector_url(self) -> str:
-        return self.raw["vector_store"].get("url", "http://localhost:6333")
+        """QDRANT_URL env var overrides config.yaml (resolves docker service hostname at runtime)."""
+        return os.environ.get("QDRANT_URL") or self.raw["vector_store"].get("url", "http://localhost:6333")
 
     @property
     def vector_local_path(self) -> str:

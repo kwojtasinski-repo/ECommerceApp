@@ -19,32 +19,37 @@ services:
         ports:
           - 5000:80
 
-    # RAG tools service — embedded Qdrant + Python MCP server.
+    # RAG tools service — connects to the qdrant HTTP container (docker mode).
     # VS Code starts the MCP server automatically via .vscode/mcp.json (docker run, not compose).
-    # Use this service for convenience: docker compose run rag-tools python ingest.py
+    # Run ingest:  docker compose --profile rag run rag-tools python ingest.py
+    # Run MCP:     docker compose --profile rag run --interactive rag-tools python mcp_server.py
     rag-tools:
         build:
             context: tools/rag
             dockerfile: Dockerfile
         image: rag-tools
+        depends_on:
+          - qdrant
         environment:
           - RAG_WORKSPACE=/workspace
           - PYTHONUNBUFFERED=1
+          - VECTOR_MODE=docker
+          - QDRANT_URL=http://qdrant:6333
         volumes:
           - .:/workspace              # repo root → /workspace (docs, .github, manifest cache)
-          - qdrant_data:/data/qdrant  # persistent embedded Qdrant storage
         profiles:
           - rag                       # opt-in: docker compose --profile rag up
 
-    # Qdrant HTTP server — required by rag-dotnet (.NET gRPC client, no embedded mode).
+    # Qdrant HTTP server — shared by rag-tools (Python MCP) and rag-dotnet (.NET gRPC client).
     qdrant:
         image: qdrant/qdrant:v1.13.6
         ports:
-          - "6333:6333"   # HTTP REST (health check, dashboard)
+          - "6333:6333"   # HTTP REST (also reachable from host at http://localhost:6333)
           - "6334:6334"   # gRPC (used by .NET Qdrant.Client)
         volumes:
           - qdrant_data:/qdrant/storage
         profiles:
+          - rag                       # shared with rag-tools
           - rag-dotnet                # opt-in: docker compose --profile rag-dotnet up
 
     # .NET RAG tools — ONNX embedder + Qdrant.Client + MCP server.
