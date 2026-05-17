@@ -25,6 +25,7 @@ from tqdm import tqdm
 from chunker import chunk_markdown
 from common import (
     REPO_ROOT,
+    CONFIG_PATH,
     Config,
     detect_adr_id,
     detect_doc_kind,
@@ -178,6 +179,8 @@ def _write_stats_md(
 
 def main() -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--config", default=None, metavar="PATH",
+                        help="Path to config.yaml (default: config.yaml next to ingest.py)")
     parser.add_argument("--mode", choices=["memory", "docker", "local"], default=None,
                         help="Override vector_store.mode from config.yaml")
     parser.add_argument("--dry-run", action="store_true",
@@ -186,7 +189,14 @@ def main() -> int:
                         help="Recreate collection from scratch (ignores manifest cache)")
     args = parser.parse_args()
 
-    cfg: Config = load_config()
+    if args.config:
+        config_path = Path(args.config).resolve()
+    elif env_ws := os.environ.get("RAG_WORKSPACE"):
+        # Container / CI mode: derive config from workspace env — no --config needed.
+        config_path = Path(env_ws) / "tools" / "rag" / "config.yaml"
+    else:
+        config_path = CONFIG_PATH
+    cfg: Config = load_config(config_path)
     mode = args.mode or cfg.vector_mode
 
     all_files = iter_markdown_files(cfg)
@@ -196,7 +206,7 @@ def main() -> int:
     stored = _load_file_manifest(cfg)
     stored_hashes: dict[str, str] = stored.get("file_hashes", {})
     current_hashes: dict[str, str] = {
-        path.relative_to(REPO_ROOT).as_posix(): _sha256_file(path)
+        path.relative_to(cfg.workspace).as_posix(): _sha256_file(path)
         for path in all_files
     }
 
@@ -216,7 +226,7 @@ def main() -> int:
         process_rels = changed_rels | new_rels
         files_to_process = [
             p for p in all_files
-            if p.relative_to(REPO_ROOT).as_posix() in process_rels
+            if p.relative_to(cfg.workspace).as_posix() in process_rels
         ]
         files_to_delete = list(deleted_rels | changed_rels)
         incremental = True
@@ -235,7 +245,7 @@ def main() -> int:
     total_chunks = 0
     for path in files_to_process:
         text = path.read_text(encoding="utf-8")
-        doc_title = _file_doc_title(path.relative_to(REPO_ROOT).as_posix(), text)
+        doc_title = _file_doc_title(path.relative_to(cfg.workspace).as_posix(), text)
         chunks = chunk_markdown(text, doc_title, cfg.chunker)
         chunks_by_file.append((path, chunks))
         total_chunks += len(chunks)
@@ -245,7 +255,7 @@ def main() -> int:
         # Print kind distribution for sanity-checking the chunker.
         kind_counts: dict[str, int] = {}
         for path, chunks in chunks_by_file:
-            rel = path.relative_to(REPO_ROOT).as_posix()
+            rel = path.relative_to(cfg.workspace).as_posix()
             kind = detect_doc_kind(rel, cfg)
             kind_counts[kind] = kind_counts.get(kind, 0) + len(chunks)
         for k, v in sorted(kind_counts.items(), key=lambda kv: -kv[1]):
@@ -327,7 +337,7 @@ def main() -> int:
     for path, chunks in tqdm(chunks_by_file, desc="files"):
         if not chunks:
             continue
-        rel = path.relative_to(REPO_ROOT).as_posix()
+        rel = path.relative_to(cfg.workspace).as_posix()
         doc_title = _file_doc_title(rel, path.read_text(encoding="utf-8"))
         weight = resolve_weight(rel, path.stat().st_size, cfg.ranking)
         embed_texts = [c.embed_text for c in chunks]
@@ -368,14 +378,14 @@ def main() -> int:
         }
         with cfg.snapshot_path.open("w", encoding="utf-8") as fh:
             json.dump(snapshot, fh)
-        print(f"[ingest] snapshot written: {cfg.snapshot_path.relative_to(REPO_ROOT)}")
+        print(f"[ingest] snapshot written: {cfg.snapshot_path.relative_to(cfg.workspace)}")
 
     # Always save the hash manifest (both memory and docker modes).
     _write_stats_md(cfg, points, len(all_files))
     if cfg.stats_path is not None:
-        print(f"[ingest] stats written:    {cfg.stats_path.relative_to(REPO_ROOT)}")
+        print(f"[ingest] stats written:    {cfg.stats_path.relative_to(cfg.workspace)}")
     _save_file_manifest(cfg, current_hashes, len(all_files), len(points), dim)
-    print(f"[ingest] manifest written: {cfg.manifest_path.relative_to(REPO_ROOT)}")
+    print(f"[ingest] manifest written: {cfg.manifest_path.relative_to(cfg.workspace)}")
     return 0
 
 

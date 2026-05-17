@@ -71,6 +71,9 @@ def _build_cmd(docker: bool, workspace: Path, server_py: Path) -> list[str]:
     or: docker compose --profile rag run rag-tools python ingest.py (container).
     """
     if docker:
+        # RAG_WORKSPACE=/workspace is the only path-related knob.
+        # The image WORKDIR is /app — scripts run from there, no /workspace/ paths needed.
+        # RAG_WORKSPACE drives config derivation: <workspace>/tools/rag/config.yaml.
         return [
             "docker", "run", "--rm", "--interactive",
             "--network", "ecommerceapp_default",   # joins compose network → qdrant:6333 reachable
@@ -80,7 +83,7 @@ def _build_cmd(docker: bool, workspace: Path, server_py: Path) -> list[str]:
             "--env", "VECTOR_MODE=docker",
             "--env", "QDRANT_URL=http://qdrant:6333",
             "rag-tools",
-            "python", "/app/mcp_server.py",
+            "python", "mcp_server.py",  # relative to WORKDIR /app — uses baked scripts
         ]
     return [sys.executable, str(server_py)]
 
@@ -227,9 +230,19 @@ def main() -> None:
                 # Print metadata only — full file content would flood the terminal
                 summary = {
                     "query": inner.get("query"),
+                    "mode": inner.get("mode"),
                     "files_returned": inner.get("files_returned"),
                     "files": [
-                        {"rel_path": f["rel_path"], "score": f["score"], "size_chars": f["size_chars"]}
+                        {
+                            "rel_path": f["rel_path"],
+                            "score": f["score"],
+                            # full mode has size_chars; chunk mode has chunks_returned
+                            **({
+                                "size_chars": f["size_chars"]
+                            } if f.get("mode") == "full" else {
+                                "chunks_returned": f.get("chunks_returned")
+                            }),
+                        }
                         for f in inner.get("files", [])
                     ],
                 }

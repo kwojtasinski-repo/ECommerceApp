@@ -134,6 +134,9 @@ class QueryEngine:
                     text=payload.get("text", ""),
                 )
             )
+        threshold = float(self.cfg.query_defaults.get("score_threshold", 0.0))
+        if threshold > 0:
+            hits = [h for h in hits if h.raw_score >= threshold]
         hits.sort(key=lambda h: h.final_score, reverse=True)
         return hits[:top_k]
 

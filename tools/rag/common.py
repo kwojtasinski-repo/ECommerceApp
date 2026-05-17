@@ -4,23 +4,55 @@ from __future__ import annotations
 import fnmatch
 import os
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 import yaml
 
-REPO_ROOT = Path(os.environ.get("RAG_WORKSPACE") or Path(__file__).resolve().parents[2])
+# Guard against containers where __file__ has depth < 3 (e.g. /app/mcp_server.py → only 2 parents).
+# When running in Docker without RAG_WORKSPACE, REPO_ROOT falls back to "/" — harmless because
+# all paths that matter are then overridden by RAG_MANIFEST / RAG_METADATA / RAG_QUERIES.
+_env_ws = os.environ.get("RAG_WORKSPACE")
+_script_parents = Path(__file__).resolve().parents
+REPO_ROOT = (
+    Path(_env_ws) if _env_ws
+    else (_script_parents[2] if len(_script_parents) > 2 else Path("/"))
+)
 CONFIG_PATH = Path(__file__).resolve().parent / "config.yaml"
 
 
 @dataclass(frozen=True)
 class Config:
     raw: dict[str, Any]
+    config_path: "Path | None" = field(default=None)
+
+    @property
+    def workspace(self) -> Path:
+        """Workspace root, derived with this priority:
+
+          1. config_path.parents[2] — when config.yaml lives at <root>/tools/rag/config.yaml.
+             This wins over RAG_WORKSPACE so an explicit --config flag always defines the workspace,
+             regardless of what is set in the shell environment.
+          2. RAG_WORKSPACE env var — fallback when config_path is shallow (e.g. /app/config.yaml
+             inside a container where the script has only 2 parent levels).
+          3. Module-level REPO_ROOT constant — last resort.
+
+        When running with per-file mounts (RAG_METADATA / RAG_QUERIES / RAG_MANIFEST) and no
+        RAG_WORKSPACE, workspace resolves to "/" — harmless because all path-sensitive properties
+        are individually overridden via those env vars.
+        """
+        if self.config_path is not None:
+            parents = self.config_path.parents
+            if len(parents) > 2:
+                return parents[2]
+        if env := os.environ.get("RAG_WORKSPACE"):
+            return Path(env)
+        return REPO_ROOT
 
     @property
     def source_roots(self) -> list[Path]:
-        return [REPO_ROOT / r for r in self.raw["source"]["roots"]]
+        return [self.workspace / r for r in self.raw["source"]["roots"]]
 
     @property
     def exclude_globs(self) -> list[str]:
@@ -79,16 +111,19 @@ class Config:
 
     @property
     def snapshot_path(self) -> Path:
-        return REPO_ROOT / self.raw["storage"]["snapshot_path"]
+        return self.workspace / self.raw["storage"]["snapshot_path"]
 
     @property
     def manifest_path(self) -> Path:
-        return REPO_ROOT / self.raw["storage"]["manifest_path"]
+        """RAG_MANIFEST env var overrides config (per-file mount mode, no whole-workspace mount)."""
+        if env := os.environ.get("RAG_MANIFEST"):
+            return Path(env)
+        return self.workspace / self.raw["storage"]["manifest_path"]
 
     @property
     def stats_path(self) -> Path | None:
         p = self.raw.get("storage", {}).get("stats_path")
-        return (REPO_ROOT / p) if p else None
+        return (self.workspace / p) if p else None
 
     @property
     def named_queries(self) -> list[dict[str, Any]]:
@@ -139,22 +174,30 @@ def load_config(path: Path = CONFIG_PATH) -> Config:
     with path.open("r", encoding="utf-8") as fh:
         raw: dict[str, Any] = yaml.safe_load(fh) or {}
 
-    # Load metadata-rules.yaml and merge into raw["metadata_rules"].
-    rules_file = _find_companion_file(path, "metadata_rules", "metadata-rules.yaml")
-    if rules_file:
+    # Load metadata-rules.yaml — RAG_METADATA env var overrides companion lookup.
+    # Per-file mount mode: --env RAG_METADATA=/data/metadata-rules.yaml
+    if env_meta := os.environ.get("RAG_METADATA"):
+        rules_file: "Path | None" = Path(env_meta)
+    else:
+        rules_file = _find_companion_file(path, "metadata_rules", "metadata-rules.yaml")
+    if rules_file and rules_file.exists():
         with rules_file.open("r", encoding="utf-8") as fh:
             rules_raw = yaml.safe_load(fh) or {}
         raw.setdefault("metadata_rules", {})
         raw["metadata_rules"].update(rules_raw)
 
-    # Load queries.yaml and merge into raw["named_queries"].
-    queries_file = _find_companion_file(path, "queries", "queries.yaml")
-    if queries_file:
+    # Load queries.yaml — RAG_QUERIES env var overrides companion lookup.
+    # Per-file mount mode: --env RAG_QUERIES=/data/queries.yaml
+    if env_queries := os.environ.get("RAG_QUERIES"):
+        queries_file: "Path | None" = Path(env_queries)
+    else:
+        queries_file = _find_companion_file(path, "queries", "queries.yaml")
+    if queries_file and queries_file.exists():
         with queries_file.open("r", encoding="utf-8") as fh:
             queries_raw = yaml.safe_load(fh) or {}
         raw["named_queries"] = queries_raw.get("named_queries", [])
 
-    return Config(raw=raw)
+    return Config(raw=raw, config_path=path)
 
 
 def is_excluded(rel_path: str, exclude_globs: list[str]) -> bool:
@@ -167,7 +210,7 @@ def iter_markdown_files(cfg: Config) -> list[Path]:
         if not root.exists():
             continue
         for path in root.rglob("*.md"):
-            rel = path.relative_to(REPO_ROOT).as_posix()
+            rel = path.relative_to(cfg.workspace).as_posix()
             if is_excluded(rel, cfg.exclude_globs):
                 continue
             files.append(path)

@@ -4,20 +4,32 @@
 # Build:
 #   docker build -t rag-tools tools/rag/
 #
-# Index docs (run after git clone or significant doc changes):
+# Index docs (run after git clone or significant doc changes).
+# Uses whole-workspace mount so ingest can scan all .md files under docs/ and .github/:
 #   docker run --rm \
 #     -v "%CD%:/workspace" \
 #     -v qdrant_data:/data/qdrant \
 #     -e RAG_WORKSPACE=/workspace \
 #     rag-tools python ingest.py
 #
-# MCP server (VS Code starts this automatically via .vscode/mcp.json):
+# MCP server (VS Code starts this automatically via .vscode/mcp.json).
+# Per-file mount strategy — only the 3 project-specific files are mounted.
+# config.yaml is baked into the image; RAG_METADATA/QUERIES/MANIFEST tell the
+# server where each file lives. No whole-workspace mount, no hardcoded paths:
 #   docker run --rm --interactive \
-#     -v "%CD%:/workspace" \
+#     -v "%CD%/tools/rag/metadata-rules.yaml:/data/metadata-rules.yaml:ro" \
+#     -v "%CD%/tools/rag/queries.yaml:/data/queries.yaml:ro" \
+#     -v "%CD%/.rag/manifest.json:/data/manifest.json:ro" \
 #     -v qdrant_data:/data/qdrant \
-#     -e RAG_WORKSPACE=/workspace \
+#     -e RAG_METADATA=/data/metadata-rules.yaml \
+#     -e RAG_QUERIES=/data/queries.yaml \
+#     -e RAG_MANIFEST=/data/manifest.json \
 #     -e PYTHONUNBUFFERED=1 \
+#     -e VECTOR_MODE=local \
 #     rag-tools python mcp_server.py
+#
+# Verify mount on startup: the server prints each file's path + size in bytes.
+# Compare with: Get-Item tools\rag\metadata-rules.yaml | Select Length
 
 FROM python:3.11-slim
 

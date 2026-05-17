@@ -1,6 +1,6 @@
 # RAG Index Stats
 
-Last indexed: 2026-05-17 15:50 UTC  
+Last indexed: 2026-05-17 21:25 UTC  
 Collection: `ecommerceapp_docs`  
 Files: 166  
 Chunks: 1  
@@ -10,10 +10,10 @@ Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
 
 | doc_kind | files | chunks |
 |----------|------:|-------:|
-| `rag_meta` | 1 | 1 |
+| `other` | 1 | 1 |
 
 ## Per-file detail
 
 | file | doc_kind | chunks |
 |------|----------|-------:|
-| `docs/rag/index-stats.md` | `rag_meta` | 1 |
+| `docs/rag/index-stats.md` | `other` | 1 |

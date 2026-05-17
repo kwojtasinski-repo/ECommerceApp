@@ -13,29 +13,35 @@ Typical agent flow:
   3. read_docs(question)   — depth: best chunks per file (or full file when "show me all details about...")
   4. get_adr_history(id)   — evolution: how did a specific ADR change over time?
 
-Run (VS Code Copilot will start this automatically via .vscode/mcp.json):
-    python tools/rag/mcp_server.py
+Run (VS Code Copilot starts this automatically via .vscode/mcp.json):
+    python tools/rag/mcp_server.py [--config /path/to/config.yaml]
+
+--config is optional. Default: config.yaml next to mcp_server.py.
+Pass it when the config lives somewhere non-standard, e.g. for local dev
+pointing at a project that doesn't use the standard tools/rag/ layout.
 """
 from __future__ import annotations
 
+import argparse
 import asyncio
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
-from dataclasses import asdict
 from pathlib import Path
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool
 
-from common import REPO_ROOT, iter_markdown_files, load_config
+from common import CONFIG_PATH, iter_markdown_files, load_config
 from query import QueryEngine
 
-CFG = load_config()
-ENGINE = QueryEngine(CFG)
+# Deferred globals — initialised in __main__ after --config arg is parsed.
+CFG = None
+ENGINE = None
 SERVER = Server("ecommerceapp-rag")
 
 
@@ -47,7 +53,7 @@ def _detect_changed_files(stored_hashes: dict[str, str]) -> list[str]:
     current_rels: set[str] = set()
     changed: list[str] = []
     for path in iter_markdown_files(CFG):
-        rel = path.relative_to(REPO_ROOT).as_posix()
+        rel = path.relative_to(CFG.workspace).as_posix()
         current_rels.add(rel)
         h = hashlib.sha256(path.read_bytes()).hexdigest()
         if stored_hashes.get(rel) != h:
@@ -58,13 +64,18 @@ def _detect_changed_files(stored_hashes: dict[str, str]) -> list[str]:
     return changed
 
 
-def _startup_check() -> None:
-    """Auto-sync the Qdrant index on MCP server startup if any docs changed since last ingest."""
+def _startup_check(config_path: Path) -> None:
+    """Incremental index sync on MCP startup: re-ingests any docs changed since last ingest.
+
+    Skipped in memory mode (no persistent index to sync). In local/docker mode, reads
+    the manifest hash file and compares against current on-disk files. Only files that
+    actually changed are re-ingested, so the check is fast for an up-to-date index.
+    Runs in a daemon thread so it does not block MCP startup or the first tool call.
+    """
     if CFG.vector_mode == "memory":
         return
 
     if CFG.vector_mode == "local":
-        # Embedded Qdrant — no HTTP server to check. Verify the storage path is accessible.
         local_path = Path(CFG.vector_local_path)
         if not local_path.exists():
             print(
@@ -72,9 +83,9 @@ def _startup_check() -> None:
                 "[rag-mcp] Run: python tools/rag/ingest.py to initialise the index.",
                 file=sys.stderr,
             )
-            return  # Nothing to sync — storage doesn't exist yet.
+            return
     else:
-        # docker mode — check Qdrant HTTP server is reachable.
+        # docker mode — verify Qdrant HTTP server is reachable before attempting sync.
         import urllib.request
         try:
             with urllib.request.urlopen(f"{CFG.vector_url}/", timeout=3) as r:
@@ -83,8 +94,7 @@ def _startup_check() -> None:
         except Exception as exc:
             print(
                 f"[rag-mcp] WARNING: Qdrant not reachable at {CFG.vector_url} ({exc}).\n"
-                "[rag-mcp] Start it with: docker start qdrant\n"
-                "[rag-mcp] Then run /rag-sync to verify the index.",
+                "[rag-mcp] Start Qdrant, then run: python tools/rag/ingest.py --mode docker",
                 file=sys.stderr,
             )
             return
@@ -92,7 +102,7 @@ def _startup_check() -> None:
     manifest_path = CFG.manifest_path
     if not manifest_path.exists():
         print(
-            "[rag-mcp] No manifest found — run: python tools/rag/ingest.py --mode docker",
+            "[rag-mcp] No ingest manifest found — run: python tools/rag/ingest.py",
             file=sys.stderr,
         )
         return
@@ -102,7 +112,7 @@ def _startup_check() -> None:
 
     stored_hashes: dict[str, str] = data.get("file_hashes", {})
     if not stored_hashes:
-        return  # old manifest format without hash tracking — skip incremental check
+        return  # old manifest format without hash tracking — skip
 
     changed = _detect_changed_files(stored_hashes)
     if not changed:
@@ -113,14 +123,10 @@ def _startup_check() -> None:
     print(f"[rag-mcp] {len(changed)} file(s) changed — running incremental ingest...", file=sys.stderr)
     script = Path(__file__).parent / "ingest.py"
     ingest_mode = CFG.vector_mode if CFG.vector_mode in {"local", "docker", "memory"} else "local"
-    # IMPORTANT: keep stdout reserved for MCP framed JSON-RPC messages.
-    # Any plain-text logs during startup must go to stderr.
+    # Keep stdout reserved for MCP framed JSON-RPC messages; route ingest output to /dev/null.
     try:
-        # Do not stream ingest logs through MCP stderr directly.
-        # In console smoke tests stderr may be unread until process exit,
-        # which can deadlock the child process on a full pipe buffer.
         result = subprocess.run(
-            [sys.executable, str(script), "--mode", ingest_mode],
+            [sys.executable, str(script), "--mode", ingest_mode, "--config", str(config_path)],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
             timeout=300,
@@ -306,7 +312,7 @@ async def _tool_read_docs(args: dict) -> list[TextContent]:
     for rel_path, score in ranked_files:
         file_hits = sorted(chunks_per_file[rel_path], key=lambda h: h.final_score, reverse=True)
         if full_mode:
-            abs_path = REPO_ROOT / rel_path
+            abs_path = CFG.workspace / rel_path
             try:
                 content = abs_path.read_text(encoding="utf-8")
             except OSError as exc:
@@ -349,12 +355,10 @@ async def _tool_read_docs(args: dict) -> list[TextContent]:
 # ---------------------------- tool: get_adr_history ----------------------------
 
 
-_ADR_FOLDER = REPO_ROOT / "docs" / "adr"
-
-
 async def _tool_get_adr_history(args: dict) -> list[TextContent]:
+    adr_folder = CFG.workspace / "docs" / "adr"
     adr_id = str(args["adr_id"]).zfill(4)
-    folder = _ADR_FOLDER / adr_id
+    folder = adr_folder / adr_id
     if not folder.exists():
         return [TextContent(type="text", text=json.dumps({"error": f"ADR {adr_id} not found"}))]
 
@@ -365,7 +369,7 @@ async def _tool_get_adr_history(args: dict) -> list[TextContent]:
     if amendments_dir.exists():
         for path in sorted(amendments_dir.glob("*.md")):
             amendments.append({
-                "rel_path": path.relative_to(REPO_ROOT).as_posix(),
+                "rel_path": path.relative_to(CFG.workspace).as_posix(),
                 "filename": path.name,
                 "content": path.read_text(encoding="utf-8"),
             })
@@ -373,7 +377,7 @@ async def _tool_get_adr_history(args: dict) -> list[TextContent]:
     result = {
         "adr_id": adr_id,
         "main": {
-            "rel_path": main_path.relative_to(REPO_ROOT).as_posix() if main_path else None,
+            "rel_path": main_path.relative_to(CFG.workspace).as_posix() if main_path else None,
             "content": main_path.read_text(encoding="utf-8") if main_path else None,
         },
         "amendments": amendments,
@@ -389,8 +393,9 @@ _TITLE_RE = re.compile(r"^#\s+(?:ADR-\d+\s*[—:-]\s*)?(.+?)\s*$", re.MULTILINE)
 
 
 async def _tool_list_adrs(_: dict) -> list[TextContent]:
+    adr_folder = CFG.workspace / "docs" / "adr"
     rows = []
-    for folder in sorted(_ADR_FOLDER.iterdir()):
+    for folder in sorted(adr_folder.iterdir()):
         if not folder.is_dir() or not re.match(r"^\d{4}$", folder.name):
             continue
         adr_id = folder.name
@@ -406,7 +411,7 @@ async def _tool_list_adrs(_: dict) -> list[TextContent]:
         rows.append({
             "id": adr_id,
             "title": title,
-            "main_file": main_files[0].relative_to(REPO_ROOT).as_posix() if main_files else None,
+            "main_file": main_files[0].relative_to(CFG.workspace).as_posix() if main_files else None,
             "amendments": len(amendments),
             "examples": len(examples),
         })
@@ -416,16 +421,90 @@ async def _tool_list_adrs(_: dict) -> list[TextContent]:
 # ---------------------------- entrypoint ----------------------------
 
 
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="ECommerceApp RAG MCP server")
+    parser.add_argument(
+        "--config",
+        default=None,
+        metavar="PATH",
+        help=(
+            "Path to config.yaml. Default: config.yaml next to mcp_server.py. "
+            "Pass when the config lives somewhere non-standard "
+            "(e.g. local dev without Docker, or a multi-project setup)."
+        ),
+    )
+    return parser.parse_args()
+
+
 async def _run() -> None:
     async with stdio_server() as (read, write):
         await SERVER.run(read, write, SERVER.create_initialization_options())
 
 
 if __name__ == "__main__":
-    # Run startup sync in a plain daemon thread BEFORE entering the asyncio loop.
+    _args = _parse_args()
+    if _args.config:
+        # Explicit path — local dev or any caller that passes --config directly.
+        _config_path = Path(_args.config).resolve()
+    elif env_ws := os.environ.get("RAG_WORKSPACE"):
+        # Container / CI mode: workspace root supplied via env, no --config needed.
+        # Convention: config.yaml always lives at <workspace>/tools/rag/config.yaml.
+        # This keeps docker run commands clean — RAG_WORKSPACE is the only knob.
+        _config_path = Path(env_ws) / "tools" / "rag" / "config.yaml"
+    else:
+        _config_path = CONFIG_PATH
+    CFG = load_config(_config_path)
+
+    # ── Validate that every resolved file actually exists on disk ─────────────
+    # Each path may come from an env var (RAG_METADATA / RAG_QUERIES / RAG_MANIFEST)
+    # or from config.yaml companion resolution. Fail fast with a clear message so
+    # a misconfigured mount is obvious rather than silently producing empty results.
+    _errors: list[str] = []
+
+    _meta_src = os.environ.get("RAG_METADATA", "<companion metadata-rules.yaml>")
+    _meta_path = Path(os.environ["RAG_METADATA"]) if "RAG_METADATA" in os.environ else None
+    if _meta_path is not None and not _meta_path.exists():
+        _errors.append(f"RAG_METADATA={_meta_path} - file not found (check --volume mount)")
+
+    _queries_src = os.environ.get("RAG_QUERIES", "<companion queries.yaml>")
+    _queries_path = Path(os.environ["RAG_QUERIES"]) if "RAG_QUERIES" in os.environ else None
+    if _queries_path is not None and not _queries_path.exists():
+        _errors.append(f"RAG_QUERIES={_queries_path} - file not found (check --volume mount)")
+
+    _manifest_path = CFG.manifest_path
+    if "RAG_MANIFEST" in os.environ and not _manifest_path.exists():
+        _errors.append(
+            f"RAG_MANIFEST={_manifest_path} - file not found "
+            "(run ingest.py first, then mount the resulting .rag/manifest.json)"
+        )
+
+    if _errors:
+        for _e in _errors:
+            print(f"[rag-mcp] ERROR: {_e}", file=sys.stderr)
+        sys.exit(1)
+
+    ENGINE = QueryEngine(CFG)
+
+    def _file_tag(path: "Path | None", fallback: str) -> str:
+        """Return 'path (NNN bytes)' for env-specified files so the startup log can be
+        cross-checked with 'Get-Item' / 'ls -l' on the host to confirm mount is live."""
+        if path is None:
+            return fallback
+        try:
+            return f"{path} ({path.stat().st_size} bytes)"
+        except OSError:
+            return f"{path} (unreadable)"
+
+    print(f"[rag-mcp] config:     {_config_path}", file=sys.stderr)
+    print(f"[rag-mcp] workspace:  {CFG.workspace}", file=sys.stderr)
+    print(f"[rag-mcp] collection: {CFG.collection} | mode: {CFG.vector_mode}", file=sys.stderr)
+    print(f"[rag-mcp] metadata:   {_file_tag(_meta_path, '<companion metadata-rules.yaml>')}", file=sys.stderr)
+    print(f"[rag-mcp] queries:    {_file_tag(_queries_path, '<companion queries.yaml>')}", file=sys.stderr)
+    print(f"[rag-mcp] manifest:   {_file_tag(_manifest_path if 'RAG_MANIFEST' in os.environ else None, str(_manifest_path))}", file=sys.stderr)
+    # Run startup sync in a daemon thread BEFORE entering the asyncio loop.
     # Using asyncio.create_task / asyncio.to_thread caused Python 3.14 compatibility
     # issues (CancelledError propagating into the MCP session before initialize completes).
     # A plain thread is simpler and avoids any interaction with the event loop.
     import threading
-    threading.Thread(target=_startup_check, daemon=True, name="rag-startup-sync").start()
+    threading.Thread(target=_startup_check, args=(_config_path,), daemon=True, name="rag-startup-sync").start()
     asyncio.run(_run())

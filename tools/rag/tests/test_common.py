@@ -18,6 +18,7 @@ from common import (
     detect_adr_id,
     detect_doc_kind,
     is_excluded,
+    load_config,
     resolve_weight,
 )
 
@@ -241,3 +242,111 @@ def test_config_chunker_returns_dict():
         "storage": {"snapshot_path": "snap", "manifest_path": "manifest.json"},
     })
     assert cfg.chunker["max_tokens"] == 800
+
+
+# ── load_config with explicit path ────────────────────────────────────────────
+
+_MINIMAL_CONFIG = textwrap.dedent("""\
+    source:
+      roots: [docs]
+      exclude_globs: []
+    embedder: {model: test-model}
+    chunker: {}
+    ranking: {weights: []}
+    query: {default_top_k: 5, fetch_k: 10, score_threshold: 0.0}
+    vector_store: {mode: memory, collection: test_col, url: "http://localhost:6333"}
+    storage:
+      snapshot_path: .rag/snapshot
+      manifest_path: .rag/manifest.json
+""")
+
+
+def _write_companion_files(tmp_path: Path) -> Path:
+    """Write config.yaml + companion queries.yaml + metadata-rules.yaml to tmp_path."""
+    config_yaml = tmp_path / "config.yaml"
+    config_yaml.write_text(
+        _MINIMAL_CONFIG + textwrap.dedent("""\
+            config_files:
+              metadata_rules: metadata-rules.yaml
+              queries: queries.yaml
+        """),
+        encoding="utf-8",
+    )
+    (tmp_path / "queries.yaml").write_text(
+        textwrap.dedent("""\
+            named_queries:
+              - {name: q-one, question: "What is a domain event?"}
+              - {name: q-two, question: "Explain CQRS"}
+        """),
+        encoding="utf-8",
+    )
+    (tmp_path / "metadata-rules.yaml").write_text(
+        textwrap.dedent("""\
+            adr_id_patterns:
+              - {pattern: "adr/(?P<id>\\\\d{4})/"}
+            doc_kind_rules:
+              - {glob: "docs/adr/*/README.md", kind: adr_router}
+              - {glob: "docs/adr/**", kind: adr_main}
+        """),
+        encoding="utf-8",
+    )
+    return config_yaml
+
+
+def test_load_config_explicit_path_returns_config(tmp_path):
+    config_yaml = _write_companion_files(tmp_path)
+    cfg = load_config(config_yaml)
+    assert isinstance(cfg, Config)
+
+
+def test_load_config_loads_named_queries_from_companion(tmp_path):
+    config_yaml = _write_companion_files(tmp_path)
+    cfg = load_config(config_yaml)
+    assert len(cfg.named_queries) == 2
+    assert cfg.named_queries[0]["name"] == "q-one"
+    assert cfg.named_queries[1]["name"] == "q-two"
+
+
+def test_load_config_loads_adr_id_patterns_from_companion(tmp_path):
+    config_yaml = _write_companion_files(tmp_path)
+    cfg = load_config(config_yaml)
+    assert len(cfg.adr_id_patterns) == 1
+    assert "id" in cfg.adr_id_patterns[0]  # named group present
+
+
+def test_load_config_loads_doc_kind_rules_from_companion(tmp_path):
+    config_yaml = _write_companion_files(tmp_path)
+    cfg = load_config(config_yaml)
+    assert len(cfg.doc_kind_rules) == 2
+    assert cfg.doc_kind_rules[0]["kind"] == "adr_router"
+
+
+def test_load_config_missing_companion_files_gives_empty_metadata(tmp_path):
+    """No companion files → empty named_queries, empty adr_id_patterns, empty doc_kind_rules."""
+    config_yaml = tmp_path / "config.yaml"
+    config_yaml.write_text(_MINIMAL_CONFIG, encoding="utf-8")
+
+    cfg = load_config(config_yaml)
+
+    assert cfg.named_queries == []
+    assert cfg.adr_id_patterns == []
+    assert cfg.doc_kind_rules == []
+
+
+def test_load_config_companion_resolved_relative_to_config_dir(tmp_path):
+    """Companion files are resolved from the config.yaml directory, not CWD."""
+    sub = tmp_path / "project" / "rag"
+    sub.mkdir(parents=True)
+    config_yaml = sub / "config.yaml"
+    config_yaml.write_text(
+        _MINIMAL_CONFIG + "config_files:\n  queries: queries.yaml\n",
+        encoding="utf-8",
+    )
+    (sub / "queries.yaml").write_text(
+        "named_queries:\n  - {name: subdir-q, question: Test}\n",
+        encoding="utf-8",
+    )
+
+    cfg = load_config(config_yaml)
+    assert len(cfg.named_queries) == 1
+    assert cfg.named_queries[0]["name"] == "subdir-q"

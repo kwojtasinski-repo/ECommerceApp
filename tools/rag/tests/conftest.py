@@ -8,6 +8,12 @@ Run from anywhere:
     pytest tools/rag/tests/
 Or from within tools/rag:
     pytest tests/
+
+Marks:
+    e2e        — requires sentence-transformers + qdrant-client; downloads model on first run.
+                 Skip fast: pytest tests/ -m "not e2e"
+    container  — additionally requires Docker and the rag-tools image to be built.
+                 Run:       pytest tests/ -m container
 """
 from __future__ import annotations
 
@@ -20,6 +26,21 @@ import pytest
 _RAG_ROOT = Path(__file__).parent.parent
 if str(_RAG_ROOT) not in sys.path:
     sys.path.insert(0, str(_RAG_ROOT))
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    """Register project-level markers so pytest --strict-markers passes."""
+    config.addinivalue_line(
+        "markers",
+        "e2e: full-stack end-to-end tests — require sentence-transformers, qdrant-client, "
+        "and download the embedding model on first run (~400 MB, cached afterwards). "
+        "Slow: skip with -m 'not e2e'.",
+    )
+    config.addinivalue_line(
+        "markers",
+        "container: additionally require Docker and the rag-tools image. "
+        "Run with: pytest -m container",
+    )
 
 
 # ── Shared fixtures ───────────────────────────────────────────────────────────
