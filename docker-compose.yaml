@@ -36,7 +36,13 @@ services:
           - VECTOR_MODE=docker
           - QDRANT_URL=http://qdrant:6333
         volumes:
-          - .:/workspace              # repo root → /workspace (docs, .github, manifest cache)
+          # Selective mounts — only what ingest actually needs, not the whole repo.
+          - ./docs:/workspace/docs                            # rw — ingest writes docs/rag/index-stats.md
+          - ./.github/context:/workspace/.github/context:ro  # context files (known-issues, agent-decisions, etc.)
+          - ./.rag:/workspace/.rag                           # rw — manifest.json written by ingest
+          # Companion config files — resolved by load_config() relative to /app/config.yaml
+          - ./tools/rag/metadata-rules.yaml:/app/metadata-rules.yaml:ro
+          - ./tools/rag/queries.yaml:/app/queries.yaml:ro
         profiles:
           - rag                       # opt-in: docker compose --profile rag up
 
