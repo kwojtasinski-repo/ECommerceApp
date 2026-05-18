@@ -80,11 +80,21 @@ Rules:
 
 <!-- Append new entries below this line, newest at the bottom. -->
 
-## 2026-05-18 — Implementer / RAG .NET configuration discovery
+## 2026-05-18 ï¿½ Implementer / RAG .NET configuration discovery
 
 - **Context**: While stabilising `tools/rag-dotnet` for local dev, the plan referenced a non-existent `tools/rag-dotnet/config.yaml` and a Python-venv `optimum-cli` step. Both wrong.
-- **Decision**: (1) The .NET path **shares** `tools/rag/config.yaml` with Python — Dockerfile literally does `COPY ../rag/config.yaml /app/config.yaml`. No separate .NET config exists. (2) The HuggingFace ONNX bundle (`/onnx/model.onnx` + `vocab.txt` + `tokenizer.json` + `config.json`) is pre-exported by sentence-transformers maintainers, so a PowerShell/curl download replaces the Python optimum-cli stage entirely.
+- **Decision**: (1) The .NET path **shares** `tools/rag/config.yaml` with Python ï¿½ Dockerfile literally does `COPY ../rag/config.yaml /app/config.yaml`. No separate .NET config exists. (2) The HuggingFace ONNX bundle (`/onnx/model.onnx` + `vocab.txt` + `tokenizer.json` + `config.json`) is pre-exported by sentence-transformers maintainers, so a PowerShell/curl download replaces the Python optimum-cli stage entirely.
 - **Rationale**: Source of truth verified in `tools/rag-dotnet/Dockerfile` line ~45 and HuggingFace repo for `paraphrase-multilingual-MiniLM-L12-v2`.
-- **Action**: `RagConfig.ResolveConfigPath` uses 4-way priority: explicit arg › `RAG_CONFIG` › `RAG_WORKSPACE`-derived `<ws>/tools/rag/config.yaml` › `AppContext.BaseDirectory/config.yaml`. `RagConfig.Workspace` derives from config-path grandparent (Python parity with `config_path.parents[2]`), then `RAG_WORKSPACE`, then cwd. Local devs run `pwsh tools/rag-dotnet/download-model.ps1` once; Docker uses `curlimages/curl` stage. **Never invent `tools/rag-dotnet/config.yaml` again.**
-- **Promote?**: Already permanent — encoded in `RagConfig.cs`, `download-model.ps1`, Dockerfile, `launchSettings.json`, and README. No further promotion needed.
+- **Action**: `RagConfig.ResolveConfigPath` uses 4-way priority: explicit arg ï¿½ `RAG_CONFIG` ï¿½ `RAG_WORKSPACE`-derived `<ws>/tools/rag/config.yaml` ï¿½ `AppContext.BaseDirectory/config.yaml`. `RagConfig.Workspace` derives from config-path grandparent (Python parity with `config_path.parents[2]`), then `RAG_WORKSPACE`, then cwd. Local devs run `pwsh tools/rag-dotnet/download-model.ps1` once; Docker uses `curlimages/curl` stage. **Never invent `tools/rag-dotnet/config.yaml` again.**
+- **Status**: Resolved
+
+---
+
+## 2026-05-19 â€” Implementer / RAG tool and test self-containment
+
+- **Context**: When implementing .NET e2e tests the agent initially considered referencing real EcommerceApp ADR numbers and domain entities (e.g. `CustomerId`, `ADR-0016`) in the synthetic test workspace.
+- **Decision**: Both RAG implementations (Python `tools/rag/` and .NET `tools/rag-dotnet/`) must be **self-contained**. Tests must use a synthetic workspace with domain-neutral content (no EcommerceApp ADR numbers, entity names, or bounded-context identifiers). The workspace is created in a temp directory with a UUID-suffixed collection name. See ADR-0027 Â§9 for the full rule.
+- **Rationale**: Self-containment lets the RAG tooling be reused in other projects without modification and lets CI run e2e tests without a full repo checkout.
+- **Action**: When writing or reviewing RAG tests: reject any fixture that imports real docs, real ADR paths, or real entity names from EcommerceApp. `SyntheticWorkspace.cs` and `conftest.py` are the approved patterns.
+- **Promote?**: After 2nd drift â†’ add to `dotnet.instructions.md` under RAG test rules.
 - **Status**: Resolved

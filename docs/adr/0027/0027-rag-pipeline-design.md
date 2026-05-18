@@ -152,9 +152,54 @@ The `bc` (bounded context) filter on `query_docs` and `read_docs` is a **substri
 post-filter** on `breadcrumb` + `doc_title`, not a Qdrant payload filter. This mirrors the
 Python reference implementation and handles BCs that appear in multiple doc kinds.
 
+### 8. Tool output contract: return only the data asked for
+
+Each MCP tool returns the **minimum data that satisfies the query** — it is a semantic
+retrieval API, not a file reader. The agent should never need to read a whole document to
+answer a focused question.
+
+| Tool | Default output | Full-content mode trigger |
+|------|---------------|--------------------------|
+| `query_docs` | Top-K scored chunks with breadcrumb, path, line range, text | N/A — always chunks |
+| `read_docs` | Best chunks grouped by file (chunk view) | Question matches `FullIntentRe` regex (e.g. "show me all", "full content of", "entire file") |
+| `get_adr_history` | All indexed chunks for the ADR ordered by `start_line` | N/A — always chunks |
+| `list_adrs` | One line per ADR: id, title, amendment count | N/A — no file content |
+
+**Rationale**: Returning full files by default would exhaust the model's context window for
+large ADRs and dilute the signal-to-noise ratio. The `FullIntentRe` regex in
+`RagTools.Mcp.Tools.RagTools` (and its Python equivalent in `mcp_server.py`) is the only
+gate for full-file mode.
+
+**Constraint**: Any change to a tool that makes it return *more* data by default requires:
+1. A conscious decision recorded here.
+2. An update to `FullIntentRe` if the change is intent-driven.
+3. Verification that the model context window budget is not exceeded for typical ADR sizes.
+
 ---
 
-## Implementation Status
+### 9. Self-containment requirement for both implementations
+
+Both the Python (`tools/rag/`) and .NET (`tools/rag-dotnet/`) implementations must be
+**self-contained**: their core logic, tests, and ingest pipeline must not depend on specific
+EcommerceApp ADR numbers, domain entity names, bounded-context identifiers, or any
+project-specific folder structure at test time.
+
+**Design requirements**:
+- Unit tests use synthetic/in-memory data (no real repo docs).
+- E2e tests create a **synthetic workspace** with generic domain-neutral documents
+  (e.g. "Alpha pattern", "Beta pattern") — no references to `CustomerId`, `OrderId`, or
+  any EcommerceApp concept.
+- Collection names used in tests include a UUID suffix to avoid cross-run conflicts.
+- The apps discover the workspace at runtime via `RAG_WORKSPACE` / config-path derivation —
+  never hardcode a path to `c:\Projekty\ECommerceApp`.
+
+**Rationale**: Self-containment enables the RAG tooling to be extracted and reused in other
+projects without modification, and allows CI to run e2e tests in isolation without a full
+repo checkout.
+
+---
+
+
 
 | Component | Status | Notes |
 |-----------|--------|-------|
