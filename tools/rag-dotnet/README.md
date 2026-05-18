@@ -201,6 +201,48 @@ pwsh tools/rag-dotnet/download-model.ps1
 > `sentence-transformers`. For local development, code navigation, and ADR
 > search this difference is rarely noticeable in practice.
 
+#### Alternative models — no tokenizer mismatch
+
+If you need accurate embeddings in the .NET path, switch to a BERT-based model that
+uses **WordPiece** tokenization and publishes `vocab.txt` natively.
+
+**Why it matters:** `BertTokenCounter` is hardcoded to `LowerCaseBeforeTokenization = true`
+(uncased BERT). Only uncased BERT-family models are drop-in compatible. Cased or
+SentencePiece-based models would require a code change.
+
+The two verified drop-in replacements (same 384-d vector space, native `vocab.txt`,
+pre-built `onnx/model.onnx` on HuggingFace, English):
+
+| Model | HuggingFace ID | ONNX size | Languages | Quality |
+|-------|----------------|-----------|-----------|---------|
+| **all-MiniLM-L6-v2** | `sentence-transformers/all-MiniLM-L6-v2` | 90 MB | English | Good — default recommendation |
+| **all-MiniLM-L12-v2** | `sentence-transformers/all-MiniLM-L12-v2` | 133 MB | English | Better than L6, slower |
+| *(current)* `paraphrase-multilingual-MiniLM-L12-v2` | — | 450 MB | 50+ languages | Multilingual; uses BERT vocab workaround in .NET |
+
+**To switch to `all-MiniLM-L6-v2`** (or L12):
+
+1. Edit `download-model.ps1` — replace `$Base` URL and **remove** the `$BertBase` workaround.
+   The `vocab.txt` download should point at `"$Base/vocab.txt"` directly:
+   ```powershell
+   $Base = 'https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/resolve/main'
+   $Files = @(
+       @{ Url = "$Base/onnx/model.onnx"; Name = 'model.onnx' }
+       @{ Url = "$Base/vocab.txt";       Name = 'vocab.txt' }   # native WordPiece vocab
+       @{ Url = "$Base/tokenizer.json";  Name = 'tokenizer.json' }
+       @{ Url = "$Base/config.json";     Name = 'config.json' }
+   )
+   ```
+2. Edit `Dockerfile` — change `ARG MODEL_BASE` to the new HuggingFace URL and change
+   the `vocab.txt` curl line back to `"${MODEL_BASE}/vocab.txt"`.
+3. Delete `model/` and re-run `download-model.ps1`.
+4. Re-ingest the workspace (embeddings are model-specific; old vectors are incompatible).
+5. If the dimension changes (e.g., switching to a 768-d model), update `config.yaml`:
+   `embedding_dimensions: 768`. For L6/L12 no change needed — they're 384-d.
+
+> **Multilingual requirement?** The Python implementation already handles this correctly
+> (SentencePiece via `sentence-transformers`). For Polish + English repos, prefer the
+> Python MCP. The .NET path is optimised for English-first repos.
+
 ### Run from Visual Studio / VS Code (F5)
 
 Both projects ship `Properties/launchSettings.json` profiles pre-configured for the

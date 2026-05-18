@@ -217,8 +217,16 @@ repo checkout.
 
 - **Good**: Zero external API cost, fully offline, fast iteration, MCP tools available in
   Copilot Chat for all team members.
-- **Good**: Both implementations produce identical search results from the same corpus and
-  config — the team can switch without re-indexing (same collection name, same schema).
+- **Good**: Both implementations share config, schema, and collection name so the team can
+  switch transports without re-indexing.
+- **Known limitation (.NET tokenizer)**: `paraphrase-multilingual-MiniLM-L12-v2` uses
+  SentencePiece (XLM-RoBERTa) — the HuggingFace repo has no `vocab.txt`. The .NET
+  `BertTokenCounter` requires WordPiece `vocab.txt`, so the download script provides the
+  BERT base uncased vocabulary as a functional stand-in. Embeddings are valid 384-d vectors
+  and differ between texts, but semantic ranking quality is lower than the Python path (which
+  uses the correct SentencePiece tokenizer). Alternative: switch to `all-MiniLM-L6-v2` or
+  `all-MiniLM-L12-v2` — BERT-based, native `vocab.txt`, 384-d, English-only, drop-in
+  compatible. See `tools/rag-dotnet/README.md` for switching instructions.
 - **Trade-off**: Two codebases to maintain. Mitigated by: shared config, shared schema, shared
   test fixtures for the fake workspace, and the Python implementation as the canonical reference.
 - **Trade-off**: Python requires Python 3.13 (not 3.14) for the e2e suite due to torch wheel
