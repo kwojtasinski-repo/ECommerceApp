@@ -119,7 +119,7 @@ cd tools/rag-dotnet
 # Build once
 dotnet build src/RagTools.Tests/RagTools.Tests.csproj -q
 
-# Run (use --no-build to avoid VS Code file-lock issues)
+# Run
 dotnet test src/RagTools.Tests/RagTools.Tests.csproj --no-build -q
 ```
 
@@ -133,6 +133,33 @@ Expected output:
 ```
 Success!  — Failed: 0, Passed: 100, Skipped: 0, Total: 100
 ```
+
+### Troubleshooting: `MSB3492` file-lock errors during `dotnet build`
+
+If `dotnet build` fails with:
+
+```
+error MSB3492: nie można odczytać istniejącego pliku *.CoreCompileInputs.cache
+```
+
+This is caused by **`VBCSCompiler.exe`** — the shared Roslyn compiler server that
+VS Code C# DevKit keeps running in the background. It holds exclusive write handles on
+MSBuild cache files in `obj/Debug/net10.0/` while actively compiling.
+
+**Fix (one command):**
+
+```powershell
+Stop-Process -Name VBCSCompiler -Force
+dotnet build src/RagTools.Tests/RagTools.Tests.csproj -q
+```
+
+VS Code restarts `VBCSCompiler` automatically within seconds — there is no lasting
+impact on IntelliSense or language features.
+
+> **What triggers this:** using `dotnet build --no-incremental` deletes existing
+> binaries in `bin/Debug/`, which causes VS Code to start a background rebuild that
+> holds these locks. **Never use `--no-incremental`** against these projects while
+> VS Code is open.
 
 ---
 
@@ -184,13 +211,13 @@ dotnet run --project src/RagTools.Mcp
 
 ## Environment variables
 
-| Variable         | Default                    | Effect                                    |
-| ---------------- | -------------------------- | ----------------------------------------- |
-| `RAG_WORKSPACE`  | derived from config path   | Absolute path to the repo root            |
-| `RAG_MODEL_DIR`  | `<binary dir>/model`       | Path to the downloaded ONNX model         |
-| `RAG_CONFIG`     | see resolution below       | Path to `config.yaml`                     |
-| `QDRANT_URL`     | value from config.yaml     | Qdrant HTTP URL (`http://host:6333`)      |
-| `RAG_COLLECTION` | value from config.yaml     | Qdrant collection name override           |
+| Variable         | Default                  | Effect                               |
+| ---------------- | ------------------------ | ------------------------------------ |
+| `RAG_WORKSPACE`  | derived from config path | Absolute path to the repo root       |
+| `RAG_MODEL_DIR`  | `<binary dir>/model`     | Path to the downloaded ONNX model    |
+| `RAG_CONFIG`     | see resolution below     | Path to `config.yaml`                |
+| `QDRANT_URL`     | value from config.yaml   | Qdrant HTTP URL (`http://host:6333`) |
+| `RAG_COLLECTION` | value from config.yaml   | Qdrant collection name override      |
 
 ### Config-path resolution (4-way priority — Python parity)
 

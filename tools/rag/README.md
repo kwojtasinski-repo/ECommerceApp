@@ -3,6 +3,7 @@
 Semantic search over the project's documentation, exposed as MCP tools to GitHub Copilot.
 
 Three tools are available in Copilot Chat:
+
 - `query_docs` — free-form semantic search
 - `list_adrs` — list all indexed ADRs
 - `get_adr_history` — fetch all chunks for a specific ADR
@@ -55,10 +56,10 @@ docker compose --profile rag run --rm rag-tools python ingest.py
 
 **Useful flags:**
 
-| Flag | Effect |
-|------|--------|
-| `--dry-run` | Scan and chunk only — prints stats, no embeddings written |
-| `--force-full` | Re-index everything even if files are unchanged |
+| Flag           | Effect                                                    |
+| -------------- | --------------------------------------------------------- |
+| `--dry-run`    | Scan and chunk only — prints stats, no embeddings written |
+| `--force-full` | Re-index everything even if files are unchanged           |
 
 ---
 
@@ -143,14 +144,14 @@ python query.py "what is the coupon max per order?" --mode memory
 
 All settings live in `tools/rag/config.yaml`. Key fields:
 
-| Field | Default | Effect |
-|-------|---------|--------|
-| `source.roots` | `[docs, .github/context]` | Directories scanned for `.md` files |
-| `source.exclude_globs` | see file | Patterns excluded from indexing |
-| `embedder.model` | `paraphrase-multilingual-MiniLM-L12-v2` | HuggingFace model for embeddings |
-| `chunker.max_tokens` | `800` | Maximum tokens per chunk |
-| `chunker.overlap_tokens` | `80` | Token overlap between consecutive chunks |
-| `vector_store.collection` | `ecommerceapp_docs` | Qdrant collection name |
+| Field                     | Default                                 | Effect                                   |
+| ------------------------- | --------------------------------------- | ---------------------------------------- |
+| `source.roots`            | `[docs, .github/context]`               | Directories scanned for `.md` files      |
+| `source.exclude_globs`    | see file                                | Patterns excluded from indexing          |
+| `embedder.model`          | `paraphrase-multilingual-MiniLM-L12-v2` | HuggingFace model for embeddings         |
+| `chunker.max_tokens`      | `800`                                   | Maximum tokens per chunk                 |
+| `chunker.overlap_tokens`  | `80`                                    | Token overlap between consecutive chunks |
+| `vector_store.collection` | `ecommerceapp_docs`                     | Qdrant collection name                   |
 
 > Changing `embedder.model`, `chunker.max_tokens`, or `metadata_rules` requires a
 > `--force-full` re-index because existing vectors are incompatible with the new settings.
@@ -167,7 +168,7 @@ All settings live in `tools/rag/config.yaml`. Key fields:
 
 **Model download fails or is slow**  
 → The model is ~500 MB. It is cached in `.venv` after the first download.
-   If your network blocks HuggingFace, set `HF_ENDPOINT` to a mirror.
+If your network blocks HuggingFace, set `HF_ENDPOINT` to a mirror.
 
 **`[ingest] nothing changed` but you expected a re-index**  
 → The file content has not changed. Use `--force-full` to override the manifest.
