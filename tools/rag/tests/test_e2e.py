@@ -90,6 +90,36 @@ import pytest
 # Skip e2e in fast CI: pytest tests/ -m "not e2e"
 pytestmark = pytest.mark.e2e
 
+# ── E2e infra availability guard ──────────────────────────────────────────────
+# Check that the embedding backend (torch / sentence-transformers) is importable
+# in the *current* Python environment. If it isn't (e.g. Python 3.14 where no
+# official torch wheels exist yet, or a CI box without GPU drivers), skip the
+# entire module instead of erroring with an obscure DLL / ImportError inside
+# spawned subprocesses.
+#
+# Recommended dev environment: Python 3.13 (torch officially supports 3.8–3.13).
+def _torch_available() -> bool:
+    import subprocess as _sp
+    result = _sp.run(
+        [sys.executable, "-c", "import torch"],
+        capture_output=True,
+        timeout=15,
+    )
+    return result.returncode == 0
+
+if not _torch_available():
+    import warnings
+    warnings.warn(
+        "torch is not importable in this Python environment — all e2e tests will be "
+        "skipped. Use Python 3.13 (official torch target) and run "
+        "'pip install -r requirements.txt' to enable them.",
+        stacklevel=1,
+    )
+    pytestmark = [pytest.mark.e2e, pytest.mark.skip(reason=(
+        "torch / sentence-transformers not available in this Python environment. "
+        "Recommended: Python 3.13. Run: pip install -r requirements.txt"
+    ))]
+
 _RAG_ROOT = Path(__file__).parent.parent   # tools/rag
 _SERVER_PY = _RAG_ROOT / "mcp_server.py"
 _INGEST_PY = _RAG_ROOT / "ingest.py"
