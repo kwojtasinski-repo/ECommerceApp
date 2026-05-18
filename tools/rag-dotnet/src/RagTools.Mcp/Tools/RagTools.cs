@@ -7,31 +7,38 @@ namespace RagTools.Mcp.Tools;
 /// <summary>
 /// MCP tools exposed to Copilot. Mirrors the Python mcp_server.py tools:
 ///   query_docs      — semantic search across all indexed documentation
-///   get_adr_history — fetch all chunks for a specific ADR ID
-///   list_adrs       — list all distinct ADR IDs in the index
+///   read_docs       — grouped-by-file search (chunk or full-file mode)
+///   get_adr_history — fetch all chunks for a specific ADR ID, ordered by start line
+///   list_adrs       — list all ADRs from disk (accurate, not index-dependent)
 /// </summary>
 [McpServerToolType]
 public sealed class RagTools(OnnxEmbedder embedder, QdrantStore store, RagConfig cfg)
 {
     [McpServerTool, Description(
-        "Semantically search the documentation index. " +
-        "Returns the top-k most relevant chunks with breadcrumbs and scores. " +
-        "Use bc (bounded context name) or doc_kind to narrow results.")]
+        "Semantic search across project documentation (ADRs, architecture, patterns, reference, roadmap). " +
+        "Returns the top-k most relevant chunks with breadcrumb, file path, line range, and text. " +
+        "Use bc to substring-filter by bounded context or topic (matched against breadcrumb and doc title). " +
+        "Follow up with ReadDocs to get full file content or grouped chunk view.")]
     public async Task<string> QueryDocs(
         [Description("The search question or topic.")] string question,
-        [Description("Optional bounded context filter — matched against doc_kind field (e.g. 'adr_main').")] string? bc = null,
+        [Description("Optional substring filter matched against breadcrumb and doc title (e.g. 'Orders', 'Pricing').")] string? bc = null,
         [Description("Maximum number of results to return (default: 5, max: 20).")] int topK = 5,
         CancellationToken cancellationToken = default)
     {
         topK = Math.Clamp(topK, 1, 20);
 
+        // Fetch more when bc filter is active to compensate for post-filtering loss.
+        var fetchK = bc is not null ? topK * 3 : topK;
         var queryVec = embedder.Embed(question);
-        var hits = await store.SearchAsync(
+        var allHits = await store.SearchAsync(
             queryVec,
-            topK,
+            fetchK,
             cfg.Query.ScoreThreshold,
-            docKindFilter: bc,
             cancellationToken: cancellationToken);
+
+        var hits = bc is not null
+            ? allHits.Where(h => MatchesBc(h, bc)).Take(topK).ToList()
+            : allHits.ToList();
 
         if (hits.Count == 0)
             return "No results found. Consider re-running the ingest script or broadening your query.";
@@ -59,13 +66,17 @@ public sealed class RagTools(OnnxEmbedder embedder, QdrantStore store, RagConfig
         var fullMode = WantsFullContent(question);
 
         // Fetch generously so each file gets good per-file coverage in chunk mode.
+        // No Qdrant-level filter: bc is a substring post-filter on breadcrumb/DocTitle.
         var queryVec = embedder.Embed(question);
-        var hits = await store.SearchAsync(
+        var rawHits = await store.SearchAsync(
             queryVec,
             topK: Math.Max(30, topFiles * 15),
             scoreThreshold: cfg.Query.ScoreThreshold,
-            docKindFilter: bc,
             cancellationToken: cancellationToken);
+
+        var hits = bc is not null
+            ? rawHits.Where(h => MatchesBc(h, bc)).ToList()
+            : rawHits.ToList();
 
         if (hits.Count == 0)
             return "No results found. Consider re-running the ingest script or broadening your query.";
@@ -112,6 +123,17 @@ public sealed class RagTools(OnnxEmbedder embedder, QdrantStore store, RagConfig
 
     private static bool WantsFullContent(string question) => FullIntentRe.IsMatch(question);
 
+    /// <summary>
+    /// Post-filter: returns true when the hit's breadcrumb or doc title contains bc as a
+    /// case-insensitive substring. Mirrors Python QueryEngine._matches_bc().
+    /// </summary>
+    private static bool MatchesBc(SearchHit h, string bc)
+    {
+        var lower = bc.ToLowerInvariant();
+        return (h.Breadcrumb?.ToLowerInvariant().Contains(lower) ?? false)
+            || (h.DocTitle?.ToLowerInvariant().Contains(lower) ?? false);
+    }
+
     [McpServerTool, Description(
         "Return all indexed chunks for a specific ADR, ordered by start line. " +
         "Equivalent to reading the full ADR with all its amendments in chronological order. " +
@@ -134,35 +156,53 @@ public sealed class RagTools(OnnxEmbedder embedder, QdrantStore store, RagConfig
         if (hits.Count == 0)
             return $"No chunks found for ADR {adrId}. Ensure the ADR is indexed.";
 
-        return $"# ADR {adrId} — {hits[0].DocTitle}\n\n" +
-               string.Join("\n\n---\n\n", hits.Select(h =>
+        // Order by start line so the output reads top-to-bottom like the source document.
+        var ordered = hits.OrderBy(h => h.StartLine).ToList();
+        return $"# ADR {adrId} — {ordered[0].DocTitle}\n\n" +
+               string.Join("\n\n---\n\n", ordered.Select(h =>
                    $"**{h.Breadcrumb}** ({h.DocKind})\n\n{h.Text}"));
     }
 
     [McpServerTool, Description(
-        "List all ADR IDs present in the index. " +
-        "Use this to discover what ADRs exist before fetching a specific one.")]
-    public async Task<string> ListAdrs(CancellationToken cancellationToken = default)
+        "List all ADRs in the repository with id, title, and amendment count. " +
+        "Reads the docs/adr/ folder from disk — always accurate, not limited by index coverage. " +
+        "Use for orientation queries like 'what ADRs exist?' before calling GetAdrHistory.")]
+    public Task<string> ListAdrs(CancellationToken cancellationToken = default)
     {
-        // Scroll all points with adr_id payload set, collect distinct IDs.
-        // We do a broad search with a zero vector and high limit as a workaround
-        // until Qdrant.Client exposes a scroll API in this version.
-        var zeroVec = new float[embedder.Dimensions];
-        var hits = await store.SearchAsync(
-            zeroVec,
-            topK: 200,
-            scoreThreshold: 0,
-            cancellationToken: cancellationToken);
+        // Read from disk — accurate and complete regardless of index state.
+        // Mirrors Python _tool_list_adrs which iterates docs/adr/ directly.
+        var adrFolder = Path.Combine(cfg.Workspace, "docs", "adr");
+        if (!Directory.Exists(adrFolder))
+            return Task.FromResult($"ADR folder not found at: {adrFolder}. Check RAG_WORKSPACE.");
 
-        var adrs = hits
-            .Where(h => h.AdrId is not null)
-            .GroupBy(h => h.AdrId!)
-            .OrderBy(g => g.Key)
-            .Select(g => $"ADR-{g.Key}  ({g.First().DocTitle})");
+        var rows = new List<string>();
+        foreach (var folder in Directory.EnumerateDirectories(adrFolder).OrderBy(d => d))
+        {
+            var dirName = Path.GetFileName(folder);
+            if (!System.Text.RegularExpressions.Regex.IsMatch(dirName, @"^\d{4}$")) continue;
 
-        var list = adrs.ToList();
-        return list.Count == 0
-            ? "No ADRs found in the index."
-            : $"Found {list.Count} ADR(s):\n\n" + string.Join("\n", list);
+            var mainFiles = Directory.GetFiles(folder, $"{dirName}-*.md").OrderBy(f => f).ToList();
+            var title = string.Empty;
+            if (mainFiles.Count > 0)
+            {
+                var text = File.ReadAllText(mainFiles[0]);
+                var m = TitleRe.Match(text);
+                if (m.Success) title = m.Groups[1].Value.Trim();
+            }
+            var amendmentsDir = Path.Combine(folder, "amendments");
+            var amendCount = Directory.Exists(amendmentsDir)
+                ? Directory.GetFiles(amendmentsDir, "*.md").Length : 0;
+            var amendSuffix = amendCount > 0 ? $"  [{amendCount} amendment(s)]" : string.Empty;
+            rows.Add($"ADR-{dirName}  {title}{amendSuffix}");
+        }
+
+        return Task.FromResult(
+            rows.Count == 0
+                ? "No ADRs found."
+                : $"Found {rows.Count} ADR(s):\n\n" + string.Join("\n", rows));
     }
+
+    private static readonly System.Text.RegularExpressions.Regex TitleRe =
+        new(@"^#\s+(?:ADR-\d+\s*[—:-]\s*)?(.+?)\s*$",
+            System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.Compiled);
 }

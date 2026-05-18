@@ -139,6 +139,7 @@ public sealed class QdrantStore : IDisposable
             DocKind: r.Payload.TryGetValue("doc_kind", out var dk) ? dk.StringValue : "",
             AdrId: r.Payload.TryGetValue("adr_id", out var ai) ? ai.StringValue : null,
             Breadcrumb: r.Payload.TryGetValue("breadcrumb", out var bc) ? bc.StringValue : "",
+            StartLine: r.Payload.TryGetValue("start_line", out var sl) ? (int)sl.IntegerValue : 0,
             Text: r.Payload.TryGetValue("text", out var tx) ? tx.StringValue : ""
         )).ToList();
     }
@@ -181,4 +182,5 @@ public sealed record SearchHit(
     string DocKind,
     string? AdrId,
     string Breadcrumb,
+    int StartLine,
     string Text);

@@ -44,6 +44,12 @@ CFG = None
 ENGINE = None
 SERVER = Server("ecommerceapp-rag")
 
+# Startup sync status — set by _startup_check() running in a background thread.
+# None  = not yet finished (thread still running or sync was skipped)
+# ""    = sync succeeded (index up to date or re-ingested successfully)
+# str   = human-readable warning message to prepend to the first tool response
+_SYNC_WARNING: "str | None" = None
+
 
 # ---------------------------- startup auto-sync ----------------------------
 
@@ -67,22 +73,26 @@ def _detect_changed_files(stored_hashes: dict[str, str]) -> list[str]:
 def _startup_check(config_path: Path) -> None:
     """Incremental index sync on MCP startup: re-ingests any docs changed since last ingest.
 
+    Sets _SYNC_WARNING to a non-empty string on failure so the next tool call can surface it.
     Skipped in memory mode (no persistent index to sync). In local/docker mode, reads
     the manifest hash file and compares against current on-disk files. Only files that
     actually changed are re-ingested, so the check is fast for an up-to-date index.
     Runs in a daemon thread so it does not block MCP startup or the first tool call.
     """
+    global _SYNC_WARNING
     if CFG.vector_mode == "memory":
+        _SYNC_WARNING = ""
         return
 
     if CFG.vector_mode == "local":
         local_path = Path(CFG.vector_local_path)
         if not local_path.exists():
-            print(
-                f"[rag-mcp] WARNING: Qdrant local storage path does not exist: {local_path}\n"
-                "[rag-mcp] Run: python tools/rag/ingest.py to initialise the index.",
-                file=sys.stderr,
+            msg = (
+                f"RAG index not initialised. Run: python tools/rag/ingest.py\n"
+                f"(Qdrant local storage path does not exist: {local_path})"
             )
+            print(f"[rag-mcp] WARNING: {msg}", file=sys.stderr)
+            _SYNC_WARNING = msg
             return
     else:
         # docker mode — verify Qdrant HTTP server is reachable before attempting sync.
@@ -92,19 +102,19 @@ def _startup_check(config_path: Path) -> None:
                 if r.status not in (200, 206):
                     raise OSError(f"HTTP {r.status}")
         except Exception as exc:
-            print(
-                f"[rag-mcp] WARNING: Qdrant not reachable at {CFG.vector_url} ({exc}).\n"
-                "[rag-mcp] Start Qdrant, then run: python tools/rag/ingest.py --mode docker",
-                file=sys.stderr,
+            msg = (
+                f"Qdrant not reachable at {CFG.vector_url} ({exc}). "
+                f"Start Qdrant, then run: python tools/rag/ingest.py --mode docker"
             )
+            print(f"[rag-mcp] WARNING: {msg}", file=sys.stderr)
+            _SYNC_WARNING = msg
             return
 
     manifest_path = CFG.manifest_path
     if not manifest_path.exists():
-        print(
-            "[rag-mcp] No ingest manifest found — run: python tools/rag/ingest.py",
-            file=sys.stderr,
-        )
+        msg = "No ingest manifest found. Run: python tools/rag/ingest.py"
+        print(f"[rag-mcp] {msg}", file=sys.stderr)
+        _SYNC_WARNING = msg
         return
 
     with manifest_path.open("r", encoding="utf-8") as fh:
@@ -112,12 +122,14 @@ def _startup_check(config_path: Path) -> None:
 
     stored_hashes: dict[str, str] = data.get("file_hashes", {})
     if not stored_hashes:
+        _SYNC_WARNING = ""
         return  # old manifest format without hash tracking — skip
 
     changed = _detect_changed_files(stored_hashes)
     if not changed:
         last = data.get("last_indexed", "unknown")
         print(f"[rag-mcp] Index up to date (last indexed: {last})", file=sys.stderr)
+        _SYNC_WARNING = ""
         return
 
     print(f"[rag-mcp] {len(changed)} file(s) changed — running incremental ingest...", file=sys.stderr)
@@ -132,9 +144,19 @@ def _startup_check(config_path: Path) -> None:
             timeout=300,
         )
         if result.returncode != 0:
-            print(f"[rag-mcp] WARNING: ingest exited with code {result.returncode}", file=sys.stderr)
+            msg = (
+                f"Incremental ingest failed (exit code {result.returncode}) for "
+                f"{len(changed)} changed file(s). The index may be stale. "
+                f"Run: python tools/rag/ingest.py to rebuild."
+            )
+            print(f"[rag-mcp] WARNING: {msg}", file=sys.stderr)
+            _SYNC_WARNING = msg
+        else:
+            _SYNC_WARNING = ""
     except subprocess.TimeoutExpired:
-        print("[rag-mcp] WARNING: ingest timed out after 300s; continuing without startup sync", file=sys.stderr)
+        msg = "Incremental ingest timed out after 300s. The index may be stale."
+        print(f"[rag-mcp] WARNING: {msg}", file=sys.stderr)
+        _SYNC_WARNING = msg
 
 
 # ---------------------------- full-content intent detection ----------------------------
@@ -241,6 +263,16 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     return [TextContent(type="text", text=f"Unknown tool: {name}")]
 
 
+def _sync_warning_prefix() -> str:
+    """Return a warning banner if the background sync failed, empty string otherwise.
+    Called from every tool so the warning is visible in Copilot Chat output.
+    """
+    w = _SYNC_WARNING
+    if w:
+        return f"⚠️ RAG INDEX WARNING: {w}\n\n"
+    return ""
+
+
 async def _tool_query_docs(args: dict) -> list[TextContent]:
     question = args["question"]
     bc = args.get("bc")
@@ -264,7 +296,8 @@ async def _tool_query_docs(args: dict) -> list[TextContent]:
             for h in hits
         ],
     }
-    return [TextContent(type="text", text=json.dumps(payload, indent=2))]
+    prefix = _sync_warning_prefix()
+    return [TextContent(type="text", text=prefix + json.dumps(payload, indent=2))]
 
 
 # ---------------------------- tool: read_docs ----------------------------
@@ -415,7 +448,8 @@ async def _tool_list_adrs(_: dict) -> list[TextContent]:
             "amendments": len(amendments),
             "examples": len(examples),
         })
-    return [TextContent(type="text", text=json.dumps({"adrs": rows, "count": len(rows)}, indent=2))]
+    prefix = _sync_warning_prefix()
+    return [TextContent(type="text", text=prefix + json.dumps({"adrs": rows, "count": len(rows)}, indent=2))]
 
 
 # ---------------------------- entrypoint ----------------------------

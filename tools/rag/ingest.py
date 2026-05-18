@@ -95,7 +95,7 @@ def _save_file_manifest(
     """Persist the per-file hash manifest so the next run can skip unchanged files."""
     cfg.manifest_path.parent.mkdir(parents=True, exist_ok=True)
     manifest = {
-        "last_indexed": datetime.datetime.utcnow().isoformat() + "Z",
+        "last_indexed": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "mode": cfg.vector_mode,
         "files": total_files,
         "chunks": total_chunks,
@@ -141,7 +141,7 @@ def _write_stats_md(
         file_chunks[rel] = file_chunks.get(rel, 0) + 1
         file_kind[rel] = kind
 
-    now = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M UTC")
+    now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     total_chunks = sum(kind_chunks.values())
 
     lines: list[str] = [
