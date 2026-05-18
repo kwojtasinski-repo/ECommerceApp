@@ -551,6 +551,19 @@ def mcp_session(ingested_workspace: Path) -> ToolCaller:
             f"Server stderr:\n{stderr}"
         )
 
+    # Warm-up: the QueryEngine loads the embedding model + snapshot lazily on the
+    # first search() call.  On a cold process (model already downloaded but not yet
+    # in RAM) SentenceTransformer + Qdrant snapshot loading can take 60-120 s.
+    # Sending one query_docs call here with a generous timeout ensures the model is
+    # fully initialised before any individual test (which uses the 90 s default)
+    # runs the first real query.
+    _call_id[0] += 1
+    try:
+        _call_tool(proc, _call_id[0], "query_docs",
+                   {"question": "_warmup_", "top_k": 1}, timeout=90.0)
+    except Exception:
+        pass  # warmup failure is reported by the individual tests
+
     def _call(tool: str, args: dict, *, timeout: float = 90.0) -> dict:
         _call_id[0] += 1
         return _call_tool(proc, _call_id[0], tool, args, timeout=timeout)
@@ -599,6 +612,7 @@ def container_session(tmp_path_factory: pytest.TempPathFactory) -> ToolCaller:
         ],
         capture_output=True,
         text=True,
+        encoding="utf-8",
         timeout=300,
     )
     assert ingest_r.returncode == 0, (
@@ -642,6 +656,14 @@ def container_session(tmp_path_factory: pytest.TempPathFactory) -> ToolCaller:
             f"Container MCP server handshake failed: {type(exc).__name__}: {exc}\n"
             f"Container stderr:\n{stderr}"
         )
+
+    # Warm-up: container model loading can be slow on first startup.
+    _call_id[0] += 1
+    try:
+        _call_tool(proc, _call_id[0], "query_docs",
+                   {"question": "_warmup_", "top_k": 1}, timeout=90.0)
+    except Exception:
+        pass
 
     def _call(tool: str, args: dict, *, timeout: float = 90.0) -> dict:
         _call_id[0] += 1
