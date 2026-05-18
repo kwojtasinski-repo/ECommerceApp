@@ -10,6 +10,7 @@
 *.userosscache
 *.sln.docstates
 *.json
+!.vscode/mcp.json
 *.config
 *.doc
 *.docx
@@ -356,3 +357,4 @@ tools/rag/.venv/
 .rag/                  # incremental ingest manifest (repo root, all RAG implementations)
 tools/rag-dotnet/**/bin/
 tools/rag-dotnet/**/obj/
+tools/rag-dotnet/model/

@@ -15,13 +15,35 @@ using RagTools.Core;
 //   QDRANT_URL       Qdrant server URL (default: from config.yaml)
 //   RAG_MODEL_DIR    path to ONNX model directory (default: /app/model)
 
-var configPath = Environment.GetEnvironmentVariable("RAG_CONFIG")
-    ?? Path.Combine(AppContext.BaseDirectory, "config.yaml");
+// Resolve config via 3-way priority (--config not supported here; MCP runs headless).
+var resolvedConfigPath = RagConfig.ResolveConfigPath(null);
 
-var cfg = RagConfig.Load(configPath);
+if (!File.Exists(resolvedConfigPath))
+{
+    Console.Error.WriteLine($"[rag-mcp] ERROR: config.yaml not found at {resolvedConfigPath}");
+    Console.Error.WriteLine("[rag-mcp] Set RAG_CONFIG or RAG_WORKSPACE before launching the MCP server.");
+    return 1;
+}
+
+var cfg = RagConfig.Load(resolvedConfigPath);
 var qdrantUrl = Environment.GetEnvironmentVariable("QDRANT_URL") ?? cfg.QdrantUrl;
 var modelDir = Environment.GetEnvironmentVariable("RAG_MODEL_DIR")
     ?? Path.Combine(AppContext.BaseDirectory, "model");
+
+// Startup log — printed to stderr so it doesn't corrupt the stdio MCP framing on stdout.
+var configFi = new FileInfo(resolvedConfigPath);
+Console.Error.WriteLine($"[rag-mcp] config     : {resolvedConfigPath} ({configFi.Length} bytes)");
+Console.Error.WriteLine($"[rag-mcp] workspace  : {cfg.Workspace}");
+Console.Error.WriteLine($"[rag-mcp] collection : {cfg.Collection}");
+Console.Error.WriteLine($"[rag-mcp] qdrant     : {qdrantUrl}");
+Console.Error.WriteLine($"[rag-mcp] model dir  : {modelDir} (exists: {Directory.Exists(modelDir)})");
+
+if (!Directory.Exists(modelDir))
+{
+    Console.Error.WriteLine($"[rag-mcp] ERROR: ONNX model directory not found at {modelDir}");
+    Console.Error.WriteLine("[rag-mcp] Run: pwsh tools/rag-dotnet/download-model.ps1");
+    return 1;
+}
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -35,3 +57,4 @@ builder.Services
 
 var host = builder.Build();
 await host.RunAsync();
+return 0;

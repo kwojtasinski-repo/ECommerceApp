@@ -191,6 +191,10 @@ def main() -> int:
 
     if args.config:
         config_path = Path(args.config).resolve()
+    elif env_cfg := os.environ.get("RAG_CONFIG"):
+        # Docker per-file-mount mode: baked config path supplied explicitly.
+        # Takes priority over RAG_WORKSPACE so the selective-mount compose setup works.
+        config_path = Path(env_cfg)
     elif env_ws := os.environ.get("RAG_WORKSPACE"):
         # Container / CI mode: derive config from workspace env — no --config needed.
         config_path = Path(env_ws) / "tools" / "rag" / "config.yaml"

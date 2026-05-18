@@ -1,19 +1,20 @@
-# ── Stage 1: ONNX model export (Python) ──────────────────────────────────────
-# Exports the sentence-transformers model to ONNX format using optimum.
-# The model is baked into the image layer so the .NET runtime doesn't need Python.
-FROM python:3.12-slim AS model-exporter
+# ── Stage 1: ONNX model download ──────────────────────────────────────────────
+# Pulls the pre-exported ONNX bundle straight from HuggingFace — no Python,
+# no optimum-cli, no venv. The model maintainers publish an /onnx/ subfolder
+# with model.onnx + tokenizer assets ready to use.
+#
+# Curl is used for a small image (curlimages/curl is ~12 MB) and stable
+# download progress in CI. Files mirror exactly what tools/rag-dotnet/download-model.ps1
+# downloads for local development, so Docker and local devs run the same bytes.
+FROM curlimages/curl:8.10.1 AS model-downloader
 
-RUN pip install --no-cache-dir \
-    sentence-transformers==3.4.1 \
-    optimum[onnxruntime]==1.23.3
+ARG MODEL_BASE=https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/resolve/main
 
-# Export model to ONNX with sentence_embedding output node (includes mean-pooling).
-# --task sentence-similarity adds the pooling + normalisation nodes to the graph.
-RUN optimum-cli export onnx \
-    --model sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 \
-    --task sentence-similarity \
-    --opset 14 \
-    /app/model
+WORKDIR /app/model
+RUN curl -sSL -o model.onnx     "${MODEL_BASE}/onnx/model.onnx"     \
+ && curl -sSL -o vocab.txt      "${MODEL_BASE}/vocab.txt"           \
+ && curl -sSL -o tokenizer.json "${MODEL_BASE}/tokenizer.json"      \
+ && curl -sSL -o config.json    "${MODEL_BASE}/config.json"
 
 # ── Stage 2: .NET build ───────────────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS builder
@@ -31,8 +32,8 @@ RUN dotnet publish src/RagTools.Mcp/RagTools.Mcp.csproj \
 # ── Stage 3: Runtime image ────────────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/runtime:10.0 AS runtime
 
-# Copy ONNX model from Python exporter stage.
-COPY --from=model-exporter /app/model /app/model
+# Copy ONNX model from downloader stage.
+COPY --from=model-downloader /app/model /app/model
 
 # Copy .NET published outputs.
 COPY --from=builder /out/ingest /app/ingest
@@ -46,7 +47,6 @@ COPY ../rag/config.yaml /app/config.yaml
 ENV RAG_WORKSPACE=/workspace
 ENV RAG_MODEL_DIR=/app/model
 ENV RAG_CONFIG=/app/config.yaml
-ENV PYTHONUNBUFFERED=1
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 # Volumes:

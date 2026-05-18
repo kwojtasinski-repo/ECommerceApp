@@ -446,6 +446,10 @@ if __name__ == "__main__":
     if _args.config:
         # Explicit path — local dev or any caller that passes --config directly.
         _config_path = Path(_args.config).resolve()
+    elif env_cfg := os.environ.get("RAG_CONFIG"):
+        # Docker per-file-mount mode: baked config path supplied explicitly.
+        # Takes priority over RAG_WORKSPACE so the selective-mount compose setup works.
+        _config_path = Path(env_cfg)
     elif env_ws := os.environ.get("RAG_WORKSPACE"):
         # Container / CI mode: workspace root supplied via env, no --config needed.
         # Convention: config.yaml always lives at <workspace>/tools/rag/config.yaml.

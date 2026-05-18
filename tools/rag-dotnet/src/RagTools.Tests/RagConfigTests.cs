@@ -307,4 +307,130 @@ public class RagConfigTests : IDisposable
         var id = cfg.DetectAdrId("docs/adr/0016/0016-coupons.md");
         Assert.Null(id);
     }
+
+    // ─── Workspace / config discovery ──────────────────────────────────────────
+
+    [Fact]
+    public void DeriveWorkspace_UsesGrandparent_OfConfigPath()
+    {
+        // <ws>/tools/rag/config.yaml  →  workspace = <ws>
+        var ws = Path.Combine(_tempDir, "ws");
+        var configPath = Path.Combine(ws, "tools", "rag", "config.yaml");
+        Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
+        File.WriteAllText(configPath, "x: 1");
+
+        var derived = RagConfig.DeriveWorkspace(configPath);
+
+        Assert.Equal(Path.GetFullPath(ws), Path.GetFullPath(derived));
+    }
+
+    [Fact]
+    public void DeriveWorkspace_FallsBackToEnvVar_WhenConfigPathNull()
+    {
+        var fakeWs = Path.Combine(_tempDir, "envws");
+        Directory.CreateDirectory(fakeWs);
+        try
+        {
+            Environment.SetEnvironmentVariable("RAG_WORKSPACE", fakeWs);
+            var derived = RagConfig.DeriveWorkspace(null);
+            Assert.Equal(fakeWs, derived);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("RAG_WORKSPACE", null);
+        }
+    }
+
+    [Fact]
+    public void Load_SetsLoadedFromAndWorkspaceFromConfigPath()
+    {
+        var ws = Path.Combine(_tempDir, "ws2");
+        var configPath = Path.Combine(ws, "tools", "rag", "config.yaml");
+        Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
+        File.WriteAllText(configPath, MinimalConfig());
+
+        var cfg = RagConfig.Load(configPath);
+
+        Assert.Equal(Path.GetFullPath(configPath), cfg.LoadedFrom);
+        Assert.Equal(Path.GetFullPath(ws), Path.GetFullPath(cfg.Workspace));
+        Assert.Equal(
+            Path.Combine(Path.GetFullPath(ws), ".rag/manifest.json"),
+            cfg.ManifestAbsPath);
+    }
+
+    [Fact]
+    public void ResolveConfigPath_PrioritisesExplicitArg_OverEnv()
+    {
+        var explicitPath = Path.Combine(_tempDir, "explicit.yaml");
+        File.WriteAllText(explicitPath, "x: 1");
+        var envPath = Path.Combine(_tempDir, "env.yaml");
+        File.WriteAllText(envPath, "x: 1");
+        try
+        {
+            Environment.SetEnvironmentVariable("RAG_CONFIG", envPath);
+            var resolved = RagConfig.ResolveConfigPath(explicitPath);
+            Assert.Equal(Path.GetFullPath(explicitPath), resolved);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("RAG_CONFIG", null);
+        }
+    }
+
+    [Fact]
+    public void ResolveConfigPath_UsesRagConfigEnv_WhenNoExplicitArg()
+    {
+        var envPath = Path.Combine(_tempDir, "from-env.yaml");
+        File.WriteAllText(envPath, "x: 1");
+        try
+        {
+            Environment.SetEnvironmentVariable("RAG_CONFIG", envPath);
+            Environment.SetEnvironmentVariable("RAG_WORKSPACE", null);
+            var resolved = RagConfig.ResolveConfigPath(null);
+            Assert.Equal(Path.GetFullPath(envPath), resolved);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("RAG_CONFIG", null);
+        }
+    }
+
+    [Fact]
+    public void ResolveConfigPath_DerivesFromRagWorkspace_WhenOnlyWorkspaceSet()
+    {
+        var ws = Path.Combine(_tempDir, "wsroot");
+        var derivedConfig = Path.Combine(ws, "tools", "rag", "config.yaml");
+        Directory.CreateDirectory(Path.GetDirectoryName(derivedConfig)!);
+        File.WriteAllText(derivedConfig, "x: 1");
+        try
+        {
+            Environment.SetEnvironmentVariable("RAG_CONFIG", null);
+            Environment.SetEnvironmentVariable("RAG_WORKSPACE", ws);
+            var resolved = RagConfig.ResolveConfigPath(null);
+            Assert.Equal(Path.GetFullPath(derivedConfig), resolved);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("RAG_WORKSPACE", null);
+        }
+    }
+
+    [Fact]
+    public void ResolveConfigPath_FallsBackToBaseDirectory_WhenNoEnvAndNoArg()
+    {
+        // No file required — we just check the *path* fallback.
+        try
+        {
+            Environment.SetEnvironmentVariable("RAG_CONFIG", null);
+            Environment.SetEnvironmentVariable("RAG_WORKSPACE", null);
+            var resolved = RagConfig.ResolveConfigPath(null);
+            Assert.Equal(Path.Combine(AppContext.BaseDirectory, "config.yaml"), resolved);
+        }
+        finally
+        {
+            // already null — defensive
+            Environment.SetEnvironmentVariable("RAG_CONFIG", null);
+            Environment.SetEnvironmentVariable("RAG_WORKSPACE", null);
+        }
+    }
 }

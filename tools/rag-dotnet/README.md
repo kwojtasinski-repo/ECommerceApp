@@ -3,9 +3,10 @@
 .NET 10 implementation of the RAG pipeline — same semantic search as the Python version
 but using ONNX Runtime for embeddings and a compiled MCP server.
 
-Three MCP tools exposed to Copilot Chat:
+Four MCP tools exposed to Copilot Chat:
 
-- `query_docs` — free-form semantic search
+- `query_docs` — free-form semantic search (top chunks ranked)
+- `read_docs` — top-ranked **unique files** (chunk view by default; full-content mode when the question contains intent phrases like "all details" / "whole file")
 - `list_adrs` — list all indexed ADRs
 - `get_adr_history` — fetch all chunks for a specific ADR
 
@@ -25,12 +26,13 @@ docker compose build rag-dotnet
 
 > **What this does:** runs a multi-stage Docker build:
 >
-> 1. Python stage — exports `paraphrase-multilingual-MiniLM-L12-v2` to ONNX format using `optimum`.
->    This bakes the model into the image so the .NET runtime never needs Python.
+> 1. `curlimages/curl` stage — downloads the **pre-exported ONNX bundle** straight from HuggingFace
+>    (`/onnx/model.onnx` + `vocab.txt` + `tokenizer.json` + `config.json`).
+>    No Python, no `optimum-cli`, no venv — same bytes the maintainers publish.
 > 2. .NET SDK stage — restores packages, publishes `RagTools.Ingest` and `RagTools.Mcp`.
 > 3. Runtime stage — combines the ONNX model and .NET binaries into a lean final image.
 >
-> First build takes 5–10 minutes (model export + NuGet restore). Subsequent builds use Docker cache.
+> First build takes ~2–4 minutes (model download + NuGet restore). Subsequent builds use Docker cache.
 
 ---
 
@@ -121,14 +123,15 @@ dotnet build src/RagTools.Tests/RagTools.Tests.csproj -q
 dotnet test src/RagTools.Tests/RagTools.Tests.csproj --no-build -q
 ```
 
-> **What this does:** runs 94 unit tests covering token counting, chunking, manifest
-> change detection, ONNX embedder internals, and config deserialization. Tests that
-> require a real `vocab.txt` are guarded with `[SkippableFact]` and skipped automatically.
+> **What this does:** runs all unit tests covering token counting, chunking, manifest
+> change detection, ONNX embedder internals, config deserialization, and the 4-way
+> config / workspace resolution. Tests that require a real `vocab.txt` are guarded
+> with `[SkippableFact]` and skipped automatically when the model isn't downloaded.
 
 Expected output:
 
 ```
-Success!  — Failed: 0, Passed: 94, Skipped: 0, Total: 94
+Success!  — Failed: 0, Passed: 100, Skipped: 0, Total: 100
 ```
 
 ---
@@ -138,42 +141,44 @@ Success!  — Failed: 0, Passed: 94, Skipped: 0, Total: 94
 You need:
 
 - .NET 10 SDK (`dotnet --version` should show `10.x`)
-- Qdrant running locally (Docker or binary)
-- ONNX model exported to a local directory
+- Qdrant running locally (`docker compose up qdrant -d`)
+- ONNX model downloaded once via the included PowerShell script — **no Python required**
 
-### Export the ONNX model locally
+### One-time: download the ONNX model
 
-```bash
-pip install optimum[onnxruntime] sentence-transformers
-optimum-cli export onnx \
-  --model sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 \
-  --task sentence-similarity \
-  --opset 14 \
-  model/
+```powershell
+pwsh tools/rag-dotnet/download-model.ps1
 ```
 
-> This exports the model to `tools/rag-dotnet/model/`. Point `RAG_MODEL_DIR` at this directory.
+> Downloads the pre-exported ONNX bundle directly from HuggingFace into
+> `tools/rag-dotnet/model/` (gitignored). Idempotent — skips files already present.
+> Total size: ~490 MB on disk.
 
-### Run ingest directly
+### Run from Visual Studio / VS Code (F5)
 
-```bash
+Both projects ship `Properties/launchSettings.json` profiles pre-configured for the
+repo layout. Set the startup project to **RagTools.Ingest** or **RagTools.Mcp** and
+press **F5** — env vars (`RAG_WORKSPACE`, `RAG_CONFIG`, `RAG_MODEL_DIR`, `QDRANT_URL`)
+are wired automatically and `workingDirectory` points at the repo root.
+
+### Run from CLI
+
+```powershell
 cd tools/rag-dotnet
 
-# Set env vars (PowerShell)
-$env:RAG_WORKSPACE   = "C:\path\to\repo"
-$env:RAG_MODEL_DIR   = "model"
-$env:QDRANT_URL      = "http://localhost:6333"
-$env:RAG_CONFIG      = "..\rag\config.yaml"
-
-dotnet run --project src/RagTools.Ingest -- --dry-run
+# Ingest (incremental — re-embeds only changed files)
 dotnet run --project src/RagTools.Ingest
-```
 
-### Run MCP server directly
+# Ingest dry-run (no embeddings, no upserts)
+dotnet run --project src/RagTools.Ingest -- --dry-run
 
-```bash
+# MCP server (stdio — usually launched by VS Code, but runs standalone for testing)
 dotnet run --project src/RagTools.Mcp
 ```
+
+> The startup banner prints the resolved config path + size, workspace, collection,
+> Qdrant URL, and model dir. **If config or model are missing, the process exits with
+> code 1 and a diagnostic message** — no silent fallback to wrong defaults.
 
 ---
 
@@ -181,11 +186,27 @@ dotnet run --project src/RagTools.Mcp
 
 | Variable         | Default                    | Effect                                    |
 | ---------------- | -------------------------- | ----------------------------------------- |
-| `RAG_WORKSPACE`  | current directory          | Absolute path to the repo root            |
-| `RAG_MODEL_DIR`  | `<binary dir>/model`       | Path to the exported ONNX model directory |
-| `RAG_CONFIG`     | `<binary dir>/config.yaml` | Path to `config.yaml`                     |
+| `RAG_WORKSPACE`  | derived from config path   | Absolute path to the repo root            |
+| `RAG_MODEL_DIR`  | `<binary dir>/model`       | Path to the downloaded ONNX model         |
+| `RAG_CONFIG`     | see resolution below       | Path to `config.yaml`                     |
 | `QDRANT_URL`     | value from config.yaml     | Qdrant HTTP URL (`http://host:6333`)      |
 | `RAG_COLLECTION` | value from config.yaml     | Qdrant collection name override           |
+
+### Config-path resolution (4-way priority — Python parity)
+
+1. Explicit `--config <path>` argument (if/when CLI exposes one)
+2. `RAG_CONFIG` env var
+3. `RAG_WORKSPACE` env var → derived path `<workspace>/tools/rag/config.yaml`
+4. `AppContext.BaseDirectory/config.yaml` (Docker bundle / published output)
+
+### Workspace-path resolution (3-way priority)
+
+1. Grandparent of the loaded config path — `<ws>/tools/rag/config.yaml` → `<ws>`
+2. `RAG_WORKSPACE` env var
+3. `Directory.GetCurrentDirectory()`
+
+> The `Workspace` instance property prevents shell env from leaking into runs that
+> pass an explicit config path. Tests cover all priority paths.
 
 ---
 
@@ -227,8 +248,9 @@ Key fields that affect the .NET path:
 RagTools.Core          — BertTokenCounter, OnnxEmbedder, MarkdownChunker,
                          ManifestService, QdrantStore, RagConfig
 RagTools.Ingest        — CLI: scan → chunk → embed → upsert
-RagTools.Mcp           — stdio MCP server: query_docs, get_adr_history, list_adrs
-RagTools.Tests         — 94 unit tests (no external services required)
+RagTools.Mcp           — stdio MCP server: query_docs, read_docs,
+                         get_adr_history, list_adrs
+RagTools.Tests         — 100 unit tests (no external services required)
 ```
 
 The MCP server mirrors the Python `mcp_server.py` tools exactly — both implementations
@@ -247,7 +269,7 @@ them without re-indexing (as long as they use the same collection name).
 
 **`Model file not found` error**  
 → `RAG_MODEL_DIR` does not point to a directory containing `model.onnx` and `tokenizer.json`.
-Run the ONNX export step or build the Docker image which includes the model.
+Run `pwsh tools/rag-dotnet/download-model.ps1` or build the Docker image which includes the model.
 
 **MCP tools not showing in Copilot**  
 → Restart VS Code after the first ingest. Check `.github/copilot/mcp.json` contains

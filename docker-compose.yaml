@@ -31,7 +31,8 @@ services:
         depends_on:
           - qdrant
         environment:
-          - RAG_WORKSPACE=/workspace
+          - RAG_CONFIG=/app/config.yaml   # use baked config — selective mounts don't include tools/rag/
+          - RAG_WORKSPACE=/workspace      # still needed for Config.workspace → source_roots resolution
           - PYTHONUNBUFFERED=1
           - VECTOR_MODE=docker
           - QDRANT_URL=http://qdrant:6333

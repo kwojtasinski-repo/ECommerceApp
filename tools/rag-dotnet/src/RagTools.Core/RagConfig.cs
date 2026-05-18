@@ -21,7 +21,13 @@ public sealed class RagConfig
     public MetadataRulesSection MetadataRules { get; init; } = new();
     public List<NamedQueryEntry> NamedQueries { get; init; } = [];
 
-    // ── Computed properties ───────────────────────────────────────────────────
+    /// <summary>
+    /// Absolute path of the config.yaml this instance was loaded from. Set by <see cref="Load"/>.
+    /// Drives <see cref="Workspace"/> derivation (Python parity: config_path.parents[2]).
+    /// </summary>
+    public string? LoadedFrom { get; init; }
+
+    // ── Computed properties ───────────────────────────────────────────────
 
     /// <summary>Qdrant collection name. RAG_COLLECTION env var wins over config.</summary>
     public string Collection =>
@@ -29,13 +35,41 @@ public sealed class RagConfig
         ?? VectorStore.Collection
         ?? "rag_docs";
 
-    /// <summary>Absolute repo root. RAG_WORKSPACE env var wins over working directory.</summary>
+    /// <summary>
+    /// Absolute repo root. Priority (Python parity):
+    ///   1. config.yaml directory's grandparent (when config sits at &lt;repo&gt;/tools/rag/config.yaml)
+    ///   2. RAG_WORKSPACE env var
+    ///   3. <see cref="Directory.GetCurrentDirectory"/>
+    /// Prevents shell env from leaking into explicit --config runs.
+    /// </summary>
+    public string Workspace => DeriveWorkspace(LoadedFrom);
+
+    internal static string DeriveWorkspace(string? configPath)
+    {
+        if (!string.IsNullOrEmpty(configPath))
+        {
+            try
+            {
+                var full = Path.GetFullPath(configPath);
+                var dir = Path.GetDirectoryName(full);
+                var parent = dir is null ? null : Path.GetDirectoryName(dir);
+                var grand = parent is null ? null : Path.GetDirectoryName(parent);
+                if (grand is not null && Directory.Exists(grand))
+                    return grand;
+            }
+            catch (ArgumentException) { /* fall through */ }
+        }
+        return Environment.GetEnvironmentVariable("RAG_WORKSPACE")
+            ?? Directory.GetCurrentDirectory();
+    }
+
+    /// <summary>Static escape hatch for callers without a RagConfig instance.</summary>
     public static string RepoRoot =>
         Environment.GetEnvironmentVariable("RAG_WORKSPACE")
         ?? Directory.GetCurrentDirectory();
 
     public string ManifestAbsPath =>
-        Path.Combine(RepoRoot, Storage.ManifestPath ?? ".rag/manifest.json");
+        Path.Combine(Workspace, Storage.ManifestPath ?? ".rag/manifest.json");
 
     public string QdrantUrl =>
         VectorStore.Url ?? "http://localhost:6333";
@@ -52,8 +86,7 @@ public sealed class RagConfig
     /// </summary>
     public static RagConfig Load(string? configPath = null)
     {
-        configPath ??= FindConfigFile("config.yaml")
-            ?? Path.Combine(AppContext.BaseDirectory, "config.yaml");
+        configPath = ResolveConfigPath(configPath);
 
         var configDir = Path.GetDirectoryName(configPath)!;
         var yaml = File.ReadAllText(configPath);
@@ -90,6 +123,7 @@ public sealed class RagConfig
 
         return new RagConfig
         {
+            LoadedFrom = Path.GetFullPath(configPath),
             Source = cfg.Source,
             Embedder = cfg.Embedder,
             VectorStore = cfg.VectorStore,
@@ -102,13 +136,31 @@ public sealed class RagConfig
         };
     }
 
-    private static string? FindConfigFile(string filename)
+    /// <summary>
+    /// 3-way config discovery (Python parity):
+    ///   1. explicit <paramref name="configPath"/> argument (e.g. from CLI)
+    ///   2. RAG_CONFIG env var
+    ///   3. RAG_WORKSPACE env var → &lt;ws&gt;/tools/rag/config.yaml
+    ///   4. AppContext.BaseDirectory/config.yaml fallback (Docker / published bundle)
+    /// </summary>
+    public static string ResolveConfigPath(string? configPath)
     {
-        // Checks: AppContext.BaseDirectory only — no hidden conventions.
-        // The caller (ingest or MCP server) is expected to provide an explicit path
-        // via RAG_CONFIG env var. This fallback is for local development only.
-        var appDir = Path.Combine(AppContext.BaseDirectory, filename);
-        return File.Exists(appDir) ? appDir : null;
+        if (!string.IsNullOrEmpty(configPath))
+            return Path.GetFullPath(configPath);
+
+        var envCfg = Environment.GetEnvironmentVariable("RAG_CONFIG");
+        if (!string.IsNullOrEmpty(envCfg))
+            return Path.GetFullPath(envCfg);
+
+        var envWs = Environment.GetEnvironmentVariable("RAG_WORKSPACE");
+        if (!string.IsNullOrEmpty(envWs))
+        {
+            var derived = Path.Combine(envWs, "tools", "rag", "config.yaml");
+            if (File.Exists(derived))
+                return Path.GetFullPath(derived);
+        }
+
+        return Path.Combine(AppContext.BaseDirectory, "config.yaml");
     }
 
     private static string? ResolveCompanionPath(

@@ -13,24 +13,42 @@ using RagTools.Core;
 //   RAG_CONFIG       path to config.yaml (default: /app/config.yaml)
 //   QDRANT_URL       Qdrant server URL (default: from config.yaml)
 
-var configPath = Environment.GetEnvironmentVariable("RAG_CONFIG")
-    ?? Path.Combine(AppContext.BaseDirectory, "config.yaml");
+// Resolve config path via 3-way priority — no explicit --config flag here, so pass null.
+var resolvedConfigPath = RagConfig.ResolveConfigPath(null);
 
-var cfg = RagConfig.Load(configPath);
+// Startup validation — fail fast on missing config / model so misconfiguration is obvious.
+if (!File.Exists(resolvedConfigPath))
+{
+    Console.Error.WriteLine($"[ingest] ERROR: config.yaml not found at {resolvedConfigPath}");
+    Console.Error.WriteLine("[ingest] Set RAG_CONFIG or RAG_WORKSPACE, or run from a directory that contains config.yaml.");
+    return 1;
+}
+
+var cfg = RagConfig.Load(resolvedConfigPath);
 
 var forceFull = args.Contains("--force-full");
 var dryRun = args.Contains("--dry-run");
 
-var repoRoot = RagConfig.RepoRoot;
+var repoRoot = cfg.Workspace;
 var manifestPath = cfg.ManifestAbsPath;
 var modelDir = Environment.GetEnvironmentVariable("RAG_MODEL_DIR")
     ?? Path.Combine(AppContext.BaseDirectory, "model");
 
+var configFi = new FileInfo(resolvedConfigPath);
+Console.WriteLine($"[ingest] config     : {resolvedConfigPath} ({configFi.Length} bytes)");
 Console.WriteLine($"[ingest] repo root  : {repoRoot}");
 Console.WriteLine($"[ingest] collection : {cfg.Collection}");
 Console.WriteLine($"[ingest] manifest   : {manifestPath}");
-Console.WriteLine($"[ingest] model dir  : {modelDir}");
+Console.WriteLine($"[ingest] model dir  : {modelDir} (exists: {Directory.Exists(modelDir)})");
 Console.WriteLine($"[ingest] mode       : {(forceFull ? "full" : "incremental")}");
+
+// Model dir is needed unless this is a --dry-run.
+if (!dryRun && !Directory.Exists(modelDir))
+{
+    Console.Error.WriteLine($"[ingest] ERROR: ONNX model directory not found at {modelDir}");
+    Console.Error.WriteLine("[ingest] Run: pwsh tools/rag-dotnet/download-model.ps1");
+    return 1;
+}
 
 // ── Collect markdown files ────────────────────────────────────────────────────
 var sourceRoots = cfg.Source.Roots
