@@ -200,7 +200,9 @@ public sealed class RagConfig
         foreach (var entry in patterns)
         {
             if (string.IsNullOrWhiteSpace(entry.Pattern)) continue;
-            var m = Regex.Match(p, entry.Pattern);
+            // Convert Python-style named groups (?P<name>...) to .NET-style (?<name>...)
+            var netPattern = entry.Pattern.Replace("(?P<", "(?<");
+            var m = Regex.Match(p, netPattern);
             if (m.Success && m.Groups["id"].Success)
                 return m.Groups["id"].Value;
         }

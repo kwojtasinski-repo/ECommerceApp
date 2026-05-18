@@ -1,0 +1,82 @@
+# RAG configuration for the .NET MCP server — ECommerceApp
+# Separate from tools/rag/config.yaml so weights and settings can be tuned
+# independently for experimentation without touching the Python server config.
+#
+# VERSION: bump this when chunker settings, model, or ranking weights change in
+# a way that requires a full re-index of the .NET collection.
+version: "1"
+
+source:
+  # Same roots as Python config — both index the same docs.
+  roots:
+    - docs
+    - .github/context
+  exclude_globs:
+    - "docs/reports/**"
+    - "docs/rag/**"              # RAG tool meta-docs and test reports — not project knowledge
+    - "**/.git/**"
+    - ".github/context/anti-patterns-critical.context.md"
+
+embedder:
+  # Multilingual model — must match the ONNX model downloaded to tools/rag-dotnet/model/.
+  # The Python server uses the same model name via sentence-transformers (SentencePiece tokenizer).
+  # The .NET server loads the ONNX export via OnnxEmbedder (BERT WordPiece tokenizer — known mismatch).
+  model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+  dimensions: 384
+  device: "cpu"
+  batch_size: 32
+
+chunker:
+  max_tokens: 800
+  min_tokens: 40
+  overlap_tokens: 80
+  split_on_headings: [1, 2, 3]
+
+vector_store:
+  backend: "qdrant"
+  mode: "docker"
+  local_path: "/data/qdrant"
+  # Separate collection so Python and .NET embeddings never mix (different tokenizers
+  # produce incompatible vector spaces — cross-collection queries would degrade quality).
+  collection: "ecommerceapp_docs_dotnet"
+  url: "http://localhost:6333"
+
+ranking:
+  # Weights are tunable here independently of the Python config.
+  # Experiment freely — only the .NET collection is affected.
+  weights:
+    - { pattern: ".github/context/known-issues.md",             weight: 1.25 }
+    - { pattern: ".github/context/agent-decisions.md",          weight: 1.20 }
+    - { pattern: ".github/context/project-state.md",            weight: 1.15 }
+    - { pattern: ".github/context/repo-index.md",               weight: 1.00 }
+    - { pattern: ".github/context/future-skills.md",            weight: 0.80 }
+    - { pattern: "docs/adr/*/amendments/**",                    weight: 1.20 }
+    - { pattern: "docs/adr/*/example-implementation/**",        weight: 1.10 }
+    - { pattern: "docs/adr/*/[0-9]*-*.md",                      weight: 1.00 }
+    - { pattern: "docs/adr/*/README.md",                        weight: 0.95 }
+    - { pattern: "docs/architecture/**",                        weight: 0.90 }
+    - { pattern: "docs/patterns/**",                            weight: 0.85 }
+    - { pattern: "docs/reference/**",                           weight: 0.80 }
+    - { pattern: "docs/roadmap/**",                             weight: 0.70 }
+    - { pattern: "docs/adr/*/checklist.md",                     weight: 0.40 }
+    - { pattern: "docs/adr/*/migration-plan.md",                weight: 0.30 }
+  stub_byte_threshold: 400
+
+query:
+  default_top_k: 5
+  fetch_k: 20
+  score_threshold: 0.30
+
+# ── Companion config files ─────────────────────────────────────────────────────
+# Relative to this file's directory (tools/rag-dotnet/).
+# Metadata rules and named queries are shared with the Python config — same repo knowledge.
+config_files:
+  metadata_rules: "metadata-rules.yaml"
+  queries:        "queries.yaml"
+
+synthesis:
+  mode: "none"
+
+storage:
+  manifest_path: ".rag/manifest-dotnet.json"   # separate manifest — .NET per-instance state
+  stats_path: "docs/rag/index-stats-dotnet.md"

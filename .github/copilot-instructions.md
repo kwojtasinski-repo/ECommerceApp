@@ -75,3 +75,23 @@ When asked to **analyze** a user-facing flow, trace it in **both directions**:
 
 Use `#file:.github/prompts/flow-analysis.prompt.md` to run a structured bidirectional trace.
 This catches races, missing redirects, re-entrant states, and TTL edge cases that forward-only analysis misses.
+
+## 12. RAG / MCP tool routing
+
+The project exposes four MCP tools via `ecommerceapp-rag-python` (or any other configured variant).
+**Route questions to the correct tool** — do not guess from training data for questions that have a definitive answer in the project docs.
+
+| Trigger phrase / intent | Tool to call | When to use |
+|---|---|---|
+| "list ADRs", "what ADRs exist", "show all decisions" | `list_adrs` | Enumerate all indexed ADRs |
+| "ADR-NNNN", "ADR about X", "decision on X" | `get_adr_history(adr_id="NNNN")` | Retrieve full text of a specific ADR |
+| General architecture / pattern / "how does X work?" | `query_docs(query="...")` | Semantic search over all docs |
+| "full content of file X", "show me everything about X", "all details" | `read_docs(query="...")` | Returns full file content for top match |
+| Known issues, bug fixes, blocked BCs, project state | `query_docs` → target `.github/context/` chunks | High-relevance context files are weighted 1.15–1.25 |
+
+**Rules:**
+- Always use a MCP tool before answering questions about ADRs, project state, known issues, or roadmap — never guess from training data.
+- If the tool returns "No chunks found", fall back to saying so and suggest re-running ingest.
+- Prefer `get_adr_history` over `query_docs` when the user mentions a specific ADR number or title.
+- Both Python and .NET MCP implementations expose identical tool names — routing is the same regardless of which server variant is enabled.
+

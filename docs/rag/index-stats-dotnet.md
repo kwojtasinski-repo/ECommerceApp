@@ -1,6 +1,6 @@
 ﻿# RAG Index Stats
 
-Last indexed: 2026-05-18 21:29 UTC  
+Last indexed: 2026-05-18 21:38 UTC  
 Collection: `ecommerceapp_docs_dotnet`  
 Files: 165  
 Chunks: 801  

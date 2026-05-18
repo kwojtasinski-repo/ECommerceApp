@@ -13,8 +13,22 @@ using RagTools.Core;
 //   RAG_CONFIG       path to config.yaml (default: /app/config.yaml)
 //   QDRANT_URL       Qdrant server URL (default: from config.yaml)
 
-// Resolve config path via 3-way priority — no explicit --config flag here, so pass null.
-var resolvedConfigPath = RagConfig.ResolveConfigPath(null);
+var forceFull = args.Contains("--force-full");
+var dryRun = args.Contains("--dry-run");
+
+// Parse --config <path> argument.
+string? configArgValue = null;
+for (var i = 0; i < args.Length - 1; i++)
+{
+    if (args[i] is "--config")
+    {
+        configArgValue = args[i + 1];
+        break;
+    }
+}
+
+// Resolve config path via 3-way priority — --config arg > RAG_CONFIG env > default.
+var resolvedConfigPath = RagConfig.ResolveConfigPath(configArgValue);
 
 // Startup validation — fail fast on missing config / model so misconfiguration is obvious.
 if (!File.Exists(resolvedConfigPath))
@@ -25,9 +39,6 @@ if (!File.Exists(resolvedConfigPath))
 }
 
 var cfg = RagConfig.Load(resolvedConfigPath);
-
-var forceFull = args.Contains("--force-full");
-var dryRun = args.Contains("--dry-run");
 
 var repoRoot = cfg.Workspace;
 var manifestPath = cfg.ManifestAbsPath;
@@ -89,7 +100,7 @@ if (dryRun)
 
 // ── Load manifest (incremental) ───────────────────────────────────────────────
 var manifest = forceFull
-    ? ManifestService.Load(string.Empty) // empty → no prior entries
+    ? ManifestService.CreateEmpty(manifestPath) // skip reading, save to correct path
     : ManifestService.Load(manifestPath);
 
 // Determine which files need processing.
@@ -123,7 +134,10 @@ Console.WriteLine($"[ingest] embedding dimensions: {embedder.Dimensions}");
 
 var qdrantUrl = Environment.GetEnvironmentVariable("QDRANT_URL") ?? cfg.QdrantUrl;
 using var store = QdrantStore.Connect(qdrantUrl, cfg.Collection);
-await store.EnsureCollectionAsync(embedder.Dimensions);
+if (forceFull)
+    await store.RecreateCollectionAsync(embedder.Dimensions);
+else
+    await store.EnsureCollectionAsync(embedder.Dimensions);
 
 // ── Delete removed files ──────────────────────────────────────────────────────
 if (deleted.Count > 0)

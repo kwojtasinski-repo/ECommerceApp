@@ -32,6 +32,13 @@ public sealed class ManifestService
         return new ManifestService(manifestPath, entries);
     }
 
+    /// <summary>
+    /// Returns an empty manifest that saves to <paramref name="manifestPath"/>.
+    /// Use for --force-full so the save path is correct even though we skip reading.
+    /// </summary>
+    public static ManifestService CreateEmpty(string manifestPath) =>
+        new ManifestService(manifestPath, []);
+
     /// <summary>Returns the SHA-256 hex hash of a file, or null if the file doesn't exist.</summary>
     public static string? HashFile(string absolutePath)
     {

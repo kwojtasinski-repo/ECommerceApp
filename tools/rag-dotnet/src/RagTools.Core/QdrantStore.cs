@@ -42,6 +42,22 @@ public sealed class QdrantStore : IDisposable
             cancellationToken: ct);
     }
 
+    /// <summary>Delete and recreate the collection. Use for --force-full to purge all stale points.</summary>
+    public async Task RecreateCollectionAsync(int dimensions, CancellationToken ct = default)
+    {
+        var exists = await _client.CollectionExistsAsync(_collection, ct);
+        if (exists)
+            await _client.DeleteCollectionAsync(_collection, cancellationToken: ct);
+
+        await _client.CreateCollectionAsync(_collection,
+            new VectorParams
+            {
+                Size = (ulong)dimensions,
+                Distance = Distance.Cosine,
+            },
+            cancellationToken: ct);
+    }
+
     /// <summary>Upsert a batch of points. Idempotent — same UUID is overwritten.</summary>
     public async Task UpsertAsync(IReadOnlyList<RagPoint> points, CancellationToken ct = default)
     {

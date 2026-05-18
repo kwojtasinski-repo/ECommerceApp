@@ -14,6 +14,7 @@ source:
   # Files matching any of these globs are excluded.
   exclude_globs:
     - "docs/reports/**"          # session/transient reports — not project knowledge
+    - "docs/rag/**"              # RAG tool meta-docs and test reports — not project knowledge
     - "**/.git/**"
     - ".github/context/anti-patterns-critical.context.md"  # loaded directly by @code-reviewer, not via RAG
 
@@ -63,7 +64,6 @@ ranking:
     - { pattern: "docs/roadmap/**",                             weight: 0.70 }
     - { pattern: "docs/adr/*/checklist.md",                     weight: 0.40 }
     - { pattern: "docs/adr/*/migration-plan.md",                weight: 0.30 }
-    - { pattern: "docs/rag/**",                                   weight: 0.20 }   # RAG tool meta-docs, not project knowledge
   # Stub guard — files smaller than this contribute weight 0.05 (effectively buried).
   stub_byte_threshold: 400
 

@@ -136,12 +136,15 @@ def _startup_check(config_path: Path) -> None:
     script = Path(__file__).parent / "ingest.py"
     ingest_mode = CFG.vector_mode if CFG.vector_mode in {"local", "docker", "memory"} else "local"
     # Keep stdout reserved for MCP framed JSON-RPC messages; route ingest output to /dev/null.
+    # Timeout: allow up to 600s for slow machines / large first-run embeds.
+    # On TimeoutExpired we do NOT warn — the existing index is still valid;
+    # the subprocess continues running in the background and will finish eventually.
     try:
         result = subprocess.run(
             [sys.executable, str(script), "--mode", ingest_mode, "--config", str(config_path)],
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
-            timeout=300,
+            timeout=600,
         )
         if result.returncode != 0:
             msg = (
@@ -154,9 +157,13 @@ def _startup_check(config_path: Path) -> None:
         else:
             _SYNC_WARNING = ""
     except subprocess.TimeoutExpired:
-        msg = "Incremental ingest timed out after 300s. The index may be stale."
-        print(f"[rag-mcp] WARNING: {msg}", file=sys.stderr)
-        _SYNC_WARNING = msg
+        # Ingest is still running in the background — existing index remains usable.
+        print(
+            f"[rag-mcp] incremental ingest is still running after 600s "
+            f"({len(changed)} file(s)) — serving existing index in the meantime.",
+            file=sys.stderr,
+        )
+        _SYNC_WARNING = ""
 
 
 # ---------------------------- full-content intent detection ----------------------------
@@ -273,11 +280,22 @@ def _sync_warning_prefix() -> str:
     return ""
 
 
+_TOOL_TIMEOUT = float(os.environ.get("RAG_TOOL_TIMEOUT", "60"))
+
+
 async def _tool_query_docs(args: dict) -> list[TextContent]:
     question = args["question"]
     bc = args.get("bc")
     top_k = int(args.get("top_k", 5))
-    hits = ENGINE.search(question, top_k=top_k, bc_filter=bc)
+    try:
+        hits = await asyncio.wait_for(
+            asyncio.to_thread(lambda: ENGINE.search(question, top_k=top_k, bc_filter=bc)),
+            timeout=_TOOL_TIMEOUT,
+        )
+    except asyncio.TimeoutError:
+        return [TextContent(type="text", text=json.dumps({
+            "error": f"query_docs timed out after {_TOOL_TIMEOUT:.0f}s — the index may be loading or Qdrant is unresponsive."
+        }))]
     payload = {
         "query": question,
         "bc_filter": bc,
@@ -328,7 +346,15 @@ async def _tool_read_docs(args: dict) -> list[TextContent]:
     # Multiplier of 15 ensures that even later-ranked chunks within a file (e.g. the
     # "Alternatives considered" section at the end of an ADR) make the global top-k
     # cutoff when there are competing chunks from other files.
-    hits = ENGINE.search(question, top_k=max(30, top_files * 15), bc_filter=bc)
+    try:
+        hits = await asyncio.wait_for(
+            asyncio.to_thread(lambda: ENGINE.search(question, top_k=max(30, top_files * 15), bc_filter=bc)),
+            timeout=_TOOL_TIMEOUT,
+        )
+    except asyncio.TimeoutError:
+        return [TextContent(type="text", text=json.dumps({
+            "error": f"read_docs timed out after {_TOOL_TIMEOUT:.0f}s — the index may be loading or Qdrant is unresponsive."
+        }))]
 
     # Group hits by file, tracking best score and all chunks per file.
     from collections import defaultdict
@@ -535,7 +561,7 @@ if __name__ == "__main__":
 
     print(f"[rag-mcp] config:     {_config_path}", file=sys.stderr)
     print(f"[rag-mcp] workspace:  {CFG.workspace}", file=sys.stderr)
-    print(f"[rag-mcp] collection: {CFG.collection} | mode: {CFG.vector_mode}", file=sys.stderr)
+    print(f"[rag-mcp] collection: {CFG.collection} | mode: {CFG.vector_mode} | tool timeout: {_TOOL_TIMEOUT:.0f}s", file=sys.stderr)
     print(f"[rag-mcp] metadata:   {_file_tag(_meta_path, '<companion metadata-rules.yaml>')}", file=sys.stderr)
     print(f"[rag-mcp] queries:    {_file_tag(_queries_path, '<companion queries.yaml>')}", file=sys.stderr)
     print(f"[rag-mcp] manifest:   {_file_tag(_manifest_path if 'RAG_MANIFEST' in os.environ else None, str(_manifest_path))}", file=sys.stderr)
