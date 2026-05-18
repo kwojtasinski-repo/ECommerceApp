@@ -22,9 +22,15 @@ if (-not (Test-Path $OutDir)) {
     New-Item -ItemType Directory -Force -Path $OutDir | Out-Null
 }
 
+# NOTE: paraphrase-multilingual-MiniLM-L12-v2 uses SentencePiece tokenization
+# (XLM-RoBERTa based) and has NO vocab.txt in its HuggingFace repository.
+# The .NET BertTokenizer requires a WordPiece vocab.txt, so we download the
+# BERT base uncased vocabulary instead. See README.md for details.
+$BertBase = 'https://huggingface.co/bert-base-uncased/resolve/main'
+
 $Files = @(
     @{ Url = "$Base/onnx/model.onnx"; Name = 'model.onnx' }
-    @{ Url = "$Base/vocab.txt";       Name = 'vocab.txt' }
+    @{ Url = "$BertBase/vocab.txt";   Name = 'vocab.txt' }
     @{ Url = "$Base/tokenizer.json";  Name = 'tokenizer.json' }
     @{ Url = "$Base/config.json";     Name = 'config.json' }
 )

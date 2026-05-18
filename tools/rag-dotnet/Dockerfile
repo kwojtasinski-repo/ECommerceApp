@@ -10,10 +10,17 @@ FROM curlimages/curl:8.10.1 AS model-downloader
 
 ARG MODEL_BASE=https://huggingface.co/sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/resolve/main
 
+# NOTE: paraphrase-multilingual-MiniLM-L12-v2 uses SentencePiece (XLM-RoBERTa)
+# and has NO vocab.txt in its HuggingFace repo. The .NET BertTokenizer requires
+# WordPiece vocab.txt, so we download the BERT base uncased vocabulary instead.
+# This produces valid (non-random) embeddings with reduced semantic accuracy.
+# The Python implementation uses the correct SentencePiece tokenizer.
+ARG BERT_VOCAB=https://huggingface.co/bert-base-uncased/resolve/main/vocab.txt
+
 WORKDIR /app/model
 RUN curl -sSL -o model.onnx     "${MODEL_BASE}/onnx/model.onnx"     \
- && curl -sSL -o vocab.txt      "${MODEL_BASE}/vocab.txt"           \
- && curl -sSL -o tokenizer.json "${MODEL_BASE}/tokenizer.json"      \
+ && curl -sSL -o vocab.txt      "${BERT_VOCAB}"                      \
+ && curl -sSL -o tokenizer.json "${MODEL_BASE}/tokenizer.json"       \
  && curl -sSL -o config.json    "${MODEL_BASE}/config.json"
 
 # ── Stage 2: .NET build ───────────────────────────────────────────────────────

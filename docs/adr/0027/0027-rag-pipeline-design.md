@@ -206,7 +206,7 @@ repo checkout.
 | Python ingest + MCP | ✅ Complete | 117 unit tests pass |
 | Python e2e tests | ✅ Complete | 74 e2e tests (require Python 3.13 + torch) |
 | .NET ingest + MCP | ✅ Complete | 100 unit tests pass |
-| .NET e2e tests | 🔲 Planned | Guard by `[SkippableFact]` when `QDRANT_URL` not set |
+| .NET e2e tests | ✅ Complete | 12 `[SkippableFact]` tests; skip when model or Docker absent |
 | Docker image (Python) | ✅ Complete | Per-file mounts, RAG_CONFIG/RAG_WORKSPACE |
 | Docker image (.NET) | ✅ Complete | curlimages/curl ONNX download stage |
 | Usage decision guide | 🔲 Planned | `docs/rag/WHICH-RAG.md` |

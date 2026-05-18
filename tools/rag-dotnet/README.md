@@ -21,7 +21,7 @@ Four MCP tools exposed to Copilot Chat:
 
 ```bash
 # From the repo root
-docker compose build rag-dotnet
+docker compose build rag-dotnetp
 ```
 
 > **What this does:** runs a multi-stage Docker build:
@@ -180,6 +180,26 @@ pwsh tools/rag-dotnet/download-model.ps1
 > Downloads the pre-exported ONNX bundle directly from HuggingFace into
 > `tools/rag-dotnet/model/` (gitignored). Idempotent — skips files already present.
 > Total size: ~490 MB on disk.
+
+#### What is downloaded and why
+
+| File | Source | Notes |
+|------|--------|-------|
+| `model.onnx` | `paraphrase-multilingual-MiniLM-L12-v2/onnx/model.onnx` | ~450 MB ONNX embedding model |
+| `vocab.txt` | **`bert-base-uncased/vocab.txt`** | 30 522-entry WordPiece vocabulary |
+| `tokenizer.json` | `paraphrase-multilingual-MiniLM-L12-v2/tokenizer.json` | SentencePiece metadata (for reference) |
+| `config.json` | `paraphrase-multilingual-MiniLM-L12-v2/config.json` | Model architecture config |
+
+> **Tokenizer mismatch — known limitation:**  
+> `paraphrase-multilingual-MiniLM-L12-v2` is XLM-RoBERTa based and uses
+> **SentencePiece** tokenization. The HuggingFace repo has no `vocab.txt`.  
+> The .NET `BertTokenizer` requires a WordPiece `vocab.txt`, so the script
+> downloads the BERT base uncased vocabulary instead.  
+> **Effect:** embeddings are valid 384-d vectors and differ between texts, but
+> they are not semantically optimal. For best semantic quality use the **Python
+> implementation** which uses the correct SentencePiece tokenizer via
+> `sentence-transformers`. For local development, code navigation, and ADR
+> search this difference is rarely noticeable in practice.
 
 ### Run from Visual Studio / VS Code (F5)
 
