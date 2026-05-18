@@ -1,0 +1,150 @@
+{
+  // ─── MCP server variants ────────────────────────────────────────────────────
+  //
+  // Pick ONE server to enable.  VS Code Copilot (Chat ▸ MCP) lists both;
+  // disable the one you don't want via the toggle in the MCP panel.
+  //
+  // "ecommerceapp-rag"        → LOCAL   (Python venv, no Docker)
+  // "ecommerceapp-rag-docker" → DOCKER  (requires: docker compose up rag-tools qdrant)
+  //
+  // ────────────────────────────────────────────────────────────────────────────
+  "servers": {
+
+    // ── Python variants ───────────────────────────────────────────────────────
+    //
+    // Pick ONE server to enable.  VS Code Copilot (Chat ▸ MCP) lists all;
+    // disable the ones you don't want via the toggle in the MCP panel.
+    //
+    // "ecommerceapp-rag-python"        → LOCAL   (Python venv, no Docker)
+    // "ecommerceapp-rag-python-docker" → DOCKER  (requires: docker compose up rag-tools qdrant)
+    //
+    // ────────────────────────────────────────────────────────────────────────────
+
+    // ── LOCAL Python variant ──────────────────────────────────────────────────
+    // Runs mcp_server.py directly from disk using the project venv.
+    // Setup: cd tools/rag && .venv/Scripts/pip install -r requirements.txt
+    //
+    // RAG_WORKSPACE tells the server where the repo root is.
+    // Companion files (metadata-rules.yaml, queries.yaml) are found automatically
+    // next to config.yaml — no explicit env vars needed for them.
+    //
+    // VECTOR_MODE=docker connects to Qdrant running via: docker compose up -d qdrant
+    // QDRANT_URL points at the host-side port exposed by the qdrant service.
+    // Without these two vars, the server falls back to mode=local with path=/data/qdrant
+    // (a container-only path) and cannot serve any queries on Windows.
+    //
+    // To use a different config file, append: "--config", "C:/full/path/config.yaml"
+    "ecommerceapp-rag-python": {
+      "type": "stdio",
+      "command": "${workspaceFolder}/tools/rag/.venv/Scripts/python.exe",
+      "args": [
+        "${workspaceFolder}/tools/rag/mcp_server.py"
+      ],
+      "env": {
+        "PYTHONUNBUFFERED": "1",
+        "PYTHONPATH": "${workspaceFolder}/tools/rag",
+        "RAG_WORKSPACE": "${workspaceFolder}",
+        "VECTOR_MODE": "docker",
+        "QDRANT_URL": "http://localhost:6333"
+      }
+    },
+
+    // ── DOCKER Python variant ─────────────────────────────────────────────────
+    // VS Code spawns "docker run" as the stdio transport — identical pipe mechanism
+    // to the local variant; the container boundary is transparent to Copilot.
+    //
+    // Per-file mount strategy — only the three companion files and the manifest
+    // are mounted individually. The main config.yaml is baked into the image
+    // (COPY config.yaml in Dockerfile), so no whole-workspace mount is needed.
+    //
+    // How paths work:
+    //   --volume .../metadata-rules.yaml:/data/...  → project-specific classification rules
+    //   --volume .../queries.yaml:/data/...         → named queries for this repo
+    //   --volume .../.rag/manifest.json:/data/...   → ingest manifest (run ingest first)
+    //   RAG_METADATA / RAG_QUERIES / RAG_MANIFEST   → tell the server where each file is
+    //
+    // No RAG_WORKSPACE, no --config, no /workspace/... paths needed at all.
+    //
+    // Prerequisites:
+    //   docker compose up -d qdrant                     (vector store)
+    //   docker build -t rag-tools tools/rag             (or: docker compose build rag-tools)
+    //   docker run --rm --volume ${workspaceFolder}:/workspace \
+    //     --env RAG_WORKSPACE=/workspace rag-tools python ingest.py   (index docs first)
+    "ecommerceapp-rag-python-docker": {
+      "type": "stdio",
+      "command": "docker",
+      "args": [
+        "run", "--rm", "--interactive",
+        "--network", "ecommerceapp_default",
+        "--volume", "${workspaceFolder}/tools/rag/metadata-rules.yaml:/data/metadata-rules.yaml:ro",
+        "--volume", "${workspaceFolder}/tools/rag/queries.yaml:/data/queries.yaml:ro",
+        "--volume", "${workspaceFolder}/.rag/manifest.json:/data/manifest.json:ro",
+        "--env", "RAG_METADATA=/data/metadata-rules.yaml",
+        "--env", "RAG_QUERIES=/data/queries.yaml",
+        "--env", "RAG_MANIFEST=/data/manifest.json",
+        "--env", "PYTHONUNBUFFERED=1",
+        "--env", "VECTOR_MODE=docker",
+        "--env", "QDRANT_URL=http://qdrant:6333",
+        "rag-tools",
+        "python", "mcp_server.py"
+      ]
+    },
+
+    // ── .NET variants ─────────────────────────────────────────────────────────
+    //
+    // "ecommerceapp-rag-dotnet"        → LOCAL   (.NET from source, no Docker build)
+    // "ecommerceapp-rag-dotnet-docker" → DOCKER  (requires: docker compose build rag-dotnet; qdrant running)
+    //
+    // Prerequisites for both:
+    //   - Qdrant running:  docker compose --profile rag-dotnet up qdrant -d
+    //   - Docs indexed:    docker compose --profile rag-dotnet run --rm rag-dotnet dotnet /app/ingest/ingest.dll
+    //
+    // Note: The .NET path uses collection 'ecommerceapp_docs_dotnet' (separate from Python).
+    // Note: Semantic ranking is reduced (WordPiece tokenizer, multilingual model). See docs/rag/SETUP-GUIDE.md.
+
+    // ── LOCAL .NET variant ────────────────────────────────────────────────────
+    // Runs dotnet run from source — no Docker image build needed.
+    // Requires: .NET 10 SDK, Qdrant running, ONNX model downloaded once.
+    //
+    // Download model (one-time):  pwsh tools/rag-dotnet/download-model.ps1
+    "ecommerceapp-rag-dotnet": {
+      "type": "stdio",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project", "${workspaceFolder}/tools/rag-dotnet/src/RagTools.Mcp/RagTools.Mcp.csproj",
+        "--no-launch-profile"
+      ],
+      "env": {
+        "RAG_WORKSPACE": "${workspaceFolder}",
+        "RAG_CONFIG":    "${workspaceFolder}/tools/rag/config.yaml",
+        "RAG_MODEL_DIR": "${workspaceFolder}/tools/rag-dotnet/model",
+        "QDRANT_URL":    "http://localhost:6333",
+        "RAG_COLLECTION": "ecommerceapp_docs_dotnet",
+        "DOTNET_CLI_TELEMETRY_OPTOUT": "1"
+      }
+    },
+
+    // ── DOCKER .NET variant ───────────────────────────────────────────────────
+    // VS Code spawns "docker run" — MCP is stdio through the container boundary.
+    //
+    // Prerequisites:
+    //   docker compose build rag-dotnet          (builds image with embedded ONNX model)
+    //   docker compose --profile rag-dotnet up qdrant -d
+    //   docker compose --profile rag-dotnet run --rm rag-dotnet dotnet /app/ingest/ingest.dll
+    "ecommerceapp-rag-dotnet-docker": {
+      "type": "stdio",
+      "command": "docker",
+      "args": [
+        "run", "--rm", "--interactive",
+        "--network", "ecommerceapp_default",
+        "--volume", "${workspaceFolder}:/workspace:ro",
+        "--env", "QDRANT_URL=http://qdrant:6333",
+        "--env", "RAG_COLLECTION=ecommerceapp_docs_dotnet",
+        "--env", "RAG_WORKSPACE=/workspace",
+        "rag-dotnet",
+        "dotnet", "/app/mcp/mcp_server.dll"
+      ]
+    }
+  }
+}

@@ -66,12 +66,12 @@ VS Code reads this file automatically.
 1. Open VS Code in this workspace
 2. Open **Copilot Chat** (Ctrl+Shift+I)
 3. Click the **Tools** button → **MCP** section
-4. Enable `ecommerceapp-rag` (local Python — fastest) or `ecommerceapp-rag-docker`
+4. Enable `ecommerceapp-rag-python` (local Python — fastest) or `ecommerceapp-rag-python-docker`
 
 > **Which MCP variant?**
-> - `ecommerceapp-rag` — runs `mcp_server.py` from the local `.venv` (no Docker start needed
+> - `ecommerceapp-rag-python` — runs `mcp_server.py` from the local `.venv` (no Docker start needed
 >   once the venv is set up; requires Python 3.13 locally)
-> - `ecommerceapp-rag-docker` — VS Code spawns a `docker run` for each chat session;
+> - `ecommerceapp-rag-python-docker` — VS Code spawns a `docker run` for each chat session;
 >   Qdrant must be running (`docker compose --profile rag up qdrant -d`)
 
 ### Using Copilot Chat
@@ -168,25 +168,14 @@ Invoke-RestMethod http://localhost:6333/collections/ecommerceapp_docs_dotnet | C
 
 ### Connect VS Code
 
-The .NET MCP server is **not yet wired into `.vscode/mcp.json`**. To add it, append
-this entry to the `"servers"` object in [`.vscode/mcp.json`](../../.vscode/mcp.json):
+The .NET MCP server entries are already configured in [`.vscode/mcp.json`](../../.vscode/mcp.json):
 
-```jsonc
-"ecommerceapp-rag-dotnet": {
-  "type": "stdio",
-  "command": "docker",
-  "args": [
-    "run", "--rm", "--interactive",
-    "--network", "ecommerceapp_default",
-    "--env", "QDRANT_URL=http://qdrant:6333",
-    "--env", "RAG_COLLECTION=ecommerceapp_docs_dotnet",
-    "rag-dotnet",
-    "dotnet", "/app/mcp/mcp_server.dll"
-  ]
-}
-```
+- `ecommerceapp-rag-dotnet` — runs `dotnet run` from source (requires .NET 10 SDK + model downloaded)
+- `ecommerceapp-rag-dotnet-docker` — spawns `docker run` (requires `rag-dotnet` image built)
 
-Then restart VS Code and enable `ecommerceapp-rag-dotnet` in the Copilot MCP panel.
+1. Open VS Code in this workspace
+2. Open **Copilot Chat** → **Tools** → **MCP**
+3. Enable `ecommerceapp-rag-dotnet` or `ecommerceapp-rag-dotnet-docker`
 
 ### Local .NET development (no Docker for ingest)
 
