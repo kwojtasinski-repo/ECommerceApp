@@ -1,5 +1,18 @@
 # RAG MVP — local docs retrieval
 
+> **New here?** Start with the **[Setup Guide](SETUP-GUIDE.md)** — step-by-step instructions
+> for both the Python and .NET implementations, including model switching and troubleshooting.
+
+---
+
+## ⚠️ This README is partially outdated
+
+The model, ingest workflow, and VS Code integration have changed significantly since this
+file was written. Use **[SETUP-GUIDE.md](SETUP-GUIDE.md)** as the authoritative reference.
+See [ADR-0027](../../docs/adr/0027/0027-rag-pipeline-design.md) for the full design.
+
+---
+
 Local, offline retrieval over `docs/`. Backed by:
 
 - **sentence-transformers** (`all-mpnet-base-v2`, 768 dims, EN) for embeddings

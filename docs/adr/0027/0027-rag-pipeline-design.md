@@ -209,7 +209,7 @@ repo checkout.
 | .NET e2e tests | ✅ Complete | 12 `[SkippableFact]` tests; skip when model or Docker absent |
 | Docker image (Python) | ✅ Complete | Per-file mounts, RAG_CONFIG/RAG_WORKSPACE |
 | Docker image (.NET) | ✅ Complete | curlimages/curl ONNX download stage |
-| Usage decision guide | 🔲 Planned | `docs/rag/WHICH-RAG.md` |
+| Usage decision guide | ✅ Complete | `docs/rag/SETUP-GUIDE.md` — beginner setup + model switching |
 
 ---
 
