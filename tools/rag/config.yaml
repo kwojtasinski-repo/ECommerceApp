@@ -77,8 +77,9 @@ query:
 # The loader resolves each path relative to the directory that contains config.yaml.
 # Override any file by changing its path here — no hardcoded paths in code.
 config_files:
-  metadata_rules: "metadata-rules.yaml"   # doc_kind_rules + adr_id_patterns
-  queries:        "queries.yaml"          # named_queries for this repo's domain
+  metadata_rules:        "metadata-rules.yaml"          # doc_kind_rules + adr_id_patterns
+  queries:               "queries.yaml"                 # named_queries for this repo's domain
+  multilingual_glossary: "multilingual-glossary.yaml"  # query-time expansion: Polish / German → English
 
 
 

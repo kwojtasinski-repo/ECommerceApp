@@ -10,15 +10,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- BertTokenizer and SentencePieceTokenizer are both in Microsoft.ML.Tokenizers 2.0.0 stable. -->
+    <PackageReference Include="Microsoft.ML.Tokenizers" Version="2.0.0" />
     <!-- Qdrant gRPC client — connects to a Qdrant HTTP server (docker-compose service) -->
-    <PackageReference Include="Microsoft.ML.Tokenizers" Version="3.0.0-preview.26160.2" />
     <PackageReference Include="Qdrant.Client" Version="1.13.0" />
 
     <!-- ONNX Runtime for local embedding inference -->
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.20.1" />
 
-    <!-- Tokenizer for token counting: removed — replaced with whitespace approximation
-         (BertTokenizer not available in stable Microsoft.ML.Tokenizers release) -->
 
     <!-- YAML config parsing -->
     <PackageReference Include="YamlDotNet" Version="16.3.0" />

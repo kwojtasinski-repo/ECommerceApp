@@ -130,6 +130,25 @@ class Config:
         """Named queries loaded from queries.yaml (empty list if file not found)."""
         return self.raw.get("named_queries", [])
 
+    @property
+    def glossary_path(self) -> "Path | None":
+        """Path to the multilingual expansion glossary.
+
+        Priority:
+          1. RAG_GLOSSARY env var — per-file mount / Docker override.
+          2. config.yaml[config_files][multilingual_glossary] relative to config.yaml.
+          3. <config_yaml_dir>/multilingual-glossary.yaml — convention fallback.
+        Returns None if no file is found (graceful degradation).
+        """
+        if env := os.environ.get("RAG_GLOSSARY"):
+            p = Path(env)
+            return p if p.exists() else None
+        if self.config_path is None:
+            return None
+        return _find_companion_file(
+            self.config_path, "multilingual_glossary", "multilingual-glossary.yaml"
+        )
+
 
 def _find_companion_file(config_yaml_path: Path, key: str, fallback_name: str) -> Path | None:
     """

@@ -42,8 +42,11 @@ var cfg = RagConfig.Load(resolvedConfigPath);
 
 var repoRoot = cfg.Workspace;
 var manifestPath = cfg.ManifestAbsPath;
-var modelDir = Environment.GetEnvironmentVariable("RAG_MODEL_DIR")
+var modelDirRaw = Environment.GetEnvironmentVariable("RAG_MODEL_DIR")
     ?? Path.Combine(AppContext.BaseDirectory, "model");
+var modelDir = Path.IsPathRooted(modelDirRaw)
+    ? modelDirRaw
+    : Path.GetFullPath(Path.Combine(repoRoot, modelDirRaw));
 
 var configFi = new FileInfo(resolvedConfigPath);
 Console.WriteLine($"[ingest] config     : {resolvedConfigPath} ({configFi.Length} bytes)");
@@ -149,7 +152,7 @@ if (deleted.Count > 0)
 }
 
 // ── Chunk, embed, upsert ──────────────────────────────────────────────────────
-var tokenCounter = BertTokenCounter.FromModelDir(modelDir);
+var tokenCounter = SentencePieceTokenCounter.FromModelDir(modelDir);
 var chunker = new MarkdownChunker(cfg.Chunker, tokenCounter);
 var batchSize = cfg.Embedder.BatchSize;
 

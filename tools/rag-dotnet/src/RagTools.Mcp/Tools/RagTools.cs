@@ -14,6 +14,9 @@ namespace RagTools.Mcp.Tools;
 [McpServerToolType]
 public sealed class RagTools(OnnxEmbedder embedder, QdrantStore store, RagConfig cfg)
 {
+    // Loaded once per server lifetime — returns Empty if GlossaryPath is null or file absent.
+    private readonly MultilingualGlossary _glossary = MultilingualGlossary.Load(cfg.GlossaryPath);
+
     [McpServerTool, Description(
         "Semantic search across project documentation (ADRs, architecture, patterns, reference, roadmap). " +
         "Returns the top-k most relevant chunks with breadcrumb, file path, line range, and text. " +
@@ -29,16 +32,17 @@ public sealed class RagTools(OnnxEmbedder embedder, QdrantStore store, RagConfig
 
         // Fetch more when bc filter is active to compensate for post-filtering loss.
         var fetchK = bc is not null ? topK * 3 : topK;
-        var queryVec = embedder.Embed(question);
+        var queryVec = embedder.Embed(_glossary.Expand(question));
         var allHits = await store.SearchAsync(
             queryVec,
             fetchK,
             cfg.Query.ScoreThreshold,
             cancellationToken: cancellationToken);
 
+        var weighted = ApplyWeights(allHits);
         var hits = bc is not null
-            ? allHits.Where(h => MatchesBc(h, bc)).Take(topK).ToList()
-            : allHits.ToList();
+            ? weighted.Where(h => MatchesBc(h, bc)).Take(topK).ToList()
+            : weighted.ToList();
 
         if (hits.Count == 0)
             return "No results found. Consider re-running the ingest script or broadening your query.";
@@ -67,16 +71,17 @@ public sealed class RagTools(OnnxEmbedder embedder, QdrantStore store, RagConfig
 
         // Fetch generously so each file gets good per-file coverage in chunk mode.
         // No Qdrant-level filter: bc is a substring post-filter on breadcrumb/DocTitle.
-        var queryVec = embedder.Embed(question);
+        var queryVec = embedder.Embed(_glossary.Expand(question));
         var rawHits = await store.SearchAsync(
             queryVec,
             topK: Math.Max(30, topFiles * 15),
             scoreThreshold: cfg.Query.ScoreThreshold,
             cancellationToken: cancellationToken);
 
+        var weighted = ApplyWeights(rawHits);
         var hits = bc is not null
-            ? rawHits.Where(h => MatchesBc(h, bc)).ToList()
-            : rawHits.ToList();
+            ? weighted.Where(h => MatchesBc(h, bc)).ToList()
+            : weighted.ToList();
 
         if (hits.Count == 0)
             return "No results found. Consider re-running the ingest script or broadening your query.";
@@ -116,6 +121,16 @@ public sealed class RagTools(OnnxEmbedder embedder, QdrantStore store, RagConfig
 
         return string.Join("\n\n===\n\n", sections);
     }
+
+    /// <summary>
+    /// Multiplies each hit's score by the configured weight for its path
+    /// (from config.yaml ranking.weights — first matching glob wins, default 1.0).
+    /// Re-sorts descending so the caller gets a ready-ranked list.
+    /// </summary>
+    private IReadOnlyList<SearchHit> ApplyWeights(IReadOnlyList<SearchHit> hits) =>
+        hits.Select(h => h with { Score = h.Score * cfg.GetWeight(h.RelPath) })
+            .OrderByDescending(h => h.Score)
+            .ToList();
 
     private static readonly System.Text.RegularExpressions.Regex FullIntentRe =
         new(@"\b(all details|full details|full content|full text|entire|whole file|show me all|explain everything|everything about|complete picture|all about|deep dive|in full|from start to finish)\b",

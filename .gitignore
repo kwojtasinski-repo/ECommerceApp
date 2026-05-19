@@ -359,3 +359,8 @@ tools/rag/mcp_stderr.txt
 tools/rag-dotnet/**/bin/
 tools/rag-dotnet/**/obj/
 tools/rag-dotnet/model/
+
+# RAG test results and reports (generated — do not commit)
+tools/tests/
+docs/rag/test-report-*.md
+docs/rag/cli-*.txt

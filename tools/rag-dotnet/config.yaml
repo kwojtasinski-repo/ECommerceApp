@@ -20,7 +20,8 @@ source:
 embedder:
   # Multilingual model — must match the ONNX model downloaded to tools/rag-dotnet/model/.
   # The Python server uses the same model name via sentence-transformers (SentencePiece tokenizer).
-  # The .NET server loads the ONNX export via OnnxEmbedder (BERT WordPiece tokenizer — known mismatch).
+  # The .NET server loads the ONNX export via OnnxEmbedder with SentencePieceTokenCounter
+  # (Microsoft.ML.Tokenizers 2.0.0 stable, HF ID remapping applied).
   model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
   dimensions: 384
   device: "cpu"
@@ -71,8 +72,9 @@ query:
 # Relative to this file's directory (tools/rag-dotnet/).
 # Metadata rules and named queries are shared with the Python config — same repo knowledge.
 config_files:
-  metadata_rules: "metadata-rules.yaml"
-  queries:        "queries.yaml"
+  metadata_rules:        "metadata-rules.yaml"
+  queries:               "queries.yaml"
+  multilingual_glossary: "multilingual-glossary.yaml"  # query-time expansion: Polish / German → English
 
 synthesis:
   mode: "none"

@@ -1,0 +1,157 @@
+# multilingual-glossary.yaml — shared query-expansion glossary for Polish and German
+#
+# Used by BOTH the Python and .NET MCP servers at query time.
+# Single source of truth — lives in tools/rag/; referenced by .NET via workspace path.
+#
+# How it works:
+#   Before embedding a query, each entry is checked (case-insensitive, word-boundary match).
+#   If any 'pattern' is found in the query, the 'english' string is appended.
+#   The expanded string is then embedded — bridging the language gap against English docs.
+#
+# Rules for adding entries:
+#   - Patterns: individual words/compounds, lowercase, one per line.
+#   - English: the canonical English terms for that concept (space-separated).
+#   - Keep patterns specific — avoid common words that appear in all contexts.
+#   - English-only queries pass through unchanged (no Latin/ASCII patterns in this file).
+
+entries:
+
+  # ── Orders & Purchases ─────────────────────────────────────────────────────
+  - english: "order purchase cart checkout"
+    patterns:
+      - zamówienie      # PL: order
+      - zamówień        # PL: orders (gen.)
+      - zamówienia      # PL: orders (acc.)
+      - koszyk          # PL: cart
+      - zakup           # PL: purchase
+      - zakupy          # PL: purchases
+      - bestellung      # DE: order
+      - bestellungen    # DE: orders
+      - kauf            # DE: purchase
+
+  # ── Coupons & Discounts ─────────────────────────────────────────────────────
+  - english: "coupon voucher discount CouponsOptions MaxCouponsPerOrder"
+    patterns:
+      - kupon           # PL: coupon
+      - kupony          # PL: coupons
+      - kuponów         # PL: coupons (gen.)
+      - zniżka          # PL: discount
+      - zniżki          # PL: discounts
+      - rabat           # PL/DE: discount
+      - gutschein       # DE: coupon
+      - gutscheine      # DE: coupons
+      - rabatt          # DE: discount
+      - rabatte         # DE: discounts
+
+  # ── Payments & Failures ─────────────────────────────────────────────────────
+  - english: "payment failure cancel PaymentStatus"
+    patterns:
+      - płatność        # PL: payment
+      - płatności       # PL: payments
+      - niepowodzenie   # PL: failure
+      - anulowanie      # PL: cancellation
+      - zahlung         # DE: payment
+      - zahlungen       # DE: payments
+      - zahlungsausfall # DE: payment failure
+      - bezahlung       # DE: payment
+
+  # ── Saga & Compensation ─────────────────────────────────────────────────────
+  - english: "saga compensation rollback choreography OrderPlacementFailed"
+    patterns:
+      - saga            # PL/DE: same word
+      - kompensacja     # PL: compensation
+      - kompensację     # PL: compensation (acc.)
+      - wycofanie       # PL: rollback
+      - kompensation    # DE: compensation
+      - rückgängig      # DE: rollback
+      - rückabwicklung  # DE: unwinding
+
+  # ── Configuration & Options ─────────────────────────────────────────────────
+  - english: "configuration options settings"
+    patterns:
+      - konfiguracja    # PL: configuration
+      - konfiguracji    # PL: configuration (gen.)
+      - ustawienia      # PL: settings
+      - ustawień        # PL: settings (gen.)
+      - konfiguration   # DE: configuration
+      - einstellung     # DE: setting
+      - einstellungen   # DE: settings
+
+  # ── Known Issues & Bugs ─────────────────────────────────────────────────────
+  - english: "known issues bugs KI-008 FluentAssertions AwesomeAssertions upgrade"
+    patterns:
+      - znane           # PL: known
+      - problemy        # PL: problems
+      - błąd            # PL: bug
+      - błędy           # PL: bugs
+      - bekannte        # DE: known
+      - probleme        # DE: problems
+      - fehler          # DE: error/bug
+
+  # ── Bounded Context & Migration ─────────────────────────────────────────────
+  - english: "bounded context migration atomic switch legacy"
+    patterns:
+      - migracja        # PL: migration
+      - migracji        # PL: migration (gen.)
+      - kontekst        # PL: context
+      - przełączenie    # PL: switch
+      - starszy         # PL: legacy/older
+      - migration       # DE (same word)
+      - kontext         # DE: context
+      - wechsel         # DE: switch
+      - umstieg         # DE: migration
+
+  # ── Blocked / Status ────────────────────────────────────────────────────────
+  - english: "blocked status progress implementation"
+    patterns:
+      - zablokowany     # PL: blocked (m)
+      - zablokowane     # PL: blocked (n/pl)
+      - blokada         # PL: blockage
+      - postęp          # PL: progress
+      - blokiert        # DE: blocked
+      - fortschritt     # DE: progress
+
+  # ── Maximum / Limits ────────────────────────────────────────────────────────
+  - english: "maximum limit quantity per order line"
+    patterns:
+      - maksymalna      # PL: maximum (f)
+      - maksymalny      # PL: maximum (m)
+      - maksymalnie     # PL: at most
+      - ilość           # PL: quantity
+      - ograniczenie    # PL: limit/restriction
+      - maximale        # DE: maximum (adj)
+      - anzahl          # DE: number/count
+      - grenze          # DE: limit
+
+  # ── API & Access Control ────────────────────────────────────────────────────
+  - english: "API access trusted user role claim TrustedApiUser"
+    patterns:
+      - dostęp          # PL: access
+      - uprawnienia     # PL: permissions/roles
+      - użytkownik      # PL: user
+      - rola            # PL: role
+      - zugriff         # DE: access
+      - berechtigung    # DE: permission
+      - benutzer        # DE: user
+      - rolle           # DE: role
+
+  # ── Entity Identity & Domain Primitives ───────────────────────────────────
+  - english: "TypedId entity identifier typed domain primitive"
+    patterns:
+      - bezeichner      # DE: identifier/designator (used in Entitäts-Bezeichner)
+      - kennung         # DE: ID / identifier
+      - entitäts        # DE: entity's (compound prefix, e.g. Entitäts-Bezeichner)
+      - identyfikator   # PL: identifier
+      - encji           # PL: entity (genitive)
+      - domenowy        # PL: domain (adj)
+      - primitiv        # DE: primitive (type)
+
+  # ── Testing & Assertions ────────────────────────────────────────────────────
+  - english: "FluentAssertions AwesomeAssertions unit test upgrade dotnet"
+    patterns:
+      - testy           # PL: tests
+      - testowanie      # PL: testing
+      - aktualizacja    # PL: update/upgrade
+      - aktualizacji    # PL: update (gen.)
+      - aktualisierung  # DE: update
+      - upgraden        # DE: to upgrade

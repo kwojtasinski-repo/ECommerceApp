@@ -141,10 +141,13 @@ public class BertTokenCounterTests
     }
 
     [Fact]
-    public void EncodeToIds_WithoutVocab_ReturnsNull()
+    public void EncodeToIds_WithoutVocab_ReturnsFallbackClsSep()
     {
         var counter = BertTokenCounter.FromModelDir("/nonexistent/path");
-        Assert.Null(counter.EncodeToIds("hello world"));
+        var ids = counter.EncodeToIds("hello world");
+        // Fallback returns [CLS]=101 and [SEP]=102
+        Assert.NotNull(ids);
+        Assert.Equal([101, 102], ids);
     }
 
     [SkippableFact]

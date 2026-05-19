@@ -7,7 +7,7 @@ namespace RagTools.Core;
 /// Uses the vocab.txt from the ONNX model directory for accurate WordPiece tokenization.
 /// Falls back to whitespace approximation if vocab.txt is not found.
 /// </summary>
-public sealed class BertTokenCounter
+public sealed class BertTokenCounter : ITokenCounter
 {
     private readonly BertTokenizer? _tokenizer;
     private const double SubwordFactor = 1.3;
@@ -48,12 +48,12 @@ public sealed class BertTokenCounter
 
     /// <summary>
     /// Encodes <paramref name="text"/> into BERT token IDs, capped at <paramref name="maxLength"/> tokens.
-    /// Returns <c>null</c> when running in fallback mode (no vocab.txt available).
     /// The returned list already includes [CLS] (101) as the first token and [SEP] (102) as the last.
+    /// Falls back to [CLS][SEP] when running in fallback mode (no vocab.txt available).
     /// </summary>
-    public IReadOnlyList<int>? EncodeToIds(string text, int maxLength = 512)
+    public IReadOnlyList<int> EncodeToIds(string text, int maxLength = 512)
     {
-        if (_tokenizer is null) return null;
+        if (_tokenizer is null) return [101, 102]; // fallback: [CLS][SEP]
         var ids = _tokenizer.EncodeToIds(text, maxLength, out string? _, out int _, true, false);
         return ids;
     }

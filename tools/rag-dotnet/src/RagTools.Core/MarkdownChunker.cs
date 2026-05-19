@@ -9,9 +9,9 @@ public sealed class MarkdownChunker
     private readonly int _maxTokens;
     private readonly int _overlapTokens;
     private readonly int _minTokens;
-    private readonly BertTokenCounter _tokenCounter;
+    private readonly ITokenCounter _tokenCounter;
 
-    public MarkdownChunker(ChunkerSection cfg, BertTokenCounter tokenCounter)
+    public MarkdownChunker(ChunkerSection cfg, ITokenCounter tokenCounter)
     {
         _maxTokens = cfg.MaxTokens;
         _overlapTokens = cfg.OverlapTokens;

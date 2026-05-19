@@ -8,20 +8,19 @@ namespace RagTools.Core;
 /// Compatible with paraphrase-multilingual-MiniLM-L12-v2 (384 dims).
 ///
 /// The ONNX model is expected at /app/model/ inside the Docker image:
-///   /app/model/model.onnx   — ONNX graph
-///   /app/model/vocab.txt    — WordPiece vocabulary (for BertTokenCounter)
-///   /app/model/tokenizer/   — (optional) full tokenizer config
+///   /app/model/model.onnx              — ONNX graph
+///   /app/model/sentencepiece.bpe.model — SentencePiece vocabulary (XLM-RoBERTa/multilingual)
 /// </summary>
 public sealed class OnnxEmbedder : IDisposable
 {
     private readonly InferenceSession _session;
-    private readonly BertTokenCounter _tokenCounter;
+    private readonly ITokenCounter _tokenCounter;
     private readonly int _maxSeqLen;
 
     /// <summary>Output dimensionality of the embedding model (384 for MiniLM-L12).</summary>
     public int Dimensions { get; }
 
-    private OnnxEmbedder(InferenceSession session, BertTokenCounter tokenCounter, int dimensions, int maxSeqLen)
+    private OnnxEmbedder(InferenceSession session, ITokenCounter tokenCounter, int dimensions, int maxSeqLen)
     {
         _session = session;
         _tokenCounter = tokenCounter;
@@ -30,7 +29,7 @@ public sealed class OnnxEmbedder : IDisposable
     }
 
     /// <summary>Creates an instance for unit testing, bypassing the ONNX file load.</summary>
-    internal static OnnxEmbedder CreateForTesting(BertTokenCounter tokenCounter, int dimensions = 4, int maxSeqLen = 16)
+    internal static OnnxEmbedder CreateForTesting(ITokenCounter tokenCounter, int dimensions = 4, int maxSeqLen = 16)
     {
         // Passing a null InferenceSession is only safe for tests that do NOT call EmbedBatch/Embed.
         // Tests exercising Tokenize, NormaliseRows, or Flatten do not need a real session.
@@ -58,7 +57,7 @@ public sealed class OnnxEmbedder : IDisposable
             ? (int)outputMeta["sentence_embedding"].Dimensions[1]
             : 384; // safe default for MiniLM-L12
 
-        var tokenCounter = BertTokenCounter.FromModelDir(modelDir);
+        var tokenCounter = SentencePieceTokenCounter.FromModelDir(modelDir);
         return new OnnxEmbedder(session, tokenCounter, dims, maxSeqLen);
     }
 
@@ -99,23 +98,15 @@ public sealed class OnnxEmbedder : IDisposable
 
     internal (long[,] ids, long[,] masks, long[,] typeIds) Tokenize(IReadOnlyList<string> texts)
     {
-        // Minimal BERT WordPiece tokenization using BertTokenCounter's underlying tokenizer.
-        // We re-use the tokenizer that the BertTokenCounter holds, but we need full token IDs.
-        // Since BertTokenCounter wraps Microsoft.ML.Tokenizers.BertTokenizer, we call Encode directly.
-        //
-        // NOTE: Microsoft.ML.Tokenizers.BertTokenizer returns EncodingResult with IDs and offsets.
-        // This is sufficient for basic BERT-style encoding. For production, use HuggingFace tokenizers via
-        // a native binding or pre-tokenize texts in a pre-processing step.
+        // SentencePiece tokenization (XLM-RoBERTa style) wraps text as: <s> tokens </s>.
+        // The resulting token IDs are compatible with paraphrase-multilingual-MiniLM-L12-v2 ONNX model.
+        // The ONNX model expects: input_ids, attention_mask, token_type_ids (all zeros for single-sentence).
 
         var encodedList = new List<long[]>();
         foreach (var text in texts)
         {
-            // BertTokenCounter._tokenizer is internal — we use a separate tokenizer instance here.
-            // The token IDs are what the ONNX model sees: [CLS] + tokens + [SEP].
             var tokenIds = _tokenCounter.EncodeToIds(text, _maxSeqLen);
-            long[] tokens = tokenIds is not null
-                ? tokenIds.Select(id => (long)id).ToArray()
-                : [101L, 102L]; // fallback: [CLS][SEP] when no vocab.txt loaded
+            long[] tokens = tokenIds.Select(id => (long)id).ToArray();
             encodedList.Add(tokens);
         }
 
@@ -204,6 +195,6 @@ public sealed class OnnxEmbedder : IDisposable
     public void Dispose()
     {
         _session?.Dispose();
-        // BertTokenCounter is no longer IDisposable (whitespace approximation, no unmanaged resources).
+        (_tokenCounter as IDisposable)?.Dispose();
     }
 }

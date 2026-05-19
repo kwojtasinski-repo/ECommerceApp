@@ -27,6 +27,14 @@ public sealed class RagConfig
     /// </summary>
     public string? LoadedFrom { get; init; }
 
+    /// <summary>
+    /// Absolute path to <c>multilingual-glossary.yaml</c>, resolved by <see cref="Load"/> via the
+    /// companion-file rules (config_files key → fallback filename, same folder as config.yaml).
+    /// Null when the file was not found — no path construction happens outside <see cref="Load"/>.
+    /// Supports <c>RAG_GLOSSARY</c> env var override (Docker / per-file mount parity with Python).
+    /// </summary>
+    public string? GlossaryPath { get; init; }
+
     // ── Computed properties ───────────────────────────────────────────────
 
     /// <summary>Qdrant collection name. RAG_COLLECTION env var wins over config.</summary>
@@ -121,6 +129,14 @@ public sealed class RagConfig
             mergedQueries = queriesWrapper?.NamedQueries;
         }
 
+        // Resolve multilingual-glossary.yaml path (not loaded here — left to MultilingualGlossary.Load).
+        // RAG_GLOSSARY env var overrides config_files declaration (Docker / per-file mount support).
+        var glossaryPath = Environment.GetEnvironmentVariable("RAG_GLOSSARY")
+            is string envGlossary && File.Exists(envGlossary)
+                ? envGlossary
+                : ResolveCompanionPath(configDir, configFiles, "multilingual_glossary", "multilingual-glossary.yaml");
+        var resolvedGlossaryPath = glossaryPath is not null && File.Exists(glossaryPath) ? glossaryPath : null;
+
         return new RagConfig
         {
             LoadedFrom = Path.GetFullPath(configPath),
@@ -133,6 +149,7 @@ public sealed class RagConfig
             Storage = cfg.Storage,
             MetadataRules = mergedRules ?? cfg.MetadataRules,
             NamedQueries = mergedQueries ?? cfg.NamedQueries,
+            GlossaryPath = resolvedGlossaryPath,
         };
     }
 
@@ -222,6 +239,22 @@ public sealed class RagConfig
                 return rule.Kind;
         }
         return "other";
+    }
+
+    /// <summary>
+    /// Returns the configured weight multiplier for a document path.
+    /// Iterates <see cref="RankingSection.Weights"/> — first matching glob wins.
+    /// Returns 1.0 if no rule matches (neutral — score unchanged).
+    /// </summary>
+    public float GetWeight(string relPath)
+    {
+        var p = relPath.Replace('\\', '/');
+        foreach (var entry in Ranking.Weights)
+        {
+            if (!string.IsNullOrWhiteSpace(entry.Pattern) && GlobMatch(p, entry.Pattern))
+                return entry.Weight;
+        }
+        return 1.0f;
     }
 
     // Minimal glob matcher: supports ** (any path segment), * (any chars within segment), ? (any single char).

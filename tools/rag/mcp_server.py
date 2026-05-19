@@ -24,11 +24,9 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import hashlib
 import json
 import os
 import re
-import subprocess
 import sys
 from pathlib import Path
 
@@ -43,128 +41,6 @@ from query import QueryEngine
 CFG = None
 ENGINE = None
 SERVER = Server("ecommerceapp-rag")
-
-# Startup sync status — set by _startup_check() running in a background thread.
-# None  = not yet finished (thread still running or sync was skipped)
-# ""    = sync succeeded (index up to date or re-ingested successfully)
-# str   = human-readable warning message to prepend to the first tool response
-_SYNC_WARNING: "str | None" = None
-
-
-# ---------------------------- startup auto-sync ----------------------------
-
-
-def _detect_changed_files(stored_hashes: dict[str, str]) -> list[str]:
-    """Return rel_paths of files that are new, changed, or deleted since last ingest."""
-    current_rels: set[str] = set()
-    changed: list[str] = []
-    for path in iter_markdown_files(CFG):
-        rel = path.relative_to(CFG.workspace).as_posix()
-        current_rels.add(rel)
-        h = hashlib.sha256(path.read_bytes()).hexdigest()
-        if stored_hashes.get(rel) != h:
-            changed.append(rel)
-    for rel in stored_hashes:
-        if rel not in current_rels:
-            changed.append(rel)
-    return changed
-
-
-def _startup_check(config_path: Path) -> None:
-    """Incremental index sync on MCP startup: re-ingests any docs changed since last ingest.
-
-    Sets _SYNC_WARNING to a non-empty string on failure so the next tool call can surface it.
-    Skipped in memory mode (no persistent index to sync). In local/docker mode, reads
-    the manifest hash file and compares against current on-disk files. Only files that
-    actually changed are re-ingested, so the check is fast for an up-to-date index.
-    Runs in a daemon thread so it does not block MCP startup or the first tool call.
-    """
-    global _SYNC_WARNING
-    if CFG.vector_mode == "memory":
-        _SYNC_WARNING = ""
-        return
-
-    if CFG.vector_mode == "local":
-        local_path = Path(CFG.vector_local_path)
-        if not local_path.exists():
-            msg = (
-                f"RAG index not initialised. Run: python tools/rag/ingest.py\n"
-                f"(Qdrant local storage path does not exist: {local_path})"
-            )
-            print(f"[rag-mcp] WARNING: {msg}", file=sys.stderr)
-            _SYNC_WARNING = msg
-            return
-    else:
-        # docker mode — verify Qdrant HTTP server is reachable before attempting sync.
-        import urllib.request
-        try:
-            with urllib.request.urlopen(f"{CFG.vector_url}/", timeout=3) as r:
-                if r.status not in (200, 206):
-                    raise OSError(f"HTTP {r.status}")
-        except Exception as exc:
-            msg = (
-                f"Qdrant not reachable at {CFG.vector_url} ({exc}). "
-                f"Start Qdrant, then run: python tools/rag/ingest.py --mode docker"
-            )
-            print(f"[rag-mcp] WARNING: {msg}", file=sys.stderr)
-            _SYNC_WARNING = msg
-            return
-
-    manifest_path = CFG.manifest_path
-    if not manifest_path.exists():
-        msg = "No ingest manifest found. Run: python tools/rag/ingest.py"
-        print(f"[rag-mcp] {msg}", file=sys.stderr)
-        _SYNC_WARNING = msg
-        return
-
-    with manifest_path.open("r", encoding="utf-8") as fh:
-        data = json.load(fh)
-
-    stored_hashes: dict[str, str] = data.get("file_hashes", {})
-    if not stored_hashes:
-        _SYNC_WARNING = ""
-        return  # old manifest format without hash tracking — skip
-
-    changed = _detect_changed_files(stored_hashes)
-    if not changed:
-        last = data.get("last_indexed", "unknown")
-        print(f"[rag-mcp] Index up to date (last indexed: {last})", file=sys.stderr)
-        _SYNC_WARNING = ""
-        return
-
-    print(f"[rag-mcp] {len(changed)} file(s) changed — running incremental ingest...", file=sys.stderr)
-    script = Path(__file__).parent / "ingest.py"
-    ingest_mode = CFG.vector_mode if CFG.vector_mode in {"local", "docker", "memory"} else "local"
-    # Keep stdout reserved for MCP framed JSON-RPC messages; route ingest output to /dev/null.
-    # Timeout: allow up to 600s for slow machines / large first-run embeds.
-    # On TimeoutExpired we do NOT warn — the existing index is still valid;
-    # the subprocess continues running in the background and will finish eventually.
-    try:
-        result = subprocess.run(
-            [sys.executable, str(script), "--mode", ingest_mode, "--config", str(config_path)],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-            timeout=600,
-        )
-        if result.returncode != 0:
-            msg = (
-                f"Incremental ingest failed (exit code {result.returncode}) for "
-                f"{len(changed)} changed file(s). The index may be stale. "
-                f"Run: python tools/rag/ingest.py to rebuild."
-            )
-            print(f"[rag-mcp] WARNING: {msg}", file=sys.stderr)
-            _SYNC_WARNING = msg
-        else:
-            _SYNC_WARNING = ""
-    except subprocess.TimeoutExpired:
-        # Ingest is still running in the background — existing index remains usable.
-        print(
-            f"[rag-mcp] incremental ingest is still running after 600s "
-            f"({len(changed)} file(s)) — serving existing index in the meantime.",
-            file=sys.stderr,
-        )
-        _SYNC_WARNING = ""
-
 
 # ---------------------------- full-content intent detection ----------------------------
 
@@ -270,16 +146,6 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     return [TextContent(type="text", text=f"Unknown tool: {name}")]
 
 
-def _sync_warning_prefix() -> str:
-    """Return a warning banner if the background sync failed, empty string otherwise.
-    Called from every tool so the warning is visible in Copilot Chat output.
-    """
-    w = _SYNC_WARNING
-    if w:
-        return f"⚠️ RAG INDEX WARNING: {w}\n\n"
-    return ""
-
-
 _TOOL_TIMEOUT = float(os.environ.get("RAG_TOOL_TIMEOUT", "60"))
 
 
@@ -314,8 +180,7 @@ async def _tool_query_docs(args: dict) -> list[TextContent]:
             for h in hits
         ],
     }
-    prefix = _sync_warning_prefix()
-    return [TextContent(type="text", text=prefix + json.dumps(payload, indent=2))]
+    return [TextContent(type="text", text=json.dumps(payload, indent=2))]
 
 
 # ---------------------------- tool: read_docs ----------------------------
@@ -474,8 +339,7 @@ async def _tool_list_adrs(_: dict) -> list[TextContent]:
             "amendments": len(amendments),
             "examples": len(examples),
         })
-    prefix = _sync_warning_prefix()
-    return [TextContent(type="text", text=prefix + json.dumps({"adrs": rows, "count": len(rows)}, indent=2))]
+    return [TextContent(type="text", text=json.dumps({"adrs": rows, "count": len(rows)}, indent=2))]
 
 
 # ---------------------------- entrypoint ----------------------------
@@ -565,10 +429,16 @@ if __name__ == "__main__":
     print(f"[rag-mcp] metadata:   {_file_tag(_meta_path, '<companion metadata-rules.yaml>')}", file=sys.stderr)
     print(f"[rag-mcp] queries:    {_file_tag(_queries_path, '<companion queries.yaml>')}", file=sys.stderr)
     print(f"[rag-mcp] manifest:   {_file_tag(_manifest_path if 'RAG_MANIFEST' in os.environ else None, str(_manifest_path))}", file=sys.stderr)
-    # Run startup sync in a daemon thread BEFORE entering the asyncio loop.
-    # Using asyncio.create_task / asyncio.to_thread caused Python 3.14 compatibility
-    # issues (CancelledError propagating into the MCP session before initialize completes).
-    # A plain thread is simpler and avoids any interaction with the event loop.
-    import threading
-    threading.Thread(target=_startup_check, args=(_config_path,), daemon=True, name="rag-startup-sync").start()
+    # Load the embedding model + connect to Qdrant synchronously BEFORE starting the
+    # asyncio event loop.  This keeps startup simple (no threads, no races) and
+    # guarantees the model is ready by the time Copilot sends its first tool call.
+    # The MCP handshake (initialize / initialized) happens after this block.
+    print("[rag-mcp] loading embedding model...", file=sys.stderr)
+    try:
+        ENGINE._ensure()
+        print("[rag-mcp] embedding model ready", file=sys.stderr)
+    except Exception as _exc:
+        print(f"[rag-mcp] ERROR: model load failed: {_exc}", file=sys.stderr)
+        sys.exit(1)
+
     asyncio.run(_run())
