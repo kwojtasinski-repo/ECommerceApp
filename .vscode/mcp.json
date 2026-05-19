@@ -1,12 +1,23 @@
 {
   // ─── MCP server variants ────────────────────────────────────────────────────
   //
-  // Pick ONE server to enable.  VS Code Copilot (Chat ▸ MCP) lists both;
-  // disable the one you don't want via the toggle in the MCP panel.
+  // HOW TO SWITCH (VS Code MCP panel — Chat icon ▸ MCP tab ▸ toggle):
   //
-  // "ecommerceapp-rag"        → LOCAL   (Python venv, no Docker)
-  // "ecommerceapp-rag-docker" → DOCKER  (requires: docker compose up rag-tools qdrant)
+  //   LOCAL TESTING (no Docker MCP image needed, only Qdrant must be running):
+  //     Python:  enable  "ecommerceapp-rag-python"        disable all others
+  //     .NET:    enable  "ecommerceapp-rag-dotnet"        disable all others
   //
+  //   DOCKER TESTING (full container pipeline):
+  //     Python:  enable  "ecommerceapp-rag-python-docker" disable all others
+  //     .NET:    enable  "ecommerceapp-rag-dotnet-docker" disable all others
+  //
+  //   Start Qdrant (required for all variants):
+  //     docker compose up -d qdrant
+  //
+  //   Index docs (required before first query):
+  //     cd tools/rag && .venv/Scripts/python ingest.py
+  //
+  // Note: only ONE server should be enabled at a time to avoid routing confusion.
   // ────────────────────────────────────────────────────────────────────────────
   "servers": {
 

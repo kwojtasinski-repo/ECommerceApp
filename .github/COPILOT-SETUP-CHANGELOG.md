@@ -13,9 +13,9 @@
 | -------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `copilot-instructions.md`              | 1     | ~3 980 chars (under 4K); Multi-option rule (§3), Sync rule (§4), agent-memory ref (§6) added                                       |
 | Instruction files (`.instructions.md`) | 16    | All with `applyTo:` frontmatter; `agent-memory` added; `pre-edit` split into core + `doc-suggestions`; `docs-index` scope narrowed |
-| Prompt files (`.prompt.md`)            | 5     | BC analysis, BC implementation, PR review, refactor, flow-analysis                                                                 |
+| Prompt files (`.prompt.md`)            | 6     | BC analysis, BC implementation, PR review, refactor, flow-analysis, rag-sync                                                        |
 | Agent files                            | 8     | adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer, planner, implementer, verifier, pr-commit                       |
-| Skills (`SKILL.md`)                    | 11    | Scaffolding templates for common artifacts; +3 new: cqrs-handler, dto-viewmodel, message-contract                                  |
+| Skills (`SKILL.md`)                    | 16    | +5 new RAG skills: diagnose-rag, tune-rag-weights, expand-rag-glossary, generate-rag-rules, generate-eval-questions |
 | ADRs                                   | 26    | Folderized ADR routers under `docs/adr/<NNNN>/README.md`                                                                           |
 | Context files                          | 6     | project-state, known-issues, agent-decisions, repo-index, future-skills, anti-patterns-critical                                    |
 | GitHub Actions workflows               | 1     | `dotnet-ci.yml` — manual trigger only (push/PR commented)                                                                          |
@@ -48,7 +48,7 @@
 | `doc-suggestions.instructions.md`     | `**`                                                          | Session 19 (new — proactive doc suggestion triggers; split from `pre-edit`) |
 | `agent-memory.instructions.md`        | `**`                                                          | Session 19 (new — auto-loads `agent-decisions.md` read rule on every task)  |
 
-### `.github/prompts/` (5 files)
+### `.github/prompts/` (6 files)
 
 | File                          | Added                                                                                                                                   |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
@@ -57,6 +57,7 @@
 | `pr-review.prompt.md`         | Session 1 (renamed)                                                                                                                     |
 | `refactor.prompt.md`          | Session 17 (new)                                                                                                                        |
 | `flow-analysis.prompt.md`     | Session 22 (registered — file existed on disk, referenced in `copilot-instructions.md` §11 and `docs-index`, omitted from prior counts) |
+| `rag-sync.prompt.md`          | Session 23 (registered — file existed on disk, runs incremental ingest + eval validation + coverage check)                             |
 
 ### `.github/agents/` (8 files)
 
@@ -71,7 +72,7 @@
 | `verifier.md`                 | Session 17 (new — pipeline stage 3, deterministic build+test, max-iter 1)                               |
 | `pr-commit.md`                | Session 17 (new — pipeline stage 5, Conventional Commits, max-iter 2)                                   |
 
-### `.github/skills/` (8 skills)
+### `.github/skills/` (16 skills)
 
 | Skill                     | Description                                                     | Added      |
 | ------------------------- | --------------------------------------------------------------- | ---------- |
@@ -86,6 +87,11 @@
 | `create-cqrs-handler`     | ICommandHandler<TCommand,TResult> + command + result (Option B) | Session 20 |
 | `create-dto-viewmodel`    | DTO/VM + ToDto() extension method (AutoMapper removal path)     | Session 20 |
 | `create-message-contract` | Cross-BC IMessage event contract, publisher side only           | Session 20 |
+| `generate-eval-questions` | Eval question template for newly indexed RAG docs               | Session 23 |
+| `diagnose-rag`            | MCP diagnostic playbook — 7 failure categories                  | Session 23 |
+| `tune-rag-weights`        | Adjust config.yaml ranking weight multipliers                   | Session 23 |
+| `expand-rag-glossary`     | Add PL/DE patterns to multilingual-glossary.yaml                | Session 23 |
+| `generate-rag-rules`      | Update metadata-rules.yaml and queries.yaml                     | Session 23 |
 
 ### `.github/context/` (6 files)
 
@@ -101,6 +107,24 @@
 ---
 
 ## Change log
+
+### Session 23 — RAG multilingual expansion + maintenance skills (2026-05-19)
+
+| #   | Change                                                                                                                                                           | Files affected                                                                                    |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| 1   | ADR-0027 §10 added: multilingual query expansion, repeat=3 rationale, benchmark table, newbie guide. Implementation status + conformance checklist updated        | `docs/adr/0027/0027-rag-pipeline-design.md`                                                      |
+| 2   | `SETUP-GUIDE.md` multilingual section added: PL/DE example queries, expansion explained, how to add glossary entries                                              | `docs/rag/SETUP-GUIDE.md`                                                                         |
+| 3   | Both multilingual glossaries updated: new concept group “Entity Identity & Domain Primitives” (`bezeichner`, `kennung`, `entitäts`, `identyfikator`, `encji`)    | `tools/rag/multilingual-glossary.yaml`, `tools/rag-dotnet/multilingual-glossary.yaml`            |
+| 4   | `agent-decisions.md` entry added: @dataclass dropout, _glossary missing after \__new\__, .NET MCP build lock, repeat=3 rationale                                  | `.github/context/agent-decisions.md`                                                              |
+| 5   | 4 new RAG maintenance skills created: `diagnose-rag`, `tune-rag-weights`, `expand-rag-glossary`, `generate-rag-rules`                                             | `.github/skills/diagnose-rag/SKILL.md` _(new)_, `tune-rag-weights` _(new)_, `expand-rag-glossary` _(new)_, `generate-rag-rules` _(new)_ |
+| 6   | `future-skills.md` updated: date, split Implemented into two groups, 5 RAG skills added to table                                                                  | `.github/context/future-skills.md`                                                                |
+| 7   | Changelog current state: skills 11→16, prompts 5→6, prompts inventory: `rag-sync.prompt.md` registered; skills inventory updated to 16 with Session 23 rows   | `.github/COPILOT-SETUP-CHANGELOG.md`                                                              |
+| 8   | `docs-index.instructions.md` RAG skills routing table added; `rag.instructions.md` skill decision table + re-index quick-ref added                               | `.github/instructions/docs-index.instructions.md`, `.github/instructions/rag.instructions.md`    |
+| 9   | `.sln` sync: 5 RAG maintenance skill solution folders added (`diagnose-rag`, `tune-rag-weights`, `expand-rag-glossary`, `generate-rag-rules`, `generate-eval-questions`) | `ECommerceApp.sln`                                                                          |
+| 10  | `rag.instructions.md` + `docs-index.instructions.md`: fixed stale server name — was `ecommerceapp-rag`, now correctly differentiates VS Code (`ecommerceapp-rag-python`/`ecommerceapp-rag-dotnet`) from GitHub.com (`ecommerceapp-rag`) | `.github/instructions/rag.instructions.md`, `.github/instructions/docs-index.instructions.md` |
+| 11  | `.vscode/mcp.json`: rewrote top comment block — added explicit "HOW TO SWITCH" guide (Python local / .NET local / Docker variants; one-line Qdrant + ingest commands) | `.vscode/mcp.json`                                                                            |
+
+---
 
 ### Session 22 — Docs: TUS V2 complete + close-out sync (2026-05-10)
 

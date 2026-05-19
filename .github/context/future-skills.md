@@ -3,11 +3,13 @@
 > **Planning & tracking document** — implemented skills and future plans.
 > Skills are task-specific, on-demand code generators stored in `.github/skills/<name>/SKILL.md`.
 
-_Last updated: 2026-04-26_
+_Last updated: 2026-05-19_
 
 ---
 
 ## Implemented — `.github/skills/`
+
+### Application / Domain scaffolding
 
 | Skill                      | What it generates                                                                                                                                      |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -22,6 +24,18 @@ _Last updated: 2026-04-26_
 | `/create-cqrs-handler`     | `ICommandHandler<TCommand, TResult>` + command `sealed record` + result type (`enum` or `sealed record` with factories) + DI registration              |
 | `/create-dto-viewmodel`    | DTO/VM (`sealed record` or class) + `internal static` Mappings extension class with `ToDto()` / `ToViewModel()` extension methods                      |
 | `/create-message-contract` | Cross-BC `IMessage` event `record` (publisher side only, event-only mode — pairs with `/create-domain-event handler-only`)                             |
+
+### RAG / MCP maintenance
+
+Full procedure guide for common RAG maintenance tasks. Use the decision table in `rag.instructions.md` to pick the right skill.
+
+| Skill                      | When to invoke                                                                                         |
+| -------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `/diagnose-rag`            | MCP server not starting, tools returning errors, bad results, wrong language, low scores, DLL lock     |
+| `/tune-rag-weights`        | A file consistently ranks too low or too high — adjust `config.yaml` ranking multipliers              |
+| `/expand-rag-glossary`     | Polish or German query returns wrong document while the English equivalent returns the right document   |
+| `/generate-rag-rules`      | New doc folder added, wrong `doc_kind` assigned, query coverage gap — `metadata-rules.yaml`/`queries.yaml` |
+| `/generate-eval-questions` | A newly indexed file has no eval coverage entry in `queries.yaml`                                      |
 
 ---
 

@@ -354,6 +354,7 @@ healthchecksdb
 # RAG MVP
 tools/rag/.cache/
 tools/rag/.venv/
+tools/rag/mcp_stderr.txt
 .rag/                  # incremental ingest manifest (repo root, all RAG implementations)
 tools/rag-dotnet/**/bin/
 tools/rag-dotnet/**/obj/

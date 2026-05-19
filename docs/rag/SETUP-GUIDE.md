@@ -94,7 +94,35 @@ What is the current project state — any blocked bounded contexts?
 > - Ask "list_adrs" or "list adrs" to see all indexed architectural decisions
 > - Prefix with "get_adr_history for ADR-0016" to get the full text of a specific ADR
 > - Use "read_docs about X" to get the full content of a relevant file
-> - Queries in both **English and Polish** are supported
+> - Queries in **English, Polish, and German** are supported — see below
+
+### Multilingual queries (Polish / German)
+
+The MCP server automatically expands non-English queries before embedding them. You do not
+need to translate — just ask in Polish or German and the server bridges the gap:
+
+```
+# Polish
+Jaka jest maksymalna liczba kuponów na zamówienie?
+Znane błędy — FluentAssertions, aktualizacja dotnet 8?
+Jak działa saga kompensacyjna przy nieudanym zamówieniu?
+
+# German
+Maximale Anzahl Gutscheine pro Bestellung?
+Bekannte Fehler FluentAssertions Aktualisierung dotnet 8?
+Wie funktioniert die Saga-Kompensation bei fehlgeschlagener Bestellung?
+```
+
+**How it works:** before embedding, the query is matched against
+`tools/rag/multilingual-glossary.yaml`. Any matching entry's English terms are appended 3×
+to the query so English concepts outweigh the non-English words in mean pooling.
+No re-indexing is needed — this is query-time only.
+
+**Adding a new language or concept:** open the glossary YAML (both `tools/rag/` and
+`tools/rag-dotnet/` copies), add a pattern entry, commit. Done — no Docker rebuild, no
+re-index.
+
+**Benchmark (2026-05-19):** EN 5/5, PL 5/5, DE 3–4/5 top-1 correct across both servers.
 
 ### Re-indexing after doc changes
 

@@ -199,9 +199,112 @@ repo checkout.
 
 ---
 
+### 10. Multilingual query expansion — glossary-based approach
+
+#### Problem
+
+The embedding model (`paraphrase-multilingual-MiniLM-L12-v2`) supports 50+ languages and
+produces cross-lingual embeddings that cluster semantically similar content across languages.
+However, it does this by placing language-specific tokens in a shared latent space trained
+for **semantic similarity**, not **translation parity**. In practice:
+
+- Common foreign words like German `Fehler` (error/bug) or Polish `błędy` (bugs) share
+  vector space with _any_ concept the model associates with "error" — including JS error
+  pipelines, exception handlers, retry envelopes, and log entries.
+- A query like `"znane błędy FluentAssertions aktualizacja dotnet 8"` should retrieve
+  `known-issues.md` KI-008 (FluentAssertions → AwesomeAssertions) — but without expansion,
+  the non-English words pull the vector toward generic "error" documents, and KI-008 placed
+  at #3 or lower.
+
+#### Solution: pre-embedding append expansion
+
+Before embedding a query, each non-English word is matched against a YAML glossary
+(`multilingual-glossary.yaml`). Any matching entry's `english` string is appended to the
+query before it is passed to the model. The expanded string is then embedded — the English
+expansion acts as a semantic anchor.
+
+**File locations:**
+
+| File | Used by |
+|------|---------|
+| `tools/rag/multilingual-glossary.yaml` | Python server (primary) |
+| `tools/rag-dotnet/multilingual-glossary.yaml` | .NET server (own copy — can diverge) |
+
+Both files ship with the same content but are independent copies. The .NET server loads its
+copy from the workspace path via `RagConfig.GlossaryPath` with `RAG_GLOSSARY` env override
+for Docker mounts.
+
+#### The repeat=3 technique
+
+Appending the expansion once gives the English terms only ~33% weight in mean pooling
+for a 7-word non-English query:
+
+```
+original:  7 tokens
+expansion: 10 tokens, appended once
+English weight = 10 / (7 + 10) = 59%  ← but original non-English tokens pull in wrong direction
+```
+
+In practice, generic foreign words like `Fehler` or `błędy` are so broadly associated with
+"error" concepts that a single append is insufficient. The solution is to repeat the expansion
+3 times, pushing English weight to 60–87% for typical short queries:
+
+```python
+# Python — query.py
+return query + (" " + expansion) * 3
+```
+
+```csharp
+// .NET — MultilingualGlossary.cs
+public const int ExpansionRepeat = 3;
+return query + string.Concat(Enumerable.Repeat(" " + expansion, ExpansionRepeat));
+```
+
+**English-only queries are always passed through unchanged** — the glossary contains only
+non-ASCII patterns so there is no risk of accidental expansion for pure English queries.
+
+#### Matching rules
+
+- Case-insensitive, word-boundary-aware regex: `(?<![a-z])<pattern>(?![a-z])`
+- Each glossary entry contributes its `english` string at most once per query (even if
+  multiple patterns from the same entry match)
+- Multiple entries can match the same query (each adds its own English group)
+- The lookbehind/lookahead only tests ASCII letters `[a-z]`, so Unicode word boundaries
+  (e.g. `ę`, `ś`, `ą`) are handled correctly
+
+#### Benchmark results (2026-05-19)
+
+15 queries across English / Polish / German against both servers after expansion was added:
+
+| Language | Python (top-1 correct) | .NET (top-1 correct) |
+|----------|------------------------|----------------------|
+| English  | 5/5 ✅                | 5/5 ✅              |
+| Polish   | 5/5 ✅                | 5/5 ✅              |
+| German   | 3/5 ✅                | 4/5 ✅              |
+| **Total**| **13/15**             | **14/15**           |
+
+The two remaining German misses on Python are vocabulary gaps (the German word for
+"entity identifier", `Bezeichner`, is not in the glossary) or expansion-group competition
+(a query containing both `Bestellung` and `Rückabwicklung` triggers the orders expansion
+AND the saga expansion simultaneously).
+
+#### How to add a new language or concept (newbie guide)
+
+1. Open `tools/rag/multilingual-glossary.yaml` (and mirror the change to `tools/rag-dotnet/multilingual-glossary.yaml`).
+2. Find the relevant concept group, or add a new one at the bottom.
+3. Add the foreign-language words as pattern entries.
+4. **No re-indexing required** — expansion runs at query time, not at ingest time.
+5. Test by querying the MCP server: `query_docs("your foreign query", top_k=3)`.
+
+Rules for patterns:
+- Use individual words/compounds in lowercase
+- Avoid extremely common words (`the`, `und`, `i`) — they appear everywhere and add noise
+- Prefer domain-specific terms and inflection forms (genitive, accusative, plural)
+- English words must never appear in `patterns` — the glossary is for non-English only
+
+---
 
 
-| Component | Status | Notes |
 |-----------|--------|-------|
 | Python ingest + MCP | ✅ Complete | 117 unit tests pass |
 | Python e2e tests | ✅ Complete | 74 e2e tests (require Python 3.13 + torch) |
@@ -209,6 +312,8 @@ repo checkout.
 | .NET e2e tests | ✅ Complete | 12 `[SkippableFact]` tests; skip when model or Docker absent |
 | Docker image (Python) | ✅ Complete | Per-file mounts, RAG_CONFIG/RAG_WORKSPACE |
 | Docker image (.NET) | ✅ Complete | curlimages/curl ONNX download stage |
+| Multilingual glossary (Python) | ✅ Complete | `tools/rag/multilingual-glossary.yaml`; 11 concept groups; repeat=3 |
+| Multilingual glossary (.NET) | ✅ Complete | `tools/rag-dotnet/multilingual-glossary.yaml`; mirror of Python copy |
 | Usage decision guide | ✅ Complete | `docs/rag/SETUP-GUIDE.md` — beginner setup + model switching |
 
 ---
@@ -243,3 +348,6 @@ repo checkout.
 - [ ] Model change → update `embedder.dimensions` in config + force full reindex + update ADR
 - [ ] Config schema change → update both `RagConfig.py` (Python) and `RagConfig.cs` (.NET)
 - [ ] New source root added to config → verify both ingest paths handle the root correctly
+- [ ] New language added to glossary → edit `tools/rag/multilingual-glossary.yaml` AND `tools/rag-dotnet/multilingual-glossary.yaml` — **no re-index needed**
+- [ ] New concept added to glossary → same as above; verify with a live query before committing
+- [ ] `repeat` value changed in `_expand_query` / `MultilingualGlossary.Expand` → re-run the 15-query benchmark (see §10) to confirm no regression

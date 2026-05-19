@@ -552,6 +552,31 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "create-message-contract", "
 		.github\skills\create-message-contract\SKILL.md = .github\skills\create-message-contract\SKILL.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "diagnose-rag", "diagnose-rag", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567801}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\diagnose-rag\SKILL.md = .github\skills\diagnose-rag\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tune-rag-weights", "tune-rag-weights", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567802}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\tune-rag-weights\SKILL.md = .github\skills\tune-rag-weights\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "expand-rag-glossary", "expand-rag-glossary", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567803}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\expand-rag-glossary\SKILL.md = .github\skills\expand-rag-glossary\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "generate-rag-rules", "generate-rag-rules", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567804}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\generate-rag-rules\SKILL.md = .github\skills\generate-rag-rules\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "generate-eval-questions", "generate-eval-questions", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567805}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\generate-eval-questions\SKILL.md = .github\skills\generate-eval-questions\SKILL.md
+	EndProjectSection
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerceApp.Web.IntegrationTests", "ECommerceApp.Web.IntegrationTests\ECommerceApp.Web.IntegrationTests.csproj", "{C77D9490-CF88-A4B6-F7E6-3B869D2FECDE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerceApp.Shared.TestInfrastructure", "ECommerceApp.Shared.TestInfrastructure\ECommerceApp.Shared.TestInfrastructure.csproj", "{3F58C385-DAF9-D146-2747-EDFCAABDD44D}"
@@ -688,6 +713,11 @@ Global
 		{C634830C-B5EE-49F0-B6FB-42BBFAB31741} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
 		{B2C3D4E5-F6A7-8901-BCDE-F12345678901} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
 		{C3D4E5F6-A7B8-9012-CDEF-012345678902} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567801} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567802} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567803} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567804} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567805} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
 		{C77D9490-CF88-A4B6-F7E6-3B869D2FECDE} = {10D50F1A-6B65-4B28-B3E1-B064B6EBF967}
 		{3F58C385-DAF9-D146-2747-EDFCAABDD44D} = {10D50F1A-6B65-4B28-B3E1-B064B6EBF967}
 	EndGlobalSection

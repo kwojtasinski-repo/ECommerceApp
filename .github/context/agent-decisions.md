@@ -98,3 +98,16 @@ Rules:
 - **Action**: When writing or reviewing RAG tests: reject any fixture that imports real docs, real ADR paths, or real entity names from EcommerceApp. `SyntheticWorkspace.cs` and `conftest.py` are the approved patterns.
 - **Promote?**: After 2nd drift → add to `dotnet.instructions.md` under RAG test rules.
 - **Status**: Resolved
+
+---
+
+## 2026-05-19 — Implementer / RAG multilingual glossary expansion
+
+- **Context**: After the multilingual glossary was added (one-shot append), Polish and German "known issues FluentAssertions" queries still returned the wrong document at #1. Mean pooling gives equal weight to every token — a 7-word PL/DE query with a 10-word English expansion appended once yields only ~33–37% English weight, insufficient to overcome the semantic pull of generic words like `Fehler`/`błędy` toward unrelated error-handling docs.
+- **Decision**: Repeat the English expansion **3 times** (not replace the non-English words — too aggressive). `return query + (" " + expansion) * 3` in Python; `Enumerable.Repeat(" " + expansion, 3)` in .NET. This raises English weight to 60–87% for typical short queries.
+- **Rationale**: Mean pooling is linear: token count drives weight. Repetition is the cheapest, safest amplification — it degrades gracefully (English-only queries are never touched because only non-ASCII patterns fire) and requires no model change or re-index.
+- **Pitfall 1 — `@dataclass` silently dropped**: When inserting `_expand_query` and `QueryHit` as a file-level replacement, the `@dataclass` decorator was inadvertently omitted from `QueryHit`. The class appeared valid (field annotations existed) but calling `QueryHit(rel_path=..., ...)` raised `TypeError: QueryHit() takes no arguments`. Fix: always read the full class definition before replacing; never omit decorators during partial replacements.
+- **Pitfall 2 — `_glossary` missing after `__new__`**: `make_engine_with_stubs()` in tests uses `QueryEngine.__new__()` to bypass `__init__`, so the `engine._glossary = []` assignment inside `__init__` was skipped → `AttributeError`. Fix: after any `__init__` addition, check all `__new__`-based test factories and add the new attribute.
+- **Pitfall 3 — .NET MCP build lock**: `dotnet build` while VS Code holds the .NET MCP server process running will fail (DLLs locked). **Always warn the user** before running `dotnet build` on any project whose output is an active MCP server; ask them to stop the server first.
+- **Action**: §10 added to ADR-0027; repeat=3 documented; glossary gap for `Bezeichner` (DE entity identifier) added to both glossary YAMLs; conformance checklist items added.
+- **Status**: Resolved
