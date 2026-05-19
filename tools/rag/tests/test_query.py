@@ -103,6 +103,7 @@ def make_engine_with_stubs(
     engine._client = fake_client
 
     engine._model = make_fake_model(embedding)
+    engine._glossary = []  # no expansion needed for unit tests
     return engine
 
 
