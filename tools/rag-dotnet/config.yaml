@@ -2,9 +2,8 @@
 # Separate from tools/rag/config.yaml so weights and settings can be tuned
 # independently for experimentation without touching the Python server config.
 #
-# VERSION: bump this when chunker settings, model, or ranking weights change in
-# a way that requires a full re-index of the .NET collection.
-version: "1"
+# Re-index note: a full re-index is needed when chunker settings, model, or
+# ranking weights change in a way that affects the vector space or chunk boundaries.
 
 source:
   # Same roots as Python config — both index the same docs.

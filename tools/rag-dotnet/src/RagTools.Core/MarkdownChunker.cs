@@ -10,6 +10,8 @@ public sealed class MarkdownChunker
     private readonly int _overlapTokens;
     private readonly int _minTokens;
     private readonly ITokenCounter _tokenCounter;
+    private readonly HashSet<int> _splitLevels;
+    private readonly int _maxHeadingLevel;
 
     public MarkdownChunker(ChunkerSection cfg, ITokenCounter tokenCounter)
     {
@@ -17,6 +19,10 @@ public sealed class MarkdownChunker
         _overlapTokens = cfg.OverlapTokens;
         _minTokens = cfg.MinTokens;
         _tokenCounter = tokenCounter;
+        _splitLevels = cfg.SplitOnHeadings.Count > 0
+            ? cfg.SplitOnHeadings.ToHashSet()
+            : [1, 2, 3];
+        _maxHeadingLevel = _splitLevels.Max();
     }
 
     public IReadOnlyList<Chunk> Chunk(string text, string relPath)
@@ -61,7 +67,7 @@ public sealed class MarkdownChunker
     private List<Chunk> SplitBySections(string[] lines, string docTitle)
     {
         var sections = new List<Chunk>();
-        var headingStack = new string?[4]; // index 1..3 for H1..H3
+        var headingStack = new string?[_maxHeadingLevel + 1]; // index 1.._maxHeadingLevel
         var currentLines = new List<string>();
         var startLine = 1;
         var inFence = false;
@@ -85,14 +91,14 @@ public sealed class MarkdownChunker
             if (trimmed.StartsWith("```"))
                 inFence = !inFence;
 
-            if (!inFence && IsHeading(trimmed, out var level, out var title) && level <= 3)
+            if (!inFence && IsHeading(trimmed, out var level, out var title) && _splitLevels.Contains(level))
             {
                 Flush(i);
                 currentLines.Clear();
                 startLine = i + 1;
                 headingStack[level] = title;
                 // Clear deeper levels.
-                for (var j = level + 1; j <= 3; j++) headingStack[j] = null;
+                for (var j = level + 1; j <= _maxHeadingLevel; j++) headingStack[j] = null;
             }
 
             currentLines.Add(line);

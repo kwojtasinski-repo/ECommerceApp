@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "RagTools.Ingest (local)": {
+      "commandName": "Project",
+      "workingDirectory": "..\\..\\..\\..\\",
+      "environmentVariables": {
+        "RAG_WORKSPACE": ".",
+        "RAG_CONFIG":    "tools\\rag-dotnet\\config.yaml",
+        "RAG_MODEL_DIR": "tools\\rag-dotnet\\model",
+        "QDRANT_URL":    "http://localhost:6333",
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    },
+    "RagTools.Ingest (dry-run)": {
+      "commandName": "Project",
+      "commandLineArgs": "--dry-run",
+      "workingDirectory": "..\\..\\..\\..\\",
+      "environmentVariables": {
+        "RAG_WORKSPACE": ".",
+        "RAG_CONFIG":    "tools\\rag-dotnet\\config.yaml",
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

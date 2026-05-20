@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/launchsettings.json",
+  "profiles": {
+    "RagTools.Mcp (local)": {
+      "commandName": "Project",
+      "workingDirectory": "..\\..\\..\\..\\",
+      "environmentVariables": {
+        "RAG_WORKSPACE": ".",
+        "RAG_CONFIG":    "tools\\rag\\config.yaml",
+        "RAG_MODEL_DIR": "tools\\rag-dotnet\\model",
+        "QDRANT_URL":    "http://localhost:6333",
+        "DOTNET_ENVIRONMENT": "Development"
+      }
+    }
+  }
+}

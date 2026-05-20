@@ -30,8 +30,8 @@ public sealed class RagTools(OnnxEmbedder embedder, QdrantStore store, RagConfig
     {
         topK = Math.Clamp(topK, 1, 20);
 
-        // Fetch more when bc filter is active to compensate for post-filtering loss.
-        var fetchK = bc is not null ? topK * 3 : topK;
+        // Fetch from config; widen pool when a bc filter is active to compensate for post-filter loss.
+        var fetchK = bc is not null ? Math.Max(cfg.Query.FetchK, topK * 3) : cfg.Query.FetchK;
         var queryVec = embedder.Embed(_glossary.Expand(question));
         var allHits = await store.SearchAsync(
             queryVec,

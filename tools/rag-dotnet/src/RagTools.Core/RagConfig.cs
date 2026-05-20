@@ -163,7 +163,14 @@ public sealed class RagConfig
     public static string ResolveConfigPath(string? configPath)
     {
         if (!string.IsNullOrEmpty(configPath))
-            return Path.GetFullPath(configPath);
+        {
+            var full = Path.GetFullPath(configPath);
+            if (File.Exists(full))
+                return full;
+            // Path provided but file not found — fall through so RAG_CONFIG env var
+            // can override (e.g. when launchSettings default path doesn't apply on a
+            // different machine or repo layout).
+        }
 
         var envCfg = Environment.GetEnvironmentVariable("RAG_CONFIG");
         if (!string.IsNullOrEmpty(envCfg))
@@ -299,6 +306,8 @@ public sealed class ChunkerSection
     public int MaxTokens { get; init; } = 400;
     public int OverlapTokens { get; init; } = 50;
     public int MinTokens { get; init; } = 30;
+    /// <summary>Heading levels that act as section boundaries (default: H1–H3).</summary>
+    public List<int> SplitOnHeadings { get; init; } = [1, 2, 3];
 }
 
 public sealed class RankingSection
@@ -315,7 +324,10 @@ public sealed class WeightEntry
 
 public sealed class QuerySection
 {
-    public int TopK { get; init; } = 5;
+    /// <summary>Maps to YAML key <c>default_top_k</c> (mirrors Python config).</summary>
+    public int DefaultTopK { get; init; } = 5;
+    /// <summary>Candidate pool size fetched from Qdrant before filtering/re-ranking.</summary>
+    public int FetchK { get; init; } = 20;
     public float ScoreThreshold { get; init; } = 0.3f;
 }
 

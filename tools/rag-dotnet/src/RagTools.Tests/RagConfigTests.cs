@@ -55,7 +55,8 @@ public class RagConfigTests : IDisposable
         ranking:
           weights: []
         query:
-          top_k: 5
+          default_top_k: 5
+          fetch_k: 20
           score_threshold: 0.3
         storage:
           manifest_path: ".rag/manifest.json"
@@ -118,6 +119,30 @@ public class RagConfigTests : IDisposable
         var path = WriteConfig(MinimalConfig());
         var cfg = RagConfig.Load(path);
         Assert.Equal(0.3f, cfg.Query.ScoreThreshold, precision: 4);
+    }
+
+    [Fact]
+    public void Load_SetsQueryDefaultTopK()
+    {
+        var path = WriteConfig(MinimalConfig());
+        var cfg = RagConfig.Load(path);
+        Assert.Equal(5, cfg.Query.DefaultTopK);
+    }
+
+    [Fact]
+    public void Load_SetsQueryFetchK()
+    {
+        var path = WriteConfig(MinimalConfig());
+        var cfg = RagConfig.Load(path);
+        Assert.Equal(20, cfg.Query.FetchK);
+    }
+
+    [Fact]
+    public void Load_SetsChunkerSplitOnHeadings()
+    {
+        var path = WriteConfig(MinimalConfig());
+        var cfg = RagConfig.Load(path);
+        Assert.Equal([1, 2, 3], cfg.Chunker.SplitOnHeadings);
     }
 
     [Fact]
@@ -267,7 +292,8 @@ public class RagConfigTests : IDisposable
                 - pattern: "docs/**"
                   weight: 0.9
             query:
-              top_k: 5
+              default_top_k: 5
+              fetch_k: 20
               score_threshold: 0.3
             storage:
               manifest_path: ".rag/manifest.json"
@@ -370,6 +396,27 @@ public class RagConfigTests : IDisposable
             Environment.SetEnvironmentVariable("RAG_CONFIG", envPath);
             var resolved = RagConfig.ResolveConfigPath(explicitPath);
             Assert.Equal(Path.GetFullPath(explicitPath), resolved);
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("RAG_CONFIG", null);
+        }
+    }
+
+    [Fact]
+    public void ResolveConfigPath_FallsThroughToEnv_WhenExplicitArgPathDoesNotExist()
+    {
+        // Simulates launchSettings --config path that is valid on the original machine
+        // but doesn't exist on a different project/machine layout.
+        var missingPath = Path.Combine(_tempDir, "nonexistent.yaml");  // NOT created
+        var envPath = Path.Combine(_tempDir, "from-env-fallback.yaml");
+        File.WriteAllText(envPath, "x: 1");
+        try
+        {
+            Environment.SetEnvironmentVariable("RAG_CONFIG", envPath);
+            Environment.SetEnvironmentVariable("RAG_WORKSPACE", null);
+            var resolved = RagConfig.ResolveConfigPath(missingPath);
+            Assert.Equal(Path.GetFullPath(envPath), resolved);
         }
         finally
         {

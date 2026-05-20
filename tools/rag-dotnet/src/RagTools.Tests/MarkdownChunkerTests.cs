@@ -264,4 +264,76 @@ public class MarkdownChunkerTests
         var chunk = Assert.Single(chunks);
         Assert.StartsWith("folder/file.md", chunk.Breadcrumb);
     }
+
+    // ── SplitOnHeadings configuration ───────────────────────────────────────────
+
+    [Fact]
+    public void Chunk_SplitOnHeadingsH1Only_DoesNotSplitOnH2OrH3()
+    {
+        var chunker = new MarkdownChunker(
+            new ChunkerSection { MaxTokens = 800, MinTokens = 1, OverlapTokens = 0, SplitOnHeadings = [1] },
+            FallbackCounter());
+
+        var md = """
+            # Doc
+
+            intro text
+
+            ## Section A
+
+            section A content
+
+            ### Sub A1
+
+            sub-section content
+            """;
+
+        // Only H1 is a boundary; H2 and H3 are treated as body text → single chunk.
+        var chunks = chunker.Chunk(md, "test.md");
+        Assert.Single(chunks);
+    }
+
+    [Fact]
+    public void Chunk_SplitOnHeadingsH1H2_DoesNotSplitOnH3()
+    {
+        var chunker = new MarkdownChunker(
+            new ChunkerSection { MaxTokens = 800, MinTokens = 1, OverlapTokens = 0, SplitOnHeadings = [1, 2] },
+            FallbackCounter());
+
+        var md = """
+            # Doc
+
+            intro
+
+            ## Section A
+
+            section content
+
+            ### Sub A1
+
+            sub content
+            """;
+
+        // H1 and H2 are boundaries → chunks: [intro], [Section A content including ### Sub A1]
+        var chunks = chunker.Chunk(md, "test.md");
+        Assert.Equal(2, chunks.Count);
+        Assert.DoesNotContain(chunks, c => c.Breadcrumb.Contains("Sub A1"));
+    }
+
+    [Fact]
+    public void Chunk_SplitOnHeadings_DefaultBehaviourMatchesH1H2H3()
+    {
+        var defaultChunker = new MarkdownChunker(
+            new ChunkerSection { MaxTokens = 800, MinTokens = 1, OverlapTokens = 0 },
+            FallbackCounter());
+        var explicitChunker = new MarkdownChunker(
+            new ChunkerSection { MaxTokens = 800, MinTokens = 1, OverlapTokens = 0, SplitOnHeadings = [1, 2, 3] },
+            FallbackCounter());
+
+        var md = "# Doc\n\nintro\n\n## A\n\ncontent A\n\n### A1\n\ncontent A1";
+        var defaultChunks = defaultChunker.Chunk(md, "test.md");
+        var explicitChunks = explicitChunker.Chunk(md, "test.md");
+
+        Assert.Equal(defaultChunks.Count, explicitChunks.Count);
+    }
 }

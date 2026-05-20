@@ -78,7 +78,7 @@ This catches races, missing redirects, re-entrant states, and TTL edge cases tha
 
 ## 12. RAG / MCP tool routing
 
-The project exposes four MCP tools via `ecommerceapp-rag-python` (or any other configured variant).
+The project exposes four MCP tools via `ecommerceapp-rag-dotnet` (or any other configured variant).
 **Route questions to the correct tool** — do not guess from training data for questions that have a definitive answer in the project docs.
 
 | Trigger phrase / intent | Tool to call | When to use |
