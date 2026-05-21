@@ -31,18 +31,35 @@
 # Verify mount on startup: the server prints each file's path + size in bytes.
 # Compare with: Get-Item tools\rag\metadata-rules.yaml | Select Length
 
-FROM python:3.11-slim
+# ── Stage 1: install dependencies + pre-download model ────────────────────────
+# All pip build artefacts (wheel cache, setuptools, .dist-info metadata) stay
+# in this stage and are never copied to the runtime image.
+FROM python:3.13-slim AS builder
 
 WORKDIR /app
-
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Pre-download the embedding model so first ingest does not require internet access.
-# Model: paraphrase-multilingual-MiniLM-L12-v2 (~500 MB, cached in this image layer).
-RUN python -c "\
+RUN pip install --no-cache-dir -r requirements.txt \
+ && python -c "\
 from sentence_transformers import SentenceTransformer; \
 SentenceTransformer('sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2')"
+
+# ── Stage 2: lean runtime image ───────────────────────────────────────────────
+# Equivalent of aspnet:10.0-noble-chiseled for .NET — drop the build tools,
+# keep only what the running process needs.
+FROM python:3.13-slim
+
+# Copy installed site-packages (torch, sentence-transformers, mcp, uvicorn, …).
+# pip, wheel, and setuptools are NOT copied — they live only in the builder.
+COPY --from=builder /usr/local/lib/python3.13/site-packages \
+                    /usr/local/lib/python3.13/site-packages
+
+# Copy pip-installed console scripts (uvicorn entry-point, huggingface-cli, …).
+COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Copy cached embedding model (~500 MB in /root/.cache/huggingface/).
+COPY --from=builder /root/.cache /root/.cache
+
+WORKDIR /app
 
 # Bake in the Python scripts and config.
 # The workspace (docs + .github) and Qdrant data are MOUNTED at runtime, not baked in.

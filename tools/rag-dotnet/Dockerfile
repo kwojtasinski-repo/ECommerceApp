@@ -18,10 +18,11 @@ ARG MODEL_BASE=https://huggingface.co/sentence-transformers/paraphrase-multiling
 ARG BERT_VOCAB=https://huggingface.co/bert-base-uncased/resolve/main/vocab.txt
 
 WORKDIR /app/model
-RUN curl -sSL -o model.onnx     "${MODEL_BASE}/onnx/model.onnx"     \
- && curl -sSL -o vocab.txt      "${BERT_VOCAB}"                      \
- && curl -sSL -o tokenizer.json "${MODEL_BASE}/tokenizer.json"       \
- && curl -sSL -o config.json    "${MODEL_BASE}/config.json"
+RUN curl -sSL -o model.onnx              "${MODEL_BASE}/onnx/model.onnx"          \
+ && curl -sSL -o vocab.txt               "${BERT_VOCAB}"                           \
+ && curl -sSL -o tokenizer.json          "${MODEL_BASE}/tokenizer.json"            \
+ && curl -sSL -o config.json             "${MODEL_BASE}/config.json"               \
+ && curl -sSL -o sentencepiece.bpe.model "${MODEL_BASE}/sentencepiece.bpe.model"
 
 # ── Stage 2: .NET build ───────────────────────────────────────────────────────
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS builder
@@ -37,7 +38,7 @@ RUN dotnet publish src/RagTools.Mcp/RagTools.Mcp.csproj \
     -c Release -o /out/mcp --no-restore
 
 # ── Stage 3: Runtime image ────────────────────────────────────────────────────
-FROM mcr.microsoft.com/dotnet/runtime:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0-noble-chiseled AS runtime
 
 # Copy ONNX model from downloader stage.
 COPY --from=model-downloader /app/model /app/model
@@ -46,21 +47,24 @@ COPY --from=model-downloader /app/model /app/model
 COPY --from=builder /out/ingest /app/ingest
 COPY --from=builder /out/mcp    /app/mcp
 
-# Copy config.yaml from the rag/ folder (shared between Python and .NET).
-# Override at runtime by mounting your repo's config at /app/config.yaml.
-COPY ../rag/config.yaml /app/config.yaml
+# No config baked in — this image is generic and shared across projects.
+# Each project mounts its own config.yaml at runtime and sets RAG_CONFIG.
+# Example: -v ./tools/rag-dotnet/config.yaml:/config.yaml:ro -e RAG_CONFIG=/config.yaml
 
 # Environment defaults — override via docker run -e or docker-compose environment:.
 ENV RAG_WORKSPACE=/workspace
 ENV RAG_MODEL_DIR=/app/model
-ENV RAG_CONFIG=/app/config.yaml
 ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 # Volumes:
 #   /workspace  — repo root (mounted read-only for ingest + MCP)
-#   /data/qdrant — NOT used by .NET (requires external Qdrant server via QDRANT_URL)
+#   /config.yaml (or any path) — project-specific config, path set via RAG_CONFIG
 VOLUME ["/workspace"]
 
-# Default: run MCP server. Override with 'ingest' for indexing.
+# Ports:
+#   3001  — SSE/HTTP transport (MCP_TRANSPORT=sse). Not used in stdio mode.
+EXPOSE 3001
+
+# Default: run MCP server. Override CMD for indexing.
 ENTRYPOINT []
 CMD ["dotnet", "/app/mcp/mcp_server.dll"]

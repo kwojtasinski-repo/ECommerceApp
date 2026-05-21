@@ -1,9 +1,9 @@
 ﻿# RAG Index Stats
 
-Last indexed: 2026-05-19 16:42 UTC  
+Last indexed: 2026-05-21 22:59 UTC  
 Collection: `ecommerceapp_docs_dotnet`  
-Files: 165  
-Chunks: 818  
+Files: 168  
+Chunks: 865  
 Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`  
 
 ## Breakdown by doc_kind
@@ -13,22 +13,22 @@ Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
 | `adr_amendment` | 9 | 35 |
 | `adr_checklist` | 24 | 34 |
 | `adr_example` | 34 | 0 |
-| `adr_main` | 27 | 390 |
+| `adr_main` | 28 | 422 |
 | `adr_migration_plan` | 25 | 24 |
-| `adr_router` | 27 | 96 |
+| `adr_router` | 28 | 97 |
 | `architecture` | 1 | 12 |
-| `context` | 5 | 71 |
+| `context` | 5 | 73 |
 | `other` | 1 | 3 |
 | `pattern` | 1 | 18 |
 | `reference` | 1 | 19 |
-| `roadmap` | 10 | 116 |
+| `roadmap` | 11 | 128 |
 
 ## Per-file detail
 
 | file | doc_kind | chunks |
 |------|----------|-------:|
-| `.github/context/agent-decisions.md` | `context` | 7 |
-| `.github/context/future-skills.md` | `context` | 5 |
+| `.github/context/agent-decisions.md` | `context` | 8 |
+| `.github/context/future-skills.md` | `context` | 6 |
 | `.github/context/known-issues.md` | `context` | 15 |
 | `.github/context/project-state.md` | `context` | 6 |
 | `.github/context/repo-index.md` | `context` | 38 |
@@ -176,8 +176,10 @@ Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
 | `docs/adr/0025/README.md` | `adr_router` | 3 |
 | `docs/adr/0026/0026-order-lifecycle-saga.md` | `adr_main` | 8 |
 | `docs/adr/0026/README.md` | `adr_router` | 5 |
-| `docs/adr/0027/0027-rag-pipeline-design.md` | `adr_main` | 12 |
+| `docs/adr/0027/0027-rag-pipeline-design.md` | `adr_main` | 13 |
 | `docs/adr/0027/README.md` | `adr_router` | 1 |
+| `docs/adr/0028/0028-remote-multitenant-rag-ingest.md` | `adr_main` | 31 |
+| `docs/adr/0028/README.md` | `adr_router` | 1 |
 | `docs/architecture/bounded-context-map.md` | `architecture` | 12 |
 | `docs/patterns/implementation-patterns.md` | `pattern` | 18 |
 | `docs/README.md` | `other` | 3 |
@@ -189,6 +191,7 @@ Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
 | `docs/roadmap/orders-atomic-switch.md` | `roadmap` | 16 |
 | `docs/roadmap/payments-atomic-switch.md` | `roadmap` | 12 |
 | `docs/roadmap/presale-slice2.md` | `roadmap` | 9 |
+| `docs/roadmap/rag-remote-multitenant.md` | `roadmap` | 12 |
 | `docs/roadmap/README.md` | `roadmap` | 6 |
 | `docs/roadmap/saga-pattern.md` | `roadmap` | 12 |
 | `docs/roadmap/storefront-offers.md` | `roadmap` | 8 |

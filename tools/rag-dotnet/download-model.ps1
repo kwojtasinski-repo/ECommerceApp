@@ -29,10 +29,11 @@ if (-not (Test-Path $OutDir)) {
 $BertBase = 'https://huggingface.co/bert-base-uncased/resolve/main'
 
 $Files = @(
-    @{ Url = "$Base/onnx/model.onnx"; Name = 'model.onnx' }
-    @{ Url = "$BertBase/vocab.txt";   Name = 'vocab.txt' }
-    @{ Url = "$Base/tokenizer.json";  Name = 'tokenizer.json' }
-    @{ Url = "$Base/config.json";     Name = 'config.json' }
+    @{ Url = "$Base/onnx/model.onnx";           Name = 'model.onnx' }
+    @{ Url = "$BertBase/vocab.txt";             Name = 'vocab.txt' }
+    @{ Url = "$Base/tokenizer.json";            Name = 'tokenizer.json' }
+    @{ Url = "$Base/config.json";               Name = 'config.json' }
+    @{ Url = "$Base/sentencepiece.bpe.model";   Name = 'sentencepiece.bpe.model' }
 )
 
 foreach ($f in $Files) {

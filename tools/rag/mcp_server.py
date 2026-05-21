@@ -360,9 +360,36 @@ def _parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-async def _run() -> None:
+async def _run_stdio() -> None:
     async with stdio_server() as (read, write):
         await SERVER.run(read, write, SERVER.create_initialization_options())
+
+
+async def _run_sse(port: int) -> None:
+    """Run the MCP server over SSE (HTTP).  VS Code connects via mcp.json type:sse."""
+    from mcp.server.sse import SseServerTransport
+    from starlette.applications import Starlette
+    from starlette.routing import Mount, Route
+    import uvicorn
+
+    sse = SseServerTransport("/messages/")
+
+    async def handle_sse(request):  # noqa: ANN001
+        async with sse.connect_sse(
+            request.scope, request.receive, request._send
+        ) as streams:
+            await SERVER.run(streams[0], streams[1], SERVER.create_initialization_options())
+
+    app = Starlette(
+        routes=[
+            Route("/sse", endpoint=handle_sse),
+            Mount("/messages/", app=sse.handle_post_message),
+        ]
+    )
+    config = uvicorn.Config(app, host="0.0.0.0", port=port, log_level="warning")
+    server = uvicorn.Server(config)
+    print(f"[rag-mcp] SSE endpoint: http://0.0.0.0:{port}/sse", file=sys.stderr)
+    await server.serve()
 
 
 if __name__ == "__main__":
@@ -441,4 +468,11 @@ if __name__ == "__main__":
         print(f"[rag-mcp] ERROR: model load failed: {_exc}", file=sys.stderr)
         sys.exit(1)
 
-    asyncio.run(_run())
+    _transport = os.environ.get("MCP_TRANSPORT", "stdio").lower()
+    _port = int(os.environ.get("MCP_PORT", "3002"))
+    print(f"[rag-mcp] transport:  {_transport}{f' (port {_port})' if _transport == 'sse' else ''}", file=sys.stderr)
+
+    if _transport == "sse":
+        asyncio.run(_run_sse(_port))
+    else:
+        asyncio.run(_run_stdio())

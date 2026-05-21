@@ -58,6 +58,8 @@ services:
         profiles:
           - rag                       # shared with rag-tools
           - rag-dotnet                # opt-in: docker compose --profile rag-dotnet up
+          - rag-dotnet-sse            # SSE persistent server
+          - rag-python-sse            # SSE persistent server
 
     # .NET RAG tools — ONNX embedder + Qdrant.Client + MCP server.
     # Requires 'qdrant' service (started via --profile rag-dotnet).
@@ -72,11 +74,69 @@ services:
           - RAG_WORKSPACE=/workspace
           - QDRANT_URL=http://qdrant:6333
           - RAG_COLLECTION=ecommerceapp_docs_dotnet
+          - RAG_CONFIG=/config.yaml
           - DOTNET_CLI_TELEMETRY_OPTOUT=1
         volumes:
-          - .:/workspace:ro           # repo root → /workspace (read-only)
+          - .:/workspace:ro                              # repo root → /workspace (read-only)
+          - ./.rag:/workspace/.rag                       # manifest + scratch files (read-write)
+          - ./docs/rag:/workspace/docs/rag               # stats md written here (read-write)
+          - ./tools/rag-dotnet/config.yaml:/config.yaml:ro  # project-specific config
         profiles:
           - rag-dotnet
+
+    # ── SSE variants ──────────────────────────────────────────────────────────
+    # Persistent HTTP servers — start once, VS Code connects via mcp.json type:sse.
+    # Both services reuse the same images built by their stdio counterparts.
+    #
+    # Start:  docker compose --profile rag-python-sse up -d rag-python-sse
+    #         docker compose --profile rag-dotnet-sse up -d rag-dotnet-sse
+    # Stop:   docker compose --profile rag-python-sse down
+    #
+    # Note: these services ONLY run the MCP server (SSE mode).
+    # Run ingest separately first using the non-SSE services.
+
+    # Python SSE — port 3002
+    rag-python-sse:
+        image: rag-tools
+        depends_on:
+          - qdrant
+        environment:
+          - MCP_TRANSPORT=sse
+          - MCP_PORT=3002
+          - RAG_WORKSPACE=/workspace
+          - VECTOR_MODE=docker
+          - QDRANT_URL=http://qdrant:6333
+          - PYTHONUNBUFFERED=1
+        ports:
+          - "3002:3002"
+        volumes:
+          - .:/workspace:ro
+          - ./tools/rag/metadata-rules.yaml:/app/metadata-rules.yaml:ro
+          - ./tools/rag/queries.yaml:/app/queries.yaml:ro
+        command: ["python", "mcp_server.py"]
+        profiles:
+          - rag-python-sse
+
+    # .NET SSE — port 3001
+    rag-dotnet-sse:
+        image: rag-dotnet
+        depends_on:
+          - qdrant
+        environment:
+          - MCP_TRANSPORT=sse
+          - MCP_PORT=3001
+          - RAG_WORKSPACE=/workspace
+          - QDRANT_URL=http://qdrant:6333
+          - RAG_COLLECTION=ecommerceapp_docs_dotnet
+          - RAG_CONFIG=/config.yaml
+          - DOTNET_CLI_TELEMETRY_OPTOUT=1
+        ports:
+          - "3001:3001"
+        volumes:
+          - .:/workspace:ro
+          - ./tools/rag-dotnet/config.yaml:/config.yaml:ro
+        profiles:
+          - rag-dotnet-sse
 
 volumes:
     qdrant_data:

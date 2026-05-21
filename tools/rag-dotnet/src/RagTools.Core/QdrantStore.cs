@@ -107,7 +107,7 @@ public sealed class QdrantStore : IDisposable
                             Field = new FieldCondition
                             {
                                 Key = "rel_path",
-                                Match = new Match { Text = relPath },
+                                Match = new Match { Keyword = relPath },
                             }
                         }
                     }
@@ -166,7 +166,7 @@ public sealed class QdrantStore : IDisposable
             Field = new FieldCondition
             {
                 Key = key,
-                Match = new Match { Text = value },
+                Match = new Match { Keyword = value },
             }
         };
 
