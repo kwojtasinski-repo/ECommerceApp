@@ -17,7 +17,13 @@ public sealed record SearchOptions(
     int TopK,
     float ScoreThreshold,
     string? DocKindFilter = null,
-    string? AdrIdFilter = null);
+    string? AdrIdFilter = null,
+    /// <summary>
+    /// Generic history filter: (fieldName, value).  When set, only chunks whose Qdrant
+    /// payload has <c>fieldName == value</c> are returned.  Used by GetHistory to filter
+    /// by the collection-configured history field (default "adr_id").
+    /// </summary>
+    (string Field, string Value)? HistoryFieldFilter = null);
 
 /// <summary>
 /// A single search result returned by IDocumentStore.SearchAsync.

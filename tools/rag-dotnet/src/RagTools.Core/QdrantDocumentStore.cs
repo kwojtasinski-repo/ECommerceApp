@@ -154,6 +154,7 @@ public sealed class QdrantDocumentStore : IDocumentStore
             opts.ScoreThreshold,
             docKindFilter: opts.DocKindFilter,
             adrIdFilter: opts.AdrIdFilter,
+            historyFieldFilter: opts.HistoryFieldFilter,
             cancellationToken: ct);
 
         return hits.Select(h => new DocumentSearchResult(

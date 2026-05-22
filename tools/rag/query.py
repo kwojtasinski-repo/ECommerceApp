@@ -140,12 +140,17 @@ class QueryEngine:
         top_k: int | None = None,
         fetch_k: int | None = None,
         bc_filter: str | None = None,
+        field_filter: tuple[str, str] | None = None,
         collection: str | None = None,
     ) -> list[QueryHit]:
         """Search the Qdrant index.
 
         *collection* overrides cfg.collection — used by the SSE multi-tenant path
         where ?project= sets a per-session collection name via ContextVar.
+
+        *field_filter* is an optional (field_name, value) pair applied as a Qdrant
+        MUST exact-match filter.  Used by get_history to filter by adr_id (or any
+        collection-configured history field) without a score threshold.
         """
         self._ensure()
         defaults = self.cfg.query_defaults
@@ -156,6 +161,9 @@ class QueryEngine:
 
         qvec = self._model.encode([_expand_query(query, self._glossary)], normalize_embeddings=True)[0].tolist()
         qfilter = None
+        if field_filter:
+            field_name, field_value = field_filter
+            qfilter = Filter(must=[FieldCondition(key=field_name, match=MatchValue(value=field_value))])
         if bc_filter:
             # bc_filter is matched against breadcrumb / heading_path as a substring (case-insensitive).
             # Qdrant has no native ICONTAINS on arrays, so we post-filter after the search.

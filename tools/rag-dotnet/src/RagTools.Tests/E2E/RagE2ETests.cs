@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Text.Json;
 using Xunit;
 
@@ -149,6 +150,68 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
 
         // Should not throw; result is either empty or an explanatory message
         Assert.NotNull(result);
+    }
+
+    // ── get_history ───────────────────────────────────────────────────────
+
+    [SkippableFact]
+    public async Task GetHistory_KnownId_ReturnsChunks()
+    {
+        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
+
+        // ADR-0001 is indexed with adr_id="0001" — get_history should find it using
+        // the default history_field ("adr_id") since the __config__ point has no HistoryField set.
+        var result = await _fx.Tools!.GetHistory("0001", CancellationToken.None);
+
+        var doc = JsonDocument.Parse(result);
+        var root = doc.RootElement;
+        Assert.Equal("0001", root.GetProperty("id").GetString());
+        Assert.Equal("adr_id", root.GetProperty("history_field").GetString());
+        Assert.True(root.GetProperty("chunk_count").GetInt32() > 0, "Expected at least one chunk for ADR 0001");
+    }
+
+    [SkippableFact]
+    public async Task GetHistory_IncludesAmendmentChunks()
+    {
+        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
+
+        // ADR-0001 has an amendment — all chunks (main + amendment) should be returned.
+        var result = await _fx.Tools!.GetHistory("0001", CancellationToken.None);
+
+        var doc = JsonDocument.Parse(result);
+        var count = doc.RootElement.GetProperty("chunk_count").GetInt32();
+        Assert.True(count > 1, $"Expected main + amendment chunks, got {count}");
+    }
+
+    [SkippableFact]
+    public async Task GetHistory_UnknownId_ReturnsEmptyChunks()
+    {
+        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
+
+        var result = await _fx.Tools!.GetHistory("9999", CancellationToken.None);
+
+        var doc = JsonDocument.Parse(result);
+        var root = doc.RootElement;
+        Assert.Equal("9999", root.GetProperty("id").GetString());
+        // Either chunk_count == 0 (success branch) or chunks array is empty (error branch).
+        if (root.TryGetProperty("chunk_count", out var cc))
+            Assert.Equal(0, cc.GetInt32());
+        else
+            Assert.Equal(0, root.GetProperty("chunks").GetArrayLength());
+    }
+
+    [SkippableFact]
+    public async Task GetHistory_ChunksOrderedByStartLine()
+    {
+        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
+
+        var result = await _fx.Tools!.GetHistory("0001", CancellationToken.None);
+
+        var doc = JsonDocument.Parse(result);
+        var chunks = doc.RootElement.GetProperty("chunks").EnumerateArray().ToList();
+        var lines = chunks.Select(c => c.GetProperty("start_line").GetInt32()).ToList();
+        var sorted = lines.OrderBy(x => x).ToList();
+        Assert.Equal(sorted, lines);
     }
 
     // ── list_adrs ─────────────────────────────────────────────────────────

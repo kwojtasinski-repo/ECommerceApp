@@ -27,6 +27,13 @@ public sealed class RagConfigPayload
     // Schema version for future migrations
     public int SchemaVersion { get; set; } = 1;
 
+    /// <summary>
+    /// Qdrant payload field used to group document chunks by history ID.
+    /// Defaults to "adr_id". Set to "rfc_id", "decision_id", etc. for other projects.
+    /// Read by GetHistory to build a collection-agnostic history filter.
+    /// </summary>
+    public string HistoryField { get; set; } = "adr_id";
+
     /// <summary>Create a <see cref="RagConfigPayload"/> from a loaded <see cref="RagConfig"/>.</summary>
     public static RagConfigPayload From(RagConfig cfg, IEnumerable<string>? glossaryTerms = null) =>
         new()

@@ -1,17 +1,19 @@
-"""MCP server exposing 4 tools backed by the RAG index.
+"""MCP server exposing 5 tools backed by the RAG index.
 
 Tools:
 - query_docs(question, bc=None, top_k=5)  -> ranked chunks: rel_path + breadcrumb + score + text snippet
 - read_docs(question, bc=None, top_files=3) -> relevant chunks grouped by file (default) OR full file content
                                               when query signals full-content intent ("show me all details", etc.)
-- get_adr_history(adr_id)                 -> main ADR + amendments in chronological order
+- get_adr_history(adr_id)                 -> main ADR + amendments in chronological order (disk-based)
+- get_history(id)                         -> all indexed chunks for a history group, sorted by start_line
+                                            (Qdrant-based; uses collection-configured history field, default adr_id)
 - list_adrs()                             -> table of all ADRs (id, title, kind counts)
 
 Typical agent flow:
   1. list_adrs()           — orientation: what exists?
   2. query_docs(question)  — discovery: which files are relevant?
   3. read_docs(question)   — depth: best chunks per file (or full file when "show me all details about...")
-  4. get_adr_history(id)   — evolution: how did a specific ADR change over time?
+  4. get_history(id)       — evolution: how did a specific document group change over time?
 
 Run (VS Code Copilot starts this automatically via .vscode/mcp.json):
     python tools/rag/mcp_server.py [--config /path/to/config.yaml]
@@ -130,6 +132,23 @@ async def list_tools() -> list[Tool]:
             },
         ),
         Tool(
+            name="get_history",
+            description=(
+                "Return all indexed chunks for a document group identified by a history ID "
+                "(e.g. ADR number, RFC number). Chunks are returned in chronological order "
+                "(sorted by start_line). The grouping field is collection-defined "
+                "(defaults to 'adr_id'). Use this instead of get_adr_history when the "
+                "collection may use a different history key."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "id": {"type": "string", "description": "History ID (e.g. '0016', 'RFC-003')"},
+                },
+                "required": ["id"],
+            },
+        ),
+        Tool(
             name="list_adrs",
             description=(
                 "List all ADRs in the repository with id, title, and presence of amendments / "
@@ -148,6 +167,8 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         return await _tool_read_docs(arguments)
     if name == "get_adr_history":
         return await _tool_get_adr_history(arguments)
+    if name == "get_history":
+        return await _tool_get_history(arguments)
     if name == "list_adrs":
         return await _tool_list_adrs(arguments)
     return [TextContent(type="text", text=f"Unknown tool: {name}")]
@@ -315,6 +336,83 @@ async def _tool_get_adr_history(args: dict) -> list[TextContent]:
         },
         "amendments": amendments,
         "amendment_count": len(amendments),
+    }
+    return [TextContent(type="text", text=json.dumps(result, indent=2))]
+
+
+# ---------------------------- tool: get_history ----------------------------
+
+_HISTORY_FIELD_DEFAULT = "adr_id"
+
+
+async def _tool_get_history(args: dict) -> list[TextContent]:
+    """Qdrant-based history lookup — collection-agnostic.
+
+    Uses a field_filter on the collection's configured history field (defaults to
+    'adr_id' for backward compatibility with existing indexed collections).
+    Unlike get_adr_history this works in hosted/remote mode (no disk access).
+    """
+    history_id = str(args["id"])
+    collection = _session_collection.get(None)
+
+    # Read history_field from the collection config point if available.
+    # Falls back to 'adr_id' for collections ingested before P2-3.
+    history_field = _HISTORY_FIELD_DEFAULT
+    try:
+        if ENGINE is not None:
+            ENGINE._ensure()
+            cfg_col = collection or ENGINE.cfg.collection
+            pts = ENGINE._client.retrieve(
+                collection_name=cfg_col,
+                ids=[0],  # __config__ point uses id=0 by convention
+                with_payload=True,
+            )
+            if pts and pts[0].payload:
+                history_field = pts[0].payload.get("history_field", _HISTORY_FIELD_DEFAULT)
+    except Exception:
+        pass  # config point not present — use default
+
+    try:
+        hits = await asyncio.wait_for(
+            asyncio.to_thread(
+                lambda: ENGINE.search(
+                    f"history {history_id}",
+                    top_k=50,
+                    fetch_k=200,
+                    field_filter=(history_field, history_id),
+                    collection=collection,
+                )
+            ),
+            timeout=_TOOL_TIMEOUT,
+        )
+    except asyncio.TimeoutError:
+        return [TextContent(type="text", text=json.dumps({
+            "error": f"get_history timed out after {_TOOL_TIMEOUT:.0f}s"
+        }))]
+
+    if not hits:
+        return [TextContent(type="text", text=json.dumps({
+            "id": history_id,
+            "history_field": history_field,
+            "chunks": [],
+            "message": f"No chunks found for {history_field}={history_id!r}. Ensure the document is indexed.",
+        }))]
+
+    ordered = sorted(hits, key=lambda h: h.start_line)
+    result = {
+        "id": history_id,
+        "history_field": history_field,
+        "chunk_count": len(ordered),
+        "chunks": [
+            {
+                "rel_path": h.rel_path,
+                "breadcrumb": h.breadcrumb,
+                "doc_kind": h.doc_kind,
+                "start_line": h.start_line,
+                "text": h.text,
+            }
+            for h in ordered
+        ],
     }
     return [TextContent(type="text", text=json.dumps(result, indent=2))]
 

@@ -223,6 +223,69 @@ public sealed class RagTools(
     }
 
     [McpServerTool, Description(
+        "Return all indexed chunks for a document group identified by a history ID " +
+        "(e.g. ADR number, RFC number). Chunks are returned in chronological order " +
+        "(sorted by start_line). The grouping field is collection-defined (defaults to " +
+        "'adr_id'). Use this instead of GetAdrHistory when the collection may use a " +
+        "different history key, or in hosted/remote mode where disk access is unavailable.")]
+    public async Task<string> GetHistory(
+        [Description("History ID (e.g. '0016', 'RFC-003'). Matched against the collection's configured history field.")] string id,
+        CancellationToken cancellationToken = default)
+    {
+        var collection = session.Collection;
+        logger.LogDebug("GetHistory: collection={Collection} id={Id}", collection, id);
+
+        // Read history_field from the collection __config__ point (id=0).
+        // Falls back to "adr_id" for collections ingested before P2-3.
+        var historyField = "adr_id";
+        try
+        {
+            var configPayload = await store.FetchConfigAsync(collection, cancellationToken);
+            if (!string.IsNullOrEmpty(configPayload?.HistoryField))
+                historyField = configPayload.HistoryField;
+        }
+        catch
+        {
+            // config point absent — use default
+        }
+
+        var queryVec = embedder.Embed($"history {id}");
+        var opts = new SearchOptions(TopK: 50, ScoreThreshold: 0,
+            HistoryFieldFilter: (historyField, id));
+        var hits = await store.SearchAsync(collection, queryVec, opts, cancellationToken);
+
+        if (hits.Count == 0)
+        {
+            logger.LogWarning("GetHistory: no chunks for {Field}={Id} in {Collection}", historyField, id, collection);
+            return JsonSerializer.Serialize(new
+            {
+                id,
+                history_field = historyField,
+                chunks = Array.Empty<object>(),
+                message = $"No chunks found for {historyField}={id}. Ensure the document is indexed.",
+            });
+        }
+
+        var ordered = hits.OrderBy(h => h.StartLine).ToList();
+        logger.LogInformation("GetHistory: {Field}={Id} returned {Count} chunks", historyField, id, ordered.Count);
+        var result = new
+        {
+            id,
+            history_field = historyField,
+            chunk_count = ordered.Count,
+            chunks = ordered.Select(h => new
+            {
+                rel_path = h.RelPath,
+                breadcrumb = h.Breadcrumb,
+                doc_kind = h.DocKind,
+                start_line = h.StartLine,
+                text = h.Text,
+            }).ToArray(),
+        };
+        return JsonSerializer.Serialize(result);
+    }
+
+    [McpServerTool, Description(
         "List all ADRs in the repository with id, title, and amendment count. " +
         "Reads the docs/adr/ folder from disk â€” always accurate, not limited by index coverage. " +
         "Use for orientation queries like 'what ADRs exist?' before calling GetAdrHistory.")]

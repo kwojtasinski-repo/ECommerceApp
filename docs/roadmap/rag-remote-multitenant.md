@@ -460,7 +460,7 @@ When `--remote` is provided:
 
 ## Phase 2 — Design corrections and new tools
 
-> Status: � In Progress (P2-1 ✅ done `a91b2b71`, P2-2 ✅ done — P2-3/P2-4/P2-5 pending)  
+> Status: 🔄 In Progress (P2-1 ✅ done `a91b2b71`, P2-2 ✅ done, P2-3 ✅ done — P2-4/P2-5 pending)
 > Scope: Both servers (`tools/rag-dotnet/`, `tools/rag/`)  
 > Follow TDD: write failing pipeline-test checks first, then implement.
 
@@ -642,9 +642,15 @@ pipeline test. Remove in a follow-up step (P2-5) once both servers pass phase 8.
 
 ---
 
-### Step P2-3 — `get_history(id)` tool — collection-defined history field
+### Step P2-3 — `get_history(id)` tool — collection-defined history field ✅ Done
 
-**TDD first — add failing checks to `test_full_pipeline.py`:**
+**Delivered (additive approach):** `get_history(id)` added alongside `get_adr_history` (not removed yet — P2-5).
+
+- **Python** (`tools/rag/`): `field_filter` param in `QueryEngine.search()`; `get_history` MCP tool in `mcp_server.py`; reads `history_field` from `__config__` point, defaults to `"adr_id"`.
+- **.NET** (`tools/rag-dotnet/`): `HistoryFieldFilter` in `SearchOptions`; `HistoryField` in `RagConfigPayload`; `historyFieldFilter` param in `QdrantStore.SearchAsync()`; `GetHistory` MCP tool in `RagTools.cs`.
+- **Tests**: 4 E2E tests in `RagE2ETests.cs` (217/217 green); 4 pipeline phase 9 checks in `test_full_pipeline.py`.
+
+**Original TDD spec (kept for reference):**
 
 ```python
 # 1. Ingest a synthetic doc with a custom history key in the body

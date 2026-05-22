@@ -135,6 +135,7 @@ public sealed class QdrantStore : IDisposable
         float scoreThreshold,
         string? docKindFilter = null,
         string? adrIdFilter = null,
+        (string Field, string Value)? historyFieldFilter = null,
         CancellationToken cancellationToken = default)
     {
         Filter? filter = null;
@@ -144,6 +145,8 @@ public sealed class QdrantStore : IDisposable
             conditions.Add(FieldCondition("doc_kind", docKindFilter));
         if (adrIdFilter is not null)
             conditions.Add(FieldCondition("adr_id", adrIdFilter));
+        if (historyFieldFilter is not null)
+            conditions.Add(FieldCondition(historyFieldFilter.Value.Field, historyFieldFilter.Value.Value));
 
         if (conditions.Count > 0)
         {

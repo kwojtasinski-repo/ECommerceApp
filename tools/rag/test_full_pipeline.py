@@ -1151,6 +1151,84 @@ def phase_7_hosted_ingest() -> PhaseResult:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# PHASE 9: get_history tool — retrieve chunks by history field
+# ══════════════════════════════════════════════════════════════════════════════
+
+def phase_9_get_history() -> PhaseResult:
+    p = PhaseResult("get_history tool — retrieve indexed chunks by history field")
+    print(f"\n{BANNER}\n  PHASE 9 — get_history tool (Python SSE + .NET SSE)\n{BANNER}")
+    print("  SSE servers must be running from phase 5.\n")
+
+    py_base = f"http://localhost:{PYTHON_SSE_PORT}"
+    dn_base = f"http://localhost:{DOTNET_SSE_PORT}"
+
+    # ── Python SSE ────────────────────────────────────────────────────────────
+    print("  [9a] Python SSE — get_history(id='0016') …")
+    try:
+        raw = asyncio.run(_run_sse_tool(py_base, "get_history", {"id": "0016"}))
+        result = json.loads(raw)
+        chunk_count = result.get("chunk_count", len(result.get("chunks", [])))
+        p.record("Python SSE: get_history('0016') → chunk_count > 0",
+                 chunk_count > 0,
+                 f"chunk_count={chunk_count}")
+        chunks_sorted = result.get("chunks", [])
+        lines = [c.get("start_line", 0) for c in chunks_sorted]
+        p.record("Python SSE: get_history('0016') chunks ordered by start_line",
+                 lines == sorted(lines),
+                 f"start_lines={lines[:6]}")
+    except Exception as exc:
+        p.record("Python SSE: get_history", False, str(exc))
+
+    print("  [9b] Python SSE — get_history(id='__nonexistent__') → empty …")
+    try:
+        raw = asyncio.run(_run_sse_tool(py_base, "get_history", {"id": "__nonexistent_9b__"}))
+        result = json.loads(raw)
+        chunk_count = result.get("chunk_count", len(result.get("chunks", [])))
+        p.record("Python SSE: get_history('__nonexistent_9b__') → 0 chunks",
+                 chunk_count == 0,
+                 f"chunk_count={chunk_count}")
+    except Exception as exc:
+        p.record("Python SSE: get_history (unknown id)", False, str(exc))
+
+    # ── .NET SSE ──────────────────────────────────────────────────────────────
+    print(f"\n  [9c] .NET SSE — get_history(id='0016') (port {DOTNET_SSE_PORT}) …")
+    try:
+        with httpx.Client(base_url=dn_base, timeout=60) as client:
+            session_id = _dotnet_initialize(client)
+            p.record(".NET SSE: get_history — MCP initialize", bool(session_id),
+                     f"session={session_id[:8]}…" if session_id else "no session")
+
+            def _call_raw(tool: str, args: dict) -> str:
+                r = _dotnet_post(client, {
+                    "jsonrpc": "2.0", "id": 20, "method": "tools/call",
+                    "params": {"name": tool, "arguments": args},
+                }, session_id=session_id)
+                return r.get("result", {}).get("content", [{}])[0].get("text", "")
+
+            text = _call_raw("get_history", {"id": "0016"})
+            result_dn = json.loads(text) if text else {}
+            chunk_count_dn = result_dn.get("chunk_count", len(result_dn.get("chunks", [])))
+            p.record(".NET SSE: get_history('0016') → chunk_count > 0",
+                     chunk_count_dn > 0,
+                     f"chunk_count={chunk_count_dn}")
+
+            print("  [9d] .NET SSE — get_history(id='__nonexistent__') → empty …")
+            text_none = _call_raw("get_history", {"id": "__nonexistent_9d__"})
+            result_none = json.loads(text_none) if text_none else {}
+            chunk_count_none = result_none.get("chunk_count",
+                                               len(result_none.get("chunks", [])))
+            p.record(".NET SSE: get_history('__nonexistent_9d__') → 0 chunks",
+                     chunk_count_none == 0,
+                     f"chunk_count={chunk_count_none}")
+
+    except Exception as exc:
+        p.record(".NET SSE: get_history", False, str(exc))
+
+    p.finish()
+    return p
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # Main
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -1159,7 +1237,7 @@ def main() -> int:
         description="Full E2E pipeline test for Python and .NET RAG MCP servers"
     )
     parser.add_argument("--phase", type=int, metavar="N",
-                        help="Run only phase N (0–8)")
+                        help="Run only phase N (0–9)")
     parser.add_argument("--skip-build", action="store_true",
                         help="Skip phase 2 (Docker build)")
     parser.add_argument("--dry-run", action="store_true",
@@ -1180,6 +1258,7 @@ def main() -> int:
         (5, phase_5_sse),
         (6, phase_6_flow_queries),
         (7, phase_7_hosted_ingest),
+        (9, phase_9_get_history),
         (8, lambda: phase_8_report(ALL_RESULTS)),
     ]
 
@@ -1188,7 +1267,7 @@ def main() -> int:
     elif args.phase is not None:
         phases = [(n, fn) for n, fn in phases if n == args.phase]
         if not phases:
-            print(f"Unknown phase {args.phase}. Must be 0–8.")
+            print(f"Unknown phase {args.phase}. Must be 0–9.")
             return 2
 
     for _, fn in phases:
