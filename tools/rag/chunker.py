@@ -249,8 +249,30 @@ def _merge_small_chunks(chunks: list[Chunk], min_tokens: int, max_tokens: int) -
                     result.append(buf)
                 buf = chunk
 
-    # Emit the final buffer if it has enough content.
+    # Final buffer: if it is too small, merge it BACKWARD into the last emitted chunk
+    # (trailing-section fix — prevents the very last H4/section from being silently dropped).
     if buf.token_count >= min_tokens:
+        result.append(buf)
+    elif result:
+        last = result[-1]
+        combined_text = last.text + "\n\n" + buf.text
+        combined_tokens = count_tokens(combined_text)
+        if combined_tokens <= max_tokens:
+            combined_embed = f"{last.breadcrumb}\n\n{combined_text}" if last.breadcrumb else combined_text
+            result[-1] = Chunk(
+                text=combined_text,
+                embed_text=combined_embed,
+                breadcrumb=last.breadcrumb,
+                heading_path=last.heading_path,
+                start_line=last.start_line,
+                end_line=buf.end_line,
+                token_count=combined_tokens,
+            )
+        else:
+            # Merged would overflow — emit as-is even though it is small.
+            result.append(buf)
+    else:
+        # Only chunk in the document — emit regardless of size.
         result.append(buf)
 
     return result

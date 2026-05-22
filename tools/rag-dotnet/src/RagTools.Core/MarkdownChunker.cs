@@ -102,9 +102,26 @@ public sealed class MarkdownChunker
             }
         }
 
-        // Emit the final buffer if it has enough content.
+        // Final buffer: if too small, merge it BACKWARD into the last emitted chunk
+        // (trailing-section fix — prevents the very last small H4/section from being dropped).
         if (buf.TokenCount >= _minTokens)
+        {
             result.Add(buf);
+        }
+        else if (result.Count > 0)
+        {
+            var last = result[^1];
+            var combinedText = last.Text + "\n\n" + buf.Text;
+            var combinedTokens = _tokenCounter.Count(combinedText);
+            if (combinedTokens <= _maxTokens)
+                result[^1] = last with { Text = combinedText, TokenCount = combinedTokens };
+            else
+                result.Add(buf); // overflow — emit as-is rather than silently drop
+        }
+        else
+        {
+            result.Add(buf); // only chunk in document — emit regardless of size
+        }
 
         return result;
     }

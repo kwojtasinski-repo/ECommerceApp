@@ -143,14 +143,16 @@ class TestMergeSmall:
         # Large chunk emitted; small should merge into nothing before it (it follows a large chunk)
         assert any("Large" in c.breadcrumb for c in result)
 
-    def test_overflow_prevents_merge(self) -> None:
-        """When merging would exceed max_tokens the small chunk is not merged."""
+    def test_overflow_emits_trailing_chunk(self) -> None:
+        """When backward-merge of a trailing small chunk would exceed max_tokens, the small
+        chunk is emitted as-is rather than dropped — content is never silently lost."""
         big = _make_chunk(tok=50, breadcrumb="Big")
         tiny = _make_chunk(tok=5, breadcrumb="Tiny")
         result = _merge_small_chunks([big, tiny], min_tokens=30, max_tokens=55)
-        # big is large enough to emit; tiny cannot merge (overflow) and is too small alone
-        assert len(result) == 1
+        # big is emitted (>= min); combined big+tiny ~57 tokens > max=55 → tiny emitted separately
+        assert len(result) == 2
         assert result[0].breadcrumb == "Big"
+        assert result[1].breadcrumb == "Tiny"
 
     def test_empty_input_returns_empty(self) -> None:
         assert _merge_small_chunks([], min_tokens=40, max_tokens=800) == []
@@ -161,11 +163,13 @@ class TestMergeSmall:
         assert len(result) == 1
         assert result[0].breadcrumb == "Only"
 
-    def test_single_small_chunk_dropped(self) -> None:
-        """A single tiny chunk with no neighbours to merge with is dropped."""
+    def test_single_small_chunk_emitted_when_only_chunk(self) -> None:
+        """A single tiny chunk with no neighbours is emitted rather than dropped;
+        discarding the only chunk in a document would be silent content loss."""
         tiny = _make_chunk(tok=3, breadcrumb="Tiny")
         result = _merge_small_chunks([tiny], min_tokens=20, max_tokens=800)
-        assert result == []
+        assert len(result) == 1
+        assert result[0].breadcrumb == "Tiny"
 
     def test_start_line_preserved_from_first_chunk(self) -> None:
         a = _make_chunk(tok=5, start=10, end=12)
