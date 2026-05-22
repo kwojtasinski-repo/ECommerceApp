@@ -36,9 +36,14 @@ public sealed class IngestController(
         if (string.IsNullOrWhiteSpace(request.Content))
             return BadRequest(new { error = "content is required" });
 
-        // Build a deterministic operation ID so re-uploads of the same file are idempotent.
+        // Build an operation ID that is safe to use in a URL path segment.
+        // relPath can contain '/' (e.g. "docs/concepts/ddd.md"); embedding the raw relPath
+        // in the URL caused .NET's Uri class to decode the percent-encoded %2F back to '/',
+        // adding extra path segments and making the GET /operations/{opId} route return 404.
+        // Replace '/' with '-' so the opId never contains a forward slash.
         var enqueuedAt = DateTimeOffset.UtcNow;
-        var opId = $"{collection}:{request.RelPath}:{enqueuedAt.Ticks}";
+        var safeRelPath = request.RelPath.Replace('/', '-');
+        var opId = $"{collection}:{safeRelPath}:{enqueuedAt.Ticks}";
 
         var job = new IngestJob
         {

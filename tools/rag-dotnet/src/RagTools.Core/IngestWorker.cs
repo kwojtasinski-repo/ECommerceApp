@@ -22,10 +22,12 @@ public sealed class IngestWorker(
     OnnxEmbedder embedder,
     RagConfig cfg,
     OperationStore operations,
-    ILogger<IngestWorker> logger) : BackgroundService
+    ILogger<IngestWorker> logger,
+    ITokenCounter? tokenCounter = null) : BackgroundService
 {
-    private readonly MarkdownChunker _chunker = new(cfg.Chunker, SentencePieceTokenCounter.FromModelDir(
-        Path.Combine(AppContext.BaseDirectory, "model")));
+    private readonly MarkdownChunker _chunker = new(cfg.Chunker,
+        tokenCounter ?? SentencePieceTokenCounter.FromModelDir(
+            Path.Combine(AppContext.BaseDirectory, "model")));
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {

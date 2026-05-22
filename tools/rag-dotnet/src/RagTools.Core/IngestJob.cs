@@ -1,5 +1,7 @@
 namespace RagTools.Core;
 
+using System.Text.Json.Serialization;
+
 /// <summary>
 /// Represents a single document to be ingested into a RAG collection.
 /// Created by the ingest controller and queued into <see cref="IngestChannel"/>.
@@ -33,7 +35,10 @@ public sealed class IngestJob
 
 /// <summary>
 /// Possible states of an ingest operation tracked by <see cref="OperationStore"/>.
+/// Decorated with <see cref="JsonStringEnumConverter"/> so HTTP responses carry readable
+/// string values ("Completed") instead of integers — matching the client-side assertions.
 /// </summary>
+[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum IngestStatus
 {
     Queued,

@@ -39,10 +39,9 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>
 
     // ── POST /ingest/{collection} — happy path ────────────────────────────────
 
-    [SkippableFact]
+    [Fact]
     public async Task Upload_Returns202_WithOperationIdAndLocationHeader()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         var payload = JsonSerializer.Serialize(new
         {
@@ -66,10 +65,9 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>
         Assert.Contains($"/ingest/{_fx.Collection}/operations/", urlEl.GetString());
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task Upload_Returns400_WhenRelPathMissing()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         var payload = JsonSerializer.Serialize(new { relPath = "", content = "# Test" });
 
@@ -80,10 +78,9 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task Upload_Returns400_WhenContentMissing()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         var payload = JsonSerializer.Serialize(new { relPath = "docs/test.md", content = "" });
 
@@ -96,10 +93,9 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>
 
     // ── Full upload→index→verify pipeline ────────────────────────────────────
 
-    [SkippableFact]
+    [Fact]
     public async Task Upload_FullPipeline_ContentIsIndexedInQdrant()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         const string relPath = "docs/concepts/hexagonal.md";
         const string content = """
@@ -122,10 +118,9 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>
         Assert.Equal(relPath, doc.RelPath);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task Upload_FullPipeline_ChunkCountIsPositive()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         const string relPath = "docs/concepts/cqrs.md";
         const string content = """
@@ -146,10 +141,9 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>
 
     // ── GET /ingest/{collection}/operations/{opId} ────────────────────────────
 
-    [SkippableFact]
+    [Fact]
     public async Task PollStatus_TransitionsFromQueued_ToCompleted()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         var payload = JsonSerializer.Serialize(new
         {
@@ -197,10 +191,9 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>
         Assert.Equal("Completed", finalStatus);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task PollStatus_Returns404_ForUnknownOperationId()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         using var resp = await _fx.Client!.GetAsync(
             $"/ingest/{_fx.Collection}/operations/does-not-exist");
@@ -208,10 +201,9 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>
         Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task PollStatus_Returns404_ForWrongCollection()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         // Upload a document to the fixture's collection.
         var payload = JsonSerializer.Serialize(new
@@ -235,10 +227,9 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>
 
     // ── GET /ingest/{collection}/operations (list) ────────────────────────────
 
-    [SkippableFact]
+    [Fact]
     public async Task ListOperations_ReturnsUploadedOperations()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         // Upload two documents.
         await _fx.UploadAndWaitAsync(_fx.Collection!, "docs/list/a.md", "# Doc A\n\nContent A.");
@@ -258,10 +249,9 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>
 
     // ── GET /admin/stats ──────────────────────────────────────────────────────
 
-    [SkippableFact]
+    [Fact]
     public async Task AdminStats_Returns200_WithQueueDepthAndRetention()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         using var resp = await _fx.Client!.GetAsync("/admin/stats");
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
@@ -275,10 +265,9 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>
 
     // ── Re-upload idempotency ─────────────────────────────────────────────────
 
-    [SkippableFact]
+    [Fact]
     public async Task ReUpload_ReplacesContent_WithUpdatedVersion()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         const string relPath = "docs/concepts/retry.md";
         const string v1 = "# Retry\n\nExponential back-off avoids thundering herd.";

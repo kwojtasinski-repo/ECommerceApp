@@ -28,10 +28,9 @@ public sealed class IngestE2ETests : IClassFixture<IngestE2EFixture>
 
     // ── Ingest worker end-to-end ──────────────────────────────────────────
 
-    [SkippableFact]
+    [Fact]
     public async Task IngestWorker_ProcessesJob_CompletesSuccessfully()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         const string content = """
             # Distributed Caching Pattern
@@ -47,10 +46,9 @@ public sealed class IngestE2ETests : IClassFixture<IngestE2EFixture>
         Assert.True(result.ChunkCount > 0, "Expected at least one chunk");
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task IngestWorker_StoresContentPoint_InQdrant()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         const string relPath = "docs/concepts/event-sourcing.md";
         const string content = """
@@ -71,10 +69,9 @@ public sealed class IngestE2ETests : IClassFixture<IngestE2EFixture>
         Assert.Equal(relPath, doc.RelPath);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task OperationStore_TransitionsFromQueued_ToCompleted()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         const string relPath = "docs/concepts/solid.md";
         const string content = """
@@ -115,10 +112,9 @@ public sealed class IngestE2ETests : IClassFixture<IngestE2EFixture>
 
     // ── CachedDocumentStore ───────────────────────────────────────────────
 
-    [SkippableFact]
+    [Fact]
     public async Task CachedDocumentStore_ReturnsCachedContent_OnSecondFetch()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         const string relPath = "docs/concepts/ddd.md";
         const string content = """
@@ -146,10 +142,9 @@ public sealed class IngestE2ETests : IClassFixture<IngestE2EFixture>
 
     // ── RagSession multi-collection routing ──────────────────────────────
 
-    [SkippableFact]
+    [Fact]
     public async Task RagSession_RoutesQuery_ToCorrectCollection()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         // The fixture uses a single collection. We test that RagSession correctly
         // resolves the collection and tools query the right one.
@@ -167,10 +162,9 @@ public sealed class IngestE2ETests : IClassFixture<IngestE2EFixture>
 
     // ── read_docs Qdrant content fallback ────────────────────────────────
 
-    [SkippableFact]
+    [Fact]
     public async Task ReadDocs_ReturnsQdrantContent_WhenContentPointExists()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         const string relPath = "docs/concepts/hexagonal-arch.md";
         const string content = """
@@ -202,10 +196,9 @@ public sealed class IngestE2ETests : IClassFixture<IngestE2EFixture>
 
     // ── Idempotent re-ingest ──────────────────────────────────────────────
 
-    [SkippableFact]
+    [Fact]
     public async Task IngestWorker_ReIngest_ReplacesOldChunks()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         const string relPath = "docs/concepts/retry.md";
         const string v1 = """

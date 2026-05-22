@@ -106,6 +106,7 @@ if (transport == "sse")
         .Services
         .AddSingleton(cfg)
         .AddSingleton(_ => OnnxEmbedder.Load(modelDir))
+        .AddSingleton<ITokenCounter>(_ => SentencePieceTokenCounter.FromModelDir(modelDir))
         .AddSingleton<IDocumentStore>(_ =>
             new CachedDocumentStore(
                 new QdrantDocumentStore(qdrantUrl),
