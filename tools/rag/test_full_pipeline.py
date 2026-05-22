@@ -476,6 +476,12 @@ def phase_3_python_stdio() -> PhaseResult:
         p.record("read_docs returns files", has_files,
                  f"{len(r3.get('files', []))} files")
 
+        # get_history
+        r4 = _mcp_call(proc, "get_history", {"id": "0006"})
+        gh_count = r4.get("chunk_count", len(r4.get("chunks", [])))
+        p.record("get_history ADR-0006 returns chunks", gh_count > 0,
+                 f"chunk_count={gh_count}")
+
     except Exception as exc:
         p.record("MCP STDIO session", False, str(exc))
     finally:
@@ -583,6 +589,18 @@ def phase_4_dotnet_stdio() -> PhaseResult:
         p.record("list_adrs returns known ADRs", has_adrs,
                  f"{len(list_text)} chars")
 
+        # get_history
+        gh_text = _mcp_call_raw(proc, "get_history", {"id": "0006"}, timeout=60)
+        gh_ok = "chunk_count" in gh_text and "\"0\"" not in gh_text[:80]
+        try:
+            gh_json = json.loads(gh_text)
+            gh_count = gh_json.get("chunk_count", 0)
+            gh_ok = gh_count > 0
+        except Exception:
+            gh_ok = False
+        p.record(".NET get_history ADR-0006 returns chunks", gh_ok,
+                 f"{len(gh_text)} chars")
+
     except Exception as exc:
         p.record(".NET MCP STDIO session", False, str(exc))
     finally:
@@ -653,6 +671,16 @@ def phase_5_sse() -> PhaseResult:
             has_coupon = "coupon" in hist.get("main", {}).get("content", "").lower()
             p.record("Python SSE: get_adr_history ADR-0016 mentions 'coupon'", has_coupon)
 
+            raw3 = asyncio.run(_run_sse_tool(
+                f"http://localhost:{PYTHON_SSE_PORT}",
+                "get_history",
+                {"id": "0016"},
+            ))
+            gh = json.loads(raw3)
+            p.record("Python SSE: get_history('0016') → chunk_count > 0",
+                     gh.get("chunk_count", 0) > 0,
+                     f"chunk_count={gh.get('chunk_count', 0)}")
+
         except Exception as exc:
             p.record("Python SSE: MCP session", False, str(exc))
 
@@ -691,6 +719,15 @@ def phase_5_sse() -> PhaseResult:
                 has_coupon = "coupon" in hist_text.lower()
                 p.record(".NET SSE: get_adr_history ADR-0016 mentions 'coupon'", has_coupon,
                          f"{len(hist_text)} chars")
+
+                gh_text = _call_raw("get_history", {"id": "0016"})
+                try:
+                    gh_json = json.loads(gh_text)
+                    gh_count = gh_json.get("chunk_count", 0)
+                except Exception:
+                    gh_count = 0
+                p.record(".NET SSE: get_history('0016') → chunk_count > 0",
+                         gh_count > 0, f"chunk_count={gh_count}")
 
         except Exception as exc:
             p.record(".NET SSE: MCP session", False, str(exc))
