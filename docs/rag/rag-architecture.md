@@ -74,6 +74,7 @@ chunker:
   # Optional — all fields have defaults in common.py
   max_tokens: 800
   overlap_tokens: 80
+  # split_on_headings: "auto"   # default: H1–H6, merges small sections; or [1,2,3] for explicit
 
 vector_store:
   url: http://localhost:6333 # override in .copilot-rag.local.yaml for non-standard setups

@@ -25,7 +25,7 @@ Your docs (docs/, .github/context/)
       │
       ▼
    Qdrant  ←─── mcp_server.py ←─── VS Code Copilot Chat
-  (vector DB)   (3 MCP tools)       (query_docs / list_adrs / get_adr_history)
+  (vector DB)   (4 MCP tools)       (query_docs / read_docs / list_adrs / get_adr_history)
 ```
 
 **Qdrant** is a vector database — it stores the embeddings and searches them by
@@ -36,6 +36,7 @@ semantic similarity. It runs as a Docker container.
 | Tool | What it does |
 |------|-------------|
 | `query_docs(question)` | Semantic search — returns the most relevant doc chunks |
+| `read_docs(question)` | Full file content of the top-ranked matches (better for reasoning) |
 | `list_adrs()` | Lists all indexed ADRs with titles and amendment counts |
 | `get_adr_history(adr_id)` | Returns the full text of one ADR + all its amendments |
 
@@ -70,7 +71,7 @@ Two implementations exist — both expose the same MCP tools and use the same mo
 
 ## How chunking works
 
-Documents are split at heading boundaries (H1/H2/H3) with an 800-token max per chunk
+Documents are split at heading boundaries (H1–H6 in auto mode; configurable via `split_on_headings` in `config.yaml`) with an 800-token max per chunk
 and 80-token overlap between consecutive chunks. Each chunk's embed text is prefixed
 with its breadcrumb so similarity search captures section context:
 
