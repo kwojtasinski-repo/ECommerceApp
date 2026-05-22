@@ -81,6 +81,8 @@ services:
           - ./.rag:/workspace/.rag                       # manifest + scratch files (read-write)
           - ./docs/rag:/workspace/docs/rag               # stats md written here (read-write)
           - ./tools/rag-dotnet/config.yaml:/config.yaml:ro  # project-specific config
+          - ./tools/rag/metadata-rules.yaml:/metadata-rules.yaml:ro  # companion: adr_id patterns
+          - ./tools/rag/queries.yaml:/queries.yaml:ro                 # companion: named queries
         profiles:
           - rag-dotnet
 
@@ -135,6 +137,8 @@ services:
         volumes:
           - .:/workspace:ro
           - ./tools/rag-dotnet/config.yaml:/config.yaml:ro
+          - ./tools/rag/metadata-rules.yaml:/metadata-rules.yaml:ro  # companion: adr_id patterns
+          - ./tools/rag/queries.yaml:/queries.yaml:ro                 # companion: named queries
         profiles:
           - rag-dotnet-sse
 
