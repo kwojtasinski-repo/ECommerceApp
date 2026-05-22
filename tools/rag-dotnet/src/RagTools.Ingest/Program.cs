@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using RagTools.Core;
+using System.Net.Http.Json;
 
 // ── CLI entry point for incremental ingest ────────────────────────────────────
 //
@@ -19,6 +20,17 @@ using RagTools.Core;
 var forceFull = args.Contains("--force-full");
 var dryRun = args.Contains("--dry-run");
 var verbose = args.Contains("-v") || args.Contains("--verbose");
+
+// --remote <url>: push files to remote MCP server via HTTP instead of embedding locally.
+string? remoteUrl = null;
+for (var i = 0; i < args.Length - 1; i++)
+{
+    if (args[i] is "--remote")
+    {
+        remoteUrl = args[i + 1];
+        break;
+    }
+}
 
 // --verbosity <level> or -v shorthand
 var logLevel = LogLevel.Information;  // default: show progress messages
@@ -167,6 +179,56 @@ if (toProcess.Count == 0 && deleted.Count == 0)
 {
     log.LogInformation("nothing to do — index is up to date");
     return 0;
+}
+
+// ── Remote mode: POST files to MCP server instead of embedding locally ────────
+if (remoteUrl is not null)
+{
+    log.LogInformation("remote mode: uploading {Count} file(s) to {Url}", toProcess.Count, remoteUrl);
+    var apiKey = Environment.GetEnvironmentVariable("RAG_API_KEY");
+    using var http = new HttpClient();
+    http.BaseAddress = new Uri(remoteUrl.TrimEnd('/') + "/");
+    if (!string.IsNullOrEmpty(apiKey))
+        http.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
+
+    var collection = cfg.Collection;
+    var processed = 0;
+    var failed = 0;
+
+    foreach (var (fi, relPath, hash) in toProcess)
+    {
+        var content = await File.ReadAllTextAsync(fi.FullName);
+        var payload = new
+        {
+            rel_path = relPath,
+            content,
+            doc_kind = (string?)null,  // auto-detect on server
+        };
+
+        try
+        {
+            var response = await http.PostAsJsonAsync($"ingest/{Uri.EscapeDataString(collection)}", payload);
+            if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
+            {
+                log.LogWarning("Server queue full for {RelPath}, retrying in 2s ...", relPath);
+                await Task.Delay(2000);
+                response = await http.PostAsJsonAsync($"ingest/{Uri.EscapeDataString(collection)}", payload);
+            }
+            response.EnsureSuccessStatusCode();
+            manifest.Update(relPath, hash, 0);  // chunk count unknown in remote mode
+            processed++;
+            dbg.LogDebug("queued {RelPath}", relPath);
+        }
+        catch (Exception ex)
+        {
+            log.LogError(ex, "failed to upload {RelPath}", relPath);
+            failed++;
+        }
+    }
+
+    manifest.Save();
+    log.LogInformation("remote ingest: {Processed} queued, {Failed} failed", processed, failed);
+    return failed > 0 ? 1 : 0;
 }
 
 // ── Load embedder + Qdrant ────────────────────────────────────────────────────

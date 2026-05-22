@@ -1,8 +1,39 @@
 # Roadmap: Remote Multi-Tenant RAG Server (ADR-0028)
 
-> Status: 🔲 Planning — ADR-0028 Proposed  
+> Status: ✅ Phase 1 (.NET) Complete — All Steps 0–11 implemented  
 > Scope: `tools/rag-dotnet/` (.NET server first), `tools/rag/` (Python server second)  
 > ADR: [ADR-0028](../adr/0028/0028-remote-multitenant-rag-ingest.md)
+
+---
+
+## Implementation Status (Phase 1: .NET)
+
+| Step | Description | Status | Notes |
+|---|---|---|---|
+| 0 | `IDocumentStore`, `QdrantDocumentStore`, `ContentDocument`, `DocKind` | ✅ Done | Committed `3a71f970` |
+| 1 | `DeterministicId`, `RagPayload` + `ChunkIndex`/`ContentId` | ✅ Done | Committed `3a71f970` |
+| 2 | `StoreDocumentAsync` / `FetchContentAsync` (zero-vector content point) | ✅ Done | Committed `3a71f970` |
+| 3 | `RagConfigPayload`, `StoreConfigAsync`, `FetchConfigAsync` | ✅ Done | Committed `3a71f970` |
+| 4 | `QueryCache` + `CachedDocumentStore` decorator | ✅ Done | In-memory, bounded 512 entries |
+| 5 | `IngestJob`, `IngestChannel` (bounded `Channel<T>`) | ✅ Done | Capacity 1000, FIFO |
+| 6 | `IngestWorker` (BackgroundService) + `OperationStore` | ✅ Done | **In-memory** (not Qdrant-backed — see deviation note) |
+| 7 | `IngestController` (POST/GET /ingest/{collection}) | ✅ Done | 202 Accepted + Location header |
+| 8 | `ApiKeyMiddleware` (X-Api-Key, RAG_API_KEY) | ✅ Done | Guards /ingest/* and /admin/* |
+| 9 | `RagSession` + `RagSessionMiddleware` (?project= collection) | ✅ Done | Scoped DI in SSE mode |
+| 10 | `read_docs` uses `IDocumentStore.FetchContentAsync` → disk fallback | ✅ Done | Tools use `IDocumentStore` + `RagSession` |
+| 11 | CLI remote mode (`--remote <url>`) | ✅ Done | HTTP upload, manifest tracking |
+
+### Deviations from original design
+
+**Step 6 — OperationStore**: The roadmap specified Qdrant-backed `__ops__` collection.
+Implemented as in-memory `ConcurrentDictionary<string, IngestOperationResult>` with 1-hour TTL
+retention and access-time eviction. Rationale: simpler, no extra Qdrant overhead, sufficient
+for the polling use case. Operations do not survive server restart (acceptable — clients re-ingest
+on restart anyway). Documented in ADR-0028 amendment.
+
+**Step 5 — IngestJob**: Roadmap modeled `IngestJob` with `IReadOnlyList<(string RelPath, string Text)> Files`
+(multiple files per job). Implemented as single-file-per-job for simpler channel semantics and
+better per-file operation tracking. The HTTP API accepts one document per POST request.
 
 ---
 

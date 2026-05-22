@@ -2,6 +2,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ModelContextProtocol.Server;
 using RagTools.Core;
+using RagTools.Mcp.Controllers;
+using RagTools.Mcp.Middleware;
 
 // ── MCP server entry point ────────────────────────────────────────────────────
 //
@@ -100,14 +102,26 @@ if (transport == "sse")
     var webBuilder = WebApplication.CreateBuilder(args);
     webBuilder.Logging.SetMinimumLevel(logLevel);
     webBuilder.Services
+        .AddControllers()
+        .Services
         .AddSingleton(cfg)
         .AddSingleton(_ => OnnxEmbedder.Load(modelDir))
-        .AddSingleton(_ => QdrantStore.Connect(qdrantUrl, cfg.Collection))
+        .AddSingleton<IDocumentStore>(_ =>
+            new CachedDocumentStore(
+                new QdrantDocumentStore(qdrantUrl),
+                new QueryCache()))
+        .AddSingleton<IngestChannel>()
+        .AddSingleton<OperationStore>()
+        .AddHostedService<IngestWorker>()
+        .AddScoped<RagSession>()
         .AddMcpServer()
             .WithHttpTransport()
             .WithToolsFromAssembly();
 
     var app = webBuilder.Build();
+    app.UseMiddleware<ApiKeyMiddleware>();
+    app.UseMiddleware<RagSessionMiddleware>();
+    app.MapControllers();
     app.MapMcp("/");
     Console.Error.WriteLine($"[rag-mcp] endpoint  : http://0.0.0.0:{port}/ (MCP Streamable HTTP)");
     await app.RunAsync($"http://0.0.0.0:{port}");
@@ -129,7 +143,13 @@ else
     builder.Services
         .AddSingleton(cfg)
         .AddSingleton(_ => OnnxEmbedder.Load(modelDir))
-        .AddSingleton(_ => QdrantStore.Connect(qdrantUrl, cfg.Collection))
+        .AddSingleton<IDocumentStore>(_ =>
+            new CachedDocumentStore(
+                new QdrantDocumentStore(qdrantUrl),
+                new QueryCache()))
+        // In stdio mode there is no HTTP context — RagSession is a singleton
+        // using cfg.Collection as the fixed collection for this process.
+        .AddSingleton<RagSession>()
         .AddMcpServer()
             .WithStdioServerTransport()
             .WithToolsFromAssembly();

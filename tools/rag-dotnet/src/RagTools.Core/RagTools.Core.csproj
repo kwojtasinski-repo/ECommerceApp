@@ -21,6 +21,8 @@
 
     <!-- YAML config parsing -->
     <PackageReference Include="YamlDotNet" Version="16.3.0" />
+    <!-- BackgroundService for IngestWorker -->
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.0" />
   </ItemGroup>
 
 </Project>

@@ -126,7 +126,11 @@ public sealed class RagE2EFixture : IAsyncLifetime
         await IngestWorkspaceAsync(cfg, _embedder, _store);
 
         // 5. Expose MCP tool instance for direct method calls in tests.
-        Tools = new RagMcpTools(_embedder, _store, cfg, Microsoft.Extensions.Logging.Abstractions.NullLogger<RagMcpTools>.Instance);
+        //    Wrap QdrantStore in QdrantDocumentStore so RagTools uses IDocumentStore.
+        var qdrantDocStore = new QdrantDocumentStore(qdrantGrpcUrl);
+        var ragSession = new RagSession(cfg);          // default collection from cfg
+        Tools = new RagMcpTools(_embedder, qdrantDocStore, ragSession, cfg,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<RagMcpTools>.Instance);
         IsAvailable = true;
     }
 
