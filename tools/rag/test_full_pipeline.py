@@ -7,11 +7,14 @@ Phases:
   2  Docker build --no-cache for rag-tools (Python) and rag-dotnet (.NET)
   3  STDIO ingest + query  —  Python mcp_server.py
   4  STDIO ingest + query  —  .NET mcp_server.dll
-  5  SSE server tests      —  start rag-python-sse + rag-dotnet-sse, upload
-                               a sample doc, query both via HTTP
+  5  SSE server tests      —  start rag-python-sse + rag-dotnet-sse, query
+                               both via HTTP (uses docs already indexed in 3/4)
   6  Flow queries          —  run a curated subset of test_flows.py flows
                                against Docker STDIO (Python)
-  7  Report                —  write docs/rag/pipeline-test-report.md
+  7  Hosted ingest (HTTP)  —  upload a synthetic document to both Python and
+                               .NET SSE servers via POST /ingest/{collection},
+                               poll for completion, query via MCP SSE to verify
+  8  Report                —  write docs/rag/pipeline-test-report.md
 
 Usage:
     python tools/rag/test_full_pipeline.py              # all phases
@@ -789,9 +792,9 @@ def phase_6_flow_queries() -> PhaseResult:
 # PHASE 7: Write report
 # ══════════════════════════════════════════════════════════════════════════════
 
-def phase_7_report(results: list[PhaseResult]) -> PhaseResult:
+def phase_8_report(results: list[PhaseResult]) -> PhaseResult:
     p = PhaseResult("Write pipeline test report")
-    print(f"\n{BANNER}\n  PHASE 7 — Writing report\n{BANNER}")
+    print(f"\n{BANNER}\n  PHASE 8 — Writing report\n{BANNER}")
 
     report_path = WORKSPACE / "docs" / "rag" / "pipeline-test-report.md"
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
@@ -870,6 +873,190 @@ def phase_7_report(results: list[PhaseResult]) -> PhaseResult:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# PHASE 7: Hosted ingest via HTTP API (no volume mounts — simulate remote host)
+# ══════════════════════════════════════════════════════════════════════════════
+
+# Synthetic document uploaded to both servers via POST /ingest/{collection}
+_HOSTED_DOC_REL_PATH = "docs/hosted-ingest-e2e-test.md"
+_HOSTED_DOC_CONTENT = """\
+# Hosted Ingest End-to-End Test Document
+
+## Purpose
+
+This document is uploaded via the HTTP ingest API (`POST /ingest/{collection}`)
+to verify that the hosted SSE server scenario works correctly without volume mounts.
+
+## Unique Marker
+
+HOSTED_INGEST_E2E_MARKER_42XQZ — a unique token used to verify the document
+was indexed and is queryable via MCP tools.
+
+## Scenario
+
+When deploying the RAG MCP server to a remote host (e.g., a cloud VM or container
+registry), there are no local volume mounts. Instead, documents are uploaded via
+the HTTP ingest REST API. This test validates that flow end-to-end.
+
+## Steps Validated
+
+1. POST /ingest/{collection} — upload document with relPath + content
+2. GET /ingest/{collection}/operations/{opId} — poll until Completed
+3. MCP query_docs — verify the unique marker is returned in results
+"""
+
+_HOSTED_INGEST_TIMEOUT = 60  # seconds to wait for ingest operation to complete
+
+
+def _http_ingest_upload(base_url: str, collection: str, rel_path: str, content: str,
+                         api_key: str | None = None) -> tuple[int, dict]:
+    """Upload a document to the ingest API. Returns (status_code, response_body)."""
+    headers: dict[str, str] = {"Content-Type": "application/json"}
+    if api_key:
+        headers["X-Api-Key"] = api_key
+    body = json.dumps({"relPath": rel_path, "content": content}).encode()
+    import urllib.request, urllib.error
+    req = urllib.request.Request(
+        f"{base_url}/ingest/{collection}",
+        data=body, headers=headers, method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return resp.status, json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read())
+
+
+def _http_ingest_poll(base_url: str, status_url: str, timeout: int = 60,
+                       api_key: str | None = None) -> dict:
+    """Poll GET {status_url} until status is Completed or Failed, or timeout."""
+    import urllib.request
+    headers: dict[str, str] = {}
+    if api_key:
+        headers["X-Api-Key"] = api_key
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        req = urllib.request.Request(f"{base_url}{status_url}", headers=headers)
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read())
+                status = data.get("status", "")
+                if status in ("Completed", "Failed", "completed", "failed"):
+                    return data
+        except Exception:
+            pass
+        time.sleep(2)
+    return {"status": "Timeout"}
+
+
+def phase_7_hosted_ingest() -> PhaseResult:
+    p = PhaseResult("Hosted ingest via HTTP API (no volume mounts)")
+    print(f"\n{BANNER}\n  PHASE 7 — Hosted ingest via HTTP API\n{BANNER}")
+    print("  Simulates remote deployment: docs uploaded via POST /ingest/{collection}")
+    print("  SSE servers must be running from phase 5.\n")
+
+    py_base = f"http://localhost:{PYTHON_SSE_PORT}"
+    dn_base = f"http://localhost:{DOTNET_SSE_PORT}"
+
+    # ── Python SSE ingest upload ───────────────────────────────────────────────
+    print("  [7a] Python SSE — upload doc via HTTP ingest API…")
+    try:
+        status_code, resp = _http_ingest_upload(
+            py_base, PYTHON_COLLECTION, _HOSTED_DOC_REL_PATH, _HOSTED_DOC_CONTENT)
+        accepted = status_code == 202
+        op_id = resp.get("operationId", "")
+        status_url = resp.get("location", resp.get("statusUrl", ""))
+        p.record("Python SSE: POST /ingest → 202 Accepted", accepted,
+                 f"status={status_code} opId={op_id[:40] if op_id else 'N/A'}")
+
+        if accepted and status_url:
+            print(f"    Polling operation {status_url} …")
+            poll = _http_ingest_poll(py_base, status_url, timeout=_HOSTED_INGEST_TIMEOUT)
+            completed = poll.get("status", "").lower() in ("completed",)
+            p.record("Python SSE: ingest operation Completed", completed,
+                     f"status={poll.get('status', '?')}")
+        else:
+            p.record("Python SSE: ingest operation Completed", False, "upload failed, skipped")
+
+        # Query via MCP SSE to verify the unique marker is retrievable
+        print("    Querying via Python MCP SSE for uploaded doc…")
+
+        async def _query_python():
+            from mcp.client.sse import sse_client
+            from mcp.client.session import ClientSession
+            async with sse_client(f"{py_base}/sse", timeout=15) as (read, write):
+                async with ClientSession(read, write) as session:
+                    await session.initialize()
+                    r = await session.call_tool("query_docs", {
+                        "question": "HOSTED_INGEST_E2E_MARKER_42XQZ hosted ingest test document",
+                        "top_k": 5,
+                    })
+                    return r.content[0].text if r.content else ""
+
+        raw = asyncio.run(_query_python())
+        result = json.loads(raw)
+        hits = result.get("hits", [])
+        found = any(_HOSTED_DOC_REL_PATH in h.get("rel_path", "") for h in hits)
+        p.record("Python SSE: uploaded doc queryable via MCP", found,
+                 f"hits: {[h.get('rel_path','') for h in hits]}")
+
+    except Exception as exc:
+        p.record("Python SSE: hosted ingest", False, str(exc))
+
+    # ── .NET SSE ingest upload ────────────────────────────────────────────────
+    print("\n  [7b] .NET SSE — upload doc via HTTP ingest API…")
+
+    # Check if .NET SSE has API key enforcement
+    # The .NET server uses ApiKeyMiddleware; if RAG_API_KEY is not set, no auth needed
+    dn_api_key: str | None = None  # no key set in our docker-compose
+
+    try:
+        status_code, resp = _http_ingest_upload(
+            dn_base, DOTNET_COLLECTION, _HOSTED_DOC_REL_PATH, _HOSTED_DOC_CONTENT,
+            api_key=dn_api_key)
+        accepted = status_code == 202
+        op_id = resp.get("operationId", "")
+        status_url = resp.get("statusUrl", resp.get("location", ""))
+        p.record(".NET SSE: POST /ingest → 202 Accepted", accepted,
+                 f"status={status_code} opId={op_id[:40] if op_id else 'N/A'}")
+
+        if accepted and status_url:
+            print(f"    Polling operation {status_url} …")
+            poll = _http_ingest_poll(dn_base, status_url, timeout=_HOSTED_INGEST_TIMEOUT,
+                                      api_key=dn_api_key)
+            completed = poll.get("status", "").lower() in ("completed",)
+            p.record(".NET SSE: ingest operation Completed", completed,
+                     f"status={poll.get('status', '?')}")
+        else:
+            p.record(".NET SSE: ingest operation Completed", False, "upload failed, skipped")
+
+        # Query via .NET Streamable HTTP MCP
+        print("    Querying via .NET MCP SSE for uploaded doc…")
+        with httpx.Client(base_url=dn_base, timeout=60) as client:
+            session_id = _dotnet_initialize(client)
+
+            def _call(tool: str, args: dict) -> str:
+                r = _dotnet_post(client, {
+                    "jsonrpc": "2.0", "id": 20, "method": "tools/call",
+                    "params": {"name": tool, "arguments": args},
+                }, session_id=session_id)
+                return r.get("result", {}).get("content", [{}])[0].get("text", "")
+
+            text = _call("query_docs", {
+                "question": "HOSTED_INGEST_E2E_MARKER_42XQZ hosted ingest test document",
+                "topK": 5,
+            })
+            found = _HOSTED_DOC_REL_PATH in text
+            p.record(".NET SSE: uploaded doc queryable via MCP", found,
+                     f"{len(text)} chars")
+
+    except Exception as exc:
+        p.record(".NET SSE: hosted ingest", False, str(exc))
+
+    p.finish()
+    return p
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # Main
 # ══════════════════════════════════════════════════════════════════════════════
 
@@ -878,7 +1065,7 @@ def main() -> int:
         description="Full E2E pipeline test for Python and .NET RAG MCP servers"
     )
     parser.add_argument("--phase", type=int, metavar="N",
-                        help="Run only phase N (0–7)")
+                        help="Run only phase N (0–8)")
     parser.add_argument("--skip-build", action="store_true",
                         help="Skip phase 2 (Docker build)")
     parser.add_argument("--dry-run", action="store_true",
@@ -898,7 +1085,8 @@ def main() -> int:
         (4, phase_4_dotnet_stdio),
         (5, phase_5_sse),
         (6, phase_6_flow_queries),
-        (7, lambda: phase_7_report(ALL_RESULTS)),
+        (7, phase_7_hosted_ingest),
+        (8, lambda: phase_8_report(ALL_RESULTS)),
     ]
 
     if args.dry_run:
@@ -906,7 +1094,7 @@ def main() -> int:
     elif args.phase is not None:
         phases = [(n, fn) for n, fn in phases if n == args.phase]
         if not phases:
-            print(f"Unknown phase {args.phase}. Must be 0–7.")
+            print(f"Unknown phase {args.phase}. Must be 0–8.")
             return 2
 
     for _, fn in phases:
