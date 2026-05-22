@@ -87,7 +87,7 @@ def _model_dir() -> Path | None:
     env = os.environ.get("RAG_MODEL_DIR")
     candidates = [
         Path(env) if env else None,
-        Path(__file__).resolve().parent.parent.parent / "rag-dotnet" / "model",
+        Path(__file__).resolve().parent.parent / "rag-dotnet" / "model",
     ]
     for p in candidates:
         if p and (p / "model.onnx").exists():
@@ -322,17 +322,30 @@ class TestLevelA_H5Fixture:
 # Uses the ONNX model for real embeddings; skips when model is absent.
 # ═════════════════════════════════════════════════════════════════════════════
 
-def _make_qdrant_client(url: str):
+_MEMORY_CLIENT: object | None = None  # shared in-memory Qdrant when QDRANT_URL is unset
+
+
+def _make_qdrant_client(url: str | None):
     from qdrant_client import QdrantClient
+    if url is None:
+        global _MEMORY_CLIENT
+        if _MEMORY_CLIENT is None:
+            _MEMORY_CLIENT = QdrantClient(":memory:")
+        return _MEMORY_CLIENT
     return QdrantClient(url=url)
+
+
+def _embedder_model_name() -> str:
+    """Get the embedder model name from config.yaml (used with sentence-transformers)."""
+    from common import load_config
+    return load_config().embedder_model
 
 
 def _ingest_fixture_to_qdrant(
     text: str,
     rel_path: str,
     collection: str,
-    qdrant_url: str,
-    model_dir: Path,
+    qdrant_url: str | None,
 ) -> int:
     """Chunk, embed (real model), and upsert one fixture doc. Returns the number of points upserted."""
     import hashlib
@@ -343,12 +356,13 @@ def _ingest_fixture_to_qdrant(
     if not chunks:
         return 0
 
-    model_path = str(model_dir)
-    model = SentenceTransformer(model_path, device="cpu")
+    model = SentenceTransformer(_embedder_model_name(), device="cpu")
     client = _make_qdrant_client(qdrant_url)
     dim = model.get_sentence_embedding_dimension()
 
-    client.recreate_collection(
+    if client.collection_exists(collection):
+        client.delete_collection(collection)
+    client.create_collection(
         collection_name=collection,
         vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
     )
@@ -395,15 +409,15 @@ def _scroll_all(client, collection: str) -> list[dict]:
     return [r.payload or {} for r in results]
 
 
-@pytest.mark.skipif(not _qdrant_url(), reason="QDRANT_URL not set — Level B skipped")
 class TestLevelB_IngestPipeline:
     """Level B: chunk + embed + upsert a fixture file, assert on stored Qdrant payloads."""
 
     @pytest.fixture(autouse=True)
     def _require_model(self):
-        if _model_dir() is None:
-            pytest.skip("ONNX model not found — Level B skipped. "
-                        "Set RAG_MODEL_DIR or place model.onnx in tools/rag-dotnet/model/")
+        try:
+            from sentence_transformers import SentenceTransformer  # noqa: F401
+        except ImportError:
+            pytest.skip("sentence-transformers not installed — Level B skipped")
 
     # ── H4 fixture ────────────────────────────────────────────────────────
 
@@ -414,7 +428,7 @@ class TestLevelB_IngestPipeline:
         collection = f"e2e_lv_b_h4_{uuid.uuid4().hex[:8]}"
         text = _H4_FIXTURE.read_text(encoding="utf-8")
 
-        count = _ingest_fixture_to_qdrant(text, "auto-mode-h4-sections.md", collection, url, _model_dir())
+        count = _ingest_fixture_to_qdrant(text, "auto-mode-h4-sections.md", collection, url)
         assert count > 0, "Expected at least one point to be upserted"
 
         client = _make_qdrant_client(url)
@@ -438,7 +452,6 @@ class TestLevelB_IngestPipeline:
     def test_h4_chunk_count_exceeds_explicit_mode(self):
         """Auto-mode ingest stores more chunks than explicit-mode ingest for the same doc."""
         url = _qdrant_url()
-        model = _model_dir()
         text = _H4_FIXTURE.read_text(encoding="utf-8")
         rel_path = "auto-mode-h4-sections.md"
 
@@ -446,7 +459,7 @@ class TestLevelB_IngestPipeline:
         explicit_col = f"e2e_lv_b_expl_{uuid.uuid4().hex[:8]}"
 
         # Ingest with auto mode.
-        auto_n = _ingest_fixture_to_qdrant(text, rel_path, auto_col, url, model)
+        auto_n = _ingest_fixture_to_qdrant(text, rel_path, auto_col, url)
 
         # Ingest with explicit mode (monkey-patch config in chunk_markdown via direct call).
         from sentence_transformers import SentenceTransformer
@@ -454,10 +467,12 @@ class TestLevelB_IngestPipeline:
         import hashlib
 
         explicit_chunks = chunk_markdown(text, _file_title(text, rel_path), _explicit_cfg())
-        mod = SentenceTransformer(str(model), device="cpu")
+        mod = SentenceTransformer(_embedder_model_name(), device="cpu")
         dim = mod.get_sentence_embedding_dimension()
         client = _make_qdrant_client(url)
-        client.recreate_collection(
+        if client.collection_exists(explicit_col):
+            client.delete_collection(explicit_col)
+        client.create_collection(
             collection_name=explicit_col,
             vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
         )
@@ -491,7 +506,7 @@ class TestLevelB_IngestPipeline:
         collection = f"e2e_lv_b_short_{uuid.uuid4().hex[:8]}"
         text = _SHORT_FIXTURE.read_text(encoding="utf-8")
 
-        _ingest_fixture_to_qdrant(text, "auto-mode-short-sections.md", collection, url, _model_dir())
+        _ingest_fixture_to_qdrant(text, "auto-mode-short-sections.md", collection, url)
 
         client = _make_qdrant_client(url)
         payloads = _scroll_all(client, collection)
@@ -510,20 +525,21 @@ class TestLevelB_IngestPipeline:
 # Requires: QDRANT_URL env var + ONNX model
 # ═════════════════════════════════════════════════════════════════════════════
 
-@pytest.mark.skipif(not _qdrant_url(), reason="QDRANT_URL not set — Level C skipped")
 class TestLevelC_QueryLevel:
     """Level C: ingest fixture → semantic query → verify H4 content is findable."""
 
     @pytest.fixture(autouse=True)
     def _require_model(self):
-        if _model_dir() is None:
-            pytest.skip("ONNX model not found — Level C skipped.")
+        try:
+            from sentence_transformers import SentenceTransformer  # noqa: F401
+        except ImportError:
+            pytest.skip("sentence-transformers not installed — Level C skipped")
 
-    def _query(self, query_text: str, collection: str, qdrant_url: str, model_dir: Path,
+    def _query(self, query_text: str, collection: str, qdrant_url: str | None,
                top_k: int = 5) -> list[dict]:
         """Embed query + vector-search Qdrant, return payloads of top hits."""
         from sentence_transformers import SentenceTransformer
-        model = SentenceTransformer(str(model_dir), device="cpu")
+        model = SentenceTransformer(_embedder_model_name(), device="cpu")
         qvec = model.encode([query_text], normalize_embeddings=True)[0].tolist()
         client = _make_qdrant_client(qdrant_url)
         results = client.search(collection_name=collection, query_vector=qvec, limit=top_k)
@@ -535,14 +551,13 @@ class TestLevelC_QueryLevel:
         """Text that lives only inside an H4 section should be retrievable by semantic search
         after auto-mode ingest — verifying end-to-end chunker → embed → query correctness."""
         url = _qdrant_url()
-        model = _model_dir()
         collection = f"e2e_lv_c_h4_{uuid.uuid4().hex[:8]}"
         text = _H4_FIXTURE.read_text(encoding="utf-8")
 
-        _ingest_fixture_to_qdrant(text, "auto-mode-h4-sections.md", collection, url, model)
+        _ingest_fixture_to_qdrant(text, "auto-mode-h4-sections.md", collection, url)
 
         # Query with a phrase about API versioning (lives inside H4 "Versioning Strategy").
-        hits = self._query("API versioning breaking changes deprecation policy", collection, url, model)
+        hits = self._query("API versioning breaking changes deprecation policy", collection, url)
 
         assert len(hits) > 0, "Expected at least one search result for H4 content query."
         top_payload = hits[0]["payload"]
@@ -562,13 +577,12 @@ class TestLevelC_QueryLevel:
     def test_h4_status_codes_findable(self):
         """HTTP status codes section (H4) should be retrievable by a status-code query."""
         url = _qdrant_url()
-        model = _model_dir()
         collection = f"e2e_lv_c_sc_{uuid.uuid4().hex[:8]}"
         text = _H4_FIXTURE.read_text(encoding="utf-8")
 
-        _ingest_fixture_to_qdrant(text, "auto-mode-h4-sections.md", collection, url, model)
+        _ingest_fixture_to_qdrant(text, "auto-mode-h4-sections.md", collection, url)
 
-        hits = self._query("HTTP response status codes 200 201 404 409", collection, url, model)
+        hits = self._query("HTTP response status codes 200 201 404 409", collection, url)
 
         assert len(hits) > 0
         found = any(
@@ -589,14 +603,13 @@ class TestLevelC_QueryLevel:
         """The merged 'See Also' content should be discoverable via semantic search
         — proving that merging preserved the text in the vector index."""
         url = _qdrant_url()
-        model = _model_dir()
         collection = f"e2e_lv_c_short_{uuid.uuid4().hex[:8]}"
         text = _SHORT_FIXTURE.read_text(encoding="utf-8")
 
-        _ingest_fixture_to_qdrant(text, "auto-mode-short-sections.md", collection, url, model)
+        _ingest_fixture_to_qdrant(text, "auto-mode-short-sections.md", collection, url)
 
         # Query about the short "See Also" content — migration instructions.
-        hits = self._query("migration upgrade instructions guide", collection, url, model)
+        hits = self._query("migration upgrade instructions guide", collection, url)
 
         assert len(hits) > 0
         combined = " ".join(h["payload"].get("text", "") for h in hits)

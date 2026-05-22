@@ -110,6 +110,11 @@ class Config:
         return self.raw["query"]
 
     @property
+    def snapshot_path(self) -> Path:
+        """Path where a JSON snapshot is written after memory-mode ingest."""
+        return self.workspace / self.raw["storage"]["snapshot_path"]
+
+    @property
     def manifest_path(self) -> Path:
         """RAG_MANIFEST env var overrides config (per-file mount mode, no whole-workspace mount)."""
         if env := os.environ.get("RAG_MANIFEST"):

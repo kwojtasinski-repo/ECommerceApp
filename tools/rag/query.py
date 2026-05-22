@@ -107,8 +107,29 @@ class QueryEngine:
         # Lazy heavy imports.
         from sentence_transformers import SentenceTransformer
         from qdrant_client import QdrantClient
+        from qdrant_client.models import Distance, PointStruct, VectorParams
         self._model = SentenceTransformer(self.cfg.embedder_model, device=self.cfg.embedder_device)
-        if self._mode == "local":
+        if self._mode == "memory":
+            self._client = QdrantClient(":memory:")
+            snapshot_path = self.cfg.snapshot_path
+            if not snapshot_path.exists():
+                raise FileNotFoundError(
+                    f"Snapshot not found at {snapshot_path}. Run `python tools/rag/ingest.py` first."
+                )
+            with snapshot_path.open("r", encoding="utf-8") as fh:
+                snap = json.load(fh)
+            self._client.recreate_collection(
+                collection_name=snap["collection"],
+                vectors_config=VectorParams(size=snap["dim"], distance=Distance.COSINE),
+            )
+            BATCH = 256
+            points = [
+                PointStruct(id=p["id"], vector=p["vector"], payload=p["payload"])
+                for p in snap["points"]
+            ]
+            for i in range(0, len(points), BATCH):
+                self._client.upsert(collection_name=snap["collection"], points=points[i : i + BATCH])
+        elif self._mode == "local":
             self._client = QdrantClient(path=self.cfg.vector_local_path)
         else:  # docker
             self._client = QdrantClient(url=self.cfg.vector_url)

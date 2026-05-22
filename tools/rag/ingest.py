@@ -283,7 +283,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default=None, metavar="PATH",
                         help="Path to config.yaml (default: config.yaml next to ingest.py)")
-    parser.add_argument("--mode", choices=["docker", "local"], default=None,
+    parser.add_argument("--mode", choices=["memory", "docker", "local"], default=None,
                         help="Override vector_store.mode from config.yaml")
     parser.add_argument("--dry-run", action="store_true",
                         help="Parse + chunk only, print stats, no embeddings or upserts")
@@ -409,7 +409,13 @@ def main() -> int:
     dim = model.get_sentence_embedding_dimension()
     print(f"[ingest] embedding dimension: {dim}")
 
-    if mode == "local":
+    if mode == "memory":
+        client = QdrantClient(":memory:")
+        client.recreate_collection(
+            collection_name=cfg.collection,
+            vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
+        )
+    elif mode == "local":
         client = QdrantClient(path=cfg.vector_local_path)
         if not incremental:
             client.recreate_collection(
@@ -493,7 +499,23 @@ def main() -> int:
         client.upsert(collection_name=cfg.collection, points=points[i : i + BATCH])
     print(f"[ingest] done in {time.time() - started:.1f}s")
 
-    # Save the hash manifest.
+    if mode == "memory":
+        # Persist a JSON snapshot so query.py can reload without re-embedding.
+        cfg.snapshot_path.parent.mkdir(parents=True, exist_ok=True)
+        snapshot = {
+            "collection": cfg.collection,
+            "dim": dim,
+            "model": cfg.embedder_model,
+            "points": [
+                {"id": p.id, "vector": p.vector, "payload": p.payload}
+                for p in points
+            ],
+        }
+        with cfg.snapshot_path.open("w", encoding="utf-8") as fh:
+            json.dump(snapshot, fh)
+        print(f"[ingest] snapshot written: {cfg.snapshot_path.relative_to(cfg.workspace)}")
+
+    # Always save the hash manifest (both memory and docker modes).
     _write_stats_md(cfg, points, len(all_files))
     if cfg.stats_path is not None:
         print(f"[ingest] stats written:    {cfg.stats_path.relative_to(cfg.workspace)}")
