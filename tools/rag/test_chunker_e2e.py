@@ -40,6 +40,7 @@ from chunker import Chunk, chunk_markdown, count_tokens
 _FIXTURES = Path(__file__).resolve().parent.parent / "rag-testdata"
 _H4_FIXTURE   = _FIXTURES / "auto-mode-h4-sections.md"
 _SHORT_FIXTURE = _FIXTURES / "auto-mode-short-sections.md"
+_H5_FIXTURE   = _FIXTURES / "auto-mode-h5-sections.md"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -58,6 +59,15 @@ def _auto_cfg(min_tokens: int = 40, max_tokens: int = 800) -> dict:
 def _explicit_cfg(min_tokens: int = 40, max_tokens: int = 800) -> dict:
     return {
         "split_on_headings": [1, 2, 3],
+        "max_tokens": max_tokens,
+        "min_tokens": min_tokens,
+        "overlap_tokens": 0,
+    }
+
+
+def _explicit_h4_cfg(min_tokens: int = 40, max_tokens: int = 800) -> dict:
+    return {
+        "split_on_headings": [1, 2, 3, 4],
         "max_tokens": max_tokens,
         "min_tokens": min_tokens,
         "overlap_tokens": 0,
@@ -206,6 +216,103 @@ class TestLevelA_AutoModeShortSectionsFixture:
         # Explicit drops the short section, auto merges it — auto should have at least as many.
         assert auto_n >= explicit_n, (
             f"Auto should not lose chunks vs explicit: auto={auto_n}, explicit={explicit_n}"
+        )
+
+
+class TestLevelA_ExplicitH4Mode:
+    """Explicit split_on_headings=[1,2,3,4] splits at H4 headings (like auto mode does
+    for H4-depth docs), but does NOT split at H5."""
+
+    def _load_h4(self) -> str:
+        return _H4_FIXTURE.read_text(encoding="utf-8")
+
+    def test_explicit_1234_h4_appears_in_breadcrumbs(self):
+        chunks = chunk_markdown(self._load_h4(), "Service Design", _explicit_h4_cfg())
+        breadcrumbs = [c.breadcrumb for c in chunks]
+        assert any(
+            "Versioning Strategy" in b or "Status Codes" in b or "Unit of Work" in b
+            for b in breadcrumbs
+        ), (
+            "Explicit [1,2,3,4] should split at H4 headings and produce H4-level breadcrumbs. "
+            f"Got: {breadcrumbs}"
+        )
+
+    def test_explicit_1234_produces_more_chunks_than_123(self):
+        text = self._load_h4()
+        h4_n = len(chunk_markdown(text, "Service Design", _explicit_h4_cfg()))
+        h3_n = len(chunk_markdown(text, "Service Design", _explicit_cfg()))
+        assert h4_n > h3_n, (
+            f"Explicit [1,2,3,4] should produce more chunks than [1,2,3]: h4={h4_n}, h3={h3_n}"
+        )
+
+    def test_explicit_1234_h4_content_not_lost(self):
+        chunks = chunk_markdown(self._load_h4(), "Service Design", _explicit_h4_cfg())
+        combined = " ".join(c.text for c in chunks)
+        assert "Never break existing versions" in combined
+        assert "Deprecation requires a minimum six-month notice period" in combined
+        assert "Use 201 for successful POST" in combined
+        assert "Use 409 for conflicts" in combined
+        # Note: "Connection Management" is a small trailing H4 (< min_tokens=40 in
+        # tiktoken cl100k_base units). Explicit mode drops small chunks rather than
+        # merging them — this is the expected behavior. Auto mode would preserve it.
+
+    def test_explicit_1234_drops_small_trailing_section_but_auto_preserves_it(self):
+        """Explicit mode drops sub-threshold trailing sections; auto mode backward-merges them."""
+        explicit_combined = " ".join(
+            c.text for c in chunk_markdown(self._load_h4(), "Service Design", _explicit_h4_cfg())
+        )
+        auto_combined = " ".join(
+            c.text for c in chunk_markdown(self._load_h4(), "Service Design", _auto_cfg())
+        )
+        # Auto mode must preserve the trailing "Connection Management" content.
+        assert "Connection pooling is handled exclusively" in auto_combined
+        # Explicit mode drops it (< min_tokens=40).
+        assert "Connection pooling is handled exclusively" not in explicit_combined
+
+
+class TestLevelA_H5Fixture:
+    """H5 headings: explicit [1,2,3,4] ignores H5; auto mode splits at H5."""
+
+    def _load(self) -> str:
+        return _H5_FIXTURE.read_text(encoding="utf-8")
+
+    def test_explicit_1234_h5_not_in_breadcrumbs(self):
+        """[1,2,3,4] must NOT create H5-level split boundaries."""
+        chunks = chunk_markdown(self._load(), "Architecture Guide", _explicit_h4_cfg())
+        breadcrumbs = [c.breadcrumb for c in chunks]
+        assert not any(
+            "Synchronous Path" in b or "Asynchronous Path" in b
+            for b in breadcrumbs
+        ), (
+            "Explicit [1,2,3,4] must not split at H5 headings. "
+            f"Got breadcrumbs: {breadcrumbs}"
+        )
+
+    def test_explicit_1234_h5_content_preserved_inside_h4_chunk(self):
+        chunks = chunk_markdown(self._load(), "Architecture Guide", _explicit_h4_cfg())
+        combined = " ".join(c.text for c in chunks)
+        assert "synchronous request path is the primary processing route" in combined.lower()
+        assert "asynchronous request path queues work items" in combined.lower()
+
+    def test_auto_h5_appears_in_breadcrumbs(self):
+        """Auto mode detects H5 as the deepest heading level and splits there."""
+        chunks = chunk_markdown(self._load(), "Architecture Guide", _auto_cfg())
+        breadcrumbs = [c.breadcrumb for c in chunks]
+        assert any(
+            "Synchronous Path" in b or "Asynchronous Path" in b
+            for b in breadcrumbs
+        ), (
+            "Auto mode should split at H5 and produce H5-level breadcrumbs. "
+            f"Got: {breadcrumbs}"
+        )
+
+    def test_auto_produces_more_chunks_than_explicit_1234_for_h5_doc(self):
+        text = self._load()
+        auto_n     = len(chunk_markdown(text, "Architecture Guide", _auto_cfg()))
+        explicit_n = len(chunk_markdown(text, "Architecture Guide", _explicit_h4_cfg()))
+        assert auto_n > explicit_n, (
+            f"Auto mode should produce more chunks than explicit [1,2,3,4] for H5 doc: "
+            f"auto={auto_n}, explicit={explicit_n}"
         )
 
 

@@ -8,20 +8,13 @@ namespace RagTools.Tests;
 /// Unit tests for ApiKeyMiddleware.
 ///
 /// Tests the middleware in isolation using DefaultHttpContext — no web host needed.
-/// The configured key is read from RAG_API_KEY env var at type-init time,
-/// so we cannot change it per-test. Tests rely on RAG_API_KEY being unset in the
-/// test runner (dev environment), which puts the middleware in "dev mode" (allow all).
-///
-/// Tests that require authentication behaviour are guarded with a skip condition.
+/// The configured key is injected via the constructor parameter so tests are always-run
+/// and do not depend on the RAG_API_KEY environment variable being set.
 /// </summary>
 public sealed class ApiKeyMiddlewareTests
 {
-    // Whether RAG_API_KEY is set in the current test environment.
-    private static readonly bool KeyIsConfigured =
-        !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("RAG_API_KEY"));
-
-    private static ApiKeyMiddleware CreateMiddleware(RequestDelegate next) =>
-        new(next, NullLogger<ApiKeyMiddleware>.Instance);
+    private static ApiKeyMiddleware CreateMiddleware(RequestDelegate next, string? configuredKey = null) =>
+        new(next, NullLogger<ApiKeyMiddleware>.Instance, configuredKey);
 
     private static DefaultHttpContext MakeContext(string path, string? apiKey = null)
     {
@@ -56,14 +49,13 @@ public sealed class ApiKeyMiddlewareTests
         Assert.Equal(200, ctx.Response.StatusCode);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task IngestPath_Returns401_WhenNoKeyProvided()
     {
-        Skip.If(!KeyIsConfigured, "RAG_API_KEY not set — middleware in dev mode, auth not enforced.");
-
+        // Inject a configured key so auth is enforced — no env var needed.
         var reached = false;
-        var mw = CreateMiddleware(_ => { reached = true; return Task.CompletedTask; });
-        var ctx = MakeContext("/ingest/mycol");
+        var mw = CreateMiddleware(_ => { reached = true; return Task.CompletedTask; }, configuredKey: "test-secret");
+        var ctx = MakeContext("/ingest/mycol"); // no X-Api-Key header
 
         await mw.InvokeAsync(ctx);
 
@@ -71,13 +63,11 @@ public sealed class ApiKeyMiddlewareTests
         Assert.False(reached);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task AdminPath_Returns401_WhenWrongKeyProvided()
     {
-        Skip.If(!KeyIsConfigured, "RAG_API_KEY not set — middleware in dev mode.");
-
         var reached = false;
-        var mw = CreateMiddleware(_ => { reached = true; return Task.CompletedTask; });
+        var mw = CreateMiddleware(_ => { reached = true; return Task.CompletedTask; }, configuredKey: "test-secret");
         var ctx = MakeContext("/admin/stats", apiKey: "wrong-key");
 
         await mw.InvokeAsync(ctx);
@@ -89,11 +79,9 @@ public sealed class ApiKeyMiddlewareTests
     [Fact]
     public async Task IngestPath_PassesThrough_InDevMode()
     {
-        // In dev mode (no RAG_API_KEY), /ingest/* should be allowed.
-        Skip.If(KeyIsConfigured, "RAG_API_KEY is set — this test only verifies dev mode.");
-
+        // Dev mode: null configuredKey means no auth enforced.
         var reached = false;
-        var mw = CreateMiddleware(_ => { reached = true; return Task.CompletedTask; });
+        var mw = CreateMiddleware(_ => { reached = true; return Task.CompletedTask; }, configuredKey: null);
         var ctx = MakeContext("/ingest/mycol");
 
         await mw.InvokeAsync(ctx);

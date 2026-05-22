@@ -11,11 +11,12 @@ namespace RagTools.Mcp.Middleware;
 ///
 /// Routes not under /ingest/* or /admin/* are not affected (MCP tool calls pass through).
 /// </summary>
-public sealed class ApiKeyMiddleware(RequestDelegate next, ILogger<ApiKeyMiddleware> logger)
+public sealed class ApiKeyMiddleware(RequestDelegate next, ILogger<ApiKeyMiddleware> logger, string? configuredKey = null)
 {
-    private const string HeaderName   = "X-Api-Key";
-    private const string EnvVarName   = "RAG_API_KEY";
-    private static readonly string?   _configuredKey = Environment.GetEnvironmentVariable(EnvVarName);
+    private const string HeaderName = "X-Api-Key";
+    public  const string EnvVarName = "RAG_API_KEY";
+    // Fallback: read from env if not injected (supports UseMiddleware<T>() without DI overrides).
+    private readonly string? _configuredKey = configuredKey ?? Environment.GetEnvironmentVariable(EnvVarName);
 
     public async Task InvokeAsync(HttpContext context)
     {
