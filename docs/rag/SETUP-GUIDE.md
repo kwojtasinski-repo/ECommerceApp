@@ -477,11 +477,57 @@ Poll response:
 
 ---
 
+---
+
+#### Step 1b — Upload many documents in one request (`POST /ingest/{collection}/batch`)
+
+Pack multiple files into a ZIP archive and POST the raw bytes. Useful for initial bulk
+loads or CI pipelines that process many docs at once.
+
+```powershell
+# Build a ZIP from a folder
+$zip = [System.IO.Path]::GetTempFileName() + '.zip'
+Compress-Archive docs/* $zip -Force
+$bytes = [System.IO.File]::ReadAllBytes($zip)
+
+$resp = Invoke-RestMethod http://localhost:3002/ingest/ecommerceapp_docs/batch `
+    -Method POST `
+    -ContentType 'application/zip' `
+    -Headers @{ 'X-Api-Key' = $env:RAG_API_KEY } `
+    -Body $bytes
+
+$resp.count       # number of files queued
+$resp.operations  # array of {operationId, relPath, statusUrl}
+```
+
+Response `202 Accepted`:
+```json
+{
+  "batchId": "<uuid>",
+  "count": 3,
+  "operations": [
+    { "operationId": "<id1>", "relPath": "docs/file-a.md", "statusUrl": "/ingest/.../operations/<id1>" },
+    { "operationId": "<id2>", "relPath": "docs/file-b.md", "statusUrl": "/ingest/.../operations/<id2>" }
+  ]
+}
+```
+
+| Status | Meaning |
+|--------|----------|
+| `202` | All files queued; poll each `statusUrl` from step 2 |
+| `400` | Body is not a valid ZIP, or the ZIP contains no files |
+| `503` | Queue cannot fit all files; reduce batch size or retry later |
+
+Directory entries inside the ZIP are silently skipped.
+
+---
+
 #### All endpoints at a glance
 
 | Method | Path | Auth | Purpose |
 |---|---|---|---|
 | `POST` | `/ingest/{collection}` | ✅ | Queue one document; returns 202 + operationId |
+| `POST` | `/ingest/{collection}/batch` | ✅ | Queue many documents from a ZIP; returns 202 + operations list |
 | `GET` | `/ingest/{collection}/operations/{opId}` | ✅ | Poll status of one operation |
 | `GET` | `/ingest/{collection}/operations` | ✅ | List all recent operations for a collection |
 | `GET` | `/admin/stats` | ✅ | Queue depth + retention hours |
@@ -513,7 +559,7 @@ Test files:
 
 | File | Tests | Needs Qdrant | Description |
 |------|-------|-------------|-------------|
-| `tools/rag/test_ingest_unit.py` | 37 | No | Unit tests for OperationStore, IngestWorker, routes, auth middleware |
+| `tools/rag/test_ingest_unit.py` | 47 | No | Unit tests for OperationStore, IngestWorker, routes, auth middleware, batch endpoint |
 | `tools/rag/test_ingest_e2e.py` | 16 | Yes (1 test) | E2E: real uvicorn server, full HTTP round-trip, one Qdrant pipeline test |
 
 ### .NET tests (unit + E2E)

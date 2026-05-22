@@ -38,8 +38,8 @@ def _run(coro):
     return asyncio.get_event_loop().run_until_complete(coro)
 
 
-def _make_app(store: OperationStore, queue: asyncio.Queue, api_key: str | None = None) -> Starlette:
-    routes = build_ingest_routes(store, queue, capacity=DEFAULT_CAPACITY)
+def _make_app(store: OperationStore, queue: asyncio.Queue, api_key: str | None = None, capacity: int = DEFAULT_CAPACITY) -> Starlette:
+    routes = build_ingest_routes(store, queue, capacity=capacity)
     app = Starlette(routes=routes)
     if api_key:
         app.add_middleware(ApiKeyMiddleware, api_key=api_key)
@@ -414,3 +414,170 @@ class TestApiKeyMiddleware:
         client = self._make_client("secret")
         resp = client.get("/admin/stats", headers={"X-Api-Key": "secret"})
         assert resp.status_code == 200
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# POST /ingest/{collection}/batch  (P2-2)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _make_zip(files: dict[str, str]) -> bytes:
+    """Build an in-memory ZIP archive from {relPath: content} mapping."""
+    import io
+    import zipfile
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for rel_path, content in files.items():
+            zf.writestr(rel_path, content)
+    return buf.getvalue()
+
+
+class TestBatchIngestRoute:
+    def _setup(self, capacity: int = DEFAULT_CAPACITY):
+        store = OperationStore()
+        queue: asyncio.Queue = asyncio.Queue(maxsize=capacity)
+        app = _make_app(store, queue, capacity=capacity)
+        return store, queue, TestClient(app, raise_server_exceptions=False)
+
+    # ── happy path ────────────────────────────────────────────────────────────
+
+    def test_batch_single_file_returns_202(self):
+        _, _, client = self._setup()
+        zb = _make_zip({"docs/intro.md": "# Intro\nHello"})
+        resp = client.post(
+            "/ingest/col/batch",
+            content=zb,
+            headers={"Content-Type": "application/zip"},
+        )
+        assert resp.status_code == 202
+
+    def test_batch_single_file_body_has_count_and_operations(self):
+        _, _, client = self._setup()
+        zb = _make_zip({"docs/intro.md": "# Intro"})
+        body = client.post(
+            "/ingest/col/batch",
+            content=zb,
+            headers={"Content-Type": "application/zip"},
+        ).json()
+        assert body["count"] == 1
+        assert len(body["operations"]) == 1
+        op = body["operations"][0]
+        assert op["relPath"] == "docs/intro.md"
+        assert op["operationId"]
+        assert op["statusUrl"].startswith("/ingest/col/operations/")
+
+    def test_batch_multiple_files_enqueues_all(self):
+        store, queue, client = self._setup()
+        files = {
+            "docs/adr/0001.md": "# ADR-0001",
+            "docs/adr/0002.md": "# ADR-0002",
+            "docs/concepts/ddd.md": "# DDD",
+        }
+        zb = _make_zip(files)
+        resp = client.post(
+            "/ingest/col/batch",
+            content=zb,
+            headers={"Content-Type": "application/zip"},
+        )
+        assert resp.status_code == 202
+        body = resp.json()
+        assert body["count"] == 3
+        assert len(body["operations"]) == 3
+        rel_paths = {op["relPath"] for op in body["operations"]}
+        assert rel_paths == set(files.keys())
+        # All three jobs must have been placed on the queue.
+        assert queue.qsize() == 3
+
+    def test_batch_each_file_gets_unique_operation_id(self):
+        _, _, client = self._setup()
+        zb = _make_zip({"a.md": "A", "b.md": "B"})
+        body = client.post(
+            "/ingest/col/batch",
+            content=zb,
+            headers={"Content-Type": "application/zip"},
+        ).json()
+        ids = [op["operationId"] for op in body["operations"]]
+        assert len(ids) == len(set(ids)), "operation IDs must be unique"
+
+    def test_batch_operations_are_registered_in_store(self):
+        store, _, client = self._setup()
+        zb = _make_zip({"f.md": "# F"})
+        body = client.post(
+            "/ingest/col/batch",
+            content=zb,
+            headers={"Content-Type": "application/zip"},
+        ).json()
+        op_id = body["operations"][0]["operationId"]
+        op = _run(store.get(op_id))
+        assert op is not None
+        assert op.status == IngestStatus.Queued
+
+    def test_batch_body_contains_batch_id(self):
+        _, _, client = self._setup()
+        zb = _make_zip({"x.md": "# X"})
+        body = client.post(
+            "/ingest/col/batch",
+            content=zb,
+            headers={"Content-Type": "application/zip"},
+        ).json()
+        assert "batchId" in body
+
+    # ── error paths ───────────────────────────────────────────────────────────
+
+    def test_batch_invalid_zip_returns_400(self):
+        _, _, client = self._setup()
+        resp = client.post(
+            "/ingest/col/batch",
+            content=b"not a zip file",
+            headers={"Content-Type": "application/zip"},
+        )
+        assert resp.status_code == 400
+        assert "error" in resp.json()
+
+    def test_batch_empty_zip_returns_400(self):
+        _, _, client = self._setup()
+        zb = _make_zip({})  # ZIP with no files
+        resp = client.post(
+            "/ingest/col/batch",
+            content=zb,
+            headers={"Content-Type": "application/zip"},
+        )
+        assert resp.status_code == 400
+        assert "error" in resp.json()
+
+    def test_batch_queue_full_returns_503(self):
+        # Capacity=1, already filled → 503
+        store = OperationStore()
+        queue: asyncio.Queue = asyncio.Queue(maxsize=1)
+        queue.put_nowait(object())  # fill the one slot
+        app = _make_app(store, queue, capacity=1)
+        client = TestClient(app, raise_server_exceptions=False)
+
+        zb = _make_zip({"a.md": "A", "b.md": "B"})
+        resp = client.post(
+            "/ingest/col/batch",
+            content=zb,
+            headers={"Content-Type": "application/zip"},
+        )
+        assert resp.status_code == 503
+
+    def test_batch_skips_directory_entries(self):
+        """ZIP directory entries (names ending '/') must not produce operations."""
+        import io, zipfile
+
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as zf:
+            zf.mkdir("docs/")  # directory entry
+            zf.writestr("docs/real.md", "# Real")
+        zb = buf.getvalue()
+
+        _, _, client = self._setup()
+        resp = client.post(
+            "/ingest/col/batch",
+            content=zb,
+            headers={"Content-Type": "application/zip"},
+        )
+        assert resp.status_code == 202
+        body = resp.json()
+        assert body["count"] == 1
+        assert body["operations"][0]["relPath"] == "docs/real.md"

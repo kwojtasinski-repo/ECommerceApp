@@ -17,14 +17,12 @@ public sealed class IngestControllerTests
 
     private static IngestController CreateController(
         IngestChannel? channel = null,
-        OperationStore? ops = null,
-        RagConfig? cfg = null)
+        OperationStore? ops = null)
     {
         channel ??= new IngestChannel();
         ops     ??= new OperationStore();
-        cfg     ??= new RagConfig();
 
-        var ctrl = new IngestController(channel, ops, cfg, NullLogger<IngestController>.Instance);
+        var ctrl = new IngestController(channel, ops, NullLogger<IngestController>.Instance);
 
         // Wire up a real HttpContext so Response.Headers["Location"] = ... works.
         var httpCtx = new DefaultHttpContext();
@@ -314,33 +312,142 @@ public sealed class IngestControllerTests
         Assert.Equal(OperationStore.RetentionPeriod.TotalHours, retentionHours);
     }
 
-    // ── POST /config ─────────────────────────────────────────────────────────
+    // ── POST /ingest/{collection}/batch  (P2-2) ───────────────────────────────
 
-    [Fact]
-    public void UploadConfig_Returns200_AndAppliesOverride()
+    private static System.IO.MemoryStream MakeZip(params (string relPath, string content)[] files)
     {
-        var ctrl = CreateController();
-
-        var result = ctrl.UploadConfig(new ConfigUploadRequest
+        var ms = new System.IO.MemoryStream();
+        using (var zip = new System.IO.Compression.ZipArchive(ms, System.IO.Compression.ZipArchiveMode.Create, leaveOpen: true))
         {
-            AdrIdPatterns = ["(?P<id>\\d{4})"],
-            DocKindRules  = [new DocKindRuleDto { Glob = "docs/adr/**", Kind = "adr" }],
-        });
+            foreach (var (relPath, content) in files)
+            {
+                var entry = zip.CreateEntry(relPath);
+                using var w = new System.IO.StreamWriter(entry.Open());
+                w.Write(content);
+            }
+        }
+        ms.Position = 0;
+        return ms;
+    }
 
-        var ok = Assert.IsType<OkObjectResult>(result);
-        Assert.NotNull(ok.Value);
+    private static IngestController CreateControllerWithBody(System.IO.Stream body, IngestChannel? channel = null, OperationStore? ops = null)
+    {
+        channel ??= new IngestChannel();
+        ops     ??= new OperationStore();
+
+        var ctrl = new IngestController(channel, ops, NullLogger<IngestController>.Instance);
+
+        var httpCtx = new DefaultHttpContext();
+        httpCtx.Request.Body          = body;
+        httpCtx.Request.ContentLength = body.Length;
+        httpCtx.Response.Body         = new System.IO.MemoryStream();
+        ctrl.ControllerContext = new ControllerContext { HttpContext = httpCtx };
+
+        return ctrl;
     }
 
     [Fact]
-    public void UploadConfig_EmptyRequest_Returns200_WithZeroCounts()
+    public async Task UploadBatch_Returns202_WithCountAndOperations()
     {
-        var ctrl = CreateController();
+        var zip  = MakeZip(("docs/intro.md", "# Intro"));
+        var ctrl = CreateControllerWithBody(zip);
 
-        var result = ctrl.UploadConfig(new ConfigUploadRequest());
+        var result = await ctrl.UploadBatch("col");
 
-        var ok    = Assert.IsType<OkObjectResult>(result);
-        var value = ok.Value!;
-        var adrCount = (int)value.GetType().GetProperty("adr_id_patterns")!.GetValue(value)!;
-        Assert.Equal(0, adrCount);
+        var accepted = Assert.IsType<AcceptedResult>(result);
+        Assert.Equal(202, accepted.StatusCode);
+        var body = accepted.Value!;
+        var count = (int)body.GetType().GetProperty("Count")!.GetValue(body)!;
+        Assert.Equal(1, count);
+    }
+
+    [Fact]
+    public async Task UploadBatch_MultipleFiles_EnqueuesAll()
+    {
+        var channel = new IngestChannel();
+        var zip = MakeZip(
+            ("docs/adr/0001.md", "# ADR-0001"),
+            ("docs/adr/0002.md", "# ADR-0002"),
+            ("docs/concepts/ddd.md", "# DDD"));
+        var ctrl = CreateControllerWithBody(zip, channel: channel);
+
+        var result = await ctrl.UploadBatch("myproject");
+
+        Assert.IsType<AcceptedResult>(result);
+        Assert.Equal(3, channel.PendingCount);
+    }
+
+    [Fact]
+    public async Task UploadBatch_EachFileGetsUniqueOperationId()
+    {
+        var ops = new OperationStore();
+        var zip = MakeZip(("a.md", "A"), ("b.md", "B"));
+        var ctrl = CreateControllerWithBody(zip, ops: ops);
+
+        var result = await ctrl.UploadBatch("col");
+
+        var accepted = Assert.IsType<AcceptedResult>(result);
+        var body     = accepted.Value!;
+        dynamic ops2 = body.GetType().GetProperty("Operations")!.GetValue(body)!;
+        // Cast to IEnumerable to iterate
+        var opList = (System.Collections.IEnumerable)ops2;
+        var ids = new System.Collections.Generic.List<string>();
+        foreach (var op in opList)
+            ids.Add((string)op.GetType().GetProperty("OperationId")!.GetValue(op)!);
+        Assert.Equal(2, ids.Distinct().Count());
+    }
+
+    [Fact]
+    public async Task UploadBatch_RegistersOperationsInStore()
+    {
+        var ops = new OperationStore();
+        var zip = MakeZip(("f.md", "# F"));
+        var ctrl = CreateControllerWithBody(zip, ops: ops);
+
+        var result = await ctrl.UploadBatch("col");
+
+        var accepted = Assert.IsType<AcceptedResult>(result);
+        var body     = accepted.Value!;
+        dynamic opList2 = body.GetType().GetProperty("Operations")!.GetValue(body)!;
+        var opList = (System.Collections.IEnumerable)opList2;
+        foreach (var op in opList)
+        {
+            var opId = (string)op.GetType().GetProperty("OperationId")!.GetValue(op)!;
+            Assert.NotNull(ops.Get(opId));
+            Assert.Equal(IngestStatus.Queued, ops.Get(opId)!.Status);
+        }
+    }
+
+    [Fact]
+    public async Task UploadBatch_InvalidZip_Returns400()
+    {
+        var body = new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes("not a zip"));
+        var ctrl = CreateControllerWithBody(body);
+
+        var result = await ctrl.UploadBatch("col");
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task UploadBatch_EmptyZip_Returns400()
+    {
+        var zip  = MakeZip(); // no files
+        var ctrl = CreateControllerWithBody(zip);
+
+        var result = await ctrl.UploadBatch("col");
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task UploadBatch_QueueFull_Returns503()
+    {
+        var ctrl = CreateControllerWithBody(MakeZip(("a.md", "A"), ("b.md", "B")), channel: FullChannel());
+
+        var result = await ctrl.UploadBatch("col");
+
+        var objResult = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(503, objResult.StatusCode);
     }
 }

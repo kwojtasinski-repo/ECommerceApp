@@ -17,9 +17,11 @@ namespace RagTools.Core;
 public sealed class IngestChannel
 {
     private readonly Channel<IngestJob> _channel;
+    private readonly int _capacity;
 
     public IngestChannel(int capacity = 1000)
     {
+        _capacity = capacity;
         _channel = Channel.CreateBounded<IngestJob>(new BoundedChannelOptions(capacity)
         {
             FullMode     = BoundedChannelFullMode.Wait,   // back-pressure (controller awaits)
@@ -43,4 +45,7 @@ public sealed class IngestChannel
 
     /// <summary>Current number of pending items (approximate).</summary>
     public int PendingCount => _channel.Reader.Count;
+
+    /// <summary>Maximum number of items the channel can hold (the capacity it was created with).</summary>
+    public int Capacity => _capacity;
 }

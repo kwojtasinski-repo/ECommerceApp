@@ -948,6 +948,37 @@ def _http_ingest_poll(base_url: str, status_url: str, timeout: int = 60,
     return {"status": "Timeout"}
 
 
+def _http_batch_upload(base_url: str, collection: str,
+                       files: dict[str, str],
+                       api_key: str | None = None) -> tuple[int, dict]:
+    """Upload a ZIP of documents to POST /ingest/{collection}/batch.
+
+    *files* maps relPath → text content.
+    Returns (status_code, response_body).
+    """
+    import io, zipfile, urllib.request, urllib.error
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        for rel_path, content in files.items():
+            zf.writestr(rel_path, content)
+    zip_bytes = buf.getvalue()
+
+    headers: dict[str, str] = {"Content-Type": "application/zip"}
+    if api_key:
+        headers["X-Api-Key"] = api_key
+
+    req = urllib.request.Request(
+        f"{base_url}/ingest/{collection}/batch",
+        data=zip_bytes, headers=headers, method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            return resp.status, json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read())
+
+
 def phase_7_hosted_ingest() -> PhaseResult:
     p = PhaseResult("Hosted ingest via HTTP API (no volume mounts)")
     print(f"\n{BANNER}\n  PHASE 7 — Hosted ingest via HTTP API\n{BANNER}")
@@ -1055,6 +1086,65 @@ def phase_7_hosted_ingest() -> PhaseResult:
 
     except Exception as exc:
         p.record(".NET SSE: hosted ingest", False, str(exc))
+
+    # ── Python SSE batch upload ───────────────────────────────────────────────
+    print("\n  [7c] Python SSE — batch upload via POST /ingest/{collection}/batch…")
+    _BATCH_DOC_MARKER = "BATCH_INGEST_E2E_MARKER_77KYZ"
+    _BATCH_FILES = {
+        "docs/batch-test-a.md": f"# Batch Test A\n\n{_BATCH_DOC_MARKER}\n",
+        "docs/batch-test-b.md": "# Batch Test B\n\nSecond file in batch.\n",
+    }
+    try:
+        py_api_key = os.environ.get("RAG_API_KEY", "").strip() or None
+        status_code, resp = _http_batch_upload(
+            py_base, PYTHON_COLLECTION, _BATCH_FILES, api_key=py_api_key)
+        accepted = status_code == 202
+        count = resp.get("count", 0)
+        p.record("Python SSE: POST /ingest/batch → 202 Accepted",
+                 accepted and count == len(_BATCH_FILES),
+                 f"status={status_code} count={count}")
+
+        if accepted:
+            for op_entry in resp.get("operations", []):
+                status_url = op_entry.get("statusUrl", "")
+                if status_url:
+                    print(f"    Polling {status_url} …")
+                    poll = _http_ingest_poll(py_base, status_url,
+                                             timeout=_HOSTED_INGEST_TIMEOUT,
+                                             api_key=py_api_key)
+                    completed = poll.get("status", "").lower() == "completed"
+                    p.record(
+                        f"Python SSE: batch op {op_entry.get('relPath','?')} Completed",
+                        completed, f"status={poll.get('status','?')}")
+    except Exception as exc:
+        p.record("Python SSE: batch upload", False, str(exc))
+
+    # ── .NET SSE batch upload ─────────────────────────────────────────────────
+    print("\n  [7d] .NET SSE — batch upload via POST /ingest/{collection}/batch…")
+    try:
+        status_code, resp = _http_batch_upload(
+            dn_base, DOTNET_COLLECTION, _BATCH_FILES, api_key=dn_api_key)
+        accepted = status_code == 202
+        count = resp.get("count", resp.get("Count", 0))
+        p.record(".NET SSE: POST /ingest/batch → 202 Accepted",
+                 accepted and count == len(_BATCH_FILES),
+                 f"status={status_code} count={count}")
+
+        if accepted:
+            for op_entry in resp.get("operations", resp.get("Operations", [])):
+                status_url = op_entry.get("statusUrl", op_entry.get("StatusUrl", ""))
+                if status_url:
+                    print(f"    Polling {status_url} …")
+                    poll = _http_ingest_poll(dn_base, status_url,
+                                             timeout=_HOSTED_INGEST_TIMEOUT,
+                                             api_key=dn_api_key)
+                    completed = poll.get("status", "").lower() == "completed"
+                    rel = op_entry.get("relPath", op_entry.get("RelPath", "?"))
+                    p.record(
+                        f".NET SSE: batch op {rel} Completed",
+                        completed, f"status={poll.get('status','?')}")
+    except Exception as exc:
+        p.record(".NET SSE: batch upload", False, str(exc))
 
     p.finish()
     return p

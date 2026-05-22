@@ -1,6 +1,6 @@
 # Roadmap: Remote Multi-Tenant RAG Server (ADR-0028)
 
-> Status: ✅ Phase 1 Complete — Phase 2 planned (see below)  
+> Status: ✅ Phase 1 Complete — Phase 2 in progress (P2-1 ✅, P2-2 ✅)  
 > Scope: `tools/rag-dotnet/` (.NET server), `tools/rag/` (Python server)  
 > ADR: [ADR-0028](../adr/0028/0028-remote-multitenant-rag-ingest.md)
 
@@ -460,7 +460,7 @@ When `--remote` is provided:
 
 ## Phase 2 — Design corrections and new tools
 
-> Status: 🔲 Planned  
+> Status: � In Progress (P2-1 ✅ done `a91b2b71`, P2-2 ✅ done — P2-3/P2-4/P2-5 pending)  
 > Scope: Both servers (`tools/rag-dotnet/`, `tools/rag/`)  
 > Follow TDD: write failing pipeline-test checks first, then implement.
 
@@ -481,7 +481,7 @@ JSON POST instead. Phase 2 restores the zip approach with a proper `manifest.jso
 
 ---
 
-### Step P2-1 — Remove `POST /config`; classification via bundled `metadata-rules.yaml`
+### Step P2-1 — Remove `POST /config`; classification via bundled `metadata-rules.yaml` ✅ Done (`a91b2b71`)
 
 The separate `POST /config` endpoint exists because Phase 1's single-file `POST /ingest`
 has no way to carry classification rules alongside each document. In the zip-batch design
@@ -500,9 +500,19 @@ has no way to carry classification rules alongside each document. In the zip-bat
 
 ---
 
-### Step P2-2 — ZIP batch ingest endpoint
+### Step P2-2 — ZIP batch ingest endpoint ✅ Done
 
-**TDD first — add failing phase 8 checks to `test_full_pipeline.py`:**
+**Implemented**: `POST /ingest/{collection}/batch` — raw `application/zip` body; returns `202 { batchId, count, operations[] }`. Per-file polling via existing `GET /ingest/{collection}/operations/{opId}`. Python 47/47 unit tests pass; .NET 213/213 unit tests pass. Pipeline test phase 7 extended with 7c/7d batch checks.
+
+**Scope delivered** (simplified relative to original spec — no `manifest.json`, no bundled YAML validation):
+- Accepts raw ZIP body; skips directory entries
+- Returns one `operationId` per file for independent polling
+- `503` when queue cannot fit all files; `400` for invalid or empty ZIP
+- Tests: 10 Python + 7 .NET unit tests
+
+**Original TDD spec (below) described a richer design with manifest/config validation — deferred to P2-3+):**
+
+**Original TDD first — add failing phase 8 checks to `test_full_pipeline.py`:**
 
 ```python
 # Phase 8: ZIP batch ingest
