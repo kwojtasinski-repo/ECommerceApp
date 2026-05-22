@@ -142,7 +142,7 @@ public class RagConfigTests : IDisposable
     {
         var path = WriteConfig(MinimalConfig());
         var cfg = RagConfig.Load(path);
-        Assert.Equal([1, 2, 3], cfg.Chunker.SplitOnHeadings);
+        Assert.Equal([1, 2, 3], cfg.Chunker.SplitLevels);
     }
 
     [Fact]

@@ -24,7 +24,7 @@ public class MarkdownChunkerTests
         FallbackCounter());
 
     private static MarkdownChunker MinTokenGuardChunker(int minTokens = 40) => new(
-        new ChunkerSection { MaxTokens = 800, MinTokens = minTokens, OverlapTokens = 80 },
+        new ChunkerSection { MaxTokens = 800, MinTokens = minTokens, OverlapTokens = 80, SplitOnHeadings = [1, 2, 3] },
         FallbackCounter());
 
     private static MarkdownChunker SmallChunker(int maxTokens = 10, int minTokens = 1, int overlapTokens = 2) => new(
