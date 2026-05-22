@@ -343,75 +343,106 @@ class TestE2EWorkerFailurePropagation:
 # Full-pipeline E2E (requires real Qdrant via QDRANT_URL env var)
 # ─────────────────────────────────────────────────────────────────────────────
 
-QDRANT_URL = os.environ.get("QDRANT_URL", "")
-REQUIRES_QDRANT = pytest.mark.skipif(
-    not QDRANT_URL,
-    reason="QDRANT_URL env var not set — skipping real Qdrant E2E tests",
-)
+_DEFAULT_QDRANT_URL = os.environ.get("QDRANT_URL", "http://localhost:6333")
 
 
-@REQUIRES_QDRANT
+def _qdrant_reachable(url: str = _DEFAULT_QDRANT_URL) -> bool:
+    """Return True if Qdrant HTTP API is responding at *url*."""
+    try:
+        with urllib.request.urlopen(f"{url}/healthz", timeout=3) as resp:
+            return resp.status == 200
+    except Exception:
+        return False
+
+
 class TestE2EFullPipelineQdrant:
-    """These tests require a running Qdrant instance reachable at QDRANT_URL.
+    """Full-pipeline tests that spin up a real uvicorn server + real Qdrant.
 
-    Set QDRANT_URL=http://localhost:6333 to run them locally.
-    They are skipped automatically in unit-test-only CI runs.
+    The test probes Qdrant at startup and fails immediately with a clear message
+    if Qdrant is not reachable — no silent skips.
+    Override the URL via ``QDRANT_URL`` env var (default: http://localhost:6333).
+    Start Qdrant with: ``docker compose up -d qdrant``
     """
 
     def test_uploaded_document_appears_in_qdrant(self):
         """Upload a doc, wait for Completed, verify at least 1 point exists in Qdrant."""
-        from qdrant_client import QdrantClient
+        qdrant_url = _DEFAULT_QDRANT_URL
+        if not _qdrant_reachable(qdrant_url):
+            pytest.fail(
+                f"Qdrant is not reachable at {qdrant_url}. "
+                "Start it with: docker compose up -d qdrant  "
+                "(or set QDRANT_URL to a running instance)"
+            )
 
-        port = _find_free_port()
-        # We need a real process_fn that connects to Qdrant.
-        # Import the builder from ingest_worker — it needs an Engine and config.
-        from common import load_config
+        import os
         from pathlib import Path
+
+        from common import load_config
+        from ingest_worker import _build_process_fn
         from query import QueryEngine
+        from qdrant_client import QdrantClient
 
         cfg_path = Path(__file__).parent / "config.yaml"
         if not cfg_path.exists():
-            pytest.skip("config.yaml not found — skipping full Qdrant E2E")
+            pytest.fail("config.yaml not found next to test file — cannot build QueryEngine")
 
-        cfg = load_config(cfg_path)
-        engine = QueryEngine(cfg)
-        store = OperationStore()
-        queue: asyncio.Queue = asyncio.Queue(maxsize=DEFAULT_CAPACITY)
+        # Force HTTP mode so the engine connects to the running Qdrant container.
+        # The config may default to 'local' (embedded Qdrant), which writes to a local
+        # file and is a completely different store from the HTTP container.
+        old_mode = os.environ.get("VECTOR_MODE")
+        old_url = os.environ.get("QDRANT_URL")
+        os.environ["VECTOR_MODE"] = "qdrant"
+        os.environ["QDRANT_URL"] = qdrant_url
 
-        from ingest_worker import _build_process_fn
-
-        process_fn = _build_process_fn(engine, cfg, store)
-        worker = IngestWorker(queue, process_fn)
-
-        @asynccontextmanager
-        async def lifespan(_app):
-            worker.start()
-            yield
-            await worker.stop()
-
-        routes = build_ingest_routes(store, queue, DEFAULT_CAPACITY)
-        app = Starlette(lifespan=lifespan, routes=routes)
-        handle = _ServerHandle(app, port)
-        handle.start()
-
-        collection = "e2e-qdrant-test"
-        base = f"http://127.0.0.1:{port}"
+        handle = None
         try:
+            cfg = load_config(cfg_path)
+            engine = QueryEngine(cfg)
+            store = OperationStore()
+            queue: asyncio.Queue = asyncio.Queue(maxsize=DEFAULT_CAPACITY)
+            process_fn = _build_process_fn(engine, cfg, store)
+            worker = IngestWorker(queue, process_fn)
+
+            @asynccontextmanager
+            async def lifespan(_app):
+                worker.start()
+                yield
+                await worker.stop()
+
+            port = _find_free_port()
+            routes = build_ingest_routes(store, queue, DEFAULT_CAPACITY)
+            app = Starlette(lifespan=lifespan, routes=routes)
+            handle = _ServerHandle(app, port)
+            handle.start()
+
+            collection = "e2e-qdrant-test"
+            base = f"http://127.0.0.1:{port}"
             code, body = _post(
                 f"{base}/ingest/{collection}",
                 {
                     "relPath": "e2e/qdrant-test.md",
-                    "content": "# E2E Qdrant test\n\nThis is paragraph one.",
+                    "content": (
+                        "# E2E Qdrant Integration Test Document\n\n"
+                        "This document is used by the Python ingest E2E integration test "
+                        "to verify that the full pipeline — HTTP POST, asyncio worker, "
+                        "SentenceTransformer embedding, and Qdrant upsert — all operate "
+                        "correctly end-to-end. The text is deliberately verbose so that "
+                        "the content exceeds the chunker min_tokens threshold (default 40) "
+                        "and at least one chunk is produced and indexed into Qdrant. "
+                        "The test then queries Qdrant directly to assert that at least "
+                        "one point exists for the uploaded rel_path, confirming that the "
+                        "worker completed the ingest pipeline successfully.\n"
+                    ),
                     "docKind": "adr",
                 },
             )
-            assert code == 202
-            final = _poll_until_done(base, collection, body["operationId"], timeout=30)
-            assert final["status"] == "Completed"
-            assert final["chunkCount"] > 0
+            assert code == 202, f"Expected 202 but got {code}: {body}"
+            final = _poll_until_done(base, collection, body["operationId"], timeout=60)
+            assert final["status"] == "Completed", f"Expected Completed: {final}"
+            assert final["chunkCount"] > 0, "Expected at least 1 chunk to be indexed"
 
-            # Verify points exist in Qdrant.
-            client = QdrantClient(url=QDRANT_URL)
+            # Verify points exist in Qdrant directly.
+            client = QdrantClient(url=qdrant_url)
             result = client.scroll(
                 collection_name=collection,
                 scroll_filter={
@@ -420,6 +451,16 @@ class TestE2EFullPipelineQdrant:
                 limit=10,
             )
             points, _ = result
-            assert len(points) > 0
+            assert len(points) > 0, "Expected at least 1 point in Qdrant after ingest"
         finally:
-            handle.stop()
+            if handle:
+                handle.stop()
+            # Restore original env vars.
+            if old_mode is None:
+                os.environ.pop("VECTOR_MODE", None)
+            else:
+                os.environ["VECTOR_MODE"] = old_mode
+            if old_url is None:
+                os.environ.pop("QDRANT_URL", None)
+            else:
+                os.environ["QDRANT_URL"] = old_url

@@ -85,8 +85,8 @@ def _build_process_fn(engine: "QueryEngine", cfg: "Config", store: "OperationSto
 
         chunks = chunk_markdown(
             job.content,
-            max_tokens=cfg.chunker_max_tokens,
-            overlap_tokens=cfg.chunker_overlap_tokens,
+            doc_title=_file_doc_title(job.rel_path, job.content),
+            chunker_cfg=cfg.chunker,
         )
         if not chunks:
             return 0
@@ -94,7 +94,7 @@ def _build_process_fn(engine: "QueryEngine", cfg: "Config", store: "OperationSto
         doc_title = _file_doc_title(job.rel_path, job.content)
         doc_kind = job.doc_kind or detect_doc_kind(job.rel_path, cfg)
         adr_id = detect_adr_id(job.rel_path, cfg)
-        weight = resolve_weight(job.rel_path, cfg)
+        weight = resolve_weight(job.rel_path, len(job.content.encode()), cfg.ranking)
 
         texts = [c.text for c in chunks]
         vectors = model.encode(texts, normalize_embeddings=True)
