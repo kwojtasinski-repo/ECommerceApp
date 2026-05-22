@@ -146,6 +146,54 @@ public sealed class ChunkerAutoModeE2E_LevelA
         Assert.Contains("Connection pooling is handled exclusively", combined);
     }
 
+    [Fact]
+    public void ExplicitH4Mode_H5HeadingsNotInBreadcrumbs()
+    {
+        // [1,2,3,4] must NOT split at H5 — H5 content stays inside its parent H4 chunk.
+        var chunks = ExplicitH4Chunker().Chunk(AutoModeE2EFixture.H5Doc, AutoModeE2EFixture.H5RelPath);
+        var breadcrumbs = chunks.Select(c => c.Breadcrumb).ToList();
+
+        Assert.False(
+            breadcrumbs.Any(b => b.Contains("Synchronous Path") || b.Contains("Asynchronous Path")),
+            $"Explicit [1,2,3,4] must not create H5-level split boundaries. " +
+            $"Got breadcrumbs: [{string.Join(", ", breadcrumbs)}]");
+    }
+
+    [Fact]
+    public void ExplicitH4Mode_H5ContentPreservedInsideH4Chunk()
+    {
+        // Even though H5 is not a split boundary, its content must appear in the H4 chunk.
+        var chunks = ExplicitH4Chunker().Chunk(AutoModeE2EFixture.H5Doc, AutoModeE2EFixture.H5RelPath);
+        var combined = string.Join(" ", chunks.Select(c => c.Text));
+
+        Assert.Contains("Synchronous request path is the primary processing route", combined, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Asynchronous request path queues work items", combined, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void AutoMode_H5HeadingsAppearInBreadcrumbs()
+    {
+        // Auto mode detects H5 as the deepest heading level and splits there too.
+        var chunks = AutoChunker().Chunk(AutoModeE2EFixture.H5Doc, AutoModeE2EFixture.H5RelPath);
+        var breadcrumbs = chunks.Select(c => c.Breadcrumb).ToList();
+
+        Assert.True(
+            breadcrumbs.Any(b => b.Contains("Synchronous Path") || b.Contains("Asynchronous Path")),
+            $"Auto mode should split at H5 and produce H5-level breadcrumbs. " +
+            $"Got: [{string.Join(", ", breadcrumbs)}]");
+    }
+
+    [Fact]
+    public void AutoMode_ProducesMoreChunksThanExplicitH4_ForH5Doc()
+    {
+        // Auto splits at H5 → more chunks than explicit [1,2,3,4] which stops at H4.
+        var autoN    = AutoChunker().Chunk(AutoModeE2EFixture.H5Doc, AutoModeE2EFixture.H5RelPath).Count;
+        var explicitN = ExplicitH4Chunker().Chunk(AutoModeE2EFixture.H5Doc, AutoModeE2EFixture.H5RelPath).Count;
+
+        Assert.True(autoN > explicitN,
+            $"Auto mode should produce more chunks than explicit [1,2,3,4] for an H5 doc: auto={autoN}, explicit={explicitN}");
+    }
+
     // ── Short-sections fixture: merge instead of drop ─────────────────────
 
     [Fact]

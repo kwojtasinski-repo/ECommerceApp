@@ -146,8 +146,47 @@ public sealed class AutoModeE2EFixture : IAsyncLifetime
 
     internal const string H4RelPath    = "docs/auto-mode-h4-sections.md";
     internal const string ShortRelPath = "docs/auto-mode-short-sections.md";
+    internal const string H5RelPath    = "docs/auto-mode-h5-sections.md";
 
-    // ── Model / Docker detection ───────────────────────────────────────────
+    /// <summary>
+    /// Document with H5 headings nested under H4.
+    /// Used to verify that explicit [1,2,3,4] does NOT split at H5,
+    /// while auto mode DOES split at H5 (it detects H5 as the deepest level).
+    /// Each H5 section is intentionally &gt;40 words to exceed min_tokens=40.
+    /// </summary>
+    internal const string H5Doc = """
+        # Architecture Guide
+
+        ## Core Concepts
+
+        ### Service Layer
+
+        #### Request Handling
+
+        ##### Synchronous Path
+        The synchronous request path is the primary processing route for all incoming API
+        calls. Requests are validated against the schema, authenticated via the identity
+        provider, and dispatched to the appropriate domain handler. Each handler returns
+        a typed result that the API layer maps to an HTTP response code and body.
+
+        ##### Asynchronous Path
+        The asynchronous request path queues work items into the internal job broker and
+        returns an accepted status immediately to the caller. Background workers pick up
+        the queued items, execute the domain logic, and publish completion events. Callers
+        poll a status endpoint or subscribe to webhook notifications to learn the outcome.
+
+        #### Response Formatting
+
+        The response formatter applies content negotiation, serialises the domain result
+        into the requested media type, attaches correlation headers, and finalises cache
+        control directives before returning to the transport layer.
+
+        ## Infrastructure
+
+        Infrastructure services provide persistence, messaging, and external integrations
+        used by the service layer described above.
+        """;
+
 
     private static string DefaultModelDir =>
         Environment.GetEnvironmentVariable("RAG_MODEL_DIR")
