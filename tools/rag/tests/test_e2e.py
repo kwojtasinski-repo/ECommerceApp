@@ -1380,6 +1380,47 @@ class TestMcpTools:
         result = mcp_session("get_adr_history", {"adr_id": "0002"})
         assert result["adr_id"] == "0002"
 
+    # ── get_history ────────────────────────────────────────────────────────
+
+    def test_get_history_0001_returns_chunks(self, mcp_session: ToolCaller) -> None:
+        result = mcp_session("get_history", {"id": "0001"})
+        assert result["id"] == "0001"
+        assert result["chunk_count"] > 0
+
+    def test_get_history_0001_has_history_field(self, mcp_session: ToolCaller) -> None:
+        result = mcp_session("get_history", {"id": "0001"})
+        assert result["history_field"] == "adr_id"
+
+    def test_get_history_0001_includes_amendment_chunks(self, mcp_session: ToolCaller) -> None:
+        """ADR-0001 has a main file and one amendment — chunk_count must be > 1."""
+        result = mcp_session("get_history", {"id": "0001"})
+        assert result["chunk_count"] > 1, (
+            f"Expected main + amendment chunks for ADR-0001, got chunk_count={result['chunk_count']}"
+        )
+
+    def test_get_history_0002_returns_chunks(self, mcp_session: ToolCaller) -> None:
+        result = mcp_session("get_history", {"id": "0002"})
+        assert result["id"] == "0002"
+        assert result["chunk_count"] > 0
+
+    def test_get_history_unknown_id_returns_zero_chunks(self, mcp_session: ToolCaller) -> None:
+        result = mcp_session("get_history", {"id": "__nonexistent_e2e__"})
+        assert result["chunk_count"] == 0
+        assert result["chunks"] == []
+
+    def test_get_history_chunks_ordered_by_start_line(self, mcp_session: ToolCaller) -> None:
+        result = mcp_session("get_history", {"id": "0001"})
+        lines = [c["start_line"] for c in result["chunks"]]
+        assert lines == sorted(lines), (
+            f"Chunks are not ordered by start_line: {lines}"
+        )
+
+    def test_get_history_chunk_has_required_fields(self, mcp_session: ToolCaller) -> None:
+        result = mcp_session("get_history", {"id": "0001"})
+        for chunk in result["chunks"]:
+            for field in ("rel_path", "breadcrumb", "doc_kind", "start_line", "text"):
+                assert field in chunk, f"Chunk is missing required field {field!r}: {chunk}"
+
     # ── Generic workspace isolation (KEY requirement) ──────────────────────
 
     def test_server_reads_from_config_workspace_not_module_repo_root(
@@ -1454,6 +1495,11 @@ class TestContainerMode:
         result = container_session("get_adr_history", {"adr_id": "0001"})
         assert result["amendment_count"] == 1
         assert result["main"]["content"] is not None
+
+    def test_container_get_history_returns_chunks(self, container_session: ToolCaller) -> None:
+        result = container_session("get_history", {"id": "0001"})
+        assert result["id"] == "0001"
+        assert result["chunk_count"] > 0
 
     def test_container_workspace_from_volume_not_image_files(
         self, container_session: ToolCaller

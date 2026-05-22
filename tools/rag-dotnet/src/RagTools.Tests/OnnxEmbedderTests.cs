@@ -179,7 +179,7 @@ public class OnnxEmbedderTests
     [Fact]
     public void Tokenize_RealVocab_HelloWorld_ContainsExpectedTokenIds()
     {
-        Skip.IfNot(File.Exists(VocabPath), $"vocab.txt not found at: {VocabPath}");
+        Assert.True(File.Exists(VocabPath), $"vocab.txt not found at: {VocabPath}");
 
         using var emb = RealTokenizerEmbedder(maxSeqLen: 16);
         var (ids, _, _) = emb.Tokenize(["hello world"]);
@@ -194,7 +194,7 @@ public class OnnxEmbedderTests
     [Fact]
     public void Tokenize_RealVocab_AttentionMask_OneForTokens_ZeroForPadding()
     {
-        Skip.IfNot(File.Exists(VocabPath), $"vocab.txt not found at: {VocabPath}");
+        Assert.True(File.Exists(VocabPath), $"vocab.txt not found at: {VocabPath}");
 
         // "hi" → [CLS, hi, SEP] = 3 tokens. maxSeqLen=8 → seqLen=3 (no padding beyond actual length)
         using var emb = RealTokenizerEmbedder(maxSeqLen: 8);
@@ -209,7 +209,7 @@ public class OnnxEmbedderTests
     [Fact]
     public void Tokenize_RealVocab_Batch_LongerTextSetsSeqLen()
     {
-        Skip.IfNot(File.Exists(VocabPath), $"vocab.txt not found at: {VocabPath}");
+        Assert.True(File.Exists(VocabPath), $"vocab.txt not found at: {VocabPath}");
 
         // Batch: short "hi" + long "hello world foo" → seqLen should cover the longest.
         using var emb = RealTokenizerEmbedder(maxSeqLen: 16);
@@ -223,7 +223,7 @@ public class OnnxEmbedderTests
     [Fact]
     public void Tokenize_RealVocab_Truncates_ToMaxSeqLen()
     {
-        Skip.IfNot(File.Exists(VocabPath), $"vocab.txt not found at: {VocabPath}");
+        Assert.True(File.Exists(VocabPath), $"vocab.txt not found at: {VocabPath}");
 
         // "hello world" has 4 tokens; cap at 3 → truncated.
         using var emb = RealTokenizerEmbedder(maxSeqLen: 3);
@@ -236,7 +236,7 @@ public class OnnxEmbedderTests
     [Fact]
     public void Tokenize_RealVocab_ShortTextInBatch_PaddedWithZeroIds()
     {
-        Skip.IfNot(File.Exists(VocabPath), $"vocab.txt not found at: {VocabPath}");
+        Assert.True(File.Exists(VocabPath), $"vocab.txt not found at: {VocabPath}");
 
         // "hi" has fewer tokens than "hello world". The shorter one gets zero-padded.
         using var emb = RealTokenizerEmbedder(maxSeqLen: 16);

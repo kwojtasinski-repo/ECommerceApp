@@ -150,10 +150,10 @@ public class BertTokenCounterTests
         Assert.Equal([101, 102], ids);
     }
 
-    [SkippableFact]
+    [Fact]
     public void EncodeToIds_WithRealVocab_HelloWorld_ReturnsExpectedIds()
     {
-        Skip.IfNot(File.Exists(VocabPath), $"vocab.txt not found at: {VocabPath}");
+        Assert.True(File.Exists(VocabPath), $"vocab.txt not found at: {VocabPath}");
         var counter = BertTokenCounter.FromModelDir(Path.GetDirectoryName(VocabPath)!);
 
         var ids = counter.EncodeToIds("hello world");
@@ -163,10 +163,10 @@ public class BertTokenCounterTests
         Assert.Equal([101, 7592, 2088, 102], ids);
     }
 
-    [SkippableFact]
+    [Fact]
     public void EncodeToIds_WithRealVocab_TruncatesToMaxLength()
     {
-        Skip.IfNot(File.Exists(VocabPath), $"vocab.txt not found at: {VocabPath}");
+        Assert.True(File.Exists(VocabPath), $"vocab.txt not found at: {VocabPath}");
         var counter = BertTokenCounter.FromModelDir(Path.GetDirectoryName(VocabPath)!);
 
         // "hello world" has 4 tokens including [CLS]/[SEP]; cap at 3

@@ -261,6 +261,7 @@ public sealed class RagTools(
             {
                 id,
                 history_field = historyField,
+                chunk_count = 0,
                 chunks = Array.Empty<object>(),
                 message = $"No chunks found for {historyField}={id}. Ensure the document is indexed.",
             });

@@ -32,10 +32,9 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
 
     // ── query_docs ────────────────────────────────────────────────────────
 
-    [SkippableFact]
+    [Fact]
     public async Task QueryDocs_SemanticSearch_ReturnsRelevantChunks()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         var result = await _fx.Tools!.QueryDocs(
             "strongly typed identifier value object", bc: null, top_k: 3,
@@ -45,10 +44,9 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
         Assert.Contains("Alpha", result, StringComparison.OrdinalIgnoreCase);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task QueryDocs_ReturnsScoreAndPath_ForEachHit()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         var result = await _fx.Tools!.QueryDocs(
             "command query separation", bc: null, top_k: 5,
@@ -59,10 +57,9 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
         Assert.Contains(".md", result, StringComparison.OrdinalIgnoreCase);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task QueryDocs_UnrelatedQuestion_ReturnsEmptyOrLowScore()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         // A question about something completely unrelated to the two synthetic docs.
         var result = await _fx.Tools!.QueryDocs(
@@ -76,10 +73,9 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
 
     // ── read_docs ─────────────────────────────────────────────────────────
 
-    [SkippableFact]
+    [Fact]
     public async Task ReadDocs_ChunkMode_ReturnsGroupedChunks()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         var result = await _fx.Tools!.ReadDocs(
             "how does the Alpha pattern work", bc: null, top_files: 2,
@@ -89,10 +85,9 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
         Assert.Contains("alpha", result, StringComparison.OrdinalIgnoreCase);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task ReadDocs_FullMode_ReturnsCompleteFileContent()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         // Phrases that trigger full-content intent regex
         var result = await _fx.Tools!.ReadDocs(
@@ -107,10 +102,9 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
 
     // ── get_adr_history ───────────────────────────────────────────────────
 
-    [SkippableFact]
+    [Fact]
     public async Task GetAdrHistory_KnownAdr_ReturnsAllChunks()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         var result = await _fx.Tools!.GetAdrHistory("0001", CancellationToken.None);
 
@@ -119,10 +113,9 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
         Assert.Contains("0001", result, StringComparison.OrdinalIgnoreCase);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task GetAdrHistory_IncludesAmendments()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         var result = await _fx.Tools!.GetAdrHistory("0001", CancellationToken.None);
 
@@ -130,10 +123,9 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
         Assert.Contains("amendment", result, StringComparison.OrdinalIgnoreCase);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task GetAdrHistory_SecondAdr_ReturnsBetaContent()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         var result = await _fx.Tools!.GetAdrHistory("0002", CancellationToken.None);
 
@@ -141,10 +133,9 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
         Assert.Contains("0002", result, StringComparison.OrdinalIgnoreCase);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task GetAdrHistory_UnknownAdr_ReturnsEmptyOrNotFoundMessage()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         var result = await _fx.Tools!.GetAdrHistory("9999", CancellationToken.None);
 
@@ -154,10 +145,9 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
 
     // ── get_history ───────────────────────────────────────────────────────
 
-    [SkippableFact]
+    [Fact]
     public async Task GetHistory_KnownId_ReturnsChunks()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         // ADR-0001 is indexed with adr_id="0001" — get_history should find it using
         // the default history_field ("adr_id") since the __config__ point has no HistoryField set.
@@ -170,10 +160,9 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
         Assert.True(root.GetProperty("chunk_count").GetInt32() > 0, "Expected at least one chunk for ADR 0001");
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task GetHistory_IncludesAmendmentChunks()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         // ADR-0001 has an amendment — all chunks (main + amendment) should be returned.
         var result = await _fx.Tools!.GetHistory("0001", CancellationToken.None);
@@ -183,27 +172,22 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
         Assert.True(count > 1, $"Expected main + amendment chunks, got {count}");
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task GetHistory_UnknownId_ReturnsEmptyChunks()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         var result = await _fx.Tools!.GetHistory("9999", CancellationToken.None);
 
         var doc = JsonDocument.Parse(result);
         var root = doc.RootElement;
         Assert.Equal("9999", root.GetProperty("id").GetString());
-        // Either chunk_count == 0 (success branch) or chunks array is empty (error branch).
-        if (root.TryGetProperty("chunk_count", out var cc))
-            Assert.Equal(0, cc.GetInt32());
-        else
-            Assert.Equal(0, root.GetProperty("chunks").GetArrayLength());
+        Assert.Equal(0, root.GetProperty("chunk_count").GetInt32());
+        Assert.Equal(0, root.GetProperty("chunks").GetArrayLength());
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task GetHistory_ChunksOrderedByStartLine()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         var result = await _fx.Tools!.GetHistory("0001", CancellationToken.None);
 
@@ -216,10 +200,9 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
 
     // ── list_adrs ─────────────────────────────────────────────────────────
 
-    [SkippableFact]
+    [Fact]
     public async Task ListAdrs_ReturnsAllAdrs()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         var result = await _fx.Tools!.ListAdrs(CancellationToken.None);
 
@@ -227,10 +210,9 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
         Assert.Contains("0002", result);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task ListAdrs_IncludesAmendmentCount()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         var result = await _fx.Tools!.ListAdrs(CancellationToken.None);
 
@@ -238,10 +220,9 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
         Assert.Contains("amendment_count", result, StringComparison.OrdinalIgnoreCase);
     }
 
-    [SkippableFact]
+    [Fact]
     public async Task ListAdrs_DoesNotRequireQdrantOrEmbedder()
     {
-        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         // This test is a contract check: ListAdrs reads only the workspace filesystem.
         // It must return a non-null, non-empty result — proven above — but here we also

@@ -394,6 +394,7 @@ async def _tool_get_history(args: dict) -> list[TextContent]:
         return [TextContent(type="text", text=json.dumps({
             "id": history_id,
             "history_field": history_field,
+            "chunk_count": 0,
             "chunks": [],
             "message": f"No chunks found for {history_field}={history_id!r}. Ensure the document is indexed.",
         }))]
