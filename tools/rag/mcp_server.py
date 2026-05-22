@@ -24,10 +24,12 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import contextlib
 import json
 import os
 import re
 import sys
+from contextvars import ContextVar
 from pathlib import Path
 
 from mcp.server import Server
@@ -41,6 +43,11 @@ from query import QueryEngine
 CFG = None
 ENGINE = None
 SERVER = Server("ecommerceapp-rag")
+
+# Per-SSE-session collection override.
+# Set from ?project=<name> query param on the /sse connection URL.
+# When None, tools fall back to CFG.collection (the default configured collection).
+_session_collection: ContextVar[str | None] = ContextVar("_session_collection", default=None)
 
 # ---------------------------- full-content intent detection ----------------------------
 
@@ -155,7 +162,8 @@ async def _tool_query_docs(args: dict) -> list[TextContent]:
     top_k = int(args.get("top_k", 5))
     try:
         hits = await asyncio.wait_for(
-            asyncio.to_thread(lambda: ENGINE.search(question, top_k=top_k, bc_filter=bc)),
+            asyncio.to_thread(lambda: ENGINE.search(question, top_k=top_k, bc_filter=bc,
+                                                     collection=_session_collection.get(None))),
             timeout=_TOOL_TIMEOUT,
         )
     except asyncio.TimeoutError:
@@ -213,7 +221,8 @@ async def _tool_read_docs(args: dict) -> list[TextContent]:
     # cutoff when there are competing chunks from other files.
     try:
         hits = await asyncio.wait_for(
-            asyncio.to_thread(lambda: ENGINE.search(question, top_k=max(30, top_files * 15), bc_filter=bc)),
+            asyncio.to_thread(lambda: ENGINE.search(question, top_k=max(30, top_files * 15), bc_filter=bc,
+                                                     collection=_session_collection.get(None))),
             timeout=_TOOL_TIMEOUT,
         )
     except asyncio.TimeoutError:
@@ -375,20 +384,52 @@ async def _run_sse(port: int) -> None:
     sse = SseServerTransport("/messages/")
 
     async def handle_sse(request):  # noqa: ANN001
-        async with sse.connect_sse(
-            request.scope, request.receive, request._send
-        ) as streams:
-            await SERVER.run(streams[0], streams[1], SERVER.create_initialization_options())
+        # Bind the per-session collection from ?project= query param.
+        # Tool handlers read _session_collection.get(None) to override CFG.collection.
+        project = request.query_params.get("project")
+        token = _session_collection.set(project)
+        try:
+            async with sse.connect_sse(
+                request.scope, request.receive, request._send
+            ) as streams:
+                await SERVER.run(streams[0], streams[1], SERVER.create_initialization_options())
+        finally:
+            _session_collection.reset(token)
+
+    # ── Ingest pipeline (async queue + background worker) ─────────────────────
+    from api_key_middleware import ApiKeyMiddleware
+    from ingest_routes import build_ingest_routes
+    from ingest_worker import DEFAULT_CAPACITY, IngestWorker, _build_process_fn
+    from operation_store import OperationStore
+
+    _store = OperationStore()
+    _queue: asyncio.Queue = asyncio.Queue(maxsize=DEFAULT_CAPACITY)
+    _process_fn = _build_process_fn(ENGINE, CFG, _store)
+    _worker = IngestWorker(_queue, _process_fn)
+
+    @contextlib.asynccontextmanager
+    async def lifespan(_app):  # noqa: ANN001
+        _worker.start()
+        yield
+        await _worker.stop()
+
+    ingest_routes = build_ingest_routes(_store, _queue, DEFAULT_CAPACITY)
 
     app = Starlette(
+        lifespan=lifespan,
         routes=[
             Route("/sse", endpoint=handle_sse),
             Mount("/messages/", app=sse.handle_post_message),
-        ]
+            *ingest_routes,
+        ],
     )
+    app.add_middleware(ApiKeyMiddleware)
     config = uvicorn.Config(app, host="0.0.0.0", port=port, log_level="warning")
     server = uvicorn.Server(config)
-    print(f"[rag-mcp] SSE endpoint: http://0.0.0.0:{port}/sse", file=sys.stderr)
+    print(f"[rag-mcp] SSE endpoint:   http://0.0.0.0:{port}/sse", file=sys.stderr)
+    print(f"[rag-mcp] ingest API:     http://0.0.0.0:{port}/ingest/{{collection}}", file=sys.stderr)
+    api_key_set = bool(os.environ.get("RAG_API_KEY", "").strip())
+    print(f"[rag-mcp] auth:           {'X-Api-Key required' if api_key_set else 'no auth (RAG_API_KEY not set)'}", file=sys.stderr)
     await server.serve()
 
 

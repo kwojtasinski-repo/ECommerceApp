@@ -178,6 +178,107 @@ def _write_stats_md(
     stats_path.write_text("\n".join(lines), encoding="utf-8")
 
 
+# ── Remote push mode (--remote URL) ───────────────────────────────────────────
+
+def _remote_push(
+    cfg: "Config",
+    files: "list[Path]",
+    base_url: str,
+    api_key: "str | None",
+) -> int:
+    """POST each file's raw Markdown content to the remote mcp_server ingest API.
+
+    Mirrors the .NET RagTools.Ingest --remote flag (ADR-0028).
+    Uses stdlib urllib so no extra dependency is needed.
+    Retries on 503 (queue full) up to 3 times with exponential back-off.
+    Polls each operation until Completed or Failed before moving on.
+    """
+    import urllib.error
+    import urllib.request
+
+    base = base_url.rstrip("/")
+    collection = cfg.collection
+    key = (api_key or os.environ.get("RAG_API_KEY", "")).strip()
+    headers: dict[str, str] = {"Content-Type": "application/json"}
+    if key:
+        headers["X-Api-Key"] = key
+
+    succeeded = failed = skipped = 0
+    for path in files:
+        rel_path = path.relative_to(cfg.workspace).as_posix()
+        try:
+            content = path.read_text(encoding="utf-8")
+        except OSError as exc:
+            print(f"[ingest] SKIP {rel_path}: cannot read — {exc}")
+            skipped += 1
+            continue
+
+        doc_kind = detect_doc_kind(rel_path, cfg)
+        body = json.dumps({"relPath": rel_path, "content": content, "docKind": doc_kind}).encode()
+
+        # POST with retry on 503.
+        location: str | None = None
+        for attempt in range(3):
+            req = urllib.request.Request(f"{base}/ingest/{collection}", data=body, headers=headers, method="POST")
+            try:
+                with urllib.request.urlopen(req, timeout=30) as resp:
+                    result = json.loads(resp.read())
+                    location = result.get("location")
+                break
+            except urllib.error.HTTPError as exc:
+                if exc.code == 503 and attempt < 2:
+                    wait = 2 ** attempt
+                    print(f"[ingest] {rel_path}: queue full (503), retry in {wait}s …")
+                    time.sleep(wait)
+                else:
+                    print(f"[ingest] ERROR {rel_path}: POST failed — HTTP {exc.code}")
+                    failed += 1
+                    location = None
+                    break
+            except Exception as exc:
+                print(f"[ingest] ERROR {rel_path}: POST failed — {exc}")
+                failed += 1
+                location = None
+                break
+
+        if location is None:
+            continue
+
+        # Poll until Completed or Failed (timeout 120s).
+        poll_url = f"{base}{location}"
+        poll_req_factory = lambda: urllib.request.Request(poll_url, headers=headers)  # noqa: E731
+        status = "Queued"
+        deadline = time.time() + 120
+        while time.time() < deadline:
+            time.sleep(2)
+            try:
+                with urllib.request.urlopen(poll_req_factory(), timeout=10) as resp:
+                    op = json.loads(resp.read())
+                    status = op.get("status", "")
+                    if status in ("Completed", "Failed"):
+                        break
+            except Exception:
+                pass  # transient network; keep polling
+
+        if status == "Completed":
+            chunks = op.get("chunkCount", "?")
+            print(f"[ingest] OK  {rel_path} → {chunks} chunk(s)")
+            succeeded += 1
+        elif status == "Failed":
+            err = op.get("errorMessage", "unknown error")
+            print(f"[ingest] FAIL {rel_path}: {err}")
+            failed += 1
+        else:
+            print(f"[ingest] TIMEOUT {rel_path}: still {status!r} after 120s")
+            failed += 1
+
+    print(
+        f"[ingest] remote push complete: {succeeded} ok, {failed} failed, {skipped} skipped "
+        f"({len(files)} total)"
+    )
+    return 0 if failed == 0 else 1
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default=None, metavar="PATH",
@@ -188,6 +289,18 @@ def main() -> int:
                         help="Parse + chunk only, print stats, no embeddings or upserts")
     parser.add_argument("--force-full", action="store_true",
                         help="Recreate collection from scratch (ignores manifest cache)")
+    parser.add_argument(
+        "--remote", default=None, metavar="URL",
+        help=(
+            "Base URL of a running mcp_server.py in SSE mode "
+            "(e.g. http://localhost:3002). When set, files are POSTed to "
+            "POST /ingest/{collection} instead of being embedded locally."
+        ),
+    )
+    parser.add_argument(
+        "--api-key", default=None, metavar="KEY",
+        help="X-Api-Key header value sent with every remote request (overrides RAG_API_KEY env var).",
+    )
     args = parser.parse_args()
 
     if args.config:
@@ -244,6 +357,11 @@ def main() -> int:
             _save_file_manifest(cfg, current_hashes, len(all_files),
                                 stored.get("chunks", 0), stored.get("dim", 0))
             return 0
+
+    # ── Remote push: skip local embedding, POST to running mcp_server ────────
+    if args.remote:
+        print(f"[ingest] remote mode → {args.remote}/ingest/{cfg.collection} ({len(files_to_process)} file(s))")
+        return _remote_push(cfg, files_to_process, args.remote, args.api_key)
 
     # -- chunk only the files that need processing --
     chunks_by_file: list[tuple[Path, list]] = []

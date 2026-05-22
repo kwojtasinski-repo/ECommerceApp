@@ -141,7 +141,13 @@ class QueryEngine:
         top_k: int | None = None,
         fetch_k: int | None = None,
         bc_filter: str | None = None,
+        collection: str | None = None,
     ) -> list[QueryHit]:
+        """Search the Qdrant index.
+
+        *collection* overrides cfg.collection — used by the SSE multi-tenant path
+        where ?project= sets a per-session collection name via ContextVar.
+        """
         self._ensure()
         defaults = self.cfg.query_defaults
         top_k = top_k or int(defaults["default_top_k"])
@@ -157,7 +163,7 @@ class QueryEngine:
             pass
 
         results = self._client.search(
-            collection_name=self.cfg.collection,
+            collection_name=collection or self.cfg.collection,
             query_vector=qvec,
             query_filter=qfilter,
             limit=fetch_k,
