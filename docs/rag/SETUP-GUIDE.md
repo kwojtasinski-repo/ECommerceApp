@@ -394,6 +394,138 @@ Invoke-RestMethod "http://localhost:3002/ingest/ecommerceapp_docs/operations/$op
 Operations are retained in memory for **1 hour** after enqueueing (same for both
 Python `RETENTION_HOURS = 1` and .NET `RetentionPeriod = TimeSpan.FromHours(1)`).
 
+### HTTP API reference (current Phase 1 design)
+
+> **Note:** This is the Phase 1 API. Phase 2 will replace these endpoints with a single
+> ZIP batch upload (`POST /ingest/{collection}/batch`). The description below is accurate
+> for the currently deployed servers.
+
+The `--remote` CLI flag uses these HTTP endpoints internally. If you need to integrate
+directly (e.g., from a CI script without Python or .NET tooling), here is the full contract.
+
+**Authentication** — all `/ingest/*` and `/admin/*` routes require:
+```
+X-Api-Key: <value of RAG_API_KEY env var on the server>
+```
+Omit the header when `RAG_API_KEY` is not set (dev mode).
+
+---
+
+#### Step 1 — Upload metadata rules (`POST /config`)
+
+Before sending documents, tell the server how to classify them. The server has no access to
+`metadata-rules.yaml` when running without a volume mount, so you push the rules at runtime.
+
+```powershell
+$rules = Get-Content tools/rag/metadata-rules.yaml -Raw | python -c "
+import sys, yaml, json; data = yaml.safe_load(sys.stdin)
+print(json.dumps({
+    'adr_id_patterns': [e['pattern'] for e in data.get('adr_id_patterns', [])],
+    'doc_kind_rules':  data.get('doc_kind_rules', []),
+}))"
+
+Invoke-RestMethod http://localhost:3002/config `
+    -Method POST `
+    -ContentType 'application/json' `
+    -Headers @{ 'X-Api-Key' = $env:RAG_API_KEY } `
+    -Body $rules
+```
+
+Response `200`:
+```json
+{ "message": "Config override applied.", "adr_id_patterns": 3, "doc_kind_rules": 8 }
+```
+
+This call is **in-memory only** — it does not persist across server restarts. Re-call it
+before the next ingest batch if the server was restarted.
+
+| Field | Type | Description |
+|---|---|---|
+| `adr_id_patterns` | `string[]` | Regex patterns; each must contain a named group `(?P<id>...)` |
+| `doc_kind_rules` | `[{glob, kind}]` | First-matching glob wins; assigns `doc_kind` to each uploaded file |
+
+---
+
+#### Step 2 — Upload one document (`POST /ingest/{collection}`)
+
+Send one document per request. Repeat for every file to index.
+
+```powershell
+$body = @{
+    relPath  = 'docs/adr/0016/0016-sales-coupons.md'
+    content  = Get-Content docs/adr/0016/0016-sales-coupons.md -Raw
+    doc_kind = 'adr'          # optional; server infers from /config rules if omitted
+} | ConvertTo-Json
+
+$resp = Invoke-RestMethod http://localhost:3002/ingest/ecommerceapp_docs `
+    -Method POST `
+    -ContentType 'application/json' `
+    -Headers @{ 'X-Api-Key' = $env:RAG_API_KEY } `
+    -Body $body
+
+$opId = $resp.operationId
+```
+
+Request body:
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `relPath` / `rel_path` | `string` | ✅ | Relative path used as the document identifier |
+| `content` | `string` | ✅ | Full text of the document |
+| `doc_kind` / `docKind` | `string` | ❌ | Classification hint; auto-detected from `/config` rules if omitted |
+
+Response `202 Accepted`:
+```json
+{
+  "operationId": "ecommerceapp_docs:docs-adr-0016-...:...",
+  "status": "Queued",
+  "location": "/ingest/ecommerceapp_docs/operations/<opId>"
+}
+```
+
+Response `503 Service Unavailable` — queue is full (capacity 100 Python / 1000 .NET); retry.
+
+---
+
+#### Step 3 — Poll until complete (`GET /ingest/{collection}/operations/{opId}`)
+
+```powershell
+do {
+    Start-Sleep 2
+    $status = Invoke-RestMethod `
+        "http://localhost:3002/ingest/ecommerceapp_docs/operations/$opId" `
+        -Headers @{ 'X-Api-Key' = $env:RAG_API_KEY }
+    Write-Host $status.status
+} until ($status.status -in 'Completed', 'Failed')
+
+if ($status.status -eq 'Failed') { Write-Error $status.errorMessage }
+```
+
+Poll response:
+
+| Field | Description |
+|---|---|
+| `status` | `Queued` → `Processing` → `Completed` \| `Failed` |
+| `operationId` | Same ID from step 2 |
+| `relPath` | Document path |
+| `errorMessage` | Non-null only when `status == "Failed"` |
+| `completedAt` | ISO-8601 timestamp, non-null when done |
+
+---
+
+#### All endpoints at a glance
+
+| Method | Path | Auth | Purpose |
+|---|---|---|---|
+| `POST` | `/config` | ✅ | Upload metadata-rules (adr_id_patterns + doc_kind_rules) |
+| `POST` | `/ingest/{collection}` | ✅ | Queue one document; returns 202 + operationId |
+| `GET` | `/ingest/{collection}/operations/{opId}` | ✅ | Poll status of one operation |
+| `GET` | `/ingest/{collection}/operations` | ✅ | List all recent operations for a collection |
+| `GET` | `/admin/stats` | ✅ | Queue depth + retention hours |
+
+Both Python (port `3002`) and .NET (port `3001`) servers expose the same endpoints with
+the same request/response schema.
+
 ---
 
 ## Running the test suite
