@@ -123,16 +123,39 @@ dotnet build src/RagTools.Tests/RagTools.Tests.csproj -q
 dotnet test src/RagTools.Tests/RagTools.Tests.csproj --no-build -q
 ```
 
-> **What this does:** runs all unit tests covering token counting, chunking, manifest
-> change detection, ONNX embedder internals, config deserialization, and the 4-way
-> config / workspace resolution. Tests that require a real `vocab.txt` are guarded
-> with `[SkippableFact]` and skipped automatically when the model isn't downloaded.
+> **What this does:** runs all unit + E2E tests covering token counting, chunking, manifest
+> change detection, ONNX embedder internals, config deserialization, ingest pipeline, and
+> HTTP upload API.
 
 Expected output:
 
 ```
-Success!  — Failed: 0, Passed: 100, Skipped: 0, Total: 100
+Success!  — Failed: 0, Passed: 206, Skipped: 0, Total: 206
 ```
+
+### E2E tests (IngestE2ETests + HttpIngestE2ETests)
+
+The E2E tests run the full ingest pipeline and HTTP API against a real Qdrant instance.
+They require:
+
+- **ONNX model** — downloaded by `pwsh tools/rag-dotnet/download-model.ps1`
+- **Qdrant** — either via Docker Desktop (Testcontainers starts it automatically per test run)
+  OR set `QDRANT_URL=http://localhost:6334` to reuse a running container
+
+Both test classes belong to the `[Collection("Rag E2E")]` xUnit collection, so they run
+**sequentially** (no parallel ONNX inference) and share the loaded embedder.
+
+**Log output:** each test routes `IngestWorker` and `IngestController` log messages to its
+own xUnit output pane via `XunitLogSink` — you see exactly which worker steps ran under
+which test assertion, making failures easy to diagnose.
+
+```bash
+# Run only the E2E tests
+dotnet test src/RagTools.Tests/RagTools.Tests.csproj --no-build -q --filter "Category=E2E"
+```
+
+> If Docker is not available and `QDRANT_URL` is not set, the fixtures report
+> `SkipReason` and tests fail with a clear message — no silent pass.
 
 ### Troubleshooting: `MSB3492` file-lock errors during `dotnet build`
 

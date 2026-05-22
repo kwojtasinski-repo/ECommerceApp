@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using RagTools.Core;
 using Xunit;
+using Xunit.Abstractions;
 
 namespace RagTools.Tests.E2E;
 
@@ -31,11 +32,28 @@ namespace RagTools.Tests.E2E;
 /// They are automatically skipped when neither is available.
 /// </summary>
 [Trait("Category", "E2E")]
-public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>
+[Collection(RagTestCollection.Name)]
+public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>, IDisposable
 {
     private readonly HttpIngestE2EFixture _fx;
+    private readonly SharedOnnxFixture    _sharedOnnx;
 
-    public HttpIngestE2ETests(HttpIngestE2EFixture fixture) => _fx = fixture;
+    public HttpIngestE2ETests(
+        HttpIngestE2EFixture fixture,
+        SharedOnnxFixture sharedOnnx,
+        ITestOutputHelper output)
+    {
+        _fx         = fixture;
+        _sharedOnnx = sharedOnnx;
+        _fx.Sink.SetOutput(output);         // web-app request logs → this test's output
+        sharedOnnx.Sink.SetOutput(output);  // ONNX model logs    → this test's output
+    }
+
+    public void Dispose()
+    {
+        _fx.Sink.SetOutput(null);
+        _sharedOnnx.Sink.SetOutput(null);
+    }
 
     // ── POST /ingest/{collection} — happy path ────────────────────────────────
 

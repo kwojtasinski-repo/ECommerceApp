@@ -1,9 +1,7 @@
-using System.Diagnostics;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using RagTools.Core;
 using Testcontainers.Qdrant;
 
@@ -26,6 +24,15 @@ public sealed class IngestE2EFixture : IAsyncLifetime
 {
     public bool IsAvailable { get; private set; }
     public string SkipReason { get; private set; } = string.Empty;
+
+    // ── Logging sink ──────────────────────────────────────────────────────────
+    /// <summary>
+    /// Route IngestWorker log messages to the currently-running test's xUnit output.
+    /// Each test-class constructor calls <c>Sink.SetOutput(output)</c>; Dispose calls
+    /// <c>Sink.SetOutput(null)</c>.
+    /// </summary>
+    public readonly XunitLogSink Sink = new();
+    private ILoggerFactory? _loggerFactory;
 
     // Infrastructure
     private QdrantContainer? _container;
@@ -59,15 +66,11 @@ public sealed class IngestE2EFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        var sw = Stopwatch.StartNew();
-        Console.WriteLine($"[IngestE2EFixture] InitializeAsync start");
-
         // Check model availability via shared singleton (avoids double-loading).
         if (!SharedOnnxModel.IsAvailable)
         {
             IsAvailable = false;
             SkipReason  = $"ONNX model not found in {SharedOnnxModel.ModelDir}";  
-            Console.WriteLine($"[IngestE2EFixture] SKIP — {SkipReason}");
             return;
         }
 
@@ -79,20 +82,17 @@ public sealed class IngestE2EFixture : IAsyncLifetime
         }
         else if (DockerAvailable())
         {
-            Console.WriteLine("[IngestE2EFixture] Starting Qdrant container ...");
             _container = new QdrantBuilder("qdrant/qdrant:v1.13.6")
                 .WithPortBinding(6334, assignRandomHostPort: true)
                 .Build();
             await _container.StartAsync();
             var grpcPort = _container.GetMappedPublicPort(6334);
             qdrantUrl = $"http://{_container.Hostname}:{grpcPort}";
-            Console.WriteLine($"[IngestE2EFixture] Qdrant ready at {qdrantUrl}  (+{sw.Elapsed.TotalSeconds:F1}s)");
         }
         else
         {
             IsAvailable = false;
             SkipReason = "Qdrant not available: set QDRANT_URL or ensure Docker is running.";
-            Console.WriteLine($"[IngestE2EFixture] SKIP — {SkipReason}");
             return;
         }
 
@@ -101,14 +101,11 @@ public sealed class IngestE2EFixture : IAsyncLifetime
         Config = RagConfig.Load(_workspace.ConfigPath);
 
         // Use the shared singleton — triggers load+warm-up ONCE for the whole test process.
-        Console.WriteLine($"[IngestE2EFixture] Acquiring shared ONNX embedder (+{sw.Elapsed.TotalSeconds:F1}s) ...");
         Embedder = SharedOnnxModel.Instance;
-        Console.WriteLine($"[IngestE2EFixture] Embedder ready (+{sw.Elapsed.TotalSeconds:F1}s)");
 
         // Ensure collection exists.
         var rawStore = QdrantStore.Connect(qdrantUrl, Collection);
         await rawStore.EnsureCollectionAsync(Embedder.Dimensions);
-        Console.WriteLine($"[IngestE2EFixture] Collection '{Collection}' created (+{sw.Elapsed.TotalSeconds:F1}s)");
 
         // Build IDocumentStore with caching.
         var qdrantDocStore = new QdrantDocumentStore(qdrantUrl);
@@ -122,22 +119,26 @@ public sealed class IngestE2EFixture : IAsyncLifetime
             .Build();
 
         // Wire up IngestWorker manually (DI-free for tests).
-        // BertTokenCounter: whitespace-based fallback — no sentencepiece.bpe.model needed for chunking.
-        // IngestWorker still uses the shared OnnxEmbedder (fully functional, real vectors).
+        // BertTokenCounter: whitespace-based fallback — no sentencepiece.bpe.model needed.
+        // IngestWorker uses the shared OnnxEmbedder (fully functional, real vectors).
         var tokenCounter = BertTokenCounter.FromModelDir("/nonexistent/path");
-        using var loggerFactory = LoggerFactory.Create(b =>
-            b.AddSimpleConsole(o => { o.TimestampFormat = "HH:mm:ss.fff "; })
+
+        // Build a LoggerFactory whose output follows the active xUnit ITestOutputHelper.
+        // The factory is kept as a field so it outlives InitializeAsync() and is only
+        // disposed in DisposeAsync() after the worker has stopped.
+        _loggerFactory = LoggerFactory.Create(b =>
+            b.AddProvider(new XunitLoggerProvider(Sink))
              .SetMinimumLevel(LogLevel.Debug));
+
         var worker = new IngestWorker(
             Channel, Store, Embedder, Config, Operations,
-            loggerFactory.CreateLogger<IngestWorker>(), tokenCounter);
+            _loggerFactory.CreateLogger<IngestWorker>(), tokenCounter);
 
         // Start the worker as a BackgroundService.
         var cts = new CancellationTokenSource();
         _ = worker.StartAsync(cts.Token);
 
         IsAvailable = true;
-        Console.WriteLine($"[IngestE2EFixture] Ready. Total init: {sw.Elapsed.TotalSeconds:F1}s");
     }
 
     /// <summary>
@@ -178,6 +179,7 @@ public sealed class IngestE2EFixture : IAsyncLifetime
     {
         if (_workerHost is not null)
             await _workerHost.StopAsync(TimeSpan.FromSeconds(5));
+        _loggerFactory?.Dispose();
         _workspace?.Dispose();
         if (_container is not null)
             await _container.DisposeAsync();

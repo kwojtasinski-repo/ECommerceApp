@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Net.Sockets;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
@@ -7,7 +6,6 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using RagTools.Core;
 using RagTools.Mcp.Controllers;
 using RagTools.Mcp.Middleware;
@@ -50,6 +48,14 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
     private QdrantStore?      _rawStore;
     private string?           _qdrantUrl;
 
+    // ── Logging sink ──────────────────────────────────────────────────────────
+    /// <summary>
+    /// Route IngestWorker / IngestController log messages to the currently-running
+    /// test's xUnit output.  Each test-class constructor calls
+    /// <c>Sink.SetOutput(output)</c>; Dispose calls <c>Sink.SetOutput(null)</c>.
+    /// </summary>
+    public readonly XunitLogSink Sink = new();
+
     // ── Availability helpers (shared with IngestE2EFixture) ──────────────────
 
     private static bool DockerAvailable()
@@ -83,15 +89,11 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
 
     public async Task InitializeAsync()
     {
-        var sw = Stopwatch.StartNew();
-        Console.WriteLine("[HttpIngestE2EFixture] InitializeAsync start");
-
         // Check model availability via shared singleton (avoids double-loading).
         if (!SharedOnnxModel.IsAvailable)
         {
             IsAvailable = false;
             SkipReason  = $"ONNX model not found in {SharedOnnxModel.ModelDir}";
-            Console.WriteLine($"[HttpIngestE2EFixture] SKIP — {SkipReason}");
             return;
         }
 
@@ -106,20 +108,17 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
         }
         else if (DockerAvailable())
         {
-            Console.WriteLine("[HttpIngestE2EFixture] Starting Qdrant container ...");
             _container = new QdrantBuilder("qdrant/qdrant:v1.13.6")
                 .WithPortBinding(6334, assignRandomHostPort: true)
                 .Build();
             await _container.StartAsync();
             var grpcPort = _container.GetMappedPublicPort(6334);
             qdrantUrl = $"http://{_container.Hostname}:{grpcPort}";
-            Console.WriteLine($"[HttpIngestE2EFixture] Qdrant ready at {qdrantUrl}  (+{sw.Elapsed.TotalSeconds:F1}s)");
         }
         else
         {
             IsAvailable = false;
             SkipReason  = "Qdrant not available: set QDRANT_URL or ensure Docker is running.";
-            Console.WriteLine($"[HttpIngestE2EFixture] SKIP — {SkipReason}");
             return;
         }
 
@@ -128,14 +127,11 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
         var cfg = RagConfig.Load(_workspace.ConfigPath);
 
         // Use the shared singleton — triggers load+warm-up ONCE for the whole test process.
-        Console.WriteLine($"[HttpIngestE2EFixture] Acquiring shared ONNX embedder (+{sw.Elapsed.TotalSeconds:F1}s) ...");
         var embedder = SharedOnnxModel.Instance;
-        Console.WriteLine($"[HttpIngestE2EFixture] Embedder ready (+{sw.Elapsed.TotalSeconds:F1}s)  dims={embedder.Dimensions}");
 
         _qdrantUrl = qdrantUrl;
         _rawStore  = QdrantStore.Connect(qdrantUrl, Collection);
         await _rawStore.EnsureCollectionAsync(embedder.Dimensions);
-        Console.WriteLine($"[HttpIngestE2EFixture] Qdrant collection '{Collection}' ready (+{sw.Elapsed.TotalSeconds:F1}s)");
 
         // Build the IDocumentStore (same as SSE branch of Program.cs).
         var qdrantDocStore = new QdrantDocumentStore(_qdrantUrl!);
@@ -149,7 +145,7 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
 
         // Enable console logging so IngestWorker + controller traces are visible in test output.
         webBuilder.Logging
-            .AddSimpleConsole(o => { o.TimestampFormat = "HH:mm:ss.fff "; })
+            .AddProvider(new XunitLoggerProvider(Sink))
             .SetMinimumLevel(LogLevel.Debug);
 
         webBuilder.WebHost.UseUrls($"http://localhost:{port}");
@@ -178,7 +174,6 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
         Client  = new HttpClient { BaseAddress = new Uri(BaseUrl) };
 
         IsAvailable = true;
-        Console.WriteLine($"[HttpIngestE2EFixture] Web app running at {BaseUrl}  Total init: {sw.Elapsed.TotalSeconds:F1}s");
     }
 
     public async Task DisposeAsync()

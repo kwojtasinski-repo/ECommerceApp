@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using RagTools.Core;
 using Xunit;
+using Xunit.Abstractions;
 using RagMcpTools = RagTools.Mcp.Tools.RagTools;
 
 namespace RagTools.Tests.E2E;
@@ -20,11 +21,28 @@ namespace RagTools.Tests.E2E;
 /// They are skipped automatically when neither is available.
 /// </summary>
 [Trait("Category", "E2E")]
-public sealed class IngestE2ETests : IClassFixture<IngestE2EFixture>
+[Collection(RagTestCollection.Name)]
+public sealed class IngestE2ETests : IClassFixture<IngestE2EFixture>, IDisposable
 {
     private readonly IngestE2EFixture _fx;
+    private readonly SharedOnnxFixture _sharedOnnx;
 
-    public IngestE2ETests(IngestE2EFixture fixture) => _fx = fixture;
+    public IngestE2ETests(
+        IngestE2EFixture fixture,
+        SharedOnnxFixture sharedOnnx,
+        ITestOutputHelper output)
+    {
+        _fx         = fixture;
+        _sharedOnnx = sharedOnnx;
+        _fx.Sink.SetOutput(output);         // IngestWorker logs → this test's output
+        sharedOnnx.Sink.SetOutput(output);  // ONNX model logs  → this test's output
+    }
+
+    public void Dispose()
+    {
+        _fx.Sink.SetOutput(null);
+        _sharedOnnx.Sink.SetOutput(null);
+    }
 
     // ── Ingest worker end-to-end ──────────────────────────────────────────
 
