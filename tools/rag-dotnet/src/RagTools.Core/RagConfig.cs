@@ -290,8 +290,12 @@ public sealed class SourceSection
 
 public sealed class EmbedderSection
 {
+    /// <summary>
+    /// Informational only — .NET loads the ONNX binary from the directory set by
+    /// <c>RAG_MODEL_DIR</c>. This field is written to the stats file so the team can
+    /// see which model was used without inspecting the directory.
+    /// </summary>
     public string Model { get; init; } = "paraphrase-multilingual-MiniLM-L12-v2";
-    public string Device { get; init; } = "cpu";
     public int BatchSize { get; init; } = 32;
 }
 

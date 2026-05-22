@@ -68,8 +68,11 @@ COPY config.yaml .
 
 # RAG_WORKSPACE tells common.py where the repo root is inside the container.
 # Overridable at runtime via -e RAG_WORKSPACE=...
+# VECTOR_MODE=local means the embedded Qdrant library is used (no separate server).
+# docker-compose overrides this to VECTOR_MODE=docker (separate Qdrant container).
 ENV RAG_WORKSPACE=/workspace
 ENV PYTHONUNBUFFERED=1
+ENV VECTOR_MODE=local
 
 # /data/qdrant — mount qdrant_data volume here (embedded Qdrant storage)
 # /workspace    — mount repo root here (docs + .github + .cache for manifest)

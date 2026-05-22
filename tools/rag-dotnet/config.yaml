@@ -17,33 +17,55 @@ source:
     - ".github/context/anti-patterns-critical.context.md"
 
 embedder:
-  # Multilingual model — must match the ONNX model downloaded to tools/rag-dotnet/model/.
-  # The Python server uses the same model name via sentence-transformers (SentencePiece tokenizer).
-  # The .NET server loads the ONNX export via OnnxEmbedder with SentencePieceTokenCounter
-  # (Microsoft.ML.Tokenizers 2.0.0 stable, HF ID remapping applied).
+  # Informational only — .NET loads the ONNX binary from the directory set by RAG_MODEL_DIR.
+  # Dimensions and device are inferred from the ONNX model at runtime; they are not used by code.
+  # This is the only field you might need to change — if you switch models, run ingest with
+  # --force-full afterwards (old vectors are incompatible with the new model).
   model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-  dimensions: 384
-  device: "cpu"
-  batch_size: 32
+  # batch_size is a server performance setting with a safe default (32). Not listed here.
 
 chunker:
-  max_tokens: 800
-  min_tokens: 40
-  overlap_tokens: 80
+  # Each doc is split into chunks so that Qdrant can find the relevant paragraph,
+  # not just the relevant file. Smaller chunks = more precise answers but more index entries.
+  max_tokens: 800        # hard upper limit per chunk (the model processes up to 512 tokens;
+                         # chunks over 512 are truncated at encode time, so keep this close to 512)
+  min_tokens: 40         # chunks shorter than this are dropped (too short to carry useful meaning)
+  overlap_tokens: 80     # the last 80 tokens of a chunk are repeated at the start of the next.
+                         # This prevents a question that spans two chunks from returning a half-answer.
+  # Which Markdown heading levels trigger a chunk boundary.
+  # [1, 2, 3] means every # H1, ## H2, and ### H3 starts a new chunk.
+  # H4, H5, H6 headings stay inside the same chunk as their parent H3 section.
+  #
+  # Why not split on every heading?
+  # H4+ sections in this repo’s ADRs and architecture docs are usually 1–2 sentences.
+  # Splitting there would produce chunks shorter than min_tokens (40) which get dropped,
+  # or tiny context-free fragments that return poor results.
+  # [1, 2, 3] gives the right balance: meaningful section boundaries without micro-chunks.
   split_on_headings: [1, 2, 3]
 
 vector_store:
-  backend: "qdrant"
-  mode: "docker"
-  local_path: "/data/qdrant"
+  # .NET always connects to Qdrant via HTTP gRPC — no embedded or memory mode.
   # Separate collection so Python and .NET embeddings never mix (different tokenizers
   # produce incompatible vector spaces — cross-collection queries would degrade quality).
   collection: "ecommerceapp_docs_dotnet"
   url: "http://localhost:6333"
 
 ranking:
-  # Weights are tunable here independently of the Python config.
-  # Experiment freely — only the .NET collection is affected.
+  # After Qdrant finds the most similar chunks, each result’s score is multiplied
+  # by a weight that depends on which file the chunk came from.
+  # final_score = raw_cosine_similarity × weight
+  # Example: known-issues.md (raw=0.80 × 1.25 = 1.00) beats roadmap (raw=0.82 × 0.70 = 0.57).
+  #
+  # How to pick a value when adding a new pattern:
+  #   1.20–1.25  "must surface no matter what"       — bug-fix gates, safety-critical docs
+  #   1.05–1.15  "more authoritative than average"    — amendments, concrete code examples
+  #   0.90–1.00  "neutral / current state"            — main ADR text, codebase maps
+  #   0.70–0.85  "useful context, not primary answer" — templates, abstract docs
+  #   0.30–0.70  "low priority / future work"         — roadmaps, migration plans
+  #   0.05–0.10  "only as a last resort"              — empty stubs, placeholders
+  #
+  # Weights are tunable here independently of the Python config — only the .NET collection is affected.
+  # First matching glob wins. Files not matched by any pattern get weight 1.00.
   weights:
     - { pattern: ".github/context/known-issues.md",             weight: 1.25 }
     - { pattern: ".github/context/agent-decisions.md",          weight: 1.20 }
@@ -63,8 +85,15 @@ ranking:
   stub_byte_threshold: 400
 
 query:
+  # How many results the MCP tools return to Copilot by default.
+  # 5 means "give Copilot the 5 most relevant chunks."
   default_top_k: 5
+  # How many candidates Qdrant fetches before ranking.
+  # Qdrant retrieves fetch_k results by raw similarity, then weights are applied,
+  # then the list is trimmed to top_k. fetch_k must be ≥ top_k.
   fetch_k: 20
+  # Minimum raw similarity (0.0–1.0) to include a result.
+  # 0.30 = ignore chunks less than 30% similar to the question.
   score_threshold: 0.30
 
 # ── Companion config files ─────────────────────────────────────────────────────
@@ -75,9 +104,7 @@ config_files:
   queries:               "queries.yaml"
   multilingual_glossary: "multilingual-glossary.yaml"  # query-time expansion: Polish / German → English
 
-synthesis:
-  mode: "none"
-
 storage:
+  # Used by the ingest pipeline only — the MCP server (stdio or SSE) does not read this section.
   manifest_path: ".rag/manifest-dotnet.json"   # separate manifest — .NET per-instance state
   stats_path: "docs/rag/index-stats-dotnet.md"

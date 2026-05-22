@@ -283,7 +283,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default=None, metavar="PATH",
                         help="Path to config.yaml (default: config.yaml next to ingest.py)")
-    parser.add_argument("--mode", choices=["memory", "docker", "local"], default=None,
+    parser.add_argument("--mode", choices=["docker", "local"], default=None,
                         help="Override vector_store.mode from config.yaml")
     parser.add_argument("--dry-run", action="store_true",
                         help="Parse + chunk only, print stats, no embeddings or upserts")
@@ -301,7 +301,15 @@ def main() -> int:
         "--api-key", default=None, metavar="KEY",
         help="X-Api-Key header value sent with every remote request (overrides RAG_API_KEY env var).",
     )
+    parser.add_argument(
+        "--verbose", "-v", action="store_true",
+        help="Enable verbose (DEBUG-level) logging output.",
+    )
     args = parser.parse_args()
+
+    if args.verbose:
+        import logging
+        logging.basicConfig(level=logging.DEBUG, format="[%(levelname)s] %(name)s: %(message)s")
 
     if args.config:
         config_path = Path(args.config).resolve()
@@ -328,7 +336,7 @@ def main() -> int:
         for path in all_files
     }
 
-    if args.force_full or mode == "memory" or not stored_hashes:
+    if args.force_full or not stored_hashes:
         files_to_process = all_files
         files_to_delete: list[str] = []
         incremental = False
@@ -361,7 +369,11 @@ def main() -> int:
     # ── Remote push: skip local embedding, POST to running mcp_server ────────
     if args.remote:
         print(f"[ingest] remote mode → {args.remote}/ingest/{cfg.collection} ({len(files_to_process)} file(s))")
-        return _remote_push(cfg, files_to_process, args.remote, args.api_key)
+        rc = _remote_push(cfg, files_to_process, args.remote, args.api_key)
+        # Save manifest on the client side so subsequent remote runs are incremental.
+        # Chunk count is unknown (server-side stat) — store 0 as a sentinel.
+        _save_file_manifest(cfg, current_hashes, len(all_files), 0, 0)
+        return rc
 
     # -- chunk only the files that need processing --
     chunks_by_file: list[tuple[Path, list]] = []
@@ -397,13 +409,7 @@ def main() -> int:
     dim = model.get_sentence_embedding_dimension()
     print(f"[ingest] embedding dimension: {dim}")
 
-    if mode == "memory":
-        client = QdrantClient(":memory:")
-        client.recreate_collection(
-            collection_name=cfg.collection,
-            vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
-        )
-    elif mode == "local":
+    if mode == "local":
         client = QdrantClient(path=cfg.vector_local_path)
         if not incremental:
             client.recreate_collection(
@@ -487,23 +493,7 @@ def main() -> int:
         client.upsert(collection_name=cfg.collection, points=points[i : i + BATCH])
     print(f"[ingest] done in {time.time() - started:.1f}s")
 
-    if mode == "memory":
-        # Persist a JSON snapshot so query.py can reload without re-embedding.
-        cfg.snapshot_path.parent.mkdir(parents=True, exist_ok=True)
-        snapshot = {
-            "collection": cfg.collection,
-            "dim": dim,
-            "model": cfg.embedder_model,
-            "points": [
-                {"id": p.id, "vector": p.vector, "payload": p.payload}
-                for p in points
-            ],
-        }
-        with cfg.snapshot_path.open("w", encoding="utf-8") as fh:
-            json.dump(snapshot, fh)
-        print(f"[ingest] snapshot written: {cfg.snapshot_path.relative_to(cfg.workspace)}")
-
-    # Always save the hash manifest (both memory and docker modes).
+    # Save the hash manifest.
     _write_stats_md(cfg, points, len(all_files))
     if cfg.stats_path is not None:
         print(f"[ingest] stats written:    {cfg.stats_path.relative_to(cfg.workspace)}")

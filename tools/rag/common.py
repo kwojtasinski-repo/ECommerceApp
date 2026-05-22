@@ -85,7 +85,7 @@ class Config:
     @property
     def vector_mode(self) -> str:
         """VECTOR_MODE env var overrides config.yaml (allows docker-compose env injection)."""
-        return os.environ.get("VECTOR_MODE") or self.raw["vector_store"].get("mode", "memory")
+        return os.environ.get("VECTOR_MODE") or self.raw["vector_store"].get("mode", "docker")
 
     @property
     def vector_url(self) -> str:
@@ -108,10 +108,6 @@ class Config:
     @property
     def query_defaults(self) -> dict[str, Any]:
         return self.raw["query"]
-
-    @property
-    def snapshot_path(self) -> Path:
-        return self.workspace / self.raw["storage"]["snapshot_path"]
 
     @property
     def manifest_path(self) -> Path:

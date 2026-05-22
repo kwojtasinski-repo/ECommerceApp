@@ -68,8 +68,12 @@ retrieval quality at the same dimensionality cost.
 | Weaviate | External | ✅ Docker | ✅ Rich | ❌ More complex setup, fewer Python e2e examples |
 
 **Rationale**: Qdrant has the best balance of local Docker support, metadata payload
-filtering, and Python + .NET client parity. The Python client supports an in-memory mode
-(`mode: memory`) which is used by e2e tests without needing a running Qdrant instance.
+filtering, and Python + .NET client parity. The Python client supports an embedded
+(file-based) mode (`VECTOR_MODE=local`) used when no separate Qdrant server is running.
+
+> **Note (2025):** The original in-memory Qdrant mode (`mode: memory`) was removed.
+> Unit tests now stub all Qdrant and embedding calls. E2E tests require a local or
+> Docker Qdrant instance. See `tools/rag/test_ingest_unit.py` and `test_e2e.py`.
 
 ---
 
@@ -123,7 +127,7 @@ ONNX model; gRPC port 6334 must be accessible.
 | Local dev, Python 3.13 venv available | Python (recommended default) |
 | Docker-only environment, no Python runtime allowed | .NET (`tools/rag-dotnet/`) |
 | Production deployment (no sentence-transformers overhead) | .NET |
-| CI smoke tests without Qdrant | Python (in-memory Qdrant mode via `mode: memory`) |
+| CI smoke tests without Qdrant | Python unit tests only — all Qdrant calls are stubbed in `test_ingest_unit.py` |
 | Adding a new MCP tool | Implement in Python first (reference), then port to .NET |
 
 ---
@@ -345,7 +349,7 @@ Rules for patterns:
 
 - [ ] New MCP tool added to Python → also added to .NET (or backlog item created here)
 - [ ] `metadata-rules.yaml` change → run `ingest --force-full` to rebuild the index
-- [ ] Model change → update `embedder.dimensions` in config + force full reindex + update ADR
+- [ ] Model change → update `embedder.model` in config + force full reindex (`--force-full`) + update ADR
 - [ ] Config schema change → update both `RagConfig.py` (Python) and `RagConfig.cs` (.NET)
 - [ ] New source root added to config → verify both ingest paths handle the root correctly
 - [ ] New language added to glossary → edit `tools/rag/multilingual-glossary.yaml` AND `tools/rag-dotnet/multilingual-glossary.yaml` — **no re-index needed**

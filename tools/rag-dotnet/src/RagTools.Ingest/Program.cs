@@ -5,11 +5,13 @@ using System.Net.Http.Json;
 // ── CLI entry point for incremental ingest ────────────────────────────────────
 //
 // Usage:
-//   dotnet run                       # incremental — only changed/new files
-//   dotnet run -- --force-full       # full rebuild, ignores manifest
-//   dotnet run -- --dry-run          # print kind distribution without embedding
-//   dotnet run -- -v                 # verbose output (LogLevel.Debug)
-//   dotnet run -- --verbosity debug  # explicit level: trace|debug|information|warning|error
+//   dotnet run                         # incremental — only changed/new files
+//   dotnet run -- --force-full         # full rebuild, ignores manifest
+//   dotnet run -- --dry-run            # print kind distribution without embedding
+//   dotnet run -- -v                   # verbose output (LogLevel.Debug)
+//   dotnet run -- --verbosity debug    # explicit level: trace|debug|information|warning|error
+//   dotnet run -- --remote http://...  # push to remote SSE server instead of embedding locally
+//   dotnet run -- --api-key KEY        # X-Api-Key header for --remote (overrides RAG_API_KEY env)
 //
 // Environment variables:
 //   RAG_WORKSPACE    absolute path to the repo root (default: cwd)
@@ -23,14 +25,20 @@ var verbose = args.Contains("-v") || args.Contains("--verbose");
 
 // --remote <url>: push files to remote MCP server via HTTP instead of embedding locally.
 string? remoteUrl = null;
+string? apiKey = null;
 for (var i = 0; i < args.Length - 1; i++)
 {
     if (args[i] is "--remote")
     {
         remoteUrl = args[i + 1];
-        break;
+    }
+    if (args[i] is "--api-key")
+    {
+        apiKey = args[i + 1];
     }
 }
+// Env var fallback for API key (mirrors Python --api-key / RAG_API_KEY).
+apiKey ??= Environment.GetEnvironmentVariable("RAG_API_KEY");
 
 // --verbosity <level> or -v shorthand
 var logLevel = LogLevel.Information;  // default: show progress messages
@@ -185,7 +193,6 @@ if (toProcess.Count == 0 && deleted.Count == 0)
 if (remoteUrl is not null)
 {
     log.LogInformation("remote mode: uploading {Count} file(s) to {Url}", toProcess.Count, remoteUrl);
-    var apiKey = Environment.GetEnvironmentVariable("RAG_API_KEY");
     using var http = new HttpClient();
     http.BaseAddress = new Uri(remoteUrl.TrimEnd('/') + "/");
     if (!string.IsNullOrEmpty(apiKey))

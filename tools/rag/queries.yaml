@@ -7,7 +7,11 @@
 #   question: the natural-language query to embed and search
 #   doc_kind: optional — filter results to this doc_kind only
 #   adr_id:   optional — filter results to a specific ADR (4-digit zero-padded)
-#   top_k:    optional — override default_top_k from config.yaml
+#   top_k:    optional — how many results to return for this query.
+#             Use a higher number (10–20) for broad discovery queries where you want
+#             to see many relevant chunks (e.g., "list all amendments").
+#             Use a lower number (5–8) for precise questions with a single correct answer.
+#             Omit to use config.yaml → query.default_top_k (currently 5).
 
 # ── ADR by kind ───────────────────────────────────────────────────────────────
 named_queries:

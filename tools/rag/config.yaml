@@ -19,58 +19,115 @@ source:
     - ".github/context/anti-patterns-critical.context.md"  # loaded directly by @code-reviewer, not via RAG
 
 embedder:
-  # Multilingual model — 50+ languages including Polish and English, 384 dims (same schema as all-MiniLM-L6-v2).
-  # Switch from all-MiniLM-L6-v2 (EN-only) to support mixed PL/EN queries against English docs.
+  # The HuggingFace model used to turn text into vector numbers.
+  # This is the only field here you might need to change — if you switch models,
+  # run ingest.py --force-full afterwards (old vectors are incompatible with the new model).
+  # See docs/rag/SETUP-GUIDE.md § Switching models for step-by-step instructions.
   model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-  dimensions: 384        # output vector size — must match collection schema; change requires full re-index
-  device: "cpu"          # cpu | cuda — cpu is fine for this corpus size
-  batch_size: 32
+  # device (cpu/cuda) and batch_size are server performance settings with safe defaults.
+  # They are not listed here to keep this file focused on what users actually tune.
 
 chunker:
-  # Heading-based split with size guard + overlap, breadcrumb prepended to embed_text.
-  max_tokens: 800        # hard upper bound per chunk (approx tokens, model limit is 512)
-  min_tokens: 40         # below this, the chunk is dropped (too generic to embed well)
-  overlap_tokens: 80     # rolling overlap when a heading section is split into sub-chunks
-  split_on_headings: [1, 2, 3]   # split at H1/H2/H3, keep H4+ inside chunks
+  # Each doc is split into chunks so that Qdrant can find the relevant paragraph,
+  # not just the relevant file. Smaller chunks = more precise answers but more index entries.
+  max_tokens: 800        # hard upper limit per chunk (the model processes up to 512 tokens;
+                         # chunks over 512 are truncated at encode time, so keep this close to 512)
+  min_tokens: 40         # chunks shorter than this are dropped (too short to carry useful meaning)
+  overlap_tokens: 80     # the last 80 tokens of a chunk are repeated at the start of the next.
+                         # This prevents a question that spans two chunks from returning a half-answer.
+  # Which Markdown heading levels trigger a chunk boundary.
+  # [1, 2, 3] means every # H1, ## H2, and ### H3 starts a new chunk.
+  # H4, H5, H6 headings stay inside the same chunk as their parent H3 section.
+  #
+  # Why not split on every heading?
+  # H4+ sections in this repo’s ADRs and architecture docs are usually 1–2 sentences.
+  # Splitting there would produce chunks shorter than min_tokens (40) which get dropped,
+  # or tiny context-free fragments that return poor results.
+  # [1, 2, 3] gives the right balance: meaningful section boundaries without micro-chunks.
+  #
+  # When to add 4: if you add docs with many long H4 sub-sections that each
+  # contain distinct searchable content (e.g., a large reference guide).
+  split_on_headings: [1, 2, 3]
 
 vector_store:
-  backend: "qdrant"
-  mode: "local"          # local | docker | memory
-                          # local  = embedded Qdrant, no server, uses local_path (default for container)
-                          # docker = Qdrant HTTP server at url (for direct host-based development)
-                          # memory = in-memory only, dumps snapshot (CI / testing)
-  local_path: "/data/qdrant"   # inside the rag-tools container, mounted to qdrant_data volume
+  # The name of the Qdrant collection that holds all indexed chunks.
+  # You normally never need to change this.
   collection: "ecommerceapp_docs"
-  # When mode = docker (override on host if running without container):
+  # Qdrant HTTP API URL — used when the server runs in docker mode.
+  # Override at runtime with the QDRANT_URL environment variable (already set in docker-compose).
   url: "http://localhost:6333"
+  # Mode (local vs docker) is set by the VECTOR_MODE environment variable — not here.
+  # local  = embedded Qdrant (file on disk, used inside the rag-tools container).
+  # docker = separate Qdrant server at the url above (used in docker-compose).
+  # Default when no env var is set: docker.
 
 ranking:
-  # Multiplier applied AFTER similarity score (score * weight).
-  # Path patterns are matched as fnmatch globs against the relative file path.
-  # First match wins. Default weight if no match: 1.00.
+  # After Qdrant finds the most similar chunks, each result’s score is multiplied
+  # by a weight that depends on which file the chunk came from.
+  #
+  # Why? Not all docs are equally useful.
+  # Bug-fix files and past corrections must surface first — even if their raw
+  # similarity is a little lower than a less critical doc.
+  # Roadmap files answer “what’s planned”, not “how does it work right now”,
+  # so they should rank lower than current-state docs for design questions.
+  #
+  # How it works in practice:
+  #   final_score = raw_cosine_similarity × weight
+  #
+  # Example:
+  #   known-issues.md chunk  : raw=0.80 × 1.25 = final 1.00
+  #   roadmap chunk          : raw=0.82 × 0.70 = final 0.57
+  #   → known-issues.md wins even though roadmap scored higher initially
+  #
+  # How to pick a value when adding a new pattern:
+  #   1.20–1.25  "must surface no matter what"   — bug-fix gates, safety-critical docs
+  #   1.05–1.15  "more authoritative than average" — amendments that override older ADR text,
+  #                                                  concrete implementation examples
+  #   0.90–1.00  "neutral / current state"         — main ADR text, full codebase maps
+  #   0.70–0.85  "useful context, not a primary answer" — abstract architecture docs,
+  #                                                        code templates, endpoint lists
+  #   0.30–0.70  "low priority / future work"      — roadmaps, step-by-step migration plans
+  #   0.05–0.10  "only as a last resort"            — generated stubs, empty placeholders
+  #
+  # First matching glob wins. Files not matched by any pattern get weight 1.00.
   weights:
-    - { pattern: ".github/context/known-issues.md",             weight: 1.25 }   # bug-fix gate — always high priority
-    - { pattern: ".github/context/agent-decisions.md",          weight: 1.20 }   # correction history — high signal
-    - { pattern: ".github/context/project-state.md",            weight: 1.15 }   # BC block status — critical
-    - { pattern: ".github/context/repo-index.md",               weight: 1.00 }   # full codebase map
-    - { pattern: ".github/context/future-skills.md",            weight: 0.80 }   # forward-looking, lower priority
-    - { pattern: "docs/adr/*/amendments/**",                    weight: 1.20 }
-    - { pattern: "docs/adr/*/example-implementation/**",        weight: 1.10 }
-    - { pattern: "docs/adr/*/[0-9]*-*.md",                      weight: 1.00 }   # main ADR file
-    - { pattern: "docs/adr/*/README.md",                        weight: 0.95 }   # router (mostly links)
-    - { pattern: "docs/architecture/**",                        weight: 0.90 }
-    - { pattern: "docs/patterns/**",                            weight: 0.85 }
-    - { pattern: "docs/reference/**",                           weight: 0.80 }
-    - { pattern: "docs/roadmap/**",                             weight: 0.70 }
-    - { pattern: "docs/adr/*/checklist.md",                     weight: 0.40 }
-    - { pattern: "docs/adr/*/migration-plan.md",                weight: 0.30 }
-  # Stub guard — files smaller than this contribute weight 0.05 (effectively buried).
+    - { pattern: ".github/context/known-issues.md",             weight: 1.25 }   # bug-fix gate: must surface even with slightly lower raw score
+    - { pattern: ".github/context/agent-decisions.md",          weight: 1.20 }   # past corrections: highest priority to prevent repeating mistakes
+    - { pattern: ".github/context/project-state.md",            weight: 1.15 }   # blocked-BC status: critical before any BC-level work
+    - { pattern: ".github/context/repo-index.md",               weight: 1.00 }   # full codebase map: neutral
+    - { pattern: ".github/context/future-skills.md",            weight: 0.80 }   # forward-looking: useful but not current state
+    - { pattern: "docs/adr/*/amendments/**",                    weight: 1.20 }   # amendments OVERRIDE original sections: always more current
+    - { pattern: "docs/adr/*/example-implementation/**",        weight: 1.10 }   # concrete code: more actionable than abstract ADR text
+    - { pattern: "docs/adr/*/[0-9]*-*.md",                      weight: 1.00 }   # main ADR file: authoritative decision
+    - { pattern: "docs/adr/*/README.md",                        weight: 0.95 }   # ADR router: mostly links, rarely the answer itself
+    - { pattern: "docs/architecture/**",                        weight: 0.90 }   # cross-cutting maps: useful but abstract
+    - { pattern: "docs/patterns/**",                            weight: 0.85 }   # code templates: useful for implementation questions
+    - { pattern: "docs/reference/**",                           weight: 0.80 }   # endpoint maps etc.: narrow scope
+    - { pattern: "docs/roadmap/**",                             weight: 0.70 }   # planned work: low priority for “how does it work now”
+    - { pattern: "docs/adr/*/checklist.md",                     weight: 0.40 }   # conformance checklists: indexed but rarely the primary answer
+    - { pattern: "docs/adr/*/migration-plan.md",                weight: 0.30 }   # step-by-step migration: rarely what a design question needs
+  # Stub guard: files smaller than this many bytes are treated as empty placeholders.
+  # Their weight is forced to 0.05 so they don’t pollute the top results.
+  # (400 bytes ≈ 3 meaningful sentences — anything shorter is a stub.)
   stub_byte_threshold: 400
 
 query:
+  # How many results the MCP tools return to Copilot by default.
+  # 5 means "give Copilot the 5 most relevant chunks."
+  # Use a higher value in queries.yaml for broad discovery queries.
   default_top_k: 5
-  fetch_k: 20            # fetch this many from Qdrant, then re-rank with weights, then truncate to top_k
-  score_threshold: 0.30  # minimum cosine similarity to include a hit (0 = no filter)
+  # How many candidates Qdrant fetches before ranking.
+  # Qdrant first retrieves fetch_k results by raw similarity.
+  # Then the weight multipliers (see ranking.weights above) are applied and
+  # the list is trimmed to top_k. fetch_k must be ≥ top_k.
+  # Higher fetch_k = the weight multipliers have more candidates to promote
+  # or demote, but each query is slightly slower. 20 is a good balance.
+  fetch_k: 20
+  # Minimum raw similarity score (0.0–1.0) to include a result.
+  # 0.30 means "if a chunk is less than 30% similar to the question, ignore it."
+  # Set to 0.0 to never filter (not recommended — off-topic chunks pollute the answer).
+  # Set to 0.5–0.7 for stricter filtering (fewer but more relevant results).
+  score_threshold: 0.30
 
 # ── Companion config files ─────────────────────────────────────────────────────
 # Paths are relative to this file's directory.
@@ -83,16 +140,8 @@ config_files:
 
 
 
-# Optional future synthesis layer. Default: disabled — Copilot does the synthesis.
-synthesis:
-  mode: "none"           # none | local | api
-  # When mode = local:
-  ollama_url: "http://localhost:11434"
-  ollama_model: "qwen2.5:7b"
-
 storage:
-  # Where the in-memory snapshot is dumped on `ingest.py` so query.py can reload without re-embedding.
-  snapshot_path: "tools/rag/.cache/snapshot.qdrant"
+  # Used by ingest.py only — the MCP server (stdio or SSE) does not read this section.
   # Manifest tracks which files are indexed and their SHA-256 hashes for incremental ingest.
   # Lives at the repo root so it works from any repo, not tied to tools/rag/.
   # Gitignored — per-instance state, not team-shared.

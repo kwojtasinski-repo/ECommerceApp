@@ -1,12 +1,16 @@
-# RAG Tools — Setup & Usage Guide
+# RAG Tools — Python Implementation
 
 Semantic search over the project's documentation, exposed as MCP tools to GitHub Copilot.
 
+> **Getting started?** See the full user guide at
+> [`docs/rag/SETUP-GUIDE.md`](../../docs/rag/SETUP-GUIDE.md).
+> This file is the developer reference for the Python source code.
+
 Three tools are available in Copilot Chat:
 
-- `query_docs` — free-form semantic search
-- `list_adrs` — list all indexed ADRs
-- `get_adr_history` — fetch all chunks for a specific ADR
+- `query_docs` — free-form semantic search over all indexed docs
+- `list_adrs` — list all indexed ADRs with titles and amendment counts
+- `get_adr_history` — fetch the full text of one ADR + all its amendments
 
 ---
 
@@ -28,16 +32,18 @@ pip install -r requirements.txt
 
 ---
 
-### 2. Build the Docker image
+### 2. Build the Docker image (one-time)
 
 ```bash
 # From the repo root
 docker compose build rag-tools
 ```
 
-> **What this does:** packages the Python code and its dependencies into a Docker image
-> called `rag-tools`. The image includes an embedded Qdrant database so no separate
-> Qdrant server is needed for the Python path.
+> **What this does:** packages `ingest.py`, `mcp_server.py`, and all Python dependencies
+> into a Docker image called `rag-tools`. The embedding model (~450 MB) is downloaded
+> during the first build — subsequent builds are cached.
+> When running in Docker the server uses an **embedded Qdrant** (no separate server needed).
+> When running locally (outside Docker) Qdrant must be started separately.
 
 ---
 
@@ -92,15 +98,25 @@ You should get a list of ADR IDs from the index.
 
 ## Running tests
 
-```bash
+```powershell
+# From the repo root
+
+# Unit tests only — no Qdrant or embedding model needed (~2 s)
 cd tools/rag
-.venv\Scripts\activate
-python -m pytest tests/ -v
+.venv/Scripts/python.exe -m pytest test_ingest_unit.py -v
+
+# All tests including E2E (requires Qdrant running)
+pwsh tools/rag/run-tests.ps1 -StartQdrant
+
+# Full suite: Python unit + E2E + .NET
+pwsh tools/rag/run-all-tests.ps1
 ```
 
-> **What this does:** runs 111 unit tests covering the chunker, common utilities,
-> ingest pipeline helpers, and query engine. No Qdrant or embedding model needed —
-> all external dependencies are replaced with stubs.
+> **Unit tests (37):** cover `OperationStore`, `IngestWorker`, HTTP routes, and auth middleware.
+> No Qdrant or embedding model needed — all external dependencies are stubbed.
+>
+> **E2E tests (16):** spin up a real uvicorn server, test the full HTTP round-trip,
+> and run one end-to-end ingest pipeline against a live Qdrant instance.
 
 ---
 
@@ -117,26 +133,30 @@ docker compose --profile rag run --rm rag-tools python ingest.py --force-full
 
 ---
 
-## Local development (no Docker)
+## Local Python setup (no Docker for ingest)
 
-If you prefer to run directly without Docker:
+Only needed if you want to develop or debug the Python RAG code:
 
 ```bash
-cd tools/rag
-.venv\Scripts\activate
+# Requires Python 3.13 (NOT 3.14 — torch wheels are not available for 3.14)
+python -m venv tools/rag/.venv
+tools/rag/.venv/Scripts/Activate.ps1      # Windows
+# source tools/rag/.venv/bin/activate    # Linux / macOS
+pip install -r tools/rag/requirements.txt
 
-# Dry-run — no Qdrant needed
-python ingest.py --mode memory --dry-run
+# Dry-run — parse + chunk only, no Qdrant or embeddings needed
+python ingest.py --dry-run
 
-# Full run with in-memory Qdrant (index lost when process exits)
-python ingest.py --mode memory
+# Full run — Qdrant must be running (docker compose --profile rag up qdrant -d)
+python ingest.py
 
-# Query against the in-memory index (same process, see query.py --mode memory)
-python query.py "what is the coupon max per order?" --mode memory
+# MCP server (VS Code usually starts this automatically)
+python mcp_server.py
 ```
 
-> `--mode memory` uses an in-memory Qdrant instance — no server or Docker required.
-> The index is not persisted between runs.
+> **Requires Qdrant:** unlike the in-process Docker image, local Python runs
+> always connect to a Qdrant server. Use `docker compose --profile rag up qdrant -d`
+> to start one before running `ingest.py` or `mcp_server.py`.
 
 ---
 
@@ -153,6 +173,15 @@ All settings live in `tools/rag/config.yaml`. Key fields:
 | `chunker.overlap_tokens`  | `80`                                    | Token overlap between consecutive chunks |
 | `vector_store.collection` | `ecommerceapp_docs`                     | Qdrant collection name                   |
 
+> **`VECTOR_MODE` env var** controls whether the Python code connects to an embedded Qdrant
+> (file on disk) or a separate Qdrant server over HTTP.
+> - `VECTOR_MODE=local` — embedded, no server needed (default inside the Docker container).
+> - `VECTOR_MODE=docker` — connects to Qdrant at `vector_store.url` (default for local dev).
+>
+> The Docker container sets `ENV VECTOR_MODE=local` automatically.
+> docker-compose sets `VECTOR_MODE=docker` for its services.
+> You can also override per-run with `--mode docker` on the `ingest.py` CLI.
+
 > Changing `embedder.model`, `chunker.max_tokens`, or `metadata_rules` requires a
 > `--force-full` re-index because existing vectors are incompatible with the new settings.
 
@@ -162,9 +191,6 @@ All settings live in `tools/rag/config.yaml`. Key fields:
 
 **`No results found` from Copilot tools**  
 → Run the ingest pipeline (step 3) — the index may be empty or stale.
-
-**`Snapshot not found` error**  
-→ You are using `--mode memory` but no snapshot exists. Run ingest first.
 
 **Model download fails or is slow**  
 → The model is ~500 MB. It is cached in `.venv` after the first download.

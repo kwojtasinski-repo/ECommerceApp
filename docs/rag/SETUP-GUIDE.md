@@ -13,16 +13,20 @@ own documentation, ADRs, and context files.
 
 ## Step 0 — Choose your implementation
 
+> **TL;DR: use Python.** It's simpler, more accurate, and fully supported.
+> Only choose .NET if you have a specific reason (e.g., no Python allowed in your environment).
+
 | | Python | .NET |
 |---|---|---|
 | **Status** | ✅ Production-ready | ⚠️ Experimental |
 | **Recommended for** | All developers | .NET-primary / advanced |
-| **Prerequisites** | Docker (+ Python 3.13 for local dev) | Docker + .NET 10 SDK |
-| **Model accuracy** | ✅ Full (correct tokenizer) | ⚠️ Reduced (WordPiece workaround) |
+| **Prerequisites** | Docker Desktop | Docker Desktop + .NET 10 SDK |
+| **Model accuracy** | ✅ Full (correct tokenizer) | ⚠️ Slightly reduced (WordPiece workaround) |
 | **Polish query support** | ✅ Yes | ⚠️ Reduced |
-| **Already indexed?** | ✅ 816 chunks in Qdrant | ❌ Must run ingest |
 
-**Use Python unless you have a specific reason to use .NET.**
+> **What is Docker Desktop?** A free tool that lets you run Linux containers on Windows/macOS.
+> Download from [docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop/).
+> You do NOT need to know Docker to use this setup — the commands are copy-paste.
 
 ---
 
@@ -30,9 +34,11 @@ own documentation, ADRs, and context files.
 
 ### Prerequisites
 
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows/Mac/Linux)
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running
 - VS Code with the **GitHub Copilot** extension
 - That's it — no Python install needed for the Docker path
+
+> **Check Docker is running:** open a terminal and run `docker ps`. You should see a table header (even if empty). If you get an error, start Docker Desktop first.
 
 ### One-time setup
 
@@ -242,7 +248,6 @@ Edit `tools/rag/config.yaml`:
 embedder:
   model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"  # current (multilingual)
   # model: "sentence-transformers/all-MiniLM-L6-v2"    # English-only, smaller, no workaround needed
-  dimensions: 384   # must match the new model's output size
 ```
 
 Then rebuild the image and re-index:
