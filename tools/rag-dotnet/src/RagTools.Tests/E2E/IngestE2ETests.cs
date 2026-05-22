@@ -205,7 +205,7 @@ public sealed class IngestE2ETests : IClassFixture<IngestE2EFixture>, IDisposabl
         // Full-content intent triggers FetchContentAsync path.
         var response = await tools.ReadDocs(
             "show me all details about hexagonal architecture",
-            topFiles: 1,
+            top_files: 1,
             cancellationToken: CancellationToken.None);
 
         Assert.Contains("Hexagonal Architecture", response);

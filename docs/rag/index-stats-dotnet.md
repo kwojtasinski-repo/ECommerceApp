@@ -1,9 +1,9 @@
 ﻿# RAG Index Stats
 
-Last indexed: 2026-05-22 13:51 UTC  
+Last indexed: 2026-05-22 14:43 UTC  
 Collection: `ecommerceapp_docs_dotnet`  
-Files: 171  
-Chunks: 998  
+Files: 173  
+Chunks: 1035  
 Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`  
 
 ## Breakdown by doc_kind
@@ -21,7 +21,7 @@ Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
 | `other` | 1 | 3 |
 | `pattern` | 1 | 18 |
 | `reference` | 1 | 28 |
-| `roadmap` | 11 | 134 |
+| `roadmap` | 13 | 171 |
 
 ## Per-file detail
 
@@ -189,6 +189,8 @@ Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
 | `docs/reference/endpoint-map.md` | `reference` | 28 |
 | `docs/roadmap/README.md` | `roadmap` | 6 |
 | `docs/roadmap/chunked-upload.md` | `roadmap` | 11 |
+| `docs/roadmap/context-mode-details.md` | `roadmap` | 23 |
+| `docs/roadmap/context-mode-integration.md` | `roadmap` | 14 |
 | `docs/roadmap/frontend-pipeline.md` | `roadmap` | 13 |
 | `docs/roadmap/iam-atomic-switch.md` | `roadmap` | 14 |
 | `docs/roadmap/iam-refresh-token.md` | `roadmap` | 15 |

@@ -202,7 +202,7 @@ def _run_dotnet_tests(failures: list[str]) -> None:
 
             # get_adr_history smoke test
             print("\n  [get_adr_history — ADR-0006]")
-            hist_text = _dotnet_call_raw(client, "get_adr_history", {"adrId": "0006"}, session_id=session_id)
+            hist_text = _dotnet_call_raw(client, "get_adr_history", {"adr_id": "0006"}, session_id=session_id)
             if "TypedId" in hist_text:
                 print("  ✓  ADR-0006 content contains 'TypedId'")
             else:

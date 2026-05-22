@@ -564,7 +564,7 @@ def phase_4_dotnet_stdio() -> PhaseResult:
         # query_docs (raw text response from .NET server)
         text = _mcp_call_raw(proc, "query_docs",
                              {"question": "strongly typed entity ID TypedId domain primitives",
-                              "topK": 3},
+                              "top_k": 3},
                              timeout=60)
         adr6 = "0006" in text
         typedid = "TypedId" in text
@@ -572,7 +572,7 @@ def phase_4_dotnet_stdio() -> PhaseResult:
         p.record("query_docs contains 'TypedId'", typedid)
 
         # get_adr_history
-        hist_text = _mcp_call_raw(proc, "get_adr_history", {"adrId": "0006"}, timeout=60)
+        hist_text = _mcp_call_raw(proc, "get_adr_history", {"adr_id": "0006"}, timeout=60)
         has_content = len(hist_text) > 50 and "No chunks found" not in hist_text
         p.record("get_adr_history ADR-0006 has content", has_content,
                  f"{len(hist_text)} chars")
@@ -681,13 +681,13 @@ def phase_5_sse() -> PhaseResult:
                     return r.get("result", {}).get("content", [{}])[0].get("text", "")
 
                 text = _call_raw("query_docs", {
-                    "question": "coupon maximum per order business rule", "topK": 3,
+                    "question": "coupon maximum per order business rule", "top_k": 3,
                 })
                 adr16 = "0016" in text
                 p.record(".NET SSE: query_docs → ADR-0016 (coupons)", adr16,
                          f"{len(text)} chars")
 
-                hist_text = _call_raw("get_adr_history", {"adrId": "0016"})
+                hist_text = _call_raw("get_adr_history", {"adr_id": "0016"})
                 has_coupon = "coupon" in hist_text.lower()
                 p.record(".NET SSE: get_adr_history ADR-0016 mentions 'coupon'", has_coupon,
                          f"{len(hist_text)} chars")
@@ -960,6 +960,32 @@ def phase_7_hosted_ingest() -> PhaseResult:
     # ── Python SSE ingest upload ───────────────────────────────────────────────
     print("  [7a] Python SSE — upload doc via HTTP ingest API…")
     try:
+        # Upload metadata-rules config first
+        try:
+            _result = _sp.run(
+                ["python", "-c", "import sys,yaml,json; data=yaml.safe_load(sys.stdin); print(json.dumps(data))"],
+                input=Path(WORKSPACE, "tools/rag/metadata-rules.yaml").read_text(encoding="utf-8"),
+                capture_output=True, text=True, timeout=10,
+            )
+            rules_dict = json.loads(_result.stdout) if _result.returncode == 0 else {}
+        except Exception:
+            rules_dict = {}
+
+        try:
+            config_payload = {
+                "adr_id_patterns": [e["pattern"] for e in rules_dict.get("adr_id_patterns", [])],
+                "doc_kind_rules": rules_dict.get("doc_kind_rules", []),
+            }
+            py_headers: dict = {"Content-Type": "application/json"}
+            if py_api_key := os.environ.get("RAG_API_KEY", "").strip():
+                py_headers["X-Api-Key"] = py_api_key
+            resp_cfg = httpx.post(f"{py_base}/config", json=config_payload, headers=py_headers, timeout=15)
+            config_ok = resp_cfg.status_code == 200
+            p.record("Python SSE: POST /config — metadata rules uploaded", config_ok,
+                     f"status={resp_cfg.status_code}")
+        except Exception as exc:
+            p.record("Python SSE: POST /config — metadata rules uploaded", False, str(exc))
+
         status_code, resp = _http_ingest_upload(
             py_base, PYTHON_COLLECTION, _HOSTED_DOC_REL_PATH, _HOSTED_DOC_CONTENT)
         accepted = status_code == 202
@@ -1009,6 +1035,39 @@ def phase_7_hosted_ingest() -> PhaseResult:
     # The .NET server uses ApiKeyMiddleware; if RAG_API_KEY is not set, no auth needed
     dn_api_key: str | None = None  # no key set in our docker-compose
 
+    # Upload metadata-rules config first (so adr_id is detected for ingested docs)
+    try:
+        import json as _json
+        metadata_rules = _json.loads(Path(WORKSPACE, "tools/rag/metadata-rules.yaml").read_bytes())
+        # metadata-rules.yaml is YAML not JSON; parse it
+        import subprocess as _sp
+        _result = _sp.run(
+            ["python", "-c",
+             "import sys,yaml,json; data=yaml.safe_load(sys.stdin); print(json.dumps(data))"],
+            input=Path(WORKSPACE, "tools/rag/metadata-rules.yaml").read_text(encoding="utf-8"),
+            capture_output=True, text=True, timeout=10
+        )
+        rules_dict = json.loads(_result.stdout) if _result.returncode == 0 else {}
+    except Exception:
+        rules_dict = {}
+
+    try:
+        config_payload = {
+            "adr_id_patterns": [e["pattern"] for e in rules_dict.get("adr_id_patterns", [])],
+            "doc_kind_rules": rules_dict.get("doc_kind_rules", []),
+        }
+        headers: dict = {"Content-Type": "application/json"}
+        if dn_api_key:
+            headers["X-Api-Key"] = dn_api_key
+        resp_cfg = httpx.post(
+            f"{dn_base}/config", json=config_payload, headers=headers, timeout=15
+        )
+        config_ok = resp_cfg.status_code == 200
+        p.record(".NET SSE: POST /config — metadata rules uploaded", config_ok,
+                 f"status={resp_cfg.status_code}")
+    except Exception as exc:
+        p.record(".NET SSE: POST /config — metadata rules uploaded", False, str(exc))
+
     try:
         status_code, resp = _http_ingest_upload(
             dn_base, DOTNET_COLLECTION, _HOSTED_DOC_REL_PATH, _HOSTED_DOC_CONTENT,
@@ -1043,7 +1102,7 @@ def phase_7_hosted_ingest() -> PhaseResult:
 
             text = _call("query_docs", {
                 "question": "HOSTED_INGEST_E2E_MARKER_42XQZ hosted ingest test document",
-                "topK": 5,
+                "top_k": 5,
             })
             found = _HOSTED_DOC_REL_PATH in text
             p.record(".NET SSE: uploaded doc queryable via MCP", found,

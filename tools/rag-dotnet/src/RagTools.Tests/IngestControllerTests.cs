@@ -17,12 +17,14 @@ public sealed class IngestControllerTests
 
     private static IngestController CreateController(
         IngestChannel? channel = null,
-        OperationStore? ops = null)
+        OperationStore? ops = null,
+        RagConfig? cfg = null)
     {
         channel ??= new IngestChannel();
         ops     ??= new OperationStore();
+        cfg     ??= new RagConfig();
 
-        var ctrl = new IngestController(channel, ops, NullLogger<IngestController>.Instance);
+        var ctrl = new IngestController(channel, ops, cfg, NullLogger<IngestController>.Instance);
 
         // Wire up a real HttpContext so Response.Headers["Location"] = ... works.
         var httpCtx = new DefaultHttpContext();
@@ -310,5 +312,35 @@ public sealed class IngestControllerTests
         var value = ok.Value!;
         var retentionHours = (double)value.GetType().GetProperty("retention_hours")!.GetValue(value)!;
         Assert.Equal(OperationStore.RetentionPeriod.TotalHours, retentionHours);
+    }
+
+    // ── POST /config ─────────────────────────────────────────────────────────
+
+    [Fact]
+    public void UploadConfig_Returns200_AndAppliesOverride()
+    {
+        var ctrl = CreateController();
+
+        var result = ctrl.UploadConfig(new ConfigUploadRequest
+        {
+            AdrIdPatterns = ["(?P<id>\\d{4})"],
+            DocKindRules  = [new DocKindRuleDto { Glob = "docs/adr/**", Kind = "adr" }],
+        });
+
+        var ok = Assert.IsType<OkObjectResult>(result);
+        Assert.NotNull(ok.Value);
+    }
+
+    [Fact]
+    public void UploadConfig_EmptyRequest_Returns200_WithZeroCounts()
+    {
+        var ctrl = CreateController();
+
+        var result = ctrl.UploadConfig(new ConfigUploadRequest());
+
+        var ok    = Assert.IsType<OkObjectResult>(result);
+        var value = ok.Value!;
+        var adrCount = (int)value.GetType().GetProperty("adr_id_patterns")!.GetValue(value)!;
+        Assert.Equal(0, adrCount);
     }
 }

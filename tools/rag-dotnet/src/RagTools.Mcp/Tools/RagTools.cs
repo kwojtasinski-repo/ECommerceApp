@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 using RagTools.Core;
@@ -35,16 +36,16 @@ public sealed class RagTools(
     public async Task<string> QueryDocs(
         [Description("The search question or topic.")] string question,
         [Description("Optional substring filter matched against breadcrumb and doc title (e.g. 'Orders', 'Pricing').")] string? bc = null,
-        [Description("Maximum number of results to return (default: 5, max: 20).")] int topK = 5,
+        [Description("Maximum number of results to return (default: 5, max: 20).")] int top_k = 5,
         CancellationToken cancellationToken = default)
     {
-        topK = Math.Clamp(topK, 1, 20);
+        top_k = Math.Clamp(top_k, 1, 20);
         var collection = session.Collection;
 
         // Widen fetch pool when bc filter is active to compensate for post-filter loss.
-        var fetchK = bc is not null ? Math.Max(cfg.Query.FetchK, topK * 3) : cfg.Query.FetchK;
+        var fetchK = bc is not null ? Math.Max(cfg.Query.FetchK, top_k * 3) : cfg.Query.FetchK;
         logger.LogDebug("QueryDocs: collection={Collection} question={Question} bc={Bc} topK={TopK} fetchK={FetchK}",
-            collection, question, bc, topK, fetchK);
+            collection, question, bc, top_k, fetchK);
 
         var queryVec = embedder.Embed(_glossary.Expand(question));
         var opts = new SearchOptions(fetchK, cfg.Query.ScoreThreshold);
@@ -52,18 +53,27 @@ public sealed class RagTools(
 
         var weighted = ApplyWeights(allHits);
         var hits = bc is not null
-            ? weighted.Where(h => MatchesBc(h, bc)).Take(topK).ToList()
+            ? weighted.Where(h => MatchesBc(h, bc)).Take(top_k).ToList()
             : weighted.ToList();
 
         logger.LogInformation("QueryDocs: returned {Count}/{Total} hits for '{Question}'", hits.Count, allHits.Count, question);
 
         if (hits.Count == 0)
-            return "No results found. Consider re-running the ingest script or broadening your query.";
+            return JsonSerializer.Serialize(new { hits = Array.Empty<object>(), message = "No results found. Consider re-running the ingest script or broadening your query." });
 
-        return string.Join("\n\n---\n\n", hits.Select((h, i) =>
-            $"[{i + 1}] score={h.Score:F3}  kind={h.DocKind}  path={h.RelPath}\n" +
-            $"breadcrumb: {h.Breadcrumb}\n\n" +
-            h.Text));
+        var result = new
+        {
+            hits = hits.Select((h, i) => new
+            {
+                rank = i + 1,
+                score = Math.Round(h.Score, 3),
+                doc_kind = h.DocKind,
+                rel_path = h.RelPath,
+                breadcrumb = h.Breadcrumb,
+                text = h.Text
+            }).ToArray()
+        };
+        return JsonSerializer.Serialize(result);
     }
 
     [McpServerTool, Description(
@@ -76,17 +86,17 @@ public sealed class RagTools(
     public async Task<string> ReadDocs(
         [Description("The search question or topic.")] string question,
         [Description("Optional bounded context filter â€” matched against doc_kind field.")] string? bc = null,
-        [Description("Maximum unique files to return (default: 3, max: 5).")] int topFiles = 3,
+        [Description("Maximum unique files to return (default: 3, max: 5).")] int top_files = 3,
         CancellationToken cancellationToken = default)
     {
-        topFiles = Math.Clamp(topFiles, 1, 5);
+        top_files = Math.Clamp(top_files, 1, 5);
         var fullMode = WantsFullContent(question);
         var collection = session.Collection;
         logger.LogDebug("ReadDocs: collection={Collection} question={Question} bc={Bc} topFiles={TopFiles} fullMode={FullMode}",
-            collection, question, bc, topFiles, fullMode);
+            collection, question, bc, top_files, fullMode);
 
         var queryVec = embedder.Embed(_glossary.Expand(question));
-        var opts = new SearchOptions(Math.Max(30, topFiles * 15), cfg.Query.ScoreThreshold);
+        var opts = new SearchOptions(Math.Max(30, top_files * 15), cfg.Query.ScoreThreshold);
         var rawHits = await store.SearchAsync(collection, queryVec, opts, cancellationToken);
 
         var weighted = ApplyWeights(rawHits);
@@ -95,16 +105,16 @@ public sealed class RagTools(
             : weighted.ToList();
 
         if (hits.Count == 0)
-            return "No results found. Consider re-running the ingest script or broadening your query.";
+            return JsonSerializer.Serialize(new { hits = Array.Empty<object>(), message = "No results found. Consider re-running the ingest script or broadening your query." });
 
         var ranked = hits
             .GroupBy(h => h.RelPath)
             .Select(g => new { RelPath = g.Key, BestScore = g.Max(h => h.Score), Chunks = g.OrderByDescending(h => h.Score).ToList() })
             .OrderByDescending(x => x.BestScore)
-            .Take(topFiles)
+            .Take(top_files)
             .ToList();
 
-        var sections = new List<string>();
+        var files = new List<object>();
         foreach (var f in ranked)
         {
             var first = f.Chunks[0];
@@ -129,27 +139,20 @@ public sealed class RagTools(
                     catch (Exception ex)
                     {
                         logger.LogWarning(ex, "ReadDocs: could not read file {RelPath}", f.RelPath);
-                        body = $"[ERROR: could not read file â€” {ex.Message}]";
+                        body = $"[ERROR: could not read file — {ex.Message}]";
                     }
                 }
-                sections.Add(
-                    $"# {f.RelPath}\n" +
-                    $"score={f.BestScore:F3}  kind={first.DocKind}  mode=full  size={body.Length} chars\n\n" +
-                    body);
+                files.Add(new { rel_path = f.RelPath, score = Math.Round(f.BestScore, 3), doc_kind = first.DocKind, mode = "full", content = body });
             }
             else
             {
-                var chunkTexts = f.Chunks.Take(8).Select((c, i) =>
-                    $"## chunk {i + 1}  score={c.Score:F3}\n{c.Text}");
-                sections.Add(
-                    $"# {f.RelPath}\n" +
-                    $"score={f.BestScore:F3}  kind={first.DocKind}  mode=chunks  chunks={Math.Min(f.Chunks.Count, 8)}\n\n" +
-                    string.Join("\n\n", chunkTexts));
+                var chunks = f.Chunks.Take(8).Select((c, i) => new { rank = i + 1, score = Math.Round(c.Score, 3), text = c.Text }).ToArray();
+                files.Add(new { rel_path = f.RelPath, score = Math.Round(f.BestScore, 3), doc_kind = first.DocKind, mode = "chunks", chunks });
             }
         }
 
-        logger.LogInformation("ReadDocs: returned {Count} file(s) for '{Question}'", sections.Count, question);
-        return string.Join("\n\n===\n\n", sections);
+        logger.LogInformation("ReadDocs: returned {Count} file(s) for '{Question}'", files.Count, question);
+        return JsonSerializer.Serialize(new { files });
     }
 
     /// <summary>
@@ -184,29 +187,39 @@ public sealed class RagTools(
         "Equivalent to reading the full ADR with all its amendments in chronological order. " +
         "Pass the 4-digit ADR number (e.g. '0016').")]
     public async Task<string> GetAdrHistory(
-        [Description("4-digit ADR ID (e.g. '0016' or '16').")] string adrId,
+        [Description("4-digit ADR ID (e.g. '0016' or '16').")] string adr_id,
         CancellationToken cancellationToken = default)
     {
         // Normalise to 4-digit zero-padded.
-        adrId = adrId.TrimStart('0').PadLeft(4, '0');
+        adr_id = adr_id.TrimStart('0').PadLeft(4, '0');
         var collection = session.Collection;
-        logger.LogDebug("GetAdrHistory: collection={Collection} adrId={AdrId}", collection, adrId);
+        logger.LogDebug("GetAdrHistory: collection={Collection} adr_id={AdrId}", collection, adr_id);
 
-        var queryVec = embedder.Embed($"ADR {adrId}");
-        var opts = new SearchOptions(TopK: 50, ScoreThreshold: 0, AdrIdFilter: adrId);
+        var queryVec = embedder.Embed($"ADR {adr_id}");
+        var opts = new SearchOptions(TopK: 50, ScoreThreshold: 0, AdrIdFilter: adr_id);
         var hits = await store.SearchAsync(collection, queryVec, opts, cancellationToken);
 
         if (hits.Count == 0)
         {
-            logger.LogWarning("GetAdrHistory: no chunks for ADR {AdrId} in {Collection}", adrId, collection);
-            return $"No chunks found for ADR {adrId}. Ensure the ADR is indexed.";
+            logger.LogWarning("GetAdrHistory: no chunks for ADR {AdrId} in {Collection}", adr_id, collection);
+            return JsonSerializer.Serialize(new { adr_id, chunks = Array.Empty<object>(), message = $"No chunks found for ADR {adr_id}. Ensure the ADR is indexed." });
         }
 
-        var ordered = hits.OrderBy(h => h.StartLine).ToList();
-        logger.LogInformation("GetAdrHistory: ADR {AdrId} returned {Count} chunks", adrId, ordered.Count);
-        return $"# ADR {adrId} â€” {ordered[0].DocTitle}\n\n" +
-               string.Join("\n\n---\n\n", ordered.Select(h =>
-                   $"**{h.Breadcrumb}** ({h.DocKind})\n\n{h.Text}"));
+                var ordered = hits.OrderBy(h => h.StartLine).ToList();
+        logger.LogInformation("GetAdrHistory: ADR {AdrId} returned {Count} chunks", adr_id, ordered.Count);
+        var result = new
+        {
+            adr_id,
+            title = ordered[0].DocTitle,
+            chunks = ordered.Select(h => new
+            {
+                breadcrumb = h.Breadcrumb,
+                doc_kind = h.DocKind,
+                start_line = h.StartLine,
+                text = h.Text
+            }).ToArray()
+        };
+        return JsonSerializer.Serialize(result);
     }
 
     [McpServerTool, Description(
@@ -241,10 +254,20 @@ public sealed class RagTools(
             rows.Add($"ADR-{dirName}  {title}{amendSuffix}");
         }
 
-        return Task.FromResult(
-            rows.Count == 0
-                ? "No ADRs found."
-                : $"Found {rows.Count} ADR(s):\n\n" + string.Join("\n", rows));
+        if (rows.Count == 0)
+            return Task.FromResult(JsonSerializer.Serialize(new { adrs = Array.Empty<object>() }));
+
+        var adrs = rows.Select(r =>
+        {
+            var m = System.Text.RegularExpressions.Regex.Match(r, @"^ADR-(?<id>\d{4})\s+(?<title>.*?)(?:\s+\[(?<amend>\d+) amendment)?");
+            return (object)new
+            {
+                adr_id = m.Success ? m.Groups["id"].Value : r,
+                title = m.Success ? m.Groups["title"].Value.Trim() : string.Empty,
+                amendment_count = m.Success && m.Groups["amend"].Success ? int.Parse(m.Groups["amend"].Value) : 0
+            };
+        }).ToArray();
+        return Task.FromResult(JsonSerializer.Serialize(new { adrs }));
     }
 
     private static readonly System.Text.RegularExpressions.Regex TitleRe =

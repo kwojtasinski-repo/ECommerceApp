@@ -1,22 +1,22 @@
 # RAG Pipeline Test Report
 
-Generated: 2026-05-22 13:51 UTC  
+Generated: 2026-05-22 14:44 UTC  
 Branch: `RAG_Improvement`
 
 ## Summary
 
 | Phase | Status | Elapsed | Checks |
 |---|---|---|---|
-| Prerequisites | ✅ PASSED | 0.7s | 4/4 |
-| Stop SSE containers | ✅ PASSED | 2.7s | 1/1 |
+| Prerequisites | ✅ PASSED | 1.2s | 4/4 |
+| Stop SSE containers | ✅ PASSED | 7.7s | 1/1 |
 | Docker build --no-cache | ✅ PASSED | 0.0s | 1/1 |
-| Python STDIO — ingest + query | ✅ PASSED | 43.7s | 5/5 |
-| .NET STDIO — ingest + query | ✅ PASSED | 103.9s | 6/6 |
-| SSE servers — start + HTTP ingest + query | ✅ PASSED | 19.9s | 9/9 |
-| Flow queries via Docker STDIO | ✅ PASSED | 10.0s | 7/7 |
-| Hosted ingest via HTTP API (no volume mounts) | ✅ PASSED | 5.1s | 6/6 |
+| Python STDIO — ingest + query | ✅ PASSED | 45.6s | 5/5 |
+| .NET STDIO — ingest + query | ✅ PASSED | 105.6s | 6/6 |
+| SSE servers — start + HTTP ingest + query | ✅ PASSED | 20.5s | 9/9 |
+| Flow queries via Docker STDIO | ✅ PASSED | 9.7s | 7/7 |
+| Hosted ingest via HTTP API (no volume mounts) | ✅ PASSED | 5.1s | 8/8 |
 
-**Total**: 39/39 checks passed ✅
+**Total**: 41/41 checks passed ✅
 
 ## Phase Details
 
@@ -47,10 +47,10 @@ Branch: `RAG_Improvement`
 
 - ✅ .NET ingest --force-full
 - ✅ MCP initialize handshake
-- ✅ query_docs returns ADR-0006 content — `14653 chars`
+- ✅ query_docs returns ADR-0006 content — `17292 chars`
 - ✅ query_docs contains 'TypedId'
-- ✅ get_adr_history ADR-0006 has content — `18357 chars`
-- ✅ list_adrs returns known ADRs — `2152 chars`
+- ✅ get_adr_history ADR-0006 has content — `21968 chars`
+- ✅ list_adrs returns known ADRs — `1382 chars`
 
 ### SSE servers — start + HTTP ingest + query
 
@@ -59,10 +59,10 @@ Branch: `RAG_Improvement`
 - ✅ .NET SSE port 3001 reachable
 - ✅ Python SSE: query_docs → ADR-0016 (coupons) — `hits: ['docs/adr/0016/amendments/a1-oversize-guard-and-catalog-name-sync.md', 'docs/adr/0016/0016-sales-coupons-bc-design.md', 'docs/adr/0016/README.md']`
 - ✅ Python SSE: get_adr_history ADR-0016 mentions 'coupon'
-- ✅ .NET SSE: MCP initialize handshake — `session=hoeCRn44…`
+- ✅ .NET SSE: MCP initialize handshake — `session=1m9FeCT8…`
 - ✅ .NET SSE: tools/list — `['get_adr_history', 'list_adrs', 'read_docs', 'query_docs']`
-- ✅ .NET SSE: query_docs → ADR-0016 (coupons) — `10521 chars`
-- ✅ .NET SSE: get_adr_history ADR-0016 mentions 'coupon' — `49218 chars`
+- ✅ .NET SSE: query_docs → ADR-0016 (coupons) — `12570 chars`
+- ✅ .NET SSE: get_adr_history ADR-0016 mentions 'coupon' — `60902 chars`
 
 ### Flow queries via Docker STDIO
 
@@ -76,12 +76,14 @@ Branch: `RAG_Improvement`
 
 ### Hosted ingest via HTTP API (no volume mounts)
 
-- ✅ Python SSE: POST /ingest → 202 Accepted — `status=202 opId=fe49bdfc-5677-4ee4-bdd3-a3bf0e3c5b8e`
+- ✅ Python SSE: POST /config — metadata rules uploaded — `status=200`
+- ✅ Python SSE: POST /ingest → 202 Accepted — `status=202 opId=34aaa873-f8f4-452a-925a-f74925c13e43`
 - ✅ Python SSE: ingest operation Completed — `status=Completed`
 - ✅ Python SSE: uploaded doc queryable via MCP — `hits: ['docs/hosted-ingest-e2e-test.md', 'docs/adr/0028/amendments/0028-001-implementation-deviations.md', '.github/context/known-issues.md', 'docs/adr/0001/0001-project-overview-and-technology-stack.md', 'docs/adr/0010/amendments/a1-retry-observability-configuration.md']`
+- ✅ .NET SSE: POST /config — metadata rules uploaded — `status=200`
 - ✅ .NET SSE: POST /ingest → 202 Accepted — `status=202 opId=ecommerceapp_docs_dotnet:docs-hosted-ing`
 - ✅ .NET SSE: ingest operation Completed — `status=Completed`
-- ✅ .NET SSE: uploaded doc queryable via MCP — `11613 chars`
+- ✅ .NET SSE: uploaded doc queryable via MCP — `14153 chars`
 
 ## Notes & Improvement Suggestions
 

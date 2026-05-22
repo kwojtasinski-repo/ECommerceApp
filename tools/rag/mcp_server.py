@@ -413,7 +413,7 @@ async def _run_sse(port: int) -> None:
         yield
         await _worker.stop()
 
-    ingest_routes = build_ingest_routes(_store, _queue, DEFAULT_CAPACITY)
+    ingest_routes = build_ingest_routes(_store, _queue, DEFAULT_CAPACITY, cfg=CFG)
 
     app = Starlette(
         lifespan=lifespan,

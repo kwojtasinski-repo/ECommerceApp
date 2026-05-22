@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Xunit;
 
 namespace RagTools.Tests.E2E;
@@ -36,7 +37,7 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
         Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         var result = await _fx.Tools!.QueryDocs(
-            "strongly typed identifier value object", bc: null, topK: 3,
+            "strongly typed identifier value object", bc: null, top_k: 3,
             CancellationToken.None);
 
         // Should surface the Alpha pattern doc (typed IDs) above the Beta pattern (CQRS)
@@ -49,11 +50,11 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
         Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         var result = await _fx.Tools!.QueryDocs(
-            "command query separation", bc: null, topK: 5,
+            "command query separation", bc: null, top_k: 5,
             CancellationToken.None);
 
-        // Output should contain score lines and file paths
-        Assert.Matches(@"(?i)score\s*[:=]", result);
+        // JSON output should contain score and rel_path fields
+        Assert.Contains("\"score\"", result, StringComparison.OrdinalIgnoreCase);
         Assert.Contains(".md", result, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -64,7 +65,7 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
 
         // A question about something completely unrelated to the two synthetic docs.
         var result = await _fx.Tools!.QueryDocs(
-            "weather forecast temperature celsius", bc: null, topK: 5,
+            "weather forecast temperature celsius", bc: null, top_k: 5,
             CancellationToken.None);
 
         // Either returns no hits or everything is low-score noise —
@@ -80,10 +81,10 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
         Skip.If(!_fx.IsAvailable, _fx.SkipReason);
 
         var result = await _fx.Tools!.ReadDocs(
-            "how does the Alpha pattern work", bc: null, topFiles: 2,
+            "how does the Alpha pattern work", bc: null, top_files: 2,
             CancellationToken.None);
 
-        // Chunk mode groups results under a file header — should mention the alpha doc
+        // JSON output should mention the alpha doc
         Assert.Contains("alpha", result, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -94,14 +95,12 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
 
         // Phrases that trigger full-content intent regex
         var result = await _fx.Tools!.ReadDocs(
-            "show me full content of Beta pattern", bc: null, topFiles: 1,
+            "show me full content of Beta pattern", bc: null, top_files: 1,
             CancellationToken.None);
 
-        // Verify FullIntentRe triggered full-content mode and the file was read from disk.
-        // We do not assert on which file ranked top: semantic ordering depends on tokenizer
-        // accuracy, which varies between ONNX model + vocab combinations.
-        Assert.Matches(@"mode=full", result);
-        Assert.Matches(@"size=\d+", result);
+        // Verify FullIntentRe triggered full-content mode (JSON "mode":"full").
+        Assert.Contains("\"full\"", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("\"content\"", result, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("[ERROR:", result);
     }
 
@@ -114,9 +113,9 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
 
         var result = await _fx.Tools!.GetAdrHistory("0001", CancellationToken.None);
 
-        // ADR-0001 covers the Alpha pattern — both decision and amendment should appear
+        // JSON: adr_id, title, chunks array — Alpha content should appear
         Assert.Contains("Alpha", result, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("ADR-0001", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("0001", result, StringComparison.OrdinalIgnoreCase);
     }
 
     [SkippableFact]
@@ -138,7 +137,7 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
         var result = await _fx.Tools!.GetAdrHistory("0002", CancellationToken.None);
 
         Assert.Contains("Beta", result, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("ADR-0002", result, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("0002", result, StringComparison.OrdinalIgnoreCase);
     }
 
     [SkippableFact]
@@ -172,8 +171,8 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
 
         var result = await _fx.Tools!.ListAdrs(CancellationToken.None);
 
-        // ADR-0001 has one amendment file; the listing should reflect that
-        Assert.Contains("amendment", result, StringComparison.OrdinalIgnoreCase);
+        // ADR-0001 has one amendment file; JSON should show amendment_count > 0
+        Assert.Contains("amendment_count", result, StringComparison.OrdinalIgnoreCase);
     }
 
     [SkippableFact]
