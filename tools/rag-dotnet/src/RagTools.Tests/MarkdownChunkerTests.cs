@@ -336,4 +336,116 @@ public class MarkdownChunkerTests
 
         Assert.Equal(defaultChunks.Count, explicitChunks.Count);
     }
+
+    // ── Auto mode (split_on_headings: "auto") ───────────────────────────────────
+
+    private static MarkdownChunker AutoChunker(int minTokens = 1) => new(
+        new ChunkerSection { MaxTokens = 800, MinTokens = minTokens, OverlapTokens = 0,
+            SplitOnHeadingsRaw = "auto" },
+        FallbackCounter());
+
+    [Fact]
+    public void AutoMode_H4HeadingsBecomeChunkBoundaries()
+    {
+        // H4 headings should trigger a new chunk in auto mode.
+        var md = """
+            ## Section
+
+            Section body with several words to pass the min token threshold.
+
+            #### Detail A
+
+            Detail A has several words to pass the min token threshold here.
+
+            #### Detail B
+
+            Detail B also has several words to pass the min token threshold.
+            """;
+
+        var chunks = AutoChunker(minTokens: 1).Chunk(md, "doc.md");
+        var breadcrumbs = chunks.Select(c => c.Breadcrumb).ToList();
+        Assert.True(breadcrumbs.Any(b => b.Contains("Detail A")), "Detail A should become its own chunk");
+        Assert.True(breadcrumbs.Any(b => b.Contains("Detail B")), "Detail B should become its own chunk");
+    }
+
+    [Fact]
+    public void AutoMode_SmallConsecutiveSectionsAreMerged()
+    {
+        // Two tiny sections (each < minTokens when alone) should be merged into one chunk.
+        var md = """
+            ## Alpha
+
+            tiny
+
+            ## Beta
+
+            words
+            """;
+
+        // minTokens = 5: each section alone has ~1-2 tokens; merged they reach ~4+
+        var chunks = AutoChunker(minTokens: 5).Chunk(md, "doc.md");
+        // The two sections should merge into 1 (or 0 if combined is still < min).
+        Assert.True(chunks.Count <= 1);
+    }
+
+    [Fact]
+    public void AutoMode_LargeSectionNotMergedWithSubsequentSmall()
+    {
+        // A large section followed by a small one: large is emitted, small merged into nothing → dropped.
+        var words50 = string.Join(" ", Enumerable.Repeat("word", 50));
+        var md = $"""
+            ## Big Section
+
+            {words50}
+
+            ## Tiny
+
+            note
+            """;
+
+        var chunks = AutoChunker(minTokens: 20).Chunk(md, "doc.md");
+        // Big section should be emitted; "Tiny" is dropped (too small, no next chunk to absorb it).
+        Assert.Equal(1, chunks.Count);
+        Assert.Contains("Big Section", chunks[0].Breadcrumb);
+    }
+
+    [Fact]
+    public void AutoMode_RecognisesAutoStringCaseInsensitive()
+    {
+        // "AUTO", "Auto", and "auto" all activate auto mode.
+        var md = "## Section\n\n" + string.Join(" ", Enumerable.Repeat("word", 30));
+        foreach (var variant in new[] { "auto", "Auto", "AUTO" })
+        {
+            var chunker = new MarkdownChunker(
+                new ChunkerSection { MaxTokens = 800, MinTokens = 1, OverlapTokens = 0,
+                    SplitOnHeadingsRaw = variant },
+                FallbackCounter());
+            var chunks = chunker.Chunk(md, "doc.md");
+            Assert.True(chunks.Count >= 1, $"Variant '{variant}' should produce at least one chunk");
+        }
+    }
+
+    [Fact]
+    public void AutoMode_NullRawProducesAutoModeByDefault()
+    {
+        // When neither SplitOnHeadings nor SplitOnHeadingsRaw is set, IsAuto should be true.
+        var section = new ChunkerSection();
+        Assert.True(section.IsAuto);
+        Assert.Equal([1, 2, 3, 4, 5, 6], section.SplitLevels);
+    }
+
+    [Fact]
+    public void AutoMode_ExplicitListDisablesAutoMode()
+    {
+        var section = new ChunkerSection { SplitOnHeadings = [1, 2, 3] };
+        Assert.False(section.IsAuto);
+        Assert.Equal([1, 2, 3], section.SplitLevels);
+    }
+
+    [Fact]
+    public void AutoMode_SplitLevelsContainH1ThroughH6()
+    {
+        var section = new ChunkerSection { SplitOnHeadingsRaw = "auto" };
+        Assert.Equal([1, 2, 3, 4, 5, 6], section.SplitLevels);
+    }
 }

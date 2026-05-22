@@ -310,8 +310,40 @@ public sealed class ChunkerSection
     public int MaxTokens { get; init; } = 400;
     public int OverlapTokens { get; init; } = 50;
     public int MinTokens { get; init; } = 30;
-    /// <summary>Heading levels that act as section boundaries (default: H1–H3).</summary>
-    public List<int> SplitOnHeadings { get; init; } = [1, 2, 3];
+
+    /// <summary>
+    /// Raw YAML value for split_on_headings. Can be the string "auto" or a sequence of ints.
+    /// YamlDotNet deserializes a string scalar to <see cref="string"/> and a sequence to
+    /// <see cref="List{T}"/> of <see cref="object"/> when the target type is <see cref="object"/>.
+    /// Use <see cref="IsAuto"/> and <see cref="SplitLevels"/> for the resolved values.
+    /// </summary>
+    [YamlMember(Alias = "split_on_headings")]
+    public object? SplitOnHeadingsRaw { get; init; }
+
+    /// <summary>
+    /// Convenience in-code setter that accepts a plain <c>List&lt;int&gt;</c>.
+    /// When set, takes precedence over <see cref="SplitOnHeadingsRaw"/>.
+    /// Ignored by YamlDotNet (use <see cref="SplitOnHeadingsRaw"/> for YAML).
+    /// </summary>
+    [YamlIgnore]
+    public List<int>? SplitOnHeadings { get; init; }
+
+    /// <summary>
+    /// True when split_on_headings is set to "auto" in config.yaml (or left unset).
+    /// Auto mode splits at every heading level (H1–H6) and merges sections below min_tokens
+    /// into the previous chunk instead of dropping them.
+    /// </summary>
+    public bool IsAuto =>
+        SplitOnHeadings is null &&
+        (SplitOnHeadingsRaw is null ||
+         (SplitOnHeadingsRaw is string s && s.Equals("auto", StringComparison.OrdinalIgnoreCase)));
+
+    /// <summary>Effective heading levels for section splitting.</summary>
+    public IReadOnlyList<int> SplitLevels =>
+        SplitOnHeadings is { Count: > 0 } explicitLevels ? explicitLevels
+        : IsAuto ? [1, 2, 3, 4, 5, 6]
+        : SplitOnHeadingsRaw is List<object> items ? items.Select(Convert.ToInt32).ToList()
+        : [1, 2, 3];
 }
 
 public sealed class RankingSection

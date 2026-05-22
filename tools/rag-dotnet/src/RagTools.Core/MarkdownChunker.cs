@@ -2,7 +2,9 @@ namespace RagTools.Core;
 
 /// <summary>
 /// Heading-aware markdown chunker. Mirrors the Python chunker.py logic.
-/// Splits at H1/H2/H3 boundaries, respects code fences, enforces token budget.
+/// Splits at heading boundaries, respects code fences, enforces token budget.
+/// In auto mode (split_on_headings: "auto") splits at all H1–H6 levels and
+/// merges sections below min_tokens into the previous chunk instead of dropping them.
 /// </summary>
 public sealed class MarkdownChunker
 {
@@ -12,6 +14,7 @@ public sealed class MarkdownChunker
     private readonly ITokenCounter _tokenCounter;
     private readonly HashSet<int> _splitLevels;
     private readonly int _maxHeadingLevel;
+    private readonly bool _autoMode;
 
     public MarkdownChunker(ChunkerSection cfg, ITokenCounter tokenCounter)
     {
@@ -19,8 +22,9 @@ public sealed class MarkdownChunker
         _overlapTokens = cfg.OverlapTokens;
         _minTokens = cfg.MinTokens;
         _tokenCounter = tokenCounter;
-        _splitLevels = cfg.SplitOnHeadings.Count > 0
-            ? cfg.SplitOnHeadings.ToHashSet()
+        _autoMode = cfg.IsAuto;
+        _splitLevels = cfg.SplitLevels.Count > 0
+            ? cfg.SplitLevels.ToHashSet()
             : [1, 2, 3];
         _maxHeadingLevel = _splitLevels.Max();
     }
@@ -32,7 +36,7 @@ public sealed class MarkdownChunker
 
         // Split into heading-bounded sections.
         var sections = SplitBySections(lines, docTitle);
-        var chunks = new List<Chunk>();
+        var rawChunks = new List<Chunk>();
 
         foreach (var section in sections)
         {
@@ -40,16 +44,69 @@ public sealed class MarkdownChunker
             if (_tokenCounter.Count(section.Text) <= _maxTokens)
             {
                 var t = section.Text.Trim();
-                if (_tokenCounter.Count(t) >= _minTokens)
-                    chunks.Add(section with { Text = t });
+                var tc = _tokenCounter.Count(t);
+                if (!_autoMode && tc < _minTokens) continue;
+                if (_autoMode || tc >= _minTokens)
+                    rawChunks.Add(section with { Text = t, TokenCount = tc });
                 continue;
             }
 
             // Section is too large: slide a window over paragraphs.
-            chunks.AddRange(SlideWindow(section));
+            foreach (var piece in SlideWindow(section))
+            {
+                if (!_autoMode && piece.TokenCount < _minTokens) continue;
+                rawChunks.Add(piece);
+            }
         }
 
-        return chunks;
+        return _autoMode ? MergeSmallChunks(rawChunks) : rawChunks;
+    }
+
+    /// <summary>
+    /// Auto-mode post-processor: accumulate consecutive small chunks until >= min_tokens.
+    /// Mirrors Python's _merge_small_chunks: starts accumulating from the first chunk and
+    /// absorbs subsequent small sections. Once a large section is encountered, the buffer
+    /// is emitted and the new section starts a fresh buffer.
+    /// </summary>
+    private List<Chunk> MergeSmallChunks(List<Chunk> chunks)
+    {
+        if (chunks.Count == 0) return [];
+
+        var result = new List<Chunk>();
+        var buf = chunks[0];
+
+        foreach (var chunk in chunks.Skip(1))
+        {
+            if (buf.TokenCount >= _minTokens)
+            {
+                // Buffer is large enough — emit it, start a new buffer.
+                result.Add(buf);
+                buf = chunk;
+            }
+            else
+            {
+                // Buffer is still small — try to absorb this chunk.
+                var combinedText = buf.Text + "\n\n" + chunk.Text;
+                var combinedTokens = _tokenCounter.Count(combinedText);
+                if (combinedTokens <= _maxTokens)
+                {
+                    buf = buf with { Text = combinedText, TokenCount = combinedTokens };
+                }
+                else
+                {
+                    // Combined would overflow — emit buffer if large enough, then start fresh.
+                    if (buf.TokenCount >= _minTokens)
+                        result.Add(buf);
+                    buf = chunk;
+                }
+            }
+        }
+
+        // Emit the final buffer if it has enough content.
+        if (buf.TokenCount >= _minTokens)
+            result.Add(buf);
+
+        return result;
     }
 
     private static string DetectTitle(string[] lines, string relPath)

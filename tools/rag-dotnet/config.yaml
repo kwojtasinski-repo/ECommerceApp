@@ -33,15 +33,10 @@ chunker:
   overlap_tokens: 80     # the last 80 tokens of a chunk are repeated at the start of the next.
                          # This prevents a question that spans two chunks from returning a half-answer.
   # Which Markdown heading levels trigger a chunk boundary.
-  # [1, 2, 3] means every # H1, ## H2, and ### H3 starts a new chunk.
-  # H4, H5, H6 headings stay inside the same chunk as their parent H3 section.
-  #
-  # Why not split on every heading?
-  # H4+ sections in this repo’s ADRs and architecture docs are usually 1–2 sentences.
-  # Splitting there would produce chunks shorter than min_tokens (40) which get dropped,
-  # or tiny context-free fragments that return poor results.
-  # [1, 2, 3] gives the right balance: meaningful section boundaries without micro-chunks.
-  split_on_headings: [1, 2, 3]
+  # "auto" (default) — splits at every heading level (H1–H6). Short sections that fall
+  #              below min_tokens are merged into the previous chunk instead of dropped.
+  # [1, 2, 3]  — explicit list. Only H1/H2/H3 act as boundaries; H4+ stays inside H3.
+  split_on_headings: "auto"
 
 vector_store:
   # .NET always connects to Qdrant via HTTP gRPC — no embedded or memory mode.

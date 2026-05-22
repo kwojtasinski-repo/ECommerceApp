@@ -1,11 +1,15 @@
 """Heading-aware markdown chunker with size guard, overlap, and breadcrumb prepending.
 
-Chunking strategy (matches docs/rag/README.md):
-1. Split the document at H1/H2/H3 boundaries (configurable via chunker.split_on_headings).
+Chunking strategy:
+1. Split the document at heading boundaries (configurable via chunker.split_on_headings).
+   - ``[1, 2, 3]`` — split at H1/H2/H3 only (default in explicit mode).
+   - ``"auto"``   — split at every heading level (H1–H6) *and* merge sections that are
+                    too small (< min_tokens) into the previous chunk instead of dropping them.
 2. Build a breadcrumb of all ancestor headings for each chunk
    (e.g. "ADR-0014 Sales/Orders > §3 Order aggregate > Status transitions").
 3. If a chunk exceeds chunker.max_tokens, split it on paragraph boundaries with rolling overlap.
 4. Drop chunks below chunker.min_tokens (too generic for a useful embedding).
+   In ``auto`` mode, short sections are merged into the previous chunk before dropping.
 5. Prepend the breadcrumb to the embed_text so semantic similarity captures the section context.
 """
 from __future__ import annotations
@@ -148,13 +152,16 @@ def _split_oversized(body: str, start_line: int, max_tokens: int, overlap_tokens
 
 def chunk_markdown(text: str, doc_title: str, chunker_cfg: dict) -> list[Chunk]:
     text, fm_lines = _strip_frontmatter(text)
-    split_levels: list[int] = chunker_cfg.get("split_on_headings", [1, 2, 3])
+    split_on_headings_raw = chunker_cfg.get("split_on_headings", [1, 2, 3])
     max_tokens: int = int(chunker_cfg.get("max_tokens", 800))
     min_tokens: int = int(chunker_cfg.get("min_tokens", 40))
     overlap_tokens: int = int(chunker_cfg.get("overlap_tokens", 80))
 
+    auto_mode = isinstance(split_on_headings_raw, str) and split_on_headings_raw.lower() == "auto"
+    split_levels: list[int] = [1, 2, 3, 4, 5, 6] if auto_mode else [int(x) for x in split_on_headings_raw]
+
     root = _parse_sections(text, split_levels)
-    chunks: list[Chunk] = []
+    raw_chunks: list[Chunk] = []
     for path, section in _walk(root, [doc_title] if doc_title else []):
         body = "\n".join(section.body_lines).strip()
         if not body:
@@ -164,10 +171,10 @@ def chunk_markdown(text: str, doc_title: str, chunker_cfg: dict) -> list[Chunk]:
         start_line = section.start_line + fm_lines
         token_count = count_tokens(body)
         if token_count <= max_tokens:
-            if token_count < min_tokens:
+            if not auto_mode and token_count < min_tokens:
                 continue
             embed_text = f"{breadcrumb}\n\n{body}" if breadcrumb else body
-            chunks.append(
+            raw_chunks.append(
                 Chunk(
                     text=body,
                     embed_text=embed_text,
@@ -181,10 +188,10 @@ def chunk_markdown(text: str, doc_title: str, chunker_cfg: dict) -> list[Chunk]:
         else:
             for piece, sl, el in _split_oversized(body, start_line, max_tokens, overlap_tokens):
                 t = count_tokens(piece)
-                if t < min_tokens:
+                if not auto_mode and t < min_tokens:
                     continue
                 embed_text = f"{breadcrumb}\n\n{piece}" if breadcrumb else piece
-                chunks.append(
+                raw_chunks.append(
                     Chunk(
                         text=piece,
                         embed_text=embed_text,
@@ -195,4 +202,55 @@ def chunk_markdown(text: str, doc_title: str, chunker_cfg: dict) -> list[Chunk]:
                         token_count=t,
                     )
                 )
-    return chunks
+
+    if not auto_mode:
+        return raw_chunks  # already filtered by min_tokens in the loop above
+    return _merge_small_chunks(raw_chunks, min_tokens, max_tokens)
+
+
+def _merge_small_chunks(chunks: list[Chunk], min_tokens: int, max_tokens: int) -> list[Chunk]:
+    """Auto-mode post-processor: accumulate consecutive small chunks until >= min_tokens.
+
+    Instead of dropping short sections outright, this accumulates adjacent sections
+    (keeping the first section's breadcrumb and heading path) until the combined result
+    reaches min_tokens. If a large section (>= min_tokens) is encountered, the buffer
+    is emitted first and the large section starts a new buffer.
+    This preserves content that would otherwise be silently lost.
+    """
+    if not chunks:
+        return []
+
+    result: list[Chunk] = []
+    buf = chunks[0]
+
+    for chunk in chunks[1:]:
+        if buf.token_count >= min_tokens:
+            # Buffer is large enough — emit it, start a new buffer with the current chunk.
+            result.append(buf)
+            buf = chunk
+        else:
+            # Buffer is still small — try to absorb this chunk.
+            combined_text = buf.text + "\n\n" + chunk.text
+            combined_tokens = count_tokens(combined_text)
+            if combined_tokens <= max_tokens:
+                combined_embed = f"{buf.breadcrumb}\n\n{combined_text}" if buf.breadcrumb else combined_text
+                buf = Chunk(
+                    text=combined_text,
+                    embed_text=combined_embed,
+                    breadcrumb=buf.breadcrumb,
+                    heading_path=buf.heading_path,
+                    start_line=buf.start_line,
+                    end_line=chunk.end_line,
+                    token_count=combined_tokens,
+                )
+            else:
+                # Combined would overflow — emit current buffer if large enough, then start fresh.
+                if buf.token_count >= min_tokens:
+                    result.append(buf)
+                buf = chunk
+
+    # Emit the final buffer if it has enough content.
+    if buf.token_count >= min_tokens:
+        result.append(buf)
+
+    return result

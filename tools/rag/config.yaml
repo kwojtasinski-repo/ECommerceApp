@@ -36,18 +36,19 @@ chunker:
   overlap_tokens: 80     # the last 80 tokens of a chunk are repeated at the start of the next.
                          # This prevents a question that spans two chunks from returning a half-answer.
   # Which Markdown heading levels trigger a chunk boundary.
-  # [1, 2, 3] means every # H1, ## H2, and ### H3 starts a new chunk.
-  # H4, H5, H6 headings stay inside the same chunk as their parent H3 section.
+  # "auto" (default) — splits at every heading level (H1–H6). Short sections that fall
+  #              below min_tokens are merged into the previous chunk instead of dropped.
+  #              This gives natural, heading-aligned boundaries for all docs regardless
+  #              of how deeply nested they are. Recommended for most repos.
+  # [1, 2, 3]  — explicit list. Only H1/H2/H3 act as boundaries; H4+ content stays inside
+  #              the parent H3 chunk. Use this when you want predictable chunk shapes and
+  #              know your H4+ sections are always too short to stand alone.
   #
-  # Why not split on every heading?
-  # H4+ sections in this repo’s ADRs and architecture docs are usually 1–2 sentences.
-  # Splitting there would produce chunks shorter than min_tokens (40) which get dropped,
-  # or tiny context-free fragments that return poor results.
-  # [1, 2, 3] gives the right balance: meaningful section boundaries without micro-chunks.
-  #
-  # When to add 4: if you add docs with many long H4 sub-sections that each
-  # contain distinct searchable content (e.g., a large reference guide).
-  split_on_headings: [1, 2, 3]
+  # Why not always use [1,2,3]?
+  # H4+ sections in ADRs and reference docs (endpoint-map.md, coupon rules) can be
+  # long and topic-specific. Without "auto", an H3 blob containing 12 H4 sub-sections
+  # gets split at the token cap — mid-paragraph, mid-sentence. "auto" prevents that.
+  split_on_headings: "auto"
 
 vector_store:
   # The name of the Qdrant collection that holds all indexed chunks.
