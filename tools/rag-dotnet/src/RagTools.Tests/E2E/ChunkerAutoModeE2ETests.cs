@@ -35,6 +35,15 @@ public sealed class ChunkerAutoModeE2E_LevelA
             SplitOnHeadings = [1, 2, 3],
         }, _counter);
 
+    private static MarkdownChunker ExplicitH4Chunker(int minTokens = 40) =>
+        new(new ChunkerSection
+        {
+            MaxTokens = 800,
+            MinTokens = minTokens,
+            OverlapTokens = 0,
+            SplitOnHeadings = [1, 2, 3, 4],
+        }, _counter);
+
     // ── H4 fixture: heading boundaries ────────────────────────────────────
 
     [Fact]
@@ -57,6 +66,44 @@ public sealed class ChunkerAutoModeE2E_LevelA
 
         Assert.DoesNotContain(breadcrumbs, b => b.Contains("Versioning Strategy"));
         Assert.DoesNotContain(breadcrumbs, b => b.Contains("Status Codes"));
+    }
+
+    // ── Explicit [1,2,3,4] — behaves like auto mode for H4 docs ──────────
+
+    [Fact]
+    public void ExplicitH4Mode_H4HeadingsAppearInBreadcrumbs()
+    {
+        var chunks = ExplicitH4Chunker().Chunk(AutoModeE2EFixture.H4Doc, AutoModeE2EFixture.H4RelPath);
+        var breadcrumbs = chunks.Select(c => c.Breadcrumb).ToList();
+
+        Assert.True(
+            breadcrumbs.Any(b => b.Contains("Versioning Strategy") || b.Contains("Status Codes")
+                              || b.Contains("Unit of Work")),
+            $"Explicit [1,2,3,4] should split at H4 headings and produce H4 breadcrumbs. " +
+            $"Got: [{string.Join(", ", breadcrumbs)}]");
+    }
+
+    [Fact]
+    public void ExplicitH4Mode_ProducesMoreChunksThanExplicit123()
+    {
+        var h4Count  = ExplicitH4Chunker().Chunk(AutoModeE2EFixture.H4Doc, AutoModeE2EFixture.H4RelPath).Count;
+        var h3Count  = ExplicitChunker().Chunk(AutoModeE2EFixture.H4Doc, AutoModeE2EFixture.H4RelPath).Count;
+
+        Assert.True(h4Count > h3Count,
+            $"Explicit [1,2,3,4] should produce more chunks than [1,2,3]: h4={h4Count}, h3={h3Count}");
+    }
+
+    [Fact]
+    public void ExplicitH4Mode_H4ContentIsNotLost()
+    {
+        var chunks = ExplicitH4Chunker().Chunk(AutoModeE2EFixture.H4Doc, AutoModeE2EFixture.H4RelPath);
+        var combined = string.Join(" ", chunks.Select(c => c.Text));
+
+        Assert.Contains("Never break existing versions", combined);
+        Assert.Contains("Deprecation requires a minimum six-month notice period", combined);
+        Assert.Contains("Use 201 for successful POST", combined);
+        Assert.Contains("Use 409 for conflicts", combined);
+        Assert.Contains("Connection pooling is handled exclusively", combined);
     }
 
     [Fact]
