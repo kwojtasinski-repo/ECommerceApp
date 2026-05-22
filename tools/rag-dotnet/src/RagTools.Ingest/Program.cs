@@ -1,11 +1,14 @@
+using Microsoft.Extensions.Logging;
 using RagTools.Core;
 
 // ── CLI entry point for incremental ingest ────────────────────────────────────
 //
 // Usage:
-//   dotnet run                 # incremental — only changed/new files
-//   dotnet run -- --force-full # full rebuild, ignores manifest
-//   dotnet run -- --dry-run    # print kind distribution without embedding
+//   dotnet run                       # incremental — only changed/new files
+//   dotnet run -- --force-full       # full rebuild, ignores manifest
+//   dotnet run -- --dry-run          # print kind distribution without embedding
+//   dotnet run -- -v                 # verbose output (LogLevel.Debug)
+//   dotnet run -- --verbosity debug  # explicit level: trace|debug|information|warning|error
 //
 // Environment variables:
 //   RAG_WORKSPACE    absolute path to the repo root (default: cwd)
@@ -15,6 +18,42 @@ using RagTools.Core;
 
 var forceFull = args.Contains("--force-full");
 var dryRun = args.Contains("--dry-run");
+var verbose = args.Contains("-v") || args.Contains("--verbose");
+
+// --verbosity <level> or -v shorthand
+var logLevel = LogLevel.Information;  // default: show progress messages
+for (var i = 0; i < args.Length - 1; i++)
+{
+    if (args[i] is "--verbosity" or "--log-level")
+    {
+        logLevel = args[i + 1].ToLowerInvariant() switch
+        {
+            "trace"       => LogLevel.Trace,
+            "debug"       => LogLevel.Debug,
+            "information" => LogLevel.Information,
+            "info"        => LogLevel.Information,
+            "warning"     => LogLevel.Warning,
+            "warn"        => LogLevel.Warning,
+            "error"       => LogLevel.Error,
+            _             => LogLevel.Information,
+        };
+        break;
+    }
+}
+if (verbose && logLevel > LogLevel.Debug)
+    logLevel = LogLevel.Debug;
+
+// Info and above always shown; Debug/Trace only when -v or --verbosity debug/trace.
+using var loggerFactory = LoggerFactory.Create(b =>
+    b.AddSimpleConsole(o =>
+    {
+        o.SingleLine = true;
+        o.TimestampFormat = "HH:mm:ss ";
+    })
+    .SetMinimumLevel(logLevel));
+
+var log = loggerFactory.CreateLogger("ingest");
+var dbg = log;  // same logger — level controls what gets emitted
 
 // Parse --config <path> argument.
 string? configArgValue = null;
@@ -33,8 +72,8 @@ var resolvedConfigPath = RagConfig.ResolveConfigPath(configArgValue);
 // Startup validation — fail fast on missing config / model so misconfiguration is obvious.
 if (!File.Exists(resolvedConfigPath))
 {
-    Console.Error.WriteLine($"[ingest] ERROR: config.yaml not found at {resolvedConfigPath}");
-    Console.Error.WriteLine("[ingest] Set RAG_CONFIG or RAG_WORKSPACE, or run from a directory that contains config.yaml.");
+    log.LogError("config.yaml not found at {Path}", resolvedConfigPath);
+    log.LogError("Set RAG_CONFIG or RAG_WORKSPACE, or run from a directory that contains config.yaml.");
     return 1;
 }
 
@@ -49,18 +88,18 @@ var modelDir = Path.IsPathRooted(modelDirRaw)
     : Path.GetFullPath(Path.Combine(repoRoot, modelDirRaw));
 
 var configFi = new FileInfo(resolvedConfigPath);
-Console.WriteLine($"[ingest] config     : {resolvedConfigPath} ({configFi.Length} bytes)");
-Console.WriteLine($"[ingest] repo root  : {repoRoot}");
-Console.WriteLine($"[ingest] collection : {cfg.Collection}");
-Console.WriteLine($"[ingest] manifest   : {manifestPath}");
-Console.WriteLine($"[ingest] model dir  : {modelDir} (exists: {Directory.Exists(modelDir)})");
-Console.WriteLine($"[ingest] mode       : {(forceFull ? "full" : "incremental")}");
+log.LogInformation("config     : {Path} ({Bytes} bytes)", resolvedConfigPath, configFi.Length);
+log.LogInformation("repo root  : {Root}", repoRoot);
+log.LogInformation("collection : {Collection}", cfg.Collection);
+log.LogInformation("manifest   : {Manifest}", manifestPath);
+log.LogInformation("model dir  : {ModelDir} (exists: {Exists})", modelDir, Directory.Exists(modelDir));
+log.LogInformation("mode       : {Mode}", forceFull ? "full" : "incremental");
 
 // Model dir is needed unless this is a --dry-run.
 if (!dryRun && !Directory.Exists(modelDir))
 {
-    Console.Error.WriteLine($"[ingest] ERROR: ONNX model directory not found at {modelDir}");
-    Console.Error.WriteLine("[ingest] Run: pwsh tools/rag-dotnet/download-model.ps1");
+    log.LogError("ONNX model directory not found at {ModelDir}", modelDir);
+    log.LogError("Run: pwsh tools/rag-dotnet/download-model.ps1");
     return 1;
 }
 
@@ -72,7 +111,7 @@ var sourceRoots = cfg.Source.Roots
 
 if (sourceRoots.Count == 0)
 {
-    Console.Error.WriteLine("[ingest] ERROR: No source roots found. Check config.yaml source.roots.");
+    log.LogError("No source roots found. Check config.yaml source.roots.");
     return 1;
 }
 
@@ -83,7 +122,7 @@ var allFiles = sourceRoots
     .OrderBy(fi => fi.FullName)
     .ToList();
 
-Console.WriteLine($"[ingest] found {allFiles.Count} markdown files");
+log.LogInformation("found {Count} markdown files", allFiles.Count);
 
 // ── Dry run: print kind distribution ─────────────────────────────────────────
 if (dryRun)
@@ -95,9 +134,9 @@ if (dryRun)
         var kind = cfg.DetectDocKind(rel);
         kindCounts[kind] = kindCounts.GetValueOrDefault(kind) + 1;
     }
-    Console.WriteLine("\n[dry-run] document kind distribution:");
+    log.LogInformation("[dry-run] document kind distribution:");
     foreach (var (kind, count) in kindCounts.OrderByDescending(kv => kv.Value))
-        Console.WriteLine($"  {kind,-30} {count,5} files");
+        log.LogInformation("  {Kind,-30} {Count,5} files", kind, count);
     return 0;
 }
 
@@ -121,19 +160,19 @@ foreach (var fi in allFiles)
 var currentRelPaths = allFiles.Select(fi => Path.GetRelativePath(repoRoot, fi.FullName).Replace('\\', '/')).ToList();
 var deleted = manifest.FindDeleted(currentRelPaths).ToList();
 
-Console.WriteLine($"[ingest] to process : {toProcess.Count} file(s) (changed/new)");
-Console.WriteLine($"[ingest] to delete  : {deleted.Count} file(s) (removed from disk)");
+log.LogInformation("to process : {Count} file(s) (changed/new)", toProcess.Count);
+log.LogInformation("to delete  : {Count} file(s) (removed from disk)", deleted.Count);
 
 if (toProcess.Count == 0 && deleted.Count == 0)
 {
-    Console.WriteLine("[ingest] nothing to do — index is up to date");
+    log.LogInformation("nothing to do — index is up to date");
     return 0;
 }
 
 // ── Load embedder + Qdrant ────────────────────────────────────────────────────
-Console.WriteLine("[ingest] loading ONNX embedder ...");
+log.LogInformation("loading ONNX embedder ...");
 using var embedder = OnnxEmbedder.Load(modelDir);
-Console.WriteLine($"[ingest] embedding dimensions: {embedder.Dimensions}");
+log.LogInformation("embedding dimensions: {Dims}", embedder.Dimensions);
 
 var qdrantUrl = Environment.GetEnvironmentVariable("QDRANT_URL") ?? cfg.QdrantUrl;
 using var store = QdrantStore.Connect(qdrantUrl, cfg.Collection);
@@ -145,10 +184,13 @@ else
 // ── Delete removed files ──────────────────────────────────────────────────────
 if (deleted.Count > 0)
 {
-    Console.WriteLine("[ingest] deleting stale points ...");
+    log.LogInformation("deleting {Count} stale points ...", deleted.Count);
     await store.DeleteByPathsAsync(deleted);
     foreach (var rel in deleted)
+    {
+        dbg.LogDebug("deleted: {RelPath}", rel);
         manifest.Remove(rel);
+    }
 }
 
 // ── Chunk, embed, upsert ──────────────────────────────────────────────────────
@@ -182,7 +224,9 @@ foreach (var (fi, relPath, hash) in toProcess)
         for (var j = 0; j < batch.Count; j++)
         {
             var chunk = batch[j];
+            var chunkIndex = i + j;   // global chunk index across batches
             var id = ManifestService.StableId(relPath, chunk.Breadcrumb, chunk.StartLine);
+            var contentId = DeterministicId.ForContent(cfg.Collection, relPath);
             points.Add(new RagPoint(id, vectors[j], new RagPayload(
                 RelPath: relPath,
                 DocTitle: docTitle,
@@ -194,7 +238,9 @@ foreach (var (fi, relPath, hash) in toProcess)
                 EndLine: chunk.EndLine,
                 TokenCount: chunk.TokenCount,
                 Weight: weight,
-                Text: chunk.Text)));
+                Text: chunk.Text,
+                ChunkIndex: chunkIndex,
+                ContentId: contentId)));
         }
     }
 
@@ -203,13 +249,14 @@ foreach (var (fi, relPath, hash) in toProcess)
     totalChunks += chunks.Count;
     processedFiles++;
 
+    dbg.LogDebug("{RelPath}: {ChunkCount} chunks, kind={Kind}, weight={Weight}", relPath, chunks.Count, kind, weight);
     if (processedFiles % 10 == 0)
-        Console.WriteLine($"[ingest] {processedFiles}/{toProcess.Count} files processed ...");
+        log.LogInformation("{Done}/{Total} files processed ...", processedFiles, toProcess.Count);
 }
 
 manifest.Save();
 WriteStatsMd(cfg, manifest, repoRoot);
-Console.WriteLine($"[ingest] done — {processedFiles} file(s), {totalChunks} chunks, manifest saved");
+log.LogInformation("done — {Files} file(s), {Chunks} chunks, manifest saved", processedFiles, totalChunks);
 return 0;
 
 // ── Local helpers ─────────────────────────────────────────────────────────────

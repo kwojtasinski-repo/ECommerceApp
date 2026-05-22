@@ -19,14 +19,45 @@ using RagTools.Core;
 // Environment variables:
 //   MCP_TRANSPORT    "stdio" (default) or "sse"
 //   MCP_PORT         port for SSE mode (default: 3001)
+//   MCP_LOG_LEVEL    log verbosity: trace|debug|information|warning|error (default: warning)
 //   RAG_WORKSPACE    absolute path to the repo root
 //   RAG_COLLECTION   Qdrant collection name override
 //   RAG_CONFIG       path to config.yaml (default: /app/config.yaml)
 //   QDRANT_URL       Qdrant server URL (default: from config.yaml)
 //   RAG_MODEL_DIR    path to ONNX model directory (default: /app/model)
+//
+// CLI flags:
+//   -v / --verbose            shorthand for debug level
+//   --verbosity <level>       trace|debug|information|warning|error
 
 var transport = (Environment.GetEnvironmentVariable("MCP_TRANSPORT") ?? "stdio").ToLowerInvariant();
 var port = int.TryParse(Environment.GetEnvironmentVariable("MCP_PORT"), out var p) ? p : 3001;
+
+// ── Log level resolution: CLI flag > MCP_LOG_LEVEL env var > default (Warning)
+var logLevel = ParseLogLevel(
+    args,
+    Environment.GetEnvironmentVariable("MCP_LOG_LEVEL"),
+    args.Contains("-v") || args.Contains("--verbose") ? LogLevel.Debug : LogLevel.Warning);
+
+static LogLevel ParseLogLevel(string[] args, string? envVal, LogLevel fallback)
+{
+    for (var i = 0; i < args.Length - 1; i++)
+        if (args[i] is "--verbosity" or "--log-level")
+            return MapLevel(args[i + 1], fallback);
+    return envVal is not null ? MapLevel(envVal, fallback) : fallback;
+}
+
+static LogLevel MapLevel(string s, LogLevel fallback) => s.ToLowerInvariant() switch
+{
+    "trace"       => LogLevel.Trace,
+    "debug"       => LogLevel.Debug,
+    "information" => LogLevel.Information,
+    "info"        => LogLevel.Information,
+    "warning"     => LogLevel.Warning,
+    "warn"        => LogLevel.Warning,
+    "error"       => LogLevel.Error,
+    _             => fallback,
+};
 
 // Resolve config via 3-way priority (--config not supported here; MCP runs headless).
 var resolvedConfigPath = RagConfig.ResolveConfigPath(null);
@@ -67,6 +98,7 @@ if (transport == "sse")
     // ── SSE / HTTP mode ───────────────────────────────────────────────────────
     // Uses WebApplication (Kestrel). Stdout is safe for normal logs here.
     var webBuilder = WebApplication.CreateBuilder(args);
+    webBuilder.Logging.SetMinimumLevel(logLevel);
     webBuilder.Services
         .AddSingleton(cfg)
         .AddSingleton(_ => OnnxEmbedder.Load(modelDir))
@@ -92,6 +124,7 @@ else
     // polluting the protocol channel.
     builder.Logging.ClearProviders();
     builder.Logging.AddConsole(opts => opts.LogToStandardErrorThreshold = LogLevel.Trace);
+    builder.Logging.SetMinimumLevel(logLevel);
 
     builder.Services
         .AddSingleton(cfg)

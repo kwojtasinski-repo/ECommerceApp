@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 using RagTools.Core;
 
@@ -12,7 +13,7 @@ namespace RagTools.Mcp.Tools;
 ///   list_adrs       — list all ADRs from disk (accurate, not index-dependent)
 /// </summary>
 [McpServerToolType]
-public sealed class RagTools(OnnxEmbedder embedder, QdrantStore store, RagConfig cfg)
+public sealed class RagTools(OnnxEmbedder embedder, QdrantStore store, RagConfig cfg, ILogger<RagTools> logger)
 {
     // Loaded once per server lifetime — returns Empty if GlossaryPath is null or file absent.
     private readonly MultilingualGlossary _glossary = MultilingualGlossary.Load(cfg.GlossaryPath);
@@ -32,6 +33,8 @@ public sealed class RagTools(OnnxEmbedder embedder, QdrantStore store, RagConfig
 
         // Fetch from config; widen pool when a bc filter is active to compensate for post-filter loss.
         var fetchK = bc is not null ? Math.Max(cfg.Query.FetchK, topK * 3) : cfg.Query.FetchK;
+        logger.LogDebug("QueryDocs: question={Question} bc={Bc} topK={TopK} fetchK={FetchK}", question, bc, topK, fetchK);
+
         var queryVec = embedder.Embed(_glossary.Expand(question));
         var allHits = await store.SearchAsync(
             queryVec,
@@ -43,6 +46,8 @@ public sealed class RagTools(OnnxEmbedder embedder, QdrantStore store, RagConfig
         var hits = bc is not null
             ? weighted.Where(h => MatchesBc(h, bc)).Take(topK).ToList()
             : weighted.ToList();
+
+        logger.LogInformation("QueryDocs: returned {Count}/{Total} hits for '{Question}'", hits.Count, allHits.Count, question);
 
         if (hits.Count == 0)
             return "No results found. Consider re-running the ingest script or broadening your query.";
@@ -68,6 +73,7 @@ public sealed class RagTools(OnnxEmbedder embedder, QdrantStore store, RagConfig
     {
         topFiles = Math.Clamp(topFiles, 1, 5);
         var fullMode = WantsFullContent(question);
+        logger.LogDebug("ReadDocs: question={Question} bc={Bc} topFiles={TopFiles} fullMode={FullMode}", question, bc, topFiles, fullMode);
 
         // Fetch generously so each file gets good per-file coverage in chunk mode.
         // No Qdrant-level filter: bc is a substring post-filter on breadcrumb/DocTitle.
@@ -101,8 +107,16 @@ public sealed class RagTools(OnnxEmbedder embedder, QdrantStore store, RagConfig
             {
                 var abs = Path.Combine(cfg.Workspace, f.RelPath);
                 string body;
-                try { body = await File.ReadAllTextAsync(abs, cancellationToken); }
-                catch (Exception ex) { body = $"[ERROR: could not read file — {ex.Message}]"; }
+                try
+                {
+                    body = await File.ReadAllTextAsync(abs, cancellationToken);
+                    logger.LogDebug("ReadDocs: full read {RelPath} ({Size} chars)", f.RelPath, body.Length);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogWarning(ex, "ReadDocs: could not read file {RelPath}", f.RelPath);
+                    body = $"[ERROR: could not read file — {ex.Message}]";
+                }
                 sections.Add(
                     $"# {f.RelPath}\n" +
                     $"score={f.BestScore:F3}  kind={first.DocKind}  mode=full  size={body.Length} chars\n\n" +
@@ -119,6 +133,7 @@ public sealed class RagTools(OnnxEmbedder embedder, QdrantStore store, RagConfig
             }
         }
 
+        logger.LogInformation("ReadDocs: returned {Count} file(s) for '{Question}'", sections.Count, question);
         return string.Join("\n\n===\n\n", sections);
     }
 
@@ -159,6 +174,7 @@ public sealed class RagTools(OnnxEmbedder embedder, QdrantStore store, RagConfig
     {
         // Normalise to 4-digit zero-padded.
         adrId = adrId.TrimStart('0').PadLeft(4, '0');
+        logger.LogDebug("GetAdrHistory: adrId={AdrId}", adrId);
 
         var queryVec = embedder.Embed($"ADR {adrId}");
         var hits = await store.SearchAsync(
@@ -169,10 +185,14 @@ public sealed class RagTools(OnnxEmbedder embedder, QdrantStore store, RagConfig
             cancellationToken: cancellationToken);
 
         if (hits.Count == 0)
+        {
+            logger.LogWarning("GetAdrHistory: no chunks for ADR {AdrId}", adrId);
             return $"No chunks found for ADR {adrId}. Ensure the ADR is indexed.";
+        }
 
         // Order by start line so the output reads top-to-bottom like the source document.
         var ordered = hits.OrderBy(h => h.StartLine).ToList();
+        logger.LogInformation("GetAdrHistory: ADR {AdrId} returned {Count} chunks", adrId, ordered.Count);
         return $"# ADR {adrId} — {ordered[0].DocTitle}\n\n" +
                string.Join("\n\n---\n\n", ordered.Select(h =>
                    $"**{h.Breadcrumb}** ({h.DocKind})\n\n{h.Text}"));
@@ -187,6 +207,7 @@ public sealed class RagTools(OnnxEmbedder embedder, QdrantStore store, RagConfig
         // Read from disk — accurate and complete regardless of index state.
         // Mirrors Python _tool_list_adrs which iterates docs/adr/ directly.
         var adrFolder = Path.Combine(cfg.Workspace, "docs", "adr");
+        logger.LogDebug("ListAdrs: scanning {AdrFolder}", adrFolder);
         if (!Directory.Exists(adrFolder))
             return Task.FromResult($"ADR folder not found at: {adrFolder}. Check RAG_WORKSPACE.");
 

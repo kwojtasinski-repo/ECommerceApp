@@ -126,7 +126,7 @@ public sealed class RagE2EFixture : IAsyncLifetime
         await IngestWorkspaceAsync(cfg, _embedder, _store);
 
         // 5. Expose MCP tool instance for direct method calls in tests.
-        Tools = new RagMcpTools(_embedder, _store, cfg);
+        Tools = new RagMcpTools(_embedder, _store, cfg, Microsoft.Extensions.Logging.Abstractions.NullLogger<RagMcpTools>.Instance);
         IsAvailable = true;
     }
 

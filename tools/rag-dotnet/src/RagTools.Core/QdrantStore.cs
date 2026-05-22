@@ -80,6 +80,10 @@ public sealed class QdrantStore : IDisposable
             };
             if (p.Payload.AdrId is not null)
                 payload["adr_id"] = p.Payload.AdrId;
+            if (p.Payload.ChunkIndex >= 0)
+                payload["chunk_index"] = p.Payload.ChunkIndex;
+            if (p.Payload.ContentId.HasValue)
+                payload["content_id"] = p.Payload.ContentId.Value.ToString();
 
             return new PointStruct
             {
@@ -189,7 +193,11 @@ public sealed record RagPayload(
     int EndLine,
     int TokenCount,
     float Weight,
-    string Text);
+    string Text,
+    // Step 1 — ADR-0028: chunk_index enables neighbor computation; content_id enables O(1) content fetch.
+    // Optional with defaults so existing call sites compile without changes.
+    int ChunkIndex = -1,
+    Guid? ContentId = null);
 
 public sealed record SearchHit(
     float Score,
