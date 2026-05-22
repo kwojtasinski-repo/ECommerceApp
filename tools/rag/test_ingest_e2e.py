@@ -455,6 +455,11 @@ class TestE2EFullPipelineQdrant:
         finally:
             if handle:
                 handle.stop()
+            # Clean up: delete the test collection from Qdrant so subsequent runs start fresh.
+            try:
+                QdrantClient(url=qdrant_url).delete_collection(collection)
+            except Exception:
+                pass  # best-effort cleanup
             # Restore original env vars.
             if old_mode is None:
                 os.environ.pop("VECTOR_MODE", None)

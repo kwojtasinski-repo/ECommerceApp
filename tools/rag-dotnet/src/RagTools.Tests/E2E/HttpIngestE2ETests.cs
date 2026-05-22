@@ -208,6 +208,31 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>
         Assert.Equal(HttpStatusCode.NotFound, resp.StatusCode);
     }
 
+    [SkippableFact]
+    public async Task PollStatus_Returns404_ForWrongCollection()
+    {
+        Skip.If(!_fx.IsAvailable, _fx.SkipReason);
+
+        // Upload a document to the fixture's collection.
+        var payload = JsonSerializer.Serialize(new
+        {
+            relPath = "docs/isolation/test.md",
+            content = "# Isolation Test\n\nCollection boundary must be enforced.",
+        });
+        using var postResp = await _fx.Client!.PostAsync(
+            $"/ingest/{_fx.Collection}",
+            new StringContent(payload, Encoding.UTF8, "application/json"));
+        Assert.Equal(HttpStatusCode.Accepted, postResp.StatusCode);
+
+        var postBody = JsonDocument.Parse(await postResp.Content.ReadAsStringAsync());
+        var opId     = postBody.RootElement.GetProperty("operationId").GetString()!;
+
+        // Look up with a DIFFERENT collection name — must return 404.
+        using var getResp = await _fx.Client.GetAsync(
+            $"/ingest/wrong-collection/operations/{Uri.EscapeDataString(opId)}");
+        Assert.Equal(HttpStatusCode.NotFound, getResp.StatusCode);
+    }
+
     // ── GET /ingest/{collection}/operations (list) ────────────────────────────
 
     [SkippableFact]

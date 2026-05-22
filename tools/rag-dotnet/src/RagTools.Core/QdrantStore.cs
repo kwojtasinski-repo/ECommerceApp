@@ -59,6 +59,14 @@ public sealed class QdrantStore : IDisposable
     }
 
     /// <summary>Upsert a batch of points. Idempotent — same UUID is overwritten.</summary>
+    public async Task TryDeleteCollectionAsync(string collection, CancellationToken ct = default)
+    {
+        var exists = await _client.CollectionExistsAsync(collection, ct);
+        if (exists)
+            await _client.DeleteCollectionAsync(collection, cancellationToken: ct);
+    }
+
+    /// <summary>Upsert a batch of points. Idempotent — same UUID is overwritten.</summary>
     public async Task UpsertAsync(IReadOnlyList<RagPoint> points, CancellationToken ct = default)
     {
         if (points.Count == 0) return;

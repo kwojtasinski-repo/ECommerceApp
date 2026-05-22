@@ -46,6 +46,8 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
     private QdrantContainer?  _container;
     private WebApplication?   _app;
     private SyntheticWorkspace? _workspace;
+    private QdrantStore?      _rawStore;
+    private string?           _qdrantUrl;
 
     // ── Availability helpers (shared with IngestE2EFixture) ──────────────────
 
@@ -125,11 +127,12 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
 
         // Ensure Qdrant collection exists.
         var embedder = OnnxEmbedder.Load(modelDir);
-        var rawStore = QdrantStore.Connect(qdrantUrl, Collection);
-        await rawStore.EnsureCollectionAsync(embedder.Dimensions);
+        _qdrantUrl = qdrantUrl;
+        _rawStore  = QdrantStore.Connect(qdrantUrl, Collection);
+        await _rawStore.EnsureCollectionAsync(embedder.Dimensions);
 
         // Build the IDocumentStore (same as SSE branch of Program.cs).
-        var qdrantDocStore = new QdrantDocumentStore(qdrantUrl);
+        var qdrantDocStore = new QdrantDocumentStore(_qdrantUrl!);
         var cachedStore    = new CachedDocumentStore(qdrantDocStore, new QueryCache());
         Store      = cachedStore;
         Operations = new OperationStore();
@@ -176,6 +179,17 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
             await _app.StopAsync(cts.Token);
             await _app.DisposeAsync();
+        }
+        // Clean up: delete the test collection from Qdrant so orphaned collections
+        // do not accumulate across test runs. Best-effort — swallow any errors.
+        if (_rawStore is not null && Collection is not null)
+        {
+            try
+            {
+                await _rawStore.TryDeleteCollectionAsync(Collection);
+            }
+            catch { /* best-effort cleanup */ }
+            _rawStore.Dispose();
         }
         _workspace?.Dispose();
         if (_container is not null)

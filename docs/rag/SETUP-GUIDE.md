@@ -329,6 +329,125 @@ The .NET path downloads the ONNX model separately. To switch:
 
 ---
 
+## Remote ingest mode (--remote)
+
+Both the Python and .NET ingest tools support a `--remote` flag that sends documents
+to a running MCP server over HTTP instead of embedding locally. This is useful in CI
+or when you want to run ingest without the ONNX model installed locally.
+
+### When to use --remote
+
+- CI pipeline: build once, index once, then push from any machine
+- Dev container: server is containerized; local machine has no Python/model
+- Team shared index: one "indexer" machine runs the server; others push to it
+
+### How to start the server in SSE mode
+
+```powershell
+# Python SSE server (port 3002)
+docker compose --profile rag-python-sse up -d rag-python-sse
+
+# .NET SSE server (port 3001)
+docker compose --profile rag-dotnet-sse up -d rag-dotnet-sse
+```
+
+Verify it's up:
+
+```powershell
+Invoke-WebRequest http://localhost:3002/admin/stats   # Python
+Invoke-WebRequest http://localhost:3001/admin/stats   # .NET
+```
+
+### Push documents via --remote
+
+```powershell
+# Python ingest → Python SSE server
+python tools/rag/ingest.py --remote http://localhost:3002
+
+# .NET ingest → .NET SSE server (from tools/rag-dotnet/)
+dotnet run --project src/RagTools.Ingest -- --remote http://localhost:3001
+
+# With API key (if RAG_API_KEY is set on the server)
+python tools/rag/ingest.py --remote http://localhost:3002 --api-key mysecret
+$env:RAG_API_KEY = 'mysecret'   # alternative: set env var
+```
+
+### Monitor ingest status
+
+After uploading, documents are processed asynchronously. Check operation status:
+
+```powershell
+# List recent operations for a collection
+Invoke-RestMethod http://localhost:3002/ingest/ecommerceapp_docs/operations
+
+# Poll a specific operation to completion
+$opId = 'abc123'
+Invoke-RestMethod "http://localhost:3002/ingest/ecommerceapp_docs/operations/$opId"
+# status: Queued → Processing → Completed (or Failed with errorMessage)
+```
+
+Operations are retained in memory for **1 hour** after enqueueing (same for both
+Python `RETENTION_HOURS = 1` and .NET `RetentionPeriod = TimeSpan.FromHours(1)`).
+
+---
+
+## Running the test suite
+
+### Python tests (unit + E2E)
+
+```powershell
+# Unit tests only — no Qdrant needed, ~2s
+pwsh tools/rag/run-tests.ps1 -UnitOnly
+
+# All tests — auto-starts and stops Qdrant
+pwsh tools/rag/run-tests.ps1 -StartQdrant
+
+# All tests — Qdrant already running
+pwsh tools/rag/run-tests.ps1
+
+# Verbose output
+pwsh tools/rag/run-tests.ps1 -StartQdrant -Verbose
+```
+
+Test files:
+
+| File | Tests | Needs Qdrant | Description |
+|------|-------|-------------|-------------|
+| `tools/rag/test_ingest_unit.py` | 37 | No | Unit tests for OperationStore, IngestWorker, routes, auth middleware |
+| `tools/rag/test_ingest_e2e.py` | 16 | Yes (1 test) | E2E: real uvicorn server, full HTTP round-trip, one Qdrant pipeline test |
+
+### .NET tests (unit + E2E)
+
+```powershell
+# Download model first (one-time, ~490 MB)
+pwsh tools/rag-dotnet/download-model.ps1
+
+# Unit tests only — no Qdrant or model needed
+pwsh tools/rag-dotnet/run-tests.ps1 -UnitOnly
+
+# All tests — auto-starts and stops Qdrant
+pwsh tools/rag-dotnet/run-tests.ps1 -StartQdrant
+
+# E2E tests with QDRANT_URL already set
+$env:QDRANT_URL = 'http://localhost:6333'
+pwsh tools/rag-dotnet/run-tests.ps1 -E2EOnly
+```
+
+### Run everything
+
+```powershell
+# Full suite — Python (unit + E2E) + .NET — Qdrant started/stopped automatically
+pwsh tools/rag/run-all-tests.ps1
+
+# Skip .NET (e.g., model not downloaded)
+pwsh tools/rag/run-all-tests.ps1 -SkipDotNet
+
+# Skip Python
+pwsh tools/rag/run-all-tests.ps1 -SkipPython
+```
+
+---
+
 ## Quick reference
 
 | Task | Command |
@@ -337,10 +456,17 @@ The .NET path downloads the ONNX model separately. To switch:
 | Build Python image | `docker compose build rag-tools` |
 | Ingest docs (Python) | `docker compose --profile rag run --rm rag-tools python ingest.py` |
 | Force full re-index (Python) | `docker compose --profile rag run --rm rag-tools python ingest.py --force-full` |
+| Remote ingest (Python) | `python tools/rag/ingest.py --remote http://localhost:3002` |
+| Python unit tests | `pwsh tools/rag/run-tests.ps1 -UnitOnly` |
+| Python all tests | `pwsh tools/rag/run-tests.ps1 -StartQdrant` |
 | Start Qdrant (.NET) | `docker compose --profile rag-dotnet up qdrant -d` |
 | Build .NET image | `docker compose build rag-dotnet` |
 | Ingest docs (.NET) | `docker compose --profile rag-dotnet run --rm rag-dotnet dotnet /app/ingest/ingest.dll` |
+| Remote ingest (.NET) | `dotnet run --project src/RagTools.Ingest -- --remote http://localhost:3001` |
 | Download .NET ONNX model | `pwsh tools/rag-dotnet/download-model.ps1` |
+| .NET unit tests | `pwsh tools/rag-dotnet/run-tests.ps1 -UnitOnly` |
+| .NET all tests | `pwsh tools/rag-dotnet/run-tests.ps1 -StartQdrant` |
+| Full test suite (Python + .NET) | `pwsh tools/rag/run-all-tests.ps1` |
 | Check index (Python) | `Invoke-RestMethod http://localhost:6333/collections/ecommerceapp_docs` |
 | Check index (.NET) | `Invoke-RestMethod http://localhost:6333/collections/ecommerceapp_docs_dotnet` |
 | Qdrant dashboard | http://localhost:6333/dashboard |
