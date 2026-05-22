@@ -18,7 +18,6 @@ namespace RagTools.Mcp.Controllers;
 public sealed class IngestController(
     IngestChannel channel,
     OperationStore operations,
-    RagConfig cfg,
     ILogger<IngestController> logger) : ControllerBase
 {
     /// <summary>
@@ -100,25 +99,6 @@ public sealed class IngestController(
         queue_depth    = channel.PendingCount,
         retention_hours = OperationStore.RetentionPeriod.TotalHours,
     });
-
-    /// <summary>
-    /// Upload metadata rules (adr_id_patterns, doc_kind_rules) at runtime.
-    /// Overrides the file-based metadata-rules.yaml for all subsequent ingest jobs.
-    /// Useful when the server is running in hosted mode without volume mounts.
-    /// </summary>
-    [HttpPost("/config")]
-    public IActionResult UploadConfig([FromBody] ConfigUploadRequest request)
-    {
-        var rules = new MetadataRulesSection
-        {
-            AdrIdPatterns = request.AdrIdPatterns?.Select(p => new AdrIdPatternEntry { Pattern = p }).ToList(),
-            DocKindRules  = request.DocKindRules?.Select(r => new DocKindRuleEntry { Glob = r.Glob, Kind = r.Kind }).ToList(),
-        };
-        cfg.SetMetadataRulesOverride(rules);
-        logger.LogInformation("Config override applied: {AdrPatterns} ADR patterns, {DocKindRules} doc-kind rules",
-            rules.AdrIdPatterns?.Count ?? 0, rules.DocKindRules?.Count ?? 0);
-        return Ok(new { message = "Config override applied.", adr_id_patterns = rules.AdrIdPatterns?.Count ?? 0, doc_kind_rules = rules.DocKindRules?.Count ?? 0 });
-    }
 }
 
 /// <summary>Request body for POST /ingest/{collection}.</summary>
@@ -141,21 +121,4 @@ public sealed class IngestResponse
     public string Collection  { get; set; } = string.Empty;
     public string RelPath     { get; set; } = string.Empty;
     public string StatusUrl   { get; set; } = string.Empty;
-}
-
-/// <summary>Request body for POST /config.</summary>
-public sealed class ConfigUploadRequest
-{
-    /// <summary>List of regex patterns used to extract ADR IDs from file paths. Each must contain a named group 'id'.</summary>
-    public List<string>? AdrIdPatterns { get; set; }
-
-    /// <summary>List of glob→kind mappings for doc_kind classification.</summary>
-    public List<DocKindRuleDto>? DocKindRules { get; set; }
-}
-
-/// <summary>A single glob→kind rule for ConfigUploadRequest.DocKindRules.</summary>
-public sealed class DocKindRuleDto
-{
-    public string Glob { get; set; } = string.Empty;
-    public string Kind { get; set; } = string.Empty;
 }

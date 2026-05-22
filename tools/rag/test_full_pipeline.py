@@ -960,31 +960,9 @@ def phase_7_hosted_ingest() -> PhaseResult:
     # ── Python SSE ingest upload ───────────────────────────────────────────────
     print("  [7a] Python SSE — upload doc via HTTP ingest API…")
     try:
-        # Upload metadata-rules config first
-        try:
-            _result = _sp.run(
-                ["python", "-c", "import sys,yaml,json; data=yaml.safe_load(sys.stdin); print(json.dumps(data))"],
-                input=Path(WORKSPACE, "tools/rag/metadata-rules.yaml").read_text(encoding="utf-8"),
-                capture_output=True, text=True, timeout=10,
-            )
-            rules_dict = json.loads(_result.stdout) if _result.returncode == 0 else {}
-        except Exception:
-            rules_dict = {}
-
-        try:
-            config_payload = {
-                "adr_id_patterns": [e["pattern"] for e in rules_dict.get("adr_id_patterns", [])],
-                "doc_kind_rules": rules_dict.get("doc_kind_rules", []),
-            }
-            py_headers: dict = {"Content-Type": "application/json"}
-            if py_api_key := os.environ.get("RAG_API_KEY", "").strip():
-                py_headers["X-Api-Key"] = py_api_key
-            resp_cfg = httpx.post(f"{py_base}/config", json=config_payload, headers=py_headers, timeout=15)
-            config_ok = resp_cfg.status_code == 200
-            p.record("Python SSE: POST /config — metadata rules uploaded", config_ok,
-                     f"status={resp_cfg.status_code}")
-        except Exception as exc:
-            p.record("Python SSE: POST /config — metadata rules uploaded", False, str(exc))
+        py_headers: dict = {"Content-Type": "application/json"}
+        if py_api_key := os.environ.get("RAG_API_KEY", "").strip():
+            py_headers["X-Api-Key"] = py_api_key
 
         status_code, resp = _http_ingest_upload(
             py_base, PYTHON_COLLECTION, _HOSTED_DOC_REL_PATH, _HOSTED_DOC_CONTENT)
@@ -1034,39 +1012,6 @@ def phase_7_hosted_ingest() -> PhaseResult:
     # Check if .NET SSE has API key enforcement
     # The .NET server uses ApiKeyMiddleware; if RAG_API_KEY is not set, no auth needed
     dn_api_key: str | None = None  # no key set in our docker-compose
-
-    # Upload metadata-rules config first (so adr_id is detected for ingested docs)
-    try:
-        import json as _json
-        metadata_rules = _json.loads(Path(WORKSPACE, "tools/rag/metadata-rules.yaml").read_bytes())
-        # metadata-rules.yaml is YAML not JSON; parse it
-        import subprocess as _sp
-        _result = _sp.run(
-            ["python", "-c",
-             "import sys,yaml,json; data=yaml.safe_load(sys.stdin); print(json.dumps(data))"],
-            input=Path(WORKSPACE, "tools/rag/metadata-rules.yaml").read_text(encoding="utf-8"),
-            capture_output=True, text=True, timeout=10
-        )
-        rules_dict = json.loads(_result.stdout) if _result.returncode == 0 else {}
-    except Exception:
-        rules_dict = {}
-
-    try:
-        config_payload = {
-            "adr_id_patterns": [e["pattern"] for e in rules_dict.get("adr_id_patterns", [])],
-            "doc_kind_rules": rules_dict.get("doc_kind_rules", []),
-        }
-        headers: dict = {"Content-Type": "application/json"}
-        if dn_api_key:
-            headers["X-Api-Key"] = dn_api_key
-        resp_cfg = httpx.post(
-            f"{dn_base}/config", json=config_payload, headers=headers, timeout=15
-        )
-        config_ok = resp_cfg.status_code == 200
-        p.record(".NET SSE: POST /config — metadata rules uploaded", config_ok,
-                 f"status={resp_cfg.status_code}")
-    except Exception as exc:
-        p.record(".NET SSE: POST /config — metadata rules uploaded", False, str(exc))
 
     try:
         status_code, resp = _http_ingest_upload(

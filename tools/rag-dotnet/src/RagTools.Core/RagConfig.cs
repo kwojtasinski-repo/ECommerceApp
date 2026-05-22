@@ -22,20 +22,6 @@ public sealed class RagConfig
     public List<NamedQueryEntry> NamedQueries { get; init; } = [];
 
     /// <summary>
-    /// Runtime override for MetadataRules, applied by <c>POST /config</c>.
-    /// When set, takes precedence over the YAML-loaded <see cref="MetadataRules"/>.
-    /// Thread-safe: written once at startup via HTTP; reads are concurrent.
-    /// </summary>
-    private volatile MetadataRulesSection? _metadataRulesOverride;
-
-    /// <summary>Replace MetadataRules at runtime (e.g. uploaded via POST /config).</summary>
-    public void SetMetadataRulesOverride(MetadataRulesSection rules) =>
-        _metadataRulesOverride = rules;
-
-    private MetadataRulesSection EffectiveMetadataRules =>
-        _metadataRulesOverride ?? MetadataRules;
-
-    /// <summary>
     /// Absolute path of the config.yaml this instance was loaded from. Set by <see cref="Load"/>.
     /// Drives <see cref="Workspace"/> derivation (Python parity: config_path.parents[2]).
     /// </summary>
@@ -234,7 +220,7 @@ public sealed class RagConfig
     public string? DetectAdrId(string relPath)
     {
         var p = relPath.Replace('\\', '/');
-        var patterns = EffectiveMetadataRules.AdrIdPatterns ?? [];
+        var patterns = MetadataRules.AdrIdPatterns ?? [];
         foreach (var entry in patterns)
         {
             if (string.IsNullOrWhiteSpace(entry.Pattern)) continue;
@@ -251,7 +237,7 @@ public sealed class RagConfig
     public string DetectDocKind(string relPath)
     {
         var p = relPath.Replace('\\', '/');
-        var rules = EffectiveMetadataRules.DocKindRules ?? [];
+        var rules = MetadataRules.DocKindRules ?? [];
         foreach (var rule in rules)
         {
             if (string.IsNullOrWhiteSpace(rule.Glob) || string.IsNullOrWhiteSpace(rule.Kind))

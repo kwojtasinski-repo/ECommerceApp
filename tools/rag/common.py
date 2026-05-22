@@ -26,7 +26,6 @@ CONFIG_PATH = Path(__file__).resolve().parent / "config.yaml"
 class Config:
     raw: dict[str, Any]
     config_path: "Path | None" = field(default=None)
-    _metadata_rules_override: "dict | None" = field(default=None, init=False, repr=False, compare=False)
 
     @property
     def workspace(self) -> Path:
@@ -75,30 +74,13 @@ class Config:
     @property
     def adr_id_patterns(self) -> list[str]:
         """List of regex patterns (with named group 'id') to extract ADR ID from rel_path."""
-        if self._metadata_rules_override is not None:
-            return self._metadata_rules_override.get("adr_id_patterns", [])
         rules = self.raw.get("metadata_rules", {}).get("adr_id_patterns", [])
         return [r["pattern"] for r in rules]
 
     @property
     def doc_kind_rules(self) -> list[dict[str, str]]:
         """Ordered list of {glob, kind} rules for classifying documents."""
-        if self._metadata_rules_override is not None:
-            return self._metadata_rules_override.get("doc_kind_rules", [])
         return self.raw.get("metadata_rules", {}).get("doc_kind_rules", [])
-
-    def set_metadata_rules_override(
-        self,
-        adr_id_patterns: list[str] | None = None,
-        doc_kind_rules: list[dict[str, str]] | None = None,
-    ) -> None:
-        """Apply runtime override for metadata rules (e.g. uploaded via POST /config).
-        Once set, takes precedence over YAML-loaded metadata_rules for this server lifetime.
-        """
-        self._metadata_rules_override = {
-            "adr_id_patterns": adr_id_patterns or [],
-            "doc_kind_rules": doc_kind_rules or [],
-        }
 
     @property
     def vector_mode(self) -> str:

@@ -6,11 +6,10 @@ Mirrors the .NET IngestController endpoints (ADR-0028 tech-details-dotnet.md):
     GET   /ingest/{collection}/operations/{operation_id}     → 200 | 404
     GET   /ingest/{collection}/operations                    → 200
     GET   /admin/stats                                       → 200
-    POST  /config                                            → 200 | 400
 
 Usage (in mcp_server.py):
     from ingest_routes import build_ingest_routes
-    routes = build_ingest_routes(store, queue, capacity, cfg=CFG)
+    routes = build_ingest_routes(store, queue, capacity)
     app = Starlette(routes=[*existing_routes, *routes])
 """
 from __future__ import annotations
@@ -32,7 +31,6 @@ def build_ingest_routes(
     store: OperationStore,
     queue: asyncio.Queue,
     capacity: int = 100,
-    cfg: Any = None,
 ) -> list[Route]:
     """Return Starlette Route objects wired to the given store and queue."""
 
@@ -111,31 +109,6 @@ def build_ingest_routes(
             }
         )
 
-    # ── POST /config ───────────────────────────────────────────────────────
-
-    async def upload_config(request: Request) -> Response:
-        if cfg is None:
-            return JSONResponse({"error": "Config object not available"}, status_code=500)
-        try:
-            body = await request.json()
-        except Exception:
-            return JSONResponse({"error": "Invalid JSON body"}, status_code=400)
-
-        adr_id_patterns = body.get("adr_id_patterns") or []
-        doc_kind_rules = body.get("doc_kind_rules") or []
-
-        # Apply override to the config object in memory
-        cfg.set_metadata_rules_override(
-            adr_id_patterns=adr_id_patterns,
-            doc_kind_rules=doc_kind_rules,
-        )
-
-        return JSONResponse({
-            "message": "Config override applied.",
-            "adr_id_patterns": len(adr_id_patterns),
-            "doc_kind_rules": len(doc_kind_rules),
-        })
-
     return [
         Route("/ingest/{collection}", endpoint=upload, methods=["POST"]),
         Route(
@@ -149,5 +122,4 @@ def build_ingest_routes(
             methods=["GET"],
         ),
         Route("/admin/stats", endpoint=admin_stats, methods=["GET"]),
-        Route("/config", endpoint=upload_config, methods=["POST"]),
     ]
