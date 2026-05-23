@@ -1,6 +1,6 @@
 # Roadmap: Remote Multi-Tenant RAG Server (ADR-0028)
 
-> Status: ✅ Phase 1 Complete — Phase 2 in progress (P2-1 ✅, P2-2 ✅)  
+> Status: ✅ Phase 1 Complete — Phase 2 Complete (P2-1 ✅, P2-2 ✅, P2-3 ✅, P2-4 ✅, P2-5 ✅)  
 > Scope: `tools/rag-dotnet/` (.NET server), `tools/rag/` (Python server)  
 > ADR: [ADR-0028](../adr/0028/0028-remote-multitenant-rag-ingest.md)
 
