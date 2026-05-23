@@ -626,6 +626,7 @@ def container_session(tmp_path_factory: pytest.TempPathFactory) -> ToolCaller:
             "docker", "run", "--rm", "--interactive",
             "--volume", f"{root}:/workspace",
             "--env", "RAG_WORKSPACE=/workspace",
+            "--env", "VECTOR_MODE=memory",  # override baked-in VECTOR_MODE=local so server loads snapshot
             "--env", "PYTHONUNBUFFERED=1",
             "rag-tools",
             "python", "mcp_server.py",  # WORKDIR /app — uses baked scripts

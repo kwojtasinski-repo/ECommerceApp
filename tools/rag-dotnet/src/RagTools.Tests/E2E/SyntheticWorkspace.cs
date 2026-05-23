@@ -78,7 +78,7 @@ public sealed class SyntheticWorkspace : IDisposable
             """);
 
         // metadata-rules.yaml: ADR ID patterns and doc_kind rules.
-        // Without this, cfg.DetectAdrId() always returns null and GetAdrHistory finds nothing.
+        // Without this, cfg.DetectAdrId() always returns null and GetHistory finds nothing.
         File.WriteAllText(Path.Combine(ragDir, "metadata-rules.yaml"), """
             adr_id_patterns:
               - pattern: "adr/(?<id>\\d{4})/"

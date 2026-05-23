@@ -144,15 +144,23 @@ async def list_tools() -> list[Tool]:
 
 @SERVER.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:
-    if name == "query_docs":
-        return await _tool_query_docs(arguments)
-    if name == "read_docs":
-        return await _tool_read_docs(arguments)
-    if name == "get_history":
-        return await _tool_get_history(arguments)
-    if name == "list_adrs":
-        return await _tool_list_adrs(arguments)
-    return [TextContent(type="text", text=f"Unknown tool: {name}")]
+    try:
+        if name == "query_docs":
+            return await _tool_query_docs(arguments)
+        if name == "read_docs":
+            return await _tool_read_docs(arguments)
+        if name == "get_history":
+            return await _tool_get_history(arguments)
+        if name == "list_adrs":
+            return await _tool_list_adrs(arguments)
+        return [TextContent(type="text", text=f"Unknown tool: {name}")]
+    except Exception as _exc:
+        import traceback
+        return [TextContent(type="text", text=json.dumps({
+            "error": type(_exc).__name__,
+            "message": str(_exc),
+            "traceback": traceback.format_exc(),
+        }))]
 
 
 _TOOL_TIMEOUT = float(os.environ.get("RAG_TOOL_TIMEOUT", "60"))
