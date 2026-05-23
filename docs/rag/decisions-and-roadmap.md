@@ -223,32 +223,32 @@ Resolved. After Docker rebuild (F-1), pipeline Phase 3 shows `chunk_count=18` fo
 
 ---
 
-### F-9 — `list_adrs` return format enrichment → consider `list_documents` generalisation
+### F-9 — `list_documents(collection)` — generic collection listing from Qdrant
 
-**Current**: `list_adrs` reads directly from the filesystem (not Qdrant) and returns:
-```json
-{ "id": "0006", "title": "TypedId...", "main_file": "docs/adr/0006/...", "amendments": 1, "examples": 0 }
-```
-There is no `bc` field, no `ingestedAt`, no `chunkCount`. The `bc` (bounded context) concept does not exist in the current return format at all.
+**Current**: `list_adrs` reads directly from the **filesystem** (`docs/adr/` folder hardcoded). It does not query Qdrant, does not respect the active collection, and only works for this project's ADR folder structure. Any project without `docs/adr/` gets an empty result.
 
-**Design consideration (future)**: `list_adrs` is hardcoded to the `docs/adr/` folder convention. A more generic `list_documents(collection, doc_kind?)` tool would query Qdrant for all `doc_kind = "full_content"` points and return any indexed document — not just ADRs. This makes the server usable for any project structure, not just ECommerceApp's ADR layout.
+**Root problem**: The tool is not collection-aware. It always reads from the server's local workspace path — ignoring which collection the MCP session is bound to.
 
-Proposed generic response:
+**Design (future)**: Replace with `list_documents(collection)` that queries Qdrant for all `doc_kind = "full_content"` points in the **collection defined in the active session** (`config.yaml → collection` or `?project=` SSE parameter). No filesystem access.
+
 ```json
 {
+  "collection": "ecommerceapp_docs",
   "documents": [
-    { "relPath": "docs/adr/0006/...", "title": "...", "docKind": "adr_main", "ingestedAt": "...", "chunkCount": 18 },
-    { "relPath": "docs/patterns/saga.md", "title": "...", "docKind": "pattern",  "ingestedAt": "...", "chunkCount": 9 }
+    { "relPath": "docs/adr/0006/...", "title": "TypedId...", "docKind": "adr_main", "ingestedAt": "2026-05-22T10:00:00Z", "chunkCount": 18 },
+    { "relPath": "docs/patterns/saga.md", "title": "Saga pattern", "docKind": "pattern", "ingestedAt": "...", "chunkCount": 9 }
   ],
   "count": 2
 }
 ```
 
-`list_adrs` could remain as a backwards-compatible filter on top: `list_documents(doc_kind="adr_main")`.
+`list_adrs` stays as a backwards-compatible filter: internally calls `list_documents` and filters `docKind = "adr_main"`.
 
-**Complexity**: Low–medium. One Qdrant scroll/fetch over `doc_kind = "full_content"` points.
+**Why this matters**: Makes both servers fully collection-aware and repo-agnostic. Any team can ingest their own docs into any collection and get a proper document listing.
 
-**Note on `bc`**: Not in scope. Could be added if documents have `bc:` in frontmatter.
+**Complexity**: Low. One Qdrant scroll over `doc_kind = "full_content"` points for the active collection. No filesystem dependency.
+
+**Note on `bc`**: Not in scope. Could be added if documents have `bc:` in their full-content payload.
 
 ---
 
