@@ -13,9 +13,9 @@ applyTo: ".github/**, docs/**"
 
 | Situation | Action |
 |---|---|
-| "Which ADR covers X?" | `list_adrs()` then `get_adr_history(id)` |
+| "Which ADR covers X?" | `list_adrs()` then `get_history(id)` |
 | "What does the project say about Y?" | `query_docs("Y")` |
-| "How did decision Z evolve?" | `get_adr_history(adr_id)` |
+| "How did decision Z evolve?" | `get_history(id)` |
 | Known file path already in hand | `read_file` directly, skip RAG |
 | Known-issues / agent-decisions / project-state | `query_docs(question, bc="context")` |
 
@@ -33,7 +33,7 @@ applyTo: ".github/**, docs/**"
 
 ```
 query_docs(question, bc?, top_k?)   -- semantic search across docs + .github/context
-get_adr_history(adr_id)             -- main ADR + amendments in order
+get_history(id)                     -- all indexed chunks for a history group, sorted by start_line
 list_adrs()                         -- all ADR ids and titles
 ```
 

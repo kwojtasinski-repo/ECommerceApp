@@ -84,7 +84,7 @@ The project exposes four MCP tools via `ecommerceapp-rag-dotnet` (or any other c
 | Trigger phrase / intent | Tool to call | When to use |
 |---|---|---|
 | "list ADRs", "what ADRs exist", "show all decisions" | `list_adrs` | Enumerate all indexed ADRs |
-| "ADR-NNNN", "ADR about X", "decision on X" | `get_adr_history(adr_id="NNNN")` | Retrieve full text of a specific ADR |
+| "ADR-NNNN", "ADR about X", "decision on X" | `get_history(id="NNNN")` | Retrieve all indexed chunks for a specific ADR |
 | General architecture / pattern / "how does X work?" | `query_docs(query="...")` | Semantic search over all docs |
 | "full content of file X", "show me everything about X", "all details" | `read_docs(query="...")` | Returns full file content for top match |
 | Known issues, bug fixes, blocked BCs, project state | `query_docs` → target `.github/context/` chunks | High-relevance context files are weighted 1.15–1.25 |
@@ -92,6 +92,6 @@ The project exposes four MCP tools via `ecommerceapp-rag-dotnet` (or any other c
 **Rules:**
 - Always use a MCP tool before answering questions about ADRs, project state, known issues, or roadmap — never guess from training data.
 - If the tool returns "No chunks found", fall back to saying so and suggest re-running ingest.
-- Prefer `get_adr_history` over `query_docs` when the user mentions a specific ADR number or title.
+- Prefer `get_history` over `query_docs` when the user mentions a specific ADR number or title.
 - Both Python and .NET MCP implementations expose identical tool names — routing is the same regardless of which server variant is enabled.
 

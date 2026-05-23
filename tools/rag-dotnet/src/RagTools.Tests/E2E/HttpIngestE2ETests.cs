@@ -1,5 +1,5 @@
+using System.IO.Compression;
 using System.Net;
-using System.Text;
 using System.Text.Json;
 using RagTools.Core;
 using Xunit;
@@ -12,9 +12,9 @@ namespace RagTools.Tests.E2E;
 ///
 /// These tests exercise the full HTTP path end-to-end:
 ///
-///   POST /ingest/{collection}
+///   POST /ingest/{collection}/batch
 ///     → ApiKeyMiddleware (dev-mode pass-through when RAG_API_KEY unset)
-///     → IngestController (validates, enqueues, returns 202)
+///     → IngestController (validates ZIP, enqueues, returns 202)
 ///     → IngestChannel
 ///     → IngestWorker (embeds, upserts to Qdrant)
 ///     → OperationStore (status transitions)
@@ -29,7 +29,6 @@ namespace RagTools.Tests.E2E;
 ///     → queue depth + retention info
 ///
 /// All tests require the ONNX model and Qdrant (Docker or QDRANT_URL env var).
-/// They are automatically skipped when neither is available.
 /// </summary>
 [Trait("Category", "E2E")]
 [Collection(RagTestCollection.Name)]
@@ -45,8 +44,8 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>, ID
     {
         _fx         = fixture;
         _sharedOnnx = sharedOnnx;
-        _fx.Sink.SetOutput(output);         // web-app request logs → this test's output
-        sharedOnnx.Sink.SetOutput(output);  // ONNX model logs    → this test's output
+        _fx.Sink.SetOutput(output);
+        sharedOnnx.Sink.SetOutput(output);
     }
 
     public void Dispose()
@@ -55,66 +54,73 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>, ID
         _sharedOnnx.Sink.SetOutput(null);
     }
 
-    // ── POST /ingest/{collection} — happy path ────────────────────────────────
+    private static byte[] BuildZip(string relPath, string content)
+    {
+        using var ms = new MemoryStream();
+        using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
+        {
+            var entry = zip.CreateEntry(relPath);
+            using var writer = new System.IO.StreamWriter(entry.Open(), System.Text.Encoding.UTF8);
+            writer.Write(content);
+        }
+        return ms.ToArray();
+    }
+
+    private HttpContent ZipContent(string relPath, string content)
+    {
+        var bytes = BuildZip(relPath, content);
+        var sc = new ByteArrayContent(bytes);
+        sc.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/zip");
+        return sc;
+    }
+
+    // ── POST /ingest/{collection}/batch — happy path ──────────────────────────
 
     [Fact]
-    public async Task Upload_Returns202_WithOperationIdAndLocationHeader()
+    public async Task UploadBatch_Returns202_WithOperationsArray()
     {
-
-        var payload = JsonSerializer.Serialize(new
-        {
-            relPath = "docs/concepts/solid.md",
-            content = "# SOLID\n\nFive design principles: SRP, OCP, LSP, ISP, DIP.",
-        });
-
         using var resp = await _fx.Client!.PostAsync(
-            $"/ingest/{_fx.Collection}",
-            new StringContent(payload, Encoding.UTF8, "application/json"));
+            $"/ingest/{_fx.Collection}/batch",
+            ZipContent("docs/concepts/solid.md", "# SOLID\n\nFive design principles."));
 
         Assert.Equal(HttpStatusCode.Accepted, resp.StatusCode);
-        Assert.True(resp.Headers.Contains("Location"),
-            "202 response must carry a Location header");
 
         var body = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
-        Assert.True(body.RootElement.TryGetProperty("operationId", out var opIdEl));
+        Assert.True(body.RootElement.TryGetProperty("operations", out var ops));
+        Assert.True(ops.GetArrayLength() > 0);
+        var first = ops.EnumerateArray().First();
+        Assert.True(first.TryGetProperty("operationId", out var opIdEl));
         Assert.NotEmpty(opIdEl.GetString()!);
-
-        Assert.True(body.RootElement.TryGetProperty("statusUrl", out var urlEl));
+        Assert.True(first.TryGetProperty("statusUrl", out var urlEl));
         Assert.Contains($"/ingest/{_fx.Collection}/operations/", urlEl.GetString());
     }
 
     [Fact]
-    public async Task Upload_Returns400_WhenRelPathMissing()
+    public async Task UploadBatch_Returns400_WhenBodyIsNotZip()
     {
-
-        var payload = JsonSerializer.Serialize(new { relPath = "", content = "# Test" });
-
-        using var resp = await _fx.Client!.PostAsync(
-            $"/ingest/{_fx.Collection}",
-            new StringContent(payload, Encoding.UTF8, "application/json"));
-
+        var sc = new ByteArrayContent(System.Text.Encoding.UTF8.GetBytes("not a zip"));
+        sc.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/zip");
+        using var resp = await _fx.Client!.PostAsync($"/ingest/{_fx.Collection}/batch", sc);
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
     }
 
     [Fact]
-    public async Task Upload_Returns400_WhenContentMissing()
+    public async Task UploadBatch_Returns400_WhenZipIsEmpty()
     {
-
-        var payload = JsonSerializer.Serialize(new { relPath = "docs/test.md", content = "" });
-
-        using var resp = await _fx.Client!.PostAsync(
-            $"/ingest/{_fx.Collection}",
-            new StringContent(payload, Encoding.UTF8, "application/json"));
-
+        using var ms = new MemoryStream();
+        using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true)) { /* empty */ }
+        var bytes = ms.ToArray();
+        var sc = new ByteArrayContent(bytes);
+        sc.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/zip");
+        using var resp = await _fx.Client!.PostAsync($"/ingest/{_fx.Collection}/batch", sc);
         Assert.Equal(HttpStatusCode.BadRequest, resp.StatusCode);
     }
 
-    // ── Full upload→index→verify pipeline ────────────────────────────────────
+    // ── Full batch→index→verify pipeline ─────────────────────────────────────
 
     [Fact]
-    public async Task Upload_FullPipeline_ContentIsIndexedInQdrant()
+    public async Task UploadBatch_FullPipeline_ContentIsIndexedInQdrant()
     {
-
         const string relPath = "docs/concepts/hexagonal.md";
         const string content = """
             # Hexagonal Architecture
@@ -129,7 +135,6 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>, ID
         Assert.NotNull(finalStatus);
         Assert.Equal("Completed", finalStatus!.RootElement.GetProperty("status").GetString());
 
-        // Verify the content point was written to Qdrant.
         var doc = await _fx.Store!.FetchContentAsync(_fx.Collection!, relPath);
         Assert.NotNull(doc);
         Assert.Contains("Hexagonal Architecture", doc!.Content);
@@ -137,9 +142,8 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>, ID
     }
 
     [Fact]
-    public async Task Upload_FullPipeline_ChunkCountIsPositive()
+    public async Task UploadBatch_FullPipeline_ChunkCountIsPositive()
     {
-
         const string relPath = "docs/concepts/cqrs.md";
         const string content = """
             # CQRS
@@ -162,22 +166,15 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>, ID
     [Fact]
     public async Task PollStatus_TransitionsFromQueued_ToCompleted()
     {
-
-        var payload = JsonSerializer.Serialize(new
-        {
-            relPath = "docs/concepts/ddd.md",
-            content = "# Domain-Driven Design\n\nModel your domain, not your database.",
-        });
-
         using var postResp = await _fx.Client!.PostAsync(
-            $"/ingest/{_fx.Collection}",
-            new StringContent(payload, Encoding.UTF8, "application/json"));
+            $"/ingest/{_fx.Collection}/batch",
+            ZipContent("docs/concepts/ddd.md", "# Domain-Driven Design\n\nModel your domain, not your database."));
 
         Assert.Equal(HttpStatusCode.Accepted, postResp.StatusCode);
 
         var postBody  = JsonDocument.Parse(await postResp.Content.ReadAsStringAsync());
-        var opId      = postBody.RootElement.GetProperty("operationId").GetString()!;
-        var statusUrl = postBody.RootElement.GetProperty("statusUrl").GetString()!;
+        var firstOp   = postBody.RootElement.GetProperty("operations").EnumerateArray().First();
+        var statusUrl = firstOp.GetProperty("statusUrl").GetString()!;
 
         // Immediately after upload the status should be Queued or Processing.
         using var immediateResp = await _fx.Client.GetAsync(statusUrl);
@@ -189,9 +186,9 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>, ID
             $"Expected Queued or Processing immediately after upload, got {immediateStatus}");
 
         // Wait for completion.
-        var finalDoc = await _fx.UploadAndWaitAsync(
+        await _fx.UploadAndWaitAsync(
             _fx.Collection!,
-            "docs/concepts/ddd-warm-up.md",   // second file to ensure worker is alive
+            "docs/concepts/ddd-warm-up.md",
             "# DDD Warm-up\n\nBounded context keeps model coherent.");
 
         // Poll the original operation until it completes.
@@ -212,7 +209,6 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>, ID
     [Fact]
     public async Task PollStatus_Returns404_ForUnknownOperationId()
     {
-
         using var resp = await _fx.Client!.GetAsync(
             $"/ingest/{_fx.Collection}/operations/does-not-exist");
 
@@ -222,20 +218,15 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>, ID
     [Fact]
     public async Task PollStatus_Returns404_ForWrongCollection()
     {
-
-        // Upload a document to the fixture's collection.
-        var payload = JsonSerializer.Serialize(new
-        {
-            relPath = "docs/isolation/test.md",
-            content = "# Isolation Test\n\nCollection boundary must be enforced.",
-        });
         using var postResp = await _fx.Client!.PostAsync(
-            $"/ingest/{_fx.Collection}",
-            new StringContent(payload, Encoding.UTF8, "application/json"));
+            $"/ingest/{_fx.Collection}/batch",
+            ZipContent("docs/isolation/test.md", "# Isolation Test\n\nCollection boundary must be enforced."));
+
         Assert.Equal(HttpStatusCode.Accepted, postResp.StatusCode);
 
         var postBody = JsonDocument.Parse(await postResp.Content.ReadAsStringAsync());
-        var opId     = postBody.RootElement.GetProperty("operationId").GetString()!;
+        var firstOp  = postBody.RootElement.GetProperty("operations").EnumerateArray().First();
+        var opId     = firstOp.GetProperty("operationId").GetString()!;
 
         // Look up with a DIFFERENT collection name — must return 404.
         using var getResp = await _fx.Client.GetAsync(
@@ -248,18 +239,16 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>, ID
     [Fact]
     public async Task ListOperations_ReturnsUploadedOperations()
     {
-
-        // Upload two documents.
+        // Upload two documents via batch.
         await _fx.UploadAndWaitAsync(_fx.Collection!, "docs/list/a.md", "# Doc A\n\nContent A.");
         await _fx.UploadAndWaitAsync(_fx.Collection!, "docs/list/b.md", "# Doc B\n\nContent B.");
 
         using var resp = await _fx.Client!.GetAsync($"/ingest/{_fx.Collection}/operations");
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
 
-        var list = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
+        var list  = JsonDocument.Parse(await resp.Content.ReadAsStringAsync());
         var items = list.RootElement.EnumerateArray().ToList();
 
-        // We've uploaded at least 2 in this fixture lifecycle.
         Assert.True(items.Count >= 2, $"Expected >= 2 operations, got {items.Count}");
         Assert.All(items, item =>
             Assert.Equal(_fx.Collection, item.GetProperty("collection").GetString()));
@@ -270,7 +259,6 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>, ID
     [Fact]
     public async Task AdminStats_Returns200_WithQueueDepthAndRetention()
     {
-
         using var resp = await _fx.Client!.GetAsync("/admin/stats");
         Assert.Equal(HttpStatusCode.OK, resp.StatusCode);
 
@@ -286,7 +274,6 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>, ID
     [Fact]
     public async Task ReUpload_ReplacesContent_WithUpdatedVersion()
     {
-
         const string relPath = "docs/concepts/retry.md";
         const string v1 = "# Retry\n\nExponential back-off avoids thundering herd.";
         const string v2 = "# Retry\n\nExponential back-off avoids thundering herd. Circuit breaker prevents cascading failures.";

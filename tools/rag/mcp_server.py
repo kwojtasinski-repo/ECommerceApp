@@ -1,13 +1,12 @@
-"""MCP server exposing 5 tools backed by the RAG index.
+"""MCP server exposing 4 tools backed by the RAG index.
 
 Tools:
 - query_docs(question, bc=None, top_k=5)  -> ranked chunks: rel_path + breadcrumb + score + text snippet
 - read_docs(question, bc=None, top_files=3) -> relevant chunks grouped by file (default) OR full file content
                                               when query signals full-content intent ("show me all details", etc.)
-- get_adr_history(adr_id)                 -> main ADR + amendments in chronological order (disk-based)
 - get_history(id)                         -> all indexed chunks for a history group, sorted by start_line
                                             (Qdrant-based; uses collection-configured history field, default adr_id)
-- list_adrs()                             -> table of all ADRs (id, title, kind counts)
+- list_adrs()                             -> table of all ADRs (id, title, kind counts)                             -> table of all ADRs (id, title, kind counts)
 
 Typical agent flow:
   1. list_adrs()           — orientation: what exists?
@@ -117,28 +116,12 @@ async def list_tools() -> list[Tool]:
             },
         ),
         Tool(
-            name="get_adr_history",
-            description=(
-                "Return the main ADR file plus all its amendments in chronological order. "
-                "Use when a query is about how a decision evolved over time, or when an "
-                "amendment supersedes a section of the original ADR."
-            ),
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "adr_id": {"type": "string", "description": "4-digit ADR id, e.g. '0014'"},
-                },
-                "required": ["adr_id"],
-            },
-        ),
-        Tool(
             name="get_history",
             description=(
                 "Return all indexed chunks for a document group identified by a history ID "
                 "(e.g. ADR number, RFC number). Chunks are returned in chronological order "
                 "(sorted by start_line). The grouping field is collection-defined "
-                "(defaults to 'adr_id'). Use this instead of get_adr_history when the "
-                "collection may use a different history key."
+                "(defaults to 'adr_id')."
             ),
             inputSchema={
                 "type": "object",
@@ -165,8 +148,6 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         return await _tool_query_docs(arguments)
     if name == "read_docs":
         return await _tool_read_docs(arguments)
-    if name == "get_adr_history":
-        return await _tool_get_adr_history(arguments)
     if name == "get_history":
         return await _tool_get_history(arguments)
     if name == "list_adrs":
@@ -306,40 +287,6 @@ async def _tool_read_docs(args: dict) -> list[TextContent]:
     return [TextContent(type="text", text=json.dumps(payload, indent=2))]
 
 
-# ---------------------------- tool: get_adr_history ----------------------------
-
-
-async def _tool_get_adr_history(args: dict) -> list[TextContent]:
-    adr_folder = CFG.workspace / "docs" / "adr"
-    adr_id = str(args["adr_id"]).zfill(4)
-    folder = adr_folder / adr_id
-    if not folder.exists():
-        return [TextContent(type="text", text=json.dumps({"error": f"ADR {adr_id} not found"}))]
-
-    main_files = sorted(p for p in folder.glob(f"{adr_id}-*.md"))
-    main_path = main_files[0] if main_files else None
-    amendments_dir = folder / "amendments"
-    amendments = []
-    if amendments_dir.exists():
-        for path in sorted(amendments_dir.glob("*.md")):
-            amendments.append({
-                "rel_path": path.relative_to(CFG.workspace).as_posix(),
-                "filename": path.name,
-                "content": path.read_text(encoding="utf-8"),
-            })
-
-    result = {
-        "adr_id": adr_id,
-        "main": {
-            "rel_path": main_path.relative_to(CFG.workspace).as_posix() if main_path else None,
-            "content": main_path.read_text(encoding="utf-8") if main_path else None,
-        },
-        "amendments": amendments,
-        "amendment_count": len(amendments),
-    }
-    return [TextContent(type="text", text=json.dumps(result, indent=2))]
-
-
 # ---------------------------- tool: get_history ----------------------------
 
 _HISTORY_FIELD_DEFAULT = "adr_id"
@@ -350,7 +297,7 @@ async def _tool_get_history(args: dict) -> list[TextContent]:
 
     Uses a field_filter on the collection's configured history field (defaults to
     'adr_id' for backward compatibility with existing indexed collections).
-    Unlike get_adr_history this works in hosted/remote mode (no disk access).
+    Works in hosted/remote mode (no disk access required).
     """
     history_id = str(args["id"])
     collection = _session_collection.get(None)

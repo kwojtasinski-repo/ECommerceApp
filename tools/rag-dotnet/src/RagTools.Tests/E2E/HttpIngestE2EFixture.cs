@@ -1,4 +1,6 @@
+using System.IO.Compression;
 using System.Net.Sockets;
+using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -204,8 +206,8 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
     // ── Test helpers ──────────────────────────────────────────────────────────
 
     /// <summary>
-    /// POST a document to the ingest endpoint and poll GET until the operation
-    /// reaches a terminal state (Completed or Failed). Returns the final status response body.
+    /// POST a document to the batch ingest endpoint (ZIP with one file) and poll GET until
+    /// the operation reaches a terminal state (Completed or Failed). Returns the final status response body.
     /// </summary>
     public async Task<JsonDocument?> UploadAndWaitAsync(
         string collection,
@@ -215,17 +217,21 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
         int    timeoutSeconds  = 45,
         string? apiKey         = null)
     {
-        var payload = JsonSerializer.Serialize(new
+        // Build a single-file ZIP.
+        using var ms = new MemoryStream();
+        using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
         {
-            relPath,
-            content,
-            docKind,
-        });
+            var entry = zip.CreateEntry(relPath);
+            using var writer = new StreamWriter(entry.Open(), Encoding.UTF8);
+            await writer.WriteAsync(content);
+        }
+        ms.Position = 0;
 
-        using var request = new HttpRequestMessage(HttpMethod.Post, $"/ingest/{collection}")
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/ingest/{collection}/batch")
         {
-            Content = new StringContent(payload, System.Text.Encoding.UTF8, "application/json"),
+            Content = new ByteArrayContent(ms.ToArray()),
         };
+        request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/zip");
         if (apiKey is not null)
             request.Headers.Add("X-Api-Key", apiKey);
 
@@ -233,16 +239,17 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
         if (!postResp.IsSuccessStatusCode)
             return null;    // caller checks status code separately
 
-        var body    = await postResp.Content.ReadAsStringAsync();
-        var doc     = JsonDocument.Parse(body);
-        var opId    = doc.RootElement.GetProperty("operationId").GetString()!;
-        var pollUrl = $"/ingest/{collection}/operations/{Uri.EscapeDataString(opId)}";
+        var body       = await postResp.Content.ReadAsStringAsync();
+        var batchDoc   = JsonDocument.Parse(body);
+        var operations = batchDoc.RootElement.GetProperty("operations").EnumerateArray().ToList();
+        if (operations.Count == 0) return null;
 
-        var deadline = DateTimeOffset.UtcNow.AddSeconds(timeoutSeconds);
+        var statusUrl = operations[0].GetProperty("statusUrl").GetString()!;
+        var deadline  = DateTimeOffset.UtcNow.AddSeconds(timeoutSeconds);
         while (DateTimeOffset.UtcNow < deadline)
         {
             await Task.Delay(250);
-            using var pollReq = new HttpRequestMessage(HttpMethod.Get, pollUrl);
+            using var pollReq = new HttpRequestMessage(HttpMethod.Get, statusUrl);
             if (apiKey is not null)
                 pollReq.Headers.Add("X-Api-Key", apiKey);
 

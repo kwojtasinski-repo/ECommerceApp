@@ -183,51 +183,10 @@ public sealed class RagTools(
     }
 
     [McpServerTool, Description(
-        "Return all indexed chunks for a specific ADR, ordered by start line. " +
-        "Equivalent to reading the full ADR with all its amendments in chronological order. " +
-        "Pass the 4-digit ADR number (e.g. '0016').")]
-    public async Task<string> GetAdrHistory(
-        [Description("4-digit ADR ID (e.g. '0016' or '16').")] string adr_id,
-        CancellationToken cancellationToken = default)
-    {
-        // Normalise to 4-digit zero-padded.
-        adr_id = adr_id.TrimStart('0').PadLeft(4, '0');
-        var collection = session.Collection;
-        logger.LogDebug("GetAdrHistory: collection={Collection} adr_id={AdrId}", collection, adr_id);
-
-        var queryVec = embedder.Embed($"ADR {adr_id}");
-        var opts = new SearchOptions(TopK: 50, ScoreThreshold: 0, AdrIdFilter: adr_id);
-        var hits = await store.SearchAsync(collection, queryVec, opts, cancellationToken);
-
-        if (hits.Count == 0)
-        {
-            logger.LogWarning("GetAdrHistory: no chunks for ADR {AdrId} in {Collection}", adr_id, collection);
-            return JsonSerializer.Serialize(new { adr_id, chunks = Array.Empty<object>(), message = $"No chunks found for ADR {adr_id}. Ensure the ADR is indexed." });
-        }
-
-                var ordered = hits.OrderBy(h => h.StartLine).ToList();
-        logger.LogInformation("GetAdrHistory: ADR {AdrId} returned {Count} chunks", adr_id, ordered.Count);
-        var result = new
-        {
-            adr_id,
-            title = ordered[0].DocTitle,
-            chunks = ordered.Select(h => new
-            {
-                breadcrumb = h.Breadcrumb,
-                doc_kind = h.DocKind,
-                start_line = h.StartLine,
-                text = h.Text
-            }).ToArray()
-        };
-        return JsonSerializer.Serialize(result);
-    }
-
-    [McpServerTool, Description(
         "Return all indexed chunks for a document group identified by a history ID " +
         "(e.g. ADR number, RFC number). Chunks are returned in chronological order " +
         "(sorted by start_line). The grouping field is collection-defined (defaults to " +
-        "'adr_id'). Use this instead of GetAdrHistory when the collection may use a " +
-        "different history key, or in hosted/remote mode where disk access is unavailable.")]
+        "'adr_id').")]
     public async Task<string> GetHistory(
         [Description("History ID (e.g. '0016', 'RFC-003'). Matched against the collection's configured history field.")] string id,
         CancellationToken cancellationToken = default)
@@ -289,7 +248,7 @@ public sealed class RagTools(
     [McpServerTool, Description(
         "List all ADRs in the repository with id, title, and amendment count. " +
         "Reads the docs/adr/ folder from disk â€” always accurate, not limited by index coverage. " +
-        "Use for orientation queries like 'what ADRs exist?' before calling GetAdrHistory.")]
+        "Use for orientation queries like 'what ADRs exist?' before calling GetHistory.")]
     public Task<string> ListAdrs(CancellationToken cancellationToken = default)
     {
         var adrFolder = Path.Combine(cfg.Workspace, "docs", "adr");

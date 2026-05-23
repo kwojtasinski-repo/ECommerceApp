@@ -100,49 +100,6 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
         Assert.DoesNotContain("[ERROR:", result);
     }
 
-    // ── get_adr_history ───────────────────────────────────────────────────
-
-    [Fact]
-    public async Task GetAdrHistory_KnownAdr_ReturnsAllChunks()
-    {
-
-        var result = await _fx.Tools!.GetAdrHistory("0001", CancellationToken.None);
-
-        // JSON: adr_id, title, chunks array — Alpha content should appear
-        Assert.Contains("Alpha", result, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("0001", result, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public async Task GetAdrHistory_IncludesAmendments()
-    {
-
-        var result = await _fx.Tools!.GetAdrHistory("0001", CancellationToken.None);
-
-        // The amendment file extends Alpha to collections
-        Assert.Contains("amendment", result, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public async Task GetAdrHistory_SecondAdr_ReturnsBetaContent()
-    {
-
-        var result = await _fx.Tools!.GetAdrHistory("0002", CancellationToken.None);
-
-        Assert.Contains("Beta", result, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("0002", result, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public async Task GetAdrHistory_UnknownAdr_ReturnsEmptyOrNotFoundMessage()
-    {
-
-        var result = await _fx.Tools!.GetAdrHistory("9999", CancellationToken.None);
-
-        // Should not throw; result is either empty or an explanatory message
-        Assert.NotNull(result);
-    }
-
     // ── get_history ───────────────────────────────────────────────────────
 
     [Fact]

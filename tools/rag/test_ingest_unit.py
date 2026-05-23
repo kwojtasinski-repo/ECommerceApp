@@ -239,59 +239,6 @@ class TestIngestWorker:
 # Ingest routes (HTTP) tests — uses Starlette TestClient (synchronous)
 # ─────────────────────────────────────────────────────────────────────────────
 
-class TestUploadRoute:
-    def _setup(self):
-        store = OperationStore()
-        queue: asyncio.Queue = asyncio.Queue(maxsize=10)
-        app = _make_app(store, queue)
-        client = TestClient(app, raise_server_exceptions=False)
-        return store, queue, client
-
-    def test_upload_returns_202_with_operation_id_and_location(self):
-        _, _, client = self._setup()
-        resp = client.post(
-            "/ingest/my-collection",
-            json={"relPath": "docs/intro.md", "content": "# Hello"},
-        )
-        assert resp.status_code == 202
-        body = resp.json()
-        assert "operationId" in body
-        assert body["status"] == "Queued"
-        assert "location" in body
-        assert resp.headers.get("location") is not None
-
-    def test_upload_missing_rel_path_returns_400(self):
-        _, _, client = self._setup()
-        resp = client.post("/ingest/c", json={"content": "# Hello"})
-        assert resp.status_code == 400
-
-    def test_upload_missing_content_returns_400(self):
-        _, _, client = self._setup()
-        resp = client.post("/ingest/c", json={"relPath": "docs/x.md"})
-        assert resp.status_code == 400
-
-    def test_upload_returns_503_when_queue_full(self):
-        store = OperationStore()
-        queue: asyncio.Queue = asyncio.Queue(maxsize=1)
-        # Fill the queue synchronously.
-        asyncio.get_event_loop().run_until_complete(
-            queue.put(IngestJob("x", "c", "x.md", "", None))
-        )
-        app = _make_app(store, queue)
-        client = TestClient(app, raise_server_exceptions=False)
-        resp = client.post("/ingest/c", json={"relPath": "f.md", "content": "# Hi"})
-        assert resp.status_code == 503
-
-    def test_upload_invalid_json_returns_400(self):
-        _, _, client = self._setup()
-        resp = client.post(
-            "/ingest/c",
-            content=b"not json",
-            headers={"content-type": "application/json"},
-        )
-        assert resp.status_code == 400
-
-
 class TestGetOperationRoute:
     def _setup(self):
         store = OperationStore()

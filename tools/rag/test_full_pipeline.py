@@ -12,7 +12,7 @@ Phases:
   6  Flow queries          —  run a curated subset of test_flows.py flows
                                against Docker STDIO (Python)
   7  Hosted ingest (HTTP)  —  upload a synthetic document to both Python and
-                               .NET SSE servers via POST /ingest/{collection},
+                               .NET SSE servers via POST /ingest/{collection}/batch,
                                poll for completion, query via MCP SSE to verify
   8  Report                —  write docs/rag/pipeline-test-report.md
 
@@ -464,10 +464,10 @@ def phase_3_python_stdio() -> PhaseResult:
         p.record("query_docs returns ADR-0006 (TypedId)", adr6,
                  f"hits: {paths}" if not adr6 else f"{len(hits)} hits")
 
-        # get_adr_history
-        r2 = _mcp_call(proc, "get_adr_history", {"adr_id": "0006"})
-        has_typedid = "TypedId" in r2.get("main", {}).get("content", "")
-        p.record("get_adr_history ADR-0006 has 'TypedId'", has_typedid)
+        # get_history (replaces get_adr_history)
+        r2 = _mcp_call(proc, "get_history", {"id": "0006"})
+        has_typedid = any("TypedId" in ch.get("text", "") for ch in r2.get("chunks", []))
+        p.record("get_history ADR-0006 has 'TypedId' in chunks", has_typedid)
 
         # read_docs
         r3 = _mcp_call(proc, "read_docs",
@@ -577,10 +577,10 @@ def phase_4_dotnet_stdio() -> PhaseResult:
         p.record("query_docs returns ADR-0006 content", adr6, f"{len(text)} chars")
         p.record("query_docs contains 'TypedId'", typedid)
 
-        # get_adr_history
-        hist_text = _mcp_call_raw(proc, "get_adr_history", {"adr_id": "0006"}, timeout=60)
+        # get_history (replaces get_adr_history)
+        hist_text = _mcp_call_raw(proc, "get_history", {"id": "0006"}, timeout=60)
         has_content = len(hist_text) > 50 and "No chunks found" not in hist_text
-        p.record("get_adr_history ADR-0006 has content", has_content,
+        p.record("get_history ADR-0006 (.NET STDIO) has content", has_content,
                  f"{len(hist_text)} chars")
 
         # list_adrs
@@ -664,12 +664,12 @@ def phase_5_sse() -> PhaseResult:
 
             raw2 = asyncio.run(_run_sse_tool(
                 f"http://localhost:{PYTHON_SSE_PORT}",
-                "get_adr_history",
-                {"adr_id": "0016"},
+                "get_history",
+                {"id": "0016"},
             ))
             hist = json.loads(raw2)
-            has_coupon = "coupon" in hist.get("main", {}).get("content", "").lower()
-            p.record("Python SSE: get_adr_history ADR-0016 mentions 'coupon'", has_coupon)
+            has_coupon = any("coupon" in ch.get("text", "").lower() for ch in hist.get("chunks", []))
+            p.record("Python SSE: get_history ADR-0016 mentions 'coupon'", has_coupon)
 
             raw3 = asyncio.run(_run_sse_tool(
                 f"http://localhost:{PYTHON_SSE_PORT}",
@@ -715,9 +715,9 @@ def phase_5_sse() -> PhaseResult:
                 p.record(".NET SSE: query_docs → ADR-0016 (coupons)", adr16,
                          f"{len(text)} chars")
 
-                hist_text = _call_raw("get_adr_history", {"adr_id": "0016"})
+                hist_text = _call_raw("get_history", {"id": "0016"})
                 has_coupon = "coupon" in hist_text.lower()
-                p.record(".NET SSE: get_adr_history ADR-0016 mentions 'coupon'", has_coupon,
+                p.record(".NET SSE: get_history ADR-0016 mentions 'coupon'", has_coupon,
                          f"{len(hist_text)} chars")
 
                 gh_text = _call_raw("get_history", {"id": "0016"})
@@ -752,7 +752,7 @@ FLOW_QUESTIONS = [
      "query_docs", {"question": "cross bounded context event domain message bus", "top_k": 5},
      ["0010"]),
     ("TypedId pattern (ADR-0006)",
-     "get_adr_history", {"adr_id": "0006"},
+     "get_history", {"id": "0006"},
      ["TypedId", "abstract record"]),
     ("Known .NET upgrade issues",
      "query_docs", {"question": "FluentAssertions AwesomeAssertions .NET 8 upgrade breaking change", "top_k": 5},
@@ -780,7 +780,7 @@ def phase_6_flow_queries() -> PhaseResult:
                 result = _mcp_call(proc, tool, args, timeout=60)
                 # Check expected strings
                 # For query_docs/read_docs: check rel_path hits
-                # For get_adr_history: check main.content
+                # For get_history: check chunks text
                 content = ""
                 if tool == "query_docs":
                     content = " ".join(h.get("rel_path", "") + " " + h.get("text", "")
@@ -791,9 +791,8 @@ def phase_6_flow_queries() -> PhaseResult:
                             c.get("text", "") for c in f.get("chunks", [])
                         ) for f in result.get("files", [])
                     )
-                elif tool == "get_adr_history":
-                    main = result.get("main", {})
-                    content = main.get("content", "") if main else str(result)
+                elif tool == "get_history":
+                    content = " ".join(ch.get("text", "") for ch in result.get("chunks", []))
 
                 all_found = all(kw.lower() in content.lower() for kw in expects)
                 missing = [kw for kw in expects if kw.lower() not in content.lower()]
@@ -913,14 +912,14 @@ def phase_8_report(results: list[PhaseResult]) -> PhaseResult:
 # PHASE 7: Hosted ingest via HTTP API (no volume mounts — simulate remote host)
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Synthetic document uploaded to both servers via POST /ingest/{collection}
+# Synthetic document uploaded to both servers via POST /ingest/{collection}/batch
 _HOSTED_DOC_REL_PATH = "docs/hosted-ingest-e2e-test.md"
 _HOSTED_DOC_CONTENT = """\
 # Hosted Ingest End-to-End Test Document
 
 ## Purpose
 
-This document is uploaded via the HTTP ingest API (`POST /ingest/{collection}`)
+This document is uploaded via the HTTP ingest API (`POST /ingest/{collection}/batch`)
 to verify that the hosted SSE server scenario works correctly without volume mounts.
 
 ## Unique Marker
@@ -936,31 +935,12 @@ the HTTP ingest REST API. This test validates that flow end-to-end.
 
 ## Steps Validated
 
-1. POST /ingest/{collection} — upload document with relPath + content
+1. POST /ingest/{collection}/batch — upload document as a ZIP
 2. GET /ingest/{collection}/operations/{opId} — poll until Completed
 3. MCP query_docs — verify the unique marker is returned in results
 """
 
 _HOSTED_INGEST_TIMEOUT = 60  # seconds to wait for ingest operation to complete
-
-
-def _http_ingest_upload(base_url: str, collection: str, rel_path: str, content: str,
-                         api_key: str | None = None) -> tuple[int, dict]:
-    """Upload a document to the ingest API. Returns (status_code, response_body)."""
-    headers: dict[str, str] = {"Content-Type": "application/json"}
-    if api_key:
-        headers["X-Api-Key"] = api_key
-    body = json.dumps({"relPath": rel_path, "content": content}).encode()
-    import urllib.request, urllib.error
-    req = urllib.request.Request(
-        f"{base_url}/ingest/{collection}",
-        data=body, headers=headers, method="POST",
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            return resp.status, json.loads(resp.read())
-    except urllib.error.HTTPError as e:
-        return e.code, json.loads(e.read())
 
 
 def _http_ingest_poll(base_url: str, status_url: str, timeout: int = 60,
@@ -1019,25 +999,26 @@ def _http_batch_upload(base_url: str, collection: str,
 def phase_7_hosted_ingest() -> PhaseResult:
     p = PhaseResult("Hosted ingest via HTTP API (no volume mounts)")
     print(f"\n{BANNER}\n  PHASE 7 — Hosted ingest via HTTP API\n{BANNER}")
-    print("  Simulates remote deployment: docs uploaded via POST /ingest/{collection}")
+    print("  Simulates remote deployment: docs uploaded via POST /ingest/{collection}/batch")
     print("  SSE servers must be running from phase 5.\n")
 
     py_base = f"http://localhost:{PYTHON_SSE_PORT}"
     dn_base = f"http://localhost:{DOTNET_SSE_PORT}"
 
     # ── Python SSE ingest upload ───────────────────────────────────────────────
-    print("  [7a] Python SSE — upload doc via HTTP ingest API…")
+    print("  [7a] Python SSE — upload doc via HTTP ingest API (batch)…")
     try:
-        py_headers: dict = {"Content-Type": "application/json"}
-        if py_api_key := os.environ.get("RAG_API_KEY", "").strip():
-            py_headers["X-Api-Key"] = py_api_key
+        py_api_key: str | None = os.environ.get("RAG_API_KEY", "").strip() or None
 
-        status_code, resp = _http_ingest_upload(
-            py_base, PYTHON_COLLECTION, _HOSTED_DOC_REL_PATH, _HOSTED_DOC_CONTENT)
+        status_code, resp = _http_batch_upload(
+            py_base, PYTHON_COLLECTION,
+            {_HOSTED_DOC_REL_PATH: _HOSTED_DOC_CONTENT},
+            api_key=py_api_key)
         accepted = status_code == 202
-        op_id = resp.get("operationId", "")
-        status_url = resp.get("location", resp.get("statusUrl", ""))
-        p.record("Python SSE: POST /ingest → 202 Accepted", accepted,
+        ops = resp.get("operations", [])
+        op_id = ops[0].get("operationId", "") if ops else ""
+        status_url = ops[0].get("statusUrl", "") if ops else ""
+        p.record("Python SSE: POST /ingest/batch → 202 Accepted", accepted,
                  f"status={status_code} opId={op_id[:40] if op_id else 'N/A'}")
 
         if accepted and status_url:
@@ -1082,13 +1063,15 @@ def phase_7_hosted_ingest() -> PhaseResult:
     dn_api_key: str | None = None  # no key set in our docker-compose
 
     try:
-        status_code, resp = _http_ingest_upload(
-            dn_base, DOTNET_COLLECTION, _HOSTED_DOC_REL_PATH, _HOSTED_DOC_CONTENT,
+        status_code, resp = _http_batch_upload(
+            dn_base, DOTNET_COLLECTION,
+            {_HOSTED_DOC_REL_PATH: _HOSTED_DOC_CONTENT},
             api_key=dn_api_key)
         accepted = status_code == 202
-        op_id = resp.get("operationId", "")
-        status_url = resp.get("statusUrl", resp.get("location", ""))
-        p.record(".NET SSE: POST /ingest → 202 Accepted", accepted,
+        ops = resp.get("operations", [])
+        op_id = ops[0].get("operationId", "") if ops else ""
+        status_url = ops[0].get("statusUrl", "") if ops else ""
+        p.record(".NET SSE: POST /ingest/batch → 202 Accepted", accepted,
                  f"status={status_code} opId={op_id[:40] if op_id else 'N/A'}")
 
         if accepted and status_url:

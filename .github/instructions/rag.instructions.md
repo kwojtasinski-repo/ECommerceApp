@@ -14,15 +14,15 @@ It exposes 4 tools:
 | `list_adrs()`                           | Orientation queries ("what ADRs exist?", "is there an ADR about X?"). Cheap; safe to call early.                                                                        |
 | `query_docs(question, bc?, top_k?)`     | Discovery — find which files are relevant. Returns ranked chunks with file paths, line ranges, and scores. Use as a pointer, then follow up with `read_docs`.           |
 | `read_docs(question, bc?, top_files?)`  | **Preferred for reasoning.** Returns the full content of the top-ranked unique files. Use when you need complete ADR rationale, conformance checklist, or amendments.   |
-| `get_adr_history(adr_id)`               | The user asks how a specific decision evolved. Returns the main ADR + all amendments in chronological order.                                                           |
+| `get_history(id)`                       | The user asks how a specific decision evolved. Returns all indexed chunks for that history group in chronological order (sorted by start_line).                         |
 
 ## Recommended flow
 
 ```
-list_adrs()          → orientation: what exists?
-query_docs(q)        → discovery: which files score highest?
-read_docs(q)         → depth: full content of those files — reason from the complete document
-get_adr_history(id)  → evolution: full amendment chain for a specific ADR
+list_adrs()       → orientation: what exists?
+query_docs(q)     → discovery: which files score highest?
+read_docs(q)      → depth: full content of those files — reason from the complete document
+get_history(id)   → evolution: full amendment chain for a specific ADR
 ```
 
 Prefer `read_docs` over `query_docs` when you need to quote rules, check conformance, or understand rationale — chunks can miss context across section boundaries.

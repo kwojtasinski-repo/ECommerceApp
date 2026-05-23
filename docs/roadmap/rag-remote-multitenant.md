@@ -460,7 +460,7 @@ When `--remote` is provided:
 
 ## Phase 2 — Design corrections and new tools
 
-> Status: 🔄 In Progress (P2-1 ✅ done `a91b2b71`, P2-2 ✅ done, P2-3 ✅ done — P2-4/P2-5 pending)
+> Status: 🔄 In Progress (P2-1 ✅ done `a91b2b71`, P2-2 ✅ done, P2-3 ✅ done, P2-4 ✅ done — P2-5 ✅ done)
 > Scope: Both servers (`tools/rag-dotnet/`, `tools/rag/`)  
 > Follow TDD: write failing pipeline-test checks first, then implement.
 
@@ -644,7 +644,7 @@ pipeline test. Remove in a follow-up step (P2-5) once both servers pass phase 8.
 
 ### Step P2-3 — `get_history(id)` tool — collection-defined history field ✅ Done
 
-**Delivered (additive approach):** `get_history(id)` added alongside `get_adr_history` (not removed yet — P2-5).
+**Delivered (additive approach):** `get_history(id)` added alongside `get_adr_history`. `get_adr_history` removed in P2-5.
 
 - **Python** (`tools/rag/`): `field_filter` param in `QueryEngine.search()`; `get_history` MCP tool in `mcp_server.py`; reads `history_field` from `__config__` point, defaults to `"adr_id"`.
 - **.NET** (`tools/rag-dotnet/`): `HistoryFieldFilter` in `SearchOptions`; `HistoryField` in `RagConfigPayload`; `historyFieldFilter` param in `QdrantStore.SearchAsync()`; `GetHistory` MCP tool in `RagTools.cs`.
@@ -720,13 +720,9 @@ Total target: **≥ 50 checks**, all green.
 
 ---
 
-### Step P2-5 — Remove legacy endpoints (post-stabilisation)
+### Step P2-5 — Remove legacy endpoints ✅ Done
 
-Once phase 8 is green and the CLI uses the zip endpoint exclusively:
-
-- Remove `POST /ingest/{collection}` (single-file JSON) from both servers.
-- Remove the phase 7 single-file tests from `test_full_pipeline.py`.
-- Update `docs/rag/pipeline-test-report.md` to reflect the new phase numbering.
+Removed `POST /ingest/{collection}` (single-file JSON) from both servers and removed `get_adr_history` (disk-based) from both servers. All tests updated to use batch ingest and `get_history` instead.
 
 When `--remote` is NOT provided: existing local ingest behavior unchanged.
 

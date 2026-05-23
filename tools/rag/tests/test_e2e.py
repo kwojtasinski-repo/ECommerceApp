@@ -33,8 +33,8 @@ What is tested
     • read_docs   — returns chunks mode by default; switches to full mode on intent
                      phrases ("show me all details about", "full content of"); full mode
                      returns size_chars + content; chunks mode returns lines field.
-    • get_adr_history — returns main content + amendments; returns an error dict for an
-                         unknown ADR ID.
+    • get_history — returns all indexed chunks for a history group; returns zero chunks
+                     for an unknown ID.
 
   Generic workspace isolation (the KEY requirement)
     • list_adrs returns ONLY the 2 ADRs from the test workspace, proving the server
@@ -1343,43 +1343,6 @@ class TestMcpTools:
             f"Expected ADR-0002 in read_docs files for CQRS query. Got: {rel_paths}"
         )
 
-    # ── get_adr_history ────────────────────────────────────────────────────
-
-    def test_get_adr_history_returns_main_for_0001(self, mcp_session: ToolCaller) -> None:
-        result = mcp_session("get_adr_history", {"adr_id": "0001"})
-        assert result["main"]["content"] is not None
-        assert "TypedId" in result["main"]["content"]
-
-    def test_get_adr_history_0001_includes_amendment(self, mcp_session: ToolCaller) -> None:
-        result = mcp_session("get_adr_history", {"adr_id": "0001"})
-        assert result["amendment_count"] == 1
-        assert len(result["amendments"]) == 1
-
-    def test_get_adr_history_amendment_has_content(self, mcp_session: ToolCaller) -> None:
-        result = mcp_session("get_adr_history", {"adr_id": "0001"})
-        amend = result["amendments"][0]
-        assert "content" in amend
-        assert len(amend["content"]) > 0
-        assert "collections" in amend["content"].lower() or "typed" in amend["content"].lower()
-
-    def test_get_adr_history_0002_has_no_amendments(self, mcp_session: ToolCaller) -> None:
-        result = mcp_session("get_adr_history", {"adr_id": "0002"})
-        assert result["amendment_count"] == 0
-        assert result["amendments"] == []
-
-    def test_get_adr_history_main_rel_path_contains_id(self, mcp_session: ToolCaller) -> None:
-        result = mcp_session("get_adr_history", {"adr_id": "0001"})
-        assert result["main"]["rel_path"] is not None
-        assert "0001" in result["main"]["rel_path"]
-
-    def test_get_adr_history_unknown_adr_returns_error_dict(self, mcp_session: ToolCaller) -> None:
-        result = mcp_session("get_adr_history", {"adr_id": "9999"})
-        assert "error" in result
-
-    def test_get_adr_history_adr_id_in_response(self, mcp_session: ToolCaller) -> None:
-        result = mcp_session("get_adr_history", {"adr_id": "0002"})
-        assert result["adr_id"] == "0002"
-
     # ── get_history ────────────────────────────────────────────────────────
 
     def test_get_history_0001_returns_chunks(self, mcp_session: ToolCaller) -> None:
@@ -1490,11 +1453,6 @@ class TestContainerMode:
             {"question": "show me all details about TypedId"},
         )
         assert result["mode"] == "full"
-
-    def test_container_get_adr_history_returns_amendment(self, container_session: ToolCaller) -> None:
-        result = container_session("get_adr_history", {"adr_id": "0001"})
-        assert result["amendment_count"] == 1
-        assert result["main"]["content"] is not None
 
     def test_container_get_history_returns_chunks(self, container_session: ToolCaller) -> None:
         result = container_session("get_history", {"id": "0001"})

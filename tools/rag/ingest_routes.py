@@ -2,7 +2,6 @@
 
 Mirrors the .NET IngestController endpoints (ADR-0028 tech-details-dotnet.md):
 
-    POST  /ingest/{collection}                               → 202 | 400 | 503
     POST  /ingest/{collection}/batch                         → 202 | 400 | 503
     GET   /ingest/{collection}/operations/{operation_id}     → 200 | 404
     GET   /ingest/{collection}/operations                    → 200
@@ -36,49 +35,6 @@ def build_ingest_routes(
     capacity: int = 100,
 ) -> list[Route]:
     """Return Starlette Route objects wired to the given store and queue."""
-
-    # ── POST /ingest/{collection} ───────────────────────────────────────────
-
-    async def upload(request: Request) -> Response:
-        collection = request.path_params["collection"]
-
-        try:
-            body = await request.json()
-        except Exception:
-            return JSONResponse({"error": "Invalid JSON body"}, status_code=400)
-
-        rel_path: str | None = body.get("relPath") or body.get("rel_path")
-        content: str | None = body.get("content")
-
-        if not rel_path:
-            return JSONResponse({"error": "relPath is required"}, status_code=400)
-        if not content:
-            return JSONResponse({"error": "content is required"}, status_code=400)
-
-        doc_kind: str | None = body.get("docKind") or body.get("doc_kind")
-
-        if queue.full():
-            return JSONResponse(
-                {"error": "Service Unavailable — ingest queue is full, retry later"},
-                status_code=503,
-            )
-
-        op = await store.enqueue(collection, rel_path)
-        job = IngestJob(
-            operation_id=op.operation_id,
-            collection=collection,
-            rel_path=rel_path,
-            content=content,
-            doc_kind=doc_kind,
-        )
-        await queue.put(job)
-
-        location = f"/ingest/{collection}/operations/{op.operation_id}"
-        return JSONResponse(
-            {"operationId": op.operation_id, "status": "Queued", "location": location},
-            status_code=202,
-            headers={"Location": location},
-        )
 
     # ── POST /ingest/{collection}/batch ────────────────────────────────────────
 
@@ -161,7 +117,6 @@ def build_ingest_routes(
         )
 
     return [
-        Route("/ingest/{collection}", endpoint=upload, methods=["POST"]),
         Route("/ingest/{collection}/batch", endpoint=upload_batch, methods=["POST"]),
         Route(
             "/ingest/{collection}/operations",
