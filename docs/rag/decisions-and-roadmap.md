@@ -233,13 +233,24 @@ Resolved. After Docker rebuild (F-1), pipeline Phase 3 shows `chunk_count=18` fo
 
 ---
 
-### F-10 — Cache invalidation on re-ingest
+### F-10 — Cache invalidation on re-ingest ⚠️ HIGH PRIORITY
 
-**Current**: `CachedDocumentStore` (`.NET`) and `QueryCache` cache search results with a TTL. After re-ingesting a document, old cached results may be served until cache TTL expires.
+**Current**: `CachedDocumentStore` (.NET) caches search results with a TTL. After re-ingesting a document (e.g., you updated ADR-0016 with new coupon limits), old cached results are served until the TTL expires. You re-ingest but Copilot still answers from stale chunks.
 
-**Planned**: `IngestWorker` calls `cache.Invalidate(relPath)` (or `cache.Clear()` for simplicity) after `DeleteChunksAsync` succeeds. Python's `query.py` has no caching layer currently — to be added if query latency becomes an issue.
+**Why this is the highest priority**: It silently serves outdated answers. The user thinks they updated the RAG index but the assistant keeps answering with the old content. There is no visible error — the bug is invisible.
 
-**Complexity**: Low for .NET (cache already has an eviction API). Python: N/A until cache is added.
+**Fix (.NET)**: In `IngestWorker`, after `DeleteChunksAsync(collection, relPath, ct)` completes successfully, call `cache.Invalidate(relPath)` (or `cache.Clear()` for safety). The `IDocumentStore` interface (or `CachedDocumentStore` directly) needs an invalidation method.
+
+**Fix (Python)**: Python server has no in-memory query cache currently — N/A until a cache is added. If a cache is added later, invalidation must be built in from the start.
+
+**Required work (.NET)**:
+1. Add `InvalidateAsync(string relPath)` to `IDocumentStore` (or expose on `CachedDocumentStore` directly)
+2. Implement in `QueryCache`: remove all cache entries whose key contains `relPath`
+3. Call from `IngestWorker` immediately after `DeleteChunksAsync` returns
+4. Add unit test: ingest file, cache a query, re-ingest, assert cache miss on next query
+5. Add integration test (optional): verify via HTTP that re-ingest returns fresh chunks
+
+**Complexity**: Low (~0.5 days .NET). No API contract change.
 
 ---
 
