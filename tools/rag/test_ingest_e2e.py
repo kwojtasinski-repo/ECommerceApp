@@ -139,6 +139,22 @@ def _build_zip(files: dict[str, str]) -> bytes:
     return buf.getvalue()
 
 
+_MIN_META_RULES_YAML = """\
+doc_kind_rules:
+  - {glob: "**", kind: doc}
+"""
+
+_MIN_QUERIES_YAML = """\
+named_queries:
+  - {name: default, question: test, top_k: 5}
+"""
+
+_VALID_ZIP_EXTRAS: dict[str, str] = {
+    "metadata-rules.yaml": _MIN_META_RULES_YAML,
+    "queries.yaml": _MIN_QUERIES_YAML,
+}
+
+
 def _post_batch(base_url: str, collection: str, files: dict[str, str],
                 headers: dict | None = None) -> tuple[int, dict]:
     """Upload files as a ZIP to POST /ingest/{collection}/batch."""
@@ -154,6 +170,12 @@ def _post_batch(base_url: str, collection: str, files: dict[str, str],
             return resp.status, json.loads(resp.read())
     except urllib.error.HTTPError as e:
         return e.code, json.loads(e.read() or b"{}")
+
+
+def _post_valid_batch(base_url: str, collection: str, docs: dict[str, str],
+                      headers: dict | None = None) -> tuple[int, dict]:
+    """Upload a ZIP that includes required config files plus *docs*."""
+    return _post_batch(base_url, collection, {**_VALID_ZIP_EXTRAS, **docs}, headers)
 
 
 def _first_op(batch_body: dict) -> dict:
@@ -189,7 +211,7 @@ def server() -> _ServerHandle:
 
 class TestE2EUpload:
     def test_post_returns_202_and_operation_id(self, server):
-        code, body = _post_batch(
+        code, body = _post_valid_batch(
             server.base_url, "docs", {"adr/0001.md": "# ADR-0001"},
         )
         assert code == 202
@@ -220,7 +242,7 @@ class TestE2EUpload:
 
 class TestE2EStatusPolling:
     def test_operation_reaches_completed_status(self, server):
-        code, body = _post_batch(
+        code, body = _post_valid_batch(
             server.base_url, "docs", {"e2e/polling.md": "# Polling test"},
         )
         assert code == 202
@@ -235,7 +257,7 @@ class TestE2EStatusPolling:
         assert code == 404
 
     def test_get_operation_returns_404_for_wrong_collection(self, server):
-        code, body = _post_batch(
+        code, body = _post_valid_batch(
             server.base_url, "col-a", {"f.md": "# Hello"},
         )
         assert code == 202
@@ -245,7 +267,7 @@ class TestE2EStatusPolling:
         assert code2 == 404
 
     def test_location_header_leads_to_operation(self, server):
-        code, body = _post_batch(
+        code, body = _post_valid_batch(
             server.base_url, "docs", {"e2e/location.md": "# Location"},
         )
         assert code == 202
@@ -264,8 +286,8 @@ class TestE2EListOperations:
     def test_list_returns_uploaded_operations(self, server):
         # Upload two docs to a unique collection via batch (one file per batch).
         col = "e2e-list-test"
-        _post_batch(server.base_url, col, {"a.md": "# A"})
-        _post_batch(server.base_url, col, {"b.md": "# B"})
+        _post_valid_batch(server.base_url, col, {"a.md": "# A"})
+        _post_valid_batch(server.base_url, col, {"b.md": "# B"})
         time.sleep(0.5)
         code, body = _get(f"{server.base_url}/ingest/{col}/operations")
         assert code == 200
@@ -311,7 +333,7 @@ class TestE2EApiKeyAuth:
         handle = _ServerHandle(app, port)
         handle.start()
         try:
-            code, _ = _post_batch(
+            code, _ = _post_valid_batch(
                 f"http://127.0.0.1:{port}", "c", {"f.md": "# Hi"},
                 headers={"X-Api-Key": "test-secret"},
             )
@@ -369,7 +391,7 @@ class TestE2EWorkerFailurePropagation:
         handle = _ServerHandle(app, port)
         handle.start()
         try:
-            code, body = _post_batch(
+            code, body = _post_valid_batch(
                 f"http://127.0.0.1:{port}", "c", {"bad.md": "# Will fail"},
             )
             assert code == 202
@@ -471,7 +493,7 @@ class TestE2EFullPipelineQdrant:
                 "one point exists for the uploaded rel_path, confirming that the "
                 "worker completed the ingest pipeline successfully.\n"
             )
-            code, body = _post_batch(
+            code, body = _post_valid_batch(
                 base, collection, {"e2e/qdrant-test.md": doc_content},
             )
             assert code == 202, f"Expected 202 but got {code}: {body}"

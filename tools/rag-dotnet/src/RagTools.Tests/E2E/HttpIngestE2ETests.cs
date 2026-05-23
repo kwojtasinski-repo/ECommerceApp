@@ -54,11 +54,20 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>, ID
         _sharedOnnx.Sink.SetOutput(null);
     }
 
+    private const string MinMetaRulesYaml = "doc_kind_rules:\n  - {glob: \"**\", kind: doc}\n";
+    private const string MinQueriesYaml   = "named_queries:\n  - {name: default, question: test, top_k: 5}\n";
+
     private static byte[] BuildZip(string relPath, string content)
     {
         using var ms = new MemoryStream();
         using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
         {
+            var metaEntry = zip.CreateEntry("metadata-rules.yaml");
+            using (var w = new System.IO.StreamWriter(metaEntry.Open(), System.Text.Encoding.UTF8)) w.Write(MinMetaRulesYaml);
+
+            var qEntry = zip.CreateEntry("queries.yaml");
+            using (var w = new System.IO.StreamWriter(qEntry.Open(), System.Text.Encoding.UTF8)) w.Write(MinQueriesYaml);
+
             var entry = zip.CreateEntry(relPath);
             using var writer = new System.IO.StreamWriter(entry.Open(), System.Text.Encoding.UTF8);
             writer.Write(content);

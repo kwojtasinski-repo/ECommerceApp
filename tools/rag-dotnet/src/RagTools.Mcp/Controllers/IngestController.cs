@@ -73,6 +73,44 @@ public sealed class IngestController(
         .Where(e => !e.FullName.EndsWith('/') && e.Length > 0)
         .ToList();
 
+    // ── Validate required config files ───────────────────────────────────────
+    var zipNames = zip.Entries.Select(e => e.FullName).ToHashSet(StringComparer.OrdinalIgnoreCase);
+    var missingConfigs = new[] { "metadata-rules.yaml", "queries.yaml" }
+        .Where(n => !zipNames.Contains(n))
+        .ToList();
+    if (missingConfigs.Count > 0)
+        return BadRequest(new { error = $"ZIP must contain: {string.Join(", ", missingConfigs)}" });
+
+    string metaContent;
+    using (var r = new System.IO.StreamReader(zip.GetEntry("metadata-rules.yaml")!.Open()))
+        metaContent = await r.ReadToEndAsync();
+    if (!System.Text.RegularExpressions.Regex.IsMatch(metaContent, @"doc_kind_rules:\s*\r?\n\s+-"))
+        return BadRequest(new { error = "metadata-rules.yaml must contain at least one doc_kind_rules entry" });
+
+    string queriesContent;
+    using (var r = new System.IO.StreamReader(zip.GetEntry("queries.yaml")!.Open()))
+        queriesContent = await r.ReadToEndAsync();
+    if (!System.Text.RegularExpressions.Regex.IsMatch(queriesContent, @"named_queries:\s*\r?\n\s+-"))
+        return BadRequest(new { error = "queries.yaml must contain at least one named_queries entry" });
+
+    var knownKinds = System.Text.RegularExpressions.Regex.Matches(metaContent, @"\bkind:\s*(\S+)")
+        .Cast<System.Text.RegularExpressions.Match>()
+        .Select(m => m.Groups[1].Value.Trim())
+        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    var badKinds = System.Text.RegularExpressions.Regex.Matches(queriesContent, @"\bdoc_kind:\s*(\S+)")
+        .Cast<System.Text.RegularExpressions.Match>()
+        .Select(m => m.Groups[1].Value.Trim())
+        .Where(k => !knownKinds.Contains(k))
+        .Distinct()
+        .OrderBy(k => k)
+        .ToList();
+    if (badKinds.Count > 0)
+        return BadRequest(new { error = $"queries.yaml references unknown doc_kind(s): [{string.Join(", ", badKinds)}]. Add matching rules to metadata-rules.yaml." });
+
+    // Filter config files — they must not be ingested as documents.
+    var configFileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "metadata-rules.yaml", "queries.yaml" };
+    fileEntries = fileEntries.Where(e => !configFileNames.Contains(e.FullName)).ToList();
+
     if (fileEntries.Count == 0)
         return BadRequest(new { error = "ZIP contains no files" });
 

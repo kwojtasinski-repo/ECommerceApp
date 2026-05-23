@@ -194,6 +194,9 @@ public sealed class IngestControllerTests
 
     // ── POST /ingest/{collection}/batch  (P2-2) ───────────────────────────────
 
+    private const string MinMetaRulesYaml = "doc_kind_rules:\n  - {glob: \"**\", kind: doc}\n";
+    private const string MinQueriesYaml   = "named_queries:\n  - {name: default, question: test, top_k: 5}\n";
+
     private static System.IO.MemoryStream MakeZip(params (string relPath, string content)[] files)
     {
         var ms = new System.IO.MemoryStream();
@@ -208,6 +211,16 @@ public sealed class IngestControllerTests
         }
         ms.Position = 0;
         return ms;
+    }
+
+    private static System.IO.MemoryStream MakeValidZip(params (string relPath, string content)[] files)
+    {
+        var all = new (string, string)[]
+        {
+            ("metadata-rules.yaml", MinMetaRulesYaml),
+            ("queries.yaml", MinQueriesYaml),
+        }.Concat(files).ToArray();
+        return MakeZip(all);
     }
 
     private static IngestController CreateControllerWithBody(System.IO.Stream body, IngestChannel? channel = null, OperationStore? ops = null)
@@ -229,7 +242,7 @@ public sealed class IngestControllerTests
     [Fact]
     public async Task UploadBatch_Returns202_WithCountAndOperations()
     {
-        var zip  = MakeZip(("docs/intro.md", "# Intro"));
+        var zip  = MakeValidZip(("docs/intro.md", "# Intro"));
         var ctrl = CreateControllerWithBody(zip);
 
         var result = await ctrl.UploadBatch("col");
@@ -245,7 +258,7 @@ public sealed class IngestControllerTests
     public async Task UploadBatch_MultipleFiles_EnqueuesAll()
     {
         var channel = new IngestChannel();
-        var zip = MakeZip(
+        var zip = MakeValidZip(
             ("docs/adr/0001.md", "# ADR-0001"),
             ("docs/adr/0002.md", "# ADR-0002"),
             ("docs/concepts/ddd.md", "# DDD"));
@@ -261,7 +274,7 @@ public sealed class IngestControllerTests
     public async Task UploadBatch_EachFileGetsUniqueOperationId()
     {
         var ops = new OperationStore();
-        var zip = MakeZip(("a.md", "A"), ("b.md", "B"));
+        var zip = MakeValidZip(("a.md", "A"), ("b.md", "B"));
         var ctrl = CreateControllerWithBody(zip, ops: ops);
 
         var result = await ctrl.UploadBatch("col");
@@ -281,7 +294,7 @@ public sealed class IngestControllerTests
     public async Task UploadBatch_RegistersOperationsInStore()
     {
         var ops = new OperationStore();
-        var zip = MakeZip(("f.md", "# F"));
+        var zip = MakeValidZip(("f.md", "# F"));
         var ctrl = CreateControllerWithBody(zip, ops: ops);
 
         var result = await ctrl.UploadBatch("col");
@@ -323,11 +336,102 @@ public sealed class IngestControllerTests
     [Fact]
     public async Task UploadBatch_QueueFull_Returns503()
     {
-        var ctrl = CreateControllerWithBody(MakeZip(("a.md", "A"), ("b.md", "B")), channel: FullChannel());
+        var ctrl = CreateControllerWithBody(MakeValidZip(("a.md", "A"), ("b.md", "B")), channel: FullChannel());
 
         var result = await ctrl.UploadBatch("col");
 
         var objResult = Assert.IsType<ObjectResult>(result);
         Assert.Equal(503, objResult.StatusCode);
+    }
+
+    // ── ZIP validation tests ──────────────────────────────────────────────────
+
+    [Fact]
+    public async Task UploadBatch_MissingMetadataRules_Returns400()
+    {
+        var zip  = MakeZip(("queries.yaml", MinQueriesYaml), ("doc.md", "# Doc"));
+        var ctrl = CreateControllerWithBody(zip);
+
+        var result = await ctrl.UploadBatch("col");
+
+        var bad = Assert.IsType<BadRequestObjectResult>(result);
+        var error = bad.Value!.GetType().GetProperty("error")!.GetValue(bad.Value)!.ToString()!;
+        Assert.Contains("metadata-rules.yaml", error);
+    }
+
+    [Fact]
+    public async Task UploadBatch_MissingQueriesYaml_Returns400()
+    {
+        var zip  = MakeZip(("metadata-rules.yaml", MinMetaRulesYaml), ("doc.md", "# Doc"));
+        var ctrl = CreateControllerWithBody(zip);
+
+        var result = await ctrl.UploadBatch("col");
+
+        var bad = Assert.IsType<BadRequestObjectResult>(result);
+        var error = bad.Value!.GetType().GetProperty("error")!.GetValue(bad.Value)!.ToString()!;
+        Assert.Contains("queries.yaml", error);
+    }
+
+    [Fact]
+    public async Task UploadBatch_EmptyDocKindRules_Returns400()
+    {
+        var zip  = MakeZip(("metadata-rules.yaml", "doc_kind_rules: []\n"), ("queries.yaml", MinQueriesYaml), ("doc.md", "# Doc"));
+        var ctrl = CreateControllerWithBody(zip);
+
+        var result = await ctrl.UploadBatch("col");
+
+        var bad = Assert.IsType<BadRequestObjectResult>(result);
+        var error = bad.Value!.GetType().GetProperty("error")!.GetValue(bad.Value)!.ToString()!;
+        Assert.Contains("doc_kind_rules", error);
+    }
+
+    [Fact]
+    public async Task UploadBatch_EmptyNamedQueries_Returns400()
+    {
+        var zip  = MakeZip(("metadata-rules.yaml", MinMetaRulesYaml), ("queries.yaml", "named_queries: []\n"), ("doc.md", "# Doc"));
+        var ctrl = CreateControllerWithBody(zip);
+
+        var result = await ctrl.UploadBatch("col");
+
+        var bad = Assert.IsType<BadRequestObjectResult>(result);
+        var error = bad.Value!.GetType().GetProperty("error")!.GetValue(bad.Value)!.ToString()!;
+        Assert.Contains("named_queries", error);
+    }
+
+    [Fact]
+    public async Task UploadBatch_UnknownDocKind_Returns400()
+    {
+        const string badQueries = "named_queries:\n  - {name: x, question: q, doc_kind: unknown_kind, top_k: 5}\n";
+        var zip  = MakeZip(("metadata-rules.yaml", MinMetaRulesYaml), ("queries.yaml", badQueries), ("doc.md", "# Doc"));
+        var ctrl = CreateControllerWithBody(zip);
+
+        var result = await ctrl.UploadBatch("col");
+
+        var bad = Assert.IsType<BadRequestObjectResult>(result);
+        var error = bad.Value!.GetType().GetProperty("error")!.GetValue(bad.Value)!.ToString()!;
+        Assert.Contains("unknown_kind", error);
+    }
+
+    [Fact]
+    public async Task UploadBatch_ConfigFilesNotIngested()
+    {
+        var channel = new IngestChannel();
+        var zip     = MakeValidZip(("doc.md", "# Doc"));
+        var ctrl    = CreateControllerWithBody(zip, channel: channel);
+
+        var result = await ctrl.UploadBatch("col");
+
+        var accepted = Assert.IsType<AcceptedResult>(result);
+        var body     = accepted.Value!;
+        var count    = (int)body.GetType().GetProperty("Count")!.GetValue(body)!;
+        Assert.Equal(1, count);
+        dynamic opList2 = body.GetType().GetProperty("Operations")!.GetValue(body)!;
+        var opList = (System.Collections.IEnumerable)opList2;
+        var relPaths = new System.Collections.Generic.List<string>();
+        foreach (var op in opList)
+            relPaths.Add((string)op.GetType().GetProperty("RelPath")!.GetValue(op)!);
+        Assert.DoesNotContain("metadata-rules.yaml", relPaths);
+        Assert.DoesNotContain("queries.yaml", relPaths);
+        Assert.Contains("doc.md", relPaths);
     }
 }

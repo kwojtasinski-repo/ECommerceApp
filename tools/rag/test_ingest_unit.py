@@ -328,7 +328,7 @@ class TestApiKeyMiddleware:
         client = self._make_client("my-key")
         resp = client.post(
             "/ingest/c/batch",
-            content=_make_zip({"f.md": "# Hi"}),
+            content=_make_valid_zip({"f.md": "# Hi"}),
             headers={"Content-Type": "application/zip", "X-Api-Key": "my-key"},
         )
         assert resp.status_code == 202
@@ -355,7 +355,7 @@ class TestApiKeyMiddleware:
         client = self._make_client(api_key=None)  # middleware not added
         resp = client.post(
             "/ingest/c/batch",
-            content=_make_zip({"f.md": "# Hi"}),
+            content=_make_valid_zip({"f.md": "# Hi"}),
             headers={"Content-Type": "application/zip"},
         )
         assert resp.status_code == 202
@@ -387,6 +387,26 @@ def _make_zip(files: dict[str, str]) -> bytes:
     return buf.getvalue()
 
 
+_MIN_META_RULES_YAML = """\
+doc_kind_rules:
+  - {glob: "**", kind: doc}
+"""
+
+_MIN_QUERIES_YAML = """\
+named_queries:
+  - {name: default, question: test, top_k: 5}
+"""
+
+
+def _make_valid_zip(docs: dict[str, str]) -> bytes:
+    """Build a ZIP that passes validation: includes minimal config files + given docs."""
+    return _make_zip({
+        "metadata-rules.yaml": _MIN_META_RULES_YAML,
+        "queries.yaml": _MIN_QUERIES_YAML,
+        **docs,
+    })
+
+
 class TestBatchIngestRoute:
     def _setup(self, capacity: int = DEFAULT_CAPACITY):
         store = OperationStore()
@@ -398,7 +418,7 @@ class TestBatchIngestRoute:
 
     def test_batch_single_file_returns_202(self):
         _, _, client = self._setup()
-        zb = _make_zip({"docs/intro.md": "# Intro\nHello"})
+        zb = _make_valid_zip({"docs/intro.md": "# Intro\nHello"})
         resp = client.post(
             "/ingest/col/batch",
             content=zb,
@@ -408,7 +428,7 @@ class TestBatchIngestRoute:
 
     def test_batch_single_file_body_has_count_and_operations(self):
         _, _, client = self._setup()
-        zb = _make_zip({"docs/intro.md": "# Intro"})
+        zb = _make_valid_zip({"docs/intro.md": "# Intro"})
         body = client.post(
             "/ingest/col/batch",
             content=zb,
@@ -428,7 +448,7 @@ class TestBatchIngestRoute:
             "docs/adr/0002.md": "# ADR-0002",
             "docs/concepts/ddd.md": "# DDD",
         }
-        zb = _make_zip(files)
+        zb = _make_valid_zip(files)
         resp = client.post(
             "/ingest/col/batch",
             content=zb,
@@ -445,7 +465,7 @@ class TestBatchIngestRoute:
 
     def test_batch_each_file_gets_unique_operation_id(self):
         _, _, client = self._setup()
-        zb = _make_zip({"a.md": "A", "b.md": "B"})
+        zb = _make_valid_zip({"a.md": "A", "b.md": "B"})
         body = client.post(
             "/ingest/col/batch",
             content=zb,
@@ -456,7 +476,7 @@ class TestBatchIngestRoute:
 
     def test_batch_operations_are_registered_in_store(self):
         store, _, client = self._setup()
-        zb = _make_zip({"f.md": "# F"})
+        zb = _make_valid_zip({"f.md": "# F"})
         body = client.post(
             "/ingest/col/batch",
             content=zb,
@@ -469,7 +489,7 @@ class TestBatchIngestRoute:
 
     def test_batch_body_contains_batch_id(self):
         _, _, client = self._setup()
-        zb = _make_zip({"x.md": "# X"})
+        zb = _make_valid_zip({"x.md": "# X"})
         body = client.post(
             "/ingest/col/batch",
             content=zb,
@@ -508,7 +528,7 @@ class TestBatchIngestRoute:
         app = _make_app(store, queue, capacity=1)
         client = TestClient(app, raise_server_exceptions=False)
 
-        zb = _make_zip({"a.md": "A", "b.md": "B"})
+        zb = _make_valid_zip({"a.md": "A", "b.md": "B"})
         resp = client.post(
             "/ingest/col/batch",
             content=zb,
@@ -522,6 +542,8 @@ class TestBatchIngestRoute:
 
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("metadata-rules.yaml", _MIN_META_RULES_YAML)
+            zf.writestr("queries.yaml", _MIN_QUERIES_YAML)
             zf.mkdir("docs/")  # directory entry
             zf.writestr("docs/real.md", "# Real")
         zb = buf.getvalue()
@@ -536,3 +558,84 @@ class TestBatchIngestRoute:
         body = resp.json()
         assert body["count"] == 1
         assert body["operations"][0]["relPath"] == "docs/real.md"
+
+
+class TestBatchValidation:
+    """Validation tests for the upload_batch route."""
+
+    def _client(self):
+        store = OperationStore()
+        queue: asyncio.Queue = asyncio.Queue(maxsize=10)
+        return TestClient(_make_app(store, queue, capacity=10), raise_server_exceptions=False)
+
+    def test_batch_missing_metadata_rules_returns_400(self):
+        zb = _make_zip({"queries.yaml": _MIN_QUERIES_YAML, "doc.md": "# Doc"})
+        resp = self._client().post(
+            "/ingest/col/batch", content=zb, headers={"Content-Type": "application/zip"}
+        )
+        assert resp.status_code == 400
+        assert "metadata-rules.yaml" in resp.json()["error"]
+
+    def test_batch_missing_queries_returns_400(self):
+        zb = _make_zip({"metadata-rules.yaml": _MIN_META_RULES_YAML, "doc.md": "# Doc"})
+        resp = self._client().post(
+            "/ingest/col/batch", content=zb, headers={"Content-Type": "application/zip"}
+        )
+        assert resp.status_code == 400
+        assert "queries.yaml" in resp.json()["error"]
+
+    def test_batch_empty_doc_kind_rules_returns_400(self):
+        bad_meta = "doc_kind_rules: []\n"
+        zb = _make_zip({
+            "metadata-rules.yaml": bad_meta,
+            "queries.yaml": _MIN_QUERIES_YAML,
+            "doc.md": "# Doc",
+        })
+        resp = self._client().post(
+            "/ingest/col/batch", content=zb, headers={"Content-Type": "application/zip"}
+        )
+        assert resp.status_code == 400
+        assert "doc_kind_rules" in resp.json()["error"]
+
+    def test_batch_empty_named_queries_returns_400(self):
+        bad_queries = "named_queries: []\n"
+        zb = _make_zip({
+            "metadata-rules.yaml": _MIN_META_RULES_YAML,
+            "queries.yaml": bad_queries,
+            "doc.md": "# Doc",
+        })
+        resp = self._client().post(
+            "/ingest/col/batch", content=zb, headers={"Content-Type": "application/zip"}
+        )
+        assert resp.status_code == 400
+        assert "named_queries" in resp.json()["error"]
+
+    def test_batch_unknown_doc_kind_returns_400(self):
+        bad_queries = "named_queries:\n  - {name: x, question: q, doc_kind: unknown_kind, top_k: 5}\n"
+        zb = _make_zip({
+            "metadata-rules.yaml": _MIN_META_RULES_YAML,
+            "queries.yaml": bad_queries,
+            "doc.md": "# Doc",
+        })
+        resp = self._client().post(
+            "/ingest/col/batch", content=zb, headers={"Content-Type": "application/zip"}
+        )
+        assert resp.status_code == 400
+        body = resp.json()
+        assert "unknown_kind" in body["error"]
+
+    def test_batch_config_files_not_ingested(self):
+        """Config files must be filtered out and not produce operations."""
+        zb = _make_valid_zip({"doc.md": "# Doc"})
+        store = OperationStore()
+        queue: asyncio.Queue = asyncio.Queue(maxsize=10)
+        client = TestClient(_make_app(store, queue, capacity=10), raise_server_exceptions=False)
+        resp = client.post(
+            "/ingest/col/batch", content=zb, headers={"Content-Type": "application/zip"}
+        )
+        assert resp.status_code == 202
+        body = resp.json()
+        rel_paths = [op["relPath"] for op in body["operations"]]
+        assert "metadata-rules.yaml" not in rel_paths
+        assert "queries.yaml" not in rel_paths
+        assert "doc.md" in rel_paths

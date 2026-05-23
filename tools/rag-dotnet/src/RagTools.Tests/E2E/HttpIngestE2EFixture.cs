@@ -217,10 +217,18 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
         int    timeoutSeconds  = 45,
         string? apiKey         = null)
     {
-        // Build a single-file ZIP.
+        // Build a ZIP with required config files plus the document.
+        const string MinMetaRulesYaml = "doc_kind_rules:\n  - {glob: \"**\", kind: doc}\n";
+        const string MinQueriesYaml   = "named_queries:\n  - {name: default, question: test, top_k: 5}\n";
         using var ms = new MemoryStream();
         using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
         {
+            var metaEntry = zip.CreateEntry("metadata-rules.yaml");
+            using (var w = new StreamWriter(metaEntry.Open(), Encoding.UTF8)) await w.WriteAsync(MinMetaRulesYaml);
+
+            var qEntry = zip.CreateEntry("queries.yaml");
+            using (var w = new StreamWriter(qEntry.Open(), Encoding.UTF8)) await w.WriteAsync(MinQueriesYaml);
+
             var entry = zip.CreateEntry(relPath);
             using var writer = new StreamWriter(entry.Open(), Encoding.UTF8);
             await writer.WriteAsync(content);

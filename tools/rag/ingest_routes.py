@@ -47,7 +47,65 @@ def build_ingest_routes(
         except zipfile.BadZipFile:
             return JSONResponse({"error": "Invalid ZIP archive"}, status_code=400)
 
-        file_entries = [info for info in zf.infolist() if not info.is_dir()]
+        # ── Validate required config files ───────────────────────────────────
+        import yaml as _yaml
+        zip_names = {info.filename for info in zf.infolist()}
+        missing_configs = [n for n in ("metadata-rules.yaml", "queries.yaml") if n not in zip_names]
+        if missing_configs:
+            return JSONResponse(
+                {"error": f"ZIP must contain: {', '.join(missing_configs)}"},
+                status_code=400,
+            )
+        try:
+            meta_raw = _yaml.safe_load(
+                zf.read("metadata-rules.yaml").decode("utf-8", errors="replace")
+            ) or {}
+        except Exception:
+            return JSONResponse(
+                {"error": "metadata-rules.yaml is not valid YAML"}, status_code=400
+            )
+        doc_kind_rules = meta_raw.get("doc_kind_rules") or []
+        if not doc_kind_rules:
+            return JSONResponse(
+                {"error": "metadata-rules.yaml must contain at least one doc_kind_rules entry"},
+                status_code=400,
+            )
+        try:
+            queries_raw = _yaml.safe_load(
+                zf.read("queries.yaml").decode("utf-8", errors="replace")
+            ) or {}
+        except Exception:
+            return JSONResponse(
+                {"error": "queries.yaml is not valid YAML"}, status_code=400
+            )
+        named_queries = queries_raw.get("named_queries") or []
+        if not named_queries:
+            return JSONResponse(
+                {"error": "queries.yaml must contain at least one named_queries entry"},
+                status_code=400,
+            )
+        known_kinds = {r.get("kind") for r in doc_kind_rules if r.get("kind")}
+        bad_kinds = sorted(
+            q.get("doc_kind")
+            for q in named_queries
+            if q.get("doc_kind") and q["doc_kind"] not in known_kinds
+        )
+        if bad_kinds:
+            return JSONResponse(
+                {
+                    "error": (
+                        f"queries.yaml references unknown doc_kind(s): {bad_kinds}. "
+                        "Add matching rules to metadata-rules.yaml."
+                    )
+                },
+                status_code=400,
+            )
+
+        _CONFIG_FILES = {"metadata-rules.yaml", "queries.yaml"}
+        file_entries = [
+            info for info in zf.infolist()
+            if not info.is_dir() and info.filename not in _CONFIG_FILES
+        ]
         if not file_entries:
             return JSONResponse({"error": "ZIP contains no files"}, status_code=400)
 
