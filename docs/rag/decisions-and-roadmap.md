@@ -223,32 +223,25 @@ Resolved. After Docker rebuild (F-1), pipeline Phase 3 shows `chunk_count=18` fo
 
 ---
 
-### F-9 — `list_documents(collection)` — generic collection listing from Qdrant
+### F-9 — `list_documents(doc_kind)` — metadata-driven listing, no hardcoding
 
-**Current**: `list_adrs` reads directly from the **filesystem** (`docs/adr/` folder hardcoded). It does not query Qdrant, does not respect the active collection, and only works for this project's ADR folder structure. Any project without `docs/adr/` gets an empty result.
+**Direction (not yet fully decided — to be refined when implementing)**:
 
-**Root problem**: The tool is not collection-aware. It always reads from the server's local workspace path — ignoring which collection the MCP session is bound to.
+The design principle: **no hardcoding of document taxonomy in the tool itself**. The available kinds to list come from what is ingested, which is driven by `doc_kind_rules` in `metadata-rules.yaml`.
 
-**Design (future)**: Replace with `list_documents(collection)` that queries Qdrant for all `doc_kind = "full_content"` points in the **collection defined in the active session** (`config.yaml → collection` or `?project=` SSE parameter). No filesystem access.
+**Analogy with `get_history`**:
+- `get_history(id)` works because `adr_id` is stored in every Qdrant chunk payload (populated from `adr_id_patterns` in `metadata-rules.yaml`). The tool filters Qdrant by `adr_id = "0006"` → returns all matching chunks.
+- `list(doc_kind)` would work the same way: `doc_kind` is stored in every Qdrant `full_content` point payload (populated from `doc_kind_rules`). The tool filters Qdrant by `doc_kind = "adr_main"` → returns all documents of that kind.
 
-```json
-{
-  "collection": "ecommerceapp_docs",
-  "documents": [
-    { "relPath": "docs/adr/0006/...", "title": "TypedId...", "docKind": "adr_main", "ingestedAt": "2026-05-22T10:00:00Z", "chunkCount": 18 },
-    { "relPath": "docs/patterns/saga.md", "title": "Saga pattern", "docKind": "pattern", "ingestedAt": "...", "chunkCount": 9 }
-  ],
-  "count": 2
-}
-```
+**What the caller sees**: only the `doc_kind` values that were actually ingested (i.e., exist in Qdrant). No list of kinds is hardcoded in the server. The metadata defines the taxonomy; the listing reflects exactly that taxonomy.
 
-`list_adrs` stays as a backwards-compatible filter: internally calls `list_documents` and filters `docKind = "adr_main"`.
+**Key constraint**: Keep it simple. The caller passes a `doc_kind` string. The server does one Qdrant filter query on `full_content` points. No complex schema, no config API surface for listing kinds.
 
-**Why this matters**: Makes both servers fully collection-aware and repo-agnostic. Any team can ingest their own docs into any collection and get a proper document listing.
+**Current `list_adrs`**: is a specialised version of this — hardcoded to `doc_kind = "adr_main"` + filesystem read. The direction is to make it a Qdrant query instead.
 
-**Complexity**: Low. One Qdrant scroll over `doc_kind = "full_content"` points for the active collection. No filesystem dependency.
+**Deferred decision**: exact API shape (`list_documents(doc_kind)` vs `list(kind)` vs extended `list_adrs` with `kind` param). Decide when implementing.
 
-**Note on `bc`**: Not in scope. Could be added if documents have `bc:` in their full-content payload.
+**Why this is the right direction**: repo-agnostic, collection-aware, no server changes needed when a new `doc_kind` is added to `metadata-rules.yaml`.
 
 ---
 
