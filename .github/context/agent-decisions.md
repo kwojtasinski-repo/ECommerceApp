@@ -111,3 +111,46 @@ Rules:
 - **Pitfall 3 — .NET MCP build lock**: `dotnet build` while VS Code holds the .NET MCP server process running will fail (DLLs locked). **Always warn the user** before running `dotnet build` on any project whose output is an active MCP server; ask them to stop the server first.
 - **Action**: §10 added to ADR-0027; repeat=3 documented; glossary gap for `Bezeichner` (DE entity identifier) added to both glossary YAMLs; conformance checklist items added.
 - **Status**: Resolved
+
+---
+
+## 2026-05-23 — RAG SSE ingest pipeline stabilisation session
+
+### ZIP validation (upload endpoint)
+
+- **Decision**: Every POST to `/ingest/{collection}/batch` must contain `metadata-rules.yaml` AND `queries.yaml` inside the ZIP. Missing either → 400. Both files are parsed and validated (non-empty `doc_kind_rules`, non-empty `named_queries`, cross-validated `doc_kind` vocabulary). Config files are then filtered out before ingest — they are not indexed as documents.
+- **Rationale**: Uploading without config files led to silent doc_kind and adr_id misdetection (fell back to built-in defaults that don't match the repo's ADR folder structure). Validation at upload time fails fast and gives the caller a clear error.
+- **Action**: Implemented in `ingest_routes.py` (Python) and `IngestController.cs` (.NET). Both servers validated; Python and .NET unit + E2E test suites updated.
+- **Status**: Resolved
+
+### Operation manifest on status endpoint
+
+- **Decision**: `GET /ingest/{collection}/operations/{opId}` returns a `manifest` object **only when status == Completed**. The manifest contains `{ indexedChunks, docKind }`. No new endpoint was created — this is intentional; one endpoint per operation is enough.
+- **Rationale**: User said "we don't need to create a new one". Embedding manifest in the existing status response avoids an extra round-trip and keeps the API surface small.
+- **Action**: `IngestOperation` (Python) and `IngestOperationResult` (C#) both carry `doc_kind` now. `mark_completed` / `MarkCompleted` accepts `doc_kind`. Workers return `(chunk_count, doc_kind)` tuple. The `chunkCount` top-level field was removed from the Python response (it was redundant with `manifest.indexedChunks`). C# uses a computed `Manifest` property with `JsonIgnore(WhenWritingNull)`.
+- **Status**: Resolved
+
+### get_history score-threshold bug
+
+- **Decision/Bug**: `QueryEngine.search()` was applying `score_threshold=0.30` even when `field_filter` was set (i.e. for `get_history` exact-metadata lookups). This caused `get_history('0006')` to return 0 chunks because the query string `"history 0006"` has low cosine similarity to TypedId ADR content, even though the chunks ARE in the index.
+- **Fix**: Skip threshold when `field_filter` is provided. The vector score is only used for ranking, not filtering, in exact-metadata mode.
+- **Pitfall**: Never apply `score_threshold` unconditionally when the query is an exact metadata filter rather than a semantic search. These two modes have fundamentally different semantics.
+- **Status**: Resolved
+
+### Pipeline test cwd bug (phase 2 docker build)
+
+- **Decision/Bug**: `_run_stream` in `test_full_pipeline.py` passed `docker build ... tools/rag/` as a relative path. When pytest ran from `tools/rag/`, the path resolved to `tools/rag/tools/rag/` (non-existent). Fix: added `cwd` parameter to `_run_stream`; phase 2 calls both docker builds with `cwd=str(WORKSPACE)`.
+- **Status**: Resolved
+
+### VECTOR_MODE env var precedence
+
+- **Decision**: Python `common.py` resolves `vector_mode` as `os.environ.get("VECTOR_MODE") or self.raw["vector_store"]["mode"]`. The env var takes priority over config file. This was broken (baked `ENV VECTOR_MODE=local` in Dockerfile prevented Docker-mode runtime). Fix: removed the baked env var from Dockerfile; the config file now controls defaults.
+- **Action**: `tools/rag/Dockerfile` must NOT bake `ENV VECTOR_MODE=...`. Set it only in `docker-compose.yaml` env sections or at runtime.
+- **Status**: Resolved
+
+### Known pre-existing issue (not fixed this session)
+
+- **Issue**: Python STDIO `get_history('0006')` returned 0 chunks in the pipeline test (Phase 3) even after the score-threshold fix was applied to the local venv. Root cause (post-fix suspicion): the Phase 3 STDIO ingest uses a Docker-launched Qdrant; the fix is only in the local Python source, not yet rebuilt into the Docker image. After Docker rebuild this should resolve.
+- **Status**: Open — will resolve after next `docker compose build rag-tools`
+
+---
