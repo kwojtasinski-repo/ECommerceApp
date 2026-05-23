@@ -14,12 +14,14 @@ Run:
 from __future__ import annotations
 
 import asyncio
+import io
 import json
 import os
 import threading
 import time
 import urllib.request
 import urllib.error
+import zipfile
 from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, patch
 
@@ -128,6 +130,38 @@ def _post(url: str, body: dict, headers: dict | None = None) -> tuple[int, dict]
         return e.code, json.loads(e.read() or b"{}")
 
 
+def _build_zip(files: dict[str, str]) -> bytes:
+    """Build an in-memory ZIP containing *files* as {relPath: content}."""
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, mode="w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for rel_path, content in files.items():
+            zf.writestr(rel_path, content)
+    return buf.getvalue()
+
+
+def _post_batch(base_url: str, collection: str, files: dict[str, str],
+                headers: dict | None = None) -> tuple[int, dict]:
+    """Upload files as a ZIP to POST /ingest/{collection}/batch."""
+    zip_bytes = _build_zip(files)
+    req = urllib.request.Request(
+        f"{base_url}/ingest/{collection}/batch",
+        data=zip_bytes,
+        headers={"Content-Type": "application/zip", **(headers or {})},
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(req) as resp:
+            return resp.status, json.loads(resp.read())
+    except urllib.error.HTTPError as e:
+        return e.code, json.loads(e.read() or b"{}")
+
+
+def _first_op(batch_body: dict) -> dict:
+    """Return the first operation entry from a batch response body."""
+    ops = batch_body.get("operations", [])
+    return ops[0] if ops else {}
+
+
 def _poll_until_done(base_url: str, collection: str, op_id: str, timeout: float = 10.0) -> dict:
     """Poll GET /ingest/{collection}/operations/{op_id} until not Queued or Processing."""
     deadline = time.monotonic() + timeout
@@ -155,31 +189,43 @@ def server() -> _ServerHandle:
 
 class TestE2EUpload:
     def test_post_returns_202_and_operation_id(self, server):
-        code, body = _post(
-            f"{server.base_url}/ingest/docs",
-            {"relPath": "adr/0001.md", "content": "# ADR-0001"},
+        code, body = _post_batch(
+            server.base_url, "docs", {"adr/0001.md": "# ADR-0001"},
         )
         assert code == 202
-        assert "operationId" in body
-        assert body["status"] == "Queued"
+        op = _first_op(body)
+        assert op.get("operationId")
+        assert op.get("statusUrl")
 
-    def test_post_missing_rel_path_returns_400(self, server):
-        code, _ = _post(f"{server.base_url}/ingest/docs", {"content": "# ADR"})
+    def test_post_non_zip_returns_400(self, server):
+        """Posting non-ZIP body to batch endpoint returns 400."""
+        req = urllib.request.Request(
+            f"{server.base_url}/ingest/docs/batch",
+            data=b"not a zip",
+            headers={"Content-Type": "application/zip"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req) as resp:
+                code = resp.status
+        except urllib.error.HTTPError as e:
+            code = e.code
         assert code == 400
 
-    def test_post_missing_content_returns_400(self, server):
-        code, _ = _post(f"{server.base_url}/ingest/docs", {"relPath": "x.md"})
+    def test_post_empty_zip_returns_400(self, server):
+        """Posting empty ZIP returns 400."""
+        code, _ = _post_batch(server.base_url, "docs", {})
         assert code == 400
 
 
 class TestE2EStatusPolling:
     def test_operation_reaches_completed_status(self, server):
-        code, body = _post(
-            f"{server.base_url}/ingest/docs",
-            {"relPath": "e2e/polling.md", "content": "# Polling test"},
+        code, body = _post_batch(
+            server.base_url, "docs", {"e2e/polling.md": "# Polling test"},
         )
         assert code == 202
-        op_id = body["operationId"]
+        op = _first_op(body)
+        op_id = op["operationId"]
         final = _poll_until_done(server.base_url, "docs", op_id)
         assert final["status"] == "Completed"
         assert final["chunkCount"] == 3  # from our no-op process_fn
@@ -189,37 +235,37 @@ class TestE2EStatusPolling:
         assert code == 404
 
     def test_get_operation_returns_404_for_wrong_collection(self, server):
-        code, body = _post(
-            f"{server.base_url}/ingest/col-a",
-            {"relPath": "f.md", "content": "# Hello"},
+        code, body = _post_batch(
+            server.base_url, "col-a", {"f.md": "# Hello"},
         )
         assert code == 202
-        op_id = body["operationId"]
+        op_id = _first_op(body)["operationId"]
         # Look up with a different collection name.
         code2, _ = _get(f"{server.base_url}/ingest/col-b/operations/{op_id}")
         assert code2 == 404
 
     def test_location_header_leads_to_operation(self, server):
-        code, body = _post(
-            f"{server.base_url}/ingest/docs",
-            {"relPath": "e2e/location.md", "content": "# Location"},
+        code, body = _post_batch(
+            server.base_url, "docs", {"e2e/location.md": "# Location"},
         )
         assert code == 202
-        location = body.get("location")
-        assert location
-        full_url = f"{server.base_url}{location}"
-        _poll_until_done(server.base_url, "docs", body["operationId"])
+        op = _first_op(body)
+        op_id = op["operationId"]
+        status_url = op.get("statusUrl", "")
+        assert status_url
+        full_url = f"{server.base_url}{status_url}"
+        _poll_until_done(server.base_url, "docs", op_id)
         status_code, op_body = _get(full_url)
         assert status_code == 200
-        assert op_body["operationId"] == body["operationId"]
+        assert op_body["operationId"] == op_id
 
 
 class TestE2EListOperations:
     def test_list_returns_uploaded_operations(self, server):
-        # Upload two docs to a unique collection.
+        # Upload two docs to a unique collection via batch (one file per batch).
         col = "e2e-list-test"
-        _post(f"{server.base_url}/ingest/{col}", {"relPath": "a.md", "content": "# A"})
-        _post(f"{server.base_url}/ingest/{col}", {"relPath": "b.md", "content": "# B"})
+        _post_batch(server.base_url, col, {"a.md": "# A"})
+        _post_batch(server.base_url, col, {"b.md": "# B"})
         time.sleep(0.5)
         code, body = _get(f"{server.base_url}/ingest/{col}/operations")
         assert code == 200
@@ -252,9 +298,8 @@ class TestE2EApiKeyAuth:
         handle = _ServerHandle(app, port)
         handle.start()
         try:
-            code, _ = _post(
-                f"http://127.0.0.1:{port}/ingest/c",
-                {"relPath": "f.md", "content": "# Hi"},
+            code, _ = _post_batch(
+                f"http://127.0.0.1:{port}", "c", {"f.md": "# Hi"},
             )
             assert code == 401
         finally:
@@ -266,9 +311,8 @@ class TestE2EApiKeyAuth:
         handle = _ServerHandle(app, port)
         handle.start()
         try:
-            code, _ = _post(
-                f"http://127.0.0.1:{port}/ingest/c",
-                {"relPath": "f.md", "content": "# Hi"},
+            code, _ = _post_batch(
+                f"http://127.0.0.1:{port}", "c", {"f.md": "# Hi"},
                 headers={"X-Api-Key": "test-secret"},
             )
             assert code == 202
@@ -281,9 +325,8 @@ class TestE2EApiKeyAuth:
         handle = _ServerHandle(app, port)
         handle.start()
         try:
-            code, _ = _post(
-                f"http://127.0.0.1:{port}/ingest/c",
-                {"relPath": "f.md", "content": "# Hi"},
+            code, _ = _post_batch(
+                f"http://127.0.0.1:{port}", "c", {"f.md": "# Hi"},
                 headers={"X-Api-Key": "wrong"},
             )
             assert code == 401
@@ -326,12 +369,11 @@ class TestE2EWorkerFailurePropagation:
         handle = _ServerHandle(app, port)
         handle.start()
         try:
-            code, body = _post(
-                f"http://127.0.0.1:{port}/ingest/c",
-                {"relPath": "bad.md", "content": "# Will fail"},
+            code, body = _post_batch(
+                f"http://127.0.0.1:{port}", "c", {"bad.md": "# Will fail"},
             )
             assert code == 202
-            op_id = body["operationId"]
+            op_id = _first_op(body)["operationId"]
             final = _poll_until_done(f"http://127.0.0.1:{port}", "c", op_id)
             assert final["status"] == "Failed"
             assert final["errorMessage"]  # non-empty error message
@@ -417,27 +459,24 @@ class TestE2EFullPipelineQdrant:
 
             collection = "e2e-qdrant-test"
             base = f"http://127.0.0.1:{port}"
-            code, body = _post(
-                f"{base}/ingest/{collection}",
-                {
-                    "relPath": "e2e/qdrant-test.md",
-                    "content": (
-                        "# E2E Qdrant Integration Test Document\n\n"
-                        "This document is used by the Python ingest E2E integration test "
-                        "to verify that the full pipeline — HTTP POST, asyncio worker, "
-                        "SentenceTransformer embedding, and Qdrant upsert — all operate "
-                        "correctly end-to-end. The text is deliberately verbose so that "
-                        "the content exceeds the chunker min_tokens threshold (default 40) "
-                        "and at least one chunk is produced and indexed into Qdrant. "
-                        "The test then queries Qdrant directly to assert that at least "
-                        "one point exists for the uploaded rel_path, confirming that the "
-                        "worker completed the ingest pipeline successfully.\n"
-                    ),
-                    "docKind": "adr",
-                },
+            doc_content = (
+                "# E2E Qdrant Integration Test Document\n\n"
+                "This document is used by the Python ingest E2E integration test "
+                "to verify that the full pipeline — HTTP POST, asyncio worker, "
+                "SentenceTransformer embedding, and Qdrant upsert — all operate "
+                "correctly end-to-end. The text is deliberately verbose so that "
+                "the content exceeds the chunker min_tokens threshold (default 40) "
+                "and at least one chunk is produced and indexed into Qdrant. "
+                "The test then queries Qdrant directly to assert that at least "
+                "one point exists for the uploaded rel_path, confirming that the "
+                "worker completed the ingest pipeline successfully.\n"
+            )
+            code, body = _post_batch(
+                base, collection, {"e2e/qdrant-test.md": doc_content},
             )
             assert code == 202, f"Expected 202 but got {code}: {body}"
-            final = _poll_until_done(base, collection, body["operationId"], timeout=60)
+            op_id = _first_op(body)["operationId"]
+            final = _poll_until_done(base, collection, op_id, timeout=60)
             assert final["status"] == "Completed", f"Expected Completed: {final}"
             assert final["chunkCount"] > 0, "Expected at least 1 chunk to be indexed"
 
