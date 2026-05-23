@@ -6,6 +6,7 @@ Technical implementation details:
 - [.NET server — data model, API contract, caching, DI wiring](tech-details-dotnet.md)
 - [Python server — data model, async queue, middleware, wiring](tech-details-python.md)
 - [Amendment 001: implementation deviations](amendments/0028-001-implementation-deviations.md)
+- [Amendment 002: batch manifest design, per-op manifest, ZIP validation, pipeline detail](amendments/0028-002-batch-manifest-pipeline.md)
 
 **Retention note (both implementations):** In-memory `OperationStore` retains operations
 for **1 hour** after `enqueued_at`. Operations are lost on server restart. Both the .NET

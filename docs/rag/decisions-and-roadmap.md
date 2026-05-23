@@ -45,31 +45,45 @@ MCP tools: `query_docs`, `read_docs`, `get_history`, `list_adrs`.
 
 ---
 
-### D-2 — Manifest embedded in operation status response (no new endpoint)
+### D-2 — Two-level manifest design
 
-**Decision**: When `GET /ingest/{collection}/operations/{opId}` returns a Completed operation, it includes a `manifest` block:
+**Decision**: The manifest is surfaced at two levels:
+
+**Level 1 — Per-operation** (existing endpoint, already implemented):  
+`GET /ingest/{collection}/operations/{opId}` returns `manifest:{indexedChunks, docKind}` when Completed. Absent for non-Completed statuses.
+
+**Level 2 — Batch** (new endpoint, planned — not yet implemented):  
+`GET /ingest/{collection}/batches/{batchId}` aggregates all per-file operations for a batch:
 
 ```json
+// While processing:
+{ "batchId": "...", "collection": "ecommerceapp_docs", "status": "Processing" }
+
+// When all complete:
 {
-  "operationId": "...",
-  "status": "Completed",
+  "batchId":    "batch:ecommerceapp_docs:...",
   "collection": "ecommerceapp_docs",
-  "relPath": "docs/adr/0001/0001-some-title.md",
-  "enqueuedAt": "...",
-  "startedAt": "...",
-  "completedAt": "...",
+  "status":     "Completed",
   "manifest": {
-    "indexedChunks": 12,
-    "docKind": "adr_main"
-  }
+    "totalFiles":  3,
+    "totalChunks": 26,
+    "files": [
+      { "relPath": "docs/adr/0001.md",     "chunks": 5,  "docKind": "adr_main" },
+      { "relPath": "docs/concepts/ddd.md", "chunks": 12, "docKind": "concept"  },
+      { "relPath": "docs/patterns/saga.md","chunks": 9,  "docKind": "pattern"  }
+    ]
+  },
+  "indexStats": { "vectorCount": 1050 }
 }
 ```
 
-For non-Completed statuses the `manifest` key is absent. There is no new batch-level manifest endpoint.
+`batchId` is already returned in the 202 response from POST. The batch endpoint is not yet implemented — it requires `batchId` to be stored per-operation so all operations for a batch can be looked up.
 
-**Why**: User explicitly requested using the existing endpoint rather than creating a new one. Per-operation granularity is sufficient — callers already poll individual operations from the 202 response's `operations` array.
+**Why**: Per-operation is enough for polling individual files. Batch level gives callers one call to know "did my whole upload succeed and how many total chunks did I get". `indexStats.vectorCount` is a live Qdrant stat (cheap `count_points` call).
 
-**Implemented in**: `tools/rag/operation_store.py` + `ingest_worker.py`, `tools/rag-dotnet/src/RagTools.Core/IngestJob.cs` + `OperationStore.cs` + `IngestWorker.cs`
+**Full design specification**: [ADR-0028 Amendment 002](../adr/0028/amendments/0028-002-batch-manifest-pipeline.md)
+
+**Implemented**: Level 1 (per-operation) in commit `828daaf6`. Level 2 (batch endpoint) is planned (see F-3 in roadmap section).
 
 ---
 
@@ -106,55 +120,126 @@ Failing checks:
 
 ## 4. Future plans
 
-### F-1 — Rebuild Docker images and re-run pipeline test
+> Items marked ✅ were completed during the May 2026 stabilisation sprint.
 
-**Why now**: The `rag-tools` image needs to be rebuilt to include the `query.py` score-threshold fix and the manifest changes. After rebuild, run `python test_full_pipeline.py --skip-build` to confirm 0 / 56 failures.
+### F-1 — Rebuild Docker images and re-run pipeline test ✅
 
-**Command**: `docker compose build rag-tools rag-dotnet` from repo root.
+Completed in commit `fb3a0636`. Both `rag-tools` and `rag-dotnet` images rebuilt. Full pipeline test: **56/56 PASSED**.
 
 ---
 
 ### F-2 — Persistent operation store (ADR-0028 Step 6)
 
-**Current**: Operations are in-memory, retained for 1 hour, lost on server restart.
+**Current**: Operations are in-memory (`ConcurrentDictionary`), retained for 1 hour, lost on server restart.
 
 **Planned**: Store operations as Qdrant points in a dedicated `__operations__` collection (or a separate collection per project). Survives restarts. Enables `GET /ingest/{collection}/operations` to return history beyond 1 hour.
 
-**Blocker**: None — can be done independently of other work. Medium complexity (~2 days).
+**ADR-0028 context**: Alternative F (separate DB for ops) was explicitly recorded in ADR-0028 as a future option. This is the path when the 1-hour TTL is insufficient.
+
+**Required work**:
+1. Add `UpsertOperationAsync`, `FetchOperationAsync`, `ListOperationsAsync`, `DeleteExpiredOperationsAsync` to `IDocumentStore`
+2. Implement in `QdrantDocumentStore` (Qdrant payload points, `doc_kind = "__op__"`)
+3. Replace `ConcurrentDictionary` in `OperationStore` with Qdrant-backed storage
+4. Update Python `operation_store.py` identically
+5. Periodic sweep service (or lazy eviction on read) for `expires_at` enforcement
+6. Add integration tests: restart server, confirm operations survive
+
+**Complexity**: Medium-high (~3 days each server). No API contract changes.
 
 ---
 
-### F-3 — Batch-level status endpoint
+### F-3 — Batch-level status endpoint (planned)
 
-**Current**: `POST /ingest/.../batch` returns individual `operationId`s; callers must poll each.
+**Design**: `GET /ingest/{collection}/batches/{batchId}` — see D-2 above and [ADR-0028 Amendment 002](../adr/0028/amendments/0028-002-batch-manifest-pipeline.md) for the full contract.
 
-**Planned**: When all operations in a batch are Completed (or any Failed), a single `GET /ingest/{collection}/batches/{batchId}` could return aggregate status. This was **deliberately deferred** — the per-operation endpoint is sufficient for now.
+**Required work**:
+1. Store `batchId` on each `IngestOperation` at enqueue time (Python: add `batch_id` field to `IngestOperation` dataclass; .NET: add `BatchId` property to `IngestJob` + `IngestOperationResult`)
+2. Implement `OperationStore.GetByBatch(batchId)` that returns all ops for a batchId (Python + .NET)
+3. Add new route: `GET /ingest/{col}/batches/{batchId}` → controller action (Python: Starlette route; .NET: `IngestController` action)
+4. Implement `indexStats.vectorCount` via Qdrant `count_points` at response time (not cached)
+5. Implement status aggregation logic: any Queued/Processing → `"Processing"`; all Completed → `"Completed"`; mix → `"PartiallyFailed"`; all Failed → `"Failed"`
+6. Add tests:
+   - Unit: status aggregation (all permutations)
+   - E2E: upload 3-file ZIP, poll batch endpoint → Processing, wait → Completed, assert `manifest.files` length = 3
+   - E2E: 404 for unknown batchId
 
-**Blocker**: Requires `batchId` to be stored alongside each operation (the `batchId` UUID is generated on upload but not persisted per-operation). Low complexity to add, but deprioritised.
-
----
-
-### F-4 — Python STDIO `get_history` ADR-0006 confirmation
-
-**Current**: 3 pipeline test failures suspect that the `rag-tools` Docker image needs rebuild. Confirm after F-1 is done.
-
-**If failures persist after rebuild**: Investigate Qdrant payload for ADR-0006 chunks directly (check `adr_id` field value) to confirm the fix reaches the running container.
-
----
-
-### F-5 — SSE auth for Python server
-
-**Current**: Python SSE server supports `X-Api-Key` auth via `ApiKeyMiddleware`. The .NET server has the same. Both are optional (no-key configured = open).
-
-**Planned**: Integration test covering key rotation and invalid-key rejection in both servers. Currently only the Python unit tests cover this path.
+**Complexity**: Medium (~1 day each server). Pre-requisite: F-2 if batch must survive restarts (otherwise in-memory is fine to start with).
 
 ---
 
-### F-6 — Transport migration (STDIO → SSE for primary dev workflow)
+### F-4 — Python STDIO `get_history` ADR-0006 confirmation ✅
 
-**Current**: VS Code MCP panel supports both STDIO and SSE. STDIO requires Docker run of the full image for each session. SSE servers (ports 3001/3002) stay running and share Qdrant state.
+Resolved. After Docker rebuild (F-1), pipeline Phase 3 shows `chunk_count=18` for `get_history('0006')`. Score-threshold fix (D-3) confirmed working in container.
 
-**Planned**: Default dev workflow should be SSE-only. STDIO kept for CI/pipeline tests only. Update `SETUP-GUIDE.md` to reflect this.
+---
+
+### F-5 — SSE auth integration tests
+
+**Current**: `X-Api-Key` middleware is implemented in both servers. Unit tests cover key validation. No integration test covers key rotation or invalid-key rejection end-to-end.
+
+**Planned tests**:
+1. `POST /ingest/...` without key when `RAG_API_KEY` is set → assert 401
+2. `POST /ingest/...` with wrong key → assert 401
+3. `POST /ingest/...` with correct key → assert 202
+4. MCP tool endpoints (`/`, `/sse`) are not guarded → assert 200 without key
+
+**Complexity**: Low (~0.5 days each server).
+
+---
+
+### F-6 — Transport migration (STDIO → SSE as default dev workflow)
+
+**Current**: VS Code MCP panel supports both STDIO and SSE. STDIO uses the Docker container per-invocation (slower startup). SSE servers (ports 3001/3002) stay running and share Qdrant state.
+
+**Planned**:
+- Default dev workflow: SSE-only (start `docker compose up -d rag-dotnet-sse rag-python-sse`)
+- STDIO kept for CI / pipeline tests only
+- Update `SETUP-GUIDE.md` to document SSE-first setup
+- Remove STDIO entries from `.github/mcp.json` default config (or make SSE the first choice)
+
+**Complexity**: Low — mostly documentation. No server code changes.
+
+---
+
+### F-7 — Named query management API
+
+**Current**: `queries.yaml` is uploaded as part of the ZIP. There is no way to update named queries without re-uploading the entire collection.
+
+**Planned**: Add `POST /ingest/{collection}/config/queries` accepting raw YAML (or JSON). Server validates, replaces the stored `__queries__` point in Qdrant. No re-chunking required.
+
+**Why**: Named queries evolve faster than the document corpus. Allowing targeted updates avoids full re-ingestion just to add a query.
+
+**Complexity**: Low (~0.5 days each server). Validation reuses existing `validate_queries_yaml` logic.
+
+---
+
+### F-8 — Chunker strategy selection at upload time
+
+**Current**: Chunker settings (`max_tokens`, `overlap`) come from `config.yaml` and are fixed for the collection lifetime.
+
+**Planned**: Allow per-upload override in `metadata-rules.yaml` `chunker` block. Useful when uploading large architecture docs that need bigger chunks.
+
+**Complexity**: Low (Python config already parsed from ZIP; just need to respect per-upload override). .NET side similar.
+
+---
+
+### F-9 — `list_adrs` return format enrichment
+
+**Current**: `list_adrs` returns ADR summaries (id, title, bc, path). No status or "last ingested" timestamp.
+
+**Planned**: Include `ingestedAt` (from the full-content point) and `chunkCount` (from the operation manifest, if available) in each ADR summary. Gives callers a quick health check on the index without querying every ADR individually.
+
+**Complexity**: Low–medium. Requires one additional payload fetch per ADR in the list query.
+
+---
+
+### F-10 — Cache invalidation on re-ingest
+
+**Current**: `CachedDocumentStore` (`.NET`) and `QueryCache` cache search results with a TTL. After re-ingesting a document, old cached results may be served until cache TTL expires.
+
+**Planned**: `IngestWorker` calls `cache.Invalidate(relPath)` (or `cache.Clear()` for simplicity) after `DeleteChunksAsync` succeeds. Python's `query.py` has no caching layer currently — to be added if query latency becomes an issue.
+
+**Complexity**: Low for .NET (cache already has an eviction API). Python: N/A until cache is added.
 
 ---
 

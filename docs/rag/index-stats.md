@@ -1,9 +1,9 @@
 # RAG Index Stats
 
-Last indexed: 2026-05-22 14:41 UTC  
+Last indexed: 2026-05-23 08:59 UTC  
 Collection: `ecommerceapp_docs`  
 Files: 173  
-Chunks: 1010  
+Chunks: 1027  
 Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`  
 
 ## Breakdown by doc_kind
@@ -17,17 +17,17 @@ Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
 | `adr_migration_plan` | 25 | 31 |
 | `adr_router` | 28 | 90 |
 | `architecture` | 1 | 12 |
-| `context` | 5 | 70 |
+| `context` | 5 | 76 |
 | `other` | 1 | 3 |
 | `pattern` | 1 | 18 |
 | `reference` | 1 | 28 |
-| `roadmap` | 13 | 169 |
+| `roadmap` | 13 | 180 |
 
 ## Per-file detail
 
 | file | doc_kind | chunks |
 |------|----------|-------:|
-| `.github/context/agent-decisions.md` | `context` | 8 |
+| `.github/context/agent-decisions.md` | `context` | 14 |
 | `.github/context/future-skills.md` | `context` | 6 |
 | `.github/context/known-issues.md` | `context` | 14 |
 | `.github/context/project-state.md` | `context` | 8 |
@@ -197,6 +197,6 @@ Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
 | `docs/roadmap/orders-atomic-switch.md` | `roadmap` | 20 |
 | `docs/roadmap/payments-atomic-switch.md` | `roadmap` | 11 |
 | `docs/roadmap/presale-slice2.md` | `roadmap` | 9 |
-| `docs/roadmap/rag-remote-multitenant.md` | `roadmap` | 17 |
+| `docs/roadmap/rag-remote-multitenant.md` | `roadmap` | 28 |
 | `docs/roadmap/saga-pattern.md` | `roadmap` | 12 |
 | `docs/roadmap/storefront-offers.md` | `roadmap` | 7 |

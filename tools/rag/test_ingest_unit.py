@@ -35,7 +35,7 @@ from api_key_middleware import ApiKeyMiddleware
 
 def _run(coro):
     """Run a coroutine synchronously inside a fresh event loop."""
-    return asyncio.get_event_loop().run_until_complete(coro)
+    return asyncio.run(coro)
 
 
 def _make_app(store: OperationStore, queue: asyncio.Queue, api_key: str | None = None, capacity: int = DEFAULT_CAPACITY) -> Starlette:
