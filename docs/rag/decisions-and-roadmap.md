@@ -225,11 +225,32 @@ Resolved. After Docker rebuild (F-1), pipeline Phase 3 shows `chunk_count=18` fo
 
 ### F-9 — `list_adrs` return format enrichment
 
-**Current**: `list_adrs` returns ADR summaries (id, title, bc, path). No status or "last ingested" timestamp.
+**Current**: `list_adrs` reads directly from the filesystem (not Qdrant) and returns:
+```json
+{ "id": "0006", "title": "TypedId...", "main_file": "docs/adr/0006/...", "amendments": 1, "examples": 0 }
+```
+There is no `bc` field, no `ingestedAt`, no `chunkCount`. The `bc` (bounded context) concept does not exist in the current return format at all.
 
-**Planned**: Include `ingestedAt` (from the full-content point) and `chunkCount` (from the operation manifest, if available) in each ADR summary. Gives callers a quick health check on the index without querying every ADR individually.
+**Planned**: Enrich with Qdrant data:
+```json
+{
+  "id":         "0006",
+  "title":      "ADR-0006: TypedId and Value Objects",
+  "main_file":  "docs/adr/0006/...",
+  "amendments": 1,
+  "examples":   0,
+  "ingestedAt": "2026-05-22T10:00:00Z",
+  "chunkCount": 18
+}
+```
+`ingestedAt` = `ingested_at` payload field from the full-content point.  
+`chunkCount` = Qdrant `count` call with `filter={"rel_path": main_file_path}`.
 
-**Complexity**: Low–medium. Requires one additional payload fetch per ADR in the list query.
+**Why**: Quick health check — "is this ADR indexed? when was it last updated? how many chunks?". Without this, you must call `get_history` per ADR individually.
+
+**Note on `bc`**: Not in scope for F-9. Could be added if ADR frontmatter contains `bc: Coupons` — separate decision.
+
+**Complexity**: Low–medium. One extra Qdrant lookup per ADR.
 
 ---
 
