@@ -327,29 +327,37 @@ class TestApiKeyMiddleware:
     def test_correct_key_passes_through(self):
         client = self._make_client("my-key")
         resp = client.post(
-            "/ingest/c",
-            json={"relPath": "f.md", "content": "# Hi"},
-            headers={"X-Api-Key": "my-key"},
+            "/ingest/c/batch",
+            content=_make_zip({"f.md": "# Hi"}),
+            headers={"Content-Type": "application/zip", "X-Api-Key": "my-key"},
         )
         assert resp.status_code == 202
 
     def test_missing_key_returns_401(self):
         client = self._make_client("my-key")
-        resp = client.post("/ingest/c", json={"relPath": "f.md", "content": "# Hi"})
+        resp = client.post(
+            "/ingest/c/batch",
+            content=_make_zip({"f.md": "# Hi"}),
+            headers={"Content-Type": "application/zip"},
+        )
         assert resp.status_code == 401
 
     def test_wrong_key_returns_401(self):
         client = self._make_client("my-key")
         resp = client.post(
-            "/ingest/c",
-            json={"relPath": "f.md", "content": "# Hi"},
-            headers={"X-Api-Key": "wrong"},
+            "/ingest/c/batch",
+            content=_make_zip({"f.md": "# Hi"}),
+            headers={"Content-Type": "application/zip", "X-Api-Key": "wrong"},
         )
         assert resp.status_code == 401
 
     def test_no_auth_configured_passes_all_requests(self):
         client = self._make_client(api_key=None)  # middleware not added
-        resp = client.post("/ingest/c", json={"relPath": "f.md", "content": "# Hi"})
+        resp = client.post(
+            "/ingest/c/batch",
+            content=_make_zip({"f.md": "# Hi"}),
+            headers={"Content-Type": "application/zip"},
+        )
         assert resp.status_code == 202
 
     def test_admin_stats_protected_when_key_set(self):
