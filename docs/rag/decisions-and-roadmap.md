@@ -223,7 +223,7 @@ Resolved. After Docker rebuild (F-1), pipeline Phase 3 shows `chunk_count=18` fo
 
 ---
 
-### F-9 — `list_adrs` return format enrichment
+### F-9 — `list_adrs` return format enrichment → consider `list_documents` generalisation
 
 **Current**: `list_adrs` reads directly from the filesystem (not Qdrant) and returns:
 ```json
@@ -231,26 +231,24 @@ Resolved. After Docker rebuild (F-1), pipeline Phase 3 shows `chunk_count=18` fo
 ```
 There is no `bc` field, no `ingestedAt`, no `chunkCount`. The `bc` (bounded context) concept does not exist in the current return format at all.
 
-**Planned**: Enrich with Qdrant data:
+**Design consideration (future)**: `list_adrs` is hardcoded to the `docs/adr/` folder convention. A more generic `list_documents(collection, doc_kind?)` tool would query Qdrant for all `doc_kind = "full_content"` points and return any indexed document — not just ADRs. This makes the server usable for any project structure, not just ECommerceApp's ADR layout.
+
+Proposed generic response:
 ```json
 {
-  "id":         "0006",
-  "title":      "ADR-0006: TypedId and Value Objects",
-  "main_file":  "docs/adr/0006/...",
-  "amendments": 1,
-  "examples":   0,
-  "ingestedAt": "2026-05-22T10:00:00Z",
-  "chunkCount": 18
+  "documents": [
+    { "relPath": "docs/adr/0006/...", "title": "...", "docKind": "adr_main", "ingestedAt": "...", "chunkCount": 18 },
+    { "relPath": "docs/patterns/saga.md", "title": "...", "docKind": "pattern",  "ingestedAt": "...", "chunkCount": 9 }
+  ],
+  "count": 2
 }
 ```
-`ingestedAt` = `ingested_at` payload field from the full-content point.  
-`chunkCount` = Qdrant `count` call with `filter={"rel_path": main_file_path}`.
 
-**Why**: Quick health check — "is this ADR indexed? when was it last updated? how many chunks?". Without this, you must call `get_history` per ADR individually.
+`list_adrs` could remain as a backwards-compatible filter on top: `list_documents(doc_kind="adr_main")`.
 
-**Note on `bc`**: Not in scope for F-9. Could be added if ADR frontmatter contains `bc: Coupons` — separate decision.
+**Complexity**: Low–medium. One Qdrant scroll/fetch over `doc_kind = "full_content"` points.
 
-**Complexity**: Low–medium. One extra Qdrant lookup per ADR.
+**Note on `bc`**: Not in scope. Could be added if documents have `bc:` in frontmatter.
 
 ---
 
