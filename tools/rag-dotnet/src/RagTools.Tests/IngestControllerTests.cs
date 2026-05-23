@@ -93,7 +93,7 @@ public sealed class IngestControllerTests
         var ops = new OperationStore();
         ops.MarkQueued("op-1", "myproject", "docs/test.md", DateTimeOffset.UtcNow);
         ops.MarkProcessing("op-1", "myproject", "docs/test.md", DateTimeOffset.UtcNow);
-        ops.MarkCompleted("op-1", chunkCount: 7);
+        ops.MarkCompleted("op-1", chunkCount: 7, docKind: "adr_main");
         var ctrl = CreateController(ops: ops);
 
         var result = ctrl.GetOperation("myproject", "op-1");
@@ -102,6 +102,10 @@ public sealed class IngestControllerTests
         var op = Assert.IsType<IngestOperationResult>(ok.Value);
         Assert.Equal(IngestStatus.Completed, op.Status);
         Assert.Equal(7, op.ChunkCount);
+        Assert.Equal("adr_main", op.DocKind);
+        Assert.NotNull(op.Manifest);
+        Assert.Equal(7, op.Manifest!.IndexedChunks);
+        Assert.Equal("adr_main", op.Manifest.DocKind);
     }
 
     [Fact]

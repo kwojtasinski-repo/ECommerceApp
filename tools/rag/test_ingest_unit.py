@@ -88,10 +88,11 @@ class TestOperationStoreTransitions:
     def test_mark_completed_sets_chunk_count(self):
         store = OperationStore()
         op = _run(store.enqueue("c", "f.md"))
-        _run(store.mark_completed(op.operation_id, chunk_count=7))
+        _run(store.mark_completed(op.operation_id, chunk_count=7, doc_kind="adr"))
         updated = _run(store.get(op.operation_id))
         assert updated.status == IngestStatus.Completed
         assert updated.chunk_count == 7
+        assert updated.doc_kind == "adr"
         assert updated.completed_at is not None
 
     def test_mark_failed_sets_error_message(self):
@@ -166,8 +167,24 @@ class TestIngestOperationToDict:
         assert "operationId" in d
         assert "relPath" in d
         assert "enqueuedAt" in d
-        assert "chunkCount" in d
         assert "errorMessage" in d
+        # chunkCount is now inside manifest (only when Completed)
+        assert "chunkCount" not in d
+
+    def test_to_dict_completed_includes_manifest(self):
+        store = OperationStore()
+        op = _run(store.enqueue("my-col", "docs/adr/0001.md"))
+        _run(store.mark_completed(op.operation_id, chunk_count=12, doc_kind="adr_main"))
+        d = _run(store.get(op.operation_id)).to_dict()
+        assert "manifest" in d
+        assert d["manifest"]["indexedChunks"] == 12
+        assert d["manifest"]["docKind"] == "adr_main"
+
+    def test_to_dict_non_completed_has_no_manifest(self):
+        store = OperationStore()
+        op = _run(store.enqueue("my-col", "f.md"))
+        d = op.to_dict()
+        assert "manifest" not in d
 
     def test_to_dict_status_is_string(self):
         store = OperationStore()

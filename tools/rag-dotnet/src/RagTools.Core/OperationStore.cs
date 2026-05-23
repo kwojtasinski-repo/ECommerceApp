@@ -48,7 +48,7 @@ public sealed class OperationStore
     }
 
     /// <summary>Transition an operation to the Completed state.</summary>
-    public void MarkCompleted(string operationId, int chunkCount)
+    public void MarkCompleted(string operationId, int chunkCount, string docKind = "")
     {
         if (_ops.TryGetValue(operationId, out var existing))
         {
@@ -57,6 +57,7 @@ public sealed class OperationStore
                 Status      = IngestStatus.Completed,
                 CompletedAt = DateTimeOffset.UtcNow,
                 ChunkCount  = chunkCount,
+                DocKind     = docKind,
             };
         }
     }

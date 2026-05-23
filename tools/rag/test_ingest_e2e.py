@@ -250,7 +250,7 @@ class TestE2EStatusPolling:
         op_id = op["operationId"]
         final = _poll_until_done(server.base_url, "docs", op_id)
         assert final["status"] == "Completed"
-        assert final["chunkCount"] == 3  # from our no-op process_fn
+        assert final["manifest"]["indexedChunks"] == 3  # from our no-op process_fn
 
     def test_get_operation_returns_404_for_unknown_id(self, server):
         code, _ = _get(f"{server.base_url}/ingest/docs/operations/nonexistent-id")
@@ -500,7 +500,7 @@ class TestE2EFullPipelineQdrant:
             op_id = _first_op(body)["operationId"]
             final = _poll_until_done(base, collection, op_id, timeout=60)
             assert final["status"] == "Completed", f"Expected Completed: {final}"
-            assert final["chunkCount"] > 0, "Expected at least 1 chunk to be indexed"
+            assert final["manifest"]["indexedChunks"] > 0, "Expected at least 1 chunk to be indexed"
 
             # Verify points exist in Qdrant directly.
             client = QdrantClient(url=qdrant_url)

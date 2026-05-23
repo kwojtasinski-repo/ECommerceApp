@@ -198,9 +198,13 @@ class QueryEngine:
                     text=payload.get("text", ""),
                 )
             )
-        threshold = float(self.cfg.query_defaults.get("score_threshold", 0.0))
-        if threshold > 0:
-            hits = [h for h in hits if h.raw_score >= threshold]
+        # Skip score threshold when field_filter is set — exact metadata lookups
+        # (e.g. get_history) must return ALL matching chunks regardless of vector
+        # similarity.  The query string is only used to rank results, not filter them.
+        if not field_filter:
+            threshold = float(self.cfg.query_defaults.get("score_threshold", 0.0))
+            if threshold > 0:
+                hits = [h for h in hits if h.raw_score >= threshold]
         hits.sort(key=lambda h: h.final_score, reverse=True)
         return hits[:top_k]
 

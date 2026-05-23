@@ -35,10 +35,11 @@ class IngestOperation:
     started_at: datetime | None = None
     completed_at: datetime | None = None
     chunk_count: int = 0
+    doc_kind: str = ""
     error_message: str | None = None
 
     def to_dict(self) -> dict:
-        return {
+        d: dict = {
             "operationId": self.operation_id,
             "status": self.status.value,
             "collection": self.collection,
@@ -46,9 +47,14 @@ class IngestOperation:
             "enqueuedAt": self.enqueued_at.isoformat(),
             "startedAt": self.started_at.isoformat() if self.started_at else None,
             "completedAt": self.completed_at.isoformat() if self.completed_at else None,
-            "chunkCount": self.chunk_count,
             "errorMessage": self.error_message,
         }
+        if self.status == IngestStatus.Completed:
+            d["manifest"] = {
+                "indexedChunks": self.chunk_count,
+                "docKind": self.doc_kind,
+            }
+        return d
 
 
 class OperationStore:
@@ -76,12 +82,13 @@ class OperationStore:
                 op.status = IngestStatus.Processing
                 op.started_at = datetime.now(timezone.utc)
 
-    async def mark_completed(self, operation_id: str, chunk_count: int) -> None:
+    async def mark_completed(self, operation_id: str, chunk_count: int, doc_kind: str = "") -> None:
         async with self._lock:
             if op := self._ops.get(operation_id):
                 op.status = IngestStatus.Completed
                 op.completed_at = datetime.now(timezone.utc)
                 op.chunk_count = chunk_count
+                op.doc_kind = doc_kind
 
     async def mark_failed(self, operation_id: str, error: str) -> None:
         async with self._lock:

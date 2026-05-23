@@ -166,7 +166,8 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>, ID
 
         Assert.NotNull(finalStatus);
         Assert.Equal("Completed", finalStatus!.RootElement.GetProperty("status").GetString());
-        var chunkCount = finalStatus.RootElement.GetProperty("chunkCount").GetInt32();
+        var manifest   = finalStatus.RootElement.GetProperty("manifest");
+        var chunkCount = manifest.GetProperty("indexedChunks").GetInt32();
         Assert.True(chunkCount > 0, $"Expected at least one chunk, got {chunkCount}");
     }
 

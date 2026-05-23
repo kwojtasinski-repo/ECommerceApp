@@ -35,11 +35,15 @@ public sealed class OperationStoreTests
     public void MarkCompleted_SetsStatusAndChunkCount()
     {
         _store.MarkQueued("op3", "col", "file.md", DateTimeOffset.UtcNow);
-        _store.MarkCompleted("op3", chunkCount: 7);
+        _store.MarkCompleted("op3", chunkCount: 7, docKind: "adr_main");
 
         var result = _store.Get("op3");
         Assert.Equal(IngestStatus.Completed, result!.Status);
         Assert.Equal(7, result.ChunkCount);
+        Assert.Equal("adr_main", result.DocKind);
+        Assert.NotNull(result.Manifest);
+        Assert.Equal(7, result.Manifest!.IndexedChunks);
+        Assert.Equal("adr_main", result.Manifest.DocKind);
     }
 
     [Fact]

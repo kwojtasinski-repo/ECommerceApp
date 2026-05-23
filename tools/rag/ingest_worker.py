@@ -89,7 +89,7 @@ def _build_process_fn(engine: "QueryEngine", cfg: "Config", store: "OperationSto
             chunker_cfg=cfg.chunker,
         )
         if not chunks:
-            return 0
+            return 0, doc_kind
 
         doc_title = _file_doc_title(job.rel_path, job.content)
         doc_kind = job.doc_kind or detect_doc_kind(job.rel_path, cfg)
@@ -135,13 +135,13 @@ def _build_process_fn(engine: "QueryEngine", cfg: "Config", store: "OperationSto
         for i in range(0, len(points), BATCH):
             client.upsert(collection_name=job.collection, points=points[i : i + BATCH])
 
-        return len(points)
+        return len(points), doc_kind
 
     async def process(job: IngestJob) -> None:
         await store.mark_processing(job.operation_id)
         try:
-            chunk_count = await asyncio.to_thread(_process_sync, job)
-            await store.mark_completed(job.operation_id, chunk_count)
+            chunk_count, doc_kind = await asyncio.to_thread(_process_sync, job)
+            await store.mark_completed(job.operation_id, chunk_count, doc_kind)
         except Exception as exc:
             print(f"[ingest-worker] ERROR processing {job.rel_path}: {exc}", file=sys.stderr)
             await store.mark_failed(job.operation_id, str(exc))

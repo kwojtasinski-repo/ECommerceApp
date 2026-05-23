@@ -61,5 +61,20 @@ public sealed record IngestOperationResult
     public DateTimeOffset? StartedAt   { get; init; }
     public DateTimeOffset? CompletedAt { get; init; }
     public int? ChunkCount            { get; init; }
+    public string? DocKind            { get; init; }
     public string? ErrorMessage       { get; init; }
+
+    /// <summary>Present only when Status == Completed.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IngestManifest? Manifest =>
+        Status == IngestStatus.Completed
+            ? new IngestManifest { IndexedChunks = ChunkCount ?? 0, DocKind = DocKind ?? string.Empty }
+            : null;
+}
+
+/// <summary>Summary of what was indexed, returned inside a Completed operation result.</summary>
+public sealed record IngestManifest
+{
+    public int    IndexedChunks { get; init; }
+    public string DocKind       { get; init; } = string.Empty;
 }

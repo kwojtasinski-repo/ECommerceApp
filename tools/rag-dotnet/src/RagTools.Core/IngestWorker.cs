@@ -108,7 +108,7 @@ public sealed class IngestWorker(
 
             await store.StoreDocumentAsync(job.Collection, contentDoc, ct);
 
-            operations.MarkCompleted(job.OperationId, chunks.Count);
+            operations.MarkCompleted(job.OperationId, chunks.Count, kind);
             logger.LogInformation("IngestWorker: completed {RelPath} — {Chunks} chunk(s)", job.RelPath, chunks.Count);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
