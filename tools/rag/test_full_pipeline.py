@@ -104,7 +104,7 @@ def _run(cmd: list[str], timeout: int = 60, env: dict | None = None,
     return result.returncode, out
 
 
-def _run_stream(cmd: list[str], timeout: int = 300, env: dict | None = None) -> tuple[int, str]:
+def _run_stream(cmd: list[str], timeout: int = 300, env: dict | None = None, cwd: str | None = None) -> tuple[int, str]:
     """Run a command, streaming output to console, return (code, output)."""
     merged_env = os.environ.copy()
     if env:
@@ -113,6 +113,7 @@ def _run_stream(cmd: list[str], timeout: int = 300, env: dict | None = None) -> 
     proc = subprocess.Popen(
         cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
         text=True, env=merged_env, encoding="utf-8", errors="replace",
+        cwd=cwd,
     )
     assert proc.stdout is not None
     for line in proc.stdout:
@@ -395,7 +396,7 @@ def phase_2_docker_build(skip: bool = False) -> PhaseResult:
     print(f"\n  Building {PYTHON_IMAGE} (this downloads/installs Python deps)…")
     rc1, out1 = _run_stream(
         ["docker", "build", "--no-cache", "-t", PYTHON_IMAGE, "tools/rag/"],
-        timeout=600,
+        timeout=600, cwd=str(WORKSPACE),
     )
     p.record(f"docker build --no-cache {PYTHON_IMAGE}", rc1 == 0,
              f"exit={rc1}" if rc1 != 0 else "")
@@ -404,7 +405,7 @@ def phase_2_docker_build(skip: bool = False) -> PhaseResult:
     print(f"\n  Building {DOTNET_IMAGE} (downloads ONNX model + .NET build)…")
     rc2, out2 = _run_stream(
         ["docker", "build", "--no-cache", "-t", DOTNET_IMAGE, "tools/rag-dotnet/"],
-        timeout=1200,  # ONNX model download can be slow
+        timeout=1200, cwd=str(WORKSPACE),
     )
     p.record(f"docker build --no-cache {DOTNET_IMAGE}", rc2 == 0,
              f"exit={rc2}" if rc2 != 0 else "")
@@ -971,13 +972,22 @@ def _http_batch_upload(base_url: str, collection: str,
     """Upload a ZIP of documents to POST /ingest/{collection}/batch.
 
     *files* maps relPath → text content.
+    Required config files (metadata-rules.yaml, queries.yaml) are injected
+    automatically if not already present in *files*.
     Returns (status_code, response_body).
     """
+    _MIN_META_RULES = "doc_kind_rules:\n  - {glob: \"**\", kind: doc}\n"
+    _MIN_QUERIES    = "named_queries:\n  - {name: default, question: test, top_k: 5}\n"
+    all_files = {
+        "metadata-rules.yaml": _MIN_META_RULES,
+        "queries.yaml":        _MIN_QUERIES,
+        **files,
+    }
     import io, zipfile, urllib.request, urllib.error
 
     buf = io.BytesIO()
     with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
-        for rel_path, content in files.items():
+        for rel_path, content in all_files.items():
             zf.writestr(rel_path, content)
     zip_bytes = buf.getvalue()
 
