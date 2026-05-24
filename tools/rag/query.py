@@ -25,55 +25,6 @@ if sys.stdout.encoding and sys.stdout.encoding.lower() != "utf-8":
 from common import Config, load_config
 
 
-# ── Multilingual query expansion ──────────────────────────────────────────────
-
-def _load_multilingual_glossary(path: "Path | None") -> list[tuple[str, list[str]]]:
-    """Load the multilingual expansion glossary from *path*.
-
-    *path* is resolved by the caller (typically ``cfg.glossary_path``) so no path
-    construction happens here.  Returns [] when path is None or missing — graceful
-    degradation means English-only queries are completely unaffected.
-    """
-    import yaml
-    if path is None or not path.exists():
-        return []
-    try:
-        with path.open(encoding="utf-8") as fh:
-            data = yaml.safe_load(fh)
-        return [
-            (entry["english"], [p.lower() for p in entry.get("patterns", [])])
-            for entry in (data or {}).get("entries", [])
-            if entry.get("english") and entry.get("patterns")
-        ]
-    except Exception:
-        return []
-
-
-def _expand_query(query: str, glossary: list[tuple[str, list[str]]], repeat: int = 3) -> str:
-    """Append English synonym groups for any non-English patterns found in *query*.
-
-    Each matching entry contributes its English string once (de-duplicated by entry).
-    The expansion is repeated *repeat* times so English terms outweigh the non-English
-    source tokens in mean pooling (~60% English weight for a 7-word query, repeat=3).
-    English-only queries are returned unchanged — ASCII word patterns are excluded
-    from the glossary by convention.
-    """
-    import re
-    if not glossary:
-        return query
-    lower = query.lower()
-    additions: list[str] = []
-    for english, patterns in glossary:
-        for pattern in patterns:
-            if re.search(r"(?<![a-z])" + re.escape(pattern) + r"(?![a-z])", lower):
-                additions.append(english)
-                break  # one match per entry is enough
-    if not additions:
-        return query
-    expansion = " ".join(additions)
-    return query + (" " + expansion) * repeat
-
-
 
 @dataclass
 class QueryHit:
@@ -94,21 +45,28 @@ class QueryHit:
 
 
 class QueryEngine:
-    def __init__(self, cfg: Config | None = None) -> None:
+    def __init__(self, cfg: Config | None = None, embedder=None) -> None:
         self.cfg = cfg or load_config()
         self._client = None
-        self._model = None
+        self._embedder = embedder  # injected or lazy-created on first _ensure() call
         self._mode = self.cfg.vector_mode
-        self._glossary = _load_multilingual_glossary(self.cfg.glossary_path)
+
+    @property
+    def embedder(self):
+        """The active embedding pipeline.  Creates one lazily if not injected."""
+        if self._embedder is None:
+            from make_embedder import make_embedder
+            self._embedder = make_embedder(self.cfg)
+        return self._embedder
 
     def _ensure(self) -> None:
         if self._client is not None:
             return
-        # Lazy heavy imports.
-        from sentence_transformers import SentenceTransformer
+        # Ensure embedder is ready (cheap — model loads lazily on first embed call).
+        _ = self.embedder
+        # Qdrant client setup.
         from qdrant_client import QdrantClient
         from qdrant_client.models import Distance, PointStruct, VectorParams
-        self._model = SentenceTransformer(self.cfg.embedder_model, device=self.cfg.embedder_device)
         if self._mode == "memory":
             self._client = QdrantClient(":memory:")
             snapshot_path = self.cfg.snapshot_path
@@ -159,7 +117,7 @@ class QueryEngine:
 
         from qdrant_client.models import Filter, FieldCondition, MatchValue
 
-        qvec = self._model.encode([_expand_query(query, self._glossary)], normalize_embeddings=True)[0].tolist()
+        qvec = self._embedder.embed(query)
         qfilter = None
         if field_filter:
             field_name, field_value = field_filter

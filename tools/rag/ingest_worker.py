@@ -71,13 +71,13 @@ def _build_process_fn(engine: "QueryEngine", cfg: "Config", store: "OperationSto
 
         engine._ensure()
         client = engine._client
-        model = engine._model
+        embedder = engine.embedder
 
         # Ensure the collection exists (important for the first upload to a new project).
         try:
             client.get_collection(job.collection)
         except Exception:
-            dim = model.get_sentence_embedding_dimension()
+            dim = embedder.dimensions
             client.create_collection(
                 job.collection,
                 vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
@@ -97,7 +97,7 @@ def _build_process_fn(engine: "QueryEngine", cfg: "Config", store: "OperationSto
         weight = resolve_weight(job.rel_path, len(job.content.encode()), cfg.ranking)
 
         texts = [c.text for c in chunks]
-        vectors = model.encode(texts, normalize_embeddings=True)
+        vectors = engine.embedder.embed_batch(texts)
 
         # Delete existing chunks for this path (idempotent re-ingest).
         client.delete(
@@ -114,7 +114,7 @@ def _build_process_fn(engine: "QueryEngine", cfg: "Config", store: "OperationSto
             points.append(
                 PointStruct(
                     id=point_id,
-                    vector=vec.tolist(),
+                    vector=vec,
                     payload={
                         "rel_path": job.rel_path,
                         "doc_title": doc_title,

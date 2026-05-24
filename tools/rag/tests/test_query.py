@@ -90,8 +90,9 @@ def make_engine_with_stubs(
     collection: str = "test_col",
     top_k: int = 5,
     fetch_k: int = 20,
+    embedder=None,
 ) -> QueryEngine:
-    """Build a QueryEngine with _client and _model pre-injected (bypasses _ensure())."""
+    """Build a QueryEngine with _client and _embedder pre-injected (bypasses _ensure())."""
     from common import Config
     cfg = Config(raw=make_config_raw(collection=collection, top_k=top_k, fetch_k=fetch_k))
     engine = QueryEngine.__new__(QueryEngine)
@@ -102,8 +103,15 @@ def make_engine_with_stubs(
     fake_client.search.return_value = qdrant_results or []
     engine._client = fake_client
 
-    engine._model = make_fake_model(embedding)
-    engine._glossary = []  # no expansion needed for unit tests
+    if embedder is not None:
+        engine._embedder = embedder
+    else:
+        if embedding is None:
+            embedding = [0.1, 0.2, 0.3, 0.4]
+        fake_embedder = MagicMock()
+        fake_embedder.embed.return_value = embedding
+        fake_embedder.embed_batch.return_value = [embedding]
+        engine._embedder = fake_embedder
     return engine
 
 
@@ -205,12 +213,12 @@ class TestQueryEngineSearch:
         hit = engine.search("q")[0]
         assert abs(hit.final_score - 1.0) < 1e-6
 
-    def test_model_encode_called_with_query(self):
+    def test_embedder_called_with_query(self):
         engine = make_engine_with_stubs(qdrant_results=[])
         engine.search("find something")
-        engine._model.encode.assert_called_once()
-        call_args = engine._model.encode.call_args
-        assert "find something" in call_args[0][0]
+        engine._embedder.embed.assert_called_once()
+        call_args = engine._embedder.embed.call_args
+        assert "find something" == call_args[0][0]
 
     def test_qdrant_search_called_with_correct_collection(self):
         engine = make_engine_with_stubs(qdrant_results=[], collection="my_col")

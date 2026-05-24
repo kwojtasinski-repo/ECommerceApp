@@ -224,6 +224,26 @@ def is_excluded(rel_path: str, exclude_globs: list[str]) -> bool:
     return any(fnmatch.fnmatch(rel_path, g) for g in exclude_globs)
 
 
+def _load_multilingual_glossary(path: "Path | None") -> list[tuple[str, list[str]]]:
+    """Load the multilingual expansion glossary from *path*.
+
+    Returns an empty list when *path* is ``None`` or the file is missing —
+    graceful degradation means English-only queries are completely unaffected.
+    """
+    if path is None or not path.exists():
+        return []
+    try:
+        with path.open(encoding="utf-8") as fh:
+            data = yaml.safe_load(fh)
+        return [
+            (entry["english"], [p.lower() for p in entry.get("patterns", [])])
+            for entry in (data or {}).get("entries", [])
+            if entry.get("english") and entry.get("patterns")
+        ]
+    except Exception:
+        return []
+
+
 def iter_markdown_files(cfg: Config) -> list[Path]:
     files: list[Path] = []
     for root in cfg.source_roots:
