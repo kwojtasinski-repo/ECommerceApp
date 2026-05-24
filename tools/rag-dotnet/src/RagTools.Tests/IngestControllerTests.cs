@@ -227,7 +227,7 @@ public sealed class IngestControllerTests
         return MakeZip(all);
     }
 
-    private static IngestController CreateControllerWithBody(System.IO.Stream body, IngestChannel? channel = null, OperationStore? ops = null)
+    private static IngestController CreateControllerWithBody(System.IO.Stream body, IngestChannel? channel = null, OperationStore? ops = null, string contentType = "application/zip")
     {
         channel ??= new IngestChannel();
         ops     ??= new OperationStore();
@@ -237,6 +237,7 @@ public sealed class IngestControllerTests
         var httpCtx = new DefaultHttpContext();
         httpCtx.Request.Body          = body;
         httpCtx.Request.ContentLength = body.Length;
+        httpCtx.Request.ContentType   = contentType;
         httpCtx.Response.Body         = new System.IO.MemoryStream();
         ctrl.ControllerContext = new ControllerContext { HttpContext = httpCtx };
 
@@ -437,5 +438,17 @@ public sealed class IngestControllerTests
         Assert.DoesNotContain("metadata-rules.yaml", relPaths);
         Assert.DoesNotContain("queries.yaml", relPaths);
         Assert.Contains("doc.md", relPaths);
+    }
+
+    [Fact]
+    public async Task UploadBatch_WrongContentType_Returns415()
+    {
+        var zip  = MakeValidZip(("doc.md", "# Doc"));
+        var ctrl = CreateControllerWithBody(zip, contentType: "text/plain");
+
+        var result = await ctrl.UploadBatch("col");
+
+        var obj = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(415, obj.StatusCode);
     }
 }
