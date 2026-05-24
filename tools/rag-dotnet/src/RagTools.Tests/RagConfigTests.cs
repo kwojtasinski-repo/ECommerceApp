@@ -37,11 +37,6 @@ public class RagConfigTests : IDisposable
           roots:
             - docs
           exclude_globs: []
-        embedder:
-          model: "test-model"
-          dimensions: 384
-          device: "cpu"
-          batch_size: 32
         chunker:
           max_tokens: 800
           min_tokens: 40
@@ -58,8 +53,6 @@ public class RagConfigTests : IDisposable
           default_top_k: 5
           fetch_k: 20
           score_threshold: 0.3
-        storage:
-          manifest_path: ".rag/manifest.json"
         {extras}
         """;
 
@@ -79,14 +72,6 @@ public class RagConfigTests : IDisposable
         var path = WriteConfig(MinimalConfig());
         var cfg = RagConfig.Load(path);
         Assert.Contains("docs", cfg.Source.Roots);
-    }
-
-    [Fact]
-    public void Load_SetsEmbedderModel()
-    {
-        var path = WriteConfig(MinimalConfig());
-        var cfg = RagConfig.Load(path);
-        Assert.Equal("test-model", cfg.Embedder.Model);
     }
 
     [Fact]
@@ -143,14 +128,6 @@ public class RagConfigTests : IDisposable
         var path = WriteConfig(MinimalConfig());
         var cfg = RagConfig.Load(path);
         Assert.Equal([1, 2, 3], cfg.Chunker.SplitLevels);
-    }
-
-    [Fact]
-    public void Load_SetsManifestPath()
-    {
-        var path = WriteConfig(MinimalConfig());
-        var cfg = RagConfig.Load(path);
-        Assert.Equal(".rag/manifest.json", cfg.Storage.ManifestPath);
     }
 
     // ── Computed properties ───────────────────────────────────────────────────
@@ -380,7 +357,7 @@ public class RagConfigTests : IDisposable
         Assert.Equal(Path.GetFullPath(configPath), cfg.LoadedFrom);
         Assert.Equal(Path.GetFullPath(ws), Path.GetFullPath(cfg.Workspace));
         Assert.Equal(
-            Path.Combine(Path.GetFullPath(ws), ".rag/manifest.json"),
+            Path.Combine(Path.GetFullPath(ws), ".rag/manifest-dotnet.json"),
             cfg.ManifestAbsPath);
     }
 

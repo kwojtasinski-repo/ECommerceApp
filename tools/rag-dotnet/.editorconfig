@@ -1,0 +1,5 @@
+root = true
+
+[*.cs]
+# Enforce braces even for single-line if/else/for/foreach/while/do
+csharp_prefer_braces = true:warning

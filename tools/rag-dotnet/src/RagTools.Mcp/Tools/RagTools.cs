@@ -19,14 +19,13 @@ namespace RagTools.Mcp.Tools;
 /// </summary>
 [McpServerToolType]
 public sealed class RagTools(
-    OnnxEmbedder embedder,
+    IEmbedder embedder,
     IDocumentStore store,
     RagSession session,
     RagConfig cfg,
+    IEnumerable<IResultPostprocessor> resultPostprocessors,
     ILogger<RagTools> logger)
 {
-    // Loaded once per server lifetime â€” returns Empty if GlossaryPath is null or file absent.
-    private readonly MultilingualGlossary _glossary = MultilingualGlossary.Load(cfg.GlossaryPath);
 
     [McpServerTool, Description(
         "Semantic search across project documentation (ADRs, architecture, patterns, reference, roadmap). " +
@@ -47,14 +46,20 @@ public sealed class RagTools(
         logger.LogDebug("QueryDocs: collection={Collection} question={Question} bc={Bc} topK={TopK} fetchK={FetchK}",
             collection, question, bc, top_k, fetchK);
 
-        var queryVec = embedder.Embed(_glossary.Expand(question));
+        // Preprocessing (glossary expansion, truncation) runs inside the pipeline.
+        var queryVec = await embedder.EmbedAsync(question, cancellationToken);
         var opts = new SearchOptions(fetchK, cfg.Query.ScoreThreshold);
         var allHits = await store.SearchAsync(collection, queryVec, opts, cancellationToken);
 
         var weighted = ApplyWeights(allHits);
-        var hits = bc is not null
+        IReadOnlyList<DocumentSearchResult> hits = bc is not null
             ? weighted.Where(h => MatchesBc(h, bc)).Take(top_k).ToList()
             : weighted.ToList();
+
+        // D3: run post-retrieval processors (re-rank, filter, augment).
+        var ctx = new QueryContext(collection, question, bc, top_k, fetchK);
+        foreach (var pp in resultPostprocessors)
+            hits = await pp.ProcessAsync(hits, ctx, cancellationToken);
 
         logger.LogInformation("QueryDocs: returned {Count}/{Total} hits for '{Question}'", hits.Count, allHits.Count, question);
 
@@ -95,7 +100,7 @@ public sealed class RagTools(
         logger.LogDebug("ReadDocs: collection={Collection} question={Question} bc={Bc} topFiles={TopFiles} fullMode={FullMode}",
             collection, question, bc, top_files, fullMode);
 
-        var queryVec = embedder.Embed(_glossary.Expand(question));
+        var queryVec = await embedder.EmbedAsync(question, cancellationToken);
         var opts = new SearchOptions(Math.Max(30, top_files * 15), cfg.Query.ScoreThreshold);
         var rawHits = await store.SearchAsync(collection, queryVec, opts, cancellationToken);
 
@@ -139,7 +144,7 @@ public sealed class RagTools(
                     catch (Exception ex)
                     {
                         logger.LogWarning(ex, "ReadDocs: could not read file {RelPath}", f.RelPath);
-                        body = $"[ERROR: could not read file — {ex.Message}]";
+                        body = $"[ERROR: could not read file ï¿½ {ex.Message}]";
                     }
                 }
                 files.Add(new { rel_path = f.RelPath, score = Math.Round(f.BestScore, 3), doc_kind = first.DocKind, mode = "full", content = body });
@@ -205,10 +210,10 @@ public sealed class RagTools(
         }
         catch
         {
-            // config point absent — use default
+            // config point absent ï¿½ use default
         }
 
-        var queryVec = embedder.Embed($"history {id}");
+        var queryVec = await embedder.EmbedAsync($"history {id}", cancellationToken);
         var opts = new SearchOptions(TopK: 50, ScoreThreshold: 0,
             HistoryFieldFilter: (historyField, id));
         var hits = await store.SearchAsync(collection, queryVec, opts, cancellationToken);

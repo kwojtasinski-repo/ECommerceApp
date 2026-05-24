@@ -265,7 +265,7 @@ if (deleted.Count > 0)
 // ── Chunk, embed, upsert ──────────────────────────────────────────────────────
 var tokenCounter = SentencePieceTokenCounter.FromModelDir(modelDir);
 var chunker = new MarkdownChunker(cfg.Chunker, tokenCounter);
-var batchSize = cfg.Embedder.BatchSize;
+const int batchSize = 32;
 
 var totalChunks = 0;
 var processedFiles = 0;
@@ -373,9 +373,7 @@ static float ResolveWeight(string relPath, int fileSizeBytes, RankingSection ran
 
 static void WriteStatsMd(RagConfig cfg, ManifestService manifest, string repoRoot)
 {
-    var statsRel = cfg.Storage.StatsPath;
-    if (string.IsNullOrWhiteSpace(statsRel)) return;
-
+    const string statsRel = "docs/rag/index-stats-dotnet.md";
     var statsPath = Path.Combine(repoRoot, statsRel);
 
     // Aggregate from manifest entries.
@@ -405,7 +403,6 @@ static void WriteStatsMd(RagConfig cfg, ManifestService manifest, string repoRoo
     sb.AppendLine($"Collection: `{cfg.Collection}`  ");
     sb.AppendLine($"Files: {totalFiles}  ");
     sb.AppendLine($"Chunks: {totalChunks}  ");
-    sb.AppendLine($"Model: `{cfg.Embedder.Model}`  ");
     sb.AppendLine();
     sb.AppendLine("## Breakdown by doc_kind");
     sb.AppendLine();

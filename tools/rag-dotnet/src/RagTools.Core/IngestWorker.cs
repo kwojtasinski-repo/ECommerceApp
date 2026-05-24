@@ -19,7 +19,7 @@ namespace RagTools.Core;
 public sealed class IngestWorker(
     IngestChannel channel,
     IDocumentStore store,
-    OnnxEmbedder embedder,
+    IEmbedder embedder,
     RagConfig cfg,
     OperationStore operations,
     ILogger<IngestWorker> logger,
@@ -62,14 +62,14 @@ public sealed class IngestWorker(
             await store.DeleteByPathsAsync(job.Collection, [job.RelPath], ct);
 
             // 4. Embed in batches and upsert.
-            var batchSize = cfg.Embedder.BatchSize;
+            const int batchSize = 32;
             var points = new List<RagPoint>(chunks.Count);
 
             for (var i = 0; i < chunks.Count; i += batchSize)
             {
                 var batch  = chunks.Skip(i).Take(batchSize).ToList();
                 var texts  = batch.Select(c => c.Breadcrumb + "\n\n" + c.Text).ToList();
-                var vectors = embedder.EmbedBatch(texts);
+                var vectors = await embedder.EmbedBatchAsync(texts, ct);
 
                 for (var j = 0; j < batch.Count; j++)
                 {

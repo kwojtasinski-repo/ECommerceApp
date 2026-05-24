@@ -267,6 +267,77 @@ return query + string.Concat(Enumerable.Repeat(" " + expansion, ExpansionRepeat)
 **English-only queries are always passed through unchanged** — the glossary contains only
 non-ASCII patterns so there is no risk of accidental expansion for pure English queries.
 
+---
+
+## Amendment 1 — Swappable Embedder Pipeline (2026-06-01)
+
+### Context
+
+The original design hard-wired `OnnxEmbedder` throughout the codebase (Program.cs, RagTools.cs,
+IngestWorker, E2E fixtures). Adding a second provider (Ollama) required touching every call
+site. Additionally, two cross-cutting concerns — glossary expansion and length truncation —
+were applied inconsistently (expansion only in QueryDocs; truncation silently inside
+OnnxEmbedder). There was no extension point for post-retrieval hit processing.
+
+### Decision
+
+Introduce a three-layer extension architecture in `RagTools.Core`:
+
+**D1 — `IEmbedder` abstraction** (`IEmbedder.cs`)  
+A single interface replacing all direct `OnnxEmbedder` references:
+```csharp
+public interface IEmbedder : IDisposable {
+    int Dimensions { get; }
+    Task<float[]> EmbedAsync(string text, CancellationToken ct = default);
+    Task<float[][]> EmbedBatchAsync(IReadOnlyList<string> texts, CancellationToken ct = default);
+}
+```
+`OnnxEmbedder` and the new `OllamaEmbedder` both implement this interface. `OnnxEmbedder`
+keeps existing synchronous `Embed`/`EmbedBatch` methods for backward compatibility.
+
+**D2 — `EmbedderPipelineBuilder` + pre/post-processor chain** (`EmbedderPipelineBuilder.cs`)  
+A fluent builder that wraps an inner `IEmbedder` with ordered `IEmbedderPreprocessor`
+(text → text) and `IEmbedderPostprocessor` (vector → vector) stages. An `EmbedContext`
+carrying `EmbedPurpose` (Query | Ingest) flows through every stage — preprocessors can
+branch on purpose (e.g., glossary expansion is skipped on ingest path).
+
+Built-in preprocessors registered by default:
+- `GlossaryExpansionPreprocessor` — multilingual query expansion; no-op on ingest.
+- `LengthTruncationPreprocessor` — word-count hard cap; applies on both purposes.
+
+DI entry points:
+```csharp
+services.AddOnnxEmbedderPipeline(modelDir).Register();
+services.AddOllamaEmbedderPipeline(cfg.Embedder.Ollama).Register();
+```
+
+**D3 — `IResultPostprocessor` extension point** (`IResultPostprocessor.cs`)  
+A post-retrieval pipeline applied after hit weighting and BC filtering in `QueryDocs`.
+No built-in implementation is shipped — it is a pure open extension point:
+```csharp
+public interface IResultPostprocessor {
+    Task<IReadOnlyList<DocumentSearchResult>> ProcessAsync(
+        IReadOnlyList<DocumentSearchResult> hits, QueryContext ctx, CancellationToken ct = default);
+}
+```
+
+**Embedder provider selection** (`rag-config.yaml` → `embedder.provider`):
+- `onnx` (default) — existing ONNX/MiniLM path, unchanged behavior.
+- `ollama` — HTTP calls to local Ollama instance; `api_url`, `model`, `timeout_seconds`
+  configurable under `embedder.ollama`.
+
+### Consequences
+
+- All callsites (`RagTools.cs`, `IngestWorker`, Program.cs, E2E fixtures) use `IEmbedder`.
+- Switching providers requires only a config change (`embedder.provider`); no code change.
+- Pre/post processor lists are ordered and DI-registered; teams can add processors by
+  implementing `IEmbedderPreprocessor`/`IEmbedderPostprocessor` and calling `.WithPreprocessor<T>()`.
+- `IResultPostprocessor` allows injecting reranking, deduplication, or citation enrichment
+  without modifying `RagTools.cs`.
+- `OnnxEmbedder` remains unchanged for sync callers (ingest script); async wrappers added.
+- When provider is `ollama`, the SentencePiece model dir is not required (guard skipped).
+
+
 #### Matching rules
 
 - Case-insensitive, word-boundary-aware regex: `(?<![a-z])<pattern>(?![a-z])`

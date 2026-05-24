@@ -86,6 +86,7 @@ Console.Error.WriteLine($"[rag-mcp] config     : {resolvedConfigPath} ({configFi
 Console.Error.WriteLine($"[rag-mcp] workspace  : {cfg.Workspace}");
 Console.Error.WriteLine($"[rag-mcp] collection : {cfg.Collection}");
 Console.Error.WriteLine($"[rag-mcp] qdrant     : {qdrantUrl}");
+Console.Error.WriteLine($"[rag-mcp] embedder   : onnx");
 Console.Error.WriteLine($"[rag-mcp] model dir  : {modelDir} (exists: {Directory.Exists(modelDir)})");
 
 if (!Directory.Exists(modelDir))
@@ -101,11 +102,14 @@ if (transport is "http" or "sse")
     // Uses WebApplication (Kestrel). Stdout is safe for normal logs here.
     var webBuilder = WebApplication.CreateBuilder(args);
     webBuilder.Logging.SetMinimumLevel(logLevel);
+
+    // Wire ONNX embedder pipeline.
+    webBuilder.Services.AddOnnxEmbedderPipeline(modelDir).Register();
+
     webBuilder.Services
         .AddControllers()
         .Services
         .AddSingleton(cfg)
-        .AddSingleton(_ => OnnxEmbedder.Load(modelDir))
         .AddSingleton<ITokenCounter>(_ => SentencePieceTokenCounter.FromModelDir(modelDir))
         .AddSingleton<IDocumentStore>(_ =>
             new CachedDocumentStore(
@@ -141,9 +145,11 @@ else
     builder.Logging.AddConsole(opts => opts.LogToStandardErrorThreshold = LogLevel.Trace);
     builder.Logging.SetMinimumLevel(logLevel);
 
+    // Wire ONNX embedder pipeline.
+    builder.Services.AddOnnxEmbedderPipeline(modelDir).Register();
+
     builder.Services
         .AddSingleton(cfg)
-        .AddSingleton(_ => OnnxEmbedder.Load(modelDir))
         .AddSingleton<IDocumentStore>(_ =>
             new CachedDocumentStore(
                 new QdrantDocumentStore(qdrantUrl),

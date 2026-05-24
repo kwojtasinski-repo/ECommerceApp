@@ -130,6 +130,7 @@ public sealed class RagE2EFixture : IAsyncLifetime
         var qdrantDocStore = new QdrantDocumentStore(qdrantGrpcUrl);
         var ragSession = new RagSession(cfg);          // default collection from cfg
         Tools = new RagMcpTools(_embedder, qdrantDocStore, ragSession, cfg,
+            Array.Empty<IResultPostprocessor>(),
             Microsoft.Extensions.Logging.Abstractions.NullLogger<RagMcpTools>.Instance);
         IsAvailable = true;
     }
@@ -157,7 +158,7 @@ public sealed class RagE2EFixture : IAsyncLifetime
             ?? Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
                 "..", "..", "..", "..", "..", "model")));
         var chunker = new MarkdownChunker(cfg.Chunker, tokenCounter);
-        var batchSize = cfg.Embedder.BatchSize;
+        const int batchSize = 32;
 
         foreach (var sourceRoot in cfg.Source.Roots)
         {

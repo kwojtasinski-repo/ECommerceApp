@@ -16,14 +16,6 @@ source:
     - "**/.git/**"
     - ".github/context/anti-patterns-critical.context.md"
 
-embedder:
-  # Informational only — .NET loads the ONNX binary from the directory set by RAG_MODEL_DIR.
-  # Dimensions and device are inferred from the ONNX model at runtime; they are not used by code.
-  # This is the only field you might need to change — if you switch models, run ingest with
-  # --force-full afterwards (old vectors are incompatible with the new model).
-  model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-  # batch_size is a server performance setting with a safe default (32). Not listed here.
-
 chunker:
   # Each doc is split into chunks so that Qdrant can find the relevant paragraph,
   # not just the relevant file. Smaller chunks = more precise answers but more index entries.
@@ -98,8 +90,3 @@ config_files:
   metadata_rules:        "metadata-rules.yaml"
   queries:               "queries.yaml"
   multilingual_glossary: "multilingual-glossary.yaml"  # query-time expansion: Polish / German → English
-
-storage:
-  # Used by the ingest pipeline only — the MCP server (stdio or SSE) does not read this section.
-  manifest_path: ".rag/manifest-dotnet.json"   # separate manifest — .NET per-instance state
-  stats_path: "docs/rag/index-stats-dotnet.md"

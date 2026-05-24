@@ -11,7 +11,7 @@ namespace RagTools.Core;
 ///   /app/model/model.onnx              — ONNX graph
 ///   /app/model/sentencepiece.bpe.model — SentencePiece vocabulary (XLM-RoBERTa/multilingual)
 /// </summary>
-public sealed class OnnxEmbedder : IDisposable
+public sealed class OnnxEmbedder : IEmbedder
 {
     private readonly InferenceSession _session;
     private readonly ITokenCounter _tokenCounter;
@@ -93,6 +93,20 @@ public sealed class OnnxEmbedder : IDisposable
     }
 
     public float[] Embed(string text) => EmbedBatch([text])[0];
+
+    // ── IEmbedder (async wrappers) ────────────────────────────────────────────
+    // The ONNX inference is CPU-bound and synchronous; wrap in Task.FromResult so
+    // callers can treat all IEmbedder implementations uniformly as async.
+
+    /// <inheritdoc/>
+    public Task<float[]> EmbedAsync(string text, CancellationToken ct = default)
+        => Task.FromResult(Embed(text));
+
+    /// <inheritdoc/>
+    /// Overrides the default sequential implementation with the native ONNX batch path,
+    /// which runs a single inference session for the entire batch (much faster at ingest).
+    public Task<float[][]> EmbedBatchAsync(IReadOnlyList<string> texts, CancellationToken ct = default)
+        => Task.FromResult(EmbedBatch(texts));
 
     // ── Private helpers ───────────────────────────────────────────────────────
 

@@ -12,12 +12,10 @@ public sealed class RagConfig
 {
     // Raw deserialized YAML sections.
     public SourceSection Source { get; init; } = new();
-    public EmbedderSection Embedder { get; init; } = new();
     public VectorStoreSection VectorStore { get; init; } = new();
     public ChunkerSection Chunker { get; init; } = new();
     public RankingSection Ranking { get; init; } = new();
     public QuerySection Query { get; init; } = new();
-    public StorageSection Storage { get; init; } = new();
     public MetadataRulesSection MetadataRules { get; init; } = new();
     public List<NamedQueryEntry> NamedQueries { get; init; } = [];
 
@@ -77,7 +75,7 @@ public sealed class RagConfig
         ?? Directory.GetCurrentDirectory();
 
     public string ManifestAbsPath =>
-        Path.Combine(Workspace, Storage.ManifestPath ?? ".rag/manifest.json");
+        Path.Combine(Workspace, ".rag/manifest-dotnet.json");
 
     public string QdrantUrl =>
         VectorStore.Url ?? "http://localhost:6333";
@@ -141,12 +139,10 @@ public sealed class RagConfig
         {
             LoadedFrom = Path.GetFullPath(configPath),
             Source = cfg.Source,
-            Embedder = cfg.Embedder,
             VectorStore = cfg.VectorStore,
             Chunker = cfg.Chunker,
             Ranking = cfg.Ranking,
             Query = cfg.Query,
-            Storage = cfg.Storage,
             MetadataRules = mergedRules ?? cfg.MetadataRules,
             NamedQueries = mergedQueries ?? cfg.NamedQueries,
             GlossaryPath = resolvedGlossaryPath,
@@ -288,17 +284,6 @@ public sealed class SourceSection
     public List<string> ExcludeGlobs { get; init; } = [];
 }
 
-public sealed class EmbedderSection
-{
-    /// <summary>
-    /// Informational only — .NET loads the ONNX binary from the directory set by
-    /// <c>RAG_MODEL_DIR</c>. This field is written to the stats file so the team can
-    /// see which model was used without inspecting the directory.
-    /// </summary>
-    public string Model { get; init; } = "paraphrase-multilingual-MiniLM-L12-v2";
-    public int BatchSize { get; init; } = 32;
-}
-
 public sealed class VectorStoreSection
 {
     public string? Collection { get; init; }
@@ -365,12 +350,6 @@ public sealed class QuerySection
     /// <summary>Candidate pool size fetched from Qdrant before filtering/re-ranking.</summary>
     public int FetchK { get; init; } = 20;
     public float ScoreThreshold { get; init; } = 0.3f;
-}
-
-public sealed class StorageSection
-{
-    public string ManifestPath { get; init; } = ".rag/manifest.json";
-    public string? StatsPath { get; init; }
 }
 
 public sealed class MetadataRulesSection

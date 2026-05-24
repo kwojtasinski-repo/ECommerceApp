@@ -157,7 +157,7 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
             .AddApplicationPart(typeof(RagTools.Mcp.Controllers.IngestController).Assembly)
             .Services
             .AddSingleton(cfg)
-            .AddSingleton(embedder)
+            .AddSingleton<IEmbedder>(embedder)
             .AddSingleton<ITokenCounter>(_ => BertTokenCounter.FromModelDir("/nonexistent/path"))
             .AddSingleton<IDocumentStore>(cachedStore)
             .AddSingleton(Operations)

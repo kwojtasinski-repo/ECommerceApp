@@ -200,6 +200,7 @@ public sealed class IngestE2ETests : IClassFixture<IngestE2EFixture>, IDisposabl
         var session = new RagSession(_fx.Config!);
         var tools = new RagMcpTools(
             _fx.Embedder!, _fx.Store!, session, _fx.Config!,
+            Array.Empty<IResultPostprocessor>(),
             NullLogger<RagMcpTools>.Instance);
 
         // Full-content intent triggers FetchContentAsync path.
