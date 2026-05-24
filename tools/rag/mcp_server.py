@@ -15,9 +15,9 @@ Typical agent flow:
   4. get_history(id)       — evolution: how did a specific document group change over time?
 
 Run (VS Code Copilot starts this automatically via .vscode/mcp.json):
-    python tools/rag/mcp_server.py [--config /path/to/config.yaml]
+    python tools/rag/mcp_server.py [--config /path/to/rag-config.yaml]
 
---config is optional. Default: config.yaml next to mcp_server.py.
+--config is optional. Default: rag-config.yaml next to mcp_server.py.
 Pass it when the config lives somewhere non-standard, e.g. for local dev
 pointing at a project that doesn't use the standard tools/rag/ layout.
 """
@@ -415,7 +415,7 @@ def _parse_args() -> argparse.Namespace:
         default=None,
         metavar="PATH",
         help=(
-            "Path to config.yaml. Default: config.yaml next to mcp_server.py. "
+            "Path to rag-config.yaml. Default: rag-config.yaml next to mcp_server.py. "
             "Pass when the config lives somewhere non-standard "
             "(e.g. local dev without Docker, or a multi-project setup)."
         ),
@@ -487,6 +487,74 @@ async def _run_sse(port: int) -> None:
     await server.serve()
 
 
+async def _run_http(port: int) -> None:
+    """Run the MCP server over Streamable HTTP (POST /).
+
+    VS Code connects via mcp.json type:http, url:http://host:PORT/?project=<collection>.
+    Requires mcp>=1.8.0 (StreamableHTTPSessionManager introduced in 1.6.0).
+    """
+    from mcp.server.streamable_http import StreamableHTTPSessionManager
+    from starlette.applications import Starlette
+    from starlette.routing import Route
+    import uvicorn
+
+    session_manager = StreamableHTTPSessionManager(
+        app=SERVER,
+        event_store=None,   # stateless — no server-sent event resumption needed
+        json_response=False,
+    )
+
+    async def handle_mcp(scope, receive, send) -> None:  # noqa: ANN001
+        # Bind per-request collection from ?project= query param so tool handlers
+        # can call _session_collection.get(None) to override CFG.collection.
+        query_string = scope.get("query_string", b"").decode()
+        project: str | None = None
+        for part in query_string.split("&"):
+            if part.startswith("project="):
+                project = part[len("project="):]
+                break
+        token = _session_collection.set(project)
+        try:
+            await session_manager.handle_request(scope, receive, send)
+        finally:
+            _session_collection.reset(token)
+
+    from api_key_middleware import ApiKeyMiddleware
+    from ingest_routes import build_ingest_routes
+    from ingest_worker import DEFAULT_CAPACITY, IngestWorker, _build_process_fn
+    from operation_store import OperationStore
+
+    _store = OperationStore()
+    _queue: asyncio.Queue = asyncio.Queue(maxsize=DEFAULT_CAPACITY)
+    _process_fn = _build_process_fn(ENGINE, CFG, _store)
+    _worker = IngestWorker(_queue, _process_fn)
+
+    @contextlib.asynccontextmanager
+    async def lifespan(_app):  # noqa: ANN001
+        async with session_manager.run():
+            _worker.start()
+            yield
+            await _worker.stop()
+
+    ingest_routes = build_ingest_routes(_store, _queue, DEFAULT_CAPACITY)
+
+    app = Starlette(
+        lifespan=lifespan,
+        routes=[
+            Route("/", endpoint=handle_mcp, methods=["POST", "GET", "DELETE"]),
+            *ingest_routes,
+        ],
+    )
+    app.add_middleware(ApiKeyMiddleware)
+    config = uvicorn.Config(app, host="0.0.0.0", port=port, log_level="warning")
+    server = uvicorn.Server(config)
+    print(f"[rag-mcp] endpoint:   http://0.0.0.0:{port}/ (MCP Streamable HTTP)", file=sys.stderr)
+    print(f"[rag-mcp] ingest API: http://0.0.0.0:{port}/ingest/{{collection}}", file=sys.stderr)
+    api_key_set = bool(os.environ.get("RAG_API_KEY", "").strip())
+    print(f"[rag-mcp] auth:       {'X-Api-Key required' if api_key_set else 'no auth (RAG_API_KEY not set)'}", file=sys.stderr)
+    await server.serve()
+
+
 if __name__ == "__main__":
     _args = _parse_args()
     if _args.config:
@@ -498,16 +566,16 @@ if __name__ == "__main__":
         _config_path = Path(env_cfg)
     elif env_ws := os.environ.get("RAG_WORKSPACE"):
         # Container / CI mode: workspace root supplied via env, no --config needed.
-        # Convention: config.yaml always lives at <workspace>/tools/rag/config.yaml.
+        # Convention: rag-config.yaml always lives at <workspace>/tools/rag/rag-config.yaml.
         # This keeps docker run commands clean — RAG_WORKSPACE is the only knob.
-        _config_path = Path(env_ws) / "tools" / "rag" / "config.yaml"
+        _config_path = Path(env_ws) / "tools" / "rag" / "rag-config.yaml"
     else:
         _config_path = CONFIG_PATH
     CFG = load_config(_config_path)
 
     # ── Validate that every resolved file actually exists on disk ─────────────
     # Each path may come from an env var (RAG_METADATA / RAG_QUERIES / RAG_MANIFEST)
-    # or from config.yaml companion resolution. Fail fast with a clear message so
+    # or from rag-config.yaml companion resolution. Fail fast with a clear message so
     # a misconfigured mount is obvious rather than silently producing empty results.
     _errors: list[str] = []
 
@@ -565,9 +633,12 @@ if __name__ == "__main__":
 
     _transport = os.environ.get("MCP_TRANSPORT", "stdio").lower()
     _port = int(os.environ.get("MCP_PORT", "3002"))
-    print(f"[rag-mcp] transport:  {_transport}{f' (port {_port})' if _transport == 'sse' else ''}", file=sys.stderr)
+    _has_port = _transport in ("sse", "http")
+    print(f"[rag-mcp] transport:  {_transport}{f' (port {_port})' if _has_port else ''}", file=sys.stderr)
 
-    if _transport == "sse":
+    if _transport == "http":
+        asyncio.run(_run_http(_port))
+    elif _transport == "sse":
         asyncio.run(_run_sse(_port))
     else:
         asyncio.run(_run_stdio())

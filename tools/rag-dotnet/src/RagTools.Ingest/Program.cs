@@ -15,9 +15,9 @@ using System.Net.Http.Json;
 //
 // Environment variables:
 //   RAG_WORKSPACE    absolute path to the repo root (default: cwd)
-//   RAG_COLLECTION   Qdrant collection name override (default: from config.yaml)
-//   RAG_CONFIG       path to config.yaml (default: /app/config.yaml)
-//   QDRANT_URL       Qdrant server URL (default: from config.yaml)
+//   RAG_COLLECTION   Qdrant collection name override (default: from rag-config.yaml)
+//   RAG_CONFIG       path to rag-config.yaml (default: /app/rag-config.yaml)
+//   QDRANT_URL       Qdrant server URL (default: from rag-config.yaml)
 
 var forceFull = args.Contains("--force-full");
 var dryRun = args.Contains("--dry-run");
@@ -92,8 +92,8 @@ var resolvedConfigPath = RagConfig.ResolveConfigPath(configArgValue);
 // Startup validation — fail fast on missing config / model so misconfiguration is obvious.
 if (!File.Exists(resolvedConfigPath))
 {
-    log.LogError("config.yaml not found at {Path}", resolvedConfigPath);
-    log.LogError("Set RAG_CONFIG or RAG_WORKSPACE, or run from a directory that contains config.yaml.");
+    log.LogError("rag-config.yaml not found at {Path}", resolvedConfigPath);
+    log.LogError("Set RAG_CONFIG or RAG_WORKSPACE, or run from a directory that contains rag-config.yaml.");
     return 1;
 }
 
@@ -131,7 +131,7 @@ var sourceRoots = cfg.Source.Roots
 
 if (sourceRoots.Count == 0)
 {
-    log.LogError("No source roots found. Check config.yaml source.roots.");
+    log.LogError("No source roots found. Check rag-config.yaml source.roots.");
     return 1;
 }
 

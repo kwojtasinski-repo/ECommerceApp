@@ -109,12 +109,12 @@ Branch: `RAG_Improvement`
   on every `--no-cache` build. Consider caching the model layer separately or
   using a private registry mirror for CI/CD.
 
-- **Python SSE transport**: Uses legacy `SseServerTransport` (two-endpoint SSE + POST).
-  The .NET server uses the newer MCP Streamable HTTP standard. Consider migrating
-  the Python server to `streamablehttp` transport when mcp-python supports it.
+- **Python HTTP transport**: ~~Uses legacy `SseServerTransport`~~ Now uses `StreamableHTTPSessionManager`
+  (mcp>=1.8.0, `MCP_TRANSPORT=http`). Both Python and .NET servers now use the same
+  MCP Streamable HTTP standard (`POST /`). VS Code connects via `"type":"http"` in `mcp.json`.
 
-- **API key enforcement**: The `.NET` SSE server enforces `X-Api-Key` via `ApiKeyMiddleware`.
-  The Python SSE server has no auth guard. Add one for production use.
+- **API key enforcement**: Both the `.NET` and Python HTTP servers enforce `X-Api-Key` via `ApiKeyMiddleware`.
+  Ensure `RAG_API_KEY` is set in production deployments.
 
 - **Collection separation**: Python uses `ecommerceapp_docs`, .NET uses
   `ecommerceapp_docs_dotnet`. Both are indexed independently (different embedders).

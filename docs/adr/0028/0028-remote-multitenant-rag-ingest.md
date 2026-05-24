@@ -1,7 +1,7 @@
-﻿# ADR-0028: Remote-Capable Multi-Tenant RAG Server with Async Ingest API
+# ADR-0028: Remote-Capable Multi-Tenant RAG Server with Async Ingest API
 
 ## Status
-Accepted — Phase 1 (.NET) Implemented
+Accepted � Phase 1 (.NET) Implemented
 
 ## Date
 2026-05-21
@@ -37,7 +37,7 @@ The server indexes the docs and answers questions for that project via a session
 
 #### 1. Project identity from configuration
 
-Each project is identified by a `collection` name in its `config.yaml`.
+Each project is identified by a `collection` name in its `rag-config.yaml`.
 This name is used everywhere: as the index name in the vector database, as the URL segment
 in the ingest API, and as the session selector in MCP connections.
 

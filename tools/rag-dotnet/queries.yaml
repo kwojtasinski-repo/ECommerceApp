@@ -1,13 +1,13 @@
 # queries.yaml — named queries for the ECommerceApp RAG index.
-# Loaded by the RAG ingest and MCP server via config.yaml → config_files.queries.
-# Override per-repo without modifying config.yaml or the Docker image.
+# Loaded by the RAG ingest and MCP server via rag-config.yaml → config_files.queries.
+# Override per-repo without modifying rag-config.yaml or the Docker image.
 #
 # Format:
 #   name:     unique identifier (used by eval.py and MCP tool arguments)
 #   question: the natural-language query to embed and search
 #   doc_kind: optional — filter results to this doc_kind only
 #   adr_id:   optional — filter results to a specific ADR (4-digit zero-padded)
-#   top_k:    optional — override default_top_k from config.yaml
+#   top_k:    optional — override default_top_k from rag-config.yaml
 
 # ── ADR by kind ───────────────────────────────────────────────────────────────
 named_queries:

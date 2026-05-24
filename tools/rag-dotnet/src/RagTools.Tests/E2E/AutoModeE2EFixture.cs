@@ -410,7 +410,7 @@ internal sealed class TempAutoModeWorkspace : IDisposable
         var ragDir = Path.Combine(root, "tools", "rag");
         Directory.CreateDirectory(ragDir);
 
-        var configPath = Path.Combine(ragDir, "config.yaml");
+        var configPath = Path.Combine(ragDir, "rag-config.yaml");
         File.WriteAllText(configPath, $"""
             source:
               roots:

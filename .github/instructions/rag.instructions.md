@@ -55,7 +55,7 @@ Re-index requirements (quick reference):
 | Change | Re-index needed? |
 |--------|-----------------|
 | `multilingual-glossary.yaml` edited | ❌ Query-time only |
-| `config.yaml` ranking weights changed | ❌ Query-time only |
+| `rag-config.yaml` ranking weights changed | ❌ Query-time only |
 | `queries.yaml` edited | ❌ Not used at ingest |
 | Any `docs/` or `.github/context/` file changed | ✅ Incremental (`ingest.py`) |
 | `metadata-rules.yaml` changed | ✅ Force-full (`ingest.py --force-full`) |

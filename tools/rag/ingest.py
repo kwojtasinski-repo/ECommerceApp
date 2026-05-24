@@ -282,9 +282,9 @@ def _remote_push(
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", default=None, metavar="PATH",
-                        help="Path to config.yaml (default: config.yaml next to ingest.py)")
+                        help="Path to rag-config.yaml (default: rag-config.yaml next to ingest.py)")
     parser.add_argument("--mode", choices=["memory", "docker", "local"], default=None,
-                        help="Override vector_store.mode from config.yaml")
+                        help="Override vector_store.mode from rag-config.yaml")
     parser.add_argument("--dry-run", action="store_true",
                         help="Parse + chunk only, print stats, no embeddings or upserts")
     parser.add_argument("--force-full", action="store_true",
@@ -319,7 +319,7 @@ def main() -> int:
         config_path = Path(env_cfg)
     elif env_ws := os.environ.get("RAG_WORKSPACE"):
         # Container / CI mode: derive config from workspace env — no --config needed.
-        config_path = Path(env_ws) / "tools" / "rag" / "config.yaml"
+        config_path = Path(env_ws) / "tools" / "rag" / "rag-config.yaml"
     else:
         config_path = CONFIG_PATH
     cfg: Config = load_config(config_path)

@@ -6,7 +6,7 @@
 
 ## 1. Current state (HEAD = `828daaf6`, branch `RAG_Improvement`)
 
-The RAG pipeline has two independent server implementations that share `tools/rag/config.yaml`, `tools/rag/metadata-rules.yaml`, and `tools/rag/queries.yaml`:
+The RAG pipeline has two independent server implementations that share `tools/rag/rag-config.yaml`, `tools/rag/metadata-rules.yaml`, and `tools/rag/queries.yaml`:
 
 | Server | Language | Port (SSE) | Docker image | Collection |
 |--------|----------|-----------|--------------|------------|
@@ -192,7 +192,7 @@ Resolved. After Docker rebuild (F-1), pipeline Phase 3 shows `chunk_count=18` fo
 **Current**: VS Code MCP panel supports both STDIO and SSE. STDIO uses the Docker container per-invocation (slower startup). SSE servers (ports 3001/3002) stay running and share Qdrant state.
 
 **Planned**:
-- Default dev workflow: SSE-only (start `docker compose up -d rag-dotnet-sse rag-python-sse`)
+- Default dev workflow: HTTP-only (start `docker compose up -d rag-dotnet-sse rag-python-sse`)
 - STDIO kept for CI / pipeline tests only
 - Update `SETUP-GUIDE.md` to document SSE-first setup
 - Remove STDIO entries from `.github/mcp.json` default config (or make SSE the first choice)
@@ -215,7 +215,7 @@ Resolved. After Docker rebuild (F-1), pipeline Phase 3 shows `chunk_count=18` fo
 
 ### F-8 — Chunker strategy selection at upload time
 
-**Current**: Chunker settings (`max_tokens`, `overlap`) come from `config.yaml` and are fixed for the collection lifetime.
+**Current**: Chunker settings (`max_tokens`, `overlap`) come from `rag-config.yaml` and are fixed for the collection lifetime.
 
 **Planned**: Allow per-upload override in `metadata-rules.yaml` `chunker` block. Useful when uploading large architecture docs that need bigger chunks.
 
@@ -270,4 +270,4 @@ The design principle: **no hardcoding of document taxonomy in the tool itself**.
 
 - **Multi-collection access control**: The current design has no per-collection auth. Any authenticated client can read/write any collection. No plans to change this.
 - **Streaming ingest results**: The 202 + polling model is intentional. Server-sent events for ingest progress are not planned.
-- **Chunking strategy configurability**: The chunker is config-driven via `config.yaml[chunker]`. No UI or API surface for chunker config at upload time.
+- **Chunking strategy configurability**: The chunker is config-driven via `rag-config.yaml[chunker]`. No UI or API surface for chunker config at upload time.

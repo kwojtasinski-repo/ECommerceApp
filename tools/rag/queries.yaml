@@ -1,6 +1,6 @@
 # queries.yaml — named queries for the ECommerceApp RAG index.
-# Loaded by the RAG ingest and MCP server via config.yaml → config_files.queries.
-# Override per-repo without modifying config.yaml or the Docker image.
+# Loaded by the RAG ingest and MCP server via rag-config.yaml → config_files.queries.
+# Override per-repo without modifying rag-config.yaml or the Docker image.
 #
 # Format:
 #   name:     unique identifier (used by eval.py and MCP tool arguments)
@@ -11,7 +11,7 @@
 #             Use a higher number (10–20) for broad discovery queries where you want
 #             to see many relevant chunks (e.g., "list all amendments").
 #             Use a lower number (5–8) for precise questions with a single correct answer.
-#             Omit to use config.yaml → query.default_top_k (currently 5).
+#             Omit to use rag-config.yaml → query.default_top_k (currently 5).
 
 # ── ADR by kind ───────────────────────────────────────────────────────────────
 named_queries:

@@ -1,6 +1,6 @@
-ï»¿# RAG â€” Retrieval-Augmented Generation for ECommerceApp
+# RAG — Retrieval-Augmented Generation for ECommerceApp
 
-> **New here? Start with [SETUP-GUIDE.md](SETUP-GUIDE.md)** â€” step-by-step instructions
+> **New here? Start with [SETUP-GUIDE.md](SETUP-GUIDE.md)** — step-by-step instructions
 > to get from zero to a working Copilot Chat with project-aware answers in ~10 minutes.
 
 ---
@@ -11,7 +11,7 @@ Instead of Copilot guessing answers from its generic training data, RAG makes it
 the specific chunk from *this repo's* documentation before answering.
 
 **Example:** asking "What does ADR-0016 say about coupon limits?" returns the exact text
-from `docs/adr/0016/...` â€” not a made-up answer.
+from `docs/adr/0016/...` — not a made-up answer.
 
 ---
 
@@ -19,23 +19,23 @@ from `docs/adr/0016/...` â€” not a made-up answer.
 
 ```
 Your docs (docs/, .github/context/)
-      â”‚
-      â–¼  ingest.py (one-time + after changes)
-      â”‚  chunks text, generates 384-dim embeddings, stores in Qdrant
-      â”‚
-      â–¼
-   Qdrant  â†â”€â”€â”€ mcp_server.py â†â”€â”€â”€ VS Code Copilot Chat
+      -
+      ¡  ingest.py (one-time + after changes)
+      -  chunks text, generates 384-dim embeddings, stores in Qdrant
+      -
+      ¡
+   Qdrant  ‹¦¦¦ mcp_server.py ‹¦¦¦ VS Code Copilot Chat
   (vector DB)   (4 MCP tools)       (query_docs / read_docs / list_adrs / get_adr_history)
 ```
 
-**Qdrant** is a vector database â€” it stores the embeddings and searches them by
+**Qdrant** is a vector database — it stores the embeddings and searches them by
 semantic similarity. It runs as a Docker container.
 
 **MCP tools** exposed to Copilot Chat:
 
 | Tool | What it does |
 |------|-------------|
-| `query_docs(question)` | Semantic search â€” returns the most relevant doc chunks |
+| `query_docs(question)` | Semantic search — returns the most relevant doc chunks |
 | `read_docs(question)` | Full file content of the top-ranked matches (better for reasoning) |
 | `list_adrs()` | Lists all indexed ADRs with titles and amendment counts |
 | `get_adr_history(adr_id)` | Returns the full text of one ADR + all its amendments |
@@ -44,14 +44,14 @@ semantic similarity. It runs as a Docker container.
 
 ## Implementations
 
-Two implementations exist â€” both expose the same MCP tools and use the same model:
+Two implementations exist — both expose the same MCP tools and use the same model:
 
 | | **Python** | **.NET** |
 |---|---|---|
-| Status | âœ… Production-ready | âš ï¸ Experimental |
+| Status | ? Production-ready | ?? Experimental |
 | Recommended for | **Everyone** | Advanced / .NET-only setups |
-| Model accuracy | âœ… Full | âš ï¸ Slightly reduced (tokenizer workaround) |
-| Polish query support | âœ… Yes | âš ï¸ Reduced |
+| Model accuracy | ? Full | ?? Slightly reduced (tokenizer workaround) |
+| Polish query support | ? Yes | ?? Reduced |
 
 **Use Python unless you have a specific reason not to.**
 
@@ -71,12 +71,12 @@ Two implementations exist â€” both expose the same MCP tools and use the same mo
 
 ## How chunking works
 
-Documents are split at heading boundaries (H1â€“H6 in auto mode; configurable via `split_on_headings` in `config.yaml`) with an 800-token max per chunk
+Documents are split at heading boundaries (H1–H6 in auto mode; configurable via `split_on_headings` in `rag-config.yaml`) with an 800-token max per chunk
 and 80-token overlap between consecutive chunks. Each chunk's embed text is prefixed
 with its breadcrumb so similarity search captures section context:
 
 ```
-ADR-0016 â€” Coupons > Â§3 Validation rules > Max coupons per order
+ADR-0016 — Coupons > §3 Validation rules > Max coupons per order
 
 The maximum number of coupons per order is controlled by CouponsOptions.MaxCouponsPerOrder
 (default: 5, ceiling: 10). ...
@@ -87,14 +87,14 @@ The maximum number of coupons per order is controlled by CouponsOptions.MaxCoupo
 ## Ranking weights
 
 After similarity search, each hit's score is multiplied by a path-based weight.
-First-matching glob wins. Configured in `tools/rag/config.yaml â†’ ranking.weights`.
+First-matching glob wins. Configured in `tools/rag/rag-config.yaml › ranking.weights`.
 
 | Weight | Path pattern | Why |
 |--------|-------------|-----|
-| 1.25 | `known-issues.md` | Bug-fix gate â€” always top priority |
-| 1.20 | `agent-decisions.md` | Correction history â€” high signal |
+| 1.25 | `known-issues.md` | Bug-fix gate — always top priority |
+| 1.20 | `agent-decisions.md` | Correction history — high signal |
 | 1.20 | `docs/adr/*/amendments/**` | Amendments override original ADR sections |
-| 1.15 | `project-state.md` | BC block status â€” critical |
+| 1.15 | `project-state.md` | BC block status — critical |
 | 1.10 | `docs/adr/*/example-implementation/**` | Concrete code examples |
 | 1.00 | `docs/adr/*/[0-9]*-*.md` | Main ADR file |
 | 0.70 | `docs/roadmap/**` | Forward-looking, lower priority for "how" questions |
@@ -105,11 +105,11 @@ First-matching glob wins. Configured in `tools/rag/config.yaml â†’ ranking.weigh
 ## Multilingual support
 
 The embedder is `paraphrase-multilingual-MiniLM-L12-v2` (384-dim, 50+ languages).
-Before embedding, the query is expanded using `tools/rag/multilingual-glossary.yaml` â€”
-Polish/German domain terms are mapped to English equivalents and appended 3Ã— to boost
+Before embedding, the query is expanded using `tools/rag/multilingual-glossary.yaml` —
+Polish/German domain terms are mapped to English equivalents and appended 3× to boost
 weight in mean pooling. No re-indexing needed; this is query-time only.
 
-**Benchmark (2026-05-19):** EN 5/5, PL 5/5, DE 3â€“4/5 correct top-1.
+**Benchmark (2026-05-19):** EN 5/5, PL 5/5, DE 3–4/5 correct top-1.
 
 ---
 

@@ -232,17 +232,17 @@ dotnet run --project src/RagTools.Mcp
 
 ## Switching models
 
-The active model is set in [`tools/rag/config.yaml`](../../tools/rag/config.yaml)
+The active model is set in [`tools/rag/rag-config.yaml`](../../tools/rag/rag-config.yaml)
 under `embedder.model`. Both implementations share this file.
 
 > **Warning:** changing the model requires a full re-index (`--force-full`).
 > Old vectors are incompatible with new model embeddings.
-> The `config.yaml` `version` field is automatically checked — increment it
+> The `rag-config.yaml` `version` field is automatically checked — increment it
 > to force a full re-index on all machines.
 
 ### Python — change model
 
-Edit `tools/rag/config.yaml`:
+Edit `tools/rag/rag-config.yaml`:
 
 ```yaml
 embedder:
@@ -346,13 +346,13 @@ or when you want to run ingest without the ONNX model installed locally.
 - Dev container: server is containerized; local machine has no Python/model
 - Team shared index: one "indexer" machine runs the server; others push to it
 
-### How to start the server in SSE mode
+### How to start the server in HTTP mode
 
 ```powershell
-# Python SSE server (port 3002)
+# Python HTTP server (port 3002, MCP Streamable HTTP, mcp>=1.8.0)
 docker compose --profile rag-python-sse up -d rag-python-sse
 
-# .NET SSE server (port 3001)
+# .NET HTTP server (port 3001)
 docker compose --profile rag-dotnet-sse up -d rag-dotnet-sse
 ```
 
@@ -366,10 +366,10 @@ Invoke-WebRequest http://localhost:3001/admin/stats   # .NET
 ### Push documents via --remote
 
 ```powershell
-# Python ingest → Python SSE server
+# Python ingest → Python HTTP server
 python tools/rag/ingest.py --remote http://localhost:3002
 
-# .NET ingest → .NET SSE server (from tools/rag-dotnet/)
+# .NET ingest → .NET HTTP server (from tools/rag-dotnet/)
 dotnet run --project src/RagTools.Ingest -- --remote http://localhost:3001
 
 # With API key (if RAG_API_KEY is set on the server)

@@ -52,18 +52,18 @@ create multiple single-file jobs internally).
 
 ---
 
-## Deviation 3: RagSession — Scoped in SSE, Singleton in Stdio
+## Deviation 3: RagSession — Scoped in HTTP mode, Singleton in Stdio
 
 **Original design:** `RagSession` was described as a single scoped service.
 
 **Implemented:**
-- **SSE mode**: `RagSession` is registered as `Scoped` — each HTTP request/session gets its own
+- **HTTP mode** (`MCP_TRANSPORT=http`): `RagSession` is registered as `Scoped` — each HTTP request/session gets its own
   instance, resolved from `?project=` query param by `RagSessionMiddleware`.
 - **Stdio mode**: `RagSession` is registered as `Singleton` — no HTTP context, uses `cfg.Collection`
   as the fixed collection for the process lifetime.
 
 This means stdio mode is single-collection (unchanged from ADR-0027 behaviour).
-Multi-collection support requires SSE mode with `?project=` query param.
+Multi-collection support requires HTTP mode (`MCP_TRANSPORT=http`) with `?project=` query param.
 
 ---
 

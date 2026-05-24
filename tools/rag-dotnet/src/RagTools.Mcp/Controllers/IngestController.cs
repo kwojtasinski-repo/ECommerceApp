@@ -1,3 +1,5 @@
+using System.IO.Compression;
+using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using RagTools.Core;
 
@@ -20,6 +22,12 @@ public sealed class IngestController(
     OperationStore operations,
     ILogger<IngestController> logger) : ControllerBase
 {
+    private const long MaxBodyBytes = 50L * 1024 * 1024; // 50 MB
+    private static readonly Regex CollectionNameRe =
+        new(@"^[a-z0-9][a-z0-9_-]*$", RegexOptions.Compiled);
+    private static readonly HashSet<string> ConfigFiles =
+        new(StringComparer.OrdinalIgnoreCase) { "metadata-rules.yaml", "queries.yaml", "multilingual-glossary.yaml" };
+
     /// <summary>Poll the status of an ingest operation.</summary>
     [HttpGet("/ingest/{collection}/operations/{opId}")]
     public IActionResult GetOperation(string collection, string opId)
@@ -49,115 +57,182 @@ public sealed class IngestController(
     ///
     /// Body: raw <c>application/zip</c> bytes — each file in the archive is ingested as a separate job.
     /// Returns: 202 Accepted with a <see cref="BatchIngestResponse"/> listing all queued operations.
-    /// Returns: 400 Bad Request when the body is not a valid ZIP or contains no files.
+    /// Returns: 400 Bad Request when the body is not a valid ZIP or contains no .md files.
+    /// Returns: 413 Payload Too Large when the body exceeds 50 MB.
+    /// Returns: 415 Unsupported Media Type when Content-Type is not application/zip.
     /// Returns: 503 Service Unavailable when the ingest queue cannot fit all files.
     /// </summary>
     [HttpPost("/ingest/{collection}/batch")]
+    [RequestSizeLimit(52_428_800)] // 50 MB — enforced before body is buffered
     public async Task<IActionResult> UploadBatch(string collection)
     {
+        // ── Collection name sanitization ──────────────────────────────────────
+        if (!CollectionNameRe.IsMatch(collection))
+            return BadRequest(new { error = $"Invalid collection name '{collection}'. Must match [a-z0-9][a-z0-9_-]*." });
+
+        // ── Content-Type validation ───────────────────────────────────────────
+        var ct = Request.ContentType ?? string.Empty;
+        if (!ct.StartsWith("application/zip", StringComparison.OrdinalIgnoreCase) &&
+            !ct.StartsWith("application/octet-stream", StringComparison.OrdinalIgnoreCase))
+            return StatusCode(415, new { error = $"Expected Content-Type application/zip, got '{ct}'" });
+
+        // ── Body size pre-check (Content-Length) ──────────────────────────────
+        if (Request.ContentLength > MaxBodyBytes)
+            return StatusCode(413, new { error = $"Request body too large. Limit is {MaxBodyBytes / (1024 * 1024)} MB." });
+
+        // ── Read body ─────────────────────────────────────────────────────────
         using var ms = new System.IO.MemoryStream();
-    await Request.Body.CopyToAsync(ms);
-    ms.Position = 0;
+        await Request.Body.CopyToAsync(ms);
 
-    System.IO.Compression.ZipArchive zip;
-    try
-    {
-        zip = new System.IO.Compression.ZipArchive(ms, System.IO.Compression.ZipArchiveMode.Read, leaveOpen: true);
-    }
-    catch (Exception)
-    {
-        return BadRequest(new { error = "Invalid ZIP archive" });
-    }
+        if (ms.Length == 0)
+            return BadRequest(new { error = "Request body is empty" });
+        if (ms.Length > MaxBodyBytes)
+            return StatusCode(413, new { error = $"Request body too large ({ms.Length:N0} bytes). Limit is {MaxBodyBytes / (1024 * 1024)} MB." });
 
-    var fileEntries = zip.Entries
-        .Where(e => !e.FullName.EndsWith('/') && e.Length > 0)
-        .ToList();
+        ms.Position = 0;
 
-    // ── Validate required config files ───────────────────────────────────────
-    var zipNames = zip.Entries.Select(e => e.FullName).ToHashSet(StringComparer.OrdinalIgnoreCase);
-    var missingConfigs = new[] { "metadata-rules.yaml", "queries.yaml" }
-        .Where(n => !zipNames.Contains(n))
-        .ToList();
-    if (missingConfigs.Count > 0)
-        return BadRequest(new { error = $"ZIP must contain: {string.Join(", ", missingConfigs)}" });
-
-    string metaContent;
-    using (var r = new System.IO.StreamReader(zip.GetEntry("metadata-rules.yaml")!.Open()))
-        metaContent = await r.ReadToEndAsync();
-    if (!System.Text.RegularExpressions.Regex.IsMatch(metaContent, @"doc_kind_rules:\s*\r?\n\s+-"))
-        return BadRequest(new { error = "metadata-rules.yaml must contain at least one doc_kind_rules entry" });
-
-    string queriesContent;
-    using (var r = new System.IO.StreamReader(zip.GetEntry("queries.yaml")!.Open()))
-        queriesContent = await r.ReadToEndAsync();
-    if (!System.Text.RegularExpressions.Regex.IsMatch(queriesContent, @"named_queries:\s*\r?\n\s+-"))
-        return BadRequest(new { error = "queries.yaml must contain at least one named_queries entry" });
-
-    var knownKinds = System.Text.RegularExpressions.Regex.Matches(metaContent, @"\bkind:\s*(\S+)")
-        .Cast<System.Text.RegularExpressions.Match>()
-        .Select(m => m.Groups[1].Value.Trim())
-        .ToHashSet(StringComparer.OrdinalIgnoreCase);
-    var badKinds = System.Text.RegularExpressions.Regex.Matches(queriesContent, @"\bdoc_kind:\s*(\S+)")
-        .Cast<System.Text.RegularExpressions.Match>()
-        .Select(m => m.Groups[1].Value.Trim())
-        .Where(k => !knownKinds.Contains(k))
-        .Distinct()
-        .OrderBy(k => k)
-        .ToList();
-    if (badKinds.Count > 0)
-        return BadRequest(new { error = $"queries.yaml references unknown doc_kind(s): [{string.Join(", ", badKinds)}]. Add matching rules to metadata-rules.yaml." });
-
-    // Filter config files — they must not be ingested as documents.
-    var configFileNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "metadata-rules.yaml", "queries.yaml" };
-    fileEntries = fileEntries.Where(e => !configFileNames.Contains(e.FullName)).ToList();
-
-    if (fileEntries.Count == 0)
-        return BadRequest(new { error = "ZIP contains no files" });
-
-    if (channel.PendingCount + fileEntries.Count > channel.Capacity)
-    {
-        logger.LogWarning("Ingest queue full, rejecting batch of {Count} files for {Collection}", fileEntries.Count, collection);
-        return StatusCode(503, new { error = "Ingest queue is full. Retry after a moment.", pending = channel.PendingCount });
-    }
-
-    var enqueuedAt = DateTimeOffset.UtcNow;
-    var opList     = new List<BatchOperationEntry>(fileEntries.Count);
-
-    foreach (var entry in fileEntries)
-    {
-        var relPath = entry.FullName;
-        string content;
-        using (var reader = new System.IO.StreamReader(entry.Open()))
-            content = await reader.ReadToEndAsync();
-
-        var safeRelPath = relPath.Replace('/', '-');
-        var opId = $"{collection}:{safeRelPath}:{enqueuedAt.Ticks}-{opList.Count}";
-
-        var job = new IngestJob
+        // ── Parse ZIP ─────────────────────────────────────────────────────────
+        ZipArchive zip;
+        try
         {
-            OperationId = opId,
-            Collection  = collection,
-            RelPath     = relPath,
-            Content     = content,
-            EnqueuedAt  = enqueuedAt,
-        };
+            zip = new ZipArchive(ms, ZipArchiveMode.Read, leaveOpen: true);
+        }
+        catch (InvalidDataException)
+        {
+            return BadRequest(new { error = "Invalid ZIP archive" });
+        }
 
-        channel.TryWrite(job);
-        operations.MarkQueued(opId, collection, relPath, enqueuedAt);
+        using (zip)
+        {
+            var warnings = new List<string>();
+            var zipNames = zip.Entries.Select(e => e.FullName).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        var statusUrl = $"/ingest/{collection}/operations/{Uri.EscapeDataString(opId)}";
-        opList.Add(new BatchOperationEntry { RelPath = relPath, OperationId = opId, StatusUrl = statusUrl });
+            // ── Required config files ─────────────────────────────────────────
+            foreach (var required in new[] { "metadata-rules.yaml", "queries.yaml" })
+            {
+                if (!zipNames.Contains(required))
+                {
+                    var yamlFiles = zipNames.Where(n => n.EndsWith(".yaml") || n.EndsWith(".yml")).ToList();
+                    var hint = yamlFiles.Count > 0
+                        ? $" Found YAML files: [{string.Join(", ", yamlFiles)}]."
+                        : string.Empty;
+                    return BadRequest(new { error = $"Required file '{required}' not found in ZIP root.{hint}" });
+                }
+            }
+
+            string metaContent;
+            using (var r = new System.IO.StreamReader(zip.GetEntry("metadata-rules.yaml")!.Open()))
+                metaContent = await r.ReadToEndAsync();
+            if (!Regex.IsMatch(metaContent, @"doc_kind_rules:\s*\r?\n\s+-"))
+                return BadRequest(new { error = "metadata-rules.yaml must contain at least one doc_kind_rules entry" });
+
+            string queriesContent;
+            using (var r = new System.IO.StreamReader(zip.GetEntry("queries.yaml")!.Open()))
+                queriesContent = await r.ReadToEndAsync();
+            if (!Regex.IsMatch(queriesContent, @"named_queries:\s*\r?\n\s+-"))
+                return BadRequest(new { error = "queries.yaml must contain at least one named_queries entry" });
+
+            var knownKinds = Regex.Matches(metaContent, @"\bkind:\s*(\S+)")
+                .Cast<Match>()
+                .Select(m => m.Groups[1].Value.Trim())
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var badKinds = Regex.Matches(queriesContent, @"\bdoc_kind:\s*(\S+)")
+                .Cast<Match>()
+                .Select(m => m.Groups[1].Value.Trim())
+                .Where(k => !knownKinds.Contains(k))
+                .Distinct()
+                .OrderBy(k => k)
+                .ToList();
+            if (badKinds.Count > 0)
+                return BadRequest(new { error = $"queries.yaml references unknown doc_kind(s): [{string.Join(", ", badKinds)}]. Add matching rules to metadata-rules.yaml." });
+
+            // ── multilingual-glossary.yaml ────────────────────────────────────
+            if (!zipNames.Contains("multilingual-glossary.yaml"))
+                warnings.Add("multilingual-glossary.yaml not found in ZIP — Polish/German query expansion will be reduced.");
+
+            // ── Document entries ──────────────────────────────────────────────
+            var fileEntries = new List<ZipArchiveEntry>();
+            foreach (var entry in zip.Entries)
+            {
+                if (entry.FullName.EndsWith('/')) continue;
+                if (ConfigFiles.Contains(entry.FullName)) continue;
+
+                // Path traversal protection
+                var normalized = entry.FullName.Replace('\\', '/');
+                if (normalized.Split('/').Any(p => p == ".."))
+                    return BadRequest(new { error = $"Path traversal detected in ZIP entry '{entry.FullName}'" });
+
+                // Extension check — only .md files accepted as documents
+                if (!entry.FullName.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+                {
+                    warnings.Add($"Skipped non-.md file: '{entry.FullName}'");
+                    continue;
+                }
+
+                // Zero-byte filter
+                if (entry.Length == 0)
+                {
+                    warnings.Add($"Skipped zero-byte file: '{entry.FullName}'");
+                    continue;
+                }
+
+                fileEntries.Add(entry);
+            }
+
+            if (fileEntries.Count == 0)
+                return BadRequest(new { error = "ZIP contains no .md document files" });
+
+            if (channel.PendingCount + fileEntries.Count > channel.Capacity)
+            {
+                logger.LogWarning("Ingest queue full, rejecting batch of {Count} files for {Collection}", fileEntries.Count, collection);
+                return StatusCode(503, new { error = "Ingest queue is full. Retry after a moment.", pending = channel.PendingCount });
+            }
+
+            var enqueuedAt = DateTimeOffset.UtcNow;
+            var opList     = new List<BatchOperationEntry>(fileEntries.Count);
+
+            foreach (var entry in fileEntries)
+            {
+                var relPath = entry.FullName.Replace('\\', '/');
+                string content;
+                using (var reader = new System.IO.StreamReader(entry.Open()))
+                    content = await reader.ReadToEndAsync();
+
+                var safeRelPath = relPath.Replace('/', '-');
+                var opId = $"{collection}:{safeRelPath}:{enqueuedAt.Ticks}-{opList.Count}";
+
+                var job = new IngestJob
+                {
+                    OperationId = opId,
+                    Collection  = collection,
+                    RelPath     = relPath,
+                    Content     = content,
+                    EnqueuedAt  = enqueuedAt,
+                };
+
+                if (!channel.TryWrite(job))
+                {
+                    logger.LogError("Failed to enqueue job {OpId} — channel unexpectedly full", opId);
+                    return StatusCode(503, new { error = "Ingest channel unexpectedly full. Retry after a moment." });
+                }
+
+                operations.MarkQueued(opId, collection, relPath, enqueuedAt);
+
+                var statusUrl = $"/ingest/{collection}/operations/{Uri.EscapeDataString(opId)}";
+                opList.Add(new BatchOperationEntry { RelPath = relPath, OperationId = opId, StatusUrl = statusUrl });
+            }
+
+            logger.LogInformation("Batch queued {Count} jobs for {Collection}", opList.Count, collection);
+
+            return Accepted(new BatchIngestResponse
+            {
+                BatchId    = $"batch:{collection}:{enqueuedAt.Ticks}",
+                Count      = opList.Count,
+                Operations = opList,
+                Warnings   = warnings.Count > 0 ? warnings : null,
+            });
+        }
     }
-
-    logger.LogInformation("Batch queued {Count} jobs for {Collection}", opList.Count, collection);
-
-    return Accepted(new BatchIngestResponse
-    {
-        BatchId    = $"batch:{collection}:{enqueuedAt.Ticks}",
-        Count      = opList.Count,
-        Operations = opList,
-    });
-}
 }
 
 /// <summary>Response body for 202 Accepted from POST /ingest/{collection}/batch.</summary>
@@ -166,6 +241,8 @@ public sealed class BatchIngestResponse
     public string                    BatchId    { get; set; } = string.Empty;
     public int                       Count      { get; set; }
     public List<BatchOperationEntry> Operations { get; set; } = [];
+    /// <summary>Non-fatal warnings (skipped files, missing optional resources).</summary>
+    public List<string>?             Warnings   { get; set; }
 }
 
 /// <summary>Per-file entry within <see cref="BatchIngestResponse"/>.</summary>

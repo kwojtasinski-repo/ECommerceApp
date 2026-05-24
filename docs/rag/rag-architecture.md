@@ -141,7 +141,7 @@ VS Code starts the MCP server via `docker run`. No Python or Qdrant on the host 
 }
 ```
 
-The MCP server exposes 3 tools — `query_docs`, `get_adr_history`, `list_adrs` — with the collection name read from `config.yaml` baked into the image.
+The MCP server exposes 3 tools — `query_docs`, `get_adr_history`, `list_adrs` — with the collection name read from `rag-config.yaml` baked into the image.
 
 ---
 
@@ -346,11 +346,11 @@ Qdrant stores only embeddings (384-dim vectors) and metadata (source path, chunk
 
 Tasks to execute to complete the v2 architecture:
 
-- [ ] **Refactor `ingest.py`** — add `--manifest` flag, replace hardcoded `config.yaml` path with manifest glob patterns
+- [ ] **Refactor `ingest.py`** — add `--manifest` flag, replace hardcoded `rag-config.yaml` path with manifest glob patterns
 - [ ] **Refactor `mcp_server.py`** — add `--manifest` flag, read collection name from manifest at startup
 - [ ] **Extract `common.py` defaults** — move `DEFAULT_WEIGHTS` list here, implement merge logic for manifest overrides
 - [ ] **Create `tune_weights.py`** — reads Qdrant stats + git log, writes `weights:` section to manifest
-- [ ] **Move `tools/rag/config.yaml` → `.copilot-rag.yaml`** at repo root, convert to new schema
+- [ ] **Move `tools/rag/rag-config.yaml` → `.copilot-rag.yaml`** at repo root, convert to new schema
 - [ ] **Create `.copilot-rag.yaml` for ParkingLot**
 - [ ] **Update `.vscode/mcp.json`** — add named `parkinglot-rag` server entry with manifest path
 - [ ] **Create `.github/prompts/tune-rag-weights.prompt.md`** — the maintenance agent prompt

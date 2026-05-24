@@ -259,7 +259,7 @@ pre-built `onnx/model.onnx` on HuggingFace, English):
    the `vocab.txt` curl line back to `"${MODEL_BASE}/vocab.txt"`.
 3. Delete `model/` and re-run `download-model.ps1`.
 4. Re-ingest the workspace (embeddings are model-specific; old vectors are incompatible).
-5. If the dimension changes (e.g., switching to a 768-d model), update `config.yaml`:
+5. If the dimension changes (e.g., switching to a 768-d model), update `rag-config.yaml`:
    `embedding_dimensions: 768`. For L6/L12 no change needed — they're 384-d.
 
 > **Multilingual requirement?** The Python implementation already handles this correctly
@@ -300,20 +300,20 @@ dotnet run --project src/RagTools.Mcp
 | ---------------- | ------------------------ | ------------------------------------ |
 | `RAG_WORKSPACE`  | derived from config path | Absolute path to the repo root       |
 | `RAG_MODEL_DIR`  | `<binary dir>/model`     | Path to the downloaded ONNX model    |
-| `RAG_CONFIG`     | see resolution below     | Path to `config.yaml`                |
-| `QDRANT_URL`     | value from config.yaml   | Qdrant HTTP URL (`http://host:6333`) |
-| `RAG_COLLECTION` | value from config.yaml   | Qdrant collection name override      |
+| `RAG_CONFIG`     | see resolution below     | Path to `rag-config.yaml`                |
+| `QDRANT_URL`     | value from rag-config.yaml   | Qdrant HTTP URL (`http://host:6333`) |
+| `RAG_COLLECTION` | value from rag-config.yaml   | Qdrant collection name override      |
 
 ### Config-path resolution (4-way priority — Python parity)
 
 1. Explicit `--config <path>` argument (if/when CLI exposes one)
 2. `RAG_CONFIG` env var
-3. `RAG_WORKSPACE` env var → derived path `<workspace>/tools/rag/config.yaml`
-4. `AppContext.BaseDirectory/config.yaml` (Docker bundle / published output)
+3. `RAG_WORKSPACE` env var → derived path `<workspace>/tools/rag/rag-config.yaml`
+4. `AppContext.BaseDirectory/rag-config.yaml` (Docker bundle / published output)
 
 ### Workspace-path resolution (3-way priority)
 
-1. Grandparent of the loaded config path — `<ws>/tools/rag/config.yaml` → `<ws>`
+1. Grandparent of the loaded config path — `<ws>/tools/rag/rag-config.yaml` → `<ws>`
 2. `RAG_WORKSPACE` env var
 3. `Directory.GetCurrentDirectory()`
 
@@ -332,7 +332,7 @@ docker compose --profile rag-dotnet run --rm rag-dotnet dotnet /app/ingest/inges
 docker compose --profile rag-dotnet run --rm rag-dotnet dotnet /app/ingest/ingest.dll -- --force-full
 ```
 
-> Use `--force-full` after changing `config.yaml` chunker settings, switching embedding
+> Use `--force-full` after changing `rag-config.yaml` chunker settings, switching embedding
 > models, or modifying `metadata-rules.yaml`. Existing vectors are incompatible
 > with different model outputs.
 
@@ -340,7 +340,7 @@ docker compose --profile rag-dotnet run --rm rag-dotnet dotnet /app/ingest/inges
 
 ## Configuration
 
-Settings are read from `tools/rag/config.yaml` (shared between Python and .NET).
+Settings are read from `tools/rag/rag-config.yaml` (shared between Python and .NET).
 The .NET runtime loads this file at startup via the `RAG_CONFIG` env var.
 
 Key fields that affect the .NET path:
@@ -366,7 +366,7 @@ RagTools.Tests         — 100 unit tests (no external services required)
 ```
 
 The MCP server mirrors the Python `mcp_server.py` tools exactly — both implementations
-read the same `config.yaml` and target the same Qdrant schema, so you can switch between
+read the same `rag-config.yaml` and target the same Qdrant schema, so you can switch between
 them without re-indexing (as long as they use the same collection name).
 
 ---

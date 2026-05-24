@@ -89,7 +89,7 @@
 | `create-message-contract` | Cross-BC IMessage event contract, publisher side only           | Session 20 |
 | `generate-eval-questions` | Eval question template for newly indexed RAG docs               | Session 23 |
 | `diagnose-rag`            | MCP diagnostic playbook — 7 failure categories                  | Session 23 |
-| `tune-rag-weights`        | Adjust config.yaml ranking weight multipliers                   | Session 23 |
+| `tune-rag-weights`        | Adjust rag-config.yaml ranking weight multipliers                   | Session 23 |
 | `expand-rag-glossary`     | Add PL/DE patterns to multilingual-glossary.yaml                | Session 23 |
 | `generate-rag-rules`      | Update metadata-rules.yaml and queries.yaml                     | Session 23 |
 
@@ -184,7 +184,7 @@
 
 | #   | Change                                                                                                                                                              | Files affected                                                                                  |
 | --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| 1   | RAG pipeline core: `config.yaml` (all knobs), `common.py` (helpers + weight resolver), `chunker.py` (heading-aware + breadcrumb + overlap), `ingest.py`, `query.py` | `tools/rag/config.yaml`, `common.py`, `chunker.py`, `ingest.py`, `query.py`, `requirements.txt` |
+| 1   | RAG pipeline core: `rag-config.yaml` (all knobs), `common.py` (helpers + weight resolver), `chunker.py` (heading-aware + breadcrumb + overlap), `ingest.py`, `query.py` | `tools/rag/rag-config.yaml`, `common.py`, `chunker.py`, `ingest.py`, `query.py`, `requirements.txt` |
 | 2   | Eval suite: 20 anchor questions + recall@k reporter (acceptance bar: recall@8 ≥ 80 %)                                                                               | `tools/rag/eval/questions.json`, `tools/rag/eval/eval.py`                                       |
 | 3   | MCP server with 3 tools: `query_docs`, `get_adr_history`, `list_adrs`; registered in VS Code via `mcp.json`                                                         | `tools/rag/mcp_server.py`, `.github/copilot/mcp.json`                                           |
 | 4   | `rag.instructions.md` — routing precedence (docs-index FIRST, RAG as fallback), output discipline, refresh policy                                                   | `.github/instructions/rag.instructions.md`, `.github/instructions/docs-index.instructions.md`   |

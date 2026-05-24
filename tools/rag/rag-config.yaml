@@ -132,7 +132,7 @@ query:
 
 # ── Companion config files ─────────────────────────────────────────────────────
 # Paths are relative to this file's directory.
-# The loader resolves each path relative to the directory that contains config.yaml.
+# The loader resolves each path relative to the directory that contains rag-config.yaml.
 # Override any file by changing its path here — no hardcoded paths in code.
 config_files:
   metadata_rules:        "metadata-rules.yaml"          # doc_kind_rules + adr_id_patterns

@@ -26,6 +26,7 @@ applyTo: ".github/**, docs/**"
 | BC blocked? | `.github/context/project-state.md` |
 | Bug already tracked? | `.github/context/known-issues.md` |
 | Prior corrections? | `.github/context/agent-decisions.md` |
+| Test skip/xfail rules? | `.github/context/test-stabilization-policy.md` |
 | Full routing table | `.github/instructions/docs-index.full.md` |
 | Pipeline spec | `.github/AGENT-PIPELINE.md` |
 

@@ -262,8 +262,8 @@ _MINIMAL_CONFIG = textwrap.dedent("""\
 
 
 def _write_companion_files(tmp_path: Path) -> Path:
-    """Write config.yaml + companion queries.yaml + metadata-rules.yaml to tmp_path."""
-    config_yaml = tmp_path / "config.yaml"
+    """Write rag-config.yaml + companion queries.yaml + metadata-rules.yaml to tmp_path."""
+    config_yaml = tmp_path / "rag-config.yaml"
     config_yaml.write_text(
         _MINIMAL_CONFIG + textwrap.dedent("""\
             config_files:
@@ -323,7 +323,7 @@ def test_load_config_loads_doc_kind_rules_from_companion(tmp_path):
 
 def test_load_config_missing_companion_files_gives_empty_metadata(tmp_path):
     """No companion files → empty named_queries, empty adr_id_patterns, empty doc_kind_rules."""
-    config_yaml = tmp_path / "config.yaml"
+    config_yaml = tmp_path / "rag-config.yaml"
     config_yaml.write_text(_MINIMAL_CONFIG, encoding="utf-8")
 
     cfg = load_config(config_yaml)
@@ -334,10 +334,10 @@ def test_load_config_missing_companion_files_gives_empty_metadata(tmp_path):
 
 
 def test_load_config_companion_resolved_relative_to_config_dir(tmp_path):
-    """Companion files are resolved from the config.yaml directory, not CWD."""
+    """Companion files are resolved from the rag-config.yaml directory, not CWD."""
     sub = tmp_path / "project" / "rag"
     sub.mkdir(parents=True)
-    config_yaml = sub / "config.yaml"
+    config_yaml = sub / "rag-config.yaml"
     config_yaml.write_text(
         _MINIMAL_CONFIG + "config_files:\n  queries: queries.yaml\n",
         encoding="utf-8",

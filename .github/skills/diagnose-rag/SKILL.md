@@ -51,7 +51,7 @@ Get-Process | Where-Object { $_.Name -like "*RagTools*" }
 | Error | Cause | Fix |
 |-------|-------|-----|
 | `ModuleNotFoundError: sentence_transformers` | venv not activated or wrong Python | Check `.vscode/mcp.json` — python path must point to `.venv/Scripts/python` |
-| `FileNotFoundError: config.yaml` | Wrong working directory | Set `cwd` in `.vscode/mcp.json` to the repo root |
+| `FileNotFoundError: rag-config.yaml` | Wrong working directory | Set `cwd` in `.vscode/mcp.json` to the repo root |
 | `ConnectionRefusedError: localhost:6333` | Qdrant not running | `docker compose --profile rag up qdrant -d` |
 | `No collection 'ecommerceapp_docs'` | Index never built | `docker compose --profile rag run --rm rag-tools python ingest.py` |
 
@@ -116,7 +116,7 @@ query_docs("<concept>", top_k=20)
 
 Scan the full list of 20 results. Is the expected file anywhere in the list?
 
-- **Not in top-20**: the doc is not indexed → re-run ingest, check `source.roots` and `exclude_globs` in `config.yaml`
+- **Not in top-20**: the doc is not indexed → re-run ingest, check `source.roots` and `exclude_globs` in `rag-config.yaml`
 - **In top-10 but not #1**: weight or threshold issue → see `tune-rag-weights` skill
 
 ### Step B — Check the score gap
@@ -175,7 +175,7 @@ print(_expand_query("twój zapytanie po polsku", entries, repeat=3))
 ### Check the threshold setting
 
 ```yaml
-# tools/rag/config.yaml
+# tools/rag/rag-config.yaml
 ranking:
   score_threshold: 0.30    # Results below this are dropped
 ```
@@ -194,7 +194,7 @@ embedder:
   dimensions: 384
 ```
 
-If you changed the model in config.yaml after the index was built → force-full re-index:
+If you changed the model in rag-config.yaml after the index was built → force-full re-index:
 
 ```powershell
 docker compose --profile rag run --rm rag-tools python ingest.py --force-full
@@ -252,7 +252,7 @@ docker compose --profile rag run --rm rag-tools python ingest.py --force-full
 |--------|------------------------|
 | New/edited markdown file | ✅ Yes |
 | Deleted markdown file | ✅ Yes |
-| `config.yaml` ranking.weights changed | ✅ Yes (query-time only) |
+| `rag-config.yaml` ranking.weights changed | ✅ Yes (query-time only) |
 | `multilingual-glossary.yaml` changed | ✅ Yes (query-time only) |
 | `queries.yaml` changed | ✅ Yes (not used during ingest) |
 | `metadata-rules.yaml` changed | ❌ No — force-full required |

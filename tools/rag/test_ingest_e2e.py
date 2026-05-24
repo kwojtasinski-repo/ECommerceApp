@@ -446,9 +446,9 @@ class TestE2EFullPipelineQdrant:
         from query import QueryEngine
         from qdrant_client import QdrantClient
 
-        cfg_path = Path(__file__).parent / "config.yaml"
+        cfg_path = Path(__file__).parent / "rag-config.yaml"
         if not cfg_path.exists():
-            pytest.fail("config.yaml not found next to test file — cannot build QueryEngine")
+            pytest.fail("rag-config.yaml not found next to test file — cannot build QueryEngine")
 
         # Force HTTP mode so the engine connects to the running Qdrant container.
         # The config may default to 'local' (embedded Qdrant), which writes to a local

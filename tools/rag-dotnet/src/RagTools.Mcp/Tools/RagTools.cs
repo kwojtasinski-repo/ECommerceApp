@@ -1,4 +1,4 @@
-﻿using System.ComponentModel;
+using System.ComponentModel;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
@@ -8,10 +8,10 @@ namespace RagTools.Mcp.Tools;
 
 /// <summary>
 /// MCP tools exposed to Copilot. Mirrors the Python mcp_server.py tools:
-///   query_docs      â€” semantic search across all indexed documentation
-///   read_docs       â€” grouped-by-file search (Qdrant content or disk fallback)
-///   get_adr_history â€” fetch all chunks for a specific ADR ID, ordered by start line
-///   list_adrs       â€” list all ADRs from disk (accurate, not index-dependent)
+///   query_docs      — semantic search across all indexed documentation
+///   read_docs       — grouped-by-file search (Qdrant content or disk fallback)
+///   get_adr_history — fetch all chunks for a specific ADR ID, ordered by start line
+///   list_adrs       — list all ADRs from disk (accurate, not index-dependent)
 ///
 /// Uses <see cref="IDocumentStore"/> + <see cref="RagSession"/> for multi-tenant support:
 ///   - Collection is resolved per-session from ?project= query parameter (Step 9)
@@ -25,7 +25,7 @@ public sealed class RagTools(
     RagConfig cfg,
     ILogger<RagTools> logger)
 {
-    // Loaded once per server lifetime â€” returns Empty if GlossaryPath is null or file absent.
+    // Loaded once per server lifetime — returns Empty if GlossaryPath is null or file absent.
     private readonly MultilingualGlossary _glossary = MultilingualGlossary.Load(cfg.GlossaryPath);
 
     [McpServerTool, Description(
@@ -85,7 +85,7 @@ public sealed class RagTools(
         "Prefer this over QueryDocs when you need to reason over document context, not a single fragment.")]
     public async Task<string> ReadDocs(
         [Description("The search question or topic.")] string question,
-        [Description("Optional bounded context filter â€” matched against doc_kind field.")] string? bc = null,
+        [Description("Optional bounded context filter — matched against doc_kind field.")] string? bc = null,
         [Description("Maximum unique files to return (default: 3, max: 5).")] int top_files = 3,
         CancellationToken cancellationToken = default)
     {
@@ -139,7 +139,7 @@ public sealed class RagTools(
                     catch (Exception ex)
                     {
                         logger.LogWarning(ex, "ReadDocs: could not read file {RelPath}", f.RelPath);
-                        body = $"[ERROR: could not read file — {ex.Message}]";
+                        body = $"[ERROR: could not read file � {ex.Message}]";
                     }
                 }
                 files.Add(new { rel_path = f.RelPath, score = Math.Round(f.BestScore, 3), doc_kind = first.DocKind, mode = "full", content = body });
@@ -157,7 +157,7 @@ public sealed class RagTools(
 
     /// <summary>
     /// Multiplies each hit's score by the configured weight for its path
-    /// (from config.yaml ranking.weights â€” first matching glob wins, default 1.0).
+    /// (from rag-config.yaml ranking.weights — first matching glob wins, default 1.0).
     /// Re-sorts descending so the caller gets a ready-ranked list.
     /// </summary>
     private IReadOnlyList<DocumentSearchResult> ApplyWeights(IReadOnlyList<DocumentSearchResult> hits) =>
@@ -205,7 +205,7 @@ public sealed class RagTools(
         }
         catch
         {
-            // config point absent — use default
+            // config point absent � use default
         }
 
         var queryVec = embedder.Embed($"history {id}");
@@ -247,7 +247,7 @@ public sealed class RagTools(
 
     [McpServerTool, Description(
         "List all ADRs in the repository with id, title, and amendment count. " +
-        "Reads the docs/adr/ folder from disk â€” always accurate, not limited by index coverage. " +
+        "Reads the docs/adr/ folder from disk — always accurate, not limited by index coverage. " +
         "Use for orientation queries like 'what ADRs exist?' before calling GetHistory.")]
     public Task<string> ListAdrs(CancellationToken cancellationToken = default)
     {
@@ -294,6 +294,6 @@ public sealed class RagTools(
     }
 
     private static readonly System.Text.RegularExpressions.Regex TitleRe =
-        new(@"^#\s+(?:ADR-\d+\s*[â€”:-]\s*)?(.+?)\s*$",
+        new(@"^#\s+(?:ADR-\d+\s*[—:-]\s*)?(.+?)\s*$",
             System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.Compiled);
 }

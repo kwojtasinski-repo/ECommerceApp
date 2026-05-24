@@ -1,6 +1,6 @@
 # metadata-rules.yaml — repo-specific document classification rules.
-# Loaded by the RAG ingest and MCP server via config.yaml → config_files.metadata_rules.
-# Override per-repo without modifying config.yaml or the Docker image.
+# Loaded by the RAG ingest and MCP server via rag-config.yaml → config_files.metadata_rules.
+# Override per-repo without modifying rag-config.yaml or the Docker image.
 #
 # All paths below are relative file paths matched against each markdown file's
 # repo-relative path (forward-slash, no leading slash).

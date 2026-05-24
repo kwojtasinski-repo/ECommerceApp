@@ -336,7 +336,7 @@ def _make_qdrant_client(url: str | None):
 
 
 def _embedder_model_name() -> str:
-    """Get the embedder model name from config.yaml (used with sentence-transformers)."""
+    """Get the embedder model name from rag-config.yaml (used with sentence-transformers)."""
     from common import load_config
     return load_config().embedder_model
 

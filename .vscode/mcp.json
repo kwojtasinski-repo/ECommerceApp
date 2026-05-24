@@ -11,7 +11,7 @@
   //     Python:  enable  "ecommerceapp-rag-python-docker" disable all others
   //     .NET:    enable  "ecommerceapp-rag-dotnet-docker" disable all others
   //
-  //   SSE variants — run the task FIRST (Ctrl+Shift+P → "Tasks: Run Task"):
+  //   HTTP variants — run the task FIRST (Ctrl+Shift+P → "Tasks: Run Task"):
   //     .NET:    "RAG: Start .NET SSE"   → then toggle on ecommerceapp-rag-dotnet-sse
   //     Python:  "RAG: Start Python SSE" → then toggle on ecommerceapp-rag-python-sse
   //
@@ -42,14 +42,14 @@
     //
     // RAG_WORKSPACE tells the server where the repo root is.
     // Companion files (metadata-rules.yaml, queries.yaml) are found automatically
-    // next to config.yaml — no explicit env vars needed for them.
+    // next to rag-config.yaml — no explicit env vars needed for them.
     //
     // VECTOR_MODE=docker connects to Qdrant running via: docker compose up -d qdrant
     // QDRANT_URL points at the host-side port exposed by the qdrant service.
     // Without these two vars, the server falls back to mode=local with path=/data/qdrant
     // (a container-only path) and cannot serve any queries on Windows.
     //
-    // To use a different config file, append: "--config", "C:/full/path/config.yaml"
+    // To use a different config file, append: "--config", "C:/full/path/rag-config.yaml"
     "ecommerceapp-rag-python": {
       "type": "stdio",
       "command": "${workspaceFolder}/tools/rag/.venv/Scripts/python.exe",
@@ -72,7 +72,7 @@
     // Workspace mount: the repo root is mounted read-only at /workspace so that
     // list_adrs and get_adr_history can read ADR files from disk.
     // The Dockerfile sets ENV RAG_WORKSPACE=/workspace so no explicit env override
-    // is needed — config.yaml resolves to /workspace/tools/rag/config.yaml.
+    // is needed — rag-config.yaml resolves to /workspace/tools/rag/rag-config.yaml.
     //
     // Companion mounts (project-specific overrides):
     //   --volume .../metadata-rules.yaml:/data/...  → project-specific classification rules
@@ -133,7 +133,7 @@
       ],
       "env": {
         "RAG_WORKSPACE": "${workspaceFolder}",
-        "RAG_CONFIG":    "${workspaceFolder}/tools/rag-dotnet/config.yaml",
+        "RAG_CONFIG":    "${workspaceFolder}/tools/rag-dotnet/rag-config.yaml",
         "RAG_MODEL_DIR": "${workspaceFolder}/tools/rag-dotnet/model",
         "QDRANT_URL":    "http://localhost:6333",
         "RAG_COLLECTION": "ecommerceapp_docs_dotnet",
@@ -179,31 +179,32 @@
     //     docker compose --profile rag-python-sse  up -d rag-python-sse
     //
     // ► Without Docker (local process):
-    //     $env:MCP_TRANSPORT="sse"; $env:MCP_PORT="3001"; dotnet run --project tools/rag-dotnet/src/RagTools.Mcp/RagTools.Mcp.csproj
-    //     $env:MCP_TRANSPORT="sse"; $env:MCP_PORT="3002"; python tools/rag/mcp_server.py
+    //     $env:MCP_TRANSPORT="http"; $env:MCP_PORT="3001"; dotnet run --project tools/rag-dotnet/src/RagTools.Mcp/RagTools.Mcp.csproj
+    //     $env:MCP_TRANSPORT="http"; $env:MCP_PORT="3002"; python tools/rag/mcp_server.py
     //
     // The model stays warm across sessions; no cold start per chat.
 
-    // ── LOCAL Python SSE variant ──────────────────────────────────────────────
+    // ── LOCAL Python HTTP variant ─────────────────────────────────────────────
+    // Uses MCP Streamable HTTP transport (POST /, mcp>=1.8.0).
+    // ?project= sets the Qdrant collection for this VS Code session.
     "ecommerceapp-rag-python-sse": {
-      "type": "sse",
-      "url": "http://localhost:3002/sse"
+      "type": "http",
+      "url": "http://localhost:3002/?project=ecommerceapp_docs"
     },
 
-    // ── LOCAL .NET SSE variant ────────────────────────────────────────────────
+    // ── LOCAL .NET HTTP variant ───────────────────────────────────────────────
     // Uses MCP Streamable HTTP transport (POST-based, MCP spec 1.x).
     // NOT classic SSE — do NOT use "type":"sse" or a /sse path here.
     //
     //   "type":"http" → Streamable HTTP  → VS Code POSTs to the URL  → server needs POST /
     //   "type":"sse"  → classic SSE      → VS Code GETs {url}/sse    → server needs GET /sse
     //
-    // Our .NET server (WithHttpTransport) has POST / only — no GET /sse endpoint.
-    // The Python server (SseServerTransport) has GET /sse only — no POST / endpoint.
+    // Both servers use MCP_TRANSPORT=http and expose POST / only.
     //
     // Requires: run task "RAG: Start .NET SSE" first.
     "ecommerceapp-rag-dotnet-sse": {
       "type": "http",
-      "url": "http://localhost:3001/"
+      "url": "http://localhost:3001/?project=ecommerceapp_docs_dotnet"
     }
   }
 }

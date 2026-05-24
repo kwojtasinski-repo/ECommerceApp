@@ -4,7 +4,7 @@ namespace RagTools.Tests.E2E;
 
 /// <summary>
 /// Creates a fully self-contained temporary workspace with synthetic markdown docs and a
-/// config.yaml that points at a caller-supplied Qdrant URL and collection name.
+/// rag-config.yaml that points at a caller-supplied Qdrant URL and collection name.
 ///
 /// The workspace is repo-independent: it contains no references to ECommerceApp ADR numbers,
 /// titles, or domain concepts. Any project that follows the docs/adr/NNNN/ convention will
@@ -12,7 +12,7 @@ namespace RagTools.Tests.E2E;
 ///
 /// Layout:
 ///   &lt;root&gt;/
-///     tools/rag/config.yaml
+///     tools/rag/rag-config.yaml
 ///     docs/
 ///       concepts/
 ///         alpha.md   — describes the "Alpha" pattern (value-object style)
@@ -43,11 +43,11 @@ public sealed class SyntheticWorkspace : IDisposable
         var root = Path.Combine(Path.GetTempPath(), $"rag-e2e-{Guid.NewGuid():N}");
         Directory.CreateDirectory(root);
 
-        // ── tools/rag/config.yaml ──────────────────────────────────────────
+        // ── tools/rag/rag-config.yaml ──────────────────────────────────────────
         var ragDir = Path.Combine(root, "tools", "rag");
         Directory.CreateDirectory(ragDir);
 
-        var configPath = Path.Combine(ragDir, "config.yaml");
+        var configPath = Path.Combine(ragDir, "rag-config.yaml");
         File.WriteAllText(configPath, $"""
             source:
               roots:

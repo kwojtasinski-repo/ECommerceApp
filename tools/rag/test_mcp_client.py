@@ -73,7 +73,7 @@ def _build_cmd(docker: bool, workspace: Path, server_py: Path) -> list[str]:
     if docker:
         # RAG_WORKSPACE=/workspace is the only path-related knob.
         # The image WORKDIR is /app — scripts run from there, no /workspace/ paths needed.
-        # RAG_WORKSPACE drives config derivation: <workspace>/tools/rag/config.yaml.
+        # RAG_WORKSPACE drives config derivation: <workspace>/tools/rag/rag-config.yaml.
         return [
             "docker", "run", "--rm", "--interactive",
             "--network", "ecommerceapp_default",   # joins compose network → qdrant:6333 reachable

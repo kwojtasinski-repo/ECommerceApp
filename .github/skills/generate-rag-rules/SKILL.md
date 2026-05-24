@@ -176,7 +176,7 @@ with their actual top-3 and expected document.
 - **Broad glob placed before specific glob** → wrong `doc_kind` assigned to files; fix by
   reordering (specific first)
 - **New folder not excluded from ingest** → RAG meta-docs, reports, transient files indexed
-  as real content; add to `source.exclude_globs` in `config.yaml`
+  as real content; add to `source.exclude_globs` in `rag-config.yaml`
 - **Skipping force-full re-index after metadata-rules change** → old chunks retain stale
   `doc_kind`; partial ingest will not fix this — force-full is required
 - **queries.yaml edited without running eval.py** → query may have a typo or wrong `adr_id`;

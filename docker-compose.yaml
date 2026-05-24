@@ -31,7 +31,7 @@ services:
         depends_on:
           - qdrant
         environment:
-          - RAG_CONFIG=/app/config.yaml   # use baked config — selective mounts don't include tools/rag/
+          - RAG_CONFIG=/app/rag-config.yaml   # use baked config — selective mounts don't include tools/rag/
           - RAG_WORKSPACE=/workspace      # still needed for Config.workspace → source_roots resolution
           - PYTHONUNBUFFERED=1
           - VECTOR_MODE=docker
@@ -41,7 +41,7 @@ services:
           - ./docs:/workspace/docs                            # rw — ingest writes docs/rag/index-stats.md
           - ./.github/context:/workspace/.github/context:ro  # context files (known-issues, agent-decisions, etc.)
           - ./.rag:/workspace/.rag                           # rw — manifest.json written by ingest
-          # Companion config files — resolved by load_config() relative to /app/config.yaml
+          # Companion config files — resolved by load_config() relative to /app/rag-config.yaml
           - ./tools/rag/metadata-rules.yaml:/app/metadata-rules.yaml:ro
           - ./tools/rag/queries.yaml:/app/queries.yaml:ro
         profiles:
@@ -74,36 +74,36 @@ services:
           - RAG_WORKSPACE=/workspace
           - QDRANT_URL=http://qdrant:6333
           - RAG_COLLECTION=ecommerceapp_docs_dotnet
-          - RAG_CONFIG=/config.yaml
+          - RAG_CONFIG=/rag-config.yaml
           - DOTNET_CLI_TELEMETRY_OPTOUT=1
         volumes:
           - .:/workspace:ro                              # repo root → /workspace (read-only)
           - ./.rag:/workspace/.rag                       # manifest + scratch files (read-write)
           - ./docs/rag:/workspace/docs/rag               # stats md written here (read-write)
-          - ./tools/rag-dotnet/config.yaml:/config.yaml:ro  # project-specific config
+          - ./tools/rag-dotnet/rag-config.yaml:/rag-config.yaml:ro  # project-specific config
           - ./tools/rag/metadata-rules.yaml:/metadata-rules.yaml:ro  # companion: adr_id patterns
           - ./tools/rag/queries.yaml:/queries.yaml:ro                 # companion: named queries
         profiles:
           - rag-dotnet
 
     # ── SSE variants ──────────────────────────────────────────────────────────
-    # Persistent HTTP servers — start once, VS Code connects via mcp.json type:sse.
+    # Persistent HTTP servers — start once, VS Code connects via mcp.json.
     # Both services reuse the same images built by their stdio counterparts.
     #
     # Start:  docker compose --profile rag-python-sse up -d rag-python-sse
     #         docker compose --profile rag-dotnet-sse up -d rag-dotnet-sse
     # Stop:   docker compose --profile rag-python-sse down
     #
-    # Note: these services ONLY run the MCP server (SSE mode).
+    # Note: these services ONLY run the MCP server (HTTP mode).
     # Run ingest separately first using the non-SSE services.
 
-    # Python SSE — port 3002
+    # Python HTTP — port 3002 (Streamable HTTP, mcp>=1.8.0)
     rag-python-sse:
         image: rag-tools
         depends_on:
           - qdrant
         environment:
-          - MCP_TRANSPORT=sse
+          - MCP_TRANSPORT=http
           - MCP_PORT=3002
           - RAG_WORKSPACE=/workspace
           - VECTOR_MODE=docker
@@ -119,24 +119,24 @@ services:
         profiles:
           - rag-python-sse
 
-    # .NET SSE — port 3001
+    # .NET HTTP — port 3001
     rag-dotnet-sse:
         image: rag-dotnet
         depends_on:
           - qdrant
         environment:
-          - MCP_TRANSPORT=sse
+          - MCP_TRANSPORT=http
           - MCP_PORT=3001
           - RAG_WORKSPACE=/workspace
           - QDRANT_URL=http://qdrant:6333
           - RAG_COLLECTION=ecommerceapp_docs_dotnet
-          - RAG_CONFIG=/config.yaml
+          - RAG_CONFIG=/rag-config.yaml
           - DOTNET_CLI_TELEMETRY_OPTOUT=1
         ports:
           - "3001:3001"
         volumes:
           - .:/workspace:ro
-          - ./tools/rag-dotnet/config.yaml:/config.yaml:ro
+          - ./tools/rag-dotnet/rag-config.yaml:/rag-config.yaml:ro
           - ./tools/rag/metadata-rules.yaml:/metadata-rules.yaml:ro  # companion: adr_id patterns
           - ./tools/rag/queries.yaml:/queries.yaml:ro                 # companion: named queries
         profiles:

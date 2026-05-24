@@ -42,6 +42,8 @@ ECommerceApp — ASP.NET Core MVC + Web API e-commerce platform. Clean/onion arc
 
 **Bug fix rule**: Before any bug fix, MUST read `known-issues.md`.
 
+**Test rule**: Before adding skip/xfail to any test, MUST read `test-stabilization-policy.md`. Every skip needs a tracking ref (KI-NNN or issue #).
+
 **Agent memory rule**: Skim `agent-decisions.md` before non-trivial work — auto-loaded via `agent-memory.instructions.md`. Append after every meaningful correction (see `pre-edit.instructions.md`).
 
 **Clarification rule**: If scope, BC ownership, or blocker status are unclear, ask BEFORE writing code.

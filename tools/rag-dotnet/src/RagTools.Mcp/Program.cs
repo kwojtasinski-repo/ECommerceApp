@@ -13,19 +13,19 @@ using RagTools.Mcp.Middleware;
 //     VS Code / Copilot spawns this process and communicates over stdin/stdout.
 //     Uses Host.CreateApplicationBuilder — stdout stays clean for MCP framing.
 //
-//   MCP_TRANSPORT=sse
-//     Runs a persistent HTTP server with /sse endpoint.
-//     VS Code connects via mcp.json "type":"sse", "url":"http://host:PORT/sse".
+//   MCP_TRANSPORT=http  (also accepts: sse — legacy alias)
+//     Runs a persistent Streamable HTTP server.
+//     VS Code connects via mcp.json "type":"http", "url":"http://host:PORT/".
 //     Uses WebApplication.CreateBuilder (ASP.NET Core / Kestrel).
 //
 // Environment variables:
-//   MCP_TRANSPORT    "stdio" (default) or "sse"
+//   MCP_TRANSPORT    "stdio" (default) or "http" (legacy alias: "sse")
 //   MCP_PORT         port for SSE mode (default: 3001)
 //   MCP_LOG_LEVEL    log verbosity: trace|debug|information|warning|error (default: warning)
 //   RAG_WORKSPACE    absolute path to the repo root
 //   RAG_COLLECTION   Qdrant collection name override
-//   RAG_CONFIG       path to config.yaml (default: /app/config.yaml)
-//   QDRANT_URL       Qdrant server URL (default: from config.yaml)
+//   RAG_CONFIG       path to rag-config.yaml (default: /app/rag-config.yaml)
+//   QDRANT_URL       Qdrant server URL (default: from rag-config.yaml)
 //   RAG_MODEL_DIR    path to ONNX model directory (default: /app/model)
 //
 // CLI flags:
@@ -66,7 +66,7 @@ var resolvedConfigPath = RagConfig.ResolveConfigPath(null);
 
 if (!File.Exists(resolvedConfigPath))
 {
-    Console.Error.WriteLine($"[rag-mcp] ERROR: config.yaml not found at {resolvedConfigPath}");
+    Console.Error.WriteLine($"[rag-mcp] ERROR: rag-config.yaml not found at {resolvedConfigPath}");
     Console.Error.WriteLine("[rag-mcp] Set RAG_CONFIG or RAG_WORKSPACE before launching the MCP server.");
     return 1;
 }
@@ -95,7 +95,7 @@ if (!Directory.Exists(modelDir))
     return 1;
 }
 
-if (transport == "sse")
+if (transport is "http" or "sse")
 {
     // ── SSE / HTTP mode ───────────────────────────────────────────────────────
     // Uses WebApplication (Kestrel). Stdout is safe for normal logs here.

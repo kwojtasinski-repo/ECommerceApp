@@ -5,7 +5,7 @@ using YamlDotNet.Serialization.NamingConventions;
 namespace RagTools.Core;
 
 /// <summary>
-/// Strongly-typed view over config.yaml. Mirrors the Python Config dataclass.
+/// Strongly-typed view over rag-config.yaml. Mirrors the Python Config dataclass.
 /// Load with RagConfig.Load(path).
 /// </summary>
 public sealed class RagConfig
@@ -22,14 +22,14 @@ public sealed class RagConfig
     public List<NamedQueryEntry> NamedQueries { get; init; } = [];
 
     /// <summary>
-    /// Absolute path of the config.yaml this instance was loaded from. Set by <see cref="Load"/>.
+    /// Absolute path of the rag-config.yaml this instance was loaded from. Set by <see cref="Load"/>.
     /// Drives <see cref="Workspace"/> derivation (Python parity: config_path.parents[2]).
     /// </summary>
     public string? LoadedFrom { get; init; }
 
     /// <summary>
     /// Absolute path to <c>multilingual-glossary.yaml</c>, resolved by <see cref="Load"/> via the
-    /// companion-file rules (config_files key → fallback filename, same folder as config.yaml).
+    /// companion-file rules (config_files key → fallback filename, same folder as rag-config.yaml).
     /// Null when the file was not found — no path construction happens outside <see cref="Load"/>.
     /// Supports <c>RAG_GLOSSARY</c> env var override (Docker / per-file mount parity with Python).
     /// </summary>
@@ -45,7 +45,7 @@ public sealed class RagConfig
 
     /// <summary>
     /// Absolute repo root. Priority (Python parity):
-    ///   1. config.yaml directory's grandparent (when config sits at &lt;repo&gt;/tools/rag/config.yaml)
+    ///   1. rag-config.yaml directory's grandparent (when config sits at &lt;repo&gt;/tools/rag/rag-config.yaml)
     ///   2. RAG_WORKSPACE env var
     ///   3. <see cref="Directory.GetCurrentDirectory"/>
     /// Prevents shell env from leaking into explicit --config runs.
@@ -85,11 +85,11 @@ public sealed class RagConfig
     // ── Factory ───────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// Load config.yaml and merge companion metadata-rules.yaml and queries.yaml.
+    /// Load rag-config.yaml and merge companion metadata-rules.yaml and queries.yaml.
     ///
     /// File resolution for companion files (no hardcoded paths):
-    ///   1. config.yaml[config_files][&lt;key&gt;] — relative path from config.yaml's directory
-    ///   2. &lt;config.yaml directory&gt;/&lt;fallback filename&gt; — convention, same folder
+    ///   1. rag-config.yaml[config_files][&lt;key&gt;] — relative path from rag-config.yaml's directory
+    ///   2. &lt;rag-config.yaml directory&gt;/&lt;fallback filename&gt; — convention, same folder
     ///   Returns without merging if the companion file does not exist.
     /// </summary>
     public static RagConfig Load(string? configPath = null)
@@ -157,8 +157,8 @@ public sealed class RagConfig
     /// 3-way config discovery (Python parity):
     ///   1. explicit <paramref name="configPath"/> argument (e.g. from CLI)
     ///   2. RAG_CONFIG env var
-    ///   3. RAG_WORKSPACE env var → &lt;ws&gt;/tools/rag/config.yaml
-    ///   4. AppContext.BaseDirectory/config.yaml fallback (Docker / published bundle)
+    ///   3. RAG_WORKSPACE env var → &lt;ws&gt;/tools/rag/rag-config.yaml
+    ///   4. AppContext.BaseDirectory/rag-config.yaml fallback (Docker / published bundle)
     /// </summary>
     public static string ResolveConfigPath(string? configPath)
     {
@@ -179,12 +179,12 @@ public sealed class RagConfig
         var envWs = Environment.GetEnvironmentVariable("RAG_WORKSPACE");
         if (!string.IsNullOrEmpty(envWs))
         {
-            var derived = Path.Combine(envWs, "tools", "rag", "config.yaml");
+            var derived = Path.Combine(envWs, "tools", "rag", "rag-config.yaml");
             if (File.Exists(derived))
                 return Path.GetFullPath(derived);
         }
 
-        return Path.Combine(AppContext.BaseDirectory, "config.yaml");
+        return Path.Combine(AppContext.BaseDirectory, "rag-config.yaml");
     }
 
     private static string? ResolveCompanionPath(
@@ -329,7 +329,7 @@ public sealed class ChunkerSection
     public List<int>? SplitOnHeadings { get; init; }
 
     /// <summary>
-    /// True when split_on_headings is set to "auto" in config.yaml (or left unset).
+    /// True when split_on_headings is set to "auto" in rag-config.yaml (or left unset).
     /// Auto mode splits at every heading level (H1–H6) and merges sections below min_tokens
     /// into the previous chunk instead of dropping them.
     /// </summary>

@@ -48,8 +48,8 @@ COPY --from=builder /out/ingest /app/ingest
 COPY --from=builder /out/mcp    /app/mcp
 
 # No config baked in — this image is generic and shared across projects.
-# Each project mounts its own config.yaml at runtime and sets RAG_CONFIG.
-# Example: -v ./tools/rag-dotnet/config.yaml:/config.yaml:ro -e RAG_CONFIG=/config.yaml
+# Each project mounts its own rag-config.yaml at runtime and sets RAG_CONFIG.
+# Example: -v ./tools/rag-dotnet/rag-config.yaml:/rag-config.yaml:ro -e RAG_CONFIG=/rag-config.yaml
 
 # Environment defaults — override via docker run -e or docker-compose environment:.
 ENV RAG_WORKSPACE=/workspace
@@ -58,11 +58,11 @@ ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
 
 # Volumes:
 #   /workspace  — repo root (mounted read-only for ingest + MCP)
-#   /config.yaml (or any path) — project-specific config, path set via RAG_CONFIG
+#   /rag-config.yaml (or any path) — project-specific config, path set via RAG_CONFIG
 VOLUME ["/workspace"]
 
 # Ports:
-#   3001  — SSE/HTTP transport (MCP_TRANSPORT=sse). Not used in stdio mode.
+#   3001  — Streamable HTTP transport (MCP_TRANSPORT=http). Not used in stdio mode.
 EXPOSE 3001
 
 # Default: run MCP server. Override CMD for indexing.

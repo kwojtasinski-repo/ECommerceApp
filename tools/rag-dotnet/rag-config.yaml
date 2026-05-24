@@ -1,5 +1,5 @@
 # RAG configuration for the .NET MCP server — ECommerceApp
-# Separate from tools/rag/config.yaml so weights and settings can be tuned
+# Separate from tools/rag/rag-config.yaml so weights and settings can be tuned
 # independently for experimentation without touching the Python server config.
 #
 # Re-index note: a full re-index is needed when chunker settings, model, or

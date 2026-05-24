@@ -1,7 +1,7 @@
 ---
 name: tune-rag-weights
 description: >
-  Tune the ranking weight multipliers in tools/rag/config.yaml.
+  Tune the ranking weight multipliers in tools/rag/rag-config.yaml.
   Use when a file consistently ranks too low or too high in query results
   despite good semantic similarity. Weight changes are query-time only —
   no re-indexing required.
@@ -10,7 +10,7 @@ argument-hint: "[file-path-or-glob] [up|down|value]"
 
 # Tune RAG Ranking Weights
 
-Adjust the `ranking.weights` table in `tools/rag/config.yaml` to boost or suppress
+Adjust the `ranking.weights` table in `tools/rag/rag-config.yaml` to boost or suppress
 specific files in query results without re-embedding anything.
 
 ---
@@ -74,7 +74,7 @@ Look at:
 | 0.70–0.89 | Strong suppression — meta-docs, forward-looking docs |
 | < 0.70 | Aggressive suppression — use only if file is hurting every query |
 
-### 3 — Edit `tools/rag/config.yaml`
+### 3 — Edit `tools/rag/rag-config.yaml`
 
 ```yaml
 ranking:
@@ -143,5 +143,5 @@ change over-boosted something — roll back or narrow the glob.
 - **Do not set weight > 1.40** — it will dominate every query regardless of semantic fit
 - **Do not add a weight for every file** — only tune files with proven query regression
 - **Do not use weight to fix language gaps** — that is the glossary's job (see `expand-rag-glossary`)
-- **Do not forget to check .NET server** — `tools/rag-dotnet/config.yaml` is a separate copy;
+- **Do not forget to check .NET server** — `tools/rag-dotnet/rag-config.yaml` is a separate copy;
   keep weights in sync between the two configs

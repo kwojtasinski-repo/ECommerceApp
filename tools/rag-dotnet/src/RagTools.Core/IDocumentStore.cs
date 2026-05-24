@@ -44,7 +44,7 @@ public sealed record DocumentSearchResult(
 /// Qdrant (or any other backend) through this interface.
 ///
 /// All methods accept a <paramref name="collection"/> parameter — the Qdrant collection
-/// name / project identifier derived from config.yaml.
+/// name / project identifier derived from rag-config.yaml.
 /// </summary>
 public interface IDocumentStore : IDisposable
 {

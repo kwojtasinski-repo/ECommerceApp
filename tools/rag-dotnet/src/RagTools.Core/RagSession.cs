@@ -6,7 +6,7 @@ namespace RagTools.Core;
 /// Collection resolution order:
 ///   1. <c>?project=name</c> query parameter in the SSE/HTTP connection URL
 ///   2. <c>RAG_COLLECTION</c> environment variable
-///   3. Default from <c>config.yaml</c> (<see cref="RagConfig.Collection"/>)
+///   3. Default from <c>rag-config.yaml</c> (<see cref="RagConfig.Collection"/>)
 ///
 /// Registered as scoped in DI so each MCP session gets its own instance.
 /// Resolved in <c>RagSessionMiddleware</c> which runs before MCP tool dispatch.

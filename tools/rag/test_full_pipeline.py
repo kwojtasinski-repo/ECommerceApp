@@ -52,7 +52,7 @@ PYTHON_IMAGE = "rag-tools"
 DOTNET_IMAGE = "rag-dotnet"
 DOTNET_COLLECTION = "ecommerceapp_docs_dotnet"
 PYTHON_COLLECTION = "ecommerceapp_docs"
-DOTNET_CONFIG = "/config.yaml"
+DOTNET_CONFIG = "/rag-config.yaml"
 BANNER = "═" * 70
 
 
@@ -510,7 +510,7 @@ def phase_4_dotnet_stdio() -> PhaseResult:
 
     dotnet_mounts = [
         "--volume", f"{WORKSPACE}:/workspace",
-        "--volume", f"{WORKSPACE}/tools/rag-dotnet/config.yaml:{DOTNET_CONFIG}:ro",
+        "--volume", f"{WORKSPACE}/tools/rag-dotnet/rag-config.yaml:{DOTNET_CONFIG}:ro",
         "--volume", f"{WORKSPACE}/tools/rag/metadata-rules.yaml:/metadata-rules.yaml:ro",
         "--volume", f"{WORKSPACE}/tools/rag/queries.yaml:/queries.yaml:ro",
     ]

@@ -19,7 +19,7 @@ REPO_ROOT = (
     Path(_env_ws) if _env_ws
     else (_script_parents[2] if len(_script_parents) > 2 else Path("/"))
 )
-CONFIG_PATH = Path(__file__).resolve().parent / "config.yaml"
+CONFIG_PATH = Path(__file__).resolve().parent / "rag-config.yaml"
 
 
 @dataclass
@@ -31,10 +31,10 @@ class Config:
     def workspace(self) -> Path:
         """Workspace root, derived with this priority:
 
-          1. config_path.parents[2] — when config.yaml lives at <root>/tools/rag/config.yaml.
+          1. config_path.parents[2] — when rag-config.yaml lives at <root>/tools/rag/rag-config.yaml.
              This wins over RAG_WORKSPACE so an explicit --config flag always defines the workspace,
              regardless of what is set in the shell environment.
-          2. RAG_WORKSPACE env var — fallback when config_path is shallow (e.g. /app/config.yaml
+          2. RAG_WORKSPACE env var — fallback when config_path is shallow (e.g. /app/rag-config.yaml
              inside a container where the script has only 2 parent levels).
           3. Module-level REPO_ROOT constant — last resort.
 
@@ -84,12 +84,12 @@ class Config:
 
     @property
     def vector_mode(self) -> str:
-        """VECTOR_MODE env var overrides config.yaml (allows docker-compose env injection)."""
+        """VECTOR_MODE env var overrides rag-config.yaml (allows docker-compose env injection)."""
         return os.environ.get("VECTOR_MODE") or self.raw["vector_store"].get("mode", "docker")
 
     @property
     def vector_url(self) -> str:
-        """QDRANT_URL env var overrides config.yaml (resolves docker service hostname at runtime)."""
+        """QDRANT_URL env var overrides rag-config.yaml (resolves docker service hostname at runtime)."""
         return os.environ.get("QDRANT_URL") or self.raw["vector_store"].get("url", "http://localhost:6333")
 
     @property
@@ -137,7 +137,7 @@ class Config:
 
         Priority:
           1. RAG_GLOSSARY env var — per-file mount / Docker override.
-          2. config.yaml[config_files][multilingual_glossary] relative to config.yaml.
+          2. rag-config.yaml[config_files][multilingual_glossary] relative to rag-config.yaml.
           3. <config_yaml_dir>/multilingual-glossary.yaml — convention fallback.
         Returns None if no file is found (graceful degradation).
         """
@@ -153,11 +153,11 @@ class Config:
 
 def _find_companion_file(config_yaml_path: Path, key: str, fallback_name: str) -> Path | None:
     """
-    Resolve a companion config file path declared in config.yaml's config_files section.
+    Resolve a companion config file path declared in rag-config.yaml's config_files section.
 
     Resolution order (no hardcoded paths):
-      1. config.yaml config_files.<key> — relative path resolved from config.yaml's directory
-      2. <config_yaml_dir>/<fallback_name> — convention: same folder as config.yaml
+      1. rag-config.yaml config_files.<key> — relative path resolved from rag-config.yaml's directory
+      2. <config_yaml_dir>/<fallback_name> — convention: same folder as rag-config.yaml
     Returns None if the resolved file does not exist.
     """
     config_dir = config_yaml_path.parent
@@ -181,15 +181,15 @@ def _find_companion_file(config_yaml_path: Path, key: str, fallback_name: str) -
 
 
 def load_config(path: Path = CONFIG_PATH) -> Config:
-    """Load config.yaml and merge companion metadata-rules.yaml and queries.yaml.
+    """Load rag-config.yaml and merge companion metadata-rules.yaml and queries.yaml.
 
     File resolution:
-      - config.yaml location: 'path' argument (defaults to CONFIG_PATH).
-      - metadata-rules.yaml:  declared in config.yaml[config_files][metadata_rules],
-                               resolved relative to config.yaml's directory.
-      - queries.yaml:          declared in config.yaml[config_files][queries],
-                               resolved relative to config.yaml's directory.
-    No hardcoded paths — all resolution is relative to config.yaml's location.
+      - rag-config.yaml location: 'path' argument (defaults to CONFIG_PATH).
+      - metadata-rules.yaml:  declared in rag-config.yaml[config_files][metadata_rules],
+                               resolved relative to rag-config.yaml's directory.
+      - queries.yaml:          declared in rag-config.yaml[config_files][queries],
+                               resolved relative to rag-config.yaml's directory.
+    No hardcoded paths — all resolution is relative to rag-config.yaml's location.
     """
     with path.open("r", encoding="utf-8") as fh:
         raw: dict[str, Any] = yaml.safe_load(fh) or {}

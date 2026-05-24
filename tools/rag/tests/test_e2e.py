@@ -282,12 +282,12 @@ _QUERIES_YAML = textwrap.dedent("""\
 
 
 def _build_workspace(root: Path) -> Path:
-    """Create a minimal fake workspace under *root*. Returns the path to config.yaml.
+    """Create a minimal fake workspace under *root*. Returns the path to rag-config.yaml.
 
     Layout (mirrors the real repo structure so config_path.parents[2] == root):
         root/
           tools/rag/
-            config.yaml
+            rag-config.yaml
             metadata-rules.yaml
             queries.yaml
           docs/
@@ -305,7 +305,7 @@ def _build_workspace(root: Path) -> Path:
     """
     rag_dir = root / "tools" / "rag"
     rag_dir.mkdir(parents=True)
-    (rag_dir / "config.yaml").write_text(_CONFIG_YAML, encoding="utf-8")
+    (rag_dir / "rag-config.yaml").write_text(_CONFIG_YAML, encoding="utf-8")
     (rag_dir / "metadata-rules.yaml").write_text(_METADATA_RULES_YAML, encoding="utf-8")
     (rag_dir / "queries.yaml").write_text(_QUERIES_YAML, encoding="utf-8")
 
@@ -326,7 +326,7 @@ def _build_workspace(root: Path) -> Path:
     arch.mkdir(parents=True)
     (arch / "overview.md").write_text(_ARCH_OVERVIEW, encoding="utf-8")
 
-    return rag_dir / "config.yaml"
+    return rag_dir / "rag-config.yaml"
 
 
 # ---------------------------------------------------------------------------
@@ -498,7 +498,7 @@ def _rag_image_exists() -> bool:
 
 @pytest.fixture(scope="session")
 def e2e_workspace(tmp_path_factory: pytest.TempPathFactory) -> Path:
-    """Create a minimal fake workspace. Returns path to config.yaml.
+    """Create a minimal fake workspace. Returns path to rag-config.yaml.
 
     Session-scoped: created once, shared across TestConfigResolution,
     TestManifest (read-only tests), and TestMcpTools.
@@ -509,7 +509,7 @@ def e2e_workspace(tmp_path_factory: pytest.TempPathFactory) -> Path:
 
 @pytest.fixture(scope="session")
 def ingested_workspace(e2e_workspace: Path) -> Path:
-    """Run ingest once on e2e_workspace. Returns config.yaml path.
+    """Run ingest once on e2e_workspace. Returns rag-config.yaml path.
 
     Session-scoped: ingest only runs once per test session.
     On the very first run in a clean environment the embedding model is downloaded
@@ -599,7 +599,7 @@ def container_session(tmp_path_factory: pytest.TempPathFactory) -> ToolCaller:
 
     # Step 1: run ingest inside the container against the mounted workspace.
     # RAG_WORKSPACE=/workspace is the only path knob — ingest.py derives
-    # config as $RAG_WORKSPACE/tools/rag/config.yaml. No hardcoded container paths.
+    # config as $RAG_WORKSPACE/tools/rag/rag-config.yaml. No hardcoded container paths.
     ingest_r = subprocess.run(
         [
             "docker", "run", "--rm",
@@ -683,7 +683,7 @@ class TestConfigResolution:
     """Verify that Config.workspace is derived correctly from --config path
     and that companion files (metadata-rules.yaml, queries.yaml) are loaded.
 
-    These tests do not require ingest — they only load config.yaml from disk.
+    These tests do not require ingest — they only load rag-config.yaml from disk.
     """
 
     def test_workspace_derived_from_config_path(
@@ -693,7 +693,7 @@ class TestConfigResolution:
         monkeypatch.delenv("RAG_WORKSPACE", raising=False)
         from common import load_config
         cfg = load_config(e2e_workspace)
-        # e2e_workspace is at <root>/tools/rag/config.yaml → parents[2] is <root>
+        # e2e_workspace is at <root>/tools/rag/rag-config.yaml → parents[2] is <root>
         expected_root = e2e_workspace.parents[2]
         assert cfg.workspace == expected_root
 
@@ -703,15 +703,15 @@ class TestConfigResolution:
         """config_path.parents[2] takes priority over RAG_WORKSPACE.
 
         When --config is passed explicitly, the workspace is derived from the
-        config file path (assumes <root>/tools/rag/config.yaml layout), even if
+        config file path (assumes <root>/tools/rag/rag-config.yaml layout), even if
         RAG_WORKSPACE is set to a different directory in the environment.
         RAG_WORKSPACE is only used as a fallback when the config path is too
-        shallow to derive a workspace (e.g. /app/config.yaml in a container).
+        shallow to derive a workspace (e.g. /app/rag-config.yaml in a container).
         """
         monkeypatch.setenv("RAG_WORKSPACE", str(tmp_path))
         from common import load_config
         cfg = load_config(e2e_workspace)
-        # e2e_workspace is <tmpdir>/tools/rag/config.yaml → parents[2] == <tmpdir root>
+        # e2e_workspace is <tmpdir>/tools/rag/rag-config.yaml → parents[2] == <tmpdir root>
         expected = e2e_workspace.parents[2]
         assert cfg.workspace == expected, (
             f"Expected config_path-derived workspace {expected}, "

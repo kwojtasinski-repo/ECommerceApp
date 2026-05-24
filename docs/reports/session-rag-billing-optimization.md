@@ -198,7 +198,7 @@ Do NOT start planning yet.
 |---|---|---|
 | `.github/instructions/docs-index.instructions.md` | **21.4 KB → 1.4 KB stub** — full table moved to `docs-index.full.md` | −5,000 tokens per docs-touching interaction |
 | `.github/instructions/docs-index.full.md` | **New** — full routing table, no `applyTo:`, on-demand only | Zero auto-load cost |
-| `tools/rag/config.yaml` | `mode: memory → docker`; added `.github/context/` source root; 5 new ranking weights; model swapped to multilingual | Persistent Qdrant + PL/EN support |
+| `tools/rag/rag-config.yaml` | `mode: memory → docker`; added `.github/context/` source root; 5 new ranking weights; model swapped to multilingual | Persistent Qdrant + PL/EN support |
 | `tools/rag/common.py` | Added `"context"` doc_kind for `.github/context/**` files | Context files correctly classified |
 | `tools/rag/requirements.txt` | `tiktoken 0.7.0 → 0.12.0` (py3.13 wheel fix) | Installs cleanly on Python 3.13 |
 | `tools/rag/query.py` | UTF-8 stdout wrapper — fixed `UnicodeEncodeError` on Windows cp1250 terminal | CLI no longer crashes |
@@ -395,9 +395,9 @@ python tools/rag/ingest.py --mode docker
 | Symptom | Fix |
 |---|---|
 | `docker: error during connect` | Start Docker Desktop first, wait 30s |
-| `Snapshot not found` error | You're in memory mode — switch to `docker` mode in `config.yaml` |
+| `Snapshot not found` error | You're in memory mode — switch to `docker` mode in `rag-config.yaml` |
 | RAG returns stale answers | Re-run `ingest.py --mode docker` |
-| Polish queries score < 0.3 | Model may have reverted — check `config.yaml` embedder model name |
+| Polish queries score < 0.3 | Model may have reverted — check `rag-config.yaml` embedder model name |
 | MCP server not responding in VS | Check Python path in `.github/copilot/mcp.json` matches your venv |
 | `UnicodeEncodeError` in terminal | Fixed in `query.py` — pull latest from `RAG_Implementation` branch |
 | Qdrant dashboard blank | Navigate to http://localhost:6333/dashboard and select collection `ecommerceapp_docs` |

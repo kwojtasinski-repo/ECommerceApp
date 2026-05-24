@@ -125,7 +125,7 @@ pwsh tools/rag/run-all-tests.ps1
 Run the ingest pipeline again (step 3). It compares SHA-256 hashes against
 `.rag/manifest.json` and only re-embeds files that changed.
 
-To force a full rebuild (e.g. after changing `config.yaml` settings):
+To force a full rebuild (e.g. after changing `rag-config.yaml` settings):
 
 ```bash
 docker compose --profile rag run --rm rag-tools python ingest.py --force-full
@@ -162,7 +162,7 @@ python mcp_server.py
 
 ## Configuration
 
-All settings live in `tools/rag/config.yaml`. Key fields:
+All settings live in `tools/rag/rag-config.yaml`. Key fields:
 
 | Field                     | Default                                 | Effect                                   |
 | ------------------------- | --------------------------------------- | ---------------------------------------- |

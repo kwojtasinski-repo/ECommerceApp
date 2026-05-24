@@ -56,7 +56,7 @@ deployment where docs live on developer machines and the server runs remotely.
 Developer machine              Remote server (one instance, one ONNX model)
 ─────────────────              ──────────────────────────────────────────────
 docs/                          POST /ingest/ecommerceapp  (async, returns opId)
-config.yaml    ─[ingest CLI]─► background worker: chunk + embed + upsert to Qdrant
+rag-config.yaml    ─[ingest CLI]─► background worker: chunk + embed + upsert to Qdrant
                                GET /ingest/ecommerceapp/operations/{opId}  (poll)
 
 VS Code (.vscode/mcp.json)     MCP SSE endpoint
@@ -450,8 +450,8 @@ dotnet run --project tools/rag-dotnet/src/RagTools.Ingest -- --remote http://rag
 ```
 
 When `--remote` is provided:
-1. Read collection name from `config.yaml` (already parsed)
-2. Zip `docs/` + `.github/context/` + `config.yaml` + glossary + rules + `queries.yaml`
+1. Read collection name from `rag-config.yaml` (already parsed)
+2. Zip `docs/` + `.github/context/` + `rag-config.yaml` + glossary + rules + `queries.yaml`
 3. POST to `{remote}/ingest/{collection}` with `X-Api-Key` from `RAG_API_KEY` env
 4. Poll `GET {remote}/ingest/{collection}/operations/{id}` every 3 s until `completed` or `failed`
 5. Print progress
@@ -516,7 +516,7 @@ has no way to carry classification rules alongside each document. In the zip-bat
 
 ```python
 # Phase 8: ZIP batch ingest
-# 1. Build a zip with: config.yaml + metadata-rules.yaml + queries.yaml + 3 synthetic docs
+# 1. Build a zip with: rag-config.yaml + metadata-rules.yaml + queries.yaml + 3 synthetic docs
 # 2. POST zip to /ingest/{collection}/batch — expect 202 + operationId
 # 3. Poll until Completed
 # 4. Query each doc via MCP query_docs — verify all 3 are indexed
@@ -573,7 +573,7 @@ response. It is NOT uploaded by the client — the client has no manifest before
 
 ```
 batch.zip/
-  config.yaml                    ← defines collection, model, chunker, and config_files
+  rag-config.yaml                    ← defines collection, model, chunker, and config_files
   metadata-rules.yaml            ← REQUIRED: doc_kind taxonomy + history.field + adr_id_patterns
   queries.yaml                   ← REQUIRED: named queries (share doc_kind vocabulary with metadata-rules)
   multilingual-glossary.yaml     ← optional (config_files.multilingual_glossary)
@@ -595,11 +595,11 @@ queries. Uploading one without the other produces silent failures (named queries
 
 **Validation on upload:**
 
-1. Server reads `config.yaml` from the zip root.
+1. Server reads `rag-config.yaml` from the zip root.
 2. `metadata-rules.yaml` and `queries.yaml` are **always required** in the zip regardless of
    `config_files` settings — the collection cannot classify or evaluate without them.
    Other `config_files` entries (`multilingual_glossary`, etc.) follow the optional/required flag
-   set in `config.yaml`.
+   set in `rag-config.yaml`.
 3. **Non-empty content validation:**
    - `metadata-rules.yaml` must contain at least one `doc_kind_rules` entry → `400` if empty or
      missing the `doc_kind_rules` key. An empty rules list means all docs get no `doc_kind` and
@@ -634,7 +634,7 @@ queries. Uploading one without the other produces silent failures (named queries
 ```
 
 - Client CLI writes the returned `manifest` to `.rag/manifest.json` and `index_stats` to
-  `docs/rag/index-stats.md` — matching paths defined in `config.yaml` under `storage.*`.
+  `docs/rag/index-stats.md` — matching paths defined in `rag-config.yaml` under `storage.*`.
 
 **Decision — existing single-file `POST /ingest/{collection}`:**
 Keep for backward compatibility until the zip batch endpoint is confirmed stable in the

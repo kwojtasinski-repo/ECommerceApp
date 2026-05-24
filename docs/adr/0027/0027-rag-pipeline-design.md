@@ -105,7 +105,7 @@ inside the same process without Python as a runtime dependency. The model is the
 HuggingFace pre-exported ONNX bundle.
 
 **Key parity decisions made during implementation** (see `agent-decisions.md` 2026-05-18):
-- Both implementations share `tools/rag/config.yaml` — `.NET` does not have a separate config.
+- Both implementations share `tools/rag/rag-config.yaml` — `.NET` does not have a separate config.
 - Config resolution uses 4-way priority: explicit arg → `RAG_CONFIG` env → `RAG_WORKSPACE`-derived
   path → `AppContext.BaseDirectory` fallback (Docker bundle).
 - `RagConfig.Workspace` derives from the config-path grandparent (Python parity with

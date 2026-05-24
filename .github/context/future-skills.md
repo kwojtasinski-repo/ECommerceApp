@@ -32,7 +32,7 @@ Full procedure guide for common RAG maintenance tasks. Use the decision table in
 | Skill                      | When to invoke                                                                                         |
 | -------------------------- | ------------------------------------------------------------------------------------------------------ |
 | `/diagnose-rag`            | MCP server not starting, tools returning errors, bad results, wrong language, low scores, DLL lock     |
-| `/tune-rag-weights`        | A file consistently ranks too low or too high — adjust `config.yaml` ranking multipliers              |
+| `/tune-rag-weights`        | A file consistently ranks too low or too high — adjust `rag-config.yaml` ranking multipliers              |
 | `/expand-rag-glossary`     | Polish or German query returns wrong document while the English equivalent returns the right document   |
 | `/generate-rag-rules`      | New doc folder added, wrong `doc_kind` assigned, query coverage gap — `metadata-rules.yaml`/`queries.yaml` |
 | `/generate-eval-questions` | A newly indexed file has no eval coverage entry in `queries.yaml`                                      |

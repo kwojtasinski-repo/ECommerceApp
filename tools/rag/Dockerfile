@@ -14,7 +14,7 @@
 #
 # MCP server (VS Code starts this automatically via .vscode/mcp.json).
 # Per-file mount strategy — only the 3 project-specific files are mounted.
-# config.yaml is baked into the image; RAG_METADATA/QUERIES/MANIFEST tell the
+# rag-config.yaml is baked into the image; RAG_METADATA/QUERIES/MANIFEST tell the
 # server where each file lives. No whole-workspace mount, no hardcoded paths:
 #   docker run --rm --interactive \
 #     -v "%CD%/tools/rag/metadata-rules.yaml:/data/metadata-rules.yaml:ro" \
@@ -64,7 +64,7 @@ WORKDIR /app
 # Bake in the Python scripts and config.
 # The workspace (docs + .github) and Qdrant data are MOUNTED at runtime, not baked in.
 COPY *.py .
-COPY config.yaml .
+COPY rag-config.yaml .
 
 # RAG_WORKSPACE tells common.py where the repo root is inside the container.
 # Overridable at runtime via -e RAG_WORKSPACE=...

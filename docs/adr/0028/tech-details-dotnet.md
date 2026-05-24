@@ -269,7 +269,7 @@ public sealed class RagSession
 }
 ```
 
-- **SSE mode**: registered as `Scoped` — one `RagSession` per SSE connection.
+- **HTTP mode** (`MCP_TRANSPORT=http`): registered as `Scoped` — one `RagSession` per HTTP request/connection.
   `RagSessionMiddleware` reads `?project=` from the query string and calls `SetCollection`.
 - **stdio mode**: registered as `Singleton` — `RagSession` holds `cfg.Collection` for the process lifetime.
 
@@ -300,7 +300,7 @@ via `ConcurrentDictionary`. FIFO eviction when capacity (512) is reached.
 dotnet run --project tools/rag-dotnet/src/RagTools.Ingest -- --remote http://rag.internal:3001
 ```
 
-- Reads `config.yaml` for the collection name.
+- Reads `rag-config.yaml` for the collection name.
 - Iterates workspace files matching configured globs.
 - Computes SHA-256 hash; skips unchanged files (manifest).
 - POSTs each file to `POST /ingest/{collection}` with `X-Api-Key` from `RAG_API_KEY` env.
@@ -309,7 +309,7 @@ dotnet run --project tools/rag-dotnet/src/RagTools.Ingest -- --remote http://rag
 
 ---
 
-## DI Wiring (SSE mode)
+## DI Wiring (HTTP mode)
 
 ```csharp
 webBuilder.Services

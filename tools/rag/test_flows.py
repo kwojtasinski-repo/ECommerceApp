@@ -78,7 +78,7 @@ def _build_cmd(docker: bool, workspace: Path) -> list[str]:
     if docker:
         # RAG_WORKSPACE=/workspace is the only knob — no hardcoded /workspace/ paths.
         # The image WORKDIR is /app; scripts baked there run without path qualification.
-        # mcp_server.py derives config as: $RAG_WORKSPACE/tools/rag/config.yaml.
+        # mcp_server.py derives config as: $RAG_WORKSPACE/tools/rag/rag-config.yaml.
         return [
             "docker", "run", "--rm", "--interactive",
             "--network", "ecommerceapp_default",
@@ -90,7 +90,7 @@ def _build_cmd(docker: bool, workspace: Path) -> list[str]:
             "rag-tools", "python", "mcp_server.py",
         ]
     server_py = Path(__file__).parent / "mcp_server.py"
-    config_py = Path(__file__).parent / "config.yaml"
+    config_py = Path(__file__).parent / "rag-config.yaml"
     return [sys.executable, str(server_py), "--config", str(config_py)]
 
 def _start(cmd: list[str]):

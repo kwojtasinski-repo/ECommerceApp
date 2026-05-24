@@ -27,7 +27,7 @@ public class RagConfigTests : IDisposable
 
     private string WriteConfig(string yaml)
     {
-        var path = Path.Combine(_tempDir, "config.yaml");
+        var path = Path.Combine(_tempDir, "rag-config.yaml");
         File.WriteAllText(path, yaml);
         return path;
     }
@@ -211,7 +211,7 @@ public class RagConfigTests : IDisposable
                 kind: "adr_main"
             """);
 
-        var cfg = RagConfig.Load(Path.Combine(_tempDir, "config.yaml"));
+        var cfg = RagConfig.Load(Path.Combine(_tempDir, "rag-config.yaml"));
 
         Assert.NotNull(cfg.MetadataRules.AdrIdPatterns);
         Assert.Single(cfg.MetadataRules.AdrIdPatterns!);
@@ -242,7 +242,7 @@ public class RagConfigTests : IDisposable
                 top_k: 3
             """);
 
-        var cfg = RagConfig.Load(Path.Combine(_tempDir, "config.yaml"));
+        var cfg = RagConfig.Load(Path.Combine(_tempDir, "rag-config.yaml"));
 
         Assert.Single(cfg.NamedQueries);
         Assert.Equal("test_query", cfg.NamedQueries[0].Name);
@@ -319,7 +319,7 @@ public class RagConfigTests : IDisposable
             doc_kind_rules: []
             """);
 
-        var cfg = RagConfig.Load(Path.Combine(_tempDir, "config.yaml"));
+        var cfg = RagConfig.Load(Path.Combine(_tempDir, "rag-config.yaml"));
         var id = cfg.DetectAdrId("docs/adr/0016/0016-coupons.md");
 
         Assert.Equal("0016", id);
@@ -339,9 +339,9 @@ public class RagConfigTests : IDisposable
     [Fact]
     public void DeriveWorkspace_UsesGrandparent_OfConfigPath()
     {
-        // <ws>/tools/rag/config.yaml  →  workspace = <ws>
+        // <ws>/tools/rag/rag-config.yaml  →  workspace = <ws>
         var ws = Path.Combine(_tempDir, "ws");
-        var configPath = Path.Combine(ws, "tools", "rag", "config.yaml");
+        var configPath = Path.Combine(ws, "tools", "rag", "rag-config.yaml");
         Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
         File.WriteAllText(configPath, "x: 1");
 
@@ -371,7 +371,7 @@ public class RagConfigTests : IDisposable
     public void Load_SetsLoadedFromAndWorkspaceFromConfigPath()
     {
         var ws = Path.Combine(_tempDir, "ws2");
-        var configPath = Path.Combine(ws, "tools", "rag", "config.yaml");
+        var configPath = Path.Combine(ws, "tools", "rag", "rag-config.yaml");
         Directory.CreateDirectory(Path.GetDirectoryName(configPath)!);
         File.WriteAllText(configPath, MinimalConfig());
 
@@ -446,7 +446,7 @@ public class RagConfigTests : IDisposable
     public void ResolveConfigPath_DerivesFromRagWorkspace_WhenOnlyWorkspaceSet()
     {
         var ws = Path.Combine(_tempDir, "wsroot");
-        var derivedConfig = Path.Combine(ws, "tools", "rag", "config.yaml");
+        var derivedConfig = Path.Combine(ws, "tools", "rag", "rag-config.yaml");
         Directory.CreateDirectory(Path.GetDirectoryName(derivedConfig)!);
         File.WriteAllText(derivedConfig, "x: 1");
         try
@@ -471,7 +471,7 @@ public class RagConfigTests : IDisposable
             Environment.SetEnvironmentVariable("RAG_CONFIG", null);
             Environment.SetEnvironmentVariable("RAG_WORKSPACE", null);
             var resolved = RagConfig.ResolveConfigPath(null);
-            Assert.Equal(Path.Combine(AppContext.BaseDirectory, "config.yaml"), resolved);
+            Assert.Equal(Path.Combine(AppContext.BaseDirectory, "rag-config.yaml"), resolved);
         }
         finally
         {
