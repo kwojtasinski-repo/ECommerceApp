@@ -62,8 +62,10 @@ class QueryEngine:
     def _ensure(self) -> None:
         if self._client is not None:
             return
-        # Ensure embedder is ready (cheap — model loads lazily on first embed call).
-        _ = self.embedder
+        # Accessing .dimensions triggers the actual ML model load inside the embedder.
+        # This is intentionally done synchronously here so the model is ready before
+        # the asyncio event loop starts (mcp_server.py calls _ensure() in __main__).
+        _ = self.embedder.dimensions
         # Qdrant client setup.
         from qdrant_client import QdrantClient
         from qdrant_client.models import Distance, PointStruct, VectorParams
