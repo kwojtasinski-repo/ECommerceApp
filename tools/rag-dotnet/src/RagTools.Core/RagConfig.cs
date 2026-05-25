@@ -216,6 +216,62 @@ public sealed class RagConfig
     public static MetadataRulesSection ParseMetadataRules(string yaml)
         => BuildDeserializer().Deserialize<MetadataRulesSection>(yaml);
 
+    /// <summary>Parse a queries YAML string into a list of <see cref="NamedQueryEntry"/>.
+    /// Returns an empty list if the YAML has no <c>named_queries</c> section.</summary>
+    public static List<NamedQueryEntry> ParseQueries(string yaml)
+        => BuildDeserializer().Deserialize<QueriesWrapper>(yaml)?.NamedQueries ?? [];
+
+    /// <summary>
+    /// True when the supplied rag-config.yaml content declares
+    /// <c>config_files.multilingual_glossary</c>. Used by batch ingest to decide whether
+    /// a missing multilingual glossary companion is fatal or just a warning.
+    /// </summary>
+    public static bool HasGlossaryConfigDeclaration(string ragConfigYaml)
+        => GetCompanionFilenames(ragConfigYaml).GlossaryDeclared;
+
+    /// <summary>
+    /// Filenames of companion files declared in <c>rag-config.yaml.config_files</c>, with
+    /// conventional fallbacks (<c>metadata-rules.yaml</c>, <c>queries.yaml</c>,
+    /// <c>multilingual-glossary.yaml</c>) when a key is absent. Mirrors the resolution
+    /// performed by <see cref="Load"/> but returns plain filenames for in-archive lookup
+    /// (no directory join, no <c>File.Exists</c>).
+    /// </summary>
+    public static CompanionFilenames GetCompanionFilenames(string ragConfigYaml)
+    {
+        Dictionary<string, string>? configFiles = null;
+        if (!string.IsNullOrWhiteSpace(ragConfigYaml))
+        {
+            try
+            {
+                var raw = new DeserializerBuilder()
+                    .WithNamingConvention(UnderscoredNamingConvention.Instance)
+                    .IgnoreUnmatchedProperties()
+                    .Build()
+                    .Deserialize<Dictionary<object, object>>(ragConfigYaml);
+                configFiles = GetNestedDict(raw, "config_files");
+            }
+            catch
+            {
+                // fall through to defaults
+            }
+        }
+
+        static string Pick(Dictionary<string, string>? dict, string key, string fallback) =>
+            dict is not null && dict.TryGetValue(key, out var v) && !string.IsNullOrWhiteSpace(v)
+                ? v
+                : fallback;
+
+        var glossaryDeclared = configFiles is not null
+            && configFiles.TryGetValue("multilingual_glossary", out var g)
+            && !string.IsNullOrWhiteSpace(g);
+
+        return new CompanionFilenames(
+            MetadataRules:    Pick(configFiles, "metadata_rules",       "metadata-rules.yaml"),
+            Queries:          Pick(configFiles, "queries",              "queries.yaml"),
+            Glossary:         Pick(configFiles, "multilingual_glossary", "multilingual-glossary.yaml"),
+            GlossaryDeclared: glossaryDeclared);
+    }
+
     /// <summary>Detect ADR ID from a relative path using the provided rules section.</summary>
     public static string? DetectAdrIdFromRules(string relPath, MetadataRulesSection rules)
     {
@@ -405,3 +461,14 @@ public sealed class NamedQueryEntry
     public string? AdrId { get; init; }
     public int? TopK { get; init; }
 }
+
+/// <summary>
+/// Resolved filenames of companion configuration files within a ZIP batch upload.
+/// Returned by <see cref="RagConfig.GetCompanionFilenames"/>. Values are plain filenames
+/// (no directory prefix) so they can be looked up directly in <c>ZipArchive.GetEntry</c>.
+/// </summary>
+public sealed record CompanionFilenames(
+    string MetadataRules,
+    string Queries,
+    string Glossary,
+    bool GlossaryDeclared);

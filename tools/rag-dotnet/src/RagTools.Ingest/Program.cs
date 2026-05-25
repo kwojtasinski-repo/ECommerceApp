@@ -205,17 +205,17 @@ using var embedder = OnnxEmbedder.Load(modelDir);
 log.LogInformation("embedding dimensions: {Dims}", embedder.Dimensions);
 
 var qdrantUrl = Environment.GetEnvironmentVariable("QDRANT_URL") ?? cfg.QdrantUrl;
-using var store = QdrantStore.Connect(qdrantUrl, cfg.Collection);
+using var store = new QdrantDocumentStore(qdrantUrl);
 if (forceFull)
-    await store.RecreateCollectionAsync(embedder.Dimensions);
+    await store.RecreateCollectionAsync(cfg.Collection, embedder.Dimensions);
 else
-    await store.EnsureCollectionAsync(embedder.Dimensions);
+    await store.EnsureCollectionAsync(cfg.Collection, embedder.Dimensions);
 
 // ── Delete removed files ──────────────────────────────────────────────────────
 if (deleted.Count > 0)
 {
     log.LogInformation("deleting {Count} stale points ...", deleted.Count);
-    await store.DeleteByPathsAsync(deleted);
+    await store.DeleteByPathsAsync(cfg.Collection, deleted);
     foreach (var rel in deleted)
     {
         dbg.LogDebug("deleted: {RelPath}", rel);
@@ -226,8 +226,10 @@ if (deleted.Count > 0)
 // ── Chunk, embed, upsert ──────────────────────────────────────────────────────
 var tokenCounter = SentencePieceTokenCounter.FromModelDir(modelDir);
 var chunker = new MarkdownChunker(cfg.Chunker, tokenCounter);
-var ingestor = new FileIngestor(embedder, store, chunker, cfg, manifest, log);
-var totalChunks = await ingestor.IngestAsync(toProcess, dbg);
+var processorLogger = loggerFactory.CreateLogger<DocumentProcessor>();
+var processor = new DocumentProcessor(cfg, chunker, embedder, store, processorLogger);
+var ingestor = new FileIngestor(processor, cfg, manifest, log);
+var totalChunks = await ingestor.IngestAsync(toProcess);
 
 manifest.Save();
 WriteStatsMd(cfg, manifest, repoRoot);

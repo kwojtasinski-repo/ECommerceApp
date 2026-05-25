@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using ModelContextProtocol.Server;
 using RagTools.Core;
 using RagTools.Core.ContentSources;
+using RagTools.Core.Ingest;
 using RagTools.Mcp;
 using RagTools.Mcp.Controllers;
 using RagTools.Mcp.Middleware;
@@ -114,14 +115,22 @@ if (transport is "http" or "sse")
         .AddJsonOptions(opts =>
             opts.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower)
         .Services
+        .AddRouting(opts =>
+            opts.ConstraintMap["collection"] = typeof(RagTools.Mcp.Routing.CollectionNameRouteConstraint))
         .AddSingleton(cfg)
         .AddSingleton<ITokenCounter>(_ => SentencePieceTokenCounter.FromModelDir(modelDir))
         .AddSingleton<IDocumentStore>(_ =>
             new CachedDocumentStore(
                 new QdrantDocumentStore(qdrantUrl),
                 new QueryCache()))
+        .AddSingleton<MarkdownChunker>(sp =>
+            new MarkdownChunker(cfg.Chunker, sp.GetRequiredService<ITokenCounter>()))
+        .AddSingleton<IDocumentProcessor, DocumentProcessor>()
         .AddSingleton<IngestChannel>()
         .AddSingleton<OperationStore>()
+        .AddSingleton<IBatchIngestService, BatchIngestService>()
+        .AddSingleton<BatchValidator>()
+        .AddSingleton<IZipBatchParser, ZipBatchParser>()
         .AddHostedService<IngestWorker>()
         // D-6 fix: ICollectionResolver reads the live request via IHttpContextAccessor AsyncLocal —
         // correctly propagated into MCP inner DI scopes. RagSession + IContentSource are Singletons.

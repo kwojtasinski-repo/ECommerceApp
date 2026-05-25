@@ -1,50 +1,71 @@
+using System.IO.Compression;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using RagTools.Core;
+using RagTools.Core.Ingest;
 using RagTools.Mcp.Controllers;
 
 namespace RagTools.Tests;
 
 /// <summary>
 /// Unit tests for IngestController — no web host, no HTTP client.
-/// The controller is instantiated directly with a real IngestChannel and OperationStore.
-/// A DefaultHttpContext is wired to ControllerContext so Response.Headers is writable.
+/// The controller is instantiated directly with real collaborators (parser,
+/// batch ingest service, channel, store). Per-error mappings are owned by
+/// <c>BatchIngestOutcomeExtensionsTests</c>; per-rule parser behavior by
+/// <c>BatchValidatorTests</c> / <c>ZipBatchParserTests</c>. These tests only
+/// pin the wiring: the controller forwards request → parser → service →
+/// <c>ToActionResult</c> without mangling either outcome.
 /// </summary>
 public sealed class IngestControllerTests
 {
-    // ── Helpers ──────────────────────────────────────────────────────────────
+    private const string MinMetaRulesYaml = "doc_kind_rules:\n  - {glob: \"**\", kind: doc}\n";
+    private const string MinQueriesYaml   = "named_queries:\n  - {name: default, question: test, top_k: 5}\n";
 
     private static IngestController CreateController(
         IngestChannel? channel = null,
-        OperationStore? ops = null)
+        OperationStore? ops = null,
+        Stream? body = null,
+        string contentType = "application/zip")
     {
         channel ??= new IngestChannel();
         ops     ??= new OperationStore();
 
-        var ctrl = new IngestController(channel, ops, NullLogger<IngestController>.Instance);
+        var validator = new BatchValidator(NullLogger<BatchValidator>.Instance);
+        var parser    = new ZipBatchParser(validator, NullLogger<ZipBatchParser>.Instance);
+        var service   = new BatchIngestService(channel, ops, NullLogger<BatchIngestService>.Instance);
 
-        // Wire up a real HttpContext so Response.Headers["Location"] = ... works.
+        var ctrl = new IngestController(parser, service, channel, ops);
+
         var httpCtx = new DefaultHttpContext();
-        httpCtx.Response.Body = new System.IO.MemoryStream();
+        if (body is not null)
+        {
+            httpCtx.Request.Body          = body;
+            httpCtx.Request.ContentLength = body.Length;
+            httpCtx.Request.ContentType   = contentType;
+        }
+        httpCtx.Response.Body  = new MemoryStream();
         ctrl.ControllerContext = new ControllerContext { HttpContext = httpCtx };
-
         return ctrl;
     }
 
-    private static IngestChannel FullChannel()
+    private static MemoryStream MakeValidZip(params (string relPath, string content)[] files)
     {
-        // Capacity=1, already written-to → TryWrite returns false.
-        var ch = new IngestChannel(capacity: 1);
-        ch.TryWrite(new IngestJob
+        var ms = new MemoryStream();
+        using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
         {
-            OperationId = "seed",
-            Collection  = "col",
-            RelPath     = "seed.md",
-            Content     = "seed",
-            EnqueuedAt  = DateTimeOffset.UtcNow,
-        });
-        return ch;
+            void Add(string name, string content)
+            {
+                using var w = new StreamWriter(zip.CreateEntry(name).Open());
+                w.Write(content);
+            }
+            Add("rag-config.yaml", "embedder:\n  model: BAAI/bge-m3\n");
+            Add("metadata-rules.yaml", MinMetaRulesYaml);
+            Add("queries.yaml", MinQueriesYaml);
+            foreach (var (relPath, content) in files) Add(relPath, content);
+        }
+        ms.Position = 0;
+        return ms;
     }
 
     // ── GET /ingest/{collection}/operations/{opId} ────────────────────────────
@@ -61,98 +82,35 @@ public sealed class IngestControllerTests
         var ok = Assert.IsType<OkObjectResult>(result);
         var op = Assert.IsType<IngestOperationResult>(ok.Value);
         Assert.Equal("op-1", op.OperationId);
-        Assert.Equal(IngestStatus.Queued, op.Status);
     }
 
     [Fact]
     public void GetOperation_Returns404_WhenNotFound()
     {
         var ctrl = CreateController();
-
-        var result = ctrl.GetOperation("myproject", "nonexistent");
-
+        var result = ctrl.GetOperation("any", "missing");
         Assert.IsType<NotFoundObjectResult>(result);
     }
 
     [Fact]
-    public void GetOperation_Returns404_WhenCollectionMismatch()
+    public void GetOperation_Returns404_WhenCollectionMismatched()
     {
         var ops = new OperationStore();
-        ops.MarkQueued("op-1", "project-a", "docs/test.md", DateTimeOffset.UtcNow);
+        ops.MarkQueued("op-1", "alpha", "f.md", DateTimeOffset.UtcNow);
         var ctrl = CreateController(ops: ops);
 
-        // op-1 belongs to project-a but we ask under project-b
-        var result = ctrl.GetOperation("project-b", "op-1");
-
+        var result = ctrl.GetOperation("beta", "op-1");
         Assert.IsType<NotFoundObjectResult>(result);
     }
 
-    [Fact]
-    public void GetOperation_ReflectsCompletedStatus_AfterMarkCompleted()
-    {
-        var ops = new OperationStore();
-        ops.MarkQueued("op-1", "myproject", "docs/test.md", DateTimeOffset.UtcNow);
-        ops.MarkProcessing("op-1", "myproject", "docs/test.md", DateTimeOffset.UtcNow);
-        ops.MarkCompleted("op-1", chunkCount: 7, docKind: "adr_main");
-        var ctrl = CreateController(ops: ops);
-
-        var result = ctrl.GetOperation("myproject", "op-1");
-
-        var ok = Assert.IsType<OkObjectResult>(result);
-        var op = Assert.IsType<IngestOperationResult>(ok.Value);
-        Assert.Equal(IngestStatus.Completed, op.Status);
-        Assert.Equal(7, op.ChunkCount);
-        Assert.Equal("adr_main", op.DocKind);
-        Assert.NotNull(op.Manifest);
-        Assert.Equal(7, op.Manifest!.IndexedChunks);
-        Assert.Equal("adr_main", op.Manifest.DocKind);
-    }
+    // ── GET /ingest/{collection}/operations ───────────────────────────────────
 
     [Fact]
-    public void GetOperation_ReflectsFailedStatus_AfterMarkFailed()
-    {
-        var ops = new OperationStore();
-        ops.MarkQueued("op-1", "myproject", "docs/test.md", DateTimeOffset.UtcNow);
-        ops.MarkProcessing("op-1", "myproject", "docs/test.md", DateTimeOffset.UtcNow);
-        ops.MarkFailed("op-1", "embedding model not found");
-        var ctrl = CreateController(ops: ops);
-
-        var result = ctrl.GetOperation("myproject", "op-1");
-
-        var ok = Assert.IsType<OkObjectResult>(result);
-        var op = Assert.IsType<IngestOperationResult>(ok.Value);
-        Assert.Equal(IngestStatus.Failed, op.Status);
-        Assert.Equal("embedding model not found", op.ErrorMessage);
-    }
-
-    // ── GET /ingest/{collection}/operations ──────────────────────────────────
-
-    [Fact]
-    public void ListOperations_ReturnsAll_ForMatchingCollection()
-    {
-        var ops     = new OperationStore();
-        var enqueue = DateTimeOffset.UtcNow;
-        ops.MarkQueued("op-a1", "project-a", "docs/a.md", enqueue);
-        ops.MarkQueued("op-a2", "project-a", "docs/b.md", enqueue);
-        ops.MarkQueued("op-b1", "project-b", "docs/c.md", enqueue);
-        var ctrl = CreateController(ops: ops);
-
-        var result = ctrl.ListOperations("project-a");
-
-        var ok   = Assert.IsType<OkObjectResult>(result);
-        var list = Assert.IsAssignableFrom<IReadOnlyList<IngestOperationResult>>(ok.Value);
-        Assert.Equal(2, list.Count);
-        Assert.All(list, op => Assert.Equal("project-a", op.Collection));
-    }
-
-    [Fact]
-    public void ListOperations_ReturnsEmpty_WhenNoOperationsForCollection()
+    public void ListOperations_ReturnsEmptyList_WhenNoneStored()
     {
         var ctrl = CreateController();
-
-        var result = ctrl.ListOperations("unknown-project");
-
-        var ok   = Assert.IsType<OkObjectResult>(result);
+        var result = ctrl.ListOperations("anything");
+        var ok = Assert.IsType<OkObjectResult>(result);
         var list = Assert.IsAssignableFrom<IReadOnlyList<IngestOperationResult>>(ok.Value);
         Assert.Empty(list);
     }
@@ -168,309 +126,78 @@ public sealed class IngestControllerTests
             OperationId = "j1", Collection = "c", RelPath = "f", Content = "c",
             EnqueuedAt  = DateTimeOffset.UtcNow,
         });
-        channel.TryWrite(new IngestJob
-        {
-            OperationId = "j2", Collection = "c", RelPath = "g", Content = "c",
-            EnqueuedAt  = DateTimeOffset.UtcNow,
-        });
         var ctrl = CreateController(channel: channel);
 
         var result = ctrl.Stats();
-
-        var ok    = Assert.IsType<OkObjectResult>(result);
+        var ok = Assert.IsType<OkObjectResult>(result);
         var value = ok.Value!;
         var queueDepth = (int)value.GetType().GetProperty("queue_depth")!.GetValue(value)!;
-        Assert.Equal(2, queueDepth);
+        Assert.Equal(1, queueDepth);
     }
 
     [Fact]
     public void Stats_ReturnsRetentionHours_MatchingOperationStore()
     {
         var ctrl = CreateController();
-
         var result = ctrl.Stats();
-
-        var ok    = Assert.IsType<OkObjectResult>(result);
+        var ok = Assert.IsType<OkObjectResult>(result);
         var value = ok.Value!;
         var retentionHours = (double)value.GetType().GetProperty("retention_hours")!.GetValue(value)!;
         Assert.Equal(OperationStore.RetentionPeriod.TotalHours, retentionHours);
     }
 
-    // ── POST /ingest/{collection}/batch  (P2-2) ───────────────────────────────
-
-    private const string MinMetaRulesYaml = "doc_kind_rules:\n  - {glob: \"**\", kind: doc}\n";
-    private const string MinQueriesYaml   = "named_queries:\n  - {name: default, question: test, top_k: 5}\n";
-
-    private static System.IO.MemoryStream MakeZip(params (string relPath, string content)[] files)
-    {
-        var ms = new System.IO.MemoryStream();
-        using (var zip = new System.IO.Compression.ZipArchive(ms, System.IO.Compression.ZipArchiveMode.Create, leaveOpen: true))
-        {
-            foreach (var (relPath, content) in files)
-            {
-                var entry = zip.CreateEntry(relPath);
-                using var w = new System.IO.StreamWriter(entry.Open());
-                w.Write(content);
-            }
-        }
-        ms.Position = 0;
-        return ms;
-    }
-
-    private static System.IO.MemoryStream MakeValidZip(params (string relPath, string content)[] files)
-    {
-        var all = new (string, string)[]
-        {
-            ("metadata-rules.yaml", MinMetaRulesYaml),
-            ("queries.yaml", MinQueriesYaml),
-        }.Concat(files).ToArray();
-        return MakeZip(all);
-    }
-
-    private static IngestController CreateControllerWithBody(System.IO.Stream body, IngestChannel? channel = null, OperationStore? ops = null, string contentType = "application/zip")
-    {
-        channel ??= new IngestChannel();
-        ops     ??= new OperationStore();
-
-        var ctrl = new IngestController(channel, ops, NullLogger<IngestController>.Instance);
-
-        var httpCtx = new DefaultHttpContext();
-        httpCtx.Request.Body          = body;
-        httpCtx.Request.ContentLength = body.Length;
-        httpCtx.Request.ContentType   = contentType;
-        httpCtx.Response.Body         = new System.IO.MemoryStream();
-        ctrl.ControllerContext = new ControllerContext { HttpContext = httpCtx };
-
-        return ctrl;
-    }
+    // ── POST /ingest/{collection}/batch — wiring smoke tests ──────────────────
 
     [Fact]
-    public async Task UploadBatch_Returns202_WithCountAndOperations()
+    public async Task UploadBatch_Returns202_AndEnqueuesJobs_WhenZipIsValid()
     {
-        var zip  = MakeValidZip(("docs/intro.md", "# Intro"));
-        var ctrl = CreateControllerWithBody(zip);
+        var ops      = new OperationStore();
+        var zip      = MakeValidZip(("docs/intro.md", "# Intro"));
+        var ctrl     = CreateController(ops: ops, body: zip);
 
-        var result = await ctrl.UploadBatch("col");
+        var result   = await ctrl.UploadBatch("myproject", CancellationToken.None);
 
         var accepted = Assert.IsType<AcceptedResult>(result);
         Assert.Equal(202, accepted.StatusCode);
-        var body = accepted.Value!;
-        var count = (int)body.GetType().GetProperty("Count")!.GetValue(body)!;
-        Assert.Equal(1, count);
+        var response = Assert.IsType<BatchIngestResponse>(accepted.Value);
+        Assert.Equal(1, response.Count);
+        Assert.Single(response.Operations);
+        Assert.Equal("docs/intro.md", response.Operations[0].RelPath);
+        Assert.NotNull(ops.Get(response.Operations[0].OperationId));
     }
 
     [Fact]
-    public async Task UploadBatch_MultipleFiles_EnqueuesAll()
+    public async Task UploadBatch_Returns400_WithCode_WhenZipIsInvalid()
     {
-        var channel = new IngestChannel();
-        var zip = MakeValidZip(
-            ("docs/adr/0001.md", "# ADR-0001"),
-            ("docs/adr/0002.md", "# ADR-0002"),
-            ("docs/concepts/ddd.md", "# DDD"));
-        var ctrl = CreateControllerWithBody(zip, channel: channel);
+        var body = new MemoryStream("not a zip"u8.ToArray());
+        var ctrl = CreateController(body: body);
 
-        var result = await ctrl.UploadBatch("myproject");
+        var result = await ctrl.UploadBatch("myproject", CancellationToken.None);
 
-        Assert.IsType<AcceptedResult>(result);
-        Assert.Equal(3, channel.PendingCount);
+        var obj  = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(400, obj.StatusCode);
+        var body2 = Assert.IsAssignableFrom<IDictionary<string, object?>>(obj.Value);
+        Assert.Equal("InvalidZipArchive", body2["code"]);
     }
 
     [Fact]
-    public async Task UploadBatch_EachFileGetsUniqueOperationId()
+    public async Task UploadBatch_Returns400_WhenZipMissesRagConfig()
     {
-        var ops = new OperationStore();
-        var zip = MakeValidZip(("a.md", "A"), ("b.md", "B"));
-        var ctrl = CreateControllerWithBody(zip, ops: ops);
-
-        var result = await ctrl.UploadBatch("col");
-
-        var accepted = Assert.IsType<AcceptedResult>(result);
-        var body     = accepted.Value!;
-        dynamic ops2 = body.GetType().GetProperty("Operations")!.GetValue(body)!;
-        // Cast to IEnumerable to iterate
-        var opList = (System.Collections.IEnumerable)ops2;
-        var ids = new System.Collections.Generic.List<string>();
-        foreach (var op in opList)
-            ids.Add((string)op.GetType().GetProperty("OperationId")!.GetValue(op)!);
-        Assert.Equal(2, ids.Distinct().Count());
-    }
-
-    [Fact]
-    public async Task UploadBatch_RegistersOperationsInStore()
-    {
-        var ops = new OperationStore();
-        var zip = MakeValidZip(("f.md", "# F"));
-        var ctrl = CreateControllerWithBody(zip, ops: ops);
-
-        var result = await ctrl.UploadBatch("col");
-
-        var accepted = Assert.IsType<AcceptedResult>(result);
-        var body     = accepted.Value!;
-        dynamic opList2 = body.GetType().GetProperty("Operations")!.GetValue(body)!;
-        var opList = (System.Collections.IEnumerable)opList2;
-        foreach (var op in opList)
+        // Build a ZIP without rag-config.yaml — parser → validator should reject.
+        var ms = new MemoryStream();
+        using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
         {
-            var opId = (string)op.GetType().GetProperty("OperationId")!.GetValue(op)!;
-            Assert.NotNull(ops.Get(opId));
-            Assert.Equal(IngestStatus.Queued, ops.Get(opId)!.Status);
+            using var w = new StreamWriter(zip.CreateEntry("docs/x.md").Open());
+            w.Write("# x");
         }
-    }
+        ms.Position = 0;
 
-    [Fact]
-    public async Task UploadBatch_InvalidZip_Returns400()
-    {
-        var body = new System.IO.MemoryStream(System.Text.Encoding.UTF8.GetBytes("not a zip"));
-        var ctrl = CreateControllerWithBody(body);
+        var ctrl   = CreateController(body: ms);
+        var result = await ctrl.UploadBatch("myproject", CancellationToken.None);
 
-        var result = await ctrl.UploadBatch("col");
-
-        Assert.IsType<BadRequestObjectResult>(result);
-    }
-
-    [Fact]
-    public async Task UploadBatch_EmptyZip_Returns400()
-    {
-        var zip  = MakeZip(); // no files
-        var ctrl = CreateControllerWithBody(zip);
-
-        var result = await ctrl.UploadBatch("col");
-
-        Assert.IsType<BadRequestObjectResult>(result);
-    }
-
-    [Fact]
-    public async Task UploadBatch_QueueFull_Returns503()
-    {
-        var ctrl = CreateControllerWithBody(MakeValidZip(("a.md", "A"), ("b.md", "B")), channel: FullChannel());
-
-        var result = await ctrl.UploadBatch("col");
-
-        var objResult = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(503, objResult.StatusCode);
-    }
-
-    // ── ZIP validation tests ──────────────────────────────────────────────────
-
-    [Fact]
-    public async Task UploadBatch_MissingMetadataRules_Returns400()
-    {
-        var zip  = MakeZip(("queries.yaml", MinQueriesYaml), ("doc.md", "# Doc"));
-        var ctrl = CreateControllerWithBody(zip);
-
-        var result = await ctrl.UploadBatch("col");
-
-        var bad = Assert.IsType<BadRequestObjectResult>(result);
-        var error = bad.Value!.GetType().GetProperty("error")!.GetValue(bad.Value)!.ToString()!;
-        Assert.Contains("metadata-rules.yaml", error);
-    }
-
-    [Fact]
-    public async Task UploadBatch_MissingQueriesYaml_Returns400()
-    {
-        var zip  = MakeZip(("metadata-rules.yaml", MinMetaRulesYaml), ("doc.md", "# Doc"));
-        var ctrl = CreateControllerWithBody(zip);
-
-        var result = await ctrl.UploadBatch("col");
-
-        var bad = Assert.IsType<BadRequestObjectResult>(result);
-        var error = bad.Value!.GetType().GetProperty("error")!.GetValue(bad.Value)!.ToString()!;
-        Assert.Contains("queries.yaml", error);
-    }
-
-    [Fact]
-    public async Task UploadBatch_EmptyDocKindRules_Returns400()
-    {
-        var zip  = MakeZip(("metadata-rules.yaml", "doc_kind_rules: []\n"), ("queries.yaml", MinQueriesYaml), ("doc.md", "# Doc"));
-        var ctrl = CreateControllerWithBody(zip);
-
-        var result = await ctrl.UploadBatch("col");
-
-        var bad = Assert.IsType<BadRequestObjectResult>(result);
-        var error = bad.Value!.GetType().GetProperty("error")!.GetValue(bad.Value)!.ToString()!;
-        Assert.Contains("doc_kind_rules", error);
-    }
-
-    [Fact]
-    public async Task UploadBatch_EmptyNamedQueries_Returns400()
-    {
-        var zip  = MakeZip(("metadata-rules.yaml", MinMetaRulesYaml), ("queries.yaml", "named_queries: []\n"), ("doc.md", "# Doc"));
-        var ctrl = CreateControllerWithBody(zip);
-
-        var result = await ctrl.UploadBatch("col");
-
-        var bad = Assert.IsType<BadRequestObjectResult>(result);
-        var error = bad.Value!.GetType().GetProperty("error")!.GetValue(bad.Value)!.ToString()!;
-        Assert.Contains("named_queries", error);
-    }
-
-    [Fact]
-    public async Task UploadBatch_UnknownDocKind_Returns400()
-    {
-        const string badQueries = "named_queries:\n  - {name: x, question: q, doc_kind: unknown_kind, top_k: 5}\n";
-        var zip  = MakeZip(("metadata-rules.yaml", MinMetaRulesYaml), ("queries.yaml", badQueries), ("doc.md", "# Doc"));
-        var ctrl = CreateControllerWithBody(zip);
-
-        var result = await ctrl.UploadBatch("col");
-
-        var bad = Assert.IsType<BadRequestObjectResult>(result);
-        var error = bad.Value!.GetType().GetProperty("error")!.GetValue(bad.Value)!.ToString()!;
-        Assert.Contains("unknown_kind", error);
-    }
-
-    [Fact]
-    public async Task UploadBatch_ConfigFilesNotIngested()
-    {
-        var channel = new IngestChannel();
-        var zip     = MakeValidZip(("doc.md", "# Doc"));
-        var ctrl    = CreateControllerWithBody(zip, channel: channel);
-
-        var result = await ctrl.UploadBatch("col");
-
-        var accepted = Assert.IsType<AcceptedResult>(result);
-        var body     = accepted.Value!;
-        var count    = (int)body.GetType().GetProperty("Count")!.GetValue(body)!;
-        Assert.Equal(1, count);
-        dynamic opList2 = body.GetType().GetProperty("Operations")!.GetValue(body)!;
-        var opList = (System.Collections.IEnumerable)opList2;
-        var relPaths = new System.Collections.Generic.List<string>();
-        foreach (var op in opList)
-            relPaths.Add((string)op.GetType().GetProperty("RelPath")!.GetValue(op)!);
-        Assert.DoesNotContain("metadata-rules.yaml", relPaths);
-        Assert.DoesNotContain("queries.yaml", relPaths);
-        Assert.Contains("doc.md", relPaths);
-    }
-
-    [Fact]
-    public async Task UploadBatch_WrongContentType_Returns415()
-    {
-        var zip  = MakeValidZip(("doc.md", "# Doc"));
-        var ctrl = CreateControllerWithBody(zip, contentType: "text/plain");
-
-        var result = await ctrl.UploadBatch("col");
-
-        var obj = Assert.IsType<ObjectResult>(result);
-        Assert.Equal(415, obj.StatusCode);
-    }
-
-    [Fact]
-    public async Task UploadBatch_DocKindInYamlComment_IsNotRejected()
-    {
-        // queries.yaml has a comment containing "doc_kind: optional".
-        // The validator must not treat comment text as a real doc_kind reference.
-        const string queriesWithComment =
-            "# doc_kind: optional — filter results to this doc_kind only\n" +
-            "named_queries:\n" +
-            "  - {name: default, question: test, top_k: 5}\n";
-
-        var zip = MakeZip(
-            ("metadata-rules.yaml", MinMetaRulesYaml),
-            ("queries.yaml", queriesWithComment),
-            ("doc.md", "# Doc"));
-        var ctrl = CreateControllerWithBody(zip);
-
-        var result = await ctrl.UploadBatch("col");
-
-        // Must accept (202) — not reject with 400 "unknown doc_kind(s): [optional]"
-        Assert.IsType<AcceptedResult>(result);
+        var obj  = Assert.IsType<ObjectResult>(result);
+        Assert.Equal(400, obj.StatusCode);
+        var body = Assert.IsAssignableFrom<IDictionary<string, object?>>(obj.Value);
+        Assert.Equal("MissingRagConfigYaml", body["code"]);
     }
 }

@@ -1,48 +1,44 @@
 using Microsoft.Extensions.Logging;
+using RagTools.Core.Primitives;
 
 namespace RagTools.Core;
 
 /// <summary>
-/// Orchestrates the chunk → embed → upsert pipeline for a batch of markdown files.
-/// Extracted from Program.cs so the ingest loop is independently testable.
+/// CLI ingest loop: reads files from disk, delegates the chunk → embed → upsert
+/// pipeline to <see cref="IDocumentProcessor"/>, then updates the manifest.
+///
+/// All pipeline logic (sanitize, title, kind, weight, chunk, embed, upsert) lives
+/// in <see cref="DocumentProcessor"/> — single source of truth shared with the HTTP
+/// path (<see cref="IngestWorker"/>).
 /// </summary>
 public sealed class FileIngestor
 {
-    private readonly IEmbedder _embedder;
-    private readonly QdrantStore _store;
-    private readonly MarkdownChunker _chunker;
+    private readonly IDocumentProcessor _processor;
     private readonly RagConfig _cfg;
     private readonly ManifestService _manifest;
     private readonly ILogger _log;
-    private const int BatchSize = 32;
 
     public FileIngestor(
-        IEmbedder embedder,
-        QdrantStore store,
-        MarkdownChunker chunker,
+        IDocumentProcessor processor,
         RagConfig cfg,
         ManifestService manifest,
         ILogger log)
     {
-        _embedder = embedder;
-        _store = store;
-        _chunker = chunker;
+        _processor = processor;
         _cfg = cfg;
         _manifest = manifest;
         _log = log;
     }
 
     /// <summary>
-    /// Processes a list of files: chunks, embeds, and upserts them into Qdrant.
-    /// Returns the total number of chunks written.
+    /// Processes a list of files: reads, hands off to <see cref="IDocumentProcessor"/>,
+    /// then updates the manifest. Returns the total chunk count.
     /// </summary>
     public async Task<int> IngestAsync(
         IReadOnlyList<(FileInfo File, string RelPath, string Hash)> toProcess,
-        ILogger? dbg = null,
         CancellationToken ct = default)
     {
-        dbg ??= _log;
-        var repoRoot = _cfg.Workspace;
+        var collection = CollectionName.Parse(_cfg.Collection);
         var totalChunks = 0;
         var processedFiles = 0;
 
@@ -51,115 +47,46 @@ public sealed class FileIngestor
             ct.ThrowIfCancellationRequested();
 
             var text = await File.ReadAllTextAsync(fi.FullName, ct);
-            text = SanitizeText(text, relPath, dbg);
-            var chunks = _chunker.Chunk(text, relPath);
-            var docTitle = ExtractTitle(text, relPath);
-            var weight = ResolveWeight(relPath, (int)fi.Length, _cfg.Ranking);
-            var kind = _cfg.DetectDocKind(relPath);
-            var adrId = _cfg.DetectAdrId(relPath);
 
-            // Remove any stale points for this file before re-upserting.
-            await _store.DeleteByPathsAsync([relPath]);
+            var result = await _processor.ProcessAsync(new DocumentProcessingRequest(
+                Collection:       collection,
+                RelPath:          relPath,
+                Content:          text,
+                FileSizeBytes:    (int)fi.Length,
+                EnsureCollection: false,  // CLI ensures upfront in Program.cs
+                StoreFullContent: false), // CLI path does not store full content
+                ct);
 
-            var points = new List<RagPoint>();
-            for (var i = 0; i < chunks.Count; i += BatchSize)
-            {
-                var batch = chunks.Skip(i).Take(BatchSize).ToList();
-                var texts = batch.Select(c => c.Breadcrumb + "\n\n" + c.Text).ToList();
-                var vectors = await _embedder.EmbedBatchAsync(texts, ct);
-
-                for (var j = 0; j < batch.Count; j++)
-                {
-                    var chunk = batch[j];
-                    var chunkIndex = i + j;
-                    var id = ManifestService.StableId(relPath, chunk.Breadcrumb, chunk.StartLine);
-                    var contentId = DeterministicId.ForContent(_cfg.Collection, relPath);
-                    points.Add(new RagPoint(id, vectors[j], new RagPayload(
-                        RelPath: relPath,
-                        DocTitle: docTitle,
-                        DocKind: kind,
-                        AdrId: adrId,
-                        Breadcrumb: chunk.Breadcrumb,
-                        HeadingPath: chunk.HeadingPath,
-                        StartLine: chunk.StartLine,
-                        EndLine: chunk.EndLine,
-                        TokenCount: chunk.TokenCount,
-                        Weight: weight,
-                        Text: chunk.Text,
-                        ChunkIndex: chunkIndex,
-                        ContentId: contentId)));
-                }
-            }
-
-            await _store.UpsertAsync(points);
-            _manifest.Update(relPath, hash, chunks.Count);
-            totalChunks += chunks.Count;
+            _manifest.Update(relPath, hash, result.ChunkCount);
+            totalChunks += result.ChunkCount;
             processedFiles++;
 
-            dbg.LogDebug("{RelPath}: {ChunkCount} chunks, kind={Kind}, weight={Weight}",
-                relPath, chunks.Count, kind, weight);
-
             if (processedFiles % 10 == 0)
+            {
                 _log.LogInformation("{Done}/{Total} files processed ...", processedFiles, toProcess.Count);
+            }
         }
 
         return totalChunks;
     }
 
-    // ── Static helpers (mirrors Program.cs) ──────────────────────────────────
+    // ── Static helpers ────────────────────────────────────────────────────────
+    // Preserved as thin delegates so external callers (e.g. Program.cs `IsExcluded`,
+    // FileIngestorTests static-method coverage) keep working with single sources of truth.
 
     internal static string ExtractTitle(string text, string relPath)
-    {
-        // Strip UTF-8 BOM if present. StreamReader with detectEncodingFromByteOrderMarks=true
-        // (the .NET default) already strips it, but raw in-memory strings may not.
-        text = text.TrimStart('\uFEFF');
-        foreach (var line in text.Split('\n'))
-        {
-            var s = line.Trim();
-            if (s.StartsWith("# ")) return s[2..].Trim();
-            if (!string.IsNullOrEmpty(s) && !s.StartsWith('#') && !s.StartsWith("---"))
-                break;
-        }
-        return relPath;
-    }
+        => DocumentMetadata.ExtractTitle(text, relPath);
 
-    /// <summary>
-    /// Replaces Unicode replacement characters (U+FFFD) with '?' and logs a warning.
-    /// These characters appear when a file was saved in a legacy encoding (e.g. Windows-1252)
-    /// but read as UTF-8.  Sanitising keeps Qdrant free of garbage bytes.
-    /// </summary>
     internal static string SanitizeText(string text, string relPath, ILogger logger)
-    {
-        if (!text.Contains('\uFFFD')) return text;
-        var count = text.Count(c => c == '\uFFFD');
-        logger.LogWarning("{RelPath}: {Count} Unicode replacement char(s) (U+FFFD) — source encoding corrupt; replacing with '?'", relPath, count);
-        return text.Replace("\uFFFD", "?");
-    }
+        => TextSanitizer.RemoveReplacementChars(text, relPath, logger);
 
-    /// <summary>Overload for query-time reads where no logger is available.</summary>
     internal static string SanitizeText(string text)
-        => text.Contains('\uFFFD') ? text.Replace("\uFFFD", "?") : text;
+        => TextSanitizer.RemoveReplacementChars(text);
 
     internal static float ResolveWeight(string relPath, int fileSizeBytes, RankingSection ranking)
-    {
-        var p = relPath.Replace('\\', '/');
-        if (fileSizeBytes < ranking.StubByteThreshold && p.Contains("/example-implementation/"))
-            return 0.05f;
-        foreach (var entry in ranking.Weights)
-            if (GlobMatch(p, entry.Pattern))
-                return entry.Weight;
-        return 1.0f;
-    }
+        => RankingWeightResolver.Resolve(relPath, fileSizeBytes, ranking);
 
     public static bool GlobMatch(string path, string glob)
-    {
-        var pattern = "^" +
-            System.Text.RegularExpressions.Regex.Escape(glob)
-                 .Replace(@"\*\*", "§§")
-                 .Replace(@"\*", "[^/]*")
-                 .Replace(@"\?", "[^/]")
-                 .Replace("§§", ".*")
-            + "$";
-        return System.Text.RegularExpressions.Regex.IsMatch(path, pattern);
-    }
+        => RankingWeightResolver.GlobMatch(path, glob);
 }
+

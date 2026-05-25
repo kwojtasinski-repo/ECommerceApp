@@ -156,12 +156,20 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
             .AddControllers()
             .AddApplicationPart(typeof(RagTools.Mcp.Controllers.IngestController).Assembly)
             .Services
+            .AddRouting(opts =>
+                opts.ConstraintMap["collection"] = typeof(RagTools.Mcp.Routing.CollectionNameRouteConstraint))
             .AddSingleton(cfg)
             .AddSingleton<IEmbedder>(embedder)
             .AddSingleton<ITokenCounter>(_ => BertTokenCounter.FromModelDir("/nonexistent/path"))
             .AddSingleton<IDocumentStore>(cachedStore)
             .AddSingleton(Operations)
             .AddSingleton<IngestChannel>()
+            .AddSingleton<MarkdownChunker>(sp =>
+                new MarkdownChunker(cfg.Chunker, sp.GetRequiredService<ITokenCounter>()))
+            .AddSingleton<IDocumentProcessor, DocumentProcessor>()
+            .AddSingleton<RagTools.Core.Ingest.BatchValidator>()
+            .AddSingleton<RagTools.Core.Ingest.IZipBatchParser, RagTools.Core.Ingest.ZipBatchParser>()
+            .AddSingleton<IBatchIngestService, BatchIngestService>()
             .AddHostedService<IngestWorker>();
 
         _app = webBuilder.Build();
@@ -216,11 +224,15 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
         string? apiKey         = null)
     {
         // Build a ZIP with required config files plus the document.
+        const string MinRagConfigYaml = "embedder:\n  model: BAAI/bge-m3\n";
         const string MinMetaRulesYaml = "doc_kind_rules:\n  - {glob: \"**\", kind: doc}\n";
         const string MinQueriesYaml   = "named_queries:\n  - {name: default, question: test, top_k: 5}\n";
         using var ms = new MemoryStream();
         using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
         {
+            var ragEntry = zip.CreateEntry("rag-config.yaml");
+            using (var w = new StreamWriter(ragEntry.Open(), Encoding.UTF8)) await w.WriteAsync(MinRagConfigYaml);
+
             var metaEntry = zip.CreateEntry("metadata-rules.yaml");
             using (var w = new StreamWriter(metaEntry.Open(), Encoding.UTF8)) await w.WriteAsync(MinMetaRulesYaml);
 

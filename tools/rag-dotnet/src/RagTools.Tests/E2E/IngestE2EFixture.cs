@@ -103,12 +103,9 @@ public sealed class IngestE2EFixture : IAsyncLifetime
         // Use the shared singleton — triggers load+warm-up ONCE for the whole test process.
         Embedder = SharedOnnxModel.Instance;
 
-        // Ensure collection exists.
-        var rawStore = QdrantStore.Connect(qdrantUrl, Collection);
-        await rawStore.EnsureCollectionAsync(Embedder.Dimensions);
-
-        // Build IDocumentStore with caching.
+        // Build IDocumentStore with caching, then ensure collection exists.
         var qdrantDocStore = new QdrantDocumentStore(qdrantUrl);
+        await qdrantDocStore.EnsureCollectionAsync(Collection, Embedder.Dimensions);
         Store = new CachedDocumentStore(qdrantDocStore, new QueryCache());
 
         // Set up ingest pipeline as a hosted service.
@@ -120,7 +117,7 @@ public sealed class IngestE2EFixture : IAsyncLifetime
 
         // Wire up IngestWorker manually (DI-free for tests).
         // BertTokenCounter: whitespace-based fallback — no sentencepiece.bpe.model needed.
-        // IngestWorker uses the shared OnnxEmbedder (fully functional, real vectors).
+        // IngestWorker uses a real DocumentProcessor backed by the shared OnnxEmbedder.
         var tokenCounter = BertTokenCounter.FromModelDir("/nonexistent/path");
 
         // Build a LoggerFactory whose output follows the active xUnit ITestOutputHelper.
@@ -130,9 +127,14 @@ public sealed class IngestE2EFixture : IAsyncLifetime
             b.AddProvider(new XunitLoggerProvider(Sink))
              .SetMinimumLevel(LogLevel.Debug));
 
+        var chunker = new MarkdownChunker(Config.Chunker, tokenCounter);
+        var processor = new DocumentProcessor(
+            Config, chunker, Embedder, Store,
+            _loggerFactory.CreateLogger<DocumentProcessor>());
+
         var worker = new IngestWorker(
-            Channel, Store, Embedder, Config, Operations,
-            _loggerFactory.CreateLogger<IngestWorker>(), tokenCounter);
+            Channel, processor, Operations,
+            _loggerFactory.CreateLogger<IngestWorker>());
 
         // Start the worker as a BackgroundService.
         var cts = new CancellationTokenSource();

@@ -54,6 +54,7 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>, ID
         _sharedOnnx.Sink.SetOutput(null);
     }
 
+    private const string MinRagConfigYaml = "embedder:\n  model: BAAI/bge-m3\n";
     private const string MinMetaRulesYaml = "doc_kind_rules:\n  - {glob: \"**\", kind: doc}\n";
     private const string MinQueriesYaml   = "named_queries:\n  - {name: default, question: test, top_k: 5}\n";
 
@@ -62,6 +63,9 @@ public sealed class HttpIngestE2ETests : IClassFixture<HttpIngestE2EFixture>, ID
         using var ms = new MemoryStream();
         using (var zip = new ZipArchive(ms, ZipArchiveMode.Create, leaveOpen: true))
         {
+            var ragEntry = zip.CreateEntry("rag-config.yaml");
+            using (var w = new System.IO.StreamWriter(ragEntry.Open(), System.Text.Encoding.UTF8)) w.Write(MinRagConfigYaml);
+
             var metaEntry = zip.CreateEntry("metadata-rules.yaml");
             using (var w = new System.IO.StreamWriter(metaEntry.Open(), System.Text.Encoding.UTF8)) w.Write(MinMetaRulesYaml);
 
