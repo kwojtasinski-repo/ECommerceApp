@@ -348,7 +348,7 @@ def main() -> int:
     chunks_by_file: list[tuple[Path, list]] = []
     total_chunks = 0
     for path in files_to_process:
-        text = path.read_text(encoding="utf-8")
+        text = path.read_text(encoding="utf-8-sig")
         doc_title = _file_doc_title(path.relative_to(cfg.workspace).as_posix(), text)
         chunks = chunk_markdown(text, doc_title, cfg.chunker)
         chunks_by_file.append((path, chunks))
@@ -384,7 +384,7 @@ def main() -> int:
         if not chunks:
             continue
         rel = path.relative_to(cfg.workspace).as_posix()
-        doc_title = _file_doc_title(rel, path.read_text(encoding="utf-8"))
+        doc_title = _file_doc_title(rel, path.read_text(encoding="utf-8-sig"))
         weight = resolve_weight(rel, path.stat().st_size, cfg.ranking)
         embed_texts = [c.embed_text for c in chunks]
         vectors = embedder.embed_batch(embed_texts)

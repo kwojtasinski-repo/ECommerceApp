@@ -194,7 +194,7 @@ def _parse_zip_batch(
             if info.file_size == 0:
                 warnings.append(f"Skipped zero-byte file: '{info.filename}'")
                 continue
-            content = zf.read(info.filename).decode("utf-8", errors="replace")
+            content = zf.read(info.filename).decode("utf-8-sig", errors="replace")
             rel_path = info.filename.replace("\\", "/")
             entries.append(_FileEntry(
                 rel_path=rel_path,
