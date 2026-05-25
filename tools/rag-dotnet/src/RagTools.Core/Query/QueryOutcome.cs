@@ -32,4 +32,5 @@ public sealed record QueryHit(
     string DocKind,
     string RelPath,
     string Breadcrumb,
+    int StartLine,
     string Text);

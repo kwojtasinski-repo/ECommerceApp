@@ -199,10 +199,22 @@ public sealed class IngestE2ETests : IClassFixture<IngestE2EFixture>, IDisposabl
 
         var session = new RagSession(new FixedCollectionResolver(_fx.Collection!));
         var contentSource = new QdrantContentSource(_fx.Store!);
-        var tools = new RagMcpTools(
-            _fx.Embedder!, _fx.Store!, session, _fx.Config!,
+        var queryService = new RagTools.Core.Query.RagQueryService(
+            _fx.Embedder!, _fx.Store!, _fx.Config!,
             Array.Empty<IResultPostprocessor>(),
-            contentSource,
+            NullLogger<RagTools.Core.Query.RagQueryService>.Instance);
+        var readDocsService = new RagTools.Core.ReadDocs.RagReadDocsService(
+            _fx.Embedder!, _fx.Store!, contentSource, _fx.Config!,
+            NullLogger<RagTools.Core.ReadDocs.RagReadDocsService>.Instance);
+        var historyService = new RagTools.Core.History.RagHistoryService(
+            _fx.Embedder!, _fx.Store!,
+            NullLogger<RagTools.Core.History.RagHistoryService>.Instance);
+        var listService = new RagTools.Core.Adrs.RagListService(
+            _fx.Store!,
+            NullLogger<RagTools.Core.Adrs.RagListService>.Instance);
+        var tools = new RagMcpTools(
+            queryService, readDocsService, historyService, listService,
+            session,
             NullLogger<RagMcpTools>.Instance);
 
         // Full-content intent triggers FetchContentAsync path.

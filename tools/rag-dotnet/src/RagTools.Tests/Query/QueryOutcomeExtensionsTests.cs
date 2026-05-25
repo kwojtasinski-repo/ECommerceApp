@@ -12,7 +12,7 @@ public class QueryOutcomeExtensionsTests
         var response = new QueryResponse(
             Collection: "docs",
             Question: "hex?",
-            Hits: [new QueryHit(1, 0.9, "doc", "a.md", "a", "txt")],
+            Hits: [new QueryHit(1, 0.9, "doc", "a.md", "a", 1, "txt")],
             TotalCandidates: 5);
 
         var result = new QueryOutcome.Success(response).ToActionResult();

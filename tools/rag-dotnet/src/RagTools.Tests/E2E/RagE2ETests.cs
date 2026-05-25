@@ -170,11 +170,10 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
     [Fact]
     public async Task ListAdrs_IncludesAmendmentCount()
     {
-
         var result = await _fx.Tools!.ListAdrs(CancellationToken.None);
 
-        // ADR-0001 has one amendment file; JSON should show amendment_count > 0
-        Assert.Contains("amendment_count", result, StringComparison.OrdinalIgnoreCase);
+        // ADR-0001 has one amendment file; JSON should expose the renamed `amendments` field with a non-zero count.
+        Assert.Contains("\"amendments\":", result, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

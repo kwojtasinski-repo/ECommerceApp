@@ -262,9 +262,22 @@ public sealed class AutoModeE2EFixture : IAsyncLifetime
         var qdrantDocStore = new QdrantDocumentStore(qdrantGrpcUrl);
         var ragSession = new RagSession(new FixedCollectionResolver(cfg.Collection));
         var contentSource = new DiskContentSource(cfg);
-        Tools = new RagMcpTools(_embedder, qdrantDocStore, ragSession, cfg,
+        var queryService = new RagTools.Core.Query.RagQueryService(
+            _embedder, qdrantDocStore, cfg,
             Array.Empty<IResultPostprocessor>(),
-            contentSource,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<RagTools.Core.Query.RagQueryService>.Instance);
+        var readDocsService = new RagTools.Core.ReadDocs.RagReadDocsService(
+            _embedder, qdrantDocStore, contentSource, cfg,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<RagTools.Core.ReadDocs.RagReadDocsService>.Instance);
+        var historyService = new RagTools.Core.History.RagHistoryService(
+            _embedder, qdrantDocStore,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<RagTools.Core.History.RagHistoryService>.Instance);
+        var listService = new RagTools.Core.Adrs.RagListService(
+            qdrantDocStore,
+            Microsoft.Extensions.Logging.Abstractions.NullLogger<RagTools.Core.Adrs.RagListService>.Instance);
+        Tools = new RagMcpTools(
+            queryService, readDocsService, historyService, listService,
+            ragSession,
             Microsoft.Extensions.Logging.Abstractions.NullLogger<RagMcpTools>.Instance);
 
         IsAvailable = true;
