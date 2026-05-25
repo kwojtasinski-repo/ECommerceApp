@@ -145,7 +145,7 @@ async def _tool_read_docs(args: dict) -> list[TextContent]:
         if full_mode:
             abs_path = state.CFG.workspace / rel_path
             try:
-                content = abs_path.read_text(encoding="utf-8")
+                content = abs_path.read_text(encoding="utf-8-sig")
             except OSError as exc:
                 content = f"[ERROR: could not read file — {exc}]"
             files_out.append({
@@ -269,7 +269,7 @@ async def _tool_list_adrs(_: dict) -> list[TextContent]:
             main_files = sorted(folder.glob(f"{adr_id}-*.md"))
             title = ""
             if main_files:
-                text = main_files[0].read_text(encoding="utf-8")
+                text = main_files[0].read_text(encoding="utf-8-sig")
                 m = _TITLE_RE.search(text)
                 if m:
                     title = m.group(1).strip()
