@@ -1,7 +1,7 @@
-# ADR-0028: Remote-Capable Multi-Tenant RAG Server with Async Ingest API
+﻿# ADR-0028: Remote-Capable Multi-Tenant RAG Server with Async Ingest API
 
 ## Status
-Accepted � Phase 1 (.NET) Implemented
+Accepted — Phase 1 (.NET) Implemented
 
 ## Date
 2026-05-21

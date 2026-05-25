@@ -1,4 +1,4 @@
-﻿# ADR-0001: ECommerceApp � Project Overview and Technology Stack
+﻿# ADR-0001: ECommerceApp — Project Overview and Technology Stack
 
 ## Status
 Accepted
@@ -35,13 +35,13 @@ and extend or supersede specific decisions recorded here.
 
 The solution `ECommerceApp.sln` contains the following projects:
 
-- `ECommerceApp.Domain` � domain models (`BaseEntity` subclasses, 22 domain model classes) and repository interfaces (`IGenericRepository<T>` and domain-specific interfaces). No dependencies on other layers.
-- `ECommerceApp.Application` � application services, handlers, DTOs, ViewModels, validators (FluentValidation), AutoMapper profiles, middleware, exception types. Depends only on `Domain`.
-- `ECommerceApp.Infrastructure` � EF Core `Context`, `GenericRepository<T>`, concrete repositories, auth (JWT, Identity internals), migrations (12 migration files as of 2026-02-21), seed data. Depends on `Application` and `Domain`.
-- `ECommerceApp.Web` � ASP.NET Core MVC application. 18 MVC controllers + Views, Identity Razor Pages area under `Areas/Identity/Pages/`. Thin UI layer; depends on `Application`.
-- `ECommerceApp.API` � ASP.NET Core Web API. 15 REST controllers with JWT authentication. Thin API layer; depends on `Application`.
-- `ECommerceApp.UnitTests` � 21 unit test files using xUnit, Moq, FluentAssertions.
-- `ECommerceApp.IntegrationTests` � 36 integration test files using xUnit, Flurl, Shouldly, `CustomWebApplicationFactory<Startup>`.
+- `ECommerceApp.Domain` — domain models (`BaseEntity` subclasses, 22 domain model classes) and repository interfaces (`IGenericRepository<T>` and domain-specific interfaces). No dependencies on other layers.
+- `ECommerceApp.Application` — application services, handlers, DTOs, ViewModels, validators (FluentValidation), AutoMapper profiles, middleware, exception types. Depends only on `Domain`.
+- `ECommerceApp.Infrastructure` — EF Core `Context`, `GenericRepository<T>`, concrete repositories, auth (JWT, Identity internals), migrations (12 migration files as of 2026-02-21), seed data. Depends on `Application` and `Domain`.
+- `ECommerceApp.Web` — ASP.NET Core MVC application. 18 MVC controllers + Views, Identity Razor Pages area under `Areas/Identity/Pages/`. Thin UI layer; depends on `Application`.
+- `ECommerceApp.API` — ASP.NET Core Web API. 15 REST controllers with JWT authentication. Thin API layer; depends on `Application`.
+- `ECommerceApp.UnitTests` — 21 unit test files using xUnit, Moq, FluentAssertions.
+- `ECommerceApp.IntegrationTests` — 36 integration test files using xUnit, Flurl, Shouldly, `CustomWebApplicationFactory<Startup>`.
 
 ### Business domain
 
@@ -70,41 +70,41 @@ ECommerceApp covers the following bounded domain areas:
 
 ### Key architectural patterns
 
-- `AbstractService<TVm, URepo, EEntity>` � base class for all CRUD-oriented application services.
-- **Handler pattern** � `CouponHandler`, `PaymentHandler`, `ItemHandler` for complex cross-aggregate operations.
-- `GenericRepository<T>` � base repository in `Infrastructure` implementing `IGenericRepository<T>`.
-- `ExceptionMiddleware` + `BusinessException` + `IErrorMapToResponse` � unified exception handling pipeline.
-- `IFileStore` / `IFileWrapper` � file/image storage abstractions (no raw `System.IO` in services).
-- `CurrencyRateService` + `NBPResponseUtils` � external NBP API integration for currency rates.
-- `BaseController` (Web + API) � shared helpers: `GetUserId()`, `GetUserRole()`, `MapExceptionAsRouteValues()`, role constants.
-- `ModelStateFilter` � global MVC model validation filter (returns `400 BadRequest` automatically).
+- `AbstractService<TVm, URepo, EEntity>` — base class for all CRUD-oriented application services.
+- **Handler pattern** — `CouponHandler`, `PaymentHandler`, `ItemHandler` for complex cross-aggregate operations.
+- `GenericRepository<T>` — base repository in `Infrastructure` implementing `IGenericRepository<T>`.
+- `ExceptionMiddleware` + `BusinessException` + `IErrorMapToResponse` — unified exception handling pipeline.
+- `IFileStore` / `IFileWrapper` — file/image storage abstractions (no raw `System.IO` in services).
+- `CurrencyRateService` + `NBPResponseUtils` — external NBP API integration for currency rates.
+- `BaseController` (Web + API) — shared helpers: `GetUserId()`, `GetUserRole()`, `MapExceptionAsRouteValues()`, role constants.
+- `ModelStateFilter` — global MVC model validation filter (returns `400 BadRequest` automatically).
 
 ### Frontend technology stack (`ECommerceApp.Web`)
 
 Managed via LibMan (`libman.json`):
-- Bootstrap � layout and responsive UI.
-- Bootstrap Select � enhanced dropdowns.
-- Font Awesome � icons (solid and brands).
-- jQuery � DOM manipulation and AJAX.
-- jQuery Validation + Unobtrusive � client-side form validation.
-- Globalize + CLDR.js + jquery-validation-globalize � locale-aware number/date/currency formatting.
-- require.js � AMD module loader for custom JS.
+- Bootstrap — layout and responsive UI.
+- Bootstrap Select — enhanced dropdowns.
+- Font Awesome — icons (solid and brands).
+- jQuery — DOM manipulation and AJAX.
+- jQuery Validation + Unobtrusive — client-side form validation.
+- Globalize + CLDR.js + jquery-validation-globalize — locale-aware number/date/currency formatting.
+- require.js — AMD module loader for custom JS.
 
 Custom JS modules under `wwwroot/js/`:
-- `ajaxRequest.js` � AJAX abstraction (used for cart item count on every page load).
-- `modalService.js`, `dialogTemplate.js`, `buttonTemplate.js` � dynamic UI components.
-- `forms.js`, `validations.js`, `errors.js` � form helpers and error display.
-- `config.js`, `site.js` � require.js config and global initialization.
+- `ajaxRequest.js` — AJAX abstraction (used for cart item count on every page load).
+- `modalService.js`, `dialogTemplate.js`, `buttonTemplate.js` — dynamic UI components.
+- `forms.js`, `validations.js`, `errors.js` — form helpers and error display.
+- `config.js`, `site.js` — require.js config and global initialization.
 
 Frontend notes:
-- UI navigation labels are partially in Polish (`Koszyk`, `Moje zam�wienia`, `Przedmioty`). Do not change without explicit request.
+- UI navigation labels are partially in Polish (`Koszyk`, `Moje zamówienia`, `Przedmioty`). Do not change without explicit request.
 - Role-based navigation is controlled by `UserPermissions.Roles` in `_Layout.cshtml`.
 - Cart item count is loaded dynamically via AJAX using `ajaxRequest.js` on every page.
 
 ### Testing conventions
 
 - Unit tests: xUnit + Moq + FluentAssertions. Extend `BaseTest` (provides `IMapper`). Use in-memory repositories from `UnitTests/Common/`.
-- Integration tests � two patterns:
+- Integration tests — two patterns:
   - Service-level: extend `BaseTest<TService>` + FluentAssertions. DB cleaned via `EnsureDeleted()` in `Dispose()`.
   - API-level: `IClassFixture<CustomWebApplicationFactory<Startup>>` + Flurl HTTP client + Shouldly assertions.
 - Test naming: `given_<context>_when_<action>_should_<expected_result>`.
@@ -121,7 +121,7 @@ Frontend notes:
 - 12 migrations under `ECommerceApp.Infrastructure/Migrations/` as of 2026-02-21.
 - DB configurations per entity under `Infrastructure/Database/Configurations/`.
 - Seed data in `Infrastructure/Database/SeedData/Seed.cs` and `DatabaseInitializer`.
-- Migrations require review and approval � see `migration-policy.md`.
+- Migrations require review and approval — see `migration-policy.md`.
 
 ## Consequences
 
@@ -137,19 +137,19 @@ Frontend notes:
 - Polish UI labels require team communication before any UI text changes.
 
 ### Risks & mitigations
-- Risk: agents may create services without `AbstractService` � mitigated by explicit rule in `dotnet-instructions.md` and `copilot-instructions.md`.
-- Risk: frontend library drift if LibMan is bypassed � mitigated by explicit rule to always check `libman.json`.
-- Risk: DB migrations applied without review � mitigated by `migration-policy.md`.
+- Risk: agents may create services without `AbstractService` — mitigated by explicit rule in `dotnet-instructions.md` and `copilot-instructions.md`.
+- Risk: frontend library drift if LibMan is bypassed — mitigated by explicit rule to always check `libman.json`.
+- Risk: DB migrations applied without review — mitigated by `migration-policy.md`.
 
 ## Alternatives considered
 
-- **Option A** � Blazor for UI � rejected because the project targets ASP.NET Core MVC with standard server-side rendering and jQuery.
-- **Option B** � Dapper instead of EF Core � rejected because EF Core Code First was chosen to leverage migrations, tracking, and the repository abstraction.
-- **Option C** � Microservices � rejected because the project is a single-domain monolith for learning and portfolio purposes.
+- **Option A** — Blazor for UI — rejected because the project targets ASP.NET Core MVC with standard server-side rendering and jQuery.
+- **Option B** — Dapper instead of EF Core — rejected because EF Core Code First was chosen to leverage migrations, tracking, and the repository abstraction.
+- **Option C** — Microservices — rejected because the project is a single-domain monolith for learning and portfolio purposes.
 
 ## References
 
-- Related ADRs: none yet � this is the foundational ADR.
+- Related ADRs: none yet — this is the foundational ADR.
 - Instruction files:
   - `.github/instructions/dotnet-instructions.md`
   - `.github/instructions/web-api-instructions.md`

@@ -1,23 +1,23 @@
 # RAG Index Stats
 
-Last indexed: 2026-05-23 08:59 UTC  
+Last indexed: 2026-05-25 14:43 UTC  
 Collection: `ecommerceapp_docs`  
-Files: 173  
-Chunks: 1027  
+Files: 176  
+Chunks: 1052  
 Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`  
 
 ## Breakdown by doc_kind
 
 | doc_kind | files | chunks |
 |----------|------:|-------:|
-| `adr_amendment` | 10 | 40 |
+| `adr_amendment` | 12 | 60 |
 | `adr_checklist` | 24 | 35 |
 | `adr_example` | 34 | 34 |
-| `adr_main` | 30 | 480 |
+| `adr_main` | 30 | 481 |
 | `adr_migration_plan` | 25 | 31 |
-| `adr_router` | 28 | 90 |
+| `adr_router` | 28 | 85 |
 | `architecture` | 1 | 12 |
-| `context` | 5 | 76 |
+| `context` | 6 | 85 |
 | `other` | 1 | 3 |
 | `pattern` | 1 | 18 |
 | `reference` | 1 | 28 |
@@ -32,13 +32,14 @@ Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
 | `.github/context/known-issues.md` | `context` | 14 |
 | `.github/context/project-state.md` | `context` | 8 |
 | `.github/context/repo-index.md` | `context` | 34 |
+| `.github/context/test-stabilization-policy.md` | `context` | 9 |
 | `docs/README.md` | `other` | 3 |
 | `docs/adr/0001/0001-project-overview-and-technology-stack.md` | `adr_main` | 15 |
 | `docs/adr/0001/README.md` | `adr_router` | 2 |
 | `docs/adr/0001/checklist.md` | `adr_checklist` | 1 |
 | `docs/adr/0001/migration-plan.md` | `adr_migration_plan` | 1 |
 | `docs/adr/0002/0002-post-event-storming-architectural-evolution-strategy.md` | `adr_main` | 15 |
-| `docs/adr/0002/README.md` | `adr_router` | 3 |
+| `docs/adr/0002/README.md` | `adr_router` | 2 |
 | `docs/adr/0002/checklist.md` | `adr_checklist` | 1 |
 | `docs/adr/0002/migration-plan.md` | `adr_migration_plan` | 1 |
 | `docs/adr/0003/0003-feature-folder-organization-for-new-bounded-context-code.md` | `adr_main` | 11 |
@@ -47,11 +48,11 @@ Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
 | `docs/adr/0003/example-implementation/bc-folder-structure-example.md` | `adr_example` | 1 |
 | `docs/adr/0003/migration-plan.md` | `adr_migration_plan` | 1 |
 | `docs/adr/0004/0004-module-taxonomy-and-bounded-context-grouping.md` | `adr_main` | 11 |
-| `docs/adr/0004/README.md` | `adr_router` | 2 |
+| `docs/adr/0004/README.md` | `adr_router` | 1 |
 | `docs/adr/0004/checklist.md` | `adr_checklist` | 1 |
 | `docs/adr/0004/migration-plan.md` | `adr_migration_plan` | 1 |
 | `docs/adr/0005/0005-accountprofile-bc-userprofile-aggregate-design.md` | `adr_main` | 9 |
-| `docs/adr/0005/README.md` | `adr_router` | 3 |
+| `docs/adr/0005/README.md` | `adr_router` | 2 |
 | `docs/adr/0005/checklist.md` | `adr_checklist` | 1 |
 | `docs/adr/0005/migration-plan.md` | `adr_migration_plan` | 1 |
 | `docs/adr/0006/0006-typedid-and-value-objects-as-shared-domain-primitives.md` | `adr_main` | 11 |
@@ -70,9 +71,9 @@ Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
 | `docs/adr/0008/checklist.md` | `adr_checklist` | 1 |
 | `docs/adr/0008/example-implementation/nbp-api-integration.md` | `adr_example` | 1 |
 | `docs/adr/0008/migration-plan.md` | `adr_migration_plan` | 1 |
-| `docs/adr/0009/0009-supporting-timemanagement-bc-design.md` | `adr_main` | 21 |
+| `docs/adr/0009/0009-supporting-timemanagement-bc-design.md` | `adr_main` | 20 |
 | `docs/adr/0009/README.md` | `adr_router` | 4 |
-| `docs/adr/0009/amendments/a1-design-revisions.md` | `adr_amendment` | 6 |
+| `docs/adr/0009/amendments/a1-design-revisions.md` | `adr_amendment` | 5 |
 | `docs/adr/0009/checklist.md` | `adr_checklist` | 1 |
 | `docs/adr/0009/example-implementation/ideferred-job-scheduler-usage.md` | `adr_example` | 1 |
 | `docs/adr/0009/example-implementation/ischeduledtask-implementation.md` | `adr_example` | 1 |
@@ -88,7 +89,7 @@ Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
 | `docs/adr/0010/migration-plan.md` | `adr_migration_plan` | 1 |
 | `docs/adr/0011/0011-inventory-availability-bc-design.md` | `adr_main` | 30 |
 | `docs/adr/0011/README.md` | `adr_router` | 4 |
-| `docs/adr/0011/amendments/a1-fulfillment-message-consumption.md` | `adr_amendment` | 3 |
+| `docs/adr/0011/amendments/a1-fulfillment-message-consumption.md` | `adr_amendment` | 2 |
 | `docs/adr/0011/checklist.md` | `adr_checklist` | 1 |
 | `docs/adr/0011/example-implementation/cross-bc-message-wiring.md` | `adr_example` | 1 |
 | `docs/adr/0011/example-implementation/stock-adjustment-algorithm.md` | `adr_example` | 1 |
@@ -106,12 +107,12 @@ Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
 | `docs/adr/0013/checklist.md` | `adr_checklist` | 1 |
 | `docs/adr/0013/example-implementation/dbcontext-interface-pattern.md` | `adr_example` | 1 |
 | `docs/adr/0013/migration-plan.md` | `adr_migration_plan` | 1 |
-| `docs/adr/0014/0014-sales-orders-bc-design.md` | `adr_main` | 23 |
-| `docs/adr/0014/README.md` | `adr_router` | 5 |
+| `docs/adr/0014/0014-sales-orders-bc-design.md` | `adr_main` | 22 |
+| `docs/adr/0014/README.md` | `adr_router` | 4 |
 | `docs/adr/0014/amendments/a1-order-status-lifecycle.md` | `adr_amendment` | 1 |
 | `docs/adr/0014/amendments/a2-event-payload-records.md` | `adr_amendment` | 1 |
 | `docs/adr/0014/amendments/a3-integration-flow-decisions.md` | `adr_amendment` | 5 |
-| `docs/adr/0014/amendments/a4-operator-notifications.md` | `adr_amendment` | 4 |
+| `docs/adr/0014/amendments/a4-operator-notifications.md` | `adr_amendment` | 3 |
 | `docs/adr/0014/checklist.md` | `adr_checklist` | 5 |
 | `docs/adr/0014/example-implementation/order-aggregate-usage.md` | `adr_example` | 1 |
 | `docs/adr/0014/example-implementation/order-product-snapshot.md` | `adr_example` | 1 |
@@ -127,15 +128,15 @@ Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
 | `docs/adr/0015/migration-plan.md` | `adr_migration_plan` | 2 |
 | `docs/adr/0016/0016-sales-coupons-bc-design.md` | `adr_main` | 28 |
 | `docs/adr/0016/README.md` | `adr_router` | 4 |
-| `docs/adr/0016/amendments/a1-oversize-guard-and-catalog-name-sync.md` | `adr_amendment` | 3 |
+| `docs/adr/0016/amendments/a1-oversize-guard-and-catalog-name-sync.md` | `adr_amendment` | 2 |
 | `docs/adr/0016/checklist.md` | `adr_checklist` | 2 |
 | `docs/adr/0016/example-implementation/apply-coupon-flow.md` | `adr_example` | 1 |
 | `docs/adr/0016/example-implementation/coupon-evaluation-context.md` | `adr_example` | 1 |
 | `docs/adr/0016/example-implementation/new-coupon-rule-guide.md` | `adr_example` | 1 |
 | `docs/adr/0016/migration-plan.md` | `adr_migration_plan` | 2 |
 | `docs/adr/0017/0017-sales-fulfillment-bc-design.md` | `adr_main` | 26 |
-| `docs/adr/0017/README.md` | `adr_router` | 5 |
-| `docs/adr/0017/amendments/a1-shipment-integration-and-fanout.md` | `adr_amendment` | 6 |
+| `docs/adr/0017/README.md` | `adr_router` | 4 |
+| `docs/adr/0017/amendments/a1-shipment-integration-and-fanout.md` | `adr_amendment` | 5 |
 | `docs/adr/0017/checklist.md` | `adr_checklist` | 1 |
 | `docs/adr/0017/example-implementation/refund-lifecycle-flow.md` | `adr_example` | 1 |
 | `docs/adr/0017/example-implementation/shipment-dispatch-flow.md` | `adr_example` | 1 |
@@ -177,11 +178,13 @@ Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
 | `docs/adr/0025/migration-plan.md` | `adr_migration_plan` | 1 |
 | `docs/adr/0026/0026-order-lifecycle-saga.md` | `adr_main` | 8 |
 | `docs/adr/0026/README.md` | `adr_router` | 4 |
-| `docs/adr/0027/0027-rag-pipeline-design.md` | `adr_main` | 20 |
+| `docs/adr/0027/0027-rag-pipeline-design.md` | `adr_main` | 23 |
 | `docs/adr/0027/README.md` | `adr_router` | 1 |
 | `docs/adr/0028/0028-remote-multitenant-rag-ingest.md` | `adr_main` | 11 |
 | `docs/adr/0028/README.md` | `adr_router` | 1 |
 | `docs/adr/0028/amendments/0028-001-implementation-deviations.md` | `adr_amendment` | 6 |
+| `docs/adr/0028/amendments/0028-002-batch-manifest-pipeline.md` | `adr_amendment` | 19 |
+| `docs/adr/0028/amendments/0028-003-transport-aware-tools.md` | `adr_amendment` | 6 |
 | `docs/adr/0028/tech-details-dotnet.md` | `adr_main` | 24 |
 | `docs/adr/0028/tech-details-python.md` | `adr_main` | 17 |
 | `docs/architecture/bounded-context-map.md` | `architecture` | 12 |

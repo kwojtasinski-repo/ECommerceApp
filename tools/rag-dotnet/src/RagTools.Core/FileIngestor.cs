@@ -51,6 +51,7 @@ public sealed class FileIngestor
             ct.ThrowIfCancellationRequested();
 
             var text = await File.ReadAllTextAsync(fi.FullName, ct);
+            text = SanitizeText(text, relPath, dbg);
             var chunks = _chunker.Chunk(text, relPath);
             var docTitle = ExtractTitle(text, relPath);
             var weight = ResolveWeight(relPath, (int)fi.Length, _cfg.Ranking);
@@ -121,6 +122,23 @@ public sealed class FileIngestor
         }
         return relPath;
     }
+
+    /// <summary>
+    /// Replaces Unicode replacement characters (U+FFFD) with '?' and logs a warning.
+    /// These characters appear when a file was saved in a legacy encoding (e.g. Windows-1252)
+    /// but read as UTF-8.  Sanitising keeps Qdrant free of garbage bytes.
+    /// </summary>
+    internal static string SanitizeText(string text, string relPath, ILogger logger)
+    {
+        if (!text.Contains('\uFFFD')) return text;
+        var count = text.Count(c => c == '\uFFFD');
+        logger.LogWarning("{RelPath}: {Count} Unicode replacement char(s) (U+FFFD) — source encoding corrupt; replacing with '?'", relPath, count);
+        return text.Replace("\uFFFD", "?");
+    }
+
+    /// <summary>Overload for query-time reads where no logger is available.</summary>
+    internal static string SanitizeText(string text)
+        => text.Contains('\uFFFD') ? text.Replace("\uFFFD", "?") : text;
 
     internal static float ResolveWeight(string relPath, int fileSizeBytes, RankingSection ranking)
     {

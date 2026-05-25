@@ -1,4 +1,4 @@
-# ECommerceApp — Roadmap
+﻿# ECommerceApp — Roadmap
 
 > **Living document.** Update when phases are completed or priorities shift.
 > For architectural decisions see `docs/adr/`. For BC implementation status see `docs/architecture/bounded-context-map.md`.
@@ -19,7 +19,7 @@
 | **Frontend error pipeline & JS migration**         | [`frontend-pipeline.md`](./frontend-pipeline.md)           | [ADR-0021](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) | ✅ Phase 1–4 complete                                                                                                                                                                                                                                                                  |
 | **Storefront — `/offers` public browsing**         | [`storefront-offers.md`](./storefront-offers.md)           | —                                                                            | ✅ Complete — §1 routing + §2 home page + §3 category strip all done                                                                                                                                                                                                                   |
 | **Chunked image upload**                           | [`chunked-upload.md`](./chunked-upload.md)                 | —                                                                            | ✅ V2 TUS complete (2026-05-10) — tusdotnet middleware at `/tus`; `CompleteUpload` bridge; 13 integration tests; `CacheOptions` (6 TTLs) configurable from appsettings; hybrid `IOutputCache` + `IMemoryCache` layer across 5 services; `WebExtensions.cs` extracted from `Startup.cs` |
-| **Context-mode — sandbox MCP (context reduction)** | [`context-mode-integration.md`](./context-mode-integration.md) + [`context-mode-details.md`](./context-mode-details.md) | — | � Unblocked — RAG stabilisation complete (2026-05-23). Ready to implement. |
+| **Context-mode — sandbox MCP (context reduction)** | [`context-mode-integration.md`](./context-mode-integration.md) + [`context-mode-details.md`](./context-mode-details.md) | — | — Unblocked — RAG stabilisation complete (2026-05-23). Ready to implement. |
 
 > **Routing strategy for all controller migrations**: [ADR-0024](../adr/0024-controller-routing-strategy.md) — Web uses ASP.NET Core Areas (new parallel routes), API uses in-place swap. Applies to Orders, Payments, and all subsequent BC controller switches.
 

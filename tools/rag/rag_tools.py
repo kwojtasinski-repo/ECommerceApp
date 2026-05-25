@@ -20,6 +20,7 @@ import re
 from mcp.types import TextContent
 
 import state
+from common import sanitize_text
 
 # ── full-content intent detection ─────────────────────────────────────────────
 
@@ -146,6 +147,7 @@ async def _tool_read_docs(args: dict) -> list[TextContent]:
             abs_path = state.CFG.workspace / rel_path
             try:
                 content = abs_path.read_text(encoding="utf-8-sig", errors="replace")
+                content = sanitize_text(content, rel_path)
             except OSError as exc:
                 content = f"[ERROR: could not read file — {exc}]"
             files_out.append({
@@ -270,6 +272,7 @@ async def _tool_list_adrs(_: dict) -> list[TextContent]:
             title = ""
             if main_files:
                 text = main_files[0].read_text(encoding="utf-8-sig", errors="replace")
+                text = sanitize_text(text, main_files[0].relative_to(state.CFG.workspace).as_posix())
                 m = _TITLE_RE.search(text)
                 if m:
                     title = m.group(1).strip()

@@ -33,6 +33,7 @@ from common import (
     iter_markdown_files,
     load_config,
     resolve_weight,
+    sanitize_text,
 )
 
 
@@ -348,8 +349,9 @@ def main() -> int:
     chunks_by_file: list[tuple[Path, list]] = []
     total_chunks = 0
     for path in files_to_process:
-        text = path.read_text(encoding="utf-8-sig", errors="replace")
-        doc_title = _file_doc_title(path.relative_to(cfg.workspace).as_posix(), text)
+        rel = path.relative_to(cfg.workspace).as_posix()
+        text = sanitize_text(path.read_text(encoding="utf-8-sig", errors="replace"), rel)
+        doc_title = _file_doc_title(rel, text)
         chunks = chunk_markdown(text, doc_title, cfg.chunker)
         chunks_by_file.append((path, chunks))
         total_chunks += len(chunks)
@@ -384,7 +386,7 @@ def main() -> int:
         if not chunks:
             continue
         rel = path.relative_to(cfg.workspace).as_posix()
-        doc_title = _file_doc_title(rel, path.read_text(encoding="utf-8-sig", errors="replace"))
+        doc_title = _file_doc_title(rel, sanitize_text(path.read_text(encoding="utf-8-sig", errors="replace"), rel))
         weight = resolve_weight(rel, path.stat().st_size, cfg.ranking)
         embed_texts = [c.embed_text for c in chunks]
         vectors = embedder.embed_batch(embed_texts)

@@ -1,4 +1,4 @@
-# ADR-XXXX: [Short title — imperative, e.g. "Use Handler pattern for complex domain operations"]
+ï»¿# ADR-XXXX: [Short title â€” imperative, e.g. "Use Handler pattern for complex domain operations"]
 
 ## Status
 <!-- Choose one: Proposed | Accepted | Deprecated | Superseded by ADR-XXXX -->
@@ -47,8 +47,8 @@ Include both positive and negative consequences.
 List the alternatives that were evaluated and why they were rejected.
 -->
 
-- **Option A** — [description] — rejected because [reason]
-- **Option B** — [description] — rejected because [reason]
+- **Option A** â€” [description] â€” rejected because [reason]
+- **Option B** â€” [description] â€” rejected because [reason]
 
 ## Migration plan
 <!--
@@ -68,7 +68,7 @@ Examples:
   - [ ] All aggregate properties use `private set`
   - [ ] Static `Create(...)` factory method present, returns `(Aggregate, DomainEvent)`
   - [ ] Aggregate files live under `Domain/<Group>/<BcName>/`
-  - [ ] No cross-BC navigation properties — IDs only
+  - [ ] No cross-BC navigation properties â€” IDs only
   - [ ] `DbContext` uses schema `"<schema>"`
   - [ ] Service implementation is `internal sealed`
 -->

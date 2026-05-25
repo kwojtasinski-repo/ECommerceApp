@@ -1,3 +1,5 @@
+using RagTools.Core;
+
 namespace RagTools.Core.ContentSources;
 
 /// <summary>
@@ -13,8 +15,11 @@ public sealed class DiskContentSource(RagConfig cfg) : IContentSource
             Path.Combine(cfg.Workspace, relPath.Replace('/', Path.DirectorySeparatorChar)));
 
         if (!File.Exists(abs))
+        {
             return null;
+        }
 
-        return await File.ReadAllTextAsync(abs, ct);
+        var text = await File.ReadAllTextAsync(abs, ct);
+        return FileIngestor.SanitizeText(text);
     }
 }

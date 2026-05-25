@@ -1,4 +1,4 @@
----
+﻿---
 description: "Razor Pages and MVC view guidance for ECommerceApp.Web"
 applyTo: "ECommerceApp.Web/**/*.cshtml, ECommerceApp.Web/**/*.cshtml.cs, ECommerceApp.Web/**/*.cs"
 ---
@@ -33,7 +33,7 @@ Error handling in MVC controllers
 - MVC controllers may catch `BusinessException` for flows that need to surface errors via redirects or query params.
 - Use `MapExceptionAsRouteValues(exception)` from `BaseController` when redirecting with error codes.
 - Use `BuildErrorModel(exception).AsQueryCollection()` from `BaseController` when setting error on the current request context before returning a view.
-- Do NOT use raw `BadRequest(exception.Message)` in MVC controllers � use `BadRequest(BuildErrorModel(exception).Codes)` for AJAX-style responses.
+- Do NOT use raw `BadRequest(exception.Message)` in MVC controllers — use `BadRequest(BuildErrorModel(exception).Codes)` for AJAX-style responses.
 
 Partial views & templates
 - Use partial views for reusable UI fragments; prefer tag helpers where appropriate.

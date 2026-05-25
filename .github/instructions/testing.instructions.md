@@ -1,4 +1,4 @@
----
+ï»¿---
 description: "Testing guidance for unit and integration tests in ECommerceApp" 
 applyTo: "ECommerceApp.UnitTests/**, ECommerceApp.IntegrationTests/**"
 ---
@@ -12,9 +12,9 @@ Unit tests
 - Use `xUnit`, `Moq`, and `FluentAssertions`.
 - Name tests using the `Method_Conditions_ExpectedResult` pattern (PascalCase, underscores as separators between the three parts):
   ```
-  Method          — the method or operation under test
-  Conditions      — the scenario or input state (concise, no spaces)
-  ExpectedResult  — what should happen
+  Method          â€” the method or operation under test
+  Conditions      â€” the scenario or input state (concise, no spaces)
+  ExpectedResult  â€” what should happen
   ```
   Examples:
   ```csharp
@@ -23,21 +23,21 @@ Unit tests
   public void MarkAsPaid_AlreadyPaidOrder_ShouldThrowBusinessException()
   public void CalculateCost_WithActiveDiscount_ShouldApplyDiscountRate()
   ```
-- **Existing tests** use the legacy `given_<context>_when_<action>_should_<result>` pattern — do NOT rename them. New tests always use `Method_Conditions_ExpectedResult`.
-- Keep unit tests fast and deterministic — avoid I/O and external services.
+- **Existing tests** use the legacy `given_<context>_when_<action>_should_<result>` pattern â€” do NOT rename them. New tests always use `Method_Conditions_ExpectedResult`.
+- Keep unit tests fast and deterministic â€” avoid I/O and external services.
 - Use in-memory repositories from `UnitTests/Common/` for data-layer mocking.
 - Use `BaseTest` for shared AutoMapper configuration.
 
-Integration tests — two patterns
+Integration tests â€” two patterns
 
 Pattern 1: Service-level integration tests
-- Extend `BaseTest<TService>` (from `IntegrationTests/Common/BaseTest.cs`) — resolves `TService` from DI via `CustomWebApplicationFactory<Startup>`.
+- Extend `BaseTest<TService>` (from `IntegrationTests/Common/BaseTest.cs`) â€” resolves `TService` from DI via `CustomWebApplicationFactory<Startup>`.
 - Use `SetHttpContextUserId()` and `SetUserRole()` helpers to control current user identity.
 - Use `FluentAssertions` for assertions.
-- `Dispose()` calls `EnsureDeleted()` — always let it run; do not suppress.
+- `Dispose()` calls `EnsureDeleted()` â€” always let it run; do not suppress.
 
 Pattern 2: API controller integration tests
-- Use `IClassFixture<CustomWebApplicationFactory<Startup>>` directly — NOT `BaseTest<T>`.
+- Use `IClassFixture<CustomWebApplicationFactory<Startup>>` directly â€” NOT `BaseTest<T>`.
 - Use `_factory.GetAuthenticatedClient()` to get an authenticated **Flurl** HTTP client.
 - Use **Shouldly** for assertions (`ShouldBe`, `ShouldNotBeNull`, `ShouldBeGreaterThan`, etc.).
 - Tests hit real HTTP endpoints and verify full request/response pipeline.

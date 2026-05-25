@@ -62,3 +62,47 @@ public sealed class FileIngestorTests
         Assert.Equal("foo.md", FileIngestor.ExtractTitle(text, "foo.md"));
     }
 }
+
+/// <summary>
+/// Unit tests for <see cref="FileIngestor.SanitizeText"/>.
+/// </summary>
+public sealed class SanitizeTextTests
+{
+    [Fact]
+    public void SanitizeText_NoReplacementChar_ReturnsUnchanged()
+    {
+        const string text = "Clean text with em dash \u2014 and Polish ó.";
+        Assert.Same(text, FileIngestor.SanitizeText(text));
+    }
+
+    [Fact]
+    public void SanitizeText_ReplacesUFFFD_WithQuestionMark()
+    {
+        const string text = "# ADR-0001: ECommerceApp \uFFFD Project Overview";
+        var result = FileIngestor.SanitizeText(text);
+        Assert.Equal("# ADR-0001: ECommerceApp ? Project Overview", result);
+    }
+
+    [Fact]
+    public void SanitizeText_MultipleReplacements_AllReplaced()
+    {
+        const string text = "A\uFFFDB\uFFFDC";
+        Assert.Equal("A?B?C", FileIngestor.SanitizeText(text));
+    }
+
+    [Fact]
+    public void SanitizeText_WithLogger_ReplacesAndLogs()
+    {
+        var logMessages = new List<string>();
+        var mockLogger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<FileIngestor>();
+        const string text = "zam\uFFFDwienia";
+        var result = FileIngestor.SanitizeText(text, "test/file.md", mockLogger);
+        Assert.Equal("zam?wienia", result);
+    }
+
+    [Fact]
+    public void SanitizeText_EmptyString_ReturnsEmpty()
+    {
+        Assert.Equal("", FileIngestor.SanitizeText(""));
+    }
+}

@@ -329,6 +329,25 @@ def detect_doc_kind(rel_path: str, cfg: "Config | None" = None) -> str:
     return "other"
 
 
+def sanitize_text(text: str, rel: str = "") -> str:
+    """Replace Unicode replacement characters (U+FFFD) with '?' and print a warning.
+
+    U+FFFD appears when a file contains bytes that are invalid in the declared
+    encoding (most often: a Windows-1252 file decoded as UTF-8).  Sanitising at
+    ingest time keeps Qdrant free of garbage bytes and makes the problem visible
+    via the printed warning so the source file can be fixed.
+    """
+    if '\ufffd' not in text:
+        return text
+    count = text.count('\ufffd')
+    label = f"'{rel}'" if rel else "text"
+    print(
+        f"[rag] WARNING: {label} contains {count} Unicode replacement char(s) "
+        "(U+FFFD) — source encoding corrupt; replacing with '?'"
+    )
+    return text.replace('\ufffd', '?')
+
+
 def resolve_weight(rel_path: str, file_size_bytes: int, ranking_cfg: dict[str, Any]) -> float:
     """First matching pattern in ranking.weights wins. Stubs (tiny files) are buried."""
     if file_size_bytes < ranking_cfg.get("stub_byte_threshold", 400):

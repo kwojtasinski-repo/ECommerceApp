@@ -1,23 +1,22 @@
 ﻿# RAG Index Stats
 
-Last indexed: 2026-05-23 09:01 UTC  
+Last indexed: 2026-05-25 14:47 UTC  
 Collection: `ecommerceapp_docs_dotnet`  
-Files: 173  
-Chunks: 1056  
-Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`  
+Files: 176  
+Chunks: 1096  
 
 ## Breakdown by doc_kind
 
 | doc_kind | files | chunks |
 |----------|------:|-------:|
-| `adr_amendment` | 10 | 41 |
+| `adr_amendment` | 12 | 68 |
 | `adr_checklist` | 24 | 34 |
 | `adr_example` | 34 | 34 |
-| `adr_main` | 30 | 496 |
+| `adr_main` | 30 | 499 |
 | `adr_migration_plan` | 25 | 25 |
 | `adr_router` | 28 | 99 |
 | `architecture` | 1 | 12 |
-| `context` | 5 | 80 |
+| `context` | 6 | 90 |
 | `other` | 1 | 3 |
 | `pattern` | 1 | 18 |
 | `reference` | 1 | 28 |
@@ -32,6 +31,7 @@ Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
 | `.github/context/known-issues.md` | `context` | 15 |
 | `.github/context/project-state.md` | `context` | 6 |
 | `.github/context/repo-index.md` | `context` | 39 |
+| `.github/context/test-stabilization-policy.md` | `context` | 10 |
 | `docs/README.md` | `other` | 3 |
 | `docs/adr/0001/0001-project-overview-and-technology-stack.md` | `adr_main` | 15 |
 | `docs/adr/0001/README.md` | `adr_router` | 2 |
@@ -177,11 +177,13 @@ Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`
 | `docs/adr/0025/migration-plan.md` | `adr_migration_plan` | 1 |
 | `docs/adr/0026/0026-order-lifecycle-saga.md` | `adr_main` | 8 |
 | `docs/adr/0026/README.md` | `adr_router` | 5 |
-| `docs/adr/0027/0027-rag-pipeline-design.md` | `adr_main` | 20 |
+| `docs/adr/0027/0027-rag-pipeline-design.md` | `adr_main` | 23 |
 | `docs/adr/0027/README.md` | `adr_router` | 1 |
 | `docs/adr/0028/0028-remote-multitenant-rag-ingest.md` | `adr_main` | 12 |
 | `docs/adr/0028/README.md` | `adr_router` | 1 |
 | `docs/adr/0028/amendments/0028-001-implementation-deviations.md` | `adr_amendment` | 6 |
+| `docs/adr/0028/amendments/0028-002-batch-manifest-pipeline.md` | `adr_amendment` | 20 |
+| `docs/adr/0028/amendments/0028-003-transport-aware-tools.md` | `adr_amendment` | 7 |
 | `docs/adr/0028/tech-details-dotnet.md` | `adr_main` | 24 |
 | `docs/adr/0028/tech-details-python.md` | `adr_main` | 19 |
 | `docs/architecture/bounded-context-map.md` | `architecture` | 12 |
