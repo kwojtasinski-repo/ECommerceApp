@@ -405,7 +405,7 @@ public class MarkdownChunkerTests
 
         var chunks = AutoChunker(minTokens: 20).Chunk(md, "doc.md");
         // Big section should be emitted; "Tiny" is dropped (too small, no next chunk to absorb it).
-        Assert.Equal(1, chunks.Count);
+        Assert.Single(chunks);
         Assert.Contains("Big Section", chunks[0].Breadcrumb);
     }
 
