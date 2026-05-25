@@ -256,7 +256,7 @@ async def _run_http(port: int) -> None:
     """
     from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
     from starlette.applications import Starlette
-    from starlette.routing import Route
+    from starlette.routing import Mount, Route
     import uvicorn
 
     session_manager = StreamableHTTPSessionManager(
@@ -292,8 +292,8 @@ async def _run_http(port: int) -> None:
     app = Starlette(
         lifespan=lifespan,
         routes=[
-            Route("/", endpoint=handle_mcp, methods=["POST", "GET", "DELETE"]),
             *ingest_routes,
+            Mount("/", app=handle_mcp),
         ],
     )
     app.add_middleware(ApiKeyMiddleware)
