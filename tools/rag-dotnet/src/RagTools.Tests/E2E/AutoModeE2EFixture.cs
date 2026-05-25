@@ -1,4 +1,5 @@
 using RagTools.Core;
+using RagTools.Core.ContentSources;
 using Testcontainers.Qdrant;
 using Qdrant.Client;
 using Qdrant.Client.Grpc;
@@ -259,9 +260,11 @@ public sealed class AutoModeE2EFixture : IAsyncLifetime
         await IngestWorkspaceAsync(cfg, _embedder, Store);
 
         var qdrantDocStore = new QdrantDocumentStore(qdrantGrpcUrl);
-        var ragSession = new RagSession(cfg);
+        var ragSession = new RagSession(new FixedCollectionResolver(cfg.Collection));
+        var contentSource = new DiskContentSource(cfg);
         Tools = new RagMcpTools(_embedder, qdrantDocStore, ragSession, cfg,
             Array.Empty<IResultPostprocessor>(),
+            contentSource,
             Microsoft.Extensions.Logging.Abstractions.NullLogger<RagMcpTools>.Instance);
 
         IsAvailable = true;

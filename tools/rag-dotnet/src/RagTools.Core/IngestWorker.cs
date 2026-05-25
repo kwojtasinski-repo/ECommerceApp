@@ -13,8 +13,9 @@ namespace RagTools.Core;
 ///   - Reports status transitions via OperationStore (queued → processing → completed/failed)
 ///   - Graceful shutdown: stops reading when CancellationToken is cancelled; in-flight job completes
 ///
-/// The worker does NOT manage the Qdrant collection (EnsureCollectionAsync is called at startup
-/// by the host). Ingest jobs assume the collection already exists.
+/// The worker calls <see cref="IDocumentStore.EnsureCollectionAsync"/> before the first
+/// upsert for each job, so dynamic collections (created via the HTTP batch ingest API)
+/// are created on demand without a separate setup step.
 /// </summary>
 public sealed class IngestWorker(
     IngestChannel channel,
@@ -49,16 +50,21 @@ public sealed class IngestWorker(
 
         try
         {
-            // 1. Detect doc kind (use override if provided, else auto-detect from path).
+            // 1. Detect doc kind and ADR ID (use override if provided, else auto-detect from path).
             var kind  = job.DocKind ?? cfg.DetectDocKind(job.RelPath);
-            var adrId = cfg.DetectAdrId(job.RelPath);
+            var adrId = job.AdrId   ?? cfg.DetectAdrId(job.RelPath);
             var title = ExtractTitle(job.Content, job.RelPath);
 
             // 2. Chunk the document.
             var chunks = _chunker.Chunk(job.Content, job.RelPath);
             logger.LogDebug("IngestWorker: {RelPath} — {Count} chunk(s), kind={Kind}", job.RelPath, chunks.Count, kind);
 
-            // 3. Delete existing points for this path (idempotent re-ingest).
+            // 3. Ensure the Qdrant collection exists (idempotent — no-op if already created).
+            //    Required for dynamic collections created via the HTTP batch ingest API
+            //    where the collection name comes from the caller (not cfg.Collection).
+            await store.EnsureCollectionAsync(job.Collection, embedder.Dimensions, ct);
+
+            // 4. Delete existing points for this path (idempotent re-ingest).
             await store.DeleteByPathsAsync(job.Collection, [job.RelPath], ct);
 
             // 4. Embed in batches and upsert.

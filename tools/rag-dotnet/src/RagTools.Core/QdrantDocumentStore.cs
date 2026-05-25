@@ -205,14 +205,76 @@ public sealed class QdrantDocumentStore : IDocumentStore
     }
 
     /// <summary>
-    /// List all ADRs indexed in the collection.
-    /// Stub for Step 0 — returns empty (list_adrs reads from disk via RagConfig.Workspace).
-    /// Implemented in Step 3.
+    /// List all ADRs indexed in the collection by scrolling all chunk points
+    /// where <c>adr_id</c> is not null, then grouping by <c>adr_id</c>.
+    ///
+    /// doc_kind constants are read from the stored <see cref="RagConfigPayload"/> so
+    /// different repos can use different kind names without hardcoding "adr_main".
+    /// Falls back to "adr_main" / "adr_amendment" when the config point is absent.
     /// </summary>
-    public Task<IReadOnlyList<AdrSummary>> ListAdrsAsync(string collection, CancellationToken ct = default)
+    public async Task<IReadOnlyList<AdrSummary>> ListAdrsAsync(string collection, CancellationToken ct = default)
     {
-        // Step 3 will query Qdrant for full_content points where doc_type = "adr".
-        return Task.FromResult<IReadOnlyList<AdrSummary>>(Array.Empty<AdrSummary>());
+        // Read stored config to get project-specific doc_kind values.
+        var config = await FetchConfigAsync(collection, ct);
+        var adrDocKind       = config?.AdrDocKind       ?? "adr_main";
+        var amendmentDocKind = config?.AmendmentDocKind ?? "adr_amendment";
+
+        // Scroll all points where adr_id field is present (not null).
+        var filter = new Filter
+        {
+            MustNot =
+            {
+                new Condition { IsNull = new IsNullCondition { Key = "adr_id" } }
+            }
+        };
+
+        var allPoints = new List<Qdrant.Client.Grpc.RetrievedPoint>();
+        Qdrant.Client.Grpc.PointId? offset = null;
+
+        do
+        {
+            var response = await _client.ScrollAsync(
+                collection,
+                filter: filter,
+                limit: 1000,
+                offset: offset,
+                payloadSelector: new WithPayloadSelector { Enable = true },
+                vectorsSelector: new WithVectorsSelector { Enable = false },
+                cancellationToken: ct);
+
+            allPoints.AddRange(response.Result);
+            offset = response.NextPageOffset;
+        }
+        while (offset is not null);
+
+        // Group by adr_id and build AdrSummary per group.
+        var groups = allPoints
+            .GroupBy(p => p.Payload.TryGetValue("adr_id", out var ai) ? ai.StringValue : null)
+            .Where(g => !string.IsNullOrEmpty(g.Key));
+
+        var summaries = groups.Select(g =>
+        {
+            // Prefer chunks from the main ADR file for title and rel_path.
+            var mainChunk = g.FirstOrDefault(p =>
+                p.Payload.TryGetValue("doc_kind", out var dk) && dk.StringValue == adrDocKind);
+
+            var (title, mainFile) = mainChunk is not null
+                ? (mainChunk.Payload.TryGetValue("doc_title", out var t) ? t.StringValue : g.Key!,
+                   mainChunk.Payload.TryGetValue("rel_path",  out var rp) ? rp.StringValue : "")
+                : (g.First().Payload.TryGetValue("doc_title", out var t2) ? t2.StringValue : g.Key!,
+                   g.First().Payload.TryGetValue("rel_path",  out var rp2) ? rp2.StringValue : "");
+
+            var amendments = g.Count(p =>
+                p.Payload.TryGetValue("doc_kind", out var dk) && dk.StringValue == amendmentDocKind);
+            var examples = g.Count(p =>
+                p.Payload.TryGetValue("doc_kind", out var dk) && dk.StringValue == "adr_example");
+
+            return new AdrSummary(g.Key!, title, mainFile, amendments, examples);
+        })
+        .OrderBy(a => a.Id)
+        .ToList();
+
+        return summaries;
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

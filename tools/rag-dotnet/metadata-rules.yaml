@@ -5,6 +5,14 @@
 # All paths below are relative file paths matched against each markdown file's
 # repo-relative path (forward-slash, no leading slash).
 
+# ── ADR doc_kind constants ────────────────────────────────────────────────────
+# Stored in the Qdrant __config__ point at ingest time via RagConfigPayload.
+# Used at query time by ListAdrsAsync to identify main ADR chunks and amendment chunks
+# when grouping by adr_id — without hardcoding "adr_main" in server code.
+adr:
+  adr_doc_kind: "adr_main"
+  amendment_doc_kind: "adr_amendment"
+
 # ── ADR ID extraction ─────────────────────────────────────────────────────────
 # adr_id_patterns: first matching regex wins.
 # Each pattern MUST have a named capture group 'id'.

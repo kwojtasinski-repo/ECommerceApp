@@ -20,7 +20,7 @@ specifics.
 | `OperationStore` | `OperationStore` (`ConcurrentDictionary`) | `operation_store.py` |
 | `IngestController` routes | ASP.NET Core `IngestController` | `ingest_routes.py` |
 | `ApiKeyMiddleware` | ASP.NET Core `ApiKeyMiddleware` | `api_key_middleware.py` |
-| `RagSession` | Scoped `RagSession` (SSE DI) | `ContextVar[str | None]` in `mcp_server.py` |
+| `RagSession` | Scoped `RagSession` (SSE DI) | `ContextVar[str | None]` in `state.py` |
 
 ---
 
@@ -71,19 +71,19 @@ class IngestOperation:
     error_message: str|None    # set on Failed
 ```
 
-JSON wire format (snake_case Python → camelCase JSON via `to_dict()`):
+JSON wire format (snake_case — all keys are snake_case throughout the Python API):
 
 ```json
 {
-  "operationId": "3fa85f64-...",
+  "operation_id": "3fa85f64-...",
   "status": "Completed",
   "collection": "ecommerceapp-rag",
-  "relPath": "docs/adr/0001/0001-example.md",
-  "enqueuedAt": "2025-01-15T10:00:00+00:00",
-  "startedAt":  "2025-01-15T10:00:01+00:00",
-  "completedAt":"2025-01-15T10:00:03+00:00",
-  "chunkCount": 12,
-  "errorMessage": null
+  "rel_path": "docs/adr/0001/0001-example.md",
+  "enqueued_at": "2025-01-15T10:00:00+00:00",
+  "started_at":  "2025-01-15T10:00:01+00:00",
+  "completed_at":"2025-01-15T10:00:03+00:00",
+  "manifest": { "indexed_chunks": 12, "doc_kind": "adr_main" },
+  "error_message": null
 }
 ```
 
@@ -161,16 +161,16 @@ Request body (JSON):
 
 | Status | Condition |
 |---|---|
-| `202 Accepted` | Job enqueued; body contains `{operationId, status, location}` |
-| `400 Bad Request` | `relPath` or `content` missing |
+| `202 Accepted` | Job enqueued; body contains `{operation_id, status, location}` |
+| `400 Bad Request` | `rel_path` or `content` missing |
 | `503 Service Unavailable` | Queue full (`asyncio.Queue.full()` is `True`) |
 
 Response `202`:
 ```json
 {
-  "operationId": "3fa85f64-...",
+  "operation_id": "3fa85f64-...",
   "status": "Queued",
-  "location": "/ingest/{collection}/operations/{operationId}"
+  "location": "/ingest/{collection}/operations/{operation_id}"
 }
 ```
 `Location` HTTP header also set (mirrors .NET `CreatedAtAction`).
@@ -223,21 +223,27 @@ When the SSE MCP connection URL contains `?project=<name>`, the server binds
 a per-session collection override using a Python `contextvars.ContextVar`:
 
 ```python
-# mcp_server.py
+# state.py — shared deferred globals
 _session_collection: ContextVar[str | None] = ContextVar("_session_collection", default=None)
+
+# mcp_server.py — context manager wraps every SSE/HTTP handler
+@contextlib.contextmanager
+def _bind_session_project(project: str | None):
+    token = state._session_collection.set(project)
+    try:
+        yield
+    finally:
+        state._session_collection.reset(token)
 
 async def handle_sse(request):
     project = request.query_params.get("project")
-    token = _session_collection.set(project)
-    try:
+    with _bind_session_project(project):
         async with sse.connect_sse(...) as streams:
             await SERVER.run(...)
-    finally:
-        _session_collection.reset(token)
 ```
 
-Tool handlers (`_tool_query_docs`, `_tool_read_docs`) pass
-`collection=_session_collection.get(None)` to `QueryEngine.search()`. When `None`,
+Tool handlers (`_tool_query_docs`, `_tool_read_docs`) in `rag_tools.py` pass
+`collection=state._session_collection.get(None)` to `QueryEngine.search()`. When `None`,
 `search()` falls back to `cfg.collection` (the default configured collection).
 
 This mirrors the .NET scoped `RagSession` approach — each SSE connection gets its
@@ -248,11 +254,11 @@ own asyncio task and thus its own `ContextVar` token.
 ## DI / Wiring (SSE branch of `mcp_server.py`)
 
 ```python
-# Ingest pipeline created inside _run_sse()
+# mcp_server.py — lean entry point (~250 lines)
+# Shared globals live in state.py; tool handlers live in rag_tools.py.
 _store = OperationStore()
-_queue = asyncio.Queue(maxsize=DEFAULT_CAPACITY)
-_process_fn = _build_process_fn(ENGINE, CFG, _store)
-_worker = IngestWorker(_queue, _process_fn)
+_queue: asyncio.Queue = asyncio.Queue(maxsize=DEFAULT_CAPACITY)
+_worker = IngestWorker(_queue, _store, state.ENGINE, state.CFG)
 
 @contextlib.asynccontextmanager
 async def lifespan(_app):
@@ -267,6 +273,10 @@ app = Starlette(lifespan=lifespan, routes=[
 ])
 app.add_middleware(ApiKeyMiddleware)
 ```
+
+> **Module split (May 2026):** `mcp_server.py` was refactored — deferred globals moved to
+> `state.py`; the 4 MCP tool coroutines moved to `rag_tools.py`. The lean `mcp_server.py`
+> contains only the MCP `Server` object, the dispatch dict, transport wiring, and `__main__` startup.
 
 ---
 
@@ -297,8 +307,10 @@ Behaviour:
 | `ingest_worker.py` — asyncio.Queue + Task consumer | ✅ Implemented |
 | `ingest_routes.py` — Starlette POST/GET/admin routes | ✅ Implemented |
 | `api_key_middleware.py` — X-Api-Key middleware | ✅ Implemented |
-| `mcp_server.py` — SSE wiring + ContextVar session | ✅ Implemented |
-| `query.py` — `collection=` param on `search()` | ✅ Implemented |
+| `state.py` — shared deferred globals (ENGINE, CFG, _session_collection, TOOL_TIMEOUT) | ✅ Implemented |
+| `rag_tools.py` — 4 MCP tool coroutines (query_docs, read_docs, get_history, list_adrs) | ✅ Implemented |
+| `mcp_server.py` — lean SSE/HTTP wiring + dispatch dict + `_bind_session_project` CM | ✅ Implemented |
+| `query.py` — `collection=` param on `search()` + `get_collection_config()` method | ✅ Implemented |
 | `ingest.py` — `--remote` + `--api-key` flags | ✅ Implemented |
 | Python unit tests | ✅ Implemented |
 | Python E2E integration tests | ✅ Implemented |

@@ -101,9 +101,9 @@ You should get a list of ADR IDs from the index.
 ```powershell
 # From the repo root
 
-# Unit tests only — no Qdrant or embedding model needed (~2 s)
+# Unit tests only — no Qdrant or embedding model needed (~3 s)
 cd tools/rag
-.venv/Scripts/python.exe -m pytest test_ingest_unit.py -v
+.venv/Scripts/python.exe -m pytest tests/ -v -m "not http_streamable"
 
 # All tests including E2E (requires Qdrant running)
 pwsh tools/rag/run-tests.ps1 -StartQdrant
@@ -112,11 +112,13 @@ pwsh tools/rag/run-tests.ps1 -StartQdrant
 pwsh tools/rag/run-all-tests.ps1
 ```
 
-> **Unit tests (37):** cover `OperationStore`, `IngestWorker`, HTTP routes, and auth middleware.
+> **Unit + integration tests (278):** cover `OperationStore`, `IngestWorker`, HTTP routes,
+> auth middleware, `QueryEngine`, and MCP tool handlers.
 > No Qdrant or embedding model needed — all external dependencies are stubbed.
+> Tests live under `tests/` (not at the repo root).
 >
-> **E2E tests (16):** spin up a real uvicorn server, test the full HTTP round-trip,
-> and run one end-to-end ingest pipeline against a live Qdrant instance.
+> **E2E tests (13, `http_streamable` marker):** spin up a real MCP server + uvicorn,
+> test the full HTTP round-trip against a live Qdrant instance.
 
 ---
 

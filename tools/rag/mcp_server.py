@@ -6,7 +6,7 @@ Tools:
                                               when query signals full-content intent ("show me all details", etc.)
 - get_history(id)                         -> all indexed chunks for a history group, sorted by start_line
                                             (Qdrant-based; uses collection-configured history field, default adr_id)
-- list_adrs()                             -> table of all ADRs (id, title, kind counts)                             -> table of all ADRs (id, title, kind counts)
+- list_adrs()                             -> table of all ADRs (id, title, kind counts)
 
 Typical agent flow:
   1. list_adrs()           — orientation: what exists?
@@ -28,47 +28,31 @@ import asyncio
 import contextlib
 import json
 import os
-import re
 import sys
-from contextvars import ContextVar
+import traceback
 from pathlib import Path
 
 from mcp.server import Server
 from mcp.server.stdio import stdio_server
 from mcp.types import TextContent, Tool
 
-from common import CONFIG_PATH, iter_markdown_files, load_config
+import state
+from common import CONFIG_PATH, load_config
+from ingest_worker import DEFAULT_CAPACITY
 from query import QueryEngine
-
-# Deferred globals — initialised in __main__ after --config arg is parsed.
-CFG = None
-ENGINE = None
-SERVER = Server("ecommerceapp-rag")
-
-# Per-SSE-session collection override.
-# Set from ?project=<name> query param on the /sse connection URL.
-# When None, tools fall back to CFG.collection (the default configured collection).
-_session_collection: ContextVar[str | None] = ContextVar("_session_collection", default=None)
-
-# ---------------------------- full-content intent detection ----------------------------
-
-_FULL_INTENT_RE = re.compile(
-    r"\b("
-    r"all details|full details|full content|full text|entire|whole file"
-    r"|show me all|explain everything|everything about|complete picture"
-    r"|all about|deep dive|in full|from start to finish"
-    r")\b",
-    re.IGNORECASE,
+from rag_tools import (
+    _tool_get_history,
+    _tool_list_adrs,
+    _tool_query_docs,
+    _tool_read_docs,
 )
 
+# ── MCP server instance ───────────────────────────────────────────────────────
 
-def _wants_full_content(question: str) -> bool:
-    """Return True when the question words signal the caller wants the whole file, not just chunks."""
-    return bool(_FULL_INTENT_RE.search(question))
+SERVER = Server("ecommerceapp-rag")
 
 
-# ---------------------------- tool: query_docs ----------------------------
-
+# ── Tool schemas ──────────────────────────────────────────────────────────────
 
 @SERVER.list_tools()
 async def list_tools() -> list[Tool]:
@@ -142,20 +126,24 @@ async def list_tools() -> list[Tool]:
     ]
 
 
+# ── Tool dispatch ─────────────────────────────────────────────────────────────
+
+_TOOL_DISPATCH = {
+    "query_docs":  _tool_query_docs,
+    "read_docs":   _tool_read_docs,
+    "get_history": _tool_get_history,
+    "list_adrs":   _tool_list_adrs,
+}
+
+
 @SERVER.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:
-    try:
-        if name == "query_docs":
-            return await _tool_query_docs(arguments)
-        if name == "read_docs":
-            return await _tool_read_docs(arguments)
-        if name == "get_history":
-            return await _tool_get_history(arguments)
-        if name == "list_adrs":
-            return await _tool_list_adrs(arguments)
+    handler = _TOOL_DISPATCH.get(name)
+    if handler is None:
         return [TextContent(type="text", text=f"Unknown tool: {name}")]
+    try:
+        return await handler(arguments)
     except Exception as _exc:
-        import traceback
         return [TextContent(type="text", text=json.dumps({
             "error": type(_exc).__name__,
             "message": str(_exc),
@@ -163,141 +151,24 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
         }))]
 
 
-_TOOL_TIMEOUT = float(os.environ.get("RAG_TOOL_TIMEOUT", "60"))
+# ── Session context manager ───────────────────────────────────────────────────
 
 
-async def _tool_query_docs(args: dict) -> list[TextContent]:
-    question = args["question"]
-    bc = args.get("bc")
-    top_k = int(args.get("top_k", 5))
-    try:
-        hits = await asyncio.wait_for(
-            asyncio.to_thread(lambda: ENGINE.search(question, top_k=top_k, bc_filter=bc,
-                                                     collection=_session_collection.get(None))),
-            timeout=_TOOL_TIMEOUT,
-        )
-    except asyncio.TimeoutError:
-        return [TextContent(type="text", text=json.dumps({
-            "error": f"query_docs timed out after {_TOOL_TIMEOUT:.0f}s — the index may be loading or Qdrant is unresponsive."
-        }))]
-    payload = {
-        "query": question,
-        "bc_filter": bc,
-        "hits": [
-            {
-                "rel_path": h.rel_path,
-                "breadcrumb": h.breadcrumb,
-                "lines": f"{h.start_line}-{h.end_line}",
-                "score": round(h.final_score, 4),
-                "raw_score": round(h.raw_score, 4),
-                "weight": h.weight,
-                "doc_kind": h.doc_kind,
-                "adr_id": h.adr_id,
-                "text": h.text,
-            }
-            for h in hits
-        ],
-    }
-    return [TextContent(type="text", text=json.dumps(payload, indent=2))]
+@contextlib.contextmanager
+def _bind_session_project(project: "str | None"):
+    """Bind the per-request/session collection from the ?project= query param.
 
-
-# ---------------------------- tool: read_docs ----------------------------
-
-
-async def _tool_read_docs(args: dict) -> list[TextContent]:
-    """Return relevant content for the top-ranked unique files matching the query.
-
-    Strategy (two modes, detected from question text):
-
-    DEFAULT — chunk mode (question does NOT signal full-content intent):
-      1. Run vector search with a generous top_k.
-      2. Group hits by file, keep all chunks per file sorted by score.
-      3. Return the top chunks per file — no disk read, minimal tokens.
-
-    FULL mode — question contains explicit full-content intent phrases
-    (e.g. "show me all details", "full content of", "explain everything about"):
-      1. Same vector search to rank files.
-      2. Read each top-ranked file in full from disk.
-      3. Return complete text — caller gets every section including Alternatives/Consequences.
+    Wraps the ``state._session_collection`` ContextVar token lifecycle so SSE and
+    HTTP handlers share the same pattern without duplication.
     """
-    question = args["question"]
-    bc = args.get("bc")
-    top_files = min(int(args.get("top_files", 3)), 5)
-    full_mode = _wants_full_content(question)
-
-    # Fetch enough chunks globally so that each file gets good per-file coverage.
-    # Multiplier of 15 ensures that even later-ranked chunks within a file (e.g. the
-    # "Alternatives considered" section at the end of an ADR) make the global top-k
-    # cutoff when there are competing chunks from other files.
+    token = state._session_collection.set(project)
     try:
-        hits = await asyncio.wait_for(
-            asyncio.to_thread(lambda: ENGINE.search(question, top_k=max(30, top_files * 15), bc_filter=bc,
-                                                     collection=_session_collection.get(None))),
-            timeout=_TOOL_TIMEOUT,
-        )
-    except asyncio.TimeoutError:
-        return [TextContent(type="text", text=json.dumps({
-            "error": f"read_docs timed out after {_TOOL_TIMEOUT:.0f}s — the index may be loading or Qdrant is unresponsive."
-        }))]
-
-    # Group hits by file, tracking best score and all chunks per file.
-    from collections import defaultdict
-    chunks_per_file: dict[str, list] = defaultdict(list)
-    best_score_per_file: dict[str, float] = {}
-    for h in hits:
-        chunks_per_file[h.rel_path].append(h)
-        if h.final_score > best_score_per_file.get(h.rel_path, 0.0):
-            best_score_per_file[h.rel_path] = h.final_score
-
-    ranked_files = sorted(best_score_per_file.items(), key=lambda x: x[1], reverse=True)[:top_files]
-
-    files_out = []
-    for rel_path, score in ranked_files:
-        file_hits = sorted(chunks_per_file[rel_path], key=lambda h: h.final_score, reverse=True)
-        if full_mode:
-            abs_path = CFG.workspace / rel_path
-            try:
-                content = abs_path.read_text(encoding="utf-8")
-            except OSError as exc:
-                content = f"[ERROR: could not read file — {exc}]"
-            files_out.append({
-                "rel_path": rel_path,
-                "score": round(score, 4),
-                "mode": "full",
-                "size_chars": len(content),
-                "content": content,
-            })
-        else:
-            # Return the top chunks for this file — no disk read.
-            chunks_out = [
-                {
-                    "lines": f"{h.start_line}-{h.end_line}",
-                    "score": round(h.final_score, 4),
-                    "text": h.text,
-                }
-                for h in file_hits[:8]  # at most 8 chunks per file
-            ]
-            files_out.append({
-                "rel_path": rel_path,
-                "score": round(score, 4),
-                "mode": "chunks",
-                "chunks_returned": len(chunks_out),
-                "chunks": chunks_out,
-            })
-
-    payload = {
-        "query": question,
-        "bc_filter": bc,
-        "mode": "full" if full_mode else "chunks",
-        "files_returned": len(files_out),
-        "files": files_out,
-    }
-    return [TextContent(type="text", text=json.dumps(payload, indent=2))]
+        yield
+    finally:
+        state._session_collection.reset(token)
 
 
-# ---------------------------- tool: get_history ----------------------------
-
-_HISTORY_FIELD_DEFAULT = "adr_id"
+# ── Ingest component factory ──────────────────────────────────────────────────
 
 
 def _make_ingest_components() -> "tuple[OperationStore, asyncio.Queue, IngestWorker]":
@@ -306,143 +177,25 @@ def _make_ingest_components() -> "tuple[OperationStore, asyncio.Queue, IngestWor
     Called once per transport startup (SSE or HTTP).  Extracted to avoid
     duplicating the same four lines in both ``_run_sse`` and ``_run_http``.
     """
-    from ingest_routes import build_ingest_routes  # local import so mcp_server stays importable
-    from ingest_worker import DEFAULT_CAPACITY, IngestWorker, _build_process_fn
+    from ingest_worker import IngestWorker, _build_process_fn
     from operation_store import OperationStore
 
     store = OperationStore()
     queue: asyncio.Queue = asyncio.Queue(maxsize=DEFAULT_CAPACITY)
-    process_fn = _build_process_fn(ENGINE, CFG, store)
+    process_fn = _build_process_fn(state.ENGINE, state.CFG, store)
     worker = IngestWorker(queue, process_fn)
     return store, queue, worker
 
 
-async def _tool_get_history(args: dict) -> list[TextContent]:
-    """Qdrant-based history lookup — collection-agnostic.
-
-    Uses a field_filter on the collection's configured history field (defaults to
-    'adr_id' for backward compatibility with existing indexed collections).
-    Works in hosted/remote mode (no disk access required).
-    """
-    history_id = str(args["id"])
-    collection = _session_collection.get(None)
-
-    # Read history_field from the collection config point if available.
-    # Falls back to 'adr_id' for collections ingested before P2-3.
-    history_field = _HISTORY_FIELD_DEFAULT
-    try:
-        if ENGINE is not None:
-            ENGINE._ensure()
-            cfg_col = collection or ENGINE.cfg.collection
-            pts = ENGINE._client.retrieve(
-                collection_name=cfg_col,
-                ids=[0],  # __config__ point uses id=0 by convention
-                with_payload=True,
-            )
-            if pts and pts[0].payload:
-                history_field = pts[0].payload.get("history_field", _HISTORY_FIELD_DEFAULT)
-    except Exception:
-        pass  # config point not present — use default
-
-    try:
-        hits = await asyncio.wait_for(
-            asyncio.to_thread(
-                lambda: ENGINE.search(
-                    f"history {history_id}",
-                    top_k=50,
-                    fetch_k=200,
-                    field_filter=(history_field, history_id),
-                    collection=collection,
-                )
-            ),
-            timeout=_TOOL_TIMEOUT,
-        )
-    except asyncio.TimeoutError:
-        return [TextContent(type="text", text=json.dumps({
-            "error": f"get_history timed out after {_TOOL_TIMEOUT:.0f}s"
-        }))]
-
-    if not hits:
-        return [TextContent(type="text", text=json.dumps({
-            "id": history_id,
-            "history_field": history_field,
-            "chunk_count": 0,
-            "chunks": [],
-            "message": f"No chunks found for {history_field}={history_id!r}. Ensure the document is indexed.",
-        }))]
-
-    ordered = sorted(hits, key=lambda h: h.start_line)
-    result = {
-        "id": history_id,
-        "history_field": history_field,
-        "chunk_count": len(ordered),
-        "chunks": [
-            {
-                "rel_path": h.rel_path,
-                "breadcrumb": h.breadcrumb,
-                "doc_kind": h.doc_kind,
-                "start_line": h.start_line,
-                "text": h.text,
-            }
-            for h in ordered
-        ],
-    }
-    return [TextContent(type="text", text=json.dumps(result, indent=2))]
-
-
-# ---------------------------- tool: list_adrs ----------------------------
-
-
-_TITLE_RE = re.compile(r"^#\s+(?:ADR-\d+\s*[—:-]\s*)?(.+?)\s*$", re.MULTILINE)
-
-
-async def _tool_list_adrs(_: dict) -> list[TextContent]:
-    adr_folder = CFG.workspace / "docs" / "adr"
-    rows = []
-    for folder in sorted(adr_folder.iterdir()):
-        if not folder.is_dir() or not re.match(r"^\d{4}$", folder.name):
-            continue
-        adr_id = folder.name
-        main_files = sorted(folder.glob(f"{adr_id}-*.md"))
-        title = ""
-        if main_files:
-            text = main_files[0].read_text(encoding="utf-8")
-            m = _TITLE_RE.search(text)
-            if m:
-                title = m.group(1).strip()
-        amendments = sorted((folder / "amendments").glob("*.md")) if (folder / "amendments").exists() else []
-        examples = sorted((folder / "example-implementation").glob("*.md")) if (folder / "example-implementation").exists() else []
-        rows.append({
-            "id": adr_id,
-            "title": title,
-            "main_file": main_files[0].relative_to(CFG.workspace).as_posix() if main_files else None,
-            "amendments": len(amendments),
-            "examples": len(examples),
-        })
-    return [TextContent(type="text", text=json.dumps({"adrs": rows, "count": len(rows)}, indent=2))]
-
-
-# ---------------------------- entrypoint ----------------------------
-
-
-def _parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="ECommerceApp RAG MCP server")
-    parser.add_argument(
-        "--config",
-        default=None,
-        metavar="PATH",
-        help=(
-            "Path to rag-config.yaml. Default: rag-config.yaml next to mcp_server.py. "
-            "Pass when the config lives somewhere non-standard "
-            "(e.g. local dev without Docker, or a multi-project setup)."
-        ),
-    )
-    return parser.parse_args()
+# ── Transport: stdio ──────────────────────────────────────────────────────────
 
 
 async def _run_stdio() -> None:
     async with stdio_server() as (read, write):
         await SERVER.run(read, write, SERVER.create_initialization_options())
+
+
+# ── Transport: SSE ────────────────────────────────────────────────────────────
 
 
 async def _run_sse(port: int) -> None:
@@ -455,19 +208,12 @@ async def _run_sse(port: int) -> None:
     sse = SseServerTransport("/messages/")
 
     async def handle_sse(request):  # noqa: ANN001
-        # Bind the per-session collection from ?project= query param.
-        # Tool handlers read _session_collection.get(None) to override CFG.collection.
-        project = request.query_params.get("project")
-        token = _session_collection.set(project)
-        try:
+        with _bind_session_project(request.query_params.get("project")):
             async with sse.connect_sse(
                 request.scope, request.receive, request._send
             ) as streams:
                 await SERVER.run(streams[0], streams[1], SERVER.create_initialization_options())
-        finally:
-            _session_collection.reset(token)
 
-    # ── Ingest pipeline (async queue + background worker) ─────────────────────
     from api_key_middleware import ApiKeyMiddleware
     from ingest_routes import build_ingest_routes
 
@@ -499,6 +245,9 @@ async def _run_sse(port: int) -> None:
     await server.serve()
 
 
+# ── Transport: Streamable HTTP ────────────────────────────────────────────────
+
+
 async def _run_http(port: int) -> None:
     """Run the MCP server over Streamable HTTP (POST /).
 
@@ -512,24 +261,19 @@ async def _run_http(port: int) -> None:
 
     session_manager = StreamableHTTPSessionManager(
         app=SERVER,
-        event_store=None,   # stateless — no server-sent event resumption needed
+        event_store=None,
         json_response=False,
     )
 
     async def handle_mcp(scope, receive, send) -> None:  # noqa: ANN001
-        # Bind per-request collection from ?project= query param so tool handlers
-        # can call _session_collection.get(None) to override CFG.collection.
         query_string = scope.get("query_string", b"").decode()
         project: str | None = None
         for part in query_string.split("&"):
             if part.startswith("project="):
                 project = part[len("project="):]
                 break
-        token = _session_collection.set(project)
-        try:
+        with _bind_session_project(project):
             await session_manager.handle_request(scope, receive, send)
-        finally:
-            _session_collection.reset(token)
 
     from api_key_middleware import ApiKeyMiddleware
     from ingest_routes import build_ingest_routes
@@ -562,41 +306,49 @@ async def _run_http(port: int) -> None:
     await server.serve()
 
 
+# ── Entrypoint ────────────────────────────────────────────────────────────────
+
+
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="ECommerceApp RAG MCP server")
+    parser.add_argument(
+        "--config",
+        default=None,
+        metavar="PATH",
+        help=(
+            "Path to rag-config.yaml. Default: rag-config.yaml next to mcp_server.py. "
+            "Pass when the config lives somewhere non-standard "
+            "(e.g. local dev without Docker, or a multi-project setup)."
+        ),
+    )
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
     _args = _parse_args()
     if _args.config:
-        # Explicit path — local dev or any caller that passes --config directly.
         _config_path = Path(_args.config).resolve()
     elif env_cfg := os.environ.get("RAG_CONFIG"):
-        # Docker per-file-mount mode: baked config path supplied explicitly.
-        # Takes priority over RAG_WORKSPACE so the selective-mount compose setup works.
         _config_path = Path(env_cfg)
     elif env_ws := os.environ.get("RAG_WORKSPACE"):
-        # Container / CI mode: workspace root supplied via env, no --config needed.
-        # Convention: rag-config.yaml always lives at <workspace>/tools/rag/rag-config.yaml.
-        # This keeps docker run commands clean — RAG_WORKSPACE is the only knob.
         _config_path = Path(env_ws) / "tools" / "rag" / "rag-config.yaml"
     else:
         _config_path = CONFIG_PATH
-    CFG = load_config(_config_path)
+
+    state.CFG = load_config(_config_path)
 
     # ── Validate that every resolved file actually exists on disk ─────────────
-    # Each path may come from an env var (RAG_METADATA / RAG_QUERIES / RAG_MANIFEST)
-    # or from rag-config.yaml companion resolution. Fail fast with a clear message so
-    # a misconfigured mount is obvious rather than silently producing empty results.
     _errors: list[str] = []
 
-    _meta_src = os.environ.get("RAG_METADATA", "<companion metadata-rules.yaml>")
     _meta_path = Path(os.environ["RAG_METADATA"]) if "RAG_METADATA" in os.environ else None
     if _meta_path is not None and not _meta_path.exists():
         _errors.append(f"RAG_METADATA={_meta_path} - file not found (check --volume mount)")
 
-    _queries_src = os.environ.get("RAG_QUERIES", "<companion queries.yaml>")
     _queries_path = Path(os.environ["RAG_QUERIES"]) if "RAG_QUERIES" in os.environ else None
     if _queries_path is not None and not _queries_path.exists():
         _errors.append(f"RAG_QUERIES={_queries_path} - file not found (check --volume mount)")
 
-    _manifest_path = CFG.manifest_path
+    _manifest_path = state.CFG.manifest_path
     if "RAG_MANIFEST" in os.environ and not _manifest_path.exists():
         _errors.append(
             f"RAG_MANIFEST={_manifest_path} - file not found "
@@ -608,11 +360,9 @@ if __name__ == "__main__":
             print(f"[rag-mcp] ERROR: {_e}", file=sys.stderr)
         sys.exit(1)
 
-    ENGINE = QueryEngine(CFG)
+    state.ENGINE = QueryEngine(state.CFG)
 
     def _file_tag(path: "Path | None", fallback: str) -> str:
-        """Return 'path (NNN bytes)' for env-specified files so the startup log can be
-        cross-checked with 'Get-Item' / 'ls -l' on the host to confirm mount is live."""
         if path is None:
             return fallback
         try:
@@ -621,18 +371,15 @@ if __name__ == "__main__":
             return f"{path} (unreadable)"
 
     print(f"[rag-mcp] config:     {_config_path}", file=sys.stderr)
-    print(f"[rag-mcp] workspace:  {CFG.workspace}", file=sys.stderr)
-    print(f"[rag-mcp] collection: {CFG.collection} | mode: {CFG.vector_mode} | tool timeout: {_TOOL_TIMEOUT:.0f}s", file=sys.stderr)
+    print(f"[rag-mcp] workspace:  {state.CFG.workspace}", file=sys.stderr)
+    print(f"[rag-mcp] collection: {state.CFG.collection} | mode: {state.CFG.vector_mode} | tool timeout: {state.TOOL_TIMEOUT:.0f}s", file=sys.stderr)
     print(f"[rag-mcp] metadata:   {_file_tag(_meta_path, '<companion metadata-rules.yaml>')}", file=sys.stderr)
     print(f"[rag-mcp] queries:    {_file_tag(_queries_path, '<companion queries.yaml>')}", file=sys.stderr)
     print(f"[rag-mcp] manifest:   {_file_tag(_manifest_path if 'RAG_MANIFEST' in os.environ else None, str(_manifest_path))}", file=sys.stderr)
-    # Load the embedding model + connect to Qdrant synchronously BEFORE starting the
-    # asyncio event loop.  This keeps startup simple (no threads, no races) and
-    # guarantees the model is ready by the time Copilot sends its first tool call.
-    # The MCP handshake (initialize / initialized) happens after this block.
+
     print("[rag-mcp] loading embedding model...", file=sys.stderr)
     try:
-        ENGINE._ensure()
+        state.ENGINE._ensure()
         print("[rag-mcp] embedding model ready", file=sys.stderr)
     except Exception as _exc:
         print(f"[rag-mcp] ERROR: model load failed: {_exc}", file=sys.stderr)

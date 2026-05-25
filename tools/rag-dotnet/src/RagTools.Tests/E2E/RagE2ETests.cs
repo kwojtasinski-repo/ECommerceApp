@@ -178,14 +178,13 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
     }
 
     [Fact]
-    public async Task ListAdrs_DoesNotRequireQdrantOrEmbedder()
+    public async Task ListAdrs_ReturnsNonEmptyResult()
     {
-
-        // This test is a contract check: ListAdrs reads only the workspace filesystem.
-        // It must return a non-null, non-empty result — proven above — but here we also
-        // verify the output is structured (contains newlines or list markers).
+        // ListAdrs now reads from Qdrant (not disk). Requires the fixture Qdrant to be running
+        // with docs indexed. Returns structured JSON regardless of ADR count.
         var result = await _fx.Tools!.ListAdrs(CancellationToken.None);
 
-        Assert.True(result.Length > 0, "Expected non-empty ADR listing.");
+        Assert.True(result.Length > 0, "Expected non-empty ADR listing from Qdrant.");
+        Assert.Contains("adrs", result, StringComparison.OrdinalIgnoreCase);
     }
 }

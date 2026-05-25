@@ -205,6 +205,83 @@ public class RagConfigTests : IDisposable
         Assert.Null(cfg.MetadataRules.AdrIdPatterns);
     }
 
+    [Fact]
+    public void MetadataRules_AdrSection_ParsesAdrDocKind()
+    {
+        WriteConfig(MinimalConfig());
+        var rulesPath = Path.Combine(_tempDir, "metadata-rules.yaml");
+        File.WriteAllText(rulesPath, """
+            adr:
+              adr_doc_kind: "adr_main"
+              amendment_doc_kind: "adr_amendment"
+            """);
+
+        var cfg = RagConfig.Load(Path.Combine(_tempDir, "rag-config.yaml"));
+
+        Assert.NotNull(cfg.MetadataRules.Adr);
+        Assert.Equal("adr_main", cfg.MetadataRules.Adr!.AdrDocKind);
+    }
+
+    [Fact]
+    public void MetadataRules_AdrSection_ParsesAmendmentDocKind()
+    {
+        WriteConfig(MinimalConfig());
+        var rulesPath = Path.Combine(_tempDir, "metadata-rules.yaml");
+        File.WriteAllText(rulesPath, """
+            adr:
+              adr_doc_kind: "decision_main"
+              amendment_doc_kind: "decision_amendment"
+            """);
+
+        var cfg = RagConfig.Load(Path.Combine(_tempDir, "rag-config.yaml"));
+
+        Assert.Equal("decision_amendment", cfg.MetadataRules.Adr!.AmendmentDocKind);
+    }
+
+    [Fact]
+    public void MetadataRules_NoAdrSection_AdrIsNull()
+    {
+        WriteConfig(MinimalConfig());
+        var rulesPath = Path.Combine(_tempDir, "metadata-rules.yaml");
+        File.WriteAllText(rulesPath, """
+            adr_id_patterns:
+              - pattern: "adr/(?P<id>\\d{4})/"
+            """);
+
+        var cfg = RagConfig.Load(Path.Combine(_tempDir, "rag-config.yaml"));
+
+        Assert.Null(cfg.MetadataRules.Adr);
+    }
+
+    [Fact]
+    public void RagConfigPayload_From_SetsAdrDocKindFromMetadataRules()
+    {
+        WriteConfig(MinimalConfig());
+        var rulesPath = Path.Combine(_tempDir, "metadata-rules.yaml");
+        File.WriteAllText(rulesPath, """
+            adr:
+              adr_doc_kind: "adr_main"
+              amendment_doc_kind: "adr_amendment"
+            """);
+
+        var cfg = RagConfig.Load(Path.Combine(_tempDir, "rag-config.yaml"));
+        var payload = RagConfigPayload.From(cfg);
+
+        Assert.Equal("adr_main", payload.AdrDocKind);
+        Assert.Equal("adr_amendment", payload.AmendmentDocKind);
+    }
+
+    [Fact]
+    public void RagConfigPayload_From_LeavesAdrFieldsNull_WhenNoAdrSection()
+    {
+        var path = WriteConfig(MinimalConfig());
+        var cfg = RagConfig.Load(path);
+        var payload = RagConfigPayload.From(cfg);
+
+        Assert.Null(payload.AdrDocKind);
+        Assert.Null(payload.AmendmentDocKind);
+    }
+
     // ── Companion file merging — queries.yaml ────────────────────────────────
 
     [Fact]

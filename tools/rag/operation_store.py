@@ -40,19 +40,19 @@ class IngestOperation:
 
     def to_dict(self) -> dict:
         d: dict = {
-            "operationId": self.operation_id,
+            "operation_id": self.operation_id,
             "status": self.status.value,
             "collection": self.collection,
-            "relPath": self.rel_path,
-            "enqueuedAt": self.enqueued_at.isoformat(),
-            "startedAt": self.started_at.isoformat() if self.started_at else None,
-            "completedAt": self.completed_at.isoformat() if self.completed_at else None,
-            "errorMessage": self.error_message,
+            "rel_path": self.rel_path,
+            "enqueued_at": self.enqueued_at.isoformat(),
+            "started_at": self.started_at.isoformat() if self.started_at else None,
+            "completed_at": self.completed_at.isoformat() if self.completed_at else None,
+            "error_message": self.error_message,
         }
         if self.status == IngestStatus.Completed:
             d["manifest"] = {
-                "indexedChunks": self.chunk_count,
-                "docKind": self.doc_kind,
+                "indexed_chunks": self.chunk_count,
+                "doc_kind": self.doc_kind,
             }
         return d
 
@@ -99,10 +99,12 @@ class OperationStore:
 
     async def get(self, operation_id: str) -> IngestOperation | None:
         async with self._lock:
+            self._purge_locked()
             return self._ops.get(operation_id)
 
     async def list_for_collection(self, collection: str) -> list[IngestOperation]:
         async with self._lock:
+            self._purge_locked()
             return [op for op in self._ops.values() if op.collection == collection]
 
     def queue_depth(self) -> int:

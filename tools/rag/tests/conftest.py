@@ -41,6 +41,13 @@ def pytest_configure(config: pytest.Config) -> None:
         "container: additionally require Docker and the rag-tools image. "
         "Run with: pytest -m container",
     )
+    config.addinivalue_line(
+        "markers",
+        "http_streamable: require Docker, the rag-dotnet image, and a free TCP port. "
+        "Starts an ephemeral Qdrant + rag-dotnet SSE server, ingests via HTTP batch upload, "
+        "and queries via MCP Streamable HTTP (e.g. http://localhost:<port>/?project=<col>). "
+        "Run with: pytest -m http_streamable",
+    )
 
 
 # ── Shared fixtures ───────────────────────────────────────────────────────────

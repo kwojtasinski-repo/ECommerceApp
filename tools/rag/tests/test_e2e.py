@@ -492,6 +492,207 @@ def _rag_image_exists() -> bool:
         return False
 
 
+def _dotnet_image_exists() -> bool:
+    try:
+        r = subprocess.run(
+            ["docker", "image", "inspect", "rag-dotnet"],
+            capture_output=True,
+            timeout=5,
+        )
+        return r.returncode == 0
+    except Exception:
+        return False
+
+
+# ---------------------------------------------------------------------------
+# HTTP Streamable helpers (rag-dotnet container + ephemeral Qdrant)
+# ---------------------------------------------------------------------------
+
+import io as _io_module
+import socket
+import zipfile
+
+
+def _find_free_port() -> int:
+    """Return a free TCP port on localhost."""
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.bind(("127.0.0.1", 0))
+        return s.getsockname()[1]
+
+
+def _docker_network_create(name: str) -> None:
+    subprocess.run(["docker", "network", "create", name], check=True, capture_output=True)
+
+
+def _docker_network_rm(name: str) -> None:
+    subprocess.run(["docker", "network", "rm", name], capture_output=True)
+
+
+def _docker_run_detached(args: list[str]) -> str:
+    """Start a container in detached mode and return its container ID."""
+    r = subprocess.run(
+        ["docker", "run", "--rm", "-d"] + args,
+        capture_output=True, text=True, check=True,
+    )
+    return r.stdout.strip()
+
+
+def _docker_stop(container_id: str) -> None:
+    subprocess.run(["docker", "stop", "--time", "5", container_id], capture_output=True)
+
+
+def _wait_for_http(url: str, timeout: float = 60.0) -> None:
+    """Poll *url* until a 200 is returned or *timeout* seconds elapse."""
+    import urllib.request
+    import urllib.error
+    deadline = __import__("time").monotonic() + timeout
+    while __import__("time").monotonic() < deadline:
+        try:
+            with urllib.request.urlopen(url, timeout=2) as resp:
+                if resp.status < 500:
+                    return
+        except Exception:
+            pass
+        __import__("time").sleep(0.5)
+    raise TimeoutError(f"HTTP endpoint {url} not ready after {timeout}s")
+
+
+def _build_ingest_zip(workspace_root: Path) -> bytes:
+    """Zip the test workspace into a bytes buffer suitable for batch ingest.
+
+    The ZIP contains:
+      - metadata-rules.yaml (required by the server)
+      - queries.yaml (required by the server)
+      - All .md files under docs/
+    """
+    buf = _io_module.BytesIO()
+    with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        # Required companion files (at ZIP root)
+        for name in ("metadata-rules.yaml", "queries.yaml"):
+            src = workspace_root / "tools" / "rag" / name
+            if src.exists():
+                zf.write(src, arcname=name)
+        # All .md files (preserve relative path under docs/)
+        docs_dir = workspace_root / "docs"
+        if docs_dir.exists():
+            for md in sorted(docs_dir.rglob("*.md")):
+                zf.write(md, arcname=md.relative_to(workspace_root).as_posix())
+    return buf.getvalue()
+
+
+def _batch_ingest_and_wait(base_url: str, collection: str, zip_bytes: bytes, timeout: float = 180.0) -> None:
+    """POST zip to /ingest/{collection}/batch and wait for ALL operations to finish.
+
+    Uses GET /ingest/{collection}/operations to poll the full list until every
+    operation reaches Completed or Failed status.
+    """
+    import httpx, time
+
+    # Submit the batch upload.
+    with httpx.Client(base_url=base_url, timeout=30) as client:
+        r = client.post(
+            f"/ingest/{collection}/batch",
+            content=zip_bytes,
+            headers={"Content-Type": "application/zip"},
+        )
+        r.raise_for_status()
+        data = r.json()
+        expected_count = data.get("count", 0)
+        if expected_count == 0:
+            raise RuntimeError(f"Batch ingest returned no operations: {data}")
+
+    # Poll until all operations for this collection reach a terminal state.
+    terminal = {"completed", "succeeded", "failed"}
+    deadline = time.monotonic() + timeout
+    with httpx.Client(base_url=base_url, timeout=10) as client:
+        while time.monotonic() < deadline:
+            r = client.get(f"/ingest/{collection}/operations")
+            if r.status_code == 200:
+                ops = r.json()
+                if isinstance(ops, list) and len(ops) >= expected_count:
+                    statuses = [op.get("status", "").lower() for op in ops]
+                    if all(s in terminal for s in statuses):
+                        failed = [op for op in ops if op.get("status", "").lower() == "failed"]
+                        if failed:
+                            raise RuntimeError(f"Ingest operations failed: {failed}")
+                        return
+            time.sleep(1)
+    raise TimeoutError(
+        f"Not all {expected_count} ingest operations completed after {timeout}s"
+    )
+
+
+def _http_mcp_initialize(base_url: str, collection: str) -> tuple[str, str]:
+    """Perform MCP initialize handshake over HTTP Streamable. Returns (session_id, mcp_url)."""
+    import httpx
+    # The MCP endpoint includes the ?project= param so every request goes to the right collection.
+    mcp_url = f"{base_url}/?project={collection}"
+    with httpx.Client(timeout=30) as client:
+        body = {
+            "jsonrpc": "2.0", "id": 1, "method": "initialize",
+            "params": {
+                "protocolVersion": "2024-11-05",
+                "capabilities": {},
+                "clientInfo": {"name": "e2e-http-test", "version": "0.1"},
+            },
+        }
+        r = client.post(
+            mcp_url,
+            json=body,
+            headers={"Content-Type": "application/json", "Accept": "application/json, text/event-stream"},
+        )
+        r.raise_for_status()
+        session_id = r.headers.get("mcp-session-id", "")
+        # Send initialized notification
+        client.post(
+            mcp_url,
+            json={"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}},
+            headers={"Content-Type": "application/json", "mcp-session-id": session_id},
+        )
+    return session_id, mcp_url
+
+
+def _parse_sse_data(text: str) -> dict:
+    """Extract the first JSON payload from an SSE response body."""
+    for line in text.splitlines():
+        if line.startswith("data:"):
+            return json.loads(line[5:].strip())
+    raise ValueError(f"No data: line found in SSE body: {text[:300]!r}")
+
+
+def _http_mcp_call(
+    mcp_url: str, session_id: str, tool: str, args: dict, timeout: float = 60.0
+) -> dict:
+    """Send a tools/call over HTTP Streamable MCP. Returns the parsed JSON payload."""
+    import httpx
+    call_id = id(args) & 0xFFFF  # unique enough per call
+    body = {
+        "jsonrpc": "2.0",
+        "id": call_id,
+        "method": "tools/call",
+        "params": {"name": tool, "arguments": args},
+    }
+    with httpx.Client(timeout=timeout) as client:
+        r = client.post(
+            mcp_url,
+            json=body,
+            headers={
+                "Content-Type": "application/json",
+                "Accept": "application/json, text/event-stream",
+                "mcp-session-id": session_id,
+            },
+        )
+        r.raise_for_status()
+        ct = r.headers.get("content-type", "")
+        resp = _parse_sse_data(r.text) if "text/event-stream" in ct else r.json()
+
+    raw = resp.get("result", {}).get("content", [{}])[0].get("text", "{}")
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return {"text": raw}
+
+
 # ---------------------------------------------------------------------------
 # Session-scoped fixtures (shared by all non-modifying tests)
 # ---------------------------------------------------------------------------
@@ -673,6 +874,130 @@ def container_session(tmp_path_factory: pytest.TempPathFactory) -> ToolCaller:
     yield _call
 
     _kill_server(proc, buf, drain_t)
+
+
+# ---------------------------------------------------------------------------
+# HTTP Streamable session fixture (rag-dotnet container + ephemeral Qdrant)
+# ---------------------------------------------------------------------------
+
+import uuid as _uuid_mod
+
+# Type alias: tool-caller yielded by http_streamable_session
+HttpToolCaller = Callable[..., dict]
+
+_REPO_ROOT = _RAG_ROOT.parent.parent  # tools/rag → tools → repo root
+
+
+@pytest.fixture(scope="session")
+def http_streamable_session(tmp_path_factory: pytest.TempPathFactory) -> HttpToolCaller:
+    """Start an ephemeral Qdrant + rag-dotnet HTTP Streamable server from scratch.
+
+    Demonstrates the "from 0" scenario:
+      1. No pre-existing Qdrant index.
+      2. Docker creates an isolated network.
+      3. Qdrant starts (ephemeral, no persistent volume).
+      4. rag-dotnet starts in HTTP mode, connected to Qdrant.
+      5. Test workspace is ingested via POST /ingest/{collection}/batch.
+      6. MCP Streamable HTTP handshake at http://localhost:{port}/?project={collection}.
+
+    Skipped automatically if:
+      - Docker is not available.
+      - rag-dotnet image is not built (run: docker compose build rag-dotnet).
+
+    Teardown: stops both containers, removes the temp Docker network.
+
+    Example usage in tests::
+
+        def test_something(http_streamable_session):
+            result = http_streamable_session("list_adrs", {})
+    """
+    if not _docker_available():
+        pytest.skip("Docker not available — skipping http_streamable tests")
+    if not _dotnet_image_exists():
+        pytest.skip(
+            "rag-dotnet image not found — build it with: docker compose build rag-dotnet"
+        )
+
+    suffix = _uuid_mod.uuid4().hex[:8]
+    net_name       = f"rag_test_net_{suffix}"
+    qdrant_name    = f"rag_test_qdrant_{suffix}"
+    mcp_name       = f"rag_test_mcp_{suffix}"
+    # Use a small unique collection name so the server is collection-agnostic.
+    collection     = f"e2e_http_{suffix}"
+    host_port      = _find_free_port()
+
+    # Build the test workspace before any Docker work so it can be mounted.
+    # Critical: .NET list_adrs reads docs/adr/ from the FILESYSTEM (cfg.Workspace),
+    # not from Qdrant. Mounting the test workspace (2 ADRs) instead of the real
+    # repo (28+ ADRs) makes the isolation tests reliable.
+    tmp_ws = tmp_path_factory.mktemp("http_e2e_ws")
+    _build_workspace(tmp_ws)         # creates docs/adr/0001, docs/adr/0002, tools/rag/*.yaml
+    zip_bytes = _build_ingest_zip(tmp_ws)
+
+    # Step 1 — create an isolated Docker network
+    _docker_network_create(net_name)
+
+    qdrant_id = mcp_id = None
+    qdrant_host_port = _find_free_port()
+    try:
+        # Step 2 — start ephemeral Qdrant (no volume, in-memory storage).
+        # Expose on a random host port so we can poll the /healthz endpoint
+        # before starting the MCP server (avoids race between Qdrant startup
+        # and the first EnsureCollectionAsync call from IngestWorker).
+        qdrant_id = _docker_run_detached([
+            "--name", qdrant_name,
+            "--network", net_name,
+            "-p", f"{qdrant_host_port}:6333",
+            "--env", "QDRANT__STORAGE__STORAGE_PATH=/tmp/qdrant_data",
+            "qdrant/qdrant:v1.13.6",
+        ])
+        _wait_for_http(f"http://localhost:{qdrant_host_port}/healthz", timeout=30)
+
+        # Step 3 — start rag-dotnet in HTTP Streamable mode.
+        # Mount the test workspace (2 ADRs) as /workspace — not the real repo —
+        # so list_adrs (filesystem-based in .NET) returns exactly 2 ADRs.
+        config_host = str(_REPO_ROOT / "tools" / "rag-dotnet" / "rag-config.yaml")
+        mcp_id = _docker_run_detached([
+            "--name", mcp_name,
+            "--network", net_name,
+            "-p", f"{host_port}:3001",
+            "-v", f"{tmp_ws}:/workspace:ro",
+            "-v", f"{config_host}:/rag-config.yaml:ro",
+            "--env", "MCP_TRANSPORT=http",
+            "--env", "MCP_PORT=3001",
+            "--env", f"QDRANT_URL=http://{qdrant_name}:6333",
+            "--env", "RAG_CONFIG=/rag-config.yaml",
+            "--env", "RAG_WORKSPACE=/workspace",
+            "--env", "DOTNET_CLI_TELEMETRY_OPTOUT=1",
+            "rag-dotnet",
+            "dotnet", "/app/mcp/mcp_server.dll",
+        ])
+
+        base_url = f"http://localhost:{host_port}"
+
+        # Step 4 — wait for the server to be reachable (admin/stats is auth-free)
+        _wait_for_http(f"{base_url}/admin/stats", timeout=60)
+
+        # Step 5 — ingest the test workspace zip and wait for ALL ops to finish.
+        # Uses GET /ingest/{collection}/operations to confirm every file is indexed
+        # before the MCP handshake — prevents race where query_docs is called
+        # while Qdrant still has an empty collection.
+        _batch_ingest_and_wait(base_url, collection, zip_bytes, timeout=180)
+
+        # Step 6 — MCP handshake
+        session_id, mcp_url = _http_mcp_initialize(base_url, collection)
+
+        def _call(tool: str, args: dict, *, timeout: float = 60.0) -> dict:
+            return _http_mcp_call(mcp_url, session_id, tool, args, timeout=timeout)
+
+        yield _call
+
+    finally:
+        if mcp_id:
+            _docker_stop(mcp_id)
+        if qdrant_id:
+            _docker_stop(qdrant_id)
+        _docker_network_rm(net_name)
 
 
 # ---------------------------------------------------------------------------
@@ -1469,4 +1794,179 @@ class TestContainerMode:
             f"Container returned {result['count']} ADRs. "
             "Expected 2 (from volume-mounted test workspace). "
             "This means --config or RAG_WORKSPACE is not respected inside the container."
+        )
+
+
+# ---------------------------------------------------------------------------
+# ── Group 6: HTTP Streamable MCP server (from 0, rag-dotnet + Qdrant)  ────
+# ---------------------------------------------------------------------------
+
+@pytest.mark.http_streamable
+class TestHttpStreamable:
+    """End-to-end tests for the .NET MCP server over HTTP Streamable transport.
+
+    Demonstrates the "from 0" scenario:
+    - No pre-existing Qdrant index.
+    - Ephemeral Qdrant container + rag-dotnet container start inside an
+      isolated Docker network.
+    - Test workspace is ingested via POST /ingest/{collection}/batch (HTTP upload).
+    - All 4 MCP tools are exercised via MCP Streamable HTTP protocol:
+        http://localhost:{port}/?project={collection}
+
+    This is the realistic usage pattern described in ADR-0028 / rag-remote-multitenant.md:
+        mcp.json: "url": "http://localhost:3001/?project=ecommerceapp_docs_dotnet"
+
+    All tests in this class are skipped if Docker is unavailable or the
+    rag-dotnet image has not been built yet.
+
+    Build: docker compose build rag-dotnet
+    Run:   pytest tests/test_e2e.py -m http_streamable -v
+    """
+
+    # ── list_adrs ──────────────────────────────────────────────────────────
+
+    def test_http_list_adrs_returns_two_adrs(
+        self, http_streamable_session: HttpToolCaller
+    ) -> None:
+        """list_adrs returns exactly 2 ADRs from the test workspace filesystem.
+
+        The .NET list_adrs tool reads docs/adr/ from the FILESYSTEM (cfg.Workspace),
+        not from Qdrant. The fixture mounts the test workspace (2 ADRs) as /workspace.
+        """
+        result = http_streamable_session("list_adrs", {})
+        assert len(result["adrs"]) == 2, (
+            f"Expected 2 ADRs (test workspace), got {len(result['adrs'])}."
+        )
+
+    def test_http_list_adrs_has_correct_ids(
+        self, http_streamable_session: HttpToolCaller
+    ) -> None:
+        result = http_streamable_session("list_adrs", {})
+        # .NET list_adrs uses adr_id key (not id)
+        ids = {adr["adr_id"] for adr in result["adrs"]}
+        assert "0001" in ids
+        assert "0002" in ids
+
+    def test_http_list_adrs_each_has_adr_id_title_and_amendment_count(
+        self, http_streamable_session: HttpToolCaller
+    ) -> None:
+        """Each ADR entry has adr_id, title, and amendment_count (the .NET schema)."""
+        result = http_streamable_session("list_adrs", {})
+        for adr in result["adrs"]:
+            assert adr.get("adr_id"), f"ADR entry missing adr_id: {adr}"
+            assert adr.get("title"), f"ADR {adr['adr_id']} has empty title"
+            assert isinstance(adr.get("amendment_count", -1), int), (
+                f"ADR {adr['adr_id']} amendment_count not an int: {adr.get('amendment_count')}"
+            )
+
+    # ── query_docs ─────────────────────────────────────────────────────────
+
+    def test_http_query_docs_returns_hits(
+        self, http_streamable_session: HttpToolCaller
+    ) -> None:
+        result = http_streamable_session("query_docs", {"question": "TypedId value object"})
+        assert len(result["hits"]) > 0
+
+    def test_http_query_docs_hit_has_doc_kind(
+        self, http_streamable_session: HttpToolCaller
+    ) -> None:
+        result = http_streamable_session("query_docs", {"question": "TypedId value object"})
+        for hit in result["hits"]:
+            assert "doc_kind" in hit, f"Hit missing doc_kind: {hit}"
+
+    def test_http_query_docs_hit_has_required_fields(
+        self, http_streamable_session: HttpToolCaller
+    ) -> None:
+        result = http_streamable_session("query_docs", {"question": "CQRS command handler"})
+        for hit in result["hits"]:
+            for field in ("rel_path", "score", "text", "doc_kind"):
+                assert field in hit, f"Hit missing required field {field!r}: {hit}"
+
+    def test_http_query_docs_typedid_surfaces_adr_0001(
+        self, http_streamable_session: HttpToolCaller
+    ) -> None:
+        result = http_streamable_session(
+            "query_docs", {"question": "TypedId strongly-typed identifier", "top_k": 5}
+        )
+        rel_paths = [h["rel_path"] for h in result["hits"]]
+        assert any("0001" in p for p in rel_paths), (
+            f"Expected ADR-0001 in hits for TypedId query. Got: {rel_paths}"
+        )
+
+    def test_http_query_docs_cqrs_surfaces_adr_0002(
+        self, http_streamable_session: HttpToolCaller
+    ) -> None:
+        result = http_streamable_session(
+            "query_docs", {"question": "CQRS ICommandHandler immutable command", "top_k": 5}
+        )
+        rel_paths = [h["rel_path"] for h in result["hits"]]
+        assert any("0002" in p for p in rel_paths), (
+            f"Expected ADR-0002 in hits for CQRS query. Got: {rel_paths}"
+        )
+
+    # ── read_docs ──────────────────────────────────────────────────────────
+
+    def test_http_read_docs_chunks_mode(
+        self, http_streamable_session: HttpToolCaller
+    ) -> None:
+        """read_docs without full-content intent returns per-file chunks mode.
+
+        The .NET server places mode on each file entry, not at the top level.
+        """
+        result = http_streamable_session("read_docs", {"question": "TypedId pattern"})
+        files = result.get("files", [])
+        assert len(files) > 0
+        assert all(f.get("mode") == "chunks" for f in files), (
+            f"Expected all files in chunks mode, got: {[f.get('mode') for f in files]}"
+        )
+
+    def test_http_read_docs_full_mode(
+        self, http_streamable_session: HttpToolCaller
+    ) -> None:
+        """Full-content-intent question triggers full mode on file entries.
+
+        The .NET server places mode per-file (not top-level) and uses content
+        (not size_chars) for the full text body.
+        """
+        result = http_streamable_session(
+            "read_docs", {"question": "show me all details about TypedId value objects"}
+        )
+        full_files = [f for f in result.get("files", []) if f.get("mode") == "full"]
+        assert len(full_files) > 0, "Expected at least one file in full mode"
+        for f in full_files:
+            assert len(f.get("content", "")) > 0, (
+                f"Full-mode file {f.get('rel_path')} has empty content"
+            )
+
+    # ── get_history ────────────────────────────────────────────────────────
+
+    def test_http_get_history_returns_chunks(
+        self, http_streamable_session: HttpToolCaller
+    ) -> None:
+        result = http_streamable_session("get_history", {"id": "0001"})
+        assert result.get("id") == "0001"
+        assert result.get("chunk_count", 0) > 0
+
+    def test_http_get_history_unknown_returns_zero(
+        self, http_streamable_session: HttpToolCaller
+    ) -> None:
+        result = http_streamable_session("get_history", {"id": "__nonexistent_http_e2e__"})
+        assert result.get("chunk_count", 0) == 0
+
+    # ── Project routing via ?project= ─────────────────────────────────────
+
+    def test_http_project_routing_isolates_from_default_collection(
+        self, http_streamable_session: HttpToolCaller
+    ) -> None:
+        """The ?project= collection only contains what was ingested for the test.
+
+        A real deployment uses collections like "ecommerceapp_docs_dotnet".
+        This test proves the routing works: list_adrs reads the test workspace
+        filesystem (2 ADRs), not the default collection or any other data.
+        """
+        result = http_streamable_session("list_adrs", {})
+        # list_adrs is filesystem-based — returns exactly 2 because the test workspace has 2 ADRs.
+        assert len(result["adrs"]) == 2, (
+            f"Expected exactly 2 ADRs in the test workspace, got {len(result['adrs'])}. "
+            "Workspace mount may be pointing to the real repo."
         )

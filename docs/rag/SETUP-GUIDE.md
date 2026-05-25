@@ -559,7 +559,7 @@ Test files:
 
 | File | Tests | Needs Qdrant | Description |
 |------|-------|-------------|-------------|
-| `tools/rag/test_ingest_unit.py` | 47 | No | Unit tests for OperationStore, IngestWorker, routes, auth middleware, batch endpoint |
+| `tools/rag/tests/test_ingest_api.py` | 54 | No | Unit tests for OperationStore, IngestWorker, routes, auth middleware, batch endpoint |
 | `tools/rag/test_ingest_e2e.py` | 16 | Yes (1 test) | E2E: real uvicorn server, full HTTP round-trip, one Qdrant pipeline test |
 
 ### .NET tests (unit + E2E)

@@ -2,8 +2,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ModelContextProtocol.Server;
 using RagTools.Core;
+using RagTools.Core.ContentSources;
+using RagTools.Mcp;
 using RagTools.Mcp.Controllers;
 using RagTools.Mcp.Middleware;
+using System.Text.Json;
 
 // ── MCP server entry point ────────────────────────────────────────────────────
 //
@@ -108,6 +111,8 @@ if (transport is "http" or "sse")
 
     webBuilder.Services
         .AddControllers()
+        .AddJsonOptions(opts =>
+            opts.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower)
         .Services
         .AddSingleton(cfg)
         .AddSingleton<ITokenCounter>(_ => SentencePieceTokenCounter.FromModelDir(modelDir))
@@ -118,14 +123,18 @@ if (transport is "http" or "sse")
         .AddSingleton<IngestChannel>()
         .AddSingleton<OperationStore>()
         .AddHostedService<IngestWorker>()
-        .AddScoped<RagSession>()
+        // D-6 fix: ICollectionResolver reads the live request via IHttpContextAccessor AsyncLocal —
+        // correctly propagated into MCP inner DI scopes. RagSession + IContentSource are Singletons.
+        .AddHttpContextAccessor()
+        .AddSingleton<ICollectionResolver, HttpCollectionResolver>()
+        .AddSingleton<RagSession>()
+        .AddSingleton<IContentSource, QdrantContentSource>()
         .AddMcpServer()
             .WithHttpTransport()
             .WithToolsFromAssembly();
 
     var app = webBuilder.Build();
     app.UseMiddleware<ApiKeyMiddleware>();
-    app.UseMiddleware<RagSessionMiddleware>();
     app.MapControllers();
     app.MapMcp("/");
     Console.Error.WriteLine($"[rag-mcp] endpoint  : http://0.0.0.0:{port}/ (MCP Streamable HTTP)");
@@ -154,9 +163,12 @@ else
             new CachedDocumentStore(
                 new QdrantDocumentStore(qdrantUrl),
                 new QueryCache()))
-        // In stdio mode there is no HTTP context — RagSession is a singleton
-        // using cfg.Collection as the fixed collection for this process.
+        // STDIO: one collection per process — resolve from env var or config default.
+        .AddSingleton<ICollectionResolver>(_ =>
+            new FixedCollectionResolver(
+                Environment.GetEnvironmentVariable("RAG_COLLECTION") ?? cfg.Collection))
         .AddSingleton<RagSession>()
+        .AddSingleton<IContentSource, DiskContentSource>()
         .AddMcpServer()
             .WithStdioServerTransport()
             .WithToolsFromAssembly();

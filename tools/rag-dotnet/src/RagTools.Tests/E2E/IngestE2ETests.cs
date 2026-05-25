@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using RagTools.Core;
+using RagTools.Core.ContentSources;
 using Xunit;
 using Xunit.Abstractions;
 using RagMcpTools = RagTools.Mcp.Tools.RagTools;
@@ -161,21 +162,20 @@ public sealed class IngestE2ETests : IClassFixture<IngestE2EFixture>, IDisposabl
     // ── RagSession multi-collection routing ──────────────────────────────
 
     [Fact]
-    public async Task RagSession_RoutesQuery_ToCorrectCollection()
+    public void RagSession_RoutesQuery_ToCorrectCollection()
     {
+        // RagSession delegates to its ICollectionResolver.
+        // FixedCollectionResolver always returns the given collection.
+        var sessionA = new RagSession(new FixedCollectionResolver(_fx.Collection!));
+        Assert.Equal(_fx.Collection, sessionA.Collection);
 
-        // The fixture uses a single collection. We test that RagSession correctly
-        // resolves the collection and tools query the right one.
-        var session = new RagSession(_fx.Config!);
-        Assert.Equal(_fx.Collection, session.Collection);
+        // A different session resolves to a different (non-existent) collection.
+        var sessionB = new RagSession(new FixedCollectionResolver("nonexistent_col_xyz"));
+        Assert.Equal("nonexistent_col_xyz", sessionB.Collection);
 
-        // Override to a different (non-existent) collection — search should return nothing.
-        session.SetCollection("nonexistent_col_xyz");
-        Assert.Equal("nonexistent_col_xyz", session.Collection);
-
-        // Reset to the real collection.
-        session.SetCollection(_fx.Collection!);
-        Assert.Equal(_fx.Collection, session.Collection);
+        // Back to the real collection via a fresh session.
+        var sessionC = new RagSession(new FixedCollectionResolver(_fx.Collection!));
+        Assert.Equal(_fx.Collection, sessionC.Collection);
     }
 
     // ── read_docs Qdrant content fallback ────────────────────────────────
@@ -197,10 +197,12 @@ public sealed class IngestE2ETests : IClassFixture<IngestE2EFixture>, IDisposabl
         var result = await _fx.EnqueueAndWaitAsync(relPath, content);
         Assert.Equal(IngestStatus.Completed, result!.Status);
 
-        var session = new RagSession(_fx.Config!);
+        var session = new RagSession(new FixedCollectionResolver(_fx.Collection!));
+        var contentSource = new QdrantContentSource(_fx.Store!);
         var tools = new RagMcpTools(
             _fx.Embedder!, _fx.Store!, session, _fx.Config!,
             Array.Empty<IResultPostprocessor>(),
+            contentSource,
             NullLogger<RagMcpTools>.Instance);
 
         // Full-content intent triggers FetchContentAsync path.

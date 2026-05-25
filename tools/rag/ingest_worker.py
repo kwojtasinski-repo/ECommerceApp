@@ -25,6 +25,9 @@ import sys
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
+from chunker import chunk_markdown
+from common import detect_adr_id, detect_doc_kind, resolve_weight
+
 if TYPE_CHECKING:
     from query import QueryEngine
     from common import Config
@@ -38,6 +41,7 @@ class IngestJob:
     rel_path: str
     content: str
     doc_kind: str | None
+    adr_id: str | None = None  # pre-computed from ZIP metadata-rules; None if no pattern matched
 
 
 # Maximum number of pending jobs.  POST /ingest returns 503 when the queue is full.
@@ -53,8 +57,6 @@ def _stable_chunk_id(rel_path: str, breadcrumb: str, start_line: int) -> int:
 
 def _build_process_fn(engine: "QueryEngine", cfg: "Config", store: "OperationStore"):
     """Return an async callable that processes one IngestJob end-to-end."""
-    from chunker import chunk_markdown
-    from common import detect_doc_kind, detect_adr_id, resolve_weight
 
     def _file_doc_title(rel_path: str, content: str) -> str:
         for line in content.splitlines():
@@ -83,17 +85,20 @@ def _build_process_fn(engine: "QueryEngine", cfg: "Config", store: "OperationSto
                 vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
             )
 
+        doc_title = _file_doc_title(job.rel_path, job.content)
+        # Resolve doc_kind and adr_id BEFORE chunking so they are available
+        # on the early-return path (empty-chunk case) without NameError.
+        doc_kind = job.doc_kind or detect_doc_kind(job.rel_path, cfg)
+        # adr_id pre-computed from ZIP's metadata-rules in ingest_routes; fallback to cfg/default.
+        adr_id = job.adr_id if job.adr_id is not None else detect_adr_id(job.rel_path, cfg)
+
         chunks = chunk_markdown(
             job.content,
-            doc_title=_file_doc_title(job.rel_path, job.content),
+            doc_title=doc_title,
             chunker_cfg=cfg.chunker,
         )
         if not chunks:
             return 0, doc_kind
-
-        doc_title = _file_doc_title(job.rel_path, job.content)
-        doc_kind = job.doc_kind or detect_doc_kind(job.rel_path, cfg)
-        adr_id = detect_adr_id(job.rel_path, cfg)
         weight = resolve_weight(job.rel_path, len(job.content.encode()), cfg.ranking)
 
         texts = [c.text for c in chunks]

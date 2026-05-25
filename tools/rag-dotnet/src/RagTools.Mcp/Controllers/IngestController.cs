@@ -126,6 +126,12 @@ public sealed class IngestController(
             if (!Regex.IsMatch(metaContent, @"doc_kind_rules:\s*\r?\n\s+-"))
                 return BadRequest(new { error = "metadata-rules.yaml must contain at least one doc_kind_rules entry" });
 
+            // Parse the ZIP's metadata rules so the worker can detect adr_id / doc_kind per file
+            // without needing the companion file to exist in the container's filesystem.
+            MetadataRulesSection? batchRules = null;
+            try { batchRules = RagConfig.ParseMetadataRules(metaContent); }
+            catch (Exception ex) { logger.LogWarning(ex, "Failed to parse metadata-rules.yaml — adr_id/doc_kind will fall back to global config"); }
+
             string queriesContent;
             using (var r = new System.IO.StreamReader(zip.GetEntry("queries.yaml")!.Open()))
                 queriesContent = await r.ReadToEndAsync();
@@ -201,12 +207,17 @@ public sealed class IngestController(
                 var safeRelPath = relPath.Replace('/', '-');
                 var opId = $"{collection}:{safeRelPath}:{enqueuedAt.Ticks}-{opList.Count}";
 
+                var docKind = batchRules is not null ? RagConfig.DetectDocKindFromRules(relPath, batchRules) : null;
+                var adrId   = batchRules is not null ? RagConfig.DetectAdrIdFromRules(relPath, batchRules)  : null;
+
                 var job = new IngestJob
                 {
                     OperationId = opId,
                     Collection  = collection,
                     RelPath     = relPath,
                     Content     = content,
+                    DocKind     = docKind,
+                    AdrId       = adrId,
                     EnqueuedAt  = enqueuedAt,
                 };
 

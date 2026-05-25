@@ -34,6 +34,20 @@ public sealed class RagConfigPayload
     /// </summary>
     public string HistoryField { get; set; } = "adr_id";
 
+    /// <summary>
+    /// doc_kind value for main ADR files. Read from metadata-rules.yaml adr.adr_doc_kind.
+    /// Null when the collection was ingested without an adr: section (non-ADR projects).
+    /// Falls back to "adr_main" at runtime when null.
+    /// </summary>
+    public string? AdrDocKind { get; set; }
+
+    /// <summary>
+    /// doc_kind value for ADR amendment files. Read from metadata-rules.yaml adr.amendment_doc_kind.
+    /// Null when the collection was ingested without an adr: section.
+    /// Falls back to "adr_amendment" at runtime when null.
+    /// </summary>
+    public string? AmendmentDocKind { get; set; }
+
     /// <summary>Create a <see cref="RagConfigPayload"/> from a loaded <see cref="RagConfig"/>.</summary>
     public static RagConfigPayload From(RagConfig cfg, IEnumerable<string>? glossaryTerms = null) =>
         new()
@@ -45,5 +59,7 @@ public sealed class RagConfigPayload
             Weights        = cfg.Ranking?.Weights ?? [],
             GlossaryTerms  = glossaryTerms?.ToList() ?? [],
             SchemaVersion  = 1,
+            AdrDocKind     = cfg.MetadataRules.Adr?.AdrDocKind,
+            AmendmentDocKind = cfg.MetadataRules.Adr?.AmendmentDocKind,
         };
 }

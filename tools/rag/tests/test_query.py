@@ -284,3 +284,65 @@ class TestQueryHitAsDict:
             "start_line", "end_line", "raw_score", "weight", "final_score", "text",
         }
         assert expected_keys.issubset(d.keys())
+
+
+# ── QueryEngine.get_collection_config ─────────────────────────────────────────
+
+class TestGetCollectionConfig:
+    """Tests for the public get_collection_config() method (#6).
+
+    Must use the public API only — no access to _client or _ensure().
+    """
+
+    def _make_engine_with_config_point(self, payload: dict) -> "QueryEngine":
+        """Build engine whose _client.retrieve returns a single point with given payload."""
+        pt = MagicMock()
+        pt.payload = payload
+        engine = make_engine_with_stubs()
+        engine._client.retrieve.return_value = [pt]
+        return engine
+
+    def test_returns_payload_when_config_point_exists(self):
+        engine = self._make_engine_with_config_point({"history_field": "adr_id", "version": 1})
+        result = engine.get_collection_config()
+        assert result == {"history_field": "adr_id", "version": 1}
+
+    def test_returns_empty_dict_when_retrieve_returns_empty_list(self):
+        engine = make_engine_with_stubs()
+        engine._client.retrieve.return_value = []
+        result = engine.get_collection_config()
+        assert result == {}
+
+    def test_returns_empty_dict_when_payload_is_none(self):
+        pt = MagicMock()
+        pt.payload = None
+        engine = make_engine_with_stubs()
+        engine._client.retrieve.return_value = [pt]
+        result = engine.get_collection_config()
+        assert result == {}
+
+    def test_returns_empty_dict_when_retrieve_raises(self):
+        engine = make_engine_with_stubs()
+        engine._client.retrieve.side_effect = RuntimeError("connection error")
+        result = engine.get_collection_config()
+        assert result == {}
+
+    def test_passes_collection_override_to_retrieve(self):
+        engine = self._make_engine_with_config_point({"history_field": "adr_id"})
+        engine.get_collection_config("other_col")
+        call_kwargs = engine._client.retrieve.call_args
+        assert call_kwargs.kwargs.get("collection_name") == "other_col" or \
+               call_kwargs.args[0] == "other_col" or \
+               "other_col" in str(call_kwargs)
+
+    def test_uses_engine_default_collection_when_none_passed(self):
+        engine = self._make_engine_with_config_point({})
+        engine.get_collection_config()
+        call_kwargs = engine._client.retrieve.call_args
+        assert "test_col" in str(call_kwargs)
+
+    def test_retrieve_called_with_id_zero(self):
+        engine = self._make_engine_with_config_point({})
+        engine.get_collection_config()
+        call_kwargs = engine._client.retrieve.call_args
+        assert "0" in str(call_kwargs)

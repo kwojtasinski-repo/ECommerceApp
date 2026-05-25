@@ -78,7 +78,7 @@ class QueryEngine:
                 )
             with snapshot_path.open("r", encoding="utf-8") as fh:
                 snap = json.load(fh)
-            self._client.recreate_collection(
+            self._client.create_collection(
                 collection_name=snap["collection"],
                 vectors_config=VectorParams(size=snap["dim"], distance=Distance.COSINE),
             )
@@ -93,6 +93,28 @@ class QueryEngine:
             self._client = QdrantClient(path=self.cfg.vector_local_path)
         else:  # docker
             self._client = QdrantClient(url=self.cfg.vector_url)
+
+    def get_collection_config(self, collection: "str | None" = None) -> dict:
+        """Retrieve the __config__ point (id=0) payload for *collection*.
+
+        Returns an empty dict if the collection has no config point yet (e.g.
+        collections ingested before the config-point convention was introduced).
+        Callers should not pierce the private ``_client`` attribute — use this
+        method instead.
+        """
+        self._ensure()
+        target = collection or self.cfg.collection
+        try:
+            pts = self._client.retrieve(
+                collection_name=target,
+                ids=[0],
+                with_payload=True,
+            )
+            if pts and pts[0].payload:
+                return dict(pts[0].payload)
+        except Exception:
+            pass
+        return {}
 
     def search(
         self,

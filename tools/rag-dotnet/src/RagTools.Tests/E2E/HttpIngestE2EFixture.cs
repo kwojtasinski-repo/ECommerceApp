@@ -162,12 +162,10 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
             .AddSingleton<IDocumentStore>(cachedStore)
             .AddSingleton(Operations)
             .AddSingleton<IngestChannel>()
-            .AddHostedService<IngestWorker>()
-            .AddScoped<RagSession>();
+            .AddHostedService<IngestWorker>();
 
         _app = webBuilder.Build();
         _app.UseMiddleware<ApiKeyMiddleware>();
-        _app.UseMiddleware<RagSessionMiddleware>();
         _app.MapControllers();
 
         await _app.StartAsync();

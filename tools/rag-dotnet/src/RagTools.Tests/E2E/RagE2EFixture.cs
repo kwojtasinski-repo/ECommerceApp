@@ -1,4 +1,5 @@
 using RagTools.Core;
+using RagTools.Core.ContentSources;
 using Testcontainers.Qdrant;
 using RagMcpTools = RagTools.Mcp.Tools.RagTools;
 
@@ -128,9 +129,11 @@ public sealed class RagE2EFixture : IAsyncLifetime
         // 5. Expose MCP tool instance for direct method calls in tests.
         //    Wrap QdrantStore in QdrantDocumentStore so RagTools uses IDocumentStore.
         var qdrantDocStore = new QdrantDocumentStore(qdrantGrpcUrl);
-        var ragSession = new RagSession(cfg);          // default collection from cfg
+        var ragSession = new RagSession(new FixedCollectionResolver(cfg.Collection));
+        var contentSource = new DiskContentSource(cfg);
         Tools = new RagMcpTools(_embedder, qdrantDocStore, ragSession, cfg,
             Array.Empty<IResultPostprocessor>(),
+            contentSource,
             Microsoft.Extensions.Logging.Abstractions.NullLogger<RagMcpTools>.Instance);
         IsAvailable = true;
     }

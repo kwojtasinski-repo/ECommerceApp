@@ -29,6 +29,13 @@ public sealed class IngestJob
     /// </summary>
     public string? DocKind { get; init; }
 
+    /// <summary>
+    /// Optional ADR ID override. When null, the worker auto-detects from the path
+    /// using <see cref="RagConfig.DetectAdrId"/>. Set by the ingest controller for
+    /// batch ingest using the ZIP's metadata-rules.yaml.
+    /// </summary>
+    public string? AdrId { get; init; }
+
     /// <summary>When the job was enqueued — used to compute operation latency.</summary>
     public DateTimeOffset EnqueuedAt { get; init; } = DateTimeOffset.UtcNow;
 }

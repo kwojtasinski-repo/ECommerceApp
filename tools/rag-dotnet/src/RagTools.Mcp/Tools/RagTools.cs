@@ -3,19 +3,20 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 using RagTools.Core;
+using RagTools.Core.ContentSources;
 
 namespace RagTools.Mcp.Tools;
 
 /// <summary>
 /// MCP tools exposed to Copilot. Mirrors the Python mcp_server.py tools:
 ///   query_docs      — semantic search across all indexed documentation
-///   read_docs       — grouped-by-file search (Qdrant content or disk fallback)
+///   read_docs       — grouped-by-file search (content via IContentSource)
 ///   get_adr_history — fetch all chunks for a specific ADR ID, ordered by start line
-///   list_adrs       — list all ADRs from disk (accurate, not index-dependent)
+///   list_adrs       — list all ADRs from Qdrant index via IDocumentStore.ListAdrsAsync
 ///
 /// Uses <see cref="IDocumentStore"/> + <see cref="RagSession"/> for multi-tenant support:
-///   - Collection is resolved per-session from ?project= query parameter (Step 9)
-///   - ReadDocs uses IDocumentStore.FetchContentAsync then falls back to disk (Step 10)
+///   - Collection is resolved per-request via ICollectionResolver (HttpCollectionResolver in HTTP mode)
+///   - ReadDocs full-content is read via <see cref="IContentSource"/> (QdrantContentSource or DiskContentSource)
 /// </summary>
 [McpServerToolType]
 public sealed class RagTools(
@@ -24,6 +25,7 @@ public sealed class RagTools(
     RagSession session,
     RagConfig cfg,
     IEnumerable<IResultPostprocessor> resultPostprocessors,
+    IContentSource contentSource,
     ILogger<RagTools> logger)
 {
 
@@ -125,28 +127,10 @@ public sealed class RagTools(
             var first = f.Chunks[0];
             if (fullMode)
             {
-                // Step 10: try Qdrant content point first, fall back to disk.
-                string body;
-                var contentDoc = await store.FetchContentAsync(collection, f.RelPath, cancellationToken);
-                if (contentDoc is not null)
-                {
-                    body = contentDoc.Content;
-                    logger.LogDebug("ReadDocs: Qdrant content hit {RelPath} ({Size} chars)", f.RelPath, body.Length);
-                }
-                else
-                {
-                    var abs = Path.Combine(cfg.Workspace, f.RelPath);
-                    try
-                    {
-                        body = await File.ReadAllTextAsync(abs, cancellationToken);
-                        logger.LogDebug("ReadDocs: disk fallback {RelPath} ({Size} chars)", f.RelPath, body.Length);
-                    }
-                    catch (Exception ex)
-                    {
-                        logger.LogWarning(ex, "ReadDocs: could not read file {RelPath}", f.RelPath);
-                        body = $"[ERROR: could not read file � {ex.Message}]";
-                    }
-                }
+                // IContentSource dispatches to QdrantContentSource (HTTP) or DiskContentSource (STDIO).
+                var body = await contentSource.ReadAsync(collection, f.RelPath, cancellationToken)
+                           ?? $"[Content unavailable for {f.RelPath}]";
+                logger.LogDebug("ReadDocs: content {RelPath} ({Size} chars)", f.RelPath, body.Length);
                 files.Add(new { rel_path = f.RelPath, score = Math.Round(f.BestScore, 3), doc_kind = first.DocKind, mode = "full", content = body });
             }
             else
@@ -206,11 +190,13 @@ public sealed class RagTools(
         {
             var configPayload = await store.FetchConfigAsync(collection, cancellationToken);
             if (!string.IsNullOrEmpty(configPayload?.HistoryField))
+            {
                 historyField = configPayload.HistoryField;
+            }
         }
         catch
         {
-            // config point absent � use default
+            // config point absent — use default
         }
 
         var queryVec = await embedder.EmbedAsync($"history {id}", cancellationToken);
@@ -251,54 +237,26 @@ public sealed class RagTools(
     }
 
     [McpServerTool, Description(
-        "List all ADRs in the repository with id, title, and amendment count. " +
-        "Reads the docs/adr/ folder from disk — always accurate, not limited by index coverage. " +
+        "List all ADRs indexed in the collection with id, title, main file path, and amendment count. " +
+        "Reads from the Qdrant index — results reflect what is currently ingested. " +
         "Use for orientation queries like 'what ADRs exist?' before calling GetHistory.")]
-    public Task<string> ListAdrs(CancellationToken cancellationToken = default)
+    public async Task<string> ListAdrs(CancellationToken cancellationToken = default)
     {
-        var adrFolder = Path.Combine(cfg.Workspace, "docs", "adr");
-        logger.LogDebug("ListAdrs: scanning {AdrFolder}", adrFolder);
-        if (!Directory.Exists(adrFolder))
-            return Task.FromResult($"ADR folder not found at: {adrFolder}. Check RAG_WORKSPACE.");
+        var collection = session.Collection;
+        logger.LogDebug("ListAdrs: collection={Collection}", collection);
 
-        var rows = new List<string>();
-        foreach (var folder in Directory.EnumerateDirectories(adrFolder).OrderBy(d => d))
+        var summaries = await store.ListAdrsAsync(collection, cancellationToken);
+
+        logger.LogInformation("ListAdrs: returned {Count} ADRs from {Collection}", summaries.Count, collection);
+        var adrs = summaries.Select(a => new
         {
-            var dirName = Path.GetFileName(folder);
-            if (!System.Text.RegularExpressions.Regex.IsMatch(dirName, @"^\d{4}$")) continue;
-
-            var mainFiles = Directory.GetFiles(folder, $"{dirName}-*.md").OrderBy(f => f).ToList();
-            var title = string.Empty;
-            if (mainFiles.Count > 0)
-            {
-                var text = File.ReadAllText(mainFiles[0]);
-                var m = TitleRe.Match(text);
-                if (m.Success) title = m.Groups[1].Value.Trim();
-            }
-            var amendmentsDir = Path.Combine(folder, "amendments");
-            var amendCount = Directory.Exists(amendmentsDir)
-                ? Directory.GetFiles(amendmentsDir, "*.md").Length : 0;
-            var amendSuffix = amendCount > 0 ? $"  [{amendCount} amendment(s)]" : string.Empty;
-            rows.Add($"ADR-{dirName}  {title}{amendSuffix}");
-        }
-
-        if (rows.Count == 0)
-            return Task.FromResult(JsonSerializer.Serialize(new { adrs = Array.Empty<object>() }));
-
-        var adrs = rows.Select(r =>
-        {
-            var m = System.Text.RegularExpressions.Regex.Match(r, @"^ADR-(?<id>\d{4})\s+(?<title>.*?)(?:\s+\[(?<amend>\d+) amendment)?");
-            return (object)new
-            {
-                adr_id = m.Success ? m.Groups["id"].Value : r,
-                title = m.Success ? m.Groups["title"].Value.Trim() : string.Empty,
-                amendment_count = m.Success && m.Groups["amend"].Success ? int.Parse(m.Groups["amend"].Value) : 0
-            };
+            adr_id         = a.Id,
+            title          = a.Title,
+            main_file      = a.MainFile,
+            amendment_count = a.Amendments,
+            example_count  = a.Examples,
         }).ToArray();
-        return Task.FromResult(JsonSerializer.Serialize(new { adrs }));
-    }
 
-    private static readonly System.Text.RegularExpressions.Regex TitleRe =
-        new(@"^#\s+(?:ADR-\d+\s*[—:-]\s*)?(.+?)\s*$",
-            System.Text.RegularExpressions.RegexOptions.Multiline | System.Text.RegularExpressions.RegexOptions.Compiled);
+        return JsonSerializer.Serialize(new { adrs });
+    }
 }

@@ -73,7 +73,7 @@ filtering, and Python + .NET client parity. The Python client supports an embedd
 
 > **Note (2025):** The original in-memory Qdrant mode (`mode: memory`) was removed.
 > Unit tests now stub all Qdrant and embedding calls. E2E tests require a local or
-> Docker Qdrant instance. See `tools/rag/test_ingest_unit.py` and `test_e2e.py`.
+> Docker Qdrant instance. See `tools/rag/tests/test_ingest_api.py` and `tests/test_e2e.py`.
 
 ---
 
@@ -127,7 +127,7 @@ ONNX model; gRPC port 6334 must be accessible.
 | Local dev, Python 3.13 venv available | Python (recommended default) |
 | Docker-only environment, no Python runtime allowed | .NET (`tools/rag-dotnet/`) |
 | Production deployment (no sentence-transformers overhead) | .NET |
-| CI smoke tests without Qdrant | Python unit tests only — all Qdrant calls are stubbed in `test_ingest_unit.py` |
+| CI smoke tests without Qdrant | Python unit tests only — all Qdrant calls are stubbed in `tests/test_ingest_api.py` |
 | Adding a new MCP tool | Implement in Python first (reference), then port to .NET |
 
 ---

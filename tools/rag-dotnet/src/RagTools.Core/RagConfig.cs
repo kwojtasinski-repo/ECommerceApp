@@ -212,15 +212,17 @@ public sealed class RagConfig
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    /// <summary>Extract ADR ID from a repo-relative path using config patterns. Returns null if none match.</summary>
-    public string? DetectAdrId(string relPath)
+    /// <summary>Parse a metadata-rules YAML string into a <see cref="MetadataRulesSection"/>.</summary>
+    public static MetadataRulesSection ParseMetadataRules(string yaml)
+        => BuildDeserializer().Deserialize<MetadataRulesSection>(yaml);
+
+    /// <summary>Detect ADR ID from a relative path using the provided rules section.</summary>
+    public static string? DetectAdrIdFromRules(string relPath, MetadataRulesSection rules)
     {
         var p = relPath.Replace('\\', '/');
-        var patterns = MetadataRules.AdrIdPatterns ?? [];
-        foreach (var entry in patterns)
+        foreach (var entry in rules.AdrIdPatterns ?? [])
         {
             if (string.IsNullOrWhiteSpace(entry.Pattern)) continue;
-            // Convert Python-style named groups (?P<name>...) to .NET-style (?<name>...)
             var netPattern = entry.Pattern.Replace("(?P<", "(?<");
             var m = Regex.Match(p, netPattern);
             if (m.Success && m.Groups["id"].Success)
@@ -229,20 +231,25 @@ public sealed class RagConfig
         return null;
     }
 
-    /// <summary>Classify a document by its repo-relative path using config glob rules (first match wins).</summary>
-    public string DetectDocKind(string relPath)
+    /// <summary>Classify a document by its relative path using the provided rules section (first match wins).</summary>
+    public static string DetectDocKindFromRules(string relPath, MetadataRulesSection rules)
     {
         var p = relPath.Replace('\\', '/');
-        var rules = MetadataRules.DocKindRules ?? [];
-        foreach (var rule in rules)
+        foreach (var rule in rules.DocKindRules ?? [])
         {
-            if (string.IsNullOrWhiteSpace(rule.Glob) || string.IsNullOrWhiteSpace(rule.Kind))
-                continue;
-            if (GlobMatch(p, rule.Glob))
-                return rule.Kind;
+            if (string.IsNullOrWhiteSpace(rule.Glob) || string.IsNullOrWhiteSpace(rule.Kind)) continue;
+            if (GlobMatch(p, rule.Glob)) return rule.Kind;
         }
         return "other";
     }
+
+    /// <summary>Extract ADR ID from a repo-relative path using config patterns. Returns null if none match.</summary>
+    public string? DetectAdrId(string relPath)
+        => DetectAdrIdFromRules(relPath, MetadataRules);
+
+    /// <summary>Classify a document by its repo-relative path using config glob rules (first match wins).</summary>
+    public string DetectDocKind(string relPath)
+        => DetectDocKindFromRules(relPath, MetadataRules);
 
     /// <summary>
     /// Returns the configured weight multiplier for a document path.
@@ -356,6 +363,22 @@ public sealed class MetadataRulesSection
 {
     public List<AdrIdPatternEntry>? AdrIdPatterns { get; init; }
     public List<DocKindRuleEntry>? DocKindRules { get; init; }
+
+    /// <summary>
+    /// Optional ADR-specific settings. When present, ingest writes <see cref="AdrDocKind"/>
+    /// and <see cref="AmendmentDocKind"/> into the collection config point so the query
+    /// server can correctly group and count ADR summaries at runtime.
+    /// </summary>
+    public MetadataRulesAdrSection? Adr { get; init; }
+}
+
+public sealed class MetadataRulesAdrSection
+{
+    /// <summary>doc_kind value for main ADR files (e.g. "adr_main").</summary>
+    public string? AdrDocKind { get; init; }
+
+    /// <summary>doc_kind value for ADR amendment files (e.g. "adr_amendment"). Optional.</summary>
+    public string? AmendmentDocKind { get; init; }
 }
 
 public sealed class AdrIdPatternEntry

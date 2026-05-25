@@ -151,7 +151,12 @@ class Config:
         )
 
 
-def _find_companion_file(config_yaml_path: Path, key: str, fallback_name: str) -> Path | None:
+def _find_companion_file(
+    config_yaml_path: Path,
+    key: str,
+    fallback_name: str,
+    raw: "dict | None" = None,
+) -> Path | None:
     """
     Resolve a companion config file path declared in rag-config.yaml's config_files section.
 
@@ -159,18 +164,22 @@ def _find_companion_file(config_yaml_path: Path, key: str, fallback_name: str) -
       1. rag-config.yaml config_files.<key> — relative path resolved from rag-config.yaml's directory
       2. <config_yaml_dir>/<fallback_name> — convention: same folder as rag-config.yaml
     Returns None if the resolved file does not exist.
+
+    Pass ``raw`` when the caller has already parsed rag-config.yaml to avoid a second disk read.
     """
     config_dir = config_yaml_path.parent
     raw_path: str | None = None
 
-    # Try to read config_files section from the already-parsed raw dict (passed in).
-    # This is called after the main config is loaded, so we read the file again minimally.
-    try:
-        with config_yaml_path.open("r", encoding="utf-8") as fh:
-            raw = yaml.safe_load(fh) or {}
+    if raw is not None:
         raw_path = raw.get("config_files", {}).get(key)
-    except Exception:
-        pass
+    else:
+        # Fall back to reading from disk only when the caller does not supply the raw dict.
+        try:
+            with config_yaml_path.open("r", encoding="utf-8") as fh:
+                _raw = yaml.safe_load(fh) or {}
+            raw_path = _raw.get("config_files", {}).get(key)
+        except Exception:
+            pass
 
     candidates = []
     if raw_path:
@@ -199,7 +208,7 @@ def load_config(path: Path = CONFIG_PATH) -> Config:
     if env_meta := os.environ.get("RAG_METADATA"):
         rules_file: "Path | None" = Path(env_meta)
     else:
-        rules_file = _find_companion_file(path, "metadata_rules", "metadata-rules.yaml")
+        rules_file = _find_companion_file(path, "metadata_rules", "metadata-rules.yaml", raw=raw)
     if rules_file and rules_file.exists():
         with rules_file.open("r", encoding="utf-8") as fh:
             rules_raw = yaml.safe_load(fh) or {}
@@ -211,7 +220,7 @@ def load_config(path: Path = CONFIG_PATH) -> Config:
     if env_queries := os.environ.get("RAG_QUERIES"):
         queries_file: "Path | None" = Path(env_queries)
     else:
-        queries_file = _find_companion_file(path, "queries", "queries.yaml")
+        queries_file = _find_companion_file(path, "queries", "queries.yaml", raw=raw)
     if queries_file and queries_file.exists():
         with queries_file.open("r", encoding="utf-8") as fh:
             queries_raw = yaml.safe_load(fh) or {}
