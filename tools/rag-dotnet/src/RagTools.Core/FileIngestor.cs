@@ -109,6 +109,9 @@ public sealed class FileIngestor
 
     internal static string ExtractTitle(string text, string relPath)
     {
+        // Strip UTF-8 BOM if present. StreamReader with detectEncodingFromByteOrderMarks=true
+        // (the .NET default) already strips it, but raw in-memory strings may not.
+        text = text.TrimStart('\uFEFF');
         foreach (var line in text.Split('\n'))
         {
             var s = line.Trim();
