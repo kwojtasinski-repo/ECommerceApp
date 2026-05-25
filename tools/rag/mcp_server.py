@@ -252,7 +252,7 @@ async def _run_http(port: int) -> None:
     """Run the MCP server over Streamable HTTP (POST /).
 
     VS Code connects via mcp.json type:http, url:http://host:PORT/?project=<collection>.
-    Requires mcp>=1.8.0 (StreamableHTTPSessionManager introduced in 1.6.0).
+    Requires mcp>=1.9.4 (1.8.x had BrokenResourceError crashing the task group on client disconnect).
     """
     from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
     from starlette.applications import Starlette
@@ -282,9 +282,33 @@ async def _run_http(port: int) -> None:
 
     @contextlib.asynccontextmanager
     async def lifespan(_app):  # noqa: ANN001
-        async with session_manager.run():
-            _worker.start()
+        # Run the session manager in a background task that auto-restarts if a
+        # client disconnect (BrokenResourceError) crashes the inner task group.
+        # MCP 1.9.x+ should handle this gracefully, but the guard is kept as
+        # belt-and-suspenders for any edge cases in HTTP/2 or proxied setups.
+        async def _sm_guard() -> None:
+            while True:
+                try:
+                    async with session_manager.run():
+                        await asyncio.sleep(float("inf"))
+                except asyncio.CancelledError:
+                    return
+                except Exception as _exc:
+                    print(
+                        f"[rag-mcp] session manager restarting after {type(_exc).__name__}: {_exc}",
+                        file=sys.stderr,
+                    )
+                    await asyncio.sleep(0.05)
+
+        sm_task = asyncio.ensure_future(_sm_guard())
+        await asyncio.sleep(0.05)  # let the session manager initialize before serving
+        _worker.start()
+        try:
             yield
+        finally:
+            sm_task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await sm_task
             await _worker.stop()
 
     ingest_routes = build_ingest_routes(_store, _queue, DEFAULT_CAPACITY)
@@ -304,6 +328,7 @@ async def _run_http(port: int) -> None:
     api_key_set = bool(os.environ.get("RAG_API_KEY", "").strip())
     print(f"[rag-mcp] auth:       {'X-Api-Key required' if api_key_set else 'no auth (RAG_API_KEY not set)'}", file=sys.stderr)
     await server.serve()
+
 
 
 # ── Entrypoint ────────────────────────────────────────────────────────────────
