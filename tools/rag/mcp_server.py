@@ -254,7 +254,7 @@ async def _run_http(port: int) -> None:
     VS Code connects via mcp.json type:http, url:http://host:PORT/?project=<collection>.
     Requires mcp>=1.8.0 (StreamableHTTPSessionManager introduced in 1.6.0).
     """
-    from mcp.server.streamable_http import StreamableHTTPSessionManager
+    from mcp.server.streamable_http_manager import StreamableHTTPSessionManager
     from starlette.applications import Starlette
     from starlette.routing import Route
     import uvicorn
