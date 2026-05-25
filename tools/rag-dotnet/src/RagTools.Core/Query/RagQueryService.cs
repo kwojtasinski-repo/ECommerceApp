@@ -21,13 +21,13 @@ public sealed class RagQueryService(
         if (Validate(request) is { } validationFailure)
             return validationFailure;
 
-        var fetchK = request.Bc is not null
+        var fetchK = request.Topic is not null
             ? Math.Max(cfg.Query.FetchK, request.TopK * 3)
             : cfg.Query.FetchK;
 
         logger.LogDebug(
-            "QueryAsync: collection={Collection} question={Question} bc={Bc} topK={TopK} fetchK={FetchK}",
-            request.Collection, request.Question, request.Bc, request.TopK, fetchK);
+            "QueryAsync: collection={Collection} question={Question} topic={Topic} topK={TopK} fetchK={FetchK}",
+            request.Collection, request.Question, request.Topic, request.TopK, fetchK);
 
         var embedResult = await EmbedAsync(request.Question, ct);
         if (embedResult.Failure is not null) return embedResult.Failure;
@@ -93,16 +93,16 @@ public sealed class RagQueryService(
 
     private IReadOnlyList<DocumentSearchResult> ApplyBcAndTake(IReadOnlyList<DocumentSearchResult> allHits, QueryRequest request)
     {
-        var weighted = BcFilter.ApplyWeights(allHits, cfg);
-        return request.Bc is not null
-            ? weighted.Where(h => BcFilter.Matches(h, request.Bc)).Take(request.TopK).ToList()
+        var weighted = TopicFilter.ApplyWeights(allHits, cfg);
+        return request.Topic is not null
+            ? weighted.Where(h => TopicFilter.Matches(h, request.Topic)).Take(request.TopK).ToList()
             : weighted.Take(request.TopK).ToList();
     }
 
     private async Task<(IReadOnlyList<DocumentSearchResult>? Hits, QueryOutcome.Failure? Failure)> RunPostprocessorsAsync(
         IReadOnlyList<DocumentSearchResult> hits, QueryRequest request, int fetchK, CancellationToken ct)
     {
-        var ctx = new QueryContext(request.Collection, request.Question, request.Bc, request.TopK, fetchK);
+        var ctx = new QueryContext(request.Collection, request.Question, request.Topic, request.TopK, fetchK);
         foreach (var pp in postprocessors)
         {
             try { hits = await pp.ProcessAsync(hits, ctx, ct); }

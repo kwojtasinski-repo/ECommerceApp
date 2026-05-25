@@ -135,6 +135,7 @@ internal static class RagToolsProjector
                 amendments = a.Amendments,
                 examples   = a.Examples,
             }).ToArray(),
+            count = s.Response.Adrs.Count,
         },
 
         AdrListOutcome.Failure f => Failure(f.Message, f.Error.ToString(), f.Details),

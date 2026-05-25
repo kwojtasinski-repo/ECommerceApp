@@ -8,5 +8,5 @@ namespace RagTools.Core.Query;
 public sealed record QueryRequest(
     string Collection,
     string Question,
-    string? Bc = null,
+    string? Topic = null,
     int TopK = 5);

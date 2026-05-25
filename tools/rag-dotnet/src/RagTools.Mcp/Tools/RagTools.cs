@@ -28,18 +28,18 @@ public sealed class RagTools(
     [McpServerTool, Description(
         "Semantic search across project documentation (ADRs, architecture, patterns, reference, roadmap). " +
         "Returns the top-k most relevant chunks with breadcrumb, file path, line range, and text. " +
-        "Use bc to substring-filter by bounded context or topic (matched against breadcrumb and doc title). " +
+        "Use topic to substring-filter by bounded context or topic (matched against breadcrumb and doc title). " +
         "Follow up with ReadDocs to get full file content or grouped chunk view.")]
     public async Task<string> QueryDocs(
         [Description("The search question or topic.")] string question,
-        [Description("Optional substring filter matched against breadcrumb and doc title (e.g. 'Orders', 'Pricing').")] string? bc = null,
+        [Description("Optional substring filter matched against breadcrumb and doc title (e.g. 'Orders', 'Pricing').")] string? topic = null,
         [Description("Maximum number of results to return (default: 5, max: 20).")] int top_k = 5,
         CancellationToken cancellationToken = default)
     {
         top_k = Math.Clamp(top_k, 1, RagQueryService.MaxTopK);
-        logger.LogDebug("QueryDocs: collection={Collection} bc={Bc} topK={TopK}", session.Collection, bc, top_k);
+        logger.LogDebug("QueryDocs: collection={Collection} topic={Topic} topK={TopK}", session.Collection, topic, top_k);
 
-        var request = new QueryRequest(session.Collection, question, bc, top_k);
+        var request = new QueryRequest(session.Collection, question, topic, top_k);
         var outcome = await queryService.QueryAsync(request, cancellationToken);
         return McpJson.Serialize(RagToolsProjector.ProjectQuery(outcome));
     }
@@ -53,14 +53,14 @@ public sealed class RagTools(
         "Prefer this over QueryDocs when you need to reason over document context, not a single fragment.")]
     public async Task<string> ReadDocs(
         [Description("The search question or topic.")] string question,
-        [Description("Optional bounded context filter — matched against doc_kind field.")] string? bc = null,
+        [Description("Optional topic / bounded-context substring filter \u2014 matched against breadcrumb and doc title.")] string? topic = null,
         [Description("Maximum unique files to return (default: 3, max: 5).")] int top_files = 3,
         CancellationToken cancellationToken = default)
     {
         top_files = Math.Clamp(top_files, 1, RagReadDocsService.MaxTopFiles);
-        logger.LogDebug("ReadDocs: collection={Collection} bc={Bc} topFiles={TopFiles}", session.Collection, bc, top_files);
+        logger.LogDebug("ReadDocs: collection={Collection} topic={Topic} topFiles={TopFiles}", session.Collection, topic, top_files);
 
-        var request = new ReadDocsRequest(session.Collection, question, bc, top_files);
+        var request = new ReadDocsRequest(session.Collection, question, topic, top_files);
         var outcome = await readDocsService.ReadAsync(request, cancellationToken);
         return McpJson.Serialize(RagToolsProjector.ProjectReadDocs(outcome));
     }

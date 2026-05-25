@@ -37,7 +37,7 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
     {
 
         var result = await _fx.Tools!.QueryDocs(
-            "strongly typed identifier value object", bc: null, top_k: 3,
+            "strongly typed identifier value object", topic: null, top_k: 3,
             CancellationToken.None);
 
         // Should surface the Alpha pattern doc (typed IDs) above the Beta pattern (CQRS)
@@ -49,7 +49,7 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
     {
 
         var result = await _fx.Tools!.QueryDocs(
-            "command query separation", bc: null, top_k: 5,
+            "command query separation", topic: null, top_k: 5,
             CancellationToken.None);
 
         // JSON output should contain score and rel_path fields
@@ -63,7 +63,7 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
 
         // A question about something completely unrelated to the two synthetic docs.
         var result = await _fx.Tools!.QueryDocs(
-            "weather forecast temperature celsius", bc: null, top_k: 5,
+            "weather forecast temperature celsius", topic: null, top_k: 5,
             CancellationToken.None);
 
         // Either returns no hits or everything is low-score noise —
@@ -78,7 +78,7 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
     {
 
         var result = await _fx.Tools!.ReadDocs(
-            "how does the Alpha pattern work", bc: null, top_files: 2,
+            "how does the Alpha pattern work", topic: null, top_files: 2,
             CancellationToken.None);
 
         // JSON output should mention the alpha doc
@@ -91,7 +91,7 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
 
         // Phrases that trigger full-content intent regex
         var result = await _fx.Tools!.ReadDocs(
-            "show me full content of Beta pattern", bc: null, top_files: 1,
+            "show me full content of Beta pattern", topic: null, top_files: 1,
             CancellationToken.None);
 
         // Verify FullIntentRe triggered full-content mode (JSON "mode":"full").

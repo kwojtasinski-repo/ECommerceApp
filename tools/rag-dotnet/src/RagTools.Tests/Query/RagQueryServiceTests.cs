@@ -132,18 +132,18 @@ public class RagQueryServiceTests
     }
 
     [Fact]
-    public async Task BcFilter_WidensFetchK_ToTopKTimes3()
+    public async Task TopicFilter_WidensFetchK_ToTopKTimes3()
     {
         var sut = Build(out var embedder, out var store);
         embedder.Handler = (_, _) => Task.FromResult(new float[] { 0.1f });
         store.SearchHandler = (_, _, _, _) =>
             Task.FromResult<IReadOnlyList<DocumentSearchResult>>(Array.Empty<DocumentSearchResult>());
-        await sut.QueryAsync(new QueryRequest("c", "q", Bc: "Orders", TopK: 10));
+        await sut.QueryAsync(new QueryRequest("c", "q", Topic: "Orders", TopK: 10));
         Assert.Equal(30, store.LastSearchOptions!.TopK);
     }
 
     [Fact]
-    public async Task NoBcFilter_UsesConfigFetchK()
+    public async Task NoTopicFilter_UsesConfigFetchK()
     {
         var sut = Build(out var embedder, out var store);
         embedder.Handler = (_, _) => Task.FromResult(new float[] { 0.1f });
@@ -176,7 +176,7 @@ public class RagQueryServiceTests
     }
 
     [Fact]
-    public async Task BcFilter_FiltersByBreadcrumbOrDocTitle_CaseInsensitive()
+    public async Task TopicFilter_FiltersByBreadcrumbOrDocTitle_CaseInsensitive()
     {
         var sut = Build(out var embedder, out var store);
         embedder.Handler = (_, _) => Task.FromResult(new float[] { 0.1f });
@@ -187,7 +187,7 @@ public class RagQueryServiceTests
             Hit(0.7f, "c.md", docTitle: "orders overview"),
         };
         store.SearchHandler = (_, _, _, _) => Task.FromResult<IReadOnlyList<DocumentSearchResult>>(raw);
-        var outcome = await sut.QueryAsync(new QueryRequest("c", "q", Bc: "Orders", TopK: 10));
+        var outcome = await sut.QueryAsync(new QueryRequest("c", "q", Topic: "Orders", TopK: 10));
         var success = Assert.IsType<QueryOutcome.Success>(outcome);
         Assert.Equal(2, success.Response.Hits.Count);
         Assert.Equal("b.md", success.Response.Hits[0].RelPath);

@@ -28,8 +28,8 @@ public sealed class RagReadDocsService(
 
         var fullMode = FullIntentRe.IsMatch(request.Question);
         logger.LogDebug(
-            "ReadAsync: collection={Collection} question={Question} bc={Bc} topFiles={TopFiles} fullMode={FullMode}",
-            request.Collection, request.Question, request.Bc, request.TopFiles, fullMode);
+            "ReadAsync: collection={Collection} question={Question} topic={Topic} topFiles={TopFiles} fullMode={FullMode}",
+            request.Collection, request.Question, request.Topic, request.TopFiles, fullMode);
 
         var embedResult = await EmbedAsync(request.Question, ct);
         if (embedResult.Failure is not null) return embedResult.Failure;
@@ -108,9 +108,9 @@ public sealed class RagReadDocsService(
 
     private List<RankedFile> RankFiles(IReadOnlyList<DocumentSearchResult> rawHits, ReadDocsRequest request)
     {
-        var weighted = BcFilter.ApplyWeights(rawHits, cfg);
-        var filtered = request.Bc is not null
-            ? weighted.Where(h => BcFilter.Matches(h, request.Bc))
+        var weighted = TopicFilter.ApplyWeights(rawHits, cfg);
+        var filtered = request.Topic is not null
+            ? weighted.Where(h => TopicFilter.Matches(h, request.Topic))
             : weighted;
 
         return filtered

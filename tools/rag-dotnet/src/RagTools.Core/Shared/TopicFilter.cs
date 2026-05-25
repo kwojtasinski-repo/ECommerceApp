@@ -3,9 +3,9 @@ namespace RagTools.Core.Shared;
 /// <summary>
 /// Shared post-search helpers used by Query and ReadDocs pipelines:
 /// per-document weight multiplier (from <see cref="RagConfig.GetWeight"/>)
-/// and the substring bc/topic filter (matched against breadcrumb and doc title).
+/// and the substring topic / bounded-context filter (matched against breadcrumb and doc title).
 /// </summary>
-internal static class BcFilter
+internal static class TopicFilter
 {
     public static IReadOnlyList<DocumentSearchResult> ApplyWeights(
         IReadOnlyList<DocumentSearchResult> hits,
@@ -14,9 +14,9 @@ internal static class BcFilter
             .OrderByDescending(h => h.Score)
             .ToList();
 
-    public static bool Matches(DocumentSearchResult h, string bc)
+    public static bool Matches(DocumentSearchResult h, string topic)
     {
-        var lower = bc.ToLowerInvariant();
+        var lower = topic.ToLowerInvariant();
         return h.Breadcrumb.ToLowerInvariant().Contains(lower)
             || h.DocTitle.ToLowerInvariant().Contains(lower);
     }
