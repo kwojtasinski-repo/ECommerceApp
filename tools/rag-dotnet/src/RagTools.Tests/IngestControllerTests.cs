@@ -451,4 +451,26 @@ public sealed class IngestControllerTests
         var obj = Assert.IsType<ObjectResult>(result);
         Assert.Equal(415, obj.StatusCode);
     }
+
+    [Fact]
+    public async Task UploadBatch_DocKindInYamlComment_IsNotRejected()
+    {
+        // queries.yaml has a comment containing "doc_kind: optional".
+        // The validator must not treat comment text as a real doc_kind reference.
+        const string queriesWithComment =
+            "# doc_kind: optional — filter results to this doc_kind only\n" +
+            "named_queries:\n" +
+            "  - {name: default, question: test, top_k: 5}\n";
+
+        var zip = MakeZip(
+            ("metadata-rules.yaml", MinMetaRulesYaml),
+            ("queries.yaml", queriesWithComment),
+            ("doc.md", "# Doc"));
+        var ctrl = CreateControllerWithBody(zip);
+
+        var result = await ctrl.UploadBatch("col");
+
+        // Must accept (202) — not reject with 400 "unknown doc_kind(s): [optional]"
+        Assert.IsType<AcceptedResult>(result);
+    }
 }

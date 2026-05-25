@@ -85,9 +85,13 @@ public sealed class IngestController(
         await Request.Body.CopyToAsync(ms);
 
         if (ms.Length == 0)
+        {
             return BadRequest(new { error = "Request body is empty" });
+        }
         if (ms.Length > MaxBodyBytes)
+        {
             return StatusCode(413, new { error = $"Request body too large ({ms.Length:N0} bytes). Limit is {MaxBodyBytes / (1024 * 1024)} MB." });
+        }
 
         ms.Position = 0;
 
@@ -138,11 +142,16 @@ public sealed class IngestController(
             if (!Regex.IsMatch(queriesContent, @"named_queries:\s*\r?\n\s+-"))
                 return BadRequest(new { error = "queries.yaml must contain at least one named_queries entry" });
 
-            var knownKinds = Regex.Matches(metaContent, @"\bkind:\s*(\S+)")
+            // Strip YAML comment lines before regex-scanning so that doc_kind: values
+            // that appear only inside comments are not treated as real references.
+            var metaNoComments     = StripYamlComments(metaContent);
+            var queriesNoComments  = StripYamlComments(queriesContent);
+
+            var knownKinds = Regex.Matches(metaNoComments, @"\bkind:\s*(\S+)")
                 .Cast<Match>()
                 .Select(m => m.Groups[1].Value.Trim())
                 .ToHashSet(StringComparer.OrdinalIgnoreCase);
-            var badKinds = Regex.Matches(queriesContent, @"\bdoc_kind:\s*(\S+)")
+            var badKinds = Regex.Matches(queriesNoComments, @"\bdoc_kind:\s*(\S+)")
                 .Cast<Match>()
                 .Select(m => m.Groups[1].Value.Trim())
                 .Where(k => !knownKinds.Contains(k))
@@ -244,6 +253,13 @@ public sealed class IngestController(
             });
         }
     }
+
+    /// <summary>
+    /// Remove lines that are YAML comments (trimmed line starts with '#') so that
+    /// regex scans over kind: / doc_kind: do not pick up values from comment text.
+    /// </summary>
+    private static string StripYamlComments(string yaml) =>
+        string.Join('\n', yaml.Split('\n').Where(l => !l.TrimStart().StartsWith('#')));
 }
 
 /// <summary>Response body for 202 Accepted from POST /ingest/{collection}/batch.</summary>
