@@ -300,6 +300,23 @@ async def _tool_read_docs(args: dict) -> list[TextContent]:
 _HISTORY_FIELD_DEFAULT = "adr_id"
 
 
+def _make_ingest_components() -> "tuple[OperationStore, asyncio.Queue, IngestWorker]":
+    """Build the shared ingest queue, worker, and operation store.
+
+    Called once per transport startup (SSE or HTTP).  Extracted to avoid
+    duplicating the same four lines in both ``_run_sse`` and ``_run_http``.
+    """
+    from ingest_routes import build_ingest_routes  # local import so mcp_server stays importable
+    from ingest_worker import DEFAULT_CAPACITY, IngestWorker, _build_process_fn
+    from operation_store import OperationStore
+
+    store = OperationStore()
+    queue: asyncio.Queue = asyncio.Queue(maxsize=DEFAULT_CAPACITY)
+    process_fn = _build_process_fn(ENGINE, CFG, store)
+    worker = IngestWorker(queue, process_fn)
+    return store, queue, worker
+
+
 async def _tool_get_history(args: dict) -> list[TextContent]:
     """Qdrant-based history lookup — collection-agnostic.
 
@@ -453,13 +470,8 @@ async def _run_sse(port: int) -> None:
     # ── Ingest pipeline (async queue + background worker) ─────────────────────
     from api_key_middleware import ApiKeyMiddleware
     from ingest_routes import build_ingest_routes
-    from ingest_worker import DEFAULT_CAPACITY, IngestWorker, _build_process_fn
-    from operation_store import OperationStore
 
-    _store = OperationStore()
-    _queue: asyncio.Queue = asyncio.Queue(maxsize=DEFAULT_CAPACITY)
-    _process_fn = _build_process_fn(ENGINE, CFG, _store)
-    _worker = IngestWorker(_queue, _process_fn)
+    _store, _queue, _worker = _make_ingest_components()
 
     @contextlib.asynccontextmanager
     async def lifespan(_app):  # noqa: ANN001
@@ -521,13 +533,8 @@ async def _run_http(port: int) -> None:
 
     from api_key_middleware import ApiKeyMiddleware
     from ingest_routes import build_ingest_routes
-    from ingest_worker import DEFAULT_CAPACITY, IngestWorker, _build_process_fn
-    from operation_store import OperationStore
 
-    _store = OperationStore()
-    _queue: asyncio.Queue = asyncio.Queue(maxsize=DEFAULT_CAPACITY)
-    _process_fn = _build_process_fn(ENGINE, CFG, _store)
-    _worker = IngestWorker(_queue, _process_fn)
+    _store, _queue, _worker = _make_ingest_components()
 
     @contextlib.asynccontextmanager
     async def lifespan(_app):  # noqa: ANN001

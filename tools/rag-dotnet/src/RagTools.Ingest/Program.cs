@@ -193,49 +193,10 @@ if (toProcess.Count == 0 && deleted.Count == 0)
 if (remoteUrl is not null)
 {
     log.LogInformation("remote mode: uploading {Count} file(s) to {Url}", toProcess.Count, remoteUrl);
-    using var http = new HttpClient();
-    http.BaseAddress = new Uri(remoteUrl.TrimEnd('/') + "/");
-    if (!string.IsNullOrEmpty(apiKey))
-        http.DefaultRequestHeaders.Add("X-Api-Key", apiKey);
-
-    var collection = cfg.Collection;
-    var processed = 0;
-    var failed = 0;
-
-    foreach (var (fi, relPath, hash) in toProcess)
-    {
-        var content = await File.ReadAllTextAsync(fi.FullName);
-        var payload = new
-        {
-            rel_path = relPath,
-            content,
-            doc_kind = (string?)null,  // auto-detect on server
-        };
-
-        try
-        {
-            var response = await http.PostAsJsonAsync($"ingest/{Uri.EscapeDataString(collection)}", payload);
-            if (response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable)
-            {
-                log.LogWarning("Server queue full for {RelPath}, retrying in 2s ...", relPath);
-                await Task.Delay(2000);
-                response = await http.PostAsJsonAsync($"ingest/{Uri.EscapeDataString(collection)}", payload);
-            }
-            response.EnsureSuccessStatusCode();
-            manifest.Update(relPath, hash, 0);  // chunk count unknown in remote mode
-            processed++;
-            dbg.LogDebug("queued {RelPath}", relPath);
-        }
-        catch (Exception ex)
-        {
-            log.LogError(ex, "failed to upload {RelPath}", relPath);
-            failed++;
-        }
-    }
-
+    using var remoteClient = new RemoteIngestClient(remoteUrl, apiKey, log);
+    var failCount = await remoteClient.PushAsync(cfg.Collection, toProcess, manifest, dbg);
     manifest.Save();
-    log.LogInformation("remote ingest: {Processed} queued, {Failed} failed", processed, failed);
-    return failed > 0 ? 1 : 0;
+    return failCount > 0 ? 1 : 0;
 }
 
 // ── Load embedder + Qdrant ────────────────────────────────────────────────────
@@ -265,67 +226,12 @@ if (deleted.Count > 0)
 // ── Chunk, embed, upsert ──────────────────────────────────────────────────────
 var tokenCounter = SentencePieceTokenCounter.FromModelDir(modelDir);
 var chunker = new MarkdownChunker(cfg.Chunker, tokenCounter);
-const int batchSize = 32;
-
-var totalChunks = 0;
-var processedFiles = 0;
-
-foreach (var (fi, relPath, hash) in toProcess)
-{
-    var text = await File.ReadAllTextAsync(fi.FullName);
-    var chunks = chunker.Chunk(text, relPath);
-    var docTitle = ExtractTitle(text, relPath);
-    var weight = ResolveWeight(relPath, (int)fi.Length, cfg.Ranking);
-    var kind = cfg.DetectDocKind(relPath);
-    var adrId = cfg.DetectAdrId(relPath);
-
-    // Delete old points for this file before re-upserting.
-    await store.DeleteByPathsAsync([relPath]);
-
-    // Embed in batches.
-    var points = new List<RagPoint>();
-    for (var i = 0; i < chunks.Count; i += batchSize)
-    {
-        var batch = chunks.Skip(i).Take(batchSize).ToList();
-        var texts = batch.Select(c => c.Breadcrumb + "\n\n" + c.Text).ToList();
-        var vectors = embedder.EmbedBatch(texts);
-
-        for (var j = 0; j < batch.Count; j++)
-        {
-            var chunk = batch[j];
-            var chunkIndex = i + j;   // global chunk index across batches
-            var id = ManifestService.StableId(relPath, chunk.Breadcrumb, chunk.StartLine);
-            var contentId = DeterministicId.ForContent(cfg.Collection, relPath);
-            points.Add(new RagPoint(id, vectors[j], new RagPayload(
-                RelPath: relPath,
-                DocTitle: docTitle,
-                DocKind: kind,
-                AdrId: adrId,
-                Breadcrumb: chunk.Breadcrumb,
-                HeadingPath: chunk.HeadingPath,
-                StartLine: chunk.StartLine,
-                EndLine: chunk.EndLine,
-                TokenCount: chunk.TokenCount,
-                Weight: weight,
-                Text: chunk.Text,
-                ChunkIndex: chunkIndex,
-                ContentId: contentId)));
-        }
-    }
-
-    await store.UpsertAsync(points);
-    manifest.Update(relPath, hash, chunks.Count);
-    totalChunks += chunks.Count;
-    processedFiles++;
-
-    dbg.LogDebug("{RelPath}: {ChunkCount} chunks, kind={Kind}, weight={Weight}", relPath, chunks.Count, kind, weight);
-    if (processedFiles % 10 == 0)
-        log.LogInformation("{Done}/{Total} files processed ...", processedFiles, toProcess.Count);
-}
+var ingestor = new FileIngestor(embedder, store, chunker, cfg, manifest, log);
+var totalChunks = await ingestor.IngestAsync(toProcess, dbg);
 
 manifest.Save();
 WriteStatsMd(cfg, manifest, repoRoot);
-log.LogInformation("done — {Files} file(s), {Chunks} chunks, manifest saved", processedFiles, totalChunks);
+log.LogInformation("done — {Files} file(s), {Chunks} chunks, manifest saved", toProcess.Count, totalChunks);
 return 0;
 
 // ── Local helpers ─────────────────────────────────────────────────────────────
@@ -333,42 +239,7 @@ return 0;
 static bool IsExcluded(FileInfo fi, string repoRoot, IEnumerable<string> globs)
 {
     var rel = Path.GetRelativePath(repoRoot, fi.FullName).Replace('\\', '/');
-    return globs.Any(g => GlobMatch(rel, g));
-}
-
-static bool GlobMatch(string path, string glob)
-{
-    var pattern = "^" +
-        System.Text.RegularExpressions.Regex.Escape(glob)
-             .Replace(@"\*\*", "§§")
-             .Replace(@"\*", "[^/]*")
-             .Replace(@"\?", "[^/]")
-             .Replace("§§", ".*")
-        + "$";
-    return System.Text.RegularExpressions.Regex.IsMatch(path, pattern);
-}
-
-static string ExtractTitle(string text, string relPath)
-{
-    foreach (var line in text.Split('\n'))
-    {
-        var s = line.Trim();
-        if (s.StartsWith("# ")) return s[2..].Trim();
-        if (!string.IsNullOrEmpty(s) && !s.StartsWith('#') && !s.StartsWith("---"))
-            break;
-    }
-    return relPath;
-}
-
-static float ResolveWeight(string relPath, int fileSizeBytes, RankingSection ranking)
-{
-    var p = relPath.Replace('\\', '/');
-    if (fileSizeBytes < ranking.StubByteThreshold && p.Contains("/example-implementation/"))
-        return 0.05f;
-    foreach (var entry in ranking.Weights)
-        if (GlobMatch(p, entry.Pattern))
-            return entry.Weight;
-    return 1.0f;
+    return globs.Any(g => FileIngestor.GlobMatch(rel, g));
 }
 
 static void WriteStatsMd(RagConfig cfg, ManifestService manifest, string repoRoot)

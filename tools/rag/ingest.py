@@ -63,6 +63,63 @@ def _build_payload(rel_path: str, doc_title: str, chunk, weight: float, cfg=None
     }
 
 
+def _make_qdrant_client(
+    cfg: "Config",
+    mode: str,
+    dim: int,
+    incremental: bool,
+    files_to_delete: "list[str]",
+):
+    """Return a configured QdrantClient for the requested mode.
+
+    Handles collection creation / recreation and stale-chunk deletion so that
+    ``main()`` does not need to branch on mode three times.
+    """
+    from qdrant_client import QdrantClient
+    from qdrant_client.models import (
+        Distance, FieldCondition, Filter, FilterSelector, MatchValue, VectorParams
+    )
+
+    if mode == "memory":
+        client = QdrantClient(":memory:")
+        client.recreate_collection(
+            collection_name=cfg.collection,
+            vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
+        )
+        return client
+
+    if mode == "local":
+        client = QdrantClient(path=cfg.vector_local_path)
+    else:  # docker
+        client = QdrantClient(url=cfg.vector_url)
+
+    if not incremental:
+        client.recreate_collection(
+            collection_name=cfg.collection,
+            vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
+        )
+    else:
+        existing = {c.name for c in client.get_collections().collections}
+        if cfg.collection not in existing:
+            client.create_collection(
+                collection_name=cfg.collection,
+                vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
+            )
+        if files_to_delete:
+            for rel_path in files_to_delete:
+                client.delete(
+                    collection_name=cfg.collection,
+                    points_selector=FilterSelector(
+                        filter=Filter(must=[
+                            FieldCondition(key="rel_path", match=MatchValue(value=rel_path))
+                        ])
+                    ),
+                )
+            print(f"[ingest] deleted stale chunks for {len(files_to_delete)} file(s)")
+
+    return client
+
+
 def _stable_id(rel_path: str, breadcrumb: str, start_line: int) -> int:
     h = hashlib.blake2b(f"{rel_path}|{breadcrumb}|{start_line}".encode(), digest_size=8)
     return int.from_bytes(h.digest(), "big")
@@ -186,97 +243,9 @@ def _remote_push(
     base_url: str,
     api_key: "str | None",
 ) -> int:
-    """POST each file's raw Markdown content to the remote mcp_server ingest API.
-
-    Mirrors the .NET RagTools.Ingest --remote flag (ADR-0028).
-    Uses stdlib urllib so no extra dependency is needed.
-    Retries on 503 (queue full) up to 3 times with exponential back-off.
-    Polls each operation until Completed or Failed before moving on.
-    """
-    import urllib.error
-    import urllib.request
-
-    base = base_url.rstrip("/")
-    collection = cfg.collection
-    key = (api_key or os.environ.get("RAG_API_KEY", "")).strip()
-    headers: dict[str, str] = {"Content-Type": "application/json"}
-    if key:
-        headers["X-Api-Key"] = key
-
-    succeeded = failed = skipped = 0
-    for path in files:
-        rel_path = path.relative_to(cfg.workspace).as_posix()
-        try:
-            content = path.read_text(encoding="utf-8")
-        except OSError as exc:
-            print(f"[ingest] SKIP {rel_path}: cannot read — {exc}")
-            skipped += 1
-            continue
-
-        doc_kind = detect_doc_kind(rel_path, cfg)
-        body = json.dumps({"relPath": rel_path, "content": content, "docKind": doc_kind}).encode()
-
-        # POST with retry on 503.
-        location: str | None = None
-        for attempt in range(3):
-            req = urllib.request.Request(f"{base}/ingest/{collection}", data=body, headers=headers, method="POST")
-            try:
-                with urllib.request.urlopen(req, timeout=30) as resp:
-                    result = json.loads(resp.read())
-                    location = result.get("location")
-                break
-            except urllib.error.HTTPError as exc:
-                if exc.code == 503 and attempt < 2:
-                    wait = 2 ** attempt
-                    print(f"[ingest] {rel_path}: queue full (503), retry in {wait}s …")
-                    time.sleep(wait)
-                else:
-                    print(f"[ingest] ERROR {rel_path}: POST failed — HTTP {exc.code}")
-                    failed += 1
-                    location = None
-                    break
-            except Exception as exc:
-                print(f"[ingest] ERROR {rel_path}: POST failed — {exc}")
-                failed += 1
-                location = None
-                break
-
-        if location is None:
-            continue
-
-        # Poll until Completed or Failed (timeout 120s).
-        poll_url = f"{base}{location}"
-        poll_req_factory = lambda: urllib.request.Request(poll_url, headers=headers)  # noqa: E731
-        status = "Queued"
-        deadline = time.time() + 120
-        while time.time() < deadline:
-            time.sleep(2)
-            try:
-                with urllib.request.urlopen(poll_req_factory(), timeout=10) as resp:
-                    op = json.loads(resp.read())
-                    status = op.get("status", "")
-                    if status in ("Completed", "Failed"):
-                        break
-            except Exception:
-                pass  # transient network; keep polling
-
-        if status == "Completed":
-            chunks = op.get("chunkCount", "?")
-            print(f"[ingest] OK  {rel_path} → {chunks} chunk(s)")
-            succeeded += 1
-        elif status == "Failed":
-            err = op.get("errorMessage", "unknown error")
-            print(f"[ingest] FAIL {rel_path}: {err}")
-            failed += 1
-        else:
-            print(f"[ingest] TIMEOUT {rel_path}: still {status!r} after 120s")
-            failed += 1
-
-    print(
-        f"[ingest] remote push complete: {succeeded} ok, {failed} failed, {skipped} skipped "
-        f"({len(files)} total)"
-    )
-    return 0 if failed == 0 else 1
+    """Delegate to the dedicated RemoteIngestClient module."""
+    from remote_ingest_client import push_files_to_remote_server
+    return push_files_to_remote_server(cfg, files, base_url, api_key)
 
 
 def main() -> int:
@@ -398,73 +367,15 @@ def main() -> int:
         return 0
 
     # Heavy imports are deferred so --dry-run stays fast.
-    from sentence_transformers import SentenceTransformer
-    from qdrant_client import QdrantClient
-    from qdrant_client.models import (
-        Distance, FieldCondition, Filter, FilterSelector, MatchValue, PointStruct, VectorParams
-    )
+    from qdrant_client.models import PointStruct
+    from make_embedder import make_embedder
 
     print(f"[ingest] loading embedder: {cfg.embedder_model} (device={cfg.embedder_device})")
-    model = SentenceTransformer(cfg.embedder_model, device=cfg.embedder_device)
-    dim = model.get_sentence_embedding_dimension()
+    embedder = make_embedder(cfg)
+    dim = embedder.dimensions
     print(f"[ingest] embedding dimension: {dim}")
 
-    if mode == "memory":
-        client = QdrantClient(":memory:")
-        client.recreate_collection(
-            collection_name=cfg.collection,
-            vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
-        )
-    elif mode == "local":
-        client = QdrantClient(path=cfg.vector_local_path)
-        if not incremental:
-            client.recreate_collection(
-                collection_name=cfg.collection,
-                vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
-            )
-        else:
-            existing = {c.name for c in client.get_collections().collections}
-            if cfg.collection not in existing:
-                client.create_collection(
-                    collection_name=cfg.collection,
-                    vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
-                )
-            if files_to_delete:
-                for rel_path in files_to_delete:
-                    client.delete(
-                        collection_name=cfg.collection,
-                        points_selector=FilterSelector(
-                            filter=Filter(must=[
-                                FieldCondition(key="rel_path", match=MatchValue(value=rel_path))
-                            ])
-                        ),
-                    )
-                print(f"[ingest] deleted stale chunks for {len(files_to_delete)} file(s)")
-    else:  # docker
-        client = QdrantClient(url=cfg.vector_url)
-        if not incremental:
-            client.recreate_collection(
-                collection_name=cfg.collection,
-                vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
-            )
-        else:
-            existing = {c.name for c in client.get_collections().collections}
-            if cfg.collection not in existing:
-                client.create_collection(
-                    collection_name=cfg.collection,
-                    vectors_config=VectorParams(size=dim, distance=Distance.COSINE),
-                )
-            if files_to_delete:
-                for rel_path in files_to_delete:
-                    client.delete(
-                        collection_name=cfg.collection,
-                        points_selector=FilterSelector(
-                            filter=Filter(must=[
-                                FieldCondition(key="rel_path", match=MatchValue(value=rel_path))
-                            ])
-                        ),
-                    )
-                print(f"[ingest] deleted stale chunks for {len(files_to_delete)} file(s)")
+    client = _make_qdrant_client(cfg, mode, dim, incremental, files_to_delete)
 
     points: list[PointStruct] = []
     print("[ingest] embedding...")
@@ -476,18 +387,13 @@ def main() -> int:
         doc_title = _file_doc_title(rel, path.read_text(encoding="utf-8"))
         weight = resolve_weight(rel, path.stat().st_size, cfg.ranking)
         embed_texts = [c.embed_text for c in chunks]
-        vectors = model.encode(
-            embed_texts,
-            batch_size=cfg.raw["embedder"].get("batch_size", 32),
-            show_progress_bar=False,
-            normalize_embeddings=True,
-        )
+        vectors = embedder.embed_batch(embed_texts)
         for chunk, vec in zip(chunks, vectors):
             payload = _build_payload(rel, doc_title, chunk, weight, cfg)
             points.append(
                 PointStruct(
                     id=_stable_id(rel, chunk.breadcrumb, chunk.start_line),
-                    vector=vec.tolist(),
+                    vector=vec,
                     payload=payload,
                 )
             )
