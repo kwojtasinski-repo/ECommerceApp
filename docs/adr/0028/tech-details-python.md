@@ -20,7 +20,7 @@ specifics.
 | `OperationStore` | `OperationStore` (`ConcurrentDictionary`) | `operation_store.py` |
 | `IngestController` routes | ASP.NET Core `IngestController` | `ingest_routes.py` |
 | `ApiKeyMiddleware` | ASP.NET Core `ApiKeyMiddleware` | `api_key_middleware.py` |
-| `RagSession` | Scoped `RagSession` (SSE DI) | `ContextVar[str | None]` in `state.py` |
+| `RagSession` | Scoped `RagSession` (HTTP / SSE DI) | `ContextVar[str | None]` in `state.py` |
 
 ---
 
@@ -205,7 +205,7 @@ Returns `IngestOperation` JSON (see Data Model above).
 - Checks `X-Api-Key` header on all paths starting with `/ingest/` or `/admin/`.
 - Returns `401` if key missing or wrong.
 - No-op when `RAG_API_KEY` env var is empty (local dev without auth).
-- MCP `/sse` and `/messages/` paths are **not** protected.
+- MCP transport paths (`/`, `/mcp`, `/sse`, `/messages/`) are **not** protected.
 
 ```bash
 # Example: set auth key
@@ -219,14 +219,14 @@ python tools/rag/ingest.py --remote http://localhost:3002 --api-key my-secret-ke
 
 ## Multi-Tenant Session Binding (`?project=` → `ContextVar`)
 
-When the SSE MCP connection URL contains `?project=<name>`, the server binds
+When the MCP connection URL contains `?project=<name>` (HTTP Streamable or legacy SSE), the server binds
 a per-session collection override using a Python `contextvars.ContextVar`:
 
 ```python
 # state.py — shared deferred globals
 _session_collection: ContextVar[str | None] = ContextVar("_session_collection", default=None)
 
-# mcp_server.py — context manager wraps every SSE/HTTP handler
+# mcp_server.py — context manager wraps every HTTP Streamable / legacy SSE handler
 @contextlib.contextmanager
 def _bind_session_project(project: str | None):
     token = state._session_collection.set(project)
@@ -246,12 +246,12 @@ Tool handlers (`_tool_query_docs`, `_tool_read_docs`) in `rag_tools.py` pass
 `collection=state._session_collection.get(None)` to `QueryEngine.search()`. When `None`,
 `search()` falls back to `cfg.collection` (the default configured collection).
 
-This mirrors the .NET scoped `RagSession` approach — each SSE connection gets its
+This mirrors the .NET scoped `RagSession` approach — each MCP connection gets its
 own asyncio task and thus its own `ContextVar` token.
 
 ---
 
-## DI / Wiring (SSE branch of `mcp_server.py`)
+## DI / Wiring (HTTP / SSE branch of `mcp_server.py`)
 
 ```python
 # mcp_server.py — lean entry point (~250 lines)
@@ -309,7 +309,7 @@ Behaviour:
 | `api_key_middleware.py` — X-Api-Key middleware | ✅ Implemented |
 | `state.py` — shared deferred globals (ENGINE, CFG, _session_collection, TOOL_TIMEOUT) | ✅ Implemented |
 | `rag_tools.py` — 4 MCP tool coroutines (query_docs, read_docs, get_history, list_adrs) | ✅ Implemented |
-| `mcp_server.py` — lean SSE/HTTP wiring + dispatch dict + `_bind_session_project` CM | ✅ Implemented |
+| `mcp_server.py` — lean HTTP / SSE wiring + dispatch dict + `_bind_session_project` CM | ✅ Implemented |
 | `query.py` — `collection=` param on `search()` + `get_collection_config()` method | ✅ Implemented |
 | `ingest.py` — `--remote` + `--api-key` flags | ✅ Implemented |
 | Python unit tests | ✅ Implemented |

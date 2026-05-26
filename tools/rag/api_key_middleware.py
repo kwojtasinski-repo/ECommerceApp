@@ -5,7 +5,7 @@ Mirrors the .NET ApiKeyMiddleware (ADR-0028):
   - Returns 401 if the key is missing or wrong.
   - When RAG_API_KEY env var is NOT set (or empty), all requests pass through
     (useful for local dev without authentication).
-  - MCP SSE/messages paths are NOT protected — they use their own VS Code
+  - MCP HTTP/messages paths are NOT protected — they use their own VS Code
     connection security (tunnelled through Copilot).
 
 Usage:

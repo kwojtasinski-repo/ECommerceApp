@@ -1,6 +1,6 @@
 """Vulnerability / validation probe for RAG MCP + Ingest endpoints.
 
-Runs adversarial inputs against the running SSE servers (Python :3002,
+Runs adversarial inputs against the running HTTP servers (Python :3002,
 .NET :3001) and reports response code + first-line of body for each probe.
 
 No teardown — assumes docker compose stack is already up.

@@ -1,4 +1,4 @@
-"""HTTP client for the remote ingest API exposed by mcp_server.py (SSE / HTTP mode).
+"""HTTP client for the remote ingest API exposed by mcp_server.py (HTTP mode).
 
 Mirrors the .NET ``RagTools.Ingest --remote`` flag pattern.
 

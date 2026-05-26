@@ -8,11 +8,11 @@ Phase A — STDIO via CLI (`docker run -i ... <image>` per server) against the
           `--force-full` runs (collections: ecommerceapp_docs / _dotnet).
 
 Phase B — HTTP Streamable upload via CLI (`ingest.py --remote` for Python;
-          `RagTools.Ingest -- --remote` for .NET) against the running SSE
+          `RagTools.Ingest -- --remote` for .NET) against the running HTTP
           containers on ports 3001 / 3002, followed by HTTP MCP tool calls.
 
 Phase C — HTTP Streamable upload WITHOUT CLI (pure stdlib urllib POST of a
-          synthetic ZIP to /ingest/{collection}/batch on each SSE server),
+          synthetic ZIP to /ingest/{collection}/batch on each HTTP server),
           followed by HTTP MCP tool calls (stdlib-only) against the test
           collection via the `?project=<coll>` route parameter.
 
@@ -111,7 +111,7 @@ def http_session(port: int, project: str | None = None):
             for line in text.splitlines():
                 if line.startswith("data:"):
                     body = json.loads(line[5:].strip()); break
-            if body is None: raise RuntimeError("no SSE data line")
+            if body is None: raise RuntimeError("no event-stream data line")
         else:
             body = json.loads(text)
         if "error" in body:
@@ -264,8 +264,8 @@ def phase_b_cli_upload():
     print("=" * 76)
     summary = {}
 
-    # B1: Python ingest --remote against rag-python-sse:3002
-    print("\n[B1] python tools/rag/ingest.py --remote http://rag-python-sse:3002")
+    # B1: Python ingest --remote against rag-python-http:3002
+    print("\n[B1] python tools/rag/ingest.py --remote http://rag-python-http:3002")
     py_rc, py_tail = _run_cli(
         ["docker","run","--rm",
          "--network","ecommerceapp_default",
@@ -276,13 +276,13 @@ def phase_b_cli_upload():
          "-e","RAG_WORKSPACE=/workspace",
          "-e","RAG_CONFIG=/workspace/tools/rag/rag-config.yaml",
          "rag-tools","python","ingest.py",
-         "--remote","http://rag-python-sse:3002","--force-full"])
+         "--remote","http://rag-python-http:3002","--force-full"])
     summary["python-cli-upload"] = "OK" if py_rc == 0 else f"FAIL (exit {py_rc})"
     print(f"  ↳ exit {py_rc}")
     print(textwrap.indent(py_tail or "(no output)", "    "))
 
-    # B2: .NET RagTools.Ingest --remote against rag-dotnet-sse:3001
-    print("\n[B2] dotnet RagTools.Ingest --remote http://rag-dotnet-sse:3001")
+    # B2: .NET RagTools.Ingest --remote against rag-dotnet-http:3001
+    print("\n[B2] dotnet RagTools.Ingest --remote http://rag-dotnet-http:3001")
     net_rc, net_tail = _run_cli(
         ["docker","run","--rm",
          "--network","ecommerceapp_default",
@@ -298,16 +298,16 @@ def phase_b_cli_upload():
          "-e","DOTNET_CLI_TELEMETRY_OPTOUT=1",
          "--entrypoint","dotnet",
          "rag-dotnet","/app/ingest/ingest.dll",
-         "--remote","http://rag-dotnet-sse:3001","--force-full"])
+         "--remote","http://rag-dotnet-http:3001","--force-full"])
     summary["dotnet-cli-upload"] = "OK" if net_rc == 0 else f"FAIL (exit {net_rc})"
     print(f"  ↳ exit {net_rc}")
     print(textwrap.indent(net_tail or "(no output)", "    "))
 
     # B3/B4: HTTP MCP tool calls against the production collections (default route)
-    print("\n[B3] HTTP MCP tools (python sse :3002, default project)")
+    print("\n[B3] HTTP MCP tools (python http :3002, default project)")
     summary["python-http-tools"] = assess_tools("python-http",
         http_session(PY_PORT), project_has_real_data=True)
-    print("\n[B4] HTTP MCP tools (dotnet sse :3001, default project)")
+    print("\n[B4] HTTP MCP tools (dotnet http :3001, default project)")
     summary["dotnet-http-tools"] = assess_tools("dotnet-http",
         http_session(NET_PORT), project_has_real_data=True)
 
@@ -437,11 +437,11 @@ def phase_c_raw_upload():
 
     # Query the test collection on each server via ?project=
     if summary.get("python-raw-upload") == "OK":
-        print(f"\n[C-pyq] HTTP MCP tools (python sse, ?project={TEST_COLL})")
+        print(f"\n[C-pyq] HTTP MCP tools (python http, ?project={TEST_COLL})")
         summary["python-raw-tools"] = assess_tools("python-raw",
             http_session(PY_PORT, TEST_COLL), project_has_real_data=False)
     if summary.get("dotnet-raw-upload") == "OK":
-        print(f"\n[C-ntq] HTTP MCP tools (dotnet sse, ?project={TEST_COLL})")
+        print(f"\n[C-ntq] HTTP MCP tools (dotnet http, ?project={TEST_COLL})")
         summary["dotnet-raw-tools"] = assess_tools("dotnet-raw",
             http_session(NET_PORT, TEST_COLL), project_has_real_data=False)
 

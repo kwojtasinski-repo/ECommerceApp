@@ -16,7 +16,7 @@ RagTools.Core/          ← domain types, interfaces, background services
   IngestChannel         ← bounded Channel<IngestJob> (capacity 1000)
   IngestWorker          ← BackgroundService: drains IngestChannel
   OperationStore        ← ConcurrentDictionary<string, IngestOperationResult>; 1h retention
-  RagSession            ← active collection for the current SSE session (or stdio singleton)
+  RagSession            ← active collection for the current HTTP Streamable session (or stdio singleton)
   IngestJob             ← POCO: OperationId, Collection, RelPath, Content, DocKind?, EnqueuedAt
   IngestOperationResult ← sealed record: OperationId, Status, EnqueuedAt, StartedAt?, CompletedAt?, ChunkCount?, ErrorMessage?
 
@@ -244,7 +244,7 @@ X-Api-Key: <key>
 
 ## API Key Middleware
 
-Guards `/ingest/*` and `/admin/*`. MCP tool endpoints (`/`, `/sse`) are not guarded.
+Guards `/ingest/*` and `/admin/*`. MCP tool endpoints (`/`, `/sse`) are not guarded. (`/sse` is the legacy SSE alias path; the production `/` Streamable HTTP endpoint is also unguarded for MCP traffic.)
 
 ```csharp
 // Middleware/ApiKeyMiddleware.cs
@@ -257,7 +257,7 @@ Guards `/ingest/*` and `/admin/*`. MCP tool endpoints (`/`, `/sse`) are not guar
 
 ## RagSession
 
-Binds the active collection to the current SSE session (or to the process for stdio).
+Binds the active collection to the current HTTP Streamable session (or to the process for stdio).
 
 ```csharp
 public sealed class RagSession
@@ -352,5 +352,5 @@ webBuilder.Services
 - [ ] Config TTL 30 min; Content TTL 15 min; Search TTL 5 min; ADR list TTL 10 min
 
 ### Session
-- [ ] SSE: `RagSession` is `Scoped`; `RagSessionMiddleware` reads `?project=`
+- [ ] HTTP Streamable: `RagSession` is `Scoped`; `RagSessionMiddleware` reads `?project=`
 - [ ] stdio: `RagSession` is `Singleton`; uses `cfg.Collection`

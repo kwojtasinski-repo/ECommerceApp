@@ -6,7 +6,7 @@ identical wire output (same set of ADR IDs).
 Transports
 ----------
 1. STDIO via CLI       — `docker run -i ... rag-{tools,dotnet}` with JSON-RPC on stdin/stdout
-2. HTTP Streamable CLI — uses the `mcp` Python SDK against the persistent SSE containers
+2. HTTP Streamable CLI — uses the `mcp` Python SDK against the persistent HTTP containers
 3. HTTP Streamable raw — direct httpx POST, no MCP library (proves wire-only conformance)
 
 Usage:

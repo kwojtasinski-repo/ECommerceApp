@@ -8,7 +8,7 @@
 
 The RAG pipeline has two independent server implementations that share `tools/rag/rag-config.yaml`, `tools/rag/metadata-rules.yaml`, and `tools/rag/queries.yaml`:
 
-| Server | Language | Port (SSE) | Docker image | Collection |
+| Server | Language | Port (HTTP) | Docker image | Collection |
 |--------|----------|-----------|--------------|------------|
 | Python | Starlette + sentence-transformers | 3002 | `rag-tools` | `ecommerceapp_docs` |
 | .NET   | ASP.NET Core + ONNX | 3001 | `rag-dotnet` | `ecommerceapp_docs_dotnet` |
@@ -173,7 +173,7 @@ Resolved. After Docker rebuild (F-1), pipeline Phase 3 shows `chunk_count=18` fo
 
 ---
 
-### F-5 — SSE auth integration tests
+### F-5 — HTTP auth integration tests
 
 **Current**: `X-Api-Key` middleware is implemented in both servers. Unit tests cover key validation. No integration test covers key rotation or invalid-key rejection end-to-end.
 
@@ -187,15 +187,15 @@ Resolved. After Docker rebuild (F-1), pipeline Phase 3 shows `chunk_count=18` fo
 
 ---
 
-### F-6 — Transport migration (STDIO → SSE as default dev workflow)
+### F-6 — Transport migration (STDIO → HTTP Streamable as default dev workflow)
 
-**Current**: VS Code MCP panel supports both STDIO and SSE. STDIO uses the Docker container per-invocation (slower startup). SSE servers (ports 3001/3002) stay running and share Qdrant state.
+**Current**: VS Code MCP panel supports STDIO and HTTP Streamable. STDIO uses the Docker container per-invocation (slower startup). HTTP Streamable servers (ports 3001/3002) stay running and share Qdrant state. The Python server also still exposes a legacy SSE transport for back-compat.
 
 **Planned**:
-- Default dev workflow: HTTP-only (start `docker compose up -d rag-dotnet-sse rag-python-sse`)
+- Default dev workflow: HTTP-only (start `docker compose up -d rag-dotnet-http rag-python-http`)
 - STDIO kept for CI / pipeline tests only
-- Update `SETUP-GUIDE.md` to document SSE-first setup
-- Remove STDIO entries from `.github/mcp.json` default config (or make SSE the first choice)
+- Update `SETUP-GUIDE.md` to document HTTP-first setup
+- Remove STDIO entries from `.github/mcp.json` default config (or make HTTP Streamable the first choice)
 
 **Complexity**: Low — mostly documentation. No server code changes.
 

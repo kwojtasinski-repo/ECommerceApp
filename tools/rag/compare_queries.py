@@ -1,4 +1,4 @@
-"""Compare query_docs/read_docs across Python (:3002) and .NET (:3001) SSE servers.
+"""Compare query_docs/read_docs across Python (:3002) and .NET (:3001) HTTP servers.
 
 Runs the same 5 specific + 3 generic queries against both servers and writes
 .rag/compare_servers.out.txt with side-by-side hit summaries.

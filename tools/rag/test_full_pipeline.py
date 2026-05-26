@@ -3,17 +3,17 @@ Full E2E pipeline test for both RAG MCP servers.
 
 Phases:
   0  Prerequisites check (Docker daemon, Qdrant container)
-  1  Stop running MCP SSE containers (clean slate)
+  1  Stop running MCP HTTP containers (clean slate)
   2  Docker build --no-cache for rag-tools (Python) and rag-dotnet (.NET)
   3  STDIO ingest + query  —  Python mcp_server.py
   4  STDIO ingest + query  —  .NET mcp_server.dll
-  5  SSE server tests      —  start rag-python-sse + rag-dotnet-sse, query
+  5  HTTP server tests      —  start rag-python-http + rag-dotnet-http, query
                                both via HTTP (uses docs already indexed in 3/4)
   6  Flow queries          —  run a curated subset of test_flows.py flows
                                against Docker STDIO (Python)
   7  Hosted ingest (HTTP)  —  upload a synthetic document to both Python and
-                               .NET SSE servers via POST /ingest/{collection}/batch,
-                               poll for completion, query via MCP SSE to verify
+                               .NET HTTP servers via POST /ingest/{collection}/batch,
+                               poll for completion, query via MCP HTTP to verify
   8  Report                —  write docs/rag/pipeline-test-report.md
 
 Usage:
@@ -44,8 +44,8 @@ if hasattr(sys.stdout, "reconfigure"):
 # ── Constants ─────────────────────────────────────────────────────────────────
 
 WORKSPACE = Path(__file__).parent.parent.parent.resolve()
-PYTHON_SSE_PORT = 3002
-DOTNET_SSE_PORT = 3001
+PYTHON_HTTP_PORT = 3002
+DOTNET_HTTP_PORT = 3001
 QDRANT_PORT = 6333
 NETWORK = "ecommerceapp_default"
 PYTHON_IMAGE = "rag-tools"
@@ -224,7 +224,7 @@ def _start_stdio_docker(image: str, extra_env: list[str] | None = None,
     return proc, t, stderr_lines
 
 
-# ── SSE / HTTP helpers ────────────────────────────────────────────────────────
+# ── HTTP helpers ────────────────────────────────────────────────────────
 
 def _parse_sse_body(text: str) -> dict:
     for line in text.splitlines():
@@ -271,8 +271,8 @@ def _dotnet_initialize(client: httpx.Client) -> str:
     return session_id
 
 
-async def _run_sse_tool(url: str, tool: str, args: dict) -> str:
-    """Call a tool on the Python SSE server and return raw text."""
+async def _run_http_tool(url: str, tool: str, args: dict) -> str:
+    """Call a tool on the Python HTTP server and return raw text."""
     from mcp.client.sse import sse_client
     from mcp.client.session import ClientSession
     async with sse_client(f"{url}/sse", timeout=15) as (read, write):
@@ -354,26 +354,26 @@ def phase_0_prerequisites() -> PhaseResult:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PHASE 1: Stop SSE containers
+# PHASE 1: Stop HTTP containers
 # ══════════════════════════════════════════════════════════════════════════════
 
-def phase_1_stop_sse() -> PhaseResult:
-    p = PhaseResult("Stop SSE containers")
-    print(f"\n{BANNER}\n  PHASE 1 — Stop running SSE containers\n{BANNER}")
+def phase_1_stop_http() -> PhaseResult:
+    p = PhaseResult("Stop HTTP containers")
+    print(f"\n{BANNER}\n  PHASE 1 — Stop running HTTP containers\n{BANNER}")
 
-    # Stop ONLY the SSE containers, not base services (qdrant etc.)
+    # Stop ONLY the HTTP containers, not base services (qdrant etc.)
     # Use 'stop' + 'rm' to avoid removing the shared network / qdrant
-    for svc in ("rag-python-sse", "rag-dotnet-sse"):
-        _run(["docker", "compose", "--profile", f"rag-{svc.split('-')[1]}-sse",
+    for svc in ("rag-python-http", "rag-dotnet-http"):
+        _run(["docker", "compose", "--profile", f"rag-{svc.split('-')[1]}-http",
               "stop", svc], timeout=15)
-        _run(["docker", "compose", "--profile", f"rag-{svc.split('-')[1]}-sse",
+        _run(["docker", "compose", "--profile", f"rag-{svc.split('-')[1]}-http",
               "rm", "-f", svc], timeout=15)
 
     # Also kill any leftover standalone containers
-    for name in ("rag-python-sse", "rag-dotnet-sse"):
+    for name in ("rag-python-http", "rag-dotnet-http"):
         _run(["docker", "rm", "-f", name], timeout=10)
 
-    p.record("SSE containers stopped (rag-python-sse + rag-dotnet-sse)", True)
+    p.record("HTTP containers stopped (rag-python-http + rag-dotnet-http)", True)
 
     p.finish()
     return p
@@ -620,39 +620,39 @@ def phase_4_dotnet_stdio() -> PhaseResult:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# PHASE 5: SSE servers — start + ingest (HTTP) + query
+# PHASE 5: HTTP servers — start + ingest (HTTP) + query
 # ══════════════════════════════════════════════════════════════════════════════
 
-def phase_5_sse() -> PhaseResult:
-    p = PhaseResult("SSE servers — start + HTTP ingest + query")
-    print(f"\n{BANNER}\n  PHASE 5 — SSE servers (start → ingest → query)\n{BANNER}")
+def phase_5_http() -> PhaseResult:
+    p = PhaseResult("HTTP servers — start + HTTP ingest + query")
+    print(f"\n{BANNER}\n  PHASE 5 — HTTP servers (start → ingest → query)\n{BANNER}")
 
-    # 5a: Start both SSE services
-    print("\n  [5a] Starting rag-python-sse and rag-dotnet-sse …")
+    # 5a: Start both HTTP services
+    print("\n  [5a] Starting rag-python-http and rag-dotnet-http …")
     rc, out = _run(
         ["docker", "compose",
-         "--profile", "rag-python-sse", "--profile", "rag-dotnet-sse",
-         "up", "-d", "--force-recreate", "rag-python-sse", "rag-dotnet-sse"],
+         "--profile", "rag-python-http", "--profile", "rag-dotnet-http",
+         "up", "-d", "--force-recreate", "rag-python-http", "rag-dotnet-http"],
         timeout=60,
     )
-    p.record("docker compose up --force-recreate (both SSE)", rc == 0,
+    p.record("docker compose up --force-recreate (both HTTP)", rc == 0,
              out.strip()[-120:] if rc != 0 else "")
 
     # Wait for servers to be HTTP-ready (not just TCP-open)
-    print(f"\n  Waiting for Python SSE (port {PYTHON_SSE_PORT}) to accept HTTP…")
-    py_up = _wait_for_http(f"http://localhost:{PYTHON_SSE_PORT}/sse", timeout=60)
-    p.record(f"Python SSE port {PYTHON_SSE_PORT} reachable", py_up)
+    print(f"\n  Waiting for Python HTTP (port {PYTHON_HTTP_PORT}) to accept HTTP…")
+    py_up = _wait_for_http(f"http://localhost:{PYTHON_HTTP_PORT}/sse", timeout=60)
+    p.record(f"Python HTTP port {PYTHON_HTTP_PORT} reachable", py_up)
 
-    print(f"  Waiting for .NET SSE (port {DOTNET_SSE_PORT}) to accept HTTP…")
-    dn_up = _wait_for_http(f"http://localhost:{DOTNET_SSE_PORT}/", timeout=60)
-    p.record(f".NET SSE port {DOTNET_SSE_PORT} reachable", dn_up)
+    print(f"  Waiting for .NET HTTP (port {DOTNET_HTTP_PORT}) to accept HTTP…")
+    dn_up = _wait_for_http(f"http://localhost:{DOTNET_HTTP_PORT}/", timeout=60)
+    p.record(f".NET HTTP port {DOTNET_HTTP_PORT} reachable", dn_up)
 
-    # 5b: SSE tool calls (Python)
+    # 5b: HTTP tool calls (Python)
     if py_up:
-        print(f"\n  [5b] Python SSE — MCP tool calls (port {PYTHON_SSE_PORT})…")
+        print(f"\n  [5b] Python HTTP — MCP tool calls (port {PYTHON_HTTP_PORT})…")
         try:
-            raw = asyncio.run(_run_sse_tool(
-                f"http://localhost:{PYTHON_SSE_PORT}",
+            raw = asyncio.run(_run_http_tool(
+                f"http://localhost:{PYTHON_HTTP_PORT}",
                 "query_docs",
                 {"question": "coupon maximum per order business rule", "top_k": 3},
             ))
@@ -660,38 +660,38 @@ def phase_5_sse() -> PhaseResult:
             hits = result.get("hits", [])
             paths = [h["rel_path"] for h in hits]
             adr16 = any("0016" in path for path in paths)
-            p.record("Python SSE: query_docs → ADR-0016 (coupons)", adr16,
+            p.record("Python HTTP: query_docs → ADR-0016 (coupons)", adr16,
                      f"hits: {paths}")
 
-            raw2 = asyncio.run(_run_sse_tool(
-                f"http://localhost:{PYTHON_SSE_PORT}",
+            raw2 = asyncio.run(_run_http_tool(
+                f"http://localhost:{PYTHON_HTTP_PORT}",
                 "get_history",
                 {"id": "0016"},
             ))
             hist = json.loads(raw2)
             has_coupon = any("coupon" in ch.get("text", "").lower() for ch in hist.get("chunks", []))
-            p.record("Python SSE: get_history ADR-0016 mentions 'coupon'", has_coupon)
+            p.record("Python HTTP: get_history ADR-0016 mentions 'coupon'", has_coupon)
 
-            raw3 = asyncio.run(_run_sse_tool(
-                f"http://localhost:{PYTHON_SSE_PORT}",
+            raw3 = asyncio.run(_run_http_tool(
+                f"http://localhost:{PYTHON_HTTP_PORT}",
                 "get_history",
                 {"id": "0016"},
             ))
             gh = json.loads(raw3)
-            p.record("Python SSE: get_history('0016') → chunk_count > 0",
+            p.record("Python HTTP: get_history('0016') → chunk_count > 0",
                      gh.get("chunk_count", 0) > 0,
                      f"chunk_count={gh.get('chunk_count', 0)}")
 
         except Exception as exc:
-            p.record("Python SSE: MCP session", False, str(exc))
+            p.record("Python HTTP: MCP session", False, str(exc))
 
-    # 5c: SSE tool calls (.NET Streamable HTTP)
+    # 5c: HTTP tool calls (.NET Streamable HTTP)
     if dn_up:
-        print(f"\n  [5c] .NET Streamable HTTP — MCP tool calls (port {DOTNET_SSE_PORT})…")
+        print(f"\n  [5c] .NET Streamable HTTP — MCP tool calls (port {DOTNET_HTTP_PORT})…")
         try:
-            with httpx.Client(base_url=f"http://localhost:{DOTNET_SSE_PORT}", timeout=60) as client:
+            with httpx.Client(base_url=f"http://localhost:{DOTNET_HTTP_PORT}", timeout=60) as client:
                 session_id = _dotnet_initialize(client)
-                p.record(".NET SSE: MCP initialize handshake", bool(session_id),
+                p.record(".NET HTTP: MCP initialize handshake", bool(session_id),
                          f"session={session_id[:8]}…")
 
                 # tools/list
@@ -699,7 +699,7 @@ def phase_5_sse() -> PhaseResult:
                     "jsonrpc": "2.0", "id": 10, "method": "tools/list", "params": {},
                 }, session_id=session_id)
                 tools = [t["name"] for t in resp.get("result", {}).get("tools", [])]
-                p.record(".NET SSE: tools/list", bool(tools), str(tools))
+                p.record(".NET HTTP: tools/list", bool(tools), str(tools))
 
                 # query_docs
                 def _call_raw(tool: str, args: dict) -> str:
@@ -713,12 +713,12 @@ def phase_5_sse() -> PhaseResult:
                     "question": "coupon maximum per order business rule", "top_k": 3,
                 })
                 adr16 = "0016" in text
-                p.record(".NET SSE: query_docs → ADR-0016 (coupons)", adr16,
+                p.record(".NET HTTP: query_docs → ADR-0016 (coupons)", adr16,
                          f"{len(text)} chars")
 
                 hist_text = _call_raw("get_history", {"id": "0016"})
                 has_coupon = "coupon" in hist_text.lower()
-                p.record(".NET SSE: get_history ADR-0016 mentions 'coupon'", has_coupon,
+                p.record(".NET HTTP: get_history ADR-0016 mentions 'coupon'", has_coupon,
                          f"{len(hist_text)} chars")
 
                 gh_text = _call_raw("get_history", {"id": "0016"})
@@ -727,11 +727,11 @@ def phase_5_sse() -> PhaseResult:
                     gh_count = gh_json.get("chunk_count", 0)
                 except Exception:
                     gh_count = 0
-                p.record(".NET SSE: get_history('0016') → chunk_count > 0",
+                p.record(".NET HTTP: get_history('0016') → chunk_count > 0",
                          gh_count > 0, f"chunk_count={gh_count}")
 
         except Exception as exc:
-            p.record(".NET SSE: MCP session", False, str(exc))
+            p.record(".NET HTTP: MCP session", False, str(exc))
 
     p.finish()
     return p
@@ -887,8 +887,8 @@ def phase_8_report(results: list[PhaseResult]) -> PhaseResult:
         f"  The .NET server uses the newer MCP Streamable HTTP standard. Consider migrating",
         f"  the Python server to `streamablehttp` transport when mcp-python supports it.",
         f"",
-        f"- **API key enforcement**: The `.NET` SSE server enforces `X-Api-Key` via `ApiKeyMiddleware`.",
-        f"  The Python SSE server has no auth guard. Add one for production use.",
+        f"- **API key enforcement**: The `.NET` HTTP server enforces `X-Api-Key` via `ApiKeyMiddleware`.",
+        f"  The Python HTTP server has no auth guard. Add one for production use.",
         f"",
         f"- **Collection separation**: Python uses `{PYTHON_COLLECTION}`, .NET uses",
         f"  `{DOTNET_COLLECTION}`. Both are indexed independently (different embedders).",
@@ -921,7 +921,7 @@ _HOSTED_DOC_CONTENT = """\
 ## Purpose
 
 This document is uploaded via the HTTP ingest API (`POST /ingest/{collection}/batch`)
-to verify that the hosted SSE server scenario works correctly without volume mounts.
+to verify that the hosted HTTP server scenario works correctly without volume mounts.
 
 ## Unique Marker
 
@@ -1010,13 +1010,13 @@ def phase_7_hosted_ingest() -> PhaseResult:
     p = PhaseResult("Hosted ingest via HTTP API (no volume mounts)")
     print(f"\n{BANNER}\n  PHASE 7 — Hosted ingest via HTTP API\n{BANNER}")
     print("  Simulates remote deployment: docs uploaded via POST /ingest/{collection}/batch")
-    print("  SSE servers must be running from phase 5.\n")
+    print("  HTTP servers must be running from phase 5.\n")
 
-    py_base = f"http://localhost:{PYTHON_SSE_PORT}"
-    dn_base = f"http://localhost:{DOTNET_SSE_PORT}"
+    py_base = f"http://localhost:{PYTHON_HTTP_PORT}"
+    dn_base = f"http://localhost:{DOTNET_HTTP_PORT}"
 
-    # ── Python SSE ingest upload ───────────────────────────────────────────────
-    print("  [7a] Python SSE — upload doc via HTTP ingest API (batch)…")
+    # ── Python HTTP ingest upload ───────────────────────────────────────────────
+    print("  [7a] Python HTTP — upload doc via HTTP ingest API (batch)…")
     try:
         py_api_key: str | None = os.environ.get("RAG_API_KEY", "").strip() or None
 
@@ -1028,20 +1028,20 @@ def phase_7_hosted_ingest() -> PhaseResult:
         ops = resp.get("operations", [])
         op_id = ops[0].get("operationId", "") if ops else ""
         status_url = ops[0].get("statusUrl", "") if ops else ""
-        p.record("Python SSE: POST /ingest/batch → 202 Accepted", accepted,
+        p.record("Python HTTP: POST /ingest/batch → 202 Accepted", accepted,
                  f"status={status_code} opId={op_id[:40] if op_id else 'N/A'}")
 
         if accepted and status_url:
             print(f"    Polling operation {status_url} …")
             poll = _http_ingest_poll(py_base, status_url, timeout=_HOSTED_INGEST_TIMEOUT)
             completed = poll.get("status", "").lower() in ("completed",)
-            p.record("Python SSE: ingest operation Completed", completed,
+            p.record("Python HTTP: ingest operation Completed", completed,
                      f"status={poll.get('status', '?')}")
         else:
-            p.record("Python SSE: ingest operation Completed", False, "upload failed, skipped")
+            p.record("Python HTTP: ingest operation Completed", False, "upload failed, skipped")
 
-        # Query via MCP SSE to verify the unique marker is retrievable
-        print("    Querying via Python MCP SSE for uploaded doc…")
+        # Query via MCP HTTP to verify the unique marker is retrievable
+        print("    Querying via Python MCP HTTP for uploaded doc…")
 
         async def _query_python():
             from mcp.client.sse import sse_client
@@ -1059,16 +1059,16 @@ def phase_7_hosted_ingest() -> PhaseResult:
         result = json.loads(raw)
         hits = result.get("hits", [])
         found = any(_HOSTED_DOC_REL_PATH in h.get("rel_path", "") for h in hits)
-        p.record("Python SSE: uploaded doc queryable via MCP", found,
+        p.record("Python HTTP: uploaded doc queryable via MCP", found,
                  f"hits: {[h.get('rel_path','') for h in hits]}")
 
     except Exception as exc:
-        p.record("Python SSE: hosted ingest", False, str(exc))
+        p.record("Python HTTP: hosted ingest", False, str(exc))
 
-    # ── .NET SSE ingest upload ────────────────────────────────────────────────
-    print("\n  [7b] .NET SSE — upload doc via HTTP ingest API…")
+    # ── .NET HTTP ingest upload ────────────────────────────────────────────────
+    print("\n  [7b] .NET HTTP — upload doc via HTTP ingest API…")
 
-    # Check if .NET SSE has API key enforcement
+    # Check if .NET HTTP has API key enforcement
     # The .NET server uses ApiKeyMiddleware; if RAG_API_KEY is not set, no auth needed
     dn_api_key: str | None = None  # no key set in our docker-compose
 
@@ -1081,7 +1081,7 @@ def phase_7_hosted_ingest() -> PhaseResult:
         ops = resp.get("operations", [])
         op_id = ops[0].get("operationId", "") if ops else ""
         status_url = ops[0].get("statusUrl", "") if ops else ""
-        p.record(".NET SSE: POST /ingest/batch → 202 Accepted", accepted,
+        p.record(".NET HTTP: POST /ingest/batch → 202 Accepted", accepted,
                  f"status={status_code} opId={op_id[:40] if op_id else 'N/A'}")
 
         if accepted and status_url:
@@ -1089,13 +1089,13 @@ def phase_7_hosted_ingest() -> PhaseResult:
             poll = _http_ingest_poll(dn_base, status_url, timeout=_HOSTED_INGEST_TIMEOUT,
                                       api_key=dn_api_key)
             completed = poll.get("status", "").lower() in ("completed",)
-            p.record(".NET SSE: ingest operation Completed", completed,
+            p.record(".NET HTTP: ingest operation Completed", completed,
                      f"status={poll.get('status', '?')}")
         else:
-            p.record(".NET SSE: ingest operation Completed", False, "upload failed, skipped")
+            p.record(".NET HTTP: ingest operation Completed", False, "upload failed, skipped")
 
         # Query via .NET Streamable HTTP MCP
-        print("    Querying via .NET MCP SSE for uploaded doc…")
+        print("    Querying via .NET MCP HTTP for uploaded doc…")
         with httpx.Client(base_url=dn_base, timeout=60) as client:
             session_id = _dotnet_initialize(client)
 
@@ -1111,14 +1111,14 @@ def phase_7_hosted_ingest() -> PhaseResult:
                 "top_k": 5,
             })
             found = _HOSTED_DOC_REL_PATH in text
-            p.record(".NET SSE: uploaded doc queryable via MCP", found,
+            p.record(".NET HTTP: uploaded doc queryable via MCP", found,
                      f"{len(text)} chars")
 
     except Exception as exc:
-        p.record(".NET SSE: hosted ingest", False, str(exc))
+        p.record(".NET HTTP: hosted ingest", False, str(exc))
 
-    # ── Python SSE batch upload ───────────────────────────────────────────────
-    print("\n  [7c] Python SSE — batch upload via POST /ingest/{collection}/batch…")
+    # ── Python HTTP batch upload ───────────────────────────────────────────────
+    print("\n  [7c] Python HTTP — batch upload via POST /ingest/{collection}/batch…")
     _BATCH_DOC_MARKER = "BATCH_INGEST_E2E_MARKER_77KYZ"
     _BATCH_FILES = {
         "docs/batch-test-a.md": f"# Batch Test A\n\n{_BATCH_DOC_MARKER}\n",
@@ -1130,7 +1130,7 @@ def phase_7_hosted_ingest() -> PhaseResult:
             py_base, PYTHON_COLLECTION, _BATCH_FILES, api_key=py_api_key)
         accepted = status_code == 202
         count = resp.get("count", 0)
-        p.record("Python SSE: POST /ingest/batch → 202 Accepted",
+        p.record("Python HTTP: POST /ingest/batch → 202 Accepted",
                  accepted and count == len(_BATCH_FILES),
                  f"status={status_code} count={count}")
 
@@ -1144,19 +1144,19 @@ def phase_7_hosted_ingest() -> PhaseResult:
                                              api_key=py_api_key)
                     completed = poll.get("status", "").lower() == "completed"
                     p.record(
-                        f"Python SSE: batch op {op_entry.get('relPath','?')} Completed",
+                        f"Python HTTP: batch op {op_entry.get('relPath','?')} Completed",
                         completed, f"status={poll.get('status','?')}")
     except Exception as exc:
-        p.record("Python SSE: batch upload", False, str(exc))
+        p.record("Python HTTP: batch upload", False, str(exc))
 
-    # ── .NET SSE batch upload ─────────────────────────────────────────────────
-    print("\n  [7d] .NET SSE — batch upload via POST /ingest/{collection}/batch…")
+    # ── .NET HTTP batch upload ─────────────────────────────────────────────────
+    print("\n  [7d] .NET HTTP — batch upload via POST /ingest/{collection}/batch…")
     try:
         status_code, resp = _http_batch_upload(
             dn_base, DOTNET_COLLECTION, _BATCH_FILES, api_key=dn_api_key)
         accepted = status_code == 202
         count = resp.get("count", resp.get("Count", 0))
-        p.record(".NET SSE: POST /ingest/batch → 202 Accepted",
+        p.record(".NET HTTP: POST /ingest/batch → 202 Accepted",
                  accepted and count == len(_BATCH_FILES),
                  f"status={status_code} count={count}")
 
@@ -1171,10 +1171,10 @@ def phase_7_hosted_ingest() -> PhaseResult:
                     completed = poll.get("status", "").lower() == "completed"
                     rel = op_entry.get("relPath", op_entry.get("RelPath", "?"))
                     p.record(
-                        f".NET SSE: batch op {rel} Completed",
+                        f".NET HTTP: batch op {rel} Completed",
                         completed, f"status={poll.get('status','?')}")
     except Exception as exc:
-        p.record(".NET SSE: batch upload", False, str(exc))
+        p.record(".NET HTTP: batch upload", False, str(exc))
 
     p.finish()
     return p
@@ -1186,46 +1186,46 @@ def phase_7_hosted_ingest() -> PhaseResult:
 
 def phase_9_get_history() -> PhaseResult:
     p = PhaseResult("get_history tool — retrieve indexed chunks by history field")
-    print(f"\n{BANNER}\n  PHASE 9 — get_history tool (Python SSE + .NET SSE)\n{BANNER}")
-    print("  SSE servers must be running from phase 5.\n")
+    print(f"\n{BANNER}\n  PHASE 9 — get_history tool (Python HTTP + .NET HTTP)\n{BANNER}")
+    print("  HTTP servers must be running from phase 5.\n")
 
-    py_base = f"http://localhost:{PYTHON_SSE_PORT}"
-    dn_base = f"http://localhost:{DOTNET_SSE_PORT}"
+    py_base = f"http://localhost:{PYTHON_HTTP_PORT}"
+    dn_base = f"http://localhost:{DOTNET_HTTP_PORT}"
 
-    # ── Python SSE ────────────────────────────────────────────────────────────
-    print("  [9a] Python SSE — get_history(id='0016') …")
+    # ── Python HTTP ────────────────────────────────────────────────────────────
+    print("  [9a] Python HTTP — get_history(id='0016') …")
     try:
-        raw = asyncio.run(_run_sse_tool(py_base, "get_history", {"id": "0016"}))
+        raw = asyncio.run(_run_http_tool(py_base, "get_history", {"id": "0016"}))
         result = json.loads(raw)
         chunk_count = result.get("chunk_count", len(result.get("chunks", [])))
-        p.record("Python SSE: get_history('0016') → chunk_count > 0",
+        p.record("Python HTTP: get_history('0016') → chunk_count > 0",
                  chunk_count > 0,
                  f"chunk_count={chunk_count}")
         chunks_sorted = result.get("chunks", [])
         lines = [c.get("start_line", 0) for c in chunks_sorted]
-        p.record("Python SSE: get_history('0016') chunks ordered by start_line",
+        p.record("Python HTTP: get_history('0016') chunks ordered by start_line",
                  lines == sorted(lines),
                  f"start_lines={lines[:6]}")
     except Exception as exc:
-        p.record("Python SSE: get_history", False, str(exc))
+        p.record("Python HTTP: get_history", False, str(exc))
 
-    print("  [9b] Python SSE — get_history(id='__nonexistent__') → empty …")
+    print("  [9b] Python HTTP — get_history(id='__nonexistent__') → empty …")
     try:
-        raw = asyncio.run(_run_sse_tool(py_base, "get_history", {"id": "__nonexistent_9b__"}))
+        raw = asyncio.run(_run_http_tool(py_base, "get_history", {"id": "__nonexistent_9b__"}))
         result = json.loads(raw)
         chunk_count = result.get("chunk_count", len(result.get("chunks", [])))
-        p.record("Python SSE: get_history('__nonexistent_9b__') → 0 chunks",
+        p.record("Python HTTP: get_history('__nonexistent_9b__') → 0 chunks",
                  chunk_count == 0,
                  f"chunk_count={chunk_count}")
     except Exception as exc:
-        p.record("Python SSE: get_history (unknown id)", False, str(exc))
+        p.record("Python HTTP: get_history (unknown id)", False, str(exc))
 
-    # ── .NET SSE ──────────────────────────────────────────────────────────────
-    print(f"\n  [9c] .NET SSE — get_history(id='0016') (port {DOTNET_SSE_PORT}) …")
+    # ── .NET HTTP ──────────────────────────────────────────────────────────────
+    print(f"\n  [9c] .NET HTTP — get_history(id='0016') (port {DOTNET_HTTP_PORT}) …")
     try:
         with httpx.Client(base_url=dn_base, timeout=60) as client:
             session_id = _dotnet_initialize(client)
-            p.record(".NET SSE: get_history — MCP initialize", bool(session_id),
+            p.record(".NET HTTP: get_history — MCP initialize", bool(session_id),
                      f"session={session_id[:8]}…" if session_id else "no session")
 
             def _call_raw(tool: str, args: dict) -> str:
@@ -1238,21 +1238,21 @@ def phase_9_get_history() -> PhaseResult:
             text = _call_raw("get_history", {"id": "0016"})
             result_dn = json.loads(text) if text else {}
             chunk_count_dn = result_dn.get("chunk_count", len(result_dn.get("chunks", [])))
-            p.record(".NET SSE: get_history('0016') → chunk_count > 0",
+            p.record(".NET HTTP: get_history('0016') → chunk_count > 0",
                      chunk_count_dn > 0,
                      f"chunk_count={chunk_count_dn}")
 
-            print("  [9d] .NET SSE — get_history(id='__nonexistent__') → empty …")
+            print("  [9d] .NET HTTP — get_history(id='__nonexistent__') → empty …")
             text_none = _call_raw("get_history", {"id": "__nonexistent_9d__"})
             result_none = json.loads(text_none) if text_none else {}
             chunk_count_none = result_none.get("chunk_count",
                                                len(result_none.get("chunks", [])))
-            p.record(".NET SSE: get_history('__nonexistent_9d__') → 0 chunks",
+            p.record(".NET HTTP: get_history('__nonexistent_9d__') → 0 chunks",
                      chunk_count_none == 0,
                      f"chunk_count={chunk_count_none}")
 
     except Exception as exc:
-        p.record(".NET SSE: get_history", False, str(exc))
+        p.record(".NET HTTP: get_history", False, str(exc))
 
     p.finish()
     return p
@@ -1281,11 +1281,11 @@ def main() -> int:
 
     phases = [
         (0, phase_0_prerequisites),
-        (1, phase_1_stop_sse),
+        (1, phase_1_stop_http),
         (2, lambda: phase_2_docker_build(skip=args.skip_build)),
         (3, phase_3_python_stdio),
         (4, phase_4_dotnet_stdio),
-        (5, phase_5_sse),
+        (5, phase_5_http),
         (6, phase_6_flow_queries),
         (7, phase_7_hosted_ingest),
         (9, phase_9_get_history),

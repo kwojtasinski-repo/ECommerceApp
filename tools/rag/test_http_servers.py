@@ -1,10 +1,10 @@
 """
-Live MCP server tests — SSE (Python, port 3002) + Streamable HTTP (.NET, port 3001).
+Live MCP server tests — HTTP (Python, port 3002) + Streamable HTTP (.NET, port 3001).
 
 Usage:
-    python test_sse_servers.py              # test both servers
-    python test_sse_servers.py --python     # Python SSE only
-    python test_sse_servers.py --dotnet     # .NET Streamable HTTP only
+    python test_http_servers.py              # test both servers
+    python test_http_servers.py --python     # Python HTTP only
+    python test_http_servers.py --dotnet     # .NET Streamable HTTP only
 """
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ import httpx
 if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-PYTHON_SSE_URL = "http://localhost:3002"
+PYTHON_HTTP_URL = "http://localhost:3002"
 DOTNET_HTTP_URL = "http://localhost:3001"
 
 BANNER = "═" * 68
@@ -57,7 +57,7 @@ def _dotnet_initialize(client: httpx.Client) -> str:
         "params": {
             "protocolVersion": "2024-11-05",
             "capabilities": {},
-            "clientInfo": {"name": "sse-tester", "version": "0.1"},
+            "clientInfo": {"name": "http-tester", "version": "0.1"},
         },
     }
     r = client.post(
@@ -93,18 +93,18 @@ def _dotnet_call_raw(client: httpx.Client, tool: str, args: dict, session_id: st
     return resp.get("result", {}).get("content", [{}])[0].get("text", "")
 
 
-# ── Python SSE helpers (via mcp.client.sse + mcp.ClientSession) ──────────────
+# ── Python HTTP helpers (via mcp.client.sse + mcp.ClientSession) ─────────────
 
-async def _run_python_sse_tests(failures: list[str]) -> None:
+async def _run_python_http_tests(failures: list[str]) -> None:
     from mcp.client.sse import sse_client
     from mcp.client.session import ClientSession
     from mcp.types import InitializeResult
 
     print(f"\n{'─' * 68}")
-    print("  Python SSE server  (http://localhost:3002/sse)")
+    print("  Python HTTP server  (http://localhost:3002/sse)")
     print(f"{'─' * 68}")
     try:
-        async with sse_client(f"{PYTHON_SSE_URL}/sse", timeout=15) as (read, write):
+        async with sse_client(f"{PYTHON_HTTP_URL}/sse", timeout=15) as (read, write):
             async with ClientSession(read, write) as session:
                 result: InitializeResult = await session.initialize()
                 print(f"  Handshake OK  (protocolVersion={result.protocolVersion})")
@@ -118,7 +118,7 @@ async def _run_python_sse_tests(failures: list[str]) -> None:
                         print(f"  ✓  {expected}")
                     else:
                         print(f"  ✗  {expected} NOT in tools list")
-                        failures.append(f"[Python SSE] tool missing: {expected}")
+                        failures.append(f"[Python HTTP] tool missing: {expected}")
 
                 # query_docs smoke test
                 print("\n  [query_docs — TypedId]")
@@ -138,7 +138,7 @@ async def _run_python_sse_tests(failures: list[str]) -> None:
                     print("  ✓  ADR-0006 surfaced")
                 else:
                     print("  ✗  ADR-0006 NOT surfaced")
-                    failures.append("[Python SSE] query_docs: ADR-0006 not in results")
+                    failures.append("[Python HTTP] query_docs: ADR-0006 not in results")
 
                 # get_adr_history smoke test
                 print("\n  [get_adr_history — ADR-0006]")
@@ -150,11 +150,11 @@ async def _run_python_sse_tests(failures: list[str]) -> None:
                     print("  ✓  ADR-0006 content contains 'TypedId'")
                 else:
                     print("  ✗  ADR-0006 content missing 'TypedId'")
-                    failures.append("[Python SSE] get_adr_history: ADR-0006 content missing 'TypedId'")
+                    failures.append("[Python HTTP] get_adr_history: ADR-0006 content missing 'TypedId'")
 
     except Exception as exc:
         print(f"  ERROR: {exc}")
-        failures.append(f"[Python SSE] exception: {exc}")
+        failures.append(f"[Python HTTP] exception: {exc}")
 
 
 # ── .NET Streamable HTTP tests ────────────────────────────────────────────────
@@ -217,9 +217,9 @@ def _run_dotnet_tests(failures: list[str]) -> None:
 # ── main ──────────────────────────────────────────────────────────────────────
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Live MCP SSE server tests")
+    parser = argparse.ArgumentParser(description="Live MCP HTTP server tests")
     grp = parser.add_mutually_exclusive_group()
-    grp.add_argument("--python", action="store_true", help="Python SSE server only (port 3002)")
+    grp.add_argument("--python", action="store_true", help="Python HTTP server only (port 3002)")
     grp.add_argument("--dotnet", action="store_true", help=".NET HTTP server only (port 3001)")
     args = parser.parse_args()
 
@@ -232,7 +232,7 @@ def main() -> int:
     run_dotnet = not args.python
 
     if run_python:
-        asyncio.run(_run_python_sse_tests(failures))
+        asyncio.run(_run_python_http_tests(failures))
 
     if run_dotnet:
         _run_dotnet_tests(failures)

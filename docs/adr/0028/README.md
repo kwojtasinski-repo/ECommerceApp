@@ -15,4 +15,4 @@ for **1 hour** after `enqueued_at`. Operations are lost on server restart. Both 
 are identical by design. Persistent storage via Qdrant is deferred to a future phase.
 
 Topics: RAG, MCP, multi-tenant, remote deployment, async ingest, Qdrant, API key,
-SSE, collection identity, full content storage, operation status, ingest CLI, .NET, Python.
+HTTP Streamable, SSE, collection identity, full content storage, operation status, ingest CLI, .NET, Python.

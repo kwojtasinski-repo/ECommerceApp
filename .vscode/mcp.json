@@ -12,8 +12,8 @@
   //     .NET:    enable  "ecommerceapp-rag-dotnet-docker" disable all others
   //
   //   HTTP variants — run the task FIRST (Ctrl+Shift+P → "Tasks: Run Task"):
-  //     .NET:    "RAG: Start .NET SSE"   → then toggle on ecommerceapp-rag-dotnet-sse
-  //     Python:  "RAG: Start Python SSE" → then toggle on ecommerceapp-rag-python-sse
+  //     .NET:    "RAG: Start .NET HTTP"   → then toggle on ecommerceapp-rag-dotnet-http
+  //     Python:  "RAG: Start Python HTTP" → then toggle on ecommerceapp-rag-python-http
   //
   //   Start Qdrant (required for all variants):
   //     docker compose up -d qdrant
@@ -163,20 +163,20 @@
       ]
     },
 
-    // ── SSE variants ──────────────────────────────────────────────────────────
+    // ── HTTP variants ─────────────────────────────────────────────────────────
     //
     // Persistent servers — VS Code connects to a running container.
     // IMPORTANT: The server must be running BEFORE you toggle it on in the MCP panel.
     //            VS Code connects immediately; if the port is not ready → 'fetch failed'.
     //
     // ► Recommended: use VS Code tasks (Ctrl+Shift+P → "Tasks: Run Task"):
-    //     "RAG: Start .NET SSE"    — starts container + waits for port 3001
-    //     "RAG: Start Python SSE"  — starts container + waits for port 3002
-    //     "RAG: Stop all SSE servers"
+    //     "RAG: Start .NET HTTP"    — starts container + waits for port 3001
+    //     "RAG: Start Python HTTP"  — starts container + waits for port 3002
+    //     "RAG: Stop all HTTP servers"
     //
     // ► Manual:
-    //     docker compose --profile rag-dotnet-sse  up -d rag-dotnet-sse
-    //     docker compose --profile rag-python-sse  up -d rag-python-sse
+    //     docker compose --profile rag-dotnet-http  up -d rag-dotnet-http
+    //     docker compose --profile rag-python-http  up -d rag-python-http
     //
     // ► Without Docker (local process):
     //     $env:MCP_TRANSPORT="http"; $env:MCP_PORT="3001"; dotnet run --project tools/rag-dotnet/src/RagTools.Mcp/RagTools.Mcp.csproj
@@ -187,7 +187,7 @@
     // ── LOCAL Python HTTP variant ─────────────────────────────────────────────
     // Uses MCP Streamable HTTP transport (POST /, mcp>=1.8.0).
     // ?project= sets the Qdrant collection for this VS Code session.
-    "ecommerceapp-rag-python-sse": {
+    "ecommerceapp-rag-python-http": {
       "type": "http",
       "url": "http://localhost:3002/?project=ecommerceapp_docs"
     },
@@ -201,8 +201,8 @@
     //
     // Both servers use MCP_TRANSPORT=http and expose POST / only.
     //
-    // Requires: run task "RAG: Start .NET SSE" first.
-    "ecommerceapp-rag-dotnet-sse": {
+    // Requires: run task "RAG: Start .NET HTTP" first.
+    "ecommerceapp-rag-dotnet-http": {
       "type": "http",
       "url": "http://localhost:3001/?project=ecommerceapp_docs_dotnet"
     }

@@ -142,7 +142,7 @@ config_files:
 
 
 storage:
-  # Used by ingest.py only — the MCP server (stdio or SSE) does not read this section.
+  # Used by ingest.py only — the MCP server (stdio or HTTP Streamable) does not read this section.
   # Manifest tracks which files are indexed and their SHA-256 hashes for incremental ingest.
   # Lives at the repo root so it works from any repo, not tied to tools/rag/.
   # Gitignored — per-instance state, not team-shared.

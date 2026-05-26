@@ -20,7 +20,7 @@ namespace RagTools.Tests.E2E;
 /// (WebApplication with Kestrel on a free port) and exposes an <see cref="HttpClient"/>
 /// for black-box HTTP testing.
 ///
-/// The server wiring mirrors the SSE branch of Program.cs exactly:
+/// The server wiring mirrors the HTTP branch of Program.cs exactly:
 ///   ApiKeyMiddleware → IngestController → IngestChannel → IngestWorker → Qdrant
 ///
 /// RAG_API_KEY is deliberately left unset so the middleware runs in dev-mode (allow all).
@@ -135,13 +135,13 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
         _rawStore  = QdrantStore.Connect(qdrantUrl, Collection);
         await _rawStore.EnsureCollectionAsync(embedder.Dimensions);
 
-        // Build the IDocumentStore (same as SSE branch of Program.cs).
+        // Build the IDocumentStore (same as HTTP branch of Program.cs).
         var qdrantDocStore = new QdrantDocumentStore(_qdrantUrl!);
         var cachedStore    = new CachedDocumentStore(qdrantDocStore, new QueryCache());
         Store      = cachedStore;
         Operations = new OperationStore();
 
-        // ── Build WebApplication (mirrors SSE branch of Program.cs) ──────────
+        // ── Build WebApplication (mirrors HTTP branch of Program.cs) ──────────
         var port       = FindFreePort();
         var webBuilder = WebApplication.CreateBuilder();
 

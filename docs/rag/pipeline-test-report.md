@@ -8,11 +8,11 @@ Branch: `RAG_Improvement`
 | Phase | Status | Elapsed | Checks |
 |---|---|---|---|
 | Prerequisites | ✅ PASSED | 0.8s | 4/4 |
-| Stop SSE containers | ✅ PASSED | 2.4s | 1/1 |
+| Stop HTTP containers | ✅ PASSED | 2.4s | 1/1 |
 | Docker build --no-cache | ✅ PASSED | 0.0s | 1/1 |
 | Python STDIO — ingest + query | ✅ PASSED | 40.2s | 6/6 |
 | .NET STDIO — ingest + query | ✅ PASSED | 107.9s | 7/7 |
-| SSE servers — start + HTTP ingest + query | ✅ PASSED | 19.8s | 11/11 |
+| HTTP servers — start + HTTP ingest + query | ✅ PASSED | 19.8s | 11/11 |
 | Flow queries via Docker STDIO | ✅ PASSED | 8.9s | 7/7 |
 | Hosted ingest via HTTP API (no volume mounts) | ✅ PASSED | 8.9s | 12/12 |
 | get_history tool — retrieve indexed chunks by history field | ✅ PASSED | 0.9s | 6/6 |
@@ -28,9 +28,9 @@ Branch: `RAG_Improvement`
 - ✅ .venv exists
 - ✅ mcp.client.sse importable
 
-### Stop SSE containers
+### Stop HTTP containers
 
-- ✅ SSE containers stopped (rag-python-sse + rag-dotnet-sse)
+- ✅ HTTP containers stopped (rag-python-http + rag-dotnet-http)
 
 ### Docker build --no-cache
 
@@ -55,19 +55,19 @@ Branch: `RAG_Improvement`
 - ✅ list_adrs returns known ADRs — `1382 chars`
 - ✅ .NET get_history ADR-0006 returns chunks — `11355 chars`
 
-### SSE servers — start + HTTP ingest + query
+### HTTP servers — start + HTTP ingest + query
 
-- ✅ docker compose up --force-recreate (both SSE)
-- ✅ Python SSE port 3002 reachable
-- ✅ .NET SSE port 3001 reachable
-- ✅ Python SSE: query_docs → ADR-0016 (coupons) — `hits: ['docs/adr/0016/amendments/a1-oversize-guard-and-catalog-name-sync.md', 'docs/adr/0016/0016-sales-coupons-bc-design.md', 'docs/adr/0016/README.md']`
-- ✅ Python SSE: get_history ADR-0016 mentions 'coupon'
-- ✅ Python SSE: get_history('0016') → chunk_count > 0 — `chunk_count=42`
-- ✅ .NET SSE: MCP initialize handshake — `session=_rARlnfK…`
-- ✅ .NET SSE: tools/list — `['list_adrs', 'get_history', 'read_docs', 'query_docs']`
-- ✅ .NET SSE: query_docs → ADR-0016 (coupons) — `12570 chars`
-- ✅ .NET SSE: get_history ADR-0016 mentions 'coupon' — `46919 chars`
-- ✅ .NET SSE: get_history('0016') → chunk_count > 0 — `chunk_count=36`
+- ✅ docker compose up --force-recreate (both HTTP)
+- ✅ Python HTTP port 3002 reachable
+- ✅ .NET HTTP port 3001 reachable
+- ✅ Python HTTP: query_docs → ADR-0016 (coupons) — `hits: ['docs/adr/0016/amendments/a1-oversize-guard-and-catalog-name-sync.md', 'docs/adr/0016/0016-sales-coupons-bc-design.md', 'docs/adr/0016/README.md']`
+- ✅ Python HTTP: get_history ADR-0016 mentions 'coupon'
+- ✅ Python HTTP: get_history('0016') → chunk_count > 0 — `chunk_count=42`
+- ✅ .NET HTTP: MCP initialize handshake — `session=_rARlnfK…`
+- ✅ .NET HTTP: tools/list — `['list_adrs', 'get_history', 'read_docs', 'query_docs']`
+- ✅ .NET HTTP: query_docs → ADR-0016 (coupons) — `12570 chars`
+- ✅ .NET HTTP: get_history ADR-0016 mentions 'coupon' — `46919 chars`
+- ✅ .NET HTTP: get_history('0016') → chunk_count > 0 — `chunk_count=36`
 
 ### Flow queries via Docker STDIO
 
@@ -81,27 +81,27 @@ Branch: `RAG_Improvement`
 
 ### Hosted ingest via HTTP API (no volume mounts)
 
-- ✅ Python SSE: POST /ingest/batch → 202 Accepted — `status=202 opId=0cd509e6-9384-4813-8cfe-2c03c33cfb53`
-- ✅ Python SSE: ingest operation Completed — `status=Completed`
-- ✅ Python SSE: uploaded doc queryable via MCP — `hits: ['docs/hosted-ingest-e2e-test.md', 'docs/adr/0028/amendments/0028-001-implementation-deviations.md', '.github/context/known-issues.md', 'docs/adr/0001/0001-project-overview-and-technology-stack.md', 'docs/adr/0010/amendments/a1-retry-observability-configuration.md']`
-- ✅ .NET SSE: POST /ingest/batch → 202 Accepted — `status=202 opId=ecommerceapp_docs_dotnet:docs-hosted-ing`
-- ✅ .NET SSE: ingest operation Completed — `status=Completed`
-- ✅ .NET SSE: uploaded doc queryable via MCP — `14440 chars`
-- ✅ Python SSE: POST /ingest/batch → 202 Accepted — `status=202 count=2`
-- ✅ Python SSE: batch op docs/batch-test-a.md Completed — `status=Completed`
-- ✅ Python SSE: batch op docs/batch-test-b.md Completed — `status=Completed`
-- ✅ .NET SSE: POST /ingest/batch → 202 Accepted — `status=202 count=2`
-- ✅ .NET SSE: batch op docs/batch-test-a.md Completed — `status=Completed`
-- ✅ .NET SSE: batch op docs/batch-test-b.md Completed — `status=Completed`
+- ✅ Python HTTP: POST /ingest/batch → 202 Accepted — `status=202 opId=0cd509e6-9384-4813-8cfe-2c03c33cfb53`
+- ✅ Python HTTP: ingest operation Completed — `status=Completed`
+- ✅ Python HTTP: uploaded doc queryable via MCP — `hits: ['docs/hosted-ingest-e2e-test.md', 'docs/adr/0028/amendments/0028-001-implementation-deviations.md', '.github/context/known-issues.md', 'docs/adr/0001/0001-project-overview-and-technology-stack.md', 'docs/adr/0010/amendments/a1-retry-observability-configuration.md']`
+- ✅ .NET HTTP: POST /ingest/batch → 202 Accepted — `status=202 opId=ecommerceapp_docs_dotnet:docs-hosted-ing`
+- ✅ .NET HTTP: ingest operation Completed — `status=Completed`
+- ✅ .NET HTTP: uploaded doc queryable via MCP — `14440 chars`
+- ✅ Python HTTP: POST /ingest/batch → 202 Accepted — `status=202 count=2`
+- ✅ Python HTTP: batch op docs/batch-test-a.md Completed — `status=Completed`
+- ✅ Python HTTP: batch op docs/batch-test-b.md Completed — `status=Completed`
+- ✅ .NET HTTP: POST /ingest/batch → 202 Accepted — `status=202 count=2`
+- ✅ .NET HTTP: batch op docs/batch-test-a.md Completed — `status=Completed`
+- ✅ .NET HTTP: batch op docs/batch-test-b.md Completed — `status=Completed`
 
 ### get_history tool — retrieve indexed chunks by history field
 
-- ✅ Python SSE: get_history('0016') → chunk_count > 0 — `chunk_count=42`
-- ✅ Python SSE: get_history('0016') chunks ordered by start_line — `start_lines=[1, 1, 1, 1, 1, 1]`
-- ✅ Python SSE: get_history('__nonexistent_9b__') → 0 chunks — `chunk_count=0`
-- ✅ .NET SSE: get_history — MCP initialize — `session=aL4qynci…`
-- ✅ .NET SSE: get_history('0016') → chunk_count > 0 — `chunk_count=36`
-- ✅ .NET SSE: get_history('__nonexistent_9d__') → 0 chunks — `chunk_count=0`
+- ✅ Python HTTP: get_history('0016') → chunk_count > 0 — `chunk_count=42`
+- ✅ Python HTTP: get_history('0016') chunks ordered by start_line — `start_lines=[1, 1, 1, 1, 1, 1]`
+- ✅ Python HTTP: get_history('__nonexistent_9b__') → 0 chunks — `chunk_count=0`
+- ✅ .NET HTTP: get_history — MCP initialize — `session=aL4qynci…`
+- ✅ .NET HTTP: get_history('0016') → chunk_count > 0 — `chunk_count=36`
+- ✅ .NET HTTP: get_history('__nonexistent_9d__') → 0 chunks — `chunk_count=0`
 
 ## Notes & Improvement Suggestions
 

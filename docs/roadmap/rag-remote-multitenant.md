@@ -19,7 +19,7 @@
 | 6 | `IngestWorker` (BackgroundService) + `OperationStore` | ✅ Done | **In-memory** (not Qdrant-backed — see deviation note) |
 | 7 | `IngestController` (POST/GET /ingest/{collection}) | ✅ Done | 202 Accepted + Location header |
 | 8 | `ApiKeyMiddleware` (X-Api-Key, RAG_API_KEY) | ✅ Done | Guards /ingest/* and /admin/* |
-| 9 | `RagSession` + `RagSessionMiddleware` (?project= collection) | ✅ Done | Scoped DI in SSE mode |
+| 9 | `RagSession` + `RagSessionMiddleware` (?project= collection) | ✅ Done | Scoped DI in HTTP mode |
 | 10 | `read_docs` uses `IDocumentStore.FetchContentAsync` → disk fallback | ✅ Done | Tools use `IDocumentStore` + `RagSession` |
 | 11 | CLI remote mode (`--remote <url>`) | ✅ Done | HTTP upload, manifest tracking |
 
@@ -59,7 +59,7 @@ docs/                          POST /ingest/ecommerceapp  (async, returns opId)
 rag-config.yaml    ─[ingest CLI]─► background worker: chunk + embed + upsert to Qdrant
                                GET /ingest/ecommerceapp/operations/{opId}  (poll)
 
-VS Code (.vscode/mcp.json)     MCP SSE endpoint
+VS Code (.vscode/mcp.json)     MCP HTTP endpoint
   url: .../?project=ecommer ─► session bound to "ecommerceapp" collection
   app  ──────────────────────► query_docs / read_docs / list_adrs / get_adr_history
                                  all data from Qdrant — zero filesystem access
@@ -342,7 +342,7 @@ every 6 hours.
 
 **New file**: `tools/rag-dotnet/src/RagTools.Mcp/Ingest/IngestController.cs`
 
-SSE mode only (the server needs `MapControllers()` added to the pipeline).
+HTTP mode only (the server needs `MapControllers()` added to the pipeline).
 
 ```csharp
 [ApiController]
@@ -398,15 +398,15 @@ public sealed class AdminController(IDocumentStore store) : ControllerBase
 Applied only to `/ingest/*` routes. Reads `RAG_API_KEY` from env. Rejects with 401 if
 header is missing or doesn't match. Logs a startup warning if `RAG_API_KEY` is not set.
 
-Not applied to MCP tool endpoints (SSE / stdio).
+Not applied to MCP tool endpoints (HTTP / stdio).
 
 ---
 
-### Step 9 — Session-level project selection (SSE transport)
+### Step 9 — Session-level project selection (HTTP transport)
 
 **File**: `tools/rag-dotnet/src/RagTools.Mcp/Program.cs`
 
-In the SSE branch, extract `?project=` from the query string and bind it to the
+In the HTTP branch, extract `?project=` from the query string and bind it to the
 `IHttpContextAccessor` / `RagSession` scoped service before the MCP handler runs.
 
 **New file**: `tools/rag-dotnet/src/RagTools.Mcp/RagSession.cs`
@@ -655,7 +655,7 @@ pipeline test. Remove in a follow-up step (P2-5) once both servers pass phase 8.
 ```python
 # 1. Ingest a synthetic doc with a custom history key in the body
 #    e.g. body = { rel_path, content, doc_kind: "adr", adr_id: "TEST-42" }
-# 2. Call get_history via MCP SSE with id="TEST-42"
+# 2. Call get_history via MCP HTTP with id="TEST-42"
 # 3. Assert chunks returned; assert adr_id field in each chunk == "TEST-42"
 # 4. Call get_adr_history with the same id — assert it no longer exists (tool removed)
 ```
@@ -815,7 +815,7 @@ Step 11 can be done in parallel from Step 5 onward.
 | `__ops__` collection missing on first query | Auto-create on `OperationStore` initialization |
 | Concurrent uploads to same collection | Allowed; chunk IDs are deterministic, so parallel upserts are safe |
 | Server restart mid-ingest | Operation stays `"processing"`; caller detects stale by `created_at > 1h` |
-| `project` param missing from SSE URL | Falls back to `RAG_COLLECTION` env var |
+| `project` param missing from HTTP URL | Falls back to `RAG_COLLECTION` env var |
 | `RAG_API_KEY` env var not set | Server starts; write endpoints return 401; warning logged at startup |
 | Re-upload of same files (idempotent) | Safe — upsert by deterministic ID overwrites identical data |
 | Qdrant payload > 500 MB | Switch to `LocalFileDocumentStore` or `BlobDocumentStore` (IDocumentStore swap, zero tool changes) |
@@ -852,7 +852,7 @@ Step 11 can be done in parallel from Step 5 onward.
 - [ ] `read_docs` returns content from cache on second call within 2 min
 
 ### Backward compatibility
-- [ ] MCP SSE connection with `?project=ecommerceapp` routes all tool calls to that collection
+- [ ] MCP HTTP connection with `?project=ecommerceapp` routes all tool calls to that collection
 - [ ] Local Docker stdio mode (`ecommerceapp-rag-dotnet-docker`) still works unchanged
 - [ ] Local `dotnet run` stdio mode (`ecommerceapp-rag-dotnet`) still works unchanged
 - [ ] `RagTools.Ingest --remote http://...` successfully uploads and polls to completion

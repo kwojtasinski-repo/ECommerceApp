@@ -127,8 +127,8 @@ class QueryEngine:
     ) -> list[QueryHit]:
         """Search the Qdrant index.
 
-        *collection* overrides cfg.collection — used by the SSE multi-tenant path
-        where ?project= sets a per-session collection name via ContextVar.
+        *collection* overrides cfg.collection — used by the multi-tenant HTTP
+        path where ?project= sets a per-session collection name via ContextVar.
 
         *field_filter* is an optional (field_name, value) pair applied as a Qdrant
         MUST exact-match filter.  Used by get_history to filter by adr_id (or any

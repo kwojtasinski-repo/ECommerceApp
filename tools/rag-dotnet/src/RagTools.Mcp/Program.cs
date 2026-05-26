@@ -17,14 +17,14 @@ using System.Text.Json;
 //     VS Code / Copilot spawns this process and communicates over stdin/stdout.
 //     Uses Host.CreateApplicationBuilder — stdout stays clean for MCP framing.
 //
-//   MCP_TRANSPORT=http  (also accepts: sse — legacy alias)
-//     Runs a persistent Streamable HTTP server.
+//   MCP_TRANSPORT=http  (legacy alias accepted: "sse")
+//     Runs a persistent Streamable HTTP server (MCP "Streamable HTTP" transport).
 //     VS Code connects via mcp.json "type":"http", "url":"http://host:PORT/".
 //     Uses WebApplication.CreateBuilder (ASP.NET Core / Kestrel).
 //
 // Environment variables:
-//   MCP_TRANSPORT    "stdio" (default) or "http" (legacy alias: "sse")
-//   MCP_PORT         port for SSE mode (default: 3001)
+//   MCP_TRANSPORT    "stdio" (default) or "http" (legacy alias accepted: "sse")
+//   MCP_PORT         port for HTTP mode (default: 3001)
 //   MCP_LOG_LEVEL    log verbosity: trace|debug|information|warning|error (default: warning)
 //   RAG_WORKSPACE    absolute path to the repo root
 //   RAG_COLLECTION   Qdrant collection name override
@@ -85,7 +85,7 @@ var modelDir = Path.IsPathRooted(modelDirRaw)
 
 // Startup log — always to stderr so it never corrupts stdio MCP framing.
 var configFi = new FileInfo(resolvedConfigPath);
-Console.Error.WriteLine($"[rag-mcp] transport  : {transport}{(transport == "sse" ? $" (port {port})" : "")}");
+Console.Error.WriteLine($"[rag-mcp] transport  : {transport}{(transport is "http" or "sse" ? $" (port {port})" : "")}");
 Console.Error.WriteLine($"[rag-mcp] config     : {resolvedConfigPath} ({configFi.Length} bytes)");
 Console.Error.WriteLine($"[rag-mcp] workspace  : {cfg.Workspace}");
 Console.Error.WriteLine($"[rag-mcp] collection : {cfg.Collection}");
@@ -102,7 +102,7 @@ if (!Directory.Exists(modelDir))
 
 if (transport is "http" or "sse")
 {
-    // ── SSE / HTTP mode ───────────────────────────────────────────────────────
+    // ── HTTP mode ─────────────────────────────────────────────────────────────
     // Uses WebApplication (Kestrel). Stdout is safe for normal logs here.
     var webBuilder = WebApplication.CreateBuilder(args);
     webBuilder.Logging.SetMinimumLevel(logLevel);

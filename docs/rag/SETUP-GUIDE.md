@@ -350,10 +350,10 @@ or when you want to run ingest without the ONNX model installed locally.
 
 ```powershell
 # Python HTTP server (port 3002, MCP Streamable HTTP, mcp>=1.8.0)
-docker compose --profile rag-python-sse up -d rag-python-sse
+docker compose --profile rag-python-http up -d rag-python-http
 
 # .NET HTTP server (port 3001)
-docker compose --profile rag-dotnet-sse up -d rag-dotnet-sse
+docker compose --profile rag-dotnet-http up -d rag-dotnet-http
 ```
 
 Verify it's up:

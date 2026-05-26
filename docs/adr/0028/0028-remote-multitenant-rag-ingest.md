@@ -131,7 +131,7 @@ To switch to the shared team server:
 
 1. Host the server with `RAG_API_KEY` set.
 2. Run the ingest CLI once per project: `--remote http://rag.internal:3001`
-3. Update `.vscode/mcp.json` to use the remote SSE URL with `?project=<name>`.
+3. Update `.vscode/mcp.json` to use the remote HTTP Streamable URL with `?project=<name>` (legacy SSE URLs are also accepted).
 4. Keep local Docker entries in mcp.json as a fallback.
 
 ---

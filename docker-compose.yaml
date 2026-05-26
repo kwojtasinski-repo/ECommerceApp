@@ -58,8 +58,8 @@ services:
         profiles:
           - rag                       # shared with rag-tools
           - rag-dotnet                # opt-in: docker compose --profile rag-dotnet up
-          - rag-dotnet-sse            # SSE persistent server
-          - rag-python-sse            # SSE persistent server
+          - rag-dotnet-http           # HTTP persistent server
+          - rag-python-http           # HTTP persistent server
 
     # .NET RAG tools — ONNX embedder + Qdrant.Client + MCP server.
     # Requires 'qdrant' service (started via --profile rag-dotnet).
@@ -86,19 +86,19 @@ services:
         profiles:
           - rag-dotnet
 
-    # ── SSE variants ──────────────────────────────────────────────────────────
+    # ── HTTP variants ─────────────────────────────────────────────────────────
     # Persistent HTTP servers — start once, VS Code connects via mcp.json.
     # Both services reuse the same images built by their stdio counterparts.
     #
-    # Start:  docker compose --profile rag-python-sse up -d rag-python-sse
-    #         docker compose --profile rag-dotnet-sse up -d rag-dotnet-sse
-    # Stop:   docker compose --profile rag-python-sse down
+    # Start:  docker compose --profile rag-python-http up -d rag-python-http
+    #         docker compose --profile rag-dotnet-http up -d rag-dotnet-http
+    # Stop:   docker compose --profile rag-python-http down
     #
     # Note: these services ONLY run the MCP server (HTTP mode).
-    # Run ingest separately first using the non-SSE services.
+    # Run ingest separately first using the non-HTTP services.
 
     # Python HTTP — port 3002 (Streamable HTTP, mcp>=1.8.0)
-    rag-python-sse:
+    rag-python-http:
         image: rag-tools
         depends_on:
           - qdrant
@@ -117,10 +117,10 @@ services:
           - ./tools/rag/queries.yaml:/app/queries.yaml:ro
         command: ["python", "mcp_server.py"]
         profiles:
-          - rag-python-sse
+          - rag-python-http
 
     # .NET HTTP — port 3001
-    rag-dotnet-sse:
+    rag-dotnet-http:
         image: rag-dotnet
         depends_on:
           - qdrant
@@ -140,7 +140,7 @@ services:
           - ./tools/rag/metadata-rules.yaml:/metadata-rules.yaml:ro  # companion: adr_id patterns
           - ./tools/rag/queries.yaml:/queries.yaml:ro                 # companion: named queries
         profiles:
-          - rag-dotnet-sse
+          - rag-dotnet-http
 
 volumes:
     qdrant_data:

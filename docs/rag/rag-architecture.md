@@ -466,7 +466,7 @@ Both servers share the same defence-in-depth shape so neither stack ever returns
 | 4 | `McpToolGuard.RunAsync<T>` | [Tools/McpToolGuard.cs](../../tools/rag-dotnet/src/RagTools.Mcp/Tools/McpToolGuard.cs) | Inside every `[McpServerTool]` method. Re-throws `McpException` and `OperationCanceledException`; logs + sanitises everything else into a `McpException` via `ToolErrorSanitizer.ToMcpException`. |
 | 5 | `ToolErrorSanitizer` | [Tools/ToolErrorSanitizer.cs](../../tools/rag-dotnet/src/RagTools.Mcp/Tools/ToolErrorSanitizer.cs) | Static utility shared by layers 1 and 4 — regex-strips absolute paths and caps the message at 500 chars. |
 
-Registration in [Program.cs](../../tools/rag-dotnet/src/RagTools.Mcp/Program.cs) (SSE / HTTP transport):
+Registration in [Program.cs](../../tools/rag-dotnet/src/RagTools.Mcp/Program.cs) (HTTP Streamable transport):
 ```csharp
 webBuilder.Services.AddExceptionHandler<ApiExceptionHandler>();
 webBuilder.Services.AddProblemDetails();
@@ -482,7 +482,7 @@ app.MapMcp("/");
 
 | Order | Layer | Source | Catches |
 |---|---|---|---|
-| 1 | Starlette global handlers | `_install_exception_handlers(app)` | `HTTPException` (preserve status) + catch-all `Exception` (500). Both go through `_sanitize_error_message`. Installed on SSE and Streamable HTTP transports. |
+| 1 | Starlette global handlers | `_install_exception_handlers(app)` | `HTTPException` (preserve status) + catch-all `Exception` (500). Both go through `_sanitize_error_message`. Installed on both the HTTP Streamable transport and the legacy SSE transport. |
 | 2 | `ApiKeyMiddleware` | `tools/rag/api_key_middleware.py` | Same role as the .NET version. |
 | 3 | `call_tool` guard | `mcp_server.py:152` | The single `@SERVER.call_tool()` dispatcher wraps every tool call in `try / except Exception`, logs full traceback, then raises `RuntimeError(_sanitize_error_message(exc))`. |
 | 4 | `_sanitize_error_message` | `mcp_server.py:142` | Mirror of `ToolErrorSanitizer.Sanitize` — strips paths via `_PATH_RE`, caps at 500 chars. |

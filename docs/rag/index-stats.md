@@ -1,6 +1,6 @@
 # RAG Index Stats
 
-Last indexed: 2026-05-25 14:43 UTC  
+Last indexed: 2026-05-26 06:21 UTC  
 Collection: `ecommerceapp_docs`  
 Files: 176  
 Chunks: 1052  

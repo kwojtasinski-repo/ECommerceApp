@@ -99,7 +99,7 @@ The project exposes four MCP tools via `ecommerceapp-rag-dotnet` (or any other c
 
 ## 13. RAG HTTP error envelope
 
-All RAG HTTP endpoints (both .NET and Python SSE/HTTP servers) return errors as a sanitised JSON envelope:
+All RAG HTTP endpoints (both .NET and Python HTTP/HTTP servers) return errors as a sanitised JSON envelope:
 
 ```json
 { "error": "<safe message>", "code": "<bucket>" }

@@ -191,8 +191,9 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 def _bind_session_project(project: "str | None"):
     """Bind the per-request/session collection from the ?project= query param.
 
-    Wraps the ``state._session_collection`` ContextVar token lifecycle so SSE and
-    HTTP handlers share the same pattern without duplication.
+    Wraps the ``state._session_collection`` ContextVar token lifecycle so the
+    HTTP Streamable handler and the legacy SSE handler share the same pattern
+    without duplication.
     """
     token = state._session_collection.set(project)
     try:
@@ -207,7 +208,7 @@ def _bind_session_project(project: "str | None"):
 def _make_ingest_components() -> "tuple[OperationStore, asyncio.Queue, IngestWorker]":
     """Build the shared ingest queue, worker, and operation store.
 
-    Called once per transport startup (SSE or HTTP).  Extracted to avoid
+    Called once per transport startup (HTTP Streamable or legacy SSE).  Extracted to avoid
     duplicating the same four lines in both ``_run_sse`` and ``_run_http``.
     """
     from ingest_worker import IngestWorker, _build_process_fn

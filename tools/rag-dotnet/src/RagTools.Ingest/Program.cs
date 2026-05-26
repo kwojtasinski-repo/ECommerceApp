@@ -10,7 +10,7 @@ using System.Net.Http.Json;
 //   dotnet run -- --dry-run            # print kind distribution without embedding
 //   dotnet run -- -v                   # verbose output (LogLevel.Debug)
 //   dotnet run -- --verbosity debug    # explicit level: trace|debug|information|warning|error
-//   dotnet run -- --remote http://...  # push to remote SSE server instead of embedding locally
+//   dotnet run -- --remote http://...  # push to remote HTTP server instead of embedding locally
 //   dotnet run -- --api-key KEY        # X-Api-Key header for --remote (overrides RAG_API_KEY env)
 //
 // Environment variables:

@@ -3,7 +3,7 @@ namespace RagTools.Core;
 /// <summary>
 /// Serializable snapshot of the config fields that the query engine needs at runtime.
 /// Stored in Qdrant per-collection (doc_kind = "__config__") so the server can serve
-/// remote SSE sessions without a local rag-config.yaml mount.
+/// remote HTTP sessions without a local rag-config.yaml mount.
 ///
 /// YAML is parsed once at upload time → stored as structured JSON.
 /// No YAML parser needed at runtime.

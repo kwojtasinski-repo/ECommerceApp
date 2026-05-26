@@ -262,7 +262,7 @@ def main() -> int:
     parser.add_argument(
         "--remote", default=None, metavar="URL",
         help=(
-            "Base URL of a running mcp_server.py in SSE mode "
+            "Base URL of a running mcp_server.py with the HTTP Streamable transport "
             "(e.g. http://localhost:3002). When set, files are POSTed to "
             "POST /ingest/{collection} instead of being embedded locally."
         ),
