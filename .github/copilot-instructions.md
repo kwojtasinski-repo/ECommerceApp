@@ -97,3 +97,13 @@ The project exposes four MCP tools via `ecommerceapp-rag-dotnet` (or any other c
 - Prefer `get_history` over `query_docs` when the user mentions a specific ADR number or title.
 - Both Python and .NET MCP implementations expose identical tool names — routing is the same regardless of which server variant is enabled.
 
+## 13. RAG HTTP error envelope
+
+All RAG HTTP endpoints (both .NET and Python SSE/HTTP servers) return errors as a sanitised JSON envelope:
+
+```json
+{ "error": "<safe message>", "code": "<bucket>" }
+```
+
+Buckets: `BadRequest`, `Unauthorized`, `HttpError`, `NotImplemented`, `InternalServerError`. Stack traces and absolute filesystem paths are never returned to the client — they are logged server-side only. When adding a new endpoint or tool, do not bypass `ApiExceptionHandler` / `BadRequestEnvelopeMiddleware` (.NET) or the Starlette global handlers / `_sanitize_error_message` (Python). Tool methods on `[McpServerTool]` classes must call `McpToolGuard.RunAsync(...)`; Python `@server.call_tool()` handlers must stay inside the existing try/except guard. See [docs/rag/rag-architecture.md §14](../docs/rag/rag-architecture.md#14-error-handling-sanitisation-and-middleware).
+

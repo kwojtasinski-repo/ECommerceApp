@@ -116,6 +116,12 @@ Branch: `RAG_Improvement`
 - **API key enforcement**: Both the `.NET` and Python HTTP servers enforce `X-Api-Key` via `ApiKeyMiddleware`.
   Ensure `RAG_API_KEY` is set in production deployments.
 
+- **Global error handling**: Both servers now wrap every HTTP request in a global exception
+  handler (.NET `ApiExceptionHandler : IExceptionHandler`, Python Starlette
+  `add_exception_handler`). All failures return the standard JSON envelope
+  `{ "error": "...", "code": "..." }`; stack traces and absolute paths are never sent to
+  the client. See [rag-architecture.md §14](rag-architecture.md#14-error-handling-sanitisation-and-middleware).
+
 - **Collection separation**: Python uses `ecommerceapp_docs`, .NET uses
   `ecommerceapp_docs_dotnet`. Both are indexed independently (different embedders).
   Consider a single canonical collection if embedding parity is achieved.
