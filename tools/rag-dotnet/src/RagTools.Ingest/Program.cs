@@ -194,7 +194,7 @@ if (remoteUrl is not null)
 {
     log.LogInformation("remote mode: uploading {Count} file(s) to {Url}", toProcess.Count, remoteUrl);
     using var remoteClient = new RemoteIngestClient(remoteUrl, apiKey, log);
-    var failCount = await remoteClient.PushAsync(cfg.Collection, toProcess, manifest, dbg);
+    var failCount = await remoteClient.PushAsync(cfg, toProcess, manifest);
     manifest.Save();
     return failCount > 0 ? 1 : 0;
 }

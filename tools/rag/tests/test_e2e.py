@@ -567,6 +567,14 @@ def _build_ingest_zip(workspace_root: Path) -> bytes:
     """
     buf = _io_module.BytesIO()
     with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        # rag-config.yaml is the always-required entry point for .NET BatchValidator.
+        # The test workspace doesn't ship one; synthesise a minimal config that
+        # declares the companions the test does provide.
+        zf.writestr("rag-config.yaml", textwrap.dedent("""\
+            config_files:
+              metadata_rules: "metadata-rules.yaml"
+              queries:        "queries.yaml"
+            """))
         # Required companion files (at ZIP root)
         for name in ("metadata-rules.yaml", "queries.yaml"):
             src = workspace_root / "tools" / "rag" / name
@@ -1842,21 +1850,20 @@ class TestHttpStreamable:
         self, http_streamable_session: HttpToolCaller
     ) -> None:
         result = http_streamable_session("list_adrs", {})
-        # .NET list_adrs uses adr_id key (not id)
-        ids = {adr["adr_id"] for adr in result["adrs"]}
+        ids = {adr["id"] for adr in result["adrs"]}
         assert "0001" in ids
         assert "0002" in ids
 
     def test_http_list_adrs_each_has_adr_id_title_and_amendment_count(
         self, http_streamable_session: HttpToolCaller
     ) -> None:
-        """Each ADR entry has adr_id, title, and amendment_count (the .NET schema)."""
+        """Each ADR entry has id, title, and amendments (Python-aligned schema)."""
         result = http_streamable_session("list_adrs", {})
         for adr in result["adrs"]:
-            assert adr.get("adr_id"), f"ADR entry missing adr_id: {adr}"
-            assert adr.get("title"), f"ADR {adr['adr_id']} has empty title"
-            assert isinstance(adr.get("amendment_count", -1), int), (
-                f"ADR {adr['adr_id']} amendment_count not an int: {adr.get('amendment_count')}"
+            assert adr.get("id"), f"ADR entry missing id: {adr}"
+            assert adr.get("title"), f"ADR {adr['id']} has empty title"
+            assert isinstance(adr.get("amendments", -1), int), (
+                f"ADR {adr['id']} amendments not an int: {adr.get('amendments')}"
             )
 
     # ── query_docs ─────────────────────────────────────────────────────────
@@ -1970,3 +1977,160 @@ class TestHttpStreamable:
             f"Expected exactly 2 ADRs in the test workspace, got {len(result['adrs'])}. "
             "Workspace mount may be pointing to the real repo."
         )
+
+
+# ---------------------------------------------------------------------------
+# CLI remote upload regression — exercises packaged CLI binaries (Python & .NET)
+# against an ephemeral .NET HTTP server. Guards the ZIP-batch upload path that
+# replaced the obsolete per-file /ingest/{coll} route.
+# ---------------------------------------------------------------------------
+
+@pytest.mark.cli_remote_upload
+class TestCliRemoteUpload:
+    """Regression for `ingest --remote URL` (both Python and .NET CLIs).
+
+    Each test:
+      1. Spins up an isolated Qdrant + rag-dotnet HTTP server (no pre-ingest).
+      2. Mounts a fresh test workspace into the CLI container.
+      3. Runs the CLI with `--remote http://host.docker.internal:{port} --force-full`.
+      4. Asserts the CLI exits 0 and reports `N ok, 0 failed` for the uploaded files.
+      5. Confirms the server-side collection now contains data by hitting /admin/stats.
+    """
+
+    @staticmethod
+    def _bootstrap_server(
+        tmp_path_factory: pytest.TempPathFactory,
+    ) -> tuple[Path, str, int, str, str, str, str]:
+        """Start Qdrant + rag-dotnet, return (workspace, collection, host_port, net, qdrant_id, mcp_id, base_url)."""
+        if not _docker_available():
+            pytest.skip("Docker not available")
+        if not _dotnet_image_exists():
+            pytest.skip("rag-dotnet image not found — build it with: docker compose build rag-dotnet")
+
+        suffix      = _uuid_mod.uuid4().hex[:8]
+        net_name    = f"rag_cli_net_{suffix}"
+        qdrant_name = f"rag_cli_qdrant_{suffix}"
+        mcp_name    = f"rag_cli_mcp_{suffix}"
+        collection  = f"e2e_cli_{suffix}"
+        host_port   = _find_free_port()
+
+        # Build workspace and patch the collection name into rag-config.yaml so the
+        # CLI talks to a clean, isolated server-side collection.
+        tmp_ws = tmp_path_factory.mktemp(f"cli_remote_ws_{suffix}")
+        _build_workspace(tmp_ws)
+        cfg_file = tmp_ws / "tools" / "rag" / "rag-config.yaml"
+        cfg_file.write_text(
+            cfg_file.read_text(encoding="utf-8").replace(
+                "collection: e2e_test_col", f"collection: {collection}"
+            ),
+            encoding="utf-8",
+        )
+
+        _docker_network_create(net_name)
+
+        qdrant_host_port = _find_free_port()
+        try:
+            qdrant_id = _docker_run_detached([
+                "--name", qdrant_name, "--network", net_name,
+                "-p", f"{qdrant_host_port}:6333",
+                "--env", "QDRANT__STORAGE__STORAGE_PATH=/tmp/qdrant_data",
+                "qdrant/qdrant:v1.13.6",
+            ])
+            _wait_for_http(f"http://localhost:{qdrant_host_port}/healthz", timeout=30)
+
+            config_host = str(_REPO_ROOT / "tools" / "rag-dotnet" / "rag-config.yaml")
+            mcp_id = _docker_run_detached([
+                "--name", mcp_name, "--network", net_name,
+                "-p", f"{host_port}:3001",
+                "-v", f"{tmp_ws}:/workspace:ro",
+                "-v", f"{config_host}:/rag-config.yaml:ro",
+                "--env", "MCP_TRANSPORT=http",
+                "--env", "MCP_PORT=3001",
+                "--env", f"QDRANT_URL=http://{qdrant_name}:6333",
+                "--env", "RAG_CONFIG=/rag-config.yaml",
+                "--env", "RAG_WORKSPACE=/workspace",
+                "--env", "DOTNET_CLI_TELEMETRY_OPTOUT=1",
+                "rag-dotnet",
+                "dotnet", "/app/mcp/mcp_server.dll",
+            ])
+
+            base_url = f"http://localhost:{host_port}"
+            _wait_for_http(f"{base_url}/admin/stats", timeout=60)
+            return tmp_ws, collection, host_port, net_name, qdrant_id, mcp_id, base_url
+        except Exception:
+            _docker_network_rm(net_name)
+            raise
+
+    @staticmethod
+    def _teardown(net_name: str, qdrant_id: str | None, mcp_id: str | None) -> None:
+        if mcp_id:
+            _docker_stop(mcp_id)
+        if qdrant_id:
+            _docker_stop(qdrant_id)
+        _docker_network_rm(net_name)
+
+    def test_python_cli_remote_upload(self, tmp_path_factory: pytest.TempPathFactory) -> None:
+        if not _rag_image_exists():
+            pytest.skip("rag-tools image not found — build it with: docker compose build rag-tools")
+        tmp_ws, collection, host_port, net, qid, mid, base_url = self._bootstrap_server(tmp_path_factory)
+        try:
+            r = subprocess.run(
+                [
+                    "docker", "run", "--rm",
+                    "--add-host", "host.docker.internal:host-gateway",
+                    "-v", f"{tmp_ws}:/workspace",
+                    "--env", "RAG_WORKSPACE=/workspace",
+                    "--env", "PYTHONUNBUFFERED=1",
+                    "--env", "PYTHONIOENCODING=utf-8",
+                    "rag-tools",
+                    "python", "ingest.py",
+                    "--remote", f"http://host.docker.internal:{host_port}",
+                    "--force-full",
+                ],
+                capture_output=True, text=True, encoding="utf-8", timeout=600,
+            )
+            combined = (r.stdout or "") + (r.stderr or "")
+            assert r.returncode == 0, (
+                f"Python CLI --remote exited {r.returncode}\nstdout:\n{r.stdout}\nstderr:\n{r.stderr}"
+            )
+            # Expect a summary line like: "remote push complete: N ok, 0 failed …"
+            import re
+            m = re.search(r"remote push complete:\s+(\d+)\s+ok,\s+(\d+)\s+failed", combined)
+            assert m is not None, f"No summary line found in CLI output:\n{combined[-2000:]}"
+            ok, failed = int(m.group(1)), int(m.group(2))
+            assert failed == 0, f"Python CLI reported {failed} failed file(s):\n{combined[-2000:]}"
+            assert ok > 0, f"Python CLI reported 0 ok files (expected ≥1):\n{combined[-2000:]}"
+        finally:
+            self._teardown(net, qid, mid)
+
+    def test_dotnet_cli_remote_upload(self, tmp_path_factory: pytest.TempPathFactory) -> None:
+        tmp_ws, collection, host_port, net, qid, mid, base_url = self._bootstrap_server(tmp_path_factory)
+        try:
+            workspace_cfg = "/workspace/tools/rag/rag-config.yaml"
+            r = subprocess.run(
+                [
+                    "docker", "run", "--rm",
+                    "--add-host", "host.docker.internal:host-gateway",
+                    "-v", f"{tmp_ws}:/workspace",
+                    "--env", "RAG_WORKSPACE=/workspace",
+                    "--env", f"RAG_CONFIG={workspace_cfg}",
+                    "--env", "DOTNET_CLI_TELEMETRY_OPTOUT=1",
+                    "rag-dotnet",
+                    "dotnet", "/app/ingest/ingest.dll",
+                    "--remote", f"http://host.docker.internal:{host_port}",
+                    "--force-full",
+                ],
+                capture_output=True, text=True, encoding="utf-8", timeout=600,
+            )
+            combined = (r.stdout or "") + (r.stderr or "")
+            assert r.returncode == 0, (
+                f".NET CLI --remote exited {r.returncode}\nstdout:\n{r.stdout}\nstderr:\n{r.stderr}"
+            )
+            import re
+            m = re.search(r"remote ingest:\s+(\d+)\s+ok,\s+(\d+)\s+failed", combined)
+            assert m is not None, f"No summary line found in CLI output:\n{combined[-2000:]}"
+            ok, failed = int(m.group(1)), int(m.group(2))
+            assert failed == 0, f".NET CLI reported {failed} failed file(s):\n{combined[-2000:]}"
+            assert ok > 0, f".NET CLI reported 0 ok files (expected ≥1):\n{combined[-2000:]}"
+        finally:
+            self._teardown(net, qid, mid)

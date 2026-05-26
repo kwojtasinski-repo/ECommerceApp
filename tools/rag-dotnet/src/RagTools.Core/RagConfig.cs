@@ -33,6 +33,12 @@ public sealed class RagConfig
     /// </summary>
     public string? GlossaryPath { get; init; }
 
+    /// <summary>Absolute path to metadata-rules.yaml (resolved by <see cref="Load"/>). Null if not found.</summary>
+    public string? MetadataRulesPath { get; init; }
+
+    /// <summary>Absolute path to queries.yaml (resolved by <see cref="Load"/>). Null if not found.</summary>
+    public string? QueriesPath { get; init; }
+
     // ── Computed properties ───────────────────────────────────────────────
 
     /// <summary>Qdrant collection name. RAG_COLLECTION env var wins over config.</summary>
@@ -146,6 +152,8 @@ public sealed class RagConfig
             MetadataRules = mergedRules ?? cfg.MetadataRules,
             NamedQueries = mergedQueries ?? cfg.NamedQueries,
             GlossaryPath = resolvedGlossaryPath,
+            MetadataRulesPath = rulesPath is not null && File.Exists(rulesPath) ? rulesPath : null,
+            QueriesPath = queriesPath is not null && File.Exists(queriesPath) ? queriesPath : null,
         };
     }
 

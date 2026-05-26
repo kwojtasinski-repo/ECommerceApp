@@ -48,6 +48,13 @@ def pytest_configure(config: pytest.Config) -> None:
         "and queries via MCP Streamable HTTP (e.g. http://localhost:<port>/?project=<col>). "
         "Run with: pytest -m http_streamable",
     )
+    config.addinivalue_line(
+        "markers",
+        "cli_remote_upload: require Docker, both rag-tools and rag-dotnet images, and a free TCP port. "
+        "Starts an ephemeral Qdrant + rag-dotnet HTTP server, then invokes each packaged CLI "
+        "(ingest.py --remote / RagTools.Ingest --remote) against it to assert the CLI ZIP-batch "
+        "upload path works end-to-end. Run with: pytest -m cli_remote_upload",
+    )
 
 
 # ── Shared fixtures ───────────────────────────────────────────────────────────
