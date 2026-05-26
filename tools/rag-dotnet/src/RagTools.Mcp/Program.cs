@@ -147,32 +147,8 @@ if (transport is "http" or "sse")
             .WithToolsFromAssembly();
 
     var app = webBuilder.Build();
+    app.UseMiddleware<BadRequestEnvelopeMiddleware>();
     app.UseMiddleware<ApiKeyMiddleware>();
-    // Convert malformed JSON-RPC / oversize bodies into a JSON 400 envelope
-    // instead of leaking an HTML 500 page or framework exception text.
-    app.Use(async (ctx, next) =>
-    {
-        try
-        {
-            await next();
-        }
-        catch (Microsoft.AspNetCore.Http.BadHttpRequestException ex)
-        {
-            ctx.Response.Clear();
-            ctx.Response.StatusCode = ex.StatusCode is >= 400 and < 500 ? ex.StatusCode : 400;
-            ctx.Response.ContentType = "application/json";
-            await ctx.Response.WriteAsync(
-                "{\"error\":\"Malformed request body.\",\"code\":\"BadRequest\"}");
-        }
-        catch (System.Text.Json.JsonException)
-        {
-            ctx.Response.Clear();
-            ctx.Response.StatusCode = 400;
-            ctx.Response.ContentType = "application/json";
-            await ctx.Response.WriteAsync(
-                "{\"error\":\"Malformed JSON payload.\",\"code\":\"BadRequest\"}");
-        }
-    });
     app.MapControllers();
     app.MapMcp("/");
     Console.Error.WriteLine($"[rag-mcp] endpoint  : http://0.0.0.0:{port}/ (MCP Streamable HTTP)");

@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using Microsoft.Extensions.Logging;
-using ModelContextProtocol;
 using ModelContextProtocol.Server;
 using RagTools.Core;
 using RagTools.Core.Adrs;
@@ -16,6 +15,9 @@ namespace RagTools.Mcp.Tools;
 /// outcome to its JSON wire shape. All wire-shape concerns live in
 /// <see cref="RagToolsProjector"/>; all orchestration lives in the four
 /// <c>IRag*Service</c> implementations.
+///
+/// Every tool body is wrapped in <see cref="McpToolGuard.RunAsync{T}"/> so the
+/// same sanitized error envelope is produced for any failure mode.
 /// </summary>
 [McpServerToolType]
 public sealed class RagTools(
@@ -26,33 +28,30 @@ public sealed class RagTools(
     RagSession          session,
     ILogger<RagTools>   logger)
 {
+    // Hard cap for the free-form question string. Numeric caps for top_k /
+    // top_files live next to their service (e.g. RagQueryService.MaxTopK).
+    private const int MaxQuestionChars = 4096;
+
     [McpServerTool, Description(
         "Semantic search across project documentation (ADRs, architecture, patterns, reference, roadmap). " +
         "Returns the top-k most relevant chunks with breadcrumb, file path, line range, and text. " +
         "Use topic to substring-filter by bounded context or topic (matched against breadcrumb and doc title). " +
         "Follow up with ReadDocs to get full file content or grouped chunk view.")]
-    public async Task<string> QueryDocs(
+    public Task<string> QueryDocs(
         [Description("The search question or topic.")] string question,
         [Description("Optional substring filter matched against breadcrumb and doc title (e.g. 'Orders', 'Pricing').")] string? topic = null,
         [Description("Maximum number of results to return (default: 5, max: 20).")] int top_k = 5,
         CancellationToken cancellationToken = default)
     {
         top_k = Math.Clamp(top_k, 1, RagQueryService.MaxTopK);
-        if (question is { Length: > 4096 }) question = question[..4096];
+        question = CapQuestion(question);
         logger.LogDebug("QueryDocs: collection={Collection} topic={Topic} topK={TopK}", session.Collection, topic, top_k);
-        try
+        return McpToolGuard.RunAsync(logger, nameof(QueryDocs), async ct =>
         {
             var request = new QueryRequest(session.Collection, question, topic, top_k);
-            var outcome = await queryService.QueryAsync(request, cancellationToken);
+            var outcome = await queryService.QueryAsync(request, ct);
             return McpJson.Serialize(RagToolsProjector.ProjectQuery(outcome));
-        }
-        catch (McpException) { throw; }
-        catch (OperationCanceledException) { throw; }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "QueryDocs failed");
-            throw ToolErrorSanitizer.ToMcpException(ex);
-        }
+        }, cancellationToken);
     }
 
     [McpServerTool, Description(
@@ -62,28 +61,21 @@ public sealed class RagTools(
         "(e.g. 'show me all details', 'full content of', 'whole file', 'explain everything about') " +
         "the server first fetches from Qdrant (stored at ingest time), then falls back to disk. " +
         "Prefer this over QueryDocs when you need to reason over document context, not a single fragment.")]
-    public async Task<string> ReadDocs(
+    public Task<string> ReadDocs(
         [Description("The search question or topic.")] string question,
         [Description("Optional topic / bounded-context substring filter \u2014 matched against breadcrumb and doc title.")] string? topic = null,
         [Description("Maximum unique files to return (default: 3, max: 5).")] int top_files = 3,
         CancellationToken cancellationToken = default)
     {
         top_files = Math.Clamp(top_files, 1, RagReadDocsService.MaxTopFiles);
-        if (question is { Length: > 4096 }) question = question[..4096];
+        question = CapQuestion(question);
         logger.LogDebug("ReadDocs: collection={Collection} topic={Topic} topFiles={TopFiles}", session.Collection, topic, top_files);
-        try
+        return McpToolGuard.RunAsync(logger, nameof(ReadDocs), async ct =>
         {
             var request = new ReadDocsRequest(session.Collection, question, topic, top_files);
-            var outcome = await readDocsService.ReadAsync(request, cancellationToken);
+            var outcome = await readDocsService.ReadAsync(request, ct);
             return McpJson.Serialize(RagToolsProjector.ProjectReadDocs(outcome));
-        }
-        catch (McpException) { throw; }
-        catch (OperationCanceledException) { throw; }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "ReadDocs failed");
-            throw ToolErrorSanitizer.ToMcpException(ex);
-        }
+        }, cancellationToken);
     }
 
     [McpServerTool, Description(
@@ -91,45 +83,34 @@ public sealed class RagTools(
         "(e.g. ADR number, RFC number). Chunks are returned in chronological order " +
         "(sorted by start_line). The grouping field is collection-defined (defaults to " +
         "'adr_id').")]
-    public async Task<string> GetHistory(
+    public Task<string> GetHistory(
         [Description("History ID (e.g. '0016', 'RFC-003'). Matched against the collection's configured history field.")] string id,
         CancellationToken cancellationToken = default)
     {
         logger.LogDebug("GetHistory: collection={Collection} id={Id}", session.Collection, id);
-        try
+        return McpToolGuard.RunAsync(logger, nameof(GetHistory), async ct =>
         {
             var request = new HistoryRequest(session.Collection, id);
-            var outcome = await historyService.GetAsync(request, cancellationToken);
+            var outcome = await historyService.GetAsync(request, ct);
             return McpJson.Serialize(RagToolsProjector.ProjectHistory(outcome));
-        }
-        catch (McpException) { throw; }
-        catch (OperationCanceledException) { throw; }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "GetHistory failed");
-            throw ToolErrorSanitizer.ToMcpException(ex);
-        }
+        }, cancellationToken);
     }
 
     [McpServerTool, Description(
         "List all ADRs indexed in the collection with id, title, main file path, and amendment count. " +
         "Reads from the Qdrant index — results reflect what is currently ingested. " +
         "Use for orientation queries like 'what ADRs exist?' before calling GetHistory.")]
-    public async Task<string> ListAdrs(CancellationToken cancellationToken = default)
+    public Task<string> ListAdrs(CancellationToken cancellationToken = default)
     {
         logger.LogDebug("ListAdrs: collection={Collection}", session.Collection);
-        try
+        return McpToolGuard.RunAsync(logger, nameof(ListAdrs), async ct =>
         {
             var request = new AdrListRequest(session.Collection);
-            var outcome = await listService.ListAsync(request, cancellationToken);
+            var outcome = await listService.ListAsync(request, ct);
             return McpJson.Serialize(RagToolsProjector.ProjectList(outcome));
-        }
-        catch (McpException) { throw; }
-        catch (OperationCanceledException) { throw; }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "ListAdrs failed");
-            throw ToolErrorSanitizer.ToMcpException(ex);
-        }
+        }, cancellationToken);
     }
+
+    private static string CapQuestion(string? question)
+        => question is { Length: > MaxQuestionChars } ? question[..MaxQuestionChars] : (question ?? string.Empty);
 }
