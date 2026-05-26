@@ -160,15 +160,18 @@ exec node \
 # ─────────────────────────────────────────────────────────────────
 FROM node:22-alpine AS builder
 
-RUN apk add --no-cache git
+# Build deps for native modules (better-sqlite3 fallback when node:sqlite is unavailable)
+RUN apk add --no-cache git python3 make g++
 
-# Clone exactly this tag — change it here on upgrade, nowhere else
-ARG CONTEXT_MODE_TAG=v1.0.146
+# Clone exactly this tag — change it here on upgrade, nowhere else.
+# v1.0.147+ required for CONTEXT_MODE_DIR support; bump to latest stable on rebuild.
+ARG CONTEXT_MODE_TAG=v1.0.148
 RUN git clone --depth 1 --branch ${CONTEXT_MODE_TAG} \
     https://github.com/mksglu/context-mode.git /build
 
 WORKDIR /build
-RUN npm ci --production --ignore-scripts
+# NOTE: do NOT pass --ignore-scripts — better-sqlite3 needs its postinstall to compile.
+RUN npm ci --production
 
 # ─────────────────────────────────────────────────────────────────
 # Stage 2: Minimal runtime image
@@ -199,6 +202,10 @@ ENTRYPOINT ["/entrypoint.sh"]
 
 ## Phase 1+5 — docker-compose.yaml (delta)
 
+> The compose snippet reads developer-tunable values from `.env.context-mode`
+> (gitignored). Defaults below in `${VAR:-default}` syntax are used when the
+> file is absent. See **§Configurable parameters (env knobs)** below.
+
 Append to the end of the `services:` section and extend the `volumes:` and `networks:` sections:
 
 ```yaml
@@ -208,28 +215,37 @@ Append to the end of the `services:` section and extend the `volumes:` and `netw
       context: .
       dockerfile: Dockerfile-context-mode
       args:
-        CONTEXT_MODE_TAG: "v1.0.146"
-    image: ecommerceapp/context-mode:1.0.146
+        CONTEXT_MODE_TAG: "${CONTEXT_MODE_TAG:-v1.0.148}"
+    image: ecommerceapp/context-mode:${CONTEXT_MODE_TAG:-v1.0.148}
     container_name: ecommerceapp-context-mode
+    env_file:
+      - path: .env.context-mode      # gitignored per-developer overrides
+        required: false              # OK if file missing — defaults below win
     stdin_open: true
     tty: false
     restart: unless-stopped
     user: "1000:1000"                              # non-root
     read_only: true                                # → root FS immutable
     tmpfs:
-      - /tmp:rw,size=64m,mode=1777                 # the only writable scratch
+      - /tmp:rw,size=${CONTEXT_MODE_TMPFS_SIZE:-64m},mode=1777  # the only writable scratch
     cap_drop: [ALL]                                # no Linux capabilities
     security_opt:
       - no-new-privileges:true                     # no setuid escalation
-    pids_limit: 100                                # limit fork bombs
-    mem_limit: 1g                                  # memory cap
+    pids_limit: ${CONTEXT_MODE_PIDS_LIMIT:-100}    # limit fork bombs
+    mem_limit: ${CONTEXT_MODE_MEM_LIMIT:-1g}       # memory cap
+    cpus: ${CONTEXT_MODE_CPUS:-2}                  # CPU quota
     ipc: none                                      # zero shared memory with the host
     volumes:
       - .:/workspace                               # access to project files (R/W)
       - context-mode-data:/home/ctxmode/.context-mode  # SQLite session DB
     environment:
-      CTX_FETCH_STRICT: "1"                        # blocks loopback + RFC1918
-      CONTEXT_MODE_EXTERNAL_MCP_NUDGE_EVERY: "50"  # reduces noise on RAG MCP calls
+      CTX_FETCH_STRICT: "${CONTEXT_MODE_FETCH_STRICT:-1}"   # default 1 = block loopback+RFC1918
+      CONTEXT_MODE_EXTERNAL_MCP_NUDGE_EVERY: "${CONTEXT_MODE_NUDGE_EVERY:-50}"
+      CONTEXT_MODE_DIR: "/home/ctxmode/.context-mode"  # explicit storage root (v1.0.147+)
+    ports:
+      - "127.0.0.1:${CONTEXT_MODE_INSIGHT_PORT:-9998}:8765"  # ctx_insight web UI — localhost only
+                                                   # NOTE: verify internal port via `ctx doctor` after first start;
+                                                   # 8765 is the assumed default. Never bind to 0.0.0.0.
     networks:
       - ctx-net                                    # custom bridge, DNS via AdGuard
     dns:
@@ -237,14 +253,14 @@ Append to the end of the `services:` section and extend the `volumes:` and `netw
 
   # ── AdGuard Home — DNS firewall (profile: monitoring) ─────────────────────────
   # Start with: docker compose --profile monitoring up -d adguard
-  # UI: http://localhost:3000  (setup wizard on first visit)
+  # UI: http://127.0.0.1:3000  (setup wizard on first visit — set a STRONG password)
   adguard:
-    image: adguard/adguardhome:v0.107.50            # pinned version
+    image: adguard/adguardhome:${ADGUARD_TAG:-v0.107.50}
     container_name: ecommerceapp-adguard
     profiles: [monitoring]
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3000:3000"                       # web UI bound to localhost only
+      - "127.0.0.1:${ADGUARD_UI_PORT:-3000}:3000"   # web UI bound to localhost only
     volumes:
       - adguard-work:/opt/adguardhome/work
       - ./docker/adguard:/opt/adguardhome/conf:ro    # our configs (read-only mount)
@@ -269,6 +285,91 @@ networks:
     # We do NOT use `internal: true` — AdGuard MUST have outbound access
     # to fetch lists and resolve upstream DNS for allowed domains.
 ```
+
+---
+
+## Configurable parameters (env knobs)
+
+context-mode's upstream exposes only **three** environment variables. Anything
+else (TTL cache window, throttling thresholds, chunk sizes) is hardcoded — to
+change behavior per-call, pass parameters like `ttl: <ms>` or `force: true`
+directly to the MCP tool.
+
+We expose a small, deliberately minimal set of knobs via `.env.context-mode`
+(gitignored, per-developer overrides) so each developer can tune resource limits
+and pinned versions without editing `docker-compose.yaml`. The committed
+`.env.context-mode.example` is the source of truth for defaults and team review.
+
+### Upstream env vars (passed into the container, see [README §Security](https://github.com/mksglu/context-mode#security))
+
+| Variable | Default | Range | Purpose |
+|---|---|---|---|
+| `CONTEXT_MODE_DIR` | `/home/ctxmode/.context-mode` | absolute path | Storage root for sessions + content. Hardcoded in compose. |
+| `CONTEXT_MODE_EXTERNAL_MCP_NUDGE_EVERY` | `50` | 1–100 | Re-injects "wrap in ctx_execute" hint every N MCP calls. Lower = noisier, higher = quieter. Aliased to `CONTEXT_MODE_NUDGE_EVERY` in `.env.context-mode`. |
+| `CTX_FETCH_STRICT` | `1` | `0` / `1` | When `1`, blocks loopback + RFC1918 + ULA in addition to always-blocked IMDS/multicast. Aliased to `CONTEXT_MODE_FETCH_STRICT` in `.env.context-mode`. **Set to `0` only when testing a local dev server as MCP fetch target; document the deviation in your PR description.** |
+
+### Our compose-level knobs (`.env.context-mode`)
+
+| Variable | Default | Why a knob |
+|---|---|---|
+| `CONTEXT_MODE_TAG` | `v1.0.148` | Upgrade is one-line, no Dockerfile edit. |
+| `ADGUARD_TAG` | `v0.107.50` | Same for AdGuard. |
+| `CONTEXT_MODE_MEM_LIMIT` | `1g` | Beefy machines can raise (e.g. `2g`) for faster `ctx_index`. |
+| `CONTEXT_MODE_PIDS_LIMIT` | `100` | Raise if you hit fork-bomb guard on large monorepo scans. |
+| `CONTEXT_MODE_CPUS` | `2` | CPU quota (cores). Raise on machines with spare cores. |
+| `CONTEXT_MODE_TMPFS_SIZE` | `64m` | `/tmp` scratch size. Raise if `ctx_index` runs out of temp space. |
+| `CONTEXT_MODE_INSIGHT_PORT` | `9998` | Host port for `ctx_insight` UI. Change if `9998` is taken locally. |
+| `CONTEXT_MODE_NUDGE_EVERY` | `50` | See upstream table above. |
+| `CONTEXT_MODE_FETCH_STRICT` | `1` | See upstream table above. |
+| `ADGUARD_UI_PORT` | `3000` | Host port for AdGuard UI. Change if `3000` is taken (often by frontend dev servers). |
+| `ADGUARD_DNS_UPSTREAM` | `https://dns.cloudflare-dns.com/dns-query` | Corporate networks can swap to internal resolver; read by `AdGuardHome.yaml` template (substitute on container start). |
+| `ADGUARD_FILTERS_UPDATE_INTERVAL` | `168` (hours = 7 days) | Community-list refresh cadence. Lower (`24`) on fast-moving security teams; raise (`720`) for stable environments. |
+
+### `.env.context-mode.example` (committed)
+
+```bash
+# .env.context-mode.example — copy to .env.context-mode, edit, never commit your version
+CONTEXT_MODE_TAG=v1.0.148
+ADGUARD_TAG=v0.107.50
+
+# Container resources (raise if your machine is beefy)
+CONTEXT_MODE_MEM_LIMIT=1g
+CONTEXT_MODE_PIDS_LIMIT=100
+CONTEXT_MODE_CPUS=2
+CONTEXT_MODE_TMPFS_SIZE=64m
+
+# Insight web UI host port
+CONTEXT_MODE_INSIGHT_PORT=9998
+
+# Routing nudges (1-100). Higher = quieter. Default upstream = 10.
+CONTEXT_MODE_NUDGE_EVERY=50
+
+# Network fetch hardening. 1 = block loopback+RFC1918; 0 or unset = allow local dev servers
+CONTEXT_MODE_FETCH_STRICT=1
+
+# AdGuard
+ADGUARD_UI_PORT=3000
+ADGUARD_DNS_UPSTREAM=https://dns.cloudflare-dns.com/dns-query
+ADGUARD_FILTERS_UPDATE_INTERVAL=168
+```
+
+**What is NOT a knob (and why)**:
+
+- `cap_drop`, `read_only`, `no-new-privileges`, `ipc: none`, `user: 1000:1000` —
+  hardening flags from ADR-0029. Changing them requires an ADR amendment.
+- AdGuard `allowed_clients` — hardcoded in `AdGuardHome.yaml` (only the `context-mode`
+  container IP may query). Loosening it requires an ADR amendment.
+- TTL cache window / throttling thresholds / chunk sizes — hardcoded upstream,
+  not env-controllable. Override per-call via tool parameters (`ttl: <ms>`,
+  `force: true`, `concurrency: 1-8`, `contentType: 'code'|'prose'`).
+
+**Safety note on `CONTEXT_MODE_FETCH_STRICT`**: this is the ONE knob where the default
+is a security boundary, not a comfort knob. If a developer sets it to `0` locally,
+their sandbox can reach the host loopback and the LAN — that’s how the
+`ECommerceApp.API` / SQL Server containers become reachable from inside the MCP
+sandbox. Acceptable for a one-off local fetch target test; never commit a script
+or task that does this. Periodically grep `.env.context-mode` files during onboarding
+review or pair sessions.
 
 ---
 
@@ -347,6 +448,9 @@ Append (for example at the end of the temporary-files section):
 
 # AdGuard personal overrides (per-developer, not shared)
 docker/adguard/personal-overrides.local.txt
+
+# context-mode per-developer env overrides (do not commit your version)
+.env.context-mode
 ```
 
 ---
@@ -355,6 +459,9 @@ docker/adguard/personal-overrides.local.txt
 
 > New file. Create the `.github/hooks/` directory if it does not exist.
 > **After adding this file, run `@copilot-setup-maintainer` (Workflow 11 + 7).**
+>
+> All 5 hooks are required for full session continuity (capture + snapshot + restore).
+> Omitting `PreCompact` means the model loses working state on every compaction.
 
 ```json
 {
@@ -369,6 +476,18 @@ docker/adguard/personal-overrides.local.txt
       {
         "type": "command",
         "command": "docker exec -i ecommerceapp-context-mode context-mode hook vscode-copilot posttooluse"
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "type": "command",
+        "command": "docker exec -i ecommerceapp-context-mode context-mode hook vscode-copilot userpromptsubmit"
+      }
+    ],
+    "PreCompact": [
+      {
+        "type": "command",
+        "command": "docker exec -i ecommerceapp-context-mode context-mode hook vscode-copilot precompact"
       }
     ],
     "SessionStart": [
@@ -390,65 +509,187 @@ docker/adguard/personal-overrides.local.txt
 > **Append at the very end** of the existing file. DO NOT modify sections 1–12.
 > Section 13 has lower priority than project rules (ADR, BC, agents).
 > **After modifying, run `@copilot-setup-maintainer` (Workflow 11 + 7).**
+>
+> The block below is the **upstream canonical routing file** from
+> [`configs/vscode-copilot/copilot-instructions.md`](https://github.com/mksglu/context-mode/blob/main/configs/vscode-copilot/copilot-instructions.md)
+> with a small project addendum at the end about RAG MCP coexistence.
 
 ```markdown
-## 13. Context sandbox (context-mode)
+## 13. Context sandbox (context-mode) — MANDATORY routing rules
 
-context-mode MCP tools are available. They sandbox raw data — protecting the
-context window. **A single unrouted call can dump 56 KB into context.**
+context-mode MCP tools available. Rules protect context window from flooding.
+One unrouted command dumps 56 KB into context.
 
-### Think in code (MANDATORY for data analysis)
+### Think in Code — MANDATORY
 
-Analysis, counting, filtering, comparing, parsing → **write a script** via
-`ctx_execute(language, code)` and `console.log()` only the result. DO NOT
-read raw data into context. One script replaces 10 tool calls.
+Analyze/count/filter/compare/search/parse/transform data: write code via
+`ctx_execute(language, code)`, `console.log()` only the answer. Do NOT read
+raw data into context. PROGRAM the analysis, not COMPUTE it. Pure JavaScript
+— Node.js built-ins only (`fs`, `path`, `child_process`). `try/catch`,
+handle `null`/`undefined`. One script replaces ten tool calls.
 
-```js
-// Before: 47 × read_file = 700 KB.  After: 1 × ctx_execute = 3.6 KB.
-ctx_execute("javascript", `
-  const files = require('fs').readdirSync('src').filter(f => f.endsWith('.cs'));
-  files.forEach(f => console.log(f + ': ' + require('fs').readFileSync('src/'+f,'utf8').split('\\n').length + ' lines'));
-`);
-```
+### BLOCKED — do NOT attempt
 
-### Tool priorities (when no project rule overrides)
+- **curl / wget**: terminal `curl`/`wget` intercepted and blocked. Use `ctx_fetch_and_index(url, source)` or `ctx_execute("javascript", "const r = await fetch(...)")`.
+- **Inline HTTP**: `fetch('http`, `requests.get(`, `requests.post(`, `http.get(`, `http.request(` intercepted. Use `ctx_execute(language, code)` — only stdout enters context.
+- **WebFetch / fetch**: use `ctx_fetch_and_index(url, source)` then `ctx_search(queries)`.
 
-0. **MEMORY**: `ctx_search(sort: "timeline")` — after resume check history before asking the user.
-1. **GATHER**: `ctx_batch_execute(commands, queries)` — many commands + searches in ONE call.
-2. **FOLLOW-UP**: `ctx_search(queries: ["q1", "q2"])` — many questions in one call.
-3. **PROCESSING**: `ctx_execute(language, code)` or `ctx_execute_file(path, language, code)` — sandbox.
-4. **WEB**: `ctx_fetch_and_index(url, source)` → `ctx_search(queries)` — raw HTML never enters context.
-5. **INDEX**: `ctx_index(content, source)` — store in FTS5 for later retrieval.
+### REDIRECTED — use sandbox
 
-### Redirects (REDIRECTED)
+- **Terminal / run_in_terminal (>20 lines output)**: terminal ONLY for `git`, `mkdir`, `rm`, `mv`, `cd`, `ls`, `npm install`, `pip install`. Otherwise: `ctx_batch_execute(commands, queries)` or `ctx_execute("shell", code)`.
+- **read_file (for analysis)**: reading to edit → `read_file` correct. Reading to analyze/explore/summarize → `ctx_execute_file(path, language, code)`.
+- **grep / search (large results)**: use `ctx_execute("shell", "grep ...")` in sandbox.
 
-| Instead of | Use |
+### Tool selection
+
+0. **MEMORY**: `ctx_search(sort: "timeline")` — after resume, check prior context before asking user.
+1. **GATHER**: `ctx_batch_execute(commands, queries)` — runs all commands, auto-indexes, returns search. ONE call replaces 30+. Each command: `{label: "header", command: "..."}`.
+2. **FOLLOW-UP**: `ctx_search(queries: ["q1", "q2", ...])` — all questions as array, ONE call.
+3. **PROCESSING**: `ctx_execute(language, code)` | `ctx_execute_file(path, language, code)` — sandbox, only stdout enters context.
+4. **WEB**: `ctx_fetch_and_index(url, source)` then `ctx_search(queries)` — raw HTML never enters context.
+5. **INDEX**: `ctx_index(content, source)` — store in FTS5 for later search.
+
+**Parallel I/O batches**: pass `concurrency: 4-8` to `ctx_batch_execute` and `ctx_fetch_and_index` for network/API batches. Keep `concurrency: 1` for CPU-bound work (test, build, lint). GitHub gh: cap at 4.
+
+### Output
+
+Write artifacts to FILES — never inline. Return: file path + 1-line description.
+Descriptive source labels for `ctx_search(source: "label")`.
+
+### Session Continuity
+
+Skills, roles, and decisions persist for the entire session. Do not abandon them
+as the conversation grows.
+
+### Memory
+
+Session history is persistent and searchable. On resume, search BEFORE asking the user:
+
+| Question | Query |
 |---|---|
-| `run_in_terminal` (output > 20 lines) | `ctx_batch_execute` or `ctx_execute("shell", ...)` |
-| `read_file` for **analysis** | `ctx_execute_file(path, language, code)` |
-| `grep_search` on large output | `ctx_execute("shell", "grep ...")` inside the sandbox |
-| `fetch` / WebFetch | `ctx_fetch_and_index(url)` → `ctx_search` |
+| What were we working on? | `ctx_search(queries: ["summary"], source: "compaction", sort: "timeline")` |
+| What did we decide? | `ctx_search(queries: ["decision"], source: "decision", sort: "timeline")` |
+| What NOT to repeat? | `ctx_search(queries: ["rejected"], source: "rejected-approach")` |
+| What constraints exist? | `ctx_search(queries: ["constraint"], source: "constraint")` |
 
-> `read_file` is fine when you are editing a file. Use the sandbox only when you are **analysing**.
-
-### Note: two independent session-memory systems
-
-| System | Tool | Purpose |
-|---|---|---|
-| context-mode session DB | `ctx_search(source: "compaction")` | Tool history, files edited, decisions in this session |
-| VS Code session store | `session_store_sql` | VS Code session history, previous conversations |
-
-These systems are **independent** — do not mix them.
+DO NOT ask "what were we working on?" — SEARCH FIRST. If search returns 0 results, proceed as a fresh session.
 
 ### ctx commands
 
 | Command | Action |
 |---|---|
-| `ctx stats` | Call `ctx_stats`; show full output |
-| `ctx doctor` | Call `ctx_doctor`; run the returned shell commands |
-| `ctx upgrade` | Call `ctx_upgrade`; run the returned shell commands |
-| `ctx purge` | Call `ctx_purge` with `confirm: true`. Warns about wiping the KB |
+| `ctx stats` | Call `ctx_stats`; display full output verbatim |
+| `ctx doctor` | Call `ctx_doctor`; run returned shell command, display as checklist |
+| `ctx upgrade` | Call `ctx_upgrade`; run returned shell command, display as checklist |
+| `ctx purge` | Call `ctx_purge` with `confirm: true`. Warns before wiping knowledge base |
+| `ctx insight` | Call `ctx_insight`; opens the local analytics dashboard at `http://localhost:9998` (localhost-only). 90 metrics across 23 event categories. |
+
+### TTL cache (ctx_fetch_and_index)
+
+Fetched URLs are cached in SQLite for **24h by default**. On cache hit the model gets a hint (~0.3KB) and calls `ctx_search` instead of re-fetching. Override per call:
+
+- `ttl: <milliseconds>` — longer for stable specs, shorter for changelogs.
+- `ttl: 0` or `force: true` — bypass cache, refetch always.
+- 14-day cleanup runs on startup.
+
+### Progressive throttling (ctx_search)
+
+If the model issues many `ctx_search` calls in a row, results get throttled:
+
+| Calls | Behavior |
+|---|---|
+| 1–3 | Normal (2 results per query) |
+| 4–8 | Reduced (1 result per query) + warning |
+| 9+ | **Blocked** — redirected to `ctx_batch_execute` |
+
+**Rule for the model**: batch related queries into a single `ctx_search(queries: ["q1", "q2", "q3"])` call. Don't loop 1-by-1.
+
+### Captured session events (~17 categories)
+
+context-mode captures Files, Tasks, Plans, Rules (CLAUDE.md/AGENTS.md), UserPrompts, Decisions, Git, Errors, Error-Resolutions, Constraints, Blockers, RejectedApproaches, Environment, AgentFindings, IterationLoops, Latency, MCPTools, Subagents, Skills, ExternalRefs, Role, Intent, and Data. Critical (P1) events always persist; lower priorities are dropped first when the 2KB compaction snapshot budget is tight.
+
+### Slash commands (NOT APPLICABLE on VS Code Copilot)
+
+`/context-mode:ctx-*` slash commands are a Claude Code plugin feature. On VS Code Copilot type the bare `ctx <command>` form in chat — the model invokes the MCP tool automatically.
+
+### Troubleshooting
+
+For bug reports run the diagnostic and attach the output:
+
+```powershell
+docker exec ecommerceapp-context-mode bash scripts/ctx-debug.sh
 ```
+
+It collects OS info, runtime versions, sqlite backend, hook validation, FTS5 test, process check, redacted configs, and session DB info into a single pasteable report.
+
+### Project addendum — RAG MCP coexistence
+
+This project also runs the `ecommerceapp-rag-*` MCP servers (ADR / docs queries).
+Do NOT route `mcp__rag-*` calls through `ctx_execute` — they are already
+small, structured responses. The `CONTEXT_MODE_EXTERNAL_MCP_NUDGE_EVERY=50`
+env var keeps RAG calls outside the sandbox guidance loop.
+```
+
+---
+
+## Phase 4b — `.claude/settings.json` (repo root, permissions)
+
+> New file at `.claude/settings.json`. context-mode reads this file on **all**
+> platforms (Claude Code AND VS Code Copilot) and enforces deny/allow rules
+> inside the sandbox before any tool runs.
+>
+> Cheap defense-in-depth: blocks `sudo`, `rm -rf /`, and reading `.env*` even
+> if the model is tricked into trying.
+
+```json
+{
+  "permissions": {
+    "deny": [
+      "Bash(sudo *)",
+      "Bash(rm -rf /*)",
+      "Bash(rm -rf ~)",
+      "Bash(rm -rf $HOME*)",
+      "Bash(curl * | *sh)",
+      "Bash(wget * -O- | *sh)",
+
+      "Read(.env)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/*.pfx)",
+      "Read(**/id_rsa*)",
+      "Read(**/credentials*)",
+      "Read(**/secret*)",
+      "Read(**/appsettings.*.json)",
+
+      "Edit(.git/**)",
+      "Write(.git/**)",
+      "Edit(Dockerfile*)",
+      "Write(Dockerfile*)",
+      "Edit(docker-compose*)",
+      "Write(docker-compose*)",
+      "Edit(.github/hooks/**)",
+      "Write(.github/hooks/**)",
+      "Edit(.claude/**)",
+      "Write(.claude/**)",
+      "Edit(docker/adguard/**)",
+      "Write(docker/adguard/**)"
+    ],
+    "allow": [
+      "Bash(git:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(dotnet:*)",
+      "Bash(docker:*)",
+      "Bash(python3:*)",
+      "Bash(pip:*)"
+    ]
+  }
+}
+```
+
+> **Why these denials?** The sandbox mounts the entire repo `.:/workspace` read-write so the agent can edit code. Without these rules a tricked agent could (a) read `.env`/`appsettings.*.json` secrets, (b) modify `.git/config` to insert a malicious credential helper, (c) backdoor the Dockerfile or compose file and wait for a rebuild, (d) edit its own hook config or AdGuard rules to weaken the firewall. `deny` always wins over `allow` per context-mode permission semantics.
 
 ---
 
@@ -461,10 +702,26 @@ AdGuard returns NXDOMAIN — the connection never starts.
 ### `docker/adguard/AdGuardHome.yaml` (system + per-client policies)
 
 ```yaml
-# Initial AdGuard config. First visit to http://localhost:3000 — the setup wizard
+# Initial AdGuard config. First visit to http://127.0.0.1:3000 — the setup wizard
 # sets the admin password. After the wizard, replace the `users` section below.
+#
+# HARDENING:
+#  - Set a STRONG password during the wizard (min 16 chars, mixed). NEVER admin/admin.
+#  - `allowed_clients` restricts WHO can talk to the web UI — only the host loopback.
+#    Even though context-mode sits on the same docker bridge, it CANNOT log into
+#    AdGuard because its source IP is the container subnet, not 127.0.0.1.
+#  - Rate limit `/control/login` to defeat bruteforce.
 bind_host: 0.0.0.0
 bind_port: 3000
+
+# Restrict web UI access: only host loopback (where the port is exposed) can hit it.
+allowed_clients:
+  - 127.0.0.1
+  - ::1
+
+# Bruteforce protection on the login endpoint.
+auth_attempts: 5            # max attempts before block
+block_auth_min: 15          # minutes locked out after auth_attempts failures
 
 users:
   - name: admin
@@ -500,6 +757,40 @@ dns:
   # Global fallback for unknown clients
   filtering_enabled: false
 ```
+
+### `docker/adguard/README.md` (operational notes — REQUIRED)
+
+```markdown
+# AdGuard Home — operational README
+
+## First-boot hardening (MANDATORY)
+
+1. Start container: `docker compose --profile monitoring up -d adguard`
+2. Open `http://127.0.0.1:3000` (host-only — never expose publicly).
+3. In the wizard set a **strong admin password**: minimum 16 chars, mixed case,
+   digits, symbols. Use a password manager. NEVER `admin`/`admin`.
+4. Copy the resulting bcrypt hash from `AdGuardHome.yaml` inside the container
+   (`docker exec ecommerceapp-adguard cat /opt/adguardhome/conf/AdGuardHome.yaml`)
+   into our repo's `docker/adguard/AdGuardHome.yaml` `users:` block, then commit.
+5. Verify `allowed_clients: [127.0.0.1, ::1]` is in effect — from a container
+   on `ctx-net`, `curl http://adguard:3000/control/login` MUST return 403.
+
+## What context-mode can reach
+
+| Target | Allowed | Why |
+|---|---|---|
+| `adguard:53/udp` | YES | DNS resolution |
+| `adguard:3000/tcp` | NO | Web UI blocked by `allowed_clients` |
+
+## Monthly review checklist (see ADR-0029)
+
+- [ ] context-mode latest stable tag pinned in `Dockerfile-context-mode`?
+- [ ] AdGuard Home latest patch pinned in `docker-compose.yaml`?
+- [ ] CVE feed checked: GHSA for `better-sqlite3`, `node`, `adguardhome`?
+- [ ] `docker exec ecommerceapp-context-mode bash scripts/ctx-debug.sh` healthy?
+- [ ] AdGuard query log reviewed for unexpected blocked-domain spikes?
+```
+
 
 ### `docker/adguard/community-blocklists.yaml`
 

@@ -24,7 +24,7 @@ of which only a fraction is actually used by the model for reasoning. Examples:
 | Test suite run (30 tests) | 6 KB | 337 B |
 | Repo research subagent | 986 KB | 62 KB |
 
-An external MCP server, [`context-mode`](https://github.com/mksglu/context-mode) (v1.0.146,
+An external MCP server, [`context-mode`](https://github.com/mksglu/context-mode) (v1.0.148,
 Elastic License 2.0), implements a session-scoped sandbox that executes tools inside its
 own process, persists the raw output in a local SQLite/FTS5 store, and returns to the
 model only a small summary plus a stable handle. Re-queries hit the local store, not the
@@ -44,12 +44,22 @@ that RAG does not cover.
   every tool argument, file path, and code snippet
 - Team must adopt with a single `docker compose up -d` — no per-developer install
 - Configuration must live in the repo so it is reviewable, versioned, and team-shared
+- **Privacy / compliance**: 300-employee organisation — no telemetry, no cloud sync, no
+  per-seat account may leave the developer's machine. context-mode satisfies this:
+  all session data lives in local SQLite under `CONTEXT_MODE_DIR`, the project explicitly
+  states "nothing leaves your machine" ([README § Privacy & Architecture](https://github.com/mksglu/context-mode#privacy--architecture)).
+- **Built-in credential redaction**: upstream's PostToolUse hook automatically masks
+  `authorization`, `auth_token`, `access_token`, `refresh_token`, `bearer`, `token`,
+  `secret`, `password`, `passwd`, `pwd`, `api_key`/`apikey`/`x_api_key`, `cookie`/`set-cookie`,
+  `signature`, `private_key`, and `client_secret` (case + hyphen/underscore insensitive)
+  to `[REDACTED]` before persisting to the session DB. This shifts the trust boundary
+  for MCP tool arguments from us to upstream's regex policy — acceptable, but recorded.
 
 ## Decision
 
 We will run `context-mode` as a hardened Docker container with:
 
-1. **Build from source, pinned tag.** The image is built from `git clone --branch v1.0.146`,
+1. **Build from source, pinned tag.** The image is built from `git clone --branch v1.0.148`,
    not `npm install -g`. Upgrades happen by changing a single `ARG CONTEXT_MODE_TAG` line
    in the Dockerfile, then a controlled commit.
 
@@ -78,8 +88,9 @@ We will run `context-mode` as a hardened Docker container with:
    `.github/copilot-instructions.md`. Sections 1–12 (project agents, ADR routing, BC rules)
    stay untouched. RAG MCP and all current agents continue to work unchanged.
 
-7. **Hooks via `docker exec`.** `.github/hooks/context-mode.json` runs PreToolUse,
-   PostToolUse, and SessionStart hooks via `docker exec -i ecommerceapp-context-mode ...`
+7. **Hooks via `docker exec`.** `.github/hooks/context-mode.json` runs all five hooks
+   (PreToolUse, PostToolUse, UserPromptSubmit, PreCompact, SessionStart) via
+   `docker exec -i ecommerceapp-context-mode ...`
    so no developer needs the `context-mode` CLI installed on the host.
 
 8. **Container logs via VS Code Docker extension / `docker logs`.** No dedicated log
@@ -87,6 +98,20 @@ We will run `context-mode` as a hardened Docker container with:
    plus `docker logs <container>` covers the team's debugging needs without adding a
    third long-running service. If a richer UI becomes necessary later, Dozzle can be
    added behind `--profile monitoring` without changing this ADR.
+
+9. **AdGuard web UI restricted to host loopback.** `allowed_clients: [127.0.0.1, ::1]`
+   in `AdGuardHome.yaml` plus port binding `127.0.0.1:3000:3000` in compose. Even though
+   context-mode and AdGuard share `ctx-net`, context-mode's source IP is the container
+   subnet, not `127.0.0.1`, so it cannot log into AdGuard. Combined with `auth_attempts: 5`
+   / `block_auth_min: 15`, this neutralises bruteforce from a compromised sandbox.
+
+10. **Session events captured for continuity (~17 categories)**. context-mode persists
+    Files, Tasks, Plans, Rules, UserPrompts, Decisions, Git, Errors, ErrorResolutions,
+    Constraints, Blockers, RejectedApproaches, Environment, AgentFindings, IterationLoops,
+    Latency, MCPTools, Subagents, Skills, ExternalRefs, Role, Intent, and Data. Critical
+    (P1) events always persist; lower-priority events drop first when the 2 KB compaction
+    snapshot is tight. Allows the model to resume from prior session state without
+    re-prompting the user.
 
 ## Consequences
 
@@ -184,7 +209,7 @@ and [`docs/roadmap/context-mode-details.md`](../../roadmap/context-mode-details.
 1. **Phase 1** — Dockerfile, network monitor, hardening flags, `ctx-net` bridge, compose entry
 2. **Phase 2** — `.vscode/mcp.json`, VS Code tasks, `.gitignore`
 3. **Phase 3** — `.github/hooks/context-mode.json`
-4. **Phase 4** — Append section 13 to `.github/copilot-instructions.md`; invoke `@copilot-setup-maintainer`
+4. **Phase 4** — Append section 13 to `.github/copilot-instructions.md`; add `.claude/settings.json` (sandbox permissions); invoke `@copilot-setup-maintainer`
 5. **Phase 5** — AdGuard service (`--profile monitoring`) + 4 config files in `docker/adguard/` + per-client policies
 
 Each phase has its own acceptance criteria in the roadmap files. Phases 3+ can be skipped
@@ -209,12 +234,32 @@ the common case; revisit if real usage shows the gap.
 - [ ] `personal-overrides.local.txt` is in `.gitignore`
 - [ ] `network-monitor.js` is loaded via `node --require` before context-mode's entrypoint
 - [ ] `.github/copilot-instructions.md` section 13 is append-only; sections 1–12 unchanged
+- [ ] `.claude/settings.json` exists and contains the deny list for `Bash(sudo *)`, `Read(.env)`, secrets, and `rm -rf /*`
+- [ ] `ctx_insight` web UI port is bound to `127.0.0.1` only (never `0.0.0.0`); access verified via `http://localhost:9998`
 - [ ] `.github/hooks/context-mode.json` uses `docker exec`, not a host-installed CLI
 - [ ] AdGuard is gated by `profiles: [monitoring]` — never starts by default
 - [ ] `ctx_fetch_and_index` is documented as gated by AdGuard allowlist
 - [ ] Upgrade procedure is a single ARG change in the Dockerfile
 - [ ] Docker Desktop licensing caveat documented; Rancher/Podman swap is a local-only
       change (not committed)
+- [ ] `docker/adguard/README.md` exists with first-boot hardening checklist; admin
+      password is set to 16+ chars during the wizard (NOT `admin`/`admin`)
+- [ ] AdGuard `allowed_clients: [127.0.0.1, ::1]` is in effect; verified from a
+      `ctx-net` container that `curl http://adguard:3000/control/login` returns 403
+- [ ] **Monthly version review** performed and logged: latest stable
+      `CONTEXT_MODE_TAG` pinned in Dockerfile, latest AdGuard patch pinned in compose,
+      GHSA / CVE feeds checked for `better-sqlite3`, `node`, `adguardhome`,
+      `docker exec ecommerceapp-context-mode bash scripts/ctx-debug.sh` green
+- [ ] **Env knobs minimalism**: `.env.context-mode.example` is committed and
+      exposes the 12 documented knobs (versions, container resources,
+      ports, nudge cadence, fetch hardening, AdGuard DNS upstream/refresh);
+      `.env.context-mode` is in `.gitignore`; defaults in
+      `.env.context-mode.example` match the security-hardened baseline
+      (`CONTEXT_MODE_FETCH_STRICT=1`); compose uses `${VAR:-default}`
+      interpolation so a missing env file still produces a working,
+      hardened container; any developer setting
+      `CONTEXT_MODE_FETCH_STRICT=0` documents the reason in their PR /
+      personal note (no silent egress relaxation)
 
 ## References
 

@@ -419,6 +419,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0026", "0026", "{00260000-0
 		docs\adr\0026\README.md = docs\adr\0026\README.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0029", "0029", "{00290000-0000-0000-0000-000000000029}"
+	ProjectSection(SolutionItems) = preProject
+		docs\adr\0029\0029-context-mode-mcp-sandbox.md = docs\adr\0029\0029-context-mode-mcp-sandbox.md
+		docs\adr\0029\README.md = docs\adr\0029\README.md
+	EndProjectSection
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ECommerce", "ECommerce", "{049E647F-D15D-4AFB-8AE6-DB2363C9F4D4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "architecture", "architecture", "{5EC11768-8E47-4C89-9EBC-78E600311851}"
@@ -442,6 +448,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "roadmap", "roadmap", "{8FA6F8D3-44D1-4AC3-9335-8B69F45EA3DD}"
 	ProjectSection(SolutionItems) = preProject
 		docs\roadmap\chunked-upload.md = docs\roadmap\chunked-upload.md
+		docs\roadmap\context-mode-details.md = docs\roadmap\context-mode-details.md
+		docs\roadmap\context-mode-integration.md = docs\roadmap\context-mode-integration.md
 		docs\roadmap\frontend-pipeline.md = docs\roadmap\frontend-pipeline.md
 		docs\roadmap\iam-atomic-switch.md = docs\roadmap\iam-atomic-switch.md
 		docs\roadmap\iam-refresh-token.md = docs\roadmap\iam-refresh-token.md
@@ -693,6 +701,7 @@ Global
 		{0024E001-0000-0000-0000-000000000024} = {00240000-0000-0000-0000-000000000024}
 		{00250000-0000-0000-0000-000000000025} = {25B91C37-ECC3-46DC-8502-C91F85A1F7BC}
 		{00260000-0000-0000-0000-000000000026} = {25B91C37-ECC3-46DC-8502-C91F85A1F7BC}
+		{00290000-0000-0000-0000-000000000029} = {25B91C37-ECC3-46DC-8502-C91F85A1F7BC}
 		{5EC11768-8E47-4C89-9EBC-78E600311851} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 		{BAC45AC5-6905-4FAF-956C-CD73D03DB4BD} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{DB95CC21-7869-4EAC-8EB3-F5706D958E0A} = {908C6C00-47A3-455F-82C8-5BBECB045911}

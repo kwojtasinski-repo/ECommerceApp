@@ -16,7 +16,7 @@
 | Prompt files (`.prompt.md`)            | 6     | BC analysis, BC implementation, PR review, refactor, flow-analysis, rag-sync                                                        |
 | Agent files                            | 8     | adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer, planner, implementer, verifier, pr-commit                       |
 | Skills (`SKILL.md`)                    | 16    | +5 new RAG skills: diagnose-rag, tune-rag-weights, expand-rag-glossary, generate-rag-rules, generate-eval-questions |
-| ADRs                                   | 26    | Folderized ADR routers under `docs/adr/<NNNN>/README.md`                                                                           |
+| ADRs                                   | 29    | Folderized ADR routers under `docs/adr/<NNNN>/README.md`; ADR-0027/0028 (RAG pipeline) + ADR-0029 (context-mode sandbox) added                                                                           |
 | Context files                          | 6     | project-state, known-issues, agent-decisions, repo-index, future-skills, anti-patterns-critical                                    |
 | GitHub Actions workflows               | 1     | `dotnet-ci.yml` — manual trigger only (push/PR commented)                                                                          |
 | Pipeline orchestration spec            | 1     | `.github/AGENT-PIPELINE.md`; `@verifier`/`@code-reviewer` embedded inside `@implementer`; standalone-only for one-off use          |
@@ -107,6 +107,21 @@
 ---
 
 ## Change log
+
+### Session 24 — ADR-0029 context-mode MCP sandbox DRAFT + env knobs (2026-05-27)
+
+| #   | Change                                                                                                                                                           | Files affected                                                                                    |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| 1   | ADR-0029 DRAFT introduced (prior commit `c663a08c`): docker-only context-mode sandbox, custom `ctx-net` bridge, AdGuard 4-file config (`AdGuardHome.yaml`, `team-blacklist.txt`, `team-whitelist.txt`, `personal-overrides.local.example.txt`), 6 hardening flags, `network-monitor.js` PreToolUse hook, Phase 6 future-policy work | `docs/adr/0029/0029-context-mode-mcp-sandbox.md`, `docs/adr/0029/README.md`                       |
+| 2   | Roadmap files introduced (prior commit): 5-phase integration plan + technical implementation details                                                              | `docs/roadmap/context-mode-integration.md`, `docs/roadmap/context-mode-details.md`                |
+| 3   | ADR-0029 second-pass audit applied: 12 items (privacy + credential redaction in Decision Drivers, AdGuard `allowed_clients` + `auth_attempts` + `block_auth_min` hardening, 17 captured event categories, monthly version review, embedded `docker/adguard/README.md`) | `docs/adr/0029/0029-context-mode-mcp-sandbox.md`, `docs/roadmap/context-mode-details.md`, `docs/roadmap/context-mode-integration.md` |
+| 4   | ADR-0029 ConformanceChecklist: "Env knobs minimalism" added — `.env.context-mode.example` (12 knobs), gitignored `.env.context-mode`, safe defaults (`CONTEXT_MODE_FETCH_STRICT=1`), `${VAR:-default}` interpolation, PR justification required when lowering strict mode | `docs/adr/0029/0029-context-mode-mcp-sandbox.md`                                                  |
+| 5   | Roadmap details: "Configurable parameters (env knobs)" section added (3 tables: upstream env vars / compose-level knobs / what is NOT a knob; full `.env.context-mode.example` content; compose snippet updated with `env_file` + `${VAR:-default}` across mem/pids/cpus/tmpfs/strict/nudge/ports; Safety note on `CONTEXT_MODE_FETCH_STRICT` as security boundary); `.gitignore` delta extended with `.env.context-mode` | `docs/roadmap/context-mode-details.md`                                                            |
+| 6   | Roadmap integration: Phase 1 scope expanded — rows 1.3b (`.env.context-mode.example` with 12 tunables, committed) and 1.3c (gitignore entry for `.env.context-mode`); file registry updated                                | `docs/roadmap/context-mode-integration.md`                                                        |
+| 7   | `.sln` sync: added `0029` ADR solution folder (`adr` tree, items: main file + README router) and the two `context-mode-*.md` roadmap files under existing `roadmap` solution folder; `NestedProjects` updated | `ECommerceApp.sln`                                                                                |
+| 8   | Current-state summary table: ADR count 26 → 29 (drift fix; ADR-0027/0028 from RAG work were also previously under-counted)                                       | `.github/COPILOT-SETUP-CHANGELOG.md`                                                              |
+
+**Pre-existing drift flagged (not in this commit)**: ADR-0027 and ADR-0028 are not in `.sln` either. Suggest a separate `.sln` backfill close-out.
 
 ### Session 23 — RAG multilingual expansion + maintenance skills (2026-05-19)
 

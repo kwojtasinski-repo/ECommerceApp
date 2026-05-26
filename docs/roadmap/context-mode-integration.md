@@ -1,7 +1,7 @@
 ﻿# Roadmap: context-mode — MCP sandbox integration
 
 > Status: — Unblocked — RAG stabilisation complete (2026-05-23), ready to implement
-> Scope: `docker/context-mode/`, `Dockerfile-context-mode`, `docker-compose.yaml` (delta), `.vscode/`, `.github/hooks/`, `.github/copilot-instructions.md` (append)
+> Scope: `docker/context-mode/`, `Dockerfile-context-mode`, `docker-compose.yaml` (delta), `.vscode/`, `.github/hooks/`, `.github/copilot-instructions.md` (append), `.claude/settings.json`, `.env.context-mode.example`
 > Companion detail plan: [`context-mode-details.md`](./context-mode-details.md)
 
 ---
@@ -38,7 +38,7 @@ Goal: extend a useful working session from ~30 min to ~3 hours without losing co
 | A8 | Hooks via `docker exec` (not a global CLI) | The team does not install anything locally |
 | A9 | copilot-instructions.md: append-only section 13 | Existing agent configuration left untouched |
 | A10 | RAG MCP stays active alongside context-mode | Each service serves a different purpose; no conflict |
-| A11 | Version pinned in the Dockerfile (v1.0.146) | Controlled upgrade via a single commit |
+| A11 | Version pinned in the Dockerfile (v1.0.148) | Controlled upgrade via a single commit; v1.0.147+ enables CONTEXT_MODE_DIR |
 | A12 | Non-root user inside the container | Security hardening |
 | A13 | Hardening flags: `read_only`, `cap_drop: [ALL]`, `no-new-privileges`, `pids_limit`, `mem_limit`, `ipc: none` | Defense-in-depth on top of network isolation |
 | A14 | AdGuard — community lists auto-update every 7 days | `StevenBlack`, `AdGuard SDN`, `EasyPrivacy`. ~240k rules, zero team effort |
@@ -75,6 +75,8 @@ Goal: extend a useful working session from ~30 min to ~3 hours without losing co
 | 1.1 | Node.js network monitoring hook | `docker/context-mode/network-monitor.js` | 🔲 |
 | 1.2 | Entrypoint wrapper | `docker/context-mode/entrypoint.sh` | 🔲 |
 | 1.3 | Two-stage Dockerfile (git clone → runtime, non-root, pinned tag) | `Dockerfile-context-mode` | 🔲 |
+| 1.3b | Env knobs example file (12 tunables: tags + container resources + ports + nudge + fetch-strict + AdGuard DNS/refresh) committed | `.env.context-mode.example` | 🔲 |
+| 1.3c | `.gitignore` entry for `.env.context-mode` (per-developer overrides) | `.gitignore` | 🔲 |
 | 1.4 | docker-compose delta: service + hardening flags + `ctx-net` bridge + `dns: [adguard]` + volume | `docker-compose.yaml` | 🔲 |
 | 1.5 | Hardening flags: `read_only`, `tmpfs:/tmp`, `cap_drop:[ALL]`, `no-new-privileges`, `pids_limit:100`, `mem_limit:1g`, `ipc:none` | `docker-compose.yaml` | 🔲 |
 | 1.6 | Named volume for the SQLite session DB | `docker-compose.yaml` (volumes section) | 🔲 |
@@ -94,6 +96,7 @@ Goal: extend a useful working session from ~30 min to ~3 hours without losing co
 | 2.3 | Verification: `ctx stats` in Copilot Chat | Copilot Chat | 🔲 |
 | 2.4 | Sandbox test: `ctx_execute("javascript", "console.log('hello')")` | Copilot Chat | 🔲 |
 | 2.5 | Add `.ctx-network-alerts.log` to `.gitignore` | `.gitignore` | 🔲 |
+| 2.6 | Verify `ctx_insight` web UI loads at `http://127.0.0.1:9998` (localhost-only) | browser | 🔲 |
 
 **Phase 2 acceptance criterion**: `ctx stats` returns a response; `ctx_execute` works; the alert log is empty (no connection attempts).
 
@@ -103,7 +106,7 @@ Goal: extend a useful working session from ~30 min to ~3 hours without losing co
 
 | Step | Description | File | Status |
 |---|---|---|---|
-| 3.1 | Hooks config (PreToolUse, PostToolUse, SessionStart) | `.github/hooks/context-mode.json` | 🔲 |
+| 3.1 | Hooks config (5 hooks: PreToolUse, PostToolUse, UserPromptSubmit, PreCompact, SessionStart) | `.github/hooks/context-mode.json` | 🔲 |
 | 3.2 | Hook verification: restart VS Code, new Copilot session | VS Code | 🔲 |
 | 3.3 | Session continuity test: force compaction, check resume | Copilot Chat | 🔲 |
 | 3.4 | Measurement: `ctx stats` after a working session — verify % reduction | Copilot Chat | 🔲 |
@@ -117,6 +120,7 @@ Goal: extend a useful working session from ~30 min to ~3 hours without losing co
 | Step | Description | File | Status |
 |---|---|---|---|
 | 4.1 | Append section 13 (context-mode routing) | `.github/copilot-instructions.md` | 🔲 |
+| 4.1b | Add `.claude/settings.json` with deny/allow rules (sandbox permissions) | `.claude/settings.json` | 🔲 |
 | 4.2 | Verification: existing agents still work (ADR query, BC routing) | Copilot Chat | 🔲 |
 | 4.3 | Run `@copilot-setup-maintainer` (Workflow 11 + 7) | Copilot Chat | 🔲 |
 
@@ -135,7 +139,11 @@ Goal: extend a useful working session from ~30 min to ~3 hours without losing co
 | 5.5 | Shared team whitelist (commit + PR) | `docker/adguard/team-whitelist.txt` | 🔲 |
 | 5.6 | Personal overrides example (gitignored) | `docker/adguard/personal-overrides.local.example.txt` | 🔲 |
 | 5.7 | `.gitignore`: `personal-overrides.local.txt` | `.gitignore` | 🔲 |
-| 5.8 | Verification: AdGuard UI at `http://localhost:3000` — lists active, `context-mode` registered as a client with the strict policy | browser | 🔲 |
+| 5.8 | **MANDATORY**: First-boot wizard — set strong admin password (16+ chars), copy bcrypt hash to repo config | `docker/adguard/AdGuardHome.yaml` | 🔲 |
+| 5.9 | Restrict web UI to host loopback only: `allowed_clients: [127.0.0.1, ::1]` + `auth_attempts: 5` + `block_auth_min: 15` | `docker/adguard/AdGuardHome.yaml` | 🔲 |
+| 5.10 | Operational notes (first-boot hardening + monthly review checklist) | `docker/adguard/README.md` | 🔲 |
+| 5.11 | Verification: from `ctx-net` container, `curl http://adguard:3000/control/login` returns 403; DNS `:53/udp` still works | `docker exec` | 🔲 |
+| 5.12 | Verification: AdGuard UI at `http://127.0.0.1:3000` — lists active, `context-mode` registered as a client with the strict policy | browser | 🔲 |
 
 **Phase 5 acceptance criterion**: AdGuard reachable on :3000, 3 community lists active (~240k rules), `context-mode` resolves through AdGuard (`docker exec ecommerceapp-context-mode nslookup raw.githubusercontent.com` returns an answer; an unknown suspicious domain — NXDOMAIN), and the PR workflow on `team-blacklist.txt` has been exercised at least once.
 
@@ -154,6 +162,7 @@ Concept:
 | 6.3 | VS Code Problem Matcher — yellow warnings in the Problems panel when `suggestions.json` gains new entries | `.vscode/tasks.json` (problem matcher) | 🔲 (future) |
 | 6.4 | Helper script `accept-suggestion.ps1` — promotes an entry to `team-blacklist.txt` + commit | `tools/adguard/accept-suggestion.ps1` | 🔲 (future) |
 | 6.5 | Scheduled Task / Azure DevOps Pipeline invokes triage every 1h or 24h (GitHub Actions unavailable — team CI = Azure DevOps) | OS scheduler | 🔲 (future) |
+| 6.6 | DNS exfiltration heuristic: alert on queries with hostname > 50 chars, or > 5 queries/s to the same parent domain, or hex/base64-looking labels | `tools/adguard/exfil-detect.ps1` | 🔲 (future) |
 
 **Why "future" and not now**: 3 community lists with a 7-day auto-update cover ~95% of bad domains. Adding a script + cron + UI is moving parts for a marginal gain. Revisit once real usage shows a gap.
 
@@ -199,17 +208,20 @@ Phase 5 (AdGuard)           ← optional gating; does not block previous phases
 | `docker/context-mode/network-monitor.js` | New | 1 | None |
 | `docker/context-mode/entrypoint.sh` | New | 1 | None |
 | `Dockerfile-context-mode` | New | 1 | None |
+| `.env.context-mode.example` | New (12 tunables) | 1 | Source of truth for defaults; copy to gitignored `.env.context-mode` |
 | `docker-compose.yaml` | Delta (2 services + `ctx-net` bridge + 2 volumes) | 1/5 | Does not touch existing services |
 | `.vscode/mcp.json` | New | 2 | Adds an MCP server; RAG remains |
 | `.vscode/tasks.json` | Delta (3 new tasks) | 2 | Existing tasks unchanged |
-| `.gitignore` | Delta (2 lines: alert log + personal-overrides) | 2/5 | None |
-| `.github/hooks/context-mode.json` | New | 3 | Requires @copilot-setup-maintainer |
+| `.gitignore` | Delta (3 lines: alert log + personal-overrides + .env.context-mode) | 1/2/5 | None |
+| `.github/hooks/context-mode.json` | New | 3 | Requires @copilot-setup-maintainer; 5 hooks total |
 | `.github/copilot-instructions.md` | Append (section 13) | 4 | Requires @copilot-setup-maintainer |
+| `.claude/settings.json` | New | 4 | Read by context-mode on VS Code Copilot too — enforces deny/allow |
 | `docker/adguard/AdGuardHome.yaml` | New | 5 | None (gated by `--profile monitoring`) |
 | `docker/adguard/community-blocklists.yaml` | New | 5 | None |
 | `docker/adguard/team-blacklist.txt` | New | 5 | None |
 | `docker/adguard/team-whitelist.txt` | New | 5 | None |
 | `docker/adguard/personal-overrides.local.example.txt` | New | 5 | None |
+| `docker/adguard/README.md` | New | 5 | Operational notes — first-boot hardening + monthly review checklist |
 
 ---
 
