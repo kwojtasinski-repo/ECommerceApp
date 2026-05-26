@@ -452,7 +452,61 @@ Output: written to `tools/rag/eval/questions.json` by the `/rag-sync` agent.
 
 ---
 
-## 14. Future architecture paths
+## 14. Error handling, sanitisation, and middleware
+
+Both servers share the same defence-in-depth shape so neither stack ever returns a raw stack trace or absolute filesystem path to a remote caller.
+
+### Layers (.NET, `tools/rag-dotnet/src/RagTools.Mcp/`)
+
+| Order | Layer | Source | Catches |
+|---|---|---|---|
+| 1 | `IExceptionHandler` (global) | [Middleware/ApiExceptionHandler.cs](../../tools/rag-dotnet/src/RagTools.Mcp/Middleware/ApiExceptionHandler.cs) | Anything that escapes the controller / MCP layer. Maps known types → HTTP status; logs full exception server-side; returns `{"error":"...","code":"..."}`. |
+| 2 | `BadRequestEnvelopeMiddleware` | [Middleware/BadRequestEnvelopeMiddleware.cs](../../tools/rag-dotnet/src/RagTools.Mcp/Middleware/BadRequestEnvelopeMiddleware.cs) | `BadHttpRequestException` (Kestrel body / framing) and `JsonException` (malformed JSON-RPC). Returns a 400 JSON envelope. |
+| 3 | `ApiKeyMiddleware` | [Middleware/ApiKeyMiddleware.cs](../../tools/rag-dotnet/src/RagTools.Mcp/Middleware/ApiKeyMiddleware.cs) | Rejects calls to `/ingest/*` and `/admin/*` without a valid `X-Api-Key`. |
+| 4 | `McpToolGuard.RunAsync<T>` | [Tools/McpToolGuard.cs](../../tools/rag-dotnet/src/RagTools.Mcp/Tools/McpToolGuard.cs) | Inside every `[McpServerTool]` method. Re-throws `McpException` and `OperationCanceledException`; logs + sanitises everything else into a `McpException` via `ToolErrorSanitizer.ToMcpException`. |
+| 5 | `ToolErrorSanitizer` | [Tools/ToolErrorSanitizer.cs](../../tools/rag-dotnet/src/RagTools.Mcp/Tools/ToolErrorSanitizer.cs) | Static utility shared by layers 1 and 4 — regex-strips absolute paths and caps the message at 500 chars. |
+
+Registration in [Program.cs](../../tools/rag-dotnet/src/RagTools.Mcp/Program.cs) (SSE / HTTP transport):
+```csharp
+webBuilder.Services.AddExceptionHandler<ApiExceptionHandler>();
+webBuilder.Services.AddProblemDetails();
+// ...
+app.UseExceptionHandler();
+app.UseMiddleware<BadRequestEnvelopeMiddleware>();
+app.UseMiddleware<ApiKeyMiddleware>();
+app.MapControllers();
+app.MapMcp("/");
+```
+
+### Layers (Python, `tools/rag/mcp_server.py`)
+
+| Order | Layer | Source | Catches |
+|---|---|---|---|
+| 1 | Starlette global handlers | `_install_exception_handlers(app)` | `HTTPException` (preserve status) + catch-all `Exception` (500). Both go through `_sanitize_error_message`. Installed on SSE and Streamable HTTP transports. |
+| 2 | `ApiKeyMiddleware` | `tools/rag/api_key_middleware.py` | Same role as the .NET version. |
+| 3 | `call_tool` guard | `mcp_server.py:152` | The single `@SERVER.call_tool()` dispatcher wraps every tool call in `try / except Exception`, logs full traceback, then raises `RuntimeError(_sanitize_error_message(exc))`. |
+| 4 | `_sanitize_error_message` | `mcp_server.py:142` | Mirror of `ToolErrorSanitizer.Sanitize` — strips paths via `_PATH_RE`, caps at 500 chars. |
+
+### Contract
+
+| Concern | Behaviour |
+|---|---|
+| Stack trace in HTTP response body | **Never** — only the sanitised first-line message. |
+| Absolute filesystem path in HTTP response body | **Never** — `<path>/<basename>` substitution. |
+| Stack trace in server logs | Always (`logger.LogError` / `_log.exception`). |
+| MCP JSON-RPC error code | Standardised via `McpException` (.NET) or `RuntimeError` propagated by the SDK (Python). |
+| REST 4xx vs 5xx | `IExceptionHandler` (.NET) and Starlette HTTPException (Python) preserve the explicit status; everything else falls to 500. |
+
+### Adding a new tool / endpoint
+
+1. **MCP tool (.NET)**: write a new `[McpServerTool]` method on `RagTools`. Wrap the body in `McpToolGuard.RunAsync(logger, nameof(MyTool), async ct => { ... }, ct)`. No try/catch needed.
+2. **MCP tool (Python)**: add the handler to `_TOOL_DISPATCH` in `mcp_server.py`. The central `call_tool` already wraps it.
+3. **REST controller / route (.NET)**: throw the most specific exception type (`ArgumentException`, `UnauthorizedAccessException`, etc.). `ApiExceptionHandler` maps it to the right status; do not add a per-action try/catch unless you need a different status mapping.
+4. **REST route (Python / Starlette)**: raise `HTTPException(status_code=..., detail=...)`. The global handler will serialise it.
+
+---
+
+## 15. Future architecture paths
 
 ### Path A — Shared `rag-tools` repository (target for 4+ developers, 5+ repos)
 

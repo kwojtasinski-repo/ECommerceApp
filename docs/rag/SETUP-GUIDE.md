@@ -408,6 +408,16 @@ X-Api-Key: <value of RAG_API_KEY env var on the server>
 ```
 Omit the header when `RAG_API_KEY` is not set (dev mode).
 
+**Error envelope** — all error responses (auth failures, malformed body, unhandled
+exceptions, MCP tool failures) follow the same shape on both stacks:
+```json
+{ "error": "<sanitized message, max 500 chars, paths stripped>", "code": "<bucket>" }
+```
+Buckets: `BadRequest`, `Unauthorized`, `HttpError`, `NotImplemented`, `InternalServerError`.
+Stack traces are never returned to the client (full traces stay in server logs).
+See [`rag-architecture.md` §14](rag-architecture.md#14-error-handling-sanitisation-and-middleware)
+for the full middleware / handler layering.
+
 ---
 
 #### Step 1 — Upload one document (`POST /ingest/{collection}`)

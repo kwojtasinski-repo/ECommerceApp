@@ -63,6 +63,7 @@ Two implementations exist — both expose the same MCP tools and use the same mo
 |------|-----|
 | **Set up for the first time** | [SETUP-GUIDE.md](SETUP-GUIDE.md) |
 | **Understand the architecture** | [rag-architecture.md](rag-architecture.md) |
+| **Error handling / middleware / API security** | [rag-architecture.md §14](rag-architecture.md#14-error-handling-sanitisation-and-middleware) |
 | **Check index stats** | [index-stats.md](index-stats.md) (Python) / [index-stats-dotnet.md](index-stats-dotnet.md) (.NET) |
 | **Python source code** | [tools/rag/](../../tools/rag/) |
 | **.NET source code** | [tools/rag-dotnet/](../../tools/rag-dotnet/) |
