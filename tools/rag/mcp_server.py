@@ -26,10 +26,10 @@ from __future__ import annotations
 import argparse
 import asyncio
 import contextlib
-import json
+import logging
 import os
+import re
 import sys
-import traceback
 from pathlib import Path
 
 from mcp.server import Server
@@ -135,20 +135,29 @@ _TOOL_DISPATCH = {
     "list_adrs":   _tool_list_adrs,
 }
 
+_log = logging.getLogger("ecommerceapp-rag.mcp")
+_PATH_RE = re.compile(r"['\"]?(?:[A-Za-z]:)?[\\/](?:[^\s'\":()]+[\\/])+([^\s'\":()]+)['\"]?")
+
+
+def _sanitize_error_message(exc: BaseException) -> str:
+    """Return a user-safe error message: strip absolute filesystem paths and cap length."""
+    msg = str(exc) or type(exc).__name__
+    msg = _PATH_RE.sub(r"<path>/\1", msg)
+    return msg[:500]
+
 
 @SERVER.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     handler = _TOOL_DISPATCH.get(name)
     if handler is None:
-        return [TextContent(type="text", text=f"Unknown tool: {name}")]
+        # MCP SDK converts raised exceptions to CallToolResult(isError=true).
+        raise ValueError(f"Unknown tool: {name}")
     try:
         return await handler(arguments)
-    except Exception as _exc:
-        return [TextContent(type="text", text=json.dumps({
-            "error": type(_exc).__name__,
-            "message": str(_exc),
-            "traceback": traceback.format_exc(),
-        }))]
+    except Exception as exc:
+        _log.exception("tool '%s' failed", name)
+        safe = _sanitize_error_message(exc)
+        raise RuntimeError(f"{type(exc).__name__}: {safe}") from None
 
 
 # ── Session context manager ───────────────────────────────────────────────────

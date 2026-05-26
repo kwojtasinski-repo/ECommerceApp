@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using Microsoft.Extensions.Logging;
+using ModelContextProtocol;
 using ModelContextProtocol.Server;
 using RagTools.Core;
 using RagTools.Core.Adrs;
@@ -37,11 +38,21 @@ public sealed class RagTools(
         CancellationToken cancellationToken = default)
     {
         top_k = Math.Clamp(top_k, 1, RagQueryService.MaxTopK);
+        if (question is { Length: > 4096 }) question = question[..4096];
         logger.LogDebug("QueryDocs: collection={Collection} topic={Topic} topK={TopK}", session.Collection, topic, top_k);
-
-        var request = new QueryRequest(session.Collection, question, topic, top_k);
-        var outcome = await queryService.QueryAsync(request, cancellationToken);
-        return McpJson.Serialize(RagToolsProjector.ProjectQuery(outcome));
+        try
+        {
+            var request = new QueryRequest(session.Collection, question, topic, top_k);
+            var outcome = await queryService.QueryAsync(request, cancellationToken);
+            return McpJson.Serialize(RagToolsProjector.ProjectQuery(outcome));
+        }
+        catch (McpException) { throw; }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "QueryDocs failed");
+            throw ToolErrorSanitizer.ToMcpException(ex);
+        }
     }
 
     [McpServerTool, Description(
@@ -58,11 +69,21 @@ public sealed class RagTools(
         CancellationToken cancellationToken = default)
     {
         top_files = Math.Clamp(top_files, 1, RagReadDocsService.MaxTopFiles);
+        if (question is { Length: > 4096 }) question = question[..4096];
         logger.LogDebug("ReadDocs: collection={Collection} topic={Topic} topFiles={TopFiles}", session.Collection, topic, top_files);
-
-        var request = new ReadDocsRequest(session.Collection, question, topic, top_files);
-        var outcome = await readDocsService.ReadAsync(request, cancellationToken);
-        return McpJson.Serialize(RagToolsProjector.ProjectReadDocs(outcome));
+        try
+        {
+            var request = new ReadDocsRequest(session.Collection, question, topic, top_files);
+            var outcome = await readDocsService.ReadAsync(request, cancellationToken);
+            return McpJson.Serialize(RagToolsProjector.ProjectReadDocs(outcome));
+        }
+        catch (McpException) { throw; }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "ReadDocs failed");
+            throw ToolErrorSanitizer.ToMcpException(ex);
+        }
     }
 
     [McpServerTool, Description(
@@ -75,10 +96,19 @@ public sealed class RagTools(
         CancellationToken cancellationToken = default)
     {
         logger.LogDebug("GetHistory: collection={Collection} id={Id}", session.Collection, id);
-
-        var request = new HistoryRequest(session.Collection, id);
-        var outcome = await historyService.GetAsync(request, cancellationToken);
-        return McpJson.Serialize(RagToolsProjector.ProjectHistory(outcome));
+        try
+        {
+            var request = new HistoryRequest(session.Collection, id);
+            var outcome = await historyService.GetAsync(request, cancellationToken);
+            return McpJson.Serialize(RagToolsProjector.ProjectHistory(outcome));
+        }
+        catch (McpException) { throw; }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "GetHistory failed");
+            throw ToolErrorSanitizer.ToMcpException(ex);
+        }
     }
 
     [McpServerTool, Description(
@@ -88,9 +118,18 @@ public sealed class RagTools(
     public async Task<string> ListAdrs(CancellationToken cancellationToken = default)
     {
         logger.LogDebug("ListAdrs: collection={Collection}", session.Collection);
-
-        var request = new AdrListRequest(session.Collection);
-        var outcome = await listService.ListAsync(request, cancellationToken);
-        return McpJson.Serialize(RagToolsProjector.ProjectList(outcome));
+        try
+        {
+            var request = new AdrListRequest(session.Collection);
+            var outcome = await listService.ListAsync(request, cancellationToken);
+            return McpJson.Serialize(RagToolsProjector.ProjectList(outcome));
+        }
+        catch (McpException) { throw; }
+        catch (OperationCanceledException) { throw; }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "ListAdrs failed");
+            throw ToolErrorSanitizer.ToMcpException(ex);
+        }
     }
 }

@@ -22,6 +22,33 @@ from mcp.types import TextContent
 import state
 from common import sanitize_text
 
+# ── input caps ────────────────────────────────────────────────────────────────
+# Defensive limits to keep tool calls bounded regardless of caller schema.
+
+_MAX_QUESTION_CHARS = 4096
+_MAX_TOP_K = 15
+_MAX_TOP_FILES = 5
+_MAX_HISTORY_ID_CHARS = 128
+
+
+def _clamp_int(raw, lo: int, hi: int, default: int) -> int:
+    try:
+        v = int(raw)
+    except (TypeError, ValueError):
+        return default
+    if v < lo:
+        return lo
+    if v > hi:
+        return hi
+    return v
+
+
+def _cap_question(raw) -> str:
+    q = "" if raw is None else str(raw)
+    if len(q) > _MAX_QUESTION_CHARS:
+        return q[:_MAX_QUESTION_CHARS]
+    return q
+
 # ── full-content intent detection ─────────────────────────────────────────────
 
 _FULL_INTENT_RE = re.compile(
@@ -43,9 +70,9 @@ def _wants_full_content(question: str) -> bool:
 
 
 async def _tool_query_docs(args: dict) -> list[TextContent]:
-    question = args["question"]
+    question = _cap_question(args.get("question", ""))
     bc = args.get("bc")
-    top_k = int(args.get("top_k", 5))
+    top_k = _clamp_int(args.get("top_k", 5), 1, _MAX_TOP_K, 5)
     try:
         hits = await asyncio.wait_for(
             asyncio.to_thread(
@@ -105,9 +132,9 @@ async def _tool_read_docs(args: dict) -> list[TextContent]:
       2. Read each top-ranked file in full from disk.
       3. Return complete text — caller gets every section including Alternatives/Consequences.
     """
-    question = args["question"]
+    question = _cap_question(args.get("question", ""))
     bc = args.get("bc")
-    top_files = min(int(args.get("top_files", 3)), 5)
+    top_files = _clamp_int(args.get("top_files", 3), 1, _MAX_TOP_FILES, 3)
     full_mode = _wants_full_content(question)
 
     # Fetch enough chunks globally so that each file gets good per-file coverage.
@@ -196,7 +223,7 @@ async def _tool_get_history(args: dict) -> list[TextContent]:
     'adr_id' for backward compatibility with existing indexed collections).
     Works in hosted/remote mode (no disk access required).
     """
-    history_id = str(args["id"])
+    history_id = str(args.get("id", ""))[:_MAX_HISTORY_ID_CHARS]
     collection = state._session_collection.get(None)
 
     # Read history_field from the collection config point via the public API.

@@ -183,7 +183,12 @@ def _parse_zip_batch(
             if info.filename in _all_config:
                 continue
             safe = info.filename.replace("\\", "/")
-            if ".." in safe.split("/"):
+            parts = safe.split("/")
+            if (
+                ".." in parts
+                or safe.startswith("/")
+                or (len(safe) >= 2 and safe[1] == ":")  # absolute Windows path like "C:/..."
+            ):
                 return None, JSONResponse(
                     {"error": f"Path traversal detected in ZIP entry '{info.filename}'"},
                     status_code=400,
@@ -332,9 +337,31 @@ def build_ingest_routes(
 ) -> list[Route]:
     """Return Starlette Route objects wired to the given store and queue."""
     ctrl = IngestController(store, queue, capacity)
+
+    async def _ingest_fallback(request: Request) -> Response:
+        # Catches any /ingest/... URL that does not match a declared route.
+        # Without this, mcp_server.py mounts the MCP handler at "/" and an
+        # unknown /ingest/... path leaks through as an MCP 406 Not Acceptable
+        # response. Convert it into a sane 400 envelope instead.
+        rest = request.path_params.get("rest", "")
+        return JSONResponse(
+            {
+                "error": "Invalid ingest path. Expected /ingest/{collection}/batch "
+                         "or /ingest/{collection}/operations[/{op_id}].",
+                "code": "BadRequest",
+                "details": {"path": "/ingest/" + rest},
+            },
+            status_code=400,
+        )
+
     return [
         Route("/ingest/{collection}/batch",                          endpoint=ctrl.upload_batch,    methods=["POST"]),
         Route("/ingest/{collection}/operations",                     endpoint=ctrl.list_operations, methods=["GET"]),
         Route("/ingest/{collection}/operations/{operation_id}",      endpoint=ctrl.get_operation,   methods=["GET"]),
         Route("/admin/stats",                                        endpoint=ctrl.admin_stats,     methods=["GET"]),
+        # Fallback for any malformed /ingest/... path (multi-segment collection,
+        # wrong method on a valid endpoint, etc.). MUST be last among the
+        # /ingest routes so concrete routes win.
+        Route("/ingest/{rest:path}",                                 endpoint=_ingest_fallback,
+              methods=["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]),
     ]

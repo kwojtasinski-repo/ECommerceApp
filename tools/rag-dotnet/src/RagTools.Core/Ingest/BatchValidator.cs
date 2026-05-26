@@ -147,7 +147,10 @@ public sealed class BatchValidator(ILogger<BatchValidator> logger)
             if (configFilenames.Contains(entry.Name)) continue;
 
             var normalized = entry.Name.Replace('\\', '/');
-            if (normalized.Split('/').Any(p => p == ".."))
+            var isAbsolute =
+                normalized.StartsWith('/') ||
+                (normalized.Length >= 2 && normalized[1] == ':');
+            if (normalized.Split('/').Any(p => p == "..") || isAbsolute)
             {
                 return Bad(BatchIngestError.PathTraversalDetected,
                     $"Path traversal detected in ZIP entry '{entry.Name}'.",
