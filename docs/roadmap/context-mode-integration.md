@@ -1,199 +1,254 @@
-﻿# Roadmap: context-mode — integracja sandboxa MCP
+﻿# Roadmap: context-mode — MCP sandbox integration
 
 > Status: — Unblocked — RAG stabilisation complete (2026-05-23), ready to implement
 > Scope: `docker/context-mode/`, `Dockerfile-context-mode`, `docker-compose.yaml` (delta), `.vscode/`, `.github/hooks/`, `.github/copilot-instructions.md` (append)
-> Powiązany plan szczegółowy: [`context-mode-details.md`](./context-mode-details.md)
+> Companion detail plan: [`context-mode-details.md`](./context-mode-details.md)
 
 ---
 
-## Po co to robimy
+## Why we are doing this
 
-GitHub Copilot wprowadza limity requestów (request usage billing). Każde wywołanie
-narzędzia wrzuca surowe dane do okna kontekstu — co przekłada się bezpośrednio
-na liczbę requestów do modelu.
+GitHub Copilot is rolling out request usage billing. Every tool invocation
+dumps raw output into the context window — which translates directly into
+the number of requests billed against the model.
 
-| Narzędzie | Raw output | W kontekście po integracji | Redukcja |
+| Tool | Raw output | In-context after integration | Reduction |
 |---|---|---|---|
 | Playwright snapshot | 56 KB | 299 B | 99% |
 | GitHub issues (20) | 59 KB | 1.1 KB | 98% |
-| Logi testów (30 suite) | 6 KB | 337 B | 95% |
+| Test logs (30 suites) | 6 KB | 337 B | 95% |
 | Repo research (subagent) | 986 KB | 62 KB | 94% |
-| **Cała sesja** | **315 KB** | **5.4 KB** | **98%** |
+| **Whole session** | **315 KB** | **5.4 KB** | **98%** |
 
-Cel: wydłużenie sesji roboczej z ~30 min do ~3 godzin bez utraty kontekstu.
+Goal: extend a useful working session from ~30 min to ~3 hours without losing context.
 
 ---
 
-## Założenia
+## Assumptions
 
-| Nr | Założenie | Uzasadnienie |
+| # | Assumption | Rationale |
 |---|---|---|
-| A1 | Build ze źródła (git clone pinowany tag), nie `npm install -g` | Pełna kontrola co jest uruchamiane; audytowalny kod |
-| A2 | Docker — bez instalacji na hoście dla teamu | `docker compose up -d context-mode` to jedyna operacja |
-| A3 | Sieć: `--network none` | Cross-runtime (Docker Desktop, Rancher, Podman); zero egress |
-| A4 | Node.js network monitoring hook | Loguje próby połączeń; działa bez kernel capabilities |
-| A5 | Alert log: `/workspace/.ctx-network-alerts.log` | Cross-runtime; widoczny w VS Code |
-| A6 | VS Code Problem Matcher task | Alerty w panelu Problems; cross-runtime |
-| A7 | Dozzle jako monitoring web UI | Zero konfiguracji; uruchamia się profilem `--profile monitoring` |
-| A8 | Hooks przez `docker exec` (nie globalny CLI) | Team nie instaluje nic lokalnie |
-| A9 | copilot-instructions.md: tylko append sekcji 13 | Istniejąca konfiguracja agentów nienaruszona |
-| A10 | RAG MCP pozostaje aktywny obok context-mode | Każdy serwis do innego celu; brak konfliktu |
-| A11 | Wersja pinowana w Dockerfile (v1.0.146) | Kontrolowany upgrade przez jeden commit |
-| A12 | Non-root user w kontenerze | Hardening bezpieczeństwa |
+| A1 | Build from source (git clone, pinned tag), not `npm install -g` | Full control over what runs; auditable code |
+| A2 | Docker — no host-side install for the team | `docker compose up -d context-mode` is the only operation |
+| A3 | Network: custom `ctx-net` bridge + DNS through AdGuard | Allows controlled use of `ctx_fetch_and_index` against a whitelist; provides a query log; cross-runtime (Docker Desktop, Rancher, Podman) |
+| A4 | Node.js network monitoring hook | Logs connection attempts (even when AdGuard permitted them); secondary signal independent of DNS |
+| A5 | Alert log: `/workspace/.ctx-network-alerts.log` | Cross-runtime; visible in VS Code |
+| A6 | VS Code Problem Matcher task | Alerts surface in the Problems panel; cross-runtime |
+| A7 | Container logs: VS Code Docker extension + `docker logs` | No dedicated log viewer container (Dozzle, Portainer) — minimise the number of services |
+| A8 | Hooks via `docker exec` (not a global CLI) | The team does not install anything locally |
+| A9 | copilot-instructions.md: append-only section 13 | Existing agent configuration left untouched |
+| A10 | RAG MCP stays active alongside context-mode | Each service serves a different purpose; no conflict |
+| A11 | Version pinned in the Dockerfile (v1.0.146) | Controlled upgrade via a single commit |
+| A12 | Non-root user inside the container | Security hardening |
+| A13 | Hardening flags: `read_only`, `cap_drop: [ALL]`, `no-new-privileges`, `pids_limit`, `mem_limit`, `ipc: none` | Defense-in-depth on top of network isolation |
+| A14 | AdGuard — community lists auto-update every 7 days | `StevenBlack`, `AdGuard SDN`, `EasyPrivacy`. ~240k rules, zero team effort |
+| A15 | Shared `team-blacklist.txt` / `team-whitelist.txt` (PR review) + `personal-overrides.local.txt` (gitignored) | Team-wide policy in git, local experiments without conflict |
+| A16 | Docker Desktop licensing caveat (company >250 employees = paid) | Rancher Desktop / Podman are free alternatives. Repo uses the `docker` CLI; a local swap is not committed. Qdrant Apache-2.0 has no company-size restriction |
+| A17 | CI = Azure DevOps (GitHub Actions unavailable) | Phase 6 auto-triage (when implemented) must use Azure Pipelines + `az repos pr create` instead of `gh pr create`. A local trigger via Windows Task Scheduler stays available as a CI-less option |
 
 ---
 
-## Czego się obawiamy — ryzyka i mitigacje
+## What we worry about — risks and mitigations
 
-| Ryzyko | P-stwo | Wpływ | Mitigacja |
+| Risk | Probability | Impact | Mitigation |
 |---|---|---|---|
-| context-mode exfiltruje dane przez sieć | Niskie | Wysoki | `--network none` blokuje wszystko; hook loguje próby |
-| Breaking change w nowej wersji | Niskie | Średni | Pinowana wersja w Dockerfile; świadomy upgrade przez cały team |
-| Hooks interferują z RAG MCP (`mcp__*` calls) | Niskie | Niski | `CONTEXT_MODE_EXTERNAL_MCP_NUDGE_EVERY=50` |
-| copilot-instructions.md konflikt | Bardzo niskie | Wysoki | Append only; nowa sekcja 13; stara konfiguracja bez zmian |
-| Różnice między Docker Desktop / Rancher / Podman | Możliwe | Niski | `--network none` działa identycznie; `docker`→`podman` podmiana lokalna |
-| SQLite session DB nie persystuje | Brak | Wysoki | Named volume `context-mode-data` |
-| Non-root user nie ma dostępu do workspace | Możliwe | Średni | Volume mount z właściwymi uprawnieniami; weryfikacja po pierwszym uruchomieniu |
+| context-mode exfiltrates data over the network | Low | High | AdGuard DNS firewall (whitelist) + hardening flags + network-monitor.js hook (audit trail) |
+| AdGuard blocks a domain that is actually needed | Possible | Low | UI quick-fix + PR to `team-whitelist.txt` (higher priority than community lists) |
+| Community blocklist auto-update introduces a false positive | Possible | Low | 7-day interval (not 24h) gives time to react; `team-whitelist.txt` is an immediate hot-fix |
+| Breaking change in a new version | Low | Medium | Pinned version in the Dockerfile; intentional upgrade by the whole team |
+| Hooks interfere with RAG MCP (`mcp__*` calls) | Low | Low | `CONTEXT_MODE_EXTERNAL_MCP_NUDGE_EVERY=50` |
+| copilot-instructions.md conflict | Very low | High | Append only; new section 13; existing configuration unchanged |
+| Differences between Docker Desktop / Rancher / Podman | Possible | Low | `ctx-net` bridge behaves identically; `docker`→`podman` is a local swap |
+| AdGuard misconfiguration blocks maintenance | Low | Medium | The AdGuard UI stays reachable even with filtering enabled; emergency: `docker compose stop adguard` |
+| SQLite session DB does not persist | None | High | Named volume `context-mode-data` |
+| Non-root user has no access to workspace | Possible | Medium | Volume mount with correct permissions; verify after the first run |
+| Docker Desktop license for a company >250 employees | Certain | Low | Rancher Desktop / Podman are free and compatible; installing Docker Engine on Linux is also free |
 
 ---
 
-## Fazy implementacji
+## Implementation phases
 
-### Faza 1 — Docker sandbox (fundament)
+### Phase 1 — Docker sandbox (foundation) + hardening + ctx-net bridge
 
-| Krok | Opis | Plik | Status |
+| Step | Description | File | Status |
 |---|---|---|---|
 | 1.1 | Node.js network monitoring hook | `docker/context-mode/network-monitor.js` | 🔲 |
 | 1.2 | Entrypoint wrapper | `docker/context-mode/entrypoint.sh` | 🔲 |
-| 1.3 | Dockerfile 2-stage (git clone → runtime) | `Dockerfile-context-mode` | 🔲 |
-| 1.4 | docker-compose delta (serwis + volume + env) | `docker-compose.yaml` | 🔲 |
-| 1.5 | Named volume dla SQLite session DB | `docker-compose.yaml` (volumes sekcja) | 🔲 |
-| 1.6 | VS Code task: `Context-Mode: Start` | `.vscode/tasks.json` | 🔲 |
-| 1.7 | Weryfikacja: `docker compose up -d context-mode` | terminal | 🔲 |
+| 1.3 | Two-stage Dockerfile (git clone → runtime, non-root, pinned tag) | `Dockerfile-context-mode` | 🔲 |
+| 1.4 | docker-compose delta: service + hardening flags + `ctx-net` bridge + `dns: [adguard]` + volume | `docker-compose.yaml` | 🔲 |
+| 1.5 | Hardening flags: `read_only`, `tmpfs:/tmp`, `cap_drop:[ALL]`, `no-new-privileges`, `pids_limit:100`, `mem_limit:1g`, `ipc:none` | `docker-compose.yaml` | 🔲 |
+| 1.6 | Named volume for the SQLite session DB | `docker-compose.yaml` (volumes section) | 🔲 |
+| 1.7 | VS Code task: `Context-Mode: Start` | `.vscode/tasks.json` | 🔲 |
+| 1.8 | Verification: `docker compose up -d context-mode` | terminal | 🔲 |
 
-**Kryterium akceptacji Fazy 1**: kontener startuje, nie crasha, `docker logs ecommerceapp-context-mode` nie pokazuje błędów.
+**Phase 1 acceptance criterion**: the container starts and does not crash, runs on `ctx-net`, has DNS pointing at `adguard`, and the hardening flags are visible in `docker inspect`.
 
 ---
 
-### Faza 2 — MCP connection do VS Code
+### Phase 2 — MCP connection to VS Code
 
-| Krok | Opis | Plik | Status |
+| Step | Description | File | Status |
 |---|---|---|---|
 | 2.1 | MCP config (docker exec stdio) | `.vscode/mcp.json` | 🔲 |
-| 2.2 | VS Code task: `Context-Mode: Stop`, `Context-Mode: Network Alerts` | `.vscode/tasks.json` | 🔲 |
-| 2.3 | Weryfikacja: `ctx stats` w Copilot Chat | Copilot Chat | 🔲 |
-| 2.4 | Test sandbox: `ctx_execute("javascript", "console.log('hello')")` | Copilot Chat | 🔲 |
-| 2.5 | Dodanie `.ctx-network-alerts.log` do `.gitignore` | `.gitignore` | 🔲 |
+| 2.2 | VS Code tasks: `Context-Mode: Stop`, `Context-Mode: Network Alerts` | `.vscode/tasks.json` | 🔲 |
+| 2.3 | Verification: `ctx stats` in Copilot Chat | Copilot Chat | 🔲 |
+| 2.4 | Sandbox test: `ctx_execute("javascript", "console.log('hello')")` | Copilot Chat | 🔲 |
+| 2.5 | Add `.ctx-network-alerts.log` to `.gitignore` | `.gitignore` | 🔲 |
 
-**Kryterium akceptacji Fazy 2**: `ctx stats` zwraca odpowiedź; `ctx_execute` działa; alert log pusty (brak prób połączeń).
+**Phase 2 acceptance criterion**: `ctx stats` returns a response; `ctx_execute` works; the alert log is empty (no connection attempts).
 
 ---
 
-### Faza 3 — Hooks (routing enforcement)
+### Phase 3 — Hooks (routing enforcement)
 
-| Krok | Opis | Plik | Status |
+| Step | Description | File | Status |
 |---|---|---|---|
 | 3.1 | Hooks config (PreToolUse, PostToolUse, SessionStart) | `.github/hooks/context-mode.json` | 🔲 |
-| 3.2 | Weryfikacja hooków: restart VS Code, nowa sesja Copilot | VS Code | 🔲 |
-| 3.3 | Test session continuity: wymuś compaction, sprawdź resume | Copilot Chat | 🔲 |
-| 3.4 | Pomiar: `ctx stats` po sesji roboczej — sprawdź % redukcji | Copilot Chat | 🔲 |
+| 3.2 | Hook verification: restart VS Code, new Copilot session | VS Code | 🔲 |
+| 3.3 | Session continuity test: force compaction, check resume | Copilot Chat | 🔲 |
+| 3.4 | Measurement: `ctx stats` after a working session — verify % reduction | Copilot Chat | 🔲 |
 
-**Kryterium akceptacji Fazy 3**: Hooks aktywne; `ctx stats` pokazuje savings > 0; session restore po compaction działa.
+**Phase 3 acceptance criterion**: hooks are active; `ctx stats` shows savings > 0; session restore after compaction works.
 
 ---
 
-### Faza 4 — copilot-instructions.md merge
+### Phase 4 — copilot-instructions.md merge
 
-| Krok | Opis | Plik | Status |
+| Step | Description | File | Status |
 |---|---|---|---|
-| 4.1 | Append sekcji 13 (routing context-mode) | `.github/copilot-instructions.md` | 🔲 |
-| 4.2 | Weryfikacja: istniejące agenty działają (ADR query, BC routing) | Copilot Chat | 🔲 |
-| 4.3 | Wywołanie `@copilot-setup-maintainer` (Workflow 11 + 7) | Copilot Chat | 🔲 |
+| 4.1 | Append section 13 (context-mode routing) | `.github/copilot-instructions.md` | 🔲 |
+| 4.2 | Verification: existing agents still work (ADR query, BC routing) | Copilot Chat | 🔲 |
+| 4.3 | Run `@copilot-setup-maintainer` (Workflow 11 + 7) | Copilot Chat | 🔲 |
 
-**Kryterium akceptacji Fazy 4**: Agenty projektowe (ADR, BC) działają jak wcześniej; context-mode routing aktywny równolegle.
+**Phase 4 acceptance criterion**: project agents (ADR, BC) behave as before; context-mode routing is active alongside them.
 
 ---
 
-### Faza 5 — Monitoring web UI (wiśnia na torcie)
+### Phase 5 — AdGuard Home (DNS firewall, `monitoring` profile)
 
-| Krok | Opis | Plik | Status |
+| Step | Description | File | Status |
 |---|---|---|---|
-| 5.1 | Dozzle serwis w docker-compose (profil `monitoring`) | `docker-compose.yaml` | 🔲 |
-| 5.2 | VS Code task: `Context-Mode: Start + Dozzle` | `.vscode/tasks.json` | 🔲 |
-| 5.3 | Weryfikacja: `http://localhost:9999` — widoczne logi context-mode | przeglądarka | 🔲 |
-| 5.4 | Test alertu: wymuszenie próby połączenia; weryfikacja w Dozzle + alert log | terminal | 🔲 |
+| 5.1 | AdGuard service in docker-compose (profile `monitoring`) + volume | `docker-compose.yaml` | 🔲 |
+| 5.2 | AdGuard config (system + per-client policies) | `docker/adguard/AdGuardHome.yaml` | 🔲 |
+| 5.3 | Community blocklists (3 lists, auto-update every 7 days) | `docker/adguard/community-blocklists.yaml` | 🔲 |
+| 5.4 | Shared team blacklist (commit + PR) | `docker/adguard/team-blacklist.txt` | 🔲 |
+| 5.5 | Shared team whitelist (commit + PR) | `docker/adguard/team-whitelist.txt` | 🔲 |
+| 5.6 | Personal overrides example (gitignored) | `docker/adguard/personal-overrides.local.example.txt` | 🔲 |
+| 5.7 | `.gitignore`: `personal-overrides.local.txt` | `.gitignore` | 🔲 |
+| 5.8 | Verification: AdGuard UI at `http://localhost:3000` — lists active, `context-mode` registered as a client with the strict policy | browser | 🔲 |
 
-**Kryterium akceptacji Fazy 5**: Dozzle dostępny; filtr na `ecommerceapp-context-mode`; `[SUSPICIOUS]` widoczne w real-time.
+**Phase 5 acceptance criterion**: AdGuard reachable on :3000, 3 community lists active (~240k rules), `context-mode` resolves through AdGuard (`docker exec ecommerceapp-context-mode nslookup raw.githubusercontent.com` returns an answer; an unknown suspicious domain — NXDOMAIN), and the PR workflow on `team-blacklist.txt` has been exercised at least once.
 
 ---
 
-## Weryfikacja end-to-end
+### Phase 6 (future, optional) — suggestions automation + "new arrived" UI
 
-Po ukończeniu wszystkich faz:
+> **Status: future amendment**, not part of the current ADR-0029. Enable only if the community lists turn out to be insufficient.
+
+Concept:
+
+| Step | Description | File | Status |
+|---|---|---|---|
+| 6.1 | Cron script reads the AdGuard REST API (`/control/querylog`), groups and deduplicates | `tools/adguard/triage-queries.ps1` | 🔲 (future) |
+| 6.2 | Suggestions buffer (pending review) | `docker/adguard/suggestions.json` | 🔲 (future) |
+| 6.3 | VS Code Problem Matcher — yellow warnings in the Problems panel when `suggestions.json` gains new entries | `.vscode/tasks.json` (problem matcher) | 🔲 (future) |
+| 6.4 | Helper script `accept-suggestion.ps1` — promotes an entry to `team-blacklist.txt` + commit | `tools/adguard/accept-suggestion.ps1` | 🔲 (future) |
+| 6.5 | Scheduled Task / Azure DevOps Pipeline invokes triage every 1h or 24h (GitHub Actions unavailable — team CI = Azure DevOps) | OS scheduler | 🔲 (future) |
+
+**Why "future" and not now**: 3 community lists with a 7-day auto-update cover ~95% of bad domains. Adding a script + cron + UI is moving parts for a marginal gain. Revisit once real usage shows a gap.
+
+---
+
+## End-to-end verification
+
+After all phases are complete:
 
 ```
 1. docker compose up -d context-mode
-2. VS Code: Copilot Chat → "ctx stats"              → odpowiedź z 0 savings
-3. Copilot Chat → "ctx_execute javascript console.log(47*6)"  → "282"
-4. Copilot Chat → analiza src/ przez ctx_execute_file         → wynik bez raw content
-5. docker logs ecommerceapp-context-mode | grep SUSPICIOUS    → brak wyników
-6. cat .ctx-network-alerts.log                                → pusty lub nie istnieje
+2. VS Code: Copilot Chat → "ctx stats"                          → response with 0 savings
+3. Copilot Chat → "ctx_execute javascript console.log(47*6)"    → "282"
+4. Copilot Chat → analyse src/ via ctx_execute_file             → result without raw content
+5. docker logs ecommerceapp-context-mode | grep SUSPICIOUS      → no matches
+6. cat .ctx-network-alerts.log                                  → empty or absent
 ```
 
 ---
 
-## Zależności i kolejność
+## Dependencies and ordering
 
 ```
-RAG MCP server stabilny     ← wymagane PRZED startem Fazy 1
+Stable RAG MCP server       ← required BEFORE starting Phase 1
         ↓
-Faza 1 (Docker)
+Phase 1 (Docker)
         ↓
-Faza 2 (MCP connection)
+Phase 2 (MCP connection)
         ↓
-Faza 3 (Hooks)              ← można pominąć i wrócić; MCP działa bez hooków (~60% compliance)
+Phase 3 (Hooks)             ← can be skipped and revisited; MCP works without hooks (~60% compliance)
         ↓
-Faza 4 (instructions merge) ← wymaga @copilot-setup-maintainer po ukończeniu
+Phase 4 (instructions merge) ← requires @copilot-setup-maintainer afterwards
         ↓
-Faza 5 (Dozzle)             ← opcjonalne; nie blokuje pozostałych faz
+Phase 5 (AdGuard)           ← optional gating; does not block previous phases
 ```
 
 ---
 
-## Nowe pliki i modyfikacje — rejestr
+## New files and modifications — registry
 
-| Plik | Akcja | Faza | Wpływ na istniejący setup |
+| File | Action | Phase | Impact on existing setup |
 |---|---|---|---|
-| `docker/context-mode/network-monitor.js` | Nowy | 1 | Brak |
-| `docker/context-mode/entrypoint.sh` | Nowy | 1 | Brak |
-| `Dockerfile-context-mode` | Nowy | 1 | Brak |
-| `docker-compose.yaml` | Delta (2 serwisy + 1 volume) | 1/5 | Nie rusza istniejących serwisów |
-| `.vscode/mcp.json` | Nowy | 2 | Dodaje MCP server; RAG pozostaje |
-| `.vscode/tasks.json` | Delta (4 nowe taski) | 2/5 | Istniejące taski bez zmian |
-| `.gitignore` | Delta (1 linia) | 2 | Brak |
-| `.github/hooks/context-mode.json` | Nowy | 3 | Wymaga @copilot-setup-maintainer |
-| `.github/copilot-instructions.md` | Append (sekcja 13) | 4 | Wymaga @copilot-setup-maintainer |
+| `docker/context-mode/network-monitor.js` | New | 1 | None |
+| `docker/context-mode/entrypoint.sh` | New | 1 | None |
+| `Dockerfile-context-mode` | New | 1 | None |
+| `docker-compose.yaml` | Delta (2 services + `ctx-net` bridge + 2 volumes) | 1/5 | Does not touch existing services |
+| `.vscode/mcp.json` | New | 2 | Adds an MCP server; RAG remains |
+| `.vscode/tasks.json` | Delta (3 new tasks) | 2 | Existing tasks unchanged |
+| `.gitignore` | Delta (2 lines: alert log + personal-overrides) | 2/5 | None |
+| `.github/hooks/context-mode.json` | New | 3 | Requires @copilot-setup-maintainer |
+| `.github/copilot-instructions.md` | Append (section 13) | 4 | Requires @copilot-setup-maintainer |
+| `docker/adguard/AdGuardHome.yaml` | New | 5 | None (gated by `--profile monitoring`) |
+| `docker/adguard/community-blocklists.yaml` | New | 5 | None |
+| `docker/adguard/team-blacklist.txt` | New | 5 | None |
+| `docker/adguard/team-whitelist.txt` | New | 5 | None |
+| `docker/adguard/personal-overrides.local.example.txt` | New | 5 | None |
 
 ---
 
-## Multi-runtime uwagi
+## Licensing (verified)
 
-| Runtime | Wymagane zmiany | |
+| Component | License | Company 300+ employees, internal dev use |
 |---|---|---|
-| Docker Desktop (Windows) | Brak — gotowe | ✅ |
-| Rancher Desktop (containerd) | `docker` → `nerdctl` w hooks + tasks; weryfikacja `--network none` | ⚠ Dokumentuj lokalnie |
-| Rancher Desktop (dockerd) | Brak — identyczne z Docker Desktop | ✅ |
-| Podman (rootless) | `docker` → `podman` w hooks + tasks + mcp.json; `docker-compose` → `podman-compose` | ⚠ Dokumentuj lokalnie |
+| context-mode | Elastic License 2.0 | ✅ FREE for internal use; ❌ NOT for hosting as a SaaS for external customers |
+| AdGuard Home | GPL-3.0 | ✅ FREE with no company-size limits |
+| Qdrant (self-host) | Apache 2.0 | ✅ FREE without restrictions (Qdrant Cloud = separate paid SaaS, not in scope) |
+| StevenBlack/hosts | MIT | ✅ FREE |
+| AdGuard SDN Filter | CC BY-SA 4.0 | ✅ FREE with attribution |
+| EasyPrivacy | CC BY-SA 3.0 | ✅ FREE with attribution |
+| Rancher Desktop | Apache 2.0 | ✅ FREE |
+| Podman | Apache 2.0 | ✅ FREE |
+| Docker Desktop | Subscription | ⚠ PAID for companies >250 employees OR >$10M revenue — workaround: Rancher / Podman / Docker Engine on Linux |
 
-> **Zasada**: pliki w repozytorium używają `docker`. Podmiana na `podman`/`nerdctl` jest zmianą lokalną (nie commitowaną) lub przez env var w tasków VS Code.
+**Conclusion**: the whole stack is free for internal dev tooling at a 300+ employee company, provided Docker Desktop is swapped for Rancher Desktop or Podman.
+
+---
+
+## Multi-runtime notes
+
+| Runtime | Required changes | |
+|---|---|---|
+| Docker Desktop (Windows) | None — works out of the box | ✅ |
+| Rancher Desktop (containerd) | `docker` → `nerdctl` in hooks + tasks; verify `--network none` behaviour | ⚠ Document locally |
+| Rancher Desktop (dockerd) | None — identical to Docker Desktop | ✅ |
+| Podman (rootless) | `docker` → `podman` in hooks + tasks + mcp.json; `docker-compose` → `podman-compose` | ⚠ Document locally |
+
+> **Rule**: files in the repository use `docker`. Swapping to `podman`/`nerdctl` is a local-only change (not committed) or an env-var override in VS Code tasks.
 
 ---
 
 ## Upgrade policy
 
-1. Sprawdź release notes na [github.com/mksglu/context-mode/releases](https://github.com/mksglu/context-mode/releases)
-2. Zmień tag w `Dockerfile-context-mode` (jedna linia)
+1. Check release notes at [github.com/mksglu/context-mode/releases](https://github.com/mksglu/context-mode/releases)
+2. Change the tag in `Dockerfile-context-mode` (one line)
 3. `docker compose build context-mode`
 4. `docker compose up -d context-mode`
-5. `ctx doctor` w Copilot Chat — weryfikacja
+5. `ctx doctor` in Copilot Chat — verification
 6. Commit: `chore: bump context-mode to vX.Y.Z`

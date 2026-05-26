@@ -154,3 +154,28 @@ Rules:
 - **Status**: Open — will resolve after next `docker compose build rag-tools`
 
 ---
+
+## 2026-05-26 — Planner / context-mode MCP sandbox design (ADR-0029 DRAFT)
+
+- **Context**: Multi-round design session for context-mode (external MCP for ~98% Copilot context reduction). Started with `--network none` only; pivoted to custom `ctx-net` bridge + AdGuard DNS firewall after recognising `ctx_fetch_and_index` value. Dozzle was initially planned as 3rd container, then dropped for simplicity. Phase 6 (auto-triage suggestions → blacklist with bot commits) was scoped, then deferred to a future amendment because community lists already cover ~95% of cases.
+- **Decision**: ADR-0029 DRAFT created at `docs/adr/0029/0029-context-mode-mcp-sandbox.md` with 8-point Decision: (1) build from pinned tag, (2) 6 hardening flags, (3) `ctx-net` bridge with `dns:[adguard]`, (4) AdGuard 4-file config + auto-update community lists every 168h, (5) `network-monitor.js` hook as secondary signal, (6) append-only section 13 in copilot-instructions, (7) hooks via `docker exec`, (8) container logs via VS Code Docker extension (NO dedicated log viewer container). Roadmap files: `docs/roadmap/context-mode-integration.md` (5 phases + future Phase 6) and `docs/roadmap/context-mode-details.md` (full configs including AdGuard YAML, blacklist/whitelist examples, REST API self-scanning sketch, Phase 6 deferred plan).
+- **Rationale**: User priorities surfaced through dialogue — simplicity over fancy UI, team-grade safety without bureaucracy, license-clean for 300+ employee internal use. AdGuard chosen over mitmproxy (community lists + UI), over Portainer (no URL filtering), over Falco (requires privileged). Dozzle dropped because VS Code Docker extension covers debugging.
+- **Action**: Files committed in DRAFT status — do not reference ADR-0029 from other docs until status flips to Accepted post-implementation kick-off. When implementation starts, **read this entry first** to avoid re-litigating: Dozzle is out, Phase 6 is future amendment, `ctx-net` is custom bridge not `--network none`, all 6 hardening flags are mandatory (conformance checklist enforces).
+- **Pitfall flagged for implementation**: Docker Desktop is paid for companies >250 employees OR >$10M revenue. Repo MUST stay runtime-agnostic — all configs use `docker` CLI verb, but per-developer swap to `podman`/`nerdctl` must remain a local-only change (never committed). Verify `ctx-net` bridge works identically on Rancher Desktop (containerd backend) and Podman (rootless) before declaring Phase 1 complete.
+- **Pitfall flagged for AdGuard config**: `bind_host: 0.0.0.0` inside the container is required (so other containers on `ctx-net` can reach it), but `ports:` mapping must use `127.0.0.1:3000:3000` to keep the UI off the host's external interface. Never expose AdGuard UI to `0.0.0.0:3000` on the host.
+- **Promote?**: This is a one-off design log entry. The decisions live in ADR-0029 and the roadmap files. No promotion target unless we hit the same "scope creep with too many containers" pattern again — then promote a "minimal containers rule" to instructions.
+- **Status**: Resolved (DRAFT serialised; implementation pending)
+
+---
+
+## 2026-05-26 — Planner / context-mode auto-triage scope + Azure DevOps constraint
+
+- **Context**: After serialising ADR-0029, user asked who and how would scan traffic + feed entries to AdGuard. Proposed full-auto pipeline (cron → threat intel feeds URLhaus/OpenPhish/VirusTotal → classification → auto-PR → conditional auto-merge → webhook notify) with safety rails (rollback window 24h, 2+ feeds threshold, allowlist override, max 10 PR/day). User declined the upgrade: "wolałbym pełną automatyzację … niestety działa na Azure DevOps więc github actions odpadają :// dobra przeżyje bez tych automatów na razie zaaktualizuj plan".
+- **Decision**: Phase 6 (auto-triage + suggestions UI) **stays as a future amendment** — NOT promoted to mandatory Phase 5. Recorded as A17 in `integration.md`: team CI is Azure DevOps, not GitHub; if/when Phase 6 is implemented, the pipeline must use Azure Pipelines + `az repos pr create` (NOT `gh pr create`) and local trigger can be Windows Task Scheduler.
+- **Rationale**: Community lists + Google Safe Browsing already cover ~95% of cases. Phase 6 automation is an optimisation, not a blocker. Building Azure DevOps integration before Phase 5 is even deployed = premature.
+- **Action**: Replaced `GitHub Action` references in `details.md` and `integration.md` with `Azure DevOps Pipeline` (+ explicit "GitHub Actions niedostępne" note). Added założenie A17 to `integration.md`. **Implementation rule for whoever picks up Phase 6 in the future**: do NOT scaffold `.github/workflows/*.yml` — use `azure-pipelines.yml` or local Task Scheduler script. The current `gh pr create` snippet in `details.md` Phase 6 PowerShell example must be replaced with the `az repos pr create` equivalent before that section becomes real.
+- **Pitfall flagged**: ADR-0029 currently has no explicit "CI = Azure DevOps" mention — only the roadmap does. If Phase 6 ever gets a follow-up ADR, that ADR MUST repeat the constraint or someone will scaffold GitHub Actions and waste a day.
+- **Promote?**: Resolve at Phase 6 design time — promote A17 to a permanent instruction note (`.github/instructions/ci-platform.instructions.md`) only if we hit a 2nd case of "agent assumed GitHub Actions". Currently a one-off.
+- **Status**: Resolved (plan updated; Phase 6 explicitly deferred)
+
+---
