@@ -146,6 +146,30 @@ def _sanitize_error_message(exc: BaseException) -> str:
     return msg[:500]
 
 
+def _install_exception_handlers(app) -> None:  # noqa: ANN001
+    """Register Starlette global exception handlers so /ingest and other HTTP routes
+    return a sanitized JSON envelope instead of the default HTML 500 page.
+
+    Mirrors the .NET ApiExceptionHandler — same payload shape, same sanitisation.
+    HTTPException is passed through to Starlette so explicit 4xx responses
+    (e.g. raised by ingest_routes) keep their status code and detail.
+    """
+    from starlette.exceptions import HTTPException
+    from starlette.responses import JSONResponse
+
+    async def _on_exception(_request, exc: Exception):  # noqa: ANN001
+        _log.exception("unhandled HTTP exception: %s", type(exc).__name__)
+        payload = {"error": _sanitize_error_message(exc), "code": "InternalServerError"}
+        return JSONResponse(payload, status_code=500)
+
+    async def _on_http_exception(_request, exc: HTTPException):  # noqa: ANN001
+        payload = {"error": _sanitize_error_message(exc), "code": "HttpError"}
+        return JSONResponse(payload, status_code=exc.status_code)
+
+    app.add_exception_handler(HTTPException, _on_http_exception)
+    app.add_exception_handler(Exception, _on_exception)
+
+
 @SERVER.call_tool()
 async def call_tool(name: str, arguments: dict) -> list[TextContent]:
     handler = _TOOL_DISPATCH.get(name)
@@ -245,6 +269,7 @@ async def _run_sse(port: int) -> None:
         ],
     )
     app.add_middleware(ApiKeyMiddleware)
+    _install_exception_handlers(app)
     config = uvicorn.Config(app, host="0.0.0.0", port=port, log_level="warning")
     server = uvicorn.Server(config)
     print(f"[rag-mcp] SSE endpoint:   http://0.0.0.0:{port}/sse", file=sys.stderr)
@@ -330,6 +355,7 @@ async def _run_http(port: int) -> None:
         ],
     )
     app.add_middleware(ApiKeyMiddleware)
+    _install_exception_handlers(app)
     config = uvicorn.Config(app, host="0.0.0.0", port=port, log_level="warning")
     server = uvicorn.Server(config)
     print(f"[rag-mcp] endpoint:   http://0.0.0.0:{port}/ (MCP Streamable HTTP)", file=sys.stderr)

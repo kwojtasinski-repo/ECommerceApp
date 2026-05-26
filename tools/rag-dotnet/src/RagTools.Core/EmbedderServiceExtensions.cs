@@ -8,7 +8,8 @@ namespace RagTools.Core;
 ///
 /// Both methods bake in the default preprocessor stack:
 ///   1. <see cref="GlossaryExpansionPreprocessor"/> — multilingual query expansion (query-only).
-///   2. <see cref="LengthTruncationPreprocessor"/>  — hard-truncate to configured max tokens.
+///   2. <see cref="LengthTruncationPreprocessor"/>  — hard-truncate to configured max words
+///      (used as a token proxy; symmetric with the Python pipeline's word-based truncation).
 ///
 /// Callers may append additional preprocessors or postprocessors before calling
 /// <see cref="EmbedderPipelineBuilder.Register"/>.

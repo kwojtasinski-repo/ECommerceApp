@@ -146,7 +146,11 @@ if (transport is "http" or "sse")
             .WithHttpTransport()
             .WithToolsFromAssembly();
 
+    webBuilder.Services.AddExceptionHandler<ApiExceptionHandler>();
+    webBuilder.Services.AddProblemDetails();
+
     var app = webBuilder.Build();
+    app.UseExceptionHandler();
     app.UseMiddleware<BadRequestEnvelopeMiddleware>();
     app.UseMiddleware<ApiKeyMiddleware>();
     app.MapControllers();
