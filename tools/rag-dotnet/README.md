@@ -8,7 +8,7 @@ Four MCP tools exposed to Copilot Chat:
 - `query_docs` — free-form semantic search (top chunks ranked)
 - `read_docs` — top-ranked **unique files** (chunk view by default; full-content mode when the question contains intent phrases like "all details" / "whole file")
 - `list_adrs` — list all indexed ADRs
-- `get_adr_history` — fetch all chunks for a specific ADR
+- `get_history` — fetch all indexed chunks for a document group (e.g. an ADR + its amendments) by history ID
 
 > **Before you start:** this path requires a running Qdrant server (HTTP + gRPC).
 > The Python path (`tools/rag`) uses embedded Qdrant and is simpler for local use.
@@ -361,7 +361,7 @@ RagTools.Core          — BertTokenCounter, OnnxEmbedder, MarkdownChunker,
                          ManifestService, QdrantStore, RagConfig
 RagTools.Ingest        — CLI: scan → chunk → embed → upsert
 RagTools.Mcp           — stdio MCP server: query_docs, read_docs,
-                         get_adr_history, list_adrs
+                         get_history, list_adrs
 RagTools.Tests         — 100 unit tests (no external services required)
 ```
 

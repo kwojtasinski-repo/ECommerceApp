@@ -70,7 +70,7 @@
     // to the local variant; the container boundary is transparent to Copilot.
     //
     // Workspace mount: the repo root is mounted read-only at /workspace so that
-    // list_adrs and get_adr_history can read ADR files from disk.
+    // list_adrs and get_history can read ADR files from disk.
     // The Dockerfile sets ENV RAG_WORKSPACE=/workspace so no explicit env override
     // is needed — rag-config.yaml resolves to /workspace/tools/rag/rag-config.yaml.
     //

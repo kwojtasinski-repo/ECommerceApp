@@ -17,15 +17,14 @@ from `docs/adr/0016/...` — not a made-up answer.
 
 ## Quick overview
 
-```
+```text
 Your docs (docs/, .github/context/)
-      -
-      ¡  ingest.py (one-time + after changes)
-      -  chunks text, generates 384-dim embeddings, stores in Qdrant
-      -
-      ¡
-   Qdrant  ‹¦¦¦ mcp_server.py ‹¦¦¦ VS Code Copilot Chat
-  (vector DB)   (4 MCP tools)       (query_docs / read_docs / list_adrs / get_adr_history)
+      |
+      |  ingest.py / RagTools.Ingest  (one-time + after changes)
+      |  chunks text, generates 384-dim embeddings, stores in Qdrant
+      v
+   Qdrant  <----  mcp_server.py / RagTools.Mcp  <----  VS Code Copilot Chat
+  (vector DB)     (4 MCP tools)                        (query_docs / read_docs / list_adrs / get_history)
 ```
 
 **Qdrant** is a vector database — it stores the embeddings and searches them by
@@ -36,9 +35,9 @@ semantic similarity. It runs as a Docker container.
 | Tool | What it does |
 |------|-------------|
 | `query_docs(question)` | Semantic search — returns the most relevant doc chunks |
-| `read_docs(question)` | Full file content of the top-ranked matches (better for reasoning) |
+| `read_docs(question)` | Best chunks grouped by file; switches to full file content when the query asks for "all details" / "whole file" |
 | `list_adrs()` | Lists all indexed ADRs with titles and amendment counts |
-| `get_adr_history(adr_id)` | Returns the full text of one ADR + all its amendments |
+| `get_history(id)` | Returns all indexed chunks for a document group (e.g. an ADR + all its amendments), sorted by line |
 
 ---
 
@@ -48,10 +47,10 @@ Two implementations exist — both expose the same MCP tools and use the same mo
 
 | | **Python** | **.NET** |
 |---|---|---|
-| Status | ? Production-ready | ?? Experimental |
+| Status | Production-ready | Experimental |
 | Recommended for | **Everyone** | Advanced / .NET-only setups |
-| Model accuracy | ? Full | ?? Slightly reduced (tokenizer workaround) |
-| Polish query support | ? Yes | ?? Reduced |
+| Model accuracy | Full | Slightly reduced (tokenizer workaround) |
+| Polish query support | Yes | Reduced |
 
 **Use Python unless you have a specific reason not to.**
 

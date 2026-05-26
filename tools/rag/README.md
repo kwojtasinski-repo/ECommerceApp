@@ -6,11 +6,12 @@ Semantic search over the project's documentation, exposed as MCP tools to GitHub
 > [`docs/rag/SETUP-GUIDE.md`](../../docs/rag/SETUP-GUIDE.md).
 > This file is the developer reference for the Python source code.
 
-Three tools are available in Copilot Chat:
+Four tools are available in Copilot Chat:
 
 - `query_docs` — free-form semantic search over all indexed docs
+- `read_docs` — best chunks grouped by file (switches to full-file content for "all details" / "whole file" queries)
 - `list_adrs` — list all indexed ADRs with titles and amendment counts
-- `get_adr_history` — fetch the full text of one ADR + all its amendments
+- `get_history` — fetch all indexed chunks for a document group (e.g. an ADR + its amendments) by history ID
 
 ---
 

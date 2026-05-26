@@ -98,7 +98,7 @@ What is the current project state — any blocked bounded contexts?
 
 > **Tips:**
 > - Ask "list_adrs" or "list adrs" to see all indexed architectural decisions
-> - Prefix with "get_adr_history for ADR-0016" to get the full text of a specific ADR
+> - Prefix with "get_history for ADR-0016" to get all indexed chunks for a specific ADR + its amendments
 > - Use "read_docs about X" to get the full content of a relevant file
 > - Queries in **English, Polish, and German** are supported — see below
 
@@ -612,13 +612,20 @@ pwsh tools/rag/run-all-tests.ps1 -SkipPython
 | Build Python image | `docker compose build rag-tools` |
 | Ingest docs (Python) | `docker compose --profile rag run --rm rag-tools python ingest.py` |
 | Force full re-index (Python) | `docker compose --profile rag run --rm rag-tools python ingest.py --force-full` |
+| **Start Python HTTP server** | `docker compose --profile rag-python-http up -d rag-python-http`  *(or VS Code task `RAG: Start Python HTTP`)* |
+| **Stop Python HTTP server** | `docker compose --profile rag-python-http down` |
 | Remote ingest (Python) | `python tools/rag/ingest.py --remote http://localhost:3002` |
 | Python unit tests | `pwsh tools/rag/run-tests.ps1 -UnitOnly` |
 | Python all tests | `pwsh tools/rag/run-tests.ps1 -StartQdrant` |
 | Start Qdrant (.NET) | `docker compose --profile rag-dotnet up qdrant -d` |
 | Build .NET image | `docker compose build rag-dotnet` |
 | Ingest docs (.NET) | `docker compose --profile rag-dotnet run --rm rag-dotnet dotnet /app/ingest/ingest.dll` |
+| **Start .NET HTTP server** | `docker compose --profile rag-dotnet-http up -d rag-dotnet-http`  *(or VS Code task `RAG: Start .NET HTTP`)* |
+| **Stop .NET HTTP server** | `docker compose --profile rag-dotnet-http down` |
 | Remote ingest (.NET) | `dotnet run --project src/RagTools.Ingest -- --remote http://localhost:3001` |
+| **Stop both HTTP servers** | `docker compose --profile rag-dotnet-http --profile rag-python-http down` |
+| **Verify HTTP server is up** | `Invoke-WebRequest http://localhost:3001/admin/stats`  *(.NET)*  /  `…:3002…`  *(Python)* |
+| **Poll an ingest operation** | `Invoke-RestMethod http://localhost:3002/ingest/<collection>/operations/<opId>` |
 | Download .NET ONNX model | `pwsh tools/rag-dotnet/download-model.ps1` |
 | .NET unit tests | `pwsh tools/rag-dotnet/run-tests.ps1 -UnitOnly` |
 | .NET all tests | `pwsh tools/rag-dotnet/run-tests.ps1 -StartQdrant` |

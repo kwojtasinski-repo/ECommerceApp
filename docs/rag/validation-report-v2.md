@@ -3,6 +3,13 @@
 > Date: June 2025 · Branch: `RAG_Implementation` · Commit: `63b4d08`  
 > Supersedes: v1 scan from previous session (pre-fix)
 
+> ⚠️ **HISTORICAL REPORT** — captures the state of the 3-tool surface
+> (`query_docs`, `list_adrs`, `get_adr_history`) before the dual-stack
+> remote-multitenant work landed. The current 4-tool surface
+> (`query_docs`, `read_docs`, `list_adrs`, `get_history`) is documented in
+> [`rag-architecture.md`](rag-architecture.md). For the current test status
+> see [`rag-architecture.md` §12](rag-architecture.md#12-testing-harness).
+
 ---
 
 ## Summary
