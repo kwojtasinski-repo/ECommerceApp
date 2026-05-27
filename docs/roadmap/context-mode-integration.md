@@ -106,10 +106,12 @@ Goal: extend a useful working session from ~30 min to ~3 hours without losing co
 
 | Step | Description | File | Status |
 |---|---|---|---|
-| 3.1 | Hooks config (5 hooks: PreToolUse, PostToolUse, UserPromptSubmit, PreCompact, SessionStart) | `.github/hooks/context-mode.json` | 🔲 |
+| 3.1 | Hooks config (5 hooks: PreToolUse, PostToolUse, UserPromptSubmit, PreCompact, SessionStart) | `.github/hooks/context-mode.json` | ✅ |
 | 3.2 | Hook verification: restart VS Code, new Copilot session | VS Code | 🔲 |
 | 3.3 | Session continuity test: force compaction, check resume | Copilot Chat | 🔲 |
 | 3.4 | Measurement: `ctx stats` after a working session — verify % reduction | Copilot Chat | 🔲 |
+
+> **Container CLI path note (2026-05-27)**: the roadmap originally specified `context-mode hook vscode-copilot <event>` as the command. There is no `context-mode` wrapper on PATH in the shipped image (`/app/bin/` contains only `statusline.mjs`). The working invocation is `node /app/cli.bundle.mjs hook vscode-copilot <event>` — the file in `.github/hooks/context-mode.json` uses this corrected form. See `agent-decisions.md` 2026-05-27 entry.
 
 **Phase 3 acceptance criterion**: hooks are active; `ctx stats` shows savings > 0; session restore after compaction works.
 

@@ -462,6 +462,8 @@ docker/adguard/personal-overrides.local.txt
 >
 > All 5 hooks are required for full session continuity (capture + snapshot + restore).
 > Omitting `PreCompact` means the model loses working state on every compaction.
+>
+> **Container CLI path (2026-05-27 correction)**: the shipped image has no `context-mode` wrapper on PATH (`/app/bin/` contains only `statusline.mjs`). Invoke the bundle directly with `node /app/cli.bundle.mjs hook vscode-copilot <event>`. The configuration below already uses the corrected form.
 
 ```json
 {
@@ -469,31 +471,31 @@ docker/adguard/personal-overrides.local.txt
     "PreToolUse": [
       {
         "type": "command",
-        "command": "docker exec -i ecommerceapp-context-mode context-mode hook vscode-copilot pretooluse"
+        "command": "docker exec -i ecommerceapp-context-mode node /app/cli.bundle.mjs hook vscode-copilot pretooluse"
       }
     ],
     "PostToolUse": [
       {
         "type": "command",
-        "command": "docker exec -i ecommerceapp-context-mode context-mode hook vscode-copilot posttooluse"
+        "command": "docker exec -i ecommerceapp-context-mode node /app/cli.bundle.mjs hook vscode-copilot posttooluse"
       }
     ],
     "UserPromptSubmit": [
       {
         "type": "command",
-        "command": "docker exec -i ecommerceapp-context-mode context-mode hook vscode-copilot userpromptsubmit"
+        "command": "docker exec -i ecommerceapp-context-mode node /app/cli.bundle.mjs hook vscode-copilot userpromptsubmit"
       }
     ],
     "PreCompact": [
       {
         "type": "command",
-        "command": "docker exec -i ecommerceapp-context-mode context-mode hook vscode-copilot precompact"
+        "command": "docker exec -i ecommerceapp-context-mode node /app/cli.bundle.mjs hook vscode-copilot precompact"
       }
     ],
     "SessionStart": [
       {
         "type": "command",
-        "command": "docker exec -i ecommerceapp-context-mode context-mode hook vscode-copilot sessionstart"
+        "command": "docker exec -i ecommerceapp-context-mode node /app/cli.bundle.mjs hook vscode-copilot sessionstart"
       }
     ]
   }

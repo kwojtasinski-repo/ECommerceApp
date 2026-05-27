@@ -11,6 +11,7 @@
 *.sln.docstates
 *.json
 !.vscode/mcp.json
+!.github/hooks/*.json
 *.config
 *.doc
 *.docx

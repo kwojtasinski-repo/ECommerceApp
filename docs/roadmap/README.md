@@ -19,37 +19,15 @@
 | **Frontend error pipeline & JS migration**         | [`frontend-pipeline.md`](./frontend-pipeline.md)           | [ADR-0021](../adr/0021-frontend-error-pipeline-and-js-migration-strategy.md) | ✅ Phase 1–4 complete                                                                                                                                                                                                                                                                  |
 | **Storefront — `/offers` public browsing**         | [`storefront-offers.md`](./storefront-offers.md)           | —                                                                            | ✅ Complete — §1 routing + §2 home page + §3 category strip all done                                                                                                                                                                                                                   |
 | **Chunked image upload**                           | [`chunked-upload.md`](./chunked-upload.md)                 | —                                                                            | ✅ V2 TUS complete (2026-05-10) — tusdotnet middleware at `/tus`; `CompleteUpload` bridge; 13 integration tests; `CacheOptions` (6 TTLs) configurable from appsettings; hybrid `IOutputCache` + `IMemoryCache` layer across 5 services; `WebExtensions.cs` extracted from `Startup.cs` |
-| **Context-mode — sandbox MCP (context reduction)** | [`context-mode-integration.md`](./context-mode-integration.md) + [`context-mode-details.md`](./context-mode-details.md) | — | — Unblocked — RAG stabilisation complete (2026-05-23). Ready to implement. |
+| **Context-mode — sandbox MCP (context reduction)** | [`context-mode-integration.md`](./context-mode-integration.md) + [`context-mode-details.md`](./context-mode-details.md) | — | 🟡 In progress — Phase 1 (Docker) + Phase 2 (MCP wiring) done; [Phase 3 (hooks)](./context-mode-integration.md#phase-3--hooks-routing-enforcement) config file landed (step 3.1), runtime verification (3.2–3.4) pending user restart; Phase 4 covered via canonical [`mcp-routing.instructions.md`](../../.github/instructions/mcp-routing.instructions.md); [Phase 5 (AdGuard)](./context-mode-integration.md#phase-5--adguard-home-dns-firewall-monitoring-profile) partial — audit pending; [Phase 7 (L2 wrapper)](./context-mode-integration.md#phase-7-future--l2-wrapper-tool-query_docs_cached) deferred |
 
 > **Routing strategy for all controller migrations**: [ADR-0024](../adr/0024-controller-routing-strategy.md) — Web uses ASP.NET Core Areas (new parallel routes), API uses in-place swap. Applies to Orders, Payments, and all subsequent BC controller switches.
 
 ---
 
-## Dependency order for next BC work
+## BC migration — complete ✅
 
-> Two parallel tracks. Implementation proceeds on all BCs simultaneously (Parallel Change).
-> Atomic switches are sequential and deferred until ~80–95% of backend implementations are complete.
-
-**Implementation track** — build in parallel, no ordering constraint:
-
-```
-Sales/Coupons Slice 1   ─► can start now
-Sales/Fulfillment Slice 1 ─► can start now
-Presale/Checkout Slice 2 ✅ Switch live
-```
-
-**Switch track** — sequential, executed after backend implementations reach 80–95%:
-
-```
-Sales/Orders (DB migration + atomic switch) ✅ Switch live
-  └─► Sales/Payments (DB migration + atomic switch) ✅ Switch live
-  └─► Presale/Checkout Slice 2 ✅ Switch live
-        └─► Sales/Coupons (atomic switch) ✅ Switch live
-        └─► Sales/Fulfillment (atomic switch) ✅ Switch live
-              └─► Supporting/Communication — ✅ unblocked
-```
-
-Full details and blocking analysis: [`bounded-context-map.md § Next BCs to implement`](../architecture/bounded-context-map.md).
+All BC implementation + switch tracks are done. Current per-BC state: [`bounded-context-map.md`](../architecture/bounded-context-map.md). Historical sequencing (ASCII diagrams of implementation + switch tracks): [`bc-migration-history.md`](./bc-migration-history.md).
 
 ---
 
@@ -91,4 +69,4 @@ Full details and blocking analysis: [`bounded-context-map.md § Next BCs to impl
 
 ---
 
-_Last reviewed: 2026-04_
+_Last reviewed: 2026-05_

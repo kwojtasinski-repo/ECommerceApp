@@ -1,0 +1,34 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "type": "command",
+        "command": "docker exec -i ecommerceapp-context-mode node /app/cli.bundle.mjs hook vscode-copilot pretooluse"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "type": "command",
+        "command": "docker exec -i ecommerceapp-context-mode node /app/cli.bundle.mjs hook vscode-copilot posttooluse"
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "type": "command",
+        "command": "docker exec -i ecommerceapp-context-mode node /app/cli.bundle.mjs hook vscode-copilot userpromptsubmit"
+      }
+    ],
+    "PreCompact": [
+      {
+        "type": "command",
+        "command": "docker exec -i ecommerceapp-context-mode node /app/cli.bundle.mjs hook vscode-copilot precompact"
+      }
+    ],
+    "SessionStart": [
+      {
+        "type": "command",
+        "command": "docker exec -i ecommerceapp-context-mode node /app/cli.bundle.mjs hook vscode-copilot sessionstart"
+      }
+    ]
+  }
+}
