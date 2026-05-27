@@ -60,3 +60,42 @@ Re-index requirements (quick reference):
 | Any `docs/` or `.github/context/` file changed | ✅ Incremental (`ingest.py`) |
 | `metadata-rules.yaml` changed | ✅ Force-full (`ingest.py --force-full`) |
 | `embedder.model` or `chunker.*` changed | ✅ Force-full |
+
+---
+
+## context-mode — when to use the `ctx_*` tools
+
+> Status: applies once the `context-mode` MCP is registered and its hooks are wired (see [ADR-0029](../../docs/adr/0029/0029-context-mode-mcp-sandbox.md) and the [context-mode roadmap](../../docs/roadmap/context-mode-integration.md)). Until then, only the RAG table above is live.
+
+| Tool                          | When to use                                                                                          |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `ctx_stats()`                 | "how much context have we saved this session?" / sanity check                                        |
+| `ctx_execute(lang, code)`     | One-shot sandboxed execution — math, parsing, regex on a small string                                |
+| `ctx_execute_file(path)`      | Run analysis over a file and return only the **summary** (not the body)                              |
+| `ctx_fetch_and_index(url)`    | Pull an allowlisted external URL through AdGuard and add it to context                               |
+| `ctx_insight()`               | Open the local web UI to inspect what's currently in context                                         |
+
+## MCP precedence (HARD RULES)
+
+When more than one MCP could plausibly answer a request, apply this
+order strictly:
+
+1. **Knowledge questions** (anything that quotes docs, ADRs, BC rules,
+   project state, known issues, roadmap) → **RAG first**. Never
+   substitute `ctx_execute` for it.
+2. **Sandboxed execution** (run a snippet, compute a value, summarise a
+   file's structure without loading its content) → **context-mode
+   first**. Never substitute `read_file` + manual summary for it when
+   the body is large.
+3. **External fetch** (any URL the user pastes) → **`ctx_fetch_and_index`
+   only**. Never raw `fetch_webpage` for project work — it bypasses the
+   AdGuard allowlist.
+4. **Both MCPs empty / unhealthy** → fall back to direct `read_file` /
+   `grep_search` and tell the user which MCP failed.
+5. **NEVER call both MCPs for the same atomic intent.** If unsure, pick
+   the one whose table matches the user's verb ("what does ADR-X say"
+   → RAG; "run this snippet" → context-mode).
+
+Full rationale, ASCII flow diagram, hook plug-in points, common wiring
+failures, and verification prompts:
+[docs/rag/mcp-first-routing-migration-playbook.md §13](../../docs/rag/mcp-first-routing-migration-playbook.md#13-coexistence-with-a-second-mcp-server-worked-example-context-mode).

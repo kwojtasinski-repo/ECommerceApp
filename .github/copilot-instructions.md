@@ -96,6 +96,7 @@ The project exposes four MCP tools via `ecommerceapp-rag-dotnet` (or any other c
 - If the tool returns "No chunks found", fall back to saying so and suggest re-running ingest.
 - Prefer `get_history` over `query_docs` when the user mentions a specific ADR number or title.
 - Both Python and .NET MCP implementations expose identical tool names — routing is the same regardless of which server variant is enabled.
+- **Multi-MCP precedence** (RAG + context-mode coexistence): knowledge → RAG; sandboxed execution / file summarisation → context-mode; external URL → `ctx_fetch_and_index` only (never raw `fetch_webpage`); both empty → direct `read_file` / `grep_search`. **NEVER call both MCPs for the same atomic intent.** Full rules + ASCII flow: [docs/rag/mcp-first-routing-migration-playbook.md §13](../docs/rag/mcp-first-routing-migration-playbook.md#13-coexistence-with-a-second-mcp-server-worked-example-context-mode). Per-tool routing: [.github/instructions/rag.instructions.md](instructions/rag.instructions.md).
 
 ## 13. RAG HTTP error envelope
 

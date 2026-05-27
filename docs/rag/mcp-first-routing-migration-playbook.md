@@ -371,6 +371,89 @@ are adding a second MCP server alongside it (here: `context-mode` per
 same recipe applies to any second MCP (Playwright, GitHub Issues,
 filesystem sandbox, etc.).
 
+### 13.0 The whole picture on one screen
+
+```text
+  +-----------------------------------------------------------------------------+
+  |                              USER PROMPT                                    |
+  +------------------------------------+----------------------------------------+
+                                       |
+                                       v
+  +-----------------------------------------------------------------------------+
+  |                AGENT  --  reads global instruction once                     |
+  |   (one file, two tool tables + numbered precedence block, see 13.3)         |
+  +------------------------------------+----------------------------------------+
+                                       |
+                                       v
+                         INTENT  CLASSIFICATION
+              +------------------------+------------------------+
+              |                        |                        |
+              v                        v                        v
+     "how does X work?"        "run / save / index"     pure code edit
+     "what does ADR-N say?"    "summarise file"         (no knowledge,
+     "is BC blocked?"          "fetch this URL"          no fetch)
+     "any known issue?"        "store this for later"
+     "show me the rule"
+              |                        |                        |
+              v                        v                        v
+  +----------------------+  +----------------------+  +----------------------+
+  |  MCP #1 -- RAG       |  |  MCP #2 -- CONTEXT-  |  |   no MCP needed      |
+  |  ecommerceapp-rag-*  |  |  MODE                |  |   (direct tools)     |
+  |                      |  |  ecommerceapp-       |  |                      |
+  |  KNOWLEDGE           |  |  context-mode        |  |  read_file           |
+  |                      |  |                      |  |  grep_search         |
+  |  list_adrs           |  |  EXECUTION /         |  |  semantic_search     |
+  |  query_docs          |  |  REDUCTION /         |  |  edit / write        |
+  |  read_docs           |  |  EXTERNAL FETCH      |  |                      |
+  |  get_history         |  |                      |  |                      |
+  |                      |  |  ctx_stats           |  |                      |
+  |  Backed by:          |  |  ctx_execute         |  |                      |
+  |   * Qdrant index     |  |  ctx_execute_file    |  |                      |
+  |   * docs/ +          |  |  ctx_fetch_and_index |  |                      |
+  |     .github/context/ |  |  ctx_insight         |  |                      |
+  |                      |  |                      |  |                      |
+  |  Source of truth     |  |  Backed by:          |  |                      |
+  |  for ANYTHING        |  |   * sandboxed Node   |  |                      |
+  |  written down        |  |   * AdGuard DNS      |  |                      |
+  |  in this repo        |  |     allowlist        |  |                      |
+  |                      |  |   * SQLite session   |  |                      |
+  |                      |  |     store            |  |                      |
+  +-----------+----------+  +-----------+----------+  +-----------+----------+
+              |                         |                         |
+              |  empty / low score?     |  hooks fired:           |
+              |  -> tell user index     |   PreToolUse rewrites   |
+              |     looks stale         |   PostToolUse compresses|
+              |  -> fall back to        |   summary saved by      |
+              |     direct read_file    |   PreCompact            |
+              |  -> NEVER guess         |                         |
+              |     from training data  |                         |
+              v                         v                         v
+  +-----------------------------------------------------------------------------+
+  |     ANSWER  +  precise file links (path#Lstart-Lend)  +  citations          |
+  +-----------------------------------------------------------------------------+
+
+           ============== HARD PRECEDENCE RULES ==============
+           1. Knowledge intent   ->  RAG first.   Never substitute ctx_execute.
+           2. Run / summarise    ->  context-mode first.  Never substitute
+                                     read_file + manual summary.
+           3. External URL       ->  ctx_fetch_and_index ONLY.
+                                     Never raw fetch_webpage (bypasses AdGuard).
+           4. Both MCPs empty    ->  direct read_file / grep_search,
+                                     name the failing MCP to the user.
+           5. NEVER call both    MCPs for the same atomic intent.
+```
+
+**Reading rule:** anything written down in the repo → MCP #1. Anything
+that needs to *run*, *summarise*, or *reach the outside world* →
+MCP #2. Direct file tools are the fallback, never the first stop for
+indexed knowledge.
+
+The subsections below break each box into the concrete artefacts you
+have to ship: tool tables (§13.2), the precedence rule itself (§13.3),
+the hook file that makes the flow visible (§13.4), the combined runtime
+view (§13.5), the three failure modes (§13.6), verification
+prompts (§13.7), and rollback (§13.8).
+
 ### 13.1 Two MCPs serve two different jobs
 
 | MCP | Job | Tools it owns |
