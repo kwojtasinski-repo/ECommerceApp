@@ -138,20 +138,36 @@ Goal: extend a useful working session from ~30 min to ~3 hours without losing co
 
 | Step | Description | File | Status |
 |---|---|---|---|
-| 5.1 | AdGuard service in docker-compose (profile `monitoring`) + volume | `docker-compose.yaml` | 🔲 |
-| 5.2 | AdGuard config (system + per-client policies) | `docker/adguard/AdGuardHome.yaml` | 🔲 |
-| 5.3 | Community blocklists (3 lists, auto-update every 7 days) | `docker/adguard/community-blocklists.yaml` | 🔲 |
-| 5.4 | Shared team blacklist (commit + PR) | `docker/adguard/team-blacklist.txt` | 🔲 |
-| 5.5 | Shared team whitelist (commit + PR) | `docker/adguard/team-whitelist.txt` | 🔲 |
-| 5.6 | Personal overrides example (gitignored) | `docker/adguard/personal-overrides.local.example.txt` | 🔲 |
-| 5.7 | `.gitignore`: `personal-overrides.local.txt` | `.gitignore` | 🔲 |
-| 5.8 | **MANDATORY**: First-boot wizard — set strong admin password (16+ chars), copy bcrypt hash to repo config | `docker/adguard/AdGuardHome.yaml` | 🔲 |
-| 5.9 | Restrict web UI to host loopback only: `allowed_clients: [127.0.0.1, ::1]` + `auth_attempts: 5` + `block_auth_min: 15` | `docker/adguard/AdGuardHome.yaml` | 🔲 |
-| 5.10 | Operational notes (first-boot hardening + monthly review checklist) | `docker/adguard/README.md` | 🔲 |
-| 5.11 | Verification: from `ctx-net` container, `curl http://adguard:3000/control/login` returns 403; DNS `:53/udp` still works | `docker exec` | 🔲 |
-| 5.12 | Verification: AdGuard UI at `http://127.0.0.1:3000` — lists active, `context-mode` registered as a client with the strict policy | browser | 🔲 |
+| 5.1 | AdGuard service in docker-compose (profile `monitoring`) + volume | `docker-compose.yaml` | ✅ Done |
+| 5.2 | AdGuard config (system + per-client policies) | `docker/adguard/AdGuardHome.yaml` | ✅ Done (template + gitignored runtime yaml) |
+| 5.3 | Community blocklists (3 lists, auto-update) | `docker/adguard/community-blocklists.yaml` | ✅ Done (different shape — inline in `AdGuardHome.yaml.template` `filters:` block, not a separate file; `filters_update_interval: 24` hours = daily, more frequent than 7d spec) |
+| 5.4 | Shared team blacklist (commit + PR) | `docker/adguard/team-blacklist.txt` | ✅ Done |
+| 5.5 | Shared team whitelist (commit + PR) | `docker/adguard/team-whitelist.txt` | ✅ Done (14 prepopulated canonical domains: learn.microsoft, github, nuget, docker hub, etc. — see file header) |
+| 5.6 | Personal overrides example (gitignored) | `docker/adguard/personal-overrides.local.example.txt` | ✅ Done — **but see follow-up below** |
+| 5.7 | `.gitignore`: `personal-overrides.local.txt` + `AdGuardHome.yaml` | `.gitignore` | ✅ Done (also `AdGuardHome.yaml` because of bcrypt hash) |
+| 5.8 | **MANDATORY**: First-boot wizard OR bootstrap script — strong admin password (16+ chars) → bcrypt hash | `docker/adguard/AdGuardHome.yaml` | ✅ Done (bootstrap script generates 24-char password, prints once, computes bcrypt cost=10) |
+| 5.9 | Restrict web UI to host loopback | `docker/adguard/AdGuardHome.yaml` + `docker-compose.yaml` | ✅ Done (different shape — UI restriction via docker port mapping `127.0.0.1:3000:3000`, NOT via AdGuard `allowed_clients` which is a DNS-section setting. `auth_attempts: 5` + `block_auth_min: 15` present in template) |
+| 5.10 | Operational notes (first-boot hardening + monthly review checklist) | `docker/adguard/README.md` | ✅ Done |
+| 5.11 | Verification: from `ctx-net` container, `curl http://adguard:3000/control/...` is auth-gated; DNS `:53/udp` works | `docker exec` | ✅ Done — live verified 2026-05-27: `GET /control/login` returns 405 (Method Not Allowed for GET); `GET /control/status` returns 403 Forbidden without bcrypt cookie. Original spec expected 403 from `/control/login` — corrected here. |
+| 5.12 | Verification: AdGuard UI at `http://127.0.0.1:3000` — lists active, `context-mode` registered as a client with the strict policy | browser | 🟡 Manual — user must log in to UI (`admin` / bootstrap-generated password) and visually confirm |
 
 **Phase 5 acceptance criterion**: AdGuard reachable on :3000, 3 community lists active (~240k rules), `context-mode` resolves through AdGuard (`docker exec ecommerceapp-context-mode nslookup raw.githubusercontent.com` returns an answer; an unknown suspicious domain — NXDOMAIN), and the PR workflow on `team-blacklist.txt` has been exercised at least once.
+
+**Live verification (2026-05-27)**:
+- `nslookup doubleclick.net 172.28.0.2` → `0.0.0.0` (community blocklist active ✅)
+- `nslookup learn.microsoft.com 172.28.0.2` → resolved via Akamai CDN (team-whitelist override works ✅)
+- `nslookup raw.githubusercontent.com 172.28.0.2` → resolved with IPv4+IPv6 records (G.3 PASS ✅)
+- AdGuard live filters: 3 community (AdGuard DNS, AdAway, StevenBlack) + team-blacklist + team-whitelist all `enabled: true` ✅
+
+### Follow-ups / known gaps
+
+| Gap | Severity | Suggested fix |
+|---|---|---|
+| `personal-overrides.local.txt` is NOT auto-loaded by bootstrap | Medium UX | Bootstrap script should detect file presence and inject filter `id=1003` entry into generated `AdGuardHome.yaml` ("upsert" behaviour: append to team whitelist if personal exists; create as standalone otherwise) — currently requires manual yaml edit per `personal-overrides.local.example.txt` instructions |
+| `filters_update_interval: 24h` differs from original spec "every 7 days" | Doc-only | Spec amended — 24h is intentionally more aggressive than 7d soft target; AdGuard limits are 1-168h, and 24h provides faster blocklist refresh for negligible bandwidth (~10MB/day total across 3 lists) |
+| Step 5.9 spec said "Restrict via `allowed_clients: [127.0.0.1, ::1]`" — but `allowed_clients` is a DNS-section setting (must remain empty `[]` so `context-mode` can query DNS). UI restriction is achieved via docker port binding `127.0.0.1:3000:3000` + bcrypt password gate | Doc-only | Spec amended above — see "different shape" note on step 5.9 |
+| Step 5.11 expected `403` from `/control/login` — reality is `405` (GET not allowed, POST required); `/control/status` returns proper `403` without auth | Doc-only | Spec amended — see "live verified" note on step 5.11 |
+| Community lists are inline in template, not a separate `community-blocklists.yaml` | Doc-only | Spec amended — see step 5.3 note. Refactoring to separate YAML would require AdGuard to support `!include` (does not as of v0.107.50) |
 
 ---
 
@@ -258,6 +274,30 @@ Subsequent recall is done via standard `ctx_search(source="rag-cache-...")` — 
 - **Subagent delegations are out of scope for Phase 7** — even L2 is an MCP tool and will not be callable from built-in subagents (LIMIT-1 hard restriction). Subagent recall stays on the inline-chunks pattern documented in the skill.
 - No regression in standard `query_docs` / `read_docs` / `get_history` behaviour.
 - Both Python and .NET RAG servers expose the tool with identical schema (parity rule from ADR-0027).
+
+---
+
+### Phase 8 (future, opportunistic) — additional sandbox runtimes
+
+> **Status: not planned, evaluate-on-demand.** Default shipped runtime image bundles only `javascript` (Node) and `shell` (POSIX sh) — `ctx_doctor` → `Runtimes: 2/11`. The schema enum accepts 9 additional langs (`typescript`, `python`, `ruby`, `go`, `rust`, `php`, `perl`, `R`, `elixir`, `csharp`) which currently error at runtime ("X not available. Install ...").
+
+Add a runtime ONLY when a real use case shows up repeatedly. Candidate triggers:
+
+| Runtime | Trigger | Approximate image cost |
+|---|---|---|
+| `csharp` (`dotnet-script`) | Frequent need for a quick LINQ/built-in-method playground inside the sandbox (no host SDK pollution, no project scaffold) | +~250 MB |
+| `python` | Repeated requests for log/CSV analysis, data crunching, or `pandas`/`numpy` workflows | +60-80 MB |
+| Others | None currently anticipated for a .NET MVC project | varies |
+
+Implementation when triggered: edit `Dockerfile-context-mode` to install the runtime, rebuild `context-mode` image, restart container, confirm via `ctx_doctor` that the count rises (e.g. `3/11`).
+
+---
+
+### Phase 9 (future, opportunistic) — auto-load `personal-overrides.local.txt`
+
+> **Status: identified follow-up from Phase 5 audit (2026-05-27).** Currently `personal-overrides.local.txt` is gitignored but NOT auto-loaded — user must manually add a filter `id=1003` entry into the (gitignored) `AdGuardHome.yaml`. This is fragile and per-developer friction.
+
+**Acceptance**: `scripts/context-mode-bootstrap.ps1` (and `.sh` counterpart) detect `docker/adguard/personal-overrides.local.txt` and, if present, inject a `filters: id=1003` entry into the generated `AdGuardHome.yaml` automatically. Behaviour is "append" (does NOT replace `team-whitelist` filter id=1002 or `team-blacklist` id=1001 — purely additive). Re-running bootstrap with `-ForceRegenerateAdGuard` re-evaluates personal-overrides presence and rewrites yaml accordingly.
 
 ---
 

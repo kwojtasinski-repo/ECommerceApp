@@ -20,8 +20,16 @@ This generates `AdGuardHome.yaml` with a bcrypt admin password and starts everyt
    (`docker exec ecommerceapp-adguard cat /opt/adguardhome/conf/AdGuardHome.yaml`)
    into our repo's `docker/adguard/AdGuardHome.yaml` `users:` block.
    (Note: the file is `.gitignore`d — keep it local.)
-5. Verify `allowed_clients: [127.0.0.1, ::1]` is in effect — from a container
-   on `ctx-net`, `curl http://adguard:3000/control/login` MUST return 403.
+5. Web UI restriction: in this setup the UI is locked down by **docker port
+   binding** `127.0.0.1:3000:3000` (compose file) — the UI is NEVER reachable
+   from any non-loopback interface on the host. From other containers on
+   `ctx-net` (e.g. `context-mode`) `adguard:3000` IS reachable, but every
+   `/control/*` endpoint is bcrypt-password-gated (verified live:
+   `GET /control/status` returns `403 Forbidden` without a session cookie).
+   **Do NOT** add `allowed_clients: [127.0.0.1, ::1]` to AdGuardHome.yaml —
+   that setting controls DNS-section client allowance, not the web UI, and
+   setting it would break DNS resolution from `context-mode` (which queries
+   from the container subnet, not 127.0.0.1).
 
 ## Rotating the admin password
 
