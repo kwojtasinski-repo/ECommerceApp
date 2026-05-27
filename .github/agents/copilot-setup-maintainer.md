@@ -51,6 +51,7 @@ Three responsibilities:
 | ------------------------------------------------- | ---------------------------------------------------------- |
 | `.github/copilot-instructions.md`                 | Repo-level policy (≤ 4,000 chars hard limit)               |
 | `.github/instructions/docs-index.instructions.md` | Docs lookup table — ADR index, roadmap index, skills index |
+| `.github/instructions/mcp-routing.instructions.md` | **Canonical** MCP tool tables + precedence + ASCII flow   |
 | `.github/instructions/safety.instructions.md`     | Allowed/disallowed actions                                 |
 | `.github/instructions/pre-edit.instructions.md`   | Pre-edit checklist                                         |
 | `.github/AGENT-PIPELINE.md`                       | Multi-agent pipeline orchestration spec (HITL, max-iter)   |

@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
     api:
         build:
@@ -142,5 +140,107 @@ services:
         profiles:
           - rag-dotnet-http
 
+    # ── Context-Mode MCP sandbox (always-on) ──────────────────────────────────
+    # Reads developer-tunable values from .env.context-mode (gitignored).
+    # See docs/roadmap/context-mode-details.md §"Configurable parameters" for the
+    # full 12-knob table. Defaults via ${VAR:-default} keep the container hardened
+    # even when the env file is missing.
+    context-mode:
+        build:
+            context: .
+            dockerfile: Dockerfile-context-mode
+            args:
+                CONTEXT_MODE_TAG: "${CONTEXT_MODE_TAG:-v1.0.151}"
+        image: ecommerceapp/context-mode:${CONTEXT_MODE_TAG:-v1.0.151}
+        container_name: ecommerceapp-context-mode
+        env_file:
+            - path: .env.context-mode
+              required: false                                  # OK if missing — ${VAR:-default} wins
+        stdin_open: true
+        tty: false
+        restart: unless-stopped
+        user: "1000:1000"                                       # non-root
+        read_only: true                                         # root FS immutable
+        tmpfs:
+            - /tmp:rw,size=${CONTEXT_MODE_TMPFS_SIZE:-64m},mode=1777
+        cap_drop: [ALL]
+        security_opt:
+            - no-new-privileges:true
+        pids_limit: ${CONTEXT_MODE_PIDS_LIMIT:-100}
+        mem_limit: ${CONTEXT_MODE_MEM_LIMIT:-1g}
+        cpus: ${CONTEXT_MODE_CPUS:-2}
+        ipc: none
+        volumes:
+            - .:/workspace:ro                                   # repo — READ-ONLY (context-mode shouldn't write to source)
+            - context-mode-data:/home/ctxmode/.context-mode     # SQLite session DB (writable, isolated)
+            - ./docker/context-mode/empty-claude-settings.json:/home/node/.claude/settings.json:ro  # silences PreToolUse hook FAIL
+        environment:
+            CTX_FETCH_STRICT: "${CONTEXT_MODE_FETCH_STRICT:-1}"
+            CONTEXT_MODE_EXTERNAL_MCP_NUDGE_EVERY: "${CONTEXT_MODE_NUDGE_EVERY:-50}"
+            CONTEXT_MODE_DIR: "/home/ctxmode/.context-mode"
+        ports:
+            - "127.0.0.1:${CONTEXT_MODE_INSIGHT_PORT:-9998}:8765"  # ctx_insight UI — localhost only
+        networks:
+            ctx-net:
+                ipv4_address: 172.28.0.10               # static — stable target for `docker exec`
+        dns:
+            - 172.28.0.2                            # AdGuard (ONLY — no upstream fallback)
+        # Keep the container alive as an idle host; MCP server is spawned per-session via
+        # `docker exec` from .vscode/mcp.json. This avoids restarting the whole sandbox on
+        # every VSCode "Start" click — only the node process gets recycled, network-monitor
+        # stays loaded, FTS5 DB stays warm.
+        entrypoint: ["sleep", "infinity"]
+        # Lightweight liveness probe — verifies the cli bundle is loadable and FTS5 native
+        # module works. Runs every 60s; failure means the image is broken, not a transient.
+        healthcheck:
+            test: ["CMD", "node", "-e", "require('/app/cli.bundle.mjs')"]
+            interval: 60s
+            timeout: 10s
+            retries: 3
+            start_period: 15s
+        profiles:
+            - context-mode
+
+    # ── AdGuard Home — DNS firewall (profile: monitoring) ─────────────────────
+    # Start with: docker compose --profile monitoring up -d adguard
+    # UI: http://127.0.0.1:3000  (setup wizard on first visit — set STRONG password)
+    adguard:
+        image: adguard/adguardhome:${ADGUARD_TAG:-v0.107.50}
+        container_name: ecommerceapp-adguard
+        profiles: [monitoring]
+        restart: unless-stopped
+        ports:
+            - "127.0.0.1:${ADGUARD_UI_PORT:-3000}:3000"         # web UI host-only
+        volumes:
+            - adguard-work:/opt/adguardhome/work
+            - ./docker/adguard:/opt/adguardhome/conf             # AdGuard upgrades schema + wizard writes password hash here
+        # Liveness: TCP probe against the DNS resolver port. AdGuard binds :53
+        # only after config loads and filters are compiled, so this gates the
+        # whole stack in one check (UI + filters + DNS). Avoids HTTP auth (403)
+        # and unreliable wget exit codes on the upstream alpine image.
+        healthcheck:
+            test: ["CMD-SHELL", "nc -z 127.0.0.1 53 || exit 1"]
+            interval: 60s
+            timeout: 10s
+            retries: 3
+            start_period: 15s
+        networks:
+            ctx-net:
+                ipv4_address: 172.28.0.2                # static IP — referenced by context-mode --dns
+                aliases: [adguard]
+
 volumes:
     qdrant_data:
+    context-mode-data:                                          # SQLite session DB for context-mode
+        name: ecommerceapp_context-mode-data                    # explicit name — created by scripts/context-mode-bootstrap.ps1 with UID 1000 ownership
+        external: true
+    adguard-work:                                               # AdGuard query log + cached lists
+
+networks:
+    ctx-net:
+        driver: bridge
+        ipam:
+            config:
+                - subnet: 172.28.0.0/24                          # fixed subnet — static IPs above must fall here
+        # We do NOT use `internal: true` — AdGuard MUST have outbound access
+        # to fetch lists and resolve upstream DNS for allowed domains.

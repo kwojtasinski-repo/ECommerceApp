@@ -7,14 +7,23 @@ applyTo: "**"
 Before proposing or committing changes, perform these steps:
 
 0. **Read agent decisions log** — Open `.github/context/agent-decisions.md` and skim for prior corrections relevant to the area, agent, or skill being used. If a prior entry applies, follow it. This step prevents repeating corrections already given in earlier sessions.
-1. **Read context** — Read the entire target file(s) and relevant related files (Controllers, services, repository code, tests).
-2. **Read ADRs** — Read ADRs in `docs/adr/` that are directly relevant to the area being changed — not all of them.
+
+   **MCP-first variant** (per [mcp-routing.instructions.md](mcp-routing.instructions.md)): prefer `query_docs("<area>")` to surface the most relevant chunks rather than reading the entire file. For ADRs you already know by number, use `get_history(id="NNNN")` directly. **Never guess from training data** for project-specific rules.
+
+1. **Read context** — Read the entire target file(s) and relevant related files (Controllers, services, repository code, tests). For files >500 lines, prefer `ctx_execute_file(path)` for a structural summary first, then `read_file` only the region you'll change.
+2. **Read ADRs** — `get_history(id)` is the preferred path; fall back to direct file reads only if RAG returns empty.
 3. **Read instructions** — Read the relevant per-stack instructions under `.github/instructions/`.
 4. **Search for impact** — Search for usages and migration impact (references, database migrations, API clients) and list affected areas.
 5. **Validate locally** — Run `dotnet restore`, `dotnet build`, and `dotnet test` (or explain why not possible).
 6. **Include tests** — Include tests for any behavioral change.
 7. **Rollback plan** — Include a short rollback/mitigation plan for risky changes.
 8. **PR for review** — Open a pull request for review; do not merge without human approval unless explicitly asked.
+
+**External URLs**: if the user pastes a project-related URL during any of the steps above, route through `ctx_fetch_and_index` only — never raw `fetch_webpage` (it bypasses the AdGuard allowlist).
+
+**Architecture suggestions**: if you're about to propose an architectural change, first `query_docs("<topic>")` to confirm no existing ADR already governs it. New patterns without an ADR → stop and propose `@adr-generator`.
+
+**NEVER call both RAG and context-mode for the same atomic intent.**
 
 Document completion of these steps in the PR description.
 

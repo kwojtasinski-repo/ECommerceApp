@@ -1,0 +1,33 @@
+# Team-wide allowlist. OVERRIDES community blocklists (highest priority).
+# AdBlock format: @@||domain.com^
+# Use when a community list mistakenly blocks something legitimate.
+#
+# Filter id: 1002 (referenced from AdGuardHome.yaml)
+#
+# Examples (uncomment, commit, PR):
+# @@||api.nuget.org^
+# @@||raw.githubusercontent.com^
+
+# ─── Canonical docs / registries used by ECommerceApp tooling ───
+# Pre-populated to survive aggressive community blocklists. Remove an entry only
+# if you confirm the domain is actively malicious (open a PR with evidence).
+@@||learn.microsoft.com^
+@@||docs.microsoft.com^
+@@||learn.azure.com^
+@@||github.com^
+@@||raw.githubusercontent.com^
+@@||objects.githubusercontent.com^
+@@||api.github.com^
+@@||registry.npmjs.org^
+@@||api.nuget.org^
+@@||www.nuget.org^
+@@||nuget.pkg.github.com^
+@@||hub.docker.com^
+@@||registry-1.docker.io^
+@@||auth.docker.io^
+@@||react.dev^
+@@||vuejs.org^
+@@||nodejs.org^
+@@||dotnet.microsoft.com^
+@@||stackoverflow.com^
+@@||developer.mozilla.org^

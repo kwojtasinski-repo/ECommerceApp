@@ -112,6 +112,7 @@ Auto-retry is FORBIDDEN. Awaiting human decision:
 - **No interpretation of test names.** A red test is a FAIL, period — even if "the test looks wrong".
 - **No skipping steps.** All three steps must run on PASS path.
 - **No new commands.** Use exactly the commands above. Adding flags, filters, or wildcards is forbidden.
+- **No MCP tool calls.** Verifier MUST NOT invoke RAG (`query_docs` / `read_docs` / `get_history` / `list_adrs`) or context-mode (`ctx_*`) — LLM-based context lookups break determinism. The single allowed tool surface is `runCommand` + `read/readFile` + `read/problems`. See [.github/instructions/mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md) (verifier is the explicit exception to the "always use MCP for knowledge" rule).
 
 ---
 

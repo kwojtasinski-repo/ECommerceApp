@@ -108,6 +108,32 @@
 
 ## Change log
 
+### Session 25 — Multi-MCP routing rollout (Phases 1-5 + tightening) (2026-05-27)
+
+Single sweep adapting the entire Copilot workflow to two coexisting MCPs (RAG + context-mode — **both live**; context-mode promoted from dormant→active after handshake verified end-to-end). Zero production code, zero migrations, zero tests touched — config only.
+
+| #   | Change                                                                                                                                                                  | Files affected                                                                                                                                                                                  |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Phase 1 — Foundation**: new canonical single-source-of-truth (status tables, ASCII flow diagram, RAG + context-mode tool tables, 5 HARD precedence rules, trigger-phrase routing, fallback ladder). RAG instructions trimmed to RAG-only ops. `copilot-instructions.md` §12 collapsed to 6-bullet non-negotiable summary linking the canonical file. `docs-index` lifted MCP routing to top-of-table | `.github/instructions/mcp-routing.instructions.md` _(new)_, `.github/instructions/rag.instructions.md`, `.github/copilot-instructions.md`, `.github/instructions/docs-index.instructions.md` |
+| 2   | **Phase 2 — Agents + pipeline**: per-agent MCP scopes added (Planner=RAG read-only; Implementer=RAG+`ctx_execute/_file/_fetch`; Verifier=**NONE** as hard rule; Code-reviewer=RAG read-only; PR-commit=`get_history` to verify ADR refs; BC-switch Step 0 RAG lookup; ADR-generator prefers `list_adrs`/`query_docs`/`get_history`). `AGENT-PIPELINE.md` max-iter table gained "MCP tools allowed" column. `copilot-setup-maintainer` now owns `mcp-routing.instructions.md` | `.github/agents/planner.md`, `implementer.md`, `verifier.md`, `code-reviewer.md`, `pr-commit.md`, `bc-switch.md`, `adr-generator.md`, `copilot-setup-maintainer.md`, `.github/AGENT-PIPELINE.md` |
+| 3   | **Phase 3 — Prompts**: Step 0 MCP lookup added to BC-analysis, flow-analysis, PR-review, refactor (inside Pre-edit gate), BC-implementation (Step 0a). 16 skills intentionally skipped (5 already RAG-native; 11 creator-scaffolds don't read project knowledge at runtime — Planner/Implementer enforce routing before invoking them) | `.github/prompts/bc-analysis.prompt.md`, `flow-analysis.prompt.md`, `pr-review.prompt.md`, `refactor.prompt.md`, `bc-implementation.prompt.md`                                                  |
+| 4   | **Phase 4 — Pre-edit + safety + memory + anti-patterns**: pre-edit checklist now MCP-first (prefer `query_docs`/`get_history`); URL handling rule (`ctx_fetch_and_index` only for project URLs); architecture-suggestion guard (`query_docs` for governing ADR first); safety adds external-HTTP and verifier-no-MCP rules; agent-memory adds pre-write `query_docs` dedupe check; anti-patterns adds 4 BLOCKS-MERGE rules (double-MCP, raw `fetch_webpage` for project URLs, training-data quotes, MCP-in-verifier) | `.github/instructions/pre-edit.instructions.md`, `safety.instructions.md`, `agent-memory.instructions.md`, `.github/context/anti-patterns-critical.context.md`                                  |
+| 5   | **Phase 5 — Changelog + playbook retrospective**: this entry + playbook §14 case study with both commit SHAs (Phase 0 `cef1bca5` + this commit)                          | `.github/COPILOT-SETUP-CHANGELOG.md`, `docs/rag/mcp-first-routing-migration-playbook.md`                                                                                                        |
+
+**Precedence rules (now canonical)**:
+
+1. Knowledge → RAG. **`grep_search`/`read_file` on `.github/context/*.md`, `docs/adr/**`, `docs/roadmap/**`, `docs/architecture/bounded-context-map.md` before `query_docs`/`get_history` = BLOCKS MERGE.**
+2. Sandboxed exec / large-file summary / hashes / math → context-mode (live; 11 tools: `ctx_execute`, `ctx_execute_file`, `ctx_index`, `ctx_search`, `ctx_fetch_and_index`, `ctx_batch_execute`, `ctx_stats`, `ctx_doctor`, `ctx_upgrade`, `ctx_purge`, `ctx_insight`).
+3. External URL → `ctx_fetch_and_index` only.
+4. Both empty → direct `read_file`/`grep_search` + name the failing MCP to the user.
+5. **NEVER call both MCPs for the same atomic intent.**
+
+**Tightening (post-test)**: after first test round revealed agent fell back to `grep_search` for "FluentAssertions known issue" and computed SHA-256 from training-data memory: (a) flipped context-mode from "dormant" to "live" across all gating clauses (7 files); (b) expanded context-mode tool table from 5→11 tools; (c) added explicit forbidden-paths list to rule #1 + new BLOCKS-MERGE anti-patterns for grep-before-MCP and training-data computation.
+
+**Files NOT touched**: zero changes under `Application/`, `Domain/`, `Infrastructure/`, `Web/`, `API/`, tests, migrations. No package version changes. No `.vscode/mcp.json` edits (parallel chat owns context-mode registration).
+
+**Skipped on purpose** (request follow-up if needed): 16 skills bulk pass; 5 skills under `.github/skills/` already wire to RAG; the 11 creator-scaffolds (`create-cqrs-handler`, `create-dbcontext`, `create-di-extension`, `create-domain-event`, `create-dto-viewmodel`, `create-ef-configuration`, `create-http-scenario`, `create-integration-test`, `create-message-contract`, `create-unit-test`, `create-validator`) operate post-routing.
+
 ### Session 24 — ADR-0029 context-mode MCP sandbox DRAFT + env knobs (2026-05-27)
 
 | #   | Change                                                                                                                                                           | Files affected                                                                                    |

@@ -28,6 +28,11 @@ You **do not** run `git`. You **do not** push. The human pastes your output and 
 2. The HITL CHECKPOINT 2 was passed (human said "ready for commit" or pasted approval).
 3. You can identify the changed files (from reviewer output, planner plan, or `git status` if provided).
 
+**MCP usage** (per [.github/instructions/mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md)):
+
+- For any ADR cited in the PR body (`Refs: ADR-NNNN`), verify it exists via `get_history(id="NNNN")` before writing the line. Do NOT cite ADRs from memory.
+- Do NOT call `ctx_*` tools — pr-commit produces text only.
+
 If pre-conditions fail → reply:
 
 ```

@@ -1,0 +1,9 @@
+# Personal overrides — local file, NOT committed (gitignored).
+# Copy to `personal-overrides.local.txt` and edit as needed.
+#
+# AdBlock format (same rules as team-blacklist/whitelist):
+# @@||my-experiment.local^
+# ||domain-i-dont-want-personally.com^
+#
+# To have AdGuard load this file, add it as filter id 1003 in
+# AdGuardHome.yaml on your local machine (do not commit that change).

@@ -267,6 +267,7 @@ the common case; revisit if real usage shows the gap.
 - [AdGuard Home](https://github.com/AdguardTeam/AdGuardHome) — GPL-3.0
 - [Dozzle](https://github.com/amir20/dozzle) — MIT
 - [ADR-0028](../0028/0028-remote-multitenant-rag-ingest.md) — RAG MCP architecture (complementary)
+- Pattern: [`docs/patterns/context-mode-read-write-split.md`](../../patterns/context-mode-read-write-split.md) — read/write/execute path split + empirical savings
 - Roadmap: [`docs/roadmap/context-mode-integration.md`](../../roadmap/context-mode-integration.md)
 - Details: [`docs/roadmap/context-mode-details.md`](../../roadmap/context-mode-details.md)
 - StevenBlack/hosts — MIT

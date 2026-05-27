@@ -56,6 +56,14 @@ Reroute via @planner or provide an APPROVED plan.
 - **Do NOT translate Polish UI text.**
 - **Per anti-patterns-critical** — every edit must conform; if a plan step violates one, STOP and surface to human.
 
+**MCP usage during implementation** (per [.github/instructions/mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md)):
+
+- Before editing a file >500 lines, prefer `ctx_execute_file(path)` over a full `read_file` to get a structural summary first. Then `read_file` only the region you'll change.
+- Use `ctx_execute(lang, code)` for sandboxed scratch — regex tests, format-string checks, small parses. Never for production logic.
+- If the user pastes an external URL while you implement, route through `ctx_fetch_and_index` — never raw `fetch_webpage`.
+- For any rule/pattern reference, confirm via `read_docs` rather than recalling from memory.
+- **NEVER call both RAG and context-mode for the same atomic intent.**
+
 ---
 
 ## Scope discipline

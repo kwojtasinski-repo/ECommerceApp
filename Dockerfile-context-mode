@@ -1,0 +1,40 @@
+# ─────────────────────────────────────────────────────────────────
+# Stage 1: Build context-mode from source (pinned tag, auditable)
+# ─────────────────────────────────────────────────────────────────
+FROM node:22-alpine AS builder
+
+# Build deps for native modules (better-sqlite3 fallback when node:sqlite is unavailable)
+RUN apk add --no-cache git python3 make g++
+
+# Clone exactly this tag — change it here on upgrade, nowhere else.
+# v1.0.147+ required for CONTEXT_MODE_DIR support; bump to latest stable on rebuild.
+ARG CONTEXT_MODE_TAG=v1.0.151
+RUN git clone --depth 1 --branch ${CONTEXT_MODE_TAG} \
+    https://github.com/mksglu/context-mode.git /build
+
+WORKDIR /build
+# NOTE: do NOT pass --ignore-scripts — better-sqlite3 needs its postinstall to compile.
+# Upstream repo ships without a lockfile, so `npm install` instead of `npm ci`.
+RUN npm install --omit=dev
+
+# ─────────────────────────────────────────────────────────────────
+# Stage 2: Minimal runtime image
+# ─────────────────────────────────────────────────────────────────
+FROM node:22-alpine
+
+# Non-root user — security hardening
+RUN addgroup -S ctxmode && adduser -S ctxmode -G ctxmode
+
+# Copy the built application
+COPY --from=builder /build /app
+COPY docker/context-mode/network-monitor.cjs /app/network-monitor.cjs
+COPY docker/context-mode/entrypoint.sh      /entrypoint.sh
+
+RUN chmod +x /entrypoint.sh \
+ && mkdir -p /home/ctxmode/.context-mode \
+ && chown -R ctxmode:ctxmode /app /home/ctxmode/.context-mode
+
+USER ctxmode
+WORKDIR /workspace
+
+ENTRYPOINT ["/entrypoint.sh"]

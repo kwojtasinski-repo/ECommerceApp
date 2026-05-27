@@ -33,6 +33,13 @@ Always load these files **before** inspecting any changed code:
 4. `.github/instructions/safety.instructions.md` — allowed/disallowed actions.
 5. `.github/context/agent-decisions.md` — skim for prior corrections in the area being reviewed (don't bulk-load — search by area/agent).
 
+**MCP-assisted lookup** (per [.github/instructions/mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md)):
+
+- For step 2 (project-state) and step 5 (agent-decisions), prefer bare `query_docs("<area>")` to surface the most relevant chunks for the area being reviewed instead of reading the entire file.
+- For ADR-compliance checks (§2 below), use `get_history(id="NNNN")` when you know the ADR number, `query_docs` when you don't.
+- Do NOT call `ctx_*` tools — review is read-only.
+- **NEVER call both RAG and context-mode for the same atomic intent.**
+
 Then load **only the relevant** per-stack instructions based on which files changed:
 
 | Changed file type                   | Load additionally                   |

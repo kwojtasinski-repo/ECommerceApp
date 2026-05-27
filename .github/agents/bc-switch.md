@@ -26,6 +26,20 @@ parallel-change strategy. Never skip a step. Never modify migration files.
 
 ---
 
+## Step 0 — MCP knowledge lookup (do NOT skip)
+
+Before touching `project-state.md` in Step 1, follow [.github/instructions/mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md):
+
+1. `list_adrs()` — confirm the BC's governing ADR number exists.
+2. `get_history(id="NNNN")` for that ADR — read the full evolution, not just the latest revision.
+3. `query_docs("<BC name> blocked OR known issue")` — catch any tracked blocker before Step 1.
+4. For very large legacy files in Step 3, use `ctx_execute_file(path)` to triage size/structure before `read_file`.
+5. **NEVER call both RAG and context-mode for the same atomic intent.**
+
+If any RAG call returns empty → fall back to direct file reads but **name the failing MCP** in your Step 1 readiness report.
+
+---
+
 ## Step 1 — Verify BC readiness
 
 1. Read `.github/context/project-state.md`.

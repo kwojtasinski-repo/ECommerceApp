@@ -17,6 +17,17 @@ wrong redirects, and states the user can get stuck in.
 
 ---
 
+## Step 0 — MCP knowledge lookup (do NOT skip)
+
+Before tracing, per [.github/instructions/mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md):
+
+- `query_docs("<flow name>")` — find the governing ADR(s) and any prior flow analysis.
+- `query_docs("<flow name> known issue")` — catch documented edge cases.
+- `get_history(id="NNNN")` for the ADR governing the flow if you know the number.
+- **NEVER call both RAG and context-mode for the same atomic intent.**
+
+---
+
 ## Step 1 — Identify the flow boundaries
 
 State the two endpoints of the flow:

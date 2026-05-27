@@ -17,6 +17,10 @@ Short human entry point for the `docs/` folder.
 2. `architecture/bounded-context-map.md` for BC ownership and status
 3. `roadmap/README.md` for current sequencing and blockers
 
+## Setup guides
+
+- [`getting-started-context-mode.md`](getting-started-context-mode.md) — first-time setup of the context-mode + AdGuard sandbox (one-command bootstrap, smoke tests, troubleshooting)
+
 ## Docs vs. Copilot environment
 
 - `docs/` is the human-facing knowledge base.

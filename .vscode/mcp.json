@@ -205,6 +205,38 @@
     "ecommerceapp-rag-dotnet-http": {
       "type": "http",
       "url": "http://localhost:3001/?project=ecommerceapp_docs_dotnet"
+    },
+
+    // ── context-mode (sandboxed MCP) ──────────────────────────────────────────
+    // Saves ~98% of context window via FTS5-indexed session memory + sandboxed
+    // code execution. Wrapped in a hardened Docker container (read-only FS,
+    // cap_drop ALL, non-root, pids/mem/cpu limits) with network-monitor.cjs
+    // logging every outbound connection.
+    //
+    // ARCHITECTURE: long-lived container + per-session `docker exec`.
+    // The container is brought up ONCE (sleep infinity) so the sandbox, network
+    // monitor, and FTS5 DB stay warm. Each VSCode "Start" only spawns a new
+    // `node cli.bundle.mjs` process inside it — no container churn.
+    //
+    // Prerequisites (one-time per machine):
+    //   pwsh ./scripts/context-mode-bootstrap.ps1                (chown the volume)
+    //   docker compose --profile monitoring  up -d adguard       (DNS firewall)
+    //   docker compose --profile context-mode build context-mode (build image)
+    //   docker compose --profile context-mode up    -d context-mode  (start sandbox)
+    //   then visit http://127.0.0.1:3000 to complete the AdGuard wizard.
+    //
+    // Per-developer tunables live in .env.context-mode (gitignored).
+    // See docs/adr/0029/0029-context-mode-mcp-sandbox.md for the security model.
+    "ecommerceapp-context-mode": {
+      "type": "stdio",
+      "command": "docker",
+      "args": [
+        "exec", "-i",
+        "ecommerceapp-context-mode",
+        "node",
+        "--require", "/app/network-monitor.cjs",
+        "/app/cli.bundle.mjs"
+      ]
     }
   }
 }

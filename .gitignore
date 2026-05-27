@@ -364,3 +364,15 @@ tools/rag-dotnet/model/
 tools/tests/
 docs/rag/test-report-*.md
 docs/rag/cli-*.txt
+
+
+# context-mode network alerts log (auto-generated, do not commit)
+.ctx-network-alerts.log
+
+# AdGuard personal overrides (per-developer, not shared)
+docker/adguard/personal-overrides.local.txt
+
+# context-mode per-developer env overrides (do not commit your version)
+.env.context-mode
+# AdGuard generated config (contains bcrypt password hash - never commit)
+docker/adguard/AdGuardHome.yaml

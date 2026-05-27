@@ -1,0 +1,9 @@
+# Team-wide blocklist. Entries have HIGHER priority than community lists.
+# AdBlock format: ||domain.com^
+# Edit via Pull Request — changes apply to everyone.
+#
+# Filter id: 1001 (referenced from AdGuardHome.yaml)
+#
+# Examples (uncomment, commit, PR):
+# ||suspicious-tracker.io^
+# ||known-malware-c2.example^

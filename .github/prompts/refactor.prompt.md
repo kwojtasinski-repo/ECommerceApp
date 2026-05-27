@@ -38,6 +38,13 @@ Run the entire pre-edit checklist from `.github/instructions/pre-edit.instructio
 2. Read the target file(s) and direct callers.
 3. Read the relevant ADR for the BC touched.
 4. Read the per-stack instruction file (auto-loaded via `applyTo:` glob).
+
+**MCP routing for the gate** (per [.github/instructions/mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md)):
+
+- Prefer bare `query_docs("<area>")` over reading the entire `agent-decisions.md`.
+- Use `get_history(id="NNNN")` for the BC's ADR rather than reading the folder router by hand.
+- For large target files, use `ctx_execute_file(path)` to triage structure before `read_file`.
+- **NEVER call both RAG and context-mode for the same atomic intent.**
 5. Identify the relevant entries in `.github/context/anti-patterns-critical.context.md`.
 
 ### Step 1 — Identify scope

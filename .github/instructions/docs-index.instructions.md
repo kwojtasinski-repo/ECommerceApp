@@ -4,9 +4,9 @@ applyTo: ".github/**, docs/**"
 
 # Docs Index — Copilot Routing Table
 
-> **RAG-first**: before reading any file from this index, call `query_docs` or `list_adrs` via the
-> active RAG MCP server (`ecommerceapp-rag-python` or `ecommerceapp-rag-dotnet` in VS Code;
-> `ecommerceapp-rag` on GitHub.com). Load individual files only when RAG returns a specific path to follow.
+> **MCP-first**: tool routing, precedence rules, and the ASCII flow live in [mcp-routing.instructions.md](mcp-routing.instructions.md) (`applyTo: **`, single source of truth). Read once per session.
+>
+> **RAG-first for knowledge**: before reading any file from this index, call `query_docs` or `list_adrs` via the active RAG MCP server (`ecommerceapp-rag-python` or `ecommerceapp-rag-dotnet` in VS Code; `ecommerceapp-rag` on GitHub.com). Load individual files only when RAG returns a specific path to follow.
 > Human-oriented docs start at `docs/README.md`. Full routing table -> `docs-index.full.md` (read on demand only).
 
 ## When to use RAG vs. read directly
@@ -17,12 +17,13 @@ applyTo: ".github/**, docs/**"
 | "What does the project say about Y?" | `query_docs("Y")` |
 | "How did decision Z evolve?" | `get_history(id)` |
 | Known file path already in hand | `read_file` directly, skip RAG |
-| Known-issues / agent-decisions / project-state | `query_docs(question, bc="context")` |
+| Known-issues / agent-decisions / project-state | `query_docs(question)` (bare — do NOT pass `bc="context"`; `bc=` is a breadcrumb/title substring filter, not a folder filter) |
 
 ## Fixed entry points (load directly, no RAG needed)
 
 | Need | File |
 |---|---|
+| **MCP routing / tool precedence / ASCII flow** | `.github/instructions/mcp-routing.instructions.md` |
 | BC blocked? | `.github/context/project-state.md` |
 | Bug already tracked? | `.github/context/known-issues.md` |
 | Prior corrections? | `.github/context/agent-decisions.md` |

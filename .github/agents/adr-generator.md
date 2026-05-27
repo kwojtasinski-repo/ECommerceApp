@@ -34,10 +34,12 @@ Always read `.github/templates/adr.template.md` before generating any ADR.
 Never create an ADR from scratch — always copy the template structure exactly.
 
 ### 3. Determine the next ADR number
-- List all folders in `/docs/adr/`.
+- **Preferred:** `list_adrs()` via the RAG MCP — returns all indexed ADR ids and titles, which doubles as a duplicate-title check.
+- Fallback if RAG is unavailable: list folders in `/docs/adr/`.
 - Find the highest existing ADR number (e.g. `0003`).
 - Increment by 1 for the new ADR number (e.g. `0004`).
 - If no ADRs exist yet, start at `0001`.
+- See [.github/instructions/mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md) for tool routing rules.
 
 ### 4. Scan the codebase for evidence
 Before writing anything, search the codebase for real evidence to support the decision:
@@ -47,7 +49,8 @@ Before writing anything, search the codebase for real evidence to support the de
 - Always reference actual file paths and class names — never make up examples.
 
 ### 5. Read existing ADRs for cross-references
-- Read all existing ADR folder routers in `/docs/adr/<NNNN>/README.md` (and the main ADR file when needed) to find related decisions.
+- **Preferred:** `query_docs("<topic> ADR related decisions")` then `get_history(id)` for each candidate ADR id returned.
+- Fallback: read existing ADR folder routers in `/docs/adr/<NNNN>/README.md` (and the main ADR file when needed).
 - List them under `## References` → `Related ADRs`.
 
 ### 6. Fill the template

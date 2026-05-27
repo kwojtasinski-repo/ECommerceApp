@@ -149,6 +149,22 @@ Goal: extend a useful working session from ~30 min to ~3 hours without losing co
 
 ---
 
+### Setup-time gate (run BEFORE declaring Phase 5 done)
+
+**One-command setup (recommended)**: `powershell -File scripts/context-mode-bootstrap.ps1` from repo root. The script generates `AdGuardHome.yaml` (skipping the first-run wizard), recreates both containers, waits for the DNS listener, and runs G.1–G.3 automatically. Default password is auto-generated and printed once; pass `-AdGuardPassword '...'` to set your own.
+
+**Manual verification** — the wizard (or the bootstrap script above) is the single most common footgun; see [KI-014](../../.github/context/known-issues.md). Until these three checks pass on a fresh machine, `ctx_fetch_and_index` returns SERVFAIL for every external URL.
+
+| # | Command | Expected | Failing means |
+|---|---|---|---|
+| G.1 | `docker exec ecommerceapp-adguard ls /opt/adguardhome/conf` | `AdGuardHome.yaml` present | Run `scripts/context-mode-bootstrap.ps1` or open `http://127.0.0.1:3000` |
+| G.2 | `docker exec ecommerceapp-adguard sh -c "netstat -ln \| grep ':53 '"` | One or more `:53` listeners (udp + tcp) | AdGuard never bound — re-run bootstrap or visit wizard "DNS server" page |
+| G.3 | `docker exec ecommerceapp-context-mode nslookup raw.githubusercontent.com 172.28.0.2` | A record returned, no SERVFAIL | AdGuard up but upstreams misconfigured — Settings → DNS settings → Upstream DNS servers |
+
+> If you wipe the AdGuard volume (`docker volume rm ecommerceapp_adguard-work`), all three checks fail until the wizard is re-run — budget 5 minutes for the bring-up.
+
+---
+
 ### Phase 6 (future, optional) — suggestions automation + "new arrived" UI
 
 > **Status: future amendment**, not part of the current ADR-0029. Enable only if the community lists turn out to be insufficient.

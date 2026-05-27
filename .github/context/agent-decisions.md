@@ -179,3 +179,12 @@ Rules:
 - **Status**: Resolved (plan updated; Phase 6 explicitly deferred)
 
 ---
+
+## 2026-05-27 — Copilot / context-mode read/write/execute split
+
+- **Context**: After empirical mixed-workload tests on context-mode v1.0.151, the question came up: should the sandbox be used for edits too (writable mount)?
+- **Decision**: NO. Keep the three-path split: READ/derive via `ctx_execute(_file)` (sandbox, `/workspace:ro`), WRITE via native VS Code edit tools (`replace_string_in_file` / `create_file` / `multi_replace_string_in_file`), EXECUTE on host (build/test/git) via `run_in_terminal`. Captured in [docs/patterns/context-mode-read-write-split.md](../../docs/patterns/context-mode-read-write-split.md).
+- **Rationale**: Reads dominate token cost (full content) — sandboxing them saves ~90% on derivation workloads (verified: 700-line file ~8.5K tok › 300 tok). Writes are diff-sized and already cheap; sandboxing them would break undo/git/permissions for ~0% saving. Execute paths are stateful (your SDK, secrets, cwd) and cannot run in an ephemeral `:ro` sandbox.
+- **Action**: New pattern doc (above). Added link from [ADR-0029 References](../../docs/adr/0029/0029-context-mode-mcp-sandbox.md#references). Added cwd-quirk note to [mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md) for `ctx_execute_file` (sandbox cwd != repo root › use absolute `/workspace/...` paths or get silent zero results).
+- **Promote?**: After 2nd occurrence of someone proposing `:rw` mount OR using `ctx_execute` for git/build › promote pattern doc rules into `anti-patterns-critical.context.md`.
+- **Status**: Resolved (pattern doc + ADR cross-link + routing note in place)

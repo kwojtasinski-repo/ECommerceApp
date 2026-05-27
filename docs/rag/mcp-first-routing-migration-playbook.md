@@ -639,3 +639,32 @@ independent; either can be rolled back without breaking the other.
 - Trigger table example: [.github/copilot-instructions.md §12](../../.github/copilot-instructions.md)
 - Error envelope contract: [rag-architecture.md §14](rag-architecture.md#14-error-handling-sanitisation-and-middleware)
 - Maintenance prompt: [.github/prompts/rag-sync.prompt.md](../../.github/prompts/rag-sync.prompt.md)
+
+
+---
+
+## 14. Applied: ECommerceApp case study (2026-05-27)
+
+Real-world execution of this playbook on this repository, split into two commits to keep the diff reviewable.
+
+### Phase 0 — Precedence wiring (commit `cef1bca5`)
+
+Single-file pilot: added the 5 HARD precedence rules, ASCII flow diagram, and `ctx_*` carve-outs to `.github/instructions/rag.instructions.md` + `.github/copilot-instructions.md §13.0`. No agent/prompt/skill changes yet. Goal was to prove the wording works before scaling.
+
+### Phases 1-5 — Full rollout (commit `<filled after commit>`)
+
+One sweep across the entire `.github/` workflow surface, ~20 files, zero production code, zero tests touched:
+
+- **Phase 1 — Foundation**: extracted canonical single-source-of-truth into new `.github/instructions/mcp-routing.instructions.md` (applyTo: \`**\`). Status tables for both MCPs, ASCII flow diagram, RAG tool table, context-mode tool table (gated as "dormant" until ADR-0029 hooks land), 5 HARD precedence rules, fallback ladder, server variants. `rag.instructions.md` trimmed to RAG-only ops (~50 lines). `copilot-instructions.md §12` collapsed to 6-bullet summary linking the canonical file. `docs-index.instructions.md` lifted MCP routing to top-of-table.
+- **Phase 2 — Agents + pipeline**: per-agent MCP scopes wired into all 8 agents (Planner=RAG read-only; Implementer=RAG + `ctx_execute/_file/_fetch`; **Verifier=NONE** as explicit hard rule; Code-reviewer=RAG read-only; PR-commit=`get_history` to verify ADR refs; BC-switch Step 0 RAG lookup; ADR-generator prefers `list_adrs`/`query_docs`/`get_history` over folder listing). `AGENT-PIPELINE.md` max-iter table gained an "MCP tools allowed" column.
+- **Phase 3 — Prompts**: Step 0 MCP lookup added to `bc-analysis`, `flow-analysis`, `pr-review`, `refactor` (inside Pre-edit gate), and `bc-implementation` (Step 0a). **Skipped**: 16 skills bulk pass — 5 are already RAG-native, 11 are creator-scaffolds that don't read project knowledge at runtime (Planner/Implementer enforce routing before invoking them). Recorded as a known follow-up if the user wants exhaustive coverage.
+- **Phase 4 — Pre-edit + safety + memory + anti-patterns**: pre-edit checklist became MCP-first (prefer `query_docs`/`get_history` over raw file reads); explicit URL handling rule (`ctx_fetch_and_index` only for project URLs); architecture-suggestion guard (`query_docs` for governing ADR first); `safety.instructions.md` adds external-HTTP rule + "verifier MUST NOT use MCPs" rule; `agent-memory.instructions.md` adds pre-write `query_docs` dedupe check; `anti-patterns-critical.context.md` gains 4 BLOCKS-MERGE rules (double-MCP, raw `fetch_webpage` for project URLs, quoting ADRs from training data, MCP calls inside verifier).
+- **Phase 5 — Changelog + retrospective**: `COPILOT-SETUP-CHANGELOG.md` Session 25 entry + this §14.
+
+### What the case study confirms
+
+- The **single-source-of-truth pattern** (Phase 1) is the most important hour of the rollout. Every later phase becomes a one-line pointer (`[mcp-routing.instructions.md](mcp-routing.instructions.md)`), so future rule changes happen in **one** place rather than fanning out across 20+ files.
+- "**NEVER call both MCPs for the same atomic intent**" is the rule that pays for itself fastest — without it, agents will happily call `query_docs` AND `ctx_execute_file` for the same ADR "just to be thorough" and double the context cost.
+- A **dormant** MCP can be wired with full precedence rules ahead of activation, as long as every reference carries an "applies once <hooks land>" gating clause. This decouples docs work from infra work.
+- **Verifier-must-not-use-MCPs** is the exception that proves the rule. Mark it explicitly in the agent file _and_ in the pipeline orchestrator (`AGENT-PIPELINE.md` MCP column) — agents will ignore one or the other if the rule lives in only one place.
+- Phase 0 + Phases 1-5 as **two separate commits** is the right granularity: pilot is small enough to read in one screen, full rollout big enough that splitting it further would lose the "one cohesive change" narrative.

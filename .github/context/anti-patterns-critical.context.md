@@ -67,6 +67,16 @@ _Last updated: 2026-03-17_
 - **No production DB migrations** without explicit human approval.
 - **No preview SDK or preview major package upgrades** without confirmation.
 
+## MCP routing
+
+- **No calling both RAG and context-mode MCPs for the same atomic intent** — pick one per intent, per [mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md). Double-calls inflate context and contradict the precedence rules.
+- **No `grep_search` or `read_file` on `.github/context/*.md`, `docs/adr/**`, `docs/roadmap/**`, or `docs/architecture/bounded-context-map.md` BEFORE `query_docs`/`get_history`** — these paths are RAG-owned. Direct file access is a fallback only after the MCP returns empty or low-score. Treating a known-issue / project-state / agent-decisions / ADR question as a code search is the #1 routing failure mode.
+- **No reporting "RAG returned empty" without first executing the mandatory retry sequence** — when `query_docs`/`read_docs` returns empty or low-score, you MUST (1) retry WITHOUT `bc=`, then (2) retry with REWORDED keywords using full-name domain synonyms (NOT literal IDs). Only after both retries fail may you state empty and fall back. Skipping either retry is the failure mode that broke Q5 (KI-008) in the routing eval — model gave up after one literal `query_docs("KI-008")` instead of retrying as `query_docs("FluentAssertions AwesomeAssertions .NET 8")` which would have hit. Equally forbidden: filling the empty result with training-memory inference. Full rule in [mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md#empty-result-clause).
+- **No raw `fetch_webpage` for project-related URLs** (ADRs, docs, package registries, GitHub links cited in repo work) — must go through `ctx_fetch_and_index` (ADR-0029). Bypasses the AdGuard allowlist.
+- **No quoting ADRs / project state / known issues / roadmap from training data** — always look up via RAG (`get_history`, `query_docs`). Stale memory is a frequent cause of wrong answers.
+- **No computing hashes, math, regex transformations, or repo-wide derivations from training-data memory** — use `ctx_execute` / `ctx_execute_file` in the sandbox. The bytes never enter context; the answer is verifiable.
+- **No MCP tool calls inside `@verifier` or any deterministic gate** — breaks reproducibility.
+
 ## Legacy code (do not extend)
 
 These classes are frozen — all new work goes to their BC replacements:

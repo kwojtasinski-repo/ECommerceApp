@@ -22,6 +22,15 @@
 You are analyzing a bounded context in ECommerceApp for migration toward the target architecture
 defined in ADR-0002, ADR-0003, and ADR-0004. Follow this analysis structure exactly.
 
+## Step 0 — MCP knowledge lookup (do NOT skip)
+
+Per [.github/instructions/mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md):
+
+1. `list_adrs()` — confirm ADRs governing the BC exist.
+2. `get_history(id="NNNN")` for each governing ADR — read the full evolution before scanning code.
+3. `query_docs("<BC name> known issue OR blocker")` — surface tracked issues.
+4. **NEVER call both RAG and context-mode for the same atomic intent.**
+
 ## Step 1 — Inventory existing artifacts
 
 Scan the codebase and list every file that belongs to this BC, grouped by type:

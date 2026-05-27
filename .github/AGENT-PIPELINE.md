@@ -101,16 +101,18 @@ HUMAN runs git commands
 
 ## Max iterations — full table
 
-| Agent                           | Max iter | Iteration definition                                              |
-| ------------------------------- | -------- | ----------------------------------------------------------------- |
-| `@planner`                      | 3        | One full plan revision (after REVISE)                             |
-| `@implementer`                  | 5        | One full pass: impl steps + 3 probes + inline review              |
-| `@verifier` _(standalone)_      | 1        | One full build + test sweep — no auto-retry (standalone use only) |
-| `@code-reviewer` _(standalone)_ | 3        | One full review pass (re-review after fix = +1, standalone only)  |
-| `@pr-commit`                    | 2        | One commit/PR text revision                                       |
-| `@bc-switch`                    | 10       | One full switch attempt (Step 1 → report)                         |
-| `@adr-generator`                | 2        | One ADR draft (revision after feedback = +1)                      |
-| `@copilot-setup-maintainer`     | n/a      | Per-workflow; audit can iterate per finding                       |
+| Agent                           | Max iter | Iteration definition                                              | MCP tools allowed |
+| ------------------------------- | -------- | ----------------------------------------------------------------- | ----------------- |
+| `@planner`                      | 3        | One full plan revision (after REVISE)                             | RAG (read-only): `list_adrs`, `query_docs`, `read_docs`, `get_history`. No `ctx_*`. |
+| `@implementer`                  | 5        | One full pass: impl steps + 3 probes + inline review              | RAG + `ctx_execute`, `ctx_execute_file`, `ctx_fetch_and_index` |
+| `@verifier` _(standalone)_      | 1        | One full build + test sweep — no auto-retry (standalone use only) | **NONE** — deterministic only |
+| `@code-reviewer` _(standalone)_ | 3        | One full review pass (re-review after fix = +1, standalone only)  | RAG (read-only). No `ctx_*`. |
+| `@pr-commit`                    | 2        | One commit/PR text revision                                       | RAG (`get_history` for ADR refs only) |
+| `@bc-switch`                    | 10       | One full switch attempt (Step 1 → report)                         | RAG + `ctx_execute_file` (large-file triage) |
+| `@adr-generator`                | 2        | One ADR draft (revision after feedback = +1)                      | RAG (`list_adrs` + `query_docs` + `get_history`) |
+| `@copilot-setup-maintainer`     | n/a      | Per-workflow; audit can iterate per finding                       | RAG + `ctx_fetch_and_index` (allowlisted external refs) |
+
+**Canonical MCP routing rules:** [.github/instructions/mcp-routing.instructions.md](instructions/mcp-routing.instructions.md). **NEVER call both RAG and context-mode for the same atomic intent.**
 
 After hitting the cap → **STOP, report what was tried, ask the human**. No silent continuation.
 
@@ -151,11 +153,12 @@ Do NOT skip when:
 
 Each agent file lists its required reads. Summary:
 
-- `@planner` → agent-decisions, project-state, known-issues, docs-index, ADR(s), per-stack instructions, anti-patterns-critical
+- **All agents** (except `@verifier`) → `.github/instructions/mcp-routing.instructions.md` for tool routing + precedence.
+- `@planner` → agent-decisions, project-state, known-issues, docs-index, ADR(s) (via `get_history`), per-stack instructions, anti-patterns-critical
 - `@implementer` → APPROVED plan + agent-decisions + per-stack instructions
-- `@verifier` → handoff message only (no architectural reads — it's deterministic)
-- `@code-reviewer` → anti-patterns-critical, project-state, per-stack instructions, ADR per BC, agent-decisions (per area)
-- `@pr-commit` → reviewer output + plan + bounded-context-map (for branch scope)
+- `@verifier` → handoff message only (no architectural reads, no MCP — it's deterministic)
+- `@code-reviewer` → anti-patterns-critical, project-state, per-stack instructions, ADR per BC (via `get_history`), agent-decisions (per area, via bare `query_docs("<area>")`)
+- `@pr-commit` → reviewer output + plan + bounded-context-map (for branch scope) + `get_history` for cited ADRs
 
 ---
 
