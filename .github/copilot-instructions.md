@@ -46,7 +46,7 @@ ECommerceApp — ASP.NET Core MVC + Web API e-commerce platform. Clean/onion arc
 
 **Agent memory rule**: Skim `agent-decisions.md` before non-trivial work — auto-loaded via `agent-memory.instructions.md`. Append after every meaningful correction (see `pre-edit.instructions.md`).
 
-**Clarification rule**: If scope, BC ownership, or blocker status are unclear, ask BEFORE writing code.
+**Clarification rule**: If scope, BC ownership, blocker status, or destructive target are unclear, ask BEFORE writing code. Triggers + host-aware mechanism (`vscode_askQuestions` in VS Code, plain numbered-list chat reply in Visual Studio / other hosts) live in [pre-edit.instructions.md §Clarification policy](instructions/pre-edit.instructions.md).
 
 Context: `project-state.md`, `known-issues.md`, `repo-index.md`. Roadmaps: `docs/roadmap/README.md`. BC map: `bounded-context-map.md`.
 

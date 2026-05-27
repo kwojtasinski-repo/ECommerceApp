@@ -23,6 +23,26 @@ Before proposing or committing changes, perform these steps:
 
 **Architecture suggestions**: if you're about to propose an architectural change, first `query_docs("<topic>")` to confirm no existing ADR already governs it. New patterns without an ADR → stop and propose `@adr-generator`.
 
+**Clarification policy — stop and ask when intent is unclear.** Do not invent missing context. The following triggers MUST cause you to pause and ask the user before any tool that writes to disk, the database, or git:
+
+- The user's request mentions a BC, an ADR, or a file by ambiguous nickname (e.g. "the orders thing", "that doc Karol mentioned") and search/RAG returns 2+ plausible matches.
+- The scope is binary and the user did not specify (e.g. "fix this" with two failing tests — which one?). Pick the most likely and confirm; do not silently choose.
+- A blocker is referenced (KI-NNN, "blocked BC", "skipped test") but the resolution path is not in the prompt and not in `known-issues.md`.
+- The request is destructive or hard to reverse (delete, force push, drop table, schema rewrite) and the target is not unambiguously identified.
+- The request requires a number, a name, or a path that the user could have typed but did not.
+
+**How to ask (host-aware)**:
+
+| Host | Preferred mechanism |
+|---|---|
+| VS Code (this repo's primary host) | Call `vscode_askQuestions` with a `freeText` field. Use multi-select options only when the choices are genuinely closed. Always include a freeform answer field unless the answer is strictly enumerated. |
+| Visual Studio 17.14+ agent mode | No first-class equivalent of `vscode_askQuestions`. Write the clarifying question as a plain chat reply, list the 2-4 likely interpretations as a numbered list, and STOP. Do not start tool calls until the user responds. |
+| Any other host | Same as Visual Studio — plain chat reply with numbered options, then stop. |
+
+If the host exposes neither a structured-question tool nor an interactive chat (e.g. CI / batch), fail loudly with the missing information listed, rather than guessing.
+
+**What NOT to do**: never silently pick "the most plausible interpretation" and proceed with destructive or hard-to-reverse work. The cost of one extra clarifying message is always lower than the cost of unwinding a wrong commit / migration / git operation.
+
 **NEVER call both RAG and context-mode for the same atomic intent.**
 
 **Verify external-tool capabilities empirically before documenting them.** Before listing a runtime, language, feature, or CLI command of an external tool in our docs (`mcp-routing.instructions.md`, roadmap files, hooks/agents configs), verify it empirically — `ctx_doctor` for context-mode runtimes; a smoke `ctx_execute` call for sandbox langs; `docker exec <container> which <cmd>` or `<cmd> --help` for binaries referenced from configs. Schema enums, upstream READMEs, and prior knowledge are **not proof** of shipped capability. This rule was promoted after recurring "doc-claimed runtime/CLI not actually present" corrections (Python runtime, 10-language enum mismatch, `context-mode` wrapper that did not exist in `/app/bin/`).
