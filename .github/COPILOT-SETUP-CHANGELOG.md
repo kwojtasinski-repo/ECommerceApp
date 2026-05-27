@@ -15,7 +15,7 @@
 | Instruction files (`.instructions.md`) | 16    | All with `applyTo:` frontmatter; `agent-memory` added; `pre-edit` split into core + `doc-suggestions`; `docs-index` scope narrowed |
 | Prompt files (`.prompt.md`)            | 6     | BC analysis, BC implementation, PR review, refactor, flow-analysis, rag-sync                                                        |
 | Agent files                            | 8     | adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer, planner, implementer, verifier, pr-commit                       |
-| Skills (`SKILL.md`)                    | 16    | +5 new RAG skills: diagnose-rag, tune-rag-weights, expand-rag-glossary, generate-rag-rules, generate-eval-questions |
+| Skills (`SKILL.md`)                    | 17    | +rag-with-memory (Session 26); +5 RAG skills (Session 23): diagnose-rag, tune-rag-weights, expand-rag-glossary, generate-rag-rules, generate-eval-questions |
 | ADRs                                   | 29    | Folderized ADR routers under `docs/adr/<NNNN>/README.md`; ADR-0027/0028 (RAG pipeline) + ADR-0029 (context-mode sandbox) added                                                                           |
 | Context files                          | 6     | project-state, known-issues, agent-decisions, repo-index, future-skills, anti-patterns-critical                                    |
 | GitHub Actions workflows               | 1     | `dotnet-ci.yml` — manual trigger only (push/PR commented)                                                                          |
@@ -72,7 +72,7 @@
 | `verifier.md`                 | Session 17 (new — pipeline stage 3, deterministic build+test, max-iter 1)                               |
 | `pr-commit.md`                | Session 17 (new — pipeline stage 5, Conventional Commits, max-iter 2)                                   |
 
-### `.github/skills/` (16 skills)
+### `.github/skills/` (17 skills)
 
 | Skill                     | Description                                                     | Added      |
 | ------------------------- | --------------------------------------------------------------- | ---------- |
@@ -92,6 +92,7 @@
 | `tune-rag-weights`        | Adjust rag-config.yaml ranking weight multipliers                   | Session 23 |
 | `expand-rag-glossary`     | Add PL/DE patterns to multilingual-glossary.yaml                | Session 23 |
 | `generate-rag-rules`      | Update metadata-rules.yaml and queries.yaml                     | Session 23 |
+| `rag-with-memory`         | RAG ↔ context-mode FTS5 handoff (L1 manual, 3-call) walkthrough | Session 26 |
 
 ### `.github/context/` (6 files)
 
@@ -119,7 +120,7 @@ Ships L1 (documentation-only) for caching RAG knowledge in context-mode's FTS5 s
 | 3   | Pattern doc gained "Integration with RAG" section + "How to discover the workspace mount path" probe recipe; all `/workspace` hardcodes replaced with `$CONTEXT_MODE_WORKSPACE` | `docs/patterns/context-mode-read-write-split.md`                                      |
 | 4   | Compose service mount target and env var both parametric: `${CONTEXT_MODE_WORKSPACE:-/workspace}` (forks override via `.env.context-mode`)         | `docker-compose.yaml`                                                                  |
 | 5   | Roadmap Phase 7 (`query_docs_cached` wrapper) + new "L1 ship status & open follow-ups" section with LIMIT-1 (hard subagent restriction, CONFIRMED), LIMIT-2 (probe enforcement, deferred), LIMIT-3 (multilingual FTS gap, documented as caveat) | `docs/roadmap/context-mode-integration.md`                                            |
-| 6   | Agent-decisions entry recording POC + 4 validation tests, decision, rationale, promotion triggers                                                   | `.github/context/agent-decisions.md`                                                  |
+| 6   | Agent-decisions entry recording POC + 3 validation tests, decision, rationale, promotion triggers                                                   | `.github/context/agent-decisions.md`                                                  |
 | 7   | docs-index gained row for the new skill                                                                                                            | `.github/instructions/docs-index.instructions.md`                                      |
 
 ---
