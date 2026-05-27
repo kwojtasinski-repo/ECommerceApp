@@ -29,7 +29,8 @@
 │                          ▼                                          │
 │           ┌───────────────────────────────────┐                    │
 │           │  context-mode container            │                    │
-│           │   /workspace  ← MOUNTED :ro       │ ← your source     │
+│           │   $CONTEXT_MODE_WORKSPACE :ro     │ ← your source     │
+│           │   (default /workspace, parametric) │   READ-ONLY       │
 │           │   node sandbox (caps dropped)      │   READ-ONLY       │
 │           │   DNS → AdGuard (allowlist)        │                    │
 │           │   read_only rootfs, tmpfs /tmp     │                    │
@@ -165,7 +166,7 @@ This is **by design** — the split optimizes the workloads that dominate agent 
   code in ctx_execute  → "rm -rf repo"
         │                    │                    │
         ▼                    ▼                    ▼
-  /workspace :ro       AdGuard allowlist   read_only rootfs
+  $WORKSPACE :ro       AdGuard allowlist   read_only rootfs
   EROFS on write       blocks egress to    + cap_drop ALL +
   → no damage          attacker domain     no-new-privileges +
                                             non-root user +
@@ -186,16 +187,32 @@ Native edit tools have a different threat surface (handled by VS Code's normal p
 
 ---
 
+## How to discover the workspace mount path
+
+The mount target inside the container is parametric. Default is `/workspace`, but forks/dev overrides can rename it via `CONTEXT_MODE_WORKSPACE` in `.env.context-mode` (see `docker-compose.yaml` — the env var is injected into the container so it's discoverable at runtime).
+
+**Recipe** (run once per session, cache the result):
+
+```
+ctx_execute("sh", "echo $CONTEXT_MODE_WORKSPACE")
+# → /workspace          (default)
+# → /repo               (if a fork overrode it)
+```
+
+Use the returned value as the prefix for all absolute paths passed to `ctx_execute_file`, `fs.readFileSync` inside `ctx_execute`, etc. **Never hardcode `/workspace`** in tooling that may run against forked configurations.
+
+---
+
 ## Anti-patterns to flag in code review
 
 | Anti-pattern | Why bad | Fix |
 |---|---|---|
-| Sandbox writes via `fs.writeFileSync('/workspace/...')` | Would bypass git/undo; only saved by `:ro` enforcement | Use native edit tools |
+| Sandbox writes via `fs.writeFileSync('$CONTEXT_MODE_WORKSPACE/...')` | Would bypass git/undo; only saved by `:ro` enforcement | Use native edit tools |
 | `read_file` of a > 300-line file just to count something | Wastes ~5–15K tokens | Use `ctx_execute_file` with the filter |
 | `run_in_terminal` for hash / regex / sandbox-able derivation | Bypasses sandbox audit trail | Use `ctx_execute` |
 | `ctx_execute` for `dotnet build` | Sandbox can't reproduce dev env | Use `run_in_terminal` |
 | `ctx_execute` for `git commit` | Sandbox is stateless / detached | Use `run_in_terminal` |
-| Using relative paths (`'ECommerceApp.Application'`) inside `ctx_execute` | Sandbox cwd ≠ repo root → silent zero results | Use absolute `/workspace/...` paths |
+| Using relative paths (`'ECommerceApp.Application'`) inside `ctx_execute` | Sandbox cwd ≠ repo root → silent zero results | Use absolute paths under `$CONTEXT_MODE_WORKSPACE` (default `/workspace`) |
 
 ---
 
@@ -205,12 +222,71 @@ When asking Copilot to do mixed work, label the steps:
 
 ```
 Step 1 (RAG / knowledge): <question>
-Step 2 (context-mode / derivation): <task — give /workspace/... paths>
+Step 2 (context-mode / derivation): <task — give absolute paths under $CONTEXT_MODE_WORKSPACE (default /workspace)>
 Step 3 (edit): <change to apply — let Copilot use native tools>
 Step 4 (run): <build/test/git — let Copilot use run_in_terminal>
 ```
 
 Explicit labels prevent weaker models (GPT-5-mini) from collapsing everything onto `run_in_terminal`.
+
+---
+
+## Integration with RAG — knowledge caching across recalls
+
+The read/write/execute split is silent about a fourth path that **does** save tokens at workload level: re-reading the same RAG knowledge multiple times in one session. Each `query_docs` / `read_docs` call re-bills the same tokens. context-mode's FTS5 store can hold the result locally and serve subsequent recalls via BM25 — at the cost of one extra `ctx_index` call up front.
+
+```
+                       FIRST CALL                       SUBSEQUENT CALLS
+                       ──────────                       ─────────────────
+
+  query_docs("X")  ───────► RAG MCP                     ctx_search(            ───► context-mode
+                            (embed + rank + return            queries=[...],         (FTS5 BM25 over
+                             N chunks, billed)                source="rag-           local store, free)
+                                  │                            cache-X")
+                                  ▼                                  │
+                            format as markdown                       ▼
+                                  │                            ranked sections
+                                  ▼                            with preserved
+                          ctx_index(content, ───► context-mode  breadcrumbs / code blocks
+                            source="rag-          (markdown-aware
+                             cache-X")             chunking, FTS5
+                                                   index, billed once)
+```
+
+| | First lookup | Second lookup | Third lookup | Tenth lookup |
+|---|---|---|---|---|
+| Without caching (direct RAG every time) | 1× RAG | 2× RAG | 3× RAG | 10× RAG |
+| With caching (L1 handoff) | 1× RAG + 1× `ctx_index` | 1× RAG + 1× `ctx_index` + 1× `ctx_search` | (same) + 1× `ctx_search` | (same) + 8× `ctx_search` |
+
+`ctx_search` against a local FTS5 store is effectively free vs. a RAG MCP round trip with embedding + ranking. Break-even is the **second** recall; after that, savings compound linearly.
+
+**When the integration pays off** (re-bill avoided):
+
+- Long debug / multi-step refactor referencing the same ADR or BC docs.
+- Planner → implementer → verifier handoff: cache once in planner, all three agents read from cache.
+- "We'll be working on X today" sessions.
+
+**When the integration does NOT pay off** (extra `ctx_index` cost wasted):
+
+- One-shot lookup answered once and forgotten.
+- Pure code edit with no knowledge re-reads.
+- The cache key already exists this session — `ctx_search` it first before re-RAG.
+
+### Surface confusion is the real risk
+
+VS Code exposes three near-identical "memory" surfaces. Without an explicit rule naming all three, weaker models reliably pick the most basic one. Empirical POC with a GPT-5-mini subagent (2026-05-27) used the **wrong** surface in all 3 handoff steps:
+
+| Step | Should call | Subagent called | Why wrong |
+|---|---|---|---|
+| Knowledge | `query_docs` (RAG MCP) | `semantic_search` (VS Code embedded) | No chunk ranking; grep-style over workspace |
+| Cache | `ctx_index` (context-mode FTS5) | `memory.create` (VS Code persistent notes) | Single-doc; no FTS recall |
+| Recall | `ctx_search` (BM25 over FTS5) | `memory.view` + manual reading | No ranking; full doc returned |
+
+Routing rules + skill mitigate this. See:
+
+- Canonical rules with the three-surface disambiguation table: [`.github/instructions/mcp-routing.instructions.md` — RAG ↔ context-mode handoff section](../../.github/instructions/mcp-routing.instructions.md)
+- Step-by-step skill with naming convention + markdown template + anti-patterns: [`.github/skills/rag-with-memory/SKILL.md`](../../.github/skills/rag-with-memory/SKILL.md)
+- L2 future amendment — single wrapper tool `query_docs_cached` that collapses the 3 steps: [`docs/roadmap/context-mode-integration.md` Phase 7](../roadmap/context-mode-integration.md)
 
 ---
 
@@ -220,3 +296,5 @@ Explicit labels prevent weaker models (GPT-5-mini) from collapsing everything on
 - [.github/instructions/mcp-routing.instructions.md](../../.github/instructions/mcp-routing.instructions.md) — canonical routing rules
 - [docs/getting-started-context-mode.md](../getting-started-context-mode.md) — setup walkthrough
 - [.github/context/known-issues.md](../../.github/context/known-issues.md) (KI-014) — first-run AdGuard bootstrap
+- [.github/skills/rag-with-memory/SKILL.md](../../.github/skills/rag-with-memory/SKILL.md) — L1 RAG ↔ context-mode handoff
+- [docs/roadmap/context-mode-integration.md](../roadmap/context-mode-integration.md) Phase 7 — L2 wrapper tool plan

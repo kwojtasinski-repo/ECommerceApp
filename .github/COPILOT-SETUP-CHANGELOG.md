@@ -108,6 +108,22 @@
 
 ## Change log
 
+### Session 26 — RAG ↔ context-mode L1 handoff (skill + parametric mount) (2026-05-27)
+
+Ships L1 (documentation-only) for caching RAG knowledge in context-mode's FTS5 store across recalls. Validated end-to-end via 4 tests (1 primary-agent POC, 2 subagent diagnostics, 1 fresh-window user-driven). Confirmed hard surface restriction on built-in subagents (LIMIT-1 — inline-chunks pattern is the only workaround). Multilingual recall caveat documented after Test 4 exposed FTS5 Porter-stemmer gap. Workspace mount path de-hardcoded (parametric `${CONTEXT_MODE_WORKSPACE:-/workspace}`).
+
+| #   | Change                                                                                                                                              | Files affected                                                                       |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| 1   | New skill `rag-with-memory` — step-by-step walkthrough of the manual 3-call handoff with Step 0 workspace probe, subagent inline-chunks pattern, multilingual recall caveat | `.github/skills/rag-with-memory/SKILL.md` (new)                                       |
+| 2   | New routing section "RAG ↔ context-mode handoff (knowledge caching across recalls)" with three-surface disambiguation table + anti-patterns | `.github/instructions/mcp-routing.instructions.md`                                    |
+| 3   | Pattern doc gained "Integration with RAG" section + "How to discover the workspace mount path" probe recipe; all `/workspace` hardcodes replaced with `$CONTEXT_MODE_WORKSPACE` | `docs/patterns/context-mode-read-write-split.md`                                      |
+| 4   | Compose service mount target and env var both parametric: `${CONTEXT_MODE_WORKSPACE:-/workspace}` (forks override via `.env.context-mode`)         | `docker-compose.yaml`                                                                  |
+| 5   | Roadmap Phase 7 (`query_docs_cached` wrapper) + new "L1 ship status & open follow-ups" section with LIMIT-1 (hard subagent restriction, CONFIRMED), LIMIT-2 (probe enforcement, deferred), LIMIT-3 (multilingual FTS gap, documented as caveat) | `docs/roadmap/context-mode-integration.md`                                            |
+| 6   | Agent-decisions entry recording POC + 4 validation tests, decision, rationale, promotion triggers                                                   | `.github/context/agent-decisions.md`                                                  |
+| 7   | docs-index gained row for the new skill                                                                                                            | `.github/instructions/docs-index.instructions.md`                                      |
+
+---
+
 ### Session 25 — Multi-MCP routing rollout (Phases 1-5 + tightening) (2026-05-27)
 
 Single sweep adapting the entire Copilot workflow to two coexisting MCPs (RAG + context-mode — **both live**; context-mode promoted from dormant→active after handshake verified end-to-end). Zero production code, zero migrations, zero tests touched — config only.

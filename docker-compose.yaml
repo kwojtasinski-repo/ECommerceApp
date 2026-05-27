@@ -171,13 +171,17 @@ services:
         cpus: ${CONTEXT_MODE_CPUS:-2}
         ipc: none
         volumes:
-            - .:/workspace:ro                                   # repo — READ-ONLY (context-mode shouldn't write to source)
+            # Mount target is parametric so forks/dev overrides can rename it via
+            # CONTEXT_MODE_WORKSPACE in .env.context-mode without breaking docs.
+            # The same value is injected as an env var below so agents can probe it.
+            - .:${CONTEXT_MODE_WORKSPACE:-/workspace}:ro        # repo — READ-ONLY (context-mode shouldn't write to source)
             - context-mode-data:/home/ctxmode/.context-mode     # SQLite session DB (writable, isolated)
             - ./docker/context-mode/empty-claude-settings.json:/home/node/.claude/settings.json:ro  # silences PreToolUse hook FAIL
         environment:
             CTX_FETCH_STRICT: "${CONTEXT_MODE_FETCH_STRICT:-1}"
             CONTEXT_MODE_EXTERNAL_MCP_NUDGE_EVERY: "${CONTEXT_MODE_NUDGE_EVERY:-50}"
             CONTEXT_MODE_DIR: "/home/ctxmode/.context-mode"
+            CONTEXT_MODE_WORKSPACE: "${CONTEXT_MODE_WORKSPACE:-/workspace}"  # discoverable by agents via `ctx_execute("sh","echo $CONTEXT_MODE_WORKSPACE")`
         ports:
             - "127.0.0.1:${CONTEXT_MODE_INSIGHT_PORT:-9998}:8765"  # ctx_insight UI — localhost only
         networks:

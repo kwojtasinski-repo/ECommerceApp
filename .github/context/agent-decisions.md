@@ -1,8 +1,8 @@
 # Agent Decisions Log
 
 > **Append-only log of in-session corrections to AI agent behavior.**
-> Operational, not architectural. For _why the system is built that way_ › ADRs in `docs/adr/`.
-> For _how the agent should behave / what it missed / what to never repeat_ › here.
+> Operational, not architectural. For _why the system is built that way_ → ADRs in `docs/adr/`.
+> For _how the agent should behave / what it missed / what to never repeat_ → here.
 >
 > **Read before non-trivial agent work** to avoid repeating past mistakes.
 > **Append after any meaningful correction** that an agent received during a session.
@@ -20,13 +20,13 @@
 | Tool selection mistake (used wrong skill, wrong scope)                      | `agent-decisions.md` |
 | Recurring drift you keep correcting in chat                                 | `agent-decisions.md` |
 
-**Promotion rule**: if the same correction appears **2+ times** › promote to a permanent rule:
+**Promotion rule**: if the same correction appears **2+ times** → promote to a permanent rule:
 
-- Architectural rule › `anti-patterns-critical.context.md` or relevant `*.instructions.md`
-- Workflow rule › relevant agent file (`bc-switch.md`, `code-reviewer.md`, etc.)
-- Decision-level rule › new ADR via `@adr-generator`
+- Architectural rule → `anti-patterns-critical.context.md` or relevant `*.instructions.md`
+- Workflow rule → relevant agent file (`bc-switch.md`, `code-reviewer.md`, etc.)
+- Decision-level rule → new ADR via `@adr-generator`
 
-When promoted, mark the entry **Status: Promoted › ADR-NNNN** (or file ref) and keep it for history.
+When promoted, mark the entry **Status: Promoted → ADR-NNNN** (or file ref) and keep it for history.
 
 ---
 
@@ -39,8 +39,8 @@ When promoted, mark the entry **Status: Promoted › ADR-NNNN** (or file ref) an
 - **Decision**: What the human decided instead (NO / YES / different approach).
 - **Rationale**: Why — link to project-state line, ADR, instruction file, or commit.
 - **Action**: What changes to instructions/agents/skills should follow (one concrete action).
-- **Promote?**: When does this graduate to a permanent rule (e.g. "after 2nd occurrence › anti-patterns-critical").
-- **Status**: Open | Resolved | Promoted › <ref>
+- **Promote?**: When does this graduate to a permanent rule (e.g. "after 2nd occurrence → anti-patterns-critical").
+- **Status**: Open | Resolved | Promoted → <ref>
 ```
 
 Rules:
@@ -57,7 +57,7 @@ Rules:
 - **Decision**: The correct location is `.vscode/mcp.json`. `.github/copilot/mcp.json` is not read by VS Code's MCP server browser — it is only relevant for GitHub Codespaces / future GitHub Copilot tooling.
 - **Rationale**: VS Code reads workspace MCP config from `.vscode/mcp.json`. The `.github/copilot/` path has no VS Code runtime effect.
 - **Action**: Always create `.vscode/mcp.json` for VS Code MCP registration. Keep `.github/copilot/mcp.json` as a secondary copy for Codespaces compatibility only.
-- **Promote?**: After 2nd occurrence › add to `docs-index.instructions.md` or a tooling note.
+- **Promote?**: After 2nd occurrence → add to `docs-index.instructions.md` or a tooling note.
 - **Status**: Resolved
 - All entries in **English** for AI parsability.
 
@@ -71,7 +71,7 @@ Rules:
 - **Decision**: Do NOT delete during the switch.
 - **Rationale**: `project-state.md` notes "Legacy `PaymentHandler` retained for Step 5 cleanup". The agent skipped reading project-state and assumed atomic switch implies delete-all-legacy.
 - **Action**: Strengthen `bc-switch.md` Step 1 to require quoting the project-state line for the BC before any delete operation.
-- **Promote?**: After 2nd occurrence › add explicit anti-pattern to `anti-patterns-critical.context.md` ("No legacy delete without project-state quote").
+- **Promote?**: After 2nd occurrence → add explicit anti-pattern to `anti-patterns-critical.context.md` ("No legacy delete without project-state quote").
 - **Status**: Open
 
 ---
@@ -85,7 +85,7 @@ Rules:
 - **Context**: While stabilising `tools/rag-dotnet` for local dev, the plan referenced a non-existent `tools/rag-dotnet/rag-config.yaml` and a Python-venv `optimum-cli` step. Both wrong.
 - **Decision**: (1) The .NET path **shares** `tools/rag/rag-config.yaml` with Python — Dockerfile literally does `COPY ../rag/rag-config.yaml /app/rag-config.yaml`. No separate .NET config exists. (2) The HuggingFace ONNX bundle (`/onnx/model.onnx` + `vocab.txt` + `tokenizer.json` + `config.json`) is pre-exported by sentence-transformers maintainers, so a PowerShell/curl download replaces the Python optimum-cli stage entirely.
 - **Rationale**: Source of truth verified in `tools/rag-dotnet/Dockerfile` line ~45 and HuggingFace repo for `paraphrase-multilingual-MiniLM-L12-v2`.
-- **Action**: `RagConfig.ResolveConfigPath` uses 4-way priority: explicit arg › `RAG_CONFIG` › `RAG_WORKSPACE`-derived `<ws>/tools/rag/rag-config.yaml` › `AppContext.BaseDirectory/rag-config.yaml`. `RagConfig.Workspace` derives from config-path grandparent (Python parity with `config_path.parents[2]`), then `RAG_WORKSPACE`, then cwd. Local devs run `pwsh tools/rag-dotnet/download-model.ps1` once; Docker uses `curlimages/curl` stage. **Never invent `tools/rag-dotnet/rag-config.yaml` again.**
+- **Action**: `RagConfig.ResolveConfigPath` uses 4-way priority: explicit arg → `RAG_CONFIG` → `RAG_WORKSPACE`-derived `<ws>/tools/rag/rag-config.yaml` → `AppContext.BaseDirectory/rag-config.yaml`. `RagConfig.Workspace` derives from config-path grandparent (Python parity with `config_path.parents[2]`), then `RAG_WORKSPACE`, then cwd. Local devs run `pwsh tools/rag-dotnet/download-model.ps1` once; Docker uses `curlimages/curl` stage. **Never invent `tools/rag-dotnet/rag-config.yaml` again.**
 - **Status**: Resolved
 
 ---
@@ -96,7 +96,7 @@ Rules:
 - **Decision**: Both RAG implementations (Python `tools/rag/` and .NET `tools/rag-dotnet/`) must be **self-contained**. Tests must use a synthetic workspace with domain-neutral content (no EcommerceApp ADR numbers, entity names, or bounded-context identifiers). The workspace is created in a temp directory with a UUID-suffixed collection name. See ADR-0027 §9 for the full rule.
 - **Rationale**: Self-containment lets the RAG tooling be reused in other projects without modification and lets CI run e2e tests without a full repo checkout.
 - **Action**: When writing or reviewing RAG tests: reject any fixture that imports real docs, real ADR paths, or real entity names from EcommerceApp. `SyntheticWorkspace.cs` and `conftest.py` are the approved patterns.
-- **Promote?**: After 2nd drift › add to `dotnet.instructions.md` under RAG test rules.
+- **Promote?**: After 2nd drift → add to `dotnet.instructions.md` under RAG test rules.
 - **Status**: Resolved
 
 ---
@@ -107,7 +107,7 @@ Rules:
 - **Decision**: Repeat the English expansion **3 times** (not replace the non-English words — too aggressive). `return query + (" " + expansion) * 3` in Python; `Enumerable.Repeat(" " + expansion, 3)` in .NET. This raises English weight to 60–87% for typical short queries.
 - **Rationale**: Mean pooling is linear: token count drives weight. Repetition is the cheapest, safest amplification — it degrades gracefully (English-only queries are never touched because only non-ASCII patterns fire) and requires no model change or re-index.
 - **Pitfall 1 — `@dataclass` silently dropped**: When inserting `_expand_query` and `QueryHit` as a file-level replacement, the `@dataclass` decorator was inadvertently omitted from `QueryHit`. The class appeared valid (field annotations existed) but calling `QueryHit(rel_path=..., ...)` raised `TypeError: QueryHit() takes no arguments`. Fix: always read the full class definition before replacing; never omit decorators during partial replacements.
-- **Pitfall 2 — `_glossary` missing after `__new__`**: `make_engine_with_stubs()` in tests uses `QueryEngine.__new__()` to bypass `__init__`, so the `engine._glossary = []` assignment inside `__init__` was skipped › `AttributeError`. Fix: after any `__init__` addition, check all `__new__`-based test factories and add the new attribute.
+- **Pitfall 2 — `_glossary` missing after `__new__`**: `make_engine_with_stubs()` in tests uses `QueryEngine.__new__()` to bypass `__init__`, so the `engine._glossary = []` assignment inside `__init__` was skipped → `AttributeError`. Fix: after any `__init__` addition, check all `__new__`-based test factories and add the new attribute.
 - **Pitfall 3 — .NET MCP build lock**: `dotnet build` while VS Code holds the .NET MCP server process running will fail (DLLs locked). **Always warn the user** before running `dotnet build` on any project whose output is an active MCP server; ask them to stop the server first.
 - **Action**: §10 added to ADR-0027; repeat=3 documented; glossary gap for `Bezeichner` (DE entity identifier) added to both glossary YAMLs; conformance checklist items added.
 - **Status**: Resolved
@@ -118,7 +118,7 @@ Rules:
 
 ### ZIP validation (upload endpoint)
 
-- **Decision**: Every POST to `/ingest/{collection}/batch` must contain `metadata-rules.yaml` AND `queries.yaml` inside the ZIP. Missing either › 400. Both files are parsed and validated (non-empty `doc_kind_rules`, non-empty `named_queries`, cross-validated `doc_kind` vocabulary). Config files are then filtered out before ingest — they are not indexed as documents.
+- **Decision**: Every POST to `/ingest/{collection}/batch` must contain `metadata-rules.yaml` AND `queries.yaml` inside the ZIP. Missing either → 400. Both files are parsed and validated (non-empty `doc_kind_rules`, non-empty `named_queries`, cross-validated `doc_kind` vocabulary). Config files are then filtered out before ingest — they are not indexed as documents.
 - **Rationale**: Uploading without config files led to silent doc_kind and adr_id misdetection (fell back to built-in defaults that don't match the repo's ADR folder structure). Validation at upload time fails fast and gives the caller a clear error.
 - **Action**: Implemented in `ingest_routes.py` (Python) and `IngestController.cs` (.NET). Both servers validated; Python and .NET unit + E2E test suites updated.
 - **Status**: Resolved
@@ -184,7 +184,31 @@ Rules:
 
 - **Context**: After empirical mixed-workload tests on context-mode v1.0.151, the question came up: should the sandbox be used for edits too (writable mount)?
 - **Decision**: NO. Keep the three-path split: READ/derive via `ctx_execute(_file)` (sandbox, `/workspace:ro`), WRITE via native VS Code edit tools (`replace_string_in_file` / `create_file` / `multi_replace_string_in_file`), EXECUTE on host (build/test/git) via `run_in_terminal`. Captured in [docs/patterns/context-mode-read-write-split.md](../../docs/patterns/context-mode-read-write-split.md).
-- **Rationale**: Reads dominate token cost (full content) — sandboxing them saves ~90% on derivation workloads (verified: 700-line file ~8.5K tok › 300 tok). Writes are diff-sized and already cheap; sandboxing them would break undo/git/permissions for ~0% saving. Execute paths are stateful (your SDK, secrets, cwd) and cannot run in an ephemeral `:ro` sandbox.
-- **Action**: New pattern doc (above). Added link from [ADR-0029 References](../../docs/adr/0029/0029-context-mode-mcp-sandbox.md#references). Added cwd-quirk note to [mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md) for `ctx_execute_file` (sandbox cwd != repo root › use absolute `/workspace/...` paths or get silent zero results).
-- **Promote?**: After 2nd occurrence of someone proposing `:rw` mount OR using `ctx_execute` for git/build › promote pattern doc rules into `anti-patterns-critical.context.md`.
+- **Rationale**: Reads dominate token cost (full content) — sandboxing them saves ~90% on derivation workloads (verified: 700-line file ~8.5K tok → 300 tok). Writes are diff-sized and already cheap; sandboxing them would break undo/git/permissions for ~0% saving. Execute paths are stateful (your SDK, secrets, cwd) and cannot run in an ephemeral `:ro` sandbox.
+- **Action**: New pattern doc (above). Added link from [ADR-0029 References](../../docs/adr/0029/0029-context-mode-mcp-sandbox.md#references). Added cwd-quirk note to [mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md) for `ctx_execute_file` (sandbox cwd != repo root → use absolute `/workspace/...` paths or get silent zero results).
+- **Promote?**: After 2nd occurrence of someone proposing `:rw` mount OR using `ctx_execute` for git/build → promote pattern doc rules into `anti-patterns-critical.context.md`.
 - **Status**: Resolved (pattern doc + ADR cross-link + routing note in place)
+
+
+---
+
+## 2026-05-27 — Copilot / RAG ↔ context-mode handoff (POC + 3 validation tests)
+
+- **Context**: After ADR-0029 (context-mode sandbox) and the read/write/execute pattern doc shipped, the next obvious efficiency question was: can context-mode's FTS5 store act as a session-local cache for RAG knowledge, so repeated re-reads of the same ADR/BC docs don't re-bill RAG? Manual POC was run end-to-end (`query_docs` → format markdown → `ctx_index(source="rag-cache-adr0028-...")` → 3× `ctx_search`). The cache returned correctly ranked sections with breadcrumbs and code blocks intact. `ctx_stats` reported 30.7% saving on 2 calls; projected 75–88% on 5–10 recalls.
+- **Test 1 — primary agent, this session** (Claude): cached ADR-0027 end-to-end, 9/9 recall queries returned correct sections, `ctx_stats` showed 55% reduction on 2 calls. **PASS.**
+- **Test 2 — subagent, no diagnostic probe** (GPT-5-mini via `runSubagent` Explore): subagent read the skill correctly and **identified** the right tools (`get_history`, `ctx_index`, `ctx_search`) but **could not invoke** them — fell back to `memory.create` / `memory.view` reporting "MCP tools not available in this environment". Did NOT use `semantic_search` (skill's three-surface table worked). Used correct naming convention `rag-cache-adr0029-context-mode`. **Partial PASS** for tool selection, **0/3** for execution. Unclear if bootstrap or hard restriction.
+- **Test 3 — subagent, with explicit `tool_search` probe** (GPT-5-mini): subagent was instructed to call `tool_search` three times to load MCP tools before doing anything. Result: `tool_search` itself reported unavailable in all 3 attempts. Zero MCP tools loadable. **Hard surface restriction CONFIRMED** — not a bootstrap issue. Built-in `Explore` subagent has a fixed tool set that excludes `tool_search`, RAG MCP, and context-mode MCP entirely.
+- **Test 4 — fresh chat window, primary agent** (user-driven, Claude): pasted L1 skill-only prompt into a clean chat. Agent used `get_history(id="0016")` → `ctx_index(source="rag-cache-adr0016-coupons")` → `ctx_search(...)`. `ctx_stats`: 60.8% reduction. **PASS for tool selection.** One recall (Polish-language query without code identifier) returned zero hits — FTS5 multilingual gap, documented as a recall-query caveat in the skill.
+- **Decision**: Ship **L1 (documentation-only) as final for parent-agent recalls**. Defer **L2 (single `query_docs_cached` wrapper tool)** to roadmap Phase 7 as parent-side ergonomic improvement, not a subagent fix. For subagent delegations, ship **inline-chunks pattern** (parent fetches RAG, formats markdown, passes content directly in subagent prompt — no MCP calls expected from subagent).
+- **What got shipped (L1)**:
+  - `.github/instructions/mcp-routing.instructions.md` — new "RAG ↔ context-mode handoff" section with three-surface table, naming convention, markdown template, trigger heuristics, anti-patterns.
+  - `.github/skills/rag-with-memory/SKILL.md` — step-by-step walkthrough, Step 0 workspace-mount probe, "Delegating to a subagent" caller-coordination section (corrected after Test 3), multilingual recall caveat.
+  - `docs/patterns/context-mode-read-write-split.md` — "Integration with RAG" section + "How to discover the workspace mount path" probe recipe; all `/workspace` hardcodes replaced with `$CONTEXT_MODE_WORKSPACE` placeholder + default note.
+  - `docker-compose.yaml` — context-mode service mount target and env var both parametric: `${CONTEXT_MODE_WORKSPACE:-/workspace}`. Forks override via `.env.context-mode` without doc rewrites.
+  - `docs/roadmap/context-mode-integration.md` — Phase 7 (L2 wrapper) + "L1 ship status & open follow-ups" section with verified LIMIT-1 (subagent surface restriction), LIMIT-2 (probe enforcement), and corrected Phase 7 acceptance criteria.
+- **Rationale**: The subagent restriction is a hard environmental limit we cannot work around with `tools:` allowlist edits (verified: no agent in `.github/agents/*.md` lists MCP tools in its allowlist, yet parent-agent prose calls them successfully — therefore the gate is not the allowlist). L1 docs + inline-chunks pattern is the maximum we can do today. L2 wrapper would still be an MCP tool, so even L2 will not be callable from a built-in subagent — its sole benefit is collapsing the manual 3-step handoff into one call **for the parent agent**.
+- **Promote / next?**:
+  - L2 (Phase 7) promotion trigger: parent agent in a real session repeatedly does manual 3-step handoff and the friction matters (e.g. forgotten step, wrong source label, etc.). Pure cost savings alone (~5% extra vs manual) does not justify the implementation effort.
+  - Subagent MCP delivery (custom agent or vendor change): empirical next step would be creating `.github/agents/explorer-with-mcp.md` to test whether custom agents bypass the surface restriction. Deferred until inline-chunks pattern proves insufficient for actual subagent workloads.
+  - Multilingual recall: documented as a caveat ("write recall queries in English or include CamelCase identifiers"); no code change planned. Promote to a separate roadmap item only if it blocks real work.
+- **Status**: Resolved. L1 shipped, validated across 4 tests (2 PASS, 1 partial, 1 confirms hard limit). L2 + subagent-fix remain on roadmap with explicit trigger conditions.

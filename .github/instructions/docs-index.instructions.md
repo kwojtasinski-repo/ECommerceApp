@@ -61,3 +61,4 @@ Use these skills when the RAG/MCP system needs attention. Read via the `read_fil
 | Polish or German query returns wrong doc (English works) | `.github/skills/expand-rag-glossary/SKILL.md` |
 | New doc folder added / wrong doc_kind / query coverage gap | `.github/skills/generate-rag-rules/SKILL.md` |
 | Newly indexed file has no eval query covering it | `.github/skills/generate-eval-questions/SKILL.md` |
+| Cache a RAG result in context-mode FTS5 for repeated recall in the same session | `.github/skills/rag-with-memory/SKILL.md` |

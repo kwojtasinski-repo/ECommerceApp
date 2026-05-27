@@ -118,7 +118,7 @@ get_history(id)   → evolution: full amendment chain
 | `ctx_stats()` | "how much context have we saved this session?" / health check |
 | `ctx_doctor()` | Server-side diagnostics — run first when other `ctx_*` calls fail. |
 | `ctx_execute(lang, code)` | Sandboxed code execution. **Verified langs in the shipped runtime: `js`, `ts`, `sh`, `ruby`, `go`, `rust`, `php`, `perl`, `R`, `elixir`, `csharp`.** Python is NOT shipped (was previously advertised by mistake — never decided in ADR-0029). Use for math, regex, parsing, repo-wide derivations — output only what you `console.log`. |
-| `ctx_execute_file(path, lang, code)` | Read a file into the sandbox as `FILE_CONTENT` and derive an answer in code — raw bytes never enter context. Use for files >500 lines or any structural summary. **Path quirk:** sandbox cwd is NOT the repo root. Use absolute `/workspace/...` paths or your scan returns silent zero results. |
+| `ctx_execute_file(path, lang, code)` | Read a file into the sandbox as `FILE_CONTENT` and derive an answer in code — raw bytes never enter context. Use for files >500 lines or any structural summary. **Path quirk:** sandbox cwd is NOT the repo root. Use absolute paths rooted at the workspace mount (default `/workspace`, parametric — see below) or your scan returns silent zero results. To discover the mount on the current container: `ctx_execute("sh", "echo $CONTEXT_MODE_WORKSPACE")` (one-shot per session; cache the result). |
 | `ctx_batch_execute(commands, queries)` | 3+ related commands in one round trip; auto-indexes outputs, returns matching sections per `queries`. Set `concurrency` 2–8 for I/O-bound work. |
 | `ctx_index(content\|path, source)` | Persist content into the FTS5 knowledge base (markdown-aware chunking, code blocks intact). Use for docs/skills/API refs you'll need to recall precisely. |
 | `ctx_search(queries, source?, sort?)` | Search the FTS5 knowledge base + auto-captured session memory (decisions, errors, blockers, plans). Multi-query batched, Porter+trigram+RRF ranking. |
@@ -154,6 +154,112 @@ The only exception: an MCP returned empty / low-score on the first call. In that
 **Skipping step 1 or step 2 is a BLOCKS MERGE anti-pattern** (see [anti-patterns-critical.context.md](../context/anti-patterns-critical.context.md)). The single most common cause of bad answers is treating the first empty result as a license to either hallucinate a plausible answer OR give up. Neither is acceptable.
 
 Producing an answer that mixes training-data inference with partial RAG hits (e.g. "the tracker shows all BCs switched to production" when RAG was empty and the file actually shows mid-migration) is **INVALID** and must be discarded. Hallucination of dates, statuses, or quoted text from empty RAG results is the most dangerous failure mode of this pipeline — name the empty result instead.
+
+---
+
+## RAG ↔ context-mode handoff (knowledge caching across recalls)
+
+> **Use case**: same RAG knowledge will be re-read 3+ times in the session (long debug, plan + implement + verify on the same ADR, multi-step refactor referencing the same BC rules). Manually re-calling `query_docs` / `read_docs` re-bills the same tokens every time. Cache the result in context-mode once, recall via `ctx_search` thereafter.
+>
+> **When NOT to use it**: a one-shot question (answered once, never reread) — direct RAG is cheaper. The handoff costs one extra `ctx_index` call up front; it only pays back after the **second** recall.
+>
+> **L1 status (this section)**: manual 3-step handoff. **L2 status (future)**: a single `query_docs_cached` wrapper tool — see [docs/roadmap/context-mode-integration.md](../../docs/roadmap/context-mode-integration.md) Phase 7.
+
+### Three similar "memory" surfaces — DO NOT MIX
+
+Three near-identically-named systems exist in this workspace. The L1 handoff uses **only** the third one. Empirical POC (2026-05-27) showed a weaker model picked the wrong one in all 3 steps without this explicit table — see [agent-decisions log](../context/agent-decisions.md).
+
+| Surface | What it actually is | Use for handoff? |
+|---|---|---|
+| `semantic_search` | **VS Code's embedded code/text search** over the open workspace. Not our RAG. Not chunk-ranked. | ❌ NO. Never substitute for `query_docs`. |
+| `memory.create` / `memory.view` (paths `/memories/*`) | **VS Code's persistent notes** for cross-session preferences. Single-doc, no FTS. | ❌ NO. Not searchable for the handoff. |
+| `ctx_index` / `ctx_search` | **context-mode's FTS5 knowledge base** with Porter+trigram+RRF ranking. Markdown-aware chunking. | ✅ YES. The only correct cache for RAG handoff. |
+
+### Manual handoff (L1) — three steps
+
+```
+  Step 1: RAG (one-time fetch)
+  ─────────────────────────────────────
+    query_docs(query="...", bc?, top_k=5)
+        ↓
+    read_docs(query="...")     ← if reasoning needs full file bodies
+        ↓
+    Format the relevant chunks into a single markdown doc:
+      - one H2 per chunk / file
+      - preserve breadcrumbs (path + line range)
+      - keep code blocks intact (```csharp ... ```)
+      - keep tables intact
+
+  Step 2: Cache (one ctx_index call)
+  ─────────────────────────────────────
+    ctx_index(
+      content="<the markdown from step 1>",
+      source="rag-cache-<scope>-<topic>"
+    )
+
+  Step 3: Recall (any number of times, zero RAG re-bill)
+  ─────────────────────────────────────
+    ctx_search(
+      queries=["specific question"],
+      source="rag-cache-<scope>"   ← partial-match works; one prefix covers multiple caches
+    )
+```
+
+### Naming convention for `source`
+
+The `source` label must be deterministic so subsequent `ctx_search` calls can target it with a partial-match prefix.
+
+| Scope | Pattern | Example |
+|---|---|---|
+| Specific ADR | `rag-cache-adr<NNNN>-<topic>` | `rag-cache-adr0028-ragsession-icontentsource` |
+| Bounded context | `rag-cache-<bc>-<topic>` | `rag-cache-orders-checkout-rules` |
+| Cross-cutting area | `rag-cache-<area>-<topic>` | `rag-cache-validation-fluentvalidation-conventions` |
+| Roadmap slice | `rag-cache-roadmap-<bc>` | `rag-cache-roadmap-iam-atomic-switch` |
+| Known issue | `rag-cache-ki<NNN>` | `rag-cache-ki008` |
+
+Always lowercase, kebab-case, ASCII only. The `rag-cache-` prefix is **mandatory** — it lets you recall any cached RAG content with `source="rag-cache"` (partial match).
+
+### Markdown template for cached content
+
+Use this exact shape so `ctx_search` returns clean ranked sections:
+
+```markdown
+# <Topic title>
+
+> Cached from RAG on <date>. Source: query_docs("<original query>"[, bc="<BC>"]).
+> Refresh: re-run query_docs and call ctx_index with the same source label to overwrite.
+
+## <First file or chunk title>
+
+**Path**: `relative/path.md#Lstart-Lend`
+**Breadcrumb**: <breadcrumb from RAG result>
+
+<chunk body — keep code blocks, tables, lists intact>
+
+## <Second file or chunk title>
+...
+```
+
+### Trigger heuristics — when to invoke the handoff
+
+| Signal | Action |
+|---|---|
+| User says "we'll be working on ADR-NNNN today" / "let's debug BC X" | Cache the ADR / BC docs proactively after the first RAG call |
+| You're about to call `query_docs` for the **second time** with similar keywords | Cache the result of the second call |
+| Plan handoff (`@planner` → `@implementer`) involves the same docs | Cache once in planner output, both agents read from cache |
+| One-off question, low chance of re-reading | **Skip** — direct RAG is cheaper |
+
+### Anti-patterns (BLOCKS MERGE if repeated after this rule)
+
+| Wrong | Right |
+|---|---|
+| `memory.create(filename="/memories/session/ADR-0028.md", content=...)` to "cache RAG output" | `ctx_index(content=..., source="rag-cache-adr0028-...")` |
+| `semantic_search(query="ADR-0028 RagSession")` instead of RAG | `query_docs(query="...")` or `get_history(id="0028")` |
+| `memory.view` + manual reading to recall the cached doc | `ctx_search(queries=[...], source="rag-cache-...")` |
+| `ctx_index` without the `rag-cache-` prefix | Always prefix RAG-derived caches with `rag-cache-` |
+| Calling `query_docs` 3+ times for the same ADR in one session | Cache once, recall via `ctx_search` thereafter |
+
+For a step-by-step walkthrough with examples, see the skill [`.github/skills/rag-with-memory/SKILL.md`](../skills/rag-with-memory/SKILL.md).
 
 ---
 

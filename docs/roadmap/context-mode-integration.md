@@ -213,7 +213,138 @@ Phase 3 (Hooks)             ← can be skipped and revisited; MCP works without 
 Phase 4 (instructions merge) ← requires @copilot-setup-maintainer afterwards
         ↓
 Phase 5 (AdGuard)           ← optional gating; does not block previous phases
+        ↓
+Phase 7 (RAG ↔ context-mode wrapper tool, L2) ← optional; depends on Phase 4 docs in place
 ```
+
+---
+
+### Phase 7 (future) — L2 wrapper tool: `query_docs_cached`
+
+> **Status: future amendment**, deferred after empirical POC (2026-05-27) — see [agent-decisions log](../../.github/context/agent-decisions.md) entry "Copilot / RAG ↔ context-mode handoff (POC + 3 validation tests)".
+> **Why deferred:** L1 (docs + skill + routing patch) ships first; L2 only justified if L1 proves insufficient in real-world parent-agent sessions. **Note**: L2 does NOT solve subagent recall — see LIMIT-1.
+
+**Problem L2 solves (revised after Test 2–4)**: the manual 3-step parent-agent flow (`query_docs` → format markdown → `ctx_index`) is correct but verbose. Each step has a possible mis-step: wrong query phrasing, inconsistent source label, missing breadcrumbs. A single wrapper tool collapses the chain to one call with a deterministic source-label derivation, so the parent agent saves both prompt budget and reasoning steps. **L2 is NOT a fix for the subagent surface restriction (LIMIT-1)** — subagent recalls stay on the inline-chunks pattern regardless.
+
+**Concept**: Extend the RAG MCP server with a wrapper that internally:
+1. Calls `query_docs(query, bc?, doc_kind?)` to get the top-N chunks.
+2. Auto-formats results into a markdown doc with consistent structure (one section per chunk, breadcrumbs preserved, code blocks intact).
+3. Auto-indexes the result into context-mode via `ctx_index` with a deterministic source label following the naming convention (`rag-cache-<adr_id>-<topic>` / `rag-cache-<bc>-<topic>`).
+4. Returns the cache key + chunk summary to the caller.
+
+Subsequent recall is done via standard `ctx_search(source="rag-cache-...")` — no wrapper needed for the read side.
+
+| Step | Description | File | Status |
+|---|---|---|---|
+| 7.1 | Design wrapper interface (param shape `{query, bc?, doc_kind?, top_k?}`, deterministic cache-key derivation, dedup policy: overwrite same source vs versioned suffix). **Design input from LIMIT-3**: decide whether to inject `multilingual-glossary.yaml` PL↔EN synonyms into the cached markdown so FTS5 trigram fallback can match either side. | `docs/rag/rag-architecture.md` (append) | 🔲 (future) |
+| 7.2 | Python implementation in `tools/rag/server.py` — new `@server.call_tool()` handler invoking existing query path + outbound `ctx_index` call via MCP-to-MCP bridge OR file-staging fallback | `tools/rag/server.py` | 🔲 (future) |
+| 7.3 | .NET implementation parity in `RagMcpServer` | `tools/rag-dotnet/...` | 🔲 (future) |
+| 7.4 | Tool descriptor + JSON schema published via `list_tools` in both runtimes | both servers | 🔲 (future) |
+| 7.5 | Integration test: end-to-end `query_docs_cached` → cache hit on second call (BM25 search returns the staged content) | `tools/rag/tests/` | 🔲 (future) |
+| 7.6 | Update [`mcp-routing.instructions.md`](../../.github/instructions/mcp-routing.instructions.md) — replace the manual 3-step handoff guidance with `query_docs_cached` as the canonical path; keep manual path as fallback | instructions file | 🔲 (future) |
+| 7.7 | Update skill [`rag-with-memory`](../../.github/skills/rag-with-memory/SKILL.md) — make L2 the default flow, demote manual handoff to "advanced / fallback" section | skill file | 🔲 (future) |
+| 7.8 | Promote agent-decisions entry from "Resolved (L1 shipped)" → "Resolved (L2 shipped)" with the empirical comparison data | agent-decisions log | 🔲 (future) |
+
+**Phase 7 acceptance criteria** (revised after LIMIT-1 confirmation):
+
+- A single `query_docs_cached(query="...")` call replaces the manual `query_docs` → format → `ctx_index` chain **for the parent agent**.
+- Cache hit ratio measurable via `ctx_stats` after a representative parent-agent session (target: ≥50% reduction on sessions with ≥3 recalls of the same scope).
+- **Subagent delegations are out of scope for Phase 7** — even L2 is an MCP tool and will not be callable from built-in subagents (LIMIT-1 hard restriction). Subagent recall stays on the inline-chunks pattern documented in the skill.
+- No regression in standard `query_docs` / `read_docs` / `get_history` behaviour.
+- Both Python and .NET RAG servers expose the tool with identical schema (parity rule from ADR-0027).
+
+---
+
+## L1 ship status & open follow-ups (2026-05-27)
+
+This section captures what shipped with L1 (manual handoff) and what remains pending so the context isn't lost between sessions.
+
+### Shipped (L1 = docs only, no infra)
+
+| Artefact | Path | Purpose |
+|---|---|---|
+| Skill | [`.github/skills/rag-with-memory/SKILL.md`](../../.github/skills/rag-with-memory/SKILL.md) | Step-by-step walkthrough of the 3-call handoff |
+| Routing rule | [`.github/instructions/mcp-routing.instructions.md`](../../.github/instructions/mcp-routing.instructions.md) — section "RAG ↔ context-mode handoff" | Canonical surface-disambiguation table (semantic_search ❌ / memory.* ❌ / ctx_* ✅) |
+| Pattern doc integration | [`docs/patterns/context-mode-read-write-split.md`](../patterns/context-mode-read-write-split.md) — section "Integration with RAG" | Cost model + before/after ASCII + break-even table |
+| Agent-decisions log entry | [`.github/context/agent-decisions.md`](../../.github/context/agent-decisions.md) — 2026-05-27 entry | POC results + decision rationale + promotion criteria |
+| Parametric workspace mount | `docker-compose.yaml` (context-mode service) | `${CONTEXT_MODE_WORKSPACE:-/workspace}` for both volume target and env var, so forks/dev overrides work without doc rewrites |
+
+### Empirical validation (current session)
+
+| Test | Model | Tool-selection accuracy | Notes |
+|---|---|---|---|
+| Test 1 | Claude (primary agent, this session) | 3/3 | 55% token reduction via `ctx_stats`, 9/9 recall sections correct |
+| Test 2 | GPT-5-mini (Explore subagent, no diagnostic probe) | 3/3 *identified* + 0/3 *executed* | Subagent correctly named `get_history`, `ctx_index`, `ctx_search` after reading the skill + routing section, but the MCP tools were not in its tool surface so it fell back to `memory.create` / `memory.view`. Naming convention applied correctly (`rag-cache-adr0029-context-mode`). Did **not** use `semantic_search`. |
+| Test 3 | GPT-5-mini (Explore subagent, with explicit `tool_search` probe) | 0/3 (probe also unavailable) | Three explicit `tool_search` calls each returned "not available". Confirms LIMIT-1 as hard surface restriction, not a load-on-demand bootstrap issue. |
+| Test 4 | Claude (primary agent, fresh chat window, user-driven) | 3/3 | `get_history(id="0016")` → `ctx_index(source="rag-cache-adr0016-coupons")` → `ctx_search`. `ctx_stats`: 60.8% reduction. **One recall returned zero hits due to Polish query without code identifier — see LIMIT-3.** |
+
+### Known limitations / open follow-ups
+
+#### LIMIT-1 — Subagent MCP tool surface gap (CONFIRMED HARD RESTRICTION)
+
+**Finding (verified by Test 2 + Test 3, 2026-05-27)**: built-in VS Code subagents (tested: `Explore` with GPT-5-mini) have a **hard tool-surface restriction**. They expose neither RAG MCP tools (`mcp_ecommerceapp-*_*`) nor context-mode tools (`ctx_*`), and they **do not even expose `tool_search`** to load deferred tools on demand. Three explicit `tool_search` calls in Test 3 returned zero MCP tools. The skill is read correctly and the right tools are named, but they cannot be invoked.
+
+**This is NOT a `tools:` allowlist issue.** Inspection of `.github/agents/*.md` shows that no custom agent (planner, implementer, code-reviewer, bc-switch, adr-generator, copilot-setup-maintainer) lists MCP tool ids in its `tools:` block, yet their prose freely invokes `query_docs` / `get_history` / `ctx_*` and these calls succeed at runtime in the parent agent context. The restriction is specific to built-in subagent invocation surface.
+
+**Impact (corrected)**: the caller-coordination pattern of "parent caches via `ctx_index`, subagent recalls via `ctx_search`" **does not work** because the subagent cannot `ctx_search`. The handoff cost saving applies only to the parent agent's own recalls, not to delegated subagent work.
+
+**Resolution options** (revised after Test 3):
+
+| Option | Effort | Tradeoff |
+|---|---|---|
+| A. **Inline-chunks pattern (working today)**: parent does `query_docs`/`get_history`, formats relevant chunks as markdown, passes them in the subagent prompt directly. Subagent reads from prompt, never calls MCP. | Trivial — already shipped in skill | Larger subagent prompt; no cache benefit across multiple subagent invocations. Acceptable for one-shot delegations. |
+| B. **Custom MCP-aware agent**: create `.github/agents/explorer-with-mcp.md` (mirroring built-in Explore behavior) and verify empirically whether custom agents inherit the parent's full MCP surface. Requires explicit invocation (`@explorer-with-mcp`). | Small (1 new agent file + empirical test) | Unknown until tested whether custom agents bypass the surface restriction. |
+| C. **Wait for L2 (Phase 7)**: `query_docs_cached` wrapper at the RAG server side would solve the parent-recall economy regardless; delegated subagent calls would still need inline-chunks. | None (already roadmapped) | Doesn't help subagent delegations. |
+
+**Recommendation**: **A is shipped** (inline-chunks pattern is now documented in the skill's "Delegating to a subagent" section). **B is the next empirical step** if delegated subagent work becomes a bottleneck. **C remains the long-term parent-side optimization**.
+
+**Tests that established this**:
+
+| Test | Outcome | Lesson |
+|---|---|---|
+| Test 2 (subagent, no diagnostic) | Subagent correctly identified `get_history`/`ctx_index`/`ctx_search` but fell back to `memory.*` claiming MCP unavailable. | Skill comprehension works; tool availability didn't. Unclear if bootstrap or hard restriction. |
+| Test 3 (subagent, with explicit `tool_search` probe) | Subagent reported `tool_search` itself unavailable in 3 separate attempts; zero MCP tools loadable. | **Hard surface restriction confirmed.** Not a bootstrap issue. |
+
+#### LIMIT-2 — Workspace path probing not enforced
+
+**Finding**: docs now reference `$CONTEXT_MODE_WORKSPACE` (default `/workspace`), but no agent rule enforces the one-shot probe at session start. Agents may still default to literal `/workspace` from training data.
+
+**Resolution**: add a single line to the `rag-with-memory` skill and/or context-mode-related agent prelude: *"At session start, if any `ctx_execute_file` call is expected, run `ctx_execute('sh','echo $CONTEXT_MODE_WORKSPACE')` once and cache."* Deferred until first real fork-config break.
+
+#### LIMIT-3 — Multilingual recall gap in FTS5 cache
+
+**Finding (Test 4, 2026-05-27)**: `ctx_search` uses SQLite FTS5 with English Porter stemmer + trigram fallback + RRF. Polish/German recall queries against English-cached content return zero hits unless the query embeds a code identifier (CamelCase class name, option key, ADR id, KI-NNN code). Empirical example:
+
+- Cached ADR-0016 (English content: `Max coupons per order`, `MaxCouponsPerOrder`, `ceiling 10`).
+- Query *"jakie są domyślne i maksymalne limity kuponów na zamówienie"* → **zero hits**.
+- Query *"where are CouponsOptions configured"* → **top-1 correct**.
+
+This is structurally different from the RAG multilingual gap: RAG bridges PL↔EN via the multilingual-glossary plus embedding similarity. `ctx_search` has neither — it is pure BM25 + trigram, language-agnostic at the token level but with no cross-language semantic bridge.
+
+**Resolution options**:
+
+| Option | Effort | Tradeoff |
+|---|---|---|
+| A. **Query-time workaround (shipped)**: skill's "Recall query tips (multilingual caveat)" section instructs agents to always include a code identifier or formulate queries in English. | Trivial — already shipped | Relies on agent compliance; weaker models may skip. |
+| B. **Index-time bridging (Phase 7 candidate)**: L2 wrapper could inject PL↔EN synonym pairs from `multilingual-glossary.yaml` into the markdown before `ctx_index`, so FTS5 trigram fallback can match either side. | Moderate — ~1 day in the wrapper, requires glossary load + injection logic | Larger cache footprint; only benefits sources passed through the wrapper, not manual `ctx_index` calls. |
+| C. **Per-language stemmer (upstream)**: would require context-mode itself to expose multi-language FTS5 tokenizer config. | Unknown — vendor change | Cleanest long-term but out of our control. |
+
+**Recommendation**: **A is sufficient for today** (documented as caveat in skill). **B becomes a Phase 7 design input** — the L2 wrapper should consider glossary injection as an option, but it must not block Phase 7 if the simple wrapper ships first. **C is informational only**.
+
+### What stays for Phase 7 (L2 wrapper)
+
+The Phase 7 plan above (`query_docs_cached`) is unchanged. Promotion trigger remains: another model fails L1 in a real session despite the docs, OR LIMIT-1 resolution proves insufficient.
+
+**Trigger to start Phase 7**: any of —
+- Real sessions show repeated manual-handoff mistakes despite L1 docs.
+- Second model POC (Claude / o-series) also fails L1 routing.
+- Team requests "one-tool RAG" ergonomics.
+
+**Out of scope for Phase 7**:
+- Auto-eviction / cache TTL (rely on context-mode's session lifecycle).
+- Cross-session cache persistence (use `ctx_index` defaults).
+- Modifying `ctx_index` / `ctx_search` themselves (those are upstream context-mode tools).
+
 
 ---
 
