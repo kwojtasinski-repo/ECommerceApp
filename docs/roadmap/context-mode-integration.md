@@ -321,7 +321,7 @@ Implementation when triggered: edit `Dockerfile-context-mode` to install the run
 
 **Execution notes**:
 
-- Implementation deliberately avoids touching `AdGuardHome.yaml` `users:` block, DNS upstreams, querylog, or container lifecycle beyond restart — clear separation from `scripts/context-mode-bootstrap.ps1` (user/yaml lifecycle, destructive) vs `domain-policy.ps1` (filter content, safe + frequent).
+- Implementation deliberately avoids touching `AdGuardHome.yaml` `users:` block, DNS upstreams, querylog, or container lifecycle beyond restart — clear separation from `scripts/context-mode-bootstrap.ps1` (user/yaml lifecycle, destructive) vs `domain-policy.ps1` (filter content, safe + frequent). **Full ownership contract for both scripts**: [`docs/reference/context-mode-tools.md`](../reference/context-mode-tools.md).
 - Reload chosen over hot-reload because (a) AdGuard v0.107.50 does not reliably hot-reload file-based filters without a kick, (b) 5s downtime is acceptable for the dev sandbox use case, (c) it avoids parsing the bcrypt-protected `/control/filtering/refresh` API and managing session cookies.
 - See `.github/context/agent-decisions.md` 2026-05-27 entry for the v2 drop rationale and design discussion summary.
 

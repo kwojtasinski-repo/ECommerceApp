@@ -270,6 +270,7 @@ the common case; revisit if real usage shows the gap.
 - Pattern: [`docs/patterns/context-mode-read-write-split.md`](../../patterns/context-mode-read-write-split.md) — read/write/execute path split + empirical savings
 - Roadmap: [`docs/roadmap/context-mode-integration.md`](../../roadmap/context-mode-integration.md)
 - Details: [`docs/roadmap/context-mode-details.md`](../../roadmap/context-mode-details.md)
+- Operational tools contract: [`docs/reference/context-mode-tools.md`](../../reference/context-mode-tools.md) — `bootstrap` + `domain-policy` ownership, flags, idempotency
 - StevenBlack/hosts — MIT
 - AdGuard SDN Filter — CC BY-SA 4.0
 - EasyList / EasyPrivacy — CC BY-SA 3.0
