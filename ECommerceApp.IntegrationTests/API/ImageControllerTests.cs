@@ -1,5 +1,5 @@
 using ECommerceApp.Application.Catalog.Images.Models;
-using ECommerceApp.Application.Catalog.Images.Upload;
+using ECommerceApp.Application.Catalog.Images.ChunkedUpload;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.POCO;
 using ECommerceApp.Domain.Catalog.Products;

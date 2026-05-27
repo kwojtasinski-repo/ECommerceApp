@@ -1,7 +1,7 @@
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Catalog.Images.Models;
 using ECommerceApp.Application.Catalog.Images.Services;
-using ECommerceApp.Application.Catalog.Images.Upload;
+using ECommerceApp.Application.Catalog.Images.ChunkedUpload;
 using ECommerceApp.Application.Catalog.Images.ViewModels;
 using ECommerceApp.Web.Areas.Catalog.Options;
 using ECommerceApp.Web.Controllers;

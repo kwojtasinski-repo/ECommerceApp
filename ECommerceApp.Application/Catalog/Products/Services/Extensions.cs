@@ -1,5 +1,5 @@
 using ECommerceApp.Application.Catalog.Images.Services;
-using ECommerceApp.Application.Catalog.Images.Upload;
+using ECommerceApp.Application.Catalog.Images.ChunkedUpload;
 using ECommerceApp.Application.Catalog.Products.Handlers;
 using ECommerceApp.Application.Catalog.Products.Messages;
 using ECommerceApp.Application.FileManager;
