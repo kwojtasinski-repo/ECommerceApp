@@ -241,39 +241,31 @@ Phase 7 (RAG ↔ context-mode wrapper tool, L2) ← optional; depends on Phase 4
 
 ---
 
-### Phase 7 (future) — L2 wrapper tool: `query_docs_cached`
+### Phase 7 ✅ Done (option C, Python-only) — L2 wrapper tool: `query_docs_cached`
 
-> **Status: future amendment**, deferred after empirical POC (2026-05-27) — see [agent-decisions log](../../.github/context/agent-decisions.md) entry "Copilot / RAG ↔ context-mode handoff (POC + 3 validation tests)".
-> **Why deferred:** L1 (docs + skill + routing patch) ships first; L2 only justified if L1 proves insufficient in real-world parent-agent sessions. **Note**: L2 does NOT solve subagent recall — see LIMIT-1.
+> **Status: shipped 2026-05-27** — Python RAG server only. `.NET` parity deferred (requires extending Core `ReadDocsChunk` with `Breadcrumb` + `EndLine`; L1 manual path still works on `.NET`).
+> **Design choice**: option C from the architecture discussion — wrapper returns formatted markdown + deterministic `source` label; the agent makes the follow-up `ctx_index` call. No cross-MCP coupling, no file staging, no direct SQLite writes. Minimum complexity for ~2× speedup of the most common handoff.
 
-**Problem L2 solves (revised after Test 2–4)**: the manual 3-step parent-agent flow (`query_docs` → format markdown → `ctx_index`) is correct but verbose. Each step has a possible mis-step: wrong query phrasing, inconsistent source label, missing breadcrumbs. A single wrapper tool collapses the chain to one call with a deterministic source-label derivation, so the parent agent saves both prompt budget and reasoning steps. **L2 is NOT a fix for the subagent surface restriction (LIMIT-1)** — subagent recalls stay on the inline-chunks pattern regardless.
-
-**Concept**: Extend the RAG MCP server with a wrapper that internally:
-1. Calls `query_docs(query, bc?, doc_kind?)` to get the top-N chunks.
-2. Auto-formats results into a markdown doc with consistent structure (one section per chunk, breadcrumbs preserved, code blocks intact).
-3. Auto-indexes the result into context-mode via `ctx_index` with a deterministic source label following the naming convention (`rag-cache-<adr_id>-<topic>` / `rag-cache-<bc>-<topic>`).
-4. Returns the cache key + chunk summary to the caller.
-
-Subsequent recall is done via standard `ctx_search(source="rag-cache-...")` — no wrapper needed for the read side.
+**What L2 collapses**: the manual 3-step parent-agent flow (`query_docs` → format markdown → `ctx_index`) becomes 1 + 1: one `query_docs_cached` call (returns `{source, markdown, files_count, chunks_count, next_step}`) plus one pass-through `ctx_index(content=markdown, source=source)`. **LIMIT-1 unchanged** — subagent recalls still use inline chunks.
 
 | Step | Description | File | Status |
 |---|---|---|---|
-| 7.1 | Design wrapper interface (param shape `{query, bc?, doc_kind?, top_k?}`, deterministic cache-key derivation, dedup policy: overwrite same source vs versioned suffix). **Design input from LIMIT-3**: decide whether to inject `multilingual-glossary.yaml` PL↔EN synonyms into the cached markdown so FTS5 trigram fallback can match either side. | `docs/rag/rag-architecture.md` (append) | 🔲 (future) |
-| 7.2 | Python implementation in `tools/rag/server.py` — new `@server.call_tool()` handler invoking existing query path + outbound `ctx_index` call via MCP-to-MCP bridge OR file-staging fallback | `tools/rag/server.py` | 🔲 (future) |
-| 7.3 | .NET implementation parity in `RagMcpServer` | `tools/rag-dotnet/...` | 🔲 (future) |
-| 7.4 | Tool descriptor + JSON schema published via `list_tools` in both runtimes | both servers | 🔲 (future) |
-| 7.5 | Integration test: end-to-end `query_docs_cached` → cache hit on second call (BM25 search returns the staged content) | `tools/rag/tests/` | 🔲 (future) |
-| 7.6 | Update [`mcp-routing.instructions.md`](../../.github/instructions/mcp-routing.instructions.md) — replace the manual 3-step handoff guidance with `query_docs_cached` as the canonical path; keep manual path as fallback | instructions file | 🔲 (future) |
-| 7.7 | Update skill [`rag-with-memory`](../../.github/skills/rag-with-memory/SKILL.md) — make L2 the default flow, demote manual handoff to "advanced / fallback" section | skill file | 🔲 (future) |
-| 7.8 | Promote agent-decisions entry from "Resolved (L1 shipped)" → "Resolved (L2 shipped)" with the empirical comparison data | agent-decisions log | 🔲 (future) |
+| 7.1 | Wrapper interface design — params `{question, bc?, top_files?}`; deterministic source derivation rules (ADR id → `rag-cache-adr<NNNN>-<hash8>`; `bc=` set → `rag-cache-<slug(bc)>-<hash8>`; fallback `rag-cache-q-<hash8>`); dedup by overwrite (idempotent). Glossary injection from LIMIT-3 NOT included — kept as future amendment. | inline in `tools/rag/rag_tools.py` docstring | ✅ Done |
+| 7.2 | Python implementation — `_tool_query_docs_cached` in [`tools/rag/rag_tools.py`](../../tools/rag/rag_tools.py); registered in [`tools/rag/mcp_server.py`](../../tools/rag/mcp_server.py) `_TOOL_DISPATCH` + `list_tools()` | `tools/rag/mcp_server.py`, `tools/rag/rag_tools.py` | ✅ Done |
+| 7.3 | .NET implementation parity in `RagTools.Mcp` | `tools/rag-dotnet/...` | 🔲 Deferred — needs `ReadDocsChunk.Breadcrumb` + `EndLine` |
+| 7.4 | Tool descriptor + JSON schema in `list_tools()` | `tools/rag/mcp_server.py` | ✅ Done |
+| 7.5 | Unit tests for `_derive_source_label` + `_format_chunks_to_markdown` | [`tools/rag/tests/test_query_docs_cached.py`](../../tools/rag/tests/test_query_docs_cached.py) | ✅ Done (9 passed) |
+| 7.6 | Update [`mcp-routing.instructions.md`](../../.github/instructions/mcp-routing.instructions.md) — L2 as canonical path, L1 as `.NET`-server / timeout fallback | instructions file | ✅ Done |
+| 7.7 | Update skill [`rag-with-memory`](../../.github/skills/rag-with-memory/SKILL.md) — L2 first, L1 demoted to fallback | skill file | ✅ Done |
+| 7.8 | Append agent-decisions entry for option C decision | agent-decisions log | ✅ Done |
 
-**Phase 7 acceptance criteria** (revised after LIMIT-1 confirmation):
+**Phase 7 acceptance results**:
 
-- A single `query_docs_cached(query="...")` call replaces the manual `query_docs` → format → `ctx_index` chain **for the parent agent**.
-- Cache hit ratio measurable via `ctx_stats` after a representative parent-agent session (target: ≥50% reduction on sessions with ≥3 recalls of the same scope).
-- **Subagent delegations are out of scope for Phase 7** — even L2 is an MCP tool and will not be callable from built-in subagents (LIMIT-1 hard restriction). Subagent recall stays on the inline-chunks pattern documented in the skill.
-- No regression in standard `query_docs` / `read_docs` / `get_history` behaviour.
-- Both Python and .NET RAG servers expose the tool with identical schema (parity rule from ADR-0027).
+- Single `query_docs_cached(question="...")` call returns ready-to-cache markdown + source label.
+- Source labels are deterministic across recalls — verified by `test_source_label_is_deterministic`.
+- L1 and L2 cache shape are identical → recalls via `ctx_search(source="rag-cache-")` find both.
+- Standard `query_docs` / `read_docs` / `get_history` unchanged — full 293-test suite green.
+- `.NET` parity deferred to Phase 7.3 ticket (not blocking — agent uses Python server by default).
 
 ---
 

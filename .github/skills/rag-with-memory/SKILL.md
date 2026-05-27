@@ -8,11 +8,12 @@ description: >
 argument-hint: "[ADR-NNNN | BC name | topic]"
 ---
 
-# RAG ↔ context-mode handoff (L1, manual)
+# RAG ↔ context-mode handoff — preferred (L2) + manual (L1) fallback
 
 > Canonical rules: [`.github/instructions/mcp-routing.instructions.md` — RAG ↔ context-mode handoff section](../../instructions/mcp-routing.instructions.md). This skill is a step-by-step walkthrough.
 >
-> **L2 (future)**: a single `query_docs_cached` wrapper tool will replace these three steps. Tracked in [`docs/roadmap/context-mode-integration.md` Phase 7](../../../docs/roadmap/context-mode-integration.md).
+> **L2 (preferred, Python RAG)**: `query_docs_cached` — single call returns formatted markdown + deterministic source label. Cache step is a pass-through `ctx_index`.
+> **L1 (manual fallback)**: 3-step handoff. Use only on the .NET RAG server or when L2 times out.
 
 ## Goal
 
@@ -59,7 +60,46 @@ Then use the returned value as the prefix for every absolute path. Pure `ctx_ind
 
 ---
 
-## Flow
+## Preferred flow (L2) — `query_docs_cached`
+
+Use this on the Python RAG server (`ecommerceapp-rag-python`). It collapses steps 1+2 of the manual flow into a single call + a pass-through.
+
+```
+  ┌──────────────────────────────────────────────────────────────┐
+  │  STEP 1 — Single RAG call returns markdown + label           │
+  ├──────────────────────────────────────────────────────────────┤
+  │   resp = query_docs_cached(                                  │
+  │     question="...", bc=?, top_files=3                        │
+  │   )                                                          │
+  │   → { source: "rag-cache-adr0028-<hash8>",                   │
+  │       markdown: "# ...\n\n## file.md\n**Path**: ...",        │
+  │       files_count, chunks_count, next_step }                 │
+  └──────────────────────────────────────────────────────────────┘
+                        ↓
+  ┌──────────────────────────────────────────────────────────────┐
+  │  STEP 2 — Pass-through ctx_index                             │
+  ├──────────────────────────────────────────────────────────────┤
+  │   ctx_index(content=resp.markdown, source=resp.source)       │
+  └──────────────────────────────────────────────────────────────┘
+                        ↓
+  ┌──────────────────────────────────────────────────────────────┐
+  │  STEP 3 — Recall (identical to L1)                           │
+  ├──────────────────────────────────────────────────────────────┤
+  │   ctx_search(queries=[...], source="rag-cache-")             │
+  └──────────────────────────────────────────────────────────────┘
+```
+
+The wrapper:
+- Picks `query_docs` semantics with the same ranking and `bc=` filter.
+- Groups hits per file (top 3 by default), keeps top 5 chunks per file.
+- Renders the template below for you — same shape as L1 so L1 and L2 caches interoperate.
+- Derives `source` deterministically: `rag-cache-adr<NNNN>-<hash8>` if the question mentions an ADR id, `rag-cache-<slug(bc)>-<hash8>` if `bc=` is set, else `rag-cache-q-<hash8>`. Same `(question, bc)` → same `source` → idempotent overwrite.
+
+If `query_docs_cached` is not available (e.g. the .NET server is the active one, or it returns an error), fall through to the manual L1 flow below.
+
+---
+
+## Manual flow (L1) — fallback / .NET server
 
 ```
   ┌──────────────────────────────────────────────────────────────┐

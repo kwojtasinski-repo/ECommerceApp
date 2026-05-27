@@ -44,6 +44,7 @@ from rag_tools import (
     _tool_get_history,
     _tool_list_adrs,
     _tool_query_docs,
+    _tool_query_docs_cached,
     _tool_read_docs,
 )
 
@@ -123,16 +124,41 @@ async def list_tools() -> list[Tool]:
             ),
             inputSchema={"type": "object", "properties": {}},
         ),
+        Tool(
+            name="query_docs_cached",
+            description=(
+                "Phase 7 L2 — RAG search packaged for caching into context-mode's FTS5 store. "
+                "Runs the same semantic search as query_docs/read_docs (chunk mode, grouped by file), "
+                "formats the top results as a markdown document with breadcrumbs preserved, and "
+                "returns it together with a deterministic source label of the form "
+                "'rag-cache-adr<NNNN>-<hash8>', 'rag-cache-<bc>-<hash8>', or 'rag-cache-q-<hash8>'. "
+                "The caller (agent) then makes one follow-up ctx_index(content=<markdown>, source=<source>) call "
+                "to persist the cache, and subsequent recalls use ctx_search(queries=[...], source='rag-cache-...'). "
+                "Use this when the same scope will be re-read 3+ times in the session — direct query_docs is cheaper "
+                "for one-shot questions. Does not write to context-mode itself (no inter-MCP coupling)."
+            ),
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "question": {"type": "string"},
+                    "bc": {"type": "string", "description": "Optional substring filter on breadcrumb / doc title"},
+                    "top_files": {"type": "integer", "default": 3, "minimum": 1, "maximum": 5,
+                                  "description": "Max unique files to include in the cached markdown"},
+                },
+                "required": ["question"],
+            },
+        ),
     ]
 
 
 # ── Tool dispatch ─────────────────────────────────────────────────────────────
 
 _TOOL_DISPATCH = {
-    "query_docs":  _tool_query_docs,
-    "read_docs":   _tool_read_docs,
-    "get_history": _tool_get_history,
-    "list_adrs":   _tool_list_adrs,
+    "query_docs":         _tool_query_docs,
+    "query_docs_cached":  _tool_query_docs_cached,
+    "read_docs":          _tool_read_docs,
+    "get_history":        _tool_get_history,
+    "list_adrs":          _tool_list_adrs,
 }
 
 _log = logging.getLogger("ecommerceapp-rag.mcp")

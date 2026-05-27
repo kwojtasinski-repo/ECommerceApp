@@ -163,7 +163,41 @@ Producing an answer that mixes training-data inference with partial RAG hits (e.
 >
 > **When NOT to use it**: a one-shot question (answered once, never reread) — direct RAG is cheaper. The handoff costs one extra `ctx_index` call up front; it only pays back after the **second** recall.
 >
-> **L1 status (this section)**: manual 3-step handoff. **L2 status (future)**: a single `query_docs_cached` wrapper tool — see [docs/roadmap/context-mode-integration.md](../../docs/roadmap/context-mode-integration.md) Phase 7.
+> **L2 status (preferred)**: single-call wrapper `query_docs_cached` (Python RAG server). Returns formatted markdown + a deterministic `source` label; the agent makes ONE follow-up `ctx_index` call. See the [L2 fast path](#l2-fast-path-query_docs_cached--preferred) below.
+> **L1 status (fallback)**: manual 3-step handoff. Use only on the .NET RAG server (which does not yet expose `query_docs_cached`) or when the wrapper times out. The cache shape is identical so L2 caches and L1 caches interoperate.
+
+### L2 fast path: `query_docs_cached` — preferred
+
+One RAG call + one context-mode call. The wrapper formats the markdown for you and derives the `source` label deterministically; you never have to construct either by hand.
+
+```
+  Step 1: RAG (one call, returns markdown + source)
+  ─────────────────────────────────────
+    query_docs_cached(question="...", bc?, top_files=3)
+        ↓
+    response.source     → "rag-cache-adr0028-<hash8>" (deterministic)
+    response.markdown   → full cache content, template already applied
+
+  Step 2: Cache (one ctx_index call — pass-through)
+  ─────────────────────────────────────
+    ctx_index(content=response.markdown, source=response.source)
+
+  Step 3: Recall (any number of times, zero RAG re-bill)
+  ─────────────────────────────────────
+    ctx_search(queries=["specific question"], source="rag-cache-")
+```
+
+**Source label rules (derived automatically by `query_docs_cached`):**
+
+| Question contains | Resulting `source` |
+|---|---|
+| ADR id (`ADR-0029`, `adr 016`, bare `0028`) | `rag-cache-adr<NNNN>-<hash8>` |
+| no ADR id, `bc=` filter present | `rag-cache-<slug(bc)>-<hash8>` |
+| no ADR id, no `bc=` | `rag-cache-q-<hash8>` |
+
+`<hash8>` = first 8 hex chars of `sha256(question.lower().strip())`. Same `(question, bc)` → same label → idempotent overwrite. Lowercase, kebab-case, ASCII only. Always prefixed `rag-cache-`.
+
+**Availability:** Python RAG server only (`ecommerceapp-rag-python`). The .NET server (`ecommerceapp-rag-dotnet`) keeps the L1 manual path until Core data model adds breadcrumb/end_line to `ReadDocsChunk`.
 
 ### Three similar "memory" surfaces — DO NOT MIX
 
@@ -175,7 +209,7 @@ Three near-identically-named systems exist in this workspace. The L1 handoff use
 | `memory.create` / `memory.view` (paths `/memories/*`) | **VS Code's persistent notes** for cross-session preferences. Single-doc, no FTS. | ❌ NO. Not searchable for the handoff. |
 | `ctx_index` / `ctx_search` | **context-mode's FTS5 knowledge base** with Porter+trigram+RRF ranking. Markdown-aware chunking. | ✅ YES. The only correct cache for RAG handoff. |
 
-### Manual handoff (L1) — three steps
+### Manual handoff (L1) — three steps (use only as fallback)
 
 ```
   Step 1: RAG (one-time fetch)
