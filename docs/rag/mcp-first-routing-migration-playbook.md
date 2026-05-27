@@ -358,6 +358,197 @@ and the agent silently kept reading files instead of querying MCP.
 
 ---
 
+## 13. Coexistence with a second MCP server (worked example: context-mode)
+
+Running the container is one thing. Wiring it into the **flow** so the
+agent actually picks the right MCP for the right intent is the part
+that breaks projects.
+
+This section assumes the RAG MCP is already wired per §1–§9 and you
+are adding a second MCP server alongside it (here: `context-mode` per
+[ADR-0029](../adr/0029/0029-context-mode-mcp-sandbox.md) and the
+[context-mode roadmap](../roadmap/context-mode-integration.md)). The
+same recipe applies to any second MCP (Playwright, GitHub Issues,
+filesystem sandbox, etc.).
+
+### 13.1 Two MCPs serve two different jobs
+
+| MCP | Job | Tools it owns |
+|---|---|---|
+| RAG (`ecommerceapp-rag-*`) | **Knowledge retrieval** over indexed docs | `list_adrs`, `query_docs`, `read_docs`, `get_history` |
+| context-mode (`ecommerceapp-context-mode`) | **Context reduction / sandboxed execution / external fetch** | `ctx_stats`, `ctx_execute`, `ctx_execute_file`, `ctx_fetch_and_index`, `ctx_insight` |
+
+They never compete for the same intent. The risk is not collision,
+it's the agent picking neither because the routing rules don't say
+which one owns which intent. That's the wiring gap.
+
+### 13.2 Extend the global instruction with a second tool table
+
+Do **not** create a second instruction file. Append a second table to
+the existing global instruction (`rag.instructions.md` or rename to
+`mcp.instructions.md` once you have more than one MCP).
+
+```markdown
+## context-mode — when to use the ctx_* tools
+
+| Tool                       | When to use                                                            |
+| -------------------------- | ---------------------------------------------------------------------- |
+| `ctx_stats`                | "how much context have we saved this session?" / sanity check          |
+| `ctx_execute(lang, code)`  | One-shot sandboxed execution — math, parsing, regex on a small string  |
+| `ctx_execute_file(path)`   | Run analysis over a file and return only the **summary** (not body)    |
+| `ctx_fetch_and_index(url)` | Pull an allowlisted external URL through AdGuard and add it to context |
+| `ctx_insight()`            | Open the local web UI to inspect what's currently in context           |
+```
+
+Keep the RAG table immediately above it. Same applyTo, same file.
+One scroll, both surfaces visible.
+
+### 13.3 Add a precedence rule (this is the part that breaks)
+
+Tool tables alone don't decide which MCP to call first when an intent
+**could** map to either. Add an explicit precedence block:
+
+```markdown
+## MCP precedence
+
+When more than one MCP could plausibly answer a request:
+
+1. **Knowledge questions** (anything that quotes docs, ADRs, rules,
+   project state) → RAG first. Never substitute `ctx_execute` for it.
+2. **Sandboxed execution** (run a snippet, compute a value, summarise a
+   file's structure without loading its content) → context-mode first.
+   Never substitute `read_file` + manual summary for it when the body
+   is large.
+3. **External fetch** (a URL the user pasted) → `ctx_fetch_and_index`
+   only. Never raw `fetch_webpage` for project work — it bypasses the
+   AdGuard allowlist.
+4. **Both MCPs empty / unhealthy** → fall back to direct read_file /
+   grep_search and tell the user which MCP failed.
+
+Never call both MCPs for the same atomic intent. If unsure, pick the
+one whose table matches the user's verb ("what does ADR-X say" → RAG;
+"run this snippet" → context-mode).
+```
+
+Three pieces matter: the numbered list, the word **first** under each
+bucket, and the closing "never call both for the same atomic intent".
+Without the third line the agent will call RAG, then "double-check"
+with `ctx_execute`, doubling the cost.
+
+### 13.4 Hooks: where context-mode actually plugs into the flow
+
+context-mode ships five hooks (per
+[context-mode-integration.md Phase 3](../roadmap/context-mode-integration.md)):
+`PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `PreCompact`,
+`SessionStart`. These hooks fire inside the agent's tool-call loop —
+they are the actual flow plug-in, not the container.
+
+| Hook            | What it does for the flow                                            |
+| --------------- | -------------------------------------------------------------------- |
+| `SessionStart`  | Loads the last summarised session from SQLite — **survives compaction** |
+| `UserPromptSubmit` | Re-injects the running summary as system context for each turn   |
+| `PreToolUse`    | Intercepts a tool call, rewrites the args (e.g. swap raw `fetch_webpage` for `ctx_fetch_and_index`), or denies it per `.claude/settings.json` |
+| `PostToolUse`   | Replaces the tool's raw output in the transcript with a short reference; full output stays in context-mode's store |
+| `PreCompact`    | Snapshots the current summary to SQLite before VS Code compacts the window |
+
+The hook file (`.github/hooks/context-mode.json`) is what makes the
+flow change visible. Without hooks, the container is just an idle
+service — the agent still dumps raw output into the window and your
+context savings stay at 0. **Wiring the hooks is the migration**, not
+adding the compose service.
+
+### 13.5 The combined flow
+
+```text
+                 User question / instruction
+                            |
+                            v
+              +---------------------------+
+              | SessionStart hook         |  context-mode plug-in
+              | (re-inject last summary)  |  (transparent to agent)
+              +---------------------------+
+                            |
+                            v
+                 Agent reads global instructions
+                 (RAG table + ctx table + precedence)
+                            |
+                            v
+              +---------------------------+
+              | Intent classification     |
+              | (per §13.3 precedence)    |
+              +---------------------------+
+                |              |                 |
+   knowledge    |  execute /   |  external       |  pure code task
+                v  summarise   v  fetch          v
+         RAG MCP first   context-mode MCP   ctx_fetch_and_index   direct read_file
+         (§4..§9 flow)   (ctx_execute*)    (AdGuard allowlist)    + grep
+                |              |                 |                 |
+                +------+-------+-----------------+-----------------+
+                       |
+                       v
+              +---------------------------+
+              | PostToolUse hook          |
+              | (raw output --> reference)|
+              +---------------------------+
+                       |
+                       v
+                  Answer + citations
+                       |
+                       v
+              +---------------------------+
+              | PreCompact (snapshot DB)  |  if window fills
+              +---------------------------+
+```
+
+Note: the hooks wrap **every** tool call, including RAG tools.
+context-mode's `PostToolUse` will also compress `read_docs` output to
+a reference. That's the win — RAG benefits from the same context
+reduction as everything else, transparently.
+
+### 13.6 Avoid the three common wiring failures
+
+1. **Only the container is wired, hooks are not.** The agent uses
+   neither MCP correctly. Symptom: `ctx_stats` shows 0% reduction
+   after a long session. Fix: complete Phase 3 of the context-mode
+   roadmap (`.github/hooks/context-mode.json` + restart VS Code).
+2. **No precedence rule.** The agent calls both MCPs "to be safe".
+   Symptom: every ADR question shows up in `ctx stats` as wasted
+   tokens. Fix: add §13.3 to the global instruction; re-run §9
+   verification with prompts that span both surfaces ("summarise
+   ADR-0028 and run a sanity check on its sample code").
+3. **`fetch_webpage` left ungoverned.** The agent fetches a URL
+   directly, bypassing AdGuard. Symptom: a request appears in the
+   AdGuard query log under "DEFAULT" client, not `context-mode`.
+   Fix: add a `PreToolUse` hook entry that rewrites `fetch_webpage`
+   args into `ctx_fetch_and_index`, OR add a hard rule in the global
+   instruction: "NEVER use `fetch_webpage` for project work — use
+   `ctx_fetch_and_index`."
+
+### 13.7 Verification (extend §9)
+
+Add these to the §9 prompt set:
+
+| Prompt                                                    | Expected behaviour                              |
+|-----------------------------------------------------------|-------------------------------------------------|
+| "How much context have we saved this session?"            | `ctx_stats` only                                |
+| "Compute the SHA-256 of the string 'hello'."              | `ctx_execute` only — no RAG, no direct read    |
+| "Summarise the structure of `Program.cs`."                | `ctx_execute_file` — not `read_file` + manual  |
+| "Fetch https://example.com/foo.md and tell me what it says." | `ctx_fetch_and_index` — not raw `fetch_webpage` |
+| "Summarise ADR-0028 and verify its sample code parses."   | RAG first (`read_docs`), then `ctx_execute` on the snippet — never both for the same fact |
+
+If the precedence block is correct, no prompt above should trigger
+both MCPs.
+
+### 13.8 Rollback for the second MCP
+
+context-mode is `--profile monitoring`-gated in `docker-compose.yaml`,
+so stopping it is one command. Removing the hooks file and reverting
+the §NN precedence section in the global instruction takes the agent
+back to RAG-only routing without touching RAG. The two MCPs are
+independent; either can be rolled back without breaking the other.
+
+---
+
 ## Cross-references
 
 - Tool surface: [rag-architecture.md §8 MCP tools](rag-architecture.md#8-mcp-tools)
