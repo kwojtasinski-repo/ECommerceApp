@@ -25,6 +25,8 @@ Before proposing or committing changes, perform these steps:
 
 **NEVER call both RAG and context-mode for the same atomic intent.**
 
+**Verify external-tool capabilities empirically before documenting them.** Before listing a runtime, language, feature, or CLI command of an external tool in our docs (`mcp-routing.instructions.md`, roadmap files, hooks/agents configs), verify it empirically — `ctx_doctor` for context-mode runtimes; a smoke `ctx_execute` call for sandbox langs; `docker exec <container> which <cmd>` or `<cmd> --help` for binaries referenced from configs. Schema enums, upstream READMEs, and prior knowledge are **not proof** of shipped capability. This rule was promoted after recurring "doc-claimed runtime/CLI not actually present" corrections (Python runtime, 10-language enum mismatch, `context-mode` wrapper that did not exist in `/app/bin/`).
+
 Document completion of these steps in the PR description.
 
 ## Post-edit — append to agent decisions log

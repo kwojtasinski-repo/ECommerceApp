@@ -634,7 +634,9 @@ env var keeps RAG calls outside the sandbox guidance loop.
 
 ---
 
-## Phase 4b — `.claude/settings.json` (repo root, permissions)
+## Phase 4b — `.claude/settings.json` (repo root, permissions) — **⛔ SKIPPED**
+
+> **Status: skipped — content kept as future reference.** This phase is Claude Code (Anthropic CLI) specific. This repo uses VS Code Copilot Chat only; no `.claude/` directory exists. See [context-mode-integration.md Phase 4 note on step 4.1b](context-mode-integration.md#phase-4--copilot-instructionsmd-merge) for the rationale and the equivalent VS Code Copilot mechanisms (terminal autoApprove, per-agent `tools:` frontmatter, `.github/hooks/*.json`). The full spec below stays in the repo as a turnkey starting point if the team ever adopts Claude Code alongside VS Code Copilot.
 
 > New file at `.claude/settings.json`. context-mode reads this file on **all**
 > platforms (Claude Code AND VS Code Copilot) and enforces deny/allow rules

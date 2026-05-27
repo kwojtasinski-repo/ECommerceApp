@@ -1,7 +1,7 @@
 ﻿# Roadmap: context-mode — MCP sandbox integration
 
 > Status: — Unblocked — RAG stabilisation complete (2026-05-23), ready to implement
-> Scope: `docker/context-mode/`, `Dockerfile-context-mode`, `docker-compose.yaml` (delta), `.vscode/`, `.github/hooks/`, `.github/copilot-instructions.md` (append), `.claude/settings.json`, `.env.context-mode.example`
+> Scope: `docker/context-mode/`, `Dockerfile-context-mode`, `docker-compose.yaml` (delta), `.vscode/`, `.github/hooks/`, `.github/copilot-instructions.md` (append), `.env.context-mode.example` (`.claude/settings.json` originally listed; now skipped — see Phase 4 note)
 > Companion detail plan: [`context-mode-details.md`](./context-mode-details.md)
 
 ---
@@ -121,10 +121,14 @@ Goal: extend a useful working session from ~30 min to ~3 hours without losing co
 
 | Step | Description | File | Status |
 |---|---|---|---|
-| 4.1 | Append section 13 (context-mode routing) | `.github/copilot-instructions.md` | 🔲 |
-| 4.1b | Add `.claude/settings.json` with deny/allow rules (sandbox permissions) | `.claude/settings.json` | 🔲 |
-| 4.2 | Verification: existing agents still work (ADR query, BC routing) | Copilot Chat | 🔲 |
-| 4.3 | Run `@copilot-setup-maintainer` (Workflow 11 + 7) | Copilot Chat | 🔲 |
+| 4.1 | Append MCP routing section to copilot-instructions | `.github/copilot-instructions.md` §12 | ✅ Done (different shape) |
+| 4.1b | Add `.claude/settings.json` with deny/allow rules | `.claude/settings.json` | ⛔ Skipped (N/A — see note) |
+| 4.2 | Verification: existing agents still work (ADR query, BC routing) | Copilot Chat | 🟡 Ongoing |
+| 4.3 | Run `@copilot-setup-maintainer` (Workflow 11 + 7) | Copilot Chat | 🔲 Deferred to batch end |
+
+**Note on 4.1**: Realised differently from original spec. Heavy lifting (rules tables, retry sequences, anti-patterns, Invalid-answer directive) lives in [.github/instructions/mcp-routing.instructions.md](../../.github/instructions/mcp-routing.instructions.md) which auto-loads via `applyTo: **`. `copilot-instructions.md §12` keeps only a thin pointer + 5-bullet non-negotiable summary so the routing rules surface on every chat without bloating the always-loaded file.
+
+**Note on 4.1b — why skipped**: `.claude/settings.json` is Claude Code (Anthropic CLI) specific. This repo uses VS Code Copilot Chat only — no `.claude/` directory exists. The functional equivalent of `.claude/settings.json` deny/allow rules is split across three VS Code mechanisms: (1) `chat.tools.terminal.autoApprove` in `.vscode/settings.json` for shell commands; (2) per-agent `tools:` frontmatter in `.github/agents/*.agent.md` for MCP tool allowlists (already used by `@verifier`); (3) `.github/hooks/*.json` PreToolUse handlers shipped in Phase 3 (can return `block`/`modify`). For context-mode's sandbox specifically, filesystem-level deny is already enforced by the docker `/workspace:ro` read-only mount in `docker-compose.yaml`. Adding a Claude-Code-format file would be cargo-cult — re-open this step only if the team adopts Claude Code alongside VS Code Copilot.
 
 **Phase 4 acceptance criterion**: project agents (ADR, BC) behave as before; context-mode routing is active alongside them.
 
@@ -364,7 +368,7 @@ The Phase 7 plan above (`query_docs_cached`) is unchanged. Promotion trigger rem
 | `.gitignore` | Delta (3 lines: alert log + personal-overrides + .env.context-mode) | 1/2/5 | None |
 | `.github/hooks/context-mode.json` | New | 3 | Requires @copilot-setup-maintainer; 5 hooks total |
 | `.github/copilot-instructions.md` | Append (section 13) | 4 | Requires @copilot-setup-maintainer |
-| `.claude/settings.json` | New | 4 | Read by context-mode on VS Code Copilot too — enforces deny/allow |
+| `.claude/settings.json` | ~~New~~ | ~~4~~ | **Skipped** — Claude Code specific; not applicable on VS Code Copilot Chat. See Phase 4 note on step 4.1b. |
 | `docker/adguard/AdGuardHome.yaml` | New | 5 | None (gated by `--profile monitoring`) |
 | `docker/adguard/community-blocklists.yaml` | New | 5 | None |
 | `docker/adguard/team-blacklist.txt` | New | 5 | None |
