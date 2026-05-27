@@ -301,6 +301,46 @@ Implementation when triggered: edit `Dockerfile-context-mode` to install the run
 
 ---
 
+### Phase 9 v1 — `domain-policy` CLI (✅ Done 2026-05-27)
+
+> **Shipped**: file-first CLI for team-wide filter management. Scope: `blacklist` + `whitelist` targets only. Personal-overrides intentionally **dropped** (see v2 below).
+
+**Acceptance met**:
+
+- [x] `scripts/adguard/domain-policy.ps1` — PowerShell entry point (~330 lines)
+- [x] `scripts/adguard/domain-policy.sh` — bash parity for WSL/Linux contributors
+- [x] Subcommands: `status [--verbose]`, `show <target|all> [--tail N] [--grep PATTERN]`, `edit <target>`, `import <target> <localfile>`, `add <target> <rule>`, `reload`, `help`
+- [x] Dedup on `add` / `import`: exact text match, case-sensitive, trim whitespace, ignore `#` / `!` comments. No semantic dedup, no cross-file dedup (both intentional — documented in `docker/adguard/README.md`)
+- [x] AdGuard rule syntax validation before `add` (rejects malformed input)
+- [x] Reload via `docker compose restart adguard` (~5s downtime, no credentials)
+- [x] `$EDITOR` fallback chain: `$EDITOR` → `code -w` → `notepad` / `vi`
+- [x] WARN-only on committed file edits — prints branch + git/PR template, never auto-stages or pushes
+- [x] Host-file operations only — zero `docker exec` for filter edits
+- [x] VS Code tasks: `AdGuard: Show all filters`, `AdGuard: Reload filters`
+- [x] Documentation: `docker/adguard/README.md` ("Daily management" section) + `docs/getting-started-context-mode.md` daily-life table
+
+**Execution notes**:
+
+- Implementation deliberately avoids touching `AdGuardHome.yaml` `users:` block, DNS upstreams, querylog, or container lifecycle beyond restart — clear separation from `scripts/context-mode-bootstrap.ps1` (user/yaml lifecycle, destructive) vs `domain-policy.ps1` (filter content, safe + frequent).
+- Reload chosen over hot-reload because (a) AdGuard v0.107.50 does not reliably hot-reload file-based filters without a kick, (b) 5s downtime is acceptable for the dev sandbox use case, (c) it avoids parsing the bcrypt-protected `/control/filtering/refresh` API and managing session cookies.
+- See `.github/context/agent-decisions.md` 2026-05-27 entry for the v2 drop rationale and design discussion summary.
+
+---
+
+### Phase 9 v2 — NOT PLANNED (auto-load `personal-overrides.local.txt`)
+
+> **Decision (2026-05-27): dropped.** Originally deferred from Phase 5.6 / 5.7 audit, then explicitly removed from `domain-policy` v1 scope, then formally dropped after design discussion.
+
+**Why dropped** (rather than deferred):
+
+- **High touch surface for marginal benefit**: required edits to `bootstrap.ps1` (yaml injection), `AdGuardHome.yaml.template` (placeholder for id=1003), and a third CLI target — all to support a per-developer use case that has not actually appeared in practice.
+- **Workflow overlap**: any rule a developer needs locally can be added to `team-whitelist.txt` as a one-off PR (the team reviews → permanent) or applied via `domain-policy.ps1 add` and reverted later. The "I need a rule that I do NOT want to share" case is rare in this stack.
+- **Risk of mixing concerns**: tying bootstrap (container lifecycle) to filter content (frequent edits) re-introduces the exact coupling Phase 9 v1 was designed to eliminate.
+
+If a real per-developer use case appears, revisit by reopening this section — the `personal-overrides.local.example.txt` placeholder file and `.gitignore` entry remain in place from Phase 5.
+
+---
+
 ## L1 ship status & open follow-ups (2026-05-27)
 
 This section captures what shipped with L1 (manual handoff) and what remains pending so the context isn't lost between sessions.

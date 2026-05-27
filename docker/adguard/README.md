@@ -37,6 +37,62 @@ This generates `AdGuardHome.yaml` with a bcrypt admin password and starts everyt
 powershell -File scripts/context-mode-bootstrap.ps1 -AdGuardPassword 'NewStrongPass!' -ForceRegenerateAdGuard
 ```
 
+## Daily management with the `domain-policy` CLI
+
+Day-to-day filter edits (block a new C2 domain, allowlist a service the
+community lists wrongly blocked) go through `scripts/adguard/domain-policy.ps1`
+(or `.sh` on WSL/Linux). The CLI edits **host files only** — no `docker exec`,
+no credentials, no UI clicks. AdGuard sees the new files via the
+`docker/adguard:/opt/adguardhome/conf` bind mount and re-reads them after a
+container restart.
+
+```powershell
+# Inspect
+./scripts/adguard/domain-policy.ps1 status              # filter table
+./scripts/adguard/domain-policy.ps1 status --verbose    # + first 5 lines of each file
+./scripts/adguard/domain-policy.ps1 show blacklist --tail 20
+./scripts/adguard/domain-policy.ps1 show whitelist --grep github
+
+# Edit
+./scripts/adguard/domain-policy.ps1 add blacklist '||malware-c2.io^'
+./scripts/adguard/domain-policy.ps1 add whitelist '@@||legitimate-cdn.com^'
+./scripts/adguard/domain-policy.ps1 import blacklist ./threat-feed.txt
+./scripts/adguard/domain-policy.ps1 edit whitelist      # opens in $EDITOR
+
+# Control
+./scripts/adguard/domain-policy.ps1 reload              # docker compose restart adguard
+./scripts/adguard/domain-policy.ps1 help
+```
+
+VS Code tasks: `Tasks: Run Task` → `AdGuard: Show all filters` /
+`AdGuard: Reload filters`.
+
+After any edit on `team-blacklist.txt` / `team-whitelist.txt` the CLI prints a
+git commit/PR reminder. **Commits are user-driven — the CLI never auto-stages
+or pushes.**
+
+### Dedup is intentionally narrow
+
+`add` and `import` skip rules already present in the target file via **exact
+text match** (trim whitespace, case-sensitive, comments ignored). Two cases
+are **not** covered and that is by design:
+
+| Not deduped | Why |
+|---|---|
+| `\|\|evil.com^` vs `\|\|www.evil.com^` (semantic overlap) | Different AdGuard rules — they match different DNS labels. A naive merge would silently drop legitimate coverage. |
+| Same domain on both `team-blacklist.txt` and `team-whitelist.txt` | Whitelist intentionally overrides blacklist (AdGuard precedence). Cross-file collision is the legitimate way to temporarily allow a domain you also long-term block. |
+
+If you want a semantic audit (e.g. find dominated rules), run it as a separate
+review step — the CLI stays predictable.
+
+### What the CLI never touches
+
+- `users:` block in `AdGuardHome.yaml` (passwords, sessions)
+- DNS upstream/bootstrap, querylog, statistics settings
+- Container lifecycle beyond `docker compose restart adguard`
+- Git (no auto-add, no auto-commit, no auto-push)
+- `personal-overrides.local.example.txt` (per-developer experiment, not part of v1)
+
 ## What context-mode can reach
 
 | Target | Allowed | Why |

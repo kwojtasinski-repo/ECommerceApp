@@ -136,8 +136,9 @@ If the target domain is on a community blocklist (ads, trackers, malware), AdGua
 |----------|--------|
 | Reboot / Docker restart | Nothing to do — containers have `restart: unless-stopped`. Just open VS Code, MCP reconnects automatically. |
 | Bootstrap script printed a password and you closed the terminal | Re-run with `-AdGuardPassword 'NewPass!' -ForceRegenerateAdGuard` |
-| Need to allow a new domain | Add `@@||example.com^` to `docker/adguard/team-whitelist.txt`, commit, push. AdGuard reloads the file automatically. |
-| Need to block a domain | Add the bare hostname to `docker/adguard/team-blacklist.txt`, commit, push. |
+| Need to allow a new domain | `./scripts/adguard/domain-policy.ps1 add whitelist '@@\|\|example.com^'` (or edit `docker/adguard/team-whitelist.txt` directly). |
+| Need to block a domain | `./scripts/adguard/domain-policy.ps1 add blacklist '\|\|evil.com^'` (or edit `docker/adguard/team-blacklist.txt` directly). |
+| Bulk-edit, review, or restart AdGuard | See `docker/adguard/README.md` → "Daily management with the `domain-policy` CLI" (`status`, `show`, `edit`, `import`, `reload`). |
 | Check what was blocked recently | UI → `http://127.0.0.1:3000` → Query log |
 | Stop everything | `docker compose --profile monitoring --profile context-mode down` |
 | Start again after stopping | `docker compose --profile monitoring --profile context-mode up -d` (bootstrap not needed once volumes exist) |
