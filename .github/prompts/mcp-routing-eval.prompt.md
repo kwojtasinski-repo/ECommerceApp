@@ -3,7 +3,7 @@
 > **Usage (two ways)**:
 > - **Slash command**: `/mcp-routing-eval` in Copilot Chat, then paste questions.
 > - **File reference**: `#file:.github/prompts/mcp-routing-eval.prompt.md` then paste questions.
-> - **Auto-detect**: just paste 3+ `Q<N>.` numbered questions \u2014 the trigger in [copilot-instructions.md \u00a714](../copilot-instructions.md#14-eval-batch-auto-detection) routes you here automatically.
+> - **Auto-detect**: just paste 3+ `Q<N>.` numbered questions \u2014 the trigger in [batched-tasks.instructions.md](../instructions/batched-tasks.instructions.md) (`applyTo: **`) routes you here automatically.
 >
 > Examples:
 > - `yo, Q1. List all ADRs. Q2. What is KI-008? Q3. Compute SHA-256 of "test".`

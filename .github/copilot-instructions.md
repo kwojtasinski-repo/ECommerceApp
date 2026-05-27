@@ -80,30 +80,17 @@ This catches races, missing redirects, re-entrant states, and TTL edge cases tha
 
 ## 12. MCP tool routing
 
-**Canonical source:** [.github/instructions/mcp-routing.instructions.md](instructions/mcp-routing.instructions.md) (`applyTo: **`). Read once per session.
+Canonical source: [.github/instructions/mcp-routing.instructions.md](instructions/mcp-routing.instructions.md) (`applyTo: **` — auto-loads every session). All rules, tables, retry sequences, anti-patterns, and the Invalid-answer directive live there.
 
-Non-negotiable summary:
+Non-negotiable summary (the long form is in the canonical file):
 
-- **Always** use an MCP tool before answering questions about ADRs, project state, known issues, roadmap, or any conventions written down in the repo — never guess from training data. `grep_search`/`read_file` on `.github/context/*.md`, `docs/adr/**`, `docs/roadmap/**`, or `docs/architecture/bounded-context-map.md` BEFORE calling `query_docs`/`get_history` is a BLOCKS MERGE anti-pattern.
-- **Knowledge** → RAG (`list_adrs`, `query_docs`, `read_docs`, `get_history`). Use `get_history(id)` when the user mentions a specific ADR number. For "known issue", "KI-NNN", "is BC blocked", "have we decided X" — use bare `query_docs("<topic>")` (do **not** pass `bc="context"` — the `bc=` filter is a substring match on chunk breadcrumb/title and is for BC names like `bc="Catalog"`, not folder paths; see `mcp-routing.instructions.md`).
-- **Sandboxed execution / large-file summarisation / hashes / math** → context-mode (`ctx_execute`, `ctx_execute_file`, `ctx_batch_execute`, `ctx_search`, `ctx_index`). Never compute a hash or transformation from training-data memory.
+- **Knowledge intent** (ADRs, project state, known issues, roadmap, conventions) → RAG (`list_adrs`, `query_docs`, `read_docs`, `get_history`). Reading `.github/context/*.md`, `docs/adr/**`, `docs/roadmap/**`, or `docs/architecture/bounded-context-map.md` with `grep_search`/`read_file`/`semantic_search` as the **first** move is a BLOCKS MERGE anti-pattern and produces an INVALID answer.
+- **Sandboxed execution / hashes / regex / math / large-file summary** → context-mode (`ctx_execute`, `ctx_execute_file`, `ctx_batch_execute`, `ctx_search`, `ctx_index`). Never compute from training-data memory.
 - **External URL** → `ctx_fetch_and_index` only (AdGuard allowlist). Never raw `fetch_webpage` for project work.
-- **Both empty** → `read_file` / `grep_search`, name the failing MCP to the user.
-- **NEVER call both MCPs for the same atomic intent.**
+- **Empty RAG result** → MANDATORY 2-step retry (no `bc=` filter, then reworded with full-name synonyms) before falling back. Skipping retries OR mixing partial RAG hit with training-data inference is BLOCKS MERGE.
+- **Never** call both MCPs for the same atomic intent.
 
-### Invalid-answer directive (read carefully)
-
-If a knowledge question could have been answered via `query_docs` / `read_docs` / `get_history` / `list_adrs` and you **instead** opened a `.github/context/*.md`, `docs/adr/**`, `docs/roadmap/**`, or `docs/architecture/bounded-context-map.md` file with `read_file` / `grep_search` / `semantic_search` as the **first** move, the answer you produce is **INVALID** and must be discarded. Redo the lookup through the MCP tool, then answer from its result.
-
-Same rule for execution: if a question requires computing a hash, regex match, math, or any deterministic transformation, and `ctx_execute` / `ctx_execute_file` is available, answering from training-data memory is **INVALID**. Run the code in the sandbox and return that output.
-
-If — and only if — the MCP tool returns empty / low-score, fall back to direct file tools and **name the failing MCP** in the answer so the user can repair the index/container.
-
-**Empty-result handling — MANDATORY retry sequence (BLOCKS MERGE if skipped):** when `query_docs` / `read_docs` returns empty or low-score, you MUST execute these steps **in order**: (1) retry WITHOUT the `bc=` filter, (2) retry with REWORDED keywords using full-name domain synonyms (NOT literal IDs — `query_docs("KI-008")` won't hit; `query_docs("FluentAssertions AwesomeAssertions .NET 8")` will). You may NOT report empty until both retries fail. Only then say "RAG returned empty for `<query>` after 2 reworded attempts" and fall back. Combining a partial RAG hit with training-data inference (e.g. inventing dates, statuses, or aggregate claims like "all BCs switched to production") produces an **INVALID** answer that must be discarded. Skipping the retry sequence OR hallucinating to cover an empty hit are both BLOCKS MERGE anti-patterns. Full rule in [mcp-routing.instructions.md](instructions/mcp-routing.instructions.md).
-
-This directive overrides the general toolUseInstructions preference for `grep_search`/`read_file`. It is enforced by [.github/context/anti-patterns-critical.context.md](context/anti-patterns-critical.context.md) (BLOCKS MERGE).
-
-Full tool tables, ASCII flow diagram, fallback ladder, trigger-phrase routing, and maintenance recipes live in `mcp-routing.instructions.md`. RAG-specific re-index rules: [instructions/rag.instructions.md](instructions/rag.instructions.md).
+Enforced by [.github/context/anti-patterns-critical.context.md](context/anti-patterns-critical.context.md). RAG re-index rules: [instructions/rag.instructions.md](instructions/rag.instructions.md).
 
 ## 13. RAG HTTP error envelope
 
@@ -117,29 +104,5 @@ Buckets: `BadRequest`, `Unauthorized`, `HttpError`, `NotImplemented`, `InternalS
 
 ## 14. Batched-tasks auto-detection
 
-If the user's message contains a **list of 3 or more discrete actionable items** \u2014 questions, tasks, or mixed \u2014 treat it as a **batched task list** and apply the rules + adaptive structured output format from [.github/prompts/batched-tasks.prompt.md](prompts/batched-tasks.prompt.md) automatically. Do NOT preamble. Do NOT ask for confirmation. Output begins with the first item's prefix.
-
-**Detection patterns** (any of these triggers batch mode):
-
-| Pattern                                            | Example                                          |
-| -------------------------------------------------- | ------------------------------------------------ |
-| 3+ `Q<N>.` markers                                 | `Q1. ... Q2. ... Q3. ...`                        |
-| 3+ numbered items (`1.` `2.` `3.` or `1)` `2)` ...) | `1. fix the validator 2. add a test 3. ...`     |
-| 3+ bulleted items (`-` or `*`)                     | `- check KI-008\n- list ADRs\n- compute sha256` |
-| 3+ `Task <N>:` / `Step <N>:` prefixes              | `Task 1: ... Task 2: ... Task 3: ...`            |
-| 3+ separate `?`-ending sentences in one message    | `What is X? What is Y? What is Z?`               |
-
-**Eval-mode delegation:** if the input has `Q<N>.` markers AND the user said any of "eval" / "test these" / "batch test" / "score" / "measure" / "rate" / "grade", delegate to the stricter [.github/prompts/mcp-routing-eval.prompt.md](prompts/mcp-routing-eval.prompt.md) instead (adds `CODE STRING:` and `RETRY TRACE:` requirements and forbids markdown headings entirely).
-
-**Output format adapts to the input style.** `Q<N>.` input \u2192 `Q<N>:` output blocks. Numbered input \u2192 `<N>:` blocks. Bulleted input \u2192 `- Item <N>:` blocks. Per-item shape: `TOOL USED:` / `ANSWER:` / `CONFIDENCE:` / optional `NOTE:`. Full table in the prompt file.
-
-**Compact mode:** if the user adds "fast" / "quick" / "short" / "no metadata" to the message, output one line per item (`<prefix> <answer>`), skipping the metadata fields. MCP routing rules still apply silently.
-
-**Negative triggers** (do NOT activate batch mode):
-- Fewer than 3 items.
-- A single question that happens to contain a numbered example list inside it.
-- A long-form essay / documentation request.
-- Genuine multi-turn troubleshooting where each step depends on the previous response.
-
-Full rules, edge cases, and forbidden patterns: [.github/prompts/batched-tasks.prompt.md](prompts/batched-tasks.prompt.md).
+Auto-loads via [.github/instructions/batched-tasks.instructions.md](instructions/batched-tasks.instructions.md) (`applyTo: **`). Detection patterns, output shape, eval-mode delegation, compact mode, and negative triggers live there. Full rules: [.github/prompts/batched-tasks.prompt.md](prompts/batched-tasks.prompt.md).
 

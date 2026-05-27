@@ -11,8 +11,8 @@
 
 | Category                               | Count | Details                                                                                                                            |
 | -------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `copilot-instructions.md`              | 1     | ~3 980 chars (under 4K); Multi-option rule (§3), Sync rule (§4), agent-memory ref (§6) added                                       |
-| Instruction files (`.instructions.md`) | 16    | All with `applyTo:` frontmatter; `agent-memory` added; `pre-edit` split into core + `doc-suggestions`; `docs-index` scope narrowed |
+| `copilot-instructions.md`              | 1     | ~7 410 chars (under 8K soft budget; Session 26 trim from 11 975); §12/§14 collapsed to pointers, dedicated `batched-tasks.instructions.md` added |
+| Instruction files (`.instructions.md`) | 17    | All with `applyTo:` frontmatter; +`batched-tasks` (Session 26); `agent-memory` added; `pre-edit` split into core + `doc-suggestions`; `docs-index` scope narrowed |
 | Prompt files (`.prompt.md`)            | 6     | BC analysis, BC implementation, PR review, refactor, flow-analysis, rag-sync                                                        |
 | Agent files                            | 8     | adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer, planner, implementer, verifier, pr-commit                       |
 | Skills (`SKILL.md`)                    | 17    | +rag-with-memory (Session 26); +5 RAG skills (Session 23): diagnose-rag, tune-rag-weights, expand-rag-glossary, generate-rag-rules, generate-eval-questions |
@@ -27,7 +27,7 @@
 
 ## File inventory
 
-### `.github/instructions/` (16 files)
+### `.github/instructions/` (17 files)
 
 | File                                  | `applyTo:`                                                    | Added                                                                       |
 | ------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------- |
@@ -47,6 +47,7 @@
 | `bc-adr-map.instructions.md`          | `**/*.cs, **/*.csproj, **/*.cshtml`                           | Session 19 (new — BC → ADR quick map for code edits)                        |
 | `doc-suggestions.instructions.md`     | `**`                                                          | Session 19 (new — proactive doc suggestion triggers; split from `pre-edit`) |
 | `agent-memory.instructions.md`        | `**`                                                          | Session 19 (new — auto-loads `agent-decisions.md` read rule on every task)  |
+| `batched-tasks.instructions.md`       | `**`                                                          | Session 26 (new — extracted from `copilot-instructions.md` §14 to keep auto-load while shrinking the root policy file) |
 
 ### `.github/prompts/` (6 files)
 
@@ -122,6 +123,8 @@ Ships L1 (documentation-only) for caching RAG knowledge in context-mode's FTS5 s
 | 5   | Roadmap Phase 7 (`query_docs_cached` wrapper) + new "L1 ship status & open follow-ups" section with LIMIT-1 (hard subagent restriction, CONFIRMED), LIMIT-2 (probe enforcement, deferred), LIMIT-3 (multilingual FTS gap, documented as caveat) | `docs/roadmap/context-mode-integration.md`                                            |
 | 6   | Agent-decisions entry recording POC + 3 validation tests, decision, rationale, promotion triggers                                                   | `.github/context/agent-decisions.md`                                                  |
 | 7   | docs-index gained row for the new skill                                                                                                            | `.github/instructions/docs-index.instructions.md`                                      |
+| 8   | `copilot-instructions.md` trimmed 11 975 → 7 409 chars (-38%): §12 MCP routing collapsed to a short pointer (full rules already in `mcp-routing.instructions.md` with `applyTo: **`); §14 batched-tasks extracted to a dedicated `batched-tasks.instructions.md` (`applyTo: **`, behaviour preserved) | `.github/copilot-instructions.md`, `.github/instructions/batched-tasks.instructions.md` (new) |
+| 9   | Maintainer ownership budget raised 4K → 8K chars (soft, with rationale) — the original 4K target was set in Session 17 when the file held ~3K of content and is no longer realistic given the current 14 sections + 4 domain constants + cross-link pointers. Refactor guidance added: move duplicates to `applyTo: **` instruction files instead of deleting unique policy. | `.github/agents/copilot-setup-maintainer.md`                                          |
 
 ---
 

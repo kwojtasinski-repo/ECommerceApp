@@ -49,7 +49,7 @@ Three responsibilities:
 
 | File                                              | Purpose                                                    |
 | ------------------------------------------------- | ---------------------------------------------------------- |
-| `.github/copilot-instructions.md`                 | Repo-level policy (≤ 4,000 chars hard limit)               |
+| `.github/copilot-instructions.md`                 | Repo-level policy (≤ 8,000 chars soft budget — see § Budgets)   |
 | `.github/instructions/docs-index.instructions.md` | Docs lookup table — ADR index, roadmap index, skills index |
 | `.github/instructions/mcp-routing.instructions.md` | **Canonical** MCP tool tables + precedence + ASCII flow   |
 | `.github/instructions/safety.instructions.md`     | Allowed/disallowed actions                                 |
@@ -128,7 +128,7 @@ Steps:
 1. Verify the file has the correct extension (`.instructions.md` for instructions, `.prompt.md` for prompts, `SKILL.md` for skills).
 2. For instruction files: verify `applyTo:` frontmatter is present and the glob pattern is correct.
 3. Add the file to the appropriate listing in `copilot-instructions.md` § 2 and/or `docs-index.instructions.md` Skills table.
-   - **Critical**: After editing, verify `copilot-instructions.md` is still ≤ 4,000 characters. If over, shorten other descriptions to make room.
+   - **Critical**: After editing, verify `copilot-instructions.md` is still ≤ 8,000 characters. If over, first move duplicated content to a dedicated `*.instructions.md` with `applyTo: **` (so auto-load behaviour is preserved) and leave a short pointer behind — do NOT delete unique policy to fit a number.
 4. Add the file entry to the correct solution folder in `ECommerceApp.sln`.
 5. Update `COPILOT-SETUP-CHANGELOG.md`: add entry to the latest session section and update the "Current state summary" counts.
 6. Report what was updated.
@@ -157,7 +157,7 @@ Steps:
 5. Compare `.github/prompts/` files against § 2 of `copilot-instructions.md` AND the `prompts` solution folder.
 6. Compare `.github/agents/` files against § 2 of `copilot-instructions.md` AND the `agents` solution folder.
 7. Compare `.github/skills/` folders against the Skills table in `docs-index.instructions.md`, the Skills line in `copilot-instructions.md`, AND each skill subfolder in the `skills` solution folder.
-8. Verify `copilot-instructions.md` is ≤ 4,000 characters.
+8. Verify `copilot-instructions.md` is ≤ 8,000 characters (soft budget). If over, flag for refactor (move duplicate content to `*.instructions.md` with `applyTo: **`).
 9. Verify all `.instructions.md` files have `applyTo:` frontmatter.
 10. Verify all cross-references between files use correct filenames (no old/renamed names).
 11. Verify `COPILOT-SETUP-CHANGELOG.md` "Current state summary" counts match actual file counts.
@@ -176,7 +176,7 @@ Steps:
 | Skills listed                        | ✅ / ❌ | ...           |
 | .sln projects match \*.csproj files  | ✅ / ❌ | ...           |
 | .sln Copilot/docs folders in sync    | ✅ / ❌ | ...           |
-| copilot-instructions.md ≤ 4K chars   | ✅ / ❌ | ...           |
+| copilot-instructions.md ≤ 8K chars   | ✅ / ❌ | ...           |
 | applyTo: frontmatter present         | ✅ / ❌ | ...           |
 | Cross-references valid               | ✅ / ❌ | ...           |
 | Changelog counts accurate            | ✅ / ❌ | ...           |
@@ -303,7 +303,7 @@ Steps:
 
 - **Never edit docs content** — `docs/` files are read-only inputs; only use them for metadata.
 - **Never edit application code** — `.cs`, `.csproj`, `.cshtml`, `.js` files are off limits.
-- **4K char limit** — `copilot-instructions.md` must stay ≤ 4,000 characters. If adding content would exceed this, shorten existing descriptions first.
+- **8K char soft budget** — `copilot-instructions.md` should stay ≤ 8,000 characters. Original 4K target (set in Session 17 when the file was ~3K) is no longer realistic: 14 sections, 4 domain constants (§8–§10), and required cross-link pointers exceed it. When at the budget, move duplicated content (anything already covered by an `applyTo: **` instruction file) out, leaving a short pointer — do NOT delete unique policy to fit a number. Session 26 trim: 11,975 → 7,409 chars by extracting batched-tasks to its own instructions file and collapsing the MCP routing summary that duplicated `mcp-routing.instructions.md`.
 - **Ask before bulk changes** — If an audit finds > 3 issues, list them all and ask the user which to fix before proceeding.
 - **Always perform a close-out check** — when meaningful docs or `.github` changes are known by the end of the task, run Workflow 11 mentally or explicitly before concluding.
 - **Report clearly** — After every workflow, output a summary of files changed and a diff-like description of what was added/removed/modified.

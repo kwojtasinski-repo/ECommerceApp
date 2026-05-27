@@ -3,7 +3,7 @@
 > **Usage (three ways)**:
 > - **Slash command**: `/batched-tasks` then paste a list.
 > - **File reference**: `#file:.github/prompts/batched-tasks.prompt.md` then paste a list.
-> - **Auto-detect**: paste any list of 3+ actionable items \u2014 the trigger in [copilot-instructions.md \u00a714](../copilot-instructions.md#14-eval-batch-auto-detection) routes you here automatically.
+> - **Auto-detect**: paste any list of 3+ actionable items \u2014 the trigger in [batched-tasks.instructions.md](../instructions/batched-tasks.instructions.md) (`applyTo: **`) routes you here automatically.
 >
 > Examples that trigger auto-detect:
 > - `please do: 1. fix the validator 2. add a test 3. update the README`

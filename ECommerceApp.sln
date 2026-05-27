@@ -37,6 +37,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "instructions", "instructions", "{38F19132-871F-4C11-806B-B6FE77611219}"
 	ProjectSection(SolutionItems) = preProject
 		.github\instructions\agent-memory.instructions.md = .github\instructions\agent-memory.instructions.md
+		.github\instructions\batched-tasks.instructions.md = .github\instructions\batched-tasks.instructions.md
 		.github\instructions\bc-adr-map.instructions.md = .github\instructions\bc-adr-map.instructions.md
 		.github\instructions\copilot-config-sync.instructions.md = .github\instructions\copilot-config-sync.instructions.md
 		.github\instructions\doc-suggestions.instructions.md = .github\instructions\doc-suggestions.instructions.md
