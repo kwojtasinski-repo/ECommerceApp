@@ -110,6 +110,29 @@
 
 ## Change log
 
+### Session 27 — Phase 9 v1: AdGuard `domain-policy` CLI (2026-05-28)
+
+File-first CLI for managing AdGuard team filter lists (blacklist/whitelist) without touching `bootstrap.ps1`, the AdGuard API, or the web UI. Edits host-mounted `team-blacklist.txt` / `team-whitelist.txt` directly, reloads via `docker compose restart adguard` (~5 s downtime). Two-script parity (PowerShell + bash). Phase 9 v2 (personal-overrides target) explicitly dropped — rationale recorded in the roadmap.
+
+| #   | Change                                                                                                                                                                                                                                                                                                       | Files affected                                                                          |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
+| 1   | New CLI: `domain-policy.ps1` (~330 lines) + `domain-policy.sh` parity — subcommands `status`, `show`, `edit`, `import`, `add`, `reload`, `help`; targets `blacklist` (id=1001) and `whitelist` (id=1002); host-file edits + container restart only (no API token, no credentials)                            | `scripts/adguard/domain-policy.ps1` _(new)_, `scripts/adguard/domain-policy.sh` _(new)_ |
+| 2   | "Daily management with the `domain-policy` CLI" section added, including dedup-limitations table (exact text match, case-sensitive, comment-skipping)                                                                                                                                                        | `docker/adguard/README.md`                                                              |
+| 3   | Daily-life table updated to route filter-edit tasks through the new CLI instead of UI / bootstrap                                                                                                                                                                                                            | `docs/getting-started-context-mode.md`                                                  |
+| 4   | Roadmap: Phase 9 v1 ✅ Done block + new "Phase 9 v2 — NOT PLANNED" block (drops `personal-overrides` target; rationale: avoids bootstrap touch + yaml template + 3rd CLI target for a use case that has not appeared; existing `personal-overrides.local.example.txt` placeholder retained for future revisit) | `docs/roadmap/context-mode-integration.md`                                              |
+| 5   | Agent-decisions entry "2026-05-27 — Implementer / Phase 9 `domain-policy` CLI (file-first design)" (Promote=NO; first occurrence)                                                                                                                                                                            | `.github/context/agent-decisions.md`                                                    |
+| 6   | Local-only VS Code tasks "AdGuard: Show all filters" / "AdGuard: Reload filters" (`.vscode/tasks.json` is gitignored; noted for awareness)                                                                                                                                                                   | `.vscode/tasks.json` _(local, gitignored)_                                              |
+
+**Not changed (deliberate)**:
+
+- `docs-index.instructions.md` — CLI is operational tooling, not a knowledge-routing target. Reference docs are already RAG-indexed.
+- `ECommerceApp.sln` — no precedent for `docker/` or `scripts/` folders in the solution; adding only `scripts/adguard/` would be an inconsistent partial mirror.
+- No instruction, prompt, agent, skill, or ADR files added → current-state counts unchanged.
+
+**Pre-existing drift (still open, flagged in Session 24)**: ADR-0027 and ADR-0028 not in `.sln`. Separate backfill close-out recommended.
+
+---
+
 ### Session 26 — RAG ↔ context-mode L1 handoff (skill + parametric mount) (2026-05-27)
 
 Ships L1 (documentation-only) for caching RAG knowledge in context-mode's FTS5 store across recalls. Validated end-to-end via 4 tests (1 primary-agent POC, 2 subagent diagnostics, 1 fresh-window user-driven). Confirmed hard surface restriction on built-in subagents (LIMIT-1 — inline-chunks pattern is the only workaround). Multilingual recall caveat documented after Test 4 exposed FTS5 Porter-stemmer gap. Workspace mount path de-hardcoded (parametric `${CONTEXT_MODE_WORKSPACE:-/workspace}`).
