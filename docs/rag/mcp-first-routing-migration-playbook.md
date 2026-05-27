@@ -671,6 +671,55 @@ Wait for hooks (L3) when:
 
 L1 and L3 are not mutually exclusive — L1 ships the read side now; L3's `PostToolUse` hook will write the same blob automatically once the hook file lands per Phase 3 of the context-mode roadmap.
 
+### 13.10 L2 handoff: `query_docs_cached` (single-call wrapper)
+
+L1's manual 3-step shape works but bills four MCP round-trips to cache one knowledge fragment. **L2** collapses the RAG side into a single call: `query_docs_cached(question, bc?, top_files?)` returns formatted markdown + a deterministic `source` label, and the agent makes ONE pass-through `ctx_index(content=markdown, source=source)` call.
+
+```
+query_docs_cached(question="...", bc="...")  --  one MCP call
+  → returns { source: "rag-cache-adr0029-4c866a79", markdown: "...", ... }
+  → ctx_index(content=<markdown>, source=<source>)  --  one pass-through
+  → ctx_search(queries=[...], source="rag-cache-")  --  sub-second recalls
+```
+
+Two implementations ship today, both with identical output schema and source-label format:
+
+- **Python RAG server** (`ecommerceapp-rag-python`) — `top_k = max(30, top_files * 15)` (e.g. 45 chunks pulled at `top_files = 3`).
+- **.NET RAG server** (`ecommerceapp-rag-dotnet`, Phase 7.3) — `top_k` clamped to `RagQueryService.MaxTopK = 20`. Same label format, same markdown shape; slightly lower chunk density per file. Documented compromise — bumping the cap is a public API change that would affect existing `query_docs` callers.
+
+**Source-label derivation (both servers)**:
+
+| Question matches | Source label format |
+|---|---|
+| ADR id detected via `\d{3,4}` (e.g. `ADR-0029`, `adr 016`, `0028`) | `rag-cache-adr<NNNN>-<hash8>` |
+| No ADR id, `bc=` filter set | `rag-cache-<slug(bc)>-<hash8>` |
+| Neither | `rag-cache-q-<hash8>` |
+
+`<hash8>` = first 8 hex chars of `sha256(question.strip().lower())`. Same `(question, bc)` → same label → idempotent overwrite. L1 and L2 cache shape are identical, so a `ctx_search(source="rag-cache-")` prefix lookup finds both.
+
+#### L2 observation hook (Phase 7.4)
+
+The .NET `top_k` cap is an unmeasured compromise. If you start using L2 heavily, instrument one of three probes before raising the cap — coverage diff between Python and .NET responses, `ctx_search` recall hit-rate on cached content, or markdown size telemetry. Decision rules and thresholds are in [docs/roadmap/context-mode-integration.md §Phase 7.4](../roadmap/context-mode-integration.md). Raising `RagQueryService.MaxTopK` is a public-API change to `query_docs` callers — bring evidence, not intuition.
+
+#### When L2 is preferred over L1
+
+Always, unless:
+
+- The MCP server you are talking to does not expose `query_docs_cached` (shipped 2026-05-27 on both Python and .NET; older containers won't have it).
+- The wrapper times out (the configured `TOOL_TIMEOUT` covers a 45-chunk search + postprocessor pipeline; falling back to L1's smaller `query_docs(top_k=10)` can shave latency in extreme cases).
+
+L1 stays as the documented fallback so that the handoff still works during outages or against unmodified RAG servers.
+
+#### Porting to a new project
+
+The wrapper has zero project-specific configuration. To stand it up in a fork:
+
+1. Copy `tools/rag/rag_tools.py` (Python) or `tools/rag-dotnet/src/RagTools.Mcp/Tools/QueryDocsCachedFormatter.cs` + the `QueryDocsCached` method on `RagTools.cs` (.NET).
+2. Make sure the underlying RAG store exposes `start_line`, `end_line`, `breadcrumb`, `rel_path`, and a score field on each hit (on .NET, `EndLine` was added to `SearchHit` / `DocumentSearchResult` / `QueryHit` in Phase 7.3 — `end_line` was already in the Qdrant payload).
+3. Register the tool in the MCP server's tool list / `_TOOL_DISPATCH`.
+4. Copy the pinning tests (Python `tools/rag/tests/test_query_docs_cached.py`; .NET `tools/rag-dotnet/src/RagTools.Tests/Tools/QueryDocsCachedFormatterTests.cs`). They double as wire-shape documentation.
+5. Reuse the `rag-with-memory` SKILL and `mcp-routing.instructions.md` sections verbatim — both are project-agnostic.
+
 ---
 
 ## Cross-references

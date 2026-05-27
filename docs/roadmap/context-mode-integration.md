@@ -267,6 +267,22 @@ Phase 7 (RAG ↔ context-mode wrapper tool, L2) ← optional; depends on Phase 4
 - Standard `query_docs` / `read_docs` / `get_history` unchanged — full 293-test Python suite + 492-test .NET suite green.
 - `.NET` parity shipped — `top_k` is capped at `RagQueryService.MaxTopK` (20) so chunk-density per file is slightly lower than Python's `max(30, top_files*15)`; label format and markdown shape are identical.
 
+### Phase 7.4 (observation, opportunistic) — measure the `top_k` gap and decide whether to raise `MaxTopK`
+
+> **Status: not started, evaluate-on-demand.** Open question: is the `.NET` `top_k=20` cap actually hurting cache quality vs Python's `top_k=45`? Currently unknown — no telemetry, no A/B comparison. Hold the decision until we have data.
+
+Three cheap probes to gather signal without instrumenting either server:
+
+| Probe | What to measure | Decision threshold to raise `MaxTopK` |
+|---|---|---|
+| **A. Coverage diff** | Run the same 10 representative questions on both servers. Compare the `files_count` and unique `rel_path` set returned in the `markdown`. | If `.NET` returns ≥ 25% fewer unique files OR misses a file that Python ranks in the top 3, that is real coverage loss → raise to ~45. |
+| **B. Recall hit-rate on cached content** | After each `query_docs_cached` call, run 2-3 plausible follow-up questions through `ctx_search(source="rag-cache-...")`. Log: did the relevant span surface in the top 3 `ctx_search` results? | If recall on `.NET` caches is consistently worse than on Python caches (n ≥ 20 pairs), top_k is the likely cause → raise. |
+| **C. Markdown size telemetry** | Log `len(markdown)` and `chunks_count` per `query_docs_cached` call (`logger.LogInformation` at the end of the tool method on `.NET`; equivalent in Python). After ~50 calls, compute median + p95 on both servers. | If `.NET` is consistently > 30% smaller on median, the cap is biting and we are paying recall cost → raise. If sizes are close, the postprocessor is already deduplicating effectively → leave it at 20. |
+
+**If raised, what to change**: bump `RagQueryService.MaxTopK` (e.g. 20 → 75). It is a public ceiling on what `query_docs` callers may request; default values for `top_k` parameters do not change, so existing callers are unaffected. No wire-shape change, no migrations.
+
+**Why not just raise it now**: every chunk we pull through the postprocessor pipeline costs time and embedding-comparison work. If 20 is enough in practice, paying for 45 is waste. The compromise is logged here so the answer is "we measured" not "we guessed".
+
 ---
 
 ### Phase 8 (future, opportunistic) — additional sandbox runtimes

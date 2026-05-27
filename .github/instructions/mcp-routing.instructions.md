@@ -163,8 +163,10 @@ Producing an answer that mixes training-data inference with partial RAG hits (e.
 >
 > **When NOT to use it**: a one-shot question (answered once, never reread) — direct RAG is cheaper. The handoff costs one extra `ctx_index` call up front; it only pays back after the **second** recall.
 >
-> **L2 status (preferred)**: single-call wrapper `query_docs_cached` (Python RAG server). Returns formatted markdown + a deterministic `source` label; the agent makes ONE follow-up `ctx_index` call. See the [L2 fast path](#l2-fast-path-query_docs_cached--preferred) below.
-> **L1 status (fallback)**: manual 3-step handoff. Use only on the .NET RAG server (which does not yet expose `query_docs_cached`) or when the wrapper times out. The cache shape is identical so L2 caches and L1 caches interoperate.
+> **L2 status (preferred)**: single-call wrapper `query_docs_cached` (both Python and .NET RAG servers). Returns formatted markdown + a deterministic `source` label; the agent makes ONE follow-up `ctx_index` call. See the [L2 fast path](#l2-fast-path-query_docs_cached--preferred) below.
+> **L1 status (fallback)**: manual 3-step handoff. Use only when the wrapper times out or errors. The cache shape is identical so L2 caches and L1 caches interoperate.
+>
+> **Open observation (Phase 7.4)**: the .NET wrapper clamps `top_k` to `RagQueryService.MaxTopK = 20`, vs Python's `max(30, top_files*15) = 45` at `top_files = 3`. If you notice the .NET wrapper consistently missing files that Python ranks in the top 3, or `ctx_search` recalls on .NET caches scoring lower than on Python caches, flag it — the threshold and decision rules are in [docs/roadmap/context-mode-integration.md §Phase 7.4](../../docs/roadmap/context-mode-integration.md). Do NOT raise `MaxTopK` silently; bring evidence to the discussion.
 
 ### L2 fast path: `query_docs_cached` — preferred
 

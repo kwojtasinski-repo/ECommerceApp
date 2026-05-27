@@ -286,7 +286,7 @@ Routing rules + skill mitigate this. See:
 
 - Canonical rules with the three-surface disambiguation table: [`.github/instructions/mcp-routing.instructions.md` — RAG ↔ context-mode handoff section](../../.github/instructions/mcp-routing.instructions.md)
 - Step-by-step skill with naming convention + markdown template + anti-patterns: [`.github/skills/rag-with-memory/SKILL.md`](../../.github/skills/rag-with-memory/SKILL.md)
-- L2 future amendment — single wrapper tool `query_docs_cached` that collapses the 3 steps: [`docs/roadmap/context-mode-integration.md` Phase 7](../roadmap/context-mode-integration.md)
+- L2 shipped 2026-05-27 — single wrapper tool `query_docs_cached` collapses the 3 manual steps into 1 RAG call + 1 pass-through `ctx_index`. Both Python and .NET RAG servers expose it (Phase 7 + 7.3). Open observation on `.NET` `top_k` cap: [`docs/roadmap/context-mode-integration.md` Phase 7.4](../roadmap/context-mode-integration.md). Porting checklist: [`docs/rag/mcp-first-routing-migration-playbook.md` §13.10](../rag/mcp-first-routing-migration-playbook.md).
 
 ---
 
