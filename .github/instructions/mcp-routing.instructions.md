@@ -197,7 +197,7 @@ One RAG call + one context-mode call. The wrapper formats the markdown for you a
 
 `<hash8>` = first 8 hex chars of `sha256(question.lower().strip())`. Same `(question, bc)` → same label → idempotent overwrite. Lowercase, kebab-case, ASCII only. Always prefixed `rag-cache-`.
 
-**Availability:** Python RAG server only (`ecommerceapp-rag-python`). The .NET server (`ecommerceapp-rag-dotnet`) keeps the L1 manual path until Core data model adds breadcrumb/end_line to `ReadDocsChunk`.
+**Availability:** Both RAG servers. Python (`ecommerceapp-rag-python`) was first (Phase 7, 2026-05-27). .NET (`ecommerceapp-rag-dotnet`) reached parity in Phase 7.3 — Core `DocumentSearchResult`/`SearchHit`/`QueryHit` gained `EndLine`; same source-label rules and markdown shape. `top_k` on .NET is capped at `RagQueryService.MaxTopK` (20) so chunk-density per file is slightly lower than Python's `max(30, top_files*15)` — output schema and label format are identical.
 
 ### Three similar "memory" surfaces — DO NOT MIX
 

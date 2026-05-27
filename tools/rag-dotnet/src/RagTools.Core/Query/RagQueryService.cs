@@ -129,6 +129,7 @@ public sealed class RagQueryService(
                 RelPath: h.RelPath,
                 Breadcrumb: h.Breadcrumb,
                 StartLine: h.StartLine,
+                EndLine: h.EndLine,
                 Text: h.Text)).ToList(),
             TotalCandidates: totalCandidates);
 }

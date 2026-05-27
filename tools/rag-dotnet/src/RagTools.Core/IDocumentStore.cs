@@ -37,6 +37,7 @@ public sealed record DocumentSearchResult(
     string? AdrId,
     string Breadcrumb,
     int StartLine,
+    int EndLine,
     string Text);
 
 /// <summary>

@@ -12,8 +12,8 @@ argument-hint: "[ADR-NNNN | BC name | topic]"
 
 > Canonical rules: [`.github/instructions/mcp-routing.instructions.md` — RAG ↔ context-mode handoff section](../../instructions/mcp-routing.instructions.md). This skill is a step-by-step walkthrough.
 >
-> **L2 (preferred, Python RAG)**: `query_docs_cached` — single call returns formatted markdown + deterministic source label. Cache step is a pass-through `ctx_index`.
-> **L1 (manual fallback)**: 3-step handoff. Use only on the .NET RAG server or when L2 times out.
+> **L2 (preferred, both RAG servers)**: `query_docs_cached` — single call returns formatted markdown + deterministic source label. Cache step is a pass-through `ctx_index`.
+> **L1 (manual fallback)**: 3-step handoff. Use only when L2 times out or returns an error.
 
 ## Goal
 
@@ -62,7 +62,7 @@ Then use the returned value as the prefix for every absolute path. Pure `ctx_ind
 
 ## Preferred flow (L2) — `query_docs_cached`
 
-Use this on the Python RAG server (`ecommerceapp-rag-python`). It collapses steps 1+2 of the manual flow into a single call + a pass-through.
+Use this on either RAG server (`ecommerceapp-rag-python` or `ecommerceapp-rag-dotnet`). It collapses steps 1+2 of the manual flow into a single call + a pass-through.
 
 ```
   ┌──────────────────────────────────────────────────────────────┐
@@ -95,11 +95,11 @@ The wrapper:
 - Renders the template below for you — same shape as L1 so L1 and L2 caches interoperate.
 - Derives `source` deterministically: `rag-cache-adr<NNNN>-<hash8>` if the question mentions an ADR id, `rag-cache-<slug(bc)>-<hash8>` if `bc=` is set, else `rag-cache-q-<hash8>`. Same `(question, bc)` → same `source` → idempotent overwrite.
 
-If `query_docs_cached` is not available (e.g. the .NET server is the active one, or it returns an error), fall through to the manual L1 flow below.
+If `query_docs_cached` is not available (e.g. it returns an error or the active server pre-dates Phase 7), fall through to the manual L1 flow below.
 
 ---
 
-## Manual flow (L1) — fallback / .NET server
+## Manual flow (L1) — fallback
 
 ```
   ┌──────────────────────────────────────────────────────────────┐

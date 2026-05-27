@@ -33,4 +33,5 @@ public sealed record QueryHit(
     string RelPath,
     string Breadcrumb,
     int StartLine,
+    int EndLine,
     string Text);

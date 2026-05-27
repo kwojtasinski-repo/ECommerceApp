@@ -55,6 +55,40 @@ public sealed class RagTools(
     }
 
     [McpServerTool, Description(
+        "L2 fast path: run a RAG query and return a formatted markdown payload plus a deterministic " +
+        "source label, ready for context-mode caching via ctx_index(content=<markdown>, source=<source>). " +
+        "The caller (Copilot) performs the ctx_index call. Subsequent recalls use " +
+        "ctx_search(source=\"rag-cache-...\") and avoid re-billing RAG. " +
+        "Source labels: rag-cache-adr<NNNN>-<hash8> when the question mentions an ADR id, " +
+        "rag-cache-<slug(bc)>-<hash8> when bc is set, otherwise rag-cache-q-<hash8>.")]
+    public Task<string> QueryDocsCached(
+        [Description("The search question or topic.")] string question,
+        [Description("Optional bounded-context / topic substring filter (matched against breadcrumb and doc title).")] string? bc = null,
+        [Description("Maximum unique files to summarise (default: 3, max: 5).")] int top_files = 3,
+        CancellationToken cancellationToken = default)
+    {
+        top_files = Math.Clamp(top_files, 1, RagReadDocsService.MaxTopFiles);
+        question = CapQuestion(question);
+        // Public IRagQueryService caps top_k at MaxTopK (20). Python uses max(30, top_files*15) — we
+        // clamp to the public service's ceiling. With top_files=3 this yields top_k=20, enough to
+        // group 3 files with several chunks each.
+        var topK = Math.Clamp(top_files * 15, 1, RagQueryService.MaxTopK);
+        var capturedTopFiles = top_files;
+        var capturedBc = bc;
+        var capturedQuestion = question;
+        logger.LogDebug(
+            "QueryDocsCached: collection={Collection} bc={Bc} topFiles={TopFiles} topK={TopK}",
+            session.Collection, bc, top_files, topK);
+        return McpToolGuard.RunAsync(logger, nameof(QueryDocsCached), async ct =>
+        {
+            var request = new QueryRequest(session.Collection, capturedQuestion, capturedBc, topK);
+            var outcome = await queryService.QueryAsync(request, ct);
+            return McpJson.Serialize(
+                RagToolsProjector.ProjectQueryCached(outcome, capturedQuestion, capturedBc, capturedTopFiles, DateTime.UtcNow));
+        }, cancellationToken);
+    }
+
+    [McpServerTool, Description(
         "Return relevant content for the top-ranked unique files matching the query. " +
         "Default mode groups the best chunks per file (no disk read). " +
         "When the question contains explicit full-content intent " +

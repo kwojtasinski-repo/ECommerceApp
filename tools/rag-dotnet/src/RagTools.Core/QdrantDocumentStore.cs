@@ -165,6 +165,7 @@ public sealed class QdrantDocumentStore : IDocumentStore
             AdrId: h.AdrId,
             Breadcrumb: h.Breadcrumb,
             StartLine: h.StartLine,
+            EndLine: h.EndLine,
             Text: h.Text)).ToList();
     }
 

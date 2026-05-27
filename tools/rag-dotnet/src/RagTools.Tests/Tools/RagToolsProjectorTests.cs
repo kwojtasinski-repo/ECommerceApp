@@ -28,7 +28,7 @@ public class RagToolsProjectorTests
     {
         var outcome = new QueryOutcome.Success(new QueryResponse("c", "q", new[]
         {
-            new QueryHit(1, 0.91, "adr_main", "docs/adr/0001.md", "ADR > 0001", 10, "body"),
+            new QueryHit(1, 0.91, "adr_main", "docs/adr/0001.md", "ADR > 0001", 10, 15, "body"),
         }, TotalCandidates: 1));
         var root = SerializeAndParse(RagToolsProjector.ProjectQuery(outcome));
 
@@ -39,6 +39,7 @@ public class RagToolsProjectorTests
         Assert.Equal("docs/adr/0001.md", hit.GetProperty("rel_path").GetString());
         Assert.Equal("ADR > 0001", hit.GetProperty("breadcrumb").GetString());
         Assert.Equal(10, hit.GetProperty("start_line").GetInt32());
+        Assert.Equal(15, hit.GetProperty("end_line").GetInt32());
         Assert.Equal("body", hit.GetProperty("text").GetString());
     }
 

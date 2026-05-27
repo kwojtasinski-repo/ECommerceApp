@@ -12,8 +12,8 @@ public sealed class QueryOutcomeTests
             Question: "what is hexagonal?",
             Hits: new[]
             {
-                new QueryHit(1, 0.92, "doc", "docs/concepts/hex.md", "concepts > hex", 1, "Hexagonal architecture..."),
-                new QueryHit(2, 0.81, "doc", "docs/concepts/ports.md", "concepts > ports", 1, "Ports and adapters..."),
+                new QueryHit(1, 0.92, "doc", "docs/concepts/hex.md", "concepts > hex", 1, 1, "Hexagonal architecture..."),
+                new QueryHit(2, 0.81, "doc", "docs/concepts/ports.md", "concepts > ports", 1, 1, "Ports and adapters..."),
             },
             TotalCandidates: 12);
 
@@ -68,7 +68,7 @@ public sealed class QueryOutcomeTests
     [Fact]
     public void QueryHit_PreservesRankAndScore()
     {
-        var hit = new QueryHit(3, 0.755, "adr", "docs/adr/0001.md", "adr > 0001", 1, "decision...");
+        var hit = new QueryHit(3, 0.755, "adr", "docs/adr/0001.md", "adr > 0001", 1, 1, "decision...");
 
         Assert.Equal(3, hit.Rank);
         Assert.Equal(0.755, hit.Score);

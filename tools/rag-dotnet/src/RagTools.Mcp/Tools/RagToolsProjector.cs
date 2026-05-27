@@ -36,6 +36,7 @@ internal static class RagToolsProjector
                 rel_path   = h.RelPath,
                 breadcrumb = h.Breadcrumb,
                 start_line = h.StartLine,
+                end_line   = h.EndLine,
                 text       = h.Text,
             }).ToArray(),
         },
@@ -141,6 +142,29 @@ internal static class RagToolsProjector
         AdrListOutcome.Failure f => Failure(f.Message, f.Error.ToString(), f.Details),
 
         _ => throw new InvalidOperationException($"Unhandled AdrListOutcome: {outcome.GetType().Name}"),
+    };
+
+    // ── query_docs_cached ────────────────────────────────────────────────────
+
+    public static object ProjectQueryCached(QueryOutcome outcome, string question, string? bc, int topFiles, DateTime utcNow) => outcome switch
+    {
+        QueryOutcome.Success s when s.Response.Hits.Count == 0 =>
+            new
+            {
+                files_count = 0,
+                chunks_count = 0,
+                query = question,
+                bc,
+                markdown = string.Empty,
+                message = "No results found. Consider re-running the ingest script or broadening your query.",
+            },
+
+        QueryOutcome.Success s =>
+            (object)QueryDocsCachedFormatter.Build(question, bc, topFiles, s.Response.Hits, utcNow).ToProjection(),
+
+        QueryOutcome.Failure f => Failure(f.Message, f.Error.ToString(), f.Details),
+
+        _ => throw new InvalidOperationException($"Unhandled QueryOutcome: {outcome.GetType().Name}"),
     };
 
     // ── shared failure envelope ──────────────────────────────────────────────

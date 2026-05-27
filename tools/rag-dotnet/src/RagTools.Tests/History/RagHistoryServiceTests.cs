@@ -53,7 +53,7 @@ public class RagHistoryServiceTests
     }
 
     private static DocumentSearchResult Hit(string relPath, int startLine, string breadcrumb = "", string docKind = "doc", string text = "txt") =>
-        new(0.5f, relPath, "", docKind, AdrId: null, breadcrumb, StartLine: startLine, Text: text);
+        new(0.5f, relPath, "", docKind, AdrId: null, breadcrumb, StartLine: startLine, EndLine: startLine, Text: text);
 
     private static RagHistoryService Build(out FakeEmbedder embedder, out FakeStore store)
     {

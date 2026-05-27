@@ -110,6 +110,60 @@
 
 ## Change log
 
+### Session 28 — Phase 7 L2: `query_docs_cached` wrapper (2026-05-27)
+
+Collapses the manual RAG → context-mode handoff (3 steps) into 1 + 1: a single `query_docs_cached` call returns formatted markdown + a deterministic source label; the agent makes one pass-through `ctx_index` call. Architecture choice **option C** (return-and-let-caller-cache) — no cross-MCP coupling, no shared-volume staging, no direct SQLite writes. Python RAG server only; `.NET` parity deferred (requires Core data-model change). Cache shape identical to L1 → both interoperate.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | New MCP tool `query_docs_cached` — handler `_tool_query_docs_cached` + helpers `_derive_source_label`, `_format_chunks_to_markdown`. Source label: ADR id detected → `rag-cache-adr<NNNN>-<hash8>`; `bc=` set → `rag-cache-<slug(bc)>-<hash8>`; fallback → `rag-cache-q-<hash8>`. `<hash8>` = first 8 chars sha256(question.lower().strip()), so re-running with same `(question, bc)` overwrites idempotently. | `tools/rag/rag_tools.py`, `tools/rag/mcp_server.py` |
+| 2 | 9 unit tests covering label routing (ADR/BC/fallback), determinism, ASCII/kebab/case rules, markdown shape (header, source line, path-with-line-range, breadcrumb, multi-file). Full suite **293 passed**, no regression. | `tools/rag/tests/test_query_docs_cached.py` _(new)_ |
+| 3 | Routing rules — new "L2 fast path" section as canonical handoff; old manual 3-step path demoted to "fallback / .NET server only". Source-label rules table updated to match wrapper's derivation. | `.github/instructions/mcp-routing.instructions.md` |
+| 4 | Skill `rag-with-memory` reframed: L2 flow first (preferred), L1 manual flow demoted to fallback. Headline + intro rewritten; new "Preferred flow (L2)" diagram block. | `.github/skills/rag-with-memory/SKILL.md` |
+| 5 | Roadmap Phase 7 moved from "future" to ✅ Done (option C, Python-only). Steps 7.1, 7.2, 7.4, 7.5, 7.6, 7.7, 7.8 done with file links; step 7.3 (.NET parity) marked Deferred with rationale (needs `ReadDocsChunk.Breadcrumb` + `EndLine`). | `docs/roadmap/context-mode-integration.md` |
+| 6 | Agent-decisions entry "2026-05-27 — Implementer / Phase 7 L2 `query_docs_cached` (option C, Python-only)" with full design rationale, label-derivation spec, and scope. Promote=NO (one-off implementation choice). | `.github/context/agent-decisions.md` |
+
+**Not changed (deliberate)**:
+
+- `docs-index.instructions.md` — `query_docs_cached` is one more tool inside the existing RAG MCP routing target; no new routing target.
+- `ECommerceApp.sln` — Python wrapper, no project membership.
+- No new instruction, prompt, agent, or ADR files; current-state counts unchanged.
+
+**Pre-existing drift (still open)**: ~~`.NET` RAG server lacks `query_docs_cached`~~ — closed in Session 28.1.
+
+**Refs**: commit `d2f054dc`, `docs/roadmap/context-mode-integration.md` Phase 7.
+
+---
+
+### Session 28.1 — Phase 7.3: `.NET` parity for `query_docs_cached` (2026-05-27)
+
+Closes the `.NET` gap left in Session 28. `RagTools.Mcp` now exposes `QueryDocsCached` with byte-identical source labels and markdown shape to the Python wrapper. Threaded `EndLine` through the three Core records (already in Qdrant payload as `end_line` — just wasn't read). Pure-formatter + projector pattern, no new application service.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Core records gain `EndLine`: `SearchHit`, `DocumentSearchResult`, `QueryHit`. Read from Qdrant `end_line` payload in `QdrantStore.SearchAsync`; threaded through `QdrantDocumentStore.SearchAsync` and `RagQueryService.BuildResponse`. Projector emits `end_line` in `ProjectQuery` JSON. | `tools/rag-dotnet/src/RagTools.Core/QdrantStore.cs`, `IDocumentStore.cs`, `QdrantDocumentStore.cs`, `Query/QueryOutcome.cs`, `Query/RagQueryService.cs`, `RagTools.Mcp/Tools/RagToolsProjector.cs` |
+| 2 | New static `QueryDocsCachedFormatter` — pure port of Python `_derive_source_label` + `_format_chunks_to_markdown` + group-by-file + top-5-per-file logic. Returns `CachedPayload` with snake_case `ToProjection()` helper. | `tools/rag-dotnet/src/RagTools.Mcp/Tools/QueryDocsCachedFormatter.cs` _(new)_ |
+| 3 | New `[McpServerTool] QueryDocsCached` on `RagTools.cs` — params `(question, bc?, top_files?)`. Reuses `IRagQueryService.QueryAsync`. `top_k` clamped to `RagQueryService.MaxTopK` (20) instead of Python's `max(30, top_files*15)` — documented compromise; same label format and markdown shape. | `tools/rag-dotnet/src/RagTools.Mcp/Tools/RagTools.cs` |
+| 4 | New `ProjectQueryCached` in projector. | `tools/rag-dotnet/src/RagTools.Mcp/Tools/RagToolsProjector.cs` |
+| 5 | 14 pinning tests for `QueryDocsCachedFormatter` (label routing, determinism, kebab/ASCII, markdown shape, group-by-file ranking, 5-chunk cap, snake_case projection). Full `.NET` suite: **492 passed** (was 478), build clean, no regressions. Existing `Hit()` test factories updated for the new positional `EndLine` field. | `tools/rag-dotnet/src/RagTools.Tests/Tools/QueryDocsCachedFormatterTests.cs` _(new)_, `RagToolsProjectorTests.cs`, `Query/QueryOutcomeTests.cs`, `Query/QueryOutcomeExtensionsTests.cs`, `Query/RagQueryServiceTests.cs`, `History/RagHistoryServiceTests.cs`, `ReadDocs/RagReadDocsServiceTests.cs` |
+| 6 | Routing rules — Availability note updated: both servers now expose L2; `.NET` limitation is the `top_k` cap, not absence of the tool. | `.github/instructions/mcp-routing.instructions.md` |
+| 7 | Skill `rag-with-memory` — drop "L1 only on `.NET`" language. L1 is the timeout/error fallback for both servers. | `.github/skills/rag-with-memory/SKILL.md` |
+| 8 | Roadmap Phase 7.3 flipped from Deferred to ✅ Done with file links. | `docs/roadmap/context-mode-integration.md` |
+| 9 | Agent-decisions entry "2026-05-27 — Implementer / Phase 7.3 .NET parity for `query_docs_cached`" with rationale for `EndLine` threading vs Core data-model larger change. Promote=NO. | `.github/context/agent-decisions.md` |
+
+**Not changed (deliberate)**:
+
+- No new application service / request / outcome — wrapper is pure formatting on top of `IRagQueryService.QueryAsync`. Adding `IRagQueryDocsCachedService` would duplicate request validation for no behavioural difference.
+- `RagQueryService.MaxTopK` unchanged at 20 — bumping it would affect existing `query_docs` callers.
+- `docs-index.instructions.md` — `QueryDocsCached` is one more tool inside the existing RAG MCP routing target.
+- `ECommerceApp.sln` — `.NET` RAG server is in its own `tools/rag-dotnet/RagTools.sln`.
+
+**Pre-existing drift**: none introduced.
+
+**Refs**: `docs/roadmap/context-mode-integration.md` Phase 7.3, `tools/rag-dotnet/src/RagTools.Mcp/Tools/QueryDocsCachedFormatter.cs`.
+
+---
+
 ### Session 27 — Phase 9 v1: AdGuard `domain-policy` CLI (2026-05-28)
 
 File-first CLI for managing AdGuard team filter lists (blacklist/whitelist) without touching `bootstrap.ps1`, the AdGuard API, or the web UI. Edits host-mounted `team-blacklist.txt` / `team-whitelist.txt` directly, reloads via `docker compose restart adguard` (~5 s downtime). Two-script parity (PowerShell + bash). Phase 9 v2 (personal-overrides target) explicitly dropped — rationale recorded in the roadmap.

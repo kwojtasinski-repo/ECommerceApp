@@ -241,9 +241,9 @@ Phase 7 (RAG ↔ context-mode wrapper tool, L2) ← optional; depends on Phase 4
 
 ---
 
-### Phase 7 ✅ Done (option C, Python-only) — L2 wrapper tool: `query_docs_cached`
+### Phase 7 ✅ Done (option C) — L2 wrapper tool: `query_docs_cached`
 
-> **Status: shipped 2026-05-27** — Python RAG server only. `.NET` parity deferred (requires extending Core `ReadDocsChunk` with `Breadcrumb` + `EndLine`; L1 manual path still works on `.NET`).
+> **Status: shipped 2026-05-27** — Python + .NET RAG servers. Both expose the L2 wrapper with byte-identical source labels and markdown shape.
 > **Design choice**: option C from the architecture discussion — wrapper returns formatted markdown + deterministic `source` label; the agent makes the follow-up `ctx_index` call. No cross-MCP coupling, no file staging, no direct SQLite writes. Minimum complexity for ~2× speedup of the most common handoff.
 
 **What L2 collapses**: the manual 3-step parent-agent flow (`query_docs` → format markdown → `ctx_index`) becomes 1 + 1: one `query_docs_cached` call (returns `{source, markdown, files_count, chunks_count, next_step}`) plus one pass-through `ctx_index(content=markdown, source=source)`. **LIMIT-1 unchanged** — subagent recalls still use inline chunks.
@@ -252,7 +252,7 @@ Phase 7 (RAG ↔ context-mode wrapper tool, L2) ← optional; depends on Phase 4
 |---|---|---|---|
 | 7.1 | Wrapper interface design — params `{question, bc?, top_files?}`; deterministic source derivation rules (ADR id → `rag-cache-adr<NNNN>-<hash8>`; `bc=` set → `rag-cache-<slug(bc)>-<hash8>`; fallback `rag-cache-q-<hash8>`); dedup by overwrite (idempotent). Glossary injection from LIMIT-3 NOT included — kept as future amendment. | inline in `tools/rag/rag_tools.py` docstring | ✅ Done |
 | 7.2 | Python implementation — `_tool_query_docs_cached` in [`tools/rag/rag_tools.py`](../../tools/rag/rag_tools.py); registered in [`tools/rag/mcp_server.py`](../../tools/rag/mcp_server.py) `_TOOL_DISPATCH` + `list_tools()` | `tools/rag/mcp_server.py`, `tools/rag/rag_tools.py` | ✅ Done |
-| 7.3 | .NET implementation parity in `RagTools.Mcp` | `tools/rag-dotnet/...` | 🔲 Deferred — needs `ReadDocsChunk.Breadcrumb` + `EndLine` |
+| 7.3 | .NET implementation parity in `RagTools.Mcp` — `QueryDocsCached` tool, `QueryDocsCachedFormatter`, `ProjectQueryCached`; Core records gain `EndLine` (`SearchHit`, `DocumentSearchResult`, `QueryHit`) | [`tools/rag-dotnet/src/RagTools.Mcp/Tools/RagTools.cs`](../../tools/rag-dotnet/src/RagTools.Mcp/Tools/RagTools.cs), [`QueryDocsCachedFormatter.cs`](../../tools/rag-dotnet/src/RagTools.Mcp/Tools/QueryDocsCachedFormatter.cs) | ✅ Done (14 new tests, 492 total) |
 | 7.4 | Tool descriptor + JSON schema in `list_tools()` | `tools/rag/mcp_server.py` | ✅ Done |
 | 7.5 | Unit tests for `_derive_source_label` + `_format_chunks_to_markdown` | [`tools/rag/tests/test_query_docs_cached.py`](../../tools/rag/tests/test_query_docs_cached.py) | ✅ Done (9 passed) |
 | 7.6 | Update [`mcp-routing.instructions.md`](../../.github/instructions/mcp-routing.instructions.md) — L2 as canonical path, L1 as `.NET`-server / timeout fallback | instructions file | ✅ Done |
@@ -264,8 +264,8 @@ Phase 7 (RAG ↔ context-mode wrapper tool, L2) ← optional; depends on Phase 4
 - Single `query_docs_cached(question="...")` call returns ready-to-cache markdown + source label.
 - Source labels are deterministic across recalls — verified by `test_source_label_is_deterministic`.
 - L1 and L2 cache shape are identical → recalls via `ctx_search(source="rag-cache-")` find both.
-- Standard `query_docs` / `read_docs` / `get_history` unchanged — full 293-test suite green.
-- `.NET` parity deferred to Phase 7.3 ticket (not blocking — agent uses Python server by default).
+- Standard `query_docs` / `read_docs` / `get_history` unchanged — full 293-test Python suite + 492-test .NET suite green.
+- `.NET` parity shipped — `top_k` is capped at `RagQueryService.MaxTopK` (20) so chunk-density per file is slightly lower than Python's `max(30, top_files*15)`; label format and markdown shape are identical.
 
 ---
 

@@ -53,7 +53,7 @@ public class RagQueryServiceTests
 
     private static DocumentSearchResult Hit(
         float score, string relPath, string breadcrumb = "", string docTitle = "", string docKind = "doc") =>
-        new(score, relPath, docTitle, docKind, AdrId: null, breadcrumb, StartLine: 1, Text: "txt");
+        new(score, relPath, docTitle, docKind, AdrId: null, breadcrumb, StartLine: 1, EndLine: 1, Text: "txt");
 
     private static RagQueryService Build(
         out FakeEmbedder embedder,

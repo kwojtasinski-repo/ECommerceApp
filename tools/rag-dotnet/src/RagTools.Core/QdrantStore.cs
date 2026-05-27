@@ -171,6 +171,7 @@ public sealed class QdrantStore : IDisposable
             AdrId: r.Payload.TryGetValue("adr_id", out var ai) ? ai.StringValue : null,
             Breadcrumb: r.Payload.TryGetValue("breadcrumb", out var bc) ? bc.StringValue : "",
             StartLine: r.Payload.TryGetValue("start_line", out var sl) ? (int)sl.IntegerValue : 0,
+            EndLine: r.Payload.TryGetValue("end_line", out var el) ? (int)el.IntegerValue : 0,
             Text: r.Payload.TryGetValue("text", out var tx) ? tx.StringValue : ""
         )).ToList();
     }
@@ -218,4 +219,5 @@ public sealed record SearchHit(
     string? AdrId,
     string Breadcrumb,
     int StartLine,
+    int EndLine,
     string Text);

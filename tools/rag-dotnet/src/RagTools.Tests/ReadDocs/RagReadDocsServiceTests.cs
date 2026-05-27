@@ -48,7 +48,7 @@ public class RagReadDocsServiceTests
 
     private static DocumentSearchResult Hit(
         float score, string relPath, int startLine = 1, string breadcrumb = "", string docTitle = "", string docKind = "doc", string text = "txt") =>
-        new(score, relPath, docTitle, docKind, AdrId: null, breadcrumb, StartLine: startLine, Text: text);
+        new(score, relPath, docTitle, docKind, AdrId: null, breadcrumb, StartLine: startLine, EndLine: startLine, Text: text);
 
     private static RagReadDocsService Build(
         out FakeEmbedder embedder, out FakeStore store, out FakeContentSource content, RagConfig? cfg = null)
