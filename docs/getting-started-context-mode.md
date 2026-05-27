@@ -197,5 +197,6 @@ powershell -File scripts/context-mode-bootstrap.ps1
 - Full architectural rationale: [ADR-0029 — context-mode MCP sandbox](../adr/0029/0029-context-mode-mcp-sandbox.md)
 - Network firewall configuration: [docker/adguard/README.md](../../docker/adguard/README.md)
 - Tool routing (when to use which MCP): [.github/instructions/mcp-routing.instructions.md](../../.github/instructions/mcp-routing.instructions.md)
+- **RAG ↔ context-mode handoff for caching knowledge across recalls (L2 / L1)**: [.github/skills/rag-with-memory/SKILL.md](../../.github/skills/rag-with-memory/SKILL.md), pattern context: [docs/patterns/context-mode-read-write-split.md §Read-side caching](patterns/context-mode-read-write-split.md), porting checklist: [docs/rag/mcp-first-routing-migration-playbook.md §13.10](rag/mcp-first-routing-migration-playbook.md)
 - Roadmap progress / phase tracking: [docs/roadmap/context-mode-integration.md](../roadmap/context-mode-integration.md)
 - Known issues affecting setup: [.github/context/known-issues.md](../../.github/context/known-issues.md)

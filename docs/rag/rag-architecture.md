@@ -114,7 +114,7 @@ Key types inside `RagTools.Mcp`:
 | [`Middleware/ApiExceptionHandler.cs`](../../tools/rag-dotnet/src/RagTools.Mcp/Middleware/ApiExceptionHandler.cs) | `IExceptionHandler` — converts unhandled exceptions to the sanitised JSON envelope (§14) |
 | [`Middleware/BadRequestEnvelopeMiddleware.cs`](../../tools/rag-dotnet/src/RagTools.Mcp/Middleware/BadRequestEnvelopeMiddleware.cs) | Rewrites `ProblemDetails` 400 responses into the same `{error, code}` envelope |
 | [`Middleware/ApiKeyMiddleware.cs`](../../tools/rag-dotnet/src/RagTools.Mcp/Middleware/ApiKeyMiddleware.cs) | Enforces `X-Api-Key` on `/ingest/*` and `/admin/*` |
-| [`Tools/RagTools.cs`](../../tools/rag-dotnet/src/RagTools.Mcp/Tools/RagTools.cs) | `[McpServerTool]` methods — `list_adrs`, `query_docs`, `read_docs`, `get_history` |
+| [`Tools/RagTools.cs`](../../tools/rag-dotnet/src/RagTools.Mcp/Tools/RagTools.cs) | `[McpServerTool]` methods — `list_adrs`, `query_docs`, `read_docs`, `get_history`, `query_docs_cached` |
 | [`Tools/McpToolGuard.cs`](../../tools/rag-dotnet/src/RagTools.Mcp/Tools/McpToolGuard.cs) | `RunAsync(...)` wrapper around every tool — sanitises errors using `ToolErrorSanitizer` |
 | [`Tools/RagSession.cs`](../../tools/rag-dotnet/src/RagTools.Mcp/Tools/RagSession.cs) | DI-scoped collection name (set per HTTP request from `?project=`) |
 | `IngestWorker` (`BackgroundService`) | Same role as Python's `ingest_worker.py` — `Channel<IngestJob>` consumer |
@@ -245,8 +245,8 @@ The full HTTP API reference (request/response schemas, error envelope) lives in
 
 ## 8. MCP tools
 
-Both stacks expose the same four tools. Names are identical; argument shapes
-match.
+Both stacks expose the same five tools. Names are identical; argument shapes
+match (one caveat noted under `query_docs_cached`).
 
 | Tool | Input | Returns |
 |---|---|---|
@@ -254,6 +254,7 @@ match.
 | `query_docs(question, bc?, top_k=5)` | semantic query, optional bounded-context substring filter | Ranked chunks with `rel_path`, `breadcrumb`, `lines`, `score`, `weight`, `text` |
 | `read_docs(question, bc?, top_files=3)` | semantic query | Best chunks grouped by file; switches to full-file content when the query contains explicit "full content" intent phrases |
 | `get_history(id)` | history group identifier (e.g. ADR number) | All chunks for that group, sorted by `start_line` |
+| `query_docs_cached(question, bc?, top_files=3)` | semantic query, optional bc filter | Formatted markdown + deterministic `source` label ready for `ctx_index(content=<markdown>, source=<source>)`. L2 RAG ↔ context-mode handoff. See [mcp-routing instructions §L2](../../.github/instructions/mcp-routing.instructions.md) and [playbook §13.10](mcp-first-routing-migration-playbook.md). **Caveat**: .NET clamps `top_k` to `MaxTopK=20`; Python uses `max(30, top_files*15)`. Label format and markdown shape identical. Open observation: [roadmap §Phase 7.4](../roadmap/context-mode-integration.md). |
 
 `get_history` replaced the older `get_adr_history` (parameter `adr_id` →
 `id`); the grouping field is collection-configurable (defaults to `adr_id`).

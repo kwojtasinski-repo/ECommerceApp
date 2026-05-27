@@ -100,6 +100,7 @@ What is the current project state — any blocked bounded contexts?
 > - Ask "list_adrs" or "list adrs" to see all indexed architectural decisions
 > - Prefix with "get_history for ADR-0016" to get all indexed chunks for a specific ADR + its amendments
 > - Use "read_docs about X" to get the full content of a relevant file
+> - Use "query_docs_cached" when the same knowledge will be re-read 3+ times in the session — returns markdown + a `rag-cache-...` source label ready for `ctx_index`. See [mcp-routing instructions §L2](../../.github/instructions/mcp-routing.instructions.md) and [playbook §13.10](mcp-first-routing-migration-playbook.md).
 > - Queries in **English, Polish, and German** are supported — see below
 
 ### Multilingual queries (Polish / German)
