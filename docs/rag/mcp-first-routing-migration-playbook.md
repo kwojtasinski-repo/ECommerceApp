@@ -630,13 +630,54 @@ the §NN precedence section in the global instruction takes the agent
 back to RAG-only routing without touching RAG. The two MCPs are
 independent; either can be rolled back without breaking the other.
 
+### 13.9 L1 handoff: caching a RAG result in context-mode for the same session
+
+Even before the hooks ship (§13.4), the two MCPs can be wired into a manual handoff that solves one specific cost problem: **the same RAG question asked 3+ times in one session pays full embedding + reranker cost every time**. The fix is to write the first RAG result into context-mode's FTS5 store and recall it with sub-second `ctx_search` afterwards. We call this **L1** — read-side caching only, no hooks.
+
+The skill is [.github/skills/rag-with-memory/SKILL.md](../../.github/skills/rag-with-memory/SKILL.md). It documents the 3-call shape:
+
+```
+query_docs(...)                   --  full cost, first time
+  → format chunks as a single markdown blob with source attributions
+  → ctx_index(text=blob, kind="rag-snapshot", title="<query>")
+  → ctx_search("<rewording>")     --  sub-second FTS5 recall thereafter
+```
+
+Three pieces that have to land before this works:
+
+1. **Three-surface disambiguation in the global instruction.** `semantic_search` (VS Code embedded), `memory.*` (VS Code `/memories/`), and `ctx_*` (context-mode FTS5) all show up as "memory-like" tools. The skill names which one owns L1 caching (`ctx_*`) and why the other two don't. Without this table, agents will write the blob to `/memories/` instead, which doesn't survive a window restart in the same way.
+2. **Parametric workspace mount.** L1 only works if `ctx_index` and `ctx_search` see the same working directory across calls. Hard-coding `/workspace` in compose breaks forks that run the container with a different mount. Use `volumes: .:${CONTEXT_MODE_WORKSPACE:-/workspace}:ro` and let the skill probe the live value with `ctx_execute("python", "import os; print(os.getcwd())")` as Step 0.
+3. **Multilingual recall caveat.** context-mode FTS5 uses an English Porter stemmer plus trigram fallback. Polish/German queries against an English blob get zero hits where the same query against RAG (which has a multilingual glossary) returns the top result. Document this in the skill and route mixed-language sessions either through RAG every time or with the keyword translated to English before `ctx_search`. Phase 7.1 of the [context-mode roadmap](../roadmap/context-mode-integration.md) tracks injecting the RAG glossary into the L1 blob as a design input.
+
+#### Built-in subagent surface restriction (LIMIT-1)
+
+Built-in subagents (`Explore`, `runSubagent` invocations of any custom agent) **cannot call MCP tools and cannot run `tool_search`**. The pattern that survives this restriction is **inline-chunks**: the parent agent fetches RAG, formats the chunks as markdown with full source attributions, and passes the blob in the subagent's prompt. The subagent reasons over the blob using only its file/grep tools — no MCP calls — and returns its answer. This is the only viable way to delegate cross-tool work to a subagent today.
+
+Same restriction applies to **named custom agents invoked via `runSubagent`** (we hit this on `@copilot-setup-maintainer` in Session 26: the agent surfaced 4 drift items with proposed edits because it could not execute them itself). The parent agent has to apply the edits.
+
+#### When L1 is worth wiring vs. waiting for hooks (L3)
+
+L1 is worth shipping ahead of hooks when:
+
+- The same 3–5 RAG queries are recurring in long sessions (post-compaction window, multi-hour BC walkthroughs).
+- The team accepts a manual `ctx_index` call as part of the routing flow (the skill makes it a 5-line recipe).
+- Multilingual queries are an exception, not the norm.
+
+Wait for hooks (L3) when:
+
+- Most queries are one-shot — the cache rarely pays for itself.
+- Multilingual sessions are the dominant flow.
+- The team can't tolerate any manual ceremony in the routing path.
+
+L1 and L3 are not mutually exclusive — L1 ships the read side now; L3's `PostToolUse` hook will write the same blob automatically once the hook file lands per Phase 3 of the context-mode roadmap.
+
 ---
 
 ## Cross-references
 
 - Tool surface: [rag-architecture.md §8 MCP tools](rag-architecture.md#8-mcp-tools)
 - Global instruction example: [.github/instructions/rag.instructions.md](../../.github/instructions/rag.instructions.md)
-- Trigger table example: [.github/copilot-instructions.md §12](../../.github/copilot-instructions.md)
+- Trigger table example: [.github/instructions/mcp-routing.instructions.md](../../.github/instructions/mcp-routing.instructions.md) (canonical, `applyTo: **`). `copilot-instructions.md §12` is the short per-repo pointer to that file, not the table itself.
 - Error envelope contract: [rag-architecture.md §14](rag-architecture.md#14-error-handling-sanitisation-and-middleware)
 - Maintenance prompt: [.github/prompts/rag-sync.prompt.md](../../.github/prompts/rag-sync.prompt.md)
 
@@ -661,6 +702,20 @@ One sweep across the entire `.github/` workflow surface, ~20 files, zero product
 - **Phase 4 — Pre-edit + safety + memory + anti-patterns**: pre-edit checklist became MCP-first (prefer `query_docs`/`get_history` over raw file reads); explicit URL handling rule (`ctx_fetch_and_index` only for project URLs); architecture-suggestion guard (`query_docs` for governing ADR first); `safety.instructions.md` adds external-HTTP rule + "verifier MUST NOT use MCPs" rule; `agent-memory.instructions.md` adds pre-write `query_docs` dedupe check; `anti-patterns-critical.context.md` gains 4 BLOCKS-MERGE rules (double-MCP, raw `fetch_webpage` for project URLs, quoting ADRs from training data, MCP calls inside verifier).
 - **Phase 5 — Changelog + retrospective**: `COPILOT-SETUP-CHANGELOG.md` Session 25 entry + this §14.
 
+### Phase 6 — L1 RAG↔context-mode handoff + char-budget right-sizing (Session 26, commits `30986fe`, `d1acd821`, `e96ee55e`)
+
+Three deliverables that landed together once the L1 read-side handoff was validated end-to-end:
+
+- **New skill** `rag-with-memory` documenting the 3-call shape (`query_docs` → format → `ctx_index` → `ctx_search`), Step 0 mount probe, three-surface disambiguation table (`semantic_search` vs `memory.*` vs `ctx_*`), inline-chunks subagent pattern, and the multilingual recall caveat. Validated by 4 tests: 1 primary-agent POC + 2 subagent diagnostics + 1 fresh-window user-driven run (3/3 successful recalls at 60.8% latency improvement).
+- **Parametric workspace mount** `${CONTEXT_MODE_WORKSPACE:-/workspace}` in `docker-compose.yaml` plus a Step 0 probe in the skill — forks that mount the container under a different path no longer break L1.
+- **Right-sized `copilot-instructions.md`** from 11,975 → 7,409 chars (-38%) by collapsing §12 (MCP routing — already auto-loaded via `mcp-routing.instructions.md` with `applyTo: **`) and extracting §14 (batched-tasks detection) to a dedicated `batched-tasks.instructions.md` with `applyTo: **`. The maintainer ownership table's char budget was raised from a 4K hard limit to an 8K soft budget with rationale (the 4K target was set in Session 17 when the file held ~3K of content; current 14 sections + 4 domain constants + cross-link pointers will not fit).
+
+Three follow-ups documented but not implemented:
+
+- **LIMIT-1** (built-in subagent surface restriction): CONFIRMED via 3 explicit `tool_search` probes in a clean Session 26 subagent. No workaround besides the inline-chunks pattern (skill §"Delegating to a subagent"). Also confirmed for `runSubagent` invocations of named custom agents (`@copilot-setup-maintainer`).
+- **LIMIT-2** (probe enforcement deferred): the workspace probe is a skill recommendation, not an enforced precondition. A future hook could fail-fast if `ctx_search` returns zero results because the mount differs from the previous session.
+- **LIMIT-3** (multilingual FTS5 gap): documented in the skill and queued as a design input for Phase 7.1 of the context-mode roadmap. Out of scope for L1.
+
 ### What the case study confirms
 
 - The **single-source-of-truth pattern** (Phase 1) is the most important hour of the rollout. Every later phase becomes a one-line pointer (`[mcp-routing.instructions.md](mcp-routing.instructions.md)`), so future rule changes happen in **one** place rather than fanning out across 20+ files.
@@ -668,3 +723,7 @@ One sweep across the entire `.github/` workflow surface, ~20 files, zero product
 - A **dormant** MCP can be wired with full precedence rules ahead of activation, as long as every reference carries an "applies once <hooks land>" gating clause. This decouples docs work from infra work.
 - **Verifier-must-not-use-MCPs** is the exception that proves the rule. Mark it explicitly in the agent file _and_ in the pipeline orchestrator (`AGENT-PIPELINE.md` MCP column) — agents will ignore one or the other if the rule lives in only one place.
 - Phase 0 + Phases 1-5 as **two separate commits** is the right granularity: pilot is small enough to read in one screen, full rollout big enough that splitting it further would lose the "one cohesive change" narrative.
+- **L1 (manual read-side handoff) can ship ahead of L3 (hooks)** as a `_get_` + `_put_` + `_get_` pattern documented in a skill. The runtime savings are smaller than the hook-based flow, but the pattern itself is what unblocks recurring queries in long sessions — and the same `ctx_index`/`ctx_search` plumbing will be reused once `PostToolUse` writes the blob automatically.
+- **Built-in subagents have a hard MCP surface restriction.** Neither `Explore` nor `runSubagent` invocations of named custom agents can call MCP tools or run `tool_search`. The inline-chunks pattern (parent fetches RAG, formats chunks as markdown, passes the blob in the subagent's prompt) is the only viable workaround. Record this in the skill that defines the subagent flow — not in the agent file alone — so future maintainers see it at the point of use.
+- **Char budget for `copilot-instructions.md` is around 8K once cross-link pointers and domain constants are realistic**, not the 4K target inherited from when the file was a stub. Refactor toward `applyTo: **` instruction files when the root policy file approaches the budget — never delete unique policy to fit a number. Trim recipe: identify duplicates of canonical `applyTo: **` files, collapse to pointer; extract distinct topics to their own `*.instructions.md` with `applyTo: **`; keep domain constants (§8–§10) and unique policy in the root file.
+- **Multilingual recall depends on which surface holds the indexed text.** RAG has a multilingual glossary; context-mode FTS5 has English-only stemming. Mixed-language sessions need either a glossary injection into the L1 blob (Phase 7.1 design input) or an English keyword in `ctx_search`. Document this caveat in the skill that ships the cache, not as a separate note that gets lost.
