@@ -15,7 +15,7 @@
 | Instruction files (`.instructions.md`) | 17    | All with `applyTo:` frontmatter; +`batched-tasks` (Session 26); `agent-memory` added; `pre-edit` split into core + `doc-suggestions`; `docs-index` scope narrowed |
 | Prompt files (`.prompt.md`)            | 6     | BC analysis, BC implementation, PR review, refactor, flow-analysis, rag-sync                                                        |
 | Agent files                            | 8     | adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer, planner, implementer, verifier, pr-commit                       |
-| Skills (`SKILL.md`)                    | 17    | +rag-with-memory (Session 26); +5 RAG skills (Session 23): diagnose-rag, tune-rag-weights, expand-rag-glossary, generate-rag-rules, generate-eval-questions |
+| Skills (`SKILL.md`)                    | 20    | +3 context-mode sandbox skills (Session 28): ctx-sandbox-bootstrap-verify, ctx-doctor-playbook, ctx-hardening-audit; +rag-with-memory (Session 26); +5 RAG skills (Session 23): diagnose-rag, tune-rag-weights, expand-rag-glossary, generate-rag-rules, generate-eval-questions |
 | ADRs                                   | 29    | Folderized ADR routers under `docs/adr/<NNNN>/README.md`; ADR-0027/0028 (RAG pipeline) + ADR-0029 (context-mode sandbox) added                                                                           |
 | Context files                          | 6     | project-state, known-issues, agent-decisions, repo-index, future-skills, anti-patterns-critical                                    |
 | GitHub Actions workflows               | 1     | `dotnet-ci.yml` — manual trigger only (push/PR commented)                                                                          |
@@ -73,7 +73,7 @@
 | `verifier.md`                 | Session 17 (new — pipeline stage 3, deterministic build+test, max-iter 1)                               |
 | `pr-commit.md`                | Session 17 (new — pipeline stage 5, Conventional Commits, max-iter 2)                                   |
 
-### `.github/skills/` (17 skills)
+### `.github/skills/` (20 skills)
 
 | Skill                     | Description                                                     | Added      |
 | ------------------------- | --------------------------------------------------------------- | ---------- |
@@ -94,6 +94,9 @@
 | `expand-rag-glossary`     | Add PL/DE patterns to multilingual-glossary.yaml                | Session 23 |
 | `generate-rag-rules`      | Update metadata-rules.yaml and queries.yaml                     | Session 23 |
 | `rag-with-memory`         | RAG ↔ context-mode FTS5 handoff (L1 manual, 3-call) walkthrough | Session 26 |
+| `ctx-sandbox-bootstrap-verify` | Runtime smoke after `docker compose up context-mode` (8 checks; non-root, 6 hardening flags, ctx-net+DNS, network-monitor, FTS5, ctx_doctor, loopback ports, AdGuard ACL) | Session 28 |
+| `ctx-doctor-playbook`     | Map `ctx_doctor` messages + container/runtime errors → cause → fix          | Session 28 |
+| `ctx-hardening-audit`     | Programmatic verification of all 22 ADR-0029 Conformance items (pre-merge gate) | Session 28 |
 
 ### `.github/context/` (6 files)
 
@@ -210,6 +213,34 @@ Closes the `.NET` gap left in Session 28. `RagTools.Mcp` now exposes `QueryDocsC
 **Pre-existing drift**: none introduced.
 
 **Refs**: `docs/roadmap/context-mode-integration.md` Phase 7.3, `tools/rag-dotnet/src/RagTools.Mcp/Tools/QueryDocsCachedFormatter.cs`.
+
+---
+
+### Session 28 — Sprint 1 RAG quick wins + 3 context-mode sandbox skills (2026-05-28)
+
+First commit of the cross-project RAG/context-mode reusability initiative (full plan: [docs/reports/rag-context-mode-skills-plan-2026-05-28.md](../docs/reports/rag-context-mode-skills-plan-2026-05-28.md)). Phase 0+1 = query-time RAG config wins, Phase 2 = context-mode GA-blocker skills, Phase 3 = this changelog + docs-index sync.
+
+| #   | Change | Files affected |
+| --- | ------ | -------------- |
+| 1   | +6 named queries (ADR-0026/0027/0028/0029, context-mode-bootstrap-flow, rag-caching-strategy) | `tools/rag/queries.yaml` |
+| 2   | +8 PL/DE glossary entries (context-mode, sandbox, AdGuard, refresh-token, IAM, host-side hook, auto-cache, atomic switch) | `tools/rag/multilingual-glossary.yaml` |
+| 3   | Initial audit report (EN): 4 RAG configs + 6 existing skills + gap list (10 RAG + 5 context-mode missing) + `docs/rag/**` exclude blocker options A/B/C | `docs/reports/rag-context-mode-audit-2026-05-28.md` _(new)_ |
+| 4   | Plan v3 (EN): 32-skill catalogue (A1-E5) + 3-stage bootstrap chain (context-mode-bootstrap → rag-bootstrap → existing mcp-first-routing-migration-playbook) + 2 new agents `setup-discovery`/`setup-evolver` + 7-step delivery schedule | `docs/reports/rag-context-mode-skills-plan-2026-05-28.md` _(new)_ |
+| 5   | +3 context-mode sandbox skills: `ctx-sandbox-bootstrap-verify` (8 runtime checks), `ctx-doctor-playbook` (message → fix map, 5 sections), `ctx-hardening-audit` (22 ADR-0029 conformance items pre-merge gate) | `.github/skills/ctx-sandbox-bootstrap-verify/SKILL.md` _(new)_, `.github/skills/ctx-doctor-playbook/SKILL.md` _(new)_, `.github/skills/ctx-hardening-audit/SKILL.md` _(new)_ |
+| 6   | Routing table: new "context-mode sandbox skills" section added under RAG maintenance skills | `.github/instructions/docs-index.instructions.md` |
+| 7   | Refreshed auto-generated index stats from prior ingest runs | `docs/rag/index-stats.md`, `docs/rag/index-stats-dotnet.md` |
+
+**Counts**: skills 17 → 20. Instructions, agents, prompts, ADRs unchanged.
+
+**Not changed (deliberate)**:
+
+- `metadata-rules.yaml` / `rag-config.yaml` — `docs/rag/**` exclude decision (option A/B/C) deferred to user; skipping Sprint 1 split avoids forcing a full reingest before decision is made.
+- `ECommerceApp.sln` — new skills + reports follow existing pattern (not added to solution explorer).
+- HTTP MCP servers not restarted in this commit — query-time configs (queries.yaml, glossary) require restart for HTTP variants only; stdio variants reload per VS Code session.
+
+**Pre-existing drift (still open, flagged in Session 24+27)**: ADR-0027 and ADR-0028 not in `.sln`. Two .NET RAG indexer bugs (ADR-0028 `main_file` + amendment count) tracked in `/memories/repo/rag-mcp-anomalies.md` — Sprint 2 work.
+
+**Refs**: `docs/reports/rag-context-mode-skills-plan-2026-05-28.md`, ADR-0029, `docs/adr/0029/0029-context-mode-mcp-sandbox.md` §Conformance checklist.
 
 ---
 

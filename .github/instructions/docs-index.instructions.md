@@ -62,3 +62,13 @@ Use these skills when the RAG/MCP system needs attention. Read via the `read_fil
 | New doc folder added / wrong doc_kind / query coverage gap | `.github/skills/generate-rag-rules/SKILL.md` |
 | Newly indexed file has no eval query covering it | `.github/skills/generate-eval-questions/SKILL.md` |
 | Cache a RAG result in context-mode FTS5 for repeated recall in the same session | `.github/skills/rag-with-memory/SKILL.md` |
+
+## context-mode sandbox skills
+
+Use these when the context-mode MCP container needs verification, debugging, or pre-merge audit.
+
+| Symptom / need | Skill |
+|---|---|
+| Smoke-test a freshly bootstrapped context-mode container (8 runtime checks) | `.github/skills/ctx-sandbox-bootstrap-verify/SKILL.md` |
+| `ctx_doctor()` not green / `ctx_*` tool error / container failed to start | `.github/skills/ctx-doctor-playbook/SKILL.md` |
+| Pre-merge compliance audit of all 22 ADR-0029 conformance items | `.github/skills/ctx-hardening-audit/SKILL.md` |
