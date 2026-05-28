@@ -81,7 +81,7 @@ public class RagQueryServiceTests
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
-    [InlineData(21)]
+    [InlineData(46)]
     [InlineData(100)]
     public async Task TopKOutOfRange_ReturnsFailure_WithDetails(int topK)
     {
