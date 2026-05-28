@@ -255,9 +255,20 @@ public sealed class QdrantDocumentStore : IDocumentStore
 
         var summaries = groups.Select(g =>
         {
-            // Prefer chunks from the main ADR file for title and rel_path.
+            // Prefer chunks from the main ADR file for title and rel_path. The "main" file is
+            // the one whose filename starts with the ADR id (e.g. "0028-remote-multitenant-….md")
+            // — NOT every file classified as adr_main by metadata-rules (which currently includes
+            // tech-details-*.md sidecars and other docs under docs/adr/NNNN/).
+            //
+            // Python parity: tools/rag/rag_tools.py:_tool_list_adrs uses
+            //   sorted(folder.glob(f"{adr_id}-*.md"))[0]
+            // which matches the canonical "0028-…" file, not tech-details-*.md.
             var mainChunk = g.FirstOrDefault(p =>
-                p.Payload.TryGetValue("doc_kind", out var dk) && dk.StringValue == adrDocKind);
+                    p.Payload.TryGetValue("doc_kind", out var dk) && dk.StringValue == adrDocKind
+                    && p.Payload.TryGetValue("rel_path", out var rp)
+                    && IsCanonicalAdrFile(rp.StringValue, g.Key!))
+                ?? g.FirstOrDefault(p =>
+                    p.Payload.TryGetValue("doc_kind", out var dk) && dk.StringValue == adrDocKind);
 
             var (title, mainFile) = mainChunk is not null
                 ? (mainChunk.Payload.TryGetValue("doc_title", out var t) ? t.StringValue : g.Key!,
@@ -265,10 +276,22 @@ public sealed class QdrantDocumentStore : IDocumentStore
                 : (g.First().Payload.TryGetValue("doc_title", out var t2) ? t2.StringValue : g.Key!,
                    g.First().Payload.TryGetValue("rel_path",  out var rp2) ? rp2.StringValue : "");
 
-            var amendments = g.Count(p =>
-                p.Payload.TryGetValue("doc_kind", out var dk) && dk.StringValue == amendmentDocKind);
-            var examples = g.Count(p =>
-                p.Payload.TryGetValue("doc_kind", out var dk) && dk.StringValue == "adr_example");
+            // Count DISTINCT files, not chunks. A single large amendment file can be split
+            // into 10+ chunks; counting chunks inflates the count by ~10x and was the cause
+            // of "P:3 vs .NET:33" parity drift on ADR-0028. Python parity: counts files in
+            // the amendments/ folder via folder.glob("*.md").
+            var amendments = g
+                .Where(p => p.Payload.TryGetValue("doc_kind", out var dk) && dk.StringValue == amendmentDocKind)
+                .Select(p => p.Payload.TryGetValue("rel_path", out var rp) ? rp.StringValue : null)
+                .Where(rp => !string.IsNullOrEmpty(rp))
+                .Distinct()
+                .Count();
+            var examples = g
+                .Where(p => p.Payload.TryGetValue("doc_kind", out var dk) && dk.StringValue == "adr_example")
+                .Select(p => p.Payload.TryGetValue("rel_path", out var rp) ? rp.StringValue : null)
+                .Where(rp => !string.IsNullOrEmpty(rp))
+                .Distinct()
+                .Count();
 
             return new AdrSummary(g.Key!, title, mainFile, amendments, examples);
         })
@@ -276,6 +299,18 @@ public sealed class QdrantDocumentStore : IDocumentStore
         .ToList();
 
         return summaries;
+    }
+
+    /// <summary>
+    /// True when <paramref name="relPath"/> looks like the canonical main ADR file for
+    /// <paramref name="adrId"/> — i.e. the filename starts with "{adrId}-".
+    /// Excludes sidecars like "tech-details-python.md", "checklist.md", "migration-plan.md".
+    /// </summary>
+    private static bool IsCanonicalAdrFile(string relPath, string adrId)
+    {
+        if (string.IsNullOrEmpty(relPath)) return false;
+        var fileName = System.IO.Path.GetFileName(relPath);
+        return fileName.StartsWith(adrId + "-", StringComparison.OrdinalIgnoreCase);
     }
 
     // ── Private helpers ───────────────────────────────────────────────────────

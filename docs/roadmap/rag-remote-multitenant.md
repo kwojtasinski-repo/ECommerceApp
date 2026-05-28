@@ -1,6 +1,6 @@
 # Roadmap: Remote Multi-Tenant RAG Server (ADR-0028)
 
-> Status: ✅ Phase 1 Complete — Phase 2 Complete (P2-1 ✅, P2-2 ✅, P2-3 ✅, P2-4 ✅, P2-5 ✅)  
+> Status: ✅ Phase 1 Complete — Phase 2 Complete (P2-1 ✅, P2-2 ✅, P2-3 ✅, P2-4 ✅, P2-5 ✅) — 🔴 Phase 3 Open (per-collection config persistence gap, see below)  
 > Scope: `tools/rag-dotnet/` (.NET server), `tools/rag/` (Python server)  
 > ADR: [ADR-0028](../adr/0028/0028-remote-multitenant-rag-ingest.md)
 
@@ -857,3 +857,65 @@ Step 11 can be done in parallel from Step 5 onward.
 - [ ] Local `dotnet run` stdio mode (`ecommerceapp-rag-dotnet`) still works unchanged
 - [ ] `RagTools.Ingest --remote http://...` successfully uploads and polls to completion
 - [ ] `rag-ingest ops list` renders a table of recent operations for a collection
+
+---
+
+## Phase 3 — Per-collection config persistence (gap fix)
+
+> Status: 🔴 Not started — discovered during parity audit 2026-05-28
+> Trigger: Diagnosis report [`docs/reports/rag-parity-fix-diagnosis-2026-05-28.md`](../reports/rag-parity-fix-diagnosis-2026-05-28.md)
+> Impacted ADR: ADR-0028 main text + tech-details-dotnet.md (intent) vs Amendment 002 (deferred without aligning ADR)
+> Impacted acceptance criteria above: ❌ "Config, glossary, rules, queries stored as structured JSON (not raw YAML text)" — currently FALSE
+> Impacted edge case: ❌ "Upload with no config (subsequent re-upload) | Use last stored config from Qdrant" — currently FALSE (server uses mounted config always)
+
+### The gap
+
+`ADR-0028` and `docs/adr/0028/tech-details-dotnet.md` describe a "config travels with the docs" model: every batch ingest persists its `rag-config.yaml`, `metadata-rules.yaml`, `queries.yaml`, and (optionally) `multilingual-glossary.yaml` into the target Qdrant collection as a single zero-vector point with `doc_kind = "__config__"`. Subsequent queries against that collection load the per-collection config and use it for weights, score threshold, fetchK, and glossary expansion. The server's mounted config files act only as a fallback for collections that have no stored config yet.
+
+The infrastructure exists in code today:
+
+- [`tools/rag-dotnet/src/RagTools.Core/QdrantDocumentStore.cs`](../../tools/rag-dotnet/src/RagTools.Core/QdrantDocumentStore.cs) — `StoreConfigAsync()` and `FetchConfigAsync()` are implemented end-to-end.
+- [`tools/rag-dotnet/src/RagTools.Core/IDocumentStore.cs`](../../tools/rag-dotnet/src/RagTools.Core/IDocumentStore.cs) — interface declares both methods.
+- `RagConfigPayload.From(cfg, glossaryTerms)` correctly builds the structured payload.
+
+But neither method is ever called in production code paths. Grep across the entire `tools/rag-dotnet/` source returns ZERO call sites for `StoreConfigAsync` (outside unit tests). Batch ingest never stores config. Query-time code never fetches it. The whole infrastructure is dead code today.
+
+Amendment 002 (`docs/adr/0028/amendments/0028-002-batch-manifest-pipeline.md`) explicitly states *"The config files are NOT indexed — they are extracted for validation/configuration only"*, abandoning the design without updating the main ADR or the `RagConfigPayload` class doc comments.
+
+### Why this matters
+
+1. **Multi-tenancy is broken.** Two collections with different topic priorities (e.g. an e-commerce project that weights `docs/adr/**` highly, a separate game project that weights `docs/design/**`) cannot coexist on the same server. The mounted `rag-config.yaml` applies uniformly.
+2. **The R3 glossary fix from 2026-05-28 only worked because the mounted glossary is global.** That's not the design intent — it's a side effect of the missing per-collection load. The "fix" would silently break the moment a second project is added.
+3. **Acceptance criteria above are not met.** A future audit will flag Phase 2 as incomplete.
+4. **Edge case "Upload with no config" is unreachable.** It assumes a stored config exists. None do.
+
+### Fix plan
+
+| Step | Description | File(s) | Risk |
+|---|---|---|---|
+| P3-1 | Call `StoreConfigAsync` from batch ingest. After `IngestWorker` finishes processing all documents in a batch, serialise the parsed `RagConfig` + glossary terms via `RagConfigPayload.From(cfg, glossaryTerms)` and persist to the target collection. | `BatchIngestService.cs`, `IngestWorker.cs` | Low — adds one point per collection per ingest |
+| P3-2 | Load per-collection config at query time. In `RagQueryService.QueryAsync()` and `RagReadDocsService.ReadAsync()`, call `store.FetchConfigAsync(collection)` first; fall back to mounted `cfg` only if null. | `RagQueryService.cs`, `RagReadDocsService.cs` | Medium — changes hot path; needs caching to avoid per-query Qdrant fetch (use existing `CachedDocumentStore`) |
+| P3-3 | Make glossary collection-aware. Refactor `GlossaryExpansionPreprocessor` to fetch per-collection glossary from `IDocumentStore` (via `RagSession.Collection`) instead of loading from mounted file at constructor time. Fall back to mounted glossary if collection has none. | `GlossaryExpansionPreprocessor.cs`, `Program.cs` (DI) | Medium — changes singleton to scoped; needs session context |
+| P3-4 | Apply per-collection ranking weights. In `TopicFilter.ApplyWeights`, resolve weights from per-collection config first, fall back to mounted config. | `TopicFilter.cs`, `RankingWeightResolver.cs` | Low — additive |
+| P3-5 | Cache invalidation. After P3-1 stores a new config, invalidate the cached config entry for that collection in `CachedDocumentStore`. | `CachedDocumentStore.cs`, `BatchIngestService.cs` | Low |
+| P3-6 | Update ADR-0028 main text + tech-details-dotnet.md to reflect implementation (or amend with Amendment 004 if main ADR should stay frozen). Remove the contradiction with Amendment 002. | `docs/adr/0028/*.md` | Doc-only |
+| P3-7 | Mirror P3-1 through P3-5 on the Python server. | `tools/rag/server.py`, `tools/rag/ingest.py`, etc. | Same risks |
+| P3-8 | Add integration tests: two collections with different weights on the same server return correctly weighted results. | `tools/rag-dotnet/src/RagTools.Tests/` | Low |
+
+### Open questions for P3
+
+1. **Glossary scope** — user clarified glossary is "optional". Should an absent per-collection glossary fall back to the mounted file (current proposal), or just behave as "no expansion"? Decision needed before P3-3.
+2. **Backward compat** — collections ingested before P3-1 lands will have no stored config. The fallback chain `per-collection → mounted → builtin defaults` covers this gracefully, but it must be explicitly tested.
+3. **Embedder/chunker settings** — these are also in `rag-config.yaml` but apply at ingest time. They are already captured implicitly (chunks already exist with the chunking applied). Per-collection persistence is only useful for query-time settings (weights, fetchK, score threshold, glossary). Confirm this scope reduction is acceptable, or expand P3 to also expose the historical ingest config for diagnostics.
+
+### Not in scope for P3
+
+- Reverting R1/R2/R3 — they remain a valid stopgap for the single-tenant case today.
+- Chunker pluggability — separate concern (`MarkdownChunker` is the only chunker; see diagnosis report §5).
+- Re-indexing existing collections — once P3-1 ships, the next batch ingest of each collection picks up the new behavior naturally. No mass re-index.
+
+### Companion follow-ups (separate from P3 itself)
+
+- **Q-PRECISE** — add 6-8 precise queries to `tools/rag/queries.yaml` covering ADR-specific questions; re-run `compare_queries.py`; decide on potential R4 (Python down-weight on `agent-decisions.md`) based on results. Cost: ~30 min. No code change.
+- **Chunker tuning** — experiment with smaller `max_tokens` / larger `min_tokens` in the next ZIP `rag-config.yaml` to reduce Category C boundary noise (amendments-page chunks). Cost: re-ingest one collection (~5 min runtime). No code change.
+- **Indexer bug #7 (anomalies memo)** — `ADR-0028 main_file` returns wrong file on .NET; amendment counts inflated. Fix in `RagListAdrsService` / amendment-counting logic. Separate from P3.

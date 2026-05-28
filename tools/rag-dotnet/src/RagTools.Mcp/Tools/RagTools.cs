@@ -69,9 +69,9 @@ public sealed class RagTools(
     {
         top_files = Math.Clamp(top_files, 1, RagReadDocsService.MaxTopFiles);
         question = CapQuestion(question);
-        // Public IRagQueryService caps top_k at MaxTopK (20). Python uses max(30, top_files*15) — we
-        // clamp to the public service's ceiling. With top_files=3 this yields top_k=20, enough to
-        // group 3 files with several chunks each.
+        // Public IRagQueryService caps top_k at MaxTopK (45 as of B2 2026-05-28; matches Python's
+        // max(30, top_files*15) for top_files=3). We clamp to the public service's ceiling so the
+        // wrapper is parity-aligned with Python's query_docs_cached.
         var topK = Math.Clamp(top_files * 15, 1, RagQueryService.MaxTopK);
         var capturedTopFiles = top_files;
         var capturedBc = bc;

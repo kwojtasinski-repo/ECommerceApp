@@ -113,6 +113,7 @@ services:
           - .:/workspace:ro
           - ./tools/rag/metadata-rules.yaml:/app/metadata-rules.yaml:ro
           - ./tools/rag/queries.yaml:/app/queries.yaml:ro
+          - ./tools/rag/multilingual-glossary.yaml:/app/multilingual-glossary.yaml:ro  # companion: PL/DE query expansion
         command: ["python", "mcp_server.py"]
         profiles:
           - rag-python-http
@@ -135,8 +136,9 @@ services:
         volumes:
           - .:/workspace:ro
           - ./tools/rag-dotnet/rag-config.yaml:/rag-config.yaml:ro
-          - ./tools/rag/metadata-rules.yaml:/metadata-rules.yaml:ro  # companion: adr_id patterns
-          - ./tools/rag/queries.yaml:/queries.yaml:ro                 # companion: named queries
+          - ./tools/rag/metadata-rules.yaml:/metadata-rules.yaml:ro              # companion: adr_id patterns
+          - ./tools/rag/queries.yaml:/queries.yaml:ro                             # companion: named queries
+          - ./tools/rag/multilingual-glossary.yaml:/multilingual-glossary.yaml:ro # companion: PL/DE query expansion (shared with Python)
         profiles:
           - rag-dotnet-http
 

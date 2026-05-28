@@ -8,6 +8,7 @@ Technical implementation details:
 - [Amendment 001: implementation deviations](amendments/0028-001-implementation-deviations.md)
 - [Amendment 002: batch manifest design, per-op manifest, ZIP validation, pipeline detail](amendments/0028-002-batch-manifest-pipeline.md)
 - [Amendment 003: transport-aware tools — `ListAdrs` Qdrant source, `RagSession` scope fix, `IContentSource`](amendments/0028-003-transport-aware-tools.md)
+- [Amendment 004: per-collection config persistence gap (documentation-only; fix tracked in roadmap Phase 3)](amendments/0028-004-per-collection-config-gap.md)
 
 **Retention note (both implementations):** In-memory `OperationStore` retains operations
 for **1 hour** after `enqueued_at`. Operations are lost on server restart. Both the .NET

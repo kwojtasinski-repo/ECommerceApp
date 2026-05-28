@@ -14,7 +14,11 @@ public sealed class RagQueryService(
     IEnumerable<IResultPostprocessor> postprocessors,
     ILogger<RagQueryService> logger) : IRagQueryService
 {
-    public const int MaxTopK = 20;
+    // B2 (2026-05-28): raised 20 → 45 to match Python's query_docs_cached behaviour, which sends
+    // top_k = max(30, top_files * 15) (i.e. 45 at the default top_files=3). The previous cap caused
+    // .NET to reject those calls with TopKOutOfRange, producing asymmetric query_docs_cached
+    // behaviour across servers. See docs/reports/rag-parity-findings-2026-05-28.md §11.
+    public const int MaxTopK = 45;
 
     public async Task<QueryOutcome> QueryAsync(QueryRequest request, CancellationToken ct = default)
     {

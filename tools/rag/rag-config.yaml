@@ -97,7 +97,7 @@ ranking:
     - { pattern: ".github/context/project-state.md",            weight: 1.15 }   # blocked-BC status: critical before any BC-level work
     - { pattern: ".github/context/repo-index.md",               weight: 1.00 }   # full codebase map: neutral
     - { pattern: ".github/context/future-skills.md",            weight: 0.80 }   # forward-looking: useful but not current state
-    - { pattern: "docs/adr/*/amendments/**",                    weight: 1.20 }   # amendments OVERRIDE original sections: always more current
+    - { pattern: "docs/adr/*/amendments/**",                    weight: 1.20 }   # amendments OVERRIDE original sections: always more current. (R4 experiment 2026-05-28: lowering to 1.10 produced ZERO parity change because Python raw cosine on amendments is consistently 0.05-0.15 higher than on canonical ADR text — see docs/reports/rag-parity-fix-diagnosis-2026-05-28.md §10. The fix belongs in retrieval ranking, not weights.)
     - { pattern: "docs/adr/*/example-implementation/**",        weight: 1.10 }   # concrete code: more actionable than abstract ADR text
     - { pattern: "docs/adr/*/[0-9]*-*.md",                      weight: 1.00 }   # main ADR file: authoritative decision
     - { pattern: "docs/adr/*/README.md",                        weight: 0.95 }   # ADR router: mostly links, rarely the answer itself

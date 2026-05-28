@@ -54,12 +54,12 @@ ranking:
   # Weights are tunable here independently of the Python config — only the .NET collection is affected.
   # First matching glob wins. Files not matched by any pattern get weight 1.00.
   weights:
-    - { pattern: ".github/context/known-issues.md",             weight: 1.25 }
-    - { pattern: ".github/context/agent-decisions.md",          weight: 1.20 }
-    - { pattern: ".github/context/project-state.md",            weight: 1.15 }
+    - { pattern: ".github/context/known-issues.md",             weight: 1.30 }   # R1 (2026-05-28): bumped 1.25→1.30 to compensate for .NET embedder under-ranking
+    - { pattern: ".github/context/agent-decisions.md",          weight: 1.25 }   # R1 (2026-05-28): bumped 1.20→1.25 same reason
+    - { pattern: ".github/context/project-state.md",            weight: 1.20 }   # R1 (2026-05-28): bumped 1.15→1.20 same reason
     - { pattern: ".github/context/repo-index.md",               weight: 1.00 }
     - { pattern: ".github/context/future-skills.md",            weight: 0.80 }
-    - { pattern: "docs/adr/*/amendments/**",                    weight: 1.20 }
+    - { pattern: "docs/adr/*/amendments/**",                    weight: 1.10 }   # R2 (2026-05-28): lowered 1.20→1.10 — .NET amendments over-boost (batch-manifest-pipeline outlier)
     - { pattern: "docs/adr/*/example-implementation/**",        weight: 1.10 }
     - { pattern: "docs/adr/*/[0-9]*-*.md",                      weight: 1.00 }
     - { pattern: "docs/adr/*/README.md",                        weight: 0.95 }

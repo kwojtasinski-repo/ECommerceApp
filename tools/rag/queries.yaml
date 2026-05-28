@@ -169,6 +169,50 @@ named_queries:
     doc_kind: "reference"
     top_k: 8
 
+  # ── Q-PRECISE block (added 2026-05-28) ─────────────────────────────────────
+  # Highly specific queries that combine an ADR id with the decision's keyword
+  # surface area. Used to test whether Python's reranker over-boosts
+  # agent-decisions.md vs the canonical ADR doc. If the canonical ADR ranks #1
+  # on .NET but agent-decisions.md ranks #1 on Python for the same query, that
+  # validates the Category B mismatch and unlocks a Python-side weight tweak
+  # (R4 in the diagnosis report).
+  - name: "qp-adr0027-chunking-decision"
+    question: "ADR-0027 RAG chunking strategy max tokens overlap heading boundaries decision"
+    adr_id: "0027"
+    top_k: 8
+
+  - name: "qp-adr0029-sandbox-runtime"
+    question: "ADR-0029 context-mode sandbox runtime Node JavaScript shell allowlist decision"
+    adr_id: "0029"
+    top_k: 8
+
+  - name: "qp-adr0016-coupon-limit"
+    question: "ADR-0016 coupon maximum per order limit five ten ceiling decision"
+    adr_id: "0016"
+    top_k: 8
+
+  - name: "qp-adr0019-currency-nbp"
+    question: "ADR-0019 NBP exchange rate currency conversion decision API integration"
+    adr_id: "0019"
+    top_k: 8
+
+  - name: "qp-adr0028-batch-vs-direct"
+    question: "ADR-0028 batch manifest ZIP upload pipeline versus direct ingest decision"
+    adr_id: "0028"
+    top_k: 8
+
+  - name: "qp-adr0027-vs-decisions-rag"
+    question: "Which ADR specifically defines the RAG architecture and embedder model choice?"
+    top_k: 8
+
+  - name: "qp-adr0028-vs-decisions-multitenant"
+    question: "Which ADR specifically governs remote multitenant RAG ingest and per-collection storage?"
+    top_k: 8
+
+  - name: "qp-adr-vs-agent-decisions"
+    question: "What architectural decision record covers cross-bounded-context messaging and event publishing?"
+    top_k: 8
+
   - name: "ef-core-conventions"
     question: "EF Core configuration entity type migrations tracking"
     doc_kind: "reference"
