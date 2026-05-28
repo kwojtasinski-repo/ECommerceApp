@@ -137,6 +137,28 @@ Ships an automated RAG → context-mode FTS5 cache pipeline. The agent now makes
 - No new instruction, prompt, agent, or skill **files**. Counts: instructions still 17, agents still 8, skills still 17, ADRs now 29 (Amendment 1 lives inside ADR-0029 folder).
 - `ECommerceApp.sln` — hook scripts are runtime config, no project membership.
 
+### Session 30.1 — Cross-platform hook migration: `posttooluse-chain.mjs` replaces `.ps1` (2026-05-28)
+
+Supersedes Session 30 item 2. The PostToolUse fan-out wrapper is now `posttooluse-chain.mjs` (Node.js ESM, cross-platform) instead of `posttooluse-chain.ps1` (PowerShell-only). `context-mode.json` uses `"cwd": "."` (VS Code hooks property, relative to repo root) so `node .github/hooks/posttooluse-chain.mjs` resolves correctly on all OSes. A bash fallback (`posttooluse-chain.sh`) covers headless Linux/macOS environments.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | `posttooluse-chain.mjs` (Node.js ESM) replaces `posttooluse-chain.ps1`. Cross-platform fan-out wrapper; always `process.exit(0)`. | `.github/hooks/posttooluse-chain.mjs` _(new)_ |
+| 2 | `posttooluse-chain.sh` — Bash fallback for headless Linux/macOS (SSH remotes, CI). | `.github/hooks/posttooluse-chain.sh` _(new)_ |
+| 3 | `context-mode.json` PostToolUse: `powershell … posttooluse-chain.ps1` → `node .github/hooks/posttooluse-chain.mjs` with `"cwd": "."`. | `.github/hooks/context-mode.json` |
+| 4 | 6 bash `.sh` scripts added (hook fallback + scripts): `tools/rag/run-tests.sh`, `tools/rag/run-all-tests.sh`, `tools/rag-dotnet/run-tests.sh`, `tools/rag-dotnet/download-model.sh`, `scripts/test-ctx-doctor.sh`, `scripts/test-ctx-fetch.sh`. | Various `.sh` _(new)_ |
+| 5 | `auto-cache-hook.md` diagram and file table updated: `.mjs` primary, `.sh` bash fallback, `.ps1` removed. | `docs/rag/auto-cache-hook.md` |
+| 6 | ADR-0029 Amendment 1 files table updated to match. | `docs/adr/0029/amendments/0029-001-host-side-rag-auto-cache.md` |
+| 7 | `SETUP-GUIDE.md` and `getting-started-context-mode.md` updated with bash blocks alongside pwsh. | `docs/rag/SETUP-GUIDE.md`, `docs/getting-started-context-mode.md` |
+
+**Not changed (deliberate)**:
+
+- `docs-index.instructions.md`, `copilot-instructions.md`, `mcp-routing.instructions.md` — implementation-level change only; routing rules unchanged.
+- `ECommerceApp.sln` — hook scripts remain runtime config, no project membership.
+- Counts unchanged: instructions 17, agents 8, skills 17, ADRs 29.
+
+**Refs**: commits `e8e4fa02`, `84167311`.
+
 ### Session 28 — Phase 7 L2: `query_docs_cached` wrapper (2026-05-27)
 
 Collapses the manual RAG → context-mode handoff (3 steps) into 1 + 1: a single `query_docs_cached` call returns formatted markdown + a deterministic source label; the agent makes one pass-through `ctx_index` call. Architecture choice **option C** (return-and-let-caller-cache) — no cross-MCP coupling, no shared-volume staging, no direct SQLite writes. Python RAG server only; `.NET` parity deferred (requires Core data-model change). Cache shape identical to L1 → both interoperate.

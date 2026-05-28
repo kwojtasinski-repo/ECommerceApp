@@ -25,7 +25,7 @@ Copilot tool call result
   PostToolUse envelope (JSON on stdin)
         |
         v
-  posttooluse-chain.ps1
+  posttooluse-chain.mjs  (Node.js ESM — Windows/Linux/macOS)
         |---> docker exec ecommerceapp-context-mode  (upstream session capture)
         |---> node auto-cache.mjs
                     |
@@ -42,8 +42,9 @@ Copilot tool call result
 
 | Path | Role |
 |---|---|
-| `.github/hooks/context-mode.json` | Hook config consumed by Copilot Chat. Wires PostToolUse to the PS wrapper. |
-| `.github/hooks/posttooluse-chain.ps1` | Fan-out wrapper. Best-effort. Always `exit 0`. |
+| `.github/hooks/context-mode.json` | Hook config consumed by Copilot Chat. Wires PostToolUse to `posttooluse-chain.mjs` via `"cwd": "."` (repo root). Cross-platform. |
+| `.github/hooks/posttooluse-chain.mjs` | Fan-out wrapper (Node.js ESM). Best-effort. Always `exit 0`. Works on Windows, Linux, macOS. |
+| `.github/hooks/posttooluse-chain.sh` | Bash fallback for headless Linux/macOS (SSH remotes, CI) without VS Code's bundled Node. |
 | `.github/hooks/auto-cache.mjs` | Node hook entry. Two modes: `mainHook` (per-fire) and `runIntrospection` (background discovery). |
 | `.github/hooks/.rag-tools-cache.json` | Discovered tool list. 1h TTL. Gitignored. |
 | `.github/hooks/.rag-tools-cache.lock` | Coalescing lock for concurrent discoveries. 60s TTL. Gitignored. |

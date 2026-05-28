@@ -100,7 +100,13 @@ powershell -File scripts/context-mode-bootstrap.ps1 -SkipBuild
 From the repo root:
 
 ```powershell
+# Windows / PowerShell
 powershell -File scripts/test-mcp-handshake.ps1
+```
+
+```bash
+# macOS / Linux
+bash scripts/test-mcp-handshake.sh
 ```
 
 Expected:
@@ -158,8 +164,15 @@ If you see `couldn't load config: ...`, the YAML template is corrupted — rerun
 ### MCP shows 0 tools or "Failed to start"
 
 ```powershell
+# Windows / PowerShell
 docker ps | Select-String context-mode
 powershell -File scripts/test-mcp-handshake.ps1
+```
+
+```bash
+# macOS / Linux
+docker ps | grep context-mode
+bash scripts/test-mcp-handshake.sh
 ```
 
 - Container not running → `docker compose --profile context-mode up -d context-mode`

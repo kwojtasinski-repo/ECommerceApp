@@ -215,9 +215,16 @@ The .NET MCP server entries are already configured in [`.vscode/mcp.json`](../..
 ### Local .NET development (no Docker for ingest)
 
 ```powershell
-# One-time: download the ONNX model (~490 MB total)
+# Windows — One-time: download the ONNX model (~490 MB total)
 pwsh tools/rag-dotnet/download-model.ps1
+```
 
+```bash
+# macOS / Linux — One-time: download the ONNX model (~490 MB total)
+bash tools/rag-dotnet/download-model.sh
+```
+
+```powershell
 # Start Qdrant (needed for ingest and MCP)
 docker compose --profile rag-dotnet up qdrant -d
 
@@ -262,16 +269,22 @@ docker compose --profile rag run --rm rag-tools python ingest.py --force-full
 
 The .NET path downloads the ONNX model separately. To switch:
 
-1. Edit `tools/rag-dotnet/download-model.ps1` — update `$Base` to the new model's
+1. Edit `tools/rag-dotnet/download-model.ps1` (Windows) or `tools/rag-dotnet/download-model.sh` (Linux/Mac) — update `$Base` / `BASE` to the new model's
    HuggingFace URL. If the new model is BERT-based (has native `vocab.txt`), remove
-   the `$BertBase` workaround and set `vocab.txt` back to `"$Base/vocab.txt"`.
+   the `BERT_BASE` workaround and set `vocab.txt` back to `"$BASE/vocab.txt"`.
 
 2. Edit `tools/rag-dotnet/Dockerfile` — update `ARG MODEL_BASE` to match.
 
 3. Delete `tools/rag-dotnet/model/` and re-run the download script:
    ```powershell
+   # Windows
    Remove-Item -Recurse tools/rag-dotnet/model
    pwsh tools/rag-dotnet/download-model.ps1
+   ```
+   ```bash
+   # macOS / Linux
+   rm -rf tools/rag-dotnet/model
+   bash tools/rag-dotnet/download-model.sh
    ```
 
 4. Rebuild and re-ingest:
@@ -324,7 +337,7 @@ The .NET path downloads the ONNX model separately. To switch:
 
 ### .NET: "Model file not found"
 
-- Run `pwsh tools/rag-dotnet/download-model.ps1` to download the ONNX model
+- Run `pwsh tools/rag-dotnet/download-model.ps1` (Windows) or `bash tools/rag-dotnet/download-model.sh` (Linux/Mac) to download the ONNX model
 - The script downloads to `tools/rag-dotnet/model/` (gitignored)
 
 ### .NET: Docker build fails at curl step
@@ -553,7 +566,7 @@ the same request/response schema.
 ### Python tests (unit + E2E)
 
 ```powershell
-# Unit tests only — no Qdrant needed, ~2s
+# Windows / PowerShell — Unit tests only — no Qdrant needed, ~2s
 pwsh tools/rag/run-tests.ps1 -UnitOnly
 
 # All tests — auto-starts and stops Qdrant
@@ -566,6 +579,20 @@ pwsh tools/rag/run-tests.ps1
 pwsh tools/rag/run-tests.ps1 -StartQdrant -Verbose
 ```
 
+```bash
+# macOS / Linux — Unit tests only
+bash tools/rag/run-tests.sh --unit-only
+
+# All tests — auto-starts and stops Qdrant
+bash tools/rag/run-tests.sh --start-qdrant
+
+# All tests — Qdrant already running
+bash tools/rag/run-tests.sh
+
+# Verbose output
+bash tools/rag/run-tests.sh --start-qdrant --verbose
+```
+
 Test files:
 
 | File | Tests | Needs Qdrant | Description |
@@ -576,7 +603,7 @@ Test files:
 ### .NET tests (unit + E2E)
 
 ```powershell
-# Download model first (one-time, ~490 MB)
+# Windows / PowerShell — Download model first (one-time, ~490 MB)
 pwsh tools/rag-dotnet/download-model.ps1
 
 # Unit tests only — no Qdrant or model needed
@@ -590,10 +617,24 @@ $env:QDRANT_URL = 'http://localhost:6333'
 pwsh tools/rag-dotnet/run-tests.ps1 -E2EOnly
 ```
 
+```bash
+# macOS / Linux — Download model first (one-time, ~490 MB)
+bash tools/rag-dotnet/download-model.sh
+
+# Unit tests only — no Qdrant or model needed
+bash tools/rag-dotnet/run-tests.sh --unit-only
+
+# All tests — auto-starts and stops Qdrant
+bash tools/rag-dotnet/run-tests.sh --start-qdrant
+
+# E2E tests with QDRANT_URL already set
+QDRANT_URL=http://localhost:6333 bash tools/rag-dotnet/run-tests.sh --e2e-only
+```
+
 ### Run everything
 
 ```powershell
-# Full suite — Python (unit + E2E) + .NET — Qdrant started/stopped automatically
+# Windows / PowerShell — Full suite — Python (unit + E2E) + .NET — Qdrant started/stopped automatically
 pwsh tools/rag/run-all-tests.ps1
 
 # Skip .NET (e.g., model not downloaded)
@@ -601,6 +642,17 @@ pwsh tools/rag/run-all-tests.ps1 -SkipDotNet
 
 # Skip Python
 pwsh tools/rag/run-all-tests.ps1 -SkipPython
+```
+
+```bash
+# macOS / Linux — Full suite
+bash tools/rag/run-all-tests.sh
+
+# Skip .NET (e.g., model not downloaded)
+bash tools/rag/run-all-tests.sh --skip-dotnet
+
+# Skip Python
+bash tools/rag/run-all-tests.sh --skip-python
 ```
 
 ---
@@ -616,8 +668,8 @@ pwsh tools/rag/run-all-tests.ps1 -SkipPython
 | **Start Python HTTP server** | `docker compose --profile rag-python-http up -d rag-python-http`  *(or VS Code task `RAG: Start Python HTTP`)* |
 | **Stop Python HTTP server** | `docker compose --profile rag-python-http down` |
 | Remote ingest (Python) | `python tools/rag/ingest.py --remote http://localhost:3002` |
-| Python unit tests | `pwsh tools/rag/run-tests.ps1 -UnitOnly` |
-| Python all tests | `pwsh tools/rag/run-tests.ps1 -StartQdrant` |
+| Python unit tests | Windows: `pwsh tools/rag/run-tests.ps1 -UnitOnly` / Linux+Mac: `bash tools/rag/run-tests.sh --unit-only` |
+| Python all tests | Windows: `pwsh tools/rag/run-tests.ps1 -StartQdrant` / Linux+Mac: `bash tools/rag/run-tests.sh --start-qdrant` |
 | Start Qdrant (.NET) | `docker compose --profile rag-dotnet up qdrant -d` |
 | Build .NET image | `docker compose build rag-dotnet` |
 | Ingest docs (.NET) | `docker compose --profile rag-dotnet run --rm rag-dotnet dotnet /app/ingest/ingest.dll` |
@@ -627,10 +679,10 @@ pwsh tools/rag/run-all-tests.ps1 -SkipPython
 | **Stop both HTTP servers** | `docker compose --profile rag-dotnet-http --profile rag-python-http down` |
 | **Verify HTTP server is up** | `Invoke-WebRequest http://localhost:3001/admin/stats`  *(.NET)*  /  `…:3002…`  *(Python)* |
 | **Poll an ingest operation** | `Invoke-RestMethod http://localhost:3002/ingest/<collection>/operations/<opId>` |
-| Download .NET ONNX model | `pwsh tools/rag-dotnet/download-model.ps1` |
-| .NET unit tests | `pwsh tools/rag-dotnet/run-tests.ps1 -UnitOnly` |
-| .NET all tests | `pwsh tools/rag-dotnet/run-tests.ps1 -StartQdrant` |
-| Full test suite (Python + .NET) | `pwsh tools/rag/run-all-tests.ps1` |
+| Download .NET ONNX model | Windows: `pwsh tools/rag-dotnet/download-model.ps1` / Linux+Mac: `bash tools/rag-dotnet/download-model.sh` |
+| .NET unit tests | Windows: `pwsh tools/rag-dotnet/run-tests.ps1 -UnitOnly` / Linux+Mac: `bash tools/rag-dotnet/run-tests.sh --unit-only` |
+| .NET all tests | Windows: `pwsh tools/rag-dotnet/run-tests.ps1 -StartQdrant` / Linux+Mac: `bash tools/rag-dotnet/run-tests.sh --start-qdrant` |
+| Full test suite (Python + .NET) | Windows: `pwsh tools/rag/run-all-tests.ps1` / Linux+Mac: `bash tools/rag/run-all-tests.sh` |
 | Check index (Python) | `Invoke-RestMethod http://localhost:6333/collections/ecommerceapp_docs` |
 | Check index (.NET) | `Invoke-RestMethod http://localhost:6333/collections/ecommerceapp_docs_dotnet` |
 | Qdrant dashboard | http://localhost:6333/dashboard |

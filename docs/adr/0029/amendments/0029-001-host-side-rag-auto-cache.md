@@ -31,7 +31,7 @@ Copilot tool call
 PostToolUse hook envelope (stdin, JSON)
       |
       v
-posttooluse-chain.ps1
+posttooluse-chain.mjs  (Node.js ESM — cross-platform)
       |---> docker exec ecommerceapp-context-mode (upstream context-mode hook)
       |---> node auto-cache.mjs
                     |
@@ -49,8 +49,9 @@ posttooluse-chain.ps1
 
 | Path | Role |
 |---|---|
-| [`.github/hooks/context-mode.json`](../../../.github/hooks/context-mode.json) | Copilot Chat hook config — wires PostToolUse to `posttooluse-chain.ps1`. Unchanged behaviour for the other 4 hooks. |
-| [`.github/hooks/posttooluse-chain.ps1`](../../../.github/hooks/posttooluse-chain.ps1) | Fan-out wrapper: pipes the hook envelope to both the upstream context-mode hook AND `auto-cache.mjs`. Best-effort: any failure is swallowed; `exit 0` keeps the chain alive. |
+| [`.github/hooks/context-mode.json`](../../../.github/hooks/context-mode.json) | Copilot Chat hook config — wires PostToolUse to `posttooluse-chain.mjs` (Node.js, cross-platform). Uses `"cwd": "."` so VS Code runs the command from the repo root (documented VS Code hooks property, relative to repository root). Works on Windows, Linux, macOS. |
+| [`.github/hooks/posttooluse-chain.mjs`](../../../.github/hooks/posttooluse-chain.mjs) | Fan-out wrapper (Node.js ESM): pipes the hook envelope to both the upstream context-mode hook AND `auto-cache.mjs`. Best-effort: any failure is swallowed; `process.exit(0)` keeps the chain alive. Cross-platform — no PowerShell required. |
+| [`.github/hooks/posttooluse-chain.sh`](../../../.github/hooks/posttooluse-chain.sh) | Bash fallback for headless Linux/macOS environments without VS Code's bundled Node (e.g. SSH remotes, CI). Same fan-out semantics. |
 | [`.github/hooks/auto-cache.mjs`](../../../.github/hooks/auto-cache.mjs) | Node entry point. Detects RAG tool calls, formats markdown, calls `ctx_index`. |
 | [`.github/hooks/.rag-tools-cache.json`](../../../.gitignore) | Runtime cache of the introspected RAG tool list (1h TTL). Gitignored. |
 | [`.github/hooks/.rag-tools-cache.lock`](../../../.gitignore) | Coalescing lock for concurrent discovery kickoffs (60s TTL). Gitignored. |

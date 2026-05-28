@@ -332,9 +332,13 @@ Default (no `?project=`) falls back to the collection in `rag-config.yaml`.
 | Python | E2E | 89 | `pytest tools/rag/tests/test_e2e.py -v` |
 | Cross-stack pipeline | manual harness | — | `python tools/rag/real_mcp_check.py` (Phase A STDIO, Phase B HTTP CLI, Phase C HTTP raw) |
 
-Convenience scripts: [`tools/rag/run-tests.ps1`](../../tools/rag/run-tests.ps1),
+Convenience scripts (Windows/PowerShell): [`tools/rag/run-tests.ps1`](../../tools/rag/run-tests.ps1),
 [`tools/rag-dotnet/run-tests.ps1`](../../tools/rag-dotnet/run-tests.ps1),
 [`tools/rag/run-all-tests.ps1`](../../tools/rag/run-all-tests.ps1).
+
+Convenience scripts (macOS/Linux/bash): [`tools/rag/run-tests.sh`](../../tools/rag/run-tests.sh),
+[`tools/rag-dotnet/run-tests.sh`](../../tools/rag-dotnet/run-tests.sh),
+[`tools/rag/run-all-tests.sh`](../../tools/rag/run-all-tests.sh).
 
 ---
 

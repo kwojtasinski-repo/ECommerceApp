@@ -9,7 +9,8 @@
     "PostToolUse": [
       {
         "type": "command",
-        "command": "node \"${workspaceFolder}/.github/hooks/posttooluse-chain.mjs\""
+        "command": "node .github/hooks/posttooluse-chain.mjs",
+        "cwd": "."
       }
     ],
     "UserPromptSubmit": [
