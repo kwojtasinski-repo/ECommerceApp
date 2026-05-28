@@ -297,6 +297,51 @@ Steps:
 6. After any edit, run Workflow 7 (changelog).
 7. Report what was synced.
 
+### Workflow 13 — Codebase evolver pass
+
+Trigger: User says "evolver pass", "scan for stale config", "audit for evolution gaps", or as part of a quarterly maintenance cycle.
+
+Purpose: detect drift between the codebase's current state and the supporting Copilot configuration. Outputs a maintainer report listing four classes of gap. Does NOT auto-fix — surfaces findings for human triage.
+
+Steps:
+
+1. **Stale ADR statuses.** For every ADR, compare its `Status:` line (`Proposed | Accepted | Implemented | Deprecated | Superseded`) against implementation reality:
+   - Search the codebase for the ADR's identifying pattern (e.g. for an EF Core pattern ADR, search for the EF Core type names it introduces).
+   - If implementation matches but ADR still says `Proposed` → flag as "Bump to Accepted/Implemented".
+   - If implementation has been replaced by a newer ADR's pattern → flag as "Mark Superseded by ADR-NNNN".
+   - Use `query_docs("ADR-NNNN")` first to surface the latest amendments; do not read ADR files cold.
+2. **Missing skill files for recurring patterns.** Scan `.github/context/agent-decisions.md` for corrections that have repeated 3+ times in different sessions on the same topic. Each such cluster is a candidate for promotion to a `.github/skills/<topic>/SKILL.md`. Flag with "Promote to skill: <name>".
+3. **Missing eval queries.** Run [`.github/skills/rag-eval-coverage/SKILL.md`](../skills/rag-eval-coverage/SKILL.md) and list any newly-uncovered HIGH or MEDIUM priority files. Flag with "Add query covering: <path>".
+4. **Missing memory entries.** Scan `agent-decisions.md` for entries with `Status: Promoted → <ref>` more than 30 days old that have NO matching entry in `/memories/repo/`. Flag with "Persist to repo memory: <topic>".
+5. **Emit the report** in this shape:
+   ```markdown
+   # Codebase Evolver Pass — <date>
+
+   ## Stale ADR statuses (<n>)
+   - **ADR-NNNN** — current `<status>`; suggest `<new-status>`. Evidence: <pointer>
+   - ...
+
+   ## Skill promotion candidates (<n>)
+   - **<topic>** — <n> recurrences in agent-decisions.md. Suggest: `.github/skills/<slug>/SKILL.md`.
+   - ...
+
+   ## Eval query gaps (<n>)
+   - `<path>` — no covering query in `queries.yaml`. Priority: <high|medium>.
+   - ...
+
+   ## Memory-promotion gaps (<n>)
+   - **<topic>** — agent-decisions entry promoted on <date>; missing in `/memories/repo/`.
+   - ...
+   ```
+6. After producing the report, run **Workflow 7** (changelog) noting the audit was performed and the number of findings in each class.
+7. Hand off to the user — DO NOT auto-fix any finding. Each class has its own follow-up workflow:
+   - Stale ADR → human reviews + edits ADR body + status.
+   - Skill promotion → `@adr-generator` (if a new ADR is needed) or manual skill scaffolding.
+   - Eval query gap → invoke `.github/skills/generate-eval-questions/SKILL.md`.
+   - Memory promotion → manual `memory create` per `agent-memory.instructions.md`.
+
+Recommended cadence: monthly (light pass) or after every 3 atomic-switch milestones (full pass).
+
 ---
 
 ## Rules

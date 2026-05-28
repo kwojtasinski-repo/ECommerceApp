@@ -69,6 +69,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "agents", "agents", "{D28679
 		.github\agents\implementer.md = .github\agents\implementer.md
 		.github\agents\planner.md = .github\agents\planner.md
 		.github\agents\pr-commit.md = .github\agents\pr-commit.md
+		.github\agents\setup-discovery.md = .github\agents\setup-discovery.md
 		.github\agents\verifier.md = .github\agents\verifier.md
 	EndProjectSection
 EndProject
@@ -420,6 +421,28 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0026", "0026", "{00260000-0
 		docs\adr\0026\README.md = docs\adr\0026\README.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0027", "0027", "{00270000-0000-0000-0000-000000000027}"
+	ProjectSection(SolutionItems) = preProject
+		docs\adr\0027\0027-rag-pipeline-design.md = docs\adr\0027\0027-rag-pipeline-design.md
+		docs\adr\0027\README.md = docs\adr\0027\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0028", "0028", "{00280000-0000-0000-0000-000000000028}"
+	ProjectSection(SolutionItems) = preProject
+		docs\adr\0028\0028-remote-multitenant-rag-ingest.md = docs\adr\0028\0028-remote-multitenant-rag-ingest.md
+		docs\adr\0028\README.md = docs\adr\0028\README.md
+		docs\adr\0028\tech-details-dotnet.md = docs\adr\0028\tech-details-dotnet.md
+		docs\adr\0028\tech-details-python.md = docs\adr\0028\tech-details-python.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "amendments", "amendments", "{0028A001-0000-0000-0000-000000000028}"
+	ProjectSection(SolutionItems) = preProject
+		docs\adr\0028\amendments\0028-001-implementation-deviations.md = docs\adr\0028\amendments\0028-001-implementation-deviations.md
+		docs\adr\0028\amendments\0028-002-batch-manifest-pipeline.md = docs\adr\0028\amendments\0028-002-batch-manifest-pipeline.md
+		docs\adr\0028\amendments\0028-003-transport-aware-tools.md = docs\adr\0028\amendments\0028-003-transport-aware-tools.md
+		docs\adr\0028\amendments\0028-004-per-collection-config-gap.md = docs\adr\0028\amendments\0028-004-per-collection-config-gap.md
+	EndProjectSection
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0029", "0029", "{00290000-0000-0000-0000-000000000029}"
 	ProjectSection(SolutionItems) = preProject
 		docs\adr\0029\0029-context-mode-mcp-sandbox.md = docs\adr\0029\0029-context-mode-mcp-sandbox.md
@@ -462,6 +485,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "roadmap", "roadmap", "{8FA6
 		docs\roadmap\orders-atomic-switch.md = docs\roadmap\orders-atomic-switch.md
 		docs\roadmap\payments-atomic-switch.md = docs\roadmap\payments-atomic-switch.md
 		docs\roadmap\presale-slice2.md = docs\roadmap\presale-slice2.md
+		docs\roadmap\rag-remote-multitenant.md = docs\roadmap\rag-remote-multitenant.md
 		docs\roadmap\README.md = docs\roadmap\README.md
 		docs\roadmap\saga-pattern.md = docs\roadmap\saga-pattern.md
 		docs\roadmap\storefront-offers.md = docs\roadmap\storefront-offers.md
@@ -613,6 +637,78 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ctx-hardening-audit", "ctx-
 		.github\skills\ctx-hardening-audit\SKILL.md = .github\skills\ctx-hardening-audit\SKILL.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rag-reindex-decision", "rag-reindex-decision", "{A1B2C3D4-E5F6-7890-ABCD-EF123456780A}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\rag-reindex-decision\SKILL.md = .github\skills\rag-reindex-decision\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rag-collection-rebuild", "rag-collection-rebuild", "{A1B2C3D4-E5F6-7890-ABCD-EF123456780B}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\rag-collection-rebuild\SKILL.md = .github\skills\rag-collection-rebuild\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rag-query-debug", "rag-query-debug", "{A1B2C3D4-E5F6-7890-ABCD-EF123456780C}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\rag-query-debug\SKILL.md = .github\skills\rag-query-debug\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rag-multilang-test", "rag-multilang-test", "{A1B2C3D4-E5F6-7890-ABCD-EF123456780D}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\rag-multilang-test\SKILL.md = .github\skills\rag-multilang-test\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ctx-bootstrap-network", "ctx-bootstrap-network", "{A1B2C3D4-E5F6-7890-ABCD-EF123456780E}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\ctx-bootstrap-network\SKILL.md = .github\skills\ctx-bootstrap-network\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ctx-bootstrap-storage", "ctx-bootstrap-storage", "{A1B2C3D4-E5F6-7890-ABCD-EF123456780F}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\ctx-bootstrap-storage\SKILL.md = .github\skills\ctx-bootstrap-storage\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ctx-bootstrap-runtimes", "ctx-bootstrap-runtimes", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567810}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\ctx-bootstrap-runtimes\SKILL.md = .github\skills\ctx-bootstrap-runtimes\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-rag-new-project", "setup-rag-new-project", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567811}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\setup-rag-new-project\SKILL.md = .github\skills\setup-rag-new-project\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-context-mode-new-project", "setup-context-mode-new-project", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567812}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\setup-context-mode-new-project\SKILL.md = .github\skills\setup-context-mode-new-project\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-adguard-policy", "setup-adguard-policy", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567813}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\setup-adguard-policy\SKILL.md = .github\skills\setup-adguard-policy\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-mcp-clients", "setup-mcp-clients", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567814}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\setup-mcp-clients\SKILL.md = .github\skills\setup-mcp-clients\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "setup-auto-cache-hook", "setup-auto-cache-hook", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567815}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\setup-auto-cache-hook\SKILL.md = .github\skills\setup-auto-cache-hook\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rag-eval-coverage", "rag-eval-coverage", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567816}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\rag-eval-coverage\SKILL.md = .github\skills\rag-eval-coverage\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "playbooks", "playbooks", "{7C3E91A2-B4D5-4F68-9A1C-E2F30748D6B2}"
+	ProjectSection(SolutionItems) = preProject
+		docs\playbooks\context-mode-bootstrap.md = docs\playbooks\context-mode-bootstrap.md
+		docs\playbooks\rag-bootstrap.md = docs\playbooks\rag-bootstrap.md
+		docs\playbooks\README.md = docs\playbooks\README.md
+	EndProjectSection
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerceApp.Web.IntegrationTests", "ECommerceApp.Web.IntegrationTests\ECommerceApp.Web.IntegrationTests.csproj", "{C77D9490-CF88-A4B6-F7E6-3B869D2FECDE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerceApp.Shared.TestInfrastructure", "ECommerceApp.Shared.TestInfrastructure\ECommerceApp.Shared.TestInfrastructure.csproj", "{3F58C385-DAF9-D146-2747-EDFCAABDD44D}"
@@ -729,6 +825,9 @@ Global
 		{0024E001-0000-0000-0000-000000000024} = {00240000-0000-0000-0000-000000000024}
 		{00250000-0000-0000-0000-000000000025} = {25B91C37-ECC3-46DC-8502-C91F85A1F7BC}
 		{00260000-0000-0000-0000-000000000026} = {25B91C37-ECC3-46DC-8502-C91F85A1F7BC}
+		{00270000-0000-0000-0000-000000000027} = {25B91C37-ECC3-46DC-8502-C91F85A1F7BC}
+		{00280000-0000-0000-0000-000000000028} = {25B91C37-ECC3-46DC-8502-C91F85A1F7BC}
+		{0028A001-0000-0000-0000-000000000028} = {00280000-0000-0000-0000-000000000028}
 		{00290000-0000-0000-0000-000000000029} = {25B91C37-ECC3-46DC-8502-C91F85A1F7BC}
 		{0029A001-0000-0000-0000-000000000029} = {00290000-0000-0000-0000-000000000029}
 		{5EC11768-8E47-4C89-9EBC-78E600311851} = {908C6C00-47A3-455F-82C8-5BBECB045911}
@@ -760,6 +859,20 @@ Global
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567807} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567808} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567809} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF123456780A} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF123456780B} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF123456780C} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF123456780D} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF123456780E} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF123456780F} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567810} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567811} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567812} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567813} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567814} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567815} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567816} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{7C3E91A2-B4D5-4F68-9A1C-E2F30748D6B2} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 		{C77D9490-CF88-A4B6-F7E6-3B869D2FECDE} = {10D50F1A-6B65-4B28-B3E1-B064B6EBF967}
 		{3F58C385-DAF9-D146-2747-EDFCAABDD44D} = {10D50F1A-6B65-4B28-B3E1-B064B6EBF967}
 	EndGlobalSection

@@ -14,8 +14,8 @@
 | `copilot-instructions.md`              | 1     | ~7 410 chars (under 8K soft budget; Session 26 trim from 11 975); §12/§14 collapsed to pointers, dedicated `batched-tasks.instructions.md` added |
 | Instruction files (`.instructions.md`) | 17    | All with `applyTo:` frontmatter; +`batched-tasks` (Session 26); `agent-memory` added; `pre-edit` split into core + `doc-suggestions`; `docs-index` scope narrowed |
 | Prompt files (`.prompt.md`)            | 6     | BC analysis, BC implementation, PR review, refactor, flow-analysis, rag-sync                                                        |
-| Agent files                            | 8     | adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer, planner, implementer, verifier, pr-commit                       |
-| Skills (`SKILL.md`)                    | 24    | +4 RAG maintenance skills (Session 32): rag-reindex-decision, rag-collection-rebuild, rag-query-debug, rag-multilang-test; +3 context-mode sandbox skills (Session 31): ctx-sandbox-bootstrap-verify, ctx-doctor-playbook, ctx-hardening-audit; +rag-with-memory (Session 26); +5 RAG skills (Session 23): diagnose-rag, tune-rag-weights, expand-rag-glossary, generate-rag-rules, generate-eval-questions |
+| Agent files                            | 9     | adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer, planner, implementer, verifier, pr-commit, setup-discovery (Session 33)                       |
+| Skills (`SKILL.md`)                    | 33    | +9 cross-project bootstrap skills (Session 33): ctx-bootstrap-network, ctx-bootstrap-storage, ctx-bootstrap-runtimes, setup-rag-new-project, setup-context-mode-new-project, setup-adguard-policy, setup-mcp-clients, setup-auto-cache-hook, rag-eval-coverage; +4 RAG maintenance skills (Session 32): rag-reindex-decision, rag-collection-rebuild, rag-query-debug, rag-multilang-test; +3 context-mode sandbox skills (Session 31): ctx-sandbox-bootstrap-verify, ctx-doctor-playbook, ctx-hardening-audit; +rag-with-memory (Session 26); +5 RAG skills (Session 23): diagnose-rag, tune-rag-weights, expand-rag-glossary, generate-rag-rules, generate-eval-questions |
 | ADRs                                   | 29    | Folderized ADR routers under `docs/adr/<NNNN>/README.md`; ADR-0027/0028 (RAG pipeline) + ADR-0029 (context-mode sandbox) added                                                                           |
 | Context files                          | 6     | project-state, known-issues, agent-decisions, repo-index, future-skills, anti-patterns-critical                                    |
 | GitHub Actions workflows               | 1     | `dotnet-ci.yml` — manual trigger only (push/PR commented)                                                                          |
@@ -247,6 +247,35 @@ Sprint 2 of the cross-project RAG/context-mode reusability initiative ([plan](..
 3. Recommendation: ship the ADR-0027 + ADR-0028 + `rag-remote-multitenant.md` sln backfill as a dedicated Workflow 10 close-out (not bundled here to keep Sprint 2 scope tight).
 
 **Refs**: commit `ef7f98aa`, branch `feat/sprint1-rag-quick-wins-skills-plan`, `docs/reports/sprint3-sprint4-requirements-brief.md`, `/memories/repo/rag-mcp-anomalies.md` entries #8 #9 #10.
+
+---
+
+### Session 33 — Sprint 3+4 cross-project bootstrap skills + maintainer evolver pass (2026-05-28)
+
+Sprints 3 and 4 of the cross-project RAG/context-mode reusability initiative ([plan](../docs/reports/rag-context-mode-skills-plan-2026-05-28.md), [handoff brief](../docs/reports/sprint3-sprint4-requirements-brief.md)). Single commit on branch `feat/sprint1-rag-quick-wins-skills-plan`, NOT pushed. Goal: make RAG + context-mode reusable in a fresh repository through composable skills + end-to-end playbooks, and teach `@copilot-setup-maintainer` to detect codebase evolution drift.
+
+Phase 3 (ADR-0028 Amendment 4 per-collection config persistence fix, roadmap steps P3-1..P3-8) was DEFERRED — scope too large for one session. D2/E1/E2 skills carry an explicit `KNOWN GAP` blockquote pointing at the roadmap.
+
+| #   | Change | Files affected |
+| --- | ------ | -------------- |
+| 1   | +9 new skills (cross-project bootstrap): D1 `ctx-bootstrap-network` (AdGuard allowlist), D2 `ctx-bootstrap-storage` (Qdrant + FTS5 + KNOWN GAP), D3 `ctx-bootstrap-runtimes` (sandbox runtime install), E1 `setup-rag-new-project` (RAG end-to-end + KNOWN GAP), E2 `setup-context-mode-new-project` (context-mode end-to-end + KNOWN GAP), E3 `setup-adguard-policy` (AdGuard stand-up), E4 `setup-mcp-clients` (VS Code / Copilot Web / VS 17.14+ matrix), E5 `setup-auto-cache-hook` (L3 hook install), B10 `rag-eval-coverage` (`comm -23` audit + priority heuristic) | `.github/skills/{ctx-bootstrap-network,ctx-bootstrap-storage,ctx-bootstrap-runtimes,setup-rag-new-project,setup-context-mode-new-project,setup-adguard-policy,setup-mcp-clients,setup-auto-cache-hook,rag-eval-coverage}/SKILL.md` _(all new)_ |
+| 2   | +2 bootstrap playbooks + hub README composing the skills end-to-end with stage gates and troubleshooting flowcharts | `docs/playbooks/README.md` _(new)_, `docs/playbooks/context-mode-bootstrap.md` _(new, 7 stages)_, `docs/playbooks/rag-bootstrap.md` _(new, 7 stages)_ |
+| 3   | New read-only discovery agent: scans an unfamiliar repo, emits ✅/❌/⚠️ checklist mapping each missing artifact to the right skill/playbook. Forbidden from any write/edit/container op. | `.github/agents/setup-discovery.md` _(new)_ |
+| 4   | `@copilot-setup-maintainer` Workflow 13 — codebase evolver pass: detects stale ADR statuses, missing skill files for recurring patterns, missing eval queries, missing memory-promotion entries; surfaces findings, does NOT auto-fix | `.github/agents/copilot-setup-maintainer.md` |
+| 5   | `doc-suggestions.instructions.md` +4 trigger sections: new skill needed (3+ recurring corrections), new eval query needed (audit shows uncovered file), new memory entry needed (correction repeats 2nd time), new ADR needed (pattern shipped without one) — all suggest-only | `.github/instructions/doc-suggestions.instructions.md` |
+| 6   | Hook cleanup: deleted stale `posttooluse-chain.ps1` (relic, never wired). `posttooluse-chain.sh` KEPT — documented bash fallback for SSH/headless Linux + macOS (Session 31 changelog, ADR-0029 Amendment 001, `docs/rag/auto-cache-hook.md`) | `.github/hooks/posttooluse-chain.ps1` _(deleted)_ |
+| 7   | docs-index sync: +9 new skill rows (D1-D3, E1-E5, B10), +3 playbook rows, +setup-discovery agent row | `.github/instructions/docs-index.instructions.md` |
+| 8   | sln drift cleared: +ADR-0027 / ADR-0028 parent folders + amendments, +`docs/roadmap/rag-remote-multitenant.md`, +new skill folders + playbook files in Copilot/docs solution folders | `ECommerceApp.sln` |
+
+**Counts**: skills 24 → 33, agents 8 → 9, playbooks 0 → 3 (hub + 2). Instructions unchanged in count (Workflow 13 extends existing maintainer agent; doc-suggestions extends existing instruction file).
+
+**Not changed (deliberate, per Sprint 3+4 scope)**:
+
+- ADR-0028 Amendment 4 / roadmap Phase 3 P3-1..P3-8 — too large for this session. D2/E1/E2 skills document the gap via KNOWN GAP blockquotes; standalone-stack projects are unaffected.
+- `posttooluse-chain.sh` retained — documented bash fallback for non-Node hosts.
+- VS Code default PowerShell shell setting kept — user confirmed they accept the existing host behavior.
+
+**Refs**: branch `feat/sprint1-rag-quick-wins-skills-plan`, parent commit `07b0bcfe`, [handoff brief](../docs/reports/sprint3-sprint4-requirements-brief.md), [ADR-0029](../docs/adr/0029/0029-context-mode-mcp-sandbox.md), [ADR-0028 Amendment 4](../docs/adr/0028/amendments/0028-004-per-collection-config-gap.md).
 
 ---
 
