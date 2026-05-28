@@ -491,6 +491,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reports", "reports", "{7C3E
 	ProjectSection(SolutionItems) = preProject
 		docs\reports\bc-migration-status.md = docs\reports\bc-migration-status.md
 		docs\reports\cross-bc-integration-test-report.md = docs\reports\cross-bc-integration-test-report.md
+		docs\reports\rag-context-mode-audit-2026-05-28.md = docs\reports\rag-context-mode-audit-2026-05-28.md
+		docs\reports\rag-context-mode-skills-plan-2026-05-28.md = docs\reports\rag-context-mode-skills-plan-2026-05-28.md
 		docs\reports\remaining-work-effort.md = docs\reports\remaining-work-effort.md
 		docs\reports\web-ui-views-report.md = docs\reports\web-ui-views-report.md
 	EndProjectSection
@@ -594,6 +596,21 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "rag-with-memory", "rag-with-memory", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567806}"
 	ProjectSection(SolutionItems) = preProject
 		.github\skills\rag-with-memory\SKILL.md = .github\skills\rag-with-memory\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ctx-sandbox-bootstrap-verify", "ctx-sandbox-bootstrap-verify", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567807}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\ctx-sandbox-bootstrap-verify\SKILL.md = .github\skills\ctx-sandbox-bootstrap-verify\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ctx-doctor-playbook", "ctx-doctor-playbook", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567808}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\ctx-doctor-playbook\SKILL.md = .github\skills\ctx-doctor-playbook\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ctx-hardening-audit", "ctx-hardening-audit", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567809}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\ctx-hardening-audit\SKILL.md = .github\skills\ctx-hardening-audit\SKILL.md
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ECommerceApp.Web.IntegrationTests", "ECommerceApp.Web.IntegrationTests\ECommerceApp.Web.IntegrationTests.csproj", "{C77D9490-CF88-A4B6-F7E6-3B869D2FECDE}"
@@ -740,6 +757,9 @@ Global
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567804} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567805} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
 		{A1B2C3D4-E5F6-7890-ABCD-EF1234567806} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567807} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567808} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A1B2C3D4-E5F6-7890-ABCD-EF1234567809} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
 		{C77D9490-CF88-A4B6-F7E6-3B869D2FECDE} = {10D50F1A-6B65-4B28-B3E1-B064B6EBF967}
 		{3F58C385-DAF9-D146-2747-EDFCAABDD44D} = {10D50F1A-6B65-4B28-B3E1-B064B6EBF967}
 	EndGlobalSection
