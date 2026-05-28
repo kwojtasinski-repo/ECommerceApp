@@ -155,3 +155,83 @@ entries:
       - aktualizacji    # PL: update (gen.)
       - aktualisierung  # DE: update
       - upgraden        # DE: to upgrade
+
+  # ── context-mode sandbox ───────────────────────────────────────────────────
+  - english: "context-mode MCP sandbox node runtime FTS5 ctx_execute ctx_search"
+    patterns:
+      - tryb-kontekstu      # PL: context-mode
+      - tryb            # PL: mode
+      - piaskownica     # PL: sandbox
+      - piaskownicy     # PL: sandbox (gen.)
+      - sandbox         # EN passthrough common in PL docs
+      - kontextmodus    # DE: context-mode
+      - sandkasten      # DE: sandbox
+
+  # ── AdGuard DNS firewall ───────────────────────────────────────────────────
+  - english: "AdGuard DNS firewall allowlist blocklist domain filter outbound network"
+    patterns:
+      - adguard         # acronym/brand
+      - zapora          # PL: firewall
+      - lista-zezwoleń  # PL: allowlist (compound)
+      - lista           # PL: list
+      - zezwoleń        # PL: permissions/allows (gen.)
+      - dnsfilter       # DE compound (DNS-Filter)
+      - sperrliste      # DE: blocklist
+      - whitelist-eintrag  # DE: whitelist entry
+
+  # ── Refresh token & sessions ───────────────────────────────────────────────
+  - english: "refresh token session expiry rotation JWT IAM identity"
+    patterns:
+      - token-odświeżania   # PL: refresh token (compound)
+      - odświeżania         # PL: refreshing
+      - odświeżanie         # PL: refresh
+      - sesja               # PL: session
+      - sesji               # PL: session (gen.)
+      - wygaśnięcie         # PL: expiry
+      - aktualisierungstoken  # DE: refresh token
+      - sitzung             # DE: session
+      - ablauf              # DE: expiry
+
+  # ── IAM / Identity Access Management ───────────────────────────────────────
+  - english: "IAM Identity Access Management authentication authorization claim role permission"
+    patterns:
+      - tożsamość       # PL: identity
+      - tożsamości      # PL: identity (gen.)
+      - identyfikacja   # PL: identification
+      - uwierzytelnianie  # PL: authentication
+      - autoryzacja     # PL: authorization
+      - identität       # DE: identity
+      - authentifizierung  # DE: authentication
+      - autorisierung   # DE: authorization
+
+  # ── Host-side hooks (Copilot agent hooks) ──────────────────────────────────
+  - english: "host-side hook PreToolUse PostToolUse PreCompact agent hook automation"
+    patterns:
+      - hak             # PL: hook
+      - haki            # PL: hooks
+      - hak-po-stronie-hosta  # PL: host-side hook (compound)
+      - po-stronie-hosta  # PL: host-side
+      - haken           # DE: hook(s)
+      - host-seitig     # DE: host-side
+
+  # ── Auto-cache RAG → context-mode FTS5 ─────────────────────────────────────
+  - english: "auto-cache RAG ctx_index FTS5 PostToolUse hook query_docs_cached source label"
+    patterns:
+      - auto-cachowanie     # PL: auto-caching
+      - auto-cache          # EN passthrough
+      - cachowanie          # PL: caching
+      - automatyczne-cachowanie  # PL: automatic caching
+      - cache               # EN passthrough common
+      - zwischenspeicherung  # DE: caching
+      - automatisches-caching  # DE: automatic caching
+
+  # ── Atomic switch (legacy → new BC) ────────────────────────────────────────
+  - english: "atomic switch bounded context migration legacy to new BC DI registration swap"
+    patterns:
+      - atomowy-switch      # PL: atomic switch
+      - atomowy             # PL: atomic
+      - przełączenie-atomowe  # PL: atomic switch (alt)
+      - swap                # EN passthrough
+      - atomarer-wechsel    # DE: atomic switch
+      - atomar              # DE: atomic
+      - umstellung          # DE: switchover

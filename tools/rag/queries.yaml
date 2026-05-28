@@ -92,6 +92,34 @@ named_queries:
     doc_kind: "adr_main"
     top_k: 8
 
+  - name: "adr-0026-saga"
+    question: "ADR-0026 saga choreography compensation OrderPlacementFailed event publisher"
+    adr_id: "0026"
+    top_k: 10
+
+  - name: "adr-0027-rag"
+    question: "ADR-0027 RAG MCP tool output contract list_adrs query_docs read_docs"
+    adr_id: "0027"
+    top_k: 10
+
+  - name: "adr-0028-multitenant"
+    question: "ADR-0028 remote multitenant RAG ingest collection per tenant API key authentication"
+    adr_id: "0028"
+    top_k: 10
+
+  - name: "adr-0029-context-mode"
+    question: "ADR-0029 context-mode MCP sandbox AdGuard hardening hooks FTS5 auto-cache"
+    adr_id: "0029"
+    top_k: 12
+
+  - name: "context-mode-bootstrap-flow"
+    question: "context-mode sandbox bootstrap script AdGuard DNS allowlist setup verification"
+    top_k: 10
+
+  - name: "rag-caching-strategy"
+    question: "RAG caching strategy L1 L2 L3 auto-cache hook ctx_index handoff query_docs_cached"
+    top_k: 10
+
   # ── Context files ──────────────────────────────────────────────────────────
   - name: "bc-blockers"
     question: "bounded context blocked status migration readiness"
