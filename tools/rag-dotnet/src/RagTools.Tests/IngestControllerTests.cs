@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging.Abstractions;
 using RagTools.Core;
+using RagTools.Core.Config;
 using RagTools.Core.Ingest;
 using RagTools.Mcp.Controllers;
 
@@ -33,7 +34,11 @@ public sealed class IngestControllerTests
 
         var validator = new BatchValidator(NullLogger<BatchValidator>.Instance);
         var parser    = new ZipBatchParser(validator, NullLogger<ZipBatchParser>.Instance);
-        var service   = new BatchIngestService(channel, ops, NullLogger<BatchIngestService>.Instance);
+        var service   = new BatchIngestService(
+            channel, ops,
+            new NoopStore(), new NoopConfigSource(),
+            new RagConfig(),
+            NullLogger<BatchIngestService>.Instance);
 
         var ctrl = new IngestController(parser, service, channel, ops);
 
@@ -199,5 +204,27 @@ public sealed class IngestControllerTests
         Assert.Equal(400, obj.StatusCode);
         var body = Assert.IsAssignableFrom<IDictionary<string, object?>>(obj.Value);
         Assert.Equal("MissingRagConfigYaml", body["code"]);
+    }
+
+    private sealed class NoopStore : IDocumentStore
+    {
+        public Task StoreConfigAsync(string collection, RagConfigPayload config, CancellationToken ct = default) => Task.CompletedTask;
+        public Task<RagConfigPayload?> FetchConfigAsync(string collection, CancellationToken ct = default) => Task.FromResult<RagConfigPayload?>(null);
+        public Task UpsertChunksAsync(string collection, IReadOnlyList<RagPoint> chunks, CancellationToken ct = default) => Task.CompletedTask;
+        public Task StoreDocumentAsync(string collection, ContentDocument doc, CancellationToken ct = default) => Task.CompletedTask;
+        public Task DeleteByPathsAsync(string collection, IEnumerable<string> relPaths, CancellationToken ct = default) => Task.CompletedTask;
+        public Task<IReadOnlyList<DocumentSearchResult>> SearchAsync(string collection, float[] queryVector, SearchOptions opts, CancellationToken ct = default) => Task.FromResult<IReadOnlyList<DocumentSearchResult>>([]);
+        public Task<ContentDocument?> FetchContentAsync(string collection, string relPath, CancellationToken ct = default) => Task.FromResult<ContentDocument?>(null);
+        public Task<IReadOnlyList<AdrSummary>> ListAdrsAsync(string collection, CancellationToken ct = default) => Task.FromResult<IReadOnlyList<AdrSummary>>([]);
+        public Task EnsureCollectionAsync(string collection, int dimensions, CancellationToken ct = default) => Task.CompletedTask;
+        public Task RecreateCollectionAsync(string collection, int dimensions, CancellationToken ct = default) => Task.CompletedTask;
+        public void Dispose() { }
+    }
+
+    private sealed class NoopConfigSource : IConfigSource
+    {
+        public ValueTask<RagConfigPayload> GetEffectiveAsync(string collection, CancellationToken ct = default)
+            => ValueTask.FromResult(new RagConfigPayload());
+        public void Invalidate(string collection) { }
     }
 }

@@ -169,6 +169,12 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
             .AddSingleton<IDocumentProcessor, DocumentProcessor>()
             .AddSingleton<RagTools.Core.Ingest.BatchValidator>()
             .AddSingleton<RagTools.Core.Ingest.IZipBatchParser, RagTools.Core.Ingest.ZipBatchParser>()
+            .AddDistributedMemoryCache()
+            .AddSingleton<RagTools.Core.Config.FileConfigSource>()
+            .AddSingleton<RagTools.Core.Config.IConfigSource>(sp =>
+                new RagTools.Core.Config.CachingConfigSource(
+                    sp.GetRequiredService<RagTools.Core.Config.FileConfigSource>(),
+                    sp.GetRequiredService<Microsoft.Extensions.Caching.Distributed.IDistributedCache>()))
             .AddSingleton<IBatchIngestService, BatchIngestService>()
             .AddHostedService<IngestWorker>();
 

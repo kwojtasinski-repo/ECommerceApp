@@ -72,9 +72,9 @@ public sealed class IngestController(
         return parseOutcome switch
         {
             ZipParseOutcome.Failure failure => failure.ToActionResult(),
-            ZipParseOutcome.Success success => batchIngest.Enqueue(
+            ZipParseOutcome.Success success => (await batchIngest.EnqueueAsync(
                 new BatchIngestRequest(collection, success.Batch.Documents, success.Batch.BatchRules, success.Batch.Warnings),
-                ct).ToActionResult(),
+                ct)).ToActionResult(),
             _ => throw new InvalidOperationException($"Unhandled ZipParseOutcome variant: {parseOutcome.GetType().Name}"),
         };
     }

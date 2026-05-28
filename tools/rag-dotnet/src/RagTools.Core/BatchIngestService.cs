@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using RagTools.Core.Config;
 using RagTools.Core.Ingest;
 
 namespace RagTools.Core;
@@ -24,19 +25,26 @@ public sealed record BatchIngestRequest(
 /// defined under <c>RagTools.Core.Ingest</c> so HTTP and CLI callers share one mapping
 /// (<c>BatchIngestOutcomeExtensions.ToActionResult</c> / <c>CliExitCodeMapper.ToExitCode</c>).
 /// Owns the queue-capacity invariant only — ZIP parsing and HTTP validation belong elsewhere.
+///
+/// As part of P3-1 / P3-5 (ADR-0028), a successful enqueue also persists the effective
+/// <see cref="RagConfigPayload"/> for the target collection to Qdrant and invalidates
+/// the <see cref="IConfigSource"/> cache entry so the next query observes fresh settings.
 /// </summary>
 public interface IBatchIngestService
 {
-    BatchIngestOutcome Enqueue(BatchIngestRequest request, CancellationToken ct = default);
+    Task<BatchIngestOutcome> EnqueueAsync(BatchIngestRequest request, CancellationToken ct = default);
 }
 
 /// <inheritdoc cref="IBatchIngestService"/>
 public sealed class BatchIngestService(
     IngestChannel channel,
     OperationStore operations,
+    IDocumentStore store,
+    IConfigSource configSource,
+    RagConfig cfg,
     ILogger<BatchIngestService> logger) : IBatchIngestService
 {
-    public BatchIngestOutcome Enqueue(BatchIngestRequest request, CancellationToken ct = default)
+    public async Task<BatchIngestOutcome> EnqueueAsync(BatchIngestRequest request, CancellationToken ct = default)
     {
         if (channel.PendingCount + request.Documents.Count > channel.Capacity)
         {
@@ -53,6 +61,35 @@ public sealed class BatchIngestService(
                     ["capacity"] = channel.Capacity,
                     ["incoming"] = request.Documents.Count,
                 });
+        }
+
+        // P3-1/P3-5: persist effective config snapshot for this collection *before*
+        // queuing jobs so downstream queries always observe a config matching the
+        // ingested data. If persistence fails the batch is rejected — the
+        // alternative (queue jobs, lose config) would leave the collection in an
+        // inconsistent state for layered/qdrant config modes.
+        var payload = BuildEffectivePayload(request.BatchRules);
+        try
+        {
+            await store.StoreConfigAsync(request.Collection, payload, ct);
+            configSource.Invalidate(request.Collection);
+            logger.LogInformation(
+                "RAG_PHASE3 stored config for collection={Collection} terms={Terms}",
+                request.Collection, payload.GlossaryTerms.Count);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex,
+                "Batch ingest: failed to persist config for {Collection} — rejecting batch",
+                request.Collection);
+            return new BatchIngestOutcome.Failure(
+                BatchIngestError.ChannelWriteFailed,
+                $"Failed to persist collection config: {ex.Message}",
+                new Dictionary<string, object?> { ["collection"] = request.Collection });
         }
 
         var enqueuedAt = DateTimeOffset.UtcNow;
@@ -105,5 +142,21 @@ public sealed class BatchIngestService(
         var batchId  = $"batch:{request.Collection}:{enqueuedAt.Ticks}";
         var response = new BatchIngestResponse(batchId, opList.Count, opList, request.Warnings);
         return new BatchIngestOutcome.Success(response);
+    }
+
+    // Compose the payload persisted with this batch.
+    // Server defaults come from the mounted RagConfig; per-batch BatchRules (if any)
+    // override only the adr.* doc_kind fields — they are the only doc-kind hints that
+    // can legally vary between batches of the same collection.
+    // Glossary persistence is wired in P3-3.
+    private RagConfigPayload BuildEffectivePayload(MetadataRulesSection? batchRules)
+    {
+        var payload = RagConfigPayload.From(cfg);
+        if (batchRules?.Adr is { } adr)
+        {
+            if (!string.IsNullOrWhiteSpace(adr.AdrDocKind))       payload.AdrDocKind       = adr.AdrDocKind;
+            if (!string.IsNullOrWhiteSpace(adr.AmendmentDocKind)) payload.AmendmentDocKind = adr.AmendmentDocKind;
+        }
+        return payload;
     }
 }
