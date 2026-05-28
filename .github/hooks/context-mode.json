@@ -9,7 +9,7 @@
     "PostToolUse": [
       {
         "type": "command",
-        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"c:\\Projekty\\ECommerceApp\\.github\\hooks\\posttooluse-chain.ps1\""
+        "command": "node \"${workspaceFolder}/.github/hooks/posttooluse-chain.mjs\""
       }
     ],
     "UserPromptSubmit": [

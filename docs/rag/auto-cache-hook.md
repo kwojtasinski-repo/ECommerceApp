@@ -123,13 +123,13 @@ Next RAG call will trigger fallback + background discovery; the call after that 
 - **Cache-recency window**: a brand-new RAG tool added upstream may be missed on its first invocation if the 1h cache is fresh. Delete `.rag-tools-cache.json` to force refresh.
 - **HTTP introspection is a TODO**: only stdio servers are introspected. Pure-HTTP setups get the WARNING + fallback list.
 - **Best-effort persistence**: `ctx_index` is not retried on failure. The diagnostic log records the failure; the user can re-issue the RAG call manually.
-- **Windows-only PS wrapper**: the chain script is PowerShell. On non-Windows hosts, port `posttooluse-chain.ps1` to bash with the same `tee` semantics.
+- **Node.js required**: the chain script is `posttooluse-chain.mjs` — a cross-platform ESM Node.js module. Node.js is always available in VS Code's bundled runtime. On rare headless Linux environments without VS Code, `posttooluse-chain.sh` is a bash fallback.
 
 ## Performance notes
 
 | Stage | Median latency (ms) |
 |---|---|
-| PS wrapper spawn + read stdin | 200–250 |
+| Node.js wrapper spawn + read stdin | 20–40 |
 | Upstream context-mode hook (`docker exec`) | 200–280 |
 | Node hook (`docker exec` for `ctx_index`) | 30–80 |
 | **Total added by hook chain** | **~290–310 ms** |

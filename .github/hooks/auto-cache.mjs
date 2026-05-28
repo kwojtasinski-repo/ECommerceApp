@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // auto-cache.mjs — PostToolUse host-side extension (variant A).
-// Wired in via .github/hooks/context-mode.json → posttooluse-chain.ps1.
+// Wired in via .github/hooks/context-mode.json → posttooluse-chain.mjs (cross-platform Node).
 //
 // Responsibilities:
 //   1. Detect RAG MCP tool calls (any tool exposed by an ecommerceapp-rag-* server).
