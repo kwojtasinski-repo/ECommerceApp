@@ -163,10 +163,42 @@ Producing an answer that mixes training-data inference with partial RAG hits (e.
 >
 > **When NOT to use it**: a one-shot question (answered once, never reread) — direct RAG is cheaper. The handoff costs one extra `ctx_index` call up front; it only pays back after the **second** recall.
 >
-> **L2 status (preferred)**: single-call wrapper `query_docs_cached` (both Python and .NET RAG servers). Returns formatted markdown + a deterministic `source` label; the agent makes ONE follow-up `ctx_index` call. See the [L2 fast path](#l2-fast-path-query_docs_cached--preferred) below.
-> **L1 status (fallback)**: manual 3-step handoff. Use only when the wrapper times out or errors. The cache shape is identical so L2 caches and L1 caches interoperate.
+> **L3 status (default since 2026-05-28)**: a host-side PostToolUse hook ([`.github/hooks/auto-cache.mjs`](../hooks/auto-cache.mjs)) auto-indexes EVERY RAG tool response into context-mode's FTS5 store. The agent now makes **just the RAG call** — the `ctx_index` follow-up is automatic. See [ADR-0029 Amendment 1](../../docs/adr/0029/amendments/0029-001-host-side-rag-auto-cache.md) and the [operator guide](../../docs/rag/auto-cache-hook.md).
+> **L2 status (still valid)**: single-call wrapper `query_docs_cached` (both Python and .NET RAG servers). Returns formatted markdown + a deterministic `source` label. Under L3 the explicit `ctx_index` follow-up is no longer required — the hook handles it. The wrapper still gives you a known label up-front if you want to recall by exact source.
+> **L1 status (fallback)**: manual 3-step handoff. Use only when the L3 hook OR the wrapper is unavailable. The cache shape is identical so L1, L2, and L3 caches interoperate.
 >
 > **Open observation (Phase 7.4)**: the .NET wrapper clamps `top_k` to `RagQueryService.MaxTopK = 20`, vs Python's `max(30, top_files*15) = 45` at `top_files = 3`. If you notice the .NET wrapper consistently missing files that Python ranks in the top 3, or `ctx_search` recalls on .NET caches scoring lower than on Python caches, flag it — the threshold and decision rules are in [docs/roadmap/context-mode-integration.md §Phase 7.4](../../docs/roadmap/context-mode-integration.md). Do NOT raise `MaxTopK` silently; bring evidence to the discussion.
+
+### L3 default: host-side PostToolUse hook — automatic
+
+Since 2026-05-28 a host-side hook auto-caches **every** RAG tool response (`query_docs`, `read_docs`, `get_history`, `query_docs_cached`, `list_adrs`) into the FTS5 store. No second tool call required.
+
+```
+  Step 1: RAG (one call — that's it)
+  ─────────────────────────────────────
+    query_docs(query="...")         ← or any other RAG tool
+        ↓
+    [hook fires automatically]
+        ↓
+    ctx_index(content=<auto-formatted markdown>, source="rag-auto-...")
+
+  Step 2: Recall (any number of times, zero RAG re-bill)
+  ─────────────────────────────────────
+    ctx_search(queries=["specific question"], source="rag-auto-")
+```
+
+**Source labels** are derived shape + tool-type aware:
+
+| Tool / response shape | Resulting `source` |
+|---|---|
+| `query_docs_cached` (L2 passthrough) | `rag-cache-...` (unchanged) |
+| `get_history(id="NNNN")` | `rag-auto-adr<NNNN>` |
+| Question mentions ADR id | `rag-auto-adr<NNNN>-<hash8>` |
+| `bc=` filter present | `rag-auto-<slug(bc)>-<hash8>` |
+| `query_docs` (orientation) | `rag-auto-orient-<hash8>` |
+| Default | `rag-auto-q-<hash8>` |
+
+Both `rag-cache-` (L2 manual) and `rag-auto-` (L3 hook) are recallable with `ctx_search(source="rag-")` (partial match). Full operator guide + debug switch (`AUTO_CACHE_DEBUG=0` to silence): [docs/rag/auto-cache-hook.md](../../docs/rag/auto-cache-hook.md).
 
 ### L2 fast path: `query_docs_cached` — preferred
 

@@ -51,6 +51,35 @@ Rules:
 
 ---
 
+## 2026-05-28 — Agent / RAG auto-cache hook (L3) pattern
+
+- **Trigger / Mistake**: The L2 path (`query_docs_cached` + manual `ctx_index`) requires the agent to remember a follow-up call; agents skipped it ~1 in 4 turns, degrading the RAG-with-memory pattern back to plain RAG.
+- **Correction**: Shipped a host-side PostToolUse hook (`.github/hooks/auto-cache.mjs`) that auto-indexes every RAG tool response into context-mode's FTS5 store under the `rag-auto-` source prefix. Tool detection uses **runtime introspection** of `.vscode/mcp.json` (cached 1h, lock-coalesced) so newly-added RAG tools are auto-discovered without code changes.
+- **Rationale**: [ADR-0029 Amendment 1](../../docs/adr/0029/amendments/0029-001-host-side-rag-auto-cache.md). Removes the most-skipped step in the RAG-with-memory pattern. Per-fire latency ~290–310ms, off the agent's turn wall-clock.
+- **Action**: Updated [mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md) — agent no longer needs an explicit `ctx_index` after RAG calls. Manual L1/L2 paths still work and interoperate (`ctx_search(source="rag-")` recalls both `rag-cache-` and `rag-auto-`).
+- **Promote?**: Already promoted (ADR + instruction). This entry serves as the audit trail.
+- **Status**: Resolved → ADR-0029 Amendment 1 + [docs/rag/auto-cache-hook.md](../../docs/rag/auto-cache-hook.md).
+
+## 2026-05-28 — Agent / Shape-driven formatter beats tool-name dispatch
+
+- **Trigger / Mistake**: First version of `auto-cache.mjs` dispatched by tool name (`query_docs` vs `read_docs` vs `get_history`) and emitted only headers for `read_docs` because that response shape has `files[].chunks[].text` (nested), not `files[].text` (flat). Cache entries were 163B — useless on recall.
+- **Correction**: Rewrote the formatter to traverse the response shape: detect `files[]` / `hits[]` / `results[]`, then for each item walk **both** `text|content|snippet` at the top level AND nested `chunks[]`. Cache size for the same `read_docs` query jumped to 994B with full chunk text.
+- **Rationale**: RAG response shapes differ between tools, between transports (stdio/HTTP), and across server implementations (.NET/Python). A shape-driven walker is the only formatter that survives upstream schema drift.
+- **Action**: When extending the formatter for new tool shapes, add a **shape detector** (presence of a key), not a tool-name branch. The fallback path (`renderItem`) must always look for nested chunks before giving up.
+- **Promote?**: After 2nd occurrence of "tool-name dispatch missed a nested shape" → promote to an anti-pattern entry in `anti-patterns-critical.context.md`.
+- **Status**: Open — single occurrence; rule documented in [docs/rag/auto-cache-hook.md](../../docs/rag/auto-cache-hook.md) §"Source labels".
+
+## 2026-05-28 — Agent / JSONC parser must be string-aware
+
+- **Trigger / Mistake**: First `readJsonc` in `auto-cache.mjs` used `raw.replace(/\/\/.*$/gm, "")` to strip line comments. `.vscode/mcp.json` contains `"http://localhost:6333"` — the regex ate everything after `//` inside the string, producing invalid JSON at position 690 → introspection silently failed and the fallback list was used every time.
+- **Correction**: Replaced the regex with a single-pass state machine (`stripJsonc`) that tracks `inString` / `stringQuote` and only strips comments outside strings.
+- **Rationale**: Any time we parse a config file that may contain URLs, escape sequences, or `/* */` inside strings, naive regex stripping is a foot-gun.
+- **Action**: When writing JSONC helpers, default to a string-aware stripper. The regex-only form is acceptable ONLY when content is guaranteed not to contain `//` or `/*` inside strings.
+- **Promote?**: After 2nd occurrence (e.g. another JSONC consumer in repo with the same bug) → promote to a small reusable helper in `tools/` and an anti-pattern entry.
+- **Status**: Open — single occurrence so far.
+
+---
+
 ## 2026-04-27 — Copilot / RAG MCP server config location
 
 - **Context**: Agent created `.github/copilot/mcp.json` to register the RAG MCP server, then told the user the server was registered. VS Code's MCP browser showed no servers.

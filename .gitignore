@@ -378,3 +378,10 @@ docker/adguard/personal-overrides.local.txt
 .env.context-mode
 # AdGuard generated config (contains bcrypt password hash - never commit)
 docker/adguard/AdGuardHome.yaml
+
+# context-mode auto-cache hook diagnostic log
+.github/hooks/auto-cache.log
+
+# context-mode auto-cache RAG tools discovery cache (regenerates on demand)
+.github/hooks/.rag-tools-cache.json
+.github/hooks/.rag-tools-cache.lock

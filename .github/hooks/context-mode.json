@@ -9,7 +9,7 @@
     "PostToolUse": [
       {
         "type": "command",
-        "command": "docker exec -i ecommerceapp-context-mode node /app/cli.bundle.mjs hook vscode-copilot posttooluse"
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"c:\\Projekty\\ECommerceApp\\.github\\hooks\\posttooluse-chain.ps1\""
       }
     ],
     "UserPromptSubmit": [

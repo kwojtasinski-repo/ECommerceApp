@@ -7,6 +7,7 @@
 | File | Purpose |
 |---|---|
 | [`0029-context-mode-mcp-sandbox.md`](./0029-context-mode-mcp-sandbox.md) | Main ADR — decision, context, alternatives |
+| [`amendments/0029-001-host-side-rag-auto-cache.md`](./amendments/0029-001-host-side-rag-auto-cache.md) | Amendment 1 (Accepted) — host-side PostToolUse hook that auto-indexes RAG results into FTS5 |
 
 ## Related
 

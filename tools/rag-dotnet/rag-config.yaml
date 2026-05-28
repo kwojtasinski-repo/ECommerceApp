@@ -69,6 +69,18 @@ ranking:
     - { pattern: "docs/roadmap/**",                             weight: 0.70 }
     - { pattern: "docs/adr/*/checklist.md",                     weight: 0.40 }
     - { pattern: "docs/adr/*/migration-plan.md",                weight: 0.30 }
+  # Stub guard: files smaller than this many bytes AND whose path contains the
+  # substring `/example-implementation/` (anywhere — not restricted to ADRs)
+  # are treated as empty placeholders and forced to weight 0.05 so they can't
+  # outrank real content. Today the only folders matching that substring live
+  # under `docs/adr/*/example-implementation/`, but the rule is by convention,
+  # not enforced — any future `/example-implementation/` folder elsewhere in
+  # the tree would also be caught. Tiny READMEs or short docs in other paths
+  # keep their normal weight from the `weights[]` table above.
+  # Tune UP (e.g. 800) if real placeholders are still leaking into top results.
+  # Tune DOWN (e.g. 200) if genuinely terse examples are being buried.
+  # (400 bytes ≈ 3 meaningful sentences — anything shorter is almost always a stub.)
+  # See: tools/rag-dotnet/src/RagTools.Core/RankingWeightResolver.cs for the exact code.
   stub_byte_threshold: 400
 
 query:

@@ -110,6 +110,33 @@
 
 ## Change log
 
+### Session 30 — RAG auto-cache hook (L3 — host-side PostToolUse) (2026-05-28)
+
+Ships an automated RAG → context-mode FTS5 cache pipeline. The agent now makes **one** RAG call instead of two (no more manual `ctx_index` follow-up). Implemented as a host-side PostToolUse hook in the Copilot Chat hook chain, not inside the context-mode sandbox. Tool detection uses **runtime introspection** of `.vscode/mcp.json` (1h cache, lock-coalesced) so new RAG tools are auto-discovered without code changes.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | New host-side hook entry `auto-cache.mjs`: detects RAG MCP calls (runtime-discovered tool list with hardcoded fallback), shape-driven markdown formatter (handles `files[].chunks[]`, `hits[]`, `results[]`), one-shot `ctx_index` via MCP stdio. Uses `rag-auto-` source prefix; recallable alongside `rag-cache-` (L2) via `ctx_search(source="rag-")`. Probe suite `auto-cache.probes.mjs` covers JSONC parser (incl. URL preservation), shape-driven formatter, source-label hash, and lock-file TTL. | `.github/hooks/auto-cache.mjs` _(new)_, `.github/hooks/auto-cache.probes.mjs` _(new)_ |
+| 2 | New fan-out wrapper `posttooluse-chain.ps1`: pipes hook envelope to BOTH the upstream context-mode hook AND `auto-cache.mjs`. Best-effort, always `exit 0`. Logging gated on `AUTO_CACHE_DEBUG` (default ON). | `.github/hooks/posttooluse-chain.ps1` _(new)_ |
+| 3 | Hook config wires PostToolUse to the PS wrapper (other 4 hooks unchanged). | `.github/hooks/context-mode.json` |
+| 4 | New ADR amendment documenting decision, architecture, runtime introspection, source labels, latency, and conformance checklist. | `docs/adr/0029/amendments/0029-001-host-side-rag-auto-cache.md` _(new)_, `docs/adr/0029/README.md` |
+| 5 | New operator guide covering pipeline, file layout, discovery mechanism, source labels, debug switch, troubleshooting, limitations, and performance. | `docs/rag/auto-cache-hook.md` _(new)_ |
+| 6 | Routing rules — new "L3 default" section as canonical handoff. L2 demoted to "still valid", L1 demoted to "fallback only". Note added that the explicit `ctx_index` is no longer required under L3. | `.github/instructions/mcp-routing.instructions.md` |
+| 7 | Agent-decisions entries: (a) L3 hook pattern, (b) shape-driven formatter beats tool-name dispatch, (c) JSONC parser must be string-aware. | `.github/context/agent-decisions.md` |
+| 8 | Runtime files (`.rag-tools-cache.json`, `.rag-tools-cache.lock`, `auto-cache.log`) added to .gitignore. | `.gitignore` |
+
+**Empirical verification (this session)**:
+
+- Stdio introspection found 4 RAG servers in `mcp.json` and merged tools to `{get_history, list_adrs, query_docs, query_docs_cached, read_docs}` (5 tools, `source=introspected`).
+- Lock coalescing: 3 concurrent kickoffs during a 30s discovery window → only 1 background process spawned; lock removed at completion.
+- End-to-end recall verified: `ctx_search(source="rag-auto-")` returns full chunk text from the most recent `query_docs` calls.
+- Per-fire latency measured at 290–310ms (PS + Node + docker exec).
+
+**Not changed (deliberate)**:
+
+- No new instruction, prompt, agent, or skill **files**. Counts: instructions still 17, agents still 8, skills still 17, ADRs now 29 (Amendment 1 lives inside ADR-0029 folder).
+- `ECommerceApp.sln` — hook scripts are runtime config, no project membership.
+
 ### Session 28 — Phase 7 L2: `query_docs_cached` wrapper (2026-05-27)
 
 Collapses the manual RAG → context-mode handoff (3 steps) into 1 + 1: a single `query_docs_cached` call returns formatted markdown + a deterministic source label; the agent makes one pass-through `ctx_index` call. Architecture choice **option C** (return-and-let-caller-cache) — no cross-MCP coupling, no shared-volume staging, no direct SQLite writes. Python RAG server only; `.NET` parity deferred (requires Core data-model change). Cache shape identical to L1 → both interoperate.
