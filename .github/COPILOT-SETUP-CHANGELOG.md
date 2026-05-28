@@ -15,7 +15,7 @@
 | Instruction files (`.instructions.md`) | 17    | All with `applyTo:` frontmatter; +`batched-tasks` (Session 26); `agent-memory` added; `pre-edit` split into core + `doc-suggestions`; `docs-index` scope narrowed |
 | Prompt files (`.prompt.md`)            | 6     | BC analysis, BC implementation, PR review, refactor, flow-analysis, rag-sync                                                        |
 | Agent files                            | 8     | adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer, planner, implementer, verifier, pr-commit                       |
-| Skills (`SKILL.md`)                    | 20    | +3 context-mode sandbox skills (Session 31): ctx-sandbox-bootstrap-verify, ctx-doctor-playbook, ctx-hardening-audit; +rag-with-memory (Session 26); +5 RAG skills (Session 23): diagnose-rag, tune-rag-weights, expand-rag-glossary, generate-rag-rules, generate-eval-questions |
+| Skills (`SKILL.md`)                    | 24    | +4 RAG maintenance skills (Session 32): rag-reindex-decision, rag-collection-rebuild, rag-query-debug, rag-multilang-test; +3 context-mode sandbox skills (Session 31): ctx-sandbox-bootstrap-verify, ctx-doctor-playbook, ctx-hardening-audit; +rag-with-memory (Session 26); +5 RAG skills (Session 23): diagnose-rag, tune-rag-weights, expand-rag-glossary, generate-rag-rules, generate-eval-questions |
 | ADRs                                   | 29    | Folderized ADR routers under `docs/adr/<NNNN>/README.md`; ADR-0027/0028 (RAG pipeline) + ADR-0029 (context-mode sandbox) added                                                                           |
 | Context files                          | 6     | project-state, known-issues, agent-decisions, repo-index, future-skills, anti-patterns-critical                                    |
 | GitHub Actions workflows               | 1     | `dotnet-ci.yml` — manual trigger only (push/PR commented)                                                                          |
@@ -213,6 +213,40 @@ Closes the `.NET` gap left in Session 28. `RagTools.Mcp` now exposes `QueryDocsC
 **Pre-existing drift**: none introduced.
 
 **Refs**: `docs/roadmap/context-mode-integration.md` Phase 7.3, `tools/rag-dotnet/src/RagTools.Mcp/Tools/QueryDocsCachedFormatter.cs`.
+
+---
+
+### Session 32 — Sprint 2 RAG quick wins: parity audit + 4 maintenance skills + ADR-0028 Amendment 4 + roadmap Phase 3 (2026-05-28)
+
+Sprint 2 of the cross-project RAG/context-mode reusability initiative ([plan](../docs/reports/rag-context-mode-skills-plan-2026-05-28.md)). Single commit `ef7f98aa` on branch `feat/sprint1-rag-quick-wins-skills-plan`. Phase work: (1) parity audit between Python (:3002) and .NET (:3001) HTTP servers — 26 queries, 10/26 top-1 match; (2) three remediations applied (R1 .NET weights, R2 .NET amendments down-weight, R3 glossary mirror sync); (3) one remediation REJECTED (R4 Python amendments down-weight — weight delta too small vs raw cosine gap); (4) two .NET service-layer fixes (indexer Bug A+B partial, B2 `MaxTopK` 20→45); (5) 4 new RAG maintenance skills closing reindex / rebuild / debug / multilang-test gaps; (6) ADR-0028 Amendment 4 + roadmap Phase 3 documenting the per-collection config persistence gap; (7) Sprint 3+4 handoff brief for the next session.
+
+| #   | Change | Files affected |
+| --- | ------ | -------------- |
+| 1   | +4 RAG maintenance skills: `rag-reindex-decision` (decision matrix before editing rag config), `rag-collection-rebuild` (destructive Qdrant drop + rebuild), `rag-query-debug` (hypothesis-ordered query diagnosis using `probe_weights.py` + `compare_queries.py`), `rag-multilang-test` (verify glossary entries on both HTTP servers) | `.github/skills/rag-reindex-decision/SKILL.md` _(new)_, `.github/skills/rag-collection-rebuild/SKILL.md` _(new)_, `.github/skills/rag-query-debug/SKILL.md` _(new)_, `.github/skills/rag-multilang-test/SKILL.md` _(new)_ |
+| 2   | New ADR-0028 amendment documenting the per-collection config persistence gap (documentation-only — fix tracked in roadmap Phase 3). Linked from ADR-0028 README. | `docs/adr/0028/amendments/0028-004-per-collection-config-gap.md` _(new)_, `docs/adr/0028/README.md` |
+| 3   | New roadmap Phase 3 (steps P3-1..P3-8) — per-collection config persistence fix plan, mirrored across .NET and Python servers | `docs/roadmap/rag-remote-multitenant.md` |
+| 4   | 4 new reports (EN): auto-generated parity audit (26 queries), parity findings (11 sections incl. §9 Q-PRECISE, §10 indexer, §11 MaxTopK), fix-diagnosis (10 sections incl. §10 R4 falsified-hypothesis writeup), Sprint 3+4 handoff brief | `docs/reports/rag-parity-audit-2026-05-28.md` _(new)_, `docs/reports/rag-parity-findings-2026-05-28.md` _(new)_, `docs/reports/rag-parity-fix-diagnosis-2026-05-28.md` _(new)_, `docs/reports/sprint3-sprint4-requirements-brief.md` _(new)_ |
+| 5   | RAG source/config (parity remediation): Python queries + probe CLI + R4-reverted config; .NET R1/R2 weights + R3 glossary mirror sync; .NET indexer Bug A+B partial fix (5/6 ADRs corrected, ADR-0028 anomaly logged); B2 `MaxTopK` 20→45 (478 unit tests pass); docker-compose mounts canonical glossary on both servers | `tools/rag/{rag-config.yaml,compare_queries.py,queries.yaml,probe_weights.py}`, `tools/rag-dotnet/{rag-config.yaml,multilingual-glossary.yaml,src/RagTools.Core/QdrantDocumentStore.cs,src/RagTools.Core/Query/RagQueryService.cs,src/RagTools.Mcp/Tools/RagTools.cs}`, `docker-compose.yaml` |
+| 6   | docs-index: 4 new rows for the RAG maintenance skills appended to "RAG maintenance skills" table | `.github/instructions/docs-index.instructions.md` |
+| 7   | rag.instructions.md: "Which maintenance skill to load" table cascaded with 4 new rows | `.github/instructions/rag.instructions.md` |
+
+**Counts**: skills 20 → 24. Instructions, agents, prompts unchanged in shape (Amendment 4 lives inside ADR-0028 folder, not a new ADR).
+
+**Not changed (deliberate, per Sprint 2 scope)**:
+
+- R4 (Python amendments weight 1.20 → 1.10) reverted — parity unchanged, root cause is raw-cosine gap not weight delta. Documented in fix-diagnosis §10 with 3 follow-up options.
+- ADR-0028 indexer anomaly (`main_file` + `amendments:33`) deferred — logged in `/memories/repo/rag-mcp-anomalies.md` entry #10.
+- Amendment 4 is intentionally "deferred design intent" — Phase 3 (P3-1..P3-8) ships the actual fix in a later sprint.
+- No agent files touched → no `code-reviewer.md` cascade.
+- No pipeline shape change → no `AGENT-PIPELINE.md` update.
+
+**Pre-existing drift (surfaced again, NOT auto-fixed)**:
+
+1. ADR-0028 parent folder still missing from `ECommerceApp.sln` `adr` SolutionItems — flagged in Sessions 24, 27, 31. Sprint 2 added Amendment 4 to that folder. Same applies to ADR-0027.
+2. `docs/roadmap/rag-remote-multitenant.md` missing from the `roadmap` sln SolutionItems — surfaced now because Sprint 2 added Phase 3 to it.
+3. Recommendation: ship the ADR-0027 + ADR-0028 + `rag-remote-multitenant.md` sln backfill as a dedicated Workflow 10 close-out (not bundled here to keep Sprint 2 scope tight).
+
+**Refs**: commit `ef7f98aa`, branch `feat/sprint1-rag-quick-wins-skills-plan`, `docs/reports/sprint3-sprint4-requirements-brief.md`, `/memories/repo/rag-mcp-anomalies.md` entries #8 #9 #10.
 
 ---
 

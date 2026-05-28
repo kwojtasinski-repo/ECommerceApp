@@ -38,6 +38,10 @@ If the user reports stale answers ("the ADR says X but the tool returned Y"), su
 | Right doc consistently at #3–5 instead of #1 | `tune-rag-weights` |
 | New `docs/` folder added or wrong `doc_kind` on a file | `generate-rag-rules` |
 | A file has no named eval query covering it | `generate-eval-questions` |
+| Deciding if a config edit needs no / incremental / full re-index | `rag-reindex-decision` |
+| Wrong / low-quality / empty query results — hypothesis-ordered debug | `rag-query-debug` |
+| Verify a new PL/DE glossary entry on both servers | `rag-multilang-test` |
+| Drop & rebuild a Qdrant collection from scratch | `rag-collection-rebuild` |
 | Full maintenance cycle (ingest + eval + coverage check) | `/rag-sync` prompt |
 
 ## Server variants

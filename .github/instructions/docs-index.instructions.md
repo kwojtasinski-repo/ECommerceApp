@@ -62,6 +62,10 @@ Use these skills when the RAG/MCP system needs attention. Read via the `read_fil
 | New doc folder added / wrong doc_kind / query coverage gap | `.github/skills/generate-rag-rules/SKILL.md` |
 | Newly indexed file has no eval query covering it | `.github/skills/generate-eval-questions/SKILL.md` |
 | Cache a RAG result in context-mode FTS5 for repeated recall in the same session | `.github/skills/rag-with-memory/SKILL.md` |
+| Decide whether a RAG config change needs re-indexing (none / incremental / full) | `.github/skills/rag-reindex-decision/SKILL.md` |
+| Drop & rebuild a Qdrant collection (embedder.dim change, corruption, model swap) | `.github/skills/rag-collection-rebuild/SKILL.md` |
+| Query returns wrong / low-quality / empty results — hypothesis-ordered debug | `.github/skills/rag-query-debug/SKILL.md` |
+| Verify a new PL/DE glossary entry expands correctly on both servers | `.github/skills/rag-multilang-test/SKILL.md` |
 
 ## context-mode sandbox skills
 
