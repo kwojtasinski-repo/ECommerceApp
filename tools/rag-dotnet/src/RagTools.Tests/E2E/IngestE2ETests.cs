@@ -199,12 +199,13 @@ public sealed class IngestE2ETests : IClassFixture<IngestE2EFixture>, IDisposabl
 
         var session = new RagSession(new FixedCollectionResolver(_fx.Collection!));
         var contentSource = new QdrantContentSource(_fx.Store!);
+        var configSource = new RagTools.Core.Config.FileConfigSource(_fx.Config!);
         var queryService = new RagTools.Core.Query.RagQueryService(
-            _fx.Embedder!, _fx.Store!, _fx.Config!,
+            _fx.Embedder!, _fx.Store!, configSource,
             Array.Empty<IResultPostprocessor>(),
             NullLogger<RagTools.Core.Query.RagQueryService>.Instance);
         var readDocsService = new RagTools.Core.ReadDocs.RagReadDocsService(
-            _fx.Embedder!, _fx.Store!, contentSource, _fx.Config!,
+            _fx.Embedder!, _fx.Store!, contentSource, configSource,
             NullLogger<RagTools.Core.ReadDocs.RagReadDocsService>.Instance);
         var historyService = new RagTools.Core.History.RagHistoryService(
             _fx.Embedder!, _fx.Store!,

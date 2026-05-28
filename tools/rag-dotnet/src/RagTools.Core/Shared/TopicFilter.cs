@@ -2,15 +2,18 @@ namespace RagTools.Core.Shared;
 
 /// <summary>
 /// Shared post-search helpers used by Query and ReadDocs pipelines:
-/// per-document weight multiplier (from <see cref="RagConfig.GetWeight"/>)
-/// and the substring topic / bounded-context filter (matched against breadcrumb and doc title).
+/// per-document weight multiplier and the substring topic / bounded-context
+/// filter (matched against breadcrumb and doc title).
+///
+/// Weights are passed explicitly so callers can source them from either the
+/// mounted <see cref="RagConfig.Ranking"/> or a per-collection <see cref="RagConfigPayload.Weights"/>.
 /// </summary>
 internal static class TopicFilter
 {
     public static IReadOnlyList<DocumentSearchResult> ApplyWeights(
         IReadOnlyList<DocumentSearchResult> hits,
-        RagConfig cfg) =>
-        hits.Select(h => h with { Score = h.Score * cfg.GetWeight(h.RelPath) })
+        IReadOnlyList<WeightEntry> weights) =>
+        hits.Select(h => h with { Score = h.Score * RagConfig.GetWeight(weights, h.RelPath) })
             .OrderByDescending(h => h.Score)
             .ToList();
 

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using RagTools.Core;
+using RagTools.Core.Config;
 using RagTools.Core.ContentSources;
 using RagTools.Core.ReadDocs;
 
@@ -7,6 +8,14 @@ namespace RagTools.Tests.ReadDocs;
 
 public class RagReadDocsServiceTests
 {
+    private sealed class StubConfigSource : IConfigSource
+    {
+        public RagConfigPayload Payload { get; set; } = new();
+        public ValueTask<RagConfigPayload> GetEffectiveAsync(string collection, CancellationToken ct = default)
+            => ValueTask.FromResult(Payload);
+        public void Invalidate(string collection) { }
+    }
+
     private sealed class FakeEmbedder : IEmbedder
     {
         public Func<string, CancellationToken, Task<float[]>>? Handler { get; set; }
@@ -20,9 +29,13 @@ public class RagReadDocsServiceTests
     private sealed class FakeStore : IDocumentStore
     {
         public Func<string, float[], SearchOptions, CancellationToken, Task<IReadOnlyList<DocumentSearchResult>>>? SearchHandler { get; set; }
+        public SearchOptions? LastSearchOptions { get; private set; }
         public Task<IReadOnlyList<DocumentSearchResult>> SearchAsync(
             string collection, float[] queryVector, SearchOptions opts, CancellationToken ct = default)
-            => SearchHandler!(collection, queryVector, opts, ct);
+        {
+            LastSearchOptions = opts;
+            return SearchHandler!(collection, queryVector, opts, ct);
+        }
 
         public Task UpsertChunksAsync(string collection, IReadOnlyList<RagPoint> chunks, CancellationToken ct = default) => throw new NotImplementedException();
         public Task StoreDocumentAsync(string collection, ContentDocument doc, CancellationToken ct = default) => throw new NotImplementedException();
@@ -51,12 +64,13 @@ public class RagReadDocsServiceTests
         new(score, relPath, docTitle, docKind, AdrId: null, breadcrumb, StartLine: startLine, EndLine: startLine, Text: text);
 
     private static RagReadDocsService Build(
-        out FakeEmbedder embedder, out FakeStore store, out FakeContentSource content, RagConfig? cfg = null)
+        out FakeEmbedder embedder, out FakeStore store, out FakeContentSource content, RagConfigPayload? payload = null)
     {
         embedder = new FakeEmbedder();
         store = new FakeStore();
         content = new FakeContentSource();
-        return new RagReadDocsService(embedder, store, content, cfg ?? new RagConfig(), NullLogger<RagReadDocsService>.Instance);
+        var configSource = new StubConfigSource { Payload = payload ?? new RagConfigPayload() };
+        return new RagReadDocsService(embedder, store, content, configSource, NullLogger<RagReadDocsService>.Instance);
     }
 
     [Fact]
@@ -202,5 +216,44 @@ public class RagReadDocsServiceTests
         var success = Assert.IsType<ReadDocsOutcome.Success>(outcome);
         Assert.Equal(2, success.Response.Files.Count);
         Assert.DoesNotContain(success.Response.Files, f => f.RelPath == "a.md");
+    }
+
+    // ── P3-4: IConfigSource overrides drive read behaviour ───────────────────
+
+    [Fact]
+    public async Task ScoreThreshold_FromPayload_PassedToStore()
+    {
+        var payload = new RagConfigPayload { ScoreThreshold = 0.77f };
+        var sut = Build(out var embedder, out var store, out _, payload: payload);
+        embedder.Handler = (_, _) => Task.FromResult(new float[] { 0.1f });
+        store.SearchHandler = (_, _, _, _) =>
+            Task.FromResult<IReadOnlyList<DocumentSearchResult>>(Array.Empty<DocumentSearchResult>());
+
+        await sut.ReadAsync(new ReadDocsRequest("c", "q", TopFiles: 3));
+
+        Assert.Equal(0.77f, store.LastSearchOptions!.ScoreThreshold);
+    }
+
+    [Fact]
+    public async Task Weights_FromPayload_AreAppliedDuringRanking()
+    {
+        var payload = new RagConfigPayload
+        {
+            Weights = [new WeightEntry { Pattern = "boosted/**", Weight = 2.0f }],
+        };
+        var sut = Build(out var embedder, out var store, out _, payload: payload);
+        embedder.Handler = (_, _) => Task.FromResult(new float[] { 0.1f });
+        store.SearchHandler = (_, _, _, _) => Task.FromResult<IReadOnlyList<DocumentSearchResult>>(new[]
+        {
+            Hit(0.5f, "normal/a.md"),
+            Hit(0.4f, "boosted/b.md"),
+        });
+
+        var outcome = await sut.ReadAsync(new ReadDocsRequest("c", "q", TopFiles: 2));
+        var success = Assert.IsType<ReadDocsOutcome.Success>(outcome);
+
+        // 0.4 * 2.0 = 0.8 outranks 0.5 * 1.0
+        Assert.Equal("boosted/b.md", success.Response.Files[0].RelPath);
+        Assert.Equal("normal/a.md", success.Response.Files[1].RelPath);
     }
 }

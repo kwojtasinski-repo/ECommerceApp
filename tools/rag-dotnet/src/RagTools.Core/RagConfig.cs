@@ -320,10 +320,16 @@ public sealed class RagConfig
     /// Iterates <see cref="RankingSection.Weights"/> — first matching glob wins.
     /// Returns 1.0 if no rule matches (neutral — score unchanged).
     /// </summary>
-    public float GetWeight(string relPath)
+    public float GetWeight(string relPath) => GetWeight(Ranking.Weights, relPath);
+
+    /// <summary>
+    /// Static overload — used by the query path when weights come from
+    /// a per-collection <see cref="RagConfigPayload"/> rather than the mounted YAML.
+    /// </summary>
+    public static float GetWeight(IReadOnlyList<WeightEntry> weights, string relPath)
     {
         var p = relPath.Replace('\\', '/');
-        foreach (var entry in Ranking.Weights)
+        foreach (var entry in weights)
         {
             if (!string.IsNullOrWhiteSpace(entry.Pattern) && GlobMatch(p, entry.Pattern))
                 return entry.Weight;

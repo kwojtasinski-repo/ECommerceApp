@@ -1,11 +1,20 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using RagTools.Core;
+using RagTools.Core.Config;
 using RagTools.Core.Query;
 
 namespace RagTools.Tests.Query;
 
 public class RagQueryServiceTests
 {
+    private sealed class StubConfigSource : IConfigSource
+    {
+        public RagConfigPayload Payload { get; set; } = new();
+        public ValueTask<RagConfigPayload> GetEffectiveAsync(string collection, CancellationToken ct = default)
+            => ValueTask.FromResult(Payload);
+        public void Invalidate(string collection) { }
+    }
+
     private sealed class FakeEmbedder : IEmbedder
     {
         public Func<string, CancellationToken, Task<float[]>>? Handler { get; set; }
@@ -59,12 +68,13 @@ public class RagQueryServiceTests
         out FakeEmbedder embedder,
         out FakeStore store,
         IEnumerable<IResultPostprocessor>? postprocessors = null,
-        RagConfig? cfg = null)
+        RagConfigPayload? payload = null)
     {
         embedder = new FakeEmbedder();
         store = new FakeStore();
+        var configSource = new StubConfigSource { Payload = payload ?? new RagConfigPayload() };
         return new RagQueryService(
-            embedder, store, cfg ?? new RagConfig(),
+            embedder, store, configSource,
             postprocessors ?? Array.Empty<IResultPostprocessor>(),
             NullLogger<RagQueryService>.Instance);
     }
@@ -192,5 +202,46 @@ public class RagQueryServiceTests
         Assert.Equal(2, success.Response.Hits.Count);
         Assert.Equal("b.md", success.Response.Hits[0].RelPath);
         Assert.Equal("c.md", success.Response.Hits[1].RelPath);
+    }
+
+    // ── P3-2: IConfigSource overrides drive query behaviour ──────────────────
+
+    [Fact]
+    public async Task NoTopicFilter_UsesPayloadFetchK_FromConfigSource()
+    {
+        var payload = new RagConfigPayload { FetchK = 7, ScoreThreshold = 0.55f };
+        var sut = Build(out var embedder, out var store, payload: payload);
+        embedder.Handler = (_, _) => Task.FromResult(new float[] { 0.1f });
+        store.SearchHandler = (_, _, _, _) =>
+            Task.FromResult<IReadOnlyList<DocumentSearchResult>>(Array.Empty<DocumentSearchResult>());
+
+        await sut.QueryAsync(new QueryRequest("c", "q", TopK: 5));
+
+        Assert.Equal(7, store.LastSearchOptions!.TopK);
+        Assert.Equal(0.55f, store.LastSearchOptions!.ScoreThreshold);
+    }
+
+    [Fact]
+    public async Task Weights_FromPayload_AreAppliedToHitScores()
+    {
+        var payload = new RagConfigPayload
+        {
+            Weights = [new WeightEntry { Pattern = "boosted/**", Weight = 2.0f }],
+        };
+        var sut = Build(out var embedder, out var store, payload: payload);
+        embedder.Handler = (_, _) => Task.FromResult(new float[] { 0.1f });
+        var raw = new DocumentSearchResult[]
+        {
+            Hit(0.5f, "normal/a.md"),
+            Hit(0.4f, "boosted/b.md"),
+        };
+        store.SearchHandler = (_, _, _, _) => Task.FromResult<IReadOnlyList<DocumentSearchResult>>(raw);
+
+        var outcome = await sut.QueryAsync(new QueryRequest("c", "q", TopK: 2));
+        var success = Assert.IsType<QueryOutcome.Success>(outcome);
+
+        // 0.4 * 2.0 = 0.8 outranks 0.5 * 1.0
+        Assert.Equal("boosted/b.md", success.Response.Hits[0].RelPath);
+        Assert.Equal("normal/a.md", success.Response.Hits[1].RelPath);
     }
 }

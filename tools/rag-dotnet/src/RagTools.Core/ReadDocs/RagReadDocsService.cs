@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using RagTools.Core.Config;
 using RagTools.Core.ContentSources;
 using RagTools.Core.Shared;
 
@@ -7,12 +8,15 @@ namespace RagTools.Core.ReadDocs;
 /// <summary>
 /// Default <see cref="IRagReadDocsService"/> — extracted from
 /// <c>RagTools.Mcp.Tools.RagTools.ReadDocs</c> so MCP, HTTP, and CLI share one pipeline.
+///
+/// Reads <see cref="RagConfigPayload.ScoreThreshold"/> and <see cref="RagConfigPayload.Weights"/>
+/// from <see cref="IConfigSource"/> so per-collection overrides (ADR-0028, P3-1) are honoured.
 /// </summary>
 public sealed class RagReadDocsService(
     IEmbedder embedder,
     IDocumentStore store,
     IContentSource contentSource,
-    RagConfig cfg,
+    IConfigSource configSource,
     ILogger<RagReadDocsService> logger) : IRagReadDocsService
 {
     public const int MaxTopFiles = 5;
@@ -31,13 +35,15 @@ public sealed class RagReadDocsService(
             "ReadAsync: collection={Collection} question={Question} topic={Topic} topFiles={TopFiles} fullMode={FullMode}",
             request.Collection, request.Question, request.Topic, request.TopFiles, fullMode);
 
+        var payload = await configSource.GetEffectiveAsync(request.Collection, ct);
+
         var embedResult = await EmbedAsync(request.Question, ct);
         if (embedResult.Failure is not null) return embedResult.Failure;
 
-        var searchResult = await SearchAsync(request.Collection, embedResult.Vector!, request.TopFiles, ct);
+        var searchResult = await SearchAsync(request.Collection, embedResult.Vector!, request.TopFiles, payload.ScoreThreshold, ct);
         if (searchResult.Failure is not null) return searchResult.Failure;
 
-        var ranked = RankFiles(searchResult.Hits!, request);
+        var ranked = RankFiles(searchResult.Hits!, request, payload.Weights);
 
         var files = new List<ReadDocsFile>(ranked.Count);
         foreach (var f in ranked)
@@ -88,11 +94,11 @@ public sealed class RagReadDocsService(
     }
 
     private async Task<(IReadOnlyList<DocumentSearchResult>? Hits, ReadDocsOutcome.Failure? Failure)> SearchAsync(
-        string collection, float[] queryVec, int topFiles, CancellationToken ct)
+        string collection, float[] queryVec, int topFiles, float scoreThreshold, CancellationToken ct)
     {
         try
         {
-            var opts = new SearchOptions(Math.Max(30, topFiles * 15), cfg.Query.ScoreThreshold);
+            var opts = new SearchOptions(Math.Max(30, topFiles * 15), scoreThreshold);
             return (await store.SearchAsync(collection, queryVec, opts, ct), null);
         }
         catch (OperationCanceledException) { throw; }
@@ -106,9 +112,9 @@ public sealed class RagReadDocsService(
         }
     }
 
-    private List<RankedFile> RankFiles(IReadOnlyList<DocumentSearchResult> rawHits, ReadDocsRequest request)
+    private List<RankedFile> RankFiles(IReadOnlyList<DocumentSearchResult> rawHits, ReadDocsRequest request, IReadOnlyList<WeightEntry> weights)
     {
-        var weighted = TopicFilter.ApplyWeights(rawHits, cfg);
+        var weighted = TopicFilter.ApplyWeights(rawHits, weights);
         var filtered = request.Topic is not null
             ? weighted.Where(h => TopicFilter.Matches(h, request.Topic))
             : weighted;

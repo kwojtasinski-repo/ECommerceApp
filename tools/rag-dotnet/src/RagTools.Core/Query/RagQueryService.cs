@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using RagTools.Core.Config;
 using RagTools.Core.Shared;
 
 namespace RagTools.Core.Query;
@@ -6,11 +7,16 @@ namespace RagTools.Core.Query;
 /// <summary>
 /// Default <see cref="IRagQueryService"/> — extracted from <c>RagTools.Mcp.Tools.RagTools.QueryDocs</c>
 /// so the same pipeline serves MCP, HTTP, and CLI surfaces.
+///
+/// Reads its query-time tunables (<see cref="RagConfigPayload.FetchK"/>,
+/// <see cref="RagConfigPayload.ScoreThreshold"/>, <see cref="RagConfigPayload.Weights"/>)
+/// from <see cref="IConfigSource"/> so per-collection overrides persisted by batch ingest
+/// (ADR-0028, P3-1) are honoured without server restart.
 /// </summary>
 public sealed class RagQueryService(
     IEmbedder embedder,
     IDocumentStore store,
-    RagConfig cfg,
+    IConfigSource configSource,
     IEnumerable<IResultPostprocessor> postprocessors,
     ILogger<RagQueryService> logger) : IRagQueryService
 {
@@ -25,9 +31,11 @@ public sealed class RagQueryService(
         if (Validate(request) is { } validationFailure)
             return validationFailure;
 
+        var payload = await configSource.GetEffectiveAsync(request.Collection, ct);
+
         var fetchK = request.Topic is not null
-            ? Math.Max(cfg.Query.FetchK, request.TopK * 3)
-            : cfg.Query.FetchK;
+            ? Math.Max(payload.FetchK, request.TopK * 3)
+            : payload.FetchK;
 
         logger.LogDebug(
             "QueryAsync: collection={Collection} question={Question} topic={Topic} topK={TopK} fetchK={FetchK}",
@@ -36,10 +44,10 @@ public sealed class RagQueryService(
         var embedResult = await EmbedAsync(request.Question, ct);
         if (embedResult.Failure is not null) return embedResult.Failure;
 
-        var searchResult = await SearchAsync(request.Collection, embedResult.Vector!, fetchK, ct);
+        var searchResult = await SearchAsync(request.Collection, embedResult.Vector!, fetchK, payload.ScoreThreshold, ct);
         if (searchResult.Failure is not null) return searchResult.Failure;
 
-        var hits = ApplyBcAndTake(searchResult.Hits!, request);
+        var hits = ApplyBcAndTake(searchResult.Hits!, request, payload.Weights);
 
         var postResult = await RunPostprocessorsAsync(hits, request, fetchK, ct);
         if (postResult.Failure is not null) return postResult.Failure;
@@ -77,11 +85,11 @@ public sealed class RagQueryService(
     }
 
     private async Task<(IReadOnlyList<DocumentSearchResult>? Hits, QueryOutcome.Failure? Failure)> SearchAsync(
-        string collection, float[] queryVec, int fetchK, CancellationToken ct)
+        string collection, float[] queryVec, int fetchK, float scoreThreshold, CancellationToken ct)
     {
         try
         {
-            var opts = new SearchOptions(fetchK, cfg.Query.ScoreThreshold);
+            var opts = new SearchOptions(fetchK, scoreThreshold);
             return (await store.SearchAsync(collection, queryVec, opts, ct), null);
         }
         catch (OperationCanceledException) { throw; }
@@ -95,9 +103,10 @@ public sealed class RagQueryService(
         }
     }
 
-    private IReadOnlyList<DocumentSearchResult> ApplyBcAndTake(IReadOnlyList<DocumentSearchResult> allHits, QueryRequest request)
+    private IReadOnlyList<DocumentSearchResult> ApplyBcAndTake(
+        IReadOnlyList<DocumentSearchResult> allHits, QueryRequest request, IReadOnlyList<WeightEntry> weights)
     {
-        var weighted = TopicFilter.ApplyWeights(allHits, cfg);
+        var weighted = TopicFilter.ApplyWeights(allHits, weights);
         return request.Topic is not null
             ? weighted.Where(h => TopicFilter.Matches(h, request.Topic)).Take(request.TopK).ToList()
             : weighted.Take(request.TopK).ToList();

@@ -131,12 +131,13 @@ public sealed class RagE2EFixture : IAsyncLifetime
         var qdrantDocStore = new QdrantDocumentStore(qdrantGrpcUrl);
         var ragSession = new RagSession(new FixedCollectionResolver(cfg.Collection));
         var contentSource = new DiskContentSource(cfg);
+        var configSource = new RagTools.Core.Config.FileConfigSource(cfg);
         var queryService = new RagTools.Core.Query.RagQueryService(
-            _embedder, qdrantDocStore, cfg,
+            _embedder, qdrantDocStore, configSource,
             Array.Empty<IResultPostprocessor>(),
             Microsoft.Extensions.Logging.Abstractions.NullLogger<RagTools.Core.Query.RagQueryService>.Instance);
         var readDocsService = new RagTools.Core.ReadDocs.RagReadDocsService(
-            _embedder, qdrantDocStore, contentSource, cfg,
+            _embedder, qdrantDocStore, contentSource, configSource,
             Microsoft.Extensions.Logging.Abstractions.NullLogger<RagTools.Core.ReadDocs.RagReadDocsService>.Instance);
         var historyService = new RagTools.Core.History.RagHistoryService(
             _embedder, qdrantDocStore,
