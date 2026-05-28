@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <!-- BertTokenizer and SentencePieceTokenizer are both in Microsoft.ML.Tokenizers 2.0.0 stable. -->
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="10.0.0" />
     <PackageReference Include="Microsoft.ML.Tokenizers" Version="2.0.0" />
     <!-- Qdrant gRPC client — connects to a Qdrant HTTP server (docker-compose service) -->
     <PackageReference Include="Qdrant.Client" Version="1.13.0" />
@@ -22,7 +23,7 @@
     <!-- YAML config parsing -->
     <PackageReference Include="YamlDotNet" Version="16.3.0" />
     <!-- BackgroundService for IngestWorker -->
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.8" />
   </ItemGroup>
 
 </Project>

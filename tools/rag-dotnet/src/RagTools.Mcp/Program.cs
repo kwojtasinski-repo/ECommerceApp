@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ModelContextProtocol.Server;
 using RagTools.Core;
+using RagTools.Core.Config;
 using RagTools.Core.ContentSources;
 using RagTools.Core.Ingest;
 using RagTools.Mcp;
@@ -125,6 +126,9 @@ if (transport is "http" or "sse")
                 new QueryCache()))
         .AddSingleton<MarkdownChunker>(sp =>
             new MarkdownChunker(cfg.Chunker, sp.GetRequiredService<ITokenCounter>()))
+        .AddDistributedMemoryCache()
+        .AddSingleton<FileConfigSource>()
+        .AddSingleton<IConfigSource>(sp => BuildConfigSource(sp, defaultMode: "layered"))
         .AddSingleton<IDocumentProcessor, DocumentProcessor>()
         .AddSingleton<IngestChannel>()
         .AddSingleton<OperationStore>()
@@ -181,6 +185,9 @@ else
             new CachedDocumentStore(
                 new QdrantDocumentStore(qdrantUrl),
                 new QueryCache()))
+        .AddDistributedMemoryCache()
+        .AddSingleton<FileConfigSource>()
+        .AddSingleton<IConfigSource>(sp => BuildConfigSource(sp, defaultMode: "file"))
         // STDIO: one collection per process — resolve from env var or config default.
         .AddSingleton<ICollectionResolver>(_ =>
             new FixedCollectionResolver(
@@ -199,4 +206,29 @@ else
     await host.RunAsync();
 }
 return 0;
+
+// ── DI helper ─────────────────────────────────────────────────────────────────
+// Resolves IConfigSource based on RAG_CONFIG_SOURCE env var.
+//   STDIO default: "file"     — mounted YAML only, no Qdrant fetch.
+//   HTTP  default: "layered"  — mounted defaults + per-collection Qdrant override.
+//   Either may be overridden to "qdrant" (pure remote, no fallback — edge case).
+// All modes are wrapped by CachingConfigSource (IDistributedCache, in-memory by default;
+// swap to Redis in Phase 4 by replacing AddDistributedMemoryCache() with AddStackExchangeRedisCache).
+static IConfigSource BuildConfigSource(IServiceProvider sp, string defaultMode)
+{
+    var mode = (Environment.GetEnvironmentVariable("RAG_CONFIG_SOURCE") ?? defaultMode).ToLowerInvariant();
+    var file = sp.GetRequiredService<FileConfigSource>();
+    var store = sp.GetRequiredService<IDocumentStore>();
+    var cache = sp.GetRequiredService<Microsoft.Extensions.Caching.Distributed.IDistributedCache>();
+    IConfigSource inner = mode switch
+    {
+        "file"    => file,
+        "qdrant"  => new QdrantConfigSource(store),
+        "layered" => new LayeredConfigSource(file, store),
+        _         => throw new InvalidOperationException(
+                        $"Unknown RAG_CONFIG_SOURCE '{mode}'. Expected: file | qdrant | layered."),
+    };
+    Console.Error.WriteLine($"[rag-mcp] config src : {mode} (decorated with IDistributedCache)");
+    return new CachingConfigSource(inner, cache);
+}
 
