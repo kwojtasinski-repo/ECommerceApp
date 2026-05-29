@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using RagTools.Core.Config;
 using RagTools.Core.Primitives;
 
 namespace RagTools.Core;
@@ -47,6 +48,7 @@ public sealed class DocumentProcessor(
     MarkdownChunker chunker,
     IEmbedder embedder,
     IDocumentStore store,
+    IConfigSource configSource,
     ILogger<DocumentProcessor> logger) : IDocumentProcessor
 {
     private const int EmbeddingBatchSize = 32;
@@ -58,6 +60,11 @@ public sealed class DocumentProcessor(
 
         var collection = request.Collection.Value;
 
+        // Resolve per-collection config once for this document (ADR-0028 Phase 3 / P3-3b).
+        // The chunker uses MaxTokens/OverlapTokens overrides from here; weight resolution stays on
+        // mounted cfg for now (per-collection ranking weights tracked as P3-3c).
+        var payload = await configSource.GetEffectiveAsync(collection, ct);
+
         // 1. Sanitize input (U+FFFD → '?'). No-op if clean.
         var content = TextSanitizer.RemoveReplacementChars(request.Content, request.RelPath, logger);
 
@@ -68,11 +75,11 @@ public sealed class DocumentProcessor(
         var size   = request.FileSizeBytes ?? content.Length;
         var weight = RankingWeightResolver.Resolve(request.RelPath, size, cfg.Ranking);
 
-        // 3. Chunk (heading-aware MarkdownChunker — same instance, single config source).
-        var chunks = chunker.Chunk(content, request.RelPath);
+        // 3. Chunk (heading-aware MarkdownChunker — per-collection MaxTokens/OverlapTokens).
+        var chunks = chunker.Chunk(content, request.RelPath, payload.MaxTokens, payload.OverlapTokens);
         logger.LogDebug(
-            "DocumentProcessor: {RelPath} → {Count} chunk(s), kind={Kind}, weight={Weight}",
-            request.RelPath, chunks.Count, kind, weight);
+            "DocumentProcessor: {RelPath} → {Count} chunk(s), kind={Kind}, weight={Weight}, maxTokens={MaxTokens}",
+            request.RelPath, chunks.Count, kind, weight, payload.MaxTokens);
 
         // 4. Ensure collection (HTTP path with dynamic collections).
         if (request.EnsureCollection)

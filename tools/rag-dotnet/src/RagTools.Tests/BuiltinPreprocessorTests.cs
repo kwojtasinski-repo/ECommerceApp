@@ -182,7 +182,7 @@ public class BuiltinPreprocessorTests
     public async Task LengthTruncation_ShortText_NotTruncated()
     {
         var cfg = BuildConfig(maxTokens: 10);
-        var pre = new LengthTruncationPreprocessor(cfg);
+        var pre = BuildLengthTrunc(cfg);
 
         var input = "one two three four five";
         var result = await pre.ProcessAsync(input, EmbedContext.Query);
@@ -193,7 +193,7 @@ public class BuiltinPreprocessorTests
     public async Task LengthTruncation_LongText_Truncated()
     {
         var cfg = BuildConfig(maxTokens: 3);
-        var pre = new LengthTruncationPreprocessor(cfg);
+        var pre = BuildLengthTrunc(cfg);
 
         var result = await pre.ProcessAsync("one two three four five", EmbedContext.Query);
         Assert.Equal("one two three", result);
@@ -203,7 +203,7 @@ public class BuiltinPreprocessorTests
     public async Task LengthTruncation_ExactLimit_NotTruncated()
     {
         var cfg = BuildConfig(maxTokens: 3);
-        var pre = new LengthTruncationPreprocessor(cfg);
+        var pre = BuildLengthTrunc(cfg);
 
         var result = await pre.ProcessAsync("one two three", EmbedContext.Query);
         Assert.Equal("one two three", result);
@@ -213,7 +213,7 @@ public class BuiltinPreprocessorTests
     public async Task LengthTruncation_EmptyString_ReturnsEmpty()
     {
         var cfg = BuildConfig(maxTokens: 10);
-        var pre = new LengthTruncationPreprocessor(cfg);
+        var pre = BuildLengthTrunc(cfg);
 
         var result = await pre.ProcessAsync(string.Empty, EmbedContext.Ingest);
         Assert.Equal(string.Empty, result);
@@ -223,7 +223,7 @@ public class BuiltinPreprocessorTests
     public async Task LengthTruncation_AppliesToBothPurposes()
     {
         var cfg = BuildConfig(maxTokens: 2);
-        var pre = new LengthTruncationPreprocessor(cfg);
+        var pre = BuildLengthTrunc(cfg);
 
         var queryResult  = await pre.ProcessAsync("a b c d", EmbedContext.Query);
         var ingestResult = await pre.ProcessAsync("a b c d", EmbedContext.Ingest);
@@ -233,6 +233,17 @@ public class BuiltinPreprocessorTests
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private static LengthTruncationPreprocessor BuildLengthTrunc(RagConfig cfg)
+    {
+        // Stub payload mirrors mounted MaxTokens so the Query path resolves the same effective
+        // value as the Ingest path (the per-collection override is "none" in unit tests).
+        var stub = new StubConfigSource
+        {
+            Payload = RagConfigPayload.From(cfg, []),
+        };
+        return new LengthTruncationPreprocessor(cfg, stub, new RagSession(new FixedCollectionResolver("test")));
+    }
 
     private sealed class StubConfigSource : IConfigSource
     {

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using RagTools.Core;
+using RagTools.Core.Config;
 using RagTools.Core.Primitives;
 using Xunit;
 
@@ -74,7 +75,8 @@ public class DocumentProcessorTests
         embedder = new FakeEmbedder();
         store    = new FakeStore();
         var chunker = BuildChunker();
-        return new DocumentProcessor(cfg ?? new RagConfig(), chunker, embedder, store, NullLogger<DocumentProcessor>.Instance);
+        var ragCfg  = cfg ?? new RagConfig();
+        return new DocumentProcessor(ragCfg, chunker, embedder, store, new FileConfigSource(ragCfg), NullLogger<DocumentProcessor>.Instance);
     }
 
     private static DocumentProcessingRequest Req(
@@ -211,7 +213,7 @@ public class DocumentProcessorTests
         var chunker  = new MarkdownChunker(
             new ChunkerSection { MaxTokens = 10, MinTokens = 1, OverlapTokens = 0, SplitOnHeadings = [1, 2] },
             BertTokenCounter.FromModelDir("/nonexistent/path"));
-        var sut = new DocumentProcessor(new RagConfig(), chunker, embedder, store, NullLogger<DocumentProcessor>.Instance);
+        var sut = new DocumentProcessor(new RagConfig(), chunker, embedder, store, new FileConfigSource(new RagConfig()), NullLogger<DocumentProcessor>.Instance);
 
         var result = await sut.ProcessAsync(Req("docs/big.md", content));
 

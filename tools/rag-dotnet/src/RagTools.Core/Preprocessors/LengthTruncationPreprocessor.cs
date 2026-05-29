@@ -1,3 +1,5 @@
+using RagTools.Core.Config;
+
 namespace RagTools.Core;
 
 /// <summary>
@@ -6,33 +8,36 @@ namespace RagTools.Core;
 /// explicit and configurable — and applies it to ALL providers (including Ollama).
 ///
 /// Uses a simple word split as a token proxy (avoids a SentencePiece dependency here).
-/// The word count limit is derived from <see cref="RagConfig"/>:<c>Chunker.MaxTokens</c>.
 ///
-/// Applies on both query and ingest paths — oversized text is always truncated.
+/// ADR-0028 Phase 3 / P3-3b — per-collection resolution:
+///   • Query path (<see cref="EmbedPurpose.Query"/>): fetches per-collection MaxTokens via
+///     <see cref="IConfigSource"/>. Falls back to the mounted <see cref="RagConfig"/> default
+///     when the per-collection payload has no override (MaxTokens == 0).
+///   • Ingest path (<see cref="EmbedPurpose.Ingest"/>): always uses the mounted default —
+///     ingest runs in a background worker where the ambient <see cref="RagSession"/> may not
+///     reflect the per-batch collection (no HttpContext), and the upstream chunker has already
+///     enforced the per-collection MaxTokens. Truncation here is a safety net only.
 /// </summary>
-public sealed class LengthTruncationPreprocessor(RagConfig cfg) : IEmbedderPreprocessor
+public sealed class LengthTruncationPreprocessor(
+    RagConfig cfg,
+    IConfigSource configSource,
+    RagSession session) : IEmbedderPreprocessor
 {
-    public Task<string> ProcessAsync(string text, EmbedContext ctx, CancellationToken ct = default)
+    public async Task<string> ProcessAsync(string text, EmbedContext ctx, CancellationToken ct = default)
     {
-        if (string.IsNullOrEmpty(text))
-        {
-            return Task.FromResult(text);
-        }
+        if (string.IsNullOrEmpty(text)) return text;
 
         var maxWords = cfg.Chunker.MaxTokens;
-        if (maxWords <= 0)
+        if (ctx.Purpose == EmbedPurpose.Query)
         {
-            return Task.FromResult(text);
+            var payload = await configSource.GetEffectiveAsync(session.Collection, ct);
+            if (payload.MaxTokens > 0) maxWords = payload.MaxTokens;
         }
+        if (maxWords <= 0) return text;
 
-        // Simple word-split proxy for token count.
-        // Accurate enough for a hard ceiling — doesn't need SentencePiece here.
         var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (words.Length <= maxWords)
-        {
-            return Task.FromResult(text);
-        }
+        if (words.Length <= maxWords) return text;
 
-        return Task.FromResult(string.Join(' ', words[..maxWords]));
+        return string.Join(' ', words[..maxWords]);
     }
 }

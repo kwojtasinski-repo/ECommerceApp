@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using RagTools.Core;
+using RagTools.Core.Config;
 using System.Net.Http.Json;
 
 // ── CLI entry point for incremental ingest ────────────────────────────────────
@@ -227,7 +228,10 @@ if (deleted.Count > 0)
 var tokenCounter = SentencePieceTokenCounter.FromModelDir(modelDir);
 var chunker = new MarkdownChunker(cfg.Chunker, tokenCounter);
 var processorLogger = loggerFactory.CreateLogger<DocumentProcessor>();
-var processor = new DocumentProcessor(cfg, chunker, embedder, store, processorLogger);
+// CLI ingestor uses mounted-only config (no Qdrant fetch) — the per-collection __config__
+// point is written by the HTTP batch ingest path, not by this offline tool.
+var configSource = new FileConfigSource(cfg);
+var processor = new DocumentProcessor(cfg, chunker, embedder, store, configSource, processorLogger);
 var ingestor = new FileIngestor(processor, cfg, manifest, log);
 var totalChunks = await ingestor.IngestAsync(toProcess);
 

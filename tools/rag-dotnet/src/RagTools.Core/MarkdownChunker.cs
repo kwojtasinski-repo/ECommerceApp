@@ -5,11 +5,17 @@ namespace RagTools.Core;
 /// Splits at heading boundaries, respects code fences, enforces token budget.
 /// In auto mode (split_on_headings: "auto") splits at all H1–H6 levels and
 /// merges sections below min_tokens into the previous chunk instead of dropping them.
+///
+/// ADR-0028 Phase 3 / P3-3b: the public <see cref="Chunk(string,string,int?,int?)"/>
+/// overload accepts per-call MaxTokens / OverlapTokens overrides resolved from the
+/// per-collection IConfigSource in <see cref="DocumentProcessor"/>. When overrides are
+/// null (or zero) the mounted defaults from <see cref="ChunkerSection"/> apply.
+/// MinTokens stays mounted-only — it is not persisted in <see cref="RagConfigPayload"/>.
 /// </summary>
 public sealed class MarkdownChunker
 {
-    private readonly int _maxTokens;
-    private readonly int _overlapTokens;
+    private readonly int _defaultMaxTokens;
+    private readonly int _defaultOverlapTokens;
     private readonly int _minTokens;
     private readonly ITokenCounter _tokenCounter;
     private readonly HashSet<int> _splitLevels;
@@ -18,8 +24,8 @@ public sealed class MarkdownChunker
 
     public MarkdownChunker(ChunkerSection cfg, ITokenCounter tokenCounter)
     {
-        _maxTokens = cfg.MaxTokens;
-        _overlapTokens = cfg.OverlapTokens;
+        _defaultMaxTokens = cfg.MaxTokens;
+        _defaultOverlapTokens = cfg.OverlapTokens;
         _minTokens = cfg.MinTokens;
         _tokenCounter = tokenCounter;
         _autoMode = cfg.IsAuto;
@@ -29,19 +35,27 @@ public sealed class MarkdownChunker
         _maxHeadingLevel = _splitLevels.Max();
     }
 
+    /// <summary>Chunk with the mounted defaults. Existing callers / tests use this overload.</summary>
     public IReadOnlyList<Chunk> Chunk(string text, string relPath)
+        => Chunk(text, relPath, maxTokensOverride: null, overlapTokensOverride: null);
+
+    /// <summary>
+    /// Chunk with optional per-collection overrides. Pass null or 0 to keep the mounted default.
+    /// </summary>
+    public IReadOnlyList<Chunk> Chunk(string text, string relPath, int? maxTokensOverride, int? overlapTokensOverride)
     {
+        var maxTokens     = maxTokensOverride     is > 0 ? maxTokensOverride.Value     : _defaultMaxTokens;
+        var overlapTokens = overlapTokensOverride is > 0 ? overlapTokensOverride.Value : _defaultOverlapTokens;
+
         var lines = text.Split('\n');
         var docTitle = DetectTitle(lines, relPath);
 
-        // Split into heading-bounded sections.
         var sections = SplitBySections(lines, docTitle);
         var rawChunks = new List<Chunk>();
 
         foreach (var section in sections)
         {
-            // If a section fits, emit as a single chunk.
-            if (_tokenCounter.Count(section.Text) <= _maxTokens)
+            if (_tokenCounter.Count(section.Text) <= maxTokens)
             {
                 var t = section.Text.Trim();
                 var tc = _tokenCounter.Count(t);
@@ -51,24 +65,20 @@ public sealed class MarkdownChunker
                 continue;
             }
 
-            // Section is too large: slide a window over paragraphs.
-            foreach (var piece in SlideWindow(section))
+            foreach (var piece in SlideWindow(section, maxTokens, overlapTokens))
             {
                 if (!_autoMode && piece.TokenCount < _minTokens) continue;
                 rawChunks.Add(piece);
             }
         }
 
-        return _autoMode ? MergeSmallChunks(rawChunks) : rawChunks;
+        return _autoMode ? MergeSmallChunks(rawChunks, maxTokens) : rawChunks;
     }
 
     /// <summary>
     /// Auto-mode post-processor: accumulate consecutive small chunks until >= min_tokens.
-    /// Mirrors Python's _merge_small_chunks: starts accumulating from the first chunk and
-    /// absorbs subsequent small sections. Once a large section is encountered, the buffer
-    /// is emitted and the new section starts a fresh buffer.
     /// </summary>
-    private List<Chunk> MergeSmallChunks(List<Chunk> chunks)
+    private List<Chunk> MergeSmallChunks(List<Chunk> chunks, int maxTokens)
     {
         if (chunks.Count == 0) return [];
 
@@ -79,22 +89,19 @@ public sealed class MarkdownChunker
         {
             if (buf.TokenCount >= _minTokens)
             {
-                // Buffer is large enough — emit it, start a new buffer.
                 result.Add(buf);
                 buf = chunk;
             }
             else
             {
-                // Buffer is still small — try to absorb this chunk.
                 var combinedText = buf.Text + "\n\n" + chunk.Text;
                 var combinedTokens = _tokenCounter.Count(combinedText);
-                if (combinedTokens <= _maxTokens)
+                if (combinedTokens <= maxTokens)
                 {
                     buf = buf with { Text = combinedText, TokenCount = combinedTokens };
                 }
                 else
                 {
-                    // Combined would overflow — emit buffer if large enough, then start fresh.
                     if (buf.TokenCount >= _minTokens)
                         result.Add(buf);
                     buf = chunk;
@@ -102,8 +109,6 @@ public sealed class MarkdownChunker
             }
         }
 
-        // Final buffer: if too small, merge it BACKWARD into the last emitted chunk
-        // (trailing-section fix — prevents the very last small H4/section from being dropped).
         if (buf.TokenCount >= _minTokens)
         {
             result.Add(buf);
@@ -113,14 +118,14 @@ public sealed class MarkdownChunker
             var last = result[^1];
             var combinedText = last.Text + "\n\n" + buf.Text;
             var combinedTokens = _tokenCounter.Count(combinedText);
-            if (combinedTokens <= _maxTokens)
+            if (combinedTokens <= maxTokens)
                 result[^1] = last with { Text = combinedText, TokenCount = combinedTokens };
             else
-                result.Add(buf); // overflow — emit as-is rather than silently drop
+                result.Add(buf);
         }
         else
         {
-            result.Add(buf); // only chunk in document — emit regardless of size
+            result.Add(buf);
         }
 
         return result;
@@ -141,7 +146,7 @@ public sealed class MarkdownChunker
     private List<Chunk> SplitBySections(string[] lines, string docTitle)
     {
         var sections = new List<Chunk>();
-        var headingStack = new string?[_maxHeadingLevel + 1]; // index 1.._maxHeadingLevel
+        var headingStack = new string?[_maxHeadingLevel + 1];
         var currentLines = new List<string>();
         var startLine = 1;
         var inFence = false;
@@ -171,7 +176,6 @@ public sealed class MarkdownChunker
                 currentLines.Clear();
                 startLine = i + 1;
                 headingStack[level] = title;
-                // Clear deeper levels.
                 for (var j = level + 1; j <= _maxHeadingLevel; j++) headingStack[j] = null;
             }
 
@@ -200,7 +204,7 @@ public sealed class MarkdownChunker
         return string.Join(" > ", parts);
     }
 
-    private IEnumerable<Chunk> SlideWindow(Chunk section)
+    private IEnumerable<Chunk> SlideWindow(Chunk section, int maxTokens, int overlapTokens)
     {
         var paragraphs = section.Text.Split("\n\n", StringSplitOptions.RemoveEmptyEntries);
         var buffer = new List<string>();
@@ -209,11 +213,10 @@ public sealed class MarkdownChunker
         foreach (var para in paragraphs)
         {
             var paraTokens = _tokenCounter.Count(para);
-            if (bufTokens + paraTokens > _maxTokens && buffer.Count > 0)
+            if (bufTokens + paraTokens > maxTokens && buffer.Count > 0)
             {
                 yield return Emit(section, buffer);
-                // Overlap: keep last paragraph(s) that fit within _overlapTokens.
-                while (buffer.Count > 0 && bufTokens > _overlapTokens)
+                while (buffer.Count > 0 && bufTokens > overlapTokens)
                 {
                     bufTokens -= _tokenCounter.Count(buffer[0]);
                     buffer.RemoveAt(0);

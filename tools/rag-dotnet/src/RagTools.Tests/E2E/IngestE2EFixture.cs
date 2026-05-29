@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using RagTools.Core;
+using RagTools.Core.Config;
 using Testcontainers.Qdrant;
 
 namespace RagTools.Tests.E2E;
@@ -129,7 +130,7 @@ public sealed class IngestE2EFixture : IAsyncLifetime
 
         var chunker = new MarkdownChunker(Config.Chunker, tokenCounter);
         var processor = new DocumentProcessor(
-            Config, chunker, Embedder, Store,
+            Config, chunker, Embedder, Store, new FileConfigSource(Config),
             _loggerFactory.CreateLogger<DocumentProcessor>());
 
         var worker = new IngestWorker(
