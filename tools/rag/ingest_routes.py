@@ -37,7 +37,8 @@ from starlette.routing import Route
 
 from ingest_worker import IngestJob
 from operation_store import OperationStore
-from config.payload import RagConfigPayload, WeightEntry
+from common import _load_multilingual_glossary
+from config.payload import RagConfigPayload, WeightEntry, GlossaryEntry
 
 _MAX_BODY_BYTES = 50 * 1024 * 1024                           # 50 MB hard limit
 _COLLECTION_RE  = re.compile(r'^[a-z0-9][a-z0-9_-]*$')      # safe collection names
@@ -69,6 +70,7 @@ def _parse_zip_batch(
     body_bytes: bytes,
     capacity: int,
     queue_size: int,
+    mounted_cfg: "Any | None" = None,
 ) -> "tuple[_ZipBatchContent, None] | tuple[None, Response]":
     """Parse a ZIP ingest payload and return document entries or an error Response.
 
@@ -219,11 +221,12 @@ def _parse_zip_batch(
                 status_code=503,
             )
 
-        # ── Build per-collection RagConfigPayload (P3-7b) ─────────────────
+        # ── Build per-collection RagConfigPayload ─────────────────────────────
         # Mirrors .NET BatchIngestService: ZIP-supplied rag-config.yaml drives
-        # the persisted payload. If absent, an empty payload is stored so the
-        # collection still gets a __config__ point (callers fall back to
-        # mounted defaults via LayeredConfigSource).
+        # the persisted payload. Glossary entries: ZIP-supplied
+        # multilingual-glossary.yaml wins if present; otherwise the mounted
+        # multilingual-glossary.yaml is baked in — exactly the .NET behaviour
+        # (BatchIngestService always calls MultilingualGlossary.Load and persists).
         cfg_raw: dict[str, Any] = {}
         if "rag-config.yaml" in zip_names:
             try:
@@ -243,10 +246,34 @@ def _parse_zip_batch(
             for w in weights_raw
             if w.get("pattern")
         )
+
+        # Glossary: ZIP-supplied file wins; fall back to mounted yaml
+        glossary_entries: tuple[GlossaryEntry, ...]
+        if "multilingual-glossary.yaml" in zip_names:
+            try:
+                graw = yaml.safe_load(
+                    zf.read("multilingual-glossary.yaml").decode("utf-8", errors="replace")
+                ) or {}
+                glossary_entries = tuple(
+                    GlossaryEntry.from_dict(e)
+                    for e in graw.get("entries", []) or []
+                )
+            except Exception:
+                glossary_entries = ()
+        else:
+            # Bake mounted glossary — parity with .NET BatchIngestService
+            glossary_path = getattr(mounted_cfg, "glossary_path", None) if mounted_cfg is not None else None
+            raw_mounted = _load_multilingual_glossary(glossary_path)
+            glossary_entries = tuple(
+                GlossaryEntry(english=english, patterns=tuple(patterns))
+                for english, patterns in raw_mounted
+            )
+
         config_payload = RagConfigPayload(
             max_tokens=chunker_raw.get("max_tokens"),
             overlap_tokens=chunker_raw.get("overlap_tokens"),
             weights=weights,
+            glossary_entries=glossary_entries,
         )
 
         return _ZipBatchContent(
@@ -272,14 +299,15 @@ class IngestController:
         queue: asyncio.Queue,
         capacity: int,
         document_store: "Any | None" = None,
+        config_source: "Any | None" = None,
+        mounted_cfg: "Any | None" = None,
     ) -> None:
         self._store    = store
         self._queue    = queue
         self._capacity = capacity
-        # Optional to keep existing unit tests / non-Qdrant deployments working.
-        # When wired, the controller persists a per-collection __config__ point
-        # via ensure_collection → store_config BEFORE enqueueing any job.
         self._document_store = document_store
+        self._config_source  = config_source
+        self._mounted_cfg    = mounted_cfg
 
     # ── POST /ingest/{collection}/batch ───────────────────────────────────────
 
@@ -313,6 +341,7 @@ class IngestController:
             body_bytes,
             capacity=self._capacity,
             queue_size=self._queue.qsize(),
+            mounted_cfg=self._mounted_cfg,
         )
         if error_response is not None:
             return error_response
@@ -326,6 +355,9 @@ class IngestController:
                 await self._document_store.store_config(
                     collection, batch_content.config_payload
                 )
+                # Invalidate the TTL cache so the next query picks up the new config.
+                if self._config_source is not None:
+                    self._config_source.invalidate(collection)
             except Exception as exc:
                 return JSONResponse(
                     {
@@ -399,9 +431,12 @@ def build_ingest_routes(
     queue: asyncio.Queue,
     capacity: int = 100,
     document_store: "Any | None" = None,
+    config_source: "Any | None" = None,
+    mounted_cfg: "Any | None" = None,
 ) -> list[Route]:
     """Return Starlette Route objects wired to the given store and queue."""
-    ctrl = IngestController(store, queue, capacity, document_store=document_store)
+    ctrl = IngestController(store, queue, capacity, document_store=document_store,
+                            config_source=config_source, mounted_cfg=mounted_cfg)
 
     async def _ingest_fallback(request: Request) -> Response:
         # Catches any /ingest/... URL that does not match a declared route.

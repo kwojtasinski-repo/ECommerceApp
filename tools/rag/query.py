@@ -124,6 +124,7 @@ class QueryEngine:
         bc_filter: str | None = None,
         field_filter: tuple[str, str] | None = None,
         collection: str | None = None,
+        glossary_entries: "tuple | None" = None,
     ) -> list[QueryHit]:
         """Search the Qdrant index.
 
@@ -140,8 +141,16 @@ class QueryEngine:
         fetch_k = fetch_k or int(defaults["fetch_k"])
 
         from qdrant_client.models import Filter, FieldCondition, MatchValue
+        from embed_context import EmbedContext, EmbedPurpose
 
-        qvec = self._embedder.embed(query)
+        qvec = self._embedder.embed(
+            query,
+            EmbedContext(
+                purpose=EmbedPurpose.QUERY,
+                collection=collection or self.cfg.collection,
+                glossary_entries=glossary_entries,
+            ),
+        )
         qfilter = None
         if field_filter:
             field_name, field_value = field_filter

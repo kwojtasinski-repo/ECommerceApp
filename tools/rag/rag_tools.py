@@ -66,6 +66,28 @@ def _wants_full_content(question: str) -> bool:
     return bool(_FULL_INTENT_RE.search(question))
 
 
+# ── per-collection glossary resolver ─────────────────────────────────────────
+
+async def _resolve_glossary_entries(collection: "str | None") -> "tuple | None":
+    """Fetch per-collection glossary_entries from the active config source.
+
+    Returns ``None`` when no config source is wired (STDIO / file mode) so
+    ``QueryEngine.search`` keeps using its constructor-supplied mounted glossary.
+    Returns the per-collection tuple (possibly empty) when a Qdrant-backed source
+    is active — overrides the mounted glossary for that search call.
+    """
+    if state.CONFIG_SOURCE is None:
+        return None
+    target = collection or (state.CFG.collection if state.CFG is not None else None)
+    if target is None:
+        return None
+    try:
+        payload = await state.CONFIG_SOURCE.get_effective(target)
+        return payload.glossary_entries
+    except Exception:
+        return None
+
+
 # ── tool: query_docs ──────────────────────────────────────────────────────────
 
 
@@ -73,6 +95,8 @@ async def _tool_query_docs(args: dict) -> list[TextContent]:
     question = _cap_question(args.get("question", ""))
     bc = args.get("bc")
     top_k = _clamp_int(args.get("top_k", 5), 1, _MAX_TOP_K, 5)
+    collection = state._session_collection.get(None)
+    glossary_entries = await _resolve_glossary_entries(collection)
     try:
         hits = await asyncio.wait_for(
             asyncio.to_thread(
@@ -80,7 +104,8 @@ async def _tool_query_docs(args: dict) -> list[TextContent]:
                     question,
                     top_k=top_k,
                     bc_filter=bc,
-                    collection=state._session_collection.get(None),
+                    collection=collection,
+                    glossary_entries=glossary_entries,
                 )
             ),
             timeout=state.TOOL_TIMEOUT,
@@ -136,6 +161,8 @@ async def _tool_read_docs(args: dict) -> list[TextContent]:
     bc = args.get("bc")
     top_files = _clamp_int(args.get("top_files", 3), 1, _MAX_TOP_FILES, 3)
     full_mode = _wants_full_content(question)
+    collection = state._session_collection.get(None)
+    glossary_entries = await _resolve_glossary_entries(collection)
 
     # Fetch enough chunks globally so that each file gets good per-file coverage.
     try:
@@ -145,7 +172,8 @@ async def _tool_read_docs(args: dict) -> list[TextContent]:
                     question,
                     top_k=max(30, top_files * 15),
                     bc_filter=bc,
-                    collection=state._session_collection.get(None),
+                    collection=collection,
+                    glossary_entries=glossary_entries,
                 )
             ),
             timeout=state.TOOL_TIMEOUT,
@@ -309,6 +337,8 @@ async def _tool_query_docs_cached(args: dict) -> list[TextContent]:
     question = _cap_question(args.get("question", ""))
     bc = args.get("bc")
     top_files = _clamp_int(args.get("top_files", 3), 1, _MAX_TOP_FILES, 3)
+    collection = state._session_collection.get(None)
+    glossary_entries = await _resolve_glossary_entries(collection)
 
     try:
         hits = await asyncio.wait_for(
@@ -317,7 +347,8 @@ async def _tool_query_docs_cached(args: dict) -> list[TextContent]:
                     question,
                     top_k=max(30, top_files * 15),
                     bc_filter=bc,
-                    collection=state._session_collection.get(None),
+                    collection=collection,
+                    glossary_entries=glossary_entries,
                 )
             ),
             timeout=state.TOOL_TIMEOUT,

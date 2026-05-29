@@ -295,8 +295,10 @@ async def _run_sse(port: int) -> None:
 
     from api_key_middleware import ApiKeyMiddleware
     from ingest_routes import build_ingest_routes
+    from config.bootstrap import build_config_source
 
     _store, _queue, _worker, _doc_store = _make_ingest_components()
+    state.CONFIG_SOURCE = build_config_source(state.CFG, _doc_store)
 
     @contextlib.asynccontextmanager
     async def lifespan(_app):  # noqa: ANN001
@@ -304,7 +306,12 @@ async def _run_sse(port: int) -> None:
         yield
         await _worker.stop()
 
-    ingest_routes = build_ingest_routes(_store, _queue, DEFAULT_CAPACITY, document_store=_doc_store)
+    ingest_routes = build_ingest_routes(
+        _store, _queue, DEFAULT_CAPACITY,
+        document_store=_doc_store,
+        config_source=state.CONFIG_SOURCE,
+        mounted_cfg=state.CFG,
+    )
 
     app = Starlette(
         lifespan=lifespan,
@@ -357,8 +364,10 @@ async def _run_http(port: int) -> None:
 
     from api_key_middleware import ApiKeyMiddleware
     from ingest_routes import build_ingest_routes
+    from config.bootstrap import build_config_source
 
     _store, _queue, _worker, _doc_store = _make_ingest_components()
+    state.CONFIG_SOURCE = build_config_source(state.CFG, _doc_store)
 
     @contextlib.asynccontextmanager
     async def lifespan(_app):  # noqa: ANN001
@@ -391,7 +400,12 @@ async def _run_http(port: int) -> None:
                 await sm_task
             await _worker.stop()
 
-    ingest_routes = build_ingest_routes(_store, _queue, DEFAULT_CAPACITY, document_store=_doc_store)
+    ingest_routes = build_ingest_routes(
+        _store, _queue, DEFAULT_CAPACITY,
+        document_store=_doc_store,
+        config_source=state.CONFIG_SOURCE,
+        mounted_cfg=state.CFG,
+    )
 
     app = Starlette(
         lifespan=lifespan,

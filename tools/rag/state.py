@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import os
 from contextvars import ContextVar
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from common import Config
@@ -18,6 +18,10 @@ if TYPE_CHECKING:
 # Deferred — set by mcp_server.__main__ before the event loop starts.
 ENGINE: "QueryEngine | None" = None
 CFG: "Config | None" = None
+
+# Per-collection config source — set at HTTP transport startup.
+# None in STDIO mode: tools fall back to mounted defaults via FileConfigSource at search time.
+CONFIG_SOURCE: "Any | None" = None
 
 # Per-SSE-session / per-HTTP-request collection override.
 # Set from the ``?project=<name>`` query param on the connection URL.

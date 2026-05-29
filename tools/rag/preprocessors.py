@@ -40,6 +40,13 @@ class GlossaryExpansionPreprocessor:
     def process(self, text: str, ctx: EmbedContext) -> str:
         if ctx.purpose != EmbedPurpose.QUERY:
             return text
+        # Per-collection override from EmbedContext — used by the HTTP multi-tenant path.
+        # When glossary_entries is present (even if empty) it supersedes the mounted default.
+        if ctx.glossary_entries is not None:
+            effective: list[tuple[str, list[str]]] = [
+                (e.english, list(e.patterns)) for e in ctx.glossary_entries
+            ]
+            return _expand(text, effective, self._repeat)
         return _expand(text, self._glossary, self._repeat)
 
 
