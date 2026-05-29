@@ -113,7 +113,9 @@ Until Phase 3 lands, read the main ADR and `tech-details-dotnet.md` with this ca
 > request, regardless of which collection the request targets. Per-collection persistence
 > is roadmap Phase 3 (see `docs/roadmap/rag-remote-multitenant.md`).
 
-This caveat will be removed once Phase 3 P3-6 (ADR update) is complete.
+This caveat is **retired for the .NET HTTP server** as of
+[Amendment 005](./0028-005-phase3-per-collection-config-dotnet.md). It still applies to
+the Python server until roadmap Phase 3 P3-7 lands.
 
 ---
 
