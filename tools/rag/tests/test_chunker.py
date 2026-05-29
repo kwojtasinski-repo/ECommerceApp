@@ -32,6 +32,20 @@ def chunk(text: str, title: str = "doc", cfg: dict = None) -> list[Chunk]:
     return chunk_markdown(text, title, cfg or DEFAULT_CFG)
 
 
+def test_missing_max_and_overlap_use_safe_fallbacks():
+    """If max_tokens/overlap_tokens are omitted, chunker should use internal defaults (512/64)."""
+    cfg = {
+        "split_on_headings": [1, 2, 3],
+        # Deliberately omit max_tokens + overlap_tokens.
+        "min_tokens": 1,
+    }
+    paragraphs = [f"Paragraph {i}: " + ("token " * 12) for i in range(120)]
+    md = "## Section\n\n" + "\n\n".join(paragraphs)
+    result = chunk_markdown(md, "doc", cfg)
+    assert result
+    assert all(c.token_count <= 512 for c in result)
+
+
 # ── Basic splitting ───────────────────────────────────────────────────────────
 
 def test_empty_document_returns_no_chunks():

@@ -1,4 +1,6 @@
 using Microsoft.Extensions.Logging;
+using YamlDotNet.Serialization;
+using YamlDotNet.Serialization.NamingConventions;
 
 namespace RagTools.Core.Ingest;
 
@@ -128,6 +130,15 @@ public sealed class BatchValidator(ILogger<BatchValidator> logger)
             warnings.Add("rag-config.yaml does not declare multilingual_glossary — Polish/German query expansion will be reduced.");
         }
 
+        if (!HasRankingWeights(ragConfigYaml))
+        {
+            warnings.Add("rag-config.yaml has no ranking.weights — using server defaults; query relevance may be suboptimal.");
+        }
+        if (!HasChunkerMaxTokens(ragConfigYaml))
+        {
+            warnings.Add("rag-config.yaml has no chunker.max_tokens — using 512 (embedder native length).");
+        }
+
         // Filenames that must NEVER appear in the eligible-docs list, regardless
         // of extension. Includes rag-config.yaml plus the user-declared companion
         // filenames (which may have non-default names like "my-rules.yaml").
@@ -199,5 +210,40 @@ public sealed class BatchValidator(ILogger<BatchValidator> logger)
                      || n.EndsWith(".yml",  StringComparison.OrdinalIgnoreCase))
             .ToList();
         return new Dictionary<string, object?> { ["yamlFilesPresent"] = yaml };
+    }
+
+    private static bool HasRankingWeights(string ragConfigYaml)
+    {
+        var raw = DeserializeYaml(ragConfigYaml);
+        if (!raw.TryGetValue("ranking", out var rankingObj) || rankingObj is not Dictionary<object, object> ranking)
+            return false;
+        return ranking.TryGetValue("weights", out var weightsObj)
+            && weightsObj is IEnumerable<object> weights
+            && weights.Any();
+    }
+
+    private static bool HasChunkerMaxTokens(string ragConfigYaml)
+    {
+        var raw = DeserializeYaml(ragConfigYaml);
+        if (!raw.TryGetValue("chunker", out var chunkerObj) || chunkerObj is not Dictionary<object, object> chunker)
+            return false;
+        return chunker.ContainsKey("max_tokens") && chunker["max_tokens"] is not null;
+    }
+
+    private static Dictionary<object, object> DeserializeYaml(string yaml)
+    {
+        if (string.IsNullOrWhiteSpace(yaml)) return [];
+        try
+        {
+            return new DeserializerBuilder()
+                .WithNamingConvention(UnderscoredNamingConvention.Instance)
+                .IgnoreUnmatchedProperties()
+                .Build()
+                .Deserialize<Dictionary<object, object>>(yaml) ?? [];
+        }
+        catch
+        {
+            return [];
+        }
     }
 }

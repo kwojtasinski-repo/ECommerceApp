@@ -75,6 +75,11 @@ doc_kind_rules:
     kind: "other"
 """
 
+_MINIMAL_RAG_CONFIG = """\
+chunker: { max_tokens: 512 }
+ranking: { weights: [ { pattern: "docs/**", weight: 1.0 } ] }
+"""
+
 _MINIMAL_QUERIES = """\
 named_queries:
   - name: "general"
@@ -88,6 +93,7 @@ _MINIMAL_DOC = "# Test Document\n\nSome content here for testing.\n"
 def _batch_zip(extra: dict[str, str] | None = None) -> bytes:
     """Minimal valid ZIP for batch ingest."""
     files = {
+        "rag-config.yaml": _MINIMAL_RAG_CONFIG,
         "metadata-rules.yaml": _MINIMAL_META,
         "queries.yaml": _MINIMAL_QUERIES,
         "docs/test.md": _MINIMAL_DOC,
@@ -470,6 +476,7 @@ class TestBatchIngestRoute:
     def test_post_count_matches_file_count(self):
         client, _, _ = self._client_and_store()
         zip_data = _make_zip({
+            "rag-config.yaml": _MINIMAL_RAG_CONFIG,
             "metadata-rules.yaml": _MINIMAL_META,
             "queries.yaml": _MINIMAL_QUERIES,
             "docs/a.md": "# A\n\nContent A.",
@@ -488,6 +495,7 @@ class TestBatchIngestRoute:
     def test_post_each_file_gets_unique_operation_id(self):
         client, _, _ = self._client_and_store()
         zip_data = _make_zip({
+            "rag-config.yaml": _MINIMAL_RAG_CONFIG,
             "metadata-rules.yaml": _MINIMAL_META,
             "queries.yaml": _MINIMAL_QUERIES,
             "docs/a.md": "# A\n\nContent.",
@@ -519,6 +527,7 @@ class TestBatchIngestRoute:
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as zf:
             zf.mkdir("docs/")  # directory entry
+            zf.writestr("rag-config.yaml", _MINIMAL_RAG_CONFIG)
             zf.writestr("metadata-rules.yaml", _MINIMAL_META)
             zf.writestr("queries.yaml", _MINIMAL_QUERIES)
             zf.writestr("docs/real.md", _MINIMAL_DOC)
@@ -536,6 +545,7 @@ class TestBatchIngestRoute:
     def test_post_config_files_not_enqueued_as_documents(self):
         client, _, _ = self._client_and_store()
         zip_data = _make_zip({
+            "rag-config.yaml": _MINIMAL_RAG_CONFIG,
             "metadata-rules.yaml": _MINIMAL_META,
             "queries.yaml": _MINIMAL_QUERIES,
             "docs/doc.md": _MINIMAL_DOC,
@@ -582,7 +592,11 @@ class TestBatchValidation:
         assert r.status_code == 400
 
     def test_missing_metadata_rules_returns_400(self):
-        zip_data = _make_zip({"queries.yaml": _MINIMAL_QUERIES, "docs/a.md": _MINIMAL_DOC})
+        zip_data = _make_zip({
+            "rag-config.yaml": _MINIMAL_RAG_CONFIG,
+            "queries.yaml": _MINIMAL_QUERIES,
+            "docs/a.md": _MINIMAL_DOC,
+        })
         r = self._client().post(
             "/ingest/col/batch",
             content=zip_data,
@@ -592,7 +606,11 @@ class TestBatchValidation:
         assert "metadata-rules.yaml" in r.json()["error"]
 
     def test_missing_queries_returns_400(self):
-        zip_data = _make_zip({"metadata-rules.yaml": _MINIMAL_META, "docs/a.md": _MINIMAL_DOC})
+        zip_data = _make_zip({
+            "rag-config.yaml": _MINIMAL_RAG_CONFIG,
+            "metadata-rules.yaml": _MINIMAL_META,
+            "docs/a.md": _MINIMAL_DOC,
+        })
         r = self._client().post(
             "/ingest/col/batch",
             content=zip_data,
@@ -601,8 +619,23 @@ class TestBatchValidation:
         assert r.status_code == 400
         assert "queries.yaml" in r.json()["error"]
 
+    def test_missing_rag_config_returns_400(self):
+        zip_data = _make_zip({
+            "metadata-rules.yaml": _MINIMAL_META,
+            "queries.yaml": _MINIMAL_QUERIES,
+            "docs/a.md": _MINIMAL_DOC,
+        })
+        r = self._client().post(
+            "/ingest/col/batch",
+            content=zip_data,
+            headers={"Content-Type": "application/zip"},
+        )
+        assert r.status_code == 400
+        assert "rag-config.yaml" in r.json()["error"]
+
     def test_no_md_files_returns_400(self):
         zip_data = _make_zip({
+            "rag-config.yaml": _MINIMAL_RAG_CONFIG,
             "metadata-rules.yaml": _MINIMAL_META,
             "queries.yaml": _MINIMAL_QUERIES,
         })
@@ -620,6 +653,7 @@ class TestBatchValidation:
         client = TestClient(app, raise_server_exceptions=False)
         # Pre-fill the queue to trigger 503
         zip_data = _make_zip({
+            "rag-config.yaml": _MINIMAL_RAG_CONFIG,
             "metadata-rules.yaml": _MINIMAL_META,
             "queries.yaml": _MINIMAL_QUERIES,
             "docs/a.md": _MINIMAL_DOC,
@@ -646,6 +680,7 @@ class TestBatchValidation:
     def test_path_traversal_in_zip_returns_400(self):
         buf = io.BytesIO()
         with zipfile.ZipFile(buf, "w") as zf:
+            zf.writestr("rag-config.yaml", _MINIMAL_RAG_CONFIG)
             zf.writestr("metadata-rules.yaml", _MINIMAL_META)
             zf.writestr("queries.yaml", _MINIMAL_QUERIES)
             zf.writestr("../etc/passwd", "root:x:0:0")
@@ -659,6 +694,47 @@ class TestBatchValidation:
         )
         assert r.status_code == 400
         assert "traversal" in r.json()["error"].lower()
+
+    def test_missing_ranking_weights_adds_warning(self):
+        zip_data = _make_zip({
+            "rag-config.yaml": "chunker:\n  max_tokens: 512\n",
+            "metadata-rules.yaml": _MINIMAL_META,
+            "queries.yaml": _MINIMAL_QUERIES,
+            "docs/a.md": _MINIMAL_DOC,
+        })
+        r = self._client().post(
+            "/ingest/col/batch",
+            content=zip_data,
+            headers={"Content-Type": "application/zip"},
+        )
+        assert r.status_code == 202
+        assert any("ranking.weights" in w for w in r.json().get("warnings", []))
+
+    def test_missing_chunker_max_tokens_adds_warning(self):
+        zip_data = _make_zip({
+            "rag-config.yaml": "ranking:\n  weights:\n    - pattern: 'docs/**'\n      weight: 1.0\n",
+            "metadata-rules.yaml": _MINIMAL_META,
+            "queries.yaml": _MINIMAL_QUERIES,
+            "docs/a.md": _MINIMAL_DOC,
+        })
+        r = self._client().post(
+            "/ingest/col/batch",
+            content=zip_data,
+            headers={"Content-Type": "application/zip"},
+        )
+        assert r.status_code == 202
+        assert any("chunker.max_tokens" in w for w in r.json().get("warnings", []))
+
+    def test_weights_and_max_tokens_present_do_not_add_warning(self):
+        r = self._client().post(
+            "/ingest/col/batch",
+            content=_batch_zip(),
+            headers={"Content-Type": "application/zip"},
+        )
+        assert r.status_code == 202
+        warnings = r.json().get("warnings", [])
+        assert not any("ranking.weights" in w for w in warnings)
+        assert not any("chunker.max_tokens" in w for w in warnings)
 
 
 class TestGetOperationRoute:
@@ -710,6 +786,7 @@ class TestListOperationsRoute:
         client = TestClient(_make_app(store, queue), raise_server_exceptions=False)
 
         zip_two = _make_zip({
+            "rag-config.yaml": _MINIMAL_RAG_CONFIG,
             "metadata-rules.yaml": _MINIMAL_META,
             "queries.yaml": _MINIMAL_QUERIES,
             "docs/a.md": _MINIMAL_DOC,

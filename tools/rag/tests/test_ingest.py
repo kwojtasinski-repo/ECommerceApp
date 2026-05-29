@@ -278,10 +278,12 @@ class TestSaveFileManifest:
         assert saved["file_hashes"] == hashes
 
     def test_manifest_contains_model_name(self, tmp_path):
+        from common import DEFAULT_EMBEDDER_MODEL
+
         cfg = make_config(tmp_path)
         _save_file_manifest(cfg, {}, total_files=0, total_chunks=0, dim=384)
         saved = json.loads(cfg.manifest_path.read_text(encoding="utf-8"))
-        assert saved["model"] == "test-model"
+        assert saved["model"] == DEFAULT_EMBEDDER_MODEL
 
     def test_manifest_contains_dim(self, tmp_path):
         cfg = make_config(tmp_path)

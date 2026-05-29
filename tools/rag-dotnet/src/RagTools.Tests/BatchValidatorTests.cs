@@ -10,17 +10,23 @@ namespace RagTools.Tests;
 /// </summary>
 public sealed class BatchValidatorTests
 {
-    private const string RagConfigNoGlossary = """
-        embedder:
-          model: BAAI/bge-m3
-        """;
+    private const string RagConfigNoGlossary =
+        "chunker:\n" +
+        "  max_tokens: 512\n" +
+        "ranking:\n" +
+        "  weights:\n" +
+        "    - pattern: \"docs/**\"\n" +
+        "      weight: 1.0\n";
 
-    private const string RagConfigWithGlossary = """
-        embedder:
-          model: BAAI/bge-m3
-        config_files:
-          multilingual_glossary: multilingual-glossary.yaml
-        """;
+    private const string RagConfigWithGlossary =
+        "chunker:\n" +
+        "  max_tokens: 512\n" +
+        "ranking:\n" +
+        "  weights:\n" +
+        "    - pattern: \"docs/**\"\n" +
+        "      weight: 1.0\n" +
+        "config_files:\n" +
+        "  multilingual_glossary: multilingual-glossary.yaml\n";
 
     private const string MinimalMetadataYaml = """
         doc_kind_rules:
@@ -256,6 +262,71 @@ public sealed class BatchValidatorTests
                  queries: MinimalQueriesYaml)));
 
         Assert.Contains(ok.Warnings, w => w.Contains("multilingual_glossary", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void MissingRankingWeights_AddsWarning()
+    {
+        var sut = NewSut();
+        var ragConfigNoWeights = """
+            chunker:
+              max_tokens: 512
+            """;
+        var entries = Entries(
+            ("rag-config.yaml", 100),
+            ("metadata-rules.yaml", 100),
+            ("queries.yaml", 100),
+            ("doc.md", 50));
+
+        var ok = AssertOk(sut.Validate(entries,
+            Yaml(ragConfig: ragConfigNoWeights,
+                 metadataRules: MinimalMetadataYaml,
+                 queries: MinimalQueriesYaml)));
+
+        Assert.Contains(ok.Warnings, w => w.Contains("ranking.weights", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void MissingChunkerMaxTokens_AddsWarning()
+    {
+        var sut = NewSut();
+        var ragConfigNoMaxTokens = """
+            ranking:
+              weights:
+                - pattern: "docs/**"
+                  weight: 1.0
+            """;
+        var entries = Entries(
+            ("rag-config.yaml", 100),
+            ("metadata-rules.yaml", 100),
+            ("queries.yaml", 100),
+            ("doc.md", 50));
+
+        var ok = AssertOk(sut.Validate(entries,
+            Yaml(ragConfig: ragConfigNoMaxTokens,
+                 metadataRules: MinimalMetadataYaml,
+                 queries: MinimalQueriesYaml)));
+
+        Assert.Contains(ok.Warnings, w => w.Contains("chunker.max_tokens", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void WeightsAndMaxTokensPresent_DoNotAddWarnings()
+    {
+        var sut = NewSut();
+        var entries = Entries(
+            ("rag-config.yaml", 100),
+            ("metadata-rules.yaml", 100),
+            ("queries.yaml", 100),
+            ("doc.md", 50));
+
+        var ok = AssertOk(sut.Validate(entries,
+            Yaml(ragConfig: RagConfigNoGlossary,
+                 metadataRules: MinimalMetadataYaml,
+                 queries: MinimalQueriesYaml)));
+
+        Assert.DoesNotContain(ok.Warnings, w => w.Contains("ranking.weights", StringComparison.OrdinalIgnoreCase));
+        Assert.DoesNotContain(ok.Warnings, w => w.Contains("chunker.max_tokens", StringComparison.OrdinalIgnoreCase));
     }
 
     // ── Per-entry rules ───────────────────────────────────────────────────────

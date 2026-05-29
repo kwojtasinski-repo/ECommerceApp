@@ -15,6 +15,9 @@ import yaml
 
 from common import (
     Config,
+    DEFAULT_COLLECTION,
+    DEFAULT_EMBEDDER_MODEL,
+    DEFAULT_QDRANT_URL,
     detect_adr_id,
     detect_doc_kind,
     is_excluded,
@@ -194,11 +197,9 @@ def test_config_collection_uses_env_override(monkeypatch):
     cfg = Config(raw={
         "vector_store": {"collection": "default_collection"},
         "source": {"roots": [], "exclude_globs": []},
-        "embedder": {"model": "m"},
         "chunker": {},
         "ranking": {},
         "query": {},
-        "storage": {"snapshot_path": "snap", "manifest_path": "manifest.json"},
     })
     monkeypatch.setenv("RAG_COLLECTION", "override_collection")
     assert cfg.collection == "override_collection"
@@ -209,24 +210,33 @@ def test_config_collection_uses_yaml_when_no_env(monkeypatch):
     cfg = Config(raw={
         "vector_store": {"collection": "yaml_collection"},
         "source": {"roots": [], "exclude_globs": []},
-        "embedder": {"model": "m"},
         "chunker": {},
         "ranking": {},
         "query": {},
-        "storage": {"snapshot_path": "snap", "manifest_path": "manifest.json"},
     })
     assert cfg.collection == "yaml_collection"
+
+
+def test_config_collection_http_mode_ignores_yaml(monkeypatch):
+    monkeypatch.delenv("RAG_COLLECTION", raising=False)
+    monkeypatch.setenv("MCP_TRANSPORT", "http")
+    cfg = Config(raw={
+        "vector_store": {"collection": "yaml_collection"},
+        "source": {"roots": [], "exclude_globs": []},
+        "chunker": {},
+        "ranking": {},
+        "query": {},
+    })
+    assert cfg.collection == DEFAULT_COLLECTION
 
 
 def test_config_exclude_globs_returns_list():
     cfg = Config(raw={
         "source": {"roots": [], "exclude_globs": ["*.draft.md", "tmp/**"]},
         "vector_store": {"collection": "c"},
-        "embedder": {"model": "m"},
         "chunker": {},
         "ranking": {},
         "query": {},
-        "storage": {"snapshot_path": "snap", "manifest_path": "manifest.json"},
     })
     assert cfg.exclude_globs == ["*.draft.md", "tmp/**"]
 
@@ -235,13 +245,35 @@ def test_config_chunker_returns_dict():
     cfg = Config(raw={
         "source": {"roots": [], "exclude_globs": []},
         "vector_store": {"collection": "c"},
-        "embedder": {"model": "m"},
         "chunker": {"max_tokens": 800, "min_tokens": 40},
         "ranking": {},
         "query": {},
-        "storage": {"snapshot_path": "snap", "manifest_path": "manifest.json"},
     })
     assert cfg.chunker["max_tokens"] == 800
+
+
+def test_embedder_model_is_server_default_even_if_yaml_has_embedder():
+    cfg = Config(raw={
+        "source": {"roots": [], "exclude_globs": []},
+        "chunker": {},
+        "ranking": {},
+        "query": {},
+        "embedder": {"model": "should_be_ignored"},
+    })
+    assert cfg.embedder_model == DEFAULT_EMBEDDER_MODEL
+
+
+def test_vector_url_http_mode_ignores_yaml(monkeypatch):
+    monkeypatch.delenv("QDRANT_URL", raising=False)
+    monkeypatch.setenv("MCP_TRANSPORT", "http")
+    cfg = Config(raw={
+        "vector_store": {"url": "http://ignored-by-http-mode:6333"},
+        "source": {"roots": [], "exclude_globs": []},
+        "chunker": {},
+        "ranking": {},
+        "query": {},
+    })
+    assert cfg.vector_url == DEFAULT_QDRANT_URL
 
 
 # ── load_config with explicit path ────────────────────────────────────────────
@@ -250,14 +282,10 @@ _MINIMAL_CONFIG = textwrap.dedent("""\
     source:
       roots: [docs]
       exclude_globs: []
-    embedder: {model: test-model}
     chunker: {}
     ranking: {weights: []}
     query: {default_top_k: 5, fetch_k: 10, score_threshold: 0.0}
     vector_store: {mode: memory, collection: test_col, url: "http://localhost:6333"}
-    storage:
-      snapshot_path: .rag/snapshot
-      manifest_path: .rag/manifest.json
 """)
 
 

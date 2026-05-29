@@ -369,8 +369,9 @@ public sealed class VectorStoreSection
 
 public sealed class ChunkerSection
 {
-    public int MaxTokens { get; init; } = 400;
-    public int OverlapTokens { get; init; } = 50;
+    // 512 matches OnnxEmbedder default maxSeqLen and MiniLM-L12-v2 native cap; values >512 are silently truncated at encode time.
+    public int MaxTokens { get; init; } = 512;
+    public int OverlapTokens { get; init; } = 64;
     public int MinTokens { get; init; } = 30;
 
     /// <summary>

@@ -90,7 +90,7 @@ def _parse_zip_batch(
         yaml_names  = sorted(n for n in zip_names if n.endswith((".yaml", ".yml")))
 
         # ── Required config files ──────────────────────────────────────────
-        for required in ("metadata-rules.yaml", "queries.yaml"):
+        for required in ("rag-config.yaml", "metadata-rules.yaml", "queries.yaml"):
             if required not in zip_names:
                 hint = f" Found YAML files: {yaml_names}" if yaml_names else ""
                 return None, JSONResponse(
@@ -227,17 +227,28 @@ def _parse_zip_batch(
         # multilingual-glossary.yaml wins if present; otherwise the mounted
         # multilingual-glossary.yaml is baked in — exactly the .NET behaviour
         # (BatchIngestService always calls MultilingualGlossary.Load and persists).
-        cfg_raw: dict[str, Any] = {}
-        if "rag-config.yaml" in zip_names:
-            try:
-                cfg_raw = yaml.safe_load(
-                    zf.read("rag-config.yaml").decode("utf-8", errors="replace")
-                ) or {}
-            except Exception:
-                cfg_raw = {}
+        try:
+            cfg_raw = yaml.safe_load(
+                zf.read("rag-config.yaml").decode("utf-8", errors="replace")
+            ) or {}
+        except Exception as exc:
+            return None, JSONResponse(
+                {"error": f"rag-config.yaml is not valid YAML: {exc}"}, status_code=400
+            )
         chunker_raw = cfg_raw.get("chunker") or {}
         ranking_raw = cfg_raw.get("ranking") or {}
         weights_raw = ranking_raw.get("weights") or []
+
+        # ── RECOMMENDED-tier warnings: missing values fall back to server defaults ──
+        if not weights_raw:
+            warnings.append(
+                "rag-config.yaml has no ranking.weights — using server defaults; "
+                "query relevance may be suboptimal."
+            )
+        if chunker_raw.get("max_tokens") is None:
+            warnings.append(
+                "rag-config.yaml has no chunker.max_tokens — using 512 (embedder native length)."
+            )
         weights = tuple(
             WeightEntry(
                 pattern=str(w.get("pattern", "")),

@@ -21,6 +21,15 @@ REPO_ROOT = (
 )
 CONFIG_PATH = Path(__file__).resolve().parent / "rag-config.yaml"
 
+# Server-owned defaults (not user-tunable in rag-config.yaml).
+DEFAULT_EMBEDDER_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+DEFAULT_EMBEDDER_DEVICE = "cpu"
+DEFAULT_COLLECTION = "ecommerceapp_docs"
+DEFAULT_QDRANT_URL = "http://localhost:6333"
+DEFAULT_QDRANT_LOCAL_PATH = "/data/qdrant"
+DEFAULT_MANIFEST_PATH = ".rag/manifest.json"
+DEFAULT_SNAPSHOT_PATH = ".rag/snapshot.qdrant"
+
 
 @dataclass
 class Config:
@@ -60,18 +69,23 @@ class Config:
 
     @property
     def embedder_model(self) -> str:
-        # Optional in --remote mode (server does the embedding). Empty string
-        # is recorded into the manifest header without crashing the CLI.
-        return self.raw.get("embedder", {}).get("model", "")
+        # Intentionally server-owned: embedder.* in rag-config.yaml is deprecated
+        # and ignored when present.
+        return DEFAULT_EMBEDDER_MODEL
 
     @property
     def embedder_device(self) -> str:
-        return self.raw.get("embedder", {}).get("device", "cpu")
+        return os.environ.get("RAG_EMBEDDER_DEVICE", DEFAULT_EMBEDDER_DEVICE)
 
     @property
     def collection(self) -> str:
         """Qdrant collection name. RAG_COLLECTION env var overrides config (useful for multi-repo)."""
-        return os.environ.get("RAG_COLLECTION") or self.raw["vector_store"]["collection"]
+        if env := os.environ.get("RAG_COLLECTION"):
+            return env
+        # HTTP transport treats server-bound vector_store values as non-user-tunable.
+        if os.environ.get("MCP_TRANSPORT", "").lower() == "http":
+            return DEFAULT_COLLECTION
+        return self.raw.get("vector_store", {}).get("collection", DEFAULT_COLLECTION)
 
     @property
     def adr_id_patterns(self) -> list[str]:
@@ -92,12 +106,17 @@ class Config:
     @property
     def vector_url(self) -> str:
         """QDRANT_URL env var overrides rag-config.yaml (resolves docker service hostname at runtime)."""
-        return os.environ.get("QDRANT_URL") or self.raw["vector_store"].get("url", "http://localhost:6333")
+        if env := os.environ.get("QDRANT_URL"):
+            return env
+        # HTTP transport ignores server-bound URL from rag-config.yaml.
+        if os.environ.get("MCP_TRANSPORT", "").lower() == "http":
+            return DEFAULT_QDRANT_URL
+        return self.raw.get("vector_store", {}).get("url", DEFAULT_QDRANT_URL)
 
     @property
     def vector_local_path(self) -> str:
         """Path for embedded Qdrant local storage (used when mode == 'local')."""
-        return self.raw["vector_store"].get("local_path", "/data/qdrant")
+        return self.raw.get("vector_store", {}).get("local_path", DEFAULT_QDRANT_LOCAL_PATH)
 
     @property
     def chunker(self) -> dict[str, Any]:
@@ -114,7 +133,8 @@ class Config:
     @property
     def snapshot_path(self) -> Path:
         """Path where a JSON snapshot is written after memory-mode ingest."""
-        return self.workspace / self.raw["storage"]["snapshot_path"]
+        rel = self.raw.get("storage", {}).get("snapshot_path", DEFAULT_SNAPSHOT_PATH)
+        return self.workspace / rel
 
     @property
     def manifest_path(self) -> Path:
@@ -125,7 +145,7 @@ class Config:
         """
         if env := os.environ.get("RAG_MANIFEST"):
             return Path(env)
-        rel = self.raw.get("storage", {}).get("manifest_path", ".rag/manifest.json")
+        rel = self.raw.get("storage", {}).get("manifest_path", DEFAULT_MANIFEST_PATH)
         return self.workspace / rel
 
     @property

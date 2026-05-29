@@ -130,6 +130,14 @@ public class RagConfigTests : IDisposable
         Assert.Equal([1, 2, 3], cfg.Chunker.SplitLevels);
     }
 
+    [Fact]
+    public void ChunkerSection_Defaults_Are512And64()
+    {
+        var chunker = new ChunkerSection();
+        Assert.Equal(512, chunker.MaxTokens);
+        Assert.Equal(64, chunker.OverlapTokens);
+    }
+
     // ── Computed properties ───────────────────────────────────────────────────
 
     [Fact]

@@ -19,10 +19,12 @@ source:
 chunker:
   # Each doc is split into chunks so that Qdrant can find the relevant paragraph,
   # not just the relevant file. Smaller chunks = more precise answers but more index entries.
-  max_tokens: 800        # hard upper limit per chunk (the model processes up to 512 tokens;
-                         # chunks over 512 are truncated at encode time, so keep this close to 512)
+  max_tokens: 512        # hard upper limit per chunk. Matches the embedder native cap
+                         # (OnnxEmbedder maxSeqLen=512 / MiniLM-L12-v2). Values >512 are
+                         # silently truncated at encode time. Eval-driven tuning to a lower
+                         # value (e.g. 256/384) is a separate future slice.
   min_tokens: 40         # chunks shorter than this are dropped (too short to carry useful meaning)
-  overlap_tokens: 80     # the last 80 tokens of a chunk are repeated at the start of the next.
+  overlap_tokens: 64     # the last 64 tokens of a chunk are repeated at the start of the next.
                          # This prevents a question that spans two chunks from returning a half-answer.
   # Which Markdown heading levels trigger a chunk boundary.
   # "auto" (default) — splits at every heading level (H1–H6). Short sections that fall

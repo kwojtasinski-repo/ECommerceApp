@@ -167,6 +167,11 @@ named_queries:
     doc_kind: "other"
 """
 
+_RAG_CONFIG_YAML = """\
+chunker: { max_tokens: 512 }
+ranking: { weights: [ { pattern: "docs/**", weight: 1.0 } ] }
+"""
+
 _GLOSSARY_YAML = """\
 entries:
   - english: invoice
@@ -178,6 +183,7 @@ entries:
 
 def _batch_zip(include_glossary: bool = False, include_doc: bool = True) -> bytes:
     files = {
+        "rag-config.yaml": _RAG_CONFIG_YAML,
         "metadata-rules.yaml": _META_YAML,
         "queries.yaml": _QUERIES_YAML,
     }

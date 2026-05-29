@@ -153,9 +153,10 @@ def _split_oversized(body: str, start_line: int, max_tokens: int, overlap_tokens
 def chunk_markdown(text: str, doc_title: str, chunker_cfg: dict) -> list[Chunk]:
     text, fm_lines = _strip_frontmatter(text)
     split_on_headings_raw = chunker_cfg.get("split_on_headings", [1, 2, 3])
-    max_tokens: int = int(chunker_cfg.get("max_tokens", 800))
+    # 512 matches the embedder native cap (MiniLM-L12-v2 / ONNX); chunks >512 tokens are silently truncated at encode time.
+    max_tokens: int = int(chunker_cfg.get("max_tokens", 512))
     min_tokens: int = int(chunker_cfg.get("min_tokens", 40))
-    overlap_tokens: int = int(chunker_cfg.get("overlap_tokens", 80))
+    overlap_tokens: int = int(chunker_cfg.get("overlap_tokens", 64))
 
     auto_mode = isinstance(split_on_headings_raw, str) and split_on_headings_raw.lower() == "auto"
     split_levels: list[int] = [1, 2, 3, 4, 5, 6] if auto_mode else [int(x) for x in split_on_headings_raw]
