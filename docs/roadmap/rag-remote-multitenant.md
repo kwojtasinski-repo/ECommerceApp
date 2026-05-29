@@ -900,7 +900,7 @@ Amendment 002 (`docs/adr/0028/amendments/0028-002-batch-manifest-pipeline.md`) e
 |---|---|---|---|---|
 | P3-1 | Call `StoreConfigAsync` from batch ingest. Serialise `RagConfig` + glossary via `RagConfigPayload.From()` into a `__config__` Qdrant point. | `BatchIngestService.cs`, `IngestWorker.cs` | Low | ✅ Done |
 | P3-2 | Load per-collection config at query time in `RagQueryService` / `RagReadDocsService`; fall back to mounted. | `RagQueryService.cs`, `RagReadDocsService.cs` | Medium | ✅ Done |
-| P3-3 | Make glossary collection-aware (`GlossaryExpansionPreprocessor` reads `payload.GlossaryEntries`; two preprocessor variants selected by `RAG_GLOSSARY_FALLBACK`). | `GlossaryExpansionPreprocessor.cs`, `Program.cs` | Medium | ✅ Done |
+| P3-3 | Make glossary collection-aware (two `GlossaryExpansionPreprocessor` variants; empty payload falls back to mounted by default). | `GlossaryExpansionPreprocessor.cs`, `Program.cs` | Medium | ✅ Done |
 | P3-4 | Apply per-collection ranking weights via `RankingWeightResolver`. | `TopicFilter.cs`, `RankingWeightResolver.cs` | Low | ✅ Done |
 | P3-5 | Cache invalidation — after P3-1 stores config, invalidate `CachedConfigSource` entry. | `CachedConfigSource.cs`, `BatchIngestService.cs` | Low | ✅ Done |
 | P3-6 | Update ADR-0028 + tech-details-dotnet.md; amend with Amendment 005. | `docs/adr/0028/*.md` | Doc-only | ✅ Done |
@@ -911,7 +911,7 @@ Amendment 002 (`docs/adr/0028/amendments/0028-002-batch-manifest-pipeline.md`) e
 
 ### Open questions for P3
 
-1. **Glossary scope** ✅ Resolved — Python uses the same unconditional-bake approach as .NET: mounted glossary is always baked into the `__config__` point at ingest time (ZIP-supplied glossary wins if present). No `RAG_GLOSSARY_FALLBACK` env var on Python; the .NET `RAG_GLOSSARY_FALLBACK` selects between `MountedFallbackGlossaryExpansionPreprocessor` and `DbOnlyGlossaryExpansionPreprocessor` (no Python equivalent needed until multi-tenant materialises). Decision recorded in [Amendment 006](../adr/0028/amendments/0028-006-phase3-python-parity.md).
+1. **Glossary scope** ✅ Resolved — Both servers bake the mounted glossary unconditionally at ingest time (ZIP-supplied glossary wins if present). Default behavior: empty per-collection glossary → fall back to mounted. Both .NET and Python use this as the production default. Decision recorded in [Amendment 006](../adr/0028/amendments/0028-006-phase3-python-parity.md).
 2. **Backward compat** ✅ Resolved — `LayeredConfigSource` (Qdrant overlay + mounted file fallback) covers collections ingested before P3-7a. `CachingConfigSource` wraps both. Collections with no `__config__` point fall back to mounted defaults transparently.
 3. **Embedder/chunker settings** ✅ Accepted — scope reduction confirmed. Per-collection persistence covers query-time settings only (weights, glossary, fetchK, score threshold, HistoryField, AdrDocKind, AmendmentDocKind). Ingest-time chunking settings are baked into the existing chunks; re-ingest with a new ZIP picks up new settings naturally.
 

@@ -72,18 +72,17 @@ inherit the mounted glossary.
 
 ### Decision 2: No `DbOnlyGlossaryExpansionPreprocessor` variant on Python
 
-.NET ships two preprocessor variants selected by `RAG_GLOSSARY_FALLBACK`:
-- `MountedFallbackGlossaryExpansionPreprocessor` — empty payload → use mounted.
-- `DbOnlyGlossaryExpansionPreprocessor` — empty payload → identity (no expansion).
+.NET ships two preprocessor variants (`MountedFallbackGlossaryExpansionPreprocessor` —
+default, empty payload → mounted; `DbOnlyGlossaryExpansionPreprocessor` — empty payload
+→ no expansion). Selection is an internal implementation detail, not a user-facing
+configuration option.
 
 Python uses a single `GlossaryExpansionPreprocessor` whose `process()` method reads
 `ctx.glossary_entries` at call time. The `None` sentinel (returned when
-`CONFIG_SOURCE is None`) gives the same behaviour as `mounted` mode; an empty tuple `()`
-gives the same behaviour as `none` mode. Selection is implicit from the call context
-rather than startup DI — simpler for an asyncio single-process server.
-
-If `RAG_GLOSSARY_FALLBACK` semantics are needed on Python in the future, the preprocessor
-can be extended to read an env var in its constructor with no protocol change.
+`CONFIG_SOURCE is None`) gives the same behaviour as the mounted-fallback variant;
+an empty tuple `()` gives the same behaviour as the DbOnly variant. Selection is
+implicit from the call context rather than startup DI — simpler for an asyncio
+single-process server.
 
 ### Decision 3: `glossary_entries=None` vs `glossary_entries=()` are semantically distinct
 
@@ -107,7 +106,7 @@ multilingual queries, not synthetic keys). The tool was intentionally left witho
 
 | .NET | Python |
 |---|---|
-| `RAG_GLOSSARY_FALLBACK` selects preprocessor type at DI startup | Single preprocessor; `None`/`()` sentinel distinguishes mounted vs suppress |
+| Two `GlossaryExpansionPreprocessor` variants (internal implementation detail, mounted-fallback is the default) | Single preprocessor; `None`/`()` sentinel distinguishes mounted vs suppress |
 | `LengthTruncationPreprocessor` resolves `MaxTokens` from `payload` at query time | Python `LengthTruncationPreprocessor` does not yet read per-collection `MaxTokens` (deferred) |
 | `RankingWeightResolver.Resolve(path, size, payload.Weights)` | Python weight resolver not yet wired (deferred) |
 | `RAG_CONFIG_SOURCE` env var selects `FileConfigSource` / `QdrantConfigSource` / `LayeredConfigSource` | Identical env var and logic in `config/bootstrap.py` |

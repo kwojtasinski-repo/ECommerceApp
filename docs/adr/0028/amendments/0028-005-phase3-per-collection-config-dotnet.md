@@ -32,7 +32,7 @@ Branch: `feat/rag-phase3-per-collection-config`
 | `ad518104` | P3-1 + P3-5 | `FileConfigSource`, `QdrantConfigSource`, `LayeredConfigSource`, `CachingConfigSource`; DI mode-switch via `RAG_CONFIG_SOURCE` |
 | `edc87397` | P3-2 + P3-4 | `RagQueryService` / `RagReadDocsService` consume `IConfigSource`; `BatchIngestService` persists `RagConfigPayload` |
 | `e9f207ef` | P3-3 Design A | Glossary as English allow-list filter (subsequently replaced) |
-| `ccd53f1a` | P3-3 Design B | Pivot to per-collection `GlossaryEntries` (English → patterns); `RAG_GLOSSARY_FALLBACK` mode-switch (`mounted` \| `none`); two preprocessors: `MountedFallbackGlossaryExpansionPreprocessor`, `DbOnlyGlossaryExpansionPreprocessor` |
+| `ccd53f1a` | P3-3 Design B | Pivot to per-collection `GlossaryEntries` (English → patterns); two preprocessors: `MountedFallbackGlossaryExpansionPreprocessor` (default, empty payload → mounted fallback), `DbOnlyGlossaryExpansionPreprocessor` (empty payload → no expansion). Selection is an internal implementation detail via env var; **not exposed as a user-facing configuration option**. |
 | `6413b968` | P3-3b | `MarkdownChunker` overload + `DocumentProcessor` resolves `MaxTokens` / `OverlapTokens` from per-collection payload; `LengthTruncationPreprocessor` resolves the same on the query path |
 | `7cf09880` | P3-3c | `DocumentProcessor` resolves ranking weights from `payload.Weights`; `RankingWeightResolver` gains a `(weights, stubByteThreshold)` overload |
 
@@ -49,9 +49,7 @@ Resolved per-request from `IConfigSource.GetEffectiveAsync(collection, ct)`:
 - `OverlapTokens` — used by `MarkdownChunker`.
 - `Weights` — used by `DocumentProcessor` via `RankingWeightResolver.Resolve(...,
   payload.Weights, cfg.Ranking.StubByteThreshold)`.
-- `GlossaryEntries` — used by `MountedFallbackGlossaryExpansionPreprocessor` (per query;
-  empty list → mounted fallback) or `DbOnlyGlossaryExpansionPreprocessor` (per query;
-  empty list → identity / no expansion). Selection driven by `RAG_GLOSSARY_FALLBACK`.
+- **`GlossaryEntries`** — used by `MountedFallbackGlossaryExpansionPreprocessor` (per query; empty list → mounted fallback) or `DbOnlyGlossaryExpansionPreprocessor` (per query; empty list → identity / no expansion). The preprocessor type is an internal implementation detail and not a user-facing setting.
 - `ScoreThreshold`, `FetchK` — already resolved per-collection in `RagQueryService` /
   `RagReadDocsService` since P3-2.
 - `HistoryField`, `AdrDocKind`, `AmendmentDocKind` — persisted in payload, used by
@@ -123,14 +121,14 @@ and then replaced in `ccd53f1a` because it could not represent a per-collection 
 whose entries did not already exist on the server. The shipped Design B stores the full
 glossary in the payload and merges with `override-wins` semantics:
 
-| `RAG_GLOSSARY_FALLBACK` | Empty `payload.GlossaryEntries` behaviour |
-| --- | --- |
-| `mounted` (default) | Use mounted `multilingual-glossary.yaml` |
-| `none` | Skip expansion entirely (identity) |
+| Empty `payload.GlossaryEntries` behaviour (default) |
+| --- |
+| Use mounted `multilingual-glossary.yaml` (`MountedFallbackGlossaryExpansionPreprocessor`) |
 
 The preprocessor type is resolved once at startup by `ResolveGlossaryPreprocessorType`
 in `Program.cs` and selected via the non-generic `EmbedderPipelineBuilder.WithPreprocessor(Type)`
-overload added in the same commit. Unknown values throw at startup so misconfiguration
+overload added in the same commit. This is an internal implementation detail — **not exposed
+as a user-facing configuration option**. Unknown values throw at startup so misconfiguration
 fails fast.
 
 ---
