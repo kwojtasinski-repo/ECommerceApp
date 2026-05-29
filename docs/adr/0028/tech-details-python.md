@@ -299,6 +299,166 @@ Behaviour:
 
 ---
 
+## Phase 3 — Per-collection Config Persistence
+
+> Implemented in slices P3-7a / P3-7b / P3-7c on branch `feat/rag-phase3-per-collection-config`.
+> Parity with [.NET Amendment 005](amendments/0028-005-phase3-per-collection-config-dotnet.md).
+> Full decision record: [Amendment 006](amendments/0028-006-phase3-python-parity.md).
+
+### New modules (`tools/rag/config/`)
+
+| Module | Purpose |
+|---|---|
+| `config/payload.py` | Frozen dataclasses: `RagConfigPayload`, `GlossaryEntry`, `WeightEntry`. `from_mounted(cfg)` builds a default payload. `merge_payloads(base, override)` override-wins per-field. `to_dict` / `from_dict` for JSON wire format (Qdrant `payload_json` field). |
+| `config/sources.py` | `IConfigSource` Protocol (`get_effective`, `invalidate`). Implementations: `FileConfigSource` (mounted-only), `QdrantConfigSource` (Qdrant `__config__` point only), `LayeredConfigSource` (Qdrant overlay + mounted fallback), `CachingConfigSource` (TTL + LRU + asyncio.Lock stampede guard). |
+| `config/bootstrap.py` | `build_config_source(mounted_cfg, store, *, mode?, ttl, max)` — the single mode-switch factory. Reads `RAG_CONFIG_SOURCE` env var: `file` → `FileConfigSource`, `qdrant` → Qdrant-only, anything else → `LayeredConfigSource`. Always wraps with `CachingConfigSource`. |
+
+### `storage/document_store.py` — Phase 3 additions
+
+`QdrantDocumentStore` gained two new methods:
+
+```python
+async def store_config(self, collection: str, payload: RagConfigPayload) -> None:
+    """Upsert the __config__ point (id=0) into the collection."""
+
+async def get_config(self, collection: str) -> RagConfigPayload | None:
+    """Fetch the __config__ point; return None if absent."""
+```
+
+`ensure_collection` is called inside `store_config` before every write (regression fix shipped in P3-7b) so callers never need to pre-create the collection.
+
+### `embed_context.py` — Phase 3 additions
+
+`EmbedContext` (frozen dataclass) gained two optional fields:
+
+```python
+@dataclass(frozen=True)
+class EmbedContext:
+    purpose: EmbedPurpose
+    collection: str | None = None            # which collection this call targets
+    glossary_entries: tuple[GlossaryEntry, ...] | None = None  # per-collection override
+```
+
+`glossary_entries=None` means "no override — fall back to mounted". `glossary_entries=()` means "collection has no glossary — suppress mounted". This distinction is intentional; it is NOT the same as an absent field.
+
+`QUERY_CTX` and `INGEST_CTX` singletons are unchanged (both have `glossary_entries=None` → STDIO path byte-identical to pre-P3-7).
+
+### `preprocessors.py` — Phase 3
+
+`GlossaryExpansionPreprocessor.process()` reads `ctx.glossary_entries`:
+
+```python
+def process(self, text: str, ctx: EmbedContext) -> str:
+    if ctx.purpose != EmbedPurpose.QUERY:
+        return text
+    if ctx.glossary_entries is not None:          # per-collection override present
+        effective = [(e.english, list(e.patterns)) for e in ctx.glossary_entries]
+        return _expand(text, effective, self._repeat)
+    return _expand(text, self._glossary, self._repeat)  # fall back to mounted
+```
+
+### `query.py` — Phase 3
+
+`QueryEngine.search()` accepts `glossary_entries: tuple | None = None` kwarg and builds an `EmbedContext` carrying the override:
+
+```python
+qvec = self._embedder.embed(
+    query,
+    EmbedContext(purpose=EmbedPurpose.QUERY,
+                 collection=collection or self.cfg.collection,
+                 glossary_entries=glossary_entries),
+)
+```
+
+### `state.py` — Phase 3
+
+```python
+CONFIG_SOURCE: Any | None = None   # set at HTTP boot; None in STDIO (safe degradation)
+```
+
+### `rag_tools.py` — Phase 3
+
+`_resolve_glossary_entries(collection)` coroutine:
+
+```python
+async def _resolve_glossary_entries(collection: str | None) -> tuple | None:
+    if state.CONFIG_SOURCE is None:
+        return None   # STDIO / file mode → use mounted
+    target = collection or (state.CFG.collection if state.CFG else None)
+    if target is None:
+        return None
+    try:
+        payload = await state.CONFIG_SOURCE.get_effective(target)
+        return payload.glossary_entries
+    except Exception:
+        return None   # Qdrant unreachable → mounted fallback
+```
+
+`_tool_query_docs`, `_tool_read_docs`, `_tool_query_docs_cached` each:
+1. Extract `collection = state._session_collection.get(None)`.
+2. `glossary_entries = await _resolve_glossary_entries(collection)`.
+3. Pass `glossary_entries=glossary_entries` to `state.ENGINE.search(...)`.
+
+`_tool_get_history` intentionally **not** updated (synthetic "history {id}" query, expansion not meaningful).
+
+### `ingest_routes.py` — Phase 3
+
+`_parse_zip_batch` bakes the glossary into `RagConfigPayload` at ingest time (parity with .NET `BatchIngestService`):
+
+- ZIP contains `multilingual-glossary.yaml` → parse and use those entries (uploader has explicit control).
+- ZIP omits it → load mounted `multilingual_glossary_path` and bake those entries unconditionally.
+
+No `RAG_INGEST_BAKE_GLOSSARY` env var — identical to the .NET behaviour which always bakes (see `.NET` `BatchIngestService.BuildEffectivePayload`).
+
+After a successful `store_config`, `IngestController.upload_batch` calls `self._config_source.invalidate(collection)` so the next query picks up the new per-collection glossary immediately (TTL bypass).
+
+### `mcp_server.py` — Phase 3
+
+Both `_run_sse` and `_run_http` call `build_config_source` after `_make_ingest_components()`:
+
+```python
+from config.bootstrap import build_config_source
+state.CONFIG_SOURCE = build_config_source(state.CFG, _doc_store)
+```
+
+Both transports pass `config_source=state.CONFIG_SOURCE, mounted_cfg=state.CFG` to `build_ingest_routes(...)`.
+
+### STDIO safety proof
+
+STDIO entrypoint never calls `build_config_source` → `state.CONFIG_SOURCE = None` →  
+`_resolve_glossary_entries` returns `None` → `QueryEngine.search` gets `glossary_entries=None` →  
+`EmbedContext.glossary_entries = None` → `GlossaryExpansionPreprocessor` uses `self._glossary`  
+(mounted YAML loaded at boot) → byte-identical embed result vs pre-P3-7.
+
+### Architecture diagram (Phase 3)
+
+```
+HTTP request → _bind_session_project (ContextVar) → collection
+                              │
+                              ▼
+              _resolve_glossary_entries(collection)
+                              │
+                    state.CONFIG_SOURCE (IConfigSource)
+                  ┌──────────────────────────────────────┐
+                  │ FileConfigSource    — mounted file    │
+                  │ QdrantConfigSource  — __config__ pt  │
+                  │ LayeredConfigSource — Qdrant+mounted  │
+                  └──────────────────────────────────────┘
+                    wrapped by CachingConfigSource (TTL+LRU)
+                              │
+                    RagConfigPayload.glossary_entries
+                              │
+              GlossaryExpansionPreprocessor.process()
+                  (ctx.glossary_entries != None → use override)
+                  (ctx.glossary_entries == None → use mounted)
+                              │
+                         EmbedContext
+                              │
+                      QueryEngine.search()
+```
+
+---
+
 ## Implementation Status
 
 | Step | Status |
@@ -307,11 +467,19 @@ Behaviour:
 | `ingest_worker.py` — asyncio.Queue + Task consumer | ✅ Implemented |
 | `ingest_routes.py` — Starlette POST/GET/admin routes | ✅ Implemented |
 | `api_key_middleware.py` — X-Api-Key middleware | ✅ Implemented |
-| `state.py` — shared deferred globals (ENGINE, CFG, _session_collection, TOOL_TIMEOUT) | ✅ Implemented |
+| `state.py` — shared deferred globals (ENGINE, CFG, _session_collection, TOOL_TIMEOUT, CONFIG_SOURCE) | ✅ Implemented |
 | `rag_tools.py` — 4 MCP tool coroutines (query_docs, read_docs, get_history, list_adrs) | ✅ Implemented |
 | `mcp_server.py` — lean HTTP / SSE wiring + dispatch dict + `_bind_session_project` CM | ✅ Implemented |
-| `query.py` — `collection=` param on `search()` + `get_collection_config()` method | ✅ Implemented |
+| `query.py` — `collection=` param + `glossary_entries=` kwarg on `search()` | ✅ Implemented |
 | `ingest.py` — `--remote` + `--api-key` flags | ✅ Implemented |
+| `config/payload.py` — `RagConfigPayload`, `GlossaryEntry`, `WeightEntry` | ✅ Implemented (P3-7a) |
+| `config/sources.py` — `IConfigSource` Protocol + 4 implementations | ✅ Implemented (P3-7a) |
+| `config/bootstrap.py` — `build_config_source` factory | ✅ Implemented (P3-7a) |
+| `storage/document_store.py` — `store_config` / `get_config` + `ensure_collection` regression fix | ✅ Implemented (P3-7b) |
+| `embed_context.py` — `collection` + `glossary_entries` fields on `EmbedContext` | ✅ Implemented (P3-7c) |
+| `preprocessors.py` — per-collection glossary override in `GlossaryExpansionPreprocessor` | ✅ Implemented (P3-7c) |
+| `rag_tools.py` — `_resolve_glossary_entries` + wired to query/read/cached tools | ✅ Implemented (P3-7c) |
+| `ingest_routes.py` — bake mounted glossary + cache invalidation | ✅ Implemented (P3-7c) |
 | Python unit tests | ✅ Implemented |
 | Python E2E integration tests | ✅ Implemented |
 | Qdrant-backed OperationStore (Phase 2 future) | ⬜ Deferred |

@@ -1,6 +1,6 @@
 # Roadmap: Remote Multi-Tenant RAG Server (ADR-0028)
 
-> Status: ✅ Phase 1 Complete — Phase 2 Complete (P2-1 ✅, P2-2 ✅, P2-3 ✅, P2-4 ✅, P2-5 ✅) — 🔴 Phase 3 Open (per-collection config persistence gap, see below)  
+> Status: ✅ Phase 1 Complete — Phase 2 Complete (P2-1 ✅, P2-2 ✅, P2-3 ✅, P2-4 ✅, P2-5 ✅) — � Phase 3 In Progress (P3-1…P3-7c ✅, P3-8 pending — see below)  
 > Scope: `tools/rag-dotnet/` (.NET server), `tools/rag/` (Python server)  
 > ADR: [ADR-0028](../adr/0028/0028-remote-multitenant-rag-ingest.md)
 
@@ -862,11 +862,14 @@ Step 11 can be done in parallel from Step 5 onward.
 
 ## Phase 3 — Per-collection config persistence (gap fix)
 
-> Status: 🔴 Not started — discovered during parity audit 2026-05-28
-> Trigger: Diagnosis report [`docs/reports/rag-parity-fix-diagnosis-2026-05-28.md`](../reports/rag-parity-fix-diagnosis-2026-05-28.md)
-> Impacted ADR: ADR-0028 main text + tech-details-dotnet.md (intent) vs Amendment 002 (deferred without aligning ADR)
-> Impacted acceptance criteria above: ❌ "Config, glossary, rules, queries stored as structured JSON (not raw YAML text)" — currently FALSE
-> Impacted edge case: ❌ "Upload with no config (subsequent re-upload) | Use last stored config from Qdrant" — currently FALSE (server uses mounted config always)
+> Status: � In Progress  
+> .NET: P3-1 ✅ P3-2 ✅ P3-3 ✅ P3-4 ✅ P3-5 ✅ P3-6 ✅ — [Amendment 005](../adr/0028/amendments/0028-005-phase3-per-collection-config-dotnet.md)  
+> Python: P3-7a ✅ P3-7b ✅ P3-7c ✅ — [Amendment 006](../adr/0028/amendments/0028-006-phase3-python-parity.md)  
+> Remaining: P3-8 (cross-collection integration tests)  
+> Trigger: Diagnosis report [`docs/reports/rag-parity-fix-diagnosis-2026-05-28.md`](../reports/rag-parity-fix-diagnosis-2026-05-28.md)  
+> Impacted ADR: ADR-0028 main text + tech-details-dotnet.md (intent) vs Amendment 002 (deferred without aligning ADR)  
+> Acceptance criteria now MET: ✅ "Config, glossary, rules, queries stored as structured JSON" — per-collection `__config__` point persisted on every batch ingest  
+> Acceptance criteria now MET: ✅ "Upload with no config (subsequent re-upload) | Use last stored config from Qdrant" — `LayeredConfigSource` fallback chain
 
 ### The gap
 
@@ -893,20 +896,24 @@ Amendment 002 (`docs/adr/0028/amendments/0028-002-batch-manifest-pipeline.md`) e
 
 | Step | Description | File(s) | Risk |
 |---|---|---|---|
-| P3-1 | Call `StoreConfigAsync` from batch ingest. After `IngestWorker` finishes processing all documents in a batch, serialise the parsed `RagConfig` + glossary terms via `RagConfigPayload.From(cfg, glossaryTerms)` and persist to the target collection. | `BatchIngestService.cs`, `IngestWorker.cs` | Low — adds one point per collection per ingest |
-| P3-2 | Load per-collection config at query time. In `RagQueryService.QueryAsync()` and `RagReadDocsService.ReadAsync()`, call `store.FetchConfigAsync(collection)` first; fall back to mounted `cfg` only if null. | `RagQueryService.cs`, `RagReadDocsService.cs` | Medium — changes hot path; needs caching to avoid per-query Qdrant fetch (use existing `CachedDocumentStore`) |
-| P3-3 | Make glossary collection-aware. Refactor `GlossaryExpansionPreprocessor` to fetch per-collection glossary from `IDocumentStore` (via `RagSession.Collection`) instead of loading from mounted file at constructor time. Fall back to mounted glossary if collection has none. | `GlossaryExpansionPreprocessor.cs`, `Program.cs` (DI) | Medium — changes singleton to scoped; needs session context |
-| P3-4 | Apply per-collection ranking weights. In `TopicFilter.ApplyWeights`, resolve weights from per-collection config first, fall back to mounted config. | `TopicFilter.cs`, `RankingWeightResolver.cs` | Low — additive |
-| P3-5 | Cache invalidation. After P3-1 stores a new config, invalidate the cached config entry for that collection in `CachedDocumentStore`. | `CachedDocumentStore.cs`, `BatchIngestService.cs` | Low |
-| P3-6 | Update ADR-0028 main text + tech-details-dotnet.md to reflect implementation (or amend with Amendment 004 if main ADR should stay frozen). Remove the contradiction with Amendment 002. | `docs/adr/0028/*.md` | Doc-only |
-| P3-7 | Mirror P3-1 through P3-5 on the Python server. | `tools/rag/server.py`, `tools/rag/ingest.py`, etc. | Same risks |
-| P3-8 | Add integration tests: two collections with different weights on the same server return correctly weighted results. | `tools/rag-dotnet/src/RagTools.Tests/` | Low |
+| Step | Description | File(s) | Risk | Status |
+|---|---|---|---|---|
+| P3-1 | Call `StoreConfigAsync` from batch ingest. Serialise `RagConfig` + glossary via `RagConfigPayload.From()` into a `__config__` Qdrant point. | `BatchIngestService.cs`, `IngestWorker.cs` | Low | ✅ Done |
+| P3-2 | Load per-collection config at query time in `RagQueryService` / `RagReadDocsService`; fall back to mounted. | `RagQueryService.cs`, `RagReadDocsService.cs` | Medium | ✅ Done |
+| P3-3 | Make glossary collection-aware (`GlossaryExpansionPreprocessor` reads `payload.GlossaryEntries`; two preprocessor variants selected by `RAG_GLOSSARY_FALLBACK`). | `GlossaryExpansionPreprocessor.cs`, `Program.cs` | Medium | ✅ Done |
+| P3-4 | Apply per-collection ranking weights via `RankingWeightResolver`. | `TopicFilter.cs`, `RankingWeightResolver.cs` | Low | ✅ Done |
+| P3-5 | Cache invalidation — after P3-1 stores config, invalidate `CachedConfigSource` entry. | `CachedConfigSource.cs`, `BatchIngestService.cs` | Low | ✅ Done |
+| P3-6 | Update ADR-0028 + tech-details-dotnet.md; amend with Amendment 005. | `docs/adr/0028/*.md` | Doc-only | ✅ Done |
+| P3-7a | Python: `IConfigSource` abstraction + `config/payload.py`, `config/sources.py`, `config/bootstrap.py`; `storage/document_store.py` `store_config` / `get_config`; `QdrantDocumentStore` ensures collection before write. | `tools/rag/config/`, `tools/rag/storage/` | Low | ✅ Done |
+| P3-7b | Python: `IngestController.upload_batch` persists per-collection `__config__` point via `store_config`; `ensure_collection` regression fix; Dockerfile copies `config/` package. | `tools/rag/ingest_routes.py`, `tools/rag/mcp_server.py`, `tools/rag/Dockerfile` | Low | ✅ Done |
+| P3-7c | Python: per-collection glossary read-path at query time. `EmbedContext` gains `glossary_entries` override; `GlossaryExpansionPreprocessor` reads it; `QueryEngine.search` accepts `glossary_entries` kwarg; `rag_tools._resolve_glossary_entries` fetches from `CONFIG_SOURCE`; ingest bakes mounted glossary (ZIP wins if supplied); `CONFIG_SOURCE` invalidated post-ingest. STDIO path byte-identical (returns `None`). | `embed_context.py`, `preprocessors.py`, `query.py`, `state.py`, `rag_tools.py`, `ingest_routes.py`, `mcp_server.py` | Low | ✅ Done |
+| P3-8 | Add integration tests: two collections with different weights on the same server return correctly weighted results. | `tools/rag-dotnet/src/RagTools.Tests/`, `tools/rag/tests/` | Low | ⬜ Pending |
 
 ### Open questions for P3
 
-1. **Glossary scope** — user clarified glossary is "optional". Should an absent per-collection glossary fall back to the mounted file (current proposal), or just behave as "no expansion"? Decision needed before P3-3.
-2. **Backward compat** — collections ingested before P3-1 lands will have no stored config. The fallback chain `per-collection → mounted → builtin defaults` covers this gracefully, but it must be explicitly tested.
-3. **Embedder/chunker settings** — these are also in `rag-config.yaml` but apply at ingest time. They are already captured implicitly (chunks already exist with the chunking applied). Per-collection persistence is only useful for query-time settings (weights, fetchK, score threshold, glossary). Confirm this scope reduction is acceptable, or expand P3 to also expose the historical ingest config for diagnostics.
+1. **Glossary scope** ✅ Resolved — Python uses the same unconditional-bake approach as .NET: mounted glossary is always baked into the `__config__` point at ingest time (ZIP-supplied glossary wins if present). No `RAG_GLOSSARY_FALLBACK` env var on Python; the .NET `RAG_GLOSSARY_FALLBACK` selects between `MountedFallbackGlossaryExpansionPreprocessor` and `DbOnlyGlossaryExpansionPreprocessor` (no Python equivalent needed until multi-tenant materialises). Decision recorded in [Amendment 006](../adr/0028/amendments/0028-006-phase3-python-parity.md).
+2. **Backward compat** ✅ Resolved — `LayeredConfigSource` (Qdrant overlay + mounted file fallback) covers collections ingested before P3-7a. `CachingConfigSource` wraps both. Collections with no `__config__` point fall back to mounted defaults transparently.
+3. **Embedder/chunker settings** ✅ Accepted — scope reduction confirmed. Per-collection persistence covers query-time settings only (weights, glossary, fetchK, score threshold, HistoryField, AdrDocKind, AmendmentDocKind). Ingest-time chunking settings are baked into the existing chunks; re-ingest with a new ZIP picks up new settings naturally.
 
 ### Not in scope for P3
 

@@ -114,8 +114,12 @@ Until Phase 3 lands, read the main ADR and `tech-details-dotnet.md` with this ca
 > is roadmap Phase 3 (see `docs/roadmap/rag-remote-multitenant.md`).
 
 This caveat is **retired for the .NET HTTP server** as of
-[Amendment 005](./0028-005-phase3-per-collection-config-dotnet.md). It still applies to
-the Python server until roadmap Phase 3 P3-7 lands.
+[Amendment 005](./0028-005-phase3-per-collection-config-dotnet.md).
+
+This caveat is **retired for the Python HTTP server** as of
+[Amendment 006](./0028-006-phase3-python-parity.md) (P3-7a/b/c complete). It still
+applies to the Python server's ranking weights path and chunker settings (deferred — see
+Amendment 006 § "What is intentionally still mounted-only").
 
 ---
 
