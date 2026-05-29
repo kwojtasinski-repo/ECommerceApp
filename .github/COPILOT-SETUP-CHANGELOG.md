@@ -12,12 +12,12 @@
 | Category                               | Count | Details                                                                                                                            |
 | -------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `copilot-instructions.md`              | 1     | ~7 410 chars (under 8K soft budget; Session 26 trim from 11 975); §12/§14 collapsed to pointers, dedicated `batched-tasks.instructions.md` added |
-| Instruction files (`.instructions.md`) | 17    | All with `applyTo:` frontmatter; +`batched-tasks` (Session 26); `agent-memory` added; `pre-edit` split into core + `doc-suggestions`; `docs-index` scope narrowed |
-| Prompt files (`.prompt.md`)            | 6     | BC analysis, BC implementation, PR review, refactor, flow-analysis, rag-sync                                                        |
+| Instruction files (`.instructions.md`) | 18    | All with `applyTo:` frontmatter; +`batched-tasks` (Session 26); `agent-memory` added; `pre-edit` split into core + `doc-suggestions`; `docs-index` scope narrowed |
+| Prompt files (`.prompt.md`)            | 8     | Includes BC analysis/implementation/review, refactor, flow-analysis, rag-sync and additional setup/routing prompt artifacts |
 | Agent files                            | 9     | adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer, planner, implementer, verifier, pr-commit, setup-discovery (Session 33)                       |
 | Skills (`SKILL.md`)                    | 33    | +9 cross-project bootstrap skills (Session 33): ctx-bootstrap-network, ctx-bootstrap-storage, ctx-bootstrap-runtimes, setup-rag-new-project, setup-context-mode-new-project, setup-adguard-policy, setup-mcp-clients, setup-auto-cache-hook, rag-eval-coverage; +4 RAG maintenance skills (Session 32): rag-reindex-decision, rag-collection-rebuild, rag-query-debug, rag-multilang-test; +3 context-mode sandbox skills (Session 31): ctx-sandbox-bootstrap-verify, ctx-doctor-playbook, ctx-hardening-audit; +rag-with-memory (Session 26); +5 RAG skills (Session 23): diagnose-rag, tune-rag-weights, expand-rag-glossary, generate-rag-rules, generate-eval-questions |
 | ADRs                                   | 29    | Folderized ADR routers under `docs/adr/<NNNN>/README.md`; ADR-0027/0028 (RAG pipeline) + ADR-0029 (context-mode sandbox) added                                                                           |
-| Context files                          | 6     | project-state, known-issues, agent-decisions, repo-index, future-skills, anti-patterns-critical                                    |
+| Context files                          | 7     | project-state, known-issues, agent-decisions, repo-index, future-skills, anti-patterns-critical, test-stabilization-policy         |
 | GitHub Actions workflows               | 1     | `dotnet-ci.yml` — manual trigger only (push/PR commented)                                                                          |
 | Pipeline orchestration spec            | 1     | `.github/AGENT-PIPELINE.md`; `@verifier`/`@code-reviewer` embedded inside `@implementer`; standalone-only for one-off use          |
 | HTTP scenario files                    | 10    | +auth.http (was 9)                                                                                                                 |
@@ -27,7 +27,7 @@
 
 ## File inventory
 
-### `.github/instructions/` (17 files)
+### `.github/instructions/` (18 files)
 
 | File                                  | `applyTo:`                                                    | Added                                                                       |
 | ------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------- |
@@ -43,13 +43,14 @@
 | `pre-edit.instructions.md`            | `**`                                                          | Session 1 (extracted from copilot-instructions)                             |
 | `docs-index.instructions.md`          | `.github/**, docs/**`                                         | Session 1 (new — docs lookup table); Session 19 (scope narrowed from `**`)  |
 | `copilot-config-sync.instructions.md` | `.github/**, docs/**`                                         | Session 11 (new); Session 14 (extended to docs/\*\*)                        |
+| `mcp-routing.instructions.md`         | `**`                                                          | Session 27 (new — single-source MCP routing and precedence rules)            |
 | `rag.instructions.md`                 | `**`                                                          | Session 18 (new — RAG routing precedence + output discipline)               |
 | `bc-adr-map.instructions.md`          | `**/*.cs, **/*.csproj, **/*.cshtml`                           | Session 19 (new — BC → ADR quick map for code edits)                        |
 | `doc-suggestions.instructions.md`     | `**`                                                          | Session 19 (new — proactive doc suggestion triggers; split from `pre-edit`) |
 | `agent-memory.instructions.md`        | `**`                                                          | Session 19 (new — auto-loads `agent-decisions.md` read rule on every task)  |
 | `batched-tasks.instructions.md`       | `**`                                                          | Session 26 (new — extracted from `copilot-instructions.md` §14 to keep auto-load while shrinking the root policy file) |
 
-### `.github/prompts/` (6 files)
+### `.github/prompts/` (8 files)
 
 | File                          | Added                                                                                                                                   |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
@@ -58,9 +59,11 @@
 | `pr-review.prompt.md`         | Session 1 (renamed)                                                                                                                     |
 | `refactor.prompt.md`          | Session 17 (new)                                                                                                                        |
 | `flow-analysis.prompt.md`     | Session 22 (registered — file existed on disk, referenced in `copilot-instructions.md` §11 and `docs-index`, omitted from prior counts) |
+| `batched-tasks.prompt.md`     | Session 26 (registered — structured response format for 3+ actionable items)                                                           |
+| `mcp-routing-eval.prompt.md`  | Session 27 (registered — stricter eval-mode format for batched MCP routing checks)                                                     |
 | `rag-sync.prompt.md`          | Session 23 (registered — file existed on disk, runs incremental ingest + eval validation + coverage check)                             |
 
-### `.github/agents/` (8 files)
+### `.github/agents/` (9 files)
 
 | File                          | Added                                                                                                   |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------- |
@@ -72,8 +75,9 @@
 | `implementer.md`              | Session 17 (new — pipeline stage 2, scope-limited, max-iter 5)                                          |
 | `verifier.md`                 | Session 17 (new — pipeline stage 3, deterministic build+test, max-iter 1)                               |
 | `pr-commit.md`                | Session 17 (new — pipeline stage 5, Conventional Commits, max-iter 2)                                   |
+| `setup-discovery.md`          | Session 33 (new — read-only bootstrap audit for RAG/context-mode/MCP client setup in new repositories) |
 
-### `.github/skills/` (20 skills)
+### `.github/skills/` (33 skills)
 
 | Skill                     | Description                                                     | Added      |
 | ------------------------- | --------------------------------------------------------------- | ---------- |
@@ -98,7 +102,9 @@
 | `ctx-doctor-playbook`     | Map `ctx_doctor` messages + container/runtime errors → cause → fix          | Session 31 |
 | `ctx-hardening-audit`     | Programmatic verification of all 22 ADR-0029 Conformance items (pre-merge gate) | Session 28 |
 
-### `.github/context/` (6 files)
+The full current 33-skill set also includes the cross-project/bootstrap and advanced RAG operations skills listed in the Current state summary, including `ctx-bootstrap-network`, `ctx-bootstrap-storage`, `ctx-bootstrap-runtimes`, `setup-rag-new-project`, `setup-context-mode-new-project`, `setup-adguard-policy`, `setup-mcp-clients`, `setup-auto-cache-hook`, `rag-eval-coverage`, `rag-reindex-decision`, `rag-collection-rebuild`, `rag-query-debug`, and `rag-multilang-test`.
+
+### `.github/context/` (7 files)
 
 | File                                | Added                                                |
 | ----------------------------------- | ---------------------------------------------------- |
@@ -108,10 +114,65 @@
 | `repo-index.md`                     | Session 2 (new — full codebase map)                  |
 | `future-skills.md`                  | Session 2 (new — skills roadmap)                     |
 | `anti-patterns-critical.context.md` | Session 3 (renamed from anti-patterns.context.md)    |
+| `test-stabilization-policy.md`      | Session 21 (new — skip/xfail policy and tracking requirements) |
 
 ---
 
 ## Change log
+
+### Session 37 — Standalone/global RAG playbook + docs sync close-out (2026-05-29)
+
+Workflow 11 + Workflow 7 compliance pass after adding a standalone/global RAG deployment guide for reuse in other repositories.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Added a new playbook covering standalone multi-project RAG rollout, isolation rules, June switch readiness checks, and future Ollama intent-router layering. | `docs/playbooks/rag-standalone-global.md` _(new)_ |
+| 2 | Synced human-facing docs navigation to expose the new playbook from root docs, playbook hub, and RAG README. | `docs/README.md`, `docs/playbooks/README.md`, `docs/rag/README.md` |
+| 3 | Synced Copilot routing/docs mirrors and solution items for the new playbook. | `.github/instructions/docs-index.instructions.md`, `.github/instructions/docs-index.full.md`, `ECommerceApp.sln` |
+| 4 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+**Counts**: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+**Not changed (deliberate)**:
+
+- `copilot-instructions.md` — still correctly delegates detailed docs routing to `docs-index.instructions.md`.
+- ADRs — the new content is operational/bootstrap guidance, not a new accepted architectural decision.
+- Application code and tests.
+
+### Session 36 — RAG requirements audit report + setup sync close-out (2026-05-29)
+
+Workflow 11 + Workflow 7 compliance pass after adding a new RAG requirements/compliance report.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Added consolidated requirements/decisions/compliance audit report for RAG (requirements checklist, decision trace, code evidence, remaining gaps). | `docs/reports/rag-requirements-compliance-2026-05-29.md` _(new)_ |
+| 2 | Synced solution items for reports folder to include the new report file. | `ECommerceApp.sln` |
+| 3 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+**Counts**: unchanged for configuration artifacts (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+**Not changed (deliberate)**:
+
+- `.github/instructions/docs-index.instructions.md` — no routing/index-table impact.
+- Application code — report and configuration-only maintenance.
+
+### Session 35 — Roadmap sync close-out after RAG stabilization docs update (2026-05-29)
+
+Workflow 11 + Workflow 7 compliance pass after updating roadmap docs for dual-stack RAG stabilization progress.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Roadmap index updated with explicit Remote Multi-Tenant RAG row and current status summary (Phase 3 mostly complete, P3-8 pending, 2026-05-29 stabilization/validation complete). | `docs/roadmap/README.md` |
+| 2 | RAG roadmap updated with a dated stabilization section documenting completed config simplification outcomes, validation matrix, and unchanged pending item P3-8. | `docs/roadmap/rag-remote-multitenant.md` |
+| 3 | Copilot setup close-out recorded (this entry) — no docs-index, solution, instruction, prompt, agent, or skill structure changes required. | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+**Counts**: unchanged for this session's edits (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+**Not changed (deliberate)**:
+
+- `.github/instructions/docs-index.instructions.md` — routing/index table unchanged.
+- `ECommerceApp.sln` — roadmap files were already present in solution items.
+- Any application code or tests.
 
 ### Session 34 — ADR-0028 Amendment 005: Phase 3 per-collection config .NET delivery (2026-05-28)
 

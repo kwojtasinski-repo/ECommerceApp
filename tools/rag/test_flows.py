@@ -235,9 +235,9 @@ def flow_01(proc, failures):
         ], failures)
     except TimeoutError as e: failures.append(f"FLOW01 step2: {e}")
 
-    _ph("Step 2b \u2014 rationale: get_adr_history('0006') \u2014 alternatives section")
+    _ph("Step 2b \u2014 rationale: get_history('0006') \u2014 alternatives section")
     try:
-        hist01 = _call(proc, "get_adr_history", {"adr_id": "0006"})
+        hist01 = _call(proc, "get_history", {"id": "0006"})
         main01 = hist01.get("main", {}).get("content", "")
         if main01:
             _check_rationale(main01, "ADR-0006 rationale", [
@@ -295,9 +295,9 @@ def flow_02(proc, failures):
         ], failures)
     except TimeoutError as e: failures.append(f"FLOW02 step2: {e}")
 
-    _ph("Step 2b \u2014 rationale: get_adr_history('0016') \u2014 alternatives section")
+    _ph("Step 2b \u2014 rationale: get_history('0016') \u2014 alternatives section")
     try:
-        hist02 = _call(proc, "get_adr_history", {"adr_id": "0016"})
+        hist02 = _call(proc, "get_history", {"id": "0016"})
         main02 = hist02.get("main", {}).get("content", "")
         if main02:
             _check_rationale(main02, "ADR-0016 rationale", [
@@ -338,9 +338,9 @@ def flow_03(proc, failures):
         ], failures)
     except TimeoutError as e: failures.append(f"FLOW03 step2: {e}")
 
-    _ph("Step 3 — history: get_adr_history('0016') — confirm amendment is documented")
+    _ph("Step 3 — history: get_history('0016') — confirm amendment is documented")
     try:
-        r3 = _call(proc, "get_adr_history", {"adr_id": "0016"})
+        r3 = _call(proc, "get_history", {"id": "0016"})
         count = r3.get("amendment_count", 0)
         print(f"      amendment_count: {count}")
         if count < 1:
@@ -371,9 +371,9 @@ def flow_04(proc, failures):
         _had_adr([h["rel_path"] for h in r.get("hits",[])], "0014", soft=True)
     except TimeoutError: print("      ⚠ timed out")
 
-    _ph("Step 2 — full history: get_adr_history('0014')")
+    _ph("Step 2 — full history: get_history('0014')")
     try:
-        r2 = _call(proc, "get_adr_history", {"adr_id": "0014"})
+        r2 = _call(proc, "get_history", {"id": "0014"})
         count = r2.get("amendment_count", 0)
         print(f"      amendment_count: {count}")
         for a in r2.get("amendments", []):
@@ -439,9 +439,9 @@ def flow_05(proc, failures):
         ], failures, require_all=False)
     except TimeoutError as e: failures.append(f"FLOW05 step2: {e}")
 
-    _ph("Step 2b \u2014 rationale: get_adr_history('0010') \u2014 alternatives section")
+    _ph("Step 2b \u2014 rationale: get_history('0010') \u2014 alternatives section")
     try:
-        hist05 = _call(proc, "get_adr_history", {"adr_id": "0010"})
+        hist05 = _call(proc, "get_history", {"id": "0010"})
         main05 = hist05.get("main", {}).get("content", "")
         if main05:
             _check_rationale(main05, "ADR-0010 WHY not MediatR/direct injection", [
@@ -482,9 +482,9 @@ def flow_06(proc, failures):
         ], failures)
     except TimeoutError as e: failures.append(f"FLOW06 step2: {e}")
 
-    _ph("Step 2b \u2014 rationale: get_adr_history('0012') \u2014 alternatives section")
+    _ph("Step 2b \u2014 rationale: get_history('0012') \u2014 alternatives section")
     try:
-        hist06 = _call(proc, "get_adr_history", {"adr_id": "0012"})
+        hist06 = _call(proc, "get_history", {"id": "0012"})
         main06 = hist06.get("main", {}).get("content", "")
         if main06:
             _check_rationale(main06, "ADR-0012 WHY not aggregate/polling", [
@@ -544,9 +544,9 @@ def flow_07(proc, failures):
         ], failures, require_all=False)
     except TimeoutError as e: failures.append(f"FLOW07 step2: {e}")
 
-    _ph("Step 2b \u2014 rationale: get_adr_history('0011') \u2014 alternatives section")
+    _ph("Step 2b \u2014 rationale: get_history('0011') \u2014 alternatives section")
     try:
-        hist07 = _call(proc, "get_adr_history", {"adr_id": "0011"})
+        hist07 = _call(proc, "get_history", {"id": "0011"})
         main07 = hist07.get("main", {}).get("content", "")
         if main07:
             _check_rationale(main07, "ADR-0011 WHY design choice", [
@@ -590,9 +590,9 @@ def flow_08(proc, failures):
         ], failures, require_all=False)
     except TimeoutError as e: failures.append(f"FLOW08 step2: {e}")
 
-    _ph("Step 2b \u2014 rationale: get_adr_history('0002') \u2014 alternatives section")
+    _ph("Step 2b \u2014 rationale: get_history('0002') \u2014 alternatives section")
     try:
-        hist08 = _call(proc, "get_adr_history", {"adr_id": "0002"})
+        hist08 = _call(proc, "get_history", {"id": "0002"})
         main08 = hist08.get("main", {}).get("content", "")
         if main08:
             _check_rationale(main08, "ADR-0002 WHY not monolith/microservices", [
@@ -617,9 +617,9 @@ def flow_09(proc, failures):
         print(f"      {'✓' if hit else '⚠'}  ADR-0014 (or amendment) {'in' if hit else 'NOT in'} results")
     except TimeoutError: print("      ⚠ timed out")
 
-    _ph("Step 2 — history: get_adr_history('0014') → navigate to a4")
+    _ph("Step 2 — history: get_history('0014') → navigate to a4")
     try:
-        r2 = _call(proc, "get_adr_history", {"adr_id": "0014"})
+        r2 = _call(proc, "get_history", {"id": "0014"})
         amds = r2.get("amendments", [])
         if len(amds) < 4:
             failures.append(f"FLOW09: expected >=4 amendments, got {len(amds)}")
@@ -729,16 +729,16 @@ def flow_12(proc, failures):
         _had_adr([h["rel_path"] for h in r.get("hits",[])], "0026", soft=True)
     except TimeoutError: print("      ⚠ timed out")
 
-    _ph("Step 2 — history: get_adr_history('0026') — read the full saga decision record")
+    _ph("Step 2 — history: get_history('0026') — read the full saga decision record")
     try:
-        r2 = _call(proc, "get_adr_history", {"adr_id": "0026"})
+        r2 = _call(proc, "get_history", {"id": "0026"})
         main = r2.get("main", {})
         amds = r2.get("amendments", [])
         print(f"      main: {main.get('rel_path','—')}  (~{main.get('content','').count(chr(10))} lines)")
         print(f"      amendment_count: {r2.get('amendment_count', 0)}")
         content = main.get("content", "")
         if not content:
-            failures.append("FLOW12: ADR-0026 main content empty from get_adr_history")
+            failures.append("FLOW12: ADR-0026 main content empty from get_history")
             return
         print("      Expected text — architectural decision (Option A chosen, Option B deferred):")
         _check(content, "ADR-0026", [
@@ -793,9 +793,9 @@ def flow_13(proc, failures):
         ], failures, require_all=False)
     except TimeoutError as e: failures.append(f"FLOW13 step2: {e}")
 
-    _ph("Step 2b \u2014 rationale: get_adr_history('0013') \u2014 alternatives section")
+    _ph("Step 2b \u2014 rationale: get_history('0013') \u2014 alternatives section")
     try:
-        hist13 = _call(proc, "get_adr_history", {"adr_id": "0013"})
+        hist13 = _call(proc, "get_history", {"id": "0013"})
         main13 = hist13.get("main", {}).get("content", "")
         if main13:
             _check_rationale(main13, "ADR-0013 WHY interfaces in Application not Domain", [

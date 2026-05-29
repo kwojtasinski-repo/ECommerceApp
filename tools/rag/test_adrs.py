@@ -6,8 +6,8 @@ Tests 5 ADRs with varied characteristics, choosing the most appropriate tool for
   ADR-0026  Order Lifecycle Saga    (0 amendments, 0 examples)  → query_docs   (discovery only)
   ADR-0006  TypedId / Value Objects (0 amendments, 2 examples)  → read_docs    (full content incl. examples)
   ADR-0012  Presale Checkout        (0 amendments, 3 examples)  → read_docs    (rich examples, no amendments)
-  ADR-0016  Sales Coupons           (1 amendment,  3 examples)  → read_docs + get_adr_history (amendment check)
-  ADR-0014  Sales Orders            (4 amendments, 4 examples)  → get_adr_history (full evolution chain)
+    ADR-0016  Sales Coupons           (1 amendment,  3 examples)  → read_docs + get_history (amendment check)
+    ADR-0014  Sales Orders            (4 amendments, 4 examples)  → get_history (full evolution chain)
 
 Usage:
     python test_adrs.py           # local .venv (default)
@@ -218,7 +218,7 @@ def _print_adr_history(result: dict) -> None:
     main   = result.get("main", {})
     amends = result.get("amendments", [])
     main_lines = main.get("content", "").count("\n") if main.get("content") else 0
-    print(f"  get_adr_history(ADR-{adr_id})")
+    print(f"  get_history(ADR-{adr_id})")
     if main.get("rel_path"):
         print(f"    main:       {main['rel_path']}  (~{main_lines} lines)")
     for a in amends:
@@ -330,15 +330,15 @@ def main() -> int:
 
         # ── TEST 4 ─────────────────────────────────────────────────────────
         # ADR-0016  Sales Coupons  (1 amendment, 3 examples)
-        # Has one amendment — test both read_docs (content) and get_adr_history
+        # Has one amendment — test both read_docs (content) and get_history
         # (amendment chain). The amendment added the oversize guard.
-        _print_header("TEST 4 — ADR-0016 Coupons  (1 amd, 3 ex)  → read_docs + get_adr_history")
+        _print_header("TEST 4 — ADR-0016 Coupons  (1 amd, 3 ex)  → read_docs + get_history")
         try:
             r_docs = _call(proc, 40, "read_docs",
                            {"question": "coupons maximum per order discount validation", "top_files": 3})
             _print_read_docs(r_docs)
 
-            r_hist = _call(proc, 41, "get_adr_history", {"adr_id": "0016"})
+            r_hist = _call(proc, 41, "get_history", {"id": "0016"})
             _print_adr_history(r_hist)
 
             ok_docs = any("0016" in f["rel_path"] for f in r_docs.get("files", []))
@@ -348,7 +348,7 @@ def main() -> int:
             if not ok_hist:
                 failures.append("TEST4: ADR-0016 amendment_count should be >= 1")
             if ok_docs and ok_hist:
-                print("  ✓ read_docs surfaced ADR-0016; get_adr_history has amendment(s)")
+                print("  ✓ read_docs surfaced ADR-0016; get_history has amendment(s)")
 
             # Spot-check the amendment content — it should describe the oversize guard:
             if r_hist.get("amendments"):
@@ -360,7 +360,7 @@ def main() -> int:
                     failures,
                 )
 
-            # Spot-check the main ADR via get_adr_history for coupon core rules:
+            # Spot-check the main ADR via get_history for coupon core rules:
             if r_hist.get("main", {}).get("content"):
                 print("  Content checks (ADR-0016 main):")
                 _assert_content(
@@ -374,11 +374,11 @@ def main() -> int:
 
         # ── TEST 5 ─────────────────────────────────────────────────────────
         # ADR-0014  Sales Orders  (4 amendments, 4 examples)
-        # Most complex evolution — use get_adr_history to retrieve the full chain,
+        # Most complex evolution — use get_history to retrieve the full chain,
         # verify all 4 amendments are present, and spot-check each one's content.
-        _print_header("TEST 5 — ADR-0014 Sales Orders  (4 amd, 4 ex)  → get_adr_history (full chain)")
+        _print_header("TEST 5 — ADR-0014 Sales Orders  (4 amd, 4 ex)  → get_history (full chain)")
         try:
-            r = _call(proc, 50, "get_adr_history", {"adr_id": "0014"}, timeout=30)
+            r = _call(proc, 50, "get_history", {"id": "0014"}, timeout=30)
             _print_adr_history(r)
             amd_count = r.get("amendment_count", 0)
             if amd_count < 4:

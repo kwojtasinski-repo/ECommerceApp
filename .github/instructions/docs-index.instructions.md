@@ -95,6 +95,7 @@ End-to-end, multi-stage walkthroughs for standing up RAG and/or context-mode in 
 | Playbook hub (which to pick, order of operations, contribution guide) | [docs/playbooks/README.md](../../docs/playbooks/README.md) |
 | Bring context-mode up end-to-end (7 stages, troubleshooting flowchart) | [docs/playbooks/context-mode-bootstrap.md](../../docs/playbooks/context-mode-bootstrap.md) |
 | Bring RAG up end-to-end (7 stages, troubleshooting flowchart) | [docs/playbooks/rag-bootstrap.md](../../docs/playbooks/rag-bootstrap.md) |
+| Build standalone/global multi-project RAG platform | [docs/playbooks/rag-standalone-global.md](../../docs/playbooks/rag-standalone-global.md) |
 
 ## Discovery agent
 

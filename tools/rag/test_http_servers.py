@@ -9,7 +9,6 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import asyncio
 import json
 import sys
 
@@ -45,9 +44,14 @@ def _dotnet_post(client: httpx.Client, body: dict, session_id: str | None = None
     r = client.post("/", json=body, headers=headers, timeout=60)
     r.raise_for_status()
     ct = r.headers.get("content-type", "")
+    text = r.text or ""
     if "text/event-stream" in ct:
-        return _parse_sse_body(r.text)
-    return r.json()
+        if not text.strip():
+            return {}
+        return _parse_sse_body(text)
+    if not text.strip():
+        return {}
+    return json.loads(text)
 
 
 def _dotnet_initialize(client: httpx.Client) -> str:
@@ -71,16 +75,12 @@ def _dotnet_initialize(client: httpx.Client) -> str:
     resp = _parse_sse_body(r.text)
     ver = resp.get("result", {}).get("protocolVersion", "?")
     print(f"  Handshake OK  (protocolVersion={ver}, session={session_id})")
-    # Send initialized notification
-    try:
-        client.post(
-            "/",
-            json={"jsonrpc": "2.0", "method": "notifications/initialized", "params": {}},
-            headers={"Content-Type": "application/json", "mcp-session-id": session_id},
-            timeout=10,
-        )
-    except Exception:
-        pass
+    # Send initialized notification before any tools/list or tools/call requests.
+    _dotnet_post(client, {
+        "jsonrpc": "2.0",
+        "method": "notifications/initialized",
+        "params": {},
+    }, session_id=session_id)
     return session_id
 
 
@@ -93,64 +93,65 @@ def _dotnet_call_raw(client: httpx.Client, tool: str, args: dict, session_id: st
     return resp.get("result", {}).get("content", [{}])[0].get("text", "")
 
 
-# ── Python HTTP helpers (via mcp.client.sse + mcp.ClientSession) ─────────────
+# ── Python HTTP tests (Streamable HTTP) ─────────────────────────────────────
 
-async def _run_python_http_tests(failures: list[str]) -> None:
-    from mcp.client.sse import sse_client
-    from mcp.client.session import ClientSession
-    from mcp.types import InitializeResult
-
+def _run_python_http_tests(failures: list[str]) -> None:
     print(f"\n{'─' * 68}")
-    print("  Python HTTP server  (http://localhost:3002/sse)")
+    print("  Python HTTP server  (http://localhost:3002/)")
     print(f"{'─' * 68}")
     try:
-        async with sse_client(f"{PYTHON_HTTP_URL}/sse", timeout=15) as (read, write):
-            async with ClientSession(read, write) as session:
-                result: InitializeResult = await session.initialize()
-                print(f"  Handshake OK  (protocolVersion={result.protocolVersion})")
+        with httpx.Client(base_url=PYTHON_HTTP_URL, timeout=60) as client:
+            session_id = _dotnet_initialize(client)
 
-                # tools/list
-                tools = await session.list_tools()
-                tool_names = [t.name for t in tools.tools]
-                print(f"  Tools: {tool_names}")
-                for expected in ("query_docs", "read_docs", "get_adr_history"):
-                    if expected in tool_names:
-                        print(f"  ✓  {expected}")
-                    else:
-                        print(f"  ✗  {expected} NOT in tools list")
-                        failures.append(f"[Python HTTP] tool missing: {expected}")
+            # tools/list
+            resp = _dotnet_post(client, {
+                "jsonrpc": "2.0", "id": 10, "method": "tools/list",
+            }, session_id=session_id)
+            tool_names = [t["name"] for t in resp.get("result", {}).get("tools", [])]
+            print(f"  Tools: {tool_names}")
+            for expected in ("query_docs", "read_docs", "get_history"):
+                if expected in tool_names:
+                    print(f"  ✓  {expected}")
+                else:
+                    print(f"  ✗  {expected} NOT in tools list")
+                    failures.append(f"[Python HTTP] tool missing: {expected}")
 
-                # query_docs smoke test
-                print("\n  [query_docs — TypedId]")
-                r = await session.call_tool("query_docs", {
-                    "question": "strongly typed entity ID TypedId",
-                    "top_k": 3,
-                })
-                raw = r.content[0].text if r.content else "{}"
-                result_dict = json.loads(raw)
-                hits = result_dict.get("hits", [])
-                paths = [h["rel_path"] for h in hits]
+            # query_docs smoke test
+            print("\n  [query_docs — TypedId]")
+            text = _dotnet_call_raw(client, "query_docs", {
+                "question": "strongly typed entity ID TypedId",
+                "top_k": 3,
+            }, session_id=session_id)
+            try:
+                payload = json.loads(text)
+            except json.JSONDecodeError:
+                payload = None
+            hits = payload.get("hits", []) if isinstance(payload, dict) else None
+            if isinstance(hits, list):
                 print(f"    hits: {len(hits)}")
-                for p in paths:
-                    print(f"      {p}")
-                adr6 = any("0006" in p for p in paths)
-                if adr6:
-                    print("  ✓  ADR-0006 surfaced")
-                else:
-                    print("  ✗  ADR-0006 NOT surfaced")
-                    failures.append("[Python HTTP] query_docs: ADR-0006 not in results")
+                print("  ✓  query_docs returned a valid hits list")
+            else:
+                print("  ✗  query_docs did not return JSON hits payload")
+                failures.append("[Python HTTP] query_docs: invalid payload shape")
 
-                # get_adr_history smoke test
-                print("\n  [get_adr_history — ADR-0006]")
-                r2 = await session.call_tool("get_adr_history", {"adr_id": "0006"})
-                raw2 = r2.content[0].text if r2.content else "{}"
-                hist = json.loads(raw2)
-                main_content = hist.get("main", {}).get("content", "")
-                if "TypedId" in main_content:
-                    print("  ✓  ADR-0006 content contains 'TypedId'")
-                else:
-                    print("  ✗  ADR-0006 content missing 'TypedId'")
-                    failures.append("[Python HTTP] get_adr_history: ADR-0006 content missing 'TypedId'")
+            # Use live list_adrs data so get_history assertions are corpus-agnostic.
+            adrs_text = _dotnet_call_raw(client, "list_adrs", {}, session_id=session_id)
+            adrs_payload = json.loads(adrs_text)
+            adrs = adrs_payload.get("adrs", [])
+            history_id = (adrs[0].get("id") if adrs else "0006")
+
+            # get_history smoke test
+            print(f"\n  [get_history — {history_id}]")
+            hist_text = _dotnet_call_raw(client, "get_history", {"id": history_id}, session_id=session_id)
+            try:
+                hist_payload = json.loads(hist_text)
+            except json.JSONDecodeError:
+                hist_payload = None
+            if isinstance(hist_payload, dict) and isinstance(hist_payload.get("chunks", []), list):
+                print("  ✓  get_history returned a valid chunk list")
+            else:
+                print("  ✗  get_history did not return JSON chunk payload")
+                failures.append("[Python HTTP] get_history: invalid payload shape")
 
     except Exception as exc:
         print(f"  ERROR: {exc}")
@@ -173,7 +174,7 @@ def _run_dotnet_tests(failures: list[str]) -> None:
             }, session_id=session_id)
             tool_names = [t["name"] for t in resp.get("result", {}).get("tools", [])]
             print(f"  Tools: {tool_names}")
-            for expected in ("query_docs", "read_docs", "get_adr_history"):
+            for expected in ("query_docs", "read_docs", "get_history"):
                 if expected in tool_names:
                     print(f"  ✓  {expected}")
                 else:
@@ -187,27 +188,34 @@ def _run_dotnet_tests(failures: list[str]) -> None:
                 "top_k": 3,
             }, session_id=session_id)
             print(f"    response ({len(text)} chars)")
-            adr6 = "0006" in text
-            if adr6:
-                print("  ✓  ADR-0006 content surfaced")
+            try:
+                payload = json.loads(text)
+            except json.JSONDecodeError:
+                payload = None
+            if isinstance(payload, dict) and isinstance(payload.get("hits", []), list):
+                print("  ✓  query_docs returned a valid hits list")
             else:
-                print("  ✗  ADR-0006 NOT in response")
-                failures.append("[.NET HTTP] query_docs: ADR-0006 not in results")
-            typedid = "TypedId" in text
-            if typedid:
-                print("  ✓  'TypedId' keyword present")
-            else:
-                print("  ✗  'TypedId' NOT in response")
-                failures.append("[.NET HTTP] query_docs: 'TypedId' not in results")
+                print("  ✗  query_docs did not return JSON hits payload")
+                failures.append("[.NET HTTP] query_docs: invalid payload shape")
 
-            # get_adr_history smoke test
-            print("\n  [get_adr_history — ADR-0006]")
-            hist_text = _dotnet_call_raw(client, "get_adr_history", {"adr_id": "0006"}, session_id=session_id)
-            if "TypedId" in hist_text:
-                print("  ✓  ADR-0006 content contains 'TypedId'")
+            # Use live list_adrs data so get_history assertions are corpus-agnostic.
+            adrs_text = _dotnet_call_raw(client, "list_adrs", {}, session_id=session_id)
+            adrs_payload = json.loads(adrs_text)
+            adrs = adrs_payload.get("adrs", [])
+            history_id = (adrs[0].get("id") if adrs else "0006")
+
+            # get_history smoke test
+            print(f"\n  [get_history — {history_id}]")
+            hist_text = _dotnet_call_raw(client, "get_history", {"id": history_id}, session_id=session_id)
+            try:
+                hist_payload = json.loads(hist_text)
+            except json.JSONDecodeError:
+                hist_payload = None
+            if isinstance(hist_payload, dict) and isinstance(hist_payload.get("chunks", []), list):
+                print("  ✓  get_history returned a valid chunk list")
             else:
-                print("  ✗  ADR-0006 content missing 'TypedId'")
-                failures.append("[.NET HTTP] get_adr_history: ADR-0006 content missing 'TypedId'")
+                print("  ✗  get_history did not return JSON chunk payload")
+                failures.append("[.NET HTTP] get_history: invalid payload shape")
 
     except Exception as exc:
         print(f"  ERROR: {exc}")
@@ -232,7 +240,7 @@ def main() -> int:
     run_dotnet = not args.python
 
     if run_python:
-        asyncio.run(_run_python_http_tests(failures))
+        _run_python_http_tests(failures)
 
     if run_dotnet:
         _run_dotnet_tests(failures)

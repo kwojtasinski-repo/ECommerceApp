@@ -516,6 +516,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reports", "reports", "{7C3E
 	ProjectSection(SolutionItems) = preProject
 		docs\reports\bc-migration-status.md = docs\reports\bc-migration-status.md
 		docs\reports\cross-bc-integration-test-report.md = docs\reports\cross-bc-integration-test-report.md
+		docs\reports\rag-requirements-compliance-2026-05-29.md = docs\reports\rag-requirements-compliance-2026-05-29.md
 		docs\reports\rag-context-mode-audit-2026-05-28.md = docs\reports\rag-context-mode-audit-2026-05-28.md
 		docs\reports\rag-context-mode-skills-plan-2026-05-28.md = docs\reports\rag-context-mode-skills-plan-2026-05-28.md
 		docs\reports\remaining-work-effort.md = docs\reports\remaining-work-effort.md
@@ -707,6 +708,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "playbooks", "playbooks", "{
 	ProjectSection(SolutionItems) = preProject
 		docs\playbooks\context-mode-bootstrap.md = docs\playbooks\context-mode-bootstrap.md
 		docs\playbooks\rag-bootstrap.md = docs\playbooks\rag-bootstrap.md
+		docs\playbooks\rag-standalone-global.md = docs\playbooks\rag-standalone-global.md
 		docs\playbooks\README.md = docs\playbooks\README.md
 	EndProjectSection
 EndProject

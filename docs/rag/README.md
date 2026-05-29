@@ -61,6 +61,7 @@ Two implementations exist — both expose the same MCP tools and use the same mo
 | Goal | Doc |
 |------|-----|
 | **Set up for the first time** | [SETUP-GUIDE.md](SETUP-GUIDE.md) |
+| **Deploy as standalone platform** | [../playbooks/rag-standalone-global.md](../playbooks/rag-standalone-global.md) |
 | **Understand the architecture** | [rag-architecture.md](rag-architecture.md) |
 | **Error handling / middleware / API security** | [rag-architecture.md §14](rag-architecture.md#14-error-handling-sanitisation-and-middleware) |
 | **Check index stats** | [index-stats.md](index-stats.md) (Python) / [index-stats-dotnet.md](index-stats-dotnet.md) (.NET) |

@@ -20,7 +20,7 @@ Usage:
     python tools/rag/real_mcp_check.py
 """
 from __future__ import annotations
-import io, json, subprocess, sys, textwrap, threading, time, zipfile
+import io, json, os, subprocess, sys, textwrap, threading, time, zipfile
 from pathlib import Path
 
 REPO_ROOT  = Path(__file__).resolve().parents[2]
@@ -29,6 +29,11 @@ NET_COLL   = "ecommerceapp_docs_dotnet"
 TEST_COLL  = "realmcptest"  # must match [a-z0-9][a-z0-9_-]*
 PY_PORT    = 3002
 NET_PORT   = 3001
+
+DOTNET_REMOTE_ENDPOINTS = [
+    "http://rag-dotnet-http:3001",
+    "http://host.docker.internal:3001",
+]
 
 # ── tiny JSON-RPC over stdio (no MCP SDK) ─────────────────────────────────────
 
@@ -281,25 +286,41 @@ def phase_b_cli_upload():
     print(f"  ↳ exit {py_rc}")
     print(textwrap.indent(py_tail or "(no output)", "    "))
 
-    # B2: .NET RagTools.Ingest --remote against rag-dotnet-http:3001
-    print("\n[B2] dotnet RagTools.Ingest --remote http://rag-dotnet-http:3001")
-    net_rc, net_tail = _run_cli(
-        ["docker","run","--rm",
-         "--network","ecommerceapp_default",
-         "-v",f"{REPO_ROOT}:/workspace:ro",
-         "-v",f"{REPO_ROOT}/.rag:/workspace/.rag",
-         "-v",f"{REPO_ROOT}/tools/rag-dotnet/rag-config.yaml:/rag-config.yaml:ro",
-         "-v",f"{REPO_ROOT}/tools/rag-dotnet/multilingual-glossary.yaml:/multilingual-glossary.yaml:ro",
-         "-v",f"{REPO_ROOT}/tools/rag/metadata-rules.yaml:/metadata-rules.yaml:ro",
-         "-v",f"{REPO_ROOT}/tools/rag/queries.yaml:/queries.yaml:ro",
-         "-e","RAG_WORKSPACE=/workspace",
-         "-e","RAG_CONFIG=/rag-config.yaml",
-         "-e","RAG_COLLECTION=ecommerceapp_docs_dotnet",
-         "-e","DOTNET_CLI_TELEMETRY_OPTOUT=1",
-         "--entrypoint","dotnet",
-         "rag-dotnet","/app/ingest/ingest.dll",
-         "--remote","http://rag-dotnet-http:3001","--force-full"])
+    # B2: .NET RagTools.Ingest --remote with endpoint fallback.
+    # Override list when needed:
+    #   set RAG_DOTNET_REMOTE_ENDPOINTS=http://a:3001,http://b:3001
+    dotnet_endpoints = [e.strip() for e in os.getenv(
+        "RAG_DOTNET_REMOTE_ENDPOINTS",
+        ",".join(DOTNET_REMOTE_ENDPOINTS),
+    ).split(",") if e.strip()]
+
+    print("\n[B2] dotnet RagTools.Ingest --remote (endpoint fallback)")
+
+    def _dotnet_ingest_cmd(endpoint: str) -> list[str]:
+        return [
+            "docker", "run", "--rm",
+            "--network", "ecommerceapp_default",
+            "-v", f"{REPO_ROOT}:/workspace:ro",
+            "-v", f"{REPO_ROOT}/.rag:/workspace/.rag",
+            "-v", f"{REPO_ROOT}/tools/rag-dotnet/rag-config.yaml:/rag-config.yaml:ro",
+            "-v", f"{REPO_ROOT}/tools/rag-dotnet/multilingual-glossary.yaml:/multilingual-glossary.yaml:ro",
+            "-v", f"{REPO_ROOT}/tools/rag/metadata-rules.yaml:/metadata-rules.yaml:ro",
+            "-v", f"{REPO_ROOT}/tools/rag/queries.yaml:/queries.yaml:ro",
+            "-e", "RAG_WORKSPACE=/workspace",
+            "-e", "RAG_CONFIG=/rag-config.yaml",
+            "-e", "RAG_COLLECTION=ecommerceapp_docs_dotnet",
+            "-e", "DOTNET_CLI_TELEMETRY_OPTOUT=1",
+            "--entrypoint", "dotnet",
+            "rag-dotnet", "/app/ingest/ingest.dll",
+            "--remote", endpoint, "--force-full",
+        ]
+
+    net_rc, net_tail, net_endpoint = _run_cli_with_endpoint_fallback(
+        _dotnet_ingest_cmd,
+        dotnet_endpoints,
+    )
     summary["dotnet-cli-upload"] = "OK" if net_rc == 0 else f"FAIL (exit {net_rc})"
+    print(f"  ↳ endpoint {net_endpoint}")
     print(f"  ↳ exit {net_rc}")
     print(textwrap.indent(net_tail or "(no output)", "    "))
 
@@ -325,6 +346,31 @@ def _run_cli(cmd: list[str], timeout: float = 600.0) -> tuple[int, str]:
         return 124, f"<timeout after {timeout}s>\n{(e.stdout or '')[-1000:]}\n{(e.stderr or '')[-1000:]}"
     except Exception as e:
         return 99, f"<launch error> {type(e).__name__}: {e}"
+
+
+def _run_cli_with_endpoint_fallback(
+    cmd_factory,
+    endpoints: list[str],
+    timeout_each: float = 420.0,
+) -> tuple[int, str, str]:
+    """Try endpoint variants in order and return first success.
+
+    Returns: (rc, tail, endpoint_used)
+    """
+    attempts: list[str] = []
+    last_rc = 99
+    last_tail = ""
+
+    for endpoint in endpoints:
+        rc, tail = _run_cli(cmd_factory(endpoint), timeout=timeout_each)
+        attempts.append(f"[endpoint={endpoint}] rc={rc}\n{tail}")
+        last_rc = rc
+        last_tail = tail
+        if rc == 0:
+            return rc, tail, endpoint
+
+    joined = "\n\n".join(attempts[-2:]) if attempts else last_tail
+    return last_rc, joined, (endpoints[-1] if endpoints else "")
 
 
 # ── PHASE C — HTTP Streamable upload WITHOUT CLI (stdlib only) ────────────────

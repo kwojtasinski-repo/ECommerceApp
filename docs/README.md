@@ -20,6 +20,8 @@ Short human entry point for the `docs/` folder.
 ## Setup guides
 
 - [`getting-started-context-mode.md`](getting-started-context-mode.md) — first-time setup of the context-mode + AdGuard sandbox (one-command bootstrap, smoke tests, troubleshooting)
+- [`playbooks/rag-bootstrap.md`](playbooks/rag-bootstrap.md) — first-time RAG bootstrap for a new project
+- [`playbooks/rag-standalone-global.md`](playbooks/rag-standalone-global.md) — standalone/global RAG platform guide for multi-project rollout
 
 ## Docs vs. Copilot environment
 

@@ -105,6 +105,15 @@ Use the folder `README.md` as the first stop for every ADR.
 | `README.md`     | First human-oriented entry point to the docs tree and its relationship to `.github` routing  |
 | `rag/README.md` | Setup, CLI usage, MCP wiring, eval, and troubleshooting for the local RAG index over `docs/` |
 
+## Playbooks (`docs/playbooks/`)
+
+| File | When to read |
+| --- | --- |
+| `README.md` | Choosing between long-form bootstrap playbooks and focused skills |
+| `rag-bootstrap.md` | Standing up RAG from scratch in a new project |
+| `rag-standalone-global.md` | Designing a standalone/global multi-project RAG platform and migration path from embedded setup |
+| `context-mode-bootstrap.md` | Standing up the context-mode sandbox end-to-end |
+
 ## Architecture docs (`docs/architecture/`)
 
 | File                     | When to read                                                                                        |

@@ -20,6 +20,7 @@ between stages.
 |---|---|---|---|
 | [context-mode-bootstrap.md](context-mode-bootstrap.md) | Stand up the context-mode sandbox: AdGuard, Qdrant, SQLite, runtime image, MCP client, optional auto-cache hook | D1, D2, D3, E2, E3, E4, E5 | 60–90 min |
 | [rag-bootstrap.md](rag-bootstrap.md) | Stand up RAG: Qdrant, Python + .NET HTTP servers, ingest, MCP client, optional auto-cache hook | E1, E4, optional E5 | 45–75 min |
+| [rag-standalone-global.md](rag-standalone-global.md) | Build a standalone multi-project RAG platform and migrate from embedded setup | E1, E4, optional E5 | 60–120 min |
 
 ## Order of operations for a brand-new project
 

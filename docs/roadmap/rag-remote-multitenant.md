@@ -926,3 +926,30 @@ Amendment 002 (`docs/adr/0028/amendments/0028-002-batch-manifest-pipeline.md`) e
 - **Q-PRECISE** — add 6-8 precise queries to `tools/rag/queries.yaml` covering ADR-specific questions; re-run `compare_queries.py`; decide on potential R4 (Python down-weight on `agent-decisions.md`) based on results. Cost: ~30 min. No code change.
 - **Chunker tuning** — experiment with smaller `max_tokens` / larger `min_tokens` in the next ZIP `rag-config.yaml` to reduce Category C boundary noise (amendments-page chunks). Cost: re-ingest one collection (~5 min runtime). No code change.
 - **Indexer bug #7 (anomalies memo)** — `ADR-0028 main_file` returns wrong file on .NET; amendment counts inflated. Fix in `RagListAdrsService` / amendment-counting logic. Separate from P3.
+
+---
+
+## 2026-05-29 stabilization update (dual-stack)
+
+This session focused on hardening and validating the user-facing config simplification path across both servers.
+
+### Completed
+
+- Simplified user-facing `rag-config.yaml` on both stacks to keep only tunable fields.
+- Moved removed schema sections (`embedder.*`, `storage.*`) to server defaults.
+- Preserved mode-aware vector-store behavior (STDIO vs HTTP).
+- Deprecated/removed config keys are ignored silently (no warnings in normal flow).
+- Batch ZIP contract enforces `rag-config.yaml` presence for both stacks.
+
+### Validation matrix (executed)
+
+- Python test suite: full run green (`tools/rag/tests/`).
+- .NET test suite: full run green (`tools/rag-dotnet/src/RagTools.Tests/`).
+- E2E subset for HTTP/container path: green.
+- Manual live checks: both Python (`:3002`) and .NET (`:3001`) ingest endpoints + remote CLI push verified.
+- Live HTTP smoke script updated to current MCP contract (`get_history`) and made collection-agnostic.
+
+### Current status after stabilization
+
+- Runtime behavior is aligned and stable across Python and .NET for the validated flows above.
+- Remaining roadmap item unchanged: `P3-8` (cross-collection integration tests).

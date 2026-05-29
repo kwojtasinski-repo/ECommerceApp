@@ -5,7 +5,7 @@ Shows exactly what text/description comes back for a question.
   python manual_query.py --docker query_docs  "entity ID pattern"
   python manual_query.py --docker read_docs   "TypedId abstract record"
   python manual_query.py --docker list_adrs
-  python manual_query.py --docker get_adr_history 0016
+    python manual_query.py --docker get_history 0016
 
 Usage:
   python manual_query.py [--local|--docker] <tool> [question] [extra_arg]
@@ -140,7 +140,7 @@ def _show_adr_history(r: dict):
     main = r.get("main")
     amendments = r.get("amendments", [])
     total = 1 + len(amendments) if main else len(amendments)
-    print(f"\n  get_adr_history returned main + {len(amendments)} amendment(s):\n")
+    print(f"\n  get_history returned main + {len(amendments)} amendment(s):\n")
     docs = []
     if main:
         docs.append(("MAIN", main))
@@ -163,7 +163,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--docker", action="store_true")
     ap.add_argument("--local",  action="store_true")
-    ap.add_argument("tool", choices=["query_docs","read_docs","list_adrs","get_adr_history"])
+    ap.add_argument("tool", choices=["query_docs","read_docs","list_adrs","get_history"])
     ap.add_argument("question", nargs="?", default="")
     ap.add_argument("extra",    nargs="?", default="")
     args = ap.parse_args()
@@ -187,9 +187,9 @@ def main():
             r = _call(proc, "list_adrs", {})
             _show_list_adrs(r)
 
-        elif args.tool == "get_adr_history":
+        elif args.tool == "get_history":
             adr_id = args.question or args.extra
-            r = _call(proc, "get_adr_history", {"adr_id": adr_id})
+            r = _call(proc, "get_history", {"id": adr_id})
             _show_adr_history(r)
 
     except TimeoutError:
