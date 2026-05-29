@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using RagTools.Core.Config;
 
 namespace RagTools.Core.History;
 
@@ -9,6 +10,7 @@ namespace RagTools.Core.History;
 public sealed class RagHistoryService(
     IEmbedder embedder,
     IDocumentStore store,
+    IConfigSource configSource,
     ILogger<RagHistoryService> logger) : IRagHistoryService
 {
     public const string DefaultHistoryField = "adr_id";
@@ -47,11 +49,14 @@ public sealed class RagHistoryService(
 
     private async Task<string> ResolveHistoryFieldAsync(string collection, CancellationToken ct)
     {
+        // ADR-0028 Phase 3 / P3-X: route through IConfigSource (cached + mode-switched) instead
+        // of calling store.FetchConfigAsync directly. The mounted fallback (FileConfigSource)
+        // returns the configured default, so the empty-string branch below is purely defensive.
         try
         {
-            var configPayload = await store.FetchConfigAsync(collection, ct);
-            return !string.IsNullOrEmpty(configPayload?.HistoryField)
-                ? configPayload.HistoryField
+            var payload = await configSource.GetEffectiveAsync(collection, ct);
+            return !string.IsNullOrEmpty(payload.HistoryField)
+                ? payload.HistoryField
                 : DefaultHistoryField;
         }
         catch (OperationCanceledException) { throw; }

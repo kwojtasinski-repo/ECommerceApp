@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using RagTools.Core;
+using RagTools.Core.Config;
 using RagTools.Core.History;
 
 namespace RagTools.Tests.History;
@@ -52,15 +53,28 @@ public class RagHistoryServiceTests
         public void Dispose() { }
     }
 
+    private sealed class FakeConfigSource : IConfigSource
+    {
+        public RagConfigPayload Payload { get; set; } = new();
+        public Func<string, CancellationToken, ValueTask<RagConfigPayload>>? Handler { get; set; }
+        public ValueTask<RagConfigPayload> GetEffectiveAsync(string collection, CancellationToken ct = default)
+            => Handler is null ? ValueTask.FromResult(Payload) : Handler(collection, ct);
+        public void Invalidate(string collection) { }
+    }
+
     private static DocumentSearchResult Hit(string relPath, int startLine, string breadcrumb = "", string docKind = "doc", string text = "txt") =>
         new(0.5f, relPath, "", docKind, AdrId: null, breadcrumb, StartLine: startLine, EndLine: startLine, Text: text);
 
-    private static RagHistoryService Build(out FakeEmbedder embedder, out FakeStore store)
+    private static RagHistoryService Build(out FakeEmbedder embedder, out FakeStore store, out FakeConfigSource config)
     {
         embedder = new FakeEmbedder();
         store = new FakeStore();
-        return new RagHistoryService(embedder, store, NullLogger<RagHistoryService>.Instance);
+        config = new FakeConfigSource();
+        return new RagHistoryService(embedder, store, config, NullLogger<RagHistoryService>.Instance);
     }
+
+    private static RagHistoryService Build(out FakeEmbedder embedder, out FakeStore store)
+        => Build(out embedder, out store, out _);
 
     [Theory]
     [InlineData("")]
@@ -98,9 +112,9 @@ public class RagHistoryServiceTests
     [Fact]
     public async Task UsesConfiguredHistoryField_WhenPresent()
     {
-        var sut = Build(out var embedder, out var store);
+        var sut = Build(out var embedder, out var store, out var config);
         embedder.Handler = (_, _) => Task.FromResult(new float[] { 0.1f });
-        store.FetchConfigHandler = (_, _) => Task.FromResult<RagConfigPayload?>(new RagConfigPayload { HistoryField = "rfc_id" });
+        config.Payload = new RagConfigPayload { HistoryField = "rfc_id" };
         store.SearchHandler = (_, _, _, _) => Task.FromResult<IReadOnlyList<DocumentSearchResult>>(Array.Empty<DocumentSearchResult>());
 
         var outcome = await sut.GetAsync(new HistoryRequest("c", "RFC-003"));
@@ -112,9 +126,9 @@ public class RagHistoryServiceTests
     [Fact]
     public async Task FallsBackToDefaultField_WhenConfigMissing()
     {
-        var sut = Build(out var embedder, out var store);
+        var sut = Build(out var embedder, out var store, out var config);
         embedder.Handler = (_, _) => Task.FromResult(new float[] { 0.1f });
-        store.FetchConfigHandler = (_, _) => Task.FromResult<RagConfigPayload?>(null);
+        config.Payload = new RagConfigPayload { HistoryField = "" };
         store.SearchHandler = (_, _, _, _) => Task.FromResult<IReadOnlyList<DocumentSearchResult>>(Array.Empty<DocumentSearchResult>());
 
         var outcome = await sut.GetAsync(new HistoryRequest("c", "0016"));
@@ -125,9 +139,9 @@ public class RagHistoryServiceTests
     [Fact]
     public async Task FallsBackToDefaultField_WhenFetchConfigThrows()
     {
-        var sut = Build(out var embedder, out var store);
+        var sut = Build(out var embedder, out var store, out var config);
         embedder.Handler = (_, _) => Task.FromResult(new float[] { 0.1f });
-        store.FetchConfigHandler = (_, _) => throw new InvalidOperationException("config gone");
+        config.Handler = (_, _) => throw new InvalidOperationException("config gone");
         store.SearchHandler = (_, _, _, _) => Task.FromResult<IReadOnlyList<DocumentSearchResult>>(Array.Empty<DocumentSearchResult>());
 
         var outcome = await sut.GetAsync(new HistoryRequest("c", "0016"));

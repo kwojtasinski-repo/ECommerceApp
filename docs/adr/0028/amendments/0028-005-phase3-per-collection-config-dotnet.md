@@ -154,14 +154,19 @@ All three are now fixed.
 
 ## Known orphans (not part of this amendment)
 
-- **P3-X** — `RagHistoryService` still reads `cfg.Query.HistoryField` directly even
-  though `RagConfigPayload.HistoryField` exists. Single read site; pending refactor.
-- **P3-Y** — `AdrDocKind` / `AmendmentDocKind` are persisted but not read anywhere on
-  the HTTP path; chunk classification still uses the mounted `MetadataRulesSection`
-  values during ingest.
+- **P3-X** — *Resolved 2026-05-28 in a follow-up commit on the same branch:*
+  `RagHistoryService` now resolves `HistoryField` via `IConfigSource.GetEffectiveAsync`
+  instead of calling `IDocumentStore.FetchConfigAsync` directly. The change brings the
+  per-collection lookup through `CachingConfigSource` and respects the active mode-switch
+  (`FileConfigSource` / `QdrantConfigSource` / `LayeredConfigSource`).
+- **~~P3-Y~~ (withdrawn)** — Earlier draft listed `AdrDocKind` / `AmendmentDocKind` as
+  orphan. Re-audit: they are read on the HTTP path by
+  `QdrantDocumentStore.ListAdrsAsync` (directly via `FetchConfigAsync`, intentionally
+  uncached because `list_adrs` is a low-traffic orientation tool), and ingest-time chunk
+  classification uses the per-batch `MetadataRules` passed through
+  `DocumentProcessingRequest.DocKindOverride` from `BatchIngestService`. No orphan.
 
-Both are tracked in `/memories/repo/rag-mcp-anomalies.md` and the roadmap follow-ups
-section. Neither blocks Phase 3 acceptance for the .NET server.
+Both notes are tracked in `/memories/repo/rag-mcp-anomalies.md`.
 
 ---
 

@@ -208,7 +208,7 @@ public sealed class IngestE2ETests : IClassFixture<IngestE2EFixture>, IDisposabl
             _fx.Embedder!, _fx.Store!, contentSource, configSource,
             NullLogger<RagTools.Core.ReadDocs.RagReadDocsService>.Instance);
         var historyService = new RagTools.Core.History.RagHistoryService(
-            _fx.Embedder!, _fx.Store!,
+            _fx.Embedder!, _fx.Store!, configSource,
             NullLogger<RagTools.Core.History.RagHistoryService>.Instance);
         var listService = new RagTools.Core.Adrs.RagListService(
             _fx.Store!,

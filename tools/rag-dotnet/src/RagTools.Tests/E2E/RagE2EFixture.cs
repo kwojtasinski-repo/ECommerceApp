@@ -140,7 +140,7 @@ public sealed class RagE2EFixture : IAsyncLifetime
             _embedder, qdrantDocStore, contentSource, configSource,
             Microsoft.Extensions.Logging.Abstractions.NullLogger<RagTools.Core.ReadDocs.RagReadDocsService>.Instance);
         var historyService = new RagTools.Core.History.RagHistoryService(
-            _embedder, qdrantDocStore,
+            _embedder, qdrantDocStore, configSource,
             Microsoft.Extensions.Logging.Abstractions.NullLogger<RagTools.Core.History.RagHistoryService>.Instance);
         var listService = new RagTools.Core.Adrs.RagListService(
             qdrantDocStore,
