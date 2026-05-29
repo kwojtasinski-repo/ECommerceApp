@@ -60,20 +60,21 @@ public sealed class DocumentProcessor(
 
         var collection = request.Collection.Value;
 
-        // Resolve per-collection config once for this document (ADR-0028 Phase 3 / P3-3b).
-        // The chunker uses MaxTokens/OverlapTokens overrides from here; weight resolution stays on
-        // mounted cfg for now (per-collection ranking weights tracked as P3-3c).
+        // Resolve per-collection config once for this document (ADR-0028 Phase 3 / P3-3b + P3-3c).
+        // Chunker uses MaxTokens/OverlapTokens from here; weights resolved against payload.Weights.
         var payload = await configSource.GetEffectiveAsync(collection, ct);
 
         // 1. Sanitize input (U+FFFD → '?'). No-op if clean.
         var content = TextSanitizer.RemoveReplacementChars(request.Content, request.RelPath, logger);
 
         // 2. Title, kind, adr_id, weight.
+        // ADR-0028 Phase 3 / P3-3c: weights resolved from the per-collection payload (Weights);
+        // StubByteThreshold stays mounted-only — it's not persisted in RagConfigPayload.
         var title  = DocumentMetadata.ExtractTitle(content, request.RelPath);
         var kind   = request.DocKindOverride ?? cfg.DetectDocKind(request.RelPath);
         var adrId  = request.AdrIdOverride   ?? cfg.DetectAdrId(request.RelPath);
         var size   = request.FileSizeBytes ?? content.Length;
-        var weight = RankingWeightResolver.Resolve(request.RelPath, size, cfg.Ranking);
+        var weight = RankingWeightResolver.Resolve(request.RelPath, size, payload.Weights, cfg.Ranking.StubByteThreshold);
 
         // 3. Chunk (heading-aware MarkdownChunker — per-collection MaxTokens/OverlapTokens).
         var chunks = chunker.Chunk(content, request.RelPath, payload.MaxTokens, payload.OverlapTokens);

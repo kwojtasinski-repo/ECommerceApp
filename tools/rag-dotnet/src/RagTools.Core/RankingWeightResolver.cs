@@ -20,14 +20,23 @@ public static class RankingWeightResolver
     /// Returns 1.0 if no rule matches.
     /// </summary>
     public static float Resolve(string relPath, int fileSizeBytes, RankingSection ranking)
+        => Resolve(relPath, fileSizeBytes, ranking.Weights, ranking.StubByteThreshold);
+
+    /// <summary>
+    /// Overload using an explicit weight list + stub-byte threshold. Used by the HTTP path,
+    /// which resolves <paramref name="weights"/> from the per-collection
+    /// <see cref="RagConfigPayload.Weights"/> (ADR-0028 Phase 3 / P3-3c) while the stub-byte
+    /// threshold stays mounted-only.
+    /// </summary>
+    public static float Resolve(string relPath, int fileSizeBytes, List<WeightEntry> weights, int stubByteThreshold)
     {
         var p = relPath.Replace('\\', '/');
-        if (fileSizeBytes < ranking.StubByteThreshold && p.Contains("/example-implementation/"))
+        if (fileSizeBytes < stubByteThreshold && p.Contains("/example-implementation/"))
         {
             return 0.05f;
         }
 
-        foreach (var entry in ranking.Weights)
+        foreach (var entry in weights)
         {
             if (GlobMatch(p, entry.Pattern))
             {
