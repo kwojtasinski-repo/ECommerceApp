@@ -37,6 +37,7 @@ public sealed class IngestControllerTests
         var service   = new BatchIngestService(
             channel, ops,
             new NoopStore(), new NoopConfigSource(),
+            new NoopEmbedder(),
             new RagConfig(),
             NullLogger<BatchIngestService>.Instance);
 
@@ -226,5 +227,13 @@ public sealed class IngestControllerTests
         public ValueTask<RagConfigPayload> GetEffectiveAsync(string collection, CancellationToken ct = default)
             => ValueTask.FromResult(new RagConfigPayload());
         public void Invalidate(string collection) { }
+    }
+
+    private sealed class NoopEmbedder : IEmbedder
+    {
+        public int Dimensions => 384;
+        public Task<float[]> EmbedAsync(string text, CancellationToken ct = default)
+            => Task.FromResult(new float[Dimensions]);
+        public void Dispose() { }
     }
 }

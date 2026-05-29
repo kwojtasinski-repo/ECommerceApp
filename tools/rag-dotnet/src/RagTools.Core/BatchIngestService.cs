@@ -41,6 +41,7 @@ public sealed class BatchIngestService(
     OperationStore operations,
     IDocumentStore store,
     IConfigSource configSource,
+    IEmbedder embedder,
     RagConfig cfg,
     ILogger<BatchIngestService> logger) : IBatchIngestService
 {
@@ -65,12 +66,15 @@ public sealed class BatchIngestService(
 
         // P3-1/P3-5: persist effective config snapshot for this collection *before*
         // queuing jobs so downstream queries always observe a config matching the
-        // ingested data. If persistence fails the batch is rejected — the
-        // alternative (queue jobs, lose config) would leave the collection in an
-        // inconsistent state for layered/qdrant config modes.
+        // ingested data. The collection itself may not yet exist on a first-batch
+        // upload (CLI seed flow / `/ingest/{collection}/batch` against a fresh
+        // collection), so ensure it first — Qdrant rejects upserts to missing
+        // collections with NotFound and the original `EnsureCollection: true` hop
+        // in DocumentProcessor only runs later, on the worker thread.
         var payload = BuildEffectivePayload(request.BatchRules);
         try
         {
+            await store.EnsureCollectionAsync(request.Collection, embedder.Dimensions, ct);
             await store.StoreConfigAsync(request.Collection, payload, ct);
             configSource.Invalidate(request.Collection);
             logger.LogInformation(

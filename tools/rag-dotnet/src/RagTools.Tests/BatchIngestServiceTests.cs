@@ -27,6 +27,7 @@ public sealed class BatchIngestServiceTests
         configSource = new StubConfigSource();
         return new BatchIngestService(
             channel, operations, store, configSource,
+            new StubEmbedder(),
             cfg ?? new RagConfig(),
             NullLogger<BatchIngestService>.Instance);
     }
@@ -34,14 +35,25 @@ public sealed class BatchIngestServiceTests
     private static BatchIngestService CreateService(int channelCapacity, out IngestChannel channel, out OperationStore operations)
         => CreateService(channelCapacity, out channel, out operations, out _, out _);
 
+    private sealed class StubEmbedder : IEmbedder
+    {
+        public int Dimensions => 384;
+        public Task<float[]> EmbedAsync(string text, CancellationToken ct = default)
+            => Task.FromResult(new float[Dimensions]);
+        public void Dispose() { }
+    }
+
     private sealed class StubStore : IDocumentStore
     {
         public List<(string Collection, RagConfigPayload Payload)> Stored { get; } = new();
+        public List<string> CallOrder { get; } = new();
         public Func<string, RagConfigPayload, CancellationToken, Task>? OnStoreConfig { get; set; }
+        public Func<string, int, CancellationToken, Task>? OnEnsureCollection { get; set; }
 
         public Task StoreConfigAsync(string collection, RagConfigPayload config, CancellationToken ct = default)
         {
             ct.ThrowIfCancellationRequested();
+            CallOrder.Add($"StoreConfig:{collection}");
             if (OnStoreConfig is not null) return OnStoreConfig(collection, config, ct);
             Stored.Add((collection, config));
             return Task.CompletedTask;
@@ -63,7 +75,11 @@ public sealed class BatchIngestServiceTests
         public Task<IReadOnlyList<AdrSummary>> ListAdrsAsync(string collection, CancellationToken ct = default)
             => Task.FromResult<IReadOnlyList<AdrSummary>>([]);
         public Task EnsureCollectionAsync(string collection, int dimensions, CancellationToken ct = default)
-            => Task.CompletedTask;
+        {
+            CallOrder.Add($"EnsureCollection:{collection}:{dimensions}");
+            if (OnEnsureCollection is not null) return OnEnsureCollection(collection, dimensions, ct);
+            return Task.CompletedTask;
+        }
         public Task RecreateCollectionAsync(string collection, int dimensions, CancellationToken ct = default)
             => Task.CompletedTask;
         public void Dispose() { }
@@ -384,5 +400,38 @@ public sealed class BatchIngestServiceTests
         var payload = store.Stored[0].Payload;
         Assert.Null(payload.AdrDocKind);
         Assert.Null(payload.AmendmentDocKind);
+    }
+
+    [Fact]
+    public async Task Enqueue_Success_EnsuresCollectionBeforeStoringConfig()
+    {
+        // Regression: P3-1/P3-5 originally called StoreConfigAsync against a
+        // collection that may not yet exist (fresh-seed CLI flow), causing
+        // Qdrant to reject the config-point upsert with NotFound → HTTP 500.
+        var sut = CreateService(10, out _, out _, out var store, out _);
+
+        await sut.EnqueueAsync(new BatchIngestRequest(
+            "fresh", [Doc("a.md")], BatchRules: null, Warnings: []));
+
+        Assert.Equal(
+            new[] { "EnsureCollection:fresh:384", "StoreConfig:fresh" },
+            store.CallOrder);
+    }
+
+    [Fact]
+    public async Task Enqueue_EnsureCollectionFails_ReturnsFailureAndDoesNotPersistConfig()
+    {
+        var sut = CreateService(10, out var channel, out _, out var store, out var configSource);
+        store.OnEnsureCollection = (_, _, _) => throw new InvalidOperationException("qdrant unreachable");
+
+        var outcome = await sut.EnqueueAsync(new BatchIngestRequest(
+            "c", [Doc("a.md")], BatchRules: null, Warnings: []));
+
+        var failure = Assert.IsType<BatchIngestOutcome.Failure>(outcome);
+        Assert.Equal(BatchIngestError.ChannelWriteFailed, failure.Error);
+        Assert.Contains("qdrant unreachable", failure.Message);
+        Assert.Empty(store.Stored);
+        Assert.Empty(configSource.Invalidated);
+        Assert.Equal(0, channel.PendingCount);
     }
 }
