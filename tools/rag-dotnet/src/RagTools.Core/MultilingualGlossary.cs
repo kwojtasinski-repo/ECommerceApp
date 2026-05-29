@@ -89,6 +89,21 @@ public sealed class MultilingualGlossary
         return query + string.Concat(Enumerable.Repeat(" " + expansion, ExpansionRepeat));
     }
 
+    /// <summary>
+    /// Returns a new <see cref="MultilingualGlossary"/> containing only the entries whose
+    /// <c>english</c> key (case-insensitive) is in <paramref name="allowedEnglishKeys"/>.
+    /// Used by <c>GlossaryExpansionPreprocessor</c> to honor a per-collection allow-list
+    /// stored in <see cref="RagConfigPayload.GlossaryTerms"/>. An empty allow-list returns
+    /// <see cref="Empty"/>; callers decide whether to fall back to the full mounted glossary.
+    /// </summary>
+    public MultilingualGlossary FilterByEnglishKeys(IReadOnlyCollection<string> allowedEnglishKeys)
+    {
+        if (_entries.Count == 0 || allowedEnglishKeys.Count == 0) return Empty;
+        var set = new HashSet<string>(allowedEnglishKeys, StringComparer.OrdinalIgnoreCase);
+        var filtered = _entries.Where(e => set.Contains(e.English)).ToList();
+        return filtered.Count == 0 ? Empty : new MultilingualGlossary(filtered);
+    }
+
     // ── YAML deserialization models ───────────────────────────────────────────
 
     private sealed class GlossaryFile
