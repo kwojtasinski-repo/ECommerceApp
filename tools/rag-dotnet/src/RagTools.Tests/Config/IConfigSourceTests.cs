@@ -150,7 +150,7 @@ public sealed class IConfigSourceTests : IDisposable
             {
                 FetchK = 77,
                 Weights = [new WeightEntry { Pattern = "x/**", Weight = 2.0f }],
-                GlossaryTerms = ["override"],
+                GlossaryEntries = [new GlossaryEntry("override", ["pl-override"])],
             },
         };
         var sut = new LayeredConfigSource(defaults, store);
@@ -160,7 +160,7 @@ public sealed class IConfigSourceTests : IDisposable
         Assert.Equal(77, effective.FetchK);
         Assert.Single(effective.Weights);
         Assert.Equal("x/**", effective.Weights[0].Pattern);
-        Assert.Single(effective.GlossaryTerms);
-        Assert.Equal("override", effective.GlossaryTerms[0]);
+        Assert.Single(effective.GlossaryEntries);
+        Assert.Equal("override", effective.GlossaryEntries[0].English);
     }
 }

@@ -21,11 +21,14 @@ public sealed class RagConfigPayload
     // Ranking weights (pattern → multiplier, first match wins)
     public List<WeightEntry> Weights { get; set; } = [];
 
-    // Glossary terms (expanded at query time to improve recall)
-    public List<string> GlossaryTerms { get; set; } = [];
+    // Per-collection multilingual glossary entries (expanded at query time to improve recall).
+    // P3-3 (ADR-0028): full per-collection entries (English → patterns). Replaced the earlier
+    // GlossaryTerms allow-list field. Schema bumped to 2.
+    public List<GlossaryEntry> GlossaryEntries { get; set; } = [];
 
-    // Schema version for future migrations
-    public int SchemaVersion { get; set; } = 1;
+    // Schema version for future migrations.
+    // 2 — GlossaryTerms (List<string> allow-list) replaced by GlossaryEntries (List<GlossaryEntry>).
+    public int SchemaVersion { get; set; } = 2;
 
     /// <summary>
     /// Qdrant payload field used to group document chunks by history ID.
@@ -49,7 +52,7 @@ public sealed class RagConfigPayload
     public string? AmendmentDocKind { get; set; }
 
     /// <summary>Create a <see cref="RagConfigPayload"/> from a loaded <see cref="RagConfig"/>.</summary>
-    public static RagConfigPayload From(RagConfig cfg, IEnumerable<string>? glossaryTerms = null) =>
+    public static RagConfigPayload From(RagConfig cfg, IEnumerable<GlossaryEntry>? glossaryEntries = null) =>
         new()
         {
             MaxTokens      = cfg.Chunker?.MaxTokens ?? 512,
@@ -57,9 +60,30 @@ public sealed class RagConfigPayload
             ScoreThreshold = cfg.Query?.ScoreThreshold ?? 0.30f,
             FetchK         = cfg.Query?.FetchK ?? 20,
             Weights        = cfg.Ranking?.Weights ?? [],
-            GlossaryTerms  = glossaryTerms?.ToList() ?? [],
-            SchemaVersion  = 1,
+            GlossaryEntries = glossaryEntries?.ToList() ?? [],
+            SchemaVersion  = 2,
             AdrDocKind     = cfg.MetadataRules.Adr?.AdrDocKind,
             AmendmentDocKind = cfg.MetadataRules.Adr?.AmendmentDocKind,
         };
+}
+
+/// <summary>
+/// Serializable per-collection multilingual glossary entry.
+/// <c>English</c> is the synonym group appended on match; <c>Patterns</c> are lowercase
+/// non-English tokens (word-boundary-matched at query time).
+/// Stored in <see cref="RagConfigPayload.GlossaryEntries"/>; mirrored from
+/// <c>multilingual-glossary.yaml</c> by the batch ingest path.
+/// </summary>
+public sealed class GlossaryEntry
+{
+    public string English { get; set; } = string.Empty;
+    public List<string> Patterns { get; set; } = [];
+
+    public GlossaryEntry() { }
+
+    public GlossaryEntry(string english, IEnumerable<string> patterns)
+    {
+        English = english;
+        Patterns = patterns.ToList();
+    }
 }

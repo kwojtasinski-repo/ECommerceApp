@@ -11,15 +11,12 @@ public static class RagConfigPayloadExtensions
     ///   • Scalars (MaxTokens, OverlapTokens, ScoreThreshold, FetchK) — override wins if non-default
     ///     (zero / unset is treated as "not specified" to allow partial overrides).
     ///   • Weights (List&lt;WeightEntry&gt;) — override wins if non-empty; otherwise keep defaults.
-    ///   • GlossaryTerms — per ADR-0028 Amendment 004:
-    ///       null      → keep defaults (R3 fallback preserved)
-    ///       []        → explicit opt-out (no expansion)
-    ///       [...]     → use override verbatim (no merge)
-    ///     Note: <see cref="RagConfigPayload.GlossaryTerms"/> is non-nullable List, so the null case
-    ///     is represented in stored JSON by an absent property — deserialized as default ([]) which we
-    ///     cannot distinguish from explicit opt-out. To preserve the three-state semantic the override
-    ///     side carries an explicit sentinel: any empty list in a stored override is treated as opt-out;
-    ///     to "keep defaults" the publisher must omit the override entirely.
+    ///   • GlossaryEntries — per ADR-0028 Phase 3 / P3-3 (Design B): override wins verbatim.
+    ///       []        → no per-collection entries (preprocessor decides fallback: mounted or none)
+    ///       [...]     → use override entries verbatim (no merge with mounted)
+    ///     Note: <see cref="RagConfigPayload.GlossaryEntries"/> is a non-nullable List, so the
+    ///     stored JSON cannot distinguish "absent" from "explicit empty". The two preprocessor
+    ///     classes encode the fallback policy at the DI level (RAG_GLOSSARY_FALLBACK env switch).
     ///   • SchemaVersion — override wins if &gt; 0.
     ///   • HistoryField, AdrDocKind, AmendmentDocKind — override wins if non-null / non-empty.
     /// </summary>
@@ -31,7 +28,7 @@ public static class RagConfigPayloadExtensions
             ScoreThreshold    = overridePayload.ScoreThreshold > 0f ? overridePayload.ScoreThreshold : defaults.ScoreThreshold,
             FetchK            = overridePayload.FetchK > 0 ? overridePayload.FetchK : defaults.FetchK,
             Weights           = overridePayload.Weights.Count > 0 ? overridePayload.Weights : defaults.Weights,
-            GlossaryTerms     = overridePayload.GlossaryTerms,
+            GlossaryEntries   = overridePayload.GlossaryEntries,
             SchemaVersion     = overridePayload.SchemaVersion > 0 ? overridePayload.SchemaVersion : defaults.SchemaVersion,
             HistoryField      = !string.IsNullOrEmpty(overridePayload.HistoryField)
                                     ? overridePayload.HistoryField

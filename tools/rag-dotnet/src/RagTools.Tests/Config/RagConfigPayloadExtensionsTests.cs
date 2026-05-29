@@ -17,7 +17,7 @@ public sealed class RagConfigPayloadExtensionsTests
         ScoreThreshold = 0.30f,
         FetchK = 20,
         Weights = [new WeightEntry { Pattern = "docs/**", Weight = 1.0f }],
-        GlossaryTerms = ["default-term"],
+        GlossaryEntries = [new GlossaryEntry("default-term", ["pl-default"])],
         SchemaVersion = 1,
         HistoryField = "adr_id",
         AdrDocKind = "adr_main",
@@ -107,27 +107,35 @@ public sealed class RagConfigPayloadExtensionsTests
     }
 
     [Fact]
-    public void Merge_GlossaryTerms_OverrideWinsVerbatim_NoMerging()
+    public void Merge_GlossaryEntries_OverrideWinsVerbatim_NoMerging()
     {
-        // Per the documented three-state semantic, the override's GlossaryTerms
-        // is taken verbatim. Empty list = opt-out; non-empty = use override only.
+        // Per ADR-0028 Phase 3 / P3-3 (Design B): override's GlossaryEntries is taken verbatim.
+        // The two preprocessor classes (Mounted/DbOnly) encode the empty-list fallback policy
+        // at the DI level; Merge itself never combines mounted and override entries.
         var defaults = Defaults();
-        var ovr = new RagConfigPayload { GlossaryTerms = ["override-only"] };
+        var ovr = new RagConfigPayload
+        {
+            GlossaryEntries = [new GlossaryEntry("override-only", ["pl-override"])],
+        };
 
         var merged = defaults.Merge(ovr);
 
-        Assert.Single(merged.GlossaryTerms);
-        Assert.Equal("override-only", merged.GlossaryTerms[0]);
+        Assert.Single(merged.GlossaryEntries);
+        Assert.Equal("override-only", merged.GlossaryEntries[0].English);
+        Assert.Equal("pl-override", merged.GlossaryEntries[0].Patterns[0]);
     }
 
     [Fact]
-    public void Merge_GlossaryTerms_EmptyOverride_TreatedAsOptOut()
+    public void Merge_GlossaryEntries_EmptyOverride_ReplacesDefaults()
     {
+        // Empty list survives the merge verbatim (no fallback to mounted entries inside Merge).
+        // The preprocessor class chosen at DI time decides whether "empty" means
+        // "use mounted YAML" (MountedFallback...) or "no expansion" (DbOnly...).
         var defaults = Defaults();
-        var ovr = new RagConfigPayload { GlossaryTerms = [] };
+        var ovr = new RagConfigPayload { GlossaryEntries = [] };
 
         var merged = defaults.Merge(ovr);
 
-        Assert.Empty(merged.GlossaryTerms);
+        Assert.Empty(merged.GlossaryEntries);
     }
 }

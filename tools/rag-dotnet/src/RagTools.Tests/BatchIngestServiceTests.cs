@@ -309,7 +309,7 @@ public sealed class BatchIngestServiceTests
 
         Assert.Single(store.Stored);
         Assert.Equal("mycoll", store.Stored[0].Collection);
-        Assert.Equal(1, store.Stored[0].Payload.SchemaVersion);
+        Assert.Equal(2, store.Stored[0].Payload.SchemaVersion);
     }
 
     [Fact]

@@ -74,8 +74,8 @@ public sealed class BatchIngestService(
             await store.StoreConfigAsync(request.Collection, payload, ct);
             configSource.Invalidate(request.Collection);
             logger.LogInformation(
-                "RAG_PHASE3 stored config for collection={Collection} terms={Terms}",
-                request.Collection, payload.GlossaryTerms.Count);
+                "RAG_PHASE3 stored config for collection={Collection} glossary_entries={Entries}",
+                request.Collection, payload.GlossaryEntries.Count);
         }
         catch (OperationCanceledException)
         {
@@ -148,10 +148,12 @@ public sealed class BatchIngestService(
     // Server defaults come from the mounted RagConfig; per-batch BatchRules (if any)
     // override only the adr.* doc_kind fields — they are the only doc-kind hints that
     // can legally vary between batches of the same collection.
-    // Glossary persistence is wired in P3-3.
+    // Glossary entries are read from the mounted multilingual-glossary.yaml so they are
+    // persisted into the per-collection __config__ point (ADR-0028 Phase 3 / P3-3).
     private RagConfigPayload BuildEffectivePayload(MetadataRulesSection? batchRules)
     {
-        var payload = RagConfigPayload.From(cfg);
+        var mountedGlossary = MultilingualGlossary.Load(cfg.GlossaryPath);
+        var payload = RagConfigPayload.From(cfg, mountedGlossary.EnumerateEntries());
         if (batchRules?.Adr is { } adr)
         {
             if (!string.IsNullOrWhiteSpace(adr.AdrDocKind))       payload.AdrDocKind       = adr.AdrDocKind;

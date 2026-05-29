@@ -37,8 +37,21 @@ public sealed class EmbedderPipelineBuilder
     /// </summary>
     public EmbedderPipelineBuilder WithPreprocessor<T>()
         where T : class, IEmbedderPreprocessor
+        => WithPreprocessor(typeof(T));
+
+    /// <summary>
+    /// Register a preprocessor by runtime <see cref="Type"/>. The type must implement
+    /// <see cref="IEmbedderPreprocessor"/>. Used by callers that pick the concrete
+    /// preprocessor at runtime (mode switches in <c>Program.cs</c>).
+    /// </summary>
+    public EmbedderPipelineBuilder WithPreprocessor(Type preprocessorType)
     {
-        _preprocessorTypes.Add(typeof(T));
+        ArgumentNullException.ThrowIfNull(preprocessorType);
+        if (!typeof(IEmbedderPreprocessor).IsAssignableFrom(preprocessorType))
+            throw new ArgumentException(
+                $"{preprocessorType.FullName} does not implement {nameof(IEmbedderPreprocessor)}.",
+                nameof(preprocessorType));
+        _preprocessorTypes.Add(preprocessorType);
         return this;
     }
 

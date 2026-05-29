@@ -4,10 +4,13 @@ namespace RagTools.Core.Config;
 /// Default for HTTP mode. Returns mounted defaults merged with a per-collection Qdrant
 /// override (override wins per-field; absent override fields keep the default).
 ///
-/// Glossary semantics (see ADR-0028 Amendment 004):
-///   • override <see cref="RagConfigPayload.GlossaryTerms"/> is null   → keep mounted glossary
-///   • override list is empty (explicit opt-out)                       → no expansion
-///   • override list has entries                                       → use override, no merge
+/// Glossary semantics (see ADR-0028 Phase 3 / P3-3, Design B):
+///   • override <see cref="RagConfigPayload.GlossaryEntries"/> is empty → no per-collection
+///     entries; the configured preprocessor class decides the fallback
+///     (<see cref="MountedFallbackGlossaryExpansionPreprocessor"/> uses the mounted YAML;
+///     <see cref="DbOnlyGlossaryExpansionPreprocessor"/> performs no expansion).
+///   • override list has entries                                       → use override verbatim
+///                                                                      (no merge with mounted)
 ///
 /// Caching is the responsibility of <see cref="CachingConfigSource"/> (the decorator). This
 /// class always hits <see cref="IDocumentStore.FetchConfigAsync"/> — which is itself cached

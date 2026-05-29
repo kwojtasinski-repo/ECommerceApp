@@ -108,8 +108,8 @@ if (transport is "http" or "sse")
     var webBuilder = WebApplication.CreateBuilder(args);
     webBuilder.Logging.SetMinimumLevel(logLevel);
 
-    // Wire ONNX embedder pipeline.
-    webBuilder.Services.AddOnnxEmbedderPipeline(modelDir).Register();
+    // Wire ONNX embedder pipeline (with mode-selected glossary preprocessor).
+    webBuilder.Services.AddOnnxEmbedderPipeline(modelDir, ResolveGlossaryPreprocessorType("http")).Register();
 
     webBuilder.Services
         .AddControllers()
@@ -176,8 +176,8 @@ else
     builder.Logging.AddConsole(opts => opts.LogToStandardErrorThreshold = LogLevel.Trace);
     builder.Logging.SetMinimumLevel(logLevel);
 
-    // Wire ONNX embedder pipeline.
-    builder.Services.AddOnnxEmbedderPipeline(modelDir).Register();
+    // Wire ONNX embedder pipeline (with mode-selected glossary preprocessor).
+    builder.Services.AddOnnxEmbedderPipeline(modelDir, ResolveGlossaryPreprocessorType("stdio")).Register();
 
     builder.Services
         .AddSingleton(cfg)
@@ -230,5 +230,26 @@ static IConfigSource BuildConfigSource(IServiceProvider sp, string defaultMode)
     };
     Console.Error.WriteLine($"[rag-mcp] config src : {mode} (decorated with IDistributedCache)");
     return new CachingConfigSource(inner, cache);
+}
+
+// Resolves the concrete glossary preprocessor class based on RAG_GLOSSARY_FALLBACK.
+//   "mounted" (default) — MountedFallbackGlossaryExpansionPreprocessor: per-collection
+//     entries from IConfigSource if non-empty, else fall back to the mounted YAML
+//     (server-wide common glossary). Appropriate for STDIO and single-org HTTP.
+//   "none"              — DbOnlyGlossaryExpansionPreprocessor: per-collection entries only;
+//     no expansion when the collection has no stored glossary. Appropriate for true
+//     multitenant SaaS deployments where the operator's mounted YAML must not leak into
+//     tenant queries.
+static Type ResolveGlossaryPreprocessorType(string transport)
+{
+    var mode = (Environment.GetEnvironmentVariable("RAG_GLOSSARY_FALLBACK") ?? "mounted").ToLowerInvariant();
+    Console.Error.WriteLine($"[rag-mcp] glossary   : fallback={mode} (transport={transport})");
+    return mode switch
+    {
+        "mounted" => typeof(MountedFallbackGlossaryExpansionPreprocessor),
+        "none"    => typeof(DbOnlyGlossaryExpansionPreprocessor),
+        _         => throw new InvalidOperationException(
+                        $"Unknown RAG_GLOSSARY_FALLBACK '{mode}'. Expected: mounted | none."),
+    };
 }
 
