@@ -113,6 +113,34 @@
 
 ## Change log
 
+### Session 34 — ADR-0028 Amendment 005: Phase 3 per-collection config .NET delivery (2026-05-28)
+
+**Why**: Ship Phase 3 (P3-1..P3-6 + P3-X follow-up) on the .NET RAG server — per-collection config persistence (Design B: indexer writes `RagConfigPayload` into Qdrant `__config__` point; query side reads through `IConfigSource` with mode switch `RAG_CONFIG_SOURCE` = `file` / `qdrant` / `layered`, wrapped by `CachingConfigSource`). Closes ADR-0028 Amendment 004's documented gap on the .NET side. Python mirror tracked as roadmap step P3-7.
+
+| #   | Change                                                                                                                                                                                                          | Files                                                                                                                                              |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | New ADR-0028 amendment 005 documenting Design B scope (chunker tokens, ranking weights, history field), payload schema, mode switch, and final P3-X resolved / P3-Y withdrawn outcomes                          | `docs/adr/0028/amendments/0028-005-phase3-per-collection-config-dotnet.md` _(new)_, `docs/adr/0028/README.md` _(amendment row + 004 forward pointer)_ |
+| 2   | sln backfill: add amendment 005 to ADR-0028 `amendments` SolutionItems (continuation of the 001–004 listing)                                                                                                    | `ECommerceApp.sln`                                                                                                                                  |
+
+**Counts**: no change. ADRs still 29 (amendment under existing ADR-0028). No new instruction / prompt / agent / skill files.
+
+**Tests**: 525/525 green on `tools/rag-dotnet/RagTools.sln` after P3-X (`2e401c28`).
+
+**Not changed (deliberate)**:
+
+- `docs-index.instructions.md` — ADR-0028 routed via folder router; amendments not listed individually by convention.
+- No pipeline agent / instruction changes — Workflow 12 not triggered.
+- `copilot-instructions.md` unchanged — no new BC.
+
+**Open for next session (P3-7 Python mirror)**:
+
+- Python server still reads ranking weights & chunker tokens from `rag-config.yaml` only.
+- Re-run `tools/rag/compare_queries.py` before AND after P3-7 to attribute deltas cleanly.
+- Schema lock-in: payload key names chosen in amendment 005 become the cross-server contract once Python writes them. Rename later = full re-index on both collections.
+- After P3-7 lands, Amendment 004's framing should be updated (or marked superseded by 005 + Python sibling).
+
+**Refs**: branch `feat/rag-phase3-per-collection-config`, commits `ccd53f1a`, `6413b968`, `7cf09880`, `157b2cf9`, `2e401c28`.
+
 ### Session 30 — RAG auto-cache hook (L3 — host-side PostToolUse) (2026-05-28)
 
 Ships an automated RAG → context-mode FTS5 cache pipeline. The agent now makes **one** RAG call instead of two (no more manual `ctx_index` follow-up). Implemented as a host-side PostToolUse hook in the Copilot Chat hook chain, not inside the context-mode sandbox. Tool detection uses **runtime introspection** of `.vscode/mcp.json` (1h cache, lock-coalesced) so new RAG tools are auto-discovered without code changes.

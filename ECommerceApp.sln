@@ -441,6 +441,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "amendments", "amendments", 
 		docs\adr\0028\amendments\0028-002-batch-manifest-pipeline.md = docs\adr\0028\amendments\0028-002-batch-manifest-pipeline.md
 		docs\adr\0028\amendments\0028-003-transport-aware-tools.md = docs\adr\0028\amendments\0028-003-transport-aware-tools.md
 		docs\adr\0028\amendments\0028-004-per-collection-config-gap.md = docs\adr\0028\amendments\0028-004-per-collection-config-gap.md
+		docs\adr\0028\amendments\0028-005-phase3-per-collection-config-dotnet.md = docs\adr\0028\amendments\0028-005-phase3-per-collection-config-dotnet.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0029", "0029", "{00290000-0000-0000-0000-000000000029}"
