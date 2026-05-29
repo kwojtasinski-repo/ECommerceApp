@@ -231,11 +231,15 @@ def _bind_session_project(project: "str | None"):
 # ── Ingest component factory ──────────────────────────────────────────────────
 
 
-def _make_ingest_components() -> "tuple[OperationStore, asyncio.Queue, IngestWorker]":
-    """Build the shared ingest queue, worker, and operation store.
+def _make_ingest_components() -> "tuple[OperationStore, asyncio.Queue, IngestWorker, Any | None]":
+    """Build the shared ingest queue, worker, operation store, and DocumentStore.
 
     Called once per transport startup (HTTP Streamable or legacy SSE).  Extracted to avoid
-    duplicating the same four lines in both ``_run_sse`` and ``_run_http``.
+    duplicating the same lines in both ``_run_sse`` and ``_run_http``.
+
+    The returned DocumentStore is ``None`` when the active vector store is not Qdrant
+    (memory mode, missing client, embedder dimension not yet resolved) — the ingest
+    controller treats that as "no per-collection config persistence" and behaves as before.
     """
     from ingest_worker import IngestWorker, _build_process_fn
     from operation_store import OperationStore
@@ -244,7 +248,22 @@ def _make_ingest_components() -> "tuple[OperationStore, asyncio.Queue, IngestWor
     queue: asyncio.Queue = asyncio.Queue(maxsize=DEFAULT_CAPACITY)
     process_fn = _build_process_fn(state.ENGINE, state.CFG, store)
     worker = IngestWorker(queue, process_fn)
-    return store, queue, worker
+
+    document_store: "Any | None" = None
+    try:
+        from storage.document_store import DocumentStore
+        state.ENGINE._ensure()
+        client = state.ENGINE._client
+        dims = state.ENGINE.embedder.dimensions
+        if client is not None and dims:
+            document_store = DocumentStore(client, dims)
+    except Exception as exc:
+        print(
+            f"[rag-mcp] WARN: per-collection config persistence disabled ({type(exc).__name__}: {exc})",
+            file=sys.stderr,
+        )
+
+    return store, queue, worker, document_store
 
 
 # ── Transport: stdio ──────────────────────────────────────────────────────────
@@ -277,7 +296,7 @@ async def _run_sse(port: int) -> None:
     from api_key_middleware import ApiKeyMiddleware
     from ingest_routes import build_ingest_routes
 
-    _store, _queue, _worker = _make_ingest_components()
+    _store, _queue, _worker, _doc_store = _make_ingest_components()
 
     @contextlib.asynccontextmanager
     async def lifespan(_app):  # noqa: ANN001
@@ -285,7 +304,7 @@ async def _run_sse(port: int) -> None:
         yield
         await _worker.stop()
 
-    ingest_routes = build_ingest_routes(_store, _queue, DEFAULT_CAPACITY)
+    ingest_routes = build_ingest_routes(_store, _queue, DEFAULT_CAPACITY, document_store=_doc_store)
 
     app = Starlette(
         lifespan=lifespan,
@@ -339,7 +358,7 @@ async def _run_http(port: int) -> None:
     from api_key_middleware import ApiKeyMiddleware
     from ingest_routes import build_ingest_routes
 
-    _store, _queue, _worker = _make_ingest_components()
+    _store, _queue, _worker, _doc_store = _make_ingest_components()
 
     @contextlib.asynccontextmanager
     async def lifespan(_app):  # noqa: ANN001
@@ -372,7 +391,7 @@ async def _run_http(port: int) -> None:
                 await sm_task
             await _worker.stop()
 
-    ingest_routes = build_ingest_routes(_store, _queue, DEFAULT_CAPACITY)
+    ingest_routes = build_ingest_routes(_store, _queue, DEFAULT_CAPACITY, document_store=_doc_store)
 
     app = Starlette(
         lifespan=lifespan,

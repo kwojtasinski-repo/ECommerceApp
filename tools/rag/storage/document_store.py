@@ -59,6 +59,26 @@ class DocumentStore:
         point = self._build_point(payload)
         self._client.upsert(collection_name=collection, points=[point])
 
+    async def ensure_collection(self, collection: str) -> None:
+        """Idempotently create *collection* with the store's vector dimension if missing.
+
+        Mirrors the .NET ``IDocumentStore.EnsureCollectionAsync`` contract and the
+        ordering requirement enforced by commit ``19f955e7`` (BatchIngestService):
+        every per-collection Qdrant write must be preceded by EnsureCollection so
+        fresh-collection seed flows do not fail with ``NotFound``.
+        """
+        from qdrant_client.models import Distance, VectorParams
+
+        try:
+            self._client.get_collection(collection)
+            return
+        except Exception:
+            pass
+        self._client.create_collection(
+            collection,
+            vectors_config=VectorParams(size=self._vector_size, distance=Distance.COSINE),
+        )
+
     # ── Internals (sync — Qdrant client is sync) ──────────────────────────
 
     def _retrieve_config_payload(self, collection: str) -> dict[str, Any] | None:

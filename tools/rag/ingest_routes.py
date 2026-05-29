@@ -37,6 +37,7 @@ from starlette.routing import Route
 
 from ingest_worker import IngestJob
 from operation_store import OperationStore
+from config.payload import RagConfigPayload, WeightEntry
 
 _MAX_BODY_BYTES = 50 * 1024 * 1024                           # 50 MB hard limit
 _COLLECTION_RE  = re.compile(r'^[a-z0-9][a-z0-9_-]*$')      # safe collection names
@@ -61,6 +62,7 @@ class _ZipBatchContent:
     """Successful result of parsing a ZIP ingest payload."""
     entries: list[_FileEntry]
     warnings: list[str] = field(default_factory=list)
+    config_payload: "RagConfigPayload | None" = None
 
 
 def _parse_zip_batch(
@@ -217,7 +219,41 @@ def _parse_zip_batch(
                 status_code=503,
             )
 
-        return _ZipBatchContent(entries=entries, warnings=warnings), None
+        # ── Build per-collection RagConfigPayload (P3-7b) ─────────────────
+        # Mirrors .NET BatchIngestService: ZIP-supplied rag-config.yaml drives
+        # the persisted payload. If absent, an empty payload is stored so the
+        # collection still gets a __config__ point (callers fall back to
+        # mounted defaults via LayeredConfigSource).
+        cfg_raw: dict[str, Any] = {}
+        if "rag-config.yaml" in zip_names:
+            try:
+                cfg_raw = yaml.safe_load(
+                    zf.read("rag-config.yaml").decode("utf-8", errors="replace")
+                ) or {}
+            except Exception:
+                cfg_raw = {}
+        chunker_raw = cfg_raw.get("chunker") or {}
+        ranking_raw = cfg_raw.get("ranking") or {}
+        weights_raw = ranking_raw.get("weights") or []
+        weights = tuple(
+            WeightEntry(
+                pattern=str(w.get("pattern", "")),
+                multiplier=float(w.get("weight", w.get("multiplier", 1.0))),
+            )
+            for w in weights_raw
+            if w.get("pattern")
+        )
+        config_payload = RagConfigPayload(
+            max_tokens=chunker_raw.get("max_tokens"),
+            overlap_tokens=chunker_raw.get("overlap_tokens"),
+            weights=weights,
+        )
+
+        return _ZipBatchContent(
+            entries=entries,
+            warnings=warnings,
+            config_payload=config_payload,
+        ), None
 
 
 # ── IngestController ──────────────────────────────────────────────────────────
@@ -230,10 +266,20 @@ class IngestController:
     so route handlers are plain async methods instead of triple-nested closures.
     """
 
-    def __init__(self, store: OperationStore, queue: asyncio.Queue, capacity: int) -> None:
+    def __init__(
+        self,
+        store: OperationStore,
+        queue: asyncio.Queue,
+        capacity: int,
+        document_store: "Any | None" = None,
+    ) -> None:
         self._store    = store
         self._queue    = queue
         self._capacity = capacity
+        # Optional to keep existing unit tests / non-Qdrant deployments working.
+        # When wired, the controller persists a per-collection __config__ point
+        # via ensure_collection → store_config BEFORE enqueueing any job.
+        self._document_store = document_store
 
     # ── POST /ingest/{collection}/batch ───────────────────────────────────────
 
@@ -270,6 +316,24 @@ class IngestController:
         )
         if error_response is not None:
             return error_response
+
+        # ── Persist per-collection config BEFORE enqueueing (P3-7b) ─────
+        # Mirrors .NET BatchIngestService ordering (commit 19f955e7): the
+        # collection must exist in Qdrant before any per-collection write.
+        if self._document_store is not None and batch_content.config_payload is not None:
+            try:
+                await self._document_store.ensure_collection(collection)
+                await self._document_store.store_config(
+                    collection, batch_content.config_payload
+                )
+            except Exception as exc:
+                return JSONResponse(
+                    {
+                        "error": f"Failed to persist collection config: {exc}",
+                        "code": "InternalServerError",
+                    },
+                    status_code=500,
+                )
 
         operations_list: list[dict[str, Any]] = []
         for entry in batch_content.entries:
@@ -334,9 +398,10 @@ def build_ingest_routes(
     store: OperationStore,
     queue: asyncio.Queue,
     capacity: int = 100,
+    document_store: "Any | None" = None,
 ) -> list[Route]:
     """Return Starlette Route objects wired to the given store and queue."""
-    ctrl = IngestController(store, queue, capacity)
+    ctrl = IngestController(store, queue, capacity, document_store=document_store)
 
     async def _ingest_fallback(request: Request) -> Response:
         # Catches any /ingest/... URL that does not match a declared route.

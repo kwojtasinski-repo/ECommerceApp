@@ -65,6 +65,9 @@ WORKDIR /app
 # The workspace (docs + .github) and Qdrant data are MOUNTED at runtime, not baked in.
 COPY *.py .
 COPY rag-config.yaml .
+# Sub-packages (per-collection config payload + Qdrant storage facade — ADR-0028 Phase 3).
+COPY config/ ./config/
+COPY storage/ ./storage/
 
 # RAG_WORKSPACE tells common.py where the repo root is inside the container.
 # Overridable at runtime via -e RAG_WORKSPACE=...

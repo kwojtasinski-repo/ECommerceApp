@@ -60,11 +60,13 @@ class Config:
 
     @property
     def embedder_model(self) -> str:
-        return self.raw["embedder"]["model"]
+        # Optional in --remote mode (server does the embedding). Empty string
+        # is recorded into the manifest header without crashing the CLI.
+        return self.raw.get("embedder", {}).get("model", "")
 
     @property
     def embedder_device(self) -> str:
-        return self.raw["embedder"].get("device", "cpu")
+        return self.raw.get("embedder", {}).get("device", "cpu")
 
     @property
     def collection(self) -> str:
@@ -116,10 +118,15 @@ class Config:
 
     @property
     def manifest_path(self) -> Path:
-        """RAG_MANIFEST env var overrides config (per-file mount mode, no whole-workspace mount)."""
+        """RAG_MANIFEST env var overrides config (per-file mount mode, no whole-workspace mount).
+
+        Defaults to ``.rag/manifest.json`` under workspace when ``storage.manifest_path``
+        is missing — lets minimal --remote-mode configs omit the whole ``storage`` section.
+        """
         if env := os.environ.get("RAG_MANIFEST"):
             return Path(env)
-        return self.workspace / self.raw["storage"]["manifest_path"]
+        rel = self.raw.get("storage", {}).get("manifest_path", ".rag/manifest.json")
+        return self.workspace / rel
 
     @property
     def stats_path(self) -> Path | None:
