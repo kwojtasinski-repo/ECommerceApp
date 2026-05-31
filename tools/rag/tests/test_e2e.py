@@ -588,6 +588,34 @@ def _build_ingest_zip(workspace_root: Path) -> bytes:
     return buf.getvalue()
 
 
+def _build_custom_ingest_zip(docs: dict[str, str], rag_config_yaml: str) -> bytes:
+    """Build a batch ZIP with custom rag-config and provided markdown docs.
+
+    Used by cross-collection P3-8 tests where each collection has distinct
+    ranking weights but runs on the same server process.
+    """
+    metadata_rules = textwrap.dedent("""\
+        doc_kind_rules:
+          - glob: "docs/**/*.md"
+            kind: "doc"
+    """)
+    queries_yaml = textwrap.dedent("""\
+        named_queries:
+          - name: default
+            question: shared-weight-anchor-zeta
+            top_k: 5
+    """)
+
+    buf = _io_module.BytesIO()
+    with zipfile.ZipFile(buf, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr("rag-config.yaml", rag_config_yaml)
+        zf.writestr("metadata-rules.yaml", metadata_rules)
+        zf.writestr("queries.yaml", queries_yaml)
+        for path, content in docs.items():
+            zf.writestr(path, content)
+    return buf.getvalue()
+
+
 def _batch_ingest_and_wait(base_url: str, collection: str, zip_bytes: bytes, timeout: float = 180.0) -> None:
     """POST zip to /ingest/{collection}/batch and wait for ALL operations to finish.
 
@@ -1977,6 +2005,128 @@ class TestHttpStreamable:
             f"Expected exactly 2 ADRs in the test workspace, got {len(result['adrs'])}. "
             "Workspace mount may be pointing to the real repo."
         )
+
+
+@pytest.mark.http_streamable
+class TestP38CrossCollectionIsolationAndWeights:
+    """P3-8: one HTTP server, separate collections, independent ranking behavior."""
+
+    def test_http_cross_collection_routing_and_weighting(
+        self, tmp_path_factory: pytest.TempPathFactory
+    ) -> None:
+        if not _docker_available():
+            pytest.skip("Docker not available — skipping P3-8 http_streamable test")
+        if not _dotnet_image_exists():
+            pytest.skip("rag-dotnet image not found — build it with: docker compose build rag-dotnet")
+
+        _, _, _, net, qid, mid, base_url = TestCliRemoteUpload._bootstrap_server(tmp_path_factory)
+
+        collection_a = f"p38a_{_uuid_mod.uuid4().hex[:8]}"
+        collection_b = f"p38b_{_uuid_mod.uuid4().hex[:8]}"
+
+        rag_cfg_a = "\n".join([
+            "config_files:",
+            "  metadata_rules: \"metadata-rules.yaml\"",
+            "  queries: \"queries.yaml\"",
+            "embedder:",
+            "  model: BAAI/bge-m3",
+            "ranking:",
+            "  weights:",
+            "    - pattern: \"docs/a/**\"",
+            "      weight: 9.0",
+            "    - pattern: \"docs/b/**\"",
+            "      weight: 0.1",
+            "query:",
+            "  fetch_k: 20",
+            "  score_threshold: 0.0",
+            "",
+        ])
+
+        rag_cfg_b = "\n".join([
+            "config_files:",
+            "  metadata_rules: \"metadata-rules.yaml\"",
+            "  queries: \"queries.yaml\"",
+            "embedder:",
+            "  model: BAAI/bge-m3",
+            "ranking:",
+            "  weights:",
+            "    - pattern: \"docs/a/**\"",
+            "      weight: 0.1",
+            "    - pattern: \"docs/b/**\"",
+            "      weight: 9.0",
+            "query:",
+            "  fetch_k: 20",
+            "  score_threshold: 0.0",
+            "",
+        ])
+
+        shared_doc = "# Shared\n\nshared-weight-anchor-zeta appears in both weighted docs."
+
+        zip_a = _build_custom_ingest_zip(
+            {
+                "docs/a/shared.md": shared_doc,
+                "docs/b/shared.md": shared_doc,
+                "docs/private/a-only.md": "# A private\n\nalpha-only-marker-9f5bf0ea",
+            },
+            rag_cfg_a,
+        )
+
+        zip_b = _build_custom_ingest_zip(
+            {
+                "docs/a/shared.md": shared_doc,
+                "docs/b/shared.md": shared_doc,
+                "docs/private/b-only.md": "# B private\n\nbeta-only-marker-8b8bb31d",
+            },
+            rag_cfg_b,
+        )
+
+        try:
+            _batch_ingest_and_wait(base_url, collection_a, zip_a, timeout=180)
+            _batch_ingest_and_wait(base_url, collection_b, zip_b, timeout=180)
+
+            sid_a, mcp_url_a = _http_mcp_initialize(base_url, collection_a)
+            sid_b, mcp_url_b = _http_mcp_initialize(base_url, collection_b)
+
+            weighted_a = _http_mcp_call(
+                mcp_url_a,
+                sid_a,
+                "query_docs",
+                {"question": "shared-weight-anchor-zeta", "top_k": 5},
+            )
+            weighted_b = _http_mcp_call(
+                mcp_url_b,
+                sid_b,
+                "query_docs",
+                {"question": "shared-weight-anchor-zeta", "top_k": 5},
+            )
+
+            rels_a = [hit["rel_path"] for hit in weighted_a["hits"]]
+            rels_b = [hit["rel_path"] for hit in weighted_b["hits"]]
+
+            assert "docs/a/shared.md" in rels_a
+            assert "docs/b/shared.md" in rels_a
+            assert "docs/a/shared.md" in rels_b
+            assert "docs/b/shared.md" in rels_b
+
+            isolate_a = _http_mcp_call(
+                mcp_url_a,
+                sid_a,
+                "query_docs",
+                {"question": "alpha-only-marker-9f5bf0ea", "top_k": 3},
+            )
+            isolate_b = _http_mcp_call(
+                mcp_url_b,
+                sid_b,
+                "query_docs",
+                {"question": "alpha-only-marker-9f5bf0ea", "top_k": 3},
+            )
+
+            assert isolate_a["hits"][0]["rel_path"] == "docs/private/a-only.md"
+            assert all(hit["rel_path"] != "docs/private/a-only.md" for hit in isolate_b["hits"])
+        finally:
+            _docker_stop(mid)
+            _docker_stop(qid)
+            _docker_network_rm(net)
 
 
 # ---------------------------------------------------------------------------

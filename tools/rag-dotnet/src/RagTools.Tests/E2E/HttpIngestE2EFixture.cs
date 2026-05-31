@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
@@ -8,7 +9,9 @@ using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using ModelContextProtocol.Server;
 using RagTools.Core;
+using RagTools.Core.ContentSources;
 using RagTools.Mcp.Controllers;
 using RagTools.Mcp.Middleware;
 using Testcontainers.Qdrant;
@@ -173,14 +176,28 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
             .AddSingleton<RagTools.Core.Config.FileConfigSource>()
             .AddSingleton<RagTools.Core.Config.IConfigSource>(sp =>
                 new RagTools.Core.Config.CachingConfigSource(
-                    sp.GetRequiredService<RagTools.Core.Config.FileConfigSource>(),
+                    new RagTools.Core.Config.LayeredConfigSource(
+                        sp.GetRequiredService<RagTools.Core.Config.FileConfigSource>(),
+                        sp.GetRequiredService<IDocumentStore>()),
                     sp.GetRequiredService<Microsoft.Extensions.Caching.Distributed.IDistributedCache>()))
+            .AddHttpContextAccessor()
+            .AddSingleton<ICollectionResolver, TestHttpCollectionResolver>()
+            .AddSingleton<RagSession>()
+            .AddSingleton<IContentSource, QdrantContentSource>()
+            .AddSingleton<RagTools.Core.Query.IRagQueryService, RagTools.Core.Query.RagQueryService>()
+            .AddSingleton<RagTools.Core.ReadDocs.IRagReadDocsService, RagTools.Core.ReadDocs.RagReadDocsService>()
+            .AddSingleton<RagTools.Core.History.IRagHistoryService, RagTools.Core.History.RagHistoryService>()
+            .AddSingleton<RagTools.Core.Adrs.IRagListService, RagTools.Core.Adrs.RagListService>()
             .AddSingleton<IBatchIngestService, BatchIngestService>()
-            .AddHostedService<IngestWorker>();
+            .AddHostedService<IngestWorker>()
+            .AddMcpServer()
+            .WithHttpTransport()
+            .WithTools<RagTools.Mcp.Tools.RagTools>();
 
         _app = webBuilder.Build();
         _app.UseMiddleware<ApiKeyMiddleware>();
         _app.MapControllers();
+        _app.MapMcp("/");
 
         await _app.StartAsync();
 
@@ -289,5 +306,235 @@ public sealed class HttpIngestE2EFixture : IAsyncLifetime
         }
 
         return null;    // timed out
+    }
+
+    /// <summary>
+    /// Upload a prebuilt ZIP to /ingest/{collection}/batch and wait for all operations
+    /// in that batch to reach a terminal state (Completed/Failed).
+    /// </summary>
+    public async Task UploadZipAndWaitAsync(
+        string collection,
+        byte[] zipBytes,
+        int timeoutSeconds = 90,
+        string? apiKey = null)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, $"/ingest/{collection}/batch")
+        {
+            Content = new ByteArrayContent(zipBytes),
+        };
+        request.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/zip");
+        if (apiKey is not null)
+        {
+            request.Headers.Add("X-Api-Key", apiKey);
+        }
+
+        using var postResp = await Client!.SendAsync(request);
+        postResp.EnsureSuccessStatusCode();
+
+        var postBody = await postResp.Content.ReadAsStringAsync();
+        using var postDoc = JsonDocument.Parse(postBody);
+        var expectedCount = postDoc.RootElement.GetProperty("count").GetInt32();
+        if (expectedCount <= 0)
+        {
+            throw new InvalidOperationException($"Batch ingest returned no operations: {postBody}");
+        }
+
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(timeoutSeconds);
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            await Task.Delay(300);
+            using var pollReq = new HttpRequestMessage(HttpMethod.Get, $"/ingest/{collection}/operations");
+            if (apiKey is not null)
+            {
+                pollReq.Headers.Add("X-Api-Key", apiKey);
+            }
+
+            using var pollResp = await Client.SendAsync(pollReq);
+            if (!pollResp.IsSuccessStatusCode)
+            {
+                continue;
+            }
+
+            var pollBody = await pollResp.Content.ReadAsStringAsync();
+            using var pollDoc = JsonDocument.Parse(pollBody);
+            if (pollDoc.RootElement.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            var ops = pollDoc.RootElement.EnumerateArray().ToList();
+            if (ops.Count < expectedCount)
+            {
+                continue;
+            }
+
+            var allTerminal = true;
+            foreach (var op in ops)
+            {
+                var status = op.GetProperty("status").GetString();
+                if (status is not ("Completed" or "Failed"))
+                {
+                    allTerminal = false;
+                    break;
+                }
+            }
+
+            if (!allTerminal)
+            {
+                continue;
+            }
+
+            var failedOps = ops
+                .Where(op => string.Equals(op.GetProperty("status").GetString(), "Failed", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+            if (failedOps.Count > 0)
+            {
+                throw new InvalidOperationException($"Ingest failed for collection '{collection}': {pollBody}");
+            }
+
+            return;
+        }
+
+        throw new TimeoutException($"Timed out waiting for batch ingest completion for '{collection}'.");
+    }
+
+    /// <summary>
+    /// Executes an MCP tool over HTTP Streamable transport for the given collection
+    /// by opening a session at /?project={collection} and returning the tool JSON payload.
+    /// </summary>
+    public async Task<JsonDocument> CallMcpToolAsync(
+        string collection,
+        string tool,
+        object args,
+        int timeoutSeconds = 60)
+    {
+        var endpoint = $"/?project={Uri.EscapeDataString(collection)}";
+
+        using var initializeReq = new HttpRequestMessage(HttpMethod.Post, endpoint)
+        {
+            Content = new StringContent(
+                JsonSerializer.Serialize(new
+                {
+                    jsonrpc = "2.0",
+                    id = 1,
+                    method = "initialize",
+                    @params = new
+                    {
+                        protocolVersion = "2024-11-05",
+                        capabilities = new { },
+                        clientInfo = new { name = "ragtools-e2e", version = "0.1" },
+                    },
+                }),
+                Encoding.UTF8,
+                "application/json"),
+        };
+        initializeReq.Headers.TryAddWithoutValidation("Accept", "application/json, text/event-stream");
+
+        using var initResp = await Client!.SendAsync(initializeReq);
+        initResp.EnsureSuccessStatusCode();
+        var sessionId = initResp.Headers.TryGetValues("mcp-session-id", out var values)
+            ? values.FirstOrDefault()
+            : null;
+
+        if (string.IsNullOrWhiteSpace(sessionId))
+        {
+            throw new InvalidOperationException("MCP initialize did not return mcp-session-id header.");
+        }
+
+        using var initializedReq = new HttpRequestMessage(HttpMethod.Post, endpoint)
+        {
+            Content = new StringContent(
+                JsonSerializer.Serialize(new
+                {
+                    jsonrpc = "2.0",
+                    method = "notifications/initialized",
+                    @params = new { },
+                }),
+                Encoding.UTF8,
+                "application/json"),
+        };
+        initializedReq.Headers.TryAddWithoutValidation("mcp-session-id", sessionId);
+        initializedReq.Headers.TryAddWithoutValidation("Accept", "application/json, text/event-stream");
+        using var initializedResp = await Client.SendAsync(initializedReq);
+        if (!initializedResp.IsSuccessStatusCode && initializedResp.StatusCode != HttpStatusCode.NotAcceptable)
+        {
+            initializedResp.EnsureSuccessStatusCode();
+        }
+
+        using var callReq = new HttpRequestMessage(HttpMethod.Post, endpoint)
+        {
+            Content = new StringContent(
+                JsonSerializer.Serialize(new
+                {
+                    jsonrpc = "2.0",
+                    id = 2,
+                    method = "tools/call",
+                    @params = new
+                    {
+                        name = tool,
+                        arguments = args,
+                    },
+                }),
+                Encoding.UTF8,
+                "application/json"),
+        };
+        callReq.Headers.TryAddWithoutValidation("Accept", "application/json, text/event-stream");
+        callReq.Headers.TryAddWithoutValidation("mcp-session-id", sessionId);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
+        using var callResp = await Client.SendAsync(callReq, cts.Token);
+        callResp.EnsureSuccessStatusCode();
+
+        var responseBody = await callResp.Content.ReadAsStringAsync(cts.Token);
+        var contentType = callResp.Content.Headers.ContentType?.MediaType ?? string.Empty;
+
+        using var envelope = ParseMcpEnvelope(responseBody, contentType);
+        var text = envelope.RootElement
+            .GetProperty("result")
+            .GetProperty("content")[0]
+            .GetProperty("text")
+            .GetString();
+
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            throw new InvalidOperationException($"MCP returned empty tool payload for '{tool}'.");
+        }
+
+        return JsonDocument.Parse(text);
+    }
+
+    private static JsonDocument ParseMcpEnvelope(string body, string contentType)
+    {
+        if (contentType.Contains("text/event-stream", StringComparison.OrdinalIgnoreCase))
+        {
+            foreach (var line in body.Split('\n'))
+            {
+                if (!line.StartsWith("data:", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var payload = line[5..].Trim();
+                if (!string.IsNullOrWhiteSpace(payload))
+                {
+                    return JsonDocument.Parse(payload);
+                }
+            }
+
+            throw new InvalidOperationException($"No SSE data payload found. Body: {body}");
+        }
+
+        return JsonDocument.Parse(body);
+    }
+
+    private sealed class TestHttpCollectionResolver(
+        Microsoft.AspNetCore.Http.IHttpContextAccessor http,
+        RagConfig cfg) : ICollectionResolver
+    {
+        public string GetCollection()
+        {
+            var project = http.HttpContext?.Request.Query["project"].ToString();
+            return string.IsNullOrWhiteSpace(project) ? cfg.Collection : project!;
+        }
     }
 }

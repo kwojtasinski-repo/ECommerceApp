@@ -1,6 +1,6 @@
 # Roadmap: Remote Multi-Tenant RAG Server (ADR-0028)
 
-> Status: ✅ Phase 1 Complete — Phase 2 Complete (P2-1 ✅, P2-2 ✅, P2-3 ✅, P2-4 ✅, P2-5 ✅) — � Phase 3 In Progress (P3-1…P3-7c ✅, P3-8 pending — see below)  
+> Status: ✅ Phase 1 Complete — ✅ Phase 2 Complete (P2-1 ✅, P2-2 ✅, P2-3 ✅, P2-4 ✅, P2-5 ✅) — ✅ Phase 3 Complete (P3-1…P3-8 ✅)  
 > Scope: `tools/rag-dotnet/` (.NET server), `tools/rag/` (Python server)  
 > ADR: [ADR-0028](../adr/0028/0028-remote-multitenant-rag-ingest.md)
 
@@ -862,10 +862,10 @@ Step 11 can be done in parallel from Step 5 onward.
 
 ## Phase 3 — Per-collection config persistence (gap fix)
 
-> Status: � In Progress  
+> Status: ✅ Complete  
 > .NET: P3-1 ✅ P3-2 ✅ P3-3 ✅ P3-4 ✅ P3-5 ✅ P3-6 ✅ — [Amendment 005](../adr/0028/amendments/0028-005-phase3-per-collection-config-dotnet.md)  
 > Python: P3-7a ✅ P3-7b ✅ P3-7c ✅ — [Amendment 006](../adr/0028/amendments/0028-006-phase3-python-parity.md)  
-> Remaining: P3-8 (cross-collection integration tests)  
+> Remaining: None  
 > Trigger: Diagnosis report [`docs/reports/rag-parity-fix-diagnosis-2026-05-28.md`](../reports/rag-parity-fix-diagnosis-2026-05-28.md)  
 > Impacted ADR: ADR-0028 main text + tech-details-dotnet.md (intent) vs Amendment 002 (deferred without aligning ADR)  
 > Acceptance criteria now MET: ✅ "Config, glossary, rules, queries stored as structured JSON" — per-collection `__config__` point persisted on every batch ingest  
@@ -907,7 +907,7 @@ Amendment 002 (`docs/adr/0028/amendments/0028-002-batch-manifest-pipeline.md`) e
 | P3-7a | Python: `IConfigSource` abstraction + `config/payload.py`, `config/sources.py`, `config/bootstrap.py`; `storage/document_store.py` `store_config` / `get_config`; `QdrantDocumentStore` ensures collection before write. | `tools/rag/config/`, `tools/rag/storage/` | Low | ✅ Done |
 | P3-7b | Python: `IngestController.upload_batch` persists per-collection `__config__` point via `store_config`; `ensure_collection` regression fix; Dockerfile copies `config/` package. | `tools/rag/ingest_routes.py`, `tools/rag/mcp_server.py`, `tools/rag/Dockerfile` | Low | ✅ Done |
 | P3-7c | Python: per-collection glossary read-path at query time. `EmbedContext` gains `glossary_entries` override; `GlossaryExpansionPreprocessor` reads it; `QueryEngine.search` accepts `glossary_entries` kwarg; `rag_tools._resolve_glossary_entries` fetches from `CONFIG_SOURCE`; ingest bakes mounted glossary (ZIP wins if supplied); `CONFIG_SOURCE` invalidated post-ingest. STDIO path byte-identical (returns `None`). | `embed_context.py`, `preprocessors.py`, `query.py`, `state.py`, `rag_tools.py`, `ingest_routes.py`, `mcp_server.py` | Low | ✅ Done |
-| P3-8 | Add integration tests: two collections with different weights on the same server return correctly weighted results. | `tools/rag-dotnet/src/RagTools.Tests/`, `tools/rag/tests/` | Low | ⬜ Pending |
+| P3-8 | Add integration tests: two collections with different weights on the same server return correctly weighted results. | `tools/rag-dotnet/src/RagTools.Tests/`, `tools/rag/tests/` | Low | ✅ Done |
 
 ### Open questions for P3
 
@@ -952,4 +952,4 @@ This session focused on hardening and validating the user-facing config simplifi
 ### Current status after stabilization
 
 - Runtime behavior is aligned and stable across Python and .NET for the validated flows above.
-- Remaining roadmap item unchanged: `P3-8` (cross-collection integration tests).
+- Remaining roadmap items for Phase 3: none (P3-8 completed with cross-collection integration coverage in .NET and Python suites).

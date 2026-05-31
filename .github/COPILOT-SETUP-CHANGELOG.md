@@ -120,6 +120,41 @@ The full current 33-skill set also includes the cross-project/bootstrap and adva
 
 ## Change log
 
+### Session 44 — Roadmap RAG Phase 3 completion status alignment close-out (2026-05-31)
+
+Workflow 11 + Workflow 7 compliance pass for docs-only roadmap status alignment.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Aligned roadmap index RAG row status with the detailed remote multi-tenant roadmap to mark Phase 3 complete. | `docs/roadmap/README.md` |
+| 2 | Close-out sync check: no routing-index, root policy, or solution-structure updates required. | `.github/instructions/docs-index.instructions.md`, `.github/copilot-instructions.md`, `ECommerceApp.sln` |
+| 3 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- `.github/instructions/docs-index.instructions.md` — no new/renamed roadmap artifact and no docs routing table delta.
+- `.github/copilot-instructions.md` — repo-level policy and routing summary remain valid.
+- `ECommerceApp.sln` — `docs/roadmap/README.md` and `docs/roadmap/rag-remote-multitenant.md` are already present in solution items.
+
+### Session 43 — sandbox-first analysis routing update (2026-05-31)
+
+Workflow 11 + Workflow 7 compliance pass after making context-mode the default route for analysis tasks.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Canonical MCP routing now explicitly lists analysis trigger words (analyze, summarize, count, compare, grep, parse, transform, extract, search) and routes them to `ctx_execute_file` / `ctx_execute` / `ctx_search` by default. | `.github/instructions/mcp-routing.instructions.md` |
+| 2 | Root Copilot instructions now include a sandbox-first shortcut so analysis tasks automatically bias toward context-mode. | `.github/copilot-instructions.md` |
+| 3 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- `docs-index.instructions.md` — no new/renamed config artifact.
+- Application code and tests — policy-only update.
+
 ### Session 42 — docs path-hardcoding cleanup close-out (2026-05-31)
 
 Workflow 11 + Workflow 7 compliance pass after removing remaining host-specific absolute path examples from docs.

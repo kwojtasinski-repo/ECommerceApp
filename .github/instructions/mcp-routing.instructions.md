@@ -120,6 +120,18 @@ get_history(id)   → evolution: full amendment chain
 | `ctx_execute(lang, code)` | Sandboxed code execution. **Only `javascript` and `shell` are installed in the shipped runtime image** (`ctx_doctor` → `Runtimes: 2/11`). The schema enum also accepts `typescript`, `ruby`, `go`, `rust`, `php`, `perl`, `R`, `elixir`, `csharp`, `python` — calling any of those returns a runtime error like `C# not available. Install dotnet-script via …`. Use `javascript` (Node) for math/regex/parsing/object work, `shell` (POSIX sh) for filesystem inspection. Output is only what you `console.log` / `echo`. |
 | `ctx_execute_file(path, lang, code)` | Read a file into the sandbox as `FILE_CONTENT` and derive an answer in code — raw bytes never enter context. Use for files >500 lines or any structural summary. **Path quirk:** sandbox cwd is NOT the repo root. Always pass mounted Linux-style paths (default `/workspace`, parametric — see below) or your scan returns silent zero results. **Never pass host OS absolute paths** (Windows `C:\...`, macOS/Linux `/Users/...`/`/home/...`) into `ctx_execute_file` — the container cannot resolve host paths. Start from a repo-relative path and map it to the mount root. To discover the mount on the current container: `ctx_execute("shell", "echo $CONTEXT_MODE_WORKSPACE")` (one-shot per session; cache the result). |
 
+### Sandbox-first default for analysis tasks
+
+If the user asks to **analyze, summarize, count, compare, grep, parse, transform, extract, or search** a file/log/output, prefer context-mode automatically:
+
+- `ctx_execute_file(...)` for file-backed analysis, especially attached files and large files
+- `ctx_execute(...)` for calculations, regex, parsing, or ad-hoc processing
+- `ctx_search(...)` for recalling previously indexed results or session memory
+
+Use `read_file` only when the goal is to **edit** the file and you need exact bytes for the patch. Use RAG instead when the goal is **docs / ADR / project-state knowledge**.
+
+**Practical rule:** if the answer depends on the file contents rather than the exact file text in a patch, sandbox it first.
+
 ### context-mode path normalization (mandatory)
 
 Before every `ctx_execute_file(...)` call, normalize from repo-relative to the container mount:

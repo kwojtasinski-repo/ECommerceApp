@@ -45,6 +45,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "instructions", "instruction
 		.github\instructions\dotnet.instructions.md = .github\instructions\dotnet.instructions.md
 		.github\instructions\efcore.instructions.md = .github\instructions\efcore.instructions.md
 		.github\instructions\frontend.instructions.md = .github\instructions\frontend.instructions.md
+		.github\instructions\mcp-routing.instructions.md = .github\instructions\mcp-routing.instructions.md
 		.github\instructions\migration-policy.instructions.md = .github\instructions\migration-policy.instructions.md
 		.github\instructions\pre-edit.instructions.md = .github\instructions\pre-edit.instructions.md
 		.github\instructions\rag.instructions.md = .github\instructions\rag.instructions.md
