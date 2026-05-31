@@ -17,7 +17,7 @@ EOF
 )
 
 OUT=$(printf '%s\n' "$REQ" | docker exec -i ecommerceapp-context-mode \
-  node --require /app/network-monitor.cjs /app/cli.bundle.mjs 2>/dev/null)
+  sh -lc 'workspace="$CONTEXT_MODE_WORKSPACE"; [ -n "$workspace" ] || workspace=/workspace; cd "$workspace" 2>/dev/null || cd /workspace; exec node --require /app/network-monitor.cjs /app/cli.bundle.mjs' 2>/dev/null)
 
 if command -v jq > /dev/null 2>&1; then
   printf '%s\n' "$OUT" | while IFS= read -r line; do

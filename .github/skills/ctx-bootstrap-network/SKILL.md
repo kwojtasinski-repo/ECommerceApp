@@ -69,7 +69,7 @@ These domains MUST stay blocked unless an explicit, documented business need exi
 ### 1. Inventory existing dependencies
 
 Before writing the allowlist, scan the new project for every external host name that
-will be hit at runtime. Use `ctx_execute("sh", ...)` to keep it sandboxed:
+will be hit at runtime. Use `ctx_execute("shell", ...)` to keep it sandboxed:
 
 ```sh
 grep -rEho 'https?://[a-zA-Z0-9.-]+' . \

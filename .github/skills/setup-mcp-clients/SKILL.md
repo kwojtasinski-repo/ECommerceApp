@@ -73,12 +73,15 @@ The richest client. Supports stdio (preferred for local Docker containers) and H
       "args": [
         "exec", "-i",
         "<project>-context-mode",
-        "node", "/app/cli.bundle.mjs", "serve"
+        "sh", "-lc",
+        "workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node --require /app/network-monitor.cjs /app/cli.bundle.mjs"
       ]
     }
   }
 }
 ```
+
+Why the shell wrapper: it makes the server infer the correct workspace mount from `$CONTEXT_MODE_WORKSPACE` and launch from there, so sandbox code can use the actual context of the current project without hardcoding `/workspace` in every call.
 
 Reload via Command Palette → "MCP: Reload servers".
 
@@ -133,7 +136,8 @@ Windows-only but works the same as VS Code.
       "args": [
         "exec", "-i",
         "<project>-context-mode",
-        "node", "/app/cli.bundle.mjs", "serve"
+        "sh", "-lc",
+        "workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node --require /app/network-monitor.cjs /app/cli.bundle.mjs"
       ]
     }
   }
@@ -217,7 +221,7 @@ acmeapp/
     "acmeapp-context-mode":  {
       "type": "stdio",
       "command": "docker",
-      "args": ["exec", "-i", "acmeapp-context-mode", "node", "/app/cli.bundle.mjs", "serve"]
+      "args": ["exec", "-i", "acmeapp-context-mode", "sh", "-lc", "workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node --require /app/network-monitor.cjs /app/cli.bundle.mjs"]
     }
   }
 }
@@ -243,7 +247,7 @@ acmeapp/
     "acmeapp-context-mode":  {
       "type": "stdio",
       "command": "docker.exe",
-      "args": ["exec", "-i", "acmeapp-context-mode", "node", "/app/cli.bundle.mjs", "serve"]
+      "args": ["exec", "-i", "acmeapp-context-mode", "sh", "-lc", "workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node --require /app/network-monitor.cjs /app/cli.bundle.mjs"]
     }
   }
 }

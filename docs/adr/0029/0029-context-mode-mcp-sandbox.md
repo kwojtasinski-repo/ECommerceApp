@@ -232,7 +232,7 @@ the common case; revisit if real usage shows the gap.
   `team-blacklist.txt`, `team-whitelist.txt`, `personal-overrides.local.example.txt`)
   exist in `docker/adguard/` and are referenced from compose
 - [ ] `personal-overrides.local.txt` is in `.gitignore`
-- [ ] `network-monitor.js` is loaded via `node --require` before context-mode's entrypoint
+- [ ] `network-monitor.cjs` is loaded via `node --require` before context-mode's entrypoint
 - [ ] `.github/copilot-instructions.md` section 13 is append-only; sections 1–12 unchanged
 - [ ] `.claude/settings.json` exists and contains the deny list for `Bash(sudo *)`, `Read(.env)`, secrets, and `rm -rf /*`
 - [ ] `ctx_insight` web UI port is bound to `127.0.0.1` only (never `0.0.0.0`); access verified via `http://localhost:9998`

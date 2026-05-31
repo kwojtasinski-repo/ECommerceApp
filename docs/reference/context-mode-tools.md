@@ -60,9 +60,12 @@ Idempotent one-shot bootstrap that brings a fresh clone to a fully running, pass
 
 | Situation | Command |
 |---|---|
-| First-time setup on a fresh clone | `pwsh ./scripts/context-mode-bootstrap.ps1 -AdGuardPassword '...'` |
-| Forgot password / lost session | `pwsh ./scripts/context-mode-bootstrap.ps1 -AdGuardPassword 'New!' -ForceRegenerateAdGuard` |
-| Rebuilt hooks / sandbox image | `pwsh ./scripts/context-mode-bootstrap.ps1` (idempotent; image rebuild + container recreate) |
+| First-time setup on a fresh clone | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/context-mode-bootstrap.ps1` |
+| Forgot password / lost session | `powershell -File scripts/context-mode-bootstrap.ps1 -AdGuardPassword 'New!' -ForceRegenerateAdGuard` |
+| Rebuilt hooks / sandbox image | `powershell -File scripts/context-mode-bootstrap.ps1` (idempotent; image rebuild + container recreate) |
+| Start existing stack after manual stop | `docker compose --profile monitoring --profile context-mode up -d` |
+| Verify MCP handshake from host | `powershell -File scripts/test-mcp-handshake.ps1` |
+| Stop the sandbox stack | `docker compose --profile monitoring --profile context-mode down` |
 | Daily AdGuard filter edits | **Use `domain-policy` instead** |
 
 ### Anti-patterns

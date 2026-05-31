@@ -183,7 +183,7 @@ services:
             CTX_FETCH_STRICT: "${CONTEXT_MODE_FETCH_STRICT:-1}"
             CONTEXT_MODE_EXTERNAL_MCP_NUDGE_EVERY: "${CONTEXT_MODE_NUDGE_EVERY:-50}"
             CONTEXT_MODE_DIR: "/home/ctxmode/.context-mode"
-            CONTEXT_MODE_WORKSPACE: "${CONTEXT_MODE_WORKSPACE:-/workspace}"  # discoverable by agents via `ctx_execute("sh","echo $CONTEXT_MODE_WORKSPACE")`
+            CONTEXT_MODE_WORKSPACE: "${CONTEXT_MODE_WORKSPACE:-/workspace}"  # discoverable by agents via `ctx_execute("shell", "echo $CONTEXT_MODE_WORKSPACE")`
         ports:
             - "127.0.0.1:${CONTEXT_MODE_INSIGHT_PORT:-9998}:8765"  # ctx_insight UI — localhost only
         networks:
@@ -191,10 +191,11 @@ services:
                 ipv4_address: 172.28.0.10               # static — stable target for `docker exec`
         dns:
             - 172.28.0.2                            # AdGuard (ONLY — no upstream fallback)
-        # Keep the container alive as an idle host; MCP server is spawned per-session via
-        # `docker exec` from .vscode/mcp.json. This avoids restarting the whole sandbox on
-        # every VSCode "Start" click — only the node process gets recycled, network-monitor
-        # stays loaded, FTS5 DB stays warm.
+        # Keep the container alive as an idle host; MCP server and hooks are spawned
+        # per-session via `docker exec` from .vscode/mcp.json / .github/hooks/context-mode.json.
+        # The startup wrapper resolves $CONTEXT_MODE_WORKSPACE, cds into that mount, and then
+        # launches `node --require /app/network-monitor.cjs /app/cli.bundle.mjs`, so only the
+        # node process gets recycled while the container and FTS5 DB stay warm.
         entrypoint: ["sleep", "infinity"]
         # Lightweight liveness probe — verifies the cli bundle is loadable and FTS5 native
         # module works. Runs every 60s; failure means the image is broken, not a transient.

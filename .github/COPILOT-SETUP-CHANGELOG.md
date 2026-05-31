@@ -120,6 +120,27 @@ The full current 33-skill set also includes the cross-project/bootstrap and adva
 
 ## Change log
 
+### Session 45 — context-mode workspace-aware startup wrapper (2026-06-01)
+
+Workflow 11 + Workflow 7 close-out after fixing context-mode startup so the tool derives its workspace context automatically instead of requiring payloads to hardcode `/workspace`.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | VS Code MCP registration now starts context-mode through `sh -lc`, resolves `$CONTEXT_MODE_WORKSPACE` inside the container, changes directory there, then launches `node --require /app/network-monitor.cjs /app/cli.bundle.mjs`. | `.vscode/mcp.json` |
+| 2 | Context-mode hook commands (`PreToolUse`, `UserPromptSubmit`, `PreCompact`, `SessionStart`) now run through the same workspace-aware shell wrapper before invoking `node /app/cli.bundle.mjs hook ...`. | `.github/hooks/context-mode.json` |
+| 3 | Roadmap/details and bootstrap docs updated to replace stale `node ... serve` / direct hook invocations with the live workspace-aware wrapper shape. | `docs/roadmap/context-mode-details.md`, `docs/playbooks/context-mode-bootstrap.md`, `.github/skills/setup-mcp-clients/SKILL.md`, `.github/skills/setup-context-mode-new-project/SKILL.md` |
+| 4 | Validation: container-side wrapper resolves `pwd` to `/workspace` and prints the same value from `$CONTEXT_MODE_WORKSPACE`; edited JSON files are error-free. | `.vscode/mcp.json`, `.github/hooks/context-mode.json` |
+| 5 | Helper smoke-test scripts now use the same workspace-aware wrapper as MCP startup before calling `cli.bundle.mjs`, and active guides/skills were updated to use `ctx_execute("shell", ...)` plus the exact bootstrap/start/test/stop command set. | `scripts/test-mcp-handshake.ps1`, `scripts/test-ctx-doctor.ps1`, `scripts/test-ctx-fetch.ps1`, `scripts/test-mcp-handshake.sh`, `scripts/test-ctx-doctor.sh`, `scripts/test-ctx-fetch.sh`, `docs/getting-started-context-mode.md`, `docs/reference/context-mode-tools.md`, `docs/patterns/context-mode-read-write-split.md`, `docs/roadmap/context-mode-integration.md`, `docs/adr/0029/0029-context-mode-mcp-sandbox.md`, `.github/skills/ctx-bootstrap-network/SKILL.md`, `.github/skills/ctx-doctor-playbook/SKILL.md`, `.github/skills/rag-eval-coverage/SKILL.md`, `.github/skills/rag-with-memory/SKILL.md` |
+| 6 | Visual Studio / solution discoverability sync: added the hooks solution folder and mirrored the updated getting-started and reference docs into `ECommerceApp.sln`. | `ECommerceApp.sln` |
+| 7 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- `docker-compose.yaml` — mount and env wiring were already parametric via `${CONTEXT_MODE_WORKSPACE:-/workspace}`; the fix was in the process launch path, not the container definition.
+- `Dockerfile-context-mode` — runtime image already exposed `/app/cli.bundle.mjs`, `WORKDIR /workspace`, and `network-monitor.cjs`; no image rebuild logic change required.
+
 ### Session 44 — Roadmap RAG Phase 3 completion status alignment close-out (2026-05-31)
 
 Workflow 11 + Workflow 7 compliance pass for docs-only roadmap status alignment.

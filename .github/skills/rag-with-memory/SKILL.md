@@ -51,7 +51,7 @@ The context-mode container mounts the repo at a parametric path (default `/works
 If this session will also call `ctx_execute_file(path)` (i.e. you'll pass absolute filesystem paths into the sandbox), run **once** at session start and cache mentally:
 
 ```
-ctx_execute("sh", "echo $CONTEXT_MODE_WORKSPACE")
+ctx_execute("shell", "echo $CONTEXT_MODE_WORKSPACE")
 # → /workspace          (default)
 # → /repo               (forked compose override, hypothetical)
 ```

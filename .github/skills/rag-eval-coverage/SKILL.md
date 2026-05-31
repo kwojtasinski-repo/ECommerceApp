@@ -42,7 +42,7 @@ and flags files with zero coverage.
 ### 1. Enumerate the corpus
 
 Use the glob argument (or default to the full corpus). Cross-platform with
-`ctx_execute("sh", ...)`:
+`ctx_execute("shell", ...)`:
 
 ```sh
 find docs .github/context -type f -name '*.md' | sort > /tmp/corpus-files.txt

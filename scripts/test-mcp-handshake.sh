@@ -11,7 +11,7 @@ EOF
 )
 
 out=$(printf '%s\n' "$req" | docker exec -i ecommerceapp-context-mode \
-    node --require /app/network-monitor.cjs /app/cli.bundle.mjs 2>/dev/null)
+    sh -lc 'workspace="$CONTEXT_MODE_WORKSPACE"; [ -n "$workspace" ] || workspace=/workspace; cd "$workspace" 2>/dev/null || cd /workspace; exec node --require /app/network-monitor.cjs /app/cli.bundle.mjs' 2>/dev/null)
 
 echo "raw lines: $(printf '%s\n' "$out" | grep -c .)"
 if command -v jq > /dev/null 2>&1; then

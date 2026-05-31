@@ -3,7 +3,7 @@ $req = @'
 {"jsonrpc":"2.0","method":"notifications/initialized"}
 {"jsonrpc":"2.0","id":2,"method":"tools/list"}
 '@
-$out = $req | docker exec -i ecommerceapp-context-mode node --require /app/network-monitor.cjs /app/cli.bundle.mjs 2>$null
+$out = $req | docker exec -i ecommerceapp-context-mode sh -lc 'workspace="$CONTEXT_MODE_WORKSPACE"; [ -n "$workspace" ] || workspace=/workspace; cd "$workspace" 2>/dev/null || cd /workspace; exec node --require /app/network-monitor.cjs /app/cli.bundle.mjs' 2>$null
 Write-Host "raw lines: $(($out | Measure-Object -Line).Lines)"
 $lines = $out -split "`n" | Where-Object { $_.Trim() -ne '' }
 foreach ($l in $lines) {

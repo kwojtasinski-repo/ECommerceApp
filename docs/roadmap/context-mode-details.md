@@ -86,7 +86,7 @@ enforced `dns: [adguard]` — cross-runtime compatible.
 
 ## Phase 1 — Docker sandbox
 
-### `docker/context-mode/network-monitor.js`
+### `docker/context-mode/network-monitor.cjs`
 
 ```js
 /**
@@ -145,10 +145,10 @@ net.Socket.prototype.connect = function (options, ...rest) {
 ```bash
 #!/bin/sh
 # Wrapper that runs context-mode with the monitoring hook preloaded.
-# `node --require` loads network-monitor.js BEFORE any MCP server code.
+# `node --require` loads network-monitor.cjs BEFORE any MCP server code.
 exec node \
-  --require /app/network-monitor.js \
-  /app/start.mjs \
+  --require /app/network-monitor.cjs \
+  /app/cli.bundle.mjs \
   "$@"
 ```
 
@@ -183,7 +183,7 @@ RUN addgroup -S ctxmode && adduser -S ctxmode -G ctxmode
 
 # Copy the built application
 COPY --from=builder /build /app
-COPY docker/context-mode/network-monitor.js /app/network-monitor.js
+COPY docker/context-mode/network-monitor.cjs /app/network-monitor.cjs
 COPY docker/context-mode/entrypoint.sh     /entrypoint.sh
 
 RUN chmod +x /entrypoint.sh \
@@ -236,12 +236,13 @@ Append to the end of the `services:` section and extend the `volumes:` and `netw
     cpus: ${CONTEXT_MODE_CPUS:-2}                  # CPU quota
     ipc: none                                      # zero shared memory with the host
     volumes:
-      - .:/workspace                               # access to project files (R/W)
+      - .:${CONTEXT_MODE_WORKSPACE:-/workspace}:ro # access to project files (read-only)
       - context-mode-data:/home/ctxmode/.context-mode  # SQLite session DB
     environment:
       CTX_FETCH_STRICT: "${CONTEXT_MODE_FETCH_STRICT:-1}"   # default 1 = block loopback+RFC1918
       CONTEXT_MODE_EXTERNAL_MCP_NUDGE_EVERY: "${CONTEXT_MODE_NUDGE_EVERY:-50}"
       CONTEXT_MODE_DIR: "/home/ctxmode/.context-mode"  # explicit storage root (v1.0.147+)
+      CONTEXT_MODE_WORKSPACE: "${CONTEXT_MODE_WORKSPACE:-/workspace}"
     ports:
       - "127.0.0.1:${CONTEXT_MODE_INSIGHT_PORT:-9998}:8765"  # ctx_insight web UI — localhost only
                                                    # NOTE: verify internal port via `ctx doctor` after first start;
@@ -381,19 +382,22 @@ review or pair sessions.
 {
   "servers": {
     "context-mode": {
+      "type": "stdio",
       "command": "docker",
       "args": [
         "exec",
         "-i",
         "ecommerceapp-context-mode",
-        "node",
-        "--require", "/app/network-monitor.js",
-        "/app/start.mjs"
+        "sh",
+        "-lc",
+        "workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node --require /app/network-monitor.cjs /app/cli.bundle.mjs"
       ]
     }
   }
 }
 ```
+
+This wrapper makes the MCP process inherit the live workspace mount automatically, so `ctx_execute` code can rely on `process.cwd()` and relative paths inside the sandbox.
 
 > **Podman**: replace `"docker"` with `"podman"` locally. Do not commit the change.
 > **Rancher Desktop (containerd)**: replace `"docker"` with `"nerdctl"` locally.
@@ -465,37 +469,40 @@ docker/adguard/personal-overrides.local.txt
 >
 > **Container CLI path (2026-05-27 correction)**: the shipped image has no `context-mode` wrapper on PATH (`/app/bin/` contains only `statusline.mjs`). Invoke the bundle directly with `node /app/cli.bundle.mjs hook vscode-copilot <event>`. The configuration below already uses the corrected form.
 
+> **Workspace-aware launch (2026-06-01 correction)**: wrap hook startup in `sh -lc`, resolve `$CONTEXT_MODE_WORKSPACE`, and `cd` there before invoking the bundle. This keeps hook behavior aligned with the MCP server startup path and avoids per-payload `/workspace` hardcoding.
+
 ```json
 {
   "hooks": {
     "PreToolUse": [
       {
         "type": "command",
-        "command": "docker exec -i ecommerceapp-context-mode node /app/cli.bundle.mjs hook vscode-copilot pretooluse"
+        "command": "docker exec -i ecommerceapp-context-mode sh -lc 'workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node /app/cli.bundle.mjs hook vscode-copilot pretooluse'"
       }
     ],
     "PostToolUse": [
       {
         "type": "command",
-        "command": "docker exec -i ecommerceapp-context-mode node /app/cli.bundle.mjs hook vscode-copilot posttooluse"
+        "command": "node .github/hooks/posttooluse-chain.mjs",
+        "cwd": "."
       }
     ],
     "UserPromptSubmit": [
       {
         "type": "command",
-        "command": "docker exec -i ecommerceapp-context-mode node /app/cli.bundle.mjs hook vscode-copilot userpromptsubmit"
+        "command": "docker exec -i ecommerceapp-context-mode sh -lc 'workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node /app/cli.bundle.mjs hook vscode-copilot userpromptsubmit'"
       }
     ],
     "PreCompact": [
       {
         "type": "command",
-        "command": "docker exec -i ecommerceapp-context-mode node /app/cli.bundle.mjs hook vscode-copilot precompact"
+        "command": "docker exec -i ecommerceapp-context-mode sh -lc 'workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node /app/cli.bundle.mjs hook vscode-copilot precompact'"
       }
     ],
     "SessionStart": [
       {
         "type": "command",
-        "command": "docker exec -i ecommerceapp-context-mode node /app/cli.bundle.mjs hook vscode-copilot sessionstart"
+        "command": "docker exec -i ecommerceapp-context-mode sh -lc 'workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node /app/cli.bundle.mjs hook vscode-copilot sessionstart'"
       }
     ]
   }
@@ -693,7 +700,7 @@ env var keeps RAG calls outside the sandbox guidance loop.
 }
 ```
 
-> **Why these denials?** The sandbox mounts the entire repo `.:/workspace` read-write so the agent can edit code. Without these rules a tricked agent could (a) read `.env`/`appsettings.*.json` secrets, (b) modify `.git/config` to insert a malicious credential helper, (c) backdoor the Dockerfile or compose file and wait for a rebuild, (d) edit its own hook config or AdGuard rules to weaken the firewall. `deny` always wins over `allow` per context-mode permission semantics.
+> **Why these denials?** The sandbox mounts the repo read-only at `${CONTEXT_MODE_WORKSPACE:-/workspace}` and keeps only scratch/session storage writable. These denials still matter because a tricked agent could otherwise (a) read `.env`/`appsettings.*.json` secrets, (b) use shell tools to probe or exfiltrate sensitive data, or (c) tamper with writable runtime state under `/tmp` or the session store. `deny` always wins over `allow` per context-mode permission semantics.
 
 ---
 

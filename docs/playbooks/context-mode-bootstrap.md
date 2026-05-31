@@ -280,12 +280,15 @@ For VS Code workspace use:
       "command": "docker",
       "args": [
         "exec", "-i", "<project>-context-mode",
-        "node", "/app/cli.bundle.mjs", "serve"
+        "sh", "-lc",
+        "workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node --require /app/network-monitor.cjs /app/cli.bundle.mjs"
       ]
     }
   }
 }
 ```
+
+This makes the MCP process start from the live workspace mount automatically instead of expecting every sandbox snippet to hardcode `/workspace`.
 
 Reload VS Code MCP servers (Command Palette → "MCP: Reload servers").
 

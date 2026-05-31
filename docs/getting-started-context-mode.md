@@ -138,6 +138,15 @@ If the target domain is on a community blocklist (ads, trackers, malware), AdGua
 
 ## 6. Daily life
 
+### Exact commands
+
+| Situation | Command |
+|----------|---------|
+| First bootstrap | `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/context-mode-bootstrap.ps1` |
+| Start existing stack | `docker compose --profile monitoring --profile context-mode up -d` |
+| Verify MCP handshake | `powershell -File scripts/test-mcp-handshake.ps1` |
+| Stop stack | `docker compose --profile monitoring --profile context-mode down` |
+
 | Situation | Action |
 |----------|--------|
 | Reboot / Docker restart | Nothing to do — containers have `restart: unless-stopped`. Just open VS Code, MCP reconnects automatically. |
@@ -176,7 +185,7 @@ bash scripts/test-mcp-handshake.sh
 ```
 
 - Container not running → `docker compose --profile context-mode up -d context-mode`
-- Container running but handshake hangs → `docker exec -it ecommerceapp-context-mode node /app/cli.bundle.mjs --help`
+- Container running but handshake hangs → run `powershell -File scripts/test-mcp-handshake.ps1`; if it still hangs, run `docker exec -i ecommerceapp-context-mode sh -lc 'workspace="$CONTEXT_MODE_WORKSPACE"; [ -n "$workspace" ] || workspace=/workspace; cd "$workspace" 2>/dev/null || cd /workspace; exec node --require /app/network-monitor.cjs /app/cli.bundle.mjs --help'`
 
 ### `ctx_fetch_and_index` returns SERVFAIL for every URL
 

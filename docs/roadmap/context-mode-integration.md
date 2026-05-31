@@ -52,7 +52,7 @@ Goal: extend a useful working session from ~30 min to ~3 hours without losing co
 
 | Risk | Probability | Impact | Mitigation |
 |---|---|---|---|
-| context-mode exfiltrates data over the network | Low | High | AdGuard DNS firewall (whitelist) + hardening flags + network-monitor.js hook (audit trail) |
+| context-mode exfiltrates data over the network | Low | High | AdGuard DNS firewall (whitelist) + hardening flags + network-monitor.cjs hook (audit trail) |
 | AdGuard blocks a domain that is actually needed | Possible | Low | UI quick-fix + PR to `team-whitelist.txt` (higher priority than community lists) |
 | Community blocklist auto-update introduces a false positive | Possible | Low | 7-day interval (not 24h) gives time to react; `team-whitelist.txt` is an immediate hot-fix |
 | Breaking change in a new version | Low | Medium | Pinned version in the Dockerfile; intentional upgrade by the whole team |
@@ -72,7 +72,7 @@ Goal: extend a useful working session from ~30 min to ~3 hours without losing co
 
 | Step | Description | File | Status |
 |---|---|---|---|
-| 1.1 | Node.js network monitoring hook | `docker/context-mode/network-monitor.js` | 🔲 |
+| 1.1 | Node.js network monitoring hook | `docker/context-mode/network-monitor.cjs` | 🔲 |
 | 1.2 | Entrypoint wrapper | `docker/context-mode/entrypoint.sh` | 🔲 |
 | 1.3 | Two-stage Dockerfile (git clone → runtime, non-root, pinned tag) | `Dockerfile-context-mode` | 🔲 |
 | 1.3b | Env knobs example file (12 tunables: tags + container resources + ports + nudge + fetch-strict + AdGuard DNS/refresh) committed | `.env.context-mode.example` | 🔲 |
@@ -403,7 +403,7 @@ This section captures what shipped with L1 (manual handoff) and what remains pen
 
 **Finding**: docs now reference `$CONTEXT_MODE_WORKSPACE` (default `/workspace`), but no agent rule enforces the one-shot probe at session start. Agents may still default to literal `/workspace` from training data.
 
-**Resolution**: add a single line to the `rag-with-memory` skill and/or context-mode-related agent prelude: *"At session start, if any `ctx_execute_file` call is expected, run `ctx_execute('sh','echo $CONTEXT_MODE_WORKSPACE')` once and cache."* Deferred until first real fork-config break.
+**Resolution**: add a single line to the `rag-with-memory` skill and/or context-mode-related agent prelude: *"At session start, if any `ctx_execute_file` call is expected, run `ctx_execute('shell','echo $CONTEXT_MODE_WORKSPACE')` once and cache."* Deferred until first real fork-config break.
 
 #### LIMIT-3 — Multilingual recall gap in FTS5 cache
 
@@ -446,7 +446,7 @@ The Phase 7 plan above (`query_docs_cached`) is unchanged. Promotion trigger rem
 
 | File | Action | Phase | Impact on existing setup |
 |---|---|---|---|
-| `docker/context-mode/network-monitor.js` | New | 1 | None |
+| `docker/context-mode/network-monitor.cjs` | New | 1 | None |
 | `docker/context-mode/entrypoint.sh` | New | 1 | None |
 | `Dockerfile-context-mode` | New | 1 | None |
 | `.env.context-mode.example` | New (12 tunables) | 1 | Source of truth for defaults; copy to gitignored `.env.context-mode` |

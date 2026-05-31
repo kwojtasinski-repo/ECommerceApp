@@ -213,7 +213,7 @@ The mount target inside the container is parametric. Default is `/workspace`, bu
 **Recipe** (run once per session, cache the result):
 
 ```
-ctx_execute("sh", "echo $CONTEXT_MODE_WORKSPACE")
+ctx_execute("shell", "echo $CONTEXT_MODE_WORKSPACE")
 # → /workspace          (default)
 # → /repo               (if a fork overrode it)
 ```

@@ -218,6 +218,11 @@
     // monitor, and FTS5 DB stay warm. Each VSCode "Start" only spawns a new
     // `node cli.bundle.mjs` process inside it — no container churn.
     //
+    // Workspace context fix: run through `sh -lc` inside the container so the
+    // MCP process starts from `$CONTEXT_MODE_WORKSPACE` automatically instead of
+    // inheriting Docker's default exec cwd. This lets `ctx_execute` code use
+    // `process.cwd()` / relative paths consistently without hardcoding `/workspace`.
+    //
     // Prerequisites (one-time per machine):
     //   pwsh ./scripts/context-mode-bootstrap.ps1                (chown the volume)
     //   docker compose --profile monitoring  up -d adguard       (DNS firewall)
@@ -233,9 +238,9 @@
       "args": [
         "exec", "-i",
         "ecommerceapp-context-mode",
-        "node",
-        "--require", "/app/network-monitor.cjs",
-        "/app/cli.bundle.mjs"
+        "sh",
+        "-lc",
+        "workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node --require /app/network-monitor.cjs /app/cli.bundle.mjs"
       ]
     }
   }

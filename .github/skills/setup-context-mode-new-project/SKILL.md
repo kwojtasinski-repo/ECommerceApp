@@ -160,11 +160,17 @@ If any check fails, see [.github/skills/ctx-doctor-playbook/SKILL.md](../ctx-doc
     "<project>-context-mode": {
       "type": "stdio",
       "command": "docker",
-      "args": ["exec", "-i", "<project>-context-mode", "node", "/app/cli.bundle.mjs", "serve"]
+      "args": [
+        "exec", "-i", "<project>-context-mode",
+        "sh", "-lc",
+        "workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node --require /app/network-monitor.cjs /app/cli.bundle.mjs"
+      ]
     }
   }
 }
 ```
+
+This wrapper is important: the tool itself derives the active workspace from `$CONTEXT_MODE_WORKSPACE` and starts inside it, so payloads do not need to hardcode `/workspace` just to give sandbox code the right cwd.
 
 #### GitHub Copilot Web (`.github/copilot/mcp.json`)
 
