@@ -2,7 +2,7 @@
 
 ## Status
 
-**DRAFT — Proposed.** Not yet accepted. Concept agreed in design discussion; full plan captured to avoid loss of context. Acceptance pending implementation kick-off (after RAG MCP stabilisation is done).
+Accepted
 
 ## Date
 

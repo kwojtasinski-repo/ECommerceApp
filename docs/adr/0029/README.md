@@ -1,6 +1,6 @@
 # ADR-0029 — context-mode MCP sandbox + DNS firewall
 
-> ⚠️ **Status: DRAFT — Proposed (not yet accepted).** Captured here so the discussion is not lost; do not reference from other docs until status flips to Accepted.
+> **Status: Accepted.**
 
 ## Files in this folder
 

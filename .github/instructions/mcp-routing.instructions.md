@@ -118,7 +118,29 @@ get_history(id)   → evolution: full amendment chain
 | `ctx_stats()` | "how much context have we saved this session?" / health check |
 | `ctx_doctor()` | Server-side diagnostics — run first when other `ctx_*` calls fail. |
 | `ctx_execute(lang, code)` | Sandboxed code execution. **Only `javascript` and `shell` are installed in the shipped runtime image** (`ctx_doctor` → `Runtimes: 2/11`). The schema enum also accepts `typescript`, `ruby`, `go`, `rust`, `php`, `perl`, `R`, `elixir`, `csharp`, `python` — calling any of those returns a runtime error like `C# not available. Install dotnet-script via …`. Use `javascript` (Node) for math/regex/parsing/object work, `shell` (POSIX sh) for filesystem inspection. Output is only what you `console.log` / `echo`. |
-| `ctx_execute_file(path, lang, code)` | Read a file into the sandbox as `FILE_CONTENT` and derive an answer in code — raw bytes never enter context. Use for files >500 lines or any structural summary. **Path quirk:** sandbox cwd is NOT the repo root. Use absolute paths rooted at the workspace mount (default `/workspace`, parametric — see below) or your scan returns silent zero results. To discover the mount on the current container: `ctx_execute("sh", "echo $CONTEXT_MODE_WORKSPACE")` (one-shot per session; cache the result). |
+| `ctx_execute_file(path, lang, code)` | Read a file into the sandbox as `FILE_CONTENT` and derive an answer in code — raw bytes never enter context. Use for files >500 lines or any structural summary. **Path quirk:** sandbox cwd is NOT the repo root. Always pass mounted Linux-style paths (default `/workspace`, parametric — see below) or your scan returns silent zero results. **Never pass host OS absolute paths** (Windows `C:\...`, macOS/Linux `/Users/...`/`/home/...`) into `ctx_execute_file` — the container cannot resolve host paths. Start from a repo-relative path and map it to the mount root. To discover the mount on the current container: `ctx_execute("shell", "echo $CONTEXT_MODE_WORKSPACE")` (one-shot per session; cache the result). |
+
+### context-mode path normalization (mandatory)
+
+Before every `ctx_execute_file(...)` call, normalize from repo-relative to the container mount:
+
+- Input (source of truth): repo-relative path, for example `docs/adr/0028/amendments/0028-004-per-collection-config-gap.md`
+- Container path: `/workspace/<relative>`
+- If mount is customized, replace `/workspace` with `$CONTEXT_MODE_WORKSPACE`.
+- Normalize separators to `/` in the final ctx path.
+
+Quick conversion rule:
+
+```text
+relative path = <relative>
+ctx path      = <CONTEXT_MODE_WORKSPACE or /workspace> + / + <relative-with-forward-slashes>
+```
+
+If uncertain, run once per session:
+
+```text
+ctx_execute("shell", "echo $CONTEXT_MODE_WORKSPACE")
+```
 | `ctx_batch_execute(commands, queries)` | 3+ related commands in one round trip; auto-indexes outputs, returns matching sections per `queries`. Set `concurrency` 2–8 for I/O-bound work. |
 | `ctx_index(content\|path, source)` | Persist content into the FTS5 knowledge base (markdown-aware chunking, code blocks intact). Use for docs/skills/API refs you'll need to recall precisely. |
 | `ctx_search(queries, source?, sort?)` | Search the FTS5 knowledge base + auto-captured session memory (decisions, errors, blockers, plans). Multi-query batched, Porter+trigram+RRF ranking. |

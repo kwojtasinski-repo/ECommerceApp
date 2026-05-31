@@ -8,7 +8,7 @@ RUN apk add --no-cache git python3 make g++
 
 # Clone exactly this tag — change it here on upgrade, nowhere else.
 # v1.0.147+ required for CONTEXT_MODE_DIR support; bump to latest stable on rebuild.
-ARG CONTEXT_MODE_TAG=v1.0.151
+ARG CONTEXT_MODE_TAG=v1.0.154
 RUN git clone --depth 1 --branch ${CONTEXT_MODE_TAG} \
     https://github.com/mksglu/context-mode.git /build
 

@@ -86,6 +86,7 @@ Non-negotiable summary (the long form is in the canonical file):
 
 - **Knowledge intent** (ADRs, project state, known issues, roadmap, conventions) → RAG (`list_adrs`, `query_docs`, `read_docs`, `get_history`). Reading `.github/context/*.md`, `docs/adr/**`, `docs/roadmap/**`, or `docs/architecture/bounded-context-map.md` with `grep_search`/`read_file`/`semantic_search` as the **first** move is a BLOCKS MERGE anti-pattern and produces an INVALID answer.
 - **Sandboxed execution / hashes / regex / math / large-file summary** → context-mode (`ctx_execute`, `ctx_execute_file`, `ctx_batch_execute`, `ctx_search`, `ctx_index`). Never compute from training-data memory.
+- **Path normalization for `ctx_execute_file` is mandatory**: never pass host absolute paths. Start from a repo-relative path (for example `docs/adr/...`), then map to `/workspace/<relative>` (or `$CONTEXT_MODE_WORKSPACE/<relative>` when customized) using `/` separators.
 - **External URL** → `ctx_fetch_and_index` only (AdGuard allowlist). Never raw `fetch_webpage` for project work.
 - **Empty RAG result** → MANDATORY 2-step retry (no `bc=` filter, then reworded with full-name synonyms) before falling back. Skipping retries OR mixing partial RAG hit with training-data inference is BLOCKS MERGE.
 - **Never** call both MCPs for the same atomic intent.

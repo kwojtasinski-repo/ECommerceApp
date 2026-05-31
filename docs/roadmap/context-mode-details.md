@@ -1024,7 +1024,7 @@ Write-Host "Accepted $Domain. Push when ready: git push"
 
 ```powershell
 # Register the schedule once (run as admin):
-$action = New-ScheduledTaskAction -Execute 'pwsh' -Argument '-File C:\Projekty\ECommerceApp\tools\adguard\triage-queries.ps1'
+$action = New-ScheduledTaskAction -Execute 'pwsh' -Argument '-File <repo-root>/tools/adguard/triage-queries.ps1'
 $trigger = New-ScheduledTaskTrigger -Daily -At 09:00
 Register-ScheduledTask -TaskName 'AdGuard Triage' -Action $action -Trigger $trigger
 ```

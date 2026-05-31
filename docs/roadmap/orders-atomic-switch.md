@@ -223,13 +223,16 @@ before any controller migration or atomic switch:
 - [x] Full test suite green after activation — 1457/1457 passing
 - [x] `bounded-context-map.md` updated (switch live)
 
-### Cleanup (Step 8 — deferred)
+### Cleanup (Step 8 — mostly complete; one action pending)
 
-- [ ] Legacy `OrderService` + `OrderItemService` (`Application/Services/Orders/`) DI registrations removed
-- [ ] Legacy `OrderRepository` + `OrderItemRepository` (`Infrastructure/Repositories/`) DI registrations removed
-- [ ] `Domain/Model/Order.cs` legacy model deleted (coordinate with IAM switch)
+> Status verified 2026-05-31 against source files.
+
+- [x] Legacy `OrderService` + `OrderItemService` (`Application/Services/Orders/`) DI registrations removed
+- [x] Legacy `OrderRepository` + `OrderItemRepository` (`Infrastructure/Repositories/`) DI registrations removed
+- [x] `Domain/Model/Order.cs` legacy model deleted (coordinate with IAM switch)
+- [ ] `Web/Areas/Sales/Controllers/OrderItemsController.cs` — remove `ByItem(int id)` action (still present)
 - [ ] Full test suite green after cleanup
 
 ---
 
-*Last reviewed: 2026-03-26 · ADRs: [ADR-0014](../adr/0014-sales-orders-bc-design.md), [ADR-0024](../adr/0024-controller-routing-strategy.md), [ADR-0025](../adr/0025-api-tiered-access-trusted-purchase-policy.md)*
+*Last reviewed: 2026-05-31 · ADRs: [ADR-0014](../adr/0014-sales-orders-bc-design.md), [ADR-0024](../adr/0024-controller-routing-strategy.md), [ADR-0025](../adr/0025-api-tiered-access-trusted-purchase-policy.md)*

@@ -120,6 +120,104 @@ The full current 33-skill set also includes the cross-project/bootstrap and adva
 
 ## Change log
 
+### Session 42 — docs path-hardcoding cleanup close-out (2026-05-31)
+
+Workflow 11 + Workflow 7 compliance pass after removing remaining host-specific absolute path examples from docs.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Replaced host-specific absolute-path example with a generic cross-platform warning in ADR-0027 (`C:\...`, `/Users/...`, `/home/...`). | `docs/adr/0027/0027-rag-pipeline-design.md` |
+| 2 | Replaced Scheduled Task argument absolute path with a repo-root placeholder in context-mode details. | `docs/roadmap/context-mode-details.md` |
+| 3 | Close-out sync check: no docs-index, root policy, or solution-structure updates required (both files already mirrored in solution items). | `ECommerceApp.sln` |
+| 4 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- `.github/instructions/docs-index.instructions.md` — no new/renamed docs artifacts and no routing-index delta.
+- `.github/copilot-instructions.md` — policy/routing summary remains valid.
+- Application code and tests — docs-only cleanup.
+
+### Session 41 — cross-platform path normalization (relative-first) follow-up (2026-05-31)
+
+Workflow 11 + Workflow 7 follow-up pass to remove host-specific path examples and make `ctx_execute_file` guidance platform-agnostic.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Canonical routing switched from host-specific examples to relative-first guidance: start from repo-relative path, map to `$CONTEXT_MODE_WORKSPACE` (default `/workspace`), normalize separators to `/`, and avoid host absolute paths on all platforms. | `.github/instructions/mcp-routing.instructions.md` |
+| 2 | Root policy summary updated to the same cross-platform rule (no host absolute paths, relative-first mapping). | `.github/copilot-instructions.md` |
+| 3 | Doctor playbook error row generalized from Windows-only case to cross-platform host-absolute path failures (`C:\...`, `/Users/...`, `/home/...`). | `.github/skills/ctx-doctor-playbook/SKILL.md` |
+| 4 | Pattern doc examples switched from host absolute paths to repo-relative input examples and explicit "do not pass host absolute paths" guidance. | `docs/patterns/context-mode-read-write-split.md` |
+| 5 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- `.github/instructions/docs-index.instructions.md` — no new/renamed artifacts.
+- `ECommerceApp.sln` — no new files in this follow-up.
+- Application code and tests — documentation/policy scope only.
+
+### Session 40 — context-mode path normalization guardrails (`ctx_execute_file`) (2026-05-31)
+
+Workflow 11 + Workflow 7 compliance pass after fixing the recurring host-path vs container-path issue for context-mode file execution.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Canonical MCP routing now enforces mandatory path normalization for `ctx_execute_file`: never pass Windows host paths; convert `<repo-root>/<relative>` to `/workspace/<relative>` (or `$CONTEXT_MODE_WORKSPACE/<relative>`). Includes explicit conversion examples and one-shot mount probe command. | `.github/instructions/mcp-routing.instructions.md` |
+| 2 | Root policy summary now includes the same non-negotiable path normalization rule so new sessions inherit it immediately. | `.github/copilot-instructions.md` |
+| 3 | Pipeline spec now includes an explicit context-mode path rule for all agents using `ctx_execute_file`. | `.github/AGENT-PIPELINE.md` |
+| 4 | Doctor playbook now maps `ENOENT` with `/workspace/c:\...` to the exact root cause and conversion fix. | `.github/skills/ctx-doctor-playbook/SKILL.md` |
+| 5 | Pattern doc now includes explicit host-path (wrong) → container-path (correct) examples and mount probe guidance. | `docs/patterns/context-mode-read-write-split.md` |
+| 6 | Solution mirror synced: added missing patterns SolutionItem entry for the updated context-mode pattern doc. | `ECommerceApp.sln` |
+| 7 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- `.github/instructions/docs-index.instructions.md` — no new/renamed instruction, agent, prompt, or skill artifact.
+- Application code and tests — documentation/policy scope only.
+
+### Session 39 — Roadmap close-out after Orders/Payments roadmap refinements (2026-05-31)
+
+Workflow 11 + Workflow 7 compliance pass after additional roadmap documentation edits in roadmap index and atomic-switch tracks.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Updated roadmap index status/details for Orders and Payments atomic-switch tracks and refreshed review timestamp. | `docs/roadmap/README.md` |
+| 2 | Updated Orders atomic-switch roadmap cleanup/acceptance status and review stamp. | `docs/roadmap/orders-atomic-switch.md` |
+| 3 | Updated Payments atomic-switch roadmap cleanup/acceptance status and review stamp. | `docs/roadmap/payments-atomic-switch.md` |
+| 4 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- `.github/instructions/docs-index.instructions.md` — no new/renamed roadmap artifacts and no routing-index delta.
+- `.github/copilot-instructions.md` — policy/routing summary remains valid.
+- `ECommerceApp.sln` — edited roadmap files were already present in solution items.
+
+### Session 38 — ADR-0029 acceptance + roadmap ADR alignment close-out (2026-05-31)
+
+Workflow 11 + Workflow 7 compliance pass after promoting ADR-0029 status and aligning the context-mode roadmap row with its ADR.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Promoted ADR-0029 main document status from Draft/Proposed to Accepted. | `docs/adr/0029/0029-context-mode-mcp-sandbox.md` |
+| 2 | Synced ADR-0029 folder router/readme status to Accepted. | `docs/adr/0029/README.md` |
+| 3 | Added ADR link in the context-mode roadmap row to keep roadmap↔ADR mapping explicit. | `docs/roadmap/README.md` |
+| 4 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- `.github/instructions/docs-index.instructions.md` — no new ADR folder/file, rename, or routing table delta.
+- `.github/copilot-instructions.md` — policy/routing summary remains valid.
+- `ECommerceApp.sln` — changed docs were already present in solution items.
+
 ### Session 37 — Standalone/global RAG playbook + docs sync close-out (2026-05-29)
 
 Workflow 11 + Workflow 7 compliance pass after adding a standalone/global RAG deployment guide for reuse in other repositories.

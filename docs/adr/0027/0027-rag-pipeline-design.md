@@ -195,7 +195,7 @@ project-specific folder structure at test time.
   any EcommerceApp concept.
 - Collection names used in tests include a UUID suffix to avoid cross-run conflicts.
 - The apps discover the workspace at runtime via `RAG_WORKSPACE` / config-path derivation —
-  never hardcode a path to `c:\Projekty\ECommerceApp`.
+  never hardcode an absolute machine path (for example `C:\...`, `/Users/...`, `/home/...`).
 
 **Rationale**: Self-containment enables the RAG tooling to be extracted and reused in other
 projects without modification, and allows CI to run e2e tests in isolation without a full

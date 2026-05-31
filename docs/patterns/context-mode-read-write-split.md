@@ -14,6 +14,25 @@
 
 **These three paths NEVER overlap.** That non-overlap is the entire optimization.
 
+## Path normalization for ctx_execute_file
+
+When using `ctx_execute_file`, the path is resolved inside the container, not on the host OS.
+
+| Input path style | Container path (correct) |
+|---|---|
+| `docs/adr/0028/amendments/0028-004-per-collection-config-gap.md` | `/workspace/docs/adr/0028/amendments/0028-004-per-collection-config-gap.md` |
+| `tools/rag/queries.yaml` | `/workspace/tools/rag/queries.yaml` |
+| Host absolute path (`C:\...`, `/Users/...`, `/home/...`) | ❌ Do not pass host absolute paths to `ctx_execute_file` |
+
+Rule: convert repo-relative `<relative>` to `<CONTEXT_MODE_WORKSPACE>/<relative>`.
+Default mount is `/workspace`.
+
+If unsure, probe once per session:
+
+```shell
+echo $CONTEXT_MODE_WORKSPACE
+```
+
 ---
 
 ## The flow

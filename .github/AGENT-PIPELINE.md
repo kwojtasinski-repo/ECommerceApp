@@ -114,6 +114,8 @@ HUMAN runs git commands
 
 **Canonical MCP routing rules:** [.github/instructions/mcp-routing.instructions.md](instructions/mcp-routing.instructions.md). **NEVER call both RAG and context-mode for the same atomic intent.**
 
+**Path rule for context-mode tools:** any `ctx_execute_file(path, ...)` call must use container mount paths (`/workspace/...` or `$CONTEXT_MODE_WORKSPACE/...`), never host OS absolute paths (for example Windows `c:\...`).
+
 After hitting the cap → **STOP, report what was tried, ask the human**. No silent continuation.
 
 ---

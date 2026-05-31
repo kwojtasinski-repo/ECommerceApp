@@ -1,7 +1,7 @@
 # Roadmap: Sales/Payments BC — DB Migrations + Atomic Switch
 
 > ADR: [ADR-0015](../adr/0015-sales-payments-bc-design.md) — Sales/Payments BC Design
-> Status: ✅ Switch live — Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migration ✅ approved
+> Status: ✅ Switch live — Domain ✅ Application ✅ Infrastructure ✅ Unit tests ✅ Integration tests ✅ DB migration ✅ approved; cleanup Step 5 ✅, Step 6 ⬜
 > **Unblocked by**: Sales/Orders atomic switch ✅ complete
 
 ---
@@ -108,14 +108,16 @@ implementations before the legacy `PaymentHandler` is removed.
 - [x] Full test suite green
 - [x] `bounded-context-map.md` updated (switch live)
 
-### Cleanup (Steps 5–6 — deferred)
+### Cleanup (Steps 5–6 — partial)
 
-- [ ] `PaymentHandler.CreatePayment()` and `HandlePaymentChangesOnOrder()` removed
-- [ ] `IPaymentHandler` / `PaymentHandler` DI registrations removed from `Application/DependencyInjection.cs`
-- [ ] `PaymentWindowTimeoutJob` (Inventory) retired
-- [ ] `PaymentWindowTimeoutJobTests.cs` (Inventory) removed
+> Status verified 2026-05-31 against source files.
+
+- [x] `PaymentHandler.CreatePayment()` and `HandlePaymentChangesOnOrder()` removed
+- [x] `IPaymentHandler` / `PaymentHandler` DI registrations removed from `Application/DependencyInjection.cs`
+- [ ] `PaymentWindowTimeoutJob` (Inventory) retired (still present and registered)
+- [x] `PaymentWindowTimeoutJobTests.cs` (Inventory) removed
 - [ ] Full test suite green after cleanup
 
 ---
 
-*Last reviewed: 2026-03-26 · ADRs: [ADR-0015](../adr/0015-sales-payments-bc-design.md), [ADR-0024](../adr/0024-controller-routing-strategy.md)*
+*Last reviewed: 2026-05-31 · ADRs: [ADR-0015](../adr/0015-sales-payments-bc-design.md), [ADR-0024](../adr/0024-controller-routing-strategy.md)*

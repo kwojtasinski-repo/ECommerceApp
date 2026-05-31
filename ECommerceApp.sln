@@ -472,6 +472,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "prompts", "prompts", "{BAC4
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "patterns", "patterns", "{DB95CC21-7869-4EAC-8EB3-F5706D958E0A}"
 	ProjectSection(SolutionItems) = preProject
+		docs\patterns\context-mode-read-write-split.md = docs\patterns\context-mode-read-write-split.md
 		docs\patterns\implementation-patterns.md = docs\patterns\implementation-patterns.md
 	EndProjectSection
 EndProject
