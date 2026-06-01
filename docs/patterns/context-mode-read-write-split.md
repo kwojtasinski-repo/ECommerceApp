@@ -6,6 +6,8 @@
 
 ## TL;DR
 
+Describe the **job**, not the tool. The agent should infer the path automatically.
+
 | Operation type | Tool path | Why |
 |---|---|---|
 | **READ / analyze / derive** | `ctx_execute_file` / `ctx_execute` (sandbox) | Large file content stays out of the conversation. Returns only the *result*. |
@@ -13,6 +15,14 @@
 | **EXECUTE on host (build, test, git)** | `run_in_terminal` (native VS Code) | Stateful, dev-environment-bound; not a sandbox concern. |
 
 **These three paths NEVER overlap.** That non-overlap is the entire optimization.
+
+Examples:
+
+- `Przeanalizuj ten log i powiedz, co najczęściej się psuje` → sandbox read/derive path
+- `Policz wszystkie użycia symbolu w repo` → sandbox read/derive path
+- `Podsumuj ten duży plik przed refaktorem` → sandbox read/derive path
+- `Zmień implementację w tym pliku` → native edit path
+- `Uruchom build i testy` → host execution path
 
 ## Path normalization for ctx_execute_file
 

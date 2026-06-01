@@ -120,6 +120,126 @@ The full current 33-skill set also includes the cross-project/bootstrap and adva
 
 ## Change log
 
+### Session 52 — pre-dispatch guard for known canceled shapes (2026-06-01)
+
+Workflow 11 + Workflow 7 close-out after observing that some diagnostic runs still dispatched known cancellation-prone heavy shell scans to context-mode.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Canonical routing now requires a pre-dispatch short-circuit for known-bad `ctx_execute(shell)` shapes: do not run, emit explicit inability marker, and continue with safe rewritten shape or downstream step. | `.github/instructions/mcp-routing.instructions.md` |
+| 2 | Root MCP summary mirrors the same known-bad shape guard requirement. | `.github/copilot-instructions.md` |
+| 3 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- File structure and locations — no new files or moves.
+- Runtime/container setup — policy-only guardrail hardening.
+
+### Session 51 — fail-open canceled handling contract (2026-06-01)
+
+Workflow 11 + Workflow 7 close-out for resilience hardening after repeated diagnostic runs where heavy context-mode steps canceled and the run quality degraded.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Canonical routing now includes a mandatory fail-open response contract for unrecoverable canceled steps: explicit inability marker (`UNABLE_TO_PROCESS`) + reason + continued next step. | `.github/instructions/mcp-routing.instructions.md` |
+| 2 | Root MCP summary mirrors the graceful degradation requirement so agents continue independent steps instead of failing fast. | `.github/copilot-instructions.md` |
+| 3 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- File structure and locations — no new files or moves.
+- Runtime/container setup — policy-only behavior hardening.
+
+### Session 50 — in-place routing governance cleanup (no structure change) (2026-06-01)
+
+Workflow 11 + Workflow 7 close-out for maintainability hardening after repeated policy additions. Goal: reduce patchwork risk without changing file layout or dropping any rule.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Added explicit change-management contract in canonical MCP routing: stable core vs tunable operational zones, plus non-regression checklist. | `.github/instructions/mcp-routing.instructions.md` |
+| 2 | Reduced root-policy duplication in MCP section; kept non-negotiable summary and replaced long duplicate text with pointers to canonical sections. | `.github/copilot-instructions.md` |
+| 3 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- File structure and locations — no new instruction files, no file moves.
+- Runtime behavior — routing logic preserved; this pass improves maintainability and drift resistance.
+
+### Session 49 — canceled-trigger guardrails for heavy shell scans (2026-06-01)
+
+Workflow 11 + Workflow 7 close-out after recurring cancellations on intentionally heavy benchmark step-A commands (`find /workspace` + per-file `grep`/`sha256sum` loops).
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Canonical routing now documents cancellation-prone command anti-patterns and a required rewrite order (scope bound → extension filters → javascript reducer → split calls). | `.github/instructions/mcp-routing.instructions.md` |
+| 2 | Root policy mirrors the same guidance so benchmark prompts avoid pathological shell shapes that cancel before retry/fallback logic can help. | `.github/copilot-instructions.md` |
+| 3 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- Application code and tests — policy-only update.
+- Runtime/container wiring — no compose or hook changes required.
+
+### Session 48 — canceled-call recovery policy in setup routing (2026-06-01)
+
+Workflow 11 + Workflow 7 close-out after repeated test feedback that `Canceled` tool calls were treated as terminal and aborted analysis/benchmark runs.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Canonical routing now defines `Canceled` as recoverable: max 3 retries with lighter call shape, then one fallback path, mandatory partial report if still incomplete. | `.github/instructions/mcp-routing.instructions.md` |
+| 2 | Root policy mirrors the same `Canceled` recovery behavior in the non-negotiable summary so agents do not fail-fast on canceled `ctx_*` calls. | `.github/copilot-instructions.md` |
+| 3 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- Application code and tests — policy-only update.
+- Runtime/container wiring — no command or compose changes required.
+
+### Session 47 — context-benchmark integrity gate (`ctx_stats`) (2026-06-01)
+
+Workflow 11 + Workflow 7 close-out after test feedback showed KPI/report inconsistencies (for example claimed multi-step `ctx_*` usage vs raw `ctx_stats` showing `0 calls`). Added an explicit integrity gate so benchmark outputs are either source-of-truth aligned or marked invalid.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Canonical MCP routing gained a benchmark-integrity section: `ctx_stats` is mandatory KPI source of truth, mismatches (`0 calls` vs claimed usage) invalidate the run, and chat-session transport artifacts are forbidden as KPI evidence. | `.github/instructions/mcp-routing.instructions.md` |
+| 2 | Root policy now mirrors the same integrity guard in the non-negotiable summary for fast agent pickup. | `.github/copilot-instructions.md` |
+| 3 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- Application code and tests — policy-only update.
+- MCP runtime wiring and hooks — no command-shape change needed; this pass tightens answer integrity only.
+
+### Session 46 — intent-based automatic context-mode routing wording (2026-06-01)
+
+Workflow 11 + Workflow 7 close-out after clarifying that users should describe the task in natural language and the agent must infer context-mode automatically, instead of waiting for explicit `ctx_*` phrasing in prompts.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Canonical MCP routing now states explicitly that users do not need to name `ctx_*` tools or mention context-mode; routing is inferred from intent and expected output shape. | `.github/instructions/mcp-routing.instructions.md` |
+| 2 | Root Copilot instructions now say natural-language task descriptions are sufficient and explicit sandbox/tool wording is optional. | `.github/copilot-instructions.md` |
+| 3 | Pattern doc TL;DR now opens with "describe the job, not the tool" plus concrete examples mapping plain-language asks to the automatic path. | `docs/patterns/context-mode-read-write-split.md` |
+| 4 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- Application code and tests — policy-only update.
+- `.vscode/mcp.json` and `.github/hooks/context-mode.json` — runtime wiring already auto-detects the workspace correctly; this pass only tightened prompt/routing semantics.
+
 ### Session 45 — context-mode workspace-aware startup wrapper (2026-06-01)
 
 Workflow 11 + Workflow 7 close-out after fixing context-mode startup so the tool derives its workspace context automatically instead of requiring payloads to hardcode `/workspace`.

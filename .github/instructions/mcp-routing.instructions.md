@@ -6,6 +6,27 @@ applyTo: "**"
 
 > **This file owns** the rules for which MCP server / which tool to call for any user intent. Every other instruction, agent, prompt, and skill file links here instead of restating the rules. If you find a duplicated rule elsewhere, fix it by replacing with a link to this file.
 
+## Change-management contract (keep rules, avoid patchwork)
+
+To keep this file maintainable while preserving all existing rules, treat it as two logical zones:
+
+1. **Core routing contract (stable):** server ownership, intent classification, precedence, invalid-answer directive.
+2. **Operational playbooks (tunable):** benchmark integrity, canceled recovery/anti-patterns, cache handoff, fallback ladder, maintenance notes.
+
+Maintenance rules:
+
+- Put new routing decisions in the smallest matching section; do not duplicate the same rule in multiple files.
+- Keep `.github/copilot-instructions.md` as a compact mirror (summary + pointers), not a second full spec.
+- When updating operational behavior, edit this file first, then mirror only a short non-negotiable summary in root instructions.
+- Preserve backward compatibility of existing rule intent; prefer rewording and regrouping over semantic rewrites.
+
+Non-regression checklist for edits in this file:
+
+- Core precedence still answers: knowledge intent, execution intent, external URL intent, and mixed-MCP conflict.
+- Empty-result and invalid-answer guards remain explicit.
+- Canceled handling still mandates retry/fallback/partial reporting.
+- Changes are logged in `COPILOT-SETUP-CHANGELOG.md`.
+
 The repo ships **two MCP servers**, both live:
 
 | MCP | Status | Servers | Job |
@@ -13,7 +34,7 @@ The repo ships **two MCP servers**, both live:
 | **RAG** | ✅ Live | `ecommerceapp-rag-python`, `ecommerceapp-rag-dotnet` (VS Code); `ecommerceapp-rag` (GitHub.com Copilot, see [.github/copilot/mcp.json](../copilot/mcp.json)) | Answer **knowledge** questions from the indexed `docs/` + `.github/context/` corpus |
 | **context-mode** | ✅ Live | `ecommerceapp-context-mode` (VS Code stdio via `docker exec`, see [.vscode/mcp.json](../../.vscode/mcp.json)) | **Execute**, **summarise**, **fetch external URLs**, and **persist FTS5-indexed session memory** through a sandboxed Node runtime + AdGuard DNS allowlist. Wraps [ADR-0029](../../docs/adr/0029/0029-context-mode-mcp-sandbox.md). |
 
-> Both servers must be running for the precedence rules below to apply. If a server is down, see the [Fallback ladder](#fallback-ladder-when-an-mcp-returns-empty).
+> Both servers must be running for the precedence rules below to apply. If a server is down, see the [Fallback ladder](mcp-routing.instructions.md).
 
 ---
 
@@ -89,7 +110,7 @@ The repo ships **two MCP servers**, both live:
 | Bounded-context map, cross-BC dependencies | `query_docs("<bc> dependencies", bc="<BCName>")` |
 | Roadmap status, "what's next for BC X" | `query_docs("<bc> roadmap", bc="<BCName>")` |
 
-> **What `bc=` actually does:** it is a case-insensitive **substring filter on the chunk's `breadcrumb` or `doc_title`** (post-search, see [tools/rag/query.py](../../tools/rag/query.py#L194)). Use it for BC **names** that appear in headings or titles (e.g. `bc="Catalog"`, `bc="Orders"`, `bc="Sales/Orders"`). **Do NOT use `bc="context"`** to target `.github/context/*.md` — those files don't have the word "context" in their headings, so the filter excludes every chunk and returns empty. For knowledge in `.github/context/*.md`, omit `bc=` entirely.
+> **What `bc=` actually does:** it is a case-insensitive **substring filter on the chunk's `breadcrumb` or `doc_title`** (post-search, see [tools/rag/query.py](../../tools/rag/query.py)). Use it for BC **names** that appear in headings or titles (e.g. `bc="Catalog"`, `bc="Orders"`, `bc="Sales/Orders"`). **Do NOT use `bc="context"`** to target `.github/context/*.md` — those files don't have the word "context" in their headings, so the filter excludes every chunk and returns empty. For knowledge in `.github/context/*.md`, omit `bc=` entirely.
 
 **Forbidden paths for `grep_search` / `read_file` as a first move** — these MUST go through RAG first:
 
@@ -123,6 +144,10 @@ get_history(id)   → evolution: full amendment chain
 ### Sandbox-first default for analysis tasks
 
 If the user asks to **analyze, summarize, count, compare, grep, parse, transform, extract, or search** a file/log/output, prefer context-mode automatically:
+
+- The user does **not** need to name `ctx_*` tools, say "use context-mode", or mention the sandbox explicitly.
+- Route by **intent and data shape**, not by whether the prompt contains MCP/tool names.
+- If the request is analysis-heavy and would likely emit large raw output, assume context-mode first even when the user asks in plain natural language.
 
 - `ctx_execute_file(...)` for file-backed analysis, especially attached files and large files
 - `ctx_execute(...)` for calculations, regex, parsing, or ad-hoc processing
@@ -172,6 +197,75 @@ When more than one path could plausibly answer a request:
 3. **External URL** (any HTTP/HTTPS the user pastes that relates to project work) → **`ctx_fetch_and_index` only**. Never raw `fetch_webpage` for project work — it bypasses the AdGuard allowlist. (Carve-out: non-project URLs the user explicitly asks you to read in raw form.)
 4. **Both MCPs empty / unhealthy** → fall back to direct `read_file` / `grep_search` and **name the failing MCP** to the user.
 5. **NEVER call both MCPs for the same atomic intent.** If unsure, pick the one whose table matches the user's verb ("what does ADR-X say" → RAG; "run this snippet" → context-mode).
+
+### User-prompt interpretation rule
+
+Treat explicit tool naming as **optional**, not required.
+
+- `Analyze these logs and tell me the top 5 failures` → route to context-mode automatically.
+- `Count usages of this symbol across the repo` → route to context-mode automatically.
+- `Summarize this large file before editing it` → route to context-mode automatically.
+- `What does ADR-0029 say about hooks?` → route to RAG automatically.
+
+Do **not** wait for prompts like `use ctx_execute`, `run ctx_execute_file`, or `use context-mode`. If the intent already matches the routing table, call the MCP directly.
+
+### Benchmark integrity rule (`ctx_stats`)
+
+For context-reduction or "savings" benchmarks, treat `ctx_stats` as the only KPI source of truth.
+
+- If the user requests benchmark metrics, call `ctx_stats` at the end and report the raw output first.
+- Derive KPI fields only from that raw output. Do not invent or interpolate missing values.
+- If raw `ctx_stats` says `0 calls` / "No tool calls yet" while the report claims multiple `ctx_*` operations, mark the run **INVALID**, state the mismatch, and rerun the benchmark flow.
+- Never use chat-session artifact files (`chat-session-resources/.../content.txt|json`) as evidence for KPI math; they are transport artifacts, not benchmark metrics.
+- If `ctx_stats` output is internally inconsistent (for example, textual call count vs KPI totals conflict), explicitly flag the inconsistency and provide only the non-contradictory metrics.
+
+### Tool-cancel recovery rule (`Canceled`)
+
+Treat tool status `Canceled` as a recoverable execution failure, not as a stop condition for the whole task.
+
+- For analysis/benchmark flows, retry the same `ctx_*` call up to 3 times using a lighter shape each time (shorter output window, split scope, or cheaper query shape).
+- If retries are exhausted, use one fallback path (for example split into smaller calls, or switch `ctx_execute` shell pipeline to `ctx_execute` javascript reducer) and continue.
+- Never end the overall run with only a cancellation note; return a partial report with explicit `FAILED STEP`, `FALLBACK USED`, and `WHAT IS MISSING`.
+- For benchmark prompts, still call `ctx_stats` at the end and mark KPI status as `PARTIAL/INVALID` when canceled steps prevent full metric trust.
+- Do not claim success for steps that returned `Canceled`; record them as incomplete.
+
+#### Fail-open response contract (mandatory after exhausted retries)
+
+If a step remains canceled after retries + one fallback, the agent must **continue the run** and emit a deterministic inability marker instead of aborting.
+
+- Required fields in the answer for that step: `UNABLE_TO_PROCESS`, `FAILED_STEP`, `REASON`, `NEXT_STEP_CONTINUED`.
+- `REASON` must be explicit and user-facing (for example: "Operation exceeds safe processing envelope in current sandbox constraints").
+- `NEXT_STEP_CONTINUED` must point to the next executed step (for example KPI collection via `ctx_stats`, or downstream B/C/D stage).
+- Hard stop is allowed only when **every** remaining step depends on the failed artifact; in that case state `RUN_STATUS=PARTIAL` and still provide whatever metrics are available.
+
+This rule exists to prevent fail-fast behavior on heavy diagnostic runs and to guarantee graceful degradation.
+
+#### `Canceled` anti-patterns to avoid
+
+These command shapes are frequent cancellation triggers and should be rewritten before retrying:
+
+- Unbounded full-repo shell scans like `find /workspace -type f` piped into per-file `grep`/`sha256sum` loops.
+- Per-file fan-out pipelines (`xargs` over all files) that run multiple expensive operations per file in a single call.
+- Mixed binary/text scans without extension filters.
+
+#### Pre-dispatch guard for known-bad shapes (mandatory)
+
+If a planned `ctx_execute(shell)` command already matches one of the anti-patterns above, do **not** dispatch it to context-mode.
+
+- Short-circuit before execution and emit: `UNABLE_TO_PROCESS`, `FAILED_STEP`, `REASON`, `NEXT_STEP_CONTINUED`.
+- Then continue with the rewritten safe shape (bounded scope + extension filters, or javascript reducer), or skip that step and continue downstream.
+- Do not use "try once anyway" for known-bad shapes; this wastes budget and still tends to cancel.
+
+This guard applies especially to synthetic "force Canceled" diagnostics: do not attempt cancellation by unbounded repo-wide scans.
+
+Preferred rewrite order after a canceled attempt:
+
+1. Constrain scope to a bounded directory set (for example `ECommerceApp.Domain/Sales`, `ECommerceApp.Application/Sales`).
+2. Constrain file types (`*.cs`, `*.md`) and exclude heavy folders (`.git`, `bin`, `obj`, `node_modules`).
+3. Replace shell fan-out with one-pass `ctx_execute` javascript aggregation.
+4. Split one heavy call into 2-4 smaller calls and merge results in the report.
+
+If the original shape matches one of the anti-patterns above, you may skip re-running that exact shape and jump directly to rewritten form. Do not loop on known-bad shapes.
 
 ### Invalid-answer directive
 
@@ -402,7 +496,7 @@ For a step-by-step walkthrough with examples, see the skill [`.github/skills/rag
 ## Further reading
 
 - Full architecture: [docs/rag/rag-architecture.md](../../docs/rag/rag-architecture.md)
-- Error envelope spec: [docs/rag/rag-architecture.md §14](../../docs/rag/rag-architecture.md#14-error-handling-sanitisation-and-middleware)
+- Error envelope spec: [docs/rag/rag-architecture.md](../../docs/rag/rag-architecture.md)
 - Migration playbook (anti-patterns + verification prompts): [docs/rag/mcp-first-routing-migration-playbook.md](../../docs/rag/mcp-first-routing-migration-playbook.md)
-- ASCII flow + multi-MCP coexistence detail: [playbook §13](../../docs/rag/mcp-first-routing-migration-playbook.md#13-coexistence-with-a-second-mcp-server-worked-example-context-mode)
+- ASCII flow + multi-MCP coexistence detail: [docs/rag/mcp-first-routing-migration-playbook.md](../../docs/rag/mcp-first-routing-migration-playbook.md)
 - ADR-0027 (RAG), ADR-0028 (remote multitenant), ADR-0029 (context-mode sandbox)

@@ -82,15 +82,24 @@ This catches races, missing redirects, re-entrant states, and TTL edge cases tha
 
 Canonical source: [.github/instructions/mcp-routing.instructions.md](instructions/mcp-routing.instructions.md) (`applyTo: **` — auto-loads every session). All rules, tables, retry sequences, anti-patterns, and the Invalid-answer directive live there.
 
-Non-negotiable summary (the long form is in the canonical file):
+Canonical maintenance rule: keep full routing logic in the canonical file above. This root section stays compact (summary + pointers) to prevent configuration drift.
 
-- **Knowledge intent** (ADRs, project state, known issues, roadmap, conventions) → RAG (`list_adrs`, `query_docs`, `read_docs`, `get_history`). Reading `.github/context/*.md`, `docs/adr/**`, `docs/roadmap/**`, or `docs/architecture/bounded-context-map.md` with `grep_search`/`read_file`/`semantic_search` as the **first** move is a BLOCKS MERGE anti-pattern and produces an INVALID answer.
-- **Sandboxed execution / hashes / regex / math / large-file summary** → context-mode (`ctx_execute`, `ctx_execute_file`, `ctx_batch_execute`, `ctx_search`, `ctx_index`). Never compute from training-data memory.
-- **Sandbox-first for analysis**: if the task is to analyze, summarize, count, compare, grep, parse, transform, or extract from a file/log/output, prefer `ctx_execute_file` / `ctx_execute` automatically; use `ctx_search` to recall prior indexed results.
-- **Path normalization for `ctx_execute_file` is mandatory**: never pass host absolute paths. Start from a repo-relative path (for example `docs/adr/...`), then map to `/workspace/<relative>` (or `$CONTEXT_MODE_WORKSPACE/<relative>` when customized) using `/` separators.
-- **External URL** → `ctx_fetch_and_index` only (AdGuard allowlist). Never raw `fetch_webpage` for project work.
-- **Empty RAG result** → MANDATORY 2-step retry (no `bc=` filter, then reworded with full-name synonyms) before falling back. Skipping retries OR mixing partial RAG hit with training-data inference is BLOCKS MERGE.
-- **Never** call both MCPs for the same atomic intent.
+Non-negotiable summary:
+
+- **Core precedence is mandatory**: knowledge intent → RAG, execution/analysis intent → context-mode, project URLs → `ctx_fetch_and_index`, never both MCPs for one atomic intent.
+- **First-move discipline is mandatory**: no `read_file`/`grep_search` first on protected knowledge paths when RAG should answer.
+- **Integrity and resilience are mandatory**: `ctx_stats` is KPI source of truth; canceled calls require retry/fallback/partial reporting.
+- **Graceful degradation is mandatory**: when a canceled step cannot be recovered, emit explicit inability (`UNABLE_TO_PROCESS` + reason), mark run `PARTIAL`, and continue remaining independent steps.
+- **Known-bad shape guard is mandatory**: do not dispatch known cancellation-prone unbounded shell scans to context-mode; short-circuit with explicit inability and continue using safe rewritten shape.
+- **Path and retry safety are mandatory**: `ctx_execute_file` path normalization plus empty-RAG retry sequence before fallback.
+
+Operational details and exact wording live in canonical sections:
+
+- Precedence + first-move restrictions: [mcp-routing.instructions.md](instructions/mcp-routing.instructions.md#hard-precedence-rules-apply-in-this-order-no-exceptions)
+- Invalid-answer + empty-result sequence: [mcp-routing.instructions.md](instructions/mcp-routing.instructions.md#invalid-answer-directive)
+- Benchmark integrity: [mcp-routing.instructions.md](instructions/mcp-routing.instructions.md#benchmark-integrity-rule-ctx_stats)
+- Canceled recovery + anti-patterns: [mcp-routing.instructions.md](instructions/mcp-routing.instructions.md#tool-cancel-recovery-rule-canceled)
+- Path normalization: [mcp-routing.instructions.md](instructions/mcp-routing.instructions.md#context-mode-path-normalization-mandatory)
 
 Enforced by [.github/context/anti-patterns-critical.context.md](context/anti-patterns-critical.context.md). RAG re-index rules: [instructions/rag.instructions.md](instructions/rag.instructions.md).
 

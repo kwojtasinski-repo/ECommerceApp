@@ -1,26 +1,26 @@
 ﻿# RAG Index Stats
 
-Last indexed: 2026-05-28 14:26 UTC  
+Last indexed: 2026-05-31 23:14 UTC  
 Collection: `ecommerceapp_docs_dotnet`  
-Files: 183  
-Chunks: 1229  
+Files: 190  
+Chunks: 1356  
 
 ## Breakdown by doc_kind
 
 | doc_kind | files | chunks |
 |----------|------:|-------:|
-| `adr_amendment` | 13 | 79 |
+| `adr_amendment` | 16 | 112 |
 | `adr_checklist` | 24 | 34 |
 | `adr_example` | 34 | 34 |
-| `adr_main` | 31 | 510 |
+| `adr_main` | 31 | 523 |
 | `adr_migration_plan` | 25 | 25 |
-| `adr_router` | 29 | 102 |
+| `adr_router` | 29 | 101 |
 | `architecture` | 1 | 12 |
 | `context` | 6 | 103 |
-| `other` | 2 | 20 |
-| `pattern` | 2 | 34 |
+| `other` | 6 | 90 |
+| `pattern` | 2 | 35 |
 | `reference` | 2 | 50 |
-| `roadmap` | 14 | 226 |
+| `roadmap` | 14 | 237 |
 
 ## Per-file detail
 
@@ -86,7 +86,7 @@ Chunks: 1229
 | `docs/adr/0010/example-implementation/publish-message-example.md` | `adr_example` | 1 |
 | `docs/adr/0010/example-implementation/register-handler-example.md` | `adr_example` | 1 |
 | `docs/adr/0010/migration-plan.md` | `adr_migration_plan` | 1 |
-| `docs/adr/0011/0011-inventory-availability-bc-design.md` | `adr_main` | 25 |
+| `docs/adr/0011/0011-inventory-availability-bc-design.md` | `adr_main` | 26 |
 | `docs/adr/0011/README.md` | `adr_router` | 5 |
 | `docs/adr/0011/amendments/a1-fulfillment-message-consumption.md` | `adr_amendment` | 3 |
 | `docs/adr/0011/checklist.md` | `adr_checklist` | 1 |
@@ -106,7 +106,7 @@ Chunks: 1229
 | `docs/adr/0013/checklist.md` | `adr_checklist` | 1 |
 | `docs/adr/0013/example-implementation/dbcontext-interface-pattern.md` | `adr_example` | 1 |
 | `docs/adr/0013/migration-plan.md` | `adr_migration_plan` | 1 |
-| `docs/adr/0014/0014-sales-orders-bc-design.md` | `adr_main` | 23 |
+| `docs/adr/0014/0014-sales-orders-bc-design.md` | `adr_main` | 24 |
 | `docs/adr/0014/README.md` | `adr_router` | 5 |
 | `docs/adr/0014/amendments/a1-order-status-lifecycle.md` | `adr_amendment` | 1 |
 | `docs/adr/0014/amendments/a2-event-payload-records.md` | `adr_amendment` | 1 |
@@ -184,15 +184,22 @@ Chunks: 1229
 | `docs/adr/0028/amendments/0028-001-implementation-deviations.md` | `adr_amendment` | 6 |
 | `docs/adr/0028/amendments/0028-002-batch-manifest-pipeline.md` | `adr_amendment` | 20 |
 | `docs/adr/0028/amendments/0028-003-transport-aware-tools.md` | `adr_amendment` | 7 |
+| `docs/adr/0028/amendments/0028-004-per-collection-config-gap.md` | `adr_amendment` | 8 |
+| `docs/adr/0028/amendments/0028-005-phase3-per-collection-config-dotnet.md` | `adr_amendment` | 11 |
+| `docs/adr/0028/amendments/0028-006-phase3-python-parity.md` | `adr_amendment` | 14 |
 | `docs/adr/0028/tech-details-dotnet.md` | `adr_main` | 24 |
-| `docs/adr/0028/tech-details-python.md` | `adr_main` | 19 |
-| `docs/adr/0029/0029-context-mode-mcp-sandbox.md` | `adr_main` | 11 |
-| `docs/adr/0029/README.md` | `adr_router` | 3 |
+| `docs/adr/0028/tech-details-python.md` | `adr_main` | 31 |
+| `docs/adr/0029/0029-context-mode-mcp-sandbox.md` | `adr_main` | 10 |
+| `docs/adr/0029/README.md` | `adr_router` | 2 |
 | `docs/adr/0029/amendments/0029-001-host-side-rag-auto-cache.md` | `adr_amendment` | 11 |
 | `docs/architecture/bounded-context-map.md` | `architecture` | 12 |
 | `docs/getting-started-context-mode.md` | `other` | 16 |
-| `docs/patterns/context-mode-read-write-split.md` | `pattern` | 16 |
+| `docs/patterns/context-mode-read-write-split.md` | `pattern` | 17 |
 | `docs/patterns/implementation-patterns.md` | `pattern` | 18 |
+| `docs/playbooks/README.md` | `other` | 7 |
+| `docs/playbooks/context-mode-bootstrap.md` | `other` | 30 |
+| `docs/playbooks/rag-bootstrap.md` | `other` | 20 |
+| `docs/playbooks/rag-standalone-global.md` | `other` | 13 |
 | `docs/reference/context-mode-tools.md` | `reference` | 22 |
 | `docs/reference/endpoint-map.md` | `reference` | 28 |
 | `docs/roadmap/README.md` | `roadmap` | 6 |
@@ -206,7 +213,7 @@ Chunks: 1229
 | `docs/roadmap/orders-atomic-switch.md` | `roadmap` | 20 |
 | `docs/roadmap/payments-atomic-switch.md` | `roadmap` | 12 |
 | `docs/roadmap/presale-slice2.md` | `roadmap` | 9 |
-| `docs/roadmap/rag-remote-multitenant.md` | `roadmap` | 29 |
+| `docs/roadmap/rag-remote-multitenant.md` | `roadmap` | 40 |
 | `docs/roadmap/saga-pattern.md` | `roadmap` | 12 |
 | `docs/roadmap/storefront-offers.md` | `roadmap` | 8 |
 
