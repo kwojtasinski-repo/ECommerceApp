@@ -193,10 +193,21 @@ services:
             - 172.28.0.2                            # AdGuard (ONLY — no upstream fallback)
         # Keep the container alive as an idle host; MCP server and hooks are spawned
         # per-session via `docker exec` from .vscode/mcp.json / .github/hooks/context-mode.json.
-        # The startup wrapper resolves $CONTEXT_MODE_WORKSPACE, cds into that mount, and then
-        # launches `node --require /app/network-monitor.cjs /app/cli.bundle.mjs`, so only the
-        # node process gets recycled while the container and FTS5 DB stay warm.
-        entrypoint: ["sleep", "infinity"]
+        # Docker exec output normally does not appear in `docker logs`, so we collect stderr
+        # into persistent files and tail them here for container-level visibility.
+        entrypoint:
+          - sh
+          - -lc
+          - |
+            mkdir -p /home/ctxmode/.context-mode /tmp
+            touch /home/ctxmode/.context-mode/runtime.log \
+                /home/ctxmode/.context-mode/hooks.log \
+                /tmp/.ctx-network-alerts.log
+            tail -n0 -F \
+               /home/ctxmode/.context-mode/runtime.log \
+               /home/ctxmode/.context-mode/hooks.log \
+               /tmp/.ctx-network-alerts.log &
+            exec sleep infinity
         # Lightweight liveness probe — verifies the cli bundle is loadable and FTS5 native
         # module works. Runs every 60s; failure means the image is broken, not a transient.
         healthcheck:

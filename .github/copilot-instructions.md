@@ -89,6 +89,7 @@ Non-negotiable summary:
 - **Core precedence is mandatory**: knowledge intent → RAG, execution/analysis intent → context-mode, project URLs → `ctx_fetch_and_index`, never both MCPs for one atomic intent.
 - **First-move discipline is mandatory**: no `read_file`/`grep_search` first on protected knowledge paths when RAG should answer.
 - **Integrity and resilience are mandatory**: `ctx_stats` is KPI source of truth; canceled calls require retry/fallback/partial reporting.
+- **End-of-run telemetry is mandatory**: if any `ctx_*` tool was used, include raw `ctx_stats` in the final answer (unless user explicitly asks to skip metadata).
 - **Graceful degradation is mandatory**: when a canceled step cannot be recovered, emit explicit inability (`UNABLE_TO_PROCESS` + reason), mark run `PARTIAL`, and continue remaining independent steps.
 - **Known-bad shape guard is mandatory**: do not dispatch known cancellation-prone unbounded shell scans to context-mode; short-circuit with explicit inability and continue using safe rewritten shape.
 - **Path and retry safety are mandatory**: `ctx_execute_file` path normalization plus empty-RAG retry sequence before fallback.

@@ -1,5 +1,5 @@
 ---
-applyTo: "**"
+applyTo: ".github/**, docs/**, tools/rag/**, tools/rag-dotnet/**"
 ---
 
 # RAG — maintenance & operations

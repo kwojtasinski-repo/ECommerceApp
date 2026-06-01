@@ -41,6 +41,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "instructions", "instruction
 		.github\instructions\bc-adr-map.instructions.md = .github\instructions\bc-adr-map.instructions.md
 		.github\instructions\copilot-config-sync.instructions.md = .github\instructions\copilot-config-sync.instructions.md
 		.github\instructions\doc-suggestions.instructions.md = .github\instructions\doc-suggestions.instructions.md
+		.github\instructions\docs-index.full.md = .github\instructions\docs-index.full.md
 		.github\instructions\docs-index.instructions.md = .github\instructions\docs-index.instructions.md
 		.github\instructions\dotnet.instructions.md = .github\instructions\dotnet.instructions.md
 		.github\instructions\efcore.instructions.md = .github\instructions\efcore.instructions.md
@@ -466,9 +467,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "architecture", "architectur
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "prompts", "prompts", "{BAC45AC5-6905-4FAF-956C-CD73D03DB4BD}"
 	ProjectSection(SolutionItems) = preProject
+		.github\prompts\batched-tasks.prompt.md = .github\prompts\batched-tasks.prompt.md
 		.github\prompts\bc-analysis.prompt.md = .github\prompts\bc-analysis.prompt.md
 		.github\prompts\bc-implementation.prompt.md = .github\prompts\bc-implementation.prompt.md
+		.github\prompts\flow-analysis.prompt.md = .github\prompts\flow-analysis.prompt.md
+		.github\prompts\mcp-routing-eval.prompt.md = .github\prompts\mcp-routing-eval.prompt.md
 		.github\prompts\pr-review.prompt.md = .github\prompts\pr-review.prompt.md
+		.github\prompts\rag-sync.prompt.md = .github\prompts\rag-sync.prompt.md
 		.github\prompts\refactor.prompt.md = .github\prompts\refactor.prompt.md
 	EndProjectSection
 EndProject
@@ -508,6 +513,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "context", "context", "{1064
 		.github\context\known-issues.md = .github\context\known-issues.md
 		.github\context\project-state.md = .github\context\project-state.md
 		.github\context\repo-index.md = .github\context\repo-index.md
+		.github\context\test-stabilization-policy.md = .github\context\test-stabilization-policy.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "hooks", "hooks", "{5A7C54F0-2E0E-4C75-A54A-8BF71003D4C2}"

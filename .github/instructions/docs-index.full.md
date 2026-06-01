@@ -36,7 +36,7 @@ Auto-loaded by `applyTo:` globs — Copilot reads these automatically when editi
 | `doc-suggestions.instructions.md`     | `**`                                | When to suggest ADR, BC map, roadmap, or project-state updates (advisory)                        |
 | `agent-memory.instructions.md`        | `**`                                | Auto-loads `agent-decisions.md` read rule before any non-trivial task                            |
 | `copilot-config-sync.instructions.md` | `.github/**, docs/**`               | Auto-sync trigger for docs and Copilot config                                                    |
-| `rag.instructions.md`                 | `**`                                | When to call the local RAG MCP tools (`query_docs`, `get_adr_history`, `list_adrs`)              |
+| `rag.instructions.md`                 | `.github/**, docs/**, tools/rag/**, tools/rag-dotnet/**` | When to call the local RAG MCP tools (`query_docs`, `get_history`, `list_adrs`)              |
 | `bc-adr-map.instructions.md`          | `**/*.cs, **/*.csproj, **/*.cshtml` | BC → ADR quick map (auto-loads when editing code)                                                |
 | `docs-index.instructions.md`          | `.github/**, docs/**`               | Stub router — points here and to RAG                                                             |
 

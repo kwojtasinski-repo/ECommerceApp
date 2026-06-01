@@ -4,499 +4,217 @@ applyTo: "**"
 
 # MCP routing — single source of truth
 
-> **This file owns** the rules for which MCP server / which tool to call for any user intent. Every other instruction, agent, prompt, and skill file links here instead of restating the rules. If you find a duplicated rule elsewhere, fix it by replacing with a link to this file.
+> This file owns MCP tool routing and precedence. Other files should mirror this briefly, not duplicate full logic.
 
 ## Change-management contract (keep rules, avoid patchwork)
 
-To keep this file maintainable while preserving all existing rules, treat it as two logical zones:
+1. Keep this file in two zones:
+- Core routing contract (stable): ownership, intent classification, precedence, invalid-answer rules.
+- Operational playbooks (tunable): retries, canceled handling, telemetry, fallback behaviors.
 
-1. **Core routing contract (stable):** server ownership, intent classification, precedence, invalid-answer directive.
-2. **Operational playbooks (tunable):** benchmark integrity, canceled recovery/anti-patterns, cache handoff, fallback ladder, maintenance notes.
+2. Update policy safely:
+- Edit canonical rules here first.
+- Mirror only short non-negotiable summaries in [ .github/copilot-instructions.md ](../copilot-instructions.md).
+- Preserve behavior when refactoring wording.
+- Record policy changes in [ .github/COPILOT-SETUP-CHANGELOG.md ](../COPILOT-SETUP-CHANGELOG.md).
 
-Maintenance rules:
+3. Non-regression checklist:
+- Core precedence remains explicit.
+- Empty-result retry sequence remains explicit.
+- Canceled handling keeps retry/fallback/fail-open requirements.
 
-- Put new routing decisions in the smallest matching section; do not duplicate the same rule in multiple files.
-- Keep `.github/copilot-instructions.md` as a compact mirror (summary + pointers), not a second full spec.
-- When updating operational behavior, edit this file first, then mirror only a short non-negotiable summary in root instructions.
-- Preserve backward compatibility of existing rule intent; prefer rewording and regrouping over semantic rewrites.
+## MCP ownership
 
-Non-regression checklist for edits in this file:
+| Intent | Primary MCP | Core tools |
+|---|---|---|
+| Knowledge from repo docs/context | RAG | `list_adrs`, `query_docs`, `read_docs`, `get_history` |
+| Analysis/compute/reduction/execution | context-mode | `ctx_execute`, `ctx_execute_file`, `ctx_batch_execute`, `ctx_search`, `ctx_stats` |
+| Project-related external URLs | context-mode | `ctx_fetch_and_index` |
 
-- Core precedence still answers: knowledge intent, execution intent, external URL intent, and mixed-MCP conflict.
-- Empty-result and invalid-answer guards remain explicit.
-- Canceled handling still mandates retry/fallback/partial reporting.
-- Changes are logged in `COPILOT-SETUP-CHANGELOG.md`.
+RAG servers: `ecommerceapp-rag-python`, `ecommerceapp-rag-dotnet`, `ecommerceapp-rag`.
 
-The repo ships **two MCP servers**, both live:
+context-mode server: `ecommerceapp-context-mode`.
 
-| MCP | Status | Servers | Job |
-|---|---|---|---|
-| **RAG** | ✅ Live | `ecommerceapp-rag-python`, `ecommerceapp-rag-dotnet` (VS Code); `ecommerceapp-rag` (GitHub.com Copilot, see [.github/copilot/mcp.json](../copilot/mcp.json)) | Answer **knowledge** questions from the indexed `docs/` + `.github/context/` corpus |
-| **context-mode** | ✅ Live | `ecommerceapp-context-mode` (VS Code stdio via `docker exec`, see [.vscode/mcp.json](../../.vscode/mcp.json)) | **Execute**, **summarise**, **fetch external URLs**, and **persist FTS5-indexed session memory** through a sandboxed Node runtime + AdGuard DNS allowlist. Wraps [ADR-0029](../../docs/adr/0029/0029-context-mode-mcp-sandbox.md). |
+## RAG quick routing
 
-> Both servers must be running for the precedence rules below to apply. If a server is down, see the [Fallback ladder](mcp-routing.instructions.md).
+Use RAG first for:
+- ADRs and architectural decisions.
+- `.github/context/*.md` knowledge (known issues, project state, agent decisions).
+- Roadmap and bounded-context map questions.
 
----
+`bc=` note: it is a substring filter on breadcrumb/title. Do not use `bc="context"` to target `.github/context/*.md`.
 
-## The whole picture on one screen
-
-```text
-  +-----------------------------------------------------------------------------+
-  |                              USER PROMPT                                    |
-  +------------------------------------+----------------------------------------+
-                                       |
-                                       v
-                         INTENT  CLASSIFICATION
-              +------------------------+------------------------+
-              |                        |                        |
-              v                        v                        v
-     "how does X work?"        "run / save / index"     pure code edit
-     "what does ADR-N say?"    "summarise file"         (no knowledge,
-     "is BC blocked?"          "fetch this URL"          no fetch)
-     "any known issue?"        "store this for later"
-              |                        |                        |
-              v                        v                        v
-  +----------------------+  +----------------------+  +----------------------+
-  |  MCP #1 -- RAG       |  |  MCP #2 -- CONTEXT-  |  |   no MCP needed      |
-  |                      |  |  MODE                |  |   (direct tools)     |
-  |  KNOWLEDGE           |  |                      |  |                      |
-  |                      |  |  EXECUTION /         |  |  read_file           |
-  |  list_adrs           |  |  REDUCTION /         |  |  grep_search         |
-  |  query_docs          |  |  EXTERNAL FETCH      |  |  semantic_search     |
-  |  read_docs           |  |                      |  |  edit / write        |
-  |  get_history         |  |  ctx_stats           |  |                      |
-  |                      |  |  ctx_execute         |  |                      |
-  |  Source of truth     |  |  ctx_execute_file    |  |                      |
-  |  for ANYTHING        |  |  ctx_fetch_and_index |  |                      |
-  |  written down        |  |  ctx_insight         |  |                      |
-  |  in this repo        |  |                      |  |                      |
-  +-----------+----------+  +-----------+----------+  +-----------+----------+
-              |                         |                         |
-              |  empty / low score?     |  hooks fired:           |
-              |  -> tell user index     |   PreToolUse rewrites   |
-              |     looks stale         |   PostToolUse compresses|
-              |  -> fall back to        |   summary saved by      |
-              |     direct read_file    |   PreCompact            |
-              |  -> NEVER guess         |                         |
-              |     from training data  |                         |
-              v                         v                         v
-  +-----------------------------------------------------------------------------+
-  |     ANSWER  +  precise file links (path#Lstart-Lend)  +  citations          |
-  +-----------------------------------------------------------------------------+
-```
-
----
-
-## RAG tools (live)
-
-| Tool | When to use |
-|---|---|
-| `list_adrs()` | Orientation — "what ADRs exist?", "is there an ADR about X?". Cheap. |
-| `query_docs(question, bc?, top_k?)` | Discovery — ranked chunks with file paths + line ranges + scores. Use as a pointer. |
-| `read_docs(question, bc?, top_files?)` | **Preferred for reasoning.** Full content of the top-ranked unique files. Use to quote rules, check conformance, understand rationale. |
-| `get_history(id)` | Evolution of a specific ADR — all chunks sorted chronologically. |
-
-### Trigger-phrase routing
-
-| Trigger phrase / intent | Tool |
-|---|---|
-| "list ADRs", "what ADRs exist" | `list_adrs` |
-| "ADR-NNNN", "decision on X" | `get_history(id="NNNN")` |
-| "how does X work?", general architecture | `query_docs(query="...")` |
-| "full content of file X", "all details" | `read_docs(query="...")` |
-| Known issues, KI-NNN, "is there a known issue about X" | `query_docs("<topic>")` — **NOT `grep_search`** |
-| Project state, blocked BCs, "is BC X ready" | `query_docs("<bc> status")` |
-| Agent decisions, prior corrections, "have we decided X before" | `query_docs("<topic>")` |
-| Bounded-context map, cross-BC dependencies | `query_docs("<bc> dependencies", bc="<BCName>")` |
-| Roadmap status, "what's next for BC X" | `query_docs("<bc> roadmap", bc="<BCName>")` |
-
-> **What `bc=` actually does:** it is a case-insensitive **substring filter on the chunk's `breadcrumb` or `doc_title`** (post-search, see [tools/rag/query.py](../../tools/rag/query.py)). Use it for BC **names** that appear in headings or titles (e.g. `bc="Catalog"`, `bc="Orders"`, `bc="Sales/Orders"`). **Do NOT use `bc="context"`** to target `.github/context/*.md` — those files don't have the word "context" in their headings, so the filter excludes every chunk and returns empty. For knowledge in `.github/context/*.md`, omit `bc=` entirely.
-
-**Forbidden paths for `grep_search` / `read_file` as a first move** — these MUST go through RAG first:
-
-- `.github/context/*.md` (known-issues, project-state, agent-decisions, anti-patterns, repo-index)
+Protected paths (RAG-first):
+- `.github/context/*.md`
 - `docs/adr/**`
 - `docs/roadmap/**`
 - `docs/architecture/bounded-context-map.md`
 
-`grep_search`/`read_file` on these paths is a **fallback only** after `query_docs`/`read_docs`/`get_history` returns empty or low-score. Violating this is a [BLOCKS MERGE anti-pattern](../context/anti-patterns-critical.context.md).
+## context-mode quick routing
 
-### Recommended flow
+Use context-mode first when the task is analyze/summarize/count/compare/parse/transform/extract.
 
-```
-list_adrs()       → orientation: what exists?
-query_docs(q)     → discovery: which files score highest?
-read_docs(q)      → depth: reason from the complete document
-get_history(id)   → evolution: full amendment chain
-```
+Preferred tools by shape:
+- File-backed large analysis: `ctx_execute_file`.
+- Computation/parsing pipelines: `ctx_execute`.
+- Multi-command gather+query: `ctx_batch_execute`.
+- Recall indexed/session data: `ctx_search`.
 
----
+Installed runtimes in shipped image: `javascript`, `shell`.
 
-## context-mode tools (live)
+## context-mode path normalization (mandatory)
 
-| Tool | When to use |
-|---|---|
-| `ctx_stats()` | "how much context have we saved this session?" / health check |
-| `ctx_doctor()` | Server-side diagnostics — run first when other `ctx_*` calls fail. |
-| `ctx_execute(lang, code)` | Sandboxed code execution. **Only `javascript` and `shell` are installed in the shipped runtime image** (`ctx_doctor` → `Runtimes: 2/11`). The schema enum also accepts `typescript`, `ruby`, `go`, `rust`, `php`, `perl`, `R`, `elixir`, `csharp`, `python` — calling any of those returns a runtime error like `C# not available. Install dotnet-script via …`. Use `javascript` (Node) for math/regex/parsing/object work, `shell` (POSIX sh) for filesystem inspection. Output is only what you `console.log` / `echo`. |
-| `ctx_execute_file(path, lang, code)` | Read a file into the sandbox as `FILE_CONTENT` and derive an answer in code — raw bytes never enter context. Use for files >500 lines or any structural summary. **Path quirk:** sandbox cwd is NOT the repo root. Always pass mounted Linux-style paths (default `/workspace`, parametric — see below) or your scan returns silent zero results. **Never pass host OS absolute paths** (Windows `C:\...`, macOS/Linux `/Users/...`/`/home/...`) into `ctx_execute_file` — the container cannot resolve host paths. Start from a repo-relative path and map it to the mount root. To discover the mount on the current container: `ctx_execute("shell", "echo $CONTEXT_MODE_WORKSPACE")` (one-shot per session; cache the result). |
+For `ctx_execute_file`, map repo-relative paths to container mount path.
 
-### Sandbox-first default for analysis tasks
+Rule:
+- input: repo-relative path
+- output: `/workspace/<relative>` or `$CONTEXT_MODE_WORKSPACE/<relative>`
+- normalize separators to `/`
 
-If the user asks to **analyze, summarize, count, compare, grep, parse, transform, extract, or search** a file/log/output, prefer context-mode automatically:
-
-- The user does **not** need to name `ctx_*` tools, say "use context-mode", or mention the sandbox explicitly.
-- Route by **intent and data shape**, not by whether the prompt contains MCP/tool names.
-- If the request is analysis-heavy and would likely emit large raw output, assume context-mode first even when the user asks in plain natural language.
-
-- `ctx_execute_file(...)` for file-backed analysis, especially attached files and large files
-- `ctx_execute(...)` for calculations, regex, parsing, or ad-hoc processing
-- `ctx_search(...)` for recalling previously indexed results or session memory
-
-Use `read_file` only when the goal is to **edit** the file and you need exact bytes for the patch. Use RAG instead when the goal is **docs / ADR / project-state knowledge**.
-
-**Practical rule:** if the answer depends on the file contents rather than the exact file text in a patch, sandbox it first.
-
-### context-mode path normalization (mandatory)
-
-Before every `ctx_execute_file(...)` call, normalize from repo-relative to the container mount:
-
-- Input (source of truth): repo-relative path, for example `docs/adr/0028/amendments/0028-004-per-collection-config-gap.md`
-- Container path: `/workspace/<relative>`
-- If mount is customized, replace `/workspace` with `$CONTEXT_MODE_WORKSPACE`.
-- Normalize separators to `/` in the final ctx path.
-
-Quick conversion rule:
-
-```text
-relative path = <relative>
-ctx path      = <CONTEXT_MODE_WORKSPACE or /workspace> + / + <relative-with-forward-slashes>
-```
-
-If uncertain, run once per session:
-
-```text
-ctx_execute("shell", "echo $CONTEXT_MODE_WORKSPACE")
-```
-| `ctx_batch_execute(commands, queries)` | 3+ related commands in one round trip; auto-indexes outputs, returns matching sections per `queries`. Set `concurrency` 2–8 for I/O-bound work. |
-| `ctx_index(content\|path, source)` | Persist content into the FTS5 knowledge base (markdown-aware chunking, code blocks intact). Use for docs/skills/API refs you'll need to recall precisely. |
-| `ctx_search(queries, source?, sort?)` | Search the FTS5 knowledge base + auto-captured session memory (decisions, errors, blockers, plans). Multi-query batched, Porter+trigram+RRF ranking. |
-| `ctx_fetch_and_index(url\|requests, source)` | Pull external URL(s) through AdGuard DNS allowlist, persist as searchable markdown. **Only path** for project-related external URLs. |
-| `ctx_insight(port?)` | Open local web UI dashboard (default :4747) for personal analytics across sessions. |
-| `ctx_purge(confirm, sessionId?\|scope?)` | **Destructive** — wipe one session or the whole project knowledge base. Requires `confirm:true` and exactly one scope. |
-| `ctx_upgrade()` | Returns the shell command to upgrade context-mode in place. |
-
----
+Never pass host absolute paths (e.g. `C:\...`, `/Users/...`, `/home/...`) to `ctx_execute_file`.
 
 ## HARD precedence rules (apply in this order, no exceptions)
 
-When more than one path could plausibly answer a request:
+1. Knowledge intent -> RAG first.
+2. Analysis/execution intent -> context-mode first.
+3. Project URL intent -> `ctx_fetch_and_index` only.
+4. If MCP is empty/unhealthy -> fallback to direct tools and name failing MCP.
+5. Never use both MCPs for one atomic intent.
 
-1. **Knowledge intent** (docs, ADRs, BC rules, project state, known issues, roadmap, conventions, agent decisions, anti-patterns) → **RAG first**. Never substitute `ctx_execute` for it. **`grep_search`/`read_file` on `.github/context/*.md`, `docs/adr/**`, `docs/roadmap/**`, `docs/architecture/bounded-context-map.md` before calling `query_docs`/`get_history` is a BLOCKS MERGE violation** — see [anti-patterns-critical.context.md](../context/anti-patterns-critical.context.md).
-2. **Sandboxed execution / file summarisation** (run a snippet, compute a value, condense a large file before edit) → **context-mode first**. Never substitute `read_file` + manual summary when the body is large. Never compute hashes, math, or transformations from training-data memory — use `ctx_execute`.
-3. **External URL** (any HTTP/HTTPS the user pastes that relates to project work) → **`ctx_fetch_and_index` only**. Never raw `fetch_webpage` for project work — it bypasses the AdGuard allowlist. (Carve-out: non-project URLs the user explicitly asks you to read in raw form.)
-4. **Both MCPs empty / unhealthy** → fall back to direct `read_file` / `grep_search` and **name the failing MCP** to the user.
-5. **NEVER call both MCPs for the same atomic intent.** If unsure, pick the one whose table matches the user's verb ("what does ADR-X say" → RAG; "run this snippet" → context-mode).
+## User-prompt interpretation rule
 
-### User-prompt interpretation rule
+Explicit tool naming is optional.
 
-Treat explicit tool naming as **optional**, not required.
+Examples:
+- "Analyze these logs" -> context-mode.
+- "Count symbol usages" -> context-mode.
+- "What does ADR-0029 say" -> RAG.
 
-- `Analyze these logs and tell me the top 5 failures` → route to context-mode automatically.
-- `Count usages of this symbol across the repo` → route to context-mode automatically.
-- `Summarize this large file before editing it` → route to context-mode automatically.
-- `What does ADR-0029 say about hooks?` → route to RAG automatically.
+Do not wait for user phrases like "use context-mode" when intent is already clear.
 
-Do **not** wait for prompts like `use ctx_execute`, `run ctx_execute_file`, or `use context-mode`. If the intent already matches the routing table, call the MCP directly.
+## Benchmark integrity rule (`ctx_stats`)
 
-### Benchmark integrity rule (`ctx_stats`)
+`ctx_stats` is the only KPI source of truth for context-savings metrics.
 
-For context-reduction or "savings" benchmarks, treat `ctx_stats` as the only KPI source of truth.
+Mandatory:
+- Show raw `ctx_stats` first for KPI runs.
+- Derive KPI only from raw `ctx_stats`.
+- If output says `0 calls` while report claims `ctx_*` usage -> mark run INVALID.
+- Do not use chat-session transport artifacts as KPI evidence.
 
-- If the user requests benchmark metrics, call `ctx_stats` at the end and report the raw output first.
-- Derive KPI fields only from that raw output. Do not invent or interpolate missing values.
-- If raw `ctx_stats` says `0 calls` / "No tool calls yet" while the report claims multiple `ctx_*` operations, mark the run **INVALID**, state the mismatch, and rerun the benchmark flow.
-- Never use chat-session artifact files (`chat-session-resources/.../content.txt|json`) as evidence for KPI math; they are transport artifacts, not benchmark metrics.
-- If `ctx_stats` output is internally inconsistent (for example, textual call count vs KPI totals conflict), explicitly flag the inconsistency and provide only the non-contradictory metrics.
+## End-of-run telemetry rule (`ctx_stats`)
 
-### Tool-cancel recovery rule (`Canceled`)
+If any `ctx_*` tool was used, call `ctx_stats` at end and include raw output in final answer.
 
-Treat tool status `Canceled` as a recoverable execution failure, not as a stop condition for the whole task.
+- Mandatory for diagnostics, benchmarks, and analysis.
+- For other runs: include unless user explicitly asked to skip metadata.
+- If `ctx_stats` fails, emit `UNABLE_TO_PROCESS` for telemetry step and continue.
 
-- For analysis/benchmark flows, retry the same `ctx_*` call up to 3 times using a lighter shape each time (shorter output window, split scope, or cheaper query shape).
-- If retries are exhausted, use one fallback path (for example split into smaller calls, or switch `ctx_execute` shell pipeline to `ctx_execute` javascript reducer) and continue.
-- Never end the overall run with only a cancellation note; return a partial report with explicit `FAILED STEP`, `FALLBACK USED`, and `WHAT IS MISSING`.
-- For benchmark prompts, still call `ctx_stats` at the end and mark KPI status as `PARTIAL/INVALID` when canceled steps prevent full metric trust.
-- Do not claim success for steps that returned `Canceled`; record them as incomplete.
+## Tool-cancel recovery rule (`Canceled`)
 
-#### Fail-open response contract (mandatory after exhausted retries)
+Treat `Canceled` as recoverable by default.
 
-If a step remains canceled after retries + one fallback, the agent must **continue the run** and emit a deterministic inability marker instead of aborting.
+- Retry up to 3 times with lighter call shape.
+- If still failing, use one fallback path and continue.
+- Do not claim canceled steps as success.
+- Keep run partial, not fail-fast.
 
-- Required fields in the answer for that step: `UNABLE_TO_PROCESS`, `FAILED_STEP`, `REASON`, `NEXT_STEP_CONTINUED`.
-- `REASON` must be explicit and user-facing (for example: "Operation exceeds safe processing envelope in current sandbox constraints").
-- `NEXT_STEP_CONTINUED` must point to the next executed step (for example KPI collection via `ctx_stats`, or downstream B/C/D stage).
-- Hard stop is allowed only when **every** remaining step depends on the failed artifact; in that case state `RUN_STATUS=PARTIAL` and still provide whatever metrics are available.
+### Fail-open response contract (mandatory after exhausted retries)
 
-This rule exists to prevent fail-fast behavior on heavy diagnostic runs and to guarantee graceful degradation.
+After retries + one fallback fail:
+- Emit `UNABLE_TO_PROCESS`.
+- Emit `FAILED_STEP`.
+- Emit `REASON` (explicit user-facing reason).
+- Emit `NEXT_STEP_CONTINUED`.
+- Continue downstream independent steps.
 
-#### `Canceled` anti-patterns to avoid
+If all remaining steps depend on failed artifact:
+- Emit `RUN_STATUS=PARTIAL` and return available metrics/results.
 
-These command shapes are frequent cancellation triggers and should be rewritten before retrying:
+### `Canceled` anti-patterns to avoid
 
-- Unbounded full-repo shell scans like `find /workspace -type f` piped into per-file `grep`/`sha256sum` loops.
-- Per-file fan-out pipelines (`xargs` over all files) that run multiple expensive operations per file in a single call.
+Known bad shapes:
+- Unbounded full-repo scans like `find /workspace -type f` with per-file loops.
+- `xargs` fan-out with repeated expensive ops (`grep`, `sha256sum`, etc.).
 - Mixed binary/text scans without extension filters.
 
-#### Pre-dispatch guard for known-bad shapes (mandatory)
+### Pre-dispatch guard for known-bad shapes (mandatory)
 
-If a planned `ctx_execute(shell)` command already matches one of the anti-patterns above, do **not** dispatch it to context-mode.
+If a planned `ctx_execute(shell)` matches known bad shapes:
+- Do not dispatch to context-mode.
+- Short-circuit with `UNABLE_TO_PROCESS`, `FAILED_STEP`, `REASON`, `NEXT_STEP_CONTINUED`.
+- Continue with safe rewritten shape or skip to downstream step.
 
-- Short-circuit before execution and emit: `UNABLE_TO_PROCESS`, `FAILED_STEP`, `REASON`, `NEXT_STEP_CONTINUED`.
-- Then continue with the rewritten safe shape (bounded scope + extension filters, or javascript reducer), or skip that step and continue downstream.
-- Do not use "try once anyway" for known-bad shapes; this wastes budget and still tends to cancel.
+### Rewrite order after canceled or blocked shape
 
-This guard applies especially to synthetic "force Canceled" diagnostics: do not attempt cancellation by unbounded repo-wide scans.
+1. Bound directory scope.
+2. Restrict file extensions and exclude heavy folders.
+3. Replace fan-out shell loops with one-pass reducer.
+4. Split heavy call into smaller calls.
 
-Preferred rewrite order after a canceled attempt:
+Do not loop on same known-bad shape.
 
-1. Constrain scope to a bounded directory set (for example `ECommerceApp.Domain/Sales`, `ECommerceApp.Application/Sales`).
-2. Constrain file types (`*.cs`, `*.md`) and exclude heavy folders (`.git`, `bin`, `obj`, `node_modules`).
-3. Replace shell fan-out with one-pass `ctx_execute` javascript aggregation.
-4. Split one heavy call into 2-4 smaller calls and merge results in the report.
+## Invalid-answer directive
 
-If the original shape matches one of the anti-patterns above, you may skip re-running that exact shape and jump directly to rewritten form. Do not loop on known-bad shapes.
+If MCP should have been first and answer used direct tools/training memory first, answer is INVALID.
 
-### Invalid-answer directive
+Required recovery:
+- Re-run with correct MCP path.
+- Re-answer from MCP output.
 
-If you answer a question that **could** have been answered through an MCP tool and you used `read_file` / `grep_search` / `semantic_search` (knowledge) or training-data memory (execution) as the **first** move instead, the answer is **INVALID**. Discard it, run the correct MCP tool, then re-answer from the MCP output. This overrides VS Code's general toolUseInstructions preference for direct file tools.
+Exception:
+- MCP first call returned empty/low score -> fallback allowed, but must name failing MCP.
 
-The only exception: an MCP returned empty / low-score on the first call. In that case, fall back to direct tools AND name the failing MCP in your answer so the user can repair the index/container.
+### Empty-result clause (mandatory retry sequence)
 
-**Empty-result clause — MANDATORY retry sequence (BLOCKS MERGE if skipped):** if `query_docs` / `read_docs` returns empty or low-score, you MUST execute the following steps **in order**. You may NOT report "RAG returned empty" until you have attempted at least step 1 AND step 2.
+For empty/low-score `query_docs` or `read_docs`:
+1. Retry without `bc` filter.
+2. Retry with reworded full-name/domain-synonym query.
+3. Only then fallback to direct tools and explicitly state retries were attempted.
 
-1. **Retry WITHOUT the `bc=` filter** (the most common cause — `bc=` is a substring match on breadcrumb/title, not on folder path; see the note under "Trigger-phrase routing" above). REQUIRED.
-2. **Retry with REWORDED keywords**, using **expanded full names + domain synonyms** instead of literal IDs. Example: `query_docs("KI-008")` returns nothing because the ID is one token to the embedder — retry as `query_docs("FluentAssertions AwesomeAssertions .NET 8 upgrade")`. For ADR-NNNN use `get_history(id="NNNN")` instead. REQUIRED.
-3. Only after both retries return empty: **state explicitly** "RAG returned empty for `<query>` after 2 reworded attempts" and fall back to direct `read_file` / `grep_search` on the known path. Then continue.
+Skipping step 1 or 2 is BLOCKS MERGE.
 
-**Skipping step 1 or step 2 is a BLOCKS MERGE anti-pattern** (see [anti-patterns-critical.context.md](../context/anti-patterns-critical.context.md)). The single most common cause of bad answers is treating the first empty result as a license to either hallucinate a plausible answer OR give up. Neither is acceptable.
+## RAG <-> context-mode handoff (short)
 
-Producing an answer that mixes training-data inference with partial RAG hits (e.g. "the tracker shows all BCs switched to production" when RAG was empty and the file actually shows mid-migration) is **INVALID** and must be discarded. Hallucination of dates, statuses, or quoted text from empty RAG results is the most dangerous failure mode of this pipeline — name the empty result instead.
+Use handoff for repeated recalls in long runs.
 
----
+- L3 default: host-side auto-cache hook indexes RAG outputs automatically.
+- L2: `query_docs_cached` wrapper still valid.
+- L1: manual handoff remains fallback.
 
-## RAG ↔ context-mode handoff (knowledge caching across recalls)
+Use deterministic cache source labels (`rag-auto-*` / `rag-cache-*`).
 
-> **Use case**: same RAG knowledge will be re-read 3+ times in the session (long debug, plan + implement + verify on the same ADR, multi-step refactor referencing the same BC rules). Manually re-calling `query_docs` / `read_docs` re-bills the same tokens every time. Cache the result in context-mode once, recall via `ctx_search` thereafter.
->
-> **When NOT to use it**: a one-shot question (answered once, never reread) — direct RAG is cheaper. The handoff costs one extra `ctx_index` call up front; it only pays back after the **second** recall.
->
-> **L3 status (default since 2026-05-28)**: a host-side PostToolUse hook ([`.github/hooks/auto-cache.mjs`](../hooks/auto-cache.mjs)) auto-indexes EVERY RAG tool response into context-mode's FTS5 store. The agent now makes **just the RAG call** — the `ctx_index` follow-up is automatic. See [ADR-0029 Amendment 1](../../docs/adr/0029/amendments/0029-001-host-side-rag-auto-cache.md) and the [operator guide](../../docs/rag/auto-cache-hook.md).
-> **L2 status (still valid)**: single-call wrapper `query_docs_cached` (both Python and .NET RAG servers). Returns formatted markdown + a deterministic `source` label. Under L3 the explicit `ctx_index` follow-up is no longer required — the hook handles it. The wrapper still gives you a known label up-front if you want to recall by exact source.
-> **L1 status (fallback)**: manual 3-step handoff. Use only when the L3 hook OR the wrapper is unavailable. The cache shape is identical so L1, L2, and L3 caches interoperate.
->
-> **Open observation (Phase 7.4)**: the .NET wrapper clamps `top_k` to `RagQueryService.MaxTopK = 20`, vs Python's `max(30, top_files*15) = 45` at `top_files = 3`. If you notice the .NET wrapper consistently missing files that Python ranks in the top 3, or `ctx_search` recalls on .NET caches scoring lower than on Python caches, flag it — the threshold and decision rules are in [docs/roadmap/context-mode-integration.md §Phase 7.4](../../docs/roadmap/context-mode-integration.md). Do NOT raise `MaxTopK` silently; bring evidence to the discussion.
+For detailed walkthroughs:
+- [ .github/skills/rag-with-memory/SKILL.md ](../skills/rag-with-memory/SKILL.md)
+- [ docs/rag/auto-cache-hook.md ](../../docs/rag/auto-cache-hook.md)
 
-### L3 default: host-side PostToolUse hook — automatic
+## Fallback ladder (when MCP returns empty)
 
-Since 2026-05-28 a host-side hook auto-caches **every** RAG tool response (`query_docs`, `read_docs`, `get_history`, `query_docs_cached`, `list_adrs`) into the FTS5 store. No second tool call required.
+1. RAG empty -> report empty, suggest re-index (`python tools/rag/ingest.py`), then direct fallback.
+2. context-mode unavailable -> report failing hook/tool, then direct fallback.
+3. Both unavailable -> direct tools only and explicitly report routing failure.
 
-```
-  Step 1: RAG (one call — that's it)
-  ─────────────────────────────────────
-    query_docs(query="...")         ← or any other RAG tool
-        ↓
-    [hook fires automatically]
-        ↓
-    ctx_index(content=<auto-formatted markdown>, source="rag-auto-...")
+Never guess from training data when project source of truth exists.
 
-  Step 2: Recall (any number of times, zero RAG re-bill)
-  ─────────────────────────────────────
-    ctx_search(queries=["specific question"], source="rag-auto-")
-```
+## RAG maintenance quick table
 
-**Source labels** are derived shape + tool-type aware:
-
-| Tool / response shape | Resulting `source` |
+| Change | Re-index needed |
 |---|---|
-| `query_docs_cached` (L2 passthrough) | `rag-cache-...` (unchanged) |
-| `get_history(id="NNNN")` | `rag-auto-adr<NNNN>` |
-| Question mentions ADR id | `rag-auto-adr<NNNN>-<hash8>` |
-| `bc=` filter present | `rag-auto-<slug(bc)>-<hash8>` |
-| `query_docs` (orientation) | `rag-auto-orient-<hash8>` |
-| Default | `rag-auto-q-<hash8>` |
+| `multilingual-glossary.yaml` | No (query-time only) |
+| `rag-config.yaml` ranking weights | No (query-time only) |
+| `queries.yaml` | No ingest impact |
+| `docs/` or `.github/context/` content changes | Yes (incremental ingest) |
+| `metadata-rules.yaml` | Yes (`--force-full`) |
+| embedder model/chunker changes | Yes (`--force-full`) |
 
-Both `rag-cache-` (L2 manual) and `rag-auto-` (L3 hook) are recallable with `ctx_search(source="rag-")` (partial match). Full operator guide + debug switch (`AUTO_CACHE_DEBUG=0` to silence): [docs/rag/auto-cache-hook.md](../../docs/rag/auto-cache-hook.md).
-
-### L2 fast path: `query_docs_cached` — preferred
-
-One RAG call + one context-mode call. The wrapper formats the markdown for you and derives the `source` label deterministically; you never have to construct either by hand.
-
-```
-  Step 1: RAG (one call, returns markdown + source)
-  ─────────────────────────────────────
-    query_docs_cached(question="...", bc?, top_files=3)
-        ↓
-    response.source     → "rag-cache-adr0028-<hash8>" (deterministic)
-    response.markdown   → full cache content, template already applied
-
-  Step 2: Cache (one ctx_index call — pass-through)
-  ─────────────────────────────────────
-    ctx_index(content=response.markdown, source=response.source)
-
-  Step 3: Recall (any number of times, zero RAG re-bill)
-  ─────────────────────────────────────
-    ctx_search(queries=["specific question"], source="rag-cache-")
-```
-
-**Source label rules (derived automatically by `query_docs_cached`):**
-
-| Question contains | Resulting `source` |
-|---|---|
-| ADR id (`ADR-0029`, `adr 016`, bare `0028`) | `rag-cache-adr<NNNN>-<hash8>` |
-| no ADR id, `bc=` filter present | `rag-cache-<slug(bc)>-<hash8>` |
-| no ADR id, no `bc=` | `rag-cache-q-<hash8>` |
-
-`<hash8>` = first 8 hex chars of `sha256(question.lower().strip())`. Same `(question, bc)` → same label → idempotent overwrite. Lowercase, kebab-case, ASCII only. Always prefixed `rag-cache-`.
-
-**Availability:** Both RAG servers. Python (`ecommerceapp-rag-python`) was first (Phase 7, 2026-05-27). .NET (`ecommerceapp-rag-dotnet`) reached parity in Phase 7.3 — Core `DocumentSearchResult`/`SearchHit`/`QueryHit` gained `EndLine`; same source-label rules and markdown shape. `top_k` on .NET is capped at `RagQueryService.MaxTopK` (20) so chunk-density per file is slightly lower than Python's `max(30, top_files*15)` — output schema and label format are identical.
-
-### Three similar "memory" surfaces — DO NOT MIX
-
-Three near-identically-named systems exist in this workspace. The L1 handoff uses **only** the third one. Empirical POC (2026-05-27) showed a weaker model picked the wrong one in all 3 steps without this explicit table — see [agent-decisions log](../context/agent-decisions.md).
-
-| Surface | What it actually is | Use for handoff? |
-|---|---|---|
-| `semantic_search` | **VS Code's embedded code/text search** over the open workspace. Not our RAG. Not chunk-ranked. | ❌ NO. Never substitute for `query_docs`. |
-| `memory.create` / `memory.view` (paths `/memories/*`) | **VS Code's persistent notes** for cross-session preferences. Single-doc, no FTS. | ❌ NO. Not searchable for the handoff. |
-| `ctx_index` / `ctx_search` | **context-mode's FTS5 knowledge base** with Porter+trigram+RRF ranking. Markdown-aware chunking. | ✅ YES. The only correct cache for RAG handoff. |
-
-### Manual handoff (L1) — three steps (use only as fallback)
-
-```
-  Step 1: RAG (one-time fetch)
-  ─────────────────────────────────────
-    query_docs(query="...", bc?, top_k=5)
-        ↓
-    read_docs(query="...")     ← if reasoning needs full file bodies
-        ↓
-    Format the relevant chunks into a single markdown doc:
-      - one H2 per chunk / file
-      - preserve breadcrumbs (path + line range)
-      - keep code blocks intact (```csharp ... ```)
-      - keep tables intact
-
-  Step 2: Cache (one ctx_index call)
-  ─────────────────────────────────────
-    ctx_index(
-      content="<the markdown from step 1>",
-      source="rag-cache-<scope>-<topic>"
-    )
-
-  Step 3: Recall (any number of times, zero RAG re-bill)
-  ─────────────────────────────────────
-    ctx_search(
-      queries=["specific question"],
-      source="rag-cache-<scope>"   ← partial-match works; one prefix covers multiple caches
-    )
-```
-
-### Naming convention for `source`
-
-The `source` label must be deterministic so subsequent `ctx_search` calls can target it with a partial-match prefix.
-
-| Scope | Pattern | Example |
-|---|---|---|
-| Specific ADR | `rag-cache-adr<NNNN>-<topic>` | `rag-cache-adr0028-ragsession-icontentsource` |
-| Bounded context | `rag-cache-<bc>-<topic>` | `rag-cache-orders-checkout-rules` |
-| Cross-cutting area | `rag-cache-<area>-<topic>` | `rag-cache-validation-fluentvalidation-conventions` |
-| Roadmap slice | `rag-cache-roadmap-<bc>` | `rag-cache-roadmap-iam-atomic-switch` |
-| Known issue | `rag-cache-ki<NNN>` | `rag-cache-ki008` |
-
-Always lowercase, kebab-case, ASCII only. The `rag-cache-` prefix is **mandatory** — it lets you recall any cached RAG content with `source="rag-cache"` (partial match).
-
-### Markdown template for cached content
-
-Use this exact shape so `ctx_search` returns clean ranked sections:
-
-```markdown
-# <Topic title>
-
-> Cached from RAG on <date>. Source: query_docs("<original query>"[, bc="<BC>"]).
-> Refresh: re-run query_docs and call ctx_index with the same source label to overwrite.
-
-## <First file or chunk title>
-
-**Path**: `relative/path.md#Lstart-Lend`
-**Breadcrumb**: <breadcrumb from RAG result>
-
-<chunk body — keep code blocks, tables, lists intact>
-
-## <Second file or chunk title>
-...
-```
-
-### Trigger heuristics — when to invoke the handoff
-
-| Signal | Action |
-|---|---|
-| User says "we'll be working on ADR-NNNN today" / "let's debug BC X" | Cache the ADR / BC docs proactively after the first RAG call |
-| You're about to call `query_docs` for the **second time** with similar keywords | Cache the result of the second call |
-| Plan handoff (`@planner` → `@implementer`) involves the same docs | Cache once in planner output, both agents read from cache |
-| One-off question, low chance of re-reading | **Skip** — direct RAG is cheaper |
-
-### Anti-patterns (BLOCKS MERGE if repeated after this rule)
-
-| Wrong | Right |
-|---|---|
-| `memory.create(filename="/memories/session/ADR-0028.md", content=...)` to "cache RAG output" | `ctx_index(content=..., source="rag-cache-adr0028-...")` |
-| `semantic_search(query="ADR-0028 RagSession")` instead of RAG | `query_docs(query="...")` or `get_history(id="0028")` |
-| `memory.view` + manual reading to recall the cached doc | `ctx_search(queries=[...], source="rag-cache-...")` |
-| `ctx_index` without the `rag-cache-` prefix | Always prefix RAG-derived caches with `rag-cache-` |
-| Calling `query_docs` 3+ times for the same ADR in one session | Cache once, recall via `ctx_search` thereafter |
-
-For a step-by-step walkthrough with examples, see the skill [`.github/skills/rag-with-memory/SKILL.md`](../skills/rag-with-memory/SKILL.md).
-
----
-
-## Fallback ladder (when an MCP returns empty)
-
-1. **RAG empty** → say "no chunks found, index may be stale, suggest `python tools/rag/ingest.py`" → only then `read_file` / `grep_search` for known paths.
-2. **context-mode empty / unhealthy** → say which hook/tool failed → fall back to direct tools, document the failure in the answer.
-3. **Both empty** → answer from direct workspace tools only; flag the routing failure explicitly so the user can fix the index/container.
-
-**Never guess from training data** for a question that has a definitive answer in the project docs.
-
----
-
-## RAG maintenance — re-index requirements
-
-| Change | Re-index needed? |
-|---|---|
-| `multilingual-glossary.yaml` edited | ❌ Query-time only |
-| `rag-config.yaml` ranking weights changed | ❌ Query-time only |
-| `queries.yaml` edited | ❌ Not used at ingest |
-| Any `docs/` or `.github/context/` file changed | ✅ Incremental (`python tools/rag/ingest.py`) |
-| `metadata-rules.yaml` changed | ✅ Force-full (`ingest.py --force-full`) |
-| `embedder.model` or `chunker.*` changed | ✅ Force-full |
-
-## RAG maintenance — which skill to load
-
-| Symptom | Skill |
-|---|---|
-| MCP not starting, errors, all scores < 0.25, DLL lock | `.github/skills/diagnose-rag/` |
-| Correct English query works but PL/DE returns wrong doc | `.github/skills/expand-rag-glossary/` |
-| Right doc consistently at #3–5 instead of #1 | `.github/skills/tune-rag-weights/` |
-| New `docs/` folder added or wrong `doc_kind` on a file | `.github/skills/generate-rag-rules/` |
-| A file has no named eval query covering it | `.github/skills/generate-eval-questions/` |
-| Full maintenance cycle | `/rag-sync` prompt |
-
----
+Skill mapping:
+- Diagnose startup/errors: `diagnose-rag`
+- Multilang mismatch: `expand-rag-glossary`
+- Ranking tuning: `tune-rag-weights`
+- Rules/query coverage: `generate-rag-rules`, `generate-eval-questions`
 
 ## Further reading
 
-- Full architecture: [docs/rag/rag-architecture.md](../../docs/rag/rag-architecture.md)
-- Error envelope spec: [docs/rag/rag-architecture.md](../../docs/rag/rag-architecture.md)
-- Migration playbook (anti-patterns + verification prompts): [docs/rag/mcp-first-routing-migration-playbook.md](../../docs/rag/mcp-first-routing-migration-playbook.md)
-- ASCII flow + multi-MCP coexistence detail: [docs/rag/mcp-first-routing-migration-playbook.md](../../docs/rag/mcp-first-routing-migration-playbook.md)
-- ADR-0027 (RAG), ADR-0028 (remote multitenant), ADR-0029 (context-mode sandbox)
+- [ docs/rag/rag-architecture.md ](../../docs/rag/rag-architecture.md)
+- [ docs/rag/mcp-first-routing-migration-playbook.md ](../../docs/rag/mcp-first-routing-migration-playbook.md)
+- [ docs/adr/0027 ](../../docs/adr/0027/README.md), [ docs/adr/0028 ](../../docs/adr/0028/README.md), [ docs/adr/0029 ](../../docs/adr/0029/README.md)

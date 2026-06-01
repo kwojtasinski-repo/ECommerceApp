@@ -44,7 +44,7 @@
 | `docs-index.instructions.md`          | `.github/**, docs/**`                                         | Session 1 (new — docs lookup table); Session 19 (scope narrowed from `**`)  |
 | `copilot-config-sync.instructions.md` | `.github/**, docs/**`                                         | Session 11 (new); Session 14 (extended to docs/\*\*)                        |
 | `mcp-routing.instructions.md`         | `**`                                                          | Session 27 (new — single-source MCP routing and precedence rules)            |
-| `rag.instructions.md`                 | `**`                                                          | Session 18 (new — RAG routing precedence + output discipline)               |
+| `rag.instructions.md`                 | `.github/**, docs/**, tools/rag/**, tools/rag-dotnet/**`     | Session 18 (new — RAG routing precedence + output discipline); Session 56 (scope narrowed from `**`) |
 | `bc-adr-map.instructions.md`          | `**/*.cs, **/*.csproj, **/*.cshtml`                           | Session 19 (new — BC → ADR quick map for code edits)                        |
 | `doc-suggestions.instructions.md`     | `**`                                                          | Session 19 (new — proactive doc suggestion triggers; split from `pre-edit`) |
 | `agent-memory.instructions.md`        | `**`                                                          | Session 19 (new — auto-loads `agent-decisions.md` read rule on every task)  |
@@ -119,6 +119,125 @@ The full current 33-skill set also includes the cross-project/bootstrap and adva
 ---
 
 ## Change log
+
+### Session 59 — post-audit mirror alignment (2026-06-01)
+
+Workflow 11 + Workflow 7 follow-up after Session 58 audit to remove remaining mirror drift.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Synced `.sln` prompt solution items with current prompt inventory (added missing 4 prompt files). | `ECommerceApp.sln` |
+| 2 | Added missing `test-stabilization-policy.md` to `.sln` context solution items. | `ECommerceApp.sln` |
+| 3 | Updated roadmap hook JSON snippet to match runtime hook stderr redirection (`hooks.log`). | `docs/roadmap/context-mode-details.md` |
+| 4 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- MCP routing semantics and tool precedence.
+- Runtime container profile layout.
+
+### Session 58 — context-mode container log visibility (2026-06-01)
+
+Workflow 11 + Workflow 7 close-out for operational logging visibility. Root cause: context-mode service runs idle (`sleep infinity`) and MCP/hook processes are launched via `docker exec`, so stderr was not visible in `docker logs`.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Updated context-mode service entrypoint to keep idle architecture but tail persistent runtime/hook/network log files into container stdout for `docker logs` visibility. | `docker-compose.yaml` |
+| 2 | Redirected MCP server stderr to `/home/ctxmode/.context-mode/runtime.log` (stdout unchanged to preserve stdio protocol). | `.vscode/mcp.json` |
+| 3 | Redirected context-mode hook stderr to `/home/ctxmode/.context-mode/hooks.log` for unified container log stream. | `.github/hooks/context-mode.json` |
+| 4 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- MCP routing semantics and fallback rules.
+- Source tree layout and profile structure.
+
+### Session 57 — Final A+B+C close-out and mirror drift fixes (2026-06-01)
+
+Workflow 11 + Workflow 7 finalization after Stage 1/2/3 slimming: resolved remaining mirror drift found in close-out audit.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Fixed tool-name drift in full index table (`get_adr_history` -> `get_history`) for consistency with canonical routing. | `.github/instructions/docs-index.full.md` |
+| 2 | Added `docs-index.full.md` to solution instruction items to keep .sln mirror complete. | `ECommerceApp.sln` |
+| 3 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- Rule semantics and runtime behavior.
+- File structure (no moves, no new config categories).
+
+### Session 56 — Stage 3 selective applyTo narrowing (2026-06-01)
+
+Workflow 11 + Workflow 7 close-out for B-stage context reduction: narrowed one low-risk global instruction scope to reduce startup context load without touching critical global guardrails.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Narrowed `rag.instructions.md` from global `applyTo: "**"` to docs/setup/rag-relevant paths only (`.github/**, docs/**, tools/rag/**, tools/rag-dotnet/**`). | `.github/instructions/rag.instructions.md` |
+| 2 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- Critical global guardrails remain global (`mcp-routing`, `pre-edit`, `safety`, `agent-memory`, `batched-tasks`).
+- File structure and locations — no new files or moves.
+
+### Session 55 — Stage 2 slimming of pre-edit/doc-suggestions (2026-06-01)
+
+Workflow 11 + Workflow 7 close-out for C-stage context reduction: compressed high-frequency global instructions while preserving mandatory triggers and post-edit obligations.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Rewrote pre-edit checklist into compact rule-only format; preserved mandatory pre-read, MCP-first routing constraints, clarification policy, capability verification, and post-edit maintainer requirement. | `.github/instructions/pre-edit.instructions.md` |
+| 2 | Rewrote proactive doc-suggestions into compact trigger matrix; preserved all suggestion categories and strict suggest-only policy. | `.github/instructions/doc-suggestions.instructions.md` |
+| 3 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- File structure and locations — no new files or moves.
+- Rule intent — semantics preserved, only text volume reduced.
+
+### Session 54 — Stage 1 slimming of canonical MCP routing (2026-06-01)
+
+Workflow 11 + Workflow 7 close-out for A-stage context reduction: compressed canonical MCP routing text while preserving routing semantics and mandatory guardrails.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Rewrote canonical routing into compact "core + operational minimum + pointers" form; removed long narrative/examples while preserving all critical rules (precedence, invalid-answer, empty-result retries, canceled fail-open, pre-dispatch guard, end-of-run `ctx_stats`). | `.github/instructions/mcp-routing.instructions.md` |
+| 2 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- File structure and locations — no new files or moves.
+- Rule intent — semantics preserved, only text volume reduced.
+
+### Session 53 — mandatory end-of-run `ctx_stats` output (2026-06-01)
+
+Workflow 11 + Workflow 7 close-out after repeated runs where context-mode was used but raw `ctx_stats` was missing from the final response.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Canonical routing now requires end-of-run `ctx_stats` whenever any `ctx_*` tool was used; raw output must be shown in final response. | `.github/instructions/mcp-routing.instructions.md` |
+| 2 | Root MCP summary mirrors the same requirement for fast and consistent agent behavior. | `.github/copilot-instructions.md` |
+| 3 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- File structure and locations — no new files or moves.
+- Runtime/container setup — policy-only telemetry requirement.
 
 ### Session 52 — pre-dispatch guard for known canceled shapes (2026-06-01)
 

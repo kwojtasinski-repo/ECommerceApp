@@ -240,7 +240,7 @@
         "ecommerceapp-context-mode",
         "sh",
         "-lc",
-        "workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node --require /app/network-monitor.cjs /app/cli.bundle.mjs"
+        "workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node --require /app/network-monitor.cjs /app/cli.bundle.mjs 2>>/home/ctxmode/.context-mode/runtime.log"
       ]
     }
   }

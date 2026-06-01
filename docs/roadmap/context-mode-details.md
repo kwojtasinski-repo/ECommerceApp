@@ -477,7 +477,7 @@ docker/adguard/personal-overrides.local.txt
     "PreToolUse": [
       {
         "type": "command",
-        "command": "docker exec -i ecommerceapp-context-mode sh -lc 'workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node /app/cli.bundle.mjs hook vscode-copilot pretooluse'"
+        "command": "docker exec -i ecommerceapp-context-mode sh -lc 'workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node /app/cli.bundle.mjs hook vscode-copilot pretooluse 2>>/home/ctxmode/.context-mode/hooks.log'"
       }
     ],
     "PostToolUse": [
@@ -490,19 +490,19 @@ docker/adguard/personal-overrides.local.txt
     "UserPromptSubmit": [
       {
         "type": "command",
-        "command": "docker exec -i ecommerceapp-context-mode sh -lc 'workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node /app/cli.bundle.mjs hook vscode-copilot userpromptsubmit'"
+        "command": "docker exec -i ecommerceapp-context-mode sh -lc 'workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node /app/cli.bundle.mjs hook vscode-copilot userpromptsubmit 2>>/home/ctxmode/.context-mode/hooks.log'"
       }
     ],
     "PreCompact": [
       {
         "type": "command",
-        "command": "docker exec -i ecommerceapp-context-mode sh -lc 'workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node /app/cli.bundle.mjs hook vscode-copilot precompact'"
+        "command": "docker exec -i ecommerceapp-context-mode sh -lc 'workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node /app/cli.bundle.mjs hook vscode-copilot precompact 2>>/home/ctxmode/.context-mode/hooks.log'"
       }
     ],
     "SessionStart": [
       {
         "type": "command",
-        "command": "docker exec -i ecommerceapp-context-mode sh -lc 'workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node /app/cli.bundle.mjs hook vscode-copilot sessionstart'"
+        "command": "docker exec -i ecommerceapp-context-mode sh -lc 'workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node /app/cli.bundle.mjs hook vscode-copilot sessionstart 2>>/home/ctxmode/.context-mode/hooks.log'"
       }
     ]
   }
