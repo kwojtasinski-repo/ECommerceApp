@@ -120,6 +120,24 @@ The full current 33-skill set also includes the cross-project/bootstrap and adva
 
 ## Change log
 
+### Session 60 — human-friendly setup guides + Docker recreate runbook (2026-06-01)
+
+Workflow 11 + Workflow 7 close-out for onboarding simplification. Added an explicit step-by-step guide for context-mode + RAG setup paths and linked it from docs navigation.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Added a practical setup guide for context-mode and RAG covering ingest + STDIO/HTTP in local/source and container modes. | `docs/getting-started-ai-mcp-stack.md` |
+| 2 | Added docs entry-point link for the new guide. | `docs/README.md` |
+| 3 | Added guide to solution docs items for discoverability. | `ECommerceApp.sln` |
+| 4 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- MCP routing semantics and fail-open rules.
+- Container security hardening profile.
+
 ### Session 59 — post-audit mirror alignment (2026-06-01)
 
 Workflow 11 + Workflow 7 follow-up after Session 58 audit to remove remaining mirror drift.

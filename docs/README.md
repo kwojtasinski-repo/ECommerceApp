@@ -20,6 +20,7 @@ Short human entry point for the `docs/` folder.
 ## Setup guides
 
 - [`getting-started-context-mode.md`](getting-started-context-mode.md) — first-time setup of the context-mode + AdGuard sandbox (one-command bootstrap, smoke tests, troubleshooting)
+- [`getting-started-ai-mcp-stack.md`](getting-started-ai-mcp-stack.md) — human-friendly step-by-step setup for context-mode + RAG (ingest, STDIO, HTTP, local/source and container variants)
 - [`playbooks/rag-bootstrap.md`](playbooks/rag-bootstrap.md) — first-time RAG bootstrap for a new project
 - [`playbooks/rag-standalone-global.md`](playbooks/rag-standalone-global.md) — standalone/global RAG platform guide for multi-project rollout
 
