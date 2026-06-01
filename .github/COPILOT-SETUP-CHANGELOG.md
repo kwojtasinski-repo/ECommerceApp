@@ -120,6 +120,25 @@ The full current 33-skill set also includes the cross-project/bootstrap and adva
 
 ## Change log
 
+### Session 61 — context-mode docs sync to v1.0.161 runtime details (2026-06-01)
+
+Workflow 11 + Workflow 7 close-out for small documentation drift after context-mode runtime/logging changes.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Updated getting-started version references from context-mode `v1.0.151` to `v1.0.161`. | `docs/getting-started-context-mode.md` |
+| 2 | Added VS Code hook debug log tail commands (`/home/node/.vscode/context-mode/*.log`) to setup guide. | `docs/getting-started-ai-mcp-stack.md` |
+| 3 | Synced roadmap technical snippets to current runtime defaults (`node:24`, `CONTEXT_MODE_NODE_OPTIONS`, `CONTEXT_MODE_DEBUG`) and hook command shape. | `docs/roadmap/context-mode-details.md` |
+| 4 | Added missing roadmap entry for `context-mode-details.md` to full docs index table. | `.github/instructions/docs-index.full.md` |
+| 5 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 8, agents 9, skills 33, ADRs 29, context files 7).
+
+Not changed (deliberate):
+
+- MCP routing semantics and precedence rules.
+- Runtime container hardening profile and compose topology.
+
 ### Session 60 — human-friendly setup guides + Docker recreate runbook (2026-06-01)
 
 Workflow 11 + Workflow 7 close-out for onboarding simplification. Added an explicit step-by-step guide for context-mode + RAG setup paths and linked it from docs navigation.

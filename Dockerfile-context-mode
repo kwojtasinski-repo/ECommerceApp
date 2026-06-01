@@ -1,7 +1,7 @@
 # ─────────────────────────────────────────────────────────────────
 # Stage 1: Build context-mode from source (pinned tag, auditable)
 # ─────────────────────────────────────────────────────────────────
-FROM node:22-alpine AS builder
+FROM node:24-alpine AS builder
 
 # Build deps for native modules (better-sqlite3 fallback when node:sqlite is unavailable)
 RUN apk add --no-cache git python3 make g++
@@ -20,7 +20,7 @@ RUN npm install --omit=dev
 # ─────────────────────────────────────────────────────────────────
 # Stage 2: Minimal runtime image
 # ─────────────────────────────────────────────────────────────────
-FROM node:22-alpine
+FROM node:24-alpine
 
 # Non-root user — security hardening
 RUN addgroup -S ctxmode && adduser -S ctxmode -G ctxmode
@@ -36,5 +36,11 @@ RUN chmod +x /entrypoint.sh \
 
 USER ctxmode
 WORKDIR /workspace
+
+# Runtime defaults: use better-sqlite3 path (disable node:sqlite experimental module)
+# and keep context-mode scoped debug hooks available. Both are overrideable via
+# docker-compose env / .env.context-mode.
+ENV CONTEXT_MODE_NODE_OPTIONS="--no-experimental-sqlite" \
+    CONTEXT_MODE_DEBUG="context-mode"
 
 ENTRYPOINT ["/entrypoint.sh"]

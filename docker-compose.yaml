@@ -165,6 +165,7 @@ services:
         read_only: true                                         # root FS immutable
         tmpfs:
             - /tmp:rw,size=${CONTEXT_MODE_TMPFS_SIZE:-64m},mode=1777
+            - /home/node/.vscode:rw,size=${CONTEXT_MODE_VSCODE_TMPFS_SIZE:-16m},mode=1777
         cap_drop: [ALL]
         security_opt:
             - no-new-privileges:true
@@ -184,6 +185,8 @@ services:
             CONTEXT_MODE_EXTERNAL_MCP_NUDGE_EVERY: "${CONTEXT_MODE_NUDGE_EVERY:-50}"
             CONTEXT_MODE_DIR: "/home/ctxmode/.context-mode"
             CONTEXT_MODE_WORKSPACE: "${CONTEXT_MODE_WORKSPACE:-/workspace}"  # discoverable by agents via `ctx_execute("shell", "echo $CONTEXT_MODE_WORKSPACE")`
+            CONTEXT_MODE_NODE_OPTIONS: "${CONTEXT_MODE_NODE_OPTIONS:---no-experimental-sqlite}"
+            CONTEXT_MODE_DEBUG: "${CONTEXT_MODE_DEBUG:-context-mode}"
         ports:
             - "127.0.0.1:${CONTEXT_MODE_INSIGHT_PORT:-9998}:8765"  # ctx_insight UI — localhost only
         networks:
@@ -199,13 +202,19 @@ services:
           - sh
           - -lc
           - |
-            mkdir -p /home/ctxmode/.context-mode /tmp
+            mkdir -p /home/ctxmode/.context-mode /home/node/.vscode/context-mode /tmp
             touch /home/ctxmode/.context-mode/runtime.log \
                 /home/ctxmode/.context-mode/hooks.log \
+              /home/node/.vscode/context-mode/posttooluse-debug.log \
+              /home/node/.vscode/context-mode/precompact-debug.log \
+              /home/node/.vscode/context-mode/sessionstart-debug.log \
                 /tmp/.ctx-network-alerts.log
             tail -n0 -F \
                /home/ctxmode/.context-mode/runtime.log \
                /home/ctxmode/.context-mode/hooks.log \
+               /home/node/.vscode/context-mode/posttooluse-debug.log \
+               /home/node/.vscode/context-mode/precompact-debug.log \
+               /home/node/.vscode/context-mode/sessionstart-debug.log \
                /tmp/.ctx-network-alerts.log &
             exec sleep infinity
         # Lightweight liveness probe — verifies the cli bundle is loadable and FTS5 native

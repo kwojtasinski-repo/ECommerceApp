@@ -240,7 +240,7 @@
         "ecommerceapp-context-mode",
         "sh",
         "-lc",
-        "workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node --require /app/network-monitor.cjs /app/cli.bundle.mjs 2>>/home/ctxmode/.context-mode/runtime.log"
+        "workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; node_opts=\"${CONTEXT_MODE_NODE_OPTIONS:---no-experimental-sqlite}\"; debug_scope=\"${CONTEXT_MODE_DEBUG:-context-mode}\"; cd \"$workspace\" 2>/dev/null || cd /workspace; exec env NODE_OPTIONS=\"$node_opts\" DEBUG=\"$debug_scope\" node --require /app/network-monitor.cjs /app/cli.bundle.mjs 2>>/home/ctxmode/.context-mode/runtime.log"
       ]
     }
   }

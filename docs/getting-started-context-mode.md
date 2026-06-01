@@ -42,7 +42,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/context-mode-bootstr
 |------|--------|-----|
 | 1 | Creates a Docker named volume `ecommerceapp_context-mode-data` and `chown`s it to UID 1000 | the sandbox runs as a non-root user; without the chown its SQLite session DB would be read-only |
 | 2 | Generates `docker/adguard/AdGuardHome.yaml` with a **bcrypt-hashed admin password** (random 24-char default — printed once; or pass `-AdGuardPassword '...'`) | replaces AdGuard's browser-based first-run wizard — that wizard is the #1 footgun (see [KI-014](../../.github/context/known-issues.md)) |
-| 3 | Builds the `context-mode:v1.0.151` image | `Dockerfile-context-mode` + locked package list |
+| 3 | Builds the `context-mode:v1.0.161` image | `Dockerfile-context-mode` + locked package list |
 | 4 | (Re)creates `ecommerceapp-adguard` and `ecommerceapp-context-mode` containers via `docker compose up -d --force-recreate` | applies any new healthcheck / hardening flags |
 | 5 | Waits up to 30 s for AdGuard's `:53` DNS listener to come up | DNS without the listener = SERVFAIL on every fetch |
 | 6 | Runs three gate checks: AdGuardHome.yaml present, `:53` listener active, sandbox can resolve `raw.githubusercontent.com` through AdGuard | confirms the firewall path actually works end-to-end |
@@ -113,7 +113,7 @@ Expected:
 
 ```
 raw lines: 2
-server: context-mode v1.0.151
+server: context-mode v1.0.161
 tools (11): ctx_execute, ctx_execute_file, ctx_index, ctx_search, ctx_fetch_and_index, ctx_batch_execute, ctx_stats, ctx_doctor, ctx_upgrade, ctx_purge, ctx_insight
 ```
 

@@ -131,6 +131,7 @@ Use the folder `README.md` as the first stop for every ADR.
 | File                        | When to read                                                                                  |
 | --------------------------- | --------------------------------------------------------------------------------------------- |
 | `README.md`                 | Before any BC implementation — shows dependency order and phase overview                      |
+| `context-mode-details.md`   | Deep operational reference for context-mode runtime, hooks, hardening, and upgrade procedure |
 | `orders-atomic-switch.md`   | Working on Sales/Orders BC (highest-priority unblocking item)                                 |
 | `payments-atomic-switch.md` | Working on Sales/Payments BC (blocked by Orders)                                              |
 | `iam-atomic-switch.md`      | Working on Identity/IAM BC (coordinate with Orders switch)                                    |

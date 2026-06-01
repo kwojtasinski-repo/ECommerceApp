@@ -158,14 +158,14 @@ exec node \
 # ─────────────────────────────────────────────────────────────────
 # Stage 1: Build context-mode from source (pinned tag, auditable)
 # ─────────────────────────────────────────────────────────────────
-FROM node:22-alpine AS builder
+FROM node:24-alpine AS builder
 
 # Build deps for native modules (better-sqlite3 fallback when node:sqlite is unavailable)
 RUN apk add --no-cache git python3 make g++
 
 # Clone exactly this tag — change it here on upgrade, nowhere else.
 # v1.0.147+ required for CONTEXT_MODE_DIR support; bump to latest stable on rebuild.
-ARG CONTEXT_MODE_TAG=v1.0.148
+ARG CONTEXT_MODE_TAG=v1.0.161
 RUN git clone --depth 1 --branch ${CONTEXT_MODE_TAG} \
     https://github.com/mksglu/context-mode.git /build
 
@@ -176,7 +176,7 @@ RUN npm ci --production
 # ─────────────────────────────────────────────────────────────────
 # Stage 2: Minimal runtime image
 # ─────────────────────────────────────────────────────────────────
-FROM node:22-alpine
+FROM node:24-alpine
 
 # Non-root user — security hardening
 RUN addgroup -S ctxmode && adduser -S ctxmode -G ctxmode
@@ -192,6 +192,11 @@ RUN chmod +x /entrypoint.sh \
 
 USER ctxmode
 WORKDIR /workspace
+
+# Runtime defaults: use better-sqlite3 path (disable node:sqlite experimental module)
+# and keep context-mode scoped debug hooks available.
+ENV CONTEXT_MODE_NODE_OPTIONS="--no-experimental-sqlite" \
+  CONTEXT_MODE_DEBUG="context-mode"
 
 ENTRYPOINT ["/entrypoint.sh"]
 ```
@@ -477,7 +482,7 @@ docker/adguard/personal-overrides.local.txt
     "PreToolUse": [
       {
         "type": "command",
-        "command": "docker exec -i ecommerceapp-context-mode sh -lc 'workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node /app/cli.bundle.mjs hook vscode-copilot pretooluse 2>>/home/ctxmode/.context-mode/hooks.log'"
+        "command": "docker exec -i ecommerceapp-context-mode sh -lc 'workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; node_opts=\"${CONTEXT_MODE_NODE_OPTIONS:---no-experimental-sqlite}\"; debug_scope=\"${CONTEXT_MODE_DEBUG:-context-mode}\"; cd \"$workspace\" 2>/dev/null || cd /workspace; exec env NODE_OPTIONS=\"$node_opts\" DEBUG=\"$debug_scope\" node /app/cli.bundle.mjs hook vscode-copilot pretooluse 2>>/home/ctxmode/.context-mode/hooks.log'"
       }
     ],
     "PostToolUse": [
@@ -490,19 +495,19 @@ docker/adguard/personal-overrides.local.txt
     "UserPromptSubmit": [
       {
         "type": "command",
-        "command": "docker exec -i ecommerceapp-context-mode sh -lc 'workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node /app/cli.bundle.mjs hook vscode-copilot userpromptsubmit 2>>/home/ctxmode/.context-mode/hooks.log'"
+        "command": "docker exec -i ecommerceapp-context-mode sh -lc 'workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; node_opts=\"${CONTEXT_MODE_NODE_OPTIONS:---no-experimental-sqlite}\"; debug_scope=\"${CONTEXT_MODE_DEBUG:-context-mode}\"; cd \"$workspace\" 2>/dev/null || cd /workspace; exec env NODE_OPTIONS=\"$node_opts\" DEBUG=\"$debug_scope\" node /app/cli.bundle.mjs hook vscode-copilot userpromptsubmit 2>>/home/ctxmode/.context-mode/hooks.log'"
       }
     ],
     "PreCompact": [
       {
         "type": "command",
-        "command": "docker exec -i ecommerceapp-context-mode sh -lc 'workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node /app/cli.bundle.mjs hook vscode-copilot precompact 2>>/home/ctxmode/.context-mode/hooks.log'"
+        "command": "docker exec -i ecommerceapp-context-mode sh -lc 'workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; node_opts=\"${CONTEXT_MODE_NODE_OPTIONS:---no-experimental-sqlite}\"; debug_scope=\"${CONTEXT_MODE_DEBUG:-context-mode}\"; cd \"$workspace\" 2>/dev/null || cd /workspace; exec env NODE_OPTIONS=\"$node_opts\" DEBUG=\"$debug_scope\" node /app/cli.bundle.mjs hook vscode-copilot precompact 2>>/home/ctxmode/.context-mode/hooks.log'"
       }
     ],
     "SessionStart": [
       {
         "type": "command",
-        "command": "docker exec -i ecommerceapp-context-mode sh -lc 'workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node /app/cli.bundle.mjs hook vscode-copilot sessionstart 2>>/home/ctxmode/.context-mode/hooks.log'"
+        "command": "docker exec -i ecommerceapp-context-mode sh -lc 'workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; node_opts=\"${CONTEXT_MODE_NODE_OPTIONS:---no-experimental-sqlite}\"; debug_scope=\"${CONTEXT_MODE_DEBUG:-context-mode}\"; cd \"$workspace\" 2>/dev/null || cd /workspace; exec env NODE_OPTIONS=\"$node_opts\" DEBUG=\"$debug_scope\" node /app/cli.bundle.mjs hook vscode-copilot sessionstart 2>>/home/ctxmode/.context-mode/hooks.log'"
       }
     ]
   }

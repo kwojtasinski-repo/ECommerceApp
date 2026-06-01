@@ -68,6 +68,9 @@ Direct files in container:
 docker exec -it ecommerceapp-context-mode sh -lc "tail -f /home/ctxmode/.context-mode/runtime.log"
 docker exec -it ecommerceapp-context-mode sh -lc "tail -f /home/ctxmode/.context-mode/hooks.log"
 docker exec -it ecommerceapp-context-mode sh -lc "tail -f /tmp/.ctx-network-alerts.log"
+docker exec -it ecommerceapp-context-mode sh -lc "tail -f /home/node/.vscode/context-mode/posttooluse-debug.log"
+docker exec -it ecommerceapp-context-mode sh -lc "tail -f /home/node/.vscode/context-mode/precompact-debug.log"
+docker exec -it ecommerceapp-context-mode sh -lc "tail -f /home/node/.vscode/context-mode/sessionstart-debug.log"
 ```
 
 ## 2. RAG setup (step-by-step)
