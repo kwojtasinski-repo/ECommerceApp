@@ -7,3 +7,5 @@
 # Examples (uncomment, commit, PR):
 # ||suspicious-tracker.io^
 # ||known-malware-c2.example^
+
+/.*/

@@ -36,7 +36,8 @@ CONVENIENCE EDIT
 
 CONTROL
   reload
-        docker compose restart adguard (~5s downtime).
+    Sync host filter files into AdGuard runtime cache (1001/1002), then
+    docker compose restart adguard (~5s downtime).
 
   help [subcommand]
         Usage info.
@@ -79,6 +80,13 @@ $AdGuardConfDir = Join-Path $RepoRoot 'docker\adguard'
 $BlacklistFile  = Join-Path $AdGuardConfDir 'team-blacklist.txt'
 $WhitelistFile  = Join-Path $AdGuardConfDir 'team-whitelist.txt'
 $YamlFile       = Join-Path $AdGuardConfDir 'AdGuardHome.yaml'
+$AdGuardContainer = 'ecommerceapp-adguard'
+
+$BlacklistCachePath = '/opt/adguardhome/work/data/filters/1001.txt'
+$WhitelistCachePath = '/opt/adguardhome/work/data/filters/1002.txt'
+
+$BlacklistSourcePath = '/opt/adguardhome/conf/team-blacklist.txt'
+$WhitelistSourcePath = '/opt/adguardhome/conf/team-whitelist.txt'
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 function Write-Ok    { param([string]$m) Write-Host "✓ $m" -ForegroundColor Green }
@@ -132,6 +140,19 @@ function Add-RulesWithDedup {
 }
 
 function Invoke-AdGuardReload {
+    Write-Info "Syncing filter cache files (1001/1002) from mounted conf…"
+    $syncCmd = @(
+        "cp $BlacklistSourcePath $BlacklistCachePath",
+        "cp $WhitelistSourcePath $WhitelistCachePath"
+    ) -join '; '
+
+    docker exec $AdGuardContainer sh -lc $syncCmd | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Err "Failed to sync filter cache files inside $AdGuardContainer (exit $LASTEXITCODE)."
+        exit 1
+    }
+    Write-Ok "Filter caches 1001/1002 synchronized."
+
     Write-Info "Reloading AdGuard (docker compose restart adguard)…"
     Push-Location $RepoRoot
     try {

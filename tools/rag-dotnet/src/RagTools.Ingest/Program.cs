@@ -250,7 +250,7 @@ static bool IsExcluded(FileInfo fi, string repoRoot, IEnumerable<string> globs)
 
 static void WriteStatsMd(RagConfig cfg, ManifestService manifest, string repoRoot)
 {
-    const string statsRel = "docs/rag/index-stats-dotnet.md";
+    const string statsRel = ".rag/index-stats-dotnet.md";
     var statsPath = Path.Combine(repoRoot, statsRel);
 
     // Aggregate from manifest entries.

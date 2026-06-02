@@ -171,10 +171,10 @@ def _write_stats_md(
     points: list,
     total_files: int,
 ) -> None:
-    """Write docs/rag/index-stats.md — a human-readable index fingerprint.
+    """Write .rag/index-stats.md — a human-readable index fingerprint.
 
-    The file is committed to the repo so reviewers can audit coverage without
-    running queries or starting Docker. It is NOT a replacement for the MCP tools.
+    The file lives in .rag to keep generated ingest artifacts out of docs/.
+    It is NOT a replacement for the MCP tools.
 
     Layout:
       - Summary header: timestamp, collection, total files/chunks.

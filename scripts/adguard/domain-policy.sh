@@ -22,7 +22,7 @@
 #   edit <target>                      Open in $EDITOR (fallback: code -w, vi)
 #   import <target> <localfile>        Bulk append (dedup) + reload
 #   add <target> <rule>                Single rule (dedup) + reload
-#   reload                             docker compose restart adguard
+#   reload                             sync cache 1001/1002, then restart adguard
 #   help                               This message
 #
 # DESIGN
@@ -42,6 +42,12 @@ ADGUARD_DIR="$REPO_ROOT/docker/adguard"
 BLACKLIST_FILE="$ADGUARD_DIR/team-blacklist.txt"
 WHITELIST_FILE="$ADGUARD_DIR/team-whitelist.txt"
 YAML_FILE="$ADGUARD_DIR/AdGuardHome.yaml"
+
+ADGUARD_CONTAINER="ecommerceapp-adguard"
+BLACKLIST_CACHE_PATH="/opt/adguardhome/work/data/filters/1001.txt"
+WHITELIST_CACHE_PATH="/opt/adguardhome/work/data/filters/1002.txt"
+BLACKLIST_SOURCE_PATH="/opt/adguardhome/conf/team-blacklist.txt"
+WHITELIST_SOURCE_PATH="/opt/adguardhome/conf/team-whitelist.txt"
 
 # ── Color output ──────────────────────────────────────────────────────────────
 if [ -t 1 ]; then
@@ -107,6 +113,10 @@ add_with_dedup() {
 }
 
 reload_adguard() {
+    info "Syncing filter cache files (1001/1002) from mounted conf…"
+    docker exec "$ADGUARD_CONTAINER" sh -lc "cp $BLACKLIST_SOURCE_PATH $BLACKLIST_CACHE_PATH; cp $WHITELIST_SOURCE_PATH $WHITELIST_CACHE_PATH" >/dev/null
+    ok "Filter caches 1001/1002 synchronized."
+
     info "Reloading AdGuard (docker compose restart adguard)…"
     ( cd "$REPO_ROOT" && docker compose restart adguard >/dev/null )
     ok "AdGuard restarted."

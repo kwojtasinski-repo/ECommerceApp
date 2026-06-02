@@ -28,6 +28,7 @@ DEFAULT_COLLECTION = "ecommerceapp_docs"
 DEFAULT_QDRANT_URL = "http://localhost:6333"
 DEFAULT_QDRANT_LOCAL_PATH = "/data/qdrant"
 DEFAULT_MANIFEST_PATH = ".rag/manifest.json"
+DEFAULT_STATS_PATH = ".rag/index-stats.md"
 DEFAULT_SNAPSHOT_PATH = ".rag/snapshot.qdrant"
 
 
@@ -150,8 +151,8 @@ class Config:
 
     @property
     def stats_path(self) -> Path | None:
-        p = self.raw.get("storage", {}).get("stats_path")
-        return (self.workspace / p) if p else None
+        p = self.raw.get("storage", {}).get("stats_path", DEFAULT_STATS_PATH)
+        return self.workspace / p if p else None
 
     @property
     def named_queries(self) -> list[dict[str, Any]]:

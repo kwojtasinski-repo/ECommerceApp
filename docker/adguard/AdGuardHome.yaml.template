@@ -101,18 +101,6 @@ statistics:
     enabled: true
 filters:
     - enabled: true
-      url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt
-      name: AdGuard DNS filter
-      id: 1
-    - enabled: true
-      url: https://adaway.org/hosts.txt
-      name: AdAway Default Blocklist
-      id: 2
-    - enabled: true
-      url: https://raw.githubusercontent.com/StevenBlack/hosts/master/hosts
-      name: StevenBlack hosts (unified)
-      id: 3
-    - enabled: true
       url: /opt/adguardhome/conf/team-blacklist.txt
       name: ECommerceApp team blacklist (local)
       id: 1001
@@ -155,7 +143,7 @@ filtering:
         pinterest: true
         yandex: true
         youtube: true
-    blocking_mode: default
+    blocking_mode: nxdomain
     parental_block_host: family-block.dns.adguard.com
     safebrowsing_block_host: standard-block.dns.adguard.com
     rewrites: []

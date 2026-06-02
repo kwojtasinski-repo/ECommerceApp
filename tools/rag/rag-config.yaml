@@ -141,3 +141,7 @@ config_files:
   queries:               "queries.yaml"                 # named_queries for this repo's domain
   multilingual_glossary: "multilingual-glossary.yaml"  # query-time expansion: Polish / German → English
 
+storage:
+  manifest_path: ".rag/manifest.json"
+  stats_path: ".rag/index-stats.md"
+
