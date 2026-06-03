@@ -18,12 +18,13 @@ Use the **generic pipeline** for ordinary feature work, bug fixes, and refactors
 
 Use a **domain agent** instead when the task matches its trigger:
 
-| Task                               | Use                                       |
-| ---------------------------------- | ----------------------------------------- |
-| Atomic legacy → new BC switch      | `@bc-switch` (max-iter 10, has own HITLs) |
-| Generating a new ADR               | `@adr-generator` (HITL before write)      |
-| Syncing `.github/` config / `.sln` | `@copilot-setup-maintainer`               |
-| One-off review of an existing PR   | `@code-reviewer` standalone               |
+| Task                                      | Use                                                         |
+| ----------------------------------------- | ----------------------------------------------------------- |
+| Atomic legacy → new BC switch             | `@bc-switch` (max-iter 10, has own HITLs)                   |
+| Generating a new ADR                      | `@adr-generator` (HITL before write)                        |
+| Syncing `.github/` config / `.sln`        | `@copilot-setup-maintainer`                                 |
+| One-off review of an existing PR          | `@code-reviewer` standalone                                 |
+| Writing a business workflow specification | `@spec-writer` (create/update/list `docs/specifications/`)  |
 
 ---
 

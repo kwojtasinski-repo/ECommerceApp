@@ -11,15 +11,15 @@
 
 | Category                               | Count | Details                                                                                                                            |
 | -------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `copilot-instructions.md`              | 1     | ~7 410 chars (under 8K soft budget; Session 26 trim from 11 975); §12/§14 collapsed to pointers, dedicated `batched-tasks.instructions.md` added |
+| `copilot-instructions.md`              | 1     | ~8 100 chars; §15 Context budget + Progressive Disclosure (Tier 0-3) + Navigation Map added (Session 62)                           |
 | Instruction files (`.instructions.md`) | 18    | All with `applyTo:` frontmatter; +`batched-tasks` (Session 26); `agent-memory` added; `pre-edit` split into core + `doc-suggestions`; `docs-index` scope narrowed |
-| Prompt files (`.prompt.md`)            | 8     | Includes BC analysis/implementation/review, refactor, flow-analysis, rag-sync and additional setup/routing prompt artifacts |
-| Agent files                            | 9     | adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer, planner, implementer, verifier, pr-commit, setup-discovery (Session 33)                       |
-| Skills (`SKILL.md`)                    | 33    | +9 cross-project bootstrap skills (Session 33): ctx-bootstrap-network, ctx-bootstrap-storage, ctx-bootstrap-runtimes, setup-rag-new-project, setup-context-mode-new-project, setup-adguard-policy, setup-mcp-clients, setup-auto-cache-hook, rag-eval-coverage; +4 RAG maintenance skills (Session 32): rag-reindex-decision, rag-collection-rebuild, rag-query-debug, rag-multilang-test; +3 context-mode sandbox skills (Session 31): ctx-sandbox-bootstrap-verify, ctx-doctor-playbook, ctx-hardening-audit; +rag-with-memory (Session 26); +5 RAG skills (Session 23): diagnose-rag, tune-rag-weights, expand-rag-glossary, generate-rag-rules, generate-eval-questions |
-| ADRs                                   | 29    | Folderized ADR routers under `docs/adr/<NNNN>/README.md`; ADR-0027/0028 (RAG pipeline) + ADR-0029 (context-mode sandbox) added                                                                           |
-| Context files                          | 7     | project-state, known-issues, agent-decisions, repo-index, future-skills, anti-patterns-critical, test-stabilization-policy         |
+| Prompt files (`.prompt.md`)            | 9     | +`general.prompt.md` (Session 62); flow-analysis, batched-tasks, mcp-routing-eval, rag-sync, refactor also included                |
+| Agent files                            | 10    | +`spec-writer.md` (Session 62); adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer, planner, implementer, verifier, pr-commit, setup-discovery |
+| Skills (`SKILL.md`)                    | 36    | +`code-validator`, `mermaid-diagram`, `context-updater` (Session 62); +9 cross-project bootstrap skills (Session 33); +4 RAG maintenance skills (Session 32); +3 context-mode sandbox skills (Session 31); +rag-with-memory (Session 26); +5 RAG skills (Session 23) |
+| ADRs                                   | 29    | Folderized ADR routers under `docs/adr/<NNNN>/README.md`; ADR-0027/0028 (RAG pipeline) + ADR-0029 (context-mode sandbox) added    |
+| Context files                          | 8     | +`anti-patterns-advisory.context.md` (Session 62); project-state, known-issues, agent-decisions, repo-index, future-skills, anti-patterns-critical, test-stabilization-policy |
 | GitHub Actions workflows               | 1     | `dotnet-ci.yml` — manual trigger only (push/PR commented)                                                                          |
-| Pipeline orchestration spec            | 1     | `.github/AGENT-PIPELINE.md`; `@verifier`/`@code-reviewer` embedded inside `@implementer`; standalone-only for one-off use          |
+| Pipeline orchestration spec            | 1     | `.github/AGENT-PIPELINE.md`; `@verifier`/`@code-reviewer` embedded inside `@implementer`; `@spec-writer` added to domain agents table (Session 62) |
 | HTTP scenario files                    | 10    | +auth.http (was 9)                                                                                                                 |
 | Test files                             | 135   | 94 unit + 41 integration                                                                                                           |
 
@@ -119,6 +119,29 @@ The full current 33-skill set also includes the cross-project/bootstrap and adva
 ---
 
 ## Change log
+
+### Session 62 — code-validator, mermaid-diagram, context-updater skills; spec-writer agent; general prompt; Progressive Disclosure §15; advisory anti-patterns (2026-06-03)
+
+Workflow 11 + Workflow 7 close-out for batch of new Copilot configuration artifacts migrated and adapted from `.github2` (Eplan Identity Service).
+
+| # | Change | Files affected |
+|---|---|---|
+| 1 | Added `code-validator` skill — fast pre-commit BLOCKS MERGE check (lighter than full `@code-reviewer`). | `.github/skills/code-validator/SKILL.md` |
+| 2 | Added `mermaid-diagram` skill — GitHub + ADO wiki compatible diagram generation with dual-target guidance. | `.github/skills/mermaid-diagram/SKILL.md` |
+| 3 | Added `context-updater` skill — keeps `.github/context/*.md` in sync after ADR changes using source-of-truth table. | `.github/skills/context-updater/SKILL.md` |
+| 4 | Added `anti-patterns-advisory.context.md` — P2/P3 suggestions (AutoMapper in new BC, missing CancellationToken, etc.); loaded only on deep reviews, never BLOCKS MERGE evidence. | `.github/context/anti-patterns-advisory.context.md` |
+| 5 | Added `spec-writer.md` agent — creates and maintains `docs/specifications/*.md` business workflow specs with HITL and RAG-first ADR lookup. | `.github/agents/spec-writer.md` |
+| 6 | Replaced `specification.template.md` content with ECommerceApp-specific template (was Eplan placeholder). | `.github/templates/specification.template.md` |
+| 7 | Added `context-cost-analysis.md` — per-file token budget measurements (7,110 fixed, 4,540 dotnet.instructions, etc.). | `.github/context-cost-analysis.md` |
+| 8 | Added `general.prompt.md` — efficient general Q&A prompt using Tier 0-3 progressive context loading. | `.github/prompts/general.prompt.md` |
+| 9 | Added §15 to `copilot-instructions.md` — Context budget (≤8K target), Progressive Disclosure (Tier 0-3), Navigation Map table. | `.github/copilot-instructions.md` |
+| 10 | Updated `code-reviewer.md` — added `anti-patterns-advisory.context.md` load rule for deep reviews. | `.github/agents/code-reviewer.md` |
+| 11 | Updated `docs-index.instructions.md` — added Code scaffolding skills table, `general.prompt.md`, `@spec-writer`. | `.github/instructions/docs-index.instructions.md` |
+| 12 | Updated `docs-index.full.md` — added `setup-discovery` + `spec-writer` agents, 5 missing prompts, ADRs 0027–0029, advisory context row, test-stabilization-policy row, and 3 new skills in organized subsections. | `.github/instructions/docs-index.full.md` |
+| 13 | Updated `AGENT-PIPELINE.md` — added `@spec-writer` to domain agents table. | `.github/AGENT-PIPELINE.md` |
+| 14 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: instructions 18, prompts 9 (+1), agents 10 (+1), skills 36 (+3), ADRs 29, context files 8 (+1).
 
 ### Session 61 — context-mode docs sync to v1.0.161 runtime details (2026-06-01)
 

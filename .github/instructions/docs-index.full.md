@@ -52,17 +52,24 @@ Auto-loaded by `applyTo:` globs — Copilot reads these automatically when editi
 | Implementer      | `@implementer`              | Pipeline stage 2 — execute APPROVED plan, scope-limited                                  |
 | Verifier         | `@verifier`                 | **Standalone only** — DETERMINISTIC build+test outside the pipeline                      |
 | PR/Commit        | `@pr-commit`                | Pipeline stage 5 — produce branch/commit/PR text after APPROVED review                   |
+| Setup Discovery  | `@setup-discovery`          | Read-only bootstrap audit for RAG/context-mode/MCP client setup in new repositories       |
+| Spec Writer      | `@spec-writer`              | Create or update business workflow spec files under `docs/specifications/`                |
 
 > Pipeline orchestration spec → [`.github/AGENT-PIPELINE.md`](../AGENT-PIPELINE.md)
 
 ## Prompts (`.github/prompts/`)
 
-| Prompt                        | When to use                                               |
-| ----------------------------- | --------------------------------------------------------- |
-| `bc-analysis.prompt.md`       | Analyzing a BC for migration readiness                    |
-| `bc-implementation.prompt.md` | Planning BC implementation steps                          |
-| `pr-review.prompt.md`         | Reviewing a pull request                                  |
-| `refactor.prompt.md`          | Structural / readability refactor with no behavior change |
+| Prompt                        | When to use                                                                     |
+| ----------------------------- | ------------------------------------------------------------------------------- |
+| `general.prompt.md`           | Efficient general Q&A — routes context progressively, avoids bulk load          |
+| `bc-analysis.prompt.md`       | Analyzing a BC for migration readiness                                          |
+| `bc-implementation.prompt.md` | Planning BC implementation steps                                                |
+| `pr-review.prompt.md`         | Reviewing a pull request                                                        |
+| `refactor.prompt.md`          | Structural / readability refactor with no behavior change                       |
+| `flow-analysis.prompt.md`     | Bidirectional user-facing flow analysis (happy path + all failure branches)     |
+| `batched-tasks.prompt.md`     | Structured response format for 3+ actionable items                              |
+| `mcp-routing-eval.prompt.md`  | Stricter eval-mode format for batched MCP routing checks                        |
+| `rag-sync.prompt.md`          | Incremental ingest + eval validation + coverage check for RAG                   |
 
 ## ADRs (`docs/adr/`)
 
@@ -97,6 +104,9 @@ Use the folder `README.md` as the first stop for every ADR.
 | 0024 | [Controller routing strategy for BC atomic switches](../../docs/adr/0024/README.md)                        | Creating Area controllers, migrating Web/API controllers, editing `Startup.cs` routing                                                                |
 | 0025 | [API tiered access — Trusted purchase policy, quantity limits, payment URL](../../docs/adr/0025/README.md) | Editing API V2 `CartController`, `CheckoutController`, `OrdersController`, `LoginController` JWT claims, `ApiPurchaseOptions`, `MaxApiQuantityFilter` |
 | 0026 | [Order lifecycle saga — choreography + compensation](../../docs/adr/0026/README.md)                        | Implementing saga compensation, `OrderPlaced` fan-out error handling, cross-BC partial failure recovery                                               |
+| 0027 | [RAG pipeline design](../../docs/adr/0027/README.md)                                                       | Working on RAG/MCP setup, semantic search, embedder model, Qdrant, or ingest configuration                                                            |
+| 0028 | [Remote multi-tenant RAG ingest](../../docs/adr/0028/README.md)                                            | Working on RAG ingest, chunking, metadata-rules, multi-project index setup, or known-gap list                                                         |
+| 0029 | [context-mode MCP sandbox + DNS firewall](../../docs/adr/0029/README.md)                                   | Working on context-mode container, AdGuard DNS setup, sandbox hardening, or conformance checklist                                                     |
 
 ## Root docs (`docs/`)
 
@@ -164,10 +174,14 @@ Use the folder `README.md` as the first stop for every ADR.
 | `repo-index.md`                     | When you need to locate code across the repo — full codebase map                                     |
 | `future-skills.md`                  | When creating skills, adding cross-BC events, or planning automation                                 |
 | `anti-patterns-critical.context.md` | Loaded by `@code-reviewer` — BLOCKS MERGE violations (critical only)                                 |
+| `test-stabilization-policy.md`      | Before adding skip/xfail to any test — read policy and get tracking ref (KI-NNN or issue #)          |
+| `anti-patterns-advisory.context.md` | Loaded by `@code-reviewer` for deep reviews — P2/P3 advisory suggestions; never use as BLOCKS MERGE evidence |
 
 ## Skills (`.github/skills/`)
 
 Read a skill **before** scaffolding the corresponding artifact.
+
+### Code scaffolding
 
 | Skill                     | When to read                                                                                     |
 | ------------------------- | ------------------------------------------------------------------------------------------------ |
@@ -182,3 +196,11 @@ Read a skill **before** scaffolding the corresponding artifact.
 | `create-cqrs-handler`     | Scaffolding ICommandHandler<TCommand, TResult> + command record + result type (Option B)         |
 | `create-dto-viewmodel`    | Scaffolding DTO/VM + ToDto() extension method mapping (AutoMapper removal path)                  |
 | `create-message-contract` | Defining a cross-BC IMessage event contract (publisher side only; pair with create-domain-event) |
+
+### Code quality and documentation
+
+| Skill              | When to read                                                                                           |
+| ------------------ | ------------------------------------------------------------------------------------------------------ |
+| `code-validator`   | Fast pre-commit check for BLOCKS MERGE violations only — lighter than full `@code-reviewer`            |
+| `mermaid-diagram`  | Generate GitHub + ADO wiki compatible Mermaid diagrams                                                 |
+| `context-updater`  | Sync `.github/context/*.md` files after an ADR change or pattern shift                                |

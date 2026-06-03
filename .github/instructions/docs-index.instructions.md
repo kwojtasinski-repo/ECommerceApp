@@ -43,12 +43,34 @@ list_adrs()                         -- all ADR ids and titles
 
 | Need | File |
 |---|---|
+| General Q&A (efficient context routing) | `.github/prompts/general.prompt.md` |
 | Analyze a BC structure | `.github/prompts/bc-analysis.prompt.md` |
 | Implement a BC slice | `.github/prompts/bc-implementation.prompt.md` |
 | Review a PR | `.github/prompts/pr-review.prompt.md` |
 | Refactor guidance | `.github/prompts/refactor.prompt.md` |
 | **Analyze a user-facing flow (bidirectional)** | `.github/prompts/flow-analysis.prompt.md` |
 | RAG maintenance cycle (ingest + eval + coverage) | `.github/prompts/rag-sync.prompt.md` |
+
+## Code scaffolding skills
+
+Use when generating or validating code. Load via the `read_file` tool or invoke by name.
+
+| Need | Skill |
+|---|---|
+| Fast pre-commit check (BLOCKS MERGE only, no ceremony) | `.github/skills/code-validator/SKILL.md` |
+| Generate Mermaid diagrams (GitHub + ADO wiki compatible) | `.github/skills/mermaid-diagram/SKILL.md` |
+| Keep `.github/context/*.md` in sync after ADR changes | `.github/skills/context-updater/SKILL.md` |
+| Scaffold CQRS command + result + handler (new BC) | `.github/skills/create-cqrs-handler/SKILL.md` |
+| Scaffold per-BC DbContext + design-time factory + DI extension | `.github/skills/create-dbcontext/SKILL.md` |
+| Scaffold DI extension class (Application or Infrastructure) | `.github/skills/create-di-extension/SKILL.md` |
+| Scaffold cross-BC domain event + handler | `.github/skills/create-domain-event/SKILL.md` |
+| Scaffold DTO/ViewModel + static mapping extension | `.github/skills/create-dto-viewmodel/SKILL.md` |
+| Scaffold EF Core IEntityTypeConfiguration | `.github/skills/create-ef-configuration/SKILL.md` |
+| Scaffold `.http` test scenario file | `.github/skills/create-http-scenario/SKILL.md` |
+| Scaffold integration test (BaseTest, in-memory DB) | `.github/skills/create-integration-test/SKILL.md` |
+| Scaffold cross-BC IMessage contract (publisher side) | `.github/skills/create-message-contract/SKILL.md` |
+| Scaffold unit test (Moq, FluentAssertions) | `.github/skills/create-unit-test/SKILL.md` |
+| Scaffold FluentValidation AbstractValidator | `.github/skills/create-validator/SKILL.md` |
 
 ## RAG maintenance skills
 
@@ -102,3 +124,4 @@ End-to-end, multi-stage walkthroughs for standing up RAG and/or context-mode in 
 | Need | Agent |
 |---|---|
 | Read-only audit of a new repo: what's already set up vs. needs bootstrapping | `@setup-discovery` (`.github/agents/setup-discovery.md`) |
+| Create / update business flow specification doc | `@spec-writer` (`.github/agents/spec-writer.md`) |

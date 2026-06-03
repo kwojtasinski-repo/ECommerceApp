@@ -118,3 +118,37 @@ Buckets: `BadRequest`, `Unauthorized`, `HttpError`, `NotImplemented`, `InternalS
 
 Auto-loads via [.github/instructions/batched-tasks.instructions.md](instructions/batched-tasks.instructions.md) (`applyTo: **`). Detection patterns, output shape, eval-mode delegation, compact mode, and negative triggers live there. Full rules: [.github/prompts/batched-tasks.prompt.md](prompts/batched-tasks.prompt.md).
 
+## 15. Context budget and Progressive Disclosure
+
+> Target: ≤ 8,000 input tokens per turn. Fixed always-loaded block = ~7,110 tokens. See [.github/context-cost-analysis.md](context-cost-analysis.md) for full measurements.
+
+Load context progressively — never bulk-load everything:
+
+| Tier | What to load | When |
+|---|---|---|
+| **Tier 0** | This file (auto) + `applyTo: "**"` instructions | Every turn — no action needed |
+| **Tier 1** | ONE context file or ADR matching the task | Most routine tasks |
+| **Tier 2** | Relevant ADR(s) from `docs/adr/` via `get_history(id)` | Changes that touch governed patterns |
+| **Tier 3** | `dotnet.instructions.md` (4,540 tokens) | Deep architectural questions or full code reviews only |
+
+**Navigation Map** — task to context file or agent:
+
+| Task | Invoke | Load |
+|---|---|---|
+| Fast pre-commit check (BLOCKS MERGE only) | `.github/skills/code-validator` | `anti-patterns-critical.context.md` |
+| Full pre-PR code review | `@code-reviewer` or `/pr-review` | auto — conditional per changed stack |
+| General codebase question | `/general` | only the relevant ADR or context file |
+| Create / update flow specification | `@spec-writer` | `specification.template.md` + matching ADR |
+| Add CQRS command + handler | skill `create-cqrs-handler` | `bc-adr-map.instructions.md` |
+| Scaffold BC DbContext or DI extension | skill `create-dbcontext` / `create-di-extension` | `efcore.instructions.md` |
+| Add EF Core entity type config | skill `create-ef-configuration` | `efcore.instructions.md` |
+| Add cross-BC event / message | skill `create-domain-event` / `create-message-contract` | `dotnet.instructions.md` §Messaging |
+| Scaffold unit test | skill `create-unit-test` | `anti-patterns-critical.context.md` |
+| Scaffold integration test | skill `create-integration-test` | `anti-patterns-critical.context.md` |
+| Generate Mermaid diagram | skill `mermaid-diagram` | (self-contained) |
+| Sync context files after ADR change | skill `context-updater` | source-of-truth table in skill |
+| Analyze BC flows (bidirectional) | `/flow-analysis` | matching ADR + `anti-patterns-critical.context.md` |
+| Refactor (structural only) | `/refactor` | `agent-decisions.md` + target file(s) |
+
+**Proactive rule**: when a task matches a row above, load and follow that skill or agent automatically — you do not need to be explicitly asked.
+

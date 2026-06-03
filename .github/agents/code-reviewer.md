@@ -33,6 +33,9 @@ Always load these files **before** inspecting any changed code:
 4. `.github/instructions/safety.instructions.md` — allowed/disallowed actions.
 5. `.github/context/agent-decisions.md` — skim for prior corrections in the area being reviewed (don't bulk-load — search by area/agent).
 
+**Deep reviews only** (when the PR description or scope is explicitly flagged as a full review):
+- Also load `.github/context/anti-patterns-advisory.context.md` — P2/P3 advisory suggestions. Report separately; never use as BLOCKS MERGE evidence.
+
 **MCP-assisted lookup** (per [.github/instructions/mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md)):
 
 - For step 2 (project-state) and step 5 (agent-decisions), prefer bare `query_docs("<area>")` to surface the most relevant chunks for the area being reviewed instead of reading the entire file.
