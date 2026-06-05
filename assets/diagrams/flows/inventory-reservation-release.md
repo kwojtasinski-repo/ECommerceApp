@@ -1,22 +1,36 @@
-# Inventory Reservation Release Flow
+﻿# Inventory Reservation and Release Flow
 
-High-level reservation lifecycle around checkout and timeout.
-Detailed business rules will be maintained in docs/specifications.
+Current implementation flow for hard reservation lifecycle in Inventory.
 
 ```mermaid
 graph TD
-    A(User adds item to cart) --> B(Create soft reservation)
-    B --> C(Track reservation TTL)
-    C --> D{Checkout confirmed before TTL}
-    D -->|Yes| E(Consume reservation during order placement)
-    D -->|No| F(Expire reservation)
-    E --> G([Stock remains allocated to order])
-    F --> H(Release stock)
-    H --> I([Item available again])
+    A(OrderPlaced message) --> B(ReserveAsync per order item)
+    B --> C(StockHold status = Guaranteed)
+
+    C --> D(PaymentConfirmed message)
+    D --> E(ConfirmHoldsByOrderAsync)
+    E --> F(StockHold status = Confirmed)
+
+    C --> G(PaymentExpired / OrderCancelled / OrderPlacementFailed)
+    G --> H(ReleaseAsync or ReleaseAllHoldsForOrderAsync)
+    H --> I(StockHold status = Released)
+
+    F --> J(ShipmentDelivered)
+    J --> K(FulfillAsync)
+    K --> L(StockHold status = Fulfilled)
+
+    F --> M(ShipmentFailed or FailedItems in ShipmentPartiallyDelivered)
+    M --> N(ReleaseAsync)
+    N --> I
+
+    C --> O(WithdrawHoldAsync)
+    F --> O
+    O --> P(StockHold status = Withdrawn)
 ```
 
 References:
+
 - ../../../docs/specifications/inventory-reservation-release.md
-- docs/roadmap/presale-slice2.md
-- docs/adr/0012/0012-presale-checkout-bc-design.md
-- docs/adr/0011/0011-inventory-availability-bc-design.md
+- ECommerceApp.Application/Inventory/Availability/Services/StockService.cs
+- ECommerceApp.Application/Inventory/Availability/Handlers/*.cs
+- ECommerceApp.Domain/Inventory/Availability/StockHoldStatus.cs

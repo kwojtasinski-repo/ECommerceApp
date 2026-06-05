@@ -1,22 +1,36 @@
-# Coupons Apply Revert Flow
+﻿# Coupons Apply and Revert Flow
 
-High-level coupon application and rollback conditions.
-Detailed business rules will be maintained in docs/specifications.
+Current implementation flow from coupon service and compensation handlers.
 
 ```mermaid
 graph TD
-    A(User applies coupon) --> B(Resolve coupon scope and eligibility)
-    B --> C{Eligible}
-    C -->|No| D([Reject coupon])
-    C -->|Yes| E(Apply discount to order context)
-    E --> F(Record coupon usage intent)
-    F --> G{Order finalization outcome}
-    G -->|Order paid| H([Coupon usage confirmed])
-    G -->|Order cancelled or expired| I(Revert coupon usage)
-    I --> J([Coupon usable again under rules])
+    A(ApplyCouponAsync called) --> B(Check OrderExists)
+    B --> C{Order exists}
+    C -->|No| D([OrderNotFound])
+    C -->|Yes| E(Get coupon by code)
+    E --> F{Coupon available}
+    F -->|No| G([CouponNotFound or CouponAlreadyUsed])
+    F -->|Yes| H(Check per-order coupon limit and rules pipeline)
+    H --> I{Rules pass and reduction > 0}
+    I -->|No| J([RulesNotSatisfied or NoDiscountProduced])
+    I -->|Yes| K(Mark coupon used + persist CouponUsed + app record)
+    K --> L(Publish CouponApplied + OrderPriceAdjusted)
+    L --> M([Applied])
+
+    N(RemoveCouponAsync called) --> O(Find coupon use by order)
+    O --> P{Found}
+    P -->|No| Q([NoCouponApplied])
+    P -->|Yes| R(Release coupon + delete CouponUsed)
+    R --> S(Publish CouponRemovedFromOrder)
+    S --> T([Removed])
+
+    U(OrderCancelled or PaymentExpired message) --> V(Find all CouponUsed for order)
+    V --> W(Release coupon + mark record reversed + delete CouponUsed)
 ```
 
 References:
+
 - ../../../docs/specifications/coupons-apply-revert.md
-- docs/adr/0016/0016-sales-coupons-bc-design.md
-- docs/roadmap/README.md
+- ECommerceApp.Application/Sales/Coupons/Services/CouponService.cs
+- ECommerceApp.Application/Sales/Coupons/Handlers/CouponsOrderCancelledHandler.cs
+- ECommerceApp.Application/Sales/Coupons/Handlers/CouponsPaymentExpiredHandler.cs

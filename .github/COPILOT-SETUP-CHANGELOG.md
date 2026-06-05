@@ -120,6 +120,33 @@ The full current 33-skill set also includes the cross-project/bootstrap and adva
 
 ## Change log
 
+### Session 68 — spec and flow content alignment to current implementation (2026-06-05)
+
+Workflow 11 + Workflow 7 close-out after content-only updates to existing workflow specifications and matching flow diagrams.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Updated IAM refresh-token spec to endpoint/service behavior only (`SignInAsync`, `RefreshAsync`, `RevokeAsync`) and removed synthetic event lifecycle naming. | `docs/specifications/iam-refresh-token.md` |
+| 2 | Updated Orders checkout spec to real `InitiateCheckoutResult`/`CheckoutResult` outcomes and current integration messages (`OrderPlaced`, `OrderPlacementFailed`). | `docs/specifications/orders-checkout.md` |
+| 3 | Updated Inventory reservation spec to actual handlers/service methods and `StockHoldStatus` values. | `docs/specifications/inventory-reservation-release.md` |
+| 4 | Updated Payments lifecycle spec to implemented domain/status transitions and registered handlers/jobs/messages. | `docs/specifications/payments-lifecycle.md` |
+| 5 | Updated Coupons spec to real service outcomes (`CouponApplyResult`, `CouponRemoveResult`) and implemented compensation handlers (`OrderCancelled`, `PaymentExpired`). | `docs/specifications/coupons-apply-revert.md` |
+| 6 | Updated all 5 flow diagrams under `assets/diagrams/flows/` to current implementation steps only (no speculative/future branches). | `assets/diagrams/flows/*.md` |
+| 7 | Verified no `.sln` structural sync required (files already present where applicable); close-out sync recorded (this entry). | `ECommerceApp.sln`, `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 9, agents 10, skills 36, ADRs 29, context files 8).
+
+### Session 67 — session policy timeout tuning (2026-06-05)
+
+Workflow 11 + Workflow 7 close-out after tuning MCP timeout guidance in SessionStart hook.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Changed default MCP timeout policy to fast-fail (`15000ms`) for regular calls. | `.github/hooks/session-policy.mjs` |
+| 2 | Kept explicit long-operation override (`300000ms`) for ingest/build/full reindex scenarios. | `.github/hooks/session-policy.mjs` |
+| 3 | Synced hooks solution items to include `session-policy.mjs`. | `ECommerceApp.sln` |
+| 4 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
 ### Session 66 — spec-writer batch close-out: payments, inventory, coupons, iam (2026-06-05)
 
 Workflow 11 + Workflow 7 close-out after adding the next four workflow specifications.

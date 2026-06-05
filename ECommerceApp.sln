@@ -533,6 +533,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "hooks", "hooks", "{5A7C54F0
 		.github\hooks\context-mode.json = .github\hooks\context-mode.json
 		.github\hooks\posttooluse-chain.mjs = .github\hooks\posttooluse-chain.mjs
 		.github\hooks\posttooluse-chain.sh = .github\hooks\posttooluse-chain.sh
+		.github\hooks\session-policy.mjs = .github\hooks\session-policy.mjs
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reference", "reference", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
