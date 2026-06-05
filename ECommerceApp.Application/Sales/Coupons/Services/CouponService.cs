@@ -142,7 +142,9 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
         {
             var existing = await _coupons.GetByCodeAsync(dto.Code, ct);
             if (existing is not null)
+            {
                 return CouponApplicationResult.Failed($"Coupon code '{dto.Code}' already exists.");
+            }
 
             var scopeTargetsForValidation = (dto.ScopeTargets ?? new List<ScopeTargetDto>())
                 .Select(t => CouponScopeTarget.Create(new CouponId(0), t.ScopeType, t.TargetId, t.TargetName))

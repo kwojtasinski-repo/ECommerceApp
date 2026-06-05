@@ -120,6 +120,54 @@ The full current 33-skill set also includes the cross-project/bootstrap and adva
 
 ## Change log
 
+### Session 66 — spec-writer batch close-out: payments, inventory, coupons, iam (2026-06-05)
+
+Workflow 11 + Workflow 7 close-out after adding the next four workflow specifications.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Added Payments lifecycle specification draft. | `docs/specifications/payments-lifecycle.md` |
+| 2 | Added Inventory reservation release specification draft. | `docs/specifications/inventory-reservation-release.md` |
+| 3 | Added Coupons apply-revert specification draft. | `docs/specifications/coupons-apply-revert.md` |
+| 4 | Added IAM refresh-token specification draft. | `docs/specifications/iam-refresh-token.md` |
+| 5 | Updated specifications index to move created specs from planned to created. | `docs/specifications/README.md` |
+| 6 | Synced `.sln` specifications solution folder with all created spec files. | `ECommerceApp.sln` |
+| 7 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 9, agents 10, skills 36, ADRs 29, context files 8).
+
+### Session 65 — spec-writer close-out: orders-checkout spec mirror sync (2026-06-05)
+
+Workflow 11 + Workflow 7 close-out after approving and adding the first workflow specification draft.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Added first created flow spec artifact in specifications area. | `docs/specifications/orders-checkout.md` |
+| 2 | Updated specifications index status from planned-only to include created spec list entry. | `docs/specifications/README.md` |
+| 3 | Synced solution docs tree: added the new spec file under the `specifications` solution folder. | `ECommerceApp.sln` |
+| 4 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for configuration artifact families (instructions 18, prompts 9, agents 10, skills 36, ADRs 29, context files 8).
+
+Not changed (deliberate):
+
+- MCP routing semantics and precedence rules.
+- Root Copilot policy sections and instruction routing tables.
+
+### Session 64 — README hub + assets bootstrap + specifications mirror sync (2026-06-05)
+
+Workflow 11 + Workflow 7 close-out after the first portfolio/docs cleanup step.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Refactored root README into a concise hub (quick start, stack, references to architecture/ADR/roadmap/specs). Removed long legacy screenshot dump and Docker SQL bootstrap script section. | `README.md` |
+| 2 | Added lightweight assets entry points for short visual layer (no deep docs duplication). | `assets/README.md`, `assets/screens/README.md`, `assets/diagrams/README.md` |
+| 3 | Added specifications index stub to establish docs target for upcoming flow specs. | `docs/specifications/README.md` |
+| 4 | Synced solution docs tree: added `specifications` solution folder with `docs/specifications/README.md`. | `ECommerceApp.sln` |
+| 5 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for instruction/prompt/agent/skill families; docs structure expanded with `docs/specifications/README.md` and mirrored in `.sln`.
+
 ### Session 63 — MCP routing compact policy + global cancel resilience defaults (2026-06-05)
 
 Workflow 11 + Workflow 7 close-out for MCP routing policy consolidation and drift-safe mirroring in root instructions.

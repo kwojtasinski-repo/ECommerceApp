@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ECommerceApp.Domain.Sales.Coupons;
+using ECommerceApp.Domain.Sales.Coupons.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 namespace ECommerceApp.Infrastructure.Sales.Coupons.Repositories
@@ -17,7 +18,7 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons.Repositories
         }
 
         public Task<Coupon> GetByCodeAsync(string code, CancellationToken ct = default)
-            => _context.Coupons.FirstOrDefaultAsync(c => c.Code.Value == code, ct);
+            => _context.Coupons.FirstOrDefaultAsync(c => c.Code == new CouponCode(code), ct);
 
         public Task<Coupon> GetByIdAsync(int id, CancellationToken ct = default)
             => _context.Coupons.FirstOrDefaultAsync(c => c.Id == new CouponId(id), ct);

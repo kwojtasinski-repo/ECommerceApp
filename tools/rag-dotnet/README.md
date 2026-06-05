@@ -21,7 +21,7 @@ Four MCP tools exposed to Copilot Chat:
 
 ```bash
 # From the repo root
-docker compose build rag-dotnetp
+docker compose build rag-dotnet
 ```
 
 > **What this does:** runs a multi-stage Docker build:
