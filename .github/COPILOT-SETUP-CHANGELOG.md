@@ -120,6 +120,22 @@ The full current 33-skill set also includes the cross-project/bootstrap and adva
 
 ## Change log
 
+### Session 63 — MCP routing compact policy + global cancel resilience defaults (2026-06-05)
+
+Workflow 11 + Workflow 7 close-out for MCP routing policy consolidation and drift-safe mirroring in root instructions.
+
+| # | Change | Files affected |
+|---|---|---|
+| 1 | Compressed canonical MCP routing document while preserving precedence, fail-open, and retry behavior. | `.github/instructions/mcp-routing.instructions.md` |
+| 2 | Added explicit long-wait default for long MCP operations: 5-minute threshold with `timeout=300000` where supported. | `.github/instructions/mcp-routing.instructions.md` |
+| 3 | Generalized cancel handling to all MCP servers (not context-mode only) with deterministic 5-step retry sequence and risk-acceptance fallback. | `.github/instructions/mcp-routing.instructions.md` |
+| 4 | Strengthened context-mode runtime defaults: `javascript` first, non-`javascript` only after availability verification, auto-fallback to `javascript`/bounded `shell`. | `.github/instructions/mcp-routing.instructions.md` |
+| 5 | Mirrored non-negotiable MCP defaults in root instructions (long-wait, retry contract, runtime default) to enforce setup-wide behavior across models. | `.github/copilot-instructions.md` |
+| 6 | Updated canonical pointer list in root instructions to avoid brittle heading anchors after routing compaction. | `.github/copilot-instructions.md` |
+| 7 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Counts: unchanged for artifact families (instructions 18, prompts 9, agents 10, skills 36, ADRs 29, context files 8).
+
 ### Session 62 — code-validator, mermaid-diagram, context-updater skills; spec-writer agent; general prompt; Progressive Disclosure §15; advisory anti-patterns (2026-06-03)
 
 Workflow 11 + Workflow 7 close-out for batch of new Copilot configuration artifacts migrated and adapted from `.github2` (Eplan Identity Service).

@@ -151,8 +151,8 @@ services:
             context: .
             dockerfile: Dockerfile-context-mode
             args:
-                CONTEXT_MODE_TAG: "${CONTEXT_MODE_TAG:-v1.0.151}"
-        image: ecommerceapp/context-mode:${CONTEXT_MODE_TAG:-v1.0.151}
+                CONTEXT_MODE_TAG: "${CONTEXT_MODE_TAG:-v1.0.162}"
+        image: ecommerceapp/context-mode:${CONTEXT_MODE_TAG:-v1.0.162}
         container_name: ecommerceapp-context-mode
         env_file:
             - path: .env.context-mode
@@ -181,7 +181,7 @@ services:
             - ./docker/context-mode/empty-claude-settings.json:/home/node/.claude/settings.json:ro  # silences PreToolUse hook FAIL
         environment:
             CTX_FETCH_STRICT: "${CONTEXT_MODE_FETCH_STRICT:-1}"
-            CONTEXT_MODE_EXTERNAL_MCP_NUDGE_EVERY: "${CONTEXT_MODE_NUDGE_EVERY:-50}"
+            CONTEXT_MODE_EXTERNAL_MCP_NUDGE_EVERY: "${CONTEXT_MODE_NUDGE_EVERY:-1}"
             CONTEXT_MODE_DIR: "/home/ctxmode/.context-mode"
             CONTEXT_MODE_WORKSPACE: "${CONTEXT_MODE_WORKSPACE:-/workspace}"  # discoverable by agents via `ctx_execute("shell", "echo $CONTEXT_MODE_WORKSPACE")`
             CONTEXT_MODE_NODE_OPTIONS: "${CONTEXT_MODE_NODE_OPTIONS:---no-experimental-sqlite}"

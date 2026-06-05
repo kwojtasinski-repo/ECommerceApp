@@ -8,7 +8,7 @@ RUN apk add --no-cache git python3 make g++
 
 # Clone exactly this tag — change it here on upgrade, nowhere else.
 # v1.0.147+ required for CONTEXT_MODE_DIR support; bump to latest stable on rebuild.
-ARG CONTEXT_MODE_TAG=v1.0.154
+ARG CONTEXT_MODE_TAG=v1.0.162
 RUN git clone --depth 1 --branch ${CONTEXT_MODE_TAG} \
     https://github.com/mksglu/context-mode.git /build
 
@@ -21,6 +21,9 @@ RUN npm install --omit=dev
 # Stage 2: Minimal runtime image
 # ─────────────────────────────────────────────────────────────────
 FROM node:24-alpine
+
+# Runtime CLI tools for sandbox shell analysis (ctx_execute/ctx_batch_execute).
+RUN apk add --no-cache ripgrep bash
 
 # Non-root user — security hardening
 RUN addgroup -S ctxmode && adduser -S ctxmode -G ctxmode

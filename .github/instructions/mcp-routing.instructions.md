@@ -4,24 +4,8 @@ applyTo: "**"
 
 # MCP routing — single source of truth
 
-> This file owns MCP tool routing and precedence. Other files should mirror this briefly, not duplicate full logic.
-
-## Change-management contract (keep rules, avoid patchwork)
-
-1. Keep this file in two zones:
-- Core routing contract (stable): ownership, intent classification, precedence, invalid-answer rules.
-- Operational playbooks (tunable): retries, canceled handling, telemetry, fallback behaviors.
-
-2. Update policy safely:
-- Edit canonical rules here first.
-- Mirror only short non-negotiable summaries in [ .github/copilot-instructions.md ](../copilot-instructions.md).
-- Preserve behavior when refactoring wording.
-- Record policy changes in [ .github/COPILOT-SETUP-CHANGELOG.md ](../COPILOT-SETUP-CHANGELOG.md).
-
-3. Non-regression checklist:
-- Core precedence remains explicit.
-- Empty-result retry sequence remains explicit.
-- Canceled handling keeps retry/fallback/fail-open requirements.
+> Compact canonical policy. Keep this file short and stable.
+> If behavior changes, update this file first, then mirror brief summaries elsewhere.
 
 ## MCP ownership
 
@@ -35,7 +19,15 @@ RAG servers: `ecommerceapp-rag-python`, `ecommerceapp-rag-dotnet`, `ecommerceapp
 
 context-mode server: `ecommerceapp-context-mode`.
 
-## RAG quick routing
+## Core precedence (mandatory)
+
+1. Knowledge intent -> RAG first.
+2. Analysis/execution intent -> context-mode first.
+3. Project URL intent -> `ctx_fetch_and_index` only.
+4. If MCP is empty/unhealthy -> fallback to direct tools and name failing MCP.
+5. Never use both MCPs for one atomic intent.
+
+## RAG quick rules
 
 Use RAG first for:
 - ADRs and architectural decisions.
@@ -50,7 +42,12 @@ Protected paths (RAG-first):
 - `docs/roadmap/**`
 - `docs/architecture/bounded-context-map.md`
 
-## context-mode quick routing
+Empty/low-score `query_docs`/`read_docs` retry order:
+1. Retry without `bc`.
+2. Retry with reworded full-name/domain-synonym query.
+3. Only then fallback to direct tools and state retries were attempted.
+
+## context-mode quick rules
 
 Use context-mode first when the task is analyze/summarize/count/compare/parse/transform/extract.
 
@@ -61,6 +58,30 @@ Preferred tools by shape:
 - Recall indexed/session data: `ctx_search`.
 
 Installed runtimes in shipped image: `javascript`, `shell`.
+
+### context-mode execution contract (always-on)
+
+Apply this by default for every analysis run, even when the user does not ask explicitly:
+
+1. Start bounded-first (small probe), then expand only if needed.
+2. Never start with full-repo recursive scans.
+3. Use `javascript` as the default runtime for file processing and parsing.
+4. Use `shell` only for small, bounded command probes.
+5. Any non-`javascript` runtime requires an explicit availability check first (`ctx_doctor` and, when needed, a one-line smoke probe).
+6. If the requested runtime is unavailable, auto-fallback to `javascript` or bounded `shell` and continue.
+7. Return synthesis + evidence, not raw dumps.
+
+Bounded-first shape requirements:
+- Scope: explicit folders only (no repo root wildcard).
+- File types: explicit extensions only.
+- Exclusions: always exclude `bin` and `obj` for code scans.
+- Result caps: include match limits (`-m`) and output caps (`head`).
+
+Escalation rule:
+- Probe 1: smallest viable scope.
+- Probe 2: broaden one axis only (scope OR pattern OR cap).
+- Probe 3: broaden one more axis only if probe 2 is still insufficient.
+- Never widen all axes at once.
 
 ## context-mode path normalization (mandatory)
 
@@ -73,14 +94,6 @@ Rule:
 
 Never pass host absolute paths (e.g. `C:\...`, `/Users/...`, `/home/...`) to `ctx_execute_file`.
 
-## HARD precedence rules (apply in this order, no exceptions)
-
-1. Knowledge intent -> RAG first.
-2. Analysis/execution intent -> context-mode first.
-3. Project URL intent -> `ctx_fetch_and_index` only.
-4. If MCP is empty/unhealthy -> fallback to direct tools and name failing MCP.
-5. Never use both MCPs for one atomic intent.
-
 ## User-prompt interpretation rule
 
 Explicit tool naming is optional.
@@ -92,17 +105,7 @@ Examples:
 
 Do not wait for user phrases like "use context-mode" when intent is already clear.
 
-## Benchmark integrity rule (`ctx_stats`)
-
-`ctx_stats` is the only KPI source of truth for context-savings metrics.
-
-Mandatory:
-- Show raw `ctx_stats` first for KPI runs.
-- Derive KPI only from raw `ctx_stats`.
-- If output says `0 calls` while report claims `ctx_*` usage -> mark run INVALID.
-- Do not use chat-session transport artifacts as KPI evidence.
-
-## End-of-run telemetry rule (`ctx_stats`)
+## End-of-run telemetry (`ctx_stats`)
 
 If any `ctx_*` tool was used, call `ctx_stats` at end and include raw output in final answer.
 
@@ -110,11 +113,13 @@ If any `ctx_*` tool was used, call `ctx_stats` at end and include raw output in 
 - For other runs: include unless user explicitly asked to skip metadata.
 - If `ctx_stats` fails, emit `UNABLE_TO_PROCESS` for telemetry step and continue.
 
-## Tool-cancel recovery rule (`Canceled`)
+## MCP cancel recovery rule (`Canceled`) — all MCP servers
 
 Treat `Canceled` as recoverable by default.
 
-- Retry up to 3 times with lighter call shape.
+- Default long-wait threshold: 5 minutes for MCP operations that may run long.
+- When an MCP tool supports a timeout parameter, set `timeout=300000` for potentially long-running calls by default.
+- Retry up to 5 times with lighter call shape.
 - If still failing, use one fallback path and continue.
 - Do not claim canceled steps as success.
 - Keep run partial, not fail-fast.
@@ -140,7 +145,7 @@ Known bad shapes:
 
 ### Pre-dispatch guard for known-bad shapes (mandatory)
 
-If a planned `ctx_execute(shell)` matches known bad shapes:
+If a planned MCP call matches known bad shapes:
 - Do not dispatch to context-mode.
 - Short-circuit with `UNABLE_TO_PROCESS`, `FAILED_STEP`, `REASON`, `NEXT_STEP_CONTINUED`.
 - Continue with safe rewritten shape or skip to downstream step.
@@ -152,7 +157,27 @@ If a planned `ctx_execute(shell)` matches known bad shapes:
 3. Replace fan-out shell loops with one-pass reducer.
 4. Split heavy call into smaller calls.
 
+### Deterministic canceled retry sequence (mandatory)
+
+When any MCP call returns `Canceled` or times out:
+
+1. Retry once with narrower scope.
+2. Retry once with narrower pattern.
+3. Retry once with lower match/output caps.
+4. Retry once by splitting work into smaller independent calls.
+5. Retry once with reduced query set/labels.
+6. If still failing, emit fail-open contract fields and continue independent steps.
+
+Do not retry the same command shape verbatim.
+
 Do not loop on same known-bad shape.
+
+### User risk-acceptance fallback (after 5 failed retries)
+
+When MCP remains unavailable after retry sequence:
+- Ask user to accept a higher-token direct-tools fallback.
+- If accepted, proceed with bounded direct file search/read and explicitly mark increased token risk.
+- If not accepted, stop at partial status with clear next step options.
 
 ## Invalid-answer directive
 
@@ -164,15 +189,6 @@ Required recovery:
 
 Exception:
 - MCP first call returned empty/low score -> fallback allowed, but must name failing MCP.
-
-### Empty-result clause (mandatory retry sequence)
-
-For empty/low-score `query_docs` or `read_docs`:
-1. Retry without `bc` filter.
-2. Retry with reworded full-name/domain-synonym query.
-3. Only then fallback to direct tools and explicitly state retries were attempted.
-
-Skipping step 1 or 2 is BLOCKS MERGE.
 
 ## RAG <-> context-mode handoff (short)
 
@@ -187,14 +203,6 @@ Use deterministic cache source labels (`rag-auto-*` / `rag-cache-*`).
 For detailed walkthroughs:
 - [ .github/skills/rag-with-memory/SKILL.md ](../skills/rag-with-memory/SKILL.md)
 - [ docs/rag/auto-cache-hook.md ](../../docs/rag/auto-cache-hook.md)
-
-## Fallback ladder (when MCP returns empty)
-
-1. RAG empty -> report empty, suggest re-index (`python tools/rag/ingest.py`), then direct fallback.
-2. context-mode unavailable -> report failing hook/tool, then direct fallback.
-3. Both unavailable -> direct tools only and explicitly report routing failure.
-
-Never guess from training data when project source of truth exists.
 
 ## RAG maintenance quick table
 

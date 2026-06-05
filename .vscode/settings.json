@@ -1,0 +1,6 @@
+{
+  "github.copilot.chat.statusLine": {
+    "type": "command",
+    "command": "docker exec -i ecommerceapp-context-mode node /app/cli.bundle.mjs statusline"
+  }
+}

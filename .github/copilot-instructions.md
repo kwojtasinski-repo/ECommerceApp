@@ -89,6 +89,9 @@ Non-negotiable summary:
 - **Core precedence is mandatory**: knowledge intent → RAG, execution/analysis intent → context-mode, project URLs → `ctx_fetch_and_index`, never both MCPs for one atomic intent.
 - **First-move discipline is mandatory**: no `read_file`/`grep_search` first on protected knowledge paths when RAG should answer.
 - **Integrity and resilience are mandatory**: `ctx_stats` is KPI source of truth; canceled calls require retry/fallback/partial reporting.
+- **Long-wait default is mandatory**: for potentially long MCP calls, use a 5-minute threshold (`timeout=300000` where supported) before treating the step as canceled.
+- **Retry contract is mandatory**: after cancel/timeout, retry with lighter shape up to 5 times; do not repeat the same command shape verbatim.
+- **Runtime default is mandatory**: for context-mode processing, default to `javascript`; any non-`javascript` runtime requires availability verification first, then fallback to `javascript`/bounded `shell` if unavailable.
 - **End-of-run telemetry is mandatory**: if any `ctx_*` tool was used, include raw `ctx_stats` in the final answer (unless user explicitly asks to skip metadata).
 - **Graceful degradation is mandatory**: when a canceled step cannot be recovered, emit explicit inability (`UNABLE_TO_PROCESS` + reason), mark run `PARTIAL`, and continue remaining independent steps.
 - **Known-bad shape guard is mandatory**: do not dispatch known cancellation-prone unbounded shell scans to context-mode; short-circuit with explicit inability and continue using safe rewritten shape.
@@ -96,11 +99,11 @@ Non-negotiable summary:
 
 Operational details and exact wording live in canonical sections:
 
-- Precedence + first-move restrictions: [mcp-routing.instructions.md](instructions/mcp-routing.instructions.md#hard-precedence-rules-apply-in-this-order-no-exceptions)
-- Invalid-answer + empty-result sequence: [mcp-routing.instructions.md](instructions/mcp-routing.instructions.md#invalid-answer-directive)
-- Benchmark integrity: [mcp-routing.instructions.md](instructions/mcp-routing.instructions.md#benchmark-integrity-rule-ctx_stats)
-- Canceled recovery + anti-patterns: [mcp-routing.instructions.md](instructions/mcp-routing.instructions.md#tool-cancel-recovery-rule-canceled)
-- Path normalization: [mcp-routing.instructions.md](instructions/mcp-routing.instructions.md#context-mode-path-normalization-mandatory)
+- Precedence + first-move restrictions: [mcp-routing.instructions.md](instructions/mcp-routing.instructions.md)
+- Invalid-answer + empty-result sequence: [mcp-routing.instructions.md](instructions/mcp-routing.instructions.md)
+- Benchmark integrity + telemetry: [mcp-routing.instructions.md](instructions/mcp-routing.instructions.md)
+- Canceled recovery + anti-patterns: [mcp-routing.instructions.md](instructions/mcp-routing.instructions.md)
+- Path normalization + runtime defaults: [mcp-routing.instructions.md](instructions/mcp-routing.instructions.md)
 
 Enforced by [.github/context/anti-patterns-critical.context.md](context/anti-patterns-critical.context.md). RAG re-index rules: [instructions/rag.instructions.md](instructions/rag.instructions.md).
 

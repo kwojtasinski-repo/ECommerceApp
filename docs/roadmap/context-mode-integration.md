@@ -1,6 +1,6 @@
 ﻿# Roadmap: context-mode — MCP sandbox integration
 
-> Status: — Unblocked — RAG stabilisation complete (2026-05-23), ready to implement
+> Status: ✅ Complete — core integration phases closed (2026-06-05); deferred items remain optional and tracked as future follow-ups
 > Scope: `docker/context-mode/`, `Dockerfile-context-mode`, `docker-compose.yaml` (delta), `.vscode/`, `.github/hooks/`, `.github/copilot-instructions.md` (append), `.env.context-mode.example` (`.claude/settings.json` originally listed; now skipped — see Phase 4 note)
 > Companion detail plan: [`context-mode-details.md`](./context-mode-details.md)
 
