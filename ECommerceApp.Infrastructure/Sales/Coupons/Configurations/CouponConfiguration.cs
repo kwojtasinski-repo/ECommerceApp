@@ -1,5 +1,4 @@
 using ECommerceApp.Domain.Sales.Coupons;
-using ECommerceApp.Domain.Sales.Coupons.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -16,21 +15,34 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons.Configurations
                    .HasConversion(x => x.Value, v => new CouponId(v))
                    .ValueGeneratedOnAdd();
 
-            builder.Property(c => c.Code)
-                   .HasConversion(x => x.Value, v => new CouponCode(v))
-                   .HasMaxLength(50)
-                   .IsRequired();
-            builder.HasIndex(c => c.Code).IsUnique();
+            builder.OwnsOne(c => c.Code, code =>
+            {
+                code.Property(x => x.Value)
+                    .HasColumnName(nameof(Coupon.Code))
+                    .HasMaxLength(50)
+                    .IsRequired();
+                code.HasIndex(x => x.Value)
+                    .HasDatabaseName("IX_Coupons_Code")
+                    .IsUnique()
+                    .HasFilter(null);
+            });
 
-            builder.Property(c => c.Description)
-                   .HasConversion(x => x.Value, v => new CouponDescription(v))
-                   .HasMaxLength(500)
-                   .IsRequired();
+            builder.Navigation(c => c.Code).IsRequired();
+
+            builder.OwnsOne(c => c.Description, description =>
+            {
+                description.Property(x => x.Value)
+                           .HasColumnName(nameof(Coupon.Description))
+                           .HasMaxLength(500)
+                           .IsRequired();
+            });
 
             builder.Property(c => c.Status)
                    .HasConversion<string>()
                    .HasMaxLength(20)
                    .IsRequired();
+
+            builder.Navigation(c => c.Description).IsRequired();
 
             // ── Slice 2 ─────────────────────────────────────────────────
             builder.Property(c => c.RulesJson)
