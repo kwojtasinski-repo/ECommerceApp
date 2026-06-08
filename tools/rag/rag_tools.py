@@ -257,17 +257,18 @@ def _slugify(text: str, max_len: int = 30) -> str:
     return s[:max_len].rstrip("-") or "q"
 
 
-def _derive_source_label(question: str, bc: str | None) -> str:
+def _derive_source_label(question: str, scope_attrs: "dict | None") -> str:
     """Deterministic ``rag-cache-...`` label for ctx_index source.
 
     Rules (in priority order):
       1. Question mentions an ADR id (``ADR-0028`` / ``adr 28`` / ``0028``)
          → ``rag-cache-adr<NNNN>-<hash8>``
-      2. ``bc`` filter present → ``rag-cache-<slug(bc)>-<hash8>``
+      2. ``scope_attrs`` dict has at least one entry → first key-value pair used:
+         ``rag-cache-<slug(key)>-<slug(value)>-<hash8>``
       3. Fallback → ``rag-cache-q-<hash8>``
 
     ``<hash8>`` is the first 8 chars of sha256 of the normalized question.
-    Same (question, bc) → same label (overwrites prior cache).
+    Same (question, scope_attrs first key-value) → same label.
     """
     norm = question.strip().lower()
     h8 = hashlib.sha256(norm.encode("utf-8")).hexdigest()[:8]
@@ -275,22 +276,27 @@ def _derive_source_label(question: str, bc: str | None) -> str:
     if m:
         adr_id = m.group(1).zfill(4)
         return f"rag-cache-adr{adr_id}-{h8}"
-    if bc:
-        return f"rag-cache-{_slugify(bc)}-{h8}"
+    if scope_attrs:
+        first_key, first_value = next(iter(scope_attrs.items()))
+        return f"rag-cache-{_slugify(first_key)}-{_slugify(str(first_value))}-{h8}"
     return f"rag-cache-q-{h8}"
 
 
-def _format_chunks_to_markdown(question: str, bc: str | None, files_out: list[dict]) -> str:
+def _format_chunks_to_markdown(
+    question: str,
+    scope_attrs: "dict | None",
+    files_out: list[dict],
+) -> str:
     """Produce the cache markdown matching the template in
     .github/instructions/mcp-routing.instructions.md
     ("Markdown template for cached content")."""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    bc_arg = f', bc="{bc}"' if bc else ""
+    scope_arg = f", scope_attrs={json.dumps(scope_attrs, ensure_ascii=False)}" if scope_attrs else ""
     head_topic = question.strip().rstrip("?.!") or "RAG cache"
     lines: list[str] = [
         f"# {head_topic}",
         "",
-        f"> Cached from RAG on {now}. Source: query_docs_cached(\"{question}\"{bc_arg}).",
+        f"> Cached from RAG on {now}. Source: query_docs_cached(\"{question}\"{scope_arg}).",
         "> Refresh: re-run query_docs_cached with the same parameters to overwrite.",
         "",
     ]
@@ -325,7 +331,12 @@ def _format_chunks_to_markdown(question: str, bc: str | None, files_out: list[di
 async def _tool_query_docs_cached(args: dict) -> list[TextContent]:
     """Run a RAG search and return formatted markdown ready for ctx_index.
 
-    Returns JSON: ``{source, markdown, files_count, chunks_count, query, bc}``.
+    Returns JSON: ``{source, markdown, files_count, chunks_count, query, scope_attrs}``.
+    ``scope_attrs`` is an optional dict of arbitrary key-value filters, e.g.
+    ``{"bc": "Sales"}`` or ``{"topic": "Catalog", "region": "PL"}``.
+    The first entry is used as the Qdrant breadcrumb/title filter and as the
+    slug in the deterministic source label.
+
     The caller should follow up with::
 
         ctx_index(content=<markdown>, source=<source>)
@@ -335,8 +346,18 @@ async def _tool_query_docs_cached(args: dict) -> list[TextContent]:
         ctx_search(queries=[...], source="rag-cache-...")  # partial prefix match
     """
     question = _cap_question(args.get("question", ""))
-    bc = args.get("bc")
     top_files = _clamp_int(args.get("top_files", 3), 1, _MAX_TOP_FILES, 3)
+
+    # Accept an arbitrary dict of scope attributes.  Any non-dict value is silently ignored.
+    raw_scope = args.get("scope_attrs")
+    scope_attrs: "dict[str, str] | None" = (
+        {str(k): str(v) for k, v in raw_scope.items() if v is not None}
+        if isinstance(raw_scope, dict) else None
+    ) or None
+
+    # Use the first scope value as the Qdrant bc_filter (breadcrumb/title substring).
+    bc_filter = next(iter(scope_attrs.values())) if scope_attrs else None
+
     collection = state._session_collection.get(None)
     glossary_entries = await _resolve_glossary_entries(collection)
 
@@ -346,7 +367,7 @@ async def _tool_query_docs_cached(args: dict) -> list[TextContent]:
                 lambda: state.ENGINE.search(
                     question,
                     top_k=max(30, top_files * 15),
-                    bc_filter=bc,
+                    bc_filter=bc_filter,
                     collection=collection,
                     glossary_entries=glossary_entries,
                 )
@@ -390,8 +411,8 @@ async def _tool_query_docs_cached(args: dict) -> list[TextContent]:
             "chunks": chunks_out,
         })
 
-    source = _derive_source_label(question, bc)
-    markdown = _format_chunks_to_markdown(question, bc, files_out)
+    source = _derive_source_label(question, scope_attrs)
+    markdown = _format_chunks_to_markdown(question, scope_attrs, files_out)
 
     payload = {
         "source": source,
@@ -399,7 +420,7 @@ async def _tool_query_docs_cached(args: dict) -> list[TextContent]:
         "files_count": len(files_out),
         "chunks_count": total_chunks,
         "query": question,
-        "bc": bc,
+        "scope_attrs": scope_attrs,
         "next_step": (
             f"ctx_index(content=<markdown>, source=\"{source}\"); "
             f"then ctx_search(queries=[...], source=\"{source}\") for recalls."

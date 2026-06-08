@@ -80,6 +80,19 @@ chunker: { max_tokens: 512 }
 ranking: { weights: [ { pattern: "docs/**", weight: 1.0 } ] }
 """
 
+_MINIMAL_RAG_CONFIG_INLINE = """\
+chunker: { max_tokens: 512 }
+ranking: { weights: [ { pattern: "docs/**", weight: 1.0 } ] }
+metadata_rules:
+  doc_kind_rules:
+    - glob: "**/*.md"
+      kind: "other"
+named_queries:
+  - name: "general"
+    query: "documentation"
+    doc_kind: "other"
+"""
+
 _MINIMAL_QUERIES = """\
 named_queries:
   - name: "general"
@@ -591,9 +604,9 @@ class TestBatchValidation:
         )
         assert r.status_code == 400
 
-    def test_missing_metadata_rules_returns_400(self):
+    def test_missing_metadata_rules_companion_uses_inline_rules(self):
         zip_data = _make_zip({
-            "rag-config.yaml": _MINIMAL_RAG_CONFIG,
+            "rag-config.yaml": _MINIMAL_RAG_CONFIG_INLINE,
             "queries.yaml": _MINIMAL_QUERIES,
             "docs/a.md": _MINIMAL_DOC,
         })
@@ -602,12 +615,11 @@ class TestBatchValidation:
             content=zip_data,
             headers={"Content-Type": "application/zip"},
         )
-        assert r.status_code == 400
-        assert "metadata-rules.yaml" in r.json()["error"]
+        assert r.status_code == 202
 
-    def test_missing_queries_returns_400(self):
+    def test_missing_queries_companion_uses_inline_queries(self):
         zip_data = _make_zip({
-            "rag-config.yaml": _MINIMAL_RAG_CONFIG,
+            "rag-config.yaml": _MINIMAL_RAG_CONFIG_INLINE,
             "metadata-rules.yaml": _MINIMAL_META,
             "docs/a.md": _MINIMAL_DOC,
         })
@@ -616,8 +628,20 @@ class TestBatchValidation:
             content=zip_data,
             headers={"Content-Type": "application/zip"},
         )
+        assert r.status_code == 202
+
+    def test_missing_metadata_rules_everywhere_returns_400(self):
+        zip_data = _make_zip({
+            "rag-config.yaml": _MINIMAL_RAG_CONFIG,
+            "docs/a.md": _MINIMAL_DOC,
+        })
+        r = self._client().post(
+            "/ingest/col/batch",
+            content=zip_data,
+            headers={"Content-Type": "application/zip"},
+        )
         assert r.status_code == 400
-        assert "queries.yaml" in r.json()["error"]
+        assert "doc_kind_rules" in r.json()["error"]
 
     def test_missing_rag_config_returns_400(self):
         zip_data = _make_zip({

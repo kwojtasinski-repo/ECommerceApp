@@ -1634,6 +1634,14 @@ class TestMcpTools:
         adr_ids = {h["adr_id"] for h in adr_hits}
         assert "0001" in adr_ids, f"Expected adr_id=0001 in hits: {adr_ids}"
 
+    def test_query_docs_cached_uses_generic_scope_key(self, mcp_session: ToolCaller) -> None:
+        result = mcp_session(
+            "query_docs_cached",
+            {"question": "catalog docs", "scope_attrs": {"scope": "Catalog"}, "top_files": 1},
+        )
+        assert result["source"].startswith("rag-cache-scope-catalog-")
+        assert result["scope_attrs"] == {"scope": "Catalog"}
+
     def test_query_docs_score_is_float_in_range(self, mcp_session: ToolCaller) -> None:
         result = mcp_session("query_docs", {"question": "software architecture"})
         for hit in result["hits"]:

@@ -47,7 +47,7 @@ public sealed class RagQueryService(
         var searchResult = await SearchAsync(request.Collection, embedResult.Vector!, fetchK, payload.ScoreThreshold, ct);
         if (searchResult.Failure is not null) return searchResult.Failure;
 
-        var hits = ApplyBcAndTake(searchResult.Hits!, request, payload.Weights);
+        var hits = ApplyWeightedFilterAndTake(searchResult.Hits!, request, payload.Weights);
 
         var postResult = await RunPostprocessorsAsync(hits, request, fetchK, ct);
         if (postResult.Failure is not null) return postResult.Failure;
@@ -103,7 +103,7 @@ public sealed class RagQueryService(
         }
     }
 
-    private IReadOnlyList<DocumentSearchResult> ApplyBcAndTake(
+    private IReadOnlyList<DocumentSearchResult> ApplyWeightedFilterAndTake(
         IReadOnlyList<DocumentSearchResult> allHits, QueryRequest request, IReadOnlyList<WeightEntry> weights)
     {
         var weighted = TopicFilter.ApplyWeights(allHits, weights);

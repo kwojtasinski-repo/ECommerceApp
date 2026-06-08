@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using RagTools.Core.Query;
 
@@ -24,13 +25,18 @@ internal static class QueryDocsCachedFormatter
 
     private static readonly char[] TrailingSentencePunctuation = ['?', '.', '!'];
 
+    /// <summary>
+    /// Result payload.  <c>ScopeAttrs</c> carries any key-value scope filters the
+    /// caller supplied (e.g. <c>{"bc":"Sales"}</c> or <c>{"topic":"Catalog","region":"PL"}</c>).
+    /// Replaces the previous individual <c>Bc</c> / <c>Scope</c> / <c>ScopeKey</c> fields.
+    /// </summary>
     public sealed record CachedPayload(
         string Source,
         string Markdown,
         int FilesCount,
         int ChunksCount,
         string Query,
-        string? Bc,
+        IReadOnlyDictionary<string, string>? ScopeAttrs,
         string NextStep)
     {
         public object ToProjection() => new
@@ -40,14 +46,14 @@ internal static class QueryDocsCachedFormatter
             files_count = FilesCount,
             chunks_count = ChunksCount,
             query = Query,
-            bc = Bc,
+            scope_attrs = ScopeAttrs,
             next_step = NextStep,
         };
     }
 
     public static CachedPayload Build(
         string question,
-        string? bc,
+        IReadOnlyDictionary<string, string>? scopeAttrs,
         int topFiles,
         IReadOnlyList<QueryHit> hits,
         DateTime utcNow)
@@ -83,16 +89,24 @@ internal static class QueryDocsCachedFormatter
             filesOut.Add(new FormattedFile(kv.Key, Math.Round(kv.Value, 4), top));
         }
 
-        var source = DeriveSourceLabel(question, bc);
-        var markdown = FormatMarkdown(question, bc, filesOut, utcNow);
+        var source = DeriveSourceLabel(question, scopeAttrs);
+        var markdown = FormatMarkdown(question, scopeAttrs, filesOut, utcNow);
         var nextStep =
             $"ctx_index(content=<markdown>, source=\"{source}\"); " +
             $"then ctx_search(queries=[...], source=\"{source}\") for recalls.";
 
-        return new CachedPayload(source, markdown, filesOut.Count, totalChunks, question, bc, nextStep);
+        return new CachedPayload(source, markdown, filesOut.Count, totalChunks, question, scopeAttrs, nextStep);
     }
 
-    public static string DeriveSourceLabel(string question, string? bc)
+    /// <summary>
+    /// Derives a deterministic cache source label from the question and optional scope attributes.
+    ///
+    /// Priority:
+    /// 1. ADR id detected in question → <c>rag-cache-adr&lt;NNNN&gt;-&lt;hash8&gt;</c>
+    /// 2. scopeAttrs has entries → first key+value used: <c>rag-cache-&lt;slug(key)&gt;-&lt;slug(value)&gt;-&lt;hash8&gt;</c>
+    /// 3. Fallback → <c>rag-cache-q-&lt;hash8&gt;</c>
+    /// </summary>
+    public static string DeriveSourceLabel(string question, IReadOnlyDictionary<string, string>? scopeAttrs)
     {
         var norm = (question ?? string.Empty).Trim().ToLowerInvariant();
         var h8 = ShortHash(norm);
@@ -102,8 +116,11 @@ internal static class QueryDocsCachedFormatter
             var adrId = m.Groups[1].Value.PadLeft(4, '0');
             return $"rag-cache-adr{adrId}-{h8}";
         }
-        if (!string.IsNullOrWhiteSpace(bc))
-            return $"rag-cache-{Slugify(bc!)}-{h8}";
+        if (scopeAttrs is { Count: > 0 })
+        {
+            var first = scopeAttrs.First();
+            return $"rag-cache-{Slugify(first.Key)}-{Slugify(first.Value)}-{h8}";
+        }
         return $"rag-cache-q-{h8}";
     }
 
@@ -125,10 +142,15 @@ internal static class QueryDocsCachedFormatter
     }
 
     private static string FormatMarkdown(
-        string question, string? bc, IReadOnlyList<FormattedFile> files, DateTime utcNow)
+        string question,
+        IReadOnlyDictionary<string, string>? scopeAttrs,
+        IReadOnlyList<FormattedFile> files,
+        DateTime utcNow)
     {
         var date = utcNow.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
-        var bcArg = string.IsNullOrEmpty(bc) ? string.Empty : $", bc=\"{bc}\"";
+        var scopeArg = scopeAttrs is { Count: > 0 }
+            ? $", scope_attrs={JsonSerializer.Serialize(scopeAttrs)}"
+            : string.Empty;
         var topic = (question ?? string.Empty).Trim().TrimEnd(TrailingSentencePunctuation);
         if (topic.Length == 0) topic = "RAG cache";
 
@@ -136,7 +158,7 @@ internal static class QueryDocsCachedFormatter
         sb.Append("# ").Append(topic).Append('\n');
         sb.Append('\n');
         sb.Append("> Cached from RAG on ").Append(date)
-          .Append(". Source: query_docs_cached(\"").Append(question).Append('"').Append(bcArg).Append(").\n");
+          .Append(". Source: query_docs_cached(\"").Append(question).Append('"').Append(scopeArg).Append(").\n");
         sb.Append("> Refresh: re-run query_docs_cached with the same parameters to overwrite.\n");
         sb.Append('\n');
 

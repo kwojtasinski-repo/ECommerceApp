@@ -120,6 +120,37 @@ The full current 33-skill set also includes the cross-project/bootstrap and adva
 
 ## Change log
 
+### Session 69 — RAG config simplification: optional companions, scope dictionary, E2E fixes (2026-06-09)
+
+Faza A+B+C refaktoru RAG pipeline zgodnie z planem z Session 69.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | **companion files optional** — `metadata-rules.yaml` and `queries.yaml` are no longer required companion files in the ingest ZIP. `rag-config.yaml` is now the single required entry point; `metadata_rules.doc_kind_rules` and `named_queries` can be embedded inline in `rag-config.yaml` directly. Missing companion files fall back to inline values; missing named_queries produces a warning, not an error. | `tools/rag/ingest_routes.py` |
+| 2 | **scope dictionary for `query_docs_cached`** — Python `_derive_source_label` and `_format_chunks_to_markdown` refactored to accept a generic `scope_filter` + `scope_key` pair. `bc` is now a compatibility alias resolved via priority order (`bc` → `scope` → `topic` → `area` → `domain` → `context`). Response payload gains `scope` and `scope_key` fields alongside legacy `bc`. | `tools/rag/rag_tools.py` |
+| 3 | **scope dictionary for `QueryDocsCached` .NET** — `QueryDocsCachedFormatter.Build`, `DeriveSourceLabel`, `FormatMarkdown` updated to `scopeFilter`/`scopeKey` parameters. `RagTools.QueryDocsCached` MCP tool now accepts `bc`, `scope`, `topic`, `area`, `domain`, `context` as alternative scope keys (same priority order). `CachedPayload` gains `Scope` and `ScopeKey` properties; projector returns `scope` and `scope_key` in JSON. | `tools/rag-dotnet/src/RagTools.Mcp/Tools/QueryDocsCachedFormatter.cs`, `RagTools.cs`, `RagToolsProjector.cs` |
+| 4 | **Python E2E tests updated** — `test_ingest_e2e.py`: added `test_post_with_inline_config_only_returns_202` (proves single-file ingest works), fixed pre-existing camelCase snake_case mismatches (`operationId→operation_id`, `statusUrl→status_url`, `indexedChunks→indexed_chunks`, `errorMessage→error_message`). `test_ingest_api.py`: replaced `test_missing_metadata_rules_returns_400` and `test_missing_queries_returns_400` with inline-fallback tests; added `test_missing_metadata_rules_everywhere_returns_400`. `test_full_pipeline.py`: `_http_batch_upload` helper now uses inline rag-config (no mandatory companion injection). `tests/test_query_docs_cached.py`: updated to `scope_filter`/`scope_key` signature. | `tools/rag/test_ingest_e2e.py`, `tools/rag/tests/test_ingest_api.py`, `tools/rag/test_full_pipeline.py`, `tools/rag/tests/test_query_docs_cached.py` |
+| 5 | **.NET formatter tests updated** — `QueryDocsCachedFormatterTests` adapted to new `scopeFilter`/`scopeKey` params; added `SourceLabel_GenericScope_ProducesSameLabelAsBc`, `Build_GenericScopeKey_AppearsInMarkdown`, `Build_BcScopeKey_ProducesLegacyBcArgument`. | `tools/rag-dotnet/src/RagTools.Tests/Tools/QueryDocsCachedFormatterTests.cs` |
+| 6 | Close-out sync recorded (this entry). | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Test results: Python 85/85 PASSED · .NET 71/71 PASSED.
+
+---
+
+### Session 70 — scope_attrs map parity + full test sweep (2026-06-09)
+
+Refactor domkniety po stronie Python i .NET oraz zweryfikowany pelnym przebiegiem testow.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | **scope_attrs dictionary parity** — `query_docs_cached` uses one generic scope map instead of hardcoded `bc`-only parameters. Python and .NET now derive cached source labels and markdown from the same dictionary-shaped scope payload. | `tools/rag/rag_tools.py`, `tools/rag-dotnet/src/RagTools.Mcp/Tools/QueryDocsCachedFormatter.cs`, `RagTools.cs`, `RagToolsProjector.cs` |
+| 2 | **test sweep completed** — Python E2E passed (`test_ingest_e2e.py`), full Python RAG suite passed (`456 passed` after excluding the standalone `smoke_test.py` helper), and the .NET RAG test project passed (`532 passed`). | `tools/rag/test_ingest_e2e.py`, `tools/rag`, `tools/rag-dotnet/src/RagTools.Tests/RagTools.Tests.csproj` |
+| 3 | **context-mode write attempt stayed blocked** — write-through to context-mode remained read-only, so the changelog sync was completed with the local editor path instead. | `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+Test results: Python E2E 17/17 PASSED · Python suite 456/456 PASSED · .NET 532/532 PASSED.
+
+---
+
 ### Session 68 — spec and flow content alignment to current implementation (2026-06-05)
 
 Workflow 11 + Workflow 7 close-out after content-only updates to existing workflow specifications and matching flow diagrams.

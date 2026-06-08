@@ -5,9 +5,9 @@ using RagTools.Mcp.Tools;
 namespace RagTools.Tests.Tools;
 
 /// <summary>
-/// Pinning tests for the .NET port of the Python <c>query_docs_cached</c> wrapper.
-/// Mirrors <c>tools/rag/tests/test_query_docs_cached.py</c> so the two MCP servers
-/// produce byte-equivalent source labels and markdown for the same hits.
+/// Pinning tests for <see cref="QueryDocsCachedFormatter"/>.
+/// Mirrors <c>tools/rag/tests/test_query_docs_cached.py</c> — scope is now a
+/// <c>Dictionary&lt;string,string&gt;</c> (scope_attrs) instead of individual bc/scope/topic params.
 /// </summary>
 public class QueryDocsCachedFormatterTests
 {
@@ -22,71 +22,123 @@ public class QueryDocsCachedFormatterTests
         int rank = 1) =>
         new(rank, score, docKind, relPath, breadcrumb, startLine, endLine, text);
 
+    // ── DeriveSourceLabel ─────────────────────────────────────────────────────
+
     [Fact]
     public void SourceLabel_ExtractsAdrId_FromAdrDashFormat()
     {
-        var label = QueryDocsCachedFormatter.DeriveSourceLabel("Tell me about ADR-0029 caching", bc: null);
+        var label = QueryDocsCachedFormatter.DeriveSourceLabel("Tell me about ADR-0029 caching", scopeAttrs: null);
         Assert.StartsWith("rag-cache-adr0029-", label);
     }
 
     [Fact]
     public void SourceLabel_ExtractsAdrId_FromShortForm()
     {
-        // 3-digit form satisfies \d{3,4}
-        var label = QueryDocsCachedFormatter.DeriveSourceLabel("explain adr 016", bc: null);
+        var label = QueryDocsCachedFormatter.DeriveSourceLabel("explain adr 016", scopeAttrs: null);
         Assert.StartsWith("rag-cache-adr0016-", label);
     }
 
     [Fact]
     public void SourceLabel_ExtractsAdrId_FromBareDigits()
     {
-        var label = QueryDocsCachedFormatter.DeriveSourceLabel("what does 0028 say about chunking", bc: null);
+        var label = QueryDocsCachedFormatter.DeriveSourceLabel("what does 0028 say about chunking", scopeAttrs: null);
         Assert.StartsWith("rag-cache-adr0028-", label);
     }
 
     [Fact]
-    public void SourceLabel_FallsBackToSlugifiedBc()
+    public void SourceLabel_UsesScopeAttrsFirstEntry()
     {
-        var label = QueryDocsCachedFormatter.DeriveSourceLabel("order placement flow", bc: "Sales / Orders");
-        Assert.StartsWith("rag-cache-sales-orders-", label);
+        var label = QueryDocsCachedFormatter.DeriveSourceLabel(
+            "order placement flow",
+            scopeAttrs: new Dictionary<string, string> { ["bc"] = "Sales / Orders" });
+        Assert.StartsWith("rag-cache-bc-sales-orders-", label);
     }
 
     [Fact]
-    public void SourceLabel_FallsBackToQ_WhenNoAdrNorBc()
+    public void SourceLabel_UsesArbitraryKey()
     {
-        var label = QueryDocsCachedFormatter.DeriveSourceLabel("general architecture question", bc: null);
+        var label = QueryDocsCachedFormatter.DeriveSourceLabel(
+            "catalog docs",
+            scopeAttrs: new Dictionary<string, string> { ["topic"] = "Catalog" });
+        Assert.StartsWith("rag-cache-topic-catalog-", label);
+    }
+
+    [Fact]
+    public void SourceLabel_UsesGenericScopeKey()
+    {
+        var label = QueryDocsCachedFormatter.DeriveSourceLabel(
+            "catalog docs",
+            scopeAttrs: new Dictionary<string, string> { ["scope"] = "Catalog" });
+        Assert.StartsWith("rag-cache-scope-catalog-", label);
+    }
+
+    [Fact]
+    public void SourceLabel_UsesOnlyFirstEntry()
+    {
+        var label = QueryDocsCachedFormatter.DeriveSourceLabel(
+            "some question",
+            scopeAttrs: new Dictionary<string, string> { ["region"] = "PL", ["bc"] = "Orders" });
+        Assert.StartsWith("rag-cache-region-pl-", label);
+    }
+
+    [Fact]
+    public void SourceLabel_FallsBackToQ_WhenNoAdrNorScope()
+    {
+        var label = QueryDocsCachedFormatter.DeriveSourceLabel("general architecture question", scopeAttrs: null);
+        Assert.StartsWith("rag-cache-q-", label);
+    }
+
+    [Fact]
+    public void SourceLabel_FallsBackToQ_WhenEmptyDict()
+    {
+        var label = QueryDocsCachedFormatter.DeriveSourceLabel("some q", scopeAttrs: new Dictionary<string, string>());
         Assert.StartsWith("rag-cache-q-", label);
     }
 
     [Fact]
     public void SourceLabel_IsDeterministic_ForSameInputs()
     {
-        var a = QueryDocsCachedFormatter.DeriveSourceLabel("same question", bc: "Catalog");
-        var b = QueryDocsCachedFormatter.DeriveSourceLabel("same question", bc: "Catalog");
+        var attrs = new Dictionary<string, string> { ["bc"] = "Catalog" };
+        var a = QueryDocsCachedFormatter.DeriveSourceLabel("same question", scopeAttrs: attrs);
+        var b = QueryDocsCachedFormatter.DeriveSourceLabel("same question", scopeAttrs: attrs);
         Assert.Equal(a, b);
     }
 
     [Fact]
     public void SourceLabel_DiffersByQuestion()
     {
-        var a = QueryDocsCachedFormatter.DeriveSourceLabel("question A", bc: null);
-        var b = QueryDocsCachedFormatter.DeriveSourceLabel("question B", bc: null);
+        var a = QueryDocsCachedFormatter.DeriveSourceLabel("question A", scopeAttrs: null);
+        var b = QueryDocsCachedFormatter.DeriveSourceLabel("question B", scopeAttrs: null);
         Assert.NotEqual(a, b);
     }
 
     [Fact]
     public void SourceLabel_IsLowercaseAsciiKebab()
     {
-        var label = QueryDocsCachedFormatter.DeriveSourceLabel("Some Q with Punctuation!", bc: "BC With Spaces");
+        var label = QueryDocsCachedFormatter.DeriveSourceLabel(
+            "Some Q with Punctuation!",
+            scopeAttrs: new Dictionary<string, string> { ["myKey"] = "BC With Spaces" });
         Assert.Matches("^[a-z0-9-]+$", label);
     }
+
+    [Fact]
+    public void SourceLabel_AdrWinsOverScopeAttrs()
+    {
+        var label = QueryDocsCachedFormatter.DeriveSourceLabel(
+            "ADR-0028 overview",
+            scopeAttrs: new Dictionary<string, string> { ["bc"] = "Catalog" });
+        Assert.StartsWith("rag-cache-adr0028-", label);
+    }
+
+    // ── Build / markdown ──────────────────────────────────────────────────────
 
     [Fact]
     public void Markdown_ContainsHeaderAndMetadata()
     {
         var hits = new[] { Hit("docs/adr/0029/0029-foo.md") };
         var payload = QueryDocsCachedFormatter.Build(
-            "How does ADR-0029 caching work?", bc: null, topFiles: 1, hits, utcNow: new DateTime(2026, 5, 27, 0, 0, 0, DateTimeKind.Utc));
+            "How does ADR-0029 caching work?", scopeAttrs: null, topFiles: 1, hits,
+            utcNow: new DateTime(2026, 5, 27, 0, 0, 0, DateTimeKind.Utc));
 
         Assert.Contains("# How does ADR-0029 caching work", payload.Markdown);
         Assert.Contains("> Cached from RAG on 2026-05-27", payload.Markdown);
@@ -97,12 +149,35 @@ public class QueryDocsCachedFormatterTests
     }
 
     [Fact]
-    public void Markdown_IncludesBcArgumentWhenSet()
+    public void Markdown_IncludesScopeAttrsJsonWhenSet()
     {
         var hits = new[] { Hit("docs/sales/orders.md") };
         var payload = QueryDocsCachedFormatter.Build(
-            "order flow", bc: "Sales", topFiles: 1, hits, utcNow: DateTime.UtcNow);
-        Assert.Contains("query_docs_cached(\"order flow\", bc=\"Sales\")", payload.Markdown);
+            "order flow",
+            scopeAttrs: new Dictionary<string, string> { ["bc"] = "Sales" },
+            topFiles: 1, hits, utcNow: DateTime.UtcNow);
+        Assert.Contains("scope_attrs={\"bc\":\"Sales\"}", payload.Markdown);
+    }
+
+    [Fact]
+    public void Markdown_MultiKeyScopeAttrs_AllKeysAppear()
+    {
+        var hits = new[] { Hit("docs/a.md") };
+        var payload = QueryDocsCachedFormatter.Build(
+            "q",
+            scopeAttrs: new Dictionary<string, string> { ["region"] = "PL", ["bc"] = "Orders" },
+            topFiles: 1, hits, utcNow: DateTime.UtcNow);
+        Assert.Contains("scope_attrs=", payload.Markdown);
+        Assert.Contains("region", payload.Markdown);
+        Assert.Contains("PL", payload.Markdown);
+    }
+
+    [Fact]
+    public void Markdown_NoScopeArgWhenNull()
+    {
+        var hits = new[] { Hit("docs/a.md") };
+        var payload = QueryDocsCachedFormatter.Build("q", scopeAttrs: null, topFiles: 1, hits, utcNow: DateTime.UtcNow);
+        Assert.DoesNotContain("scope_attrs=", payload.Markdown);
     }
 
     [Fact]
@@ -116,10 +191,9 @@ public class QueryDocsCachedFormatterTests
             Hit("docs/c.md", score: 0.5),
         };
 
-        var payload = QueryDocsCachedFormatter.Build("q", bc: null, topFiles: 2, hits, utcNow: DateTime.UtcNow);
+        var payload = QueryDocsCachedFormatter.Build("q", scopeAttrs: null, topFiles: 2, hits, utcNow: DateTime.UtcNow);
 
         Assert.Equal(2, payload.FilesCount);
-        // a.md has best score 0.95, ranked first; first chunk in its block uses startLine 100.
         var aIdx = payload.Markdown.IndexOf("## a.md", StringComparison.Ordinal);
         var bIdx = payload.Markdown.IndexOf("## b.md", StringComparison.Ordinal);
         Assert.True(aIdx >= 0 && bIdx > aIdx, "a.md should come before b.md");
@@ -129,8 +203,10 @@ public class QueryDocsCachedFormatterTests
     [Fact]
     public void Build_LimitsChunksPerFileToFive()
     {
-        var hits = Enumerable.Range(1, 7).Select(i => Hit("docs/a.md", score: 0.9 - i * 0.01, startLine: i, endLine: i + 1, text: $"chunk-{i}")).ToArray();
-        var payload = QueryDocsCachedFormatter.Build("q", bc: null, topFiles: 1, hits, utcNow: DateTime.UtcNow);
+        var hits = Enumerable.Range(1, 7)
+            .Select(i => Hit("docs/a.md", score: 0.9 - i * 0.01, startLine: i, endLine: i + 1, text: $"chunk-{i}"))
+            .ToArray();
+        var payload = QueryDocsCachedFormatter.Build("q", scopeAttrs: null, topFiles: 1, hits, utcNow: DateTime.UtcNow);
         Assert.Equal(5, payload.ChunksCount);
     }
 
@@ -138,7 +214,10 @@ public class QueryDocsCachedFormatterTests
     public void Build_PayloadProjection_IsSnakeCase()
     {
         var hits = new[] { Hit("docs/a.md") };
-        var payload = QueryDocsCachedFormatter.Build("q", bc: "Catalog", topFiles: 1, hits, utcNow: DateTime.UtcNow);
+        var payload = QueryDocsCachedFormatter.Build(
+            "q",
+            scopeAttrs: new Dictionary<string, string> { ["bc"] = "Catalog" },
+            topFiles: 1, hits, utcNow: DateTime.UtcNow);
         var json = JsonSerializer.Serialize(payload.ToProjection());
         using var doc = JsonDocument.Parse(json);
         var root = doc.RootElement;
@@ -147,7 +226,7 @@ public class QueryDocsCachedFormatterTests
         Assert.True(root.TryGetProperty("files_count", out _));
         Assert.True(root.TryGetProperty("chunks_count", out _));
         Assert.True(root.TryGetProperty("query", out _));
-        Assert.True(root.TryGetProperty("bc", out _));
+        Assert.True(root.TryGetProperty("scope_attrs", out _));
         Assert.True(root.TryGetProperty("next_step", out _));
     }
 

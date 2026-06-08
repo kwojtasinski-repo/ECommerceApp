@@ -146,7 +146,12 @@ internal static class RagToolsProjector
 
     // ── query_docs_cached ────────────────────────────────────────────────────
 
-    public static object ProjectQueryCached(QueryOutcome outcome, string question, string? bc, int topFiles, DateTime utcNow) => outcome switch
+    public static object ProjectQueryCached(
+        QueryOutcome outcome,
+        string question,
+        IReadOnlyDictionary<string, string>? scopeAttrs,
+        int topFiles,
+        DateTime utcNow) => outcome switch
     {
         QueryOutcome.Success s when s.Response.Hits.Count == 0 =>
             new
@@ -154,13 +159,13 @@ internal static class RagToolsProjector
                 files_count = 0,
                 chunks_count = 0,
                 query = question,
-                bc,
+                scope_attrs = scopeAttrs,
                 markdown = string.Empty,
                 message = "No results found. Consider re-running the ingest script or broadening your query.",
             },
 
         QueryOutcome.Success s =>
-            (object)QueryDocsCachedFormatter.Build(question, bc, topFiles, s.Response.Hits, utcNow).ToProjection(),
+            (object)QueryDocsCachedFormatter.Build(question, scopeAttrs, topFiles, s.Response.Hits, utcNow).ToProjection(),
 
         QueryOutcome.Failure f => Failure(f.Message, f.Error.ToString(), f.Details),
 

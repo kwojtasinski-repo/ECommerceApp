@@ -29,6 +29,12 @@ RagTools.Mcp/
 RagTools.Ingest/        ← CLI: local ingest or --remote HTTP push
 ```
 
+`QueryDocsCached` uses a generic `scope_attrs` dictionary for cache labels and
+search scoping. The first dictionary entry drives the temporary search filter and
+label slug; this intentionally replaces any BC-specific parameter naming. In other
+words: `bc` may still appear in examples for backward-compatible caller shapes, but
+it is no longer the conceptual contract of the tool.
+
 ---
 
 ## Data Model

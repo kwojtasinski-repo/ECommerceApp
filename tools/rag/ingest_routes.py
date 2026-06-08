@@ -42,8 +42,6 @@ from config.payload import RagConfigPayload, WeightEntry, GlossaryEntry
 
 _MAX_BODY_BYTES = 50 * 1024 * 1024                           # 50 MB hard limit
 _COLLECTION_RE  = re.compile(r'^[a-z0-9][a-z0-9_-]*$')      # safe collection names
-_CONFIG_FILES   = frozenset({"metadata-rules.yaml", "queries.yaml"})
-_OPTIONAL_CONFIG = frozenset({"multilingual-glossary.yaml"}) # processed but not required
 
 
 # ── ZIP batch parsing (business logic, no HTTP objects) ───────────────────────
@@ -89,29 +87,55 @@ def _parse_zip_batch(
         zip_names   = {info.filename for info in all_entries}
         yaml_names  = sorted(n for n in zip_names if n.endswith((".yaml", ".yml")))
 
-        # ── Required config files ──────────────────────────────────────────
-        for required in ("rag-config.yaml", "metadata-rules.yaml", "queries.yaml"):
-            if required not in zip_names:
-                hint = f" Found YAML files: {yaml_names}" if yaml_names else ""
-                return None, JSONResponse(
-                    {"error": f"Required file '{required}' not found in ZIP root.{hint}"},
-                    status_code=400,
-                )
+        # ── rag-config.yaml is the only required config file ──────────────
+        if "rag-config.yaml" not in zip_names:
+            hint = f" Found YAML files: {yaml_names}" if yaml_names else ""
+            return None, JSONResponse(
+                {"error": f"Required file 'rag-config.yaml' not found in ZIP root.{hint}"},
+                status_code=400,
+            )
 
-        # ── Parse metadata-rules.yaml ──────────────────────────────────────
         try:
-            meta_raw = yaml.safe_load(
-                zf.read("metadata-rules.yaml").decode("utf-8", errors="replace")
+            cfg_raw = yaml.safe_load(
+                zf.read("rag-config.yaml").decode("utf-8", errors="replace")
             ) or {}
         except Exception as exc:
             return None, JSONResponse(
-                {"error": f"metadata-rules.yaml is not valid YAML: {exc}"}, status_code=400
+                {"error": f"rag-config.yaml is not valid YAML: {exc}"}, status_code=400
+            )
+
+        config_files = cfg_raw.get("config_files") or {}
+        metadata_rules_name = str(config_files.get("metadata_rules") or "metadata-rules.yaml")
+        queries_name = str(config_files.get("queries") or "queries.yaml")
+        glossary_name = str(config_files.get("multilingual_glossary") or "multilingual-glossary.yaml")
+
+        # ── Merge metadata rules (rag-config primary, companion override) ──
+        meta_raw = cfg_raw.get("metadata_rules") or {}
+        if metadata_rules_name in zip_names:
+            try:
+                meta_raw = yaml.safe_load(
+                    zf.read(metadata_rules_name).decode("utf-8", errors="replace")
+                ) or {}
+            except Exception as exc:
+                return None, JSONResponse(
+                    {"error": f"{metadata_rules_name} is not valid YAML: {exc}"}, status_code=400
+                )
+
+        if not isinstance(meta_raw, dict):
+            return None, JSONResponse(
+                {"error": "metadata_rules must be a YAML mapping (in rag-config.yaml or companion file)"},
+                status_code=400,
             )
 
         doc_kind_rules = meta_raw.get("doc_kind_rules") or []
         if not doc_kind_rules:
             return None, JSONResponse(
-                {"error": "metadata-rules.yaml must contain at least one doc_kind_rules entry"},
+                {
+                    "error": (
+                        "Missing doc_kind_rules. Provide metadata_rules.doc_kind_rules in rag-config.yaml "
+                        f"or include companion '{metadata_rules_name}'."
+                    )
+                },
                 status_code=400,
             )
 
@@ -135,51 +159,64 @@ def _parse_zip_batch(
                         return None
             return None
 
-        # ── Parse queries.yaml ─────────────────────────────────────────────
-        try:
-            queries_raw = yaml.safe_load(
-                zf.read("queries.yaml").decode("utf-8", errors="replace")
-            ) or {}
-        except Exception as exc:
+        # ── Merge named queries (rag-config primary, companion override) ───
+        named_queries = cfg_raw.get("named_queries") or []
+        if queries_name in zip_names:
+            try:
+                queries_raw = yaml.safe_load(
+                    zf.read(queries_name).decode("utf-8", errors="replace")
+                ) or {}
+            except Exception as exc:
+                return None, JSONResponse(
+                    {"error": f"{queries_name} is not valid YAML: {exc}"}, status_code=400
+                )
+            named_queries = queries_raw.get("named_queries") or []
+
+        if not isinstance(named_queries, list):
             return None, JSONResponse(
-                {"error": f"queries.yaml is not valid YAML: {exc}"}, status_code=400
+                {"error": "named_queries must be a YAML list (in rag-config.yaml or companion file)"},
+                status_code=400,
             )
 
-        named_queries = queries_raw.get("named_queries") or []
+        # ── Optional config files / warnings ──────────────────────────────
+        warnings: list[str] = []
         if not named_queries:
-            return None, JSONResponse(
-                {"error": "queries.yaml must contain at least one named_queries entry"},
-                status_code=400,
+            warnings.append(
+                "No named_queries found in rag-config.yaml and no companion queries file provided. "
+                "Named query presets will be unavailable for this ingest batch."
             )
 
         known_kinds = {r.get("kind") for r in doc_kind_rules if r.get("kind")}
         bad_kinds = sorted(
             q["doc_kind"]
             for q in named_queries
-            if q.get("doc_kind") and q["doc_kind"] not in known_kinds
+            if isinstance(q, dict) and q.get("doc_kind") and q["doc_kind"] not in known_kinds
         )
         if bad_kinds:
             return None, JSONResponse(
                 {
                     "error": (
-                        f"queries.yaml references unknown doc_kind(s): {bad_kinds}. "
-                        "Add matching rules to metadata-rules.yaml."
+                        f"named_queries references unknown doc_kind(s): {bad_kinds}. "
+                        "Add matching rules to metadata_rules.doc_kind_rules."
                     )
                 },
                 status_code=400,
             )
 
-        # ── Optional config files / warnings ──────────────────────────────
-        warnings: list[str] = []
-        if "multilingual-glossary.yaml" not in zip_names:
+        if glossary_name not in zip_names:
             warnings.append(
-                "multilingual-glossary.yaml not found in ZIP — "
+                f"{glossary_name} not found in ZIP — "
                 "Polish/German query expansion will be reduced. "
                 "Include it for multilingual support."
             )
 
         # ── Document entries (non-config, non-dir, .md only, non-zero) ────
-        _all_config = _CONFIG_FILES | _OPTIONAL_CONFIG
+        _all_config = {
+            "rag-config.yaml",
+            metadata_rules_name,
+            queries_name,
+            glossary_name,
+        }
         entries: list[_FileEntry] = []
         for info in all_entries:
             if info.is_dir():
@@ -223,18 +260,9 @@ def _parse_zip_batch(
 
         # ── Build per-collection RagConfigPayload ─────────────────────────────
         # Mirrors .NET BatchIngestService: ZIP-supplied rag-config.yaml drives
-        # the persisted payload. Glossary entries: ZIP-supplied
-        # multilingual-glossary.yaml wins if present; otherwise the mounted
-        # multilingual-glossary.yaml is baked in — exactly the .NET behaviour
-        # (BatchIngestService always calls MultilingualGlossary.Load and persists).
-        try:
-            cfg_raw = yaml.safe_load(
-                zf.read("rag-config.yaml").decode("utf-8", errors="replace")
-            ) or {}
-        except Exception as exc:
-            return None, JSONResponse(
-                {"error": f"rag-config.yaml is not valid YAML: {exc}"}, status_code=400
-            )
+        # the persisted payload. Glossary entries: ZIP-supplied glossary file
+        # (resolved from config_files.multilingual_glossary) wins; otherwise
+        # the mounted multilingual glossary is baked in.
         chunker_raw = cfg_raw.get("chunker") or {}
         ranking_raw = cfg_raw.get("ranking") or {}
         weights_raw = ranking_raw.get("weights") or []
@@ -260,10 +288,10 @@ def _parse_zip_batch(
 
         # Glossary: ZIP-supplied file wins; fall back to mounted yaml
         glossary_entries: tuple[GlossaryEntry, ...]
-        if "multilingual-glossary.yaml" in zip_names:
+        if glossary_name in zip_names:
             try:
                 graw = yaml.safe_load(
-                    zf.read("multilingual-glossary.yaml").decode("utf-8", errors="replace")
+                    zf.read(glossary_name).decode("utf-8", errors="replace")
                 ) or {}
                 glossary_entries = tuple(
                     GlossaryEntry.from_dict(e)

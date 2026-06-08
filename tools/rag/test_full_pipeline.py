@@ -972,15 +972,21 @@ def _http_batch_upload(base_url: str, collection: str,
     """Upload a ZIP of documents to POST /ingest/{collection}/batch.
 
     *files* maps relPath → text content.
-    Required config files (metadata-rules.yaml, queries.yaml) are injected
-    automatically if not already present in *files*.
+    Injects a minimal inline rag-config by default. Companion metadata/queries
+    files are optional for hosted ingest and can still be added via *files*.
     Returns (status_code, response_body).
     """
-    _MIN_META_RULES = "doc_kind_rules:\n  - {glob: \"**\", kind: doc}\n"
-    _MIN_QUERIES    = "named_queries:\n  - {name: default, question: test, top_k: 5}\n"
+    _MIN_RAG_CONFIG_INLINE = (
+        "chunker: { max_tokens: 512 }\n"
+        "ranking: { weights: [ { pattern: \"docs/**\", weight: 1.0 } ] }\n"
+        "metadata_rules:\n"
+        "  doc_kind_rules:\n"
+        "    - {glob: \"**\", kind: doc}\n"
+        "named_queries:\n"
+        "  - {name: default, question: test, top_k: 5, doc_kind: doc}\n"
+    )
     all_files = {
-        "metadata-rules.yaml": _MIN_META_RULES,
-        "queries.yaml":        _MIN_QUERIES,
+        "rag-config.yaml": _MIN_RAG_CONFIG_INLINE,
         **files,
     }
     import io, zipfile, urllib.request, urllib.error

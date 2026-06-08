@@ -58,6 +58,21 @@ public sealed class RagE2ETests : IClassFixture<RagE2EFixture>
     }
 
     [Fact]
+    public async Task QueryDocsCached_UsesGenericScopeKey_ForSourceLabel()
+    {
+        var result = await _fx.Tools!.QueryDocsCached(
+            "catalog docs",
+            scope_attrs: "{\"scope\":\"Catalog\"}",
+            top_files: 1,
+            CancellationToken.None);
+
+        var doc = JsonDocument.Parse(result);
+        var root = doc.RootElement;
+        Assert.StartsWith("rag-cache-scope-catalog-", root.GetProperty("source").GetString());
+        Assert.Contains("scope_attrs", root.GetRawText(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public async Task QueryDocs_UnrelatedQuestion_ReturnsEmptyOrLowScore()
     {
 

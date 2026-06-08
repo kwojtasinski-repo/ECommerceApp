@@ -149,6 +149,16 @@ named_queries:
   - {name: default, question: test, top_k: 5}
 """
 
+_MIN_RAG_CONFIG_INLINE = """\
+chunker: { max_tokens: 512 }
+ranking: { weights: [ { pattern: "docs/**", weight: 1.0 } ] }
+metadata_rules:
+  doc_kind_rules:
+    - {glob: "**", kind: doc}
+named_queries:
+  - {name: default, question: test, top_k: 5, doc_kind: doc}
+"""
+
 _VALID_ZIP_EXTRAS: dict[str, str] = {
     "metadata-rules.yaml": _MIN_META_RULES_YAML,
     "queries.yaml": _MIN_QUERIES_YAML,
@@ -174,8 +184,13 @@ def _post_batch(base_url: str, collection: str, files: dict[str, str],
 
 def _post_valid_batch(base_url: str, collection: str, docs: dict[str, str],
                       headers: dict | None = None) -> tuple[int, dict]:
-    """Upload a ZIP that includes required config files plus *docs*."""
-    return _post_batch(base_url, collection, {**_VALID_ZIP_EXTRAS, **docs}, headers)
+    """Upload a ZIP with rag-config plus companion files and *docs*."""
+    return _post_batch(
+        base_url,
+        collection,
+        {"rag-config.yaml": _MIN_RAG_CONFIG_INLINE, **_VALID_ZIP_EXTRAS, **docs},
+        headers,
+    )
 
 
 def _first_op(batch_body: dict) -> dict:
@@ -216,8 +231,21 @@ class TestE2EUpload:
         )
         assert code == 202
         op = _first_op(body)
-        assert op.get("operationId")
-        assert op.get("statusUrl")
+        assert op.get("operation_id")
+        assert op.get("status_url")
+
+    def test_post_with_inline_config_only_returns_202(self, server):
+        code, body = _post_batch(
+            server.base_url,
+            "docs",
+            {
+                "rag-config.yaml": _MIN_RAG_CONFIG_INLINE,
+                "adr/inline-only.md": "# Inline config",
+            },
+        )
+        assert code == 202
+        op = _first_op(body)
+        assert op.get("operation_id")
 
     def test_post_non_zip_returns_400(self, server):
         """Posting non-ZIP body to batch endpoint returns 400."""
@@ -247,10 +275,10 @@ class TestE2EStatusPolling:
         )
         assert code == 202
         op = _first_op(body)
-        op_id = op["operationId"]
+        op_id = op["operation_id"]
         final = _poll_until_done(server.base_url, "docs", op_id)
         assert final["status"] == "Completed"
-        assert final["manifest"]["indexedChunks"] == 3  # from our no-op process_fn
+        assert final["manifest"]["indexed_chunks"] == 3  # from our no-op process_fn
 
     def test_get_operation_returns_404_for_unknown_id(self, server):
         code, _ = _get(f"{server.base_url}/ingest/docs/operations/nonexistent-id")
@@ -261,7 +289,7 @@ class TestE2EStatusPolling:
             server.base_url, "col-a", {"f.md": "# Hello"},
         )
         assert code == 202
-        op_id = _first_op(body)["operationId"]
+        op_id = _first_op(body)["operation_id"]
         # Look up with a different collection name.
         code2, _ = _get(f"{server.base_url}/ingest/col-b/operations/{op_id}")
         assert code2 == 404
@@ -272,14 +300,14 @@ class TestE2EStatusPolling:
         )
         assert code == 202
         op = _first_op(body)
-        op_id = op["operationId"]
-        status_url = op.get("statusUrl", "")
+        op_id = op["operation_id"]
+        status_url = op.get("status_url", "")
         assert status_url
         full_url = f"{server.base_url}{status_url}"
         _poll_until_done(server.base_url, "docs", op_id)
         status_code, op_body = _get(full_url)
         assert status_code == 200
-        assert op_body["operationId"] == op_id
+        assert op_body["operation_id"] == op_id
 
 
 class TestE2EListOperations:
@@ -395,10 +423,10 @@ class TestE2EWorkerFailurePropagation:
                 f"http://127.0.0.1:{port}", "c", {"bad.md": "# Will fail"},
             )
             assert code == 202
-            op_id = _first_op(body)["operationId"]
+            op_id = _first_op(body)["operation_id"]
             final = _poll_until_done(f"http://127.0.0.1:{port}", "c", op_id)
             assert final["status"] == "Failed"
-            assert final["errorMessage"]  # non-empty error message
+            assert final["error_message"]  # non-empty error message
         finally:
             handle.stop()
 
@@ -497,10 +525,10 @@ class TestE2EFullPipelineQdrant:
                 base, collection, {"e2e/qdrant-test.md": doc_content},
             )
             assert code == 202, f"Expected 202 but got {code}: {body}"
-            op_id = _first_op(body)["operationId"]
+            op_id = _first_op(body)["operation_id"]
             final = _poll_until_done(base, collection, op_id, timeout=60)
             assert final["status"] == "Completed", f"Expected Completed: {final}"
-            assert final["manifest"]["indexedChunks"] > 0, "Expected at least 1 chunk to be indexed"
+            assert final["manifest"]["indexed_chunks"] > 0, "Expected at least 1 chunk to be indexed"
 
             # Verify points exist in Qdrant directly.
             client = QdrantClient(url=qdrant_url)

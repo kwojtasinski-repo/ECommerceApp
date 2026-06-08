@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using ModelContextProtocol.Server;
 using RagTools.Core;
@@ -10,7 +11,7 @@ using RagTools.Core.ReadDocs;
 namespace RagTools.Mcp.Tools;
 
 /// <summary>
-/// MCP tools exposed to Copilot. Pure delegation layer — each method clamps inputs,
+/// MCP tools exposed to Copilot. Pure delegation layer â€” each method clamps inputs,
 /// builds the request DTO, calls one application service, and projects the typed
 /// outcome to its JSON wire shape. All wire-shape concerns live in
 /// <see cref="RagToolsProjector"/>; all orchestration lives in the four
@@ -59,32 +60,44 @@ public sealed class RagTools(
         "source label, ready for context-mode caching via ctx_index(content=<markdown>, source=<source>). " +
         "The caller (Copilot) performs the ctx_index call. Subsequent recalls use " +
         "ctx_search(source=\"rag-cache-...\") and avoid re-billing RAG. " +
+        "Optional scope_attrs is a JSON object of arbitrary key-value scope filters, " +
+        "e.g. {\"scope\":\"Sales\"} or {\"topic\":\"Catalog\",\"region\":\"PL\"}. " +
+        "The first entry is used as a Qdrant breadcrumb/title filter and as the label slug. " +
         "Source labels: rag-cache-adr<NNNN>-<hash8> when the question mentions an ADR id, " +
-        "rag-cache-<slug(bc)>-<hash8> when bc is set, otherwise rag-cache-q-<hash8>.")]
+        "rag-cache-<slug(key)>-<slug(value)>-<hash8> when scope_attrs is set, otherwise rag-cache-q-<hash8>.")]
     public Task<string> QueryDocsCached(
         [Description("The search question or topic.")] string question,
-        [Description("Optional bounded-context / topic substring filter (matched against breadcrumb and doc title).")] string? bc = null,
+        [Description(
+            "Optional JSON object of scope attributes used to filter results and build the cache label. " +
+            "Any string keys are accepted, e.g. {\"scope\":\"Sales\"} or {\"topic\":\"Catalog\",\"region\":\"PL\"}. " +
+            "The first entry is used as the Qdrant breadcrumb/title filter. Omit or pass null for no filtering.")]
+        string? scope_attrs = null,
         [Description("Maximum unique files to summarise (default: 3, max: 5).")] int top_files = 3,
         CancellationToken cancellationToken = default)
     {
         top_files = Math.Clamp(top_files, 1, RagReadDocsService.MaxTopFiles);
         question = CapQuestion(question);
-        // Public IRagQueryService caps top_k at MaxTopK (45 as of B2 2026-05-28; matches Python's
-        // max(30, top_files*15) for top_files=3). We clamp to the public service's ceiling so the
-        // wrapper is parity-aligned with Python's query_docs_cached.
         var topK = Math.Clamp(top_files * 15, 1, RagQueryService.MaxTopK);
         var capturedTopFiles = top_files;
-        var capturedBc = bc;
         var capturedQuestion = question;
+        // Parse scope_attrs JSON → Dictionary. Accept null or empty gracefully.
+        var capturedScopeAttrs = ParseScopeAttrs(scope_attrs);
+        // First value used as Qdrant breadcrumb/title filter (mirrors Python scope filter).
+        var scopeFilter = capturedScopeAttrs?.Count > 0 ? capturedScopeAttrs.Values.First() : null;
         logger.LogDebug(
-            "QueryDocsCached: collection={Collection} bc={Bc} topFiles={TopFiles} topK={TopK}",
-            session.Collection, bc, top_files, topK);
+            "QueryDocsCached: collection={Collection} scopeAttrs={ScopeAttrs} topFiles={TopFiles} topK={TopK}",
+            session.Collection, scope_attrs, top_files, topK);
         return McpToolGuard.RunAsync(logger, nameof(QueryDocsCached), async ct =>
         {
-            var request = new QueryRequest(session.Collection, capturedQuestion, capturedBc, topK);
+            var request = new QueryRequest(session.Collection, capturedQuestion, scopeFilter, topK);
             var outcome = await queryService.QueryAsync(request, ct);
             return McpJson.Serialize(
-                RagToolsProjector.ProjectQueryCached(outcome, capturedQuestion, capturedBc, capturedTopFiles, DateTime.UtcNow));
+                RagToolsProjector.ProjectQueryCached(
+                    outcome,
+                    capturedQuestion,
+                    capturedScopeAttrs,
+                    capturedTopFiles,
+                    DateTime.UtcNow));
         }, cancellationToken);
     }
 
@@ -132,7 +145,7 @@ public sealed class RagTools(
 
     [McpServerTool, Description(
         "List all ADRs indexed in the collection with id, title, main file path, and amendment count. " +
-        "Reads from the Qdrant index — results reflect what is currently ingested. " +
+        "Reads from the Qdrant index â€” results reflect what is currently ingested. " +
         "Use for orientation queries like 'what ADRs exist?' before calling GetHistory.")]
     public Task<string> ListAdrs(CancellationToken cancellationToken = default)
     {
@@ -143,6 +156,26 @@ public sealed class RagTools(
             var outcome = await listService.ListAsync(request, ct);
             return McpJson.Serialize(RagToolsProjector.ProjectList(outcome));
         }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Parses a JSON string like <c>{"scope":"Sales","region":"PL"}</c> into a
+    /// <see cref="Dictionary{TKey,TValue}"/> preserving insertion order.
+    /// Returns null for null / empty / invalid input.
+    /// </summary>
+    private static IReadOnlyDictionary<string, string>? ParseScopeAttrs(string? json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return null;
+        try
+        {
+            var parsed = JsonSerializer.Deserialize<Dictionary<string, string>>(json);
+            return parsed is { Count: > 0 } ? parsed : null;
+        }
+        catch
+        {
+            // Silently ignore malformed JSON â€” tool should not error out on bad scope_attrs.
+            return null;
+        }
     }
 
     private static string CapQuestion(string? question)

@@ -246,6 +246,12 @@ Tool handlers (`_tool_query_docs`, `_tool_read_docs`) in `rag_tools.py` pass
 `collection=state._session_collection.get(None)` to `QueryEngine.search()`. When `None`,
 `search()` falls back to `cfg.collection` (the default configured collection).
 
+`_tool_query_docs_cached` uses the same collection resolution, but its cache label and
+markdown metadata now take a generic `scope_attrs` dict rather than a BC-specific
+filter parameter. The first `scope_attrs` entry is only used as the search filter and
+slug source; `bc` remains a legacy example key for compatibility, not an architectural
+term.
+
 This mirrors the .NET scoped `RagSession` approach — each MCP connection gets its
 own asyncio task and thus its own `ContextVar` token.
 
