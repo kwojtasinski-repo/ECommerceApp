@@ -1,6 +1,7 @@
 # Multi-Agent Pipeline — ECommerceApp
 
 > **Read this** before invoking any pipeline agent (`@planner`, `@implementer`, `@pr-commit`).
+> For general routing before pipeline choice, read [.github/instructions/agent-workflow.instructions.md](instructions/agent-workflow.instructions.md) first.
 > This is the orchestration spec — agent files describe each stage; this file describes the **flow**.
 >
 > **Note**: `@verifier` and `@code-reviewer` are **embedded inside `@implementer`** — do NOT invoke them separately during a pipeline run. They remain available as standalone agents for one-off use outside the pipeline.

@@ -109,6 +109,33 @@ Rules:
 
 <!-- Append new entries below this line, newest at the bottom. -->
 
+## 2026-06-14 — Copilot / context-mode UID/GID portability
+
+- **Context**: The context-mode container used a hard-coded `1000:1000` user mapping, which is brittle across different hosts, WSL, CI runners, and machines with another local user ID.
+- **Decision**: Make the container user configurable through `UID` and `GID` environment variables, with `1000` as the default for first-run smoke tests.
+- **Rationale**: File ownership and `.git` traversal can break when the container user does not match the host-side ownership model. A configurable mapping keeps the setup portable without sacrificing the non-root hardening.
+- **Action**: Keep `user: "${UID:-1000}:${GID:-1000}"` in [docker-compose.yaml](../../docker-compose.yaml) and document `UID` / `GID` in [.env.context-mode.example](../../.env.context-mode.example).
+- **Promote?**: If the same ownership issue appears again, promote the portable user mapping into a dedicated instruction or hardening note.
+- **Status**: Resolved
+
+## 2026-06-14 — Copilot / agent workflow hub consolidation
+
+- **Context**: Routing guidance was spread across several files, so the model had multiple plausible entry points and kept bouncing between them.
+- **Decision**: Add a short front-door hub and make the detailed files point to it instead of repeating the same top-level routing prose everywhere.
+- **Rationale**: The user wants one place that answers "what should I do first?" so GPT-5 mini can infer the right path without needing explicit tool names.
+- **Action**: Keep [agent-workflow.instructions.md](../instructions/agent-workflow.instructions.md) as the short first read; leave [mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md) as the canonical detail file; keep [docs-index.instructions.md](../instructions/docs-index.instructions.md) as the docs lookup table.
+- **Promote?**: If the same routing confusion appears again, move the hub concept into a dedicated anti-pattern or workflow rule.
+- **Status**: Resolved
+
+## 2026-06-14 — Copilot / MCP intent inference for RAG vs context-mode
+
+- **Context**: The agent waited for the user to explicitly name RAG or context-mode, even though the task shape made the intended path clear from the target files and outcome.
+- **Decision**: Do not require explicit tool naming. Infer the MCP path from the request type: docs/ADRs/known issues/project state/roadmap/config meaning -> RAG; logs/local code/analysis/derivation -> context-mode.
+- **Rationale**: The user wants the routing to happen automatically from natural language. The canonical rules already cover precedence, but the model needed a more explicit intent-inference rule to avoid shortcutting into implementation.
+- **Action**: Keep the new intent-inference bullets in [mcp-routing.instructions.md](../instructions/mcp-routing.instructions.md) and [copilot-instructions.md](../copilot-instructions.md). If this pattern appears again, promote the heuristic into a dedicated anti-pattern entry.
+- **Promote?**: After a second repeat of "waited for explicit tool naming" -> add a hard anti-pattern or workflow rule.
+- **Status**: Resolved
+
 ## 2026-05-18 — Implementer / RAG .NET configuration discovery
 
 - **Context**: While stabilising `tools/rag-dotnet` for local dev, the plan referenced a non-existent `tools/rag-dotnet/rag-config.yaml` and a Python-venv `optimum-cli` step. Both wrong.
@@ -287,3 +314,21 @@ Rules:
 - **Action**: Added `EndLine` to `SearchHit`, `DocumentSearchResult`, `QueryHit`; threaded through `QdrantStore.SearchAsync`, `QdrantDocumentStore.SearchAsync`, `RagQueryService.BuildResponse`. Added `tools/rag-dotnet/src/RagTools.Mcp/Tools/QueryDocsCachedFormatter.cs`. Added `ProjectQueryCached` to `RagToolsProjector`. Added `QueryDocsCached` `[McpServerTool]` on `RagTools.cs`. Added 14 pinning tests in `tools/rag-dotnet/src/RagTools.Tests/Tools/QueryDocsCachedFormatterTests.cs`. Existing constructor sites in tests updated for the new positional field. Full suite: 492 passed (was 478), build clean. Updated `mcp-routing.instructions.md`, `rag-with-memory` SKILL.md, and roadmap Phase 7.3 to mark parity shipped.
 - **Promote?**: NO -- specific implementation choice for one wrapper port. The pattern (Core record extension + thin formatter + projector entry) is already documented in `dotnet.instructions.md` for the four existing tools.
 - **Status**: Resolved.
+
+## 2026-06-14 — Copilot / compose command override shadowed image CMD
+
+- **Context**: The context-mode image was rebuilt with a foreground tail-based PID1 and startup echo, but `docker logs` still stayed empty after recreate.
+- **Decision**: Remove the `command: ["sleep", "infinity"]` override from [docker-compose.yaml](../../docker-compose.yaml) so the image-defined startup command actually runs.
+- **Rationale**: `docker inspect` showed the running container still had `CMD=["sleep","infinity"]` from compose, which overrode the Dockerfile `CMD` entirely. That made the logging changes in the image invisible.
+- **Action**: Treat `command:` in compose as a hard override. If the image owns startup behavior, do not restate a placeholder command in compose unless you explicitly want to replace the image `CMD`.
+- **Promote?**: After a 2nd occurrence of "compose override masked image startup/logging behavior" → add a small anti-pattern note in `pre-edit.instructions.md` or the compose guidance.
+- **Status**: Resolved
+
+## 2026-06-14 — Copilot / PostToolUse chain needs an explicit summary marker
+
+- **Context**: `PostToolUse` already passed through `posttooluse-chain.mjs`, but the container-side log only showed low-level wrapper output, which made the maintenance path hard to follow.
+- **Decision**: Add a concise `PostToolUse chain tool=... tool_use_id=...` line to the same `hooks.log` before the upstream call fan-out.
+- **Rationale**: Future maintainers need one readable line that explains why `PostToolUse` is special and where it goes, without reverse-engineering the wrapper chain from multiple files.
+- **Action**: Keep explicit markers for special hook paths whenever a host-side chain fans out to the container. The marker should name the hook, the tool, and the chain wrapper.
+- **Promote?**: After a 2nd occurrence of a silent/opaque hook chain → add a small anti-pattern note to `pre-edit.instructions.md` or `anti-patterns-critical.context.md`.
+- **Status**: Resolved

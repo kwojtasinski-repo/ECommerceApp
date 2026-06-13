@@ -4,6 +4,7 @@
 > ("for X, read `docs/foo/bar.md`") and migrate it to the
 > **MCP first, docs as fallback** workflow without losing the existing
 > link discipline.
+> For the current repo's task routing, start with [.github/instructions/agent-workflow.instructions.md](../../.github/instructions/agent-workflow.instructions.md); this playbook is a migration guide, not the live front door.
 >
 > Audience: anyone setting this up on a second/third repo. This is a
 > distilled checklist of what works and what doesn't, based on lessons

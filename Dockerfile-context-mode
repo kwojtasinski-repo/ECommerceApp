@@ -23,7 +23,7 @@ RUN npm install --omit=dev
 FROM node:24-alpine
 
 # Runtime CLI tools for sandbox shell analysis (ctx_execute/ctx_batch_execute).
-RUN apk add --no-cache ripgrep bash
+RUN apk add --no-cache bash git jq python3 ripgrep py3-networkx py3-numpy py3-pandas py3-tabulate
 
 # Non-root user — security hardening
 RUN addgroup -S ctxmode && adduser -S ctxmode -G ctxmode
@@ -31,10 +31,12 @@ RUN addgroup -S ctxmode && adduser -S ctxmode -G ctxmode
 # Copy the built application
 COPY --from=builder /build /app
 COPY docker/context-mode/network-monitor.cjs /app/network-monitor.cjs
-COPY docker/context-mode/entrypoint.sh      /entrypoint.sh
 
-RUN chmod +x /entrypoint.sh \
- && mkdir -p /home/ctxmode/.context-mode \
+RUN mkdir -p /home/ctxmode/.context-mode \
+ && printf '%s\n' '#!/bin/sh' 'set -eu' 'NODE_OPTS="${CONTEXT_MODE_NODE_OPTIONS:---no-experimental-sqlite}"' 'DEBUG_SCOPE="${CONTEXT_MODE_DEBUG:-context-mode}"' 'exec env NODE_OPTIONS="$NODE_OPTS" DEBUG="$DEBUG_SCOPE" node --require /app/network-monitor.cjs /app/cli.bundle.mjs "$@" 2>>/home/ctxmode/.context-mode/runtime.log' > /usr/local/bin/context-mode \
+ && printf '%s\n' '#!/bin/sh' 'set -eu' 'LOG_FILE=/home/ctxmode/.context-mode/hooks.log' 'printf "%s context-mode-hook %s\n" "$(date -Iseconds)" "$*" >> "$LOG_FILE"' 'exec context-mode hook "$@" >>"$LOG_FILE" 2>&1' > /usr/local/bin/context-mode-hook \
+ && chmod +x /usr/local/bin/context-mode \
+ && chmod +x /usr/local/bin/context-mode-hook \
  && chown -R ctxmode:ctxmode /app /home/ctxmode/.context-mode
 
 USER ctxmode
@@ -46,4 +48,4 @@ WORKDIR /workspace
 ENV CONTEXT_MODE_NODE_OPTIONS="--no-experimental-sqlite" \
     CONTEXT_MODE_DEBUG="context-mode"
 
-ENTRYPOINT ["/entrypoint.sh"]
+CMD ["sh", "-lc", "mkdir -p /home/ctxmode/.context-mode /tmp && touch /home/ctxmode/.context-mode/runtime.log /home/ctxmode/.context-mode/hooks.log /workspace/.ctx-network-alerts.log && echo \"context-mode container started\" && tail -n0 -F /home/ctxmode/.context-mode/runtime.log & tail -n0 -F /home/ctxmode/.context-mode/hooks.log & tail -n0 -F /workspace/.ctx-network-alerts.log & wait"]
