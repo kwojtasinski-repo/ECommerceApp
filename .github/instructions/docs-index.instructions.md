@@ -31,6 +31,7 @@ applyTo: ".github/**, docs/**"
 | Full routing table | `.github/instructions/docs-index.full.md` |
 | Pipeline spec | `.github/AGENT-PIPELINE.md` |
 
+> **Start here**: [agent-workflow.instructions.md](agent-workflow.instructions.md) is the short front door for task routing.
 ## MCP tools
 
 ```
@@ -49,6 +50,7 @@ list_adrs()                         -- all ADR ids and titles
 | Review a PR | `.github/prompts/pr-review.prompt.md` |
 | Refactor guidance | `.github/prompts/refactor.prompt.md` |
 | **Analyze a user-facing flow (bidirectional)** | `.github/prompts/flow-analysis.prompt.md` |
+| **Agent workflow / what to do first** | `.github/instructions/agent-workflow.instructions.md` |
 | RAG maintenance cycle (ingest + eval + coverage) | `.github/prompts/rag-sync.prompt.md` |
 
 ## Code scaffolding skills

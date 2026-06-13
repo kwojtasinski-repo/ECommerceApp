@@ -392,17 +392,17 @@ review or pair sessions.
       "args": [
         "exec",
         "-i",
+        "-w",
+        "/workspace",
         "ecommerceapp-context-mode",
-        "sh",
-        "-lc",
-        "workspace=\"$CONTEXT_MODE_WORKSPACE\"; [ -n \"$workspace\" ] || workspace=/workspace; cd \"$workspace\" 2>/dev/null || cd /workspace; exec node --require /app/network-monitor.cjs /app/cli.bundle.mjs"
+        "context-mode"
       ]
     }
   }
 }
 ```
 
-This wrapper makes the MCP process inherit the live workspace mount automatically, so `ctx_execute` code can rely on `process.cwd()` and relative paths inside the sandbox.
+This is the current working shape: VS Code launches a long-lived container with `docker exec`, and the in-image `context-mode` wrapper handles the Node CLI, network monitor, runtime logs, and workspace defaults. The `-w /workspace` flag keeps the MCP process aligned with the live repo root so `ctx_execute` can use relative paths consistently.
 
 > **Podman**: replace `"docker"` with `"podman"` locally. Do not commit the change.
 > **Rancher Desktop (containerd)**: replace `"docker"` with `"nerdctl"` locally.
@@ -475,6 +475,8 @@ docker/adguard/personal-overrides.local.txt
 > **Container CLI path (2026-05-27 correction)**: the shipped image has no `context-mode` wrapper on PATH (`/app/bin/` contains only `statusline.mjs`). Invoke the bundle directly with `node /app/cli.bundle.mjs hook vscode-copilot <event>`. The configuration below already uses the corrected form.
 
 > **Workspace-aware launch (2026-06-01 correction)**: wrap hook startup in `sh -lc`, resolve `$CONTEXT_MODE_WORKSPACE`, and `cd` there before invoking the bundle. This keeps hook behavior aligned with the MCP server startup path and avoids per-payload `/workspace` hardcoding.
+
+> **PostToolUse note (2026-06-14)**: `PostToolUse` is intentionally split into the host-side `posttooluse-chain.mjs` wrapper. That wrapper forwards the payload into the container, writes a readable `PostToolUse chain tool=...` marker into `/home/ctxmode/.context-mode/hooks.log`, and then fans out to the upstream hook plus the auto-cache path. This keeps the special case visible to maintainers instead of hiding it behind a silent pass-through.
 
 ```json
 {

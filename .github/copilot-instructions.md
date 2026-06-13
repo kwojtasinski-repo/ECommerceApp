@@ -2,6 +2,11 @@
 
 > Repo-level policy for AI agents. Per-stack details auto-load via `applyTo:` globs. Full routing table → `docs-index.instructions.md`.
 
+## Top Rules
+
+- Start with [agent-workflow.instructions.md](instructions/agent-workflow.instructions.md); it is the short front door for task routing.
+- Keep this file focused on repo-specific policy and setup, not duplicated routing prose.
+
 ## 1. Project summary
 
 ECommerceApp — ASP.NET Core MVC + Web API e-commerce platform. Clean/onion architecture, EF Core, ASP.NET Core Identity.
@@ -87,6 +92,11 @@ Canonical maintenance rule: keep full routing logic in the canonical file above.
 Non-negotiable summary:
 
 - **Core precedence is mandatory**: knowledge intent → RAG, execution/analysis intent → context-mode, project URLs → `ctx_fetch_and_index`, never both MCPs for one atomic intent.
+- **Intent inference is mandatory**: do not wait for the user to name a tool. Infer RAG vs context-mode from the task shape and target files.
+- **Context-mode definition**: the local sandbox for thinking in code. Use it to read local files/snippets, search indexed session data, compute reductions, compare outputs, generate code fragments, and turn repo facts into a concrete result before touching files.
+- **Derived-result rule is mandatory**: if you need code, math, a table, a transformed dataset, or a summary generated from repo knowledge, first retrieve the source with RAG if needed, then do the derivation with `ctx_execute` / `ctx_batch_execute` / `ctx_execute_file`, and cache reusable outputs with `ctx_index`.
+- **RAG-fail fallback rule is mandatory**: if RAG is empty/unavailable, do not jump straight to classic tools; use context-mode on local files or captured snippets first, and only then fall back to classic tools if the MCP path still fails.
+- **Context-mode first probe is mandatory**: for implementation tasks, start with bounded context-mode probing on the target files/snippets before using classic repo reads; `read_file` / `grep_search` are only allowed after context-mode returns no useful signal or when exact bytes are needed for the final edit.
 - **First-move discipline is mandatory**: no `read_file`/`grep_search` first on protected knowledge paths when RAG should answer.
 - **Integrity and resilience are mandatory**: `ctx_stats` is KPI source of truth; canceled calls require retry/fallback/partial reporting.
 - **Long-wait default is mandatory**: for potentially long MCP calls, use a 5-minute threshold (`timeout=300000` where supported) before treating the step as canceled.

@@ -3,6 +3,7 @@
 > Status: ✅ Complete — core integration phases closed (2026-06-05); deferred items remain optional and tracked as future follow-ups
 > Scope: `docker/context-mode/`, `Dockerfile-context-mode`, `docker-compose.yaml` (delta), `.vscode/`, `.github/hooks/`, `.github/copilot-instructions.md` (append), `.env.context-mode.example` (`.claude/settings.json` originally listed; now skipped — see Phase 4 note)
 > Companion detail plan: [`context-mode-details.md`](./context-mode-details.md)
+> For agent task routing, use [.github/instructions/agent-workflow.instructions.md](../../.github/instructions/agent-workflow.instructions.md); this roadmap only describes the context-mode implementation and rollout.
 
 ---
 
@@ -39,7 +40,7 @@ Goal: extend a useful working session from ~30 min to ~3 hours without losing co
 | A9 | copilot-instructions.md: append-only section 13 | Existing agent configuration left untouched |
 | A10 | RAG MCP stays active alongside context-mode | Each service serves a different purpose; no conflict |
 | A11 | Version pinned in the Dockerfile (v1.0.148) | Controlled upgrade via a single commit; v1.0.147+ enables CONTEXT_MODE_DIR |
-| A12 | Non-root user inside the container | Security hardening |
+| A12 | Non-root user inside the container, configurable via `UID` / `GID` env vars | Security hardening + portable file ownership |
 | A13 | Hardening flags: `read_only`, `cap_drop: [ALL]`, `no-new-privileges`, `pids_limit`, `mem_limit`, `ipc: none` | Defense-in-depth on top of network isolation |
 | A14 | AdGuard — community lists auto-update every 7 days | `StevenBlack`, `AdGuard SDN`, `EasyPrivacy`. ~240k rules, zero team effort |
 | A15 | Shared `team-blacklist.txt` / `team-whitelist.txt` (PR review) + `personal-overrides.local.txt` (gitignored) | Team-wide policy in git, local experiments without conflict |
@@ -238,6 +239,28 @@ Phase 5 (AdGuard)           ← optional gating; does not block previous phases
         ↓
 Phase 7 (RAG ↔ context-mode wrapper tool, L2) ← optional; depends on Phase 4 docs in place
 ```
+
+**Recommended working flow**:
+
+```text
+Need project docs / architecture?
+        ↓
+     RAG (query_docs / read_docs / get_history)
+        ↓
+Need analysis, math, transformation, or code generation?
+        ↓
+context-mode (ctx_search / ctx_execute / ctx_execute_file / ctx_batch_execute)
+        ↓
+Need a durable recall later?
+        ↓
+ctx_index
+        ↓
+If MCP path fails or is unavailable
+        ↓
+classic tools (read_file / grep_search / terminal)
+```
+
+**Practical rollout order**: build the image and bring up `context-mode`, connect MCP in VS Code, then turn on hooks, then do the instructions sync. AdGuard can stay optional while validating the core sandbox, but it must be in place before `ctx_fetch_and_index` is trusted for real external URLs.
 
 ---
 

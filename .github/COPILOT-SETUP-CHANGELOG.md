@@ -5,7 +5,23 @@
 >
 > Use as a quick reference to see what exists without scanning every file.
 
----
+
+## Session 71 — explicit RAG -> context-mode -> classic fallback workflow (2026-06-14)
+
+Added an explicit default workflow rule to the canonical MCP routing file and the repo-level Copilot instructions:
+
+ Top-of-file rules now state the workflow before the rest of the policy text.
+- Top-level rules now define the abbreviations: RAG = repo-doc MCP servers, context-mode = sandbox MCP server.
+- context-mode isolation is now explicit: it must not invoke RAG or any `mcp__rag*` tool.
+- RAG first for documentation / ADR / project knowledge.
+- context-mode next for derived results, analysis, math, code generation, and transformations.
+- context-mode is explicitly defined as the local sandbox for thinking in code: read local files/snippets, search indexed session data, compute reductions, compare outputs, and generate code fragments before touching files.
+- classic tools only when the MCP step fails or is unavailable.
+- if RAG is empty/unavailable, stay in MCP and try context-mode on local files/snippets before classic fallback.
+- for implementation tasks, context-mode is the first probe even before classic repo reads; `read_file` / `grep_search` come later only if MCP gives no useful signal.
+
+Also added a compact ASCII flow to `docs/roadmap/context-mode-integration.md` so the rollout path is obvious to maintainers.
+
 
 ## Current state summary
 

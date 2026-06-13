@@ -5,7 +5,24 @@ applyTo: "**"
 # MCP routing — single source of truth
 
 > Compact canonical policy. Keep this file short and stable.
+> Start with [agent-workflow.instructions.md](agent-workflow.instructions.md) for the short front door.
 > If behavior changes, update this file first, then mirror brief summaries elsewhere.
+
+## Top Rules
+
+- RAG = use the repo-doc MCP servers: `ecommerceapp-rag-python`, `ecommerceapp-rag-dotnet`, or `ecommerceapp-rag`.
+- context-mode = use the sandbox MCP server: `ecommerceapp-context-mode`.
+- context-mode must not invoke RAG or any `mcp__rag*` tool; if RAG is needed, do it as a separate step outside context-mode.
+- Knowledge intent -> RAG first.
+- Analysis/execution intent -> context-mode first.
+- If RAG is empty/unavailable, use context-mode on local files/snippets before classic tools.
+- Classic tools are last resort only when both RAG and context-mode fail.
+- For implementation tasks, start with bounded context-mode probing before classic repo reads.
+- For derived results, use RAG for source retrieval and context-mode for computation/generation.
+- Users do NOT need to name RAG or context-mode explicitly. Infer intent from the task shape, target files, and requested outcome.
+- If the user asks about repo docs, ADRs, known issues, project state, roadmap, or configuration meaning, route to RAG even when they only say "sprawdź", "wyjaśnij", "dlaczego", or "co to znaczy".
+- If the user asks to analyze, compare, count, transform, derive, inspect logs, or validate behavior from local workspace evidence, route to context-mode even when they do not mention the sandbox.
+- If the user asks to change code or design implementation details, begin with bounded context-mode probing on the smallest relevant files, then patch exact bytes with classic tools only if needed.
 
 ## MCP ownership
 
@@ -49,7 +66,22 @@ Empty/low-score `query_docs`/`read_docs` retry order:
 
 ## context-mode quick rules
 
+Definition: context-mode is the local sandbox for thinking in code. Use it to read local files/snippets, search indexed session data, compute reductions, compare outputs, generate code fragments, and turn repo facts into a concrete result. It is not the place for classic repo browsing or final file editing; it is the place to derive the answer before you touch files.
+
 Use context-mode first when the task is analyze/summarize/count/compare/parse/transform/extract.
+
+For implementation tasks, start with a bounded context-mode probe on the target files/snippets before using classic repo reads. `read_file` / `grep_search` are allowed only after context-mode returns no useful signal or when you need exact bytes for a final edit.
+
+Implementation expectation: first ask context-mode to produce the draft result from the smallest useful evidence set, then use classic tools only to patch exact bytes if necessary. Do not let the flow become read_file-first just because the task is coding.
+
+If the user wants a derived result, code generation, numeric output, table, or transformation based on repo knowledge, use RAG only to retrieve the source material and use context-mode to do the work. In practice: fetch facts with RAG, then compute or generate with `ctx_execute` / `ctx_execute_file` / `ctx_batch_execute`, and store the useful result with `ctx_index` when it should be reused later.
+
+Default working sequence:
+1. Use RAG for docs, ADRs, and project knowledge.
+2. Use context-mode for any derived result, analysis, math, code generation, or transformation.
+3. If RAG is unavailable or returns empty/low-signal results, stay in the MCP path and use context-mode on local files / captured snippets to derive the answer.
+4. Fall back to classic tools only if both RAG and context-mode fail for the current step.
+5. Do not skip straight to classic tools when MCP is available.
 
 Preferred tools by shape:
 - File-backed large analysis: `ctx_execute_file`.
@@ -96,12 +128,15 @@ Never pass host absolute paths (e.g. `C:\...`, `/Users/...`, `/home/...`) to `ct
 
 ## User-prompt interpretation rule
 
-Explicit tool naming is optional.
+Explicit tool naming is optional. The agent must infer the right MCP path from the user's intent.
 
 Examples:
 - "Analyze these logs" -> context-mode.
 - "Count symbol usages" -> context-mode.
 - "What does ADR-0029 say" -> RAG.
+- "Why does GPT-5 mini skip the rules" -> read the routing instructions and agent decisions first, then diagnose with the narrowest relevant evidence.
+- "Sprawdź czy to działa" about docs/configuration -> RAG first.
+- "Sprawdź ten log / kod / output" -> context-mode first.
 
 Do not wait for user phrases like "use context-mode" when intent is already clear.
 

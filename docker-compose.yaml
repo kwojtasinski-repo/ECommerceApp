@@ -160,7 +160,7 @@ services:
         stdin_open: true
         tty: false
         restart: unless-stopped
-        user: "1000:1000"                                       # non-root
+        user: "${UID:-1000}:${GID:-1000}"                      # non-root, portable across hosts/users
         read_only: true                                         # root FS immutable
         tmpfs:
             - /tmp:rw,size=${CONTEXT_MODE_TMPFS_SIZE:-64m},mode=1777
@@ -176,7 +176,8 @@ services:
             # Mount target is parametric so forks/dev overrides can rename it via
             # CONTEXT_MODE_WORKSPACE in .env.context-mode without breaking docs.
             # The same value is injected as an env var below so agents can probe it.
-            - .:${CONTEXT_MODE_WORKSPACE:-/workspace}:ro        # repo — READ-ONLY (context-mode shouldn't write to source)
+            - .:${CONTEXT_MODE_WORKSPACE:-/workspace}:rw        # repo — writable, but only source tree (host/rootfs stay hardened)
+            - ./docker/context-mode/empty-gitdir:/workspace/.git:ro  # hide host .git metadata from the container
             - context-mode-data:/home/ctxmode/.context-mode     # SQLite session DB (writable, isolated)
             - ./docker/context-mode/empty-claude-settings.json:/home/node/.claude/settings.json:ro  # silences PreToolUse hook FAIL
         environment:
@@ -193,33 +194,8 @@ services:
                 ipv4_address: 172.28.0.10               # static — stable target for `docker exec`
         dns:
             - 172.28.0.2                            # AdGuard (ONLY — no upstream fallback)
-        # Keep the container alive as an idle host; MCP server and hooks are spawned
-        # per-session via `docker exec` from .vscode/mcp.json / .github/hooks/context-mode.json.
-        # Docker exec output normally does not appear in `docker logs`, so we collect stderr
-        # into persistent files and tail them here for container-level visibility.
-        entrypoint:
-          - sh
-          - -lc
-          - |
-            mkdir -p /home/ctxmode/.context-mode /home/node/.vscode/context-mode /tmp
-            touch /home/ctxmode/.context-mode/runtime.log \
-                /home/ctxmode/.context-mode/hooks.log \
-              /home/node/.vscode/context-mode/posttooluse-debug.log \
-              /home/node/.vscode/context-mode/precompact-debug.log \
-              /home/node/.vscode/context-mode/sessionstart-debug.log \
-                /tmp/.ctx-network-alerts.log
-            tail -n0 -F \
-               /home/ctxmode/.context-mode/runtime.log \
-               /home/ctxmode/.context-mode/hooks.log \
-               /home/node/.vscode/context-mode/posttooluse-debug.log \
-               /home/node/.vscode/context-mode/precompact-debug.log \
-               /home/node/.vscode/context-mode/sessionstart-debug.log \
-               /tmp/.ctx-network-alerts.log &
-            exec sleep infinity
-        # Lightweight liveness probe — verifies the cli bundle is loadable and FTS5 native
-        # module works. Runs every 60s; failure means the image is broken, not a transient.
         healthcheck:
-            test: ["CMD", "node", "-e", "require('/app/cli.bundle.mjs')"]
+            test: ["CMD-SHELL", "context-mode --help >/dev/null 2>&1"]
             interval: 60s
             timeout: 10s
             retries: 3

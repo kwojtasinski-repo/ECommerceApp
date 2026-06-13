@@ -24,6 +24,14 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const LOG_FILE  = join(__dirname, "auto-cache.log");
 const DEBUG     = process.env.AUTO_CACHE_DEBUG !== "0";
 
+function parseEnvelope(buf) {
+  try {
+    return JSON.parse(buf.toString("utf8"));
+  } catch {
+    return null;
+  }
+}
+
 function log(msg) {
   if (!DEBUG) return;
   try { appendFileSync(LOG_FILE, `[${new Date().toISOString()}] MJS-CHAIN ${msg}\n`); } catch { /* hooks must never throw */ }
@@ -33,7 +41,21 @@ const chunks = [];
 process.stdin.on("data", chunk => chunks.push(chunk));
 process.stdin.on("end", () => {
   const input = Buffer.concat(chunks);
+  const envelope = parseEnvelope(input);
+  const toolName = envelope?.tool_name ?? "unknown";
+  const toolUseId = envelope?.tool_use_id ?? "unknown";
   log(`wrapper fired; stdin-bytes=${input.length}`);
+
+  try {
+    execFileSync("docker", [
+      "exec", "-i", "ecommerceapp-context-mode",
+      "sh", "-lc",
+      `printf '%s PostToolUse chain tool=%s tool_use_id=%s\\n' "$(date -Iseconds)" ${JSON.stringify(toolName)} ${JSON.stringify(toolUseId)} >> /home/ctxmode/.context-mode/hooks.log`,
+    ], { stdio: ["pipe", "ignore", "ignore"] });
+    log("summary-marker=0");
+  } catch (e) {
+    log(`summary-marker=${e.status ?? "err"}: ${e.message ?? ""}`);
+  }
 
   if (input.length === 0) {
     log("empty stdin; exit");
@@ -43,8 +65,8 @@ process.stdin.on("end", () => {
   // ── 1. Upstream context-mode hook (session DB capture) ──────────────────
   try {
     execFileSync("docker", [
-      "exec", "-i", "ecommerceapp-context-mode",
-      "node", "/app/cli.bundle.mjs", "hook", "vscode-copilot", "posttooluse",
+      "exec", "-i", "-w", "/workspace", "ecommerceapp-context-mode",
+      "context-mode-hook", "vscode-copilot", "posttooluse",
     ], { input, stdio: ["pipe", "ignore", "ignore"] });
     log("upstream-exit=0");
   } catch (e) {
