@@ -577,6 +577,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "skills", "skills", "{2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}"
 	ProjectSection(SolutionItems) = preProject
 		.github\skills\code-validator\SKILL.md = .github\skills\code-validator\SKILL.md
+		.github\skills\context-distiller\SKILL.md = .github\skills\context-distiller\SKILL.md
 		.github\skills\context-updater\SKILL.md = .github\skills\context-updater\SKILL.md
 		.github\skills\create-cqrs-handler\SKILL.md = .github\skills\create-cqrs-handler\SKILL.md
 		.github\skills\create-dbcontext\SKILL.md = .github\skills\create-dbcontext\SKILL.md

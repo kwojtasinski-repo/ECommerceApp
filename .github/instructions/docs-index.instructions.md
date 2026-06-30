@@ -76,6 +76,14 @@ Use when generating or validating code. Load via the `read_file` tool or invoke 
 | Scaffold unit test (Moq, FluentAssertions) | `.github/skills/create-unit-test/SKILL.md` |
 | Scaffold FluentValidation AbstractValidator | `.github/skills/create-validator/SKILL.md` |
 
+## Domain modeling skills
+
+Use when the task is concept distillation, boundary detection, or safe generalization across domain concepts.
+
+| Need | Skill |
+|---|---|
+| Aggressively distill concepts into shared abstractions and specific contexts | `.github/skills/context-distiller/SKILL.md` |
+
 ## RAG maintenance skills
 
 Use these skills when the RAG/MCP system needs attention. Read via the `read_file` tool.

@@ -151,6 +151,7 @@ Load context progressively — never bulk-load everything:
 | Fast pre-commit check (BLOCKS MERGE only) | `.github/skills/code-validator` | `anti-patterns-critical.context.md` |
 | Full pre-PR code review | `@code-reviewer` or `/pr-review` | auto — conditional per changed stack |
 | General codebase question | `/general` | only the relevant ADR or context file |
+| Distill domain concepts / find safe generalizations | `@context-distiller` | domain description / event storming output |
 | Create / update flow specification | `@spec-writer` | `specification.template.md` + matching ADR |
 | Add CQRS command + handler | skill `create-cqrs-handler` | `bc-adr-map.instructions.md` |
 | Scaffold BC DbContext or DI extension | skill `create-dbcontext` / `create-di-extension` | `efcore.instructions.md` |
