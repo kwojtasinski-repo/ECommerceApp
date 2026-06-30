@@ -14,12 +14,14 @@ applyTo: "**"
 - Docs / ADRs / known issues / project state / roadmap / config meaning -> RAG first.
 - Logs / local code / analysis / derivation / transformation -> context-mode first.
 - Implementation work -> bounded context-mode probe on the smallest relevant files, then exact patching with classic tools only if needed.
+- Research / evidence gathering / source verification -> `research-gatherer` skill first, with human approval gates unless `--yolo` is explicit.
 
 ## What to read next
 
 - MCP routing detail -> [mcp-routing.instructions.md](mcp-routing.instructions.md)
 - Docs lookup map -> [docs-index.instructions.md](docs-index.instructions.md)
 - Pipeline flow -> [../AGENT-PIPELINE.md](../AGENT-PIPELINE.md)
+- Research workflow -> [../skills/research-gatherer/SKILL.md](../skills/research-gatherer/SKILL.md)
 - Prior corrections -> [../context/agent-decisions.md](../context/agent-decisions.md)
 - BC block status -> [../context/project-state.md](../context/project-state.md)
 - Confirmed bugs -> [../context/known-issues.md](../context/known-issues.md)

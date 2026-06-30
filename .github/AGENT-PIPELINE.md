@@ -27,6 +27,14 @@ Use a **domain agent** instead when the task matches its trigger:
 | One-off review of an existing PR          | `@code-reviewer` standalone                                 |
 | Writing a business workflow specification | `@spec-writer` (create/update/list `docs/specifications/`)  |
 
+Use the **research workflow** when the task is evidence gathering, source verification, or research synthesis:
+
+| Task                                      | Use |
+| ----------------------------------------- | --- |
+| Plan scope, sources, and checkpoints      | `research-planner` |
+| Gather raw evidence only                  | `information-gatherer-lite` |
+| Run the full research lifecycle           | `research-gatherer` |
+
 ---
 
 ## Pipeline flow
@@ -95,6 +103,7 @@ HUMAN runs git commands
 | **HITL 2 — Commit readiness** | After `@implementer` APPROVED             | Last inspection before commit text is generated                             |
 | **HITL on bc-switch Step 1**  | Inside `@bc-switch` (domain agent)        | Pre-delete safety gate — never auto-delete legacy                           |
 | **HITL on adr-generator**     | Inside `@adr-generator` (domain agent)    | ADRs are permanent — review draft before write                              |
+| **HITL on research-gatherer** | Inside `research-gatherer`                | Research must not skip scope/source approval unless `--yolo` is explicit    |
 
 > **Rule**: agents never call the next agent automatically. Every transition is a human handoff (paste, approve, or explicit `@` invocation).
 > **`@verifier` and `@code-reviewer` standalone**: still valid for one-off use outside the pipeline (e.g. reviewing an existing PR, running deterministic checks on a hotfix).
@@ -113,6 +122,7 @@ HUMAN runs git commands
 | `@bc-switch`                    | 10       | One full switch attempt (Step 1 → report)                         | RAG + `ctx_execute_file` (large-file triage) |
 | `@adr-generator`                | 2        | One ADR draft (revision after feedback = +1)                      | RAG (`list_adrs` + `query_docs` + `get_history`) |
 | `@copilot-setup-maintainer`     | n/a      | Per-workflow; audit can iterate per finding                       | RAG + `ctx_fetch_and_index` (allowlisted external refs) |
+| `research-gatherer`             | 3        | One research pass (plan + gather + verify + synthesize)           | RAG + context-mode + external web as needed |
 
 **Canonical MCP routing rules:** [.github/instructions/mcp-routing.instructions.md](instructions/mcp-routing.instructions.md). **NEVER call both RAG and context-mode for the same atomic intent.**
 

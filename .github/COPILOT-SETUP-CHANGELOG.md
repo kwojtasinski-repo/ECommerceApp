@@ -6,6 +6,19 @@
 > Use as a quick reference to see what exists without scanning every file.
 
 
+## Session 72 — research workflow bootstrap (2026-06-30)
+
+Added a strict, human-gated research workflow for ECommerceApp.
+
+| # | Change | Files affected |
+| --- | --- | --- |
+| 1 | Added `research-gatherer` as the front-door skill for plan/gather/verify/synthesize flows, defaulting to interactive mode and requiring human approval unless `--yolo` is explicit. | `.github/skills/research-gatherer/SKILL.md` |
+| 2 | Added `research-planner` and `information-gatherer-lite` agents to split scope/source planning from raw evidence gathering. | `.github/agents/research-planner.md`, `.github/agents/information-gatherer-lite.md` |
+| 3 | Updated docs routing and pipeline references so maintainers can discover the workflow from `docs-index`, `agent-workflow`, and `AGENT-PIPELINE`. | `.github/instructions/docs-index.instructions.md`, `.github/instructions/agent-workflow.instructions.md`, `.github/AGENT-PIPELINE.md` |
+| 4 | Synced the solution file and setup changelog with the new workflow assets. | `ECommerceApp.sln`, `.github/COPILOT-SETUP-CHANGELOG.md` |
+
+---
+
 ## Session 71 — explicit RAG -> context-mode -> classic fallback workflow (2026-06-14)
 
 Added an explicit default workflow rule to the canonical MCP routing file and the repo-level Copilot instructions:
@@ -28,10 +41,10 @@ Also added a compact ASCII flow to `docs/roadmap/context-mode-integration.md` so
 | Category                               | Count | Details                                                                                                                            |
 | -------------------------------------- | ----- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `copilot-instructions.md`              | 1     | ~8 100 chars; §15 Context budget + Progressive Disclosure (Tier 0-3) + Navigation Map added (Session 62)                           |
-| Instruction files (`.instructions.md`) | 18    | All with `applyTo:` frontmatter; +`batched-tasks` (Session 26); `agent-memory` added; `pre-edit` split into core + `doc-suggestions`; `docs-index` scope narrowed |
+| Instruction files (`.instructions.md`) | 20    | All with `applyTo:` frontmatter; +`batched-tasks` (Session 26); `agent-memory` added; `pre-edit` split into core + `doc-suggestions`; `docs-index` scope narrowed |
 | Prompt files (`.prompt.md`)            | 9     | +`general.prompt.md` (Session 62); flow-analysis, batched-tasks, mcp-routing-eval, rag-sync, refactor also included                |
-| Agent files                            | 10    | +`spec-writer.md` (Session 62); adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer, planner, implementer, verifier, pr-commit, setup-discovery |
-| Skills (`SKILL.md`)                    | 36    | +`code-validator`, `mermaid-diagram`, `context-updater` (Session 62); +9 cross-project bootstrap skills (Session 33); +4 RAG maintenance skills (Session 32); +3 context-mode sandbox skills (Session 31); +rag-with-memory (Session 26); +5 RAG skills (Session 23) |
+| Agent files                            | 12    | +`spec-writer.md` (Session 62); +`research-planner.md`, `information-gatherer-lite.md` (Session 72); adr-generator, bc-switch, code-reviewer, copilot-setup-maintainer, planner, implementer, verifier, pr-commit, setup-discovery |
+| Skills (`SKILL.md`)                    | 37    | +`code-validator`, `mermaid-diagram`, `context-updater` (Session 62); +`research-gatherer` (Session 72); +9 cross-project bootstrap skills (Session 33); +4 RAG maintenance skills (Session 32); +3 context-mode sandbox skills (Session 31); +rag-with-memory (Session 26); +5 RAG skills (Session 23) |
 | ADRs                                   | 29    | Folderized ADR routers under `docs/adr/<NNNN>/README.md`; ADR-0027/0028 (RAG pipeline) + ADR-0029 (context-mode sandbox) added    |
 | Context files                          | 8     | +`anti-patterns-advisory.context.md` (Session 62); project-state, known-issues, agent-decisions, repo-index, future-skills, anti-patterns-critical, test-stabilization-policy |
 | GitHub Actions workflows               | 1     | `dotnet-ci.yml` — manual trigger only (push/PR commented)                                                                          |
@@ -43,7 +56,7 @@ Also added a compact ASCII flow to `docs/roadmap/context-mode-integration.md` so
 
 ## File inventory
 
-### `.github/instructions/` (18 files)
+### `.github/instructions/` (20 files)
 
 | File                                  | `applyTo:`                                                    | Added                                                                       |
 | ------------------------------------- | ------------------------------------------------------------- | --------------------------------------------------------------------------- |
@@ -57,7 +70,9 @@ Also added a compact ASCII flow to `docs/roadmap/context-mode-integration.md` so
 | `shared-primitives.instructions.md`   | `ECommerceApp.Domain/Shared/**/*.cs`                          | Pre-existing                                                                |
 | `safety.instructions.md`              | `**`                                                          | Session 1 (extracted from copilot-instructions)                             |
 | `pre-edit.instructions.md`            | `**`                                                          | Session 1 (extracted from copilot-instructions)                             |
+| `agent-workflow.instructions.md`      | `**`                                                          | Session 72 (new — short front-door workflow hub for routing)                |
 | `docs-index.instructions.md`          | `.github/**, docs/**`                                         | Session 1 (new — docs lookup table); Session 19 (scope narrowed from `**`)  |
+| `docs-index.full.md`                  | `.github/**, docs/**`                                         | Session 72 (registered — full routing table companion to docs-index)         |
 | `copilot-config-sync.instructions.md` | `.github/**, docs/**`                                         | Session 11 (new); Session 14 (extended to docs/\*\*)                        |
 | `mcp-routing.instructions.md`         | `**`                                                          | Session 27 (new — single-source MCP routing and precedence rules)            |
 | `rag.instructions.md`                 | `.github/**, docs/**, tools/rag/**, tools/rag-dotnet/**`     | Session 18 (new — RAG routing precedence + output discipline); Session 56 (scope narrowed from `**`) |
@@ -66,12 +81,13 @@ Also added a compact ASCII flow to `docs/roadmap/context-mode-integration.md` so
 | `agent-memory.instructions.md`        | `**`                                                          | Session 19 (new — auto-loads `agent-decisions.md` read rule on every task)  |
 | `batched-tasks.instructions.md`       | `**`                                                          | Session 26 (new — extracted from `copilot-instructions.md` §14 to keep auto-load while shrinking the root policy file) |
 
-### `.github/prompts/` (8 files)
+### `.github/prompts/` (9 files)
 
 | File                          | Added                                                                                                                                   |
 | ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
 | `bc-analysis.prompt.md`       | Session 1 (renamed)                                                                                                                     |
 | `bc-implementation.prompt.md` | Session 1 (renamed)                                                                                                                     |
+| `general.prompt.md`           | Session 62 (new — general Q&A / efficient context routing)                                                                             |
 | `pr-review.prompt.md`         | Session 1 (renamed)                                                                                                                     |
 | `refactor.prompt.md`          | Session 17 (new)                                                                                                                        |
 | `flow-analysis.prompt.md`     | Session 22 (registered — file existed on disk, referenced in `copilot-instructions.md` §11 and `docs-index`, omitted from prior counts) |
@@ -79,7 +95,7 @@ Also added a compact ASCII flow to `docs/roadmap/context-mode-integration.md` so
 | `mcp-routing-eval.prompt.md`  | Session 27 (registered — stricter eval-mode format for batched MCP routing checks)                                                     |
 | `rag-sync.prompt.md`          | Session 23 (registered — file existed on disk, runs incremental ingest + eval validation + coverage check)                             |
 
-### `.github/agents/` (9 files)
+### `.github/agents/` (12 files)
 
 | File                          | Added                                                                                                   |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------- |
@@ -92,8 +108,11 @@ Also added a compact ASCII flow to `docs/roadmap/context-mode-integration.md` so
 | `verifier.md`                 | Session 17 (new — pipeline stage 3, deterministic build+test, max-iter 1)                               |
 | `pr-commit.md`                | Session 17 (new — pipeline stage 5, Conventional Commits, max-iter 2)                                   |
 | `setup-discovery.md`          | Session 33 (new — read-only bootstrap audit for RAG/context-mode/MCP client setup in new repositories) |
+| `spec-writer.md`              | Session 62 (new — business workflow specification agent, HITL before write)                              |
+| `research-planner.md`         | Session 72 (new — research planning stage, scope/sources/checkpoints, human approval gate)             |
+| `information-gatherer-lite.md` | Session 72 (new — evidence gathering stage, raw findings only, no synthesis)                            |
 
-### `.github/skills/` (33 skills)
+### `.github/skills/` (37 skills)
 
 | Skill                     | Description                                                     | Added      |
 | ------------------------- | --------------------------------------------------------------- | ---------- |
@@ -117,10 +136,11 @@ Also added a compact ASCII flow to `docs/roadmap/context-mode-integration.md` so
 | `ctx-sandbox-bootstrap-verify` | Runtime smoke after `docker compose up context-mode` (8 checks; non-root, 6 hardening flags, ctx-net+DNS, network-monitor, FTS5, ctx_doctor, loopback ports, AdGuard ACL) | Session 31 |
 | `ctx-doctor-playbook`     | Map `ctx_doctor` messages + container/runtime errors → cause → fix          | Session 31 |
 | `ctx-hardening-audit`     | Programmatic verification of all 22 ADR-0029 Conformance items (pre-merge gate) | Session 28 |
+| `research-gatherer`      | Strict human-gated research workflow (plan, gather, verify, synthesize) | Session 72 |
 
-The full current 33-skill set also includes the cross-project/bootstrap and advanced RAG operations skills listed in the Current state summary, including `ctx-bootstrap-network`, `ctx-bootstrap-storage`, `ctx-bootstrap-runtimes`, `setup-rag-new-project`, `setup-context-mode-new-project`, `setup-adguard-policy`, `setup-mcp-clients`, `setup-auto-cache-hook`, `rag-eval-coverage`, `rag-reindex-decision`, `rag-collection-rebuild`, `rag-query-debug`, and `rag-multilang-test`.
+The full current 37-skill set also includes the cross-project/bootstrap and advanced RAG operations skills listed in the Current state summary, including `ctx-bootstrap-network`, `ctx-bootstrap-storage`, `ctx-bootstrap-runtimes`, `setup-rag-new-project`, `setup-context-mode-new-project`, `setup-adguard-policy`, `setup-mcp-clients`, `setup-auto-cache-hook`, `rag-eval-coverage`, `rag-reindex-decision`, `rag-collection-rebuild`, `rag-query-debug`, `rag-multilang-test`, and `research-gatherer`.
 
-### `.github/context/` (7 files)
+### `.github/context/` (8 files)
 
 | File                                | Added                                                |
 | ----------------------------------- | ---------------------------------------------------- |
@@ -130,6 +150,7 @@ The full current 33-skill set also includes the cross-project/bootstrap and adva
 | `repo-index.md`                     | Session 2 (new — full codebase map)                  |
 | `future-skills.md`                  | Session 2 (new — skills roadmap)                     |
 | `anti-patterns-critical.context.md` | Session 3 (renamed from anti-patterns.context.md)    |
+| `anti-patterns-advisory.context.md` | Session 62 (new — advisory anti-patterns extracted from dotnet instructions) |
 | `test-stabilization-policy.md`      | Session 21 (new — skip/xfail policy and tracking requirements) |
 
 ---

@@ -93,6 +93,16 @@ Use these skills when the RAG/MCP system needs attention. Read via the `read_fil
 | Find docs that lack covering eval queries (`comm -23` audit + priority + draft heuristic) | `.github/skills/rag-eval-coverage/SKILL.md` |
 | Bring RAG up from scratch in a new project (compose, ingest, MCP, ADR-0028 known gap) | `.github/skills/setup-rag-new-project/SKILL.md` |
 
+## Research workflow skills
+
+Use when the task is evidence gathering, source verification, or research synthesis.
+
+| Need | Skill / Agent |
+|---|---|
+| Strict research workflow with human approval gates | `.github/skills/research-gatherer/SKILL.md` |
+| Research planning only (scope, sources, checkpoints) | `.github/agents/research-planner.md` |
+| Raw evidence gathering only | `.github/agents/information-gatherer-lite.md` |
+
 ## context-mode sandbox skills
 
 Use these when the context-mode MCP container needs verification, debugging, or pre-merge audit.
