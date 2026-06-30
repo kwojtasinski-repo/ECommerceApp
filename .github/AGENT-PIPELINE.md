@@ -86,9 +86,9 @@ USER REQUEST
 HUMAN runs git commands
     │
     ▼
-@copilot-setup-maintainer ── post-task sync (always)
+@copilot-setup-maintainer ── post-task sync (lite by default)
     Workflow 11 (close-out check) → Workflow 12 (pipeline sync) if agents changed
-    → Workflow 7 (changelog update)
+    → Workflow 7 (setup-state refresh) only when inventory or structure changed
 ```
 
 ---
@@ -180,4 +180,4 @@ Each agent file lists its required reads. Summary:
 
 - After every pipeline run: append to `agent-decisions.md` if a correction was given.
 - After 2× same correction: promote to permanent rule (anti-pattern / instruction / new ADR).
-- After config changes: trigger `@copilot-setup-maintainer` Workflow 6 (full audit) periodically — quarterly or after major batches.
+- After config changes: trigger `@copilot-setup-maintainer` Workflow 6 (full audit) on explicit request or after structural batches (new/removed instructions, prompts, agents, skills).

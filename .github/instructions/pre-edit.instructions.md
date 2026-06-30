@@ -66,5 +66,6 @@ Schema enums/upstream README/prior memory are not proof of shipped capability.
 1. If corrected on a new recurring mistake, append entry to `.github/context/agent-decisions.md` (Variant A).
 2. If correction appears 2nd time, promote to permanent rule (instruction/anti-pattern/ADR).
 3. If any `.github/` or `docs/` file changed: invoke `@copilot-setup-maintainer` as last step.
-- Minimum always-run: Workflow 11 + Workflow 7.
-- If unsure/scope wide: Workflow 6 + Workflow 7.
+- Minimum always-run: Workflow 11.
+- If the task changed Copilot inventory or structure: add Workflow 7 (refresh setup-state).
+- If unsure/scope wide: Workflow 6, then refresh setup-state instead of the changelog.

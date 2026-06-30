@@ -28,6 +28,8 @@ applyTo: ".github/**, docs/**"
 | Bug already tracked? | `.github/context/known-issues.md` |
 | Prior corrections? | `.github/context/agent-decisions.md` |
 | Test skip/xfail rules? | `.github/context/test-stabilization-policy.md` |
+| Compact setup snapshot | `.github/setup-state.md` |
+| Archived setup history (read-only) | `.github/COPILOT-SETUP-CHANGELOG.md` |
 | Full routing table | `.github/instructions/docs-index.full.md` |
 | Pipeline spec | `.github/AGENT-PIPELINE.md` |
 

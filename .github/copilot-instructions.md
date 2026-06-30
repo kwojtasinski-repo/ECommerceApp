@@ -19,7 +19,7 @@ ECommerceApp — ASP.NET Core MVC + Web API e-commerce platform. Clean/onion arc
 
 ## 2. Configuration map
 
-`docs-index.instructions.md` is the **single routing table** for all Copilot config (instructions, prompts, agents, skills, ADRs, context files, `AGENT-PIPELINE.md`). Human-facing docs start at `docs/README.md`.
+`docs-index.instructions.md` is the **single routing table** for all Copilot config (instructions, prompts, agents, skills, ADRs, context files, `AGENT-PIPELINE.md`). Human-facing docs start at `docs/README.md`. `setup-state.md` is the compact current-state snapshot used by maintainer audits; `COPILOT-SETUP-CHANGELOG.md` is archival only and not a sync trigger.
 
 ## 3. AI developer profile
 
@@ -36,7 +36,7 @@ ECommerceApp — ASP.NET Core MVC + Web API e-commerce platform. Clean/onion arc
 - Detailed rules for AbstractService, Handler pattern, ExceptionMiddleware, IFileStore, NBP API → `dotnet.instructions.md`.
 - **BC changes rule**: Before editing BC code, MUST read `project-state.md`. If blocked, STOP. Atomic switches deferred until 80–95% migration complete.
 - **Feed-forward rule**: When docs/ADR meaning changes, update `.github` in the same task.
-- **Sync rule**: After any `.github/` or `docs/` change, invoke `@copilot-setup-maintainer` (Workflow 11 + 7 minimum) — see `pre-edit.instructions.md`.
+- **Sync rule**: After any `.github/` or `docs/` change, invoke `@copilot-setup-maintainer`; use Workflow 7 only when the Copilot inventory or structure changed — see `pre-edit.instructions.md`.
 
 ## 5. Communication & PRs
 
@@ -164,4 +164,3 @@ Load context progressively — never bulk-load everything:
 | Refactor (structural only) | `/refactor` | `agent-decisions.md` + target file(s) |
 
 **Proactive rule**: when a task matches a row above, load and follow that skill or agent automatically — you do not need to be explicitly asked.
-

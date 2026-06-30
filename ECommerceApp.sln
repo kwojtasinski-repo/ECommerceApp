@@ -30,6 +30,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Copilot", "Copilot", "{02EA
 	ProjectSection(SolutionItems) = preProject
 		.github\AGENT-PIPELINE.md = .github\AGENT-PIPELINE.md
 		.github\copilot-instructions.md = .github\copilot-instructions.md
+		.github\setup-state.md = .github\setup-state.md
 		.github\COPILOT-SETUP-CHANGELOG.md = .github\COPILOT-SETUP-CHANGELOG.md
 		.github\copilot\mcp.json = .github\copilot\mcp.json
 	EndProjectSection
