@@ -32,6 +32,34 @@ per `Implementation-Blueprint-v1.md` §16 until validated by a pilot.
   Do not add new fields without a human decision — this is explicitly deferred territory
   (see Blueprint §16, "front matter schema beyond the minimum").
 
+## Quick Reference Index
+
+Use this index first to avoid loading the full knowledge library when a narrow lookup is enough.
+
+- `docs/architect-consultant/knowledge-library.md#1-business-archetypes`
+  - Business concepts and reference archetypes
+- `docs/architect-consultant/knowledge-library.md#2-architectural-patterns`
+  - Reusable implementation strategies
+- `docs/architect-consultant/knowledge-library.md#3-ddd-patterns`
+  - Domain building blocks
+- `docs/architect-consultant/knowledge-library.md#4-integration-patterns`
+  - Cross-boundary communication patterns
+- `docs/architect-consultant/knowledge-library.md#5-decision-strategies`
+  - How to choose between architectural options
+- `docs/architect-consultant/knowledge-library.md#6-heuristics`
+  - Short reasoning checklists
+- `docs/architect-consultant/knowledge-library.md#7-smells`
+  - Warning signs
+- `docs/architect-consultant/knowledge-library.md#8-adr-references`
+  - Validated repository decisions
+- `docs/architect-consultant/knowledge-library.md#9-evidence-library`
+  - Pilot findings and validated observations
+
+## Retrieval Rule
+
+Always start with the Quick Reference Index.
+Load full knowledge-library sections only when the index is not enough to answer.
+
 ## Consume, don't duplicate
 
 - New library entries must be **derived from** existing repository knowledge (ADRs,
