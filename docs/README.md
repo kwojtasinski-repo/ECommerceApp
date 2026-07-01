@@ -6,6 +6,8 @@ Short human entry point for the `docs/` folder.
 
 - `adr/` — architecture decisions, organized as `docs/adr/<NNNN>/`
 - `architecture/` — bounded-context map and structural views of the system
+- `architect-consultant/` — operating docs for the Architect Consultant framework
+  (a separate orchestration tool, not an ECommerceApp bounded context)
 - `patterns/` — reusable implementation guidance
 - `reference/` — endpoint maps and other lookup material
 - `reports/` — analysis snapshots and generated status reports
