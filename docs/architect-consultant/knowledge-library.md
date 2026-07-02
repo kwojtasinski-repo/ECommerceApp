@@ -42,6 +42,7 @@ Examples:
 
 - Accounting
 - Pricing
+- Knowledge Management
 - Party
 - Inventory
 - Workflow
@@ -331,6 +332,7 @@ Suggested initial seed set:
 
 - Accounting
 - Pricing
+- Knowledge Management
 - Party
 - Inventory
 - Workflow

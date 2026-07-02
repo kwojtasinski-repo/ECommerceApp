@@ -37,6 +37,7 @@ Missing mappers are expected during early exploration. Do not fail the scan beca
 |----|------|-------|----------------------|
 | `accounting` | live | `accounting-archetype-mapper` | "Can I ask 'how much X does S have?' and get a number with transaction history?" |
 | `pricing` | live | `pricing-archetype-mapper` | "Is there a computed price/rate that depends on context, time, or components?" |
+| `knowledge` | live | `knowledge-management-archetype-mapper` | "Can I ask what we know about X, from which source, how fresh/trustworthy it is, and whether we can cite evidence?" |
 | `party` | reference | `5-znanewzorce-demo/demo-party-miro.md` | "Do I have named participants, roles, and hierarchy rather than actions or balances?" |
 | `catalog` | reference | knowledge reference | "Do I model a product/content catalog with versioned descriptors and stable identifiers?" |
 | `workflow` | reference | knowledge reference | "Do I model a process with states, transitions, and handoffs?" |
@@ -162,6 +163,7 @@ Build a results table:
 |-----------|------|------|---------------------------|
 | accounting | live | Yes/No | [1-line summary] |
 | pricing | live | Yes/No | [1-line summary] |
+| knowledge | live | Yes/No | [1-line summary] |
 | party | reference | Reference-only | [1-line summary / source doc] |
 | catalog | reference | Reference-only | [1-line summary / no mapper yet] |
 | workflow | reference | Reference-only | [1-line summary / no mapper yet] |
