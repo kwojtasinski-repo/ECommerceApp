@@ -78,11 +78,27 @@ Use when generating or validating code. Load via the `read_file` tool or invoke 
 
 ## Domain modeling skills
 
-Use when the task is concept distillation, boundary detection, or safe generalization across domain concepts.
+Use when the task is concept distillation, boundary detection, archetype selection, problem-class classification, or safe generalization across domain concepts.
 
 | Need | Skill |
 |---|---|
 | Aggressively distill concepts into shared abstractions and specific contexts | `.github/skills/context-distiller/SKILL.md` |
+| Detect and lock aggregate boundaries for concurrent commands | `.github/skills/aggregate-designer/SKILL.md` |
+| Scan a requirement set against known archetypes in parallel | `.github/skills/archetype-scanner/SKILL.md` |
+| Map domain requirements to the accounting archetype | `.github/skills/accounting-archetype-mapper/SKILL.md` |
+| Map domain requirements to the pricing archetype | `.github/skills/pricing-archetype-mapper/SKILL.md` |
+| Map governed knowledge and evidence rules to a knowledge-governance model | `.github/skills/knowledge-management-archetype-mapper/SKILL.md` |
+| Classify a business requirement into CRUD / T&P / Integration / Resource Contention | `.github/skills/problem-classifier/SKILL.md` |
+| Classify metaprograms from utterances, transcripts, or behavior | `.github/skills/metaprogram-classifier/SKILL.md` |
+
+## Analysis and critique skills
+
+Use when the task is to critique inputs for hidden decisions, false consensus, or decision-quality problems.
+
+| Need | Skill |
+|---|---|
+| Critique requirements for hidden assumptions and CRUD-disguised logic | `.github/skills/requirements-critic/SKILL.md` |
+| Critique meeting transcripts for hidden decisions and scope drift | `.github/skills/transcript-critic/SKILL.md` |
 
 ## RAG maintenance skills
 
