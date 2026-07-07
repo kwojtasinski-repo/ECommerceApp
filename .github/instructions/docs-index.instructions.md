@@ -99,6 +99,7 @@ Use when the task is to critique inputs for hidden decisions, false consensus, o
 |---|---|
 | Critique requirements for hidden assumptions and CRUD-disguised logic | `.github/skills/requirements-critic/SKILL.md` |
 | Critique meeting transcripts for hidden decisions and scope drift | `.github/skills/transcript-critic/SKILL.md` |
+| Verify linguistic boundaries between bounded contexts | `.github/skills/linguistic-boundary-verifier/SKILL.md` |
 
 ## RAG maintenance skills
 

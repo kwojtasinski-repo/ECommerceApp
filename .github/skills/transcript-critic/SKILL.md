@@ -1,106 +1,143 @@
 ---
 name: transcript-critic
-description: Critique meeting transcripts for hidden decisions, false consensus, marginalized voices, scope drift, and unsupported claims. Use only on explicit request.
+description: >
+	Critiques meeting transcripts for hidden decisions, false consensus, marginalized voices,
+	scope drift, and unsupported claims. Use only on explicit request.
 argument-hint: "[meeting transcript or discussion notes]"
 ---
 
 # Transcript Critic
 
-## Enforcement Rules
+This skill critiques decision-making visible in transcripts.
+It does not summarize, rewrite, or decide.
 
-- ALWAYS analyze only when the user explicitly asks for critique, review, or diagnosis.
-- NEVER summarize the transcript.
-- NEVER infer intent, tone, or motive without evidence.
-- ALWAYS quote the exact transcript line that triggered each finding.
-- ALWAYS distinguish fact, opinion, hearsay, and declarative conclusion.
-- NEVER turn silence into a finding unless there is a concrete decision risk.
-- ALWAYS produce diagnostic questions that can be taken to the next meeting.
+## Hard rules
 
-Analyze meeting transcripts to surface decision-making problems that a naive summary would miss: false consensus, marginalized voices, opinions disguised as facts, hidden dependencies between "separate" topics, and scope drift.
+- MUST analyze only when the user explicitly asks for critique, review, or diagnosis.
+- MUST read the whole transcript before reporting anything.
+- MUST quote the exact transcript line that triggered each finding.
+- MUST classify important claims as fact, opinion, hearsay, or declarative conclusion.
+- MUST treat opinion-to-fact escalation as a high-risk pattern.
+- MUST distinguish genuine agreement from compliance and from not being asked.
+- MUST flag silence only when there is a concrete decision risk.
+- MUST generate diagnostic questions for the next meeting.
+- MUST not summarize the transcript.
+- MUST not infer intent, tone, or motive without evidence.
+- MUST not make decisions for the user.
 
-**Output goal**: a structured critique with severity, evidence, and diagnostic questions. This is not a summary.
+## When to use
 
-## When to Use
+- After a meeting where decisions were made.
+- Before acting on meeting notes.
+- When preparing questions for a follow-up meeting.
+- When reviewing notes for missing decision logic.
 
-- After a meeting where decisions were made
-- Before acting on meeting notes
-- When preparing questions for a follow-up meeting
-- When reviewing notes for missing decision logic
+## When not to use
 
-## When NOT to Use
+- The user wants a summary.
+- The user wants a rewrite of the transcript.
+- The user wants a decision instead of a critique.
 
-- The user wants a summary
-- The user wants a rewrite of the transcript
-- The user wants a decision made instead of a critique
-
----
-
-## Analysis Framework
+## Analysis framework
 
 Run all seven checks on the transcript. Each check produces findings independently.
 
 ### Check 1: Fact vs Opinion vs Hearsay
 
-Classify every claim:
+For every claim made by a participant, classify it as:
 
-- **Fact** — verifiable with evidence in the transcript
-- **Opinion** — stated without evidence
-- **Hearsay** — information from a third party
-- **Declarative conclusion** — stated as fact without support
+- **Fact** — verifiable, with evidence in the transcript.
+- **Opinion** — stated without evidence, based on experience or feeling.
+- **Hearsay** — information from a third party, not verified.
+- **Declarative conclusion** — stated as if it were fact, but without support.
 
-Track when opinion or hearsay gets treated as fact later.
+Track when an opinion or hearsay claim gets treated as fact later.
+For each finding, note who said it, the original classification, whether it escalated, and what verification would look like.
 
-### Check 2: Consensus Audit
+### Check 2: Consensus audit
 
-Verify who explicitly agreed, who was only compliant, and who was never asked.
+When the conversation reaches a decision point, verify:
 
-### Check 3: Interrupted or Marginalized Topics
+- Who explicitly agreed.
+- Who was asked and said OK after being overruled or interrupted.
+- Who was never asked.
+- Who said no impact without explanation.
 
-Track topics that were raised and cut off, deferred, or quietly abandoned.
+Produce a consensus matrix.
 
-### Check 4: Hidden Dependencies
+### Check 3: Interrupted or marginalized topics
+
+Track every topic that was raised and cut off, deferred, or quietly abandoned.
+
+For each interrupted topic, record:
+
+- Who raised it.
+- Who cut it off and how.
+- Whether the topic was genuinely separate or hiddenly dependent.
+- The risk of ignoring it.
+
+### Check 4: Hidden dependencies
 
 Find topics treated as separate even though one depends on the other.
 
-### Check 5: Scope Drift
+For each dependency candidate, record:
+
+- Topic A being decided now.
+- Topic B deferred or dismissed.
+- How A affects B.
+- Risk of deciding A without B.
+
+### Check 5: Scope drift
 
 Compare the stated meeting goal with the actual decision path.
 
-### Check 6: Severity Mismatch
+Track:
+
+- What the meeting was supposed to decide.
+- When the actual decision happened.
+- Whether alternatives were genuinely explored or the first proposal won by default.
+
+### Check 6: Severity mismatch
 
 Check whether the group dismissed a low-frequency issue that may have high consequences.
 
-### Check 7: Authority and Social Dynamics
+For each finding, record:
+
+- What was dismissed.
+- On what basis.
+- The actual consequence if it happens.
+- The frequency multiplied by consequence.
+
+### Check 7: Authority and social dynamics
 
 Detect first-mover advantage, authority override, loudest-voice bias, and politeness traps.
-
----
 
 ## Workflow
 
 ### Step 1: Inventory
 
-- List participants and roles
-- Build a topic timeline
-- List explicit and implicit decisions
+- List participants and roles.
+- Build a topic timeline.
+- List explicit and implicit decisions.
 
-### Step 2: Run All Checks
+### Step 2: Run all checks
 
-Apply each check independently. One sentence can trigger multiple findings.
+Apply each check independently.
+One sentence can trigger multiple findings.
 
-### Step 3: Cross-Reference Findings
+### Step 3: Cross-reference findings
 
 Look for patterns across checks and note compounded risk.
 
-### Step 4: Generate Diagnostic Questions
+### Step 4: Generate diagnostic questions
 
 Questions must be specific, verifiable, and non-threatening.
 
-### Step 5: Produce Report
+Each finding should get 1 to 2 questions that can go to the next meeting.
 
----
+### Step 5: Produce report
 
-## Output Format
+## Output format
 
 ```markdown
 # Transcript Critique: [Meeting Name / Date]
@@ -136,8 +173,6 @@ Questions must be specific, verifiable, and non-threatening.
 
 [Ordered list of diagnostic questions]
 ```
-
----
 
 ## Pitfalls
 
