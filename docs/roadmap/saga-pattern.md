@@ -1,7 +1,13 @@
 # Saga / Orchestrator Pattern — Design Analysis
 
-> **Status**: In Progress — Option A (choreography + compensation) skeleton implemented. ADR-0026 Accepted.
-> Option B (Process Manager) deferred pending Outbox pattern + F4 handler chain refactoring.
+> **Status**: In Progress — Option A (choreography + compensation) implemented, including all three
+> `OrderPlacementFailed` handlers (Payments, Inventory, Presale — cart restore shipped 2026-07-26).
+> ADR-0026 Accepted. As part of the same amendment, the `PaymentExpired`→`OrderCancelled` implicit
+> chain described in Gap 3 below was flattened: `OrderPaymentExpiredHandler` no longer publishes
+> `OrderCancelled`. That event is still live, though — it's published directly by
+> `OrderService.CancelOrderAsync` on the manual-cancel path, with 4 active handlers.
+> Option B (Process Manager) deferred pending Outbox pattern (not started) + F4 handler chain
+> refactoring (Shipment handler dedup not started).
 > Linked from [`README.md` F3](./README.md#future-architectural-considerations).
 
 ---
@@ -15,7 +21,9 @@ Every multi-BC event chain is one:
 |---|---|
 | **Order Placement** | `OrderPlaced` → [Inventory.`OrderPlacedHandler`, Payments.`OrderPlacedHandler`, Presale.`OrderPlacedHandler`] |
 | **Payment Confirmed** | `PaymentConfirmed` → [Orders.`OrderPaymentConfirmedHandler`, Inventory.`PaymentConfirmedHandler`] |
-| **Payment Expired** | `PaymentExpired` → [Orders.`OrderPaymentExpiredHandler`] → `OrderCancelled` → [Inventory.`OrderCancelledHandler`, Coupons.`CouponsOrderCancelledHandler`] |
+| **Payment Expired** | `PaymentExpired` → [Orders.`OrderPaymentExpiredHandler`] — flattened by ADR-0026 amendment, no longer publishes `OrderCancelled` |
+| **Order Placement Failed** | `OrderPlacementFailed` → [Payments.`OrderPlacementFailedHandler`, Inventory.`OrderPlacementFailedHandler`, Presale.`OrderPlacementFailedHandler`] — Option A compensation, ADR-0026 |
+| **Manual Order Cancel** | `OrderCancelled` (published directly by `OrderService.CancelOrderAsync`, not via a chain) → [Inventory.`OrderCancelledHandler`, Coupons.`CouponsOrderCancelledHandler`, Communication.`OrderCancelledNotificationHandler`, Communication.`OrderCancelledEmailHandler`] |
 | **Refund Approved** | `RefundApproved` → [Inventory.`InventoryRefundApprovedHandler`, Communication.`RefundApprovedEmailHandler`] |
 | **Shipment Delivered** | `ShipmentDelivered` → [Orders.`OrderShipmentDeliveredHandler`, Inventory.`ShipmentDeliveredHandler`] |
 | **Shipment Failed** | `ShipmentFailed` → [Orders.`OrderShipmentFailedHandler`, Inventory.`ShipmentFailedHandler`] → `OrderRequiresAttention` → [Communication] |
@@ -45,12 +53,22 @@ You can answer "what status is this order in?" via `Order.Status`, but you canno
 Failed or partially-executed event chains leave no structured breadcrumb — only application
 logs.
 
-### Gap 3 — Implicit handler chains (F4 overlap)
+### Gap 3 — Implicit handler chains (F4 overlap) — **partially closed**
 
-`OrderPaymentExpiredHandler` handles `PaymentExpired` → cancels order → publishes
-`OrderCancelled`. The second event triggers its own set of handlers across Inventory and
-Coupons. These implicit chains are correct when all handlers succeed but produce ambiguous
-failure semantics when any handler throws mid-chain.
+Originally: `OrderPaymentExpiredHandler` handled `PaymentExpired` → cancelled order →
+published `OrderCancelled`, which triggered its own set of handlers across Inventory and
+Coupons — an implicit chain with ambiguous failure semantics if a handler threw mid-chain.
+
+**Resolved for this specific chain** by an ADR-0026 amendment: `OrderPaymentExpiredHandler`
+now only calls `order.ExpirePayment()` — it no longer publishes anything, so the chain no
+longer exists. `OrderCancelled` is still published, but directly from
+`OrderService.CancelOrderAsync` (manual-cancel path), not from another handler — so it's a
+single-level fan-out, not a chain.
+
+**Still open**: `ShipmentDelivered`/`ShipmentFailed`/`ShipmentPartiallyDelivered` handlers in
+Inventory are leaf publishers (not chains, since they don't trigger further handler-to-handler
+publishes) but remain fully duplicated across three near-identical handler classes — dedup is
+workstream 3 in [`order-placement-compensation-followup.md`](./order-placement-compensation-followup.md).
 
 ---
 
@@ -122,10 +140,9 @@ This is a separate ADR concern but must be sequenced **before** Option B is star
 ## Recommended sequencing
 
 ```
-Now (optional):
-  └─► Option A — add OrderPlacementFailed compensation handlers
-        Adds safety for the highest-risk failure path (placement fan-out)
-        No new infrastructure required
+Done:
+  └─► Option A — OrderPlacementFailed compensation handlers (Payments, Inventory, Presale)
+        All three shipped; cart restore (Presale) was the last one, 2026-07-26.
 
 Before Option B:
   └─► F4 — refactor implicit handler chains into explicit orchestration per BC

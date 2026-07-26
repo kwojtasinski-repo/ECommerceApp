@@ -1,6 +1,7 @@
 # Order-placement compensation — follow-up work (F3/F4 deep-dive)
 
-> **Status:** Paused — parked in favor of another in-progress work stream. Resume with workstream 1.
+> **Status:** Paused — parked in favor of another in-progress work stream. Workstream 1 (cart restore) and
+> workstream 4 (docs correction) are done. **Next up: workstream 2 (Outbox pattern)** — see table below.
 > **Origin:** ad-hoc analysis of roadmap items F3 (saga/orchestrator) and F4 (handler chain refactoring),
 > see [`README.md`](./README.md#future-architectural-considerations) and [`saga-pattern.md`](./saga-pattern.md).
 > **Goal of this doc:** capture enough decisions that work can resume without re-litigating scope.
@@ -27,12 +28,15 @@ Full findings live in the conversation that produced this doc; the actionable pa
 
 | # | Workstream | What | Status |
 |---|---|---|---|
-| **1** | **Cart restore** | Implement `ICartService.RestoreAsync` + wire it into `Presale.OrderPlacementFailedHandler` | **Plan handed to Copilot** — see `.github/plans/01-phase-cart-restore-implementation.md` (executable plan) + `01-phase-cart-restore-validation.md` (independent verification checklist). Both are deleted once phase 1 validates PASS; this doc's spec below is the permanent record. |
-| **2** | **Outbox pattern** | At-least-once delivery for `IMessageBroker`; unblocks saga Option B | Not started |
-| **3** | **F4 cleanup** | Deduplicate `ShipmentDelivered/Failed/PartiallyDelivered` handlers into shared logic — preparatory, not risk-driven (new requirements are expected to land here later) | Not started |
-| **4** | **Docs correction** | `README.md` F3/F4 rows + `saga-pattern.md` don't reflect that ADR-0026 Option A and the flat-fan-out amendment already shipped | Not started, low effort, can piggyback on any of the above |
+| **1** | **Cart restore** | Implement `ICartService.RestoreAsync` + wire it into `Presale.OrderPlacementFailedHandler` | **Done** (2026-07-26) — implemented and validated PASS (build, 1008 unit + 221 integration tests green, spec-conformance and code review clean). Pipeline plan/validation files deleted per convention; this doc's spec above is the permanent record. |
+| **2** | **Outbox pattern** | At-least-once delivery for `IMessageBroker`; unblocks saga Option B | **NOT STARTED — next up.** Verified in code (2026-07-26): zero `Outbox` hits anywhere in `.cs` files; `InMemoryMessageBroker`/`ModuleClient`/`AsyncMessageDispatcher` are all synchronous or in-process-channel only, no persistence, no retry. See [`saga-pattern.md`](./saga-pattern.md) § "Infrastructure prerequisite: Outbox Pattern" for scope. |
+| **3** | **F4 cleanup** | Deduplicate `ShipmentDelivered/Failed/PartiallyDelivered` handlers into shared logic — preparatory, not risk-driven (new requirements are expected to land here later) | Not started. Verified in code (2026-07-26): `ShipmentDeliveredHandler`, `ShipmentFailedHandler`, `ShipmentPartiallyDeliveredHandler` (`ECommerceApp.Application/Inventory/Availability/Handlers/`) are still independently copy-pasted, no shared base class or helper. |
+| **4** | **Docs correction** | `README.md` F3/F4 rows + `saga-pattern.md` don't reflect that ADR-0026 Option A and the flat-fan-out amendment already shipped | **Done** (2026-07-26) — `README.md` F4 row and `saga-pattern.md` (status banner, event-chain table, Gap 3, sequencing) updated. Also caught and fixed a factual error introduced by the first pass: `README.md` had claimed `OrderCancelled` was "unused, reserved for a future manual-cancel path" — verified false, it's actively published by `OrderService.CancelOrderAsync` (manual-cancel endpoint) with 4 live handlers; only the auto-expiry chain to it was removed. |
 
-Do workstream 1 first. 2–4 order is not fixed — re-confirm priority when resuming if circumstances changed.
+Workstream 1 was required first and is done. Workstream 4 was low-effort and piggybacked alongside.
+**Workstream 2 (Outbox) is next** — it's the prerequisite blocking saga Option B and F4's "before Option B"
+sequencing in `saga-pattern.md`. Re-confirm priority vs. workstream 3 if circumstances changed since this
+note was written.
 
 ---
 
