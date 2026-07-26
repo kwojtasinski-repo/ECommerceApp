@@ -27,7 +27,7 @@ Full findings live in the conversation that produced this doc; the actionable pa
 
 | # | Workstream | What | Status |
 |---|---|---|---|
-| **1** | **Cart restore** | Implement `ICartService.RestoreAsync` + wire it into `Presale.OrderPlacementFailedHandler` | **Next up — see spec below** |
+| **1** | **Cart restore** | Implement `ICartService.RestoreAsync` + wire it into `Presale.OrderPlacementFailedHandler` | **Plan handed to Copilot** — see `.github/plans/01-phase-cart-restore-implementation.md` (executable plan) + `01-phase-cart-restore-validation.md` (independent verification checklist). Both are deleted once phase 1 validates PASS; this doc's spec below is the permanent record. |
 | **2** | **Outbox pattern** | At-least-once delivery for `IMessageBroker`; unblocks saga Option B | Not started |
 | **3** | **F4 cleanup** | Deduplicate `ShipmentDelivered/Failed/PartiallyDelivered` handlers into shared logic — preparatory, not risk-driven (new requirements are expected to land here later) | Not started |
 | **4** | **Docs correction** | `README.md` F3/F4 rows + `saga-pattern.md` don't reflect that ADR-0026 Option A and the flat-fan-out amendment already shipped | Not started, low effort, can piggyback on any of the above |
