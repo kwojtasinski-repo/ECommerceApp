@@ -12,6 +12,7 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
     {
         Task<AddToCartResult> AddToCartAsync(AddToCartDto dto, CancellationToken ct = default);
         Task SetCartItemAsync(AddToCartDto dto, CancellationToken ct = default);
+        Task RestoreAsync(PresaleUserId userId, IReadOnlyList<CartRestoreItem> items, CancellationToken ct = default);
         Task RemoveAsync(PresaleUserId userId, PresaleProductId productId, CancellationToken ct = default);
         Task RemoveRangeAsync(PresaleUserId userId, IReadOnlyList<PresaleProductId> productIds, CancellationToken ct = default);
         Task ClearAsync(PresaleUserId userId, CancellationToken ct = default);

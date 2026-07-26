@@ -1,34 +1,39 @@
 # RAG Index Stats
 
-Last indexed: 2026-06-14 13:58 UTC  
+Last indexed: 2026-07-26 18:58 UTC  
 Collection: `ecommerceapp_docs`  
-Files: 214  
-Chunks: 247  
+Files: 227  
+Chunks: 121  
 Model: `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2`  
 
 ## Breakdown by doc_kind
 
 | doc_kind | files | chunks |
 |----------|------:|-------:|
-| `other` | 16 | 247 |
+| `adr_checklist` | 1 | 1 |
+| `adr_main` | 1 | 15 |
+| `adr_migration_plan` | 1 | 2 |
+| `adr_router` | 1 | 4 |
+| `architecture` | 1 | 2 |
+| `other` | 7 | 69 |
+| `roadmap` | 3 | 28 |
 
 ## Per-file detail
 
 | file | doc_kind | chunks |
 |------|----------|-------:|
-| `docs/rag/README.md` | `other` | 9 |
-| `docs/rag/SETUP-GUIDE.md` | `other` | 33 |
-| `docs/rag/auto-cache-hook.md` | `other` | 12 |
-| `docs/rag/decisions-and-roadmap.md` | `other` | 17 |
-| `docs/rag/index-stats-dotnet.md` | `other` | 3 |
-| `docs/rag/index-stats.md` | `other` | 3 |
-| `docs/rag/mcp-first-routing-migration-playbook.md` | `other` | 35 |
-| `docs/rag/pipeline-test-report.md` | `other` | 8 |
-| `docs/rag/rag-architecture-v2-design.md` | `other` | 32 |
-| `docs/rag/rag-architecture.md` | `other` | 21 |
-| `docs/rag/reports/2026-05-26-architecture-audit-and-refactor.md` | `other` | 20 |
-| `docs/rag/reports/2026-05-26-real-mcp-verification.md` | `other` | 10 |
-| `docs/rag/reports/eval-results/README.md` | `other` | 1 |
-| `docs/rag/reports/mcp-routing-eval-50q.md` | `other` | 13 |
-| `docs/rag/reports/mcp-routing-eval-batched-5q.md` | `other` | 17 |
-| `docs/rag/validation-report-v2.md` | `other` | 13 |
+| `docs/README.md` | `other` | 4 |
+| `docs/adr/0030/0030-guest-checkout-anonymous-order-placement.md` | `adr_main` | 15 |
+| `docs/adr/0030/README.md` | `adr_router` | 4 |
+| `docs/adr/0030/checklist.md` | `adr_checklist` | 1 |
+| `docs/adr/0030/migration-plan.md` | `adr_migration_plan` | 2 |
+| `docs/architect-consultant/IMPLEMENTATION_PLAYBOOK.md` | `other` | 13 |
+| `docs/architect-consultant/IMPLEMENTATION_RULES.md` | `other` | 10 |
+| `docs/architect-consultant/Implementation-Blueprint-v1.md` | `other` | 20 |
+| `docs/architect-consultant/README.md` | `other` | 4 |
+| `docs/architect-consultant/knowledge-library.md` | `other` | 16 |
+| `docs/architecture/architect-consultant-tooling.md` | `architecture` | 2 |
+| `docs/rag/index-stats.md` | `other` | 2 |
+| `docs/roadmap/README.md` | `roadmap` | 7 |
+| `docs/roadmap/guest-checkout.md` | `roadmap` | 13 |
+| `docs/roadmap/order-placement-compensation-followup.md` | `roadmap` | 8 |

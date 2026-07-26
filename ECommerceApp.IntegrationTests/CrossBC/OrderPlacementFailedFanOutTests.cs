@@ -1,8 +1,11 @@
 using ECommerceApp.Application.Inventory.Availability.Services;
 using ECommerceApp.Application.Messaging;
+using ECommerceApp.Application.Presale.Checkout.DTOs;
+using ECommerceApp.Application.Presale.Checkout.Services;
 using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Application.Sales.Payments.Services;
 using ECommerceApp.Domain.Inventory.Availability;
+using ECommerceApp.Domain.Presale.Checkout;
 using ECommerceApp.Domain.Sales.Payments;
 using ECommerceApp.Shared.TestInfrastructure;
 using Shouldly;
@@ -20,7 +23,7 @@ namespace ECommerceApp.IntegrationTests.CrossBC
     /// <list type="bullet">
     ///   <item>Payments BC — cancels the pending payment</item>
     ///   <item>Inventory BC — releases stock holds per order item</item>
-    ///   <item>Presale BC — logs warning (cart restore deferred)</item>
+    ///   <item>Presale BC — restores the user's cart</item>
     /// </list>
     /// </summary>
     public class OrderPlacementFailedFanOutTests : BcBaseTest<IMessageBroker>
@@ -31,11 +34,12 @@ namespace ECommerceApp.IntegrationTests.CrossBC
         private const int OrderId = 10;
         private const int Quantity = 3;
         private const decimal TotalAmount = 75m;
+        private const string CartUserId = "user-1";
 
-        private OrderPlaced CreateOrderPlaced(int orderId = OrderId, int productId = ProductId, int quantity = Quantity)
+        private OrderPlaced CreateOrderPlaced(int orderId = OrderId, int productId = ProductId, int quantity = Quantity, string userId = null)
             => new(orderId,
                    new List<OrderPlacedItem> { new(productId, quantity) },
-                   PROPER_CUSTOMER_ID,
+                   userId ?? PROPER_CUSTOMER_ID,
                    DateTime.UtcNow.AddHours(24),
                    DateTime.UtcNow,
                    TotalAmount,
@@ -45,7 +49,7 @@ namespace ECommerceApp.IntegrationTests.CrossBC
             => new(orderId,
                    "inventory handler threw",
                    new List<OrderPlacedItem> { new(productId, quantity) },
-                   UserId: "user-1");
+                   UserId: CartUserId);
 
         private async Task SeedInventoryAsync(int productId = ProductId, int initialQuantity = 100, CancellationToken ct = default)
         {
@@ -105,6 +109,28 @@ namespace ECommerceApp.IntegrationTests.CrossBC
             var act = async () => await PublishAsync(CreateOrderPlacementFailed(), CancellationToken);
 
             await act.ShouldNotThrowAsync();
+        }
+
+        // ── Presale BC compensation ─────────────────────────────────────────
+
+        [Fact]
+        public async Task OrderPlacementFailed_AfterOrderPlaced_ShouldRestoreCartInPresaleBc()
+        {
+            var cartService = GetRequiredService<ICartService>();
+            await cartService.SetCartItemAsync(new AddToCartDto(CartUserId, ProductId, Quantity), CancellationToken);
+
+            await PublishAsync(CreateOrderPlaced(userId: CartUserId), CancellationToken);
+
+            var afterPlaced = await cartService.GetCartAsync(new PresaleUserId(CartUserId), CancellationToken);
+            afterPlaced.ShouldBeNull();
+
+            await PublishAsync(CreateOrderPlacementFailed(), CancellationToken);
+
+            var afterFailed = await cartService.GetCartAsync(new PresaleUserId(CartUserId), CancellationToken);
+            afterFailed.ShouldNotBeNull();
+            afterFailed.Lines.Count.ShouldBe(1);
+            afterFailed.Lines[0].ProductId.ShouldBe(ProductId);
+            afterFailed.Lines[0].Quantity.ShouldBe(Quantity);
         }
 
         // ── Cross-BC fan-out ──────────────────────────────────────────────────

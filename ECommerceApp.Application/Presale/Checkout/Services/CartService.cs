@@ -47,6 +47,17 @@ namespace ECommerceApp.Application.Presale.Checkout.Services
             await RefreshCacheAsync(dto.UserId, ct);
         }
 
+        public async Task RestoreAsync(PresaleUserId userId, IReadOnlyList<CartRestoreItem> items, CancellationToken ct = default)
+        {
+            foreach (var item in items)
+            {
+                var line = CartLine.Create(userId.Value, item.ProductId, item.Quantity);
+                await _cartRepo.UpsertAsync(line, ct);
+            }
+
+            await RefreshCacheAsync(userId, ct);
+        }
+
         public async Task RemoveAsync(PresaleUserId userId, PresaleProductId productId, CancellationToken ct = default)
         {
             await _cartRepo.DeleteAsync(userId, productId, ct);
