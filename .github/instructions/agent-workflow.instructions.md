@@ -22,6 +22,7 @@ applyTo: "**"
 - MCP routing detail -> [mcp-routing.instructions.md](mcp-routing.instructions.md)
 - Docs lookup map -> [docs-index.instructions.md](docs-index.instructions.md)
 - Pipeline flow -> [../AGENT-PIPELINE.md](../AGENT-PIPELINE.md)
+- Task is complex or likely to span sessions -> [session-continuity.instructions.md](session-continuity.instructions.md) (phased plan/validation files, model-agnostic)
 - Research workflow -> [../skills/research-gatherer/SKILL.md](../skills/research-gatherer/SKILL.md)
 - Domain distillation -> [../skills/context-distiller/SKILL.md](../skills/context-distiller/SKILL.md)
 - Prior corrections -> [../context/agent-decisions.md](../context/agent-decisions.md)

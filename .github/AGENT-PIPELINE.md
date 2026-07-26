@@ -5,6 +5,12 @@
 > This is the orchestration spec — agent files describe each stage; this file describes the **flow**.
 >
 > **Note**: `@verifier` and `@code-reviewer` are **embedded inside `@implementer`** — do NOT invoke them separately during a pipeline run. They remain available as standalone agents for one-off use outside the pipeline.
+>
+> **Orthogonal concern — surviving a session boundary**: this doc defines *who* does each step and
+> where the human gates are. It says nothing about a step's work outliving the current session/context.
+> For that, see [session-continuity.instructions.md](instructions/session-continuity.instructions.md)
+> (phased plan/validation files, model-agnostic) — a `@planner` plan can itself be written as a phase's
+> implementation file when the work is expected to span sessions.
 
 ---
 

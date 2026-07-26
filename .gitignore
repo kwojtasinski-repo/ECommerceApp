@@ -385,3 +385,8 @@ docker/adguard/AdGuardHome.yaml
 # context-mode auto-cache RAG tools discovery cache (regenerates on demand)
 .github/hooks/.rag-tools-cache.json
 .github/hooks/.rag-tools-cache.lock
+
+# Session-continuity phase plans (see .github/instructions/session-continuity.instructions.md).
+# Transient by default — not committed. Force-add a specific phase pair with `git add -f` only
+# when there is a real cross-session continuity reason (e.g. resuming after a context/budget cutoff).
+.github/plans/
