@@ -97,6 +97,14 @@ intervention. Acceptable for the current traffic/complexity level.
 
 ### Option B — Process Manager per saga *(future, when Option A proves insufficient)*
 
+> **Superseded (2026-07-26):** the sketch below (single `OrderLifecycleSaga` owned by Orders) was
+> written when Order Placement was the only known saga candidate. Refund, cart-corruption recovery,
+> and Inventory→Checkout lock propagation have since surfaced as further concrete candidates, which
+> tips this from "purpose-built entity" to "generic engine, Order Placement is one definition on
+> it." See [`generic-saga-orchestration-proposal.md`](./generic-saga-orchestration-proposal.md) for
+> the current shape, requirements, and implementation plan. Kept below for historical context on
+> the original gap analysis, which is still accurate.
+
 A `OrderLifecycleSaga` entity (persisted in `sales.OrderSagas`, owned by the Orders BC)
 that:
 1. Subscribes to all `OrderPlaced`, `PaymentConfirmed`, `PaymentExpired`, `ShipmentDelivered`
