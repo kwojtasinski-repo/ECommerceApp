@@ -1,0 +1,24 @@
+## Conformance checklist
+
+- [ ] `BaseController.GetOrCreateShopperId()` is the only place that decides authenticated-vs-guest identity for Presale endpoints — no duplicate logic in `CartController`/`CheckoutController`
+- [ ] Guest session cookie value is cryptographically random (≥128-bit) and prefixed (e.g. `gst_`) so it can never collide with an `AspNetUsers.Id`
+- [ ] Guest session cookie is `HttpOnly`, `Secure`, `SameSite=Lax`, with an expiry bounded to the checkout window (same order of magnitude as `PresaleOptions.SoftReservationTtl`)
+- [ ] The guest session cookie is never read by `[Authorize]`/JWT Bearer — it is consumed exclusively by `GetOrCreateShopperId()`
+- [ ] `CartController` and `CheckoutController` guest-eligible actions use `[AllowAnonymous]`, not a relaxed `TrustedApiUser` policy
+- [ ] `ApiPolicies.TrustedApiUser` is unchanged and still enforced on any endpoint outside the guest-eligible checkout surface
+- [ ] `PresaleUserId`, `CartLine`, `SoftReservation`, `CartService`, `SoftReservationService` require **zero** code changes — guest support is entirely upstream of these types
+- [ ] `Order.Create` and `Order.CustomerId`'s `> 0` invariant are **not** modified — no nullable `CustomerId`
+- [ ] No `IsGuest` (or similarly named) boolean property is added to `UserProfile`, `Order`, or any shared entity
+- [ ] `IAccountProfileClient.EnsureGuestCustomerAsync` is idempotent per `PresaleUserId` — calling it twice for the same guest session returns the same `UserProfileId`
+- [ ] `IUserProfileService.GetOrCreateForGuestAsync` calls `IUserProfileRepository.GetByUserIdAsync` before creating a new `UserProfile` — never creates a duplicate for an existing guest session
+- [ ] Guest `UserProfile.UserId` is populated via the same `UserProfile.Create` factory used for registered profiles — no parallel guest-only entity or table
+- [ ] `UserProfile.ReassignOwner(string newUserId)` validates non-empty `newUserId` and has no other side effects — it does not touch `Order.CustomerId` or any other aggregate
+- [ ] Promotion (`IGuestPromotionService.PromoteAsync`) never creates a second `UserProfile` row — it updates the existing guest row in place
+- [ ] The "guest-ness" check (`IsUnclaimed`) is computed via `UserManager.FindByIdAsync(profile.UserId)` at read time — never persisted as a column
+- [ ] Registration (`RegisterModel.OnPostAsync`) returns an identical HTTP response regardless of whether a matching unclaimed `UserProfile` is found by email
+- [ ] Any email-address match against unclaimed `UserProfile`s happens in a background handler, never inline in the registration request/response cycle
+- [ ] The account-linking flow reassigns **all** matching unclaimed `UserProfile` rows for an email, not just the first (no unique constraint on `Email`)
+- [ ] The account-linking email token is single-use, signed, and expiring
+- [ ] `POST /api/checkout/confirm` and guest-cookie issuance are covered by rate limiting before this feature ships (verify existing infrastructure — do not assume it exists)
+- [ ] A scheduled cleanup job purges unclaimed `UserProfile` rows with no associated `Order` past the agreed retention threshold; rows with at least one `Order` are never purged by this job
+- [ ] `ConfirmCheckoutRequest.CustomerId` is validated as required for authenticated callers and absent/ignored for guest callers — not silently defaulted
