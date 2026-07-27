@@ -106,11 +106,113 @@ Following that convention:
   `IMessage` and calling `IModuleClient.PublishAsync` — today's `JobDispatcherService` resolves an
   `IScheduledTask` by string name, which is a simpler problem than polymorphic message
   deserialization.
-- Retrofit the ~15 existing `PublishAsync` call sites (`OrderService`, `PaymentService`,
-  `CouponService`, `RefundService`, `ShipmentService`, `StockService`, `StockAdjustmentJob`,
-  `ProductService`, plus the 3 Inventory Shipment* leaf-republishers) so the write goes into
-  `messaging.Outbox` inside the same `SaveChangesAsync` as the aggregate write, not as a separate
-  `_messageBroker.PublishAsync` call afterward.
+- Retrofit the existing `PublishAsync` call sites so the write goes into `messaging.Outbox` inside
+  the same transaction as the aggregate write, not as a separate `_messageBroker.PublishAsync` call
+  afterward. **Recounted precisely (2026-07-27, grep of `ECommerceApp.Application` for
+  `PublishAsync(`) — 29 call sites across 12 files**, not the ~15 originally estimated:
+  `OrderService.cs` (5), `StockService.cs` (6), `ProductService.cs` (3), `CouponService.cs` (2),
+  `RefundService.cs` (2), `ShipmentService.cs` (4), `PaymentService.cs` (1),
+  `PaymentWindowExpiredJob.cs` (1), `StockAdjustmentJob.cs` (1), and the 3 Inventory leaf-republishers
+  (`ShipmentDeliveredHandler.cs`, `ShipmentFailedHandler.cs`, `ShipmentPartiallyDeliveredHandler.cs`,
+  1 each). Re-grep at Phase 0 start in case new call sites landed since this count.
+
+### Inbox / consumer-side idempotency (new — required once Outbox introduces at-least-once delivery)
+
+Today's synchronous, in-process broker delivers each message exactly once per process lifetime —
+there is no redelivery path, so no handler in this codebase currently needs to tolerate being
+called twice for the same logical event. **The Outbox poller changes that.** If the poller
+dispatches a message, the process crashes before the `Outbox` row is marked `Dispatched`, and it
+restarts, the same row is picked up again — every registered handler for that message type runs a
+second time. Handlers that mutate state without checking prior occurrence (`StockService`
+decrementing quantity, `PaymentService` creating a payment record, Coupons incrementing usage
+count) would double-apply. This is not a hypothetical — it is the direct consequence of moving from
+synchronous in-process delivery to a poll/retry dispatcher, and Phase 0 is not complete without
+addressing it (see the existing but under-specified validation line 193-194 below: "at-least-once +
+idempotent handling, or an explicit dedup key" — this subsection is that specification).
+
+**Key design constraint, and why it's cheaper than it first looks:** Outbox is single-writer — one
+`SaveChangesAsync` on the publishing BC's own `DbContext` can atomically include the Outbox insert.
+Inbox/dedup is multi-*consumer* — each handler lives in a different BC and writes to that BC's own
+`DbContext`. Naively this looks like it needs a distributed transaction to keep a shared dedup table
+atomic with each consumer's own write. **Verified this is not the case here**: every BC's `DbContext`
+(`OrdersDbContext`, `AvailabilityDbContext`, `PaymentsDbContext`, etc.) points at the same
+`ConnectionStrings:DefaultConnection` — one physical SQL Server database, split by schema, not
+separate databases (confirmed across all `Extensions.cs` registrations, e.g.
+`ECommerceApp.Infrastructure/Sales/Orders/Extensions.cs:20`,
+`ECommerceApp.Infrastructure/Inventory/Availability/Extensions.cs:21`). Two `DbContext` instances on
+the same physical connection can share one local ADO.NET transaction
+(`context1.Database.BeginTransaction()` → `context2.Database.UseTransaction(tx.GetDbTransaction())`)
+with no MSDTC/2PC involved — this is a standard, supported EF Core technique, not something novel
+being introduced for this feature.
+
+**Recommended shape:** one shared `messaging.Inbox` table (not per-BC-schema — same reasoning as
+requirement 2 for Outbox: one shared mechanism beats N per-BC forks). Columns: `MessageId` (the
+`messaging.Outbox.Id` of the delivered row), `HandlerType` (string — one BC can register multiple
+handlers for the same message type, each needs its own dedup slot), `ProcessedAt`. Unique constraint
+on `(MessageId, HandlerType)`.
+- The handler's own logic wraps its existing work **and** the `messaging.Inbox` insert in one shared
+  local transaction spanning the handler's own `DbContext` and `MessagingDbContext` (the same
+  connection-sharing technique used for the Outbox write in the retrofit — Phase 0 builds this
+  helper once, both Outbox-write and Inbox-check reuse it), then a single `SaveChangesAsync` per
+  context inside that transaction. Insert-or-skip via a try/catch on the unique-constraint violation
+  (`DbUpdateException`), matching how this codebase already treats unique-constraint races elsewhere
+  (verify against `efcore.instructions.md` conventions before implementing — do not invent a new
+  race-handling idiom).
+- **Cheaper alternative, worth ruling in/out explicitly rather than defaulting to the above:** for
+  handlers that are already naturally idempotent by construction (e.g. a handler that only
+  overwrites a value to an absolute target rather than incrementing/decrementing it), no dedup
+  table is needed at all — the redelivery is harmless. Audit the 29 retrofitted call sites'
+  *consumers* (not the publishers) once Phase 0 starts: some may already qualify, shrinking the
+  number of BCs that actually need a `ProcessedMessages` table.
+
+**Open question — not decided, resolve before Phase 0 implementation starts:** which consumer
+handlers are naturally idempotent (skip the dedup insert, cheaper) vs. genuinely need a
+`messaging.Inbox` row. Do not default every handler into writing one "to be safe" — that's needless
+write volume for a problem some handlers don't have; equally, do not skip the audit and assume none
+need it.
+
+### Outbox (and Inbox) cleanup job — reuse the existing TimeManagement recurring-job pattern
+
+Once `messaging.Outbox` rows reach `Dispatched`, they're audit trail, not live data — same relationship
+`DeferredJobQueue` has to `JobExecutions` today. Left unbounded, `Outbox` (and any per-BC
+`ProcessedMessages` tables from the Inbox subsection above) grow forever. This needs the same kind
+of recurring purge `RefreshTokenCleanupTask` already does for expired refresh tokens — no new
+infrastructure pattern, just another instance of the existing one.
+
+- **New `IScheduledTask`**: `OutboxCleanupTask` (`ECommerceApp.Application/Messaging/Services/`,
+  mirroring `RefreshTokenCleanupTask`'s shape exactly —
+  `ECommerceApp.Application/Identity/IAM/Services/RefreshTokenCleanupTask.cs:9-32`): constructor-
+  injected repository, `TaskName => "OutboxCleanup"`, `ExecuteAsync` wraps the delete in
+  try/catch → `context.ReportSuccess`/`ReportFailure`, never throws out of the task.
+- **Retention threshold is appsettings-configurable, not hardcoded**, mirroring `PresaleOptions`
+  (`ECommerceApp.Application/Presale/Checkout/PresaleOptions.cs:6-20` — `TimeSpan` properties bound
+  from config with an `IValidateOptions<T>` guard): new `MessagingOptions.OutboxRetention` (`TimeSpan`,
+  default 14 days per your ask — "co 2 tygodnie" — but make it a config value, not a literal
+  `TimeSpan.FromDays(14)` in the task itself), section name `"Messaging"`, with a validator rejecting
+  zero/negative values the same way `PresaleOptionsValidator` does.
+- **Only delete `Dispatched` rows older than the retention window.** Never delete `Pending` or
+  `Failed` rows regardless of age — a `Failed` row sitting past retention is a signal something is
+  stuck, not garbage; surfacing that (e.g. an alert/metric) is a separate concern from cleanup, not
+  something this task should silently paper over by deleting the evidence.
+- **Recurring schedule**, not a one-off: registered as a `ScheduledJob` the same way the existing
+  `CurrencyRateSync` job is (`ScheduledJob.Create(jobName, cronExpression, timeZoneId, maxRetries)`,
+  wired through `JobManagementService.Create` —
+  `ECommerceApp.Application/Supporting/TimeManagement/Services/JobManagementService.cs:126`). Daily
+  cadence (e.g. `"0 3 * * *"`) is a separate knob from the retention `TimeSpan` above — don't conflate
+  "how often it runs" with "how old something must be to delete"; both should be independently
+  configurable.
+- **DI registration**: `services.AddScoped<IScheduledTask, OutboxCleanupTask>()` alongside
+  `MessagingOptions` binding, in whichever `Extensions.cs` owns Messaging DI registration today —
+  same one-line pattern as IAM's `Extensions.cs:12`.
+- If the Inbox subsection above lands per-BC `ProcessedMessages` tables, each such BC needs its own
+  equivalent cleanup task (or the existing task iterates a registered list of cleanup targets) — scope
+  this once the Inbox open question is resolved, don't guess the shape now.
+
+**Test plan (mirrors `RefreshTokenCleanupTaskTests.cs`,
+`ECommerceApp.UnitTests/Identity/IAM/RefreshTokenCleanupTaskTests.cs`):** delete-older-than-retention
+happy path; rows exactly at the boundary are not deleted (off-by-one check); `Pending`/`Failed` rows
+are never touched regardless of age; repository throwing is caught and reported as failure, not
+propagated.
 
 ### Saga engine core (new scope vs. prior `OrderLifecycleSaga` estimate)
 
@@ -142,7 +244,7 @@ tradeoff to make explicitly, not by default.
 
 | Phase | Scope |
 |---|---|
-| **0** | Outbox pattern: `messaging.Outbox` schema/table/migration, generic poller + dispatcher, retrofit ~15 call sites, crash/restart + at-least-once integration tests |
+| **0** | Outbox pattern: `messaging.Outbox` schema/table/migration, generic poller + dispatcher, retrofit 29 call sites, crash/restart + at-least-once integration tests; consumer-side Inbox/idempotency audit + shared `messaging.Inbox` table where needed; `OutboxCleanupTask`/`InboxCleanupTask` recurring purge jobs (appsettings-configurable retention + enable/disable + dynamic cron) |
 | **1** | Saga engine core: `SagaInstance`/`SagaStep` domain + EF config/migration (`sagas` schema), `ISagaDefinition` abstraction + registration mechanism, generic transition/compensation/notify-dependent-step execution |
 | **2** | Decide + implement: retrofit Option A into `OrderPlacementSagaDefinition`, or leave standalone (explicit decision required first) |
 | **3** | `RefundSagaDefinition` — first genuinely new saga on the engine; validates the abstraction with a second real case |
@@ -157,7 +259,9 @@ that's a signal the abstraction in Phase 1 was wrong and needs revisiting before
 
 ## Effort estimate (rough — revise once Phase 1 design is final)
 
-- Phase 0 (Outbox, shared table): ~1 week — unchanged from prior estimate.
+- Phase 0 (Outbox, shared table + Inbox audit/dedup + cleanup job): ~1.5–2 weeks — up from the prior
+  ~1 week Outbox-only estimate; the Inbox audit (which consumers need dedup) and the cleanup task are
+  new scope added in this revision, not part of the original estimate.
 - Phase 1 (engine core): ~2–3 weeks — bigger than the previous purpose-built `OrderLifecycleSaga`
   estimate (2–4 weeks total) because it now includes a real abstraction layer (definition registry,
   generic transition engine) instead of one fixed entity.
@@ -193,11 +297,22 @@ to the full estimate.
       delivered exactly the intended number of times from the consumer's perspective (at-least-once
       + idempotent handling, or an explicit dedup key) — not just "poller runs", but a real crash
       simulation.
-- [ ] Every one of the ~15 original `PublishAsync` call sites was updated — grep for direct
+- [ ] Every one of the 29 original `PublishAsync` call sites was updated — grep for direct
       `_messageBroker.PublishAsync(` calls outside the new dispatcher; any hit outside the
       dispatcher itself is a missed retrofit, flag it.
 - [ ] No BC-specific `Outbox` table or schema was added anywhere — confirms requirement 2 held
       (single shared table, not a per-BC fork slipping back in under time pressure).
+- [ ] The Inbox audit was actually performed and recorded (which consumer handlers got a
+      `ProcessedMessages` table vs. were judged naturally idempotent, and why) — not skipped, not
+      "we'll add dedup later if it becomes a problem."
+- [ ] A duplicate-delivery integration test exists per handler that got a `ProcessedMessages` table:
+      deliver the same Outbox row twice, assert the handler's side effect (stock decrement, payment
+      record, coupon usage count, etc.) happened exactly once.
+- [ ] `OutboxCleanupTask` exists, is registered, and its retention is read from `MessagingOptions`
+      (config), not a hardcoded literal — confirm by changing the config value in a test and
+      observing the cutoff shift.
+- [ ] `OutboxCleanupTask` never deletes `Pending` or `Failed` rows regardless of age — test asserts
+      this explicitly, not just "some old rows were deleted."
 
 **After Phase 1 (engine core):**
 - [ ] Grep the engine's own code (`SagaInstance`, `SagaStep`, the transition/execution logic) for
