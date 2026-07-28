@@ -4,6 +4,7 @@ using ECommerceApp.Application.Sales.Payments.Messages;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Application.Supporting.TimeManagement.Models;
 using ECommerceApp.Domain.Sales.Payments;
+using ECommerceApp.Application.Sales.Payments;
 using AwesomeAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -23,10 +24,11 @@ namespace ECommerceApp.UnitTests.Sales.Payments
     public class PaymentExpiredCorrelationTests
     {
         private readonly Mock<IPaymentRepository> _paymentRepo = new();
-        private readonly Mock<IMessageBroker> _broker = new();
+        private readonly Mock<IPaymentsUnitOfWork> _unitOfWork = new();
+        private readonly Mock<IOutboxWriter> _outboxWriter = new();
 
         private PaymentWindowExpiredJob CreateJob()
-            => new(_paymentRepo.Object, _broker.Object, NullLogger<PaymentWindowExpiredJob>.Instance);
+            => new(_paymentRepo.Object, _unitOfWork.Object, _outboxWriter.Object, NullLogger<PaymentWindowExpiredJob>.Instance);
 
         private static JobExecutionContext Context(string entityId = "1")
             => new(entityId, Guid.NewGuid().ToString());
@@ -49,9 +51,14 @@ namespace ECommerceApp.UnitTests.Sales.Payments
             _paymentRepo
                 .Setup(r => r.GetByIdAsync(1, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreatePendingPayment(paymentId: 1, orderId: 10));
-            _broker
-                .Setup(b => b.PublishAsync(It.IsAny<IMessage[]>()))
-                .Callback<IMessage[]>(msgs => captured = msgs[0] as PaymentExpired)
+
+            var txMock = new Mock<IOutboxTransaction>();
+            txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(txMock.Object);
+
+            _outboxWriter
+                .Setup(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()))
+                .Callback<IMessage, IOutboxTransaction, CancellationToken>((msg, tx, ct) => captured = msg as PaymentExpired)
                 .Returns(Task.CompletedTask);
 
             await CreateJob().ExecuteAsync(Context("1"), CancellationToken.None);
@@ -70,11 +77,15 @@ namespace ECommerceApp.UnitTests.Sales.Payments
             _paymentRepo.Setup(r => r.GetByIdAsync(2, It.IsAny<CancellationToken>())).ReturnsAsync(payment2);
 
             var correlationIds = new System.Collections.Generic.List<Guid>();
-            _broker
-                .Setup(b => b.PublishAsync(It.IsAny<IMessage[]>()))
-                .Callback<IMessage[]>(msgs =>
+            var txMock = new Mock<IOutboxTransaction>();
+            txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(txMock.Object);
+
+            _outboxWriter
+                .Setup(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()))
+                .Callback<IMessage, IOutboxTransaction, CancellationToken>((msg, tx, ct) =>
                 {
-                    if (msgs[0] is PaymentExpired pe)
+                    if (msg is PaymentExpired pe)
                         correlationIds.Add(pe.CorrelationId);
                 })
                 .Returns(Task.CompletedTask);
@@ -95,9 +106,13 @@ namespace ECommerceApp.UnitTests.Sales.Payments
             _paymentRepo
                 .Setup(r => r.GetByIdAsync(5, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(CreatePendingPayment(paymentId: 5, orderId: 42));
-            _broker
-                .Setup(b => b.PublishAsync(It.IsAny<IMessage[]>()))
-                .Callback<IMessage[]>(msgs => captured = msgs[0] as PaymentExpired)
+            var txMock = new Mock<IOutboxTransaction>();
+            txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(txMock.Object);
+
+            _outboxWriter
+                .Setup(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()))
+                .Callback<IMessage, IOutboxTransaction, CancellationToken>((msg, tx, ct) => captured = msg as PaymentExpired)
                 .Returns(Task.CompletedTask);
 
             await CreateJob().ExecuteAsync(Context("5"), CancellationToken.None);
@@ -120,7 +135,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
 
             await CreateJob().ExecuteAsync(Context("1"), CancellationToken.None);
 
-            _broker.Verify(b => b.PublishAsync(It.IsAny<PaymentExpired>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
     }
 }

@@ -26,6 +26,7 @@ namespace ECommerceApp.Application.Messaging
             Register(typeof(ProductPublished), "catalog.product.published");
             Register(typeof(ProductUnpublished), "catalog.product.unpublished");
             Register(typeof(PaymentConfirmed), "payments.payment.confirmed");
+            Register(typeof(PaymentExpired), "payments.payment.expired");
         }
 
         internal static void Register(Type messageType, string key)

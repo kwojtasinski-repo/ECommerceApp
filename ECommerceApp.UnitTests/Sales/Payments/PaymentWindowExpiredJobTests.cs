@@ -1,5 +1,6 @@
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Sales.Payments.Handlers;
+using ECommerceApp.Application.Sales.Payments;
 using ECommerceApp.Application.Sales.Payments.Messages;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Application.Supporting.TimeManagement.Models;
@@ -17,16 +18,18 @@ namespace ECommerceApp.UnitTests.Sales.Payments
     public class PaymentWindowExpiredJobTests
     {
         private readonly Mock<IPaymentRepository> _paymentRepo;
-        private readonly Mock<IMessageBroker> _broker;
+        private readonly Mock<IPaymentsUnitOfWork> _unitOfWork;
+        private readonly Mock<IOutboxWriter> _outboxWriter;
 
         public PaymentWindowExpiredJobTests()
         {
             _paymentRepo = new Mock<IPaymentRepository>();
-            _broker = new Mock<IMessageBroker>();
+            _unitOfWork = new Mock<IPaymentsUnitOfWork>();
+            _outboxWriter = new Mock<IOutboxWriter>();
         }
 
         private PaymentWindowExpiredJob CreateJob()
-            => new(_paymentRepo.Object, _broker.Object, NullLogger<PaymentWindowExpiredJob>.Instance);
+            => new(_paymentRepo.Object, _unitOfWork.Object, _outboxWriter.Object, NullLogger<PaymentWindowExpiredJob>.Instance);
 
         private static JobExecutionContext Context(string entityId)
             => new(entityId, Guid.NewGuid().ToString());
@@ -61,7 +64,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
             await CreateJob().ExecuteAsync(ctx, CancellationToken.None);
 
             ctx.Outcome.Should().BeOfType<JobOutcome.Failure>();
-            _broker.Verify(b => b.PublishAsync(It.IsAny<PaymentExpired>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         // ── No-op guards ──────────────────────────────────────────────────────
@@ -77,7 +80,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
             await CreateJob().ExecuteAsync(ctx, CancellationToken.None);
 
             ctx.Outcome.Should().BeOfType<JobOutcome.Success>();
-            _broker.Verify(b => b.PublishAsync(It.IsAny<PaymentExpired>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Theory]
@@ -96,7 +99,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
             await CreateJob().ExecuteAsync(ctx, CancellationToken.None);
 
             ctx.Outcome.Should().BeOfType<JobOutcome.Success>();
-            _broker.Verify(b => b.PublishAsync(It.IsAny<PaymentExpired>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         // ── Happy path ────────────────────────────────────────────────────────
@@ -110,11 +113,22 @@ namespace ECommerceApp.UnitTests.Sales.Payments
                 .ReturnsAsync(payment);
             var ctx = Context("5");
 
+            // Arrange transaction + outbox expectations
+            var txMock = new Mock<IOutboxTransaction>();
+            txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(System.Threading.Tasks.Task.CompletedTask);
+            _unitOfWork
+                .Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(txMock.Object);
+            _outboxWriter
+                .Setup(w => w.EnqueueAsync(It.IsAny<PaymentExpired>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()))
+                .Returns(System.Threading.Tasks.Task.CompletedTask);
+
             await CreateJob().ExecuteAsync(ctx, CancellationToken.None);
 
             payment.Status.Should().Be(PaymentStatus.Expired);
             _paymentRepo.Verify(r => r.UpdateAsync(payment, It.IsAny<CancellationToken>()), Times.Once);
-            _broker.Verify(b => b.PublishAsync(It.Is<PaymentExpired>(msg => msg.OrderId == 10)), Times.Once);
+            _outboxWriter.Verify(w => w.EnqueueAsync(It.Is<PaymentExpired>(msg => msg.OrderId == 10), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()), Times.Once);
+            txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
             ctx.Outcome.Should().BeOfType<JobOutcome.Success>();
         }
 
