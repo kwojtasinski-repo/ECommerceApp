@@ -1,3 +1,4 @@
+using ECommerceApp.Application.Sales.Payments;
 using ECommerceApp.Domain.Sales.Payments;
 using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Sales.Payments.Repositories;
@@ -18,6 +19,7 @@ namespace ECommerceApp.Infrastructure.Sales.Payments
 
             services.AddScoped<IDbContextMigrator, DbContextMigrator<PaymentsDbContext>>();
             services.AddScoped<IPaymentRepository, PaymentRepository>();
+            services.AddScoped<IPaymentsUnitOfWork, PaymentsUnitOfWork>();
 
             return services;
         }

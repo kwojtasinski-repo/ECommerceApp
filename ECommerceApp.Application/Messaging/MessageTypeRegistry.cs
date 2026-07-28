@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using ECommerceApp.Application.Catalog.Products.Messages;
+using ECommerceApp.Application.Sales.Payments.Messages;
 
 namespace ECommerceApp.Application.Messaging
 {
@@ -24,6 +25,7 @@ namespace ECommerceApp.Application.Messaging
             Register(typeof(ProductUpdated), "catalog.product.updated");
             Register(typeof(ProductPublished), "catalog.product.published");
             Register(typeof(ProductUnpublished), "catalog.product.unpublished");
+            Register(typeof(PaymentConfirmed), "payments.payment.confirmed");
         }
 
         internal static void Register(Type messageType, string key)

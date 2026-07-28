@@ -1,4 +1,5 @@
 using ECommerceApp.Application.Messaging;
+using ECommerceApp.Application.Sales.Payments;
 using ECommerceApp.Application.Sales.Payments.DTOs;
 using ECommerceApp.Application.Sales.Payments.Messages;
 using ECommerceApp.Application.Sales.Payments.ViewModels;
@@ -14,12 +15,14 @@ namespace ECommerceApp.Application.Sales.Payments.Services
     internal sealed class PaymentService : IPaymentService
     {
         private readonly IPaymentRepository _paymentRepo;
-        private readonly IMessageBroker _broker;
+        private readonly IPaymentsUnitOfWork _unitOfWork;
+        private readonly IOutboxWriter _outboxWriter;
 
-        public PaymentService(IPaymentRepository paymentRepo, IMessageBroker broker)
+        public PaymentService(IPaymentRepository paymentRepo, IPaymentsUnitOfWork unitOfWork, IOutboxWriter outboxWriter)
         {
             _paymentRepo = paymentRepo;
-            _broker = broker;
+            _unitOfWork = unitOfWork;
+            _outboxWriter = outboxWriter;
         }
 
         public async Task<PaymentDetailsVm> GetByIdAsync(int paymentId, CancellationToken ct = default)
@@ -82,13 +85,18 @@ namespace ECommerceApp.Application.Sales.Payments.Services
                 return PaymentOperationResult.AlreadyCancelled;
 
             var @event = payment.Confirm(dto.TransactionRef);
-            await _paymentRepo.UpdateAsync(payment, ct);
 
-            await _broker.PublishAsync(new PaymentConfirmed(
-                @event.PaymentId,
-                @event.OrderId,
-                System.Array.Empty<PaymentConfirmedItem>(),
-                @event.OccurredAt));
+            var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+            await using (transaction)
+            {
+                await _paymentRepo.UpdateAsync(payment, ct);
+                await _outboxWriter.EnqueueAsync(new PaymentConfirmed(
+                    @event.PaymentId,
+                    @event.OrderId,
+                    System.Array.Empty<PaymentConfirmedItem>(),
+                    @event.OccurredAt), transaction, CancellationToken.None);
+                await transaction.CommitAsync(CancellationToken.None);
+            }
 
             return PaymentOperationResult.Success;
         }
