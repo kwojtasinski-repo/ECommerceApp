@@ -1,5 +1,5 @@
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using ECommerceApp.Application.Catalog.Products.Messages;
 
 namespace ECommerceApp.Application.Messaging
@@ -10,8 +10,12 @@ namespace ECommerceApp.Application.Messaging
     /// </summary>
     public static class MessageTypeRegistry
     {
-        private static readonly Dictionary<Type, string> KeysByType = new();
-        private static readonly Dictionary<string, Type> TypesByKey = new();
+        // ConcurrentDictionary: tests call Register(...) at run time (see MessageTypeRegistryTests,
+        // OutboxDispatcherTests) while xUnit may run other test classes' KeyFor/TypeFor lookups
+        // concurrently on other threads. A plain Dictionary is not thread-safe for concurrent
+        // read/write and would risk corruption or spurious exceptions under parallel test execution.
+        private static readonly ConcurrentDictionary<Type, string> KeysByType = new();
+        private static readonly ConcurrentDictionary<string, Type> TypesByKey = new();
 
         static MessageTypeRegistry()
         {
@@ -24,8 +28,19 @@ namespace ECommerceApp.Application.Messaging
 
         internal static void Register(Type messageType, string key)
         {
-            KeysByType.Add(messageType, key);
-            TypesByKey.Add(key, messageType);
+            if (!KeysByType.TryAdd(messageType, key))
+            {
+                throw new ArgumentException(
+                    $"Message type '{messageType.FullName}' is already registered in {nameof(MessageTypeRegistry)}.",
+                    nameof(messageType));
+            }
+
+            if (!TypesByKey.TryAdd(key, messageType))
+            {
+                throw new ArgumentException(
+                    $"Outbox message type key '{key}' is already registered in {nameof(MessageTypeRegistry)}.",
+                    nameof(key));
+            }
         }
 
         public static string KeyFor(Type messageType)

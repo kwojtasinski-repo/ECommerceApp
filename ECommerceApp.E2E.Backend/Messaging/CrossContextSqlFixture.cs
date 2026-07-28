@@ -2,7 +2,7 @@ using System.Threading.Tasks;
 using Testcontainers.MsSql;
 using Xunit;
 
-namespace ECommerceApp.IntegrationTests.Messaging
+namespace ECommerceApp.E2E.Backend.Messaging
 {
     /// <summary>
     /// E2E fixture: spins up one ephemeral, isolated SQL Server container (via Testcontainers)
@@ -14,12 +14,13 @@ namespace ECommerceApp.IntegrationTests.Messaging
     /// Needed because <c>CrossContextTransactionScope</c> hardcodes <c>UseSqlServer(...)</c> and its
     /// commit/rollback proof depends on real ADO.NET connection/transaction sharing
     /// (<c>OpenConnectionAsync</c>/<c>GetDbConnection</c>/<c>UseTransaction</c>) — none of which EF
-    /// Core's InMemory provider (used by every other, non-E2E integration test in this suite) can
-    /// exercise. This is what distinguishes it as an E2E test rather than a regular integration test:
-    /// it runs against a real database engine, not a fake/in-memory one.
+    /// Core's InMemory provider can exercise. Deliberately a bare container with no DI host (unlike
+    /// <see cref="Infrastructure.MsSqlE2EFixture"/>): <see cref="CrossContextTransactionScopeE2ETests"/>
+    /// constructs <c>DbContext</c> instances directly against the container's connection string,
+    /// bypassing DI entirely — see <c>CrossContextTransactionScope.BeginAsync</c>'s XML doc.
     /// </para>
     /// </summary>
-    public sealed class MsSqlE2EFixture : IAsyncLifetime
+    public sealed class CrossContextSqlFixture : IAsyncLifetime
     {
         private readonly MsSqlContainer _container = new MsSqlBuilder().Build();
 
@@ -31,7 +32,7 @@ namespace ECommerceApp.IntegrationTests.Messaging
     }
 
     [CollectionDefinition("CrossContextSqlServer")]
-    public sealed class CrossContextSqlServerCollection : ICollectionFixture<MsSqlE2EFixture>
+    public sealed class CrossContextSqlServerCollection : ICollectionFixture<CrossContextSqlFixture>
     {
     }
 }

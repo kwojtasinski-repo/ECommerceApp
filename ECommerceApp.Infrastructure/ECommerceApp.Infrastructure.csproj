@@ -47,12 +47,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Needed so ECommerceApp.IntegrationTests/Messaging/CrossContextTransactionScopeE2ETests.cs can
+    <!-- Needed by OutboxPollerIntegrationTests and other IntegrationTests that reach internal types
+         like IMessagingDbContext directly. -->
+    <InternalsVisibleTo Include="ECommerceApp.IntegrationTests" />
+    <!-- Needed so ECommerceApp.E2E.Backend/Messaging/CrossContextTransactionScopeE2ETests.cs can
          construct the internal MessagingDbContext/TimeManagementDbContext types directly (bypassing
          BcWebApplicationFactory's InMemory swap, which cannot exercise real connection/transaction
          sharing) to prove CrossContextTransactionScope's commit/rollback semantics against a real
          relational connection. -->
-    <InternalsVisibleTo Include="ECommerceApp.IntegrationTests" />
+    <InternalsVisibleTo Include="ECommerceApp.E2E.Backend" />
     <!-- OutboxDispatcherTests unit-tests the internal OutboxDispatcher class directly with mocked
          IModuleClient/IOutboxRepository. -->
     <InternalsVisibleTo Include="ECommerceApp.UnitTests" />

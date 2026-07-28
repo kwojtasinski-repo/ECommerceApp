@@ -10,12 +10,11 @@ using System;
 using System.Threading.Tasks;
 using Xunit;
 
-namespace ECommerceApp.IntegrationTests.Messaging
+namespace ECommerceApp.E2E.Backend.Messaging
 {
     /// <summary>
-    /// E2E test — the only test class in this suite that runs against a real database engine
-    /// instead of EF Core's InMemory provider (see <see cref="MsSqlE2EFixture"/>). Everything else
-    /// under <c>ECommerceApp.IntegrationTests</c> is a regular (InMemory-backed) integration test.
+    /// E2E test — runs against a real database engine instead of EF Core's InMemory provider (see
+    /// <see cref="CrossContextSqlFixture"/>).
     /// <para>
     /// Correctness proof for <see cref="CrossContextTransactionScope"/> — the entire outbox-atomicity
     /// claim rests on this: a rollback must undo writes made through BOTH the primary and secondary
@@ -23,7 +22,7 @@ namespace ECommerceApp.IntegrationTests.Messaging
     /// physical ADO.NET connection/transaction.
     /// </para>
     /// <para>
-    /// Runs against a real, ephemeral SQL Server container (<see cref="MsSqlE2EFixture"/>, via
+    /// Runs against a real, ephemeral SQL Server container (<see cref="CrossContextSqlFixture"/>, via
     /// Testcontainers) because <see cref="CrossContextTransactionScope.CreateSecondaryContext{TSecondaryContext}"/>
     /// hardcodes <c>UseSqlServer(...)</c> per this phase's design (every BC's <c>DbContext</c> points at
     /// one physical SQL Server database, split by schema) — InMemory has no real
@@ -35,9 +34,9 @@ namespace ECommerceApp.IntegrationTests.Messaging
     [Collection("CrossContextSqlServer")]
     public class CrossContextTransactionScopeE2ETests : IAsyncLifetime
     {
-        private readonly MsSqlE2EFixture _fixture;
+        private readonly CrossContextSqlFixture _fixture;
 
-        public CrossContextTransactionScopeE2ETests(MsSqlE2EFixture fixture)
+        public CrossContextTransactionScopeE2ETests(CrossContextSqlFixture fixture)
         {
             _fixture = fixture;
         }
