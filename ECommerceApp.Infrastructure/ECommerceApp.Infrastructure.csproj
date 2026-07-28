@@ -34,6 +34,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="10.0.7" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="10.0.7" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.7" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.7" />
   </ItemGroup>
 
@@ -43,6 +44,18 @@
 
   <ItemGroup>
     <Folder Include="Supporting\Communication\Adapters\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Needed so ECommerceApp.IntegrationTests/Messaging/CrossContextTransactionScopeE2ETests.cs can
+         construct the internal MessagingDbContext/TimeManagementDbContext types directly (bypassing
+         BcWebApplicationFactory's InMemory swap, which cannot exercise real connection/transaction
+         sharing) to prove CrossContextTransactionScope's commit/rollback semantics against a real
+         relational connection. -->
+    <InternalsVisibleTo Include="ECommerceApp.IntegrationTests" />
+    <!-- OutboxDispatcherTests unit-tests the internal OutboxDispatcher class directly with mocked
+         IModuleClient/IOutboxRepository. -->
+    <InternalsVisibleTo Include="ECommerceApp.UnitTests" />
   </ItemGroup>
 
 </Project>

@@ -5,6 +5,7 @@ using ECommerceApp.Application.Constants;
 using ECommerceApp.Application.Exceptions;
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Messaging;
+using ECommerceApp.Application.Catalog.Products;
 using ECommerceApp.Domain.Catalog.Products;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
@@ -26,7 +27,8 @@ namespace ECommerceApp.Application.Catalog.Products.Services
         private readonly ICategoryRepository _categoryRepo;
         private readonly IProductTagRepository _tagRepo;
         private readonly IImageUrlBuilder _urlBuilder;
-        private readonly IMessageBroker _broker;
+        private readonly ICatalogUnitOfWork _unitOfWork;
+        private readonly IOutboxWriter _outboxWriter;
         private readonly IMemoryCache _cache;
         private readonly CacheOptions _cacheOptions;
 
@@ -35,7 +37,8 @@ namespace ECommerceApp.Application.Catalog.Products.Services
             ICategoryRepository categoryRepo,
             IProductTagRepository tagRepo,
             IImageUrlBuilder urlBuilder,
-            IMessageBroker broker,
+            ICatalogUnitOfWork unitOfWork,
+            IOutboxWriter outboxWriter,
             IMemoryCache cache,
             IOptions<CacheOptions> cacheOptions)
         {
@@ -43,7 +46,8 @@ namespace ECommerceApp.Application.Catalog.Products.Services
             _categoryRepo = categoryRepo;
             _tagRepo = tagRepo;
             _urlBuilder = urlBuilder;
-            _broker = broker;
+            _unitOfWork = unitOfWork;
+            _outboxWriter = outboxWriter;
             _cache = cache;
             _cacheOptions = cacheOptions.Value;
         }
@@ -89,8 +93,13 @@ namespace ECommerceApp.Application.Catalog.Products.Services
             if (dto.TagIds is not null)
                 product.ReplaceTags(dto.TagIds.Select(id => new TagId(id)));
 
-            await _productRepo.UpdateAsync(product);
-            await _broker.PublishAsync(new ProductUpdated(product.Id.Value, DateTime.UtcNow));
+            var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+            await using (transaction)
+            {
+                await _productRepo.UpdateAsync(product);
+                await _outboxWriter.EnqueueAsync(new ProductUpdated(product.Id.Value, DateTime.UtcNow), transaction, CancellationToken.None);
+                await transaction.CommitAsync(CancellationToken.None);
+            }
             return true;
         }
 
@@ -209,8 +218,13 @@ namespace ECommerceApp.Application.Catalog.Products.Services
                     ErrorCode.Create("productNotFound", ErrorParameter.Create("id", id)));
 
             product.Publish();
-            await _productRepo.UpdateAsync(product);
-            await _broker.PublishAsync(new ProductPublished(product.Id.Value, product.Name.Value, false, DateTime.UtcNow));
+            var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+            await using (transaction)
+            {
+                await _productRepo.UpdateAsync(product);
+                await _outboxWriter.EnqueueAsync(new ProductPublished(product.Id.Value, product.Name.Value, false, DateTime.UtcNow), transaction, CancellationToken.None);
+                await transaction.CommitAsync(CancellationToken.None);
+            }
         }
 
         public async Task UnpublishProduct(int id)
@@ -222,8 +236,13 @@ namespace ECommerceApp.Application.Catalog.Products.Services
                     ErrorCode.Create("productNotFound", ErrorParameter.Create("id", id)));
 
             var @event = product.Unpublish(Domain.Catalog.Products.UnpublishReason.ManualReview);
-            await _productRepo.UpdateAsync(product);
-            await _broker.PublishAsync(new ProductUnpublished(product.Id.Value, @event.Reason, DateTime.UtcNow));
+            var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+            await using (transaction)
+            {
+                await _productRepo.UpdateAsync(product);
+                await _outboxWriter.EnqueueAsync(new ProductUnpublished(product.Id.Value, @event.Reason, DateTime.UtcNow), transaction, CancellationToken.None);
+                await transaction.CommitAsync(CancellationToken.None);
+            }
         }
 
         public async Task<bool> ProductExists(int id)

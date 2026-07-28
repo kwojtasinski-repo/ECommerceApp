@@ -26,7 +26,11 @@ namespace ECommerceApp.Infrastructure.Messaging
 
             foreach (var handler in handlers)
             {
-                await ((dynamic)handler).HandleAsync((dynamic)message);
+                var method = handlerType.GetMethod(nameof(IMessageHandler<IMessage>.HandleAsync));
+                if (method is null)
+                    continue;
+
+                await (Task)method.Invoke(handler, new object[] { message, default(CancellationToken) })!;
                 dispatched = true;
             }
 

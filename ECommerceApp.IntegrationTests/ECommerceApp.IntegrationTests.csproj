@@ -18,6 +18,12 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <!-- Real SQL Server for CrossContextTransactionScopeE2ETests / OutboxPollerIntegrationTests /
+         ProductServiceOutboxIntegrationTests — these prove real ADO.NET connection/transaction-sharing
+         behavior that EF Core's InMemory provider (used by every other integration test via
+         BcWebApplicationFactory) cannot exercise at all. Testcontainers spins up an ephemeral, isolated
+         SQL Server container per test run — never touches the app's real/shared database. -->
+    <PackageReference Include="Testcontainers.MsSql" Version="4.8.0" />
   </ItemGroup>
 
   <ItemGroup>

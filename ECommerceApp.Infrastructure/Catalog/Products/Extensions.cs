@@ -1,6 +1,7 @@
 using ECommerceApp.Domain.Catalog.Products;
 using ECommerceApp.Infrastructure.Catalog.Products.Repositories;
 using ECommerceApp.Infrastructure.Database;
+using ECommerceApp.Application.Catalog.Products;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +20,8 @@ namespace ECommerceApp.Infrastructure.Catalog.Products
             services.AddScoped<ICatalogDbContext>(sp => sp.GetRequiredService<CatalogDbContext>());
 
             services.AddScoped<IDbContextMigrator, DbContextMigrator<CatalogDbContext>>();
+
+            services.AddScoped<ICatalogUnitOfWork, CatalogUnitOfWork>();
 
             return services
                 .AddScoped<IProductRepository, ProductRepository>()
