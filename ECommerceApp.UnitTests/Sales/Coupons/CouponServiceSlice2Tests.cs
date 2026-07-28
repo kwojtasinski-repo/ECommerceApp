@@ -31,7 +31,8 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         private readonly Mock<ICouponUsedRepository> _couponUsed;
         private readonly Mock<ICouponApplicationRecordRepository> _applicationRecords;
         private readonly Mock<IModuleClient> _moduleClient;
-        private readonly Mock<IMessageBroker> _broker;
+        private readonly Mock<ICouponsUnitOfWork> _unitOfWork;
+        private readonly Mock<IOutboxWriter> _outboxWriter;
         private readonly Mock<ICouponRuleRegistry> _ruleRegistry;
         private readonly Mock<ISpecialEventCache> _specialEventCache;
         private readonly Mock<IRuntimeCouponSource> _runtimeCouponSource;
@@ -45,7 +46,8 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             _couponUsed = new Mock<ICouponUsedRepository>();
             _applicationRecords = new Mock<ICouponApplicationRecordRepository>();
             _moduleClient = new Mock<IModuleClient>();
-            _broker = new Mock<IMessageBroker>();
+            _unitOfWork = new Mock<ICouponsUnitOfWork>();
+            _outboxWriter = new Mock<IOutboxWriter>();
             _ruleRegistry = new Mock<ICouponRuleRegistry>();
             _specialEventCache = new Mock<ISpecialEventCache>();
             _runtimeCouponSource = new Mock<IRuntimeCouponSource>();
@@ -351,17 +353,8 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
 
             result.Should().Be(CouponApplyResult.Applied);
             _pipeline.Verify(p => p.EvaluateAsync(It.IsAny<IReadOnlyList<CouponRuleDefinition>>(), context, It.IsAny<CancellationToken>()), Times.Once);
-            _broker.Verify(b => b.PublishAsync(It.Is<IMessage[]>(m =>
-                m.Length == 2 &&
-                m[0].GetType() == typeof(CouponApplied) &&
-                ((CouponApplied)m[0]).OrderId == 99 &&
-                ((CouponApplied)m[0]).CouponUsedId == 7 &&
-                m[1].GetType() == typeof(OrderPriceAdjusted) &&
-                ((OrderPriceAdjusted)m[1]).OrderId == 99 &&
-                ((OrderPriceAdjusted)m[1]).NewPrice == 170m &&
-                ((OrderPriceAdjusted)m[1]).Delta == -30m &&
-                ((OrderPriceAdjusted)m[1]).AdjustmentType == "coupon" &&
-                ((OrderPriceAdjusted)m[1]).ReferenceId == 7)), Times.Once);
+            _outboxWriter.Verify(o => o.EnqueueAsync(It.Is<IMessage>(m => m.GetType() == typeof(CouponApplied) && ((CouponApplied)m).OrderId == 99 && ((CouponApplied)m).CouponUsedId == 7), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()), Times.Once);
+            _outboxWriter.Verify(o => o.EnqueueAsync(It.Is<IMessage>(m => m.GetType() == typeof(OrderPriceAdjusted) && ((OrderPriceAdjusted)m).OrderId == 99 && ((OrderPriceAdjusted)m).NewPrice == 170m && ((OrderPriceAdjusted)m).Delta == -30m && ((OrderPriceAdjusted)m).AdjustmentType == "coupon" && ((OrderPriceAdjusted)m).ReferenceId == 7), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -379,7 +372,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
 
             result.Should().Be(CouponApplyResult.RulesNotSatisfied);
             _couponUsed.Verify(r => r.AddAsync(It.IsAny<CouponUsed>(), It.IsAny<CancellationToken>()), Times.Never);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -406,7 +399,12 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
         // ── helper ────────────────────────────────────────────────────────────
 
         private ICouponService CreateSlice1Service()
-            => new CouponService(_coupons.Object, _couponUsed.Object, _moduleClient.Object, _broker.Object, _scopeTargets.Object, _pipeline.Object, _options, _applicationRecords.Object);
+        {
+            var txMock = new Mock<IOutboxTransaction>();
+            txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(txMock.Object);
+            return new CouponService(_coupons.Object, _couponUsed.Object, _moduleClient.Object, _unitOfWork.Object, _outboxWriter.Object, _scopeTargets.Object, _pipeline.Object, _options, _applicationRecords.Object);
+        }
 
         // ══════════════════════════════════════════════════════════════════════
         // SimulateCouponAsync — runs rule pipeline without committing
@@ -505,7 +503,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
 
             result.Should().Be(CouponApplyResult.NoDiscountProduced);
             _pipeline.Verify(p => p.EvaluateAsync(It.IsAny<IReadOnlyList<CouponRuleDefinition>>(), It.IsAny<CouponEvaluationContext>(), It.IsAny<CancellationToken>()), Times.Never);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -535,11 +533,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
             var result = await CreateSlice1Service().ApplyCouponAsync("SAVE15", context, TestContext.Current.CancellationToken);
 
             result.Should().Be(CouponApplyResult.Applied);
-            _broker.Verify(b => b.PublishAsync(It.Is<IMessage[]>(m =>
-                m.Length == 2 &&
-                m[1].GetType() == typeof(OrderPriceAdjusted) &&
-                ((OrderPriceAdjusted)m[1]).NewPrice == 0m &&
-                ((OrderPriceAdjusted)m[1]).Delta == -50m)), Times.Once);
+            _outboxWriter.Verify(o => o.EnqueueAsync(It.Is<IMessage>(m => m.GetType() == typeof(OrderPriceAdjusted) && ((OrderPriceAdjusted)m).NewPrice == 0m && ((OrderPriceAdjusted)m).Delta == -50m), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()), Times.Once);
             _applicationRecords.Verify(r => r.AddAsync(
                 It.Is<CouponApplicationRecord>(ar => ar.Reduction == 50m),
                 It.IsAny<CancellationToken>()), Times.Once);
@@ -567,7 +561,7 @@ namespace ECommerceApp.UnitTests.Sales.Coupons
 
             result.Should().Be(CouponApplyResult.RulesNotSatisfied);
             _pipeline.Verify(p => p.EvaluateAsync(It.IsAny<IReadOnlyList<CouponRuleDefinition>>(), It.IsAny<CouponEvaluationContext>(), It.IsAny<CancellationToken>()), Times.Never);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
     }
 }

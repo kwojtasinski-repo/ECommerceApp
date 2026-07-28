@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using ECommerceApp.Application.Catalog.Products.Messages;
+using ECommerceApp.Application.Sales.Coupons.Messages;
 using ECommerceApp.Application.Sales.Payments.Messages;
 
 namespace ECommerceApp.Application.Messaging
@@ -27,6 +28,9 @@ namespace ECommerceApp.Application.Messaging
             Register(typeof(ProductUnpublished), "catalog.product.unpublished");
             Register(typeof(PaymentConfirmed), "payments.payment.confirmed");
             Register(typeof(PaymentExpired), "payments.payment.expired");
+            Register(typeof(CouponApplied), "coupons.coupon.applied");
+            Register(typeof(OrderPriceAdjusted), "coupons.order-price.adjusted");
+            Register(typeof(CouponRemovedFromOrder), "coupons.coupon.removed-from-order");
         }
 
         internal static void Register(Type messageType, string key)

@@ -1,4 +1,5 @@
 using ECommerceApp.Application.Sales.Coupons.Contracts;
+using ECommerceApp.Application.Sales.Coupons;
 using ECommerceApp.Domain.Sales.Coupons;
 using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Sales.Coupons.Adapters;
@@ -28,6 +29,7 @@ namespace ECommerceApp.Infrastructure.Sales.Coupons
             services.AddScoped<ISpecialEventCache, SpecialEventCache>();
             services.AddScoped<IRuntimeCouponSource, NullRuntimeCouponSource>();
             services.AddScoped<IScopeTargetRepository, ScopeTargetRepository>();
+            services.AddScoped<ICouponsUnitOfWork, CouponsUnitOfWork>();
 
             return services;
         }

@@ -19,7 +19,8 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
         private readonly ICouponRepository _coupons;
         private readonly ICouponUsedRepository _couponUsed;
         private readonly IModuleClient _moduleClient;
-        private readonly IMessageBroker _broker;
+        private readonly IOutboxWriter _outboxWriter;
+        private readonly ICouponsUnitOfWork _unitOfWork;
         private readonly IScopeTargetRepository _scopeTargets;
         private readonly ICouponRulePipeline _pipeline;
         private readonly CouponsOptions _options;
@@ -29,7 +30,8 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
             ICouponRepository coupons,
             ICouponUsedRepository couponUsed,
             IModuleClient moduleClient,
-            IMessageBroker broker,
+            ICouponsUnitOfWork unitOfWork,
+            IOutboxWriter outboxWriter,
             IScopeTargetRepository scopeTargets,
             ICouponRulePipeline pipeline,
             CouponsOptions options,
@@ -38,7 +40,8 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
             _coupons = coupons;
             _couponUsed = couponUsed;
             _moduleClient = moduleClient;
-            _broker = broker;
+            _unitOfWork = unitOfWork;
+            _outboxWriter = outboxWriter;
             _scopeTargets = scopeTargets;
             _pipeline = pipeline;
             _options = options;
@@ -108,18 +111,24 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
 
             coupon.MarkAsUsed();
             var couponUsed = CouponUsed.CreateForDbCoupon(coupon.Id, context.OrderId, context.UserId);
-            await _couponUsed.AddAsync(couponUsed, ct);
-            await _coupons.UpdateAsync(coupon, ct);
 
-            var discountType = discountRule?.Name ?? "none";
-            var record = CouponApplicationRecord.Create(
-                couponUsed.Id.Value, coupon.Code.Value, discountType,
-                discountValue, context.OriginalTotal, actualReduction);
-            await _applicationRecords.AddAsync(record, ct);
+            var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+            await using (transaction)
+            {
+                await _couponUsed.AddAsync(couponUsed, ct);
+                await _coupons.UpdateAsync(coupon, ct);
 
-            await _broker.PublishAsync(
-                new CouponApplied(context.OrderId, couponUsed.Id.Value, 0),
-                new OrderPriceAdjusted(context.OrderId, effectivePrice - actualReduction, -actualReduction, "coupon", couponUsed.Id.Value));
+                var discountType = discountRule?.Name ?? "none";
+                var record = CouponApplicationRecord.Create(
+                    couponUsed.Id.Value, coupon.Code.Value, discountType,
+                    discountValue, context.OriginalTotal, actualReduction);
+                await _applicationRecords.AddAsync(record, ct);
+
+                await _outboxWriter.EnqueueAsync(new CouponApplied(context.OrderId, couponUsed.Id.Value, 0), transaction, CancellationToken.None);
+                await _outboxWriter.EnqueueAsync(new OrderPriceAdjusted(context.OrderId, effectivePrice - actualReduction, -actualReduction, "coupon", couponUsed.Id.Value), transaction, CancellationToken.None);
+
+                await transaction.CommitAsync(CancellationToken.None);
+            }
 
             return CouponApplyResult.Applied;
         }
@@ -132,9 +141,15 @@ namespace ECommerceApp.Application.Sales.Coupons.Services
 
             var coupon = await _coupons.GetByIdAsync(couponUsed.CouponId.Value, ct);
             coupon.Release();
-            await _couponUsed.DeleteAsync(couponUsed, ct);
-            await _coupons.UpdateAsync(coupon, ct);
-            await _broker.PublishAsync(new CouponRemovedFromOrder(orderId));
+
+            var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+            await using (transaction)
+            {
+                await _couponUsed.DeleteAsync(couponUsed, ct);
+                await _coupons.UpdateAsync(coupon, ct);
+                await _outboxWriter.EnqueueAsync(new CouponRemovedFromOrder(orderId), transaction, CancellationToken.None);
+                await transaction.CommitAsync(CancellationToken.None);
+            }
             return CouponRemoveResult.Removed;
         }
 
