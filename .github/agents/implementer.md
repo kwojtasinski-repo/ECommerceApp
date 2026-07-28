@@ -145,6 +145,8 @@ Checks to run:
 | 4   | Security — hardcoded secrets, `[AllowAnonymous]` without justification, raw `User.Claims`, raw SQL? | **BLOCKS MERGE** → surface immediately |
 | 5   | Code style — missing braces, file-scoped namespaces, `.Result`/`.Wait()`                            | **Advisory** — include in report       |
 | 6   | Test coverage — behavioral change without test update?                                              | **Advisory** — include in report       |
+| 7   | Service Locator — `IServiceProvider` injected just to call `GetService`/`GetRequiredService` instead of constructor injection? (see `dotnet.instructions.md` §13 for the one documented exception) | **Advisory** — include in report       |
+| 8   | Testcontainers placement — new test spins up Testcontainers but lives outside `ECommerceApp.E2E.Backend`? | **Advisory** — include in report       |
 
 **On BLOCKS MERGE:** Output the **BLOCKS MERGE report** (see below) and STOP. Do NOT auto-fix.
 **On Advisory only:** Include advisories in the APPROVED report and continue to HITL 2.

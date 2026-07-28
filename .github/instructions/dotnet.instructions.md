@@ -157,12 +157,18 @@ Unit tests live in `ECommerceApp.UnitTests`, integration tests in `ECommerceApp.
 - Use `TestDatabaseInitializer` / `DatabaseInitializer` for test DB setup and seed data.
 - `PROPER_CUSTOMER_ID` is a shared constant in `BaseTest<T>` — use it when tests require a known valid customer ID.
 
+**E2E test rules:**
+- Any test that spins up **Testcontainers** (a real database engine — SQL Server, etc. — instead of EF Core's InMemory provider) MUST live in `ECommerceApp.E2E.Backend`, never in `ECommerceApp.UnitTests`/`ECommerceApp.IntegrationTests`. Those two projects use InMemory/fake infra only.
+- `ECommerceApp.E2E.Backend` tests run through the same production DI wiring (`Startup` → `AddInfrastructure`) via `SqlServerE2EWebApplicationFactory`, resolving services from a per-test `IServiceScope` (`SqlServerE2ETestBase<T>`) — see existing examples under `ECommerceApp.E2E.Backend/` before adding a new one.
+- Granting a new E2E test access to an `internal` type requires adding `<InternalsVisibleTo Include="ECommerceApp.E2E.Backend" />` to that type's own project (not `IntegrationTests`/`UnitTests`) — check `ECommerceApp.Infrastructure.csproj` for the existing pattern.
+
 ## 13. DI registration
 
 - Application layer services are registered in `ECommerceApp.Application/DependencyInjection.cs`.
 - Infrastructure layer services are registered in `ECommerceApp.Infrastructure/DependencyInjection.cs`.
 - Do NOT register services directly in `Startup.cs` / `Program.cs` — use the extension methods from each layer.
 - Handlers (`CouponHandler`, `PaymentHandler`, `ItemHandler`) are registered as internal implementations behind their interfaces.
+- **Avoid the Service Locator pattern** — do NOT inject `IServiceProvider` into a class just to call `GetService`/`GetRequiredService` for a dependency you could take as a normal constructor parameter instead. Prefer explicit constructor injection everywhere. The one documented exception in this codebase is `CrossContextTransactionScope.CreateSecondaryContext` resolving a secondary `DbContext` from DI when running against EF Core's non-relational InMemory provider (no real connection to share) — that is a narrow, commented infrastructure-internal exception, not a pattern to copy into service/business logic.
 
 ## 14. Security and auth
 

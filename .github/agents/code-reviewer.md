@@ -95,6 +95,7 @@ Any match → mark as **BLOCKS MERGE** with the specific anti-pattern name and f
 1. If behavioral code changed (services, handlers, domain aggregates), verify tests were added/updated.
 2. If no test changes accompany a behavioral change → **Advisory — missing tests**.
 3. Verify test naming follows `Method_Conditions_ExpectedResult` (not the legacy convention).
+4. If a new test spins up Testcontainers (real DB engine, not EF Core InMemory) but lives outside `ECommerceApp.E2E.Backend` → **Advisory — wrong project, see `dotnet.instructions.md` §12 E2E test rules**.
 
 ### 6. Security scan
 
@@ -108,6 +109,7 @@ Any match → mark as **BLOCKS MERGE** with the specific anti-pattern name and f
 1. Braces on all control flow (`if`, `foreach`, `for`, `while`) — even single-line bodies.
 2. No file-scoped namespaces (project convention).
 3. `async`/`await` used correctly — no `.Result` or `.Wait()`.
+4. Service Locator — `IServiceProvider` injected just to call `GetService`/`GetRequiredService` instead of ordinary constructor injection → **Advisory**, unless it matches the one documented exception in `dotnet.instructions.md` §13.
 
 ### 8. Pipeline awareness (when invoked as part of multi-agent pipeline)
 
