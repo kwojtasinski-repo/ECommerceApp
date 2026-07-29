@@ -1,4 +1,5 @@
 using ECommerceApp.Application.Messaging;
+using ECommerceApp.Application.Sales.Fulfillment;
 using ECommerceApp.Application.Sales.Fulfillment.DTOs;
 using ECommerceApp.Application.Sales.Fulfillment.Messages;
 using ECommerceApp.Application.Sales.Fulfillment.Results;
@@ -18,17 +19,24 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
     {
         private readonly Mock<IRefundRepository> _refunds;
         private readonly Mock<IModuleClient> _moduleClient;
-        private readonly Mock<IMessageBroker> _broker;
+        private readonly Mock<IFulfillmentUnitOfWork> _unitOfWork;
+        private readonly Mock<IOutboxWriter> _outboxWriter;
 
         public RefundServiceTests()
         {
             _refunds = new Mock<IRefundRepository>();
             _moduleClient = new Mock<IModuleClient>();
-            _broker = new Mock<IMessageBroker>();
+            _unitOfWork = new Mock<IFulfillmentUnitOfWork>();
+            _outboxWriter = new Mock<IOutboxWriter>();
         }
 
-        private IRefundService CreateService()
-            => new RefundService(_refunds.Object, _moduleClient.Object, _broker.Object);
+        private IRefundService CreateService(Mock<IOutboxTransaction> txMock = null)
+        {
+            txMock ??= new Mock<IOutboxTransaction>();
+            txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(txMock.Object);
+            return new RefundService(_refunds.Object, _moduleClient.Object, _unitOfWork.Object, _outboxWriter.Object);
+        }
 
         private static Refund CreateRequestedRefund(int id = 1, int orderId = 99)
         {
@@ -99,7 +107,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
             var result = await CreateService().ApproveRefundAsync(1, TestContext.Current.CancellationToken);
 
             result.Should().Be(RefundOperationResult.RefundNotFound);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -113,7 +121,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
 
             result.Should().Be(RefundOperationResult.AlreadyProcessed);
             _refunds.Verify(r => r.UpdateAsync(It.IsAny<Refund>(), It.IsAny<CancellationToken>()), Times.Never);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -122,21 +130,24 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
             var refund = CreateRequestedRefund(id: 5, orderId: 99);
             _refunds.Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(refund);
 
-            var result = await CreateService().ApproveRefundAsync(5, TestContext.Current.CancellationToken);
+            var txMock = new Mock<IOutboxTransaction>();
+            var result = await CreateService(txMock).ApproveRefundAsync(5, TestContext.Current.CancellationToken);
 
             result.Should().Be(RefundOperationResult.Success);
             refund.Status.Should().Be(RefundStatus.Approved);
             _refunds.Verify(r => r.UpdateAsync(refund, It.IsAny<CancellationToken>()), Times.Once);
-            _broker.Verify(b => b.PublishAsync(It.Is<IMessage[]>(m =>
-                m.Length == 1 &&
-                m[0].GetType() == typeof(RefundApproved) &&
-                ((RefundApproved)m[0]).RefundId == 5 &&
-                ((RefundApproved)m[0]).OrderId == 99 &&
-                ((RefundApproved)m[0]).Items.Count == 2 &&
-                ((RefundApproved)m[0]).Items[0].ProductId == 10 &&
-                ((RefundApproved)m[0]).Items[0].Quantity == 2 &&
-                ((RefundApproved)m[0]).Items[1].ProductId == 20 &&
-                ((RefundApproved)m[0]).Items[1].Quantity == 1)), Times.Once);
+            _outboxWriter.Verify(w => w.EnqueueAsync(
+                It.Is<RefundApproved>(m =>
+                    m.RefundId == 5 &&
+                    m.OrderId == 99 &&
+                    m.Items.Count == 2 &&
+                    m.Items[0].ProductId == 10 &&
+                    m.Items[0].Quantity == 2 &&
+                    m.Items[1].ProductId == 20 &&
+                    m.Items[1].Quantity == 1),
+                It.IsAny<IOutboxTransaction>(),
+                It.IsAny<CancellationToken>()), Times.Once);
+            txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         // ── RejectRefundAsync ─────────────────────────────────────────────────
@@ -149,7 +160,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
             var result = await CreateService().RejectRefundAsync(1, TestContext.Current.CancellationToken);
 
             result.Should().Be(RefundOperationResult.RefundNotFound);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -163,7 +174,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
 
             result.Should().Be(RefundOperationResult.AlreadyProcessed);
             _refunds.Verify(r => r.UpdateAsync(It.IsAny<Refund>(), It.IsAny<CancellationToken>()), Times.Never);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -177,7 +188,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
 
             result.Should().Be(RefundOperationResult.AlreadyProcessed);
             _refunds.Verify(r => r.UpdateAsync(It.IsAny<Refund>(), It.IsAny<CancellationToken>()), Times.Never);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -186,16 +197,19 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
             var refund = CreateRequestedRefund(id: 5, orderId: 99);
             _refunds.Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(refund);
 
-            var result = await CreateService().RejectRefundAsync(5, TestContext.Current.CancellationToken);
+            var txMock = new Mock<IOutboxTransaction>();
+            var result = await CreateService(txMock).RejectRefundAsync(5, TestContext.Current.CancellationToken);
 
             result.Should().Be(RefundOperationResult.Success);
             refund.Status.Should().Be(RefundStatus.Rejected);
             _refunds.Verify(r => r.UpdateAsync(refund, It.IsAny<CancellationToken>()), Times.Once);
-            _broker.Verify(b => b.PublishAsync(It.Is<IMessage[]>(m =>
-                m.Length == 1 &&
-                m[0].GetType() == typeof(RefundRejected) &&
-                ((RefundRejected)m[0]).RefundId == 5 &&
-                ((RefundRejected)m[0]).OrderId == 99)), Times.Once);
+            _outboxWriter.Verify(w => w.EnqueueAsync(
+                It.Is<RefundRejected>(m =>
+                    m.RefundId == 5 &&
+                    m.OrderId == 99),
+                It.IsAny<IOutboxTransaction>(),
+                It.IsAny<CancellationToken>()), Times.Once);
+            txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         // ── GetRefundAsync ────────────────────────────────────────────────────

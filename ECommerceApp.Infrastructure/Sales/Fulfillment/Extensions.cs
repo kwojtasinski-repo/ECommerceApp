@@ -1,3 +1,4 @@
+using ECommerceApp.Application.Sales.Fulfillment;
 using ECommerceApp.Domain.Sales.Fulfillment;
 using ECommerceApp.Infrastructure.Database;
 using ECommerceApp.Infrastructure.Sales.Fulfillment.Repositories;
@@ -19,6 +20,7 @@ namespace ECommerceApp.Infrastructure.Sales.Fulfillment
             services.AddScoped<IDbContextMigrator, DbContextMigrator<FulfillmentDbContext>>();
             services.AddScoped<IRefundRepository, RefundRepository>();
             services.AddScoped<IShipmentRepository, ShipmentRepository>();
+            services.AddScoped<IFulfillmentUnitOfWork, FulfillmentUnitOfWork>();
 
             return services;
         }

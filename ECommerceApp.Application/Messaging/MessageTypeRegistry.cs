@@ -3,6 +3,8 @@ using System.Collections.Concurrent;
 using ECommerceApp.Application.Catalog.Products.Messages;
 using ECommerceApp.Application.Sales.Coupons.Messages;
 using ECommerceApp.Application.Sales.Payments.Messages;
+using FulfillmentRefundApproved = ECommerceApp.Application.Sales.Fulfillment.Messages.RefundApproved;
+using FulfillmentRefundRejected = ECommerceApp.Application.Sales.Fulfillment.Messages.RefundRejected;
 
 namespace ECommerceApp.Application.Messaging
 {
@@ -31,6 +33,8 @@ namespace ECommerceApp.Application.Messaging
             Register(typeof(CouponApplied), "coupons.coupon.applied");
             Register(typeof(OrderPriceAdjusted), "coupons.order-price.adjusted");
             Register(typeof(CouponRemovedFromOrder), "coupons.coupon.removed-from-order");
+            Register(typeof(FulfillmentRefundApproved), "fulfillment.refund.approved");
+            Register(typeof(FulfillmentRefundRejected), "fulfillment.refund.rejected");
         }
 
         internal static void Register(Type messageType, string key)

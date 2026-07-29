@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ECommerceApp.Application.Messaging;
+using ECommerceApp.Application.Sales.Fulfillment;
 using ECommerceApp.Application.Sales.Fulfillment.DTOs;
 using ECommerceApp.Application.Sales.Fulfillment.Messages;
 using ECommerceApp.Application.Sales.Fulfillment.Results;
@@ -16,16 +17,19 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
     {
         private readonly IRefundRepository _refunds;
         private readonly IModuleClient _moduleClient;
-        private readonly IMessageBroker _broker;
+        private readonly IFulfillmentUnitOfWork _unitOfWork;
+        private readonly IOutboxWriter _outboxWriter;
 
         public RefundService(
             IRefundRepository refunds,
             IModuleClient moduleClient,
-            IMessageBroker broker)
+            IFulfillmentUnitOfWork unitOfWork,
+            IOutboxWriter outboxWriter)
         {
             _refunds = refunds;
             _moduleClient = moduleClient;
-            _broker = broker;
+            _unitOfWork = unitOfWork;
+            _outboxWriter = outboxWriter;
         }
 
         public async Task<RefundRequestResult> RequestRefundAsync(RequestRefundDto dto, CancellationToken ct = default)
@@ -62,17 +66,22 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
             }
 
             refund.Approve();
-            await _refunds.UpdateAsync(refund, ct);
 
             var approvedItems = refund.Items
                 .Select(i => new RefundApprovedItem(i.ProductId, i.Quantity))
                 .ToList();
 
-            await _broker.PublishAsync(new RefundApproved(
-                refund.Id.Value,
-                refund.OrderId,
-                approvedItems,
-                DateTime.UtcNow));
+            var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+            await using (transaction)
+            {
+                await _refunds.UpdateAsync(refund, ct);
+
+                await _outboxWriter.EnqueueAsync(
+                    new RefundApproved(refund.Id.Value, refund.OrderId, approvedItems, DateTime.UtcNow),
+                    transaction,
+                    CancellationToken.None);
+                await transaction.CommitAsync(CancellationToken.None);
+            }
 
             return RefundOperationResult.Success;
         }
@@ -91,12 +100,18 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
             }
 
             refund.Reject();
-            await _refunds.UpdateAsync(refund, ct);
 
-            await _broker.PublishAsync(new RefundRejected(
-                refund.Id.Value,
-                refund.OrderId,
-                DateTime.UtcNow));
+            var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+            await using (transaction)
+            {
+                await _refunds.UpdateAsync(refund, ct);
+
+                await _outboxWriter.EnqueueAsync(
+                    new RefundRejected(refund.Id.Value, refund.OrderId, DateTime.UtcNow),
+                    transaction,
+                    CancellationToken.None);
+                await transaction.CommitAsync(CancellationToken.None);
+            }
 
             return RefundOperationResult.Success;
         }
