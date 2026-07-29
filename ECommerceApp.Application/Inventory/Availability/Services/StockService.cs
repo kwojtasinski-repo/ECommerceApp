@@ -1,3 +1,4 @@
+using ECommerceApp.Application.Inventory.Availability;
 using ECommerceApp.Application.Inventory.Availability.DTOs;
 using ECommerceApp.Application.Inventory.Availability.Handlers;
 using ECommerceApp.Application.Inventory.Availability.Messages;
@@ -20,7 +21,8 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
         private readonly IProductSnapshotRepository _productSnapshotRepo;
         private readonly IPendingStockAdjustmentRepository _pendingAdjustmentRepo;
         private readonly IDeferredJobScheduler _deferredScheduler;
-        private readonly IMessageBroker _broker;
+        private readonly IInventoryUnitOfWork _unitOfWork;
+        private readonly IOutboxWriter _outboxWriter;
         private readonly IStockAuditRepository _auditRepo;
 
         public StockService(
@@ -29,7 +31,8 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             IProductSnapshotRepository productSnapshotRepo,
             IPendingStockAdjustmentRepository pendingAdjustmentRepo,
             IDeferredJobScheduler deferredScheduler,
-            IMessageBroker broker,
+            IInventoryUnitOfWork unitOfWork,
+            IOutboxWriter outboxWriter,
             IStockAuditRepository auditRepo)
         {
             _stockItemRepo = stockItemRepo;
@@ -37,7 +40,8 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             _productSnapshotRepo = productSnapshotRepo;
             _pendingAdjustmentRepo = pendingAdjustmentRepo;
             _deferredScheduler = deferredScheduler;
-            _broker = broker;
+            _unitOfWork = unitOfWork;
+            _outboxWriter = outboxWriter;
             _auditRepo = auditRepo;
         }
 
@@ -79,9 +83,19 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             }
 
             var (stock, _) = StockItem.Create(new StockProductId(productId), new StockQuantity(initialQuantity));
-            await _stockItemRepo.AddAsync(stock, ct);
-            await _auditRepo.AddAsync(StockAuditEntry.Create(productId, StockChangeType.Initialized, 0, stock.AvailableQuantity, null, DateTime.UtcNow), ct);
-            await _broker.PublishAsync(new StockAvailabilityChanged(productId, stock.AvailableQuantity, DateTime.UtcNow));
+
+            var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+            await using (transaction)
+            {
+                await _stockItemRepo.AddAsync(stock, ct);
+                await _auditRepo.AddAsync(StockAuditEntry.Create(productId, StockChangeType.Initialized, 0, stock.AvailableQuantity, null, DateTime.UtcNow), ct);
+                await _outboxWriter.EnqueueAsync(
+                    new StockAvailabilityChanged(productId, stock.AvailableQuantity, DateTime.UtcNow),
+                    transaction,
+                    CancellationToken.None);
+                await transaction.CommitAsync(CancellationToken.None);
+            }
+
             return true;
         }
 
@@ -113,9 +127,18 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
 
                 var reserveBefore = stock.AvailableQuantity;
                 stock.Reserve(dto.Quantity);
-                await _stockItemRepo.UpdateAsync(stock, ct);
-                await _auditRepo.AddAsync(StockAuditEntry.Create(dto.ProductId, StockChangeType.Reserved, reserveBefore, stock.AvailableQuantity, dto.OrderId, DateTime.UtcNow), ct);
-                await _broker.PublishAsync(new StockAvailabilityChanged(dto.ProductId, stock.AvailableQuantity, DateTime.UtcNow));
+
+                var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+                await using (transaction)
+                {
+                    await _stockItemRepo.UpdateAsync(stock, ct);
+                    await _auditRepo.AddAsync(StockAuditEntry.Create(dto.ProductId, StockChangeType.Reserved, reserveBefore, stock.AvailableQuantity, dto.OrderId, DateTime.UtcNow), ct);
+                    await _outboxWriter.EnqueueAsync(
+                        new StockAvailabilityChanged(dto.ProductId, stock.AvailableQuantity, DateTime.UtcNow),
+                        transaction,
+                        CancellationToken.None);
+                    await transaction.CommitAsync(CancellationToken.None);
+                }
             }
 
             var stockHold = StockHold.Create(new StockProductId(dto.ProductId), new ReservationOrderId(dto.OrderId), dto.Quantity, dto.ExpiresAt);
@@ -141,9 +164,18 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
                 {
                     var releaseBefore = stock.AvailableQuantity;
                     stock.Release(quantity);
-                    await _stockItemRepo.UpdateAsync(stock, ct);
-                    await _auditRepo.AddAsync(StockAuditEntry.Create(productId, StockChangeType.Released, releaseBefore, stock.AvailableQuantity, orderId, DateTime.UtcNow), ct);
-                    await _broker.PublishAsync(new StockAvailabilityChanged(productId, stock.AvailableQuantity, DateTime.UtcNow));
+
+                    var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+                    await using (transaction)
+                    {
+                        await _stockItemRepo.UpdateAsync(stock, ct);
+                        await _auditRepo.AddAsync(StockAuditEntry.Create(productId, StockChangeType.Released, releaseBefore, stock.AvailableQuantity, orderId, DateTime.UtcNow), ct);
+                        await _outboxWriter.EnqueueAsync(
+                            new StockAvailabilityChanged(productId, stock.AvailableQuantity, DateTime.UtcNow),
+                            transaction,
+                            CancellationToken.None);
+                        await transaction.CommitAsync(CancellationToken.None);
+                    }
                 }
             }
 
@@ -190,9 +222,18 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
 
             var fulfillBefore = stock.AvailableQuantity;
             stock.Fulfill(quantity);
-            await _stockItemRepo.UpdateAsync(stock, ct);
-            await _auditRepo.AddAsync(StockAuditEntry.Create(productId, StockChangeType.Fulfilled, fulfillBefore, stock.AvailableQuantity, orderId, DateTime.UtcNow), ct);
-            await _broker.PublishAsync(new StockAvailabilityChanged(productId, stock.AvailableQuantity, DateTime.UtcNow));
+
+            var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+            await using (transaction)
+            {
+                await _stockItemRepo.UpdateAsync(stock, ct);
+                await _auditRepo.AddAsync(StockAuditEntry.Create(productId, StockChangeType.Fulfilled, fulfillBefore, stock.AvailableQuantity, orderId, DateTime.UtcNow), ct);
+                await _outboxWriter.EnqueueAsync(
+                    new StockAvailabilityChanged(productId, stock.AvailableQuantity, DateTime.UtcNow),
+                    transaction,
+                    CancellationToken.None);
+                await transaction.CommitAsync(CancellationToken.None);
+            }
 
             var stockHold = await _stockHoldRepo.GetByOrderAndProductAsync(orderId, productId, ct);
             if (stockHold != null)
@@ -214,9 +255,19 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
 
             var returnBefore = stock.AvailableQuantity;
             stock.Return(quantity);
-            await _stockItemRepo.UpdateAsync(stock, ct);
-            await _auditRepo.AddAsync(StockAuditEntry.Create(productId, StockChangeType.Returned, returnBefore, stock.AvailableQuantity, null, DateTime.UtcNow), ct);
-            await _broker.PublishAsync(new StockAvailabilityChanged(productId, stock.AvailableQuantity, DateTime.UtcNow));
+
+            var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+            await using (transaction)
+            {
+                await _stockItemRepo.UpdateAsync(stock, ct);
+                await _auditRepo.AddAsync(StockAuditEntry.Create(productId, StockChangeType.Returned, returnBefore, stock.AvailableQuantity, null, DateTime.UtcNow), ct);
+                await _outboxWriter.EnqueueAsync(
+                    new StockAvailabilityChanged(productId, stock.AvailableQuantity, DateTime.UtcNow),
+                    transaction,
+                    CancellationToken.None);
+                await transaction.CommitAsync(CancellationToken.None);
+            }
+
             return true;
         }
 
@@ -242,9 +293,18 @@ namespace ECommerceApp.Application.Inventory.Availability.Services
             {
                 var before = stock.AvailableQuantity;
                 stock.Release(stockHold.Quantity);
-                await _stockItemRepo.UpdateAsync(stock, ct);
-                await _auditRepo.AddAsync(StockAuditEntry.Create(productId, StockChangeType.Withdrawn, before, stock.AvailableQuantity, orderId, DateTime.UtcNow), ct);
-                await _broker.PublishAsync(new StockAvailabilityChanged(productId, stock.AvailableQuantity, DateTime.UtcNow));
+
+                var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+                await using (transaction)
+                {
+                    await _stockItemRepo.UpdateAsync(stock, ct);
+                    await _auditRepo.AddAsync(StockAuditEntry.Create(productId, StockChangeType.Withdrawn, before, stock.AvailableQuantity, orderId, DateTime.UtcNow), ct);
+                    await _outboxWriter.EnqueueAsync(
+                        new StockAvailabilityChanged(productId, stock.AvailableQuantity, DateTime.UtcNow),
+                        transaction,
+                        CancellationToken.None);
+                    await transaction.CommitAsync(CancellationToken.None);
+                }
             }
 
             await _stockHoldRepo.UpdateAsync(stockHold, ct);

@@ -1,3 +1,4 @@
+using ECommerceApp.Application.Inventory.Availability;
 using ECommerceApp.Application.Inventory.Availability.DTOs;
 using ECommerceApp.Application.Inventory.Availability.Handlers;
 using ECommerceApp.Application.Inventory.Availability.Services;
@@ -22,7 +23,8 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         private readonly Mock<IProductSnapshotRepository> _productSnapshotRepo;
         private readonly Mock<IPendingStockAdjustmentRepository> _pendingAdjustmentRepo;
         private readonly Mock<IDeferredJobScheduler> _deferredScheduler;
-        private readonly Mock<IMessageBroker> _broker;
+        private readonly Mock<IInventoryUnitOfWork> _unitOfWork;
+        private readonly Mock<IOutboxWriter> _outboxWriter;
         private readonly Mock<IStockAuditRepository> _auditRepo;
 
         public StockServiceTests()
@@ -32,8 +34,13 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _productSnapshotRepo = new Mock<IProductSnapshotRepository>();
             _pendingAdjustmentRepo = new Mock<IPendingStockAdjustmentRepository>();
             _deferredScheduler = new Mock<IDeferredJobScheduler>();
-            _broker = new Mock<IMessageBroker>();
+            _unitOfWork = new Mock<IInventoryUnitOfWork>();
+            _outboxWriter = new Mock<IOutboxWriter>();
             _auditRepo = new Mock<IStockAuditRepository>();
+
+            var txMock = new Mock<IOutboxTransaction>();
+            txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(txMock.Object);
         }
 
         private StockService CreateService() => new(
@@ -42,7 +49,8 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _productSnapshotRepo.Object,
             _pendingAdjustmentRepo.Object,
             _deferredScheduler.Object,
-            _broker.Object,
+            _unitOfWork.Object,
+            _outboxWriter.Object,
             _auditRepo.Object);
 
         // ── GetByProductIdAsync

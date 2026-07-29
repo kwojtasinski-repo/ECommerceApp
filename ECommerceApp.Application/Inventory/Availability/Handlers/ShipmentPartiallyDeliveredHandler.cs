@@ -1,3 +1,4 @@
+using ECommerceApp.Application.Inventory.Availability;
 using ECommerceApp.Application.Inventory.Availability.Messages;
 using ECommerceApp.Application.Inventory.Availability.Services;
 using ECommerceApp.Application.Messaging;
@@ -12,12 +13,14 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
     internal sealed class ShipmentPartiallyDeliveredHandler : IMessageHandler<ShipmentPartiallyDelivered>
     {
         private readonly IStockService _stockService;
-        private readonly IMessageBroker _messageBroker;
+        private readonly IInventoryUnitOfWork _unitOfWork;
+        private readonly IOutboxWriter _outboxWriter;
 
-        public ShipmentPartiallyDeliveredHandler(IStockService stockService, IMessageBroker messageBroker)
+        public ShipmentPartiallyDeliveredHandler(IStockService stockService, IInventoryUnitOfWork unitOfWork, IOutboxWriter outboxWriter)
         {
             _stockService = stockService;
-            _messageBroker = messageBroker;
+            _unitOfWork = unitOfWork;
+            _outboxWriter = outboxWriter;
         }
 
         public async Task HandleAsync(ShipmentPartiallyDelivered message, CancellationToken ct = default)
@@ -37,7 +40,17 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
             }
 
             if (failures.Count > 0)
-                await _messageBroker.PublishAsync(new StockReconciliationRequired(message.OrderId, failures, DateTime.UtcNow));
+            {
+                var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+                await using (transaction)
+                {
+                    await _outboxWriter.EnqueueAsync(
+                        new StockReconciliationRequired(message.OrderId, failures, DateTime.UtcNow),
+                        transaction,
+                        CancellationToken.None);
+                    await transaction.CommitAsync(CancellationToken.None);
+                }
+            }
         }
     }
 }

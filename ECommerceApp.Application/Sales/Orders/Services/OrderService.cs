@@ -1,5 +1,6 @@
 using ECommerceApp.Application.Interfaces;
 using ECommerceApp.Application.Messaging;
+using ECommerceApp.Application.Sales.Orders;
 using ECommerceApp.Application.Sales.Orders.Contracts;
 using ECommerceApp.Application.Sales.Orders.DTOs;
 using ECommerceApp.Application.Sales.Orders.Messages;
@@ -22,7 +23,8 @@ namespace ECommerceApp.Application.Sales.Orders.Services
         private readonly IOrderItemRepository _orderItemRepo;
         private readonly ICustomerExistenceChecker _customerChecker;
         private readonly IOrderCustomerResolver _customerResolver;
-        private readonly IMessageBroker _messageBroker;
+        private readonly IOrdersUnitOfWork _unitOfWork;
+        private readonly IOutboxWriter _outboxWriter;
         private readonly IImageUrlBuilder _urlBuilder;
 
         public OrderService(
@@ -30,14 +32,16 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             IOrderItemRepository orderItemRepo,
             ICustomerExistenceChecker customerChecker,
             IOrderCustomerResolver customerResolver,
-            IMessageBroker messageBroker,
+            IOrdersUnitOfWork unitOfWork,
+            IOutboxWriter outboxWriter,
             IImageUrlBuilder urlBuilder)
         {
             _orderRepo = orderRepo;
             _orderItemRepo = orderItemRepo;
             _customerChecker = customerChecker;
             _customerResolver = customerResolver;
-            _messageBroker = messageBroker;
+            _unitOfWork = unitOfWork;
+            _outboxWriter = outboxWriter;
             _urlBuilder = urlBuilder;
         }
 
@@ -63,36 +67,51 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             var customer = await _customerResolver.ResolveAsync(dto.CustomerId, ct);
             var number = OrderNumber.Generate();
             var order = Order.Create(dto.CustomerId, dto.CurrencyId, dto.UserId, number, customer);
-            var orderId = await _orderRepo.AddAsync(order, ct);
-
-            await _orderItemRepo.AssignToOrderAsync(dto.CartItemIds, orderId, ct);
-
-            var orderWithItems = await _orderRepo.GetByIdWithItemsAsync(orderId, ct);
-            orderWithItems!.CalculateCost();
-            await _orderRepo.UpdateAsync(orderWithItems, ct);
 
             var items = cartItems
                 .Select(i => new OrderPlacedItem(i.ItemId.Value, i.Quantity))
                 .ToList();
 
-            var orderPlaced = new OrderPlaced(
-                orderId,
-                items,
-                dto.UserId,
-                DateTime.UtcNow.AddDays(3),
-                DateTime.UtcNow,
-                orderWithItems!.Cost,
-                orderWithItems.CurrencyId);
+            int orderId;
+            var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+            await using (transaction)
+            {
+                orderId = await _orderRepo.AddAsync(order, ct);
 
-            try
-            {
-                await _messageBroker.PublishAsync(orderPlaced);
-            }
-            catch (Exception ex)
-            {
-                await _messageBroker.PublishAsync(
-                    new OrderPlacementFailed(orderId, ex.Message, items, dto.UserId));
-                return PlaceOrderResult.PlacementFailed(orderId);
+                await _orderItemRepo.AssignToOrderAsync(dto.CartItemIds, orderId, ct);
+
+                var orderWithItems = await _orderRepo.GetByIdWithItemsAsync(orderId, ct);
+                orderWithItems!.CalculateCost();
+                await _orderRepo.UpdateAsync(orderWithItems, ct);
+
+                var orderPlaced = new OrderPlaced(
+                    orderId,
+                    items,
+                    dto.UserId,
+                    DateTime.UtcNow.AddDays(3),
+                    DateTime.UtcNow,
+                    orderWithItems.Cost,
+                    orderWithItems.CurrencyId);
+
+                // Preserve the original compensation semantics (publish OrderPlacementFailed if
+                // OrderPlaced can't go out) with a changed meaning post-retrofit: this catch now
+                // fires only on a DB/serialization failure enqueueing the outbox row, not a downstream
+                // handler failure (handlers run later, out of process, via the poller/dispatcher).
+                try
+                {
+                    await _outboxWriter.EnqueueAsync(orderPlaced, transaction, CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    await _outboxWriter.EnqueueAsync(
+                        new OrderPlacementFailed(orderId, ex.Message, items, dto.UserId),
+                        transaction,
+                        CancellationToken.None);
+                    await transaction.CommitAsync(CancellationToken.None);
+                    return PlaceOrderResult.PlacementFailed(orderId);
+                }
+
+                await transaction.CommitAsync(CancellationToken.None);
             }
 
             return PlaceOrderResult.Success(orderId);
@@ -140,7 +159,6 @@ namespace ECommerceApp.Application.Sales.Orders.Services
                 return OrderOperationResult.AlreadyDelivered;
 
             order.Fulfill();
-            await _orderRepo.UpdateAsync(order, ct);
 
             var fulfilledAt = order.Events
                 .Last(e => e.EventType == OrderEventType.OrderFulfilled)
@@ -150,7 +168,17 @@ namespace ECommerceApp.Application.Sales.Orders.Services
                 .Select(i => new OrderShippedItem(i.ItemId.Value, i.Quantity))
                 .ToList();
 
-            await _messageBroker.PublishAsync(new OrderShipped(orderId, items, fulfilledAt));
+            var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+            await using (transaction)
+            {
+                await _orderRepo.UpdateAsync(order, ct);
+                await _outboxWriter.EnqueueAsync(
+                    new OrderShipped(orderId, items, fulfilledAt),
+                    transaction,
+                    CancellationToken.None);
+                await transaction.CommitAsync(CancellationToken.None);
+            }
+
             return OrderOperationResult.Success;
         }
 
@@ -295,9 +323,18 @@ namespace ECommerceApp.Application.Sales.Orders.Services
                 .ToList();
 
             order.Cancel("ManualOperator");
-            await _orderRepo.UpdateAsync(order, ct);
 
-            await _messageBroker.PublishAsync(new OrderCancelled(orderId, items, DateTime.UtcNow));
+            var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+            await using (transaction)
+            {
+                await _orderRepo.UpdateAsync(order, ct);
+                await _outboxWriter.EnqueueAsync(
+                    new OrderCancelled(orderId, items, DateTime.UtcNow),
+                    transaction,
+                    CancellationToken.None);
+                await transaction.CommitAsync(CancellationToken.None);
+            }
+
             return OrderOperationResult.Success;
         }
 
@@ -337,20 +374,29 @@ namespace ECommerceApp.Application.Sales.Orders.Services
             }
 
             order.CalculateCost();
-            var orderId = await _orderRepo.AddAsync(order, ct);
 
             var items = dto.Lines
                 .Select(l => new OrderPlacedItem(l.ProductId, l.Quantity))
                 .ToList();
 
-            await _messageBroker.PublishAsync(new OrderPlaced(
-                orderId,
-                items,
-                dto.UserId,
-                DateTime.UtcNow.AddDays(3),
-                DateTime.UtcNow,
-                order.Cost,
-                dto.CurrencyId));
+            int orderId;
+            var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+            await using (transaction)
+            {
+                orderId = await _orderRepo.AddAsync(order, ct);
+                await _outboxWriter.EnqueueAsync(
+                    new OrderPlaced(
+                        orderId,
+                        items,
+                        dto.UserId,
+                        DateTime.UtcNow.AddDays(3),
+                        DateTime.UtcNow,
+                        order.Cost,
+                        dto.CurrencyId),
+                    transaction,
+                    CancellationToken.None);
+                await transaction.CommitAsync(CancellationToken.None);
+            }
 
             return PlaceOrderResult.Success(orderId);
         }

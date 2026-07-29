@@ -24,6 +24,8 @@ namespace ECommerceApp.Infrastructure.Inventory.Availability
 
             services.AddScoped<IDbContextMigrator, DbContextMigrator<AvailabilityDbContext>>();
 
+            services.AddScoped<IInventoryUnitOfWork, InventoryUnitOfWork>();
+
             return services
                 .AddScoped<IStockItemRepository, StockItemRepository>()
                 .AddScoped<IStockHoldRepository, StockHoldRepository>()

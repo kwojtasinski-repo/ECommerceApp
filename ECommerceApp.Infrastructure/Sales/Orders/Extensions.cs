@@ -1,4 +1,5 @@
 using ECommerceApp.Application.Messaging;
+using ECommerceApp.Application.Sales.Orders;
 using ECommerceApp.Application.Sales.Orders.Contracts;
 using ECommerceApp.Application.Supporting.Communication.Contracts;
 using ECommerceApp.Domain.Sales.Orders;
@@ -22,6 +23,8 @@ namespace ECommerceApp.Infrastructure.Sales.Orders
             services.AddScoped<IOrdersDbContext>(sp => sp.GetRequiredService<OrdersDbContext>());
 
             services.AddScoped<IDbContextMigrator, DbContextMigrator<OrdersDbContext>>();
+
+            services.AddScoped<IOrdersUnitOfWork, OrdersUnitOfWork>();
 
             services.AddScoped<IOrderRepository, OrderRepository>();
             services.AddScoped<IOrderItemRepository, OrderItemRepository>();

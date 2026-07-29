@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Concurrent;
 using ECommerceApp.Application.Catalog.Products.Messages;
+using ECommerceApp.Application.Inventory.Availability.Messages;
 using ECommerceApp.Application.Sales.Coupons.Messages;
 using ECommerceApp.Application.Sales.Fulfillment.Messages;
+using ECommerceApp.Application.Sales.Orders.Messages;
 using ECommerceApp.Application.Sales.Payments.Messages;
 using FulfillmentRefundApproved = ECommerceApp.Application.Sales.Fulfillment.Messages.RefundApproved;
 using FulfillmentRefundRejected = ECommerceApp.Application.Sales.Fulfillment.Messages.RefundRejected;
@@ -40,6 +42,12 @@ namespace ECommerceApp.Application.Messaging
             Register(typeof(ShipmentDelivered), "fulfillment.shipment.delivered");
             Register(typeof(ShipmentFailed), "fulfillment.shipment.failed");
             Register(typeof(ShipmentPartiallyDelivered), "fulfillment.shipment.partially-delivered");
+            Register(typeof(StockAvailabilityChanged), "inventory.stock.availability-changed");
+            Register(typeof(StockReconciliationRequired), "inventory.stock.reconciliation-required");
+            Register(typeof(OrderPlaced), "orders.order.placed");
+            Register(typeof(OrderPlacementFailed), "orders.order.placement-failed");
+            Register(typeof(OrderShipped), "orders.order.shipped");
+            Register(typeof(OrderCancelled), "orders.order.cancelled");
         }
 
         internal static void Register(Type messageType, string key)

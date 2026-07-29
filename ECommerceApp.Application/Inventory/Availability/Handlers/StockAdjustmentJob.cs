@@ -1,3 +1,4 @@
+using ECommerceApp.Application.Inventory.Availability;
 using ECommerceApp.Application.Inventory.Availability.Messages;
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Supporting.TimeManagement;
@@ -17,18 +18,21 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
 
         private readonly IStockItemRepository _stockItemRepo;
         private readonly IPendingStockAdjustmentRepository _pendingAdjustmentRepo;
-        private readonly IMessageBroker _broker;
+        private readonly IInventoryUnitOfWork _unitOfWork;
+        private readonly IOutboxWriter _outboxWriter;
         private readonly IStockAuditRepository _auditRepo;
 
         public StockAdjustmentJob(
             IStockItemRepository stockItemRepo,
             IPendingStockAdjustmentRepository pendingAdjustmentRepo,
-            IMessageBroker broker,
+            IInventoryUnitOfWork unitOfWork,
+            IOutboxWriter outboxWriter,
             IStockAuditRepository auditRepo)
         {
             _stockItemRepo = stockItemRepo;
             _pendingAdjustmentRepo = pendingAdjustmentRepo;
-            _broker = broker;
+            _unitOfWork = unitOfWork;
+            _outboxWriter = outboxWriter;
             _auditRepo = auditRepo;
         }
 
@@ -93,8 +97,24 @@ namespace ECommerceApp.Application.Inventory.Availability.Handlers
             }
 
             await _pendingAdjustmentRepo.DeleteIfVersionMatchesAsync(productId, version, cancellationToken);
-            await _auditRepo.AddAsync(StockAuditEntry.Create(productId, StockChangeType.Adjusted, adjustBefore, stock!.AvailableQuantity, null, DateTime.UtcNow), cancellationToken);
-            await _broker.PublishAsync(new StockAvailabilityChanged(productId, stock.AvailableQuantity, DateTime.UtcNow));
+
+            // Deliberately NOT wrapped in the same transaction as the retry loop above: opening a
+            // CrossContextTransactionScope before the loop would hold a DB transaction open across the
+            // exponential-backoff Task.Delay calls, which is a real risk (long-held locks/connection),
+            // not just style. So the stock quantity update (already committed by the loop's own
+            // UpdateAsync/SaveChangesAsync) and this audit+outbox write are two separate commits — an
+            // acknowledged, narrow atomicity gap for this job specifically (residual-risk exception per
+            // the Phase 3 retrofit plan), not an oversight.
+            var transaction = await _unitOfWork.BeginTransactionAsync(cancellationToken);
+            await using (transaction)
+            {
+                await _auditRepo.AddAsync(StockAuditEntry.Create(productId, StockChangeType.Adjusted, adjustBefore, stock!.AvailableQuantity, null, DateTime.UtcNow), cancellationToken);
+                await _outboxWriter.EnqueueAsync(
+                    new StockAvailabilityChanged(productId, stock.AvailableQuantity, DateTime.UtcNow),
+                    transaction,
+                    cancellationToken);
+                await transaction.CommitAsync(cancellationToken);
+            }
 
             context.ReportSuccess($"Stock adjusted to {pending.NewQuantity} for product {productId}.");
         }
