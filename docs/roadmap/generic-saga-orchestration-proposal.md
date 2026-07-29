@@ -96,6 +96,18 @@ Following that convention:
 
 ### Outbox (prerequisite — workstream 2, unchanged scope from prior estimate)
 
+> **Status update (2026-07-29): retrofit complete, validated PASS.** All 29 call sites across the 12
+> files listed below now go through `IOutboxWriter`/`CrossContextTransactionScope`; `messaging.Outbox`,
+> the generic poller, and the dispatcher are live in production. Full-solution grep for
+> `_messageBroker.PublishAsync(`/`_broker.PublishAsync(` returns zero hits outside `ModuleClient.cs`/
+> `InMemoryMessageBroker.cs`. See `.github/plans/03-phase-outbox-retrofit-callsites-validation.md`
+> history (deleted after PASS per convention; this note is the permanent record) and
+> [`order-placement-compensation-followup.md`](./order-placement-compensation-followup.md) for the
+> `OrderPlacementFailed` compensation-semantics decision made during the retrofit.
+> `IMessageBroker`/`AsyncMessageDispatcher`/`BackgroundMessageDispatcher`/`MessageChannel` were
+> deliberately left in place, unmodified — they're dead-code cleanup candidates for a future, separate,
+> low-risk phase, not addressed here. **Next up: Phase 4 (Inbox / consumer-side idempotency, below).**
+
 - `messaging.Outbox`: `Id`, `MessageType` (assembly-qualified or a registered short type key —
   needs a serialization strategy decision), `Payload` (JSON), `CreatedAt`, `Status`
   (`Pending`/`Dispatched`/`Failed`), `DispatchedAt`, retry count.

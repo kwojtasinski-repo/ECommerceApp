@@ -399,6 +399,69 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
             _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
+        // ── MarkAsPartiallyDeliveredAsync ─────────────────────────────────────
+
+        [Fact]
+        public async Task MarkAsPartiallyDeliveredAsync_ShipmentNotFound_ShouldReturnNotFound()
+        {
+            _shipments.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync((Shipment)null);
+
+            var result = await CreateService().MarkAsPartiallyDeliveredAsync(1, new List<int> { 10 }, TestContext.Current.CancellationToken);
+
+            result.Should().Be(ShipmentOperationResult.NotFound);
+            _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task MarkAsPartiallyDeliveredAsync_PendingShipment_ShouldReturnInvalidStatus()
+        {
+            var shipment = CreateShipment(status: ShipmentStatus.Pending);
+            _shipments.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(shipment);
+
+            var result = await CreateService().MarkAsPartiallyDeliveredAsync(1, new List<int> { 10 }, TestContext.Current.CancellationToken);
+
+            result.Should().Be(ShipmentOperationResult.InvalidStatus);
+            _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task MarkAsPartiallyDeliveredAsync_InTransitShipment_ShouldUpdateAndPublishShipmentPartiallyDeliveredWithSplitItems()
+        {
+            var shipment = CreateShipment(id: 7, orderId: 99, status: ShipmentStatus.InTransit);
+            _shipments.Setup(x => x.GetByIdAsync(7, It.IsAny<CancellationToken>())).ReturnsAsync(shipment);
+
+            var txMock = new Mock<IOutboxTransaction>();
+            var result = await CreateService(txMock).MarkAsPartiallyDeliveredAsync(7, new List<int> { 10 }, TestContext.Current.CancellationToken);
+
+            result.Should().Be(ShipmentOperationResult.Success);
+            shipment.Status.Should().Be(ShipmentStatus.PartiallyDelivered);
+            _shipments.Verify(r => r.UpdateAsync(shipment, It.IsAny<CancellationToken>()), Times.Once);
+            _outboxWriter.Verify(w => w.EnqueueAsync(
+                It.Is<ShipmentPartiallyDelivered>(m =>
+                    m.ShipmentId == 7 &&
+                    m.OrderId == 99 &&
+                    m.DeliveredItems.Count == 1 && m.DeliveredItems[0].ProductId == 10 && m.DeliveredItems[0].Quantity == 2 &&
+                    m.FailedItems.Count == 1 && m.FailedItems[0].ProductId == 20 && m.FailedItems[0].Quantity == 1),
+                It.IsAny<IOutboxTransaction>(),
+                It.IsAny<CancellationToken>()), Times.Once);
+            txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task MarkAsPartiallyDeliveredAsync_NoDeliveredProductIds_ShouldReturnInvalidStatus()
+        {
+            var shipment = CreateShipment(status: ShipmentStatus.InTransit);
+            _shipments.Setup(x => x.GetByIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync(shipment);
+
+            var result = await CreateService().MarkAsPartiallyDeliveredAsync(1, new List<int>(), TestContext.Current.CancellationToken);
+
+            result.Should().Be(ShipmentOperationResult.InvalidStatus);
+            _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+        }
+
         // ── GetShipmentAsync
 
         [Fact]

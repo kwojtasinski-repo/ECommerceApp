@@ -1,6 +1,7 @@
 using ECommerceApp.Application.Inventory.Availability;
 using ECommerceApp.Application.Inventory.Availability.DTOs;
 using ECommerceApp.Application.Inventory.Availability.Handlers;
+using ECommerceApp.Application.Inventory.Availability.Messages;
 using ECommerceApp.Application.Inventory.Availability.Services;
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Application.Supporting.TimeManagement;
@@ -26,6 +27,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
         private readonly Mock<IInventoryUnitOfWork> _unitOfWork;
         private readonly Mock<IOutboxWriter> _outboxWriter;
         private readonly Mock<IStockAuditRepository> _auditRepo;
+        private readonly Mock<IOutboxTransaction> _txMock;
 
         public StockServiceTests()
         {
@@ -38,9 +40,11 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _outboxWriter = new Mock<IOutboxWriter>();
             _auditRepo = new Mock<IStockAuditRepository>();
 
-            var txMock = new Mock<IOutboxTransaction>();
-            txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
-            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(txMock.Object);
+            _txMock = new Mock<IOutboxTransaction>();
+            _txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_txMock.Object);
+            _outboxWriter.Setup(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
         }
 
         private StockService CreateService() => new(
@@ -128,6 +132,11 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
 
             result.Should().BeTrue();
             _stockItemRepo.Verify(r => r.AddAsync(It.Is<StockItem>(s => s.ProductId.Value == 1 && s.Quantity.Value == 20), It.IsAny<CancellationToken>()), Times.Once);
+            _outboxWriter.Verify(w => w.EnqueueAsync(
+                It.Is<StockAvailabilityChanged>(m => m.ProductId == 1 && m.AvailableQuantity == 20),
+                _txMock.Object,
+                It.IsAny<CancellationToken>()), Times.Once);
+            _txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -165,6 +174,11 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 PaymentWindowTimeoutJob.JobTaskName,
                 It.Is<string>(e => e.StartsWith("42:1:3")),
                 dto.ExpiresAt, It.IsAny<CancellationToken>()), Times.Once);
+            _outboxWriter.Verify(w => w.EnqueueAsync(
+                It.Is<StockAvailabilityChanged>(m => m.ProductId == 1 && m.AvailableQuantity == 7),
+                _txMock.Object,
+                It.IsAny<CancellationToken>()), Times.Once);
+            _txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -182,6 +196,8 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             _stockItemRepo.Verify(r => r.GetByProductIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Never);
             _stockHoldRepo.Verify(r => r.AddAsync(It.IsAny<StockHold>(), It.IsAny<CancellationToken>()), Times.Once);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+            _outboxWriter.Verify(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -228,6 +244,11 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             result.Should().BeTrue();
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Once);
             _stockHoldRepo.Verify(r => r.UpdateAsync(It.IsAny<StockHold>(), It.IsAny<CancellationToken>()), Times.Once);
+            _outboxWriter.Verify(w => w.EnqueueAsync(
+                It.Is<StockAvailabilityChanged>(m => m.ProductId == 1 && m.AvailableQuantity == 10),
+                _txMock.Object,
+                It.IsAny<CancellationToken>()), Times.Once);
+            _txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -259,6 +280,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             result.Should().BeTrue();
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Never);
             _stockHoldRepo.Verify(r => r.UpdateAsync(It.IsAny<StockHold>(), It.IsAny<CancellationToken>()), Times.Once);
+            _outboxWriter.Verify(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
         // ── ConfirmAsync ──────────────────────────────────────────────────────
@@ -348,6 +370,11 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             result.Should().BeTrue();
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Once);
             _stockHoldRepo.Verify(r => r.UpdateAsync(stockHold, It.IsAny<CancellationToken>()), Times.Once);
+            _outboxWriter.Verify(w => w.EnqueueAsync(
+                It.Is<StockAvailabilityChanged>(m => m.ProductId == 1),
+                _txMock.Object,
+                It.IsAny<CancellationToken>()), Times.Once);
+            _txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -392,6 +419,11 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             result.Should().BeTrue();
             _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Once);
             stock.Quantity.Value.Should().Be(8);
+            _outboxWriter.Verify(w => w.EnqueueAsync(
+                It.Is<StockAvailabilityChanged>(m => m.ProductId == 1),
+                _txMock.Object,
+                It.IsAny<CancellationToken>()), Times.Once);
+            _txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -403,6 +435,67 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
             var result = await CreateService().ReturnAsync(1, 3, TestContext.Current.CancellationToken);
 
             result.Should().BeFalse();
+        }
+
+        // ── WithdrawHoldAsync ─────────────────────────────────────────────────
+
+        [Fact]
+        public async Task WithdrawHoldAsync_GuaranteedHold_ShouldReleaseStockEnqueueAndMarkWithdrawn()
+        {
+            var stockHold = StockHold.Create(new StockProductId(1), new ReservationOrderId(42), 3, DateTime.UtcNow.AddHours(1));
+            var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
+            stock.Reserve(3);
+
+            _stockHoldRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(stockHold);
+            _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(stock);
+
+            var result = await CreateService().WithdrawHoldAsync(42, 1, TestContext.Current.CancellationToken);
+
+            result.Should().BeTrue();
+            stockHold.Status.Should().Be(StockHoldStatus.Withdrawn);
+            _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Once);
+            _stockHoldRepo.Verify(r => r.UpdateAsync(stockHold, It.IsAny<CancellationToken>()), Times.Once);
+            _outboxWriter.Verify(w => w.EnqueueAsync(
+                It.Is<StockAvailabilityChanged>(m => m.ProductId == 1 && m.AvailableQuantity == 10),
+                _txMock.Object,
+                It.IsAny<CancellationToken>()), Times.Once);
+            _txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Fact]
+        public async Task WithdrawHoldAsync_HoldNotFound_ShouldReturnFalse_AndDoesNotOpenTransaction()
+        {
+            _stockHoldRepo.Setup(r => r.GetByOrderAndProductAsync(99, 1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync((StockHold)null);
+
+            var result = await CreateService().WithdrawHoldAsync(99, 1, TestContext.Current.CancellationToken);
+
+            result.Should().BeFalse();
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+            _outboxWriter.Verify(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task WithdrawHoldAsync_QuantityExceedsReserved_ShouldSkipStockReleaseButMarkWithdrawn()
+        {
+            var stockHold = StockHold.Create(new StockProductId(1), new ReservationOrderId(42), 5, DateTime.UtcNow.AddHours(1));
+            var (stock, _) = StockItem.Create(new StockProductId(1), new StockQuantity(10));
+            stock.Reserve(2);
+
+            _stockHoldRepo.Setup(r => r.GetByOrderAndProductAsync(42, 1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(stockHold);
+            _stockItemRepo.Setup(r => r.GetByProductIdAsync(1, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(stock);
+
+            var result = await CreateService().WithdrawHoldAsync(42, 1, TestContext.Current.CancellationToken);
+
+            result.Should().BeTrue();
+            stockHold.Status.Should().Be(StockHoldStatus.Withdrawn);
+            _stockItemRepo.Verify(r => r.UpdateAsync(It.IsAny<StockItem>(), It.IsAny<CancellationToken>()), Times.Never);
+            _outboxWriter.Verify(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()), Times.Never);
+            _stockHoldRepo.Verify(r => r.UpdateAsync(stockHold, It.IsAny<CancellationToken>()), Times.Once);
         }
 
         // ── AdjustAsync ───────────────────────────────────────────────────────

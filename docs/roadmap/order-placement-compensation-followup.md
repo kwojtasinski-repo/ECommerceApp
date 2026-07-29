@@ -29,7 +29,7 @@ Full findings live in the conversation that produced this doc; the actionable pa
 | # | Workstream | What | Status |
 |---|---|---|---|
 | **1** | **Cart restore** | Implement `ICartService.RestoreAsync` + wire it into `Presale.OrderPlacementFailedHandler` | **Done** (2026-07-26) — implemented and validated PASS (build, 1008 unit + 221 integration tests green, spec-conformance and code review clean). Pipeline plan/validation files deleted per convention; this doc's spec above is the permanent record. |
-| **2** | **Outbox pattern** | At-least-once delivery for `IMessageBroker`; unblocks saga Option B | **NOT STARTED — next up.** Verified in code (2026-07-26): zero `Outbox` hits anywhere in `.cs` files; `InMemoryMessageBroker`/`ModuleClient`/`AsyncMessageDispatcher` are all synchronous or in-process-channel only, no persistence, no retry. Scope now specified in detail (single shared `messaging.Outbox` table, generic poller reusing `DeferredJobPollerService`'s shape) as Phase 0 of [`generic-saga-orchestration-proposal.md`](./generic-saga-orchestration-proposal.md) — see that doc instead of `saga-pattern.md`'s original one-paragraph sketch. |
+| **2** | **Outbox pattern** | At-least-once delivery for `IMessageBroker`; unblocks saga Option B | **Retrofit done (2026-07-29), validated PASS.** All 29 `PublishAsync` call sites across 12 files now go through `IOutboxWriter` + `CrossContextTransactionScope`, one shared `messaging.Outbox` table, `OutboxPollerService`/`OutboxDispatcher` live. See the `OrderPlacementFailed` compensation-semantics decision recorded permanently below. Phase 4 (Inbox/consumer-side idempotency) is next — see [`generic-saga-orchestration-proposal.md`](./generic-saga-orchestration-proposal.md). |
 | **3** | **F4 cleanup** | Deduplicate `ShipmentDelivered/Failed/PartiallyDelivered` handlers into shared logic — preparatory, not risk-driven (new requirements are expected to land here later) | Not started. Verified in code (2026-07-26): `ShipmentDeliveredHandler`, `ShipmentFailedHandler`, `ShipmentPartiallyDeliveredHandler` (`ECommerceApp.Application/Inventory/Availability/Handlers/`) are still independently copy-pasted, no shared base class or helper. |
 | **4** | **Docs correction** | `README.md` F3/F4 rows + `saga-pattern.md` don't reflect that ADR-0026 Option A and the flat-fan-out amendment already shipped | **Done** (2026-07-26) — `README.md` F4 row and `saga-pattern.md` (status banner, event-chain table, Gap 3, sequencing) updated. Also caught and fixed a factual error introduced by the first pass: `README.md` had claimed `OrderCancelled` was "unused, reserved for a future manual-cancel path" — verified false, it's actively published by `OrderService.CancelOrderAsync` (manual-cancel endpoint) with 4 live handlers; only the auto-expiry chain to it was removed. |
 
@@ -148,6 +148,25 @@ needed:
    new test actually verifies.
 
 ---
+
+## Workstream 2 (Outbox retrofit) — `OrderPlacementFailed` compensation-semantics decision
+
+Recorded permanently here since the phase plan file that originally captured it is deleted per the
+phased-plan-file convention once validation passes (see `.github/instructions/session-continuity.instructions.md`).
+
+**Decision recorded 2026-07-29**: `OrderService.PlaceOrderAsync`'s `OrderPlacementFailed` compensation
+covers only the *synchronous* half of the failure surface — enqueueing `OrderPlaced` into the Outbox
+throws a DB/serialization error. In that case the catch block enqueues `OrderPlacementFailed` in the
+*same* `CrossContextTransactionScope`, before the single `CommitAsync()`, so the Order row and the
+compensation message commit atomically together.
+
+The deeper *async*-delivery-failure case — the `OrderPlaced` Outbox row enqueues fine, but the
+poller/dispatcher later exhausts retries and dead-letters it — is **option (a): accepted as a
+documented gap until the saga engine lands**, not fixed in this phase. No dispatcher-side
+`DeadLetter → OrderPlacementFailed` compensation was added. The gap is crash-window-sized (same shape as
+Phase 4's inbox-redelivery window) and is explicitly a candidate for the "Order Placement" case in the
+[generic saga orchestration proposal](./generic-saga-orchestration-proposal.md), not something to patch
+ad hoc here.
 
 ## Not decided yet (raise when resuming, don't assume)
 
