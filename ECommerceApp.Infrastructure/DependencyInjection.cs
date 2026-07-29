@@ -24,6 +24,7 @@ namespace ECommerceApp.Infrastructure
         {
             // Override Application-layer defaults with values from appsettings.
             services.Configure<CacheOptions>(configuration.GetSection(CacheOptions.SectionName));
+            services.Configure<RetryPolicyOptions>(configuration.GetSection(RetryPolicyOptions.SectionName));
             services.AddDatabase(configuration);
             services.AddIamInfrastructure(configuration);
             services.AddUserProfileInfrastructure(configuration);
