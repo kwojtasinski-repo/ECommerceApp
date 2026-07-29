@@ -1,4 +1,5 @@
 using ECommerceApp.Application.Messaging;
+using ECommerceApp.Application.Sales.Fulfillment;
 using ECommerceApp.Application.Sales.Fulfillment.DTOs;
 using ECommerceApp.Application.Sales.Fulfillment.Messages;
 using ECommerceApp.Application.Sales.Fulfillment.Results;
@@ -17,17 +18,24 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
     {
         private readonly Mock<IShipmentRepository> _shipments;
         private readonly Mock<IModuleClient> _moduleClient;
-        private readonly Mock<IMessageBroker> _broker;
+        private readonly Mock<IFulfillmentUnitOfWork> _unitOfWork;
+        private readonly Mock<IOutboxWriter> _outboxWriter;
 
         public ShipmentServiceTests()
         {
             _shipments = new Mock<IShipmentRepository>();
             _moduleClient = new Mock<IModuleClient>();
-            _broker = new Mock<IMessageBroker>();
+            _unitOfWork = new Mock<IFulfillmentUnitOfWork>();
+            _outboxWriter = new Mock<IOutboxWriter>();
         }
 
-        private IShipmentService CreateService()
-            => new ShipmentService(_shipments.Object, _moduleClient.Object, _broker.Object);
+        private IShipmentService CreateService(Mock<IOutboxTransaction> txMock = null)
+        {
+            txMock ??= new Mock<IOutboxTransaction>();
+            txMock.Setup(t => t.CommitAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(txMock.Object);
+            return new ShipmentService(_shipments.Object, _moduleClient.Object, _unitOfWork.Object, _outboxWriter.Object);
+        }
 
         private static Shipment CreateShipment(
             int id = 1,
@@ -111,7 +119,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
 
             await CreateService().CreateShipmentAsync(CreateDto(), TestContext.Current.CancellationToken);
 
-            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         // ── MarkAsInTransitAsync ──────────────────────────────────────────────
@@ -125,7 +133,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
 
             result.Should().Be(ShipmentOperationResult.NotFound);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -145,18 +153,21 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
             var shipment = CreateShipment(id: 5, orderId: 99, status: ShipmentStatus.Pending);
             _shipments.Setup(x => x.GetByIdAsync(5, It.IsAny<CancellationToken>())).ReturnsAsync(shipment);
 
-            var result = await CreateService().MarkAsInTransitAsync(5, "TRACK-XYZ", TestContext.Current.CancellationToken);
+            var txMock = new Mock<IOutboxTransaction>();
+            var result = await CreateService(txMock).MarkAsInTransitAsync(5, "TRACK-XYZ", TestContext.Current.CancellationToken);
 
             result.Should().Be(ShipmentOperationResult.Success);
             shipment.Status.Should().Be(ShipmentStatus.InTransit);
             shipment.TrackingNumber.Should().Be("TRACK-XYZ");
             _shipments.Verify(r => r.UpdateAsync(shipment, It.IsAny<CancellationToken>()), Times.Once);
-            _broker.Verify(b => b.PublishAsync(It.Is<IMessage[]>(m =>
-                m.Length == 1 &&
-                m[0].GetType() == typeof(ShipmentDispatched) &&
-                ((ShipmentDispatched)m[0]).ShipmentId == 5 &&
-                ((ShipmentDispatched)m[0]).OrderId == 99 &&
-                ((ShipmentDispatched)m[0]).TrackingNumber == "TRACK-XYZ")), Times.Once);
+            _outboxWriter.Verify(w => w.EnqueueAsync(
+                It.Is<ShipmentDispatched>(m =>
+                    m.ShipmentId == 5 &&
+                    m.OrderId == 99 &&
+                    m.TrackingNumber == "TRACK-XYZ"),
+                It.IsAny<IOutboxTransaction>(),
+                It.IsAny<CancellationToken>()), Times.Once);
+            txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -169,7 +180,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
 
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -182,7 +193,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
 
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -195,7 +206,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
 
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         // ── MarkAsDeliveredAsync
@@ -209,7 +220,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
 
             result.Should().Be(ShipmentOperationResult.NotFound);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -229,17 +240,20 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
             var shipment = CreateShipment(id: 7, orderId: 99, status: ShipmentStatus.InTransit);
             _shipments.Setup(x => x.GetByIdAsync(7, It.IsAny<CancellationToken>())).ReturnsAsync(shipment);
 
-            var result = await CreateService().MarkAsDeliveredAsync(7, TestContext.Current.CancellationToken);
+            var txMock = new Mock<IOutboxTransaction>();
+            var result = await CreateService(txMock).MarkAsDeliveredAsync(7, TestContext.Current.CancellationToken);
 
             result.Should().Be(ShipmentOperationResult.Success);
             shipment.Status.Should().Be(ShipmentStatus.Delivered);
             shipment.DeliveredAt.Should().NotBeNull();
             _shipments.Verify(r => r.UpdateAsync(shipment, It.IsAny<CancellationToken>()), Times.Once);
-            _broker.Verify(b => b.PublishAsync(It.Is<IMessage[]>(m =>
-                m.Length == 1 &&
-                m[0].GetType() == typeof(ShipmentDelivered) &&
-                ((ShipmentDelivered)m[0]).ShipmentId == 7 &&
-                ((ShipmentDelivered)m[0]).OrderId == 99)), Times.Once);
+            _outboxWriter.Verify(w => w.EnqueueAsync(
+                It.Is<ShipmentDelivered>(m =>
+                    m.ShipmentId == 7 &&
+                    m.OrderId == 99),
+                It.IsAny<IOutboxTransaction>(),
+                It.IsAny<CancellationToken>()), Times.Once);
+            txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -252,7 +266,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
 
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -265,7 +279,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
 
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -278,7 +292,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
 
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         // ── MarkAsFailedAsync
@@ -292,7 +306,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
 
             result.Should().Be(ShipmentOperationResult.NotFound);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -312,16 +326,19 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
             var shipment = CreateShipment(id: 3, orderId: 99, status: ShipmentStatus.Pending);
             _shipments.Setup(x => x.GetByIdAsync(3, It.IsAny<CancellationToken>())).ReturnsAsync(shipment);
 
-            var result = await CreateService().MarkAsFailedAsync(3, TestContext.Current.CancellationToken);
+            var txMock = new Mock<IOutboxTransaction>();
+            var result = await CreateService(txMock).MarkAsFailedAsync(3, TestContext.Current.CancellationToken);
 
             result.Should().Be(ShipmentOperationResult.Success);
             shipment.Status.Should().Be(ShipmentStatus.Failed);
             _shipments.Verify(r => r.UpdateAsync(shipment, It.IsAny<CancellationToken>()), Times.Once);
-            _broker.Verify(b => b.PublishAsync(It.Is<IMessage[]>(m =>
-                m.Length == 1 &&
-                m[0].GetType() == typeof(ShipmentFailed) &&
-                ((ShipmentFailed)m[0]).ShipmentId == 3 &&
-                ((ShipmentFailed)m[0]).OrderId == 99)), Times.Once);
+            _outboxWriter.Verify(w => w.EnqueueAsync(
+                It.Is<ShipmentFailed>(m =>
+                    m.ShipmentId == 3 &&
+                    m.OrderId == 99),
+                It.IsAny<IOutboxTransaction>(),
+                It.IsAny<CancellationToken>()), Times.Once);
+            txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -341,16 +358,19 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
             var shipment = CreateShipment(id: 4, orderId: 99, status: ShipmentStatus.InTransit);
             _shipments.Setup(x => x.GetByIdAsync(4, It.IsAny<CancellationToken>())).ReturnsAsync(shipment);
 
-            var result = await CreateService().MarkAsFailedAsync(4, TestContext.Current.CancellationToken);
+            var txMock = new Mock<IOutboxTransaction>();
+            var result = await CreateService(txMock).MarkAsFailedAsync(4, TestContext.Current.CancellationToken);
 
             result.Should().Be(ShipmentOperationResult.Success);
             shipment.Status.Should().Be(ShipmentStatus.Failed);
             _shipments.Verify(r => r.UpdateAsync(shipment, It.IsAny<CancellationToken>()), Times.Once);
-            _broker.Verify(b => b.PublishAsync(It.Is<IMessage[]>(m =>
-                m.Length == 1 &&
-                m[0].GetType() == typeof(ShipmentFailed) &&
-                ((ShipmentFailed)m[0]).ShipmentId == 4 &&
-                ((ShipmentFailed)m[0]).OrderId == 99)), Times.Once);
+            _outboxWriter.Verify(w => w.EnqueueAsync(
+                It.Is<ShipmentFailed>(m =>
+                    m.ShipmentId == 4 &&
+                    m.OrderId == 99),
+                It.IsAny<IOutboxTransaction>(),
+                It.IsAny<CancellationToken>()), Times.Once);
+            txMock.Verify(t => t.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -363,7 +383,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
 
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         [Fact]
@@ -376,7 +396,7 @@ namespace ECommerceApp.UnitTests.Sales.Fulfillment
 
             result.Should().Be(ShipmentOperationResult.InvalidStatus);
             _shipments.Verify(r => r.UpdateAsync(It.IsAny<Shipment>(), It.IsAny<CancellationToken>()), Times.Never);
-            _broker.Verify(b => b.PublishAsync(It.IsAny<IMessage[]>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
         }
 
         // ── GetShipmentAsync

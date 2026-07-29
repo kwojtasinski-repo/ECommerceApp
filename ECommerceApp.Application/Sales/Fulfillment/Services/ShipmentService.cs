@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using ECommerceApp.Application.Messaging;
+using ECommerceApp.Application.Sales.Fulfillment;
 using ECommerceApp.Application.Sales.Fulfillment.DTOs;
 using ECommerceApp.Application.Sales.Fulfillment.Messages;
 using ECommerceApp.Application.Sales.Fulfillment.Results;
@@ -17,16 +18,19 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
     {
         private readonly IShipmentRepository _shipments;
         private readonly IModuleClient _moduleClient;
-        private readonly IMessageBroker _broker;
+        private readonly IFulfillmentUnitOfWork _unitOfWork;
+        private readonly IOutboxWriter _outboxWriter;
 
         public ShipmentService(
             IShipmentRepository shipments,
             IModuleClient moduleClient,
-            IMessageBroker broker)
+            IFulfillmentUnitOfWork unitOfWork,
+            IOutboxWriter outboxWriter)
         {
             _shipments = shipments;
             _moduleClient = moduleClient;
-            _broker = broker;
+            _unitOfWork = unitOfWork;
+            _outboxWriter = outboxWriter;
         }
 
         public async Task<ShipmentOperationResult> CreateShipmentAsync(CreateShipmentDto dto, CancellationToken ct = default)
@@ -60,13 +64,17 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
                 return ShipmentOperationResult.InvalidStatus;
             }
 
-            await _shipments.UpdateAsync(shipment, ct);
+            var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+            await using (transaction)
+            {
+                await _shipments.UpdateAsync(shipment, ct);
 
-            await _broker.PublishAsync(new ShipmentDispatched(
-                shipment.Id.Value,
-                shipment.OrderId,
-                trackingNumber,
-                DateTime.UtcNow));
+                await _outboxWriter.EnqueueAsync(
+                    new ShipmentDispatched(shipment.Id.Value, shipment.OrderId, trackingNumber, DateTime.UtcNow),
+                    transaction,
+                    CancellationToken.None);
+                await transaction.CommitAsync(CancellationToken.None);
+            }
 
             return ShipmentOperationResult.Success;
         }
@@ -88,13 +96,17 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
                 return ShipmentOperationResult.InvalidStatus;
             }
 
-            await _shipments.UpdateAsync(shipment, ct);
+            var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+            await using (transaction)
+            {
+                await _shipments.UpdateAsync(shipment, ct);
 
-            await _broker.PublishAsync(new ShipmentDelivered(
-                shipment.Id.Value,
-                shipment.OrderId,
-                MapToLineItems(shipment.Lines),
-                DateTime.UtcNow));
+                await _outboxWriter.EnqueueAsync(
+                    new ShipmentDelivered(shipment.Id.Value, shipment.OrderId, MapToLineItems(shipment.Lines), DateTime.UtcNow),
+                    transaction,
+                    CancellationToken.None);
+                await transaction.CommitAsync(CancellationToken.None);
+            }
 
             return ShipmentOperationResult.Success;
         }
@@ -116,13 +128,17 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
                 return ShipmentOperationResult.InvalidStatus;
             }
 
-            await _shipments.UpdateAsync(shipment, ct);
+            var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+            await using (transaction)
+            {
+                await _shipments.UpdateAsync(shipment, ct);
 
-            await _broker.PublishAsync(new ShipmentFailed(
-                shipment.Id.Value,
-                shipment.OrderId,
-                MapToLineItems(shipment.Lines),
-                DateTime.UtcNow));
+                await _outboxWriter.EnqueueAsync(
+                    new ShipmentFailed(shipment.Id.Value, shipment.OrderId, MapToLineItems(shipment.Lines), DateTime.UtcNow),
+                    transaction,
+                    CancellationToken.None);
+                await transaction.CommitAsync(CancellationToken.None);
+            }
 
             return ShipmentOperationResult.Success;
         }
@@ -144,8 +160,6 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
                 return ShipmentOperationResult.InvalidStatus;
             }
 
-            await _shipments.UpdateAsync(shipment, ct);
-
             var deliveredSet = new HashSet<int>(deliveredProductIds);
             var deliveredItems = shipment.Lines
                 .Where(l => deliveredSet.Contains(l.ProductId))
@@ -156,12 +170,17 @@ namespace ECommerceApp.Application.Sales.Fulfillment.Services
                 .Select(l => new ShipmentLineItem(l.ProductId, l.Quantity))
                 .ToList();
 
-            await _broker.PublishAsync(new ShipmentPartiallyDelivered(
-                shipment.Id.Value,
-                shipment.OrderId,
-                deliveredItems,
-                failedItems,
-                DateTime.UtcNow));
+            var transaction = await _unitOfWork.BeginTransactionAsync(CancellationToken.None);
+            await using (transaction)
+            {
+                await _shipments.UpdateAsync(shipment, ct);
+
+                await _outboxWriter.EnqueueAsync(
+                    new ShipmentPartiallyDelivered(shipment.Id.Value, shipment.OrderId, deliveredItems, failedItems, DateTime.UtcNow),
+                    transaction,
+                    CancellationToken.None);
+                await transaction.CommitAsync(CancellationToken.None);
+            }
 
             return ShipmentOperationResult.Success;
         }
