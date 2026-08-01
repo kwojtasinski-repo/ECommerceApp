@@ -203,6 +203,56 @@ declaring Phase 4 done.
   option (b) if the audit shows dedup-needing and dedup-safe handlers are never mixed for the same
   message type; option (a) if they are. Record the actual decision here once made.
 
+  **Decision recorded 2026-08-02, using the completed Step 1 audit above (not guessed): option (a),
+  per-handler dedup.** Dedup-needing and dedup-safe handlers ARE mixed for most multi-handler message
+  types — e.g. `OrderPlaced` (Inventory needs dedup; Presale and the Orders snapshot handler don't),
+  `PaymentConfirmed`/`PaymentExpired` (the BC-side handlers are safe; both Communication handlers per
+  type need dedup), `OrderCancelled` (Inventory/Coupons safe; both Communication handlers need dedup).
+  Dispatcher-level (option b) dedup would gate the safe handlers identically to the unsafe ones on the
+  same redelivery — wrong per the plan's own "coarser" warning, and would also block a legitimately
+  redelivered message from ever reaching a handler that's supposed to still run it.
+
+  **Concrete mechanism** (verified against the real, current code —
+  `ECommerceApp.Application/Messaging/IModuleClient.cs`, `IMessageHandler.cs`,
+  `ECommerceApp.Infrastructure/Messaging/ModuleClient.cs`, `OutboxDispatcher.cs`):
+  - **New, additive interface** `ECommerceApp.Application/Messaging/IIdAwareMessageHandler.cs`:
+    ```csharp
+    public interface IIdAwareMessageHandler<TMessage> : IMessageHandler<TMessage> where TMessage : class, IMessage
+    {
+        Task HandleAsync(TMessage message, long outboxMessageId, CancellationToken ct = default);
+    }
+    ```
+    Only the 19 dedup-needing handlers implement this (in addition to their existing
+    `IMessageHandler<TMessage>` registration, unchanged). The 21 naturally-idempotent handlers are
+    **not touched at all** — their existing `IMessageHandler<T>.HandleAsync(TMessage, CancellationToken)`
+    signature stays exactly as-is. This is the additive property the plan's Step 2 text calls for.
+  - **`IModuleClient.PublishAsync`** gains an optional parameter:
+    `Task PublishAsync(IMessage message, long? outboxMessageId = null);` — the in-memory/test broker
+    path (anything not coming through the real Outbox dispatcher) simply omits it, defaulting to `null`.
+  - **`ModuleClient.PublishAsync`** (the only implementation — already does reflection-based dynamic
+    dispatch over `IMessageHandler<>`, so this is a natural extension, not a new pattern): for each
+    resolved handler, additionally check
+    `typeof(IIdAwareMessageHandler<>).MakeGenericType(message.GetType()).IsInstanceOfType(handler)`. If
+    true **and** `outboxMessageId.HasValue`, invoke the id-aware `HandleAsync(TMessage, long, CancellationToken)`
+    overload via reflection (mirrors the existing `method.Invoke(...)` call already in this file); otherwise
+    invoke the plain overload exactly as today. A handler that implements `IIdAwareMessageHandler<T>` but
+    is invoked with `outboxMessageId == null` (e.g. if ever called from a non-Outbox path) falls back to
+    the plain overload — **not** an error, just no dedup for that call (acceptable: today, nothing calls
+    a Phase-3-retrofitted publish path outside the Outbox at all).
+  - **`OutboxDispatcher.DispatchAsync`** changes one line: `await _moduleClient.PublishAsync(imessage, message.Id);`
+    — `message.Id` (the `OutboxMessage.Id`, a `long`, already on the type) is the stable id a redelivery
+    of the *same* Outbox row still carries, per the plan's "Verified facts" section above.
+  - Inside each dedup-needing handler's new `HandleAsync(TMessage message, long outboxMessageId, CancellationToken ct)`
+    overload: call `_guard.TryMarkProcessedAsync(outboxMessageId, GetType().FullName, scope, ct)` first
+    (per the `Files to add` table's `IProcessedMessageGuard` shape below), `return` early if it returns
+    `false`, otherwise run the existing logic unchanged. The *old* `IMessageHandler<TMessage>.HandleAsync(TMessage, CancellationToken)`
+    member still has to exist to satisfy the base interface — implement it as a thin
+    `=> HandleAsync(message, outboxMessageId: -1, ct)`-style forwarder is **wrong** (fakes an id); instead
+    make the plain overload throw `NotSupportedException("This handler requires outboxMessageId; call the IIdAwareMessageHandler overload.")`
+    — it should never actually be invoked in practice once `ModuleClient` always prefers the id-aware
+    overload when present, so a thrown exception here is a loud signal something is wired incorrectly,
+    not a silent wrong-behavior path.
+
 ### Files NOT to touch
 - Handlers classified "naturally idempotent" in the audit — no dedup wrapping added, but the *reason*
   must be recorded in the audit table (Step 1), not just silently skipped.
