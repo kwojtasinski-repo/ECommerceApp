@@ -5,7 +5,7 @@ namespace ECommerceApp.Application.Messaging
 {
     public interface IModuleClient
     {
-        Task PublishAsync(IMessage message);
+        Task PublishAsync(IMessage message, long? outboxMessageId = null);
         Task<TResult> SendAsync<TResult>(IQuery<TResult> query, CancellationToken ct = default);
     }
 }

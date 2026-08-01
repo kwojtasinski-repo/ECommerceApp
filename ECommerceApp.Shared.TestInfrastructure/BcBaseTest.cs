@@ -74,6 +74,17 @@ namespace ECommerceApp.Shared.TestInfrastructure
         protected System.Threading.Tasks.Task PublishAsync(IMessage message, CancellationToken cancellationToken = default)
             => PublishAsync([message], cancellationToken);
 
+        /// <summary>
+        /// Redelivers <paramref name="message"/> under an explicit, caller-chosen
+        /// <c>outboxMessageId</c> — call this twice with the same id to simulate an
+        /// at-least-once redelivery of the same Outbox row for Inbox-dedup tests.
+        /// </summary>
+        protected async System.Threading.Tasks.Task RedeliverAsync(IMessage message, long outboxMessageId, CancellationToken cancellationToken = default)
+        {
+            var broker = GetRequiredService<IMessageBroker>();
+            await broker.RedeliverAsync(message, outboxMessageId, cancellationToken);
+        }
+
         protected void SetHttpContextUserId(string userId)
         {
             var httpContextAccessor = Services.GetService(typeof(IHttpContextAccessor)) as IHttpContextAccessor;

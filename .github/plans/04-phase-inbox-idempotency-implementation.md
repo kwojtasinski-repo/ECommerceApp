@@ -301,6 +301,90 @@ declaring Phase 4 done.
 - **Risk**: composite-key `(MessageId, HandlerType)` on `Inbox` will grow unbounded without cleanup —
   this is exactly what Phase 5 exists to address; do not add ad hoc cleanup logic here, wait for Phase 5.
 
+### Correction — Step 1 audit was stale, 8 handlers missing (2026-08-02)
+
+The Step 1 audit above (dated 2026-07-29) claims `FulfillmentRefundApproved`/`FulfillmentRefundRejected`
+have "no handler yet." **False as of now** — a Refund flow was built after the audit and never folded
+back in. `MessageTypeRegistry` confirms both are registered (`fulfillment.refund.approved`,
+`fulfillment.refund.rejected`), i.e. already on the Outbox, and **8 handler classes** exist across 4 BCs,
+none previously audited:
+
+| Handler | Message type | Classification | Reasoning |
+|---|---|---|---|
+| `RefundApprovedHandler` (Inventory) | RefundApproved | **Needs dedup** | `StockService.ReturnAsync` unconditionally increments `AvailableQuantity` (`stock.Return(quantity)`), appends a `StockAuditEntry`, and publishes `StockAvailabilityChanged` — no existing-refund check, same additive-mutation risk class as `OrderPlacedHandler`'s reserve path. |
+| `OrderRefundApprovedHandler` (Sales/Orders) | RefundApproved | **Needs dedup** | `OrderService.AddRefundAsync` → `Order.AssignRefund` unconditionally appends an `OrderEventType.RefundAssigned` event every call, no guard. |
+| `PaymentRefundApprovedHandler` (Sales/Payments) | RefundApproved | Naturally idempotent | `PaymentService.ProcessRefundAsync` explicitly guards `Status == Refunded → return AlreadyRefunded` (and `Status == Expired → AlreadyExpired`) before calling `payment.Refund(refundId)` — redelivery short-circuits, same pattern as `OrderPaymentConfirmedHandler`. |
+| `RefundApprovedEmailHandler` (Communication) | RefundApproved | **Needs dedup** | Unconditional email send, same shape as the already-audited Communication handlers. |
+| `RefundApprovedNotificationHandler` (Communication) | RefundApproved | **Needs dedup** | Unconditional notification creation. |
+| `OrderRefundRejectedHandler` (Sales/Orders) | RefundRejected | **Needs dedup** | `OrderService.RemoveRefundByRefundIdAsync` → `Order.RemoveRefund` unconditionally appends `OrderEventType.RefundRemoved`, no guard (unlike Coupons' delete-as-guard pattern — this doesn't delete anything, just appends). |
+| `RefundRejectedEmailHandler` (Communication) | RefundRejected | **Needs dedup** | Unconditional email send. |
+| `RefundRejectedNotificationHandler` (Communication) | RefundRejected | **Needs dedup** | Unconditional notification creation. |
+
+**Corrected summary: 48 handlers audited (was 40) — 26 need dedup (was 19), 22 naturally idempotent (was
+21; `PaymentRefundApprovedHandler` adds to this bucket).**
+
+**Scope exclusion (user decision, 2026-08-02): `StockReconciliationRequired`'s missing handler and the 2
+lower-severity Sales/Orders handlers are known placeholders for a future event-subscription solution, not
+gaps to fill in this phase.** Specifically:
+- `StockReconciliationRequired` staying handler-less is intentional, not an oversight — do not add a
+  handler for it in this phase.
+- `OrderCouponAppliedHandler` and `OrderPriceAdjustedHandler` (both "needs dedup (lower severity)" —
+  audit-trail-duplication only, no financial/quantity impact) are placeholder implementations slated to be
+  rewritten under that future solution. Wiring Inbox dedup into code that's about to be replaced is wasted
+  work — **excluded from this phase's wiring scope.** They remain classified "needs dedup" in the audit
+  table above for correctness-reasoning purposes, but are deliberately not wired here; re-evaluate when the
+  future event-subscription solution lands.
+
+Of this phase's total dedup work: 1 handler done (reference), **23 remain** (25 minus the 2 excluded
+above) — 1 Sales/Payments (`OrderPlacementFailedHandler`), 5 Inventory (4 original + `RefundApprovedHandler`),
+5 Sales/Orders (`OrderShipmentDispatchedHandler`, `OrderShipmentFailedHandler`,
+`OrderShipmentPartiallyDeliveredHandler`, `OrderRefundApprovedHandler`, `OrderRefundRejectedHandler` — the 2
+lower-severity ones excluded per above), 12 Communication (8 original + 4 Refund-related).
+
+**Communication handlers have no BC DbContext/unit-of-work** (`SmtpEmailService`/`SignalRNotificationService`
+— pure external side effects, nothing EF-backed) — the `IProcessedMessageGuard.TryMarkProcessedAsync(long,
+string, IOutboxTransaction, ...)` shape from the Files-to-add table doesn't fit them (nothing to commit
+the marker atomically with). Added a second guard overload,
+`TryMarkProcessedAsync(long messageId, string handlerType, CancellationToken ct = default)`, implemented
+in `ProcessedMessageGuard` by opening its own transaction directly against an injected `MessagingDbContext`
+(no `CrossContextTransactionScope` needed — there's no second write to coordinate). All 12 Communication
+handlers should use this overload; every other BC's handlers keep using the `IOutboxTransaction` overload.
+Ordering: guard-check happens before the send (mark-then-send), so a crash between the two skips a
+legitimate send on next redelivery — accepted deliberately, since mark-after reopens the duplicate-send
+window the guard exists to close.
+
+### Correction — test-harness gap discovered during reference-handler validation (2026-08-02)
+
+This plan's "Verified facts" claim that "today, nothing calls a Phase-3-retrofitted publish path
+outside the Outbox at all" is **false for the test harness**. `ECommerceApp.IntegrationTests` never
+goes through `ModuleClient`/`OutboxDispatcher` — `BcWebApplicationFactory` swaps `IMessageBroker` for
+`SynchronousMultiHandlerBroker`, a second, independent reflection-dispatch implementation
+(`ECommerceApp.Shared.TestInfrastructure/SynchronousMultiHandlerBroker.cs`) that always invoked the
+plain `IMessageHandler<T>.HandleAsync(message, ct)` overload. Once `OrderPlacedHandler` (Payments) was
+wired as the reference handler and its plain overload started throwing `NotSupportedException` by
+design, every integration test whose arrange step publishes `OrderPlaced` broke — not just
+Payments-specific tests, since `OrderPlaced` fans out to Inventory/Presale/Sales too. Actual blast
+radius on first measurement: 26 failing integration tests (not the 3 the initial handoff reported),
+plus 3 pre-existing `OutboxDispatcherTests` unit tests broken by the unrelated `IModuleClient.PublishAsync`
+signature change (old Moq `It.IsAny<IMessage>()` setups no longer matched the 2-arg call).
+
+**Resolution** (does not touch the Step 2 decision above — `ModuleClient`'s production behavior and the
+handler's throw-if-no-id contract are unchanged):
+- `IMessageBroker` gained `Task RedeliverAsync(IMessage message, long outboxMessageId, CancellationToken ct = default)`.
+- `InMemoryMessageBroker.RedeliverAsync` forwards to `_moduleClient.PublishAsync(message, outboxMessageId)`
+  (unused in production — real redelivery only ever happens through the Outbox).
+- `SynchronousMultiHandlerBroker` now mirrors `ModuleClient`'s id-aware dispatch: `PublishAsync` assigns
+  each message a fresh, unique synthetic id (`Interlocked.Increment`) so distinct business events across
+  tests are never mistaken for a redelivery of one another; `RedeliverAsync` lets a test pass the *same*
+  id twice to deliberately simulate one.
+- `BcBaseTest` exposes `RedeliverAsync(message, outboxMessageId, ct)` as the single, non-ad-hoc mechanism
+  every handler's `DuplicateDeliveryTests` (required by this plan's "Tests required" section) should use
+  — call it twice with the same id and assert the side effect happened exactly once.
+- Fixed the 3 `OutboxDispatcherTests` Moq setups to match `IModuleClient.PublishAsync(IMessage, long?)`.
+
+Full suite re-verified after the fix: `dotnet test` UnitTests 1056/1056, IntegrationTests 220/220, build
+0 errors/0 warnings-as-errors.
+
 ### Rollback plan
 - Revert the audited handlers' dedup wrapping (per-handler, independent). Revert
   `ProcessedMessage`/`IProcessedMessageGuard`/migration as a unit if the whole phase needs undoing. No

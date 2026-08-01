@@ -18,19 +18,25 @@ namespace ECommerceApp.Infrastructure.Messaging
             _logger = logger;
         }
 
-        public async Task PublishAsync(IMessage message)
+        public async Task PublishAsync(IMessage message, long? outboxMessageId = null)
         {
             var handlerType = typeof(IMessageHandler<>).MakeGenericType(message.GetType());
+            var idAwareHandlerType = typeof(IIdAwareMessageHandler<>).MakeGenericType(message.GetType());
             var handlers = _serviceProvider.GetServices(handlerType);
             var dispatched = false;
 
             foreach (var handler in handlers)
             {
-                var method = handlerType.GetMethod(nameof(IMessageHandler<IMessage>.HandleAsync));
+                var method = outboxMessageId.HasValue && idAwareHandlerType.IsInstanceOfType(handler)
+                    ? idAwareHandlerType.GetMethod(nameof(IIdAwareMessageHandler<IMessage>.HandleAsync))
+                    : handlerType.GetMethod(nameof(IMessageHandler<IMessage>.HandleAsync));
                 if (method is null)
                     continue;
 
-                await (Task)method.Invoke(handler, new object[] { message, default(CancellationToken) })!;
+                var arguments = outboxMessageId.HasValue && idAwareHandlerType.IsInstanceOfType(handler)
+                    ? new object[] { message, outboxMessageId.Value, default(CancellationToken) }
+                    : new object[] { message, default(CancellationToken) };
+                await (Task)method.Invoke(handler, arguments)!;
                 dispatched = true;
             }
 

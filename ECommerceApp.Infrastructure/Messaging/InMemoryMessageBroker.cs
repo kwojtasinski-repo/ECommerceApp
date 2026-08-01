@@ -1,6 +1,7 @@
 using ECommerceApp.Application.Messaging;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Infrastructure.Messaging
@@ -44,5 +45,8 @@ namespace ECommerceApp.Infrastructure.Messaging
 
             await Task.WhenAll(tasks);
         }
+
+        public Task RedeliverAsync(IMessage message, long outboxMessageId, CancellationToken ct = default)
+            => _moduleClient.PublishAsync(message, outboxMessageId);
     }
 }

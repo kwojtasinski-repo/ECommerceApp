@@ -54,13 +54,13 @@ namespace ECommerceApp.UnitTests.Messaging
 
             IMessage? published = null;
             _moduleClient
-                .Setup(m => m.PublishAsync(It.IsAny<IMessage>()))
-                .Callback<IMessage>(m => published = m)
+                .Setup(m => m.PublishAsync(It.IsAny<IMessage>(), It.IsAny<long?>()))
+                .Callback<IMessage, long?>((m, _) => published = m)
                 .Returns(Task.CompletedTask);
 
             await _dispatcher.DispatchAsync(message, CancellationToken.None);
 
-            _moduleClient.Verify(m => m.PublishAsync(It.IsAny<IMessage>()), Times.Once);
+            _moduleClient.Verify(m => m.PublishAsync(It.IsAny<IMessage>(), message.Id), Times.Once);
             published.Should().BeOfType<TestMessage>();
             ((TestMessage)published!).Value.Should().Be(7);
             message.Status.Should().Be(OutboxStatus.Dispatched);
@@ -75,7 +75,7 @@ namespace ECommerceApp.UnitTests.Messaging
             Func<Task> act = () => _dispatcher.DispatchAsync(message, CancellationToken.None);
 
             await act.Should().NotThrowAsync();
-            _moduleClient.Verify(m => m.PublishAsync(It.IsAny<IMessage>()), Times.Never);
+            _moduleClient.Verify(m => m.PublishAsync(It.IsAny<IMessage>(), It.IsAny<long?>()), Times.Never);
             message.Status.Should().Be(OutboxStatus.Pending);
             message.RetryCount.Should().Be(1);
             _outboxRepository.Verify(r => r.UpdateAsync(message, It.IsAny<CancellationToken>()), Times.Once);
@@ -88,7 +88,7 @@ namespace ECommerceApp.UnitTests.Messaging
             var message = OutboxMessage.Create(key, JsonSerializer.Serialize(new TestMessage { Value = 3 }));
 
             _moduleClient
-                .Setup(m => m.PublishAsync(It.IsAny<IMessage>()))
+                .Setup(m => m.PublishAsync(It.IsAny<IMessage>(), It.IsAny<long?>()))
                 .ThrowsAsync(new InvalidOperationException("handler exploded"));
 
             Func<Task> act = () => _dispatcher.DispatchAsync(message, CancellationToken.None);
@@ -107,7 +107,7 @@ namespace ECommerceApp.UnitTests.Messaging
             var message = OutboxMessage.Create(key, JsonSerializer.Serialize(new TestMessage { Value = 9 }), maxRetries: 0);
 
             _moduleClient
-                .Setup(m => m.PublishAsync(It.IsAny<IMessage>()))
+                .Setup(m => m.PublishAsync(It.IsAny<IMessage>(), It.IsAny<long?>()))
                 .ThrowsAsync(new InvalidOperationException("boom"));
 
             await _dispatcher.DispatchAsync(message, CancellationToken.None);

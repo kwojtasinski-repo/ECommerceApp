@@ -1,6 +1,8 @@
 using ECommerceApp.Application.Sales.Orders.Messages;
+using ECommerceApp.Application.Sales.Payments;
 using ECommerceApp.Application.Sales.Payments.Handlers;
 using ECommerceApp.Application.Supporting.TimeManagement;
+using ECommerceApp.Application.Messaging;
 using ECommerceApp.Domain.Sales.Payments;
 using AwesomeAssertions;
 using Moq;
@@ -16,15 +18,35 @@ namespace ECommerceApp.UnitTests.Sales.Payments
     {
         private readonly Mock<IPaymentRepository> _paymentRepo;
         private readonly Mock<IDeferredJobScheduler> _scheduler;
+        private readonly Mock<IPaymentsUnitOfWork> _unitOfWork;
+        private readonly Mock<IOutboxTransaction> _transaction;
+        private readonly Mock<IProcessedMessageGuard> _processedMessageGuard;
 
         public OrderPlacedHandlerTests()
         {
             _paymentRepo = new Mock<IPaymentRepository>();
             _scheduler = new Mock<IDeferredJobScheduler>();
+            _unitOfWork = new Mock<IPaymentsUnitOfWork>();
+            _transaction = new Mock<IOutboxTransaction>();
+            _processedMessageGuard = new Mock<IProcessedMessageGuard>();
+            _unitOfWork
+                .Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()))
+                .ReturnsAsync(_transaction.Object);
+            _processedMessageGuard
+                .Setup(g => g.TryMarkProcessedAsync(
+                    It.IsAny<long>(),
+                    It.IsAny<string>(),
+                    _transaction.Object,
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(true);
         }
 
         private OrderPlacedHandler CreateHandler()
-            => new(_paymentRepo.Object, _scheduler.Object);
+            => new(
+                _paymentRepo.Object,
+                _scheduler.Object,
+                _unitOfWork.Object,
+                _processedMessageGuard.Object);
 
         private static OrderPlaced CreateMessage(int orderId = 1, decimal total = 99.99m, int currencyId = 1)
         {
@@ -43,7 +65,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
                 .Callback<Payment, CancellationToken>((p, _) => savedPayment = p)
                 .Returns(Task.CompletedTask);
 
-            await CreateHandler().HandleAsync(CreateMessage(orderId: 7, total: 49.99m, currencyId: 2), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(CreateMessage(orderId: 7, total: 49.99m, currencyId: 2), 1, TestContext.Current.CancellationToken);
 
             savedPayment.Should().NotBeNull();
             savedPayment!.OrderId.Value.Should().Be(7);
@@ -63,7 +85,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
                 .Callback<string, string, DateTime, CancellationToken>((name, _, _, _) => scheduledJobName = name)
                 .Returns(Task.CompletedTask);
 
-            await CreateHandler().HandleAsync(CreateMessage(), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(CreateMessage(), 1, TestContext.Current.CancellationToken);
 
             scheduledJobName.Should().Be(PaymentWindowExpiredJob.JobTaskName);
         }
@@ -79,7 +101,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
                 .Callback<string, string, DateTime, CancellationToken>((_, _, at, _) => scheduledAt = at)
                 .Returns(Task.CompletedTask);
 
-            await CreateHandler().HandleAsync(message, TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
             scheduledAt.Should().Be(expiresAt);
         }

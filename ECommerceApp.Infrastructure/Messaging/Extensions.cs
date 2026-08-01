@@ -38,6 +38,7 @@ namespace ECommerceApp.Infrastructure.Messaging
             services.AddScoped<OutboxDispatcher>();
             services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, OutboxPollerService>());
             services.AddScoped<IOutboxWriter, OutboxWriter>();
+            services.AddScoped<IProcessedMessageGuard, ProcessedMessageGuard>();
 
             return services;
         }

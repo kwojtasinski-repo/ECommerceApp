@@ -7,6 +7,7 @@ namespace ECommerceApp.Infrastructure.Messaging
     internal sealed class MessagingDbContext : DbContext, IMessagingDbContext
     {
         public DbSet<OutboxMessage> Outbox => Set<OutboxMessage>();
+        public DbSet<ProcessedMessage> Inbox => Set<ProcessedMessage>();
 
         public MessagingDbContext(DbContextOptions<MessagingDbContext> options) : base(options)
         {

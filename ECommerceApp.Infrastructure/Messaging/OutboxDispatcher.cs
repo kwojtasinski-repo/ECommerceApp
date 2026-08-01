@@ -37,7 +37,7 @@ namespace ECommerceApp.Infrastructure.Messaging
                 var deserialized = JsonSerializer.Deserialize(message.Payload, type);
                 var imessage = (IMessage)deserialized!;
 
-                await _moduleClient.PublishAsync(imessage);
+                await _moduleClient.PublishAsync(imessage, message.Id);
 
                 message.MarkDispatched(DateTime.UtcNow);
                 await _outboxRepository.UpdateAsync(message, ct);
