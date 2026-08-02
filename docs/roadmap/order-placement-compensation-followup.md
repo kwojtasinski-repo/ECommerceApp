@@ -1,7 +1,8 @@
 # Order-placement compensation — follow-up work (F3/F4 deep-dive)
 
-> **Status:** Paused — parked in favor of another in-progress work stream. Workstream 1 (cart restore) and
-> workstream 4 (docs correction) are done. **Next up: workstream 2 (Outbox pattern)** — see table below.
+> **Status:** Workstreams 1 (cart restore), 2 (Outbox pattern, all 5 phases), and 4 (docs correction) are
+> done. **Next up: workstream 3 (F4 cleanup)**, or resume the generic saga engine work in
+> [`generic-saga-orchestration-proposal.md`](./generic-saga-orchestration-proposal.md) — see table below.
 > **Origin:** ad-hoc analysis of roadmap items F3 (saga/orchestrator) and F4 (handler chain refactoring),
 > see [`README.md`](./README.md#future-architectural-considerations) and [`saga-pattern.md`](./saga-pattern.md).
 > **Goal of this doc:** capture enough decisions that work can resume without re-litigating scope.
@@ -29,7 +30,7 @@ Full findings live in the conversation that produced this doc; the actionable pa
 | # | Workstream | What | Status |
 |---|---|---|---|
 | **1** | **Cart restore** | Implement `ICartService.RestoreAsync` + wire it into `Presale.OrderPlacementFailedHandler` | **Done** (2026-07-26) — implemented and validated PASS (build, 1008 unit + 221 integration tests green, spec-conformance and code review clean). Pipeline plan/validation files deleted per convention; this doc's spec above is the permanent record. |
-| **2** | **Outbox pattern** | At-least-once delivery for `IMessageBroker`; unblocks saga Option B | **Retrofit done (2026-07-29), validated PASS.** All 29 `PublishAsync` call sites across 12 files now go through `IOutboxWriter` + `CrossContextTransactionScope`, one shared `messaging.Outbox` table, `OutboxPollerService`/`OutboxDispatcher` live. See the `OrderPlacementFailed` compensation-semantics decision recorded permanently below. Phase 4 (Inbox/consumer-side idempotency) is next — see [`generic-saga-orchestration-proposal.md`](./generic-saga-orchestration-proposal.md). |
+| **2** | **Outbox pattern** | At-least-once delivery for `IMessageBroker`; unblocks saga Option B | **Fully done (2026-08-02), all 5 phases validated PASS.** Schema/poller/dispatcher, all 29 `PublishAsync` call sites retrofitted through `IOutboxWriter` + `CrossContextTransactionScope` onto one shared `messaging.Outbox` table, consumer-side Inbox idempotency (48 handlers audited, 23 wired with dedup + passing `DuplicateDeliveryTests`), and config-driven `OutboxCleanupTask`/`InboxCleanupTask` retention/cron jobs. See the `OrderPlacementFailed` compensation-semantics decision recorded permanently below, and [`generic-saga-orchestration-proposal.md`](./generic-saga-orchestration-proposal.md) for the full Phase 0 validation record. Saga engine core (that doc's Phase 1) is the next thing this unblocks, whenever it's picked up. |
 | **3** | **F4 cleanup** | Deduplicate `ShipmentDelivered/Failed/PartiallyDelivered` handlers into shared logic — preparatory, not risk-driven (new requirements are expected to land here later) | Not started. Verified in code (2026-07-26): `ShipmentDeliveredHandler`, `ShipmentFailedHandler`, `ShipmentPartiallyDeliveredHandler` (`ECommerceApp.Application/Inventory/Availability/Handlers/`) are still independently copy-pasted, no shared base class or helper. |
 | **4** | **Docs correction** | `README.md` F3/F4 rows + `saga-pattern.md` don't reflect that ADR-0026 Option A and the flat-fan-out amendment already shipped | **Done** (2026-07-26) — `README.md` F4 row and `saga-pattern.md` (status banner, event-chain table, Gap 3, sequencing) updated. Also caught and fixed a factual error introduced by the first pass: `README.md` had claimed `OrderCancelled` was "unused, reserved for a future manual-cancel path" — verified false, it's actively published by `OrderService.CancelOrderAsync` (manual-cancel endpoint) with 4 live handlers; only the auto-expiry chain to it was removed. |
 

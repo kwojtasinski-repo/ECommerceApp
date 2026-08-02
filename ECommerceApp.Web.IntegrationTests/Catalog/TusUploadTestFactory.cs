@@ -3,6 +3,7 @@ using ECommerceApp.Application.Catalog.Products.Services;
 using ECommerceApp.Application.Catalog.Products.ViewModels;
 using ECommerceApp.Application.FileManager;
 using ECommerceApp.Application.Interfaces;
+using ECommerceApp.Domain.Catalog.Products;
 using ECommerceApp.Shared.TestInfrastructure;
 using ECommerceApp.Web;
 using Microsoft.AspNetCore.Hosting;
@@ -52,6 +53,19 @@ namespace ECommerceApp.Web.IntegrationTests.Catalog
             var categoryDescriptor = services.FirstOrDefault(d => d.ServiceType == typeof(ICategoryService));
             if (categoryDescriptor != null) services.Remove(categoryDescriptor);
             services.AddScoped<ICategoryService, TusNullCategoryService>();
+        }
+
+        public async Task<int> CreateTestProductAsync()
+        {
+            using var scope = Services.CreateScope();
+            var category = await scope.ServiceProvider
+                .GetRequiredService<ICategoryRepository>()
+                .AddAsync(Category.Create($"TUS test category {Guid.NewGuid():N}"));
+            var product = await scope.ServiceProvider
+                .GetRequiredService<IProductRepository>()
+                .AddAsync(Product.Create("TUS test product", 1m, "TUS upload test product", category.Value));
+
+            return product.Value;
         }
     }
 

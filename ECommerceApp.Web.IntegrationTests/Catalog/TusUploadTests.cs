@@ -48,8 +48,16 @@ namespace ECommerceApp.Web.IntegrationTests.Catalog
             0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0xFF, 0xD9
         };
 
+        private int _itemId;
+
         public TusUploadTests(TusUploadTestFactory factory, ITestOutputHelper output)
             : base(factory, output) { }
+
+        public override async ValueTask InitializeAsync()
+        {
+            await base.InitializeAsync();
+            _itemId = await _factory.CreateTestProductAsync();
+        }
 
         // ─── Auth guard ──────────────────────────────────────────────────────────────
 
@@ -99,7 +107,7 @@ namespace ECommerceApp.Web.IntegrationTests.Catalog
         {
             var client = await CreateAuthenticatedClientAsync();
 
-            var location = await CreateTusUploadAsync(client, fileBytes: MinJpegBytes, itemId: 1);
+            var location = await CreateTusUploadAsync(client, fileBytes: MinJpegBytes, itemId: _itemId);
 
             location.ShouldNotBeNull();
             location.ToString().ShouldContain("/tus/");
@@ -135,7 +143,7 @@ namespace ECommerceApp.Web.IntegrationTests.Catalog
         public async Task Tus_Head_AfterCreation_ReturnsZeroOffset()
         {
             var client = await CreateAuthenticatedClientAsync();
-            var location = await CreateTusUploadAsync(client, fileBytes: MinJpegBytes, itemId: 1);
+            var location = await CreateTusUploadAsync(client, fileBytes: MinJpegBytes, itemId: _itemId);
 
             var headRequest = new HttpRequestMessage(HttpMethod.Head, location);
             headRequest.Headers.Add(TusResumableHeader, TusResumableVersion);
@@ -178,7 +186,7 @@ namespace ECommerceApp.Web.IntegrationTests.Catalog
         public async Task Tus_Patch_SingleChunk_Returns204AndCorrectOffset()
         {
             var client = await CreateAuthenticatedClientAsync();
-            var location = await CreateTusUploadAsync(client, fileBytes: MinJpegBytes, itemId: 1);
+            var location = await CreateTusUploadAsync(client, fileBytes: MinJpegBytes, itemId: _itemId);
 
             var patchResponse = await PatchTusChunkAsync(client, location, offset: 0, data: MinJpegBytes);
 
@@ -195,7 +203,7 @@ namespace ECommerceApp.Web.IntegrationTests.Catalog
         public async Task Tus_Patch_WrongOffset_Returns409()
         {
             var client = await CreateAuthenticatedClientAsync();
-            var location = await CreateTusUploadAsync(client, fileBytes: MinJpegBytes, itemId: 1);
+            var location = await CreateTusUploadAsync(client, fileBytes: MinJpegBytes, itemId: _itemId);
 
             // Send with offset=5 before uploading the first 5 bytes → offset mismatch
             var response = await PatchTusChunkAsync(client, location, offset: 5, data: MinJpegBytes);
@@ -219,7 +227,7 @@ namespace ECommerceApp.Web.IntegrationTests.Catalog
             var chunk2 = fileBytes[half..];
 
             var client = await CreateAuthenticatedClientAsync();
-            var location = await CreateTusUploadAsync(client, fileBytes: fileBytes, itemId: 1);
+            var location = await CreateTusUploadAsync(client, fileBytes: fileBytes, itemId: _itemId);
 
             var r1 = await PatchTusChunkAsync(client, location, offset: 0, data: chunk1);
             r1.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -243,7 +251,7 @@ namespace ECommerceApp.Web.IntegrationTests.Catalog
             var half = fileBytes.Length / 2;
 
             var client = await CreateAuthenticatedClientAsync();
-            var location = await CreateTusUploadAsync(client, fileBytes: fileBytes, itemId: 1);
+            var location = await CreateTusUploadAsync(client, fileBytes: fileBytes, itemId: _itemId);
 
             // Upload only first half
             await PatchTusChunkAsync(client, location, offset: 0, data: fileBytes[..half]);
@@ -270,7 +278,7 @@ namespace ECommerceApp.Web.IntegrationTests.Catalog
         [Fact]
         public async Task CompleteUpload_AfterFullTusUpload_Returns200()
         {
-            const int itemId = 1;
+            var itemId = _itemId;
             var client = await CreateAuthenticatedClientAsync();
             var location = await CreateTusUploadAsync(client, fileBytes: MinJpegBytes, itemId: itemId);
 
@@ -287,7 +295,8 @@ namespace ECommerceApp.Web.IntegrationTests.Catalog
 
             var response = await client.SendAsync(requestMsg, CancellationToken);
 
-            response.StatusCode.ShouldBe(HttpStatusCode.OK);
+            var responseBody = await response.Content.ReadAsStringAsync(CancellationToken);
+            response.StatusCode.ShouldBe(HttpStatusCode.OK, responseBody);
         }
 
         /// <summary>
@@ -297,7 +306,7 @@ namespace ECommerceApp.Web.IntegrationTests.Catalog
         [Fact]
         public async Task CompleteUpload_BeforeUploadComplete_Returns422()
         {
-            const int itemId = 1;
+            var itemId = _itemId;
             var fileBytes = new byte[22];
             Array.Copy(MinJpegBytes, fileBytes, MinJpegBytes.Length);
             var half = fileBytes.Length / 2;

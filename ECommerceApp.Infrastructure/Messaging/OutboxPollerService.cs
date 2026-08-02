@@ -16,20 +16,23 @@ namespace ECommerceApp.Infrastructure.Messaging
 
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ILogger<OutboxPollerService> _logger;
+        private readonly MessagingOptions _messagingOptions;
 
         public OutboxPollerService(
             IServiceScopeFactory scopeFactory,
-            ILogger<OutboxPollerService> logger)
+            ILogger<OutboxPollerService> logger,
+            MessagingOptions messagingOptions)
         {
             _scopeFactory = scopeFactory;
             _logger = logger;
+            _messagingOptions = messagingOptions;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
+                await Task.Delay(_messagingOptions.OutboxPollInterval, stoppingToken);
                 await PollAsync(stoppingToken);
             }
         }

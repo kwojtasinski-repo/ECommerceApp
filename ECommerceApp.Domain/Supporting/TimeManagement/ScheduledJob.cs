@@ -41,6 +41,11 @@ namespace ECommerceApp.Domain.Supporting.TimeManagement
             IsEnabled = false;
         }
 
+        public void UpdateSchedule(string newSchedule)
+        {
+            Schedule = new CronSchedule(newSchedule);
+        }
+
         public void RecordRun(DateTime completedAt, DateTime? nextRunAt)
         {
             LastRunAt = completedAt;

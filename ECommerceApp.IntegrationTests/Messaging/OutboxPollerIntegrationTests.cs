@@ -1,9 +1,11 @@
 using ECommerceApp.Application.Messaging;
+using ECommerceApp.Application.Constants;
 using ECommerceApp.Domain.Messaging;
 using ECommerceApp.Infrastructure.Messaging;
 using ECommerceApp.Shared.TestInfrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Shouldly;
 using System;
 using System.Collections.Concurrent;
@@ -22,9 +24,11 @@ namespace ECommerceApp.IntegrationTests.Messaging
     /// throwaway test-only message/handler pair (registered via <see cref="OverrideServicesImplementation"/>)
     /// so these tests don't depend on any real BC's handler behavior.
     /// <para>
-    /// The poller ticks every 10 seconds (see <see cref="OutboxPollerService"/>), so every assertion
-    /// here uses a bounded retry-poll (check every ~500ms up to a generous timeout) instead of a single
-    /// fixed <c>Task.Delay</c> + assert — a single wait would be inherently racy against the timer.
+    /// Production polls every 10 seconds (<see cref="MessagingOptions.OutboxPollInterval"/>'s default);
+    /// this test class overrides it to 100ms (see <see cref="OverrideServicesImplementation"/>) so the
+    /// suite doesn't spend real 10s ticks waiting on it. Assertions still use a bounded retry-poll
+    /// (check every ~500ms up to a generous timeout) rather than a fixed <c>Task.Delay</c> + assert — a
+    /// single wait would still be racy against however fast the configured interval actually is.
     /// </para>
     /// </summary>
     public class OutboxPollerIntegrationTests : BcBaseTest<IOutboxRepository>
@@ -45,6 +49,18 @@ namespace ECommerceApp.IntegrationTests.Messaging
         protected override void OverrideServicesImplementation(IServiceCollection services)
         {
             base.OverrideServicesImplementation(services);
+            // MessagingOptions is a plain AddSingleton(instance) registration (not IOptions<T> — see
+            // ECommerceApp.Infrastructure/Messaging/Extensions.cs), so overriding it means replacing that
+            // instance, not calling Configure<T>() (which would register a disconnected IOptions<T>
+            // wrapper nothing in production actually reads).
+            services.AddSingleton(new MessagingOptions
+            {
+                OutboxPollInterval = TimeSpan.FromMilliseconds(100)
+            });
+            services.AddSingleton<IOptions<RetryPolicyOptions>>(Options.Create(new RetryPolicyOptions
+            {
+                MaxBackoff = TimeSpan.FromMilliseconds(100)
+            }));
             services.AddSingleton(ReceivedCorrelationIds);
             services.AddScoped<IMessageHandler<PollerTestMessage>, PollerTestMessageHandler>();
         }

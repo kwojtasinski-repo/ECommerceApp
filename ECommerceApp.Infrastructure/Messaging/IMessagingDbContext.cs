@@ -8,6 +8,7 @@ namespace ECommerceApp.Infrastructure.Messaging
     internal interface IMessagingDbContext
     {
         DbSet<OutboxMessage> Outbox { get; }
+        DbSet<ProcessedMessage> Inbox { get; }
         Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
     }
 }

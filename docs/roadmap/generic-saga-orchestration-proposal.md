@@ -283,7 +283,7 @@ tradeoff to make explicitly, not by default.
 
 | Phase | Scope |
 |---|---|
-| **0** | Outbox pattern: `messaging.Outbox` schema/table/migration, generic poller + dispatcher, retrofit 29 call sites, crash/restart + at-least-once integration tests; consumer-side Inbox/idempotency audit + shared `messaging.Inbox` table where needed; `OutboxCleanupTask`/`InboxCleanupTask` recurring purge jobs (appsettings-configurable retention + enable/disable + dynamic cron) |
+| **0** | **Done (2026-08-02), validated PASS.** Outbox pattern: `messaging.Outbox` schema/table/migration, generic poller + dispatcher, retrofit 29 call sites, crash/restart + at-least-once integration tests; consumer-side Inbox/idempotency audit + shared `messaging.Inbox` table where needed; `OutboxCleanupTask`/`InboxCleanupTask` recurring purge jobs (appsettings-configurable retention + enable/disable + dynamic cron). All 5 phases (schema, poller/dispatcher, retrofit, Inbox, cleanup) complete — see `order-placement-compensation-followup.md` workstream 2. |
 | **1** | Saga engine core: `SagaInstance`/`SagaStep` domain + EF config/migration (`sagas` schema), `ISagaDefinition` abstraction + registration mechanism, generic transition/compensation/notify-dependent-step execution |
 | **2** | Decide + implement: retrofit Option A into `OrderPlacementSagaDefinition`, or leave standalone (explicit decision required first) |
 | **3** | `RefundSagaDefinition` — first genuinely new saga on the engine; validates the abstraction with a second real case |
@@ -298,9 +298,15 @@ that's a signal the abstraction in Phase 1 was wrong and needs revisiting before
 
 ## Effort estimate (rough — revise once Phase 1 design is final)
 
-- Phase 0 (Outbox, shared table + Inbox audit/dedup + cleanup job): ~1.5–2 weeks — up from the prior
-  ~1 week Outbox-only estimate; the Inbox audit (which consumers need dedup) and the cleanup task are
-  new scope added in this revision, not part of the original estimate.
+- Phase 0 (Outbox, shared table + Inbox audit/dedup + cleanup job): estimated ~1.5–2 weeks, delivered
+  as 5 incremental phases across roughly 2026-07-26 to 2026-08-02 (schema/poller/dispatcher, 6 retrofit
+  slices, Inbox audit + 23 handlers wired, cleanup jobs) — actual effort tracked closely with the
+  estimate. Two corrections surfaced mid-flight, both resolved and recorded in the phase files before
+  they were deleted: the Inbox audit initially missed 8 handlers from a Refund flow added after the
+  first audit pass (folded in), and `OutboxPollerService`'s poll interval was briefly wired through a
+  disconnected `IOptions<MessagingOptions>` that would have silently ignored appsettings/env overrides
+  in production — caught during independent validation, fixed to match the rest of Messaging's
+  established manually-bound-singleton pattern before merge.
 - Phase 1 (engine core): ~2–3 weeks — bigger than the previous purpose-built `OrderLifecycleSaga`
   estimate (2–4 weeks total) because it now includes a real abstraction layer (definition registry,
   generic transition engine) instead of one fixed entity.
@@ -329,29 +335,48 @@ to the full estimate.
 - [ ] Serialization strategy for Outbox `Payload` (assembly-qualified type name vs. registered short
       key) is decided — affects both Outbox and every `SagaStep.Payload`, so decide once, reuse.
 
-**After Phase 0 (Outbox) — deterministic checks:**
-- [ ] `dotnet build` + full unit/integration suite green (same three commands used for workstream 1
-      validation).
-- [ ] Kill-the-process-mid-dispatch integration test proves a message survives restart and is
+**After Phase 0 (Outbox) — deterministic checks — all confirmed 2026-08-02:**
+- [x] `dotnet build` + full unit/integration suite green (same three commands used for workstream 1
+      validation). Re-verified independently: build 0 errors, UnitTests 1072/1072, IntegrationTests
+      245/245 (run 3 times in a row after the parallel-collections change below, zero flakiness).
+- [x] Kill-the-process-mid-dispatch integration test proves a message survives restart and is
       delivered exactly the intended number of times from the consumer's perspective (at-least-once
       + idempotent handling, or an explicit dedup key) — not just "poller runs", but a real crash
-      simulation.
-- [ ] Every one of the 29 original `PublishAsync` call sites was updated — grep for direct
+      simulation. (Phase 3's crash-recovery tests.)
+- [x] Every one of the 29 original `PublishAsync` call sites was updated — grep for direct
       `_messageBroker.PublishAsync(` calls outside the new dispatcher; any hit outside the
-      dispatcher itself is a missed retrofit, flag it.
-- [ ] No BC-specific `Outbox` table or schema was added anywhere — confirms requirement 2 held
+      dispatcher itself is a missed retrofit, flag it. (Phase 3, all 6 slices.)
+- [x] No BC-specific `Outbox` table or schema was added anywhere — confirms requirement 2 held
       (single shared table, not a per-BC fork slipping back in under time pressure).
-- [ ] The Inbox audit was actually performed and recorded (which consumer handlers got a
+- [x] The Inbox audit was actually performed and recorded (which consumer handlers got a
       `ProcessedMessages` table vs. were judged naturally idempotent, and why) — not skipped, not
-      "we'll add dedup later if it becomes a problem."
-- [ ] A duplicate-delivery integration test exists per handler that got a `ProcessedMessages` table:
+      "we'll add dedup later if it becomes a problem." 48 handlers audited (26 need dedup, 22
+      naturally idempotent) — see the "Resolved (Phase 4)" note above.
+- [x] A duplicate-delivery integration test exists per handler that got a `ProcessedMessages` table:
       deliver the same Outbox row twice, assert the handler's side effect (stock decrement, payment
-      record, coupon usage count, etc.) happened exactly once.
-- [ ] `OutboxCleanupTask` exists, is registered, and its retention is read from `MessagingOptions`
+      record, coupon usage count, etc.) happened exactly once. All 23 in-scope handlers covered.
+- [x] `OutboxCleanupTask` exists, is registered, and its retention is read from `MessagingOptions`
       (config), not a hardcoded literal — confirm by changing the config value in a test and
-      observing the cutoff shift.
-- [ ] `OutboxCleanupTask` never deletes `Pending` or `Failed` rows regardless of age — test asserts
-      this explicitly, not just "some old rows were deleted."
+      observing the cutoff shift. `MessagingScheduledJobReconcilerIntegrationTests` proves the dynamic
+      part end-to-end (asserts the `ScheduledJobs.Schedule` DB column actually changes after a second
+      reconcile with different config, not just "no exception").
+- [x] `OutboxCleanupTask` never deletes `Pending` or `Failed` rows regardless of age — test asserts
+      this explicitly, not just "some old rows were deleted." Confirmed by reading
+      `OutboxRepository.DeleteDispatchedOlderThanAsync`'s query directly: `WHERE Status == Dispatched
+      AND DispatchedAt < cutoff` — no other status is ever touched.
+
+**Test-suite speedup, done alongside Phase 5 (not scoped by this doc, flagged here since it touches
+the same integration-test infrastructure this checklist relies on):** `ECommerceApp.IntegrationTests`
+now runs with `xunit.runner.json`'s `parallelizeTestCollections: true` (previously `false`) plus a
+configurable `OutboxPollerService` poll interval (test override: 100ms vs. production's unchanged
+10s default) — full suite dropped from ~95s to ~17-21s. Verified safe: ran the full suite 3
+consecutive times post-change with zero flakiness. One latent race was found and fixed during that
+verification, not by the change's own author: `BcWebApplicationFactory`'s IAM-database seeding (added
+during Phase 4's own test-infra fix) had no try/catch around it, unlike the equivalent seeding call in
+`CustomWebApplicationFactory` — under real parallel test-class construction, two hosts can now race to
+seed the same fixed-Id test users in the one shared `"InMemoryIamDatabase"` name, and the loser would
+have crashed its own host startup. Now caught and logged, matching the established pattern, instead of
+left as a hope-it-doesn't-happen gap.
 
 **After Phase 1 (engine core):**
 - [ ] Grep the engine's own code (`SagaInstance`, `SagaStep`, the transition/execution logic) for

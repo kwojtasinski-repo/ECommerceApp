@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -196,7 +197,24 @@ namespace ECommerceApp.Shared.TestInfrastructure
             using var scope = tempSp.CreateScope();
             var iamContext = scope.ServiceProvider.GetRequiredService<IamDbContext>();
             iamContext.Database.EnsureCreated();
-            Utilities.InitializeIamUsers(scope.ServiceProvider).GetAwaiter().GetResult();
+
+            try
+            {
+                Utilities.InitializeIamUsers(scope.ServiceProvider).GetAwaiter().GetResult();
+            }
+            catch (Exception ex)
+            {
+                // IamDbContext is swapped to one fixed InMemory database name shared by every
+                // BcWebApplicationFactory/CustomWebApplicationFactory instance (not a per-instance GUID
+                // like the BC-specific DbContexts get) — with xunit.runner.json's
+                // parallelizeTestCollections now true, two test classes' constructors can race to seed
+                // the same fixed-Id test users concurrently. Whichever wins leaves the data every
+                // instance reads from the same named store anyway; the loser here just needs to not
+                // crash its own host startup over it, matching CustomWebApplicationFactory's own
+                // try/catch around this same seeding call.
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<BcWebApplicationFactory>>();
+                logger.LogWarning(ex, "IAM user seeding raced with another test host — continuing.");
+            }
         }
     }
 }

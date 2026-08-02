@@ -1,4 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
+using ECommerceApp.Application.Supporting.TimeManagement;
+using ECommerceApp.Application.Messaging.Services;
 
 namespace ECommerceApp.Application.Messaging
 {
@@ -6,6 +8,8 @@ namespace ECommerceApp.Application.Messaging
     {
         public static IServiceCollection AddMessagingServices(this IServiceCollection services)
         {
+            services.AddScoped<IScheduledTask, OutboxCleanupTask>();
+            services.AddScoped<IScheduledTask, InboxCleanupTask>();
             return services;
         }
     }

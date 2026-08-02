@@ -40,5 +40,18 @@ namespace ECommerceApp.Infrastructure.Messaging.Repositories
             _context.Outbox.Update(message);
             await _context.SaveChangesAsync(ct);
         }
+
+        public async Task<int> DeleteDispatchedOlderThanAsync(System.DateTime cutoff, CancellationToken ct = default)
+        {
+            var messages = await _context.Outbox
+                .Where(m => m.Status == OutboxStatus.Dispatched
+                         && m.DispatchedAt.HasValue
+                         && m.DispatchedAt.Value < cutoff)
+                .ToListAsync(ct);
+
+            _context.Outbox.RemoveRange(messages);
+            await _context.SaveChangesAsync(ct);
+            return messages.Count;
+        }
     }
 }

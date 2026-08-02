@@ -25,13 +25,15 @@ namespace ECommerceApp.Infrastructure.Messaging
             services.AddScoped<IMessageBroker, InMemoryMessageBroker>();
 
             services.TryAddEnumerable(ServiceDescriptor.Singleton<IHostedService, BackgroundMessageDispatcher>());
+            services.AddHostedService<MessagingScheduledJobReconciler>();
 
             // Outbox persistence (Phase 1 of the outbox rollout)
             services.AddDbContext<MessagingDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
             services.AddScoped<IMessagingDbContext>(sp => sp.GetRequiredService<MessagingDbContext>())
-                .AddScoped<IOutboxRepository, OutboxRepository>();
+                .AddScoped<IOutboxRepository, OutboxRepository>()
+                .AddScoped<IInboxCleanupRepository, InboxCleanupRepository>();
 
             services.AddScoped<IDbContextMigrator, DbContextMigrator<MessagingDbContext>>();
 
