@@ -95,6 +95,8 @@ namespace ECommerceApp.E2E.Backend.Sales.Orders
 
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            builder.ConfigureLogging(logging => TestLogging.Configure(logging));
+
             builder.ConfigureAppConfiguration((_, cfg) =>
             {
                 cfg.AddJsonFile(Path.Combine(AppContext.BaseDirectory, "appsettings.test.json"), optional: false, reloadOnChange: false);
