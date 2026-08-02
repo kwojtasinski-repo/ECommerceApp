@@ -1,5 +1,6 @@
 using ECommerceApp.Application.Messaging;
 using ECommerceApp.Infrastructure.Database;
+using ECommerceApp.Infrastructure.Identity.IAM;
 using ECommerceApp.Web;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
@@ -38,6 +39,7 @@ namespace ECommerceApp.Shared.TestInfrastructure
                 MakeAllBcDbContextsTransient(services);
                 ReplaceMessageBrokerWithSynchronous(services);
                 ReplaceDbContextMigratorsWithNoOp(services);
+                EnsureIamDbContextCreatedAndSeeded(services);
                 EnsureAllBcDbContextsCreated(services);
             });
         }
@@ -186,6 +188,15 @@ namespace ECommerceApp.Shared.TestInfrastructure
                     ctx.Database.EnsureCreated();
                 }
             }
+        }
+
+        private static void EnsureIamDbContextCreatedAndSeeded(IServiceCollection services)
+        {
+            using var tempSp = services.BuildServiceProvider();
+            using var scope = tempSp.CreateScope();
+            var iamContext = scope.ServiceProvider.GetRequiredService<IamDbContext>();
+            iamContext.Database.EnsureCreated();
+            Utilities.InitializeIamUsers(scope.ServiceProvider).GetAwaiter().GetResult();
         }
     }
 }

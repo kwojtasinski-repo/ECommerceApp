@@ -183,6 +183,33 @@ handlers are naturally idempotent (skip the dedup insert, cheaper) vs. genuinely
 write volume for a problem some handlers don't have; equally, do not skip the audit and assume none
 need it.
 
+**Resolved (Phase 4, 2026-08-02) — PASS.** Full audit of all 48 registered consumer handlers across
+every Phase-3-retrofitted message type: **26 need dedup, 22 are naturally idempotent** (a small
+correction was needed mid-phase — a Refund flow added after the first audit pass added 8 previously
+unaudited handlers; all 8 were classified and folded in). 2 of the 26 (`OrderCouponAppliedHandler`,
+`OrderPriceAdjustedHandler` — audit-trail-duplication only, no financial impact) plus
+`Inventory.Availability.Handlers.OrderShippedHandler` (turned out to be dead/unregistered code,
+superseded by Fulfillment's shipment handlers per ADR-0017 §13.3) were explicitly excluded from
+wiring — the first 2 as placeholders slated for a future event-subscription rewrite, the last because
+it can never be invoked. The remaining 23 are wired and each has a passing `DuplicateDeliveryTests`
+integration test that redelivers the same Outbox row twice and asserts the side effect changed
+exactly once.
+
+**Mechanism** (option (a) from this section — per-handler, not dispatcher-level): a new additive
+`IIdAwareMessageHandler<TMessage>` interface; `IModuleClient.PublishAsync`/`OutboxDispatcher` carry the
+originating `OutboxMessage.Id` through to handlers that opt in; each dedup-needing handler injects
+`IProcessedMessageGuard` and wraps its existing logic. Two guard overloads ended up necessary, not
+foreseen when this doc was written: one anchored on a BC's own `IOutboxTransaction` (matches this
+section's original design), and a second, transaction-less one for handlers with no BC `DbContext` of
+their own (Supporting/Communication's 12 email/notification handlers — pure external side effects).
+
+**Known residual weakness, not fixed by this phase, flagged for whoever picks up Inventory next**:
+`StockService.FulfillAsync`'s only guard checks the product's *aggregate* `ReservedQuantity` across
+all orders, not the specific hold being fulfilled. Inbox dedup correctly prevents *redelivery* of the
+same message from double-fulfilling; it does not fix that guard for a genuinely concurrent second
+order on the same product hitting the same aggregate headroom. Tracked here, not silently treated as
+resolved.
+
 ### Outbox (and Inbox) cleanup job — reuse the existing TimeManagement recurring-job pattern
 
 Once `messaging.Outbox` rows reach `Dispatched`, they're audit trail, not live data — same relationship

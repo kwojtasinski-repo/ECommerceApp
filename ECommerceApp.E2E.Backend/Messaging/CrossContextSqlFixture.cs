@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using ECommerceApp.Shared.TestInfrastructure;
 using Testcontainers.MsSql;
 using Xunit;
 
@@ -22,7 +23,10 @@ namespace ECommerceApp.E2E.Backend.Messaging
     /// </summary>
     public sealed class CrossContextSqlFixture : IAsyncLifetime
     {
-        private readonly MsSqlContainer _container = new MsSqlBuilder().Build();
+        private readonly MsSqlContainer _container = new MsSqlBuilder()
+            .WithLogger(TestLogging.CreateTestcontainersLogger())
+            .WithOutputConsumer(TestLogging.CreateContainerOutputConsumer())
+            .Build();
 
         public string ConnectionString => _container.GetConnectionString();
 

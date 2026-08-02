@@ -1,12 +1,17 @@
 ﻿---
-description: "Testing guidance for unit and integration tests in ECommerceApp" 
-applyTo: "ECommerceApp.UnitTests/**, ECommerceApp.IntegrationTests/**"
+description: "Testing guidance for unit, integration, Web integration, and backend E2E tests in ECommerceApp"
+applyTo: "ECommerceApp.UnitTests/**, ECommerceApp.IntegrationTests/**, ECommerceApp.Web.IntegrationTests/**, ECommerceApp.E2E.Backend/**, ECommerceApp.Shared.TestInfrastructure/**"
 ---
 
 # Testing Guidelines for ECommerceApp
 
 Purpose
 - Ensure consistent, reliable tests for CI and local development.
+
+Logging
+- Test hosts and test runs use `Debug` as the default minimum log level.
+- Keep Debug logs enabled when diagnosing failures; do not raise the default to `Information` or higher because it hides startup, DI, request, database, and cleanup evidence.
+- A narrower per-category or per-test override is allowed only for a documented reason and must not remove the logs needed to diagnose the test.
 
 Unit tests
 - Use `xUnit`, `Moq`, and `FluentAssertions`.

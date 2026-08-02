@@ -31,9 +31,7 @@ namespace ECommerceApp.Shared.TestInfrastructure
 
                 builder.ConfigureLogging(logging =>
                 {
-                    logging.AddConsole();
-                    logging.AddDebug();
-                    logging.AddProvider(new XunitLoggerProvider(Sink));
+                    TestLogging.Configure(logging, Sink);
                 });
 
                 builder.ConfigureServices(services =>

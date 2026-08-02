@@ -30,6 +30,7 @@ Auto-loaded by `applyTo:` globs — Copilot reads these automatically when editi
 | `efcore.instructions.md`              | `ECommerceApp.Infrastructure/**`    | EF Core tracking, transactions                                                                   |
 | `migration-policy.instructions.md`    | `Infrastructure/Migrations/**`      | DB migration approval                                                                            |
 | `testing.instructions.md`             | `UnitTests/**, IntegrationTests/**` | Unit/integration test patterns                                                                   |
+| `integration-web-e2e-testing.instructions.md` | `IntegrationTests/**, Web.IntegrationTests/**, E2E.Backend/**, Shared.TestInfrastructure/**` | ASP.NET integration, Web, backend E2E, fixtures, lifecycle, and log-first diagnosis |
 | `shared-primitives.instructions.md`   | `Domain/Shared/**`                  | TypedId, Money, Price, Quantity                                                                  |
 | `safety.instructions.md`              | `**`                                | Allowed/disallowed actions                                                                       |
 | `pre-edit.instructions.md`            | `**`                                | Pre-edit checklist (steps 0–8), post-edit agent-decisions append, @copilot-setup-maintainer gate |
@@ -196,6 +197,12 @@ Read a skill **before** scaffolding the corresponding artifact.
 | `create-cqrs-handler`     | Scaffolding ICommandHandler<TCommand, TResult> + command record + result type (Option B)         |
 | `create-dto-viewmodel`    | Scaffolding DTO/VM + ToDto() extension method mapping (AutoMapper removal path)                  |
 | `create-message-contract` | Defining a cross-BC IMessage event contract (publisher side only; pair with create-domain-event) |
+
+### Test diagnostics
+
+| Skill | When to read |
+|---|---|
+| `diagnose-integration-e2e-tests` | A .NET integration or E2E backend test fails; identify the exact assertion, inspect test/application/dependency logs, classify the cause, and run one discriminating check before proposing a fix |
 
 ### Code quality and documentation
 

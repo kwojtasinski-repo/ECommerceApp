@@ -134,7 +134,10 @@ namespace ECommerceApp.E2E.Backend.Sales.Orders
     /// </summary>
     public sealed class OrderRollbackE2EFixture : IAsyncLifetime
     {
-        private readonly MsSqlContainer _container = new MsSqlBuilder().Build();
+        private readonly MsSqlContainer _container = new MsSqlBuilder()
+            .WithLogger(TestLogging.CreateTestcontainersLogger())
+            .WithOutputConsumer(TestLogging.CreateContainerOutputConsumer())
+            .Build();
         private OrderRollbackE2EWebApplicationFactory _factory;
 
         public IServiceProvider Services => (_factory ?? throw new InvalidOperationException(

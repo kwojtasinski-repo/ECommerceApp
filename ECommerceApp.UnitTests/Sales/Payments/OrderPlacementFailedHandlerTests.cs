@@ -1,7 +1,9 @@
 using ECommerceApp.Application.Sales.Orders.Messages;
+using ECommerceApp.Application.Sales.Payments;
 using ECommerceApp.Application.Sales.Payments.Handlers;
 using ECommerceApp.Application.Supporting.TimeManagement;
 using ECommerceApp.Domain.Sales.Payments;
+using ECommerceApp.Application.Messaging;
 using AwesomeAssertions;
 using Moq;
 using System;
@@ -16,15 +18,21 @@ namespace ECommerceApp.UnitTests.Sales.Payments
     {
         private readonly Mock<IPaymentRepository> _paymentRepo;
         private readonly Mock<IDeferredJobScheduler> _scheduler;
+        private readonly Mock<IPaymentsUnitOfWork> _unitOfWork = new();
+        private readonly Mock<IOutboxTransaction> _transaction = new();
+        private readonly Mock<IProcessedMessageGuard> _processedMessageGuard = new();
 
         public OrderPlacementFailedHandlerTests()
         {
             _paymentRepo = new Mock<IPaymentRepository>();
             _scheduler = new Mock<IDeferredJobScheduler>();
+            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_transaction.Object);
+            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(
+                It.IsAny<long>(), It.IsAny<string>(), _transaction.Object, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         }
 
         private OrderPlacementFailedHandler CreateHandler()
-            => new(_paymentRepo.Object, _scheduler.Object);
+            => new(_paymentRepo.Object, _scheduler.Object, _unitOfWork.Object, _processedMessageGuard.Object);
 
         private static OrderPlacementFailed CreateMessage(int orderId = 1)
             => new(orderId, "handler threw", new List<OrderPlacedItem>(), "user-1");
@@ -45,7 +53,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
                 .Callback<Payment, CancellationToken>((p, _) => updatedPayment = p)
                 .Returns(Task.CompletedTask);
 
-            await CreateHandler().HandleAsync(CreateMessage(orderId: 1), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(CreateMessage(orderId: 1), 1, TestContext.Current.CancellationToken);
 
             updatedPayment.Should().NotBeNull();
             updatedPayment!.Status.Should().Be(PaymentStatus.Cancelled);
@@ -64,7 +72,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
                 .Callback<string, string, CancellationToken>((job, id, _) => { cancelledJobName = job; cancelledEntityId = id; })
                 .Returns(Task.CompletedTask);
 
-            await CreateHandler().HandleAsync(CreateMessage(orderId: 1), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(CreateMessage(orderId: 1), 1, TestContext.Current.CancellationToken);
 
             cancelledJobName.Should().Be(PaymentWindowExpiredJob.JobTaskName);
             cancelledEntityId.Should().Be("42");
@@ -77,7 +85,7 @@ namespace ECommerceApp.UnitTests.Sales.Payments
         {
             _paymentRepo.Setup(r => r.GetByOrderIdAsync(1, It.IsAny<CancellationToken>())).ReturnsAsync((Payment)null);
 
-            await CreateHandler().HandleAsync(CreateMessage(orderId: 1), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(CreateMessage(orderId: 1), 1, TestContext.Current.CancellationToken);
 
             _paymentRepo.Verify(r => r.UpdateAsync(It.IsAny<Payment>(), It.IsAny<CancellationToken>()), Times.Never);
             _scheduler.Verify(s => s.CancelAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);

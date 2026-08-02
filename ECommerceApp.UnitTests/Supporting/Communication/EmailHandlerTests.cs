@@ -4,6 +4,7 @@ using ECommerceApp.Application.Sales.Payments.Messages;
 using ECommerceApp.Application.Supporting.Communication.Contracts;
 using ECommerceApp.Application.Supporting.Communication.Emails;
 using ECommerceApp.Application.Supporting.Communication.Handlers;
+using ECommerceApp.Application.Messaging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using System;
@@ -19,9 +20,13 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
     {
         private readonly Mock<IEmailService> _emails = new();
         private readonly Mock<IUserEmailResolver> _emailResolver = new();
+        private readonly Mock<IProcessedMessageGuard> _processedMessageGuard = new();
 
         private OrderPlacedEmailHandler CreateHandler()
-            => new(_emails.Object, _emailResolver.Object);
+        {
+            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            return new(_emails.Object, _emailResolver.Object, _processedMessageGuard.Object);
+        }
 
         private static OrderPlaced Message(int orderId = 1, string userId = "user-1", decimal total = 99.99m)
             => new(orderId, new List<OrderPlacedItem>(), userId, DateTime.UtcNow.AddDays(3), DateTime.UtcNow, total, 1);
@@ -32,7 +37,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _emailResolver.Setup(r => r.GetEmailForUserAsync("user-5", It.IsAny<CancellationToken>()))
                           .ReturnsAsync("user5@test.com");
 
-            await CreateHandler().HandleAsync(Message(orderId: 5, userId: "user-5"), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(orderId: 5, userId: "user-5"), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(
                 It.Is<EmailTemplate>(t => t.To == "user5@test.com"),
@@ -45,7 +50,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                           .ReturnsAsync((string)null);
 
-            await CreateHandler().HandleAsync(Message(), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(It.IsAny<EmailTemplate>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -56,7 +61,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                           .ReturnsAsync("user@test.com");
 
-            await CreateHandler().HandleAsync(Message(orderId: 42), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(orderId: 42), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(
                 It.Is<EmailTemplate>(t => t.Subject.Contains("42")),
@@ -69,7 +74,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                           .ReturnsAsync("user@test.com");
 
-            await CreateHandler().HandleAsync(Message(orderId: 1, total: 149.50m), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(orderId: 1, total: 149.50m), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(
                 It.Is<EmailTemplate>(t => t.Body.Contains("149")),
@@ -82,7 +87,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                           .ReturnsAsync("user@test.com");
 
-            await CreateHandler().HandleAsync(Message(orderId: 7), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(orderId: 7), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(
                 It.Is<EmailTemplate>(t => t.Actions != null && t.Actions.Count == 1 && t.Actions[0].Url.Contains("7")),
@@ -95,9 +100,13 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private readonly Mock<IEmailService> _emails = new();
         private readonly Mock<IOrderUserResolver> _resolver = new();
         private readonly Mock<IUserEmailResolver> _emailResolver = new();
+        private readonly Mock<IProcessedMessageGuard> _processedMessageGuard = new();
 
         private PaymentConfirmedEmailHandler CreateHandler()
-            => new(_emails.Object, _resolver.Object, _emailResolver.Object);
+        {
+            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            return new(_emails.Object, _resolver.Object, _emailResolver.Object, _processedMessageGuard.Object);
+        }
 
         private static PaymentConfirmed Message(int paymentId = 1, int orderId = 10)
             => new(paymentId, orderId, new List<PaymentConfirmedItem>(), DateTime.UtcNow);
@@ -110,7 +119,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _emailResolver.Setup(r => r.GetEmailForUserAsync("user-10", It.IsAny<CancellationToken>()))
                           .ReturnsAsync("user10@test.com");
 
-            await CreateHandler().HandleAsync(Message(orderId: 10), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(orderId: 10), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(
                 It.Is<EmailTemplate>(t => t.To == "user10@test.com" && t.Subject.Contains("10")),
@@ -123,7 +132,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                      .ReturnsAsync((string)null);
 
-            await CreateHandler().HandleAsync(Message(), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(It.IsAny<EmailTemplate>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -136,7 +145,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                           .ReturnsAsync((string)null);
 
-            await CreateHandler().HandleAsync(Message(), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(It.IsAny<EmailTemplate>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -149,7 +158,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                           .ReturnsAsync("user@test.com");
 
-            await CreateHandler().HandleAsync(Message(paymentId: 99), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(paymentId: 99), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(
                 It.Is<EmailTemplate>(t => t.Actions != null && t.Actions[0].Url.Contains("99")),
@@ -162,9 +171,13 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private readonly Mock<IEmailService> _emails = new();
         private readonly Mock<IOrderUserResolver> _resolver = new();
         private readonly Mock<IUserEmailResolver> _emailResolver = new();
+        private readonly Mock<IProcessedMessageGuard> _processedMessageGuard = new();
 
         private RefundApprovedEmailHandler CreateHandler()
-            => new(_emails.Object, _resolver.Object, _emailResolver.Object);
+        {
+            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            return new(_emails.Object, _resolver.Object, _emailResolver.Object, _processedMessageGuard.Object);
+        }
 
         private static FulfillmentMessages.RefundApproved Message(int refundId = 1, int orderId = 10)
             => new(refundId, orderId, new List<FulfillmentMessages.RefundApprovedItem>(), DateTime.UtcNow);
@@ -177,7 +190,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _emailResolver.Setup(r => r.GetEmailForUserAsync("user-10", It.IsAny<CancellationToken>()))
                           .ReturnsAsync("user10@test.com");
 
-            await CreateHandler().HandleAsync(Message(refundId: 3, orderId: 10), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(refundId: 3, orderId: 10), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(
                 It.Is<EmailTemplate>(t => t.To == "user10@test.com" && t.Subject.Contains("3")),
@@ -190,7 +203,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                      .ReturnsAsync((string)null);
 
-            await CreateHandler().HandleAsync(Message(), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(It.IsAny<EmailTemplate>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -203,7 +216,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                           .ReturnsAsync((string)null);
 
-            await CreateHandler().HandleAsync(Message(), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(It.IsAny<EmailTemplate>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -216,7 +229,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                           .ReturnsAsync("user@test.com");
 
-            await CreateHandler().HandleAsync(Message(refundId: 55), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(refundId: 55), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(
                 It.Is<EmailTemplate>(t => t.Actions != null && t.Actions[0].Url.Contains("55")),
@@ -229,9 +242,13 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private readonly Mock<IEmailService> _emails = new();
         private readonly Mock<IOrderUserResolver> _resolver = new();
         private readonly Mock<IUserEmailResolver> _emailResolver = new();
+        private readonly Mock<IProcessedMessageGuard> _processedMessageGuard = new();
 
         private OrderCancelledEmailHandler CreateHandler()
-            => new(_emails.Object, _resolver.Object, _emailResolver.Object);
+        {
+            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            return new(_emails.Object, _resolver.Object, _emailResolver.Object, _processedMessageGuard.Object);
+        }
 
         private static OrderCancelled Message(int orderId = 1)
             => new(orderId, new List<OrderCancelledItem>(), DateTime.UtcNow);
@@ -244,7 +261,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _emailResolver.Setup(r => r.GetEmailForUserAsync("user-5", It.IsAny<CancellationToken>()))
                           .ReturnsAsync("user5@test.com");
 
-            await CreateHandler().HandleAsync(Message(orderId: 5), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(orderId: 5), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(
                 It.Is<EmailTemplate>(t => t.To == "user5@test.com" && t.Subject.Contains("5")),
@@ -257,7 +274,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                      .ReturnsAsync((string)null);
 
-            await CreateHandler().HandleAsync(Message(), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(It.IsAny<EmailTemplate>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -270,7 +287,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                           .ReturnsAsync((string)null);
 
-            await CreateHandler().HandleAsync(Message(), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(It.IsAny<EmailTemplate>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -281,9 +298,13 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private readonly Mock<IEmailService> _emails = new();
         private readonly Mock<IOrderUserResolver> _resolver = new();
         private readonly Mock<IUserEmailResolver> _emailResolver = new();
+        private readonly Mock<IProcessedMessageGuard> _processedMessageGuard = new();
 
         private PaymentExpiredEmailHandler CreateHandler()
-            => new(_emails.Object, _resolver.Object, _emailResolver.Object, NullLogger<PaymentExpiredEmailHandler>.Instance);
+        {
+            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            return new(_emails.Object, _resolver.Object, _emailResolver.Object, NullLogger<PaymentExpiredEmailHandler>.Instance, _processedMessageGuard.Object);
+        }
 
         private static PaymentExpired Message(int paymentId = 1, int orderId = 10)
             => new(paymentId, orderId, DateTime.UtcNow);
@@ -296,7 +317,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _emailResolver.Setup(r => r.GetEmailForUserAsync("user-10", It.IsAny<CancellationToken>()))
                           .ReturnsAsync("user10@test.com");
 
-            await CreateHandler().HandleAsync(Message(paymentId: 3, orderId: 10), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(paymentId: 3, orderId: 10), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(
                 It.Is<EmailTemplate>(t => t.To == "user10@test.com" && t.Subject.Contains("10")),
@@ -309,7 +330,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                      .ReturnsAsync((string)null);
 
-            await CreateHandler().HandleAsync(Message(), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(It.IsAny<EmailTemplate>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -322,7 +343,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                           .ReturnsAsync((string)null);
 
-            await CreateHandler().HandleAsync(Message(), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(It.IsAny<EmailTemplate>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -335,7 +356,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                           .ReturnsAsync("user@test.com");
 
-            await CreateHandler().HandleAsync(Message(paymentId: 7), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(paymentId: 7), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(
                 It.Is<EmailTemplate>(t => t.Body.Contains("7") && t.Body.Contains("anulowane")),
@@ -348,9 +369,13 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
         private readonly Mock<IEmailService> _emails = new();
         private readonly Mock<IOrderUserResolver> _resolver = new();
         private readonly Mock<IUserEmailResolver> _emailResolver = new();
+        private readonly Mock<IProcessedMessageGuard> _processedMessageGuard = new();
 
         private RefundRejectedEmailHandler CreateHandler()
-            => new(_emails.Object, _resolver.Object, _emailResolver.Object);
+        {
+            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(It.IsAny<long>(), It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            return new(_emails.Object, _resolver.Object, _emailResolver.Object, _processedMessageGuard.Object);
+        }
 
         private static FulfillmentMessages.RefundRejected Message(int refundId = 1, int orderId = 10)
             => new(refundId, orderId, DateTime.UtcNow);
@@ -363,7 +388,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _emailResolver.Setup(r => r.GetEmailForUserAsync("user-10", It.IsAny<CancellationToken>()))
                           .ReturnsAsync("user10@test.com");
 
-            await CreateHandler().HandleAsync(Message(refundId: 4, orderId: 10), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(refundId: 4, orderId: 10), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(
                 It.Is<EmailTemplate>(t => t.To == "user10@test.com" && t.Subject.Contains("4")),
@@ -376,7 +401,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _resolver.Setup(r => r.GetUserIdForOrderAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                      .ReturnsAsync((string)null);
 
-            await CreateHandler().HandleAsync(Message(), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(It.IsAny<EmailTemplate>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -389,7 +414,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                           .ReturnsAsync((string)null);
 
-            await CreateHandler().HandleAsync(Message(), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(It.IsAny<EmailTemplate>(), It.IsAny<CancellationToken>()), Times.Never);
         }
@@ -402,7 +427,7 @@ namespace ECommerceApp.UnitTests.Supporting.Communication
             _emailResolver.Setup(r => r.GetEmailForUserAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                           .ReturnsAsync("user@test.com");
 
-            await CreateHandler().HandleAsync(Message(refundId: 1, orderId: 20), TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(Message(refundId: 1, orderId: 20), 1, TestContext.Current.CancellationToken);
 
             _emails.Verify(e => e.SendAsync(
                 It.Is<EmailTemplate>(t => t.Actions != null && t.Actions[0].Url.Contains("20")),

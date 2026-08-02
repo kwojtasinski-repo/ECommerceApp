@@ -28,6 +28,7 @@ applyTo: ".github/**, docs/**"
 | Bug already tracked? | `.github/context/known-issues.md` |
 | Prior corrections? | `.github/context/agent-decisions.md` |
 | Test skip/xfail rules? | `.github/context/test-stabilization-policy.md` |
+| Integration/Web/E2E test rules? | `.github/instructions/integration-web-e2e-testing.instructions.md` |
 | Compact setup snapshot | `.github/setup-state.md` |
 | Archived setup history (read-only) | `.github/COPILOT-SETUP-CHANGELOG.md` |
 | Full routing table | `.github/instructions/docs-index.full.md` |
@@ -100,6 +101,12 @@ Use when the task is to critique inputs for hidden decisions, false consensus, o
 | Critique requirements for hidden assumptions and CRUD-disguised logic | `.github/skills/requirements-critic/SKILL.md` |
 | Critique meeting transcripts for hidden decisions and scope drift | `.github/skills/transcript-critic/SKILL.md` |
 | Verify linguistic boundaries between bounded contexts | `.github/skills/linguistic-boundary-verifier/SKILL.md` |
+
+## Test diagnostics
+
+| Need | Skill |
+|---|---|
+| Diagnose a failed integration test or E2E backend test from the exact assertion and captured logs | `.github/skills/diagnose-integration-e2e-tests/SKILL.md` |
 
 ## RAG maintenance skills
 

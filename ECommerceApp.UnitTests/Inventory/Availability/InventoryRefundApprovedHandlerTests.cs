@@ -1,6 +1,8 @@
 using ECommerceApp.Application.Inventory.Availability.Handlers;
 using ECommerceApp.Application.Inventory.Availability.Services;
 using ECommerceApp.Application.Sales.Fulfillment.Messages;
+using ECommerceApp.Application.Inventory.Availability;
+using ECommerceApp.Application.Messaging;
 using Moq;
 using System;
 using System.Collections.Generic;
@@ -13,12 +15,18 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
     public class InventoryRefundApprovedHandlerTests
     {
         private readonly Mock<IStockService> _stockService;
+        private readonly Mock<IInventoryUnitOfWork> _unitOfWork = new();
+        private readonly Mock<IOutboxTransaction> _transaction = new();
+        private readonly Mock<IProcessedMessageGuard> _processedMessageGuard = new();
         private readonly RefundApprovedHandler _handler;
 
         public InventoryRefundApprovedHandlerTests()
         {
             _stockService = new Mock<IStockService>();
-            _handler = new RefundApprovedHandler(_stockService.Object);
+            _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_transaction.Object);
+            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(
+                It.IsAny<long>(), It.IsAny<string>(), _transaction.Object, It.IsAny<CancellationToken>())).ReturnsAsync(true);
+            _handler = new RefundApprovedHandler(_stockService.Object, _unitOfWork.Object, _processedMessageGuard.Object);
         }
 
         [Fact]
@@ -34,7 +42,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 },
                 OccurredAt: DateTime.UtcNow);
 
-            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
+            await _handler.HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
             _stockService.Verify(s => s.ReturnAsync(42, 3, It.IsAny<CancellationToken>()), Times.Once);
             _stockService.Verify(s => s.ReturnAsync(10, 1, It.IsAny<CancellationToken>()), Times.Once);
@@ -52,7 +60,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability
                 },
                 OccurredAt: DateTime.UtcNow);
 
-            await _handler.HandleAsync(message, TestContext.Current.CancellationToken);
+            await _handler.HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
             _stockService.Verify(s => s.ReturnAsync(10, 1, It.IsAny<CancellationToken>()), Times.Once);
             _stockService.VerifyNoOtherCalls();

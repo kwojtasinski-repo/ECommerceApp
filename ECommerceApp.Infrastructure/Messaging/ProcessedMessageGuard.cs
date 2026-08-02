@@ -57,12 +57,23 @@ namespace ECommerceApp.Infrastructure.Messaging
             {
                 return false;
             }
+            catch (ArgumentException ex) when (IsInMemoryUniqueConstraintViolation(ex))
+            {
+                return false;
+            }
         }
 
         private static bool IsUniqueConstraintViolation(DbUpdateException exception)
         {
             return exception.InnerException is SqlException sqlException
                 && (sqlException.Number == 2601 || sqlException.Number == 2627);
+        }
+
+        private static bool IsInMemoryUniqueConstraintViolation(ArgumentException exception)
+        {
+            return exception.Message.StartsWith(
+                "An item with the same key has already been added.",
+                StringComparison.Ordinal);
         }
     }
 }

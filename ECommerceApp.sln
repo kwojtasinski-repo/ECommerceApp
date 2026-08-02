@@ -57,6 +57,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "instructions", "instruction
 		.github\instructions\safety.instructions.md = .github\instructions\safety.instructions.md
 		.github\instructions\shared-primitives.instructions.md = .github\instructions\shared-primitives.instructions.md
 		.github\instructions\testing.instructions.md = .github\instructions\testing.instructions.md
+		.github\instructions\integration-web-e2e-testing.instructions.md = .github\instructions\integration-web-e2e-testing.instructions.md
 		.github\instructions\web-api.instructions.md = .github\instructions\web-api.instructions.md
 	EndProjectSection
 EndProject
@@ -593,6 +594,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "skills", "skills", "{2FBD2A
 		.github\skills\create-http-scenario\SKILL.md = .github\skills\create-http-scenario\SKILL.md
 		.github\skills\create-integration-test\SKILL.md = .github\skills\create-integration-test\SKILL.md
 		.github\skills\create-message-contract\SKILL.md = .github\skills\create-message-contract\SKILL.md
+		.github\skills\diagnose-integration-e2e-tests\SKILL.md = .github\skills\diagnose-integration-e2e-tests\SKILL.md
 		.github\skills\create-unit-test\SKILL.md = .github\skills\create-unit-test\SKILL.md
 		.github\skills\create-validator\SKILL.md = .github\skills\create-validator\SKILL.md
 		.github\skills\knowledge-management-archetype-mapper\SKILL.md = .github\skills\knowledge-management-archetype-mapper\SKILL.md
@@ -686,6 +688,11 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "diagnose-rag", "diagnose-rag", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567801}"
 	ProjectSection(SolutionItems) = preProject
 		.github\skills\diagnose-rag\SKILL.md = .github\skills\diagnose-rag\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "diagnose-integration-e2e-tests", "diagnose-integration-e2e-tests", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567810}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\diagnose-integration-e2e-tests\SKILL.md = .github\skills\diagnose-integration-e2e-tests\SKILL.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tune-rag-weights", "tune-rag-weights", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567802}"

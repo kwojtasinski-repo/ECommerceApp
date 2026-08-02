@@ -19,6 +19,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
         private readonly Mock<IInventoryUnitOfWork> _unitOfWork = new();
         private readonly Mock<IOutboxWriter> _outboxWriter = new();
         private readonly Mock<IOutboxTransaction> _txMock = new();
+        private readonly Mock<IProcessedMessageGuard> _processedMessageGuard = new();
 
         public ShipmentPartiallyDeliveredHandlerTests()
         {
@@ -26,10 +27,12 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
             _unitOfWork.Setup(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>())).ReturnsAsync(_txMock.Object);
             _outboxWriter.Setup(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
+            _processedMessageGuard.Setup(g => g.TryMarkProcessedAsync(
+                It.IsAny<long>(), It.IsAny<string>(), _txMock.Object, It.IsAny<CancellationToken>())).ReturnsAsync(true);
         }
 
         private ShipmentPartiallyDeliveredHandler CreateHandler()
-            => new(_stockService.Object, _unitOfWork.Object, _outboxWriter.Object);
+            => new(_stockService.Object, _unitOfWork.Object, _outboxWriter.Object, _processedMessageGuard.Object);
 
         private static ShipmentPartiallyDelivered CreateMessage(
             int orderId, ShipmentLineItem[] delivered, ShipmentLineItem[] failed)
@@ -44,9 +47,9 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
                 delivered: new[] { new ShipmentLineItem(1, 2) },
                 failed: new[] { new ShipmentLineItem(2, 3) });
 
-            await CreateHandler().HandleAsync(message, TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
-            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Never);
+            _unitOfWork.Verify(u => u.BeginTransactionAsync(It.IsAny<CancellationToken>()), Times.Once);
             _outboxWriter.Verify(w => w.EnqueueAsync(It.IsAny<IMessage>(), It.IsAny<IOutboxTransaction>(), It.IsAny<CancellationToken>()), Times.Never);
         }
 
@@ -59,7 +62,7 @@ namespace ECommerceApp.UnitTests.Inventory.Availability.Handlers
                 delivered: new[] { new ShipmentLineItem(1, 2) },
                 failed: new[] { new ShipmentLineItem(2, 3) });
 
-            await CreateHandler().HandleAsync(message, TestContext.Current.CancellationToken);
+            await CreateHandler().HandleAsync(message, 1, TestContext.Current.CancellationToken);
 
             _outboxWriter.Verify(w => w.EnqueueAsync(
                 It.Is<StockReconciliationRequired>(m => m.OrderId == 42
