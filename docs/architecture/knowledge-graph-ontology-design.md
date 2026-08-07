@@ -15,6 +15,11 @@ mechanics (how each tool asks clarifying questions, how a skill/prompt file is
 structured, argument syntax) are tool-specific and live in each wrapper — see
 "Why two skills, not one" at the bottom.
 
+**This doc is design-only and stops at the parser sketch.** Turning a confirmed
+ontology into a phased build of the codegen tool is the companion methodology in
+[kg-implementation-planning/](kg-implementation-planning/README.md), wrapped by
+the `kg-implementation-planner` skill (both hosts).
+
 ## Origin
 
 The pattern is adapted from `architekt-jutra-code/tools/kg-simple-demo/` (a

@@ -82,6 +82,7 @@ Use when generating or validating code. Load via the `read_file` tool or invoke 
 | Need | Skill |
 |---|---|
 | Design/extend the code-derived KG ontology (modules, endpoints, message-broker flow); mandatory dry-run before writing ontology files | `.github/skills/kg-ontology-designer/SKILL.md` (methodology in [docs/architecture/knowledge-graph-ontology-design.md](../../docs/architecture/knowledge-graph-ontology-design.md); Claude Code variant at `.claude/skills/kg-ontology-designer/SKILL.md`) |
+| Turn a confirmed KG ontology into a phased build of the codegen tool — one phase at a time; requires an explicit ontology path; emits a plan pair, an unattended handoff prompt, or the implementation itself | `.github/skills/kg-implementation-planner/SKILL.md` (methodology in [docs/architecture/kg-implementation-planning/README.md](../../docs/architecture/kg-implementation-planning/README.md); Claude Code variant at `.claude/skills/kg-implementation-planner/SKILL.md`) |
 
 ## Domain modeling skills
 
