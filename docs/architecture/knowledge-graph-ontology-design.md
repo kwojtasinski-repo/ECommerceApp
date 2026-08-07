@@ -248,11 +248,17 @@ resist modeling/building everything at once):
    `CouponUsed` vs. `CouponApplicationRecord` — all real, all in this repo).
    Fixed to unwrap `Task<T>`/`IReadOnlyList<T>`/`T?`/`T[]` and compare exact
    simple names; regression test added.
-2. Test hardening (new) — a handful of end-to-end tests pinned on real,
-   hand-verified fragments of the actual graph output (not just "count > 0"),
-   so a future phase's refactor can't silently corrupt Phase 0+1's output
-   while adding Phase 2+ node types. See phase file for the exact target
-   list.
+2. ✅ **Built** (test hardening) — CLI entry point (`Program.cs`) extracted
+   into a testable `CliRunner.Run(args, stdout, stderr)`, exercised by
+   in-process tests (`--check` write-suppression, timestamped-file write,
+   non-zero exit + `error:` on a broken ontology fixture). Added pinned/golden
+   facts against the real repo (exact `Module` count, `Coupon` entity's table
+   name and FQCN, exact-not-prefix `PERSISTED_BY` edges — the direct
+   regression pin for the Phase 0+1 bug — one real `Action` node, lower-bound
+   floors for `Entity`/`Repository`/`Action`, zero unknown-label warnings),
+   full-pipeline determinism across two runs at real-repo scale, and exactly
+   one subprocess test against the actual built executable (catches packaging
+   issues no in-process test can see). 19/19 tests pass.
 3. Roslyn parser: `Endpoint`, `Page`, `Role`/`Policy` (with alias-splitting,
    Guardrail 3).
 4. Roslyn parser: `Message`/`MessageHandler`/`Query`/`QueryHandler`/`Job`
@@ -262,6 +268,25 @@ resist modeling/building everything at once):
 6. `compose.yml` (Neo4j) + `overrides.yaml` for facts no parser can infer
    (e.g. the real cron string for `Scheduled` jobs), replacing the Phase 0+1
    stand-in `SpineCatalog.cs`.
+7. MCP server — Tier-1 query tools per design-flow step 5 above, wrapping the
+   Neo4j instance stood up in Phase 6. **Stdio transport only** — no
+   HTTP-streamable variant, unlike this repo's RAG MCP servers (see
+   "Querying the graph today" below for why that asymmetry is intentional).
+
+## Querying the graph today
+
+As of Phase 2, kg-codegen only emits a static `tools/kg/kg-seed.*.cypher`
+file — there is **no live Neo4j instance and no MCP server** for this
+project's own graph yet. Confirmed by inspection: `docker-compose.yaml` has
+no `neo4j` service (only `api`, `web`, `rag-tools`, `qdrant`), and
+`.vscode/mcp.json` has no Neo4j entry (only the RAG vector-search servers and
+the `context-mode` sandbox). This is different from the AJ platform's
+`neo4j-aj-kb` MCP server referenced by the `aj-kg-query` skill — that graph
+and server already exist for AJ; ECommerceApp's equivalent is Phase 6
+(stand up Neo4j, load the seed) + Phase 7 (MCP tool layer) above, neither
+started. Until then, inspecting the graph means loading
+`kg-seed.*.cypher` into a Neo4j instance by hand (e.g. `cypher-shell`) and
+querying it directly.
 
 ## Why two skills, not one
 

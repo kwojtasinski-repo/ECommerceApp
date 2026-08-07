@@ -15,6 +15,7 @@ tools/kg/kg-seed.*.cypher
 !.vscode/mcp.json
 !.github/hooks/*.json
 !tools/kg/seed/*.json
+!tools/kg/kg-codegen/KgCodegen.Tests/Fixtures/*.json
 *.config
 *.doc
 *.docx
