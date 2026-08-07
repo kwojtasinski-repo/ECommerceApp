@@ -321,10 +321,36 @@ two original coarse phases — each sub-phase below touches one source
 location and one risk profile, matching the granularity Phase 0-2 already
 used (decided 2026-08-07, see [[project_ecommerceapp_kg_meta_skill_plan]]).
 
-3a. Roslyn parser: `Endpoint` (`[HttpGet]`/... on `[ApiController]` under
-    `API/Controllers/<Module>/`) + `Page` (MVC action + Razor view under
+3a. ✅ **Built** — `Endpoint` (`[HttpGet]`/... on `[ApiController]` under
+    `API/Controllers/<Module>/`) + `Page` (MVC action under
     `Web/Areas/<Area>/Controllers` or `Web/Controllers`) — the HTTP-surface
-    layer, `Action -[:EXPOSED_BY]-> {Endpoint|Page}`.
+    layer, `Action -[:EXPOSED_BY]-> {Endpoint|Page}`. `SpineCatalog` now also
+    emits the two `Host` nodes (`ApiHost`/`WebHost`) the ontology already
+    declared. Both parsers share `ControllerParserSupport`; the two
+    `[ApiController]` branches (12 controllers inherit it from
+    `API/Controllers/BaseController.cs`, `StorefrontController` declares it
+    directly) are both covered and both pinned. Real repo: 2 `Host`,
+    49 `Endpoint` (= exactly the 49 `[Http*]` attributes in the 14 API
+    controllers), 176 `Page`, 227 `EXPOSED_BY`, 0 ontology errors,
+    deterministic across runs. **Action-resolution coverage: 48/49 = 98.0 %
+    of `Endpoint` and 161/176 = 91.5 % of `Page` nodes carry at least one
+    `EXPOSED_BY` edge (209/225 = 92.9 % overall).** The uncovered remainder
+    is methods that call no injected service at all (`HomeController.Error`,
+    GET form actions returning a bare `View()`) — not failed resolutions:
+    zero `Could not resolve action` warnings are emitted. Route extraction
+    stays best-effort per plan — 171 MVC pages use conventional routing with
+    no explicit `[Route]`, so their `route` is `null` **plus a warning**
+    rather than a guess.
+    Two honesty guards were added during independent validation:
+    `DomainSymbolIndex.ResolveImplementation` (the fallback that resolves
+    decorators, e.g. `ICatalogNavigationService` whose only implementation is
+    `CachedCatalogNavigationService` — there is no `CatalogNavigationService`
+    class, so the `I{Service}`↔`{Service}` convention alone would miss it)
+    refuses to answer when more than one class implements the interface, and
+    the same refusal covers duplicated simple names; an ambiguous service
+    yields a warning, never an edge to an arbitrarily picked class. The index'
+    duplicate-name warnings are now surfaced by `CliRunner` instead of being
+    collected and dropped. 27/27 tests pass.
 3b. Roslyn parser: `Role`/`Policy` (`[Authorize(Roles=...)]` /
     `[Authorize(Policy=...)]` on the controllers found in 3a — `{Endpoint|
     Page} -[:GOVERNED_BY]-> {Role|Policy}`), with the alias-splitting rule

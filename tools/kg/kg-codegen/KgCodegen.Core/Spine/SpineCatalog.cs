@@ -20,6 +20,10 @@ public static class SpineCatalog
     {
         var graph = Graph.Empty();
         graph.Nodes.Add(new CypherNode("System", "ECommerceApp", new Dictionary<string, object?>()));
+        graph.Nodes.Add(new CypherNode("Host", "ApiHost", new Dictionary<string, object?> { ["path"] = "ECommerceApp.API" }));
+        graph.Nodes.Add(new CypherNode("Host", "WebHost", new Dictionary<string, object?> { ["path"] = "ECommerceApp.Web" }));
+        graph.Edges.Add(new CypherEdge("CONTAINS", "System", "ECommerceApp", "Host", "ApiHost"));
+        graph.Edges.Add(new CypherEdge("CONTAINS", "System", "ECommerceApp", "Host", "WebHost"));
         foreach (var module in Modules)
         {
             graph.Nodes.Add(new CypherNode("Module", module.Id, new Dictionary<string, object?> { ["path"] = module.Path }));

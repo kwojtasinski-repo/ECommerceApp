@@ -9,6 +9,64 @@ namespace KgCodegen.Tests;
 public sealed class PinnedRealGraphTests
 {
     [Fact]
+    public void Spine_has_exactly_two_hosts()
+    {
+        var graph = BuildRealGraph();
+
+        Assert.Equal(2, graph.Nodes.Count(node => node.Label == "Host"));
+        Assert.Contains(graph.Nodes, node => node.Label == "Host" && node.Id == "ApiHost");
+        Assert.Contains(graph.Nodes, node => node.Label == "Host" && node.Id == "WebHost");
+    }
+
+    [Fact]
+    public void Real_graph_has_endpoint_and_page_coverage_for_orders()
+    {
+        var graph = BuildRealGraph();
+
+        Assert.True(graph.Nodes.Count(node => node.Label == "Endpoint") >= 40);
+        Assert.True(graph.Nodes.Count(node => node.Label == "Page") >= 170);
+        Assert.Contains(graph.Edges, edge =>
+            edge.Type == "EXPOSED_BY" &&
+            edge.SourceId == "ECommerceApp.Application.Sales.Orders.Services.OrderService.GetOrderDetailsAsync" &&
+            edge.TargetLabel == "Endpoint");
+        Assert.Contains(graph.Edges, edge =>
+            edge.Type == "EXPOSED_BY" &&
+            edge.SourceId == "ECommerceApp.Application.Sales.Orders.Services.OrderService.GetOrderDetailsAsync" &&
+            edge.TargetLabel == "Page");
+    }
+
+    [Fact]
+    public void Storefront_api_controller_is_parsed_via_the_direct_ApiController_branch()
+    {
+        // StorefrontController is the only API controller declaring [ApiController] on itself
+        // instead of inheriting it from BaseController — it is the sole cover for that branch.
+        var graph = BuildRealGraph();
+        var endpoint = Assert.Single(
+            graph.Nodes,
+            node => node.Label == "Endpoint" && node.Id == "ECommerceApp.API.Controllers.Presale.StorefrontController.GetProducts");
+
+        Assert.Equal("GET", endpoint.Properties["httpMethod"]);
+        Assert.Equal("api/storefront/products", endpoint.Properties["route"]);
+        Assert.Contains(graph.Edges, edge =>
+            edge.Type == "CONTAINS" && edge.SourceId == "ApiHost" && edge.TargetId == endpoint.Id);
+        Assert.Contains(graph.Nodes, node =>
+            node.Label == "Endpoint" && node.Id == "ECommerceApp.API.Controllers.Presale.StorefrontController.GetProductsByTag");
+    }
+
+    [Fact]
+    public void Decorator_only_service_resolves_to_the_decorator_class()
+    {
+        // ICatalogNavigationService has no CatalogNavigationService class, so the I-prefix convention
+        // misses and the edge has to come from the interface-implementation fallback.
+        var graph = BuildRealGraph();
+
+        Assert.Contains(graph.Edges, edge =>
+            edge.Type == "EXPOSED_BY" &&
+            edge.SourceId == "ECommerceApp.Application.Catalog.Products.Services.CachedCatalogNavigationService.GetAllCategories" &&
+            edge.TargetId == "ECommerceApp.Web.Areas.Presale.Controllers.StorefrontController.Index");
+    }
+
+    [Fact]
     public void Module_count_is_exactly_fourteen()
     {
         var graph = BuildRealGraph();
@@ -80,6 +138,17 @@ public sealed class PinnedRealGraphTests
         repository.Graph.MergeInto(graph);
         var action = new ActionParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Application"));
         action.Graph.MergeInto(graph);
+        var applicationSymbols = DomainSymbolIndex.Build(Path.Combine(root, "ECommerceApp.Application"));
+        var endpoint = new EndpointParser().Parse(
+            Path.Combine(root, "ECommerceApp.API"),
+            applicationSymbols,
+            graph.Nodes.Where(node => node.Label == "Action").ToList());
+        endpoint.Graph.MergeInto(graph);
+        var page = new PageParser().Parse(
+            Path.Combine(root, "ECommerceApp.Web"),
+            applicationSymbols,
+            graph.Nodes.Where(node => node.Label == "Action").ToList());
+        page.Graph.MergeInto(graph);
 
         var report = GraphValidator.Validate(
             graph,

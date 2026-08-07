@@ -25,14 +25,28 @@ public static class CliRunner
         var graph = SpineCatalog.Create();
         var resolver = new ModuleResolver();
         var symbols = DomainSymbolIndex.Build(Path.Combine(root, "ECommerceApp.Domain"));
+        var applicationSymbols = DomainSymbolIndex.Build(Path.Combine(root, "ECommerceApp.Application"));
         var entity = new EntityParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Infrastructure"), symbols);
         entity.Graph.MergeInto(graph);
+        // Endpoint/Page must run after Action: their EXPOSED_BY edges only target Action nodes that
+        // already exist, so `actions` is threaded through explicitly rather than read back off `graph`.
+        var actions = new ActionParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Application"));
         var parsers = new (string Name, ParserResult Result)[]
         {
             ("Entity", entity),
             ("Repository", new RepositoryParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Domain"), graph.Nodes.Where(x => x.Label == "Entity").ToList())),
-            ("Action", new ActionParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Application")))
+            ("Action", actions),
+            ("Endpoint", new EndpointParser().Parse(Path.Combine(root, "ECommerceApp.API"), applicationSymbols, actions.Graph.Nodes)),
+            ("Page", new PageParser().Parse(Path.Combine(root, "ECommerceApp.Web"), applicationSymbols, actions.Graph.Nodes))
         };
+
+        foreach (var (indexName, index) in new[] { ("Domain", symbols), ("Application", applicationSymbols) })
+        {
+            foreach (var warning in index.Warnings)
+            {
+                stdout.WriteLine($"warning: {indexName} symbols: {warning}");
+            }
+        }
 
         foreach (var parser in parsers)
         {
