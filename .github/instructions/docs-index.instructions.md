@@ -77,6 +77,12 @@ Use when generating or validating code. Load via the `read_file` tool or invoke 
 | Scaffold unit test (Moq, FluentAssertions) | `.github/skills/create-unit-test/SKILL.md` |
 | Scaffold FluentValidation AbstractValidator | `.github/skills/create-validator/SKILL.md` |
 
+## Architecture & knowledge-graph skills
+
+| Need | Skill |
+|---|---|
+| Design/extend the code-derived KG ontology (modules, endpoints, message-broker flow); mandatory dry-run before writing ontology files | `.github/skills/kg-ontology-designer/SKILL.md` (methodology in [docs/architecture/knowledge-graph-ontology-design.md](../../docs/architecture/knowledge-graph-ontology-design.md); Claude Code variant at `.claude/skills/kg-ontology-designer/SKILL.md`) |
+
 ## Domain modeling skills
 
 Use when the task is concept distillation, boundary detection, archetype selection, problem-class classification, or safe generalization across domain concepts.

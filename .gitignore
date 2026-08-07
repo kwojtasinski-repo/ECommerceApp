@@ -12,6 +12,7 @@
 *.json
 !.vscode/mcp.json
 !.github/hooks/*.json
+!tools/kg/seed/*.json
 *.config
 *.doc
 *.docx
