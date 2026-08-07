@@ -171,8 +171,15 @@ not a modeling defect.
   query/command classification deliberately **not modeled** — .NET has no
   direct equivalent of a `readOnly`-transaction marker; revisit only if a real
   convention emerges.
-- `Endpoint`: `[HttpGet]`/... method on an `[ApiController]` under
-  `API/Controllers/<Module>/*Controller.cs`.
+- `Endpoint`: `[HttpGet]`/... method on a class under
+  `API/Controllers/<Module>/*Controller.cs` that is an API controller —
+  verified 2026-08-07 this is **not** simply "has `[ApiController]` on
+  itself": 12 of 13 controllers get it transitively by deriving from
+  `API/Controllers/BaseController.cs` (which carries `[ApiController]`);
+  exactly one (`StorefrontController`) derives from `ControllerBase`
+  directly and declares `[ApiController]` itself. A syntax-only parser
+  needs both branches — direct attribute, or `BaseController` in the
+  (single-level, confirmed no deeper chain exists) base-type list.
 - `Page`: MVC action + Razor view under `Web/Areas/<Area>/Controllers` or
   `Web/Controllers`.
 - `ScriptModule`: client-side JS loaded via RequireJS/AMD — see Guardrail 5,
@@ -230,6 +237,56 @@ wiring) — the graph would surface this on its own once built (a `Message`
 node with zero `PUBLISHES` in-edges and zero `HANDLED_BY` out-edges), no
 special node type needed to detect it.
 
+## Target questions + MCP tool tiering (ECommerceApp)
+
+Design-flow step 2's "5-10 concrete questions" for this graph, collected
+2026-08-07 from the questions the user actually asks when scoping a new
+feature by hand today. Each maps to a Tier-1 tool (typed params, real
+ontology triples) or is flagged as explicitly out of scope so Phase 7 does
+not silently invent a tool for something this graph structurally cannot
+answer (per design-flow step 5 and Guardrail 4 — don't materialize a fact
+that can't be honestly derived).
+
+| # | Question (as the user actually asks it) | Tier-1 tool | Traversal |
+|---|---|---|---|
+| TQ1 | "How does X work / what is it connected to?" | `GetNodeNeighbors(nodeId)` | all in/out edges of one node, generic across labels |
+| TQ2 | "What does changing X affect (blast radius)?" | `GetBlastRadius(nodeId, maxDepth)` | forward: `OPERATES_ON`, `PERSISTED_BY`, `PUBLISHES→HANDLED_BY`, `EXPOSED_BY`, `USES`, `SCHEDULES` |
+| TQ3 | "What does X need to run / to load Y?" | `GetNodeDependencies(nodeId)` | reverse of TQ2 — for an `Action`: `USES→Query`, `OPERATES_ON→Entity` |
+| TQ4 | "What integrations do we have — which BCs talk to which?" | `GetModuleDependencies(moduleId)` | `Module→Action→PUBLISHES→Message→HANDLED_BY→MessageHandler→Module` (+ `Query` equivalent) — already named in Guardrail 4 as the reason `Module-DEPENDS_ON->Module` is *not* a stored edge |
+| TQ5 | "Where is the source of truth for BC X?" | `GetModuleOwnership(moduleId)` | `Module -[:CONTAINS]-> {Entity,Repository}` |
+| TQ6 | "Does page/endpoint X trigger action Y? Where else is Y called from?" | `GetActionExposure(actionId)` | reverse `EXPOSED_BY` (`Endpoint`/`Page`) + reverse `SCHEDULES` (for a `Job`'s callers) |
+| TQ7 | "Who handles message/query X? Any dead contracts (zero handlers or callers)?" | `GetOrphanContracts()` | `Message`/`Query`/`Job` nodes with no `HANDLED_BY`/`PUBLISHES`/`SCHEDULES` edge — generalizes the dry run's `JobExecutionCompleted` finding into a standing tool |
+| TQ8 | "Who schedules job X, what's its trigger mode?" | `GetJobSchedulers(jobId)` | reverse `SCHEDULES` + `Job.triggerMode` property |
+| TQ9 | "Which actions/pages require role/policy X (RBAC audit)?" | `GetGovernedActions(roleOrPolicyId)` | reverse `GOVERNED_BY` from `Role`/`Policy` |
+| TQ10 | "Is there an existing pattern I can reuse for X?" | `FindStructurallySimilarActions(actionId)` | `Action` nodes with overlapping `OPERATES_ON`/`PUBLISHES`/`USES`/`EXPOSED_BY` target-label shape — **heuristic proxy only**, not an authoritative pattern match (see below) |
+
+**Explicitly out of scope — do not build a tool that fakes these:**
+- **Effort/time estimates** ("how many changes, how many months"). Not
+  derivable from a structural graph. TQ2/TQ3's *node/edge count* is a
+  legitimate rough size proxy; no tool should claim to estimate calendar
+  time from it.
+- **"From scratch or reuse", "which pattern", "which archetype".** These
+  are architectural judgment calls a human or LLM makes *using* TQ10's
+  structural signal as input — the graph surfaces shape similarity, it
+  does not classify patterns itself. Consistent with this doc's opening
+  line: a code-derived graph, not an LLM-interpreted one.
+- **"What tests exist / are missing for the most sensitive code."** Needs
+  a coverage data source this ontology does not have. TQ2 run in reverse
+  (who depends on me = high fan-in) is a usable "structurally sensitive"
+  proxy today; actual test coverage is a candidate future Layer-4
+  addition (a `Test`/coverage import), not Phase 7 scope.
+- **"Author of an action" as git authorship.** That's `git blame`/`git
+  log`, outside this graph entirely. If the question actually meant
+  "which module owns this action," that's TQ1/TQ5.
+
+**Views clarification (confirms existing modeling, no new node type):**
+"views" in target-question terms means the `Page` marker (MVC action +
+Razor view wiring under `Web/…/Controllers`, already defined in Layer 2
+above) and the `ScriptModule` marker (RequireJS/AMD client JS, Layer 3) —
+not Razor template internals. TQ6 already covers "does page X trigger
+action Y" via the existing `Page -[:EXPOSED_BY]- Action` /
+`Page -[:USES]-> ScriptModule` triples; no ontology change needed.
+
 ## Implementation plan (kg-codegen)
 
 Phased, one source domain at a time (see Guardrail-adjacent principle:
@@ -259,19 +316,48 @@ resist modeling/building everything at once):
    full-pipeline determinism across two runs at real-repo scale, and exactly
    one subprocess test against the actual built executable (catches packaging
    issues no in-process test can see). 19/19 tests pass.
-3. Roslyn parser: `Endpoint`, `Page`, `Role`/`Policy` (with alias-splitting,
-   Guardrail 3).
-4. Roslyn parser: `Message`/`MessageHandler`/`Query`/`QueryHandler`/`Job`
-   (+ `SCHEDULES`) — the highlight layer this whole design exists for.
+Phases 3 and 4 are split into homogeneous sub-phases rather than kept as the
+two original coarse phases — each sub-phase below touches one source
+location and one risk profile, matching the granularity Phase 0-2 already
+used (decided 2026-08-07, see [[project_ecommerceapp_kg_meta_skill_plan]]).
+
+3a. Roslyn parser: `Endpoint` (`[HttpGet]`/... on `[ApiController]` under
+    `API/Controllers/<Module>/`) + `Page` (MVC action + Razor view under
+    `Web/Areas/<Area>/Controllers` or `Web/Controllers`) — the HTTP-surface
+    layer, `Action -[:EXPOSED_BY]-> {Endpoint|Page}`.
+3b. Roslyn parser: `Role`/`Policy` (`[Authorize(Roles=...)]` /
+    `[Authorize(Policy=...)]` on the controllers found in 3a — `{Endpoint|
+    Page} -[:GOVERNED_BY]-> {Role|Policy}`), with the alias-splitting rule
+    from Guardrail 3 (a comma-joined role constant must resolve to atomic
+    `Role` nodes, never a node for the alias string itself). Kept separate
+    from 3a because the guardrail adds real parsing risk (splitting logic)
+    that a plain attribute-presence parser doesn't have.
+4a. Roslyn parser: `Message`/`MessageHandler` (async Outbox/Inbox side of
+    the variability point — `IMessage`/`MessageTypeRegistry`,
+    `IMessageHandler<T>`/`IIdAwareMessageHandler<T>`).
+4b. Roslyn parser: `Query`/`QueryHandler` (sync `ModuleClient` side —
+    `IQuery<TResult>`, `IQueryHandler<TQuery,TResult>`). Split from 4a
+    because the two channels have opposite delivery guarantees (0..N
+    eventual-consistency handlers vs. exactly-one immediate response) and
+    are extracted from different marker interfaces.
+4c. Roslyn parser: `Job` (+ the new `SCHEDULES` verb from
+    `{Action,MessageHandler} -[:SCHEDULES]-> Job`) — depends on 4a/4b
+    existing first since `SCHEDULES` sources from `Action`/`MessageHandler`
+    nodes. Three trigger modes per `JobTriggerSource`; `Scheduled`'s cron
+    string is runtime DB data, not statically extractable (stays a gap
+    until Phase 6's `overrides.yaml`).
 5. JS/AMD parser: `ScriptModule` — lowest confidence, built last, carries the
    staleness-warning requirement from Guardrail 5.
 6. `compose.yml` (Neo4j) + `overrides.yaml` for facts no parser can infer
    (e.g. the real cron string for `Scheduled` jobs), replacing the Phase 0+1
-   stand-in `SpineCatalog.cs`.
-7. MCP server — Tier-1 query tools per design-flow step 5 above, wrapping the
-   Neo4j instance stood up in Phase 6. **Stdio transport only** — no
-   HTTP-streamable variant, unlike this repo's RAG MCP servers (see
-   "Querying the graph today" below for why that asymmetry is intentional).
+   stand-in `SpineCatalog.cs`. Includes the load step (seed `.cypher` →
+   running Neo4j) that nothing describes today — see "Querying the graph
+   today" below.
+7. MCP server — Tier-1 query tools per the target-questions tiering below,
+   wrapping the Neo4j instance stood up in Phase 6. **Stdio transport
+   only** — no HTTP-streamable variant, unlike this repo's RAG MCP servers
+   (see "Querying the graph today" below for why that asymmetry is
+   intentional).
 
 ## Querying the graph today
 
