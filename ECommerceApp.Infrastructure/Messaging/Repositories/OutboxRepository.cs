@@ -35,6 +35,18 @@ namespace ECommerceApp.Infrastructure.Messaging.Repositories
                 .ToListAsync(ct);
         }
 
+        public async Task<IReadOnlyList<OutboxMessage>> GetSinceAsync(
+            System.DateTime sinceUtc,
+            int batchSize,
+            CancellationToken ct = default)
+        {
+            return await _context.Outbox
+                .Where(m => m.CreatedAt >= sinceUtc)
+                .OrderBy(m => m.CreatedAt)
+                .Take(batchSize)
+                .ToListAsync(ct);
+        }
+
         public async Task UpdateAsync(OutboxMessage message, CancellationToken ct = default)
         {
             _context.Outbox.Update(message);

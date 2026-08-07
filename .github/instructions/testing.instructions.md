@@ -1,6 +1,6 @@
 ﻿---
-description: "Testing guidance for unit, integration, Web integration, and backend E2E tests in ECommerceApp"
-applyTo: "ECommerceApp.UnitTests/**, ECommerceApp.IntegrationTests/**, ECommerceApp.Web.IntegrationTests/**, ECommerceApp.E2E.Backend/**, ECommerceApp.Shared.TestInfrastructure/**"
+description: "Testing guidance for unit, integration, Web integration, browser E2E, and backend E2E tests in ECommerceApp"
+applyTo: "ECommerceApp.UnitTests/**, ECommerceApp.IntegrationTests/**, ECommerceApp.Web.IntegrationTests/**, ECommerceApp.Web.E2E/**, ECommerceApp.E2E.Backend/**, ECommerceApp.Shared.TestInfrastructure/**"
 ---
 
 # Testing Guidelines for ECommerceApp
@@ -47,6 +47,19 @@ Pattern 2: API controller integration tests
 - Use **Shouldly** for assertions (`ShouldBe`, `ShouldNotBeNull`, `ShouldBeGreaterThan`, etc.).
 - Tests hit real HTTP endpoints and verify full request/response pipeline.
 - Test naming follows the same `Method_Conditions_ExpectedResult` pattern.
+
+Browser E2E tests (Playwright) — `ECommerceApp.Web.E2E`
+- Use only when a flow needs real browser JavaScript execution and/or must observe asynchronous
+  message-broker/Outbox-poller timing (a page rendering before an event is processed). See
+  `create-web-e2e-test` skill for the fixture pattern and template.
+- This is the one tier that deliberately keeps `MessagingOptions.UseBackgroundDispatcher = true`
+  (real `BackgroundMessageDispatcher` + `OutboxPollerService`) — every other tier here runs the
+  broker synchronously on purpose. Do not "fix" this by making it synchronous.
+- Always host through `PlaywrightWebApplicationFactory.StartKestrelHost()` / `.ServerAddress`.
+  Never use the inherited `Services`/`CreateClient()`/`Server` — they build a second, disconnected
+  TestServer-backed host with its own InMemory database (see the class's own XML doc for why).
+- Share the browser process via `[Collection(PlaywrightCollection.Name)]` — never launch a second
+  `IBrowser`/`IPlaywright` per test class.
 
 CI
 - CI must run unit and integration tests on PRs.

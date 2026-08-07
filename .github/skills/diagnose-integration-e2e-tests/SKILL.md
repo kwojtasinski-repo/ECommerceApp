@@ -17,8 +17,8 @@ infrastructure, environment, and test-isolation failures.
 
 ## When to use
 
-- A test in `ECommerceApp.IntegrationTests`, `ECommerceApp.Web.IntegrationTests`, or
-  `ECommerceApp.E2E.Backend` fails.
+- A test in `ECommerceApp.IntegrationTests`, `ECommerceApp.Web.IntegrationTests`,
+  `ECommerceApp.Web.E2E`, or `ECommerceApp.E2E.Backend` fails.
 - `dotnet test` reports a failed test, timeout, HTTP error, database error, or host startup error.
 - A CI run reports only a generic failure and the underlying logs must be reconstructed.
 - A test passes alone but fails in a suite or in a repeated run.

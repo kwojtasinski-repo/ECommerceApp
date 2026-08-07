@@ -67,6 +67,49 @@ namespace ECommerceApp.IntegrationTests.Messaging
         }
 
         [Fact]
+        public async Task GetSinceAsync_ReturnsMessagesCreatedAtOrAfterCutoff_RegardlessOfStatus()
+        {
+            var cutoff = DateTime.UtcNow;
+
+            var pending = OutboxMessage.Create("since-pending", "{}");
+            await _service.AddAsync(pending, CancellationToken);
+
+            var dispatched = OutboxMessage.Create("since-dispatched", "{}");
+            dispatched.MarkDispatched(DateTime.UtcNow);
+            await _service.AddAsync(dispatched, CancellationToken);
+
+            var deadLetter = OutboxMessage.Create("since-dead-letter", "{}", maxRetries: 0);
+            deadLetter.Fail("fatal error", DateTime.UtcNow);
+            await _service.AddAsync(deadLetter, CancellationToken);
+
+            var messages = await _service.GetSinceAsync(cutoff, batchSize: 50, CancellationToken);
+
+            messages.Select(m => m.MessageTypeKey).ShouldBe(
+                new[] { "since-pending", "since-dispatched", "since-dead-letter" });
+            messages.Select(m => m.Status).ShouldBe(new[]
+            {
+                OutboxStatus.Pending,
+                OutboxStatus.Dispatched,
+                OutboxStatus.DeadLetter
+            });
+        }
+
+        [Fact]
+        public async Task GetSinceAsync_ExcludesMessagesCreatedBeforeCutoff()
+        {
+            var beforeCutoff = OutboxMessage.Create("since-before-cutoff", "{}");
+            await _service.AddAsync(beforeCutoff, CancellationToken);
+            var cutoff = DateTime.UtcNow;
+
+            var afterCutoff = OutboxMessage.Create("since-after-cutoff", "{}");
+            await _service.AddAsync(afterCutoff, CancellationToken);
+
+            var messages = await _service.GetSinceAsync(cutoff, batchSize: 50, CancellationToken);
+
+            messages.Select(m => m.MessageTypeKey).ShouldBe(new[] { "since-after-cutoff" });
+        }
+
+        [Fact]
         public async Task UpdateAsync_AfterMarkDispatched_PersistsStatusAndTimestamp()
         {
             var message = OutboxMessage.Create("update-after-dispatch", "{}");

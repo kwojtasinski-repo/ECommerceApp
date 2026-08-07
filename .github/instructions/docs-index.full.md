@@ -29,8 +29,8 @@ Auto-loaded by `applyTo:` globs — Copilot reads these automatically when editi
 | `frontend.instructions.md`            | `wwwroot/**, **/*.cshtml`           | LibMan, JS modules, require.js                                                                   |
 | `efcore.instructions.md`              | `ECommerceApp.Infrastructure/**`    | EF Core tracking, transactions                                                                   |
 | `migration-policy.instructions.md`    | `Infrastructure/Migrations/**`      | DB migration approval                                                                            |
-| `testing.instructions.md`             | `UnitTests/**, IntegrationTests/**, Web.IntegrationTests/**, E2E.Backend/**, Shared.TestInfrastructure/**` | Unit, integration, Web integration, backend E2E, and shared test infrastructure patterns       |
-| `integration-web-e2e-testing.instructions.md` | `IntegrationTests/**, Web.IntegrationTests/**, E2E.Backend/**, Shared.TestInfrastructure/**` | ASP.NET integration, Web, backend E2E, fixtures, lifecycle, and log-first diagnosis |
+| `testing.instructions.md`             | `UnitTests/**, IntegrationTests/**, Web.IntegrationTests/**, Web.E2E/**, E2E.Backend/**, Shared.TestInfrastructure/**` | Unit, integration, Web integration, browser E2E, backend E2E, and shared test infrastructure patterns |
+| `integration-web-e2e-testing.instructions.md` | `IntegrationTests/**, Web.IntegrationTests/**, Web.E2E/**, E2E.Backend/**, Shared.TestInfrastructure/**` | ASP.NET integration, Web, browser E2E, backend E2E, fixtures, lifecycle, and log-first diagnosis |
 | `shared-primitives.instructions.md`   | `Domain/Shared/**`                  | TypedId, Money, Price, Quantity                                                                  |
 | `safety.instructions.md`              | `**`                                | Allowed/disallowed actions                                                                       |
 | `pre-edit.instructions.md`            | `**`                                | Pre-edit checklist (steps 0–8), post-edit agent-decisions append, @copilot-setup-maintainer gate |
@@ -192,6 +192,7 @@ Read a skill **before** scaffolding the corresponding artifact.
 | `create-di-extension`     | Adding Application or Infrastructure DI extension methods                                        |
 | `create-domain-event`     | Creating cross-BC IMessage events and/or IMessageHandler                                         |
 | `create-integration-test` | Scaffolding an integration test with BaseTest<T> + Shouldly                                      |
+| `create-web-e2e-test`     | Scaffolding a browser-driven Playwright test in ECommerceApp.Web.E2E (real JS + async broker/Outbox timing) |
 | `create-http-scenario`    | Creating a .http file for any API endpoint testing                                               |
 | `create-validator`        | Adding a FluentValidation AbstractValidator<T>                                                   |
 | `create-cqrs-handler`     | Scaffolding ICommandHandler<TCommand, TResult> + command record + result type (Option B)         |

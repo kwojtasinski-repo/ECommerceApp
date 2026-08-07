@@ -1,6 +1,6 @@
 ---
 description: "Guidance for ASP.NET Core integration, Web integration, and backend E2E tests"
-applyTo: "ECommerceApp.IntegrationTests/**, ECommerceApp.Web.IntegrationTests/**, ECommerceApp.E2E.Backend/**, ECommerceApp.Shared.TestInfrastructure/**"
+applyTo: "ECommerceApp.IntegrationTests/**, ECommerceApp.Web.IntegrationTests/**, ECommerceApp.Web.E2E/**, ECommerceApp.E2E.Backend/**, ECommerceApp.Shared.TestInfrastructure/**"
 ---
 
 # Integration, Web, and E2E Testing Guidelines
@@ -26,6 +26,11 @@ applyTo: "ECommerceApp.IntegrationTests/**, ECommerceApp.Web.IntegrationTests/**
 - Web/API integration tests use Shouldly for HTTP assertions. Service-level integration tests use FluentAssertions unless the neighboring test class establishes another local convention.
 - Backend E2E tests use the real-infrastructure factory and test fixture already provided by the project. Do not bypass migrations or container readiness in a test whose purpose is to verify them.
 - Preserve existing test names. New tests use `Method_Conditions_ExpectedResult`.
+
+### Browser E2E tier
+
+- `ECommerceApp.Web.E2E` uses Playwright against a real Kestrel address so tests can observe browser JavaScript and asynchronous broker/Outbox timing together.
+- This tier intentionally keeps `MessagingOptions.UseBackgroundDispatcher` enabled; the service and legacy web integration tiers use synchronous dispatch for deterministic service and MVC pipeline assertions.
 
 ## Isolation and lifecycle
 
