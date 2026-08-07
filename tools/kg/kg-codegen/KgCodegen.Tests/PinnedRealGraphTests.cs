@@ -198,10 +198,8 @@ public sealed class PinnedRealGraphTests
 
         Assert.True(graph.Nodes.Count(node => node.Label == "Message") >= 24);
         Assert.True(graph.Nodes.Count(node => node.Label == "MessageHandler") >= 50);
-        Assert.DoesNotContain(graph.Nodes, node => node.Label == "Job");
-        Assert.DoesNotContain(graph.Nodes, node => node.Label == "MessageHandler" && node.Id.EndsWith("StockAdjustmentJob", StringComparison.Ordinal));
         Assert.All(
-            graph.Edges.Where(edge => edge.Type == "PUBLISHES"),
+            graph.Edges.Where(edge => edge.Type == "PUBLISHES" && edge.TargetLabel == "Message" && edge.SourceLabel == "Action"),
             edge => Assert.Equal("Action", edge.SourceLabel));
         Assert.All(
             graph.Edges.Where(edge => edge.Type == "HANDLED_BY" && edge.SourceLabel == "Message"),
@@ -362,6 +360,69 @@ public sealed class PinnedRealGraphTests
         Assert.DoesNotContain(graph.Edges, edge => edge.Type == "PUBLISHES" && edge.TargetId.EndsWith("RefundApprovedItem", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void Real_graph_has_exact_job_nodes_and_task_names()
+    {
+        var graph = BuildRealGraph();
+        var jobs = graph.Nodes.Where(node => node.Label == "Job").ToArray();
+
+        Assert.Equal(9, jobs.Length);
+        Assert.Equal("CurrencyDownloader", Assert.Single(jobs, node => node.Id.EndsWith("CurrencyRateSyncTask", StringComparison.Ordinal)).Properties["taskName"]);
+        Assert.Equal("InboxCleanup", Assert.Single(jobs, node => node.Id.EndsWith("InboxCleanupTask", StringComparison.Ordinal)).Properties["taskName"]);
+        Assert.Equal("OutboxCleanup", Assert.Single(jobs, node => node.Id.EndsWith("OutboxCleanupTask", StringComparison.Ordinal)).Properties["taskName"]);
+        Assert.Equal("SnapshotOrderItemsJob", Assert.Single(jobs, node => node.Id.EndsWith("SnapshotOrderItemsJob", StringComparison.Ordinal)).Properties["taskName"]);
+        Assert.Equal(9, graph.Edges.Count(edge => edge.Type == "CONTAINS" && edge.TargetLabel == "Job"));
+    }
+
+    [Fact]
+    public void Real_graph_has_only_the_four_deferred_schedule_edges()
+    {
+        var graph = BuildRealGraph();
+        var expected = new[]
+        {
+            ("ECommerceApp.Application.Inventory.Availability.Services.StockService.ReserveAsync", "ECommerceApp.Application.Inventory.Availability.Handlers.PaymentWindowTimeoutJob"),
+            ("ECommerceApp.Application.Inventory.Availability.Services.StockService.AdjustAsync", "ECommerceApp.Application.Inventory.Availability.Handlers.StockAdjustmentJob"),
+            ("ECommerceApp.Application.Presale.Checkout.Services.SoftReservationService.HoldAsync", "ECommerceApp.Application.Presale.Checkout.Handlers.SoftReservationExpiredJob"),
+            ("ECommerceApp.Application.Sales.Payments.Handlers.OrderPlacedHandler", "ECommerceApp.Application.Sales.Payments.Handlers.PaymentWindowExpiredJob")
+        };
+
+        var schedules = graph.Edges.Where(edge => edge.Type == "SCHEDULES").ToArray();
+        Assert.Equal(4, schedules.Length);
+        foreach (var (source, target) in expected)
+        {
+            Assert.Contains(schedules, edge => edge.SourceId == source && edge.TargetId == target);
+        }
+
+        Assert.DoesNotContain(schedules, edge => edge.SourceId.EndsWith("OrderPlacementFailedHandler", StringComparison.Ordinal));
+        Assert.Equal(4, graph.Nodes.Count(node => node.Label == "Job" && Equals(node.Properties["triggerMode"], "Deferred")));
+        Assert.Equal(5, graph.Nodes.Count(node => node.Label == "Job" && node.Properties["triggerMode"] is null));
+    }
+
+    [Fact]
+    public void Real_graph_has_exact_job_operates_on_edges()
+    {
+        var graph = BuildRealGraph();
+        var operatesOn = graph.Edges.Where(edge => edge.Type == "OPERATES_ON").ToArray();
+
+        Assert.Equal(9, operatesOn.Length);
+        Assert.Equal(3, operatesOn.Count(edge => edge.SourceId.EndsWith("StockAdjustmentJob", StringComparison.Ordinal)));
+        Assert.Equal(2, operatesOn.Count(edge => edge.SourceId.EndsWith("PaymentWindowTimeoutJob", StringComparison.Ordinal)));
+        Assert.Equal(0, operatesOn.Count(edge => edge.SourceId.EndsWith("CurrencyRateSyncTask", StringComparison.Ordinal)));
+        Assert.All(operatesOn, edge => Assert.Equal("Entity", edge.TargetLabel));
+    }
+
+    [Fact]
+    public void Real_graph_has_exact_job_publish_edges()
+    {
+        var graph = BuildRealGraph();
+        var publishes = graph.Edges.Where(edge => edge.Type == "PUBLISHES" && edge.SourceLabel == "Job").ToArray();
+
+        Assert.Equal(2, publishes.Length);
+        Assert.Contains(publishes, edge => edge.SourceId.EndsWith("StockAdjustmentJob", StringComparison.Ordinal) && edge.TargetId.EndsWith("StockAvailabilityChanged", StringComparison.Ordinal));
+        Assert.Contains(publishes, edge => edge.SourceId.EndsWith("PaymentWindowExpiredJob", StringComparison.Ordinal) && edge.TargetId.EndsWith("PaymentExpired", StringComparison.Ordinal));
+        Assert.All(publishes, edge => Assert.Contains(graph.Nodes, node => node.Label == "Message" && node.Id == edge.TargetId));
+    }
+
     /// <summary>
     /// `OrderService` declares the message in a local variable and enqueues the identifier, not a
     /// `new` expression. Missing this edge is the difference between seeing order placement in the
@@ -384,17 +445,14 @@ public sealed class PinnedRealGraphTests
     /// both are silent. Pinned so the silence stays deliberate. See `MessageParser`'s summary.
     /// </summary>
     [Fact]
-    public void Real_graph_omits_handler_and_job_sourced_publishes_without_warning()
+    public void Real_graph_omits_handler_sourced_publishes_without_warning()
     {
         var graph = BuildRealGraph(out _, out var messageWarnings);
 
         Assert.DoesNotContain(graph.Edges, edge =>
             edge.Type == "PUBLISHES" && edge.TargetId.EndsWith("StockReconciliationRequired", StringComparison.Ordinal));
-        Assert.DoesNotContain(graph.Edges, edge =>
-            edge.Type == "PUBLISHES" && edge.TargetId.EndsWith("PaymentExpired", StringComparison.Ordinal));
         Assert.DoesNotContain(messageWarnings, warning =>
-            warning.Contains("StockReconciliationRequired", StringComparison.Ordinal) ||
-            warning.Contains("PaymentExpired", StringComparison.Ordinal));
+            warning.Contains("StockReconciliationRequired", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -458,8 +516,6 @@ public sealed class PinnedRealGraphTests
             edge => edge.Type == "USES" && edge.TargetLabel == "Query" &&
                     edge.TargetId != "ECommerceApp.Application.Messaging.OrderExistsQuery");
         Assert.DoesNotContain(graph.Edges, edge => edge.Type == "CONTAINS" && edge.TargetLabel == "Query");
-        Assert.DoesNotContain(graph.Nodes, node => node.Label == "Job");
-        Assert.DoesNotContain(graph.Edges, edge => edge.Type == "SCHEDULES");
     }
 
     private static Graph BuildRealGraph() => BuildRealGraph(out _, out _);
@@ -492,6 +548,14 @@ public sealed class PinnedRealGraphTests
             Path.Combine(root, "ECommerceApp.Application"),
             message.Graph.Nodes);
         messageHandler.Graph.MergeInto(graph);
+        var job = new JobParser(resolver).Parse(
+            Path.Combine(root, "ECommerceApp.Application"),
+            graph.Nodes.Where(node => node.Label == "Action").ToList(),
+            messageHandler.Graph.Nodes,
+            message.Graph.Nodes,
+            repository.Graph.Nodes,
+            repository.Graph.Edges);
+        job.Graph.MergeInto(graph);
         var query = new QueryParser().Parse(
             Path.Combine(root, "ECommerceApp.Application"),
             graph.Nodes.Where(node => node.Label == "Action").ToList());

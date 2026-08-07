@@ -33,6 +33,16 @@ public static class CliRunner
         var actions = new ActionParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Application"));
         var messages = new MessageParser().Parse(Path.Combine(root, "ECommerceApp.Application"), actions.Graph.Nodes);
         var messageHandlers = new MessageHandlerParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Application"), messages.Graph.Nodes);
+        var repositories = new RepositoryParser(resolver).Parse(
+            Path.Combine(root, "ECommerceApp.Domain"),
+            graph.Nodes.Where(x => x.Label == "Entity").ToList());
+        var jobs = new JobParser(resolver).Parse(
+            Path.Combine(root, "ECommerceApp.Application"),
+            actions.Graph.Nodes,
+            messageHandlers.Graph.Nodes,
+            messages.Graph.Nodes,
+            repositories.Graph.Nodes,
+            repositories.Graph.Edges);
         // Query must run after Action because its USES pass targets Action nodes.
         var queries = new QueryParser().Parse(Path.Combine(root, "ECommerceApp.Application"), actions.Graph.Nodes);
         // QueryHandler must run after Query because HANDLED_BY targets Query nodes; handlers live in Infrastructure.
@@ -42,12 +52,14 @@ public static class CliRunner
         var parsers = new (string Name, ParserResult Result)[]
         {
             ("Entity", entity),
-            ("Repository", new RepositoryParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Domain"), graph.Nodes.Where(x => x.Label == "Entity").ToList())),
+            ("Repository", repositories),
             ("Action", actions),
             // Message must run after Action because its later PUBLISHES pass targets Action nodes.
             ("Message", messages),
             // MessageHandler must run after Message because HANDLED_BY targets Message nodes.
             ("MessageHandler", messageHandlers),
+            // Job must run after Action, Message, MessageHandler and Repository: its edges target those nodes.
+            ("Job", jobs),
             // Query must run after Action because USES targets Action nodes.
             ("Query", queries),
             // QueryHandler must run after Query because HANDLED_BY targets Query nodes.

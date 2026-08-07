@@ -127,20 +127,7 @@ public sealed class MessageParser
                     // Only the enqueued argument counts. Scanning the whole method body for
                     // `new SomeMessage(...)` would turn every constructed value — including
                     // non-message types such as `RefundApprovedItem` — into a publish.
-                    var argument = invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
-                    var messageName = argument switch
-                    {
-                        ObjectCreationExpressionSyntax creation => creation.Type.ToString(),
-                        IdentifierNameSyntax identifier => FindLocalMessageType(site.Method, identifier.Identifier.Text),
-                        _ => null
-                    };
-                    if (messageName is null)
-                    {
-                        warnings.Add($"Could not extract published message in {site.ActionId}: {argument ?? invocation}.");
-                        continue;
-                    }
-
-                    var resolved = resolver.Resolve(messageName, root, out var warning);
+                    var resolved = OutboxPublishResolver.ResolvePublishedMessage(invocation, site.Method, site.ActionId, resolver, root, out var warning);
                     if (warning is not null)
                     {
                         warnings.Add(warning);
@@ -161,13 +148,4 @@ public sealed class MessageParser
         }
     }
 
-    private static string? FindLocalMessageType(MethodDeclarationSyntax method, string variableName)
-    {
-        return method.DescendantNodes()
-            .OfType<VariableDeclaratorSyntax>()
-            .Where(variable => variable.Identifier.Text.Equals(variableName, StringComparison.Ordinal))
-            .Select(variable => variable.Initializer?.Value as ObjectCreationExpressionSyntax)
-            .FirstOrDefault(creation => creation is not null)
-            ?.Type.ToString();
-    }
 }
