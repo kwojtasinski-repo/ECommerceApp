@@ -343,6 +343,35 @@ public sealed class ParserTests
         Directory.Delete(root.Root, true);
     }
 
+    [Fact]
+    public void Message_parsers_resolve_registry_aliases_handlers_and_local_publishes()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "kg-messages-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(root, "Messages"));
+        Directory.CreateDirectory(Path.Combine(root, "Messaging"));
+        Directory.CreateDirectory(Path.Combine(root, "Services", "Handlers"));
+        File.WriteAllText(Path.Combine(root, "Messages", "Real.cs"), "namespace Demo.Messages; public sealed record Real : IMessage; public interface IMessage { }");
+        File.WriteAllText(Path.Combine(root, "Messages", "Other.cs"), "namespace Demo.Messages; public sealed record Other : IMessage;");
+        File.WriteAllText(Path.Combine(root, "Messaging", "MessageTypeRegistry.cs"), "using Alias = Demo.Messages.Real; public static class MessageTypeRegistry { static MessageTypeRegistry() { Register(typeof(Alias), \"real\"); Register(typeof(Other), \"other\"); } static void Register(System.Type type, string key) { } }");
+        File.WriteAllText(Path.Combine(root, "Services", "DemoService.cs"), "using Demo.Messages; namespace Demo.Services; public sealed class DemoService { public void Send() { var local = new Other(); EnqueueAsync(new Real(), null); EnqueueAsync(local, null); } private void EnqueueAsync(object message, object? transaction) { } }");
+        File.WriteAllText(Path.Combine(root, "Services", "Handlers", "DemoHandler.cs"), "using Demo.Messages; namespace Demo.Services.Handlers; public sealed class DemoHandler : IMessageHandler<Real>, IIdAwareMessageHandler<Other> { } public interface IMessageHandler<T> { } public interface IIdAwareMessageHandler<T> { }");
+
+        var modules = new ModuleResolver(new Dictionary<string, string> { ["Demo"] = "Services" });
+        var actions = new[] { new CypherNode("Action", "Demo.Services.DemoService.Send", new Dictionary<string, object?>()) };
+        var messages = new MessageParser(modules).Parse(root, actions);
+        var handlers = new MessageHandlerParser(modules).Parse(root, messages.Graph.Nodes);
+
+        Assert.Equal(2, messages.Graph.Nodes.Count(node => node.Label == "Message"));
+        Assert.Equal("real", Assert.Single(messages.Graph.Nodes, node => node.Id.EndsWith("Real", StringComparison.Ordinal)).Properties["key"]);
+        Assert.Equal("other", Assert.Single(messages.Graph.Nodes, node => node.Id.EndsWith("Other", StringComparison.Ordinal)).Properties["key"]);
+        Assert.Equal(2, messages.Graph.Edges.Count(edge => edge.Type == "PUBLISHES"));
+        Assert.Single(handlers.Graph.Nodes, node => node.Properties["idAware"] is true);
+        Assert.Equal(2, handlers.Graph.Edges.Count(edge => edge.Type == "HANDLED_BY"));
+        Assert.Empty(messages.Warnings);
+        Assert.Empty(handlers.Warnings);
+        Directory.Delete(root, true);
+    }
+
     private static (string Root, string Api, string Web) CreateRoleFixture(string alias, string methods, string classAttributes = "")
     {
         var root = Path.Combine(Path.GetTempPath(), "kg-role-" + Guid.NewGuid().ToString("N"));

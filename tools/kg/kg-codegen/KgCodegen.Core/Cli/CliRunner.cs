@@ -31,6 +31,8 @@ public static class CliRunner
         // Endpoint/Page must run after Action: their EXPOSED_BY edges only target Action nodes that
         // already exist, so `actions` is threaded through explicitly rather than read back off `graph`.
         var actions = new ActionParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Application"));
+        var messages = new MessageParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Application"), actions.Graph.Nodes);
+        var messageHandlers = new MessageHandlerParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Application"), messages.Graph.Nodes);
         var endpoints = new EndpointParser().Parse(Path.Combine(root, "ECommerceApp.API"), applicationSymbols, actions.Graph.Nodes);
         var pages = new PageParser().Parse(Path.Combine(root, "ECommerceApp.Web"), applicationSymbols, actions.Graph.Nodes);
         var parsers = new (string Name, ParserResult Result)[]
@@ -38,6 +40,10 @@ public static class CliRunner
             ("Entity", entity),
             ("Repository", new RepositoryParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Domain"), graph.Nodes.Where(x => x.Label == "Entity").ToList())),
             ("Action", actions),
+            // Message must run after Action because its later PUBLISHES pass targets Action nodes.
+            ("Message", messages),
+            // MessageHandler must run after Message because HANDLED_BY targets Message nodes.
+            ("MessageHandler", messageHandlers),
             ("Endpoint", endpoints),
             ("Page", pages),
             // RolePolicy must run after Endpoint/Page: GOVERNED_BY sources are their generated nodes.
