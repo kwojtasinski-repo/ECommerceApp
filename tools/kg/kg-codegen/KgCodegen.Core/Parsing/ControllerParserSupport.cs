@@ -5,6 +5,13 @@ using KgCodegen.Core.Model;
 
 namespace KgCodegen.Core.Parsing;
 
+internal readonly record struct ControllerActionSite(
+    string FilePath,
+    string ClassId,
+    ClassDeclarationSyntax Class,
+    MethodDeclarationSyntax Method,
+    string NodeId);
+
 internal static class ControllerParserSupport
 {
     public static ParserResult Parse(
@@ -21,6 +28,68 @@ internal static class ControllerParserSupport
             .Select(node => node.Id)
             .ToHashSet(StringComparer.Ordinal);
 
+        foreach (var site in EnumerateActionSites(rootPath, isController))
+        {
+            var classId = site.ClassId;
+            var controller = site.Class;
+            var method = site.Method;
+            var serviceFields = controller.Members.OfType<FieldDeclarationSyntax>()
+                    .SelectMany(field => field.Declaration.Variables.Select(variable =>
+                        (Field: variable.Identifier.Text, Interface: GetSimpleTypeName(field.Declaration.Type))))
+                    .Where(pair => pair.Interface is not null && pair.Interface.StartsWith("I", StringComparison.Ordinal) && pair.Interface.EndsWith("Service", StringComparison.Ordinal))
+                    .ToDictionary(pair => pair.Field, pair => pair.Interface!, StringComparer.Ordinal);
+
+            var classRoute = GetStringAttributeValue(controller.AttributeLists, "Route");
+            var httpMethod = GetHttpMethod(method.AttributeLists);
+            var route = CombineRoute(classRoute, GetMethodRoute(method.AttributeLists));
+            if (route is null)
+            {
+                warnings.Add($"Could not confidently extract route for {classId}.{method.Identifier.Text}.");
+            }
+
+            graph.Nodes.Add(new CypherNode(label, site.NodeId, new Dictionary<string, object?>
+            {
+                ["httpMethod"] = httpMethod,
+                ["route"] = route
+            }));
+            graph.Edges.Add(new CypherEdge("CONTAINS", "Host", hostId, label, site.NodeId));
+
+            foreach (var invocation in method.DescendantNodes().OfType<InvocationExpressionSyntax>())
+            {
+                if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess ||
+                    memberAccess.Expression is not IdentifierNameSyntax receiver ||
+                    !serviceFields.TryGetValue(receiver.Identifier.Text, out var interfaceName))
+                {
+                    continue;
+                }
+
+                // `IOrderService` -> `OrderService` is the convention; the interface lookup is the
+                // fallback for decorators (`CachedCatalogNavigationService : ICatalogNavigationService`).
+                var concreteName = interfaceName[1..];
+                var ambiguous = applicationSymbols.IsAmbiguous(concreteName) || applicationSymbols.IsAmbiguous(interfaceName);
+                var concreteType = ambiguous
+                    ? null
+                    : applicationSymbols.Resolve(concreteName) ?? applicationSymbols.ResolveImplementation(interfaceName);
+                var actionId = concreteType is null ? null : concreteType + "." + memberAccess.Name.Identifier.Text;
+                if (actionId is null || !actionIds.Contains(actionId))
+                {
+                    var reason = ambiguous ? " (more than one type declares that name)" : "";
+                    warnings.Add($"Could not resolve action for {classId}.{method.Identifier.Text}: {interfaceName}.{memberAccess.Name.Identifier.Text}{reason}.");
+                    continue;
+                }
+
+                graph.Edges.Add(new CypherEdge("EXPOSED_BY", "Action", actionId, label, site.NodeId));
+            }
+        }
+
+        return new ParserResult(graph, warnings);
+    }
+
+    internal static IEnumerable<ControllerActionSite> EnumerateActionSites(
+        string rootPath,
+        Func<ClassDeclarationSyntax, bool> isController)
+    {
+        var ids = new HashSet<string>(StringComparer.Ordinal);
         foreach (var file in Directory.EnumerateFiles(rootPath, "*Controller.cs", SearchOption.AllDirectories))
         {
             var syntaxRoot = CSharpSyntaxTree.ParseText(File.ReadAllText(file)).GetRoot();
@@ -28,64 +97,14 @@ internal static class ControllerParserSupport
             foreach (var controller in syntaxRoot.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(isController))
             {
                 var classId = string.IsNullOrEmpty(ns) ? controller.Identifier.Text : ns + "." + controller.Identifier.Text;
-                var serviceFields = controller.Members.OfType<FieldDeclarationSyntax>()
-                    .SelectMany(field => field.Declaration.Variables.Select(variable =>
-                        (Field: variable.Identifier.Text, Interface: GetSimpleTypeName(field.Declaration.Type))))
-                    .Where(pair => pair.Interface is not null && pair.Interface.StartsWith("I", StringComparison.Ordinal) && pair.Interface.EndsWith("Service", StringComparison.Ordinal))
-                    .ToDictionary(pair => pair.Field, pair => pair.Interface!, StringComparer.Ordinal);
-
-                var classRoute = GetStringAttributeValue(controller.AttributeLists, "Route");
                 foreach (var method in controller.Members.OfType<MethodDeclarationSyntax>()
                     .Where(method => method.Modifiers.Any(modifier => modifier.IsKind(SyntaxKind.PublicKeyword))))
                 {
-                    var httpMethod = GetHttpMethod(method.AttributeLists);
-                    var route = CombineRoute(classRoute, GetMethodRoute(method.AttributeLists));
-                    if (route is null)
-                    {
-                        warnings.Add($"Could not confidently extract route for {classId}.{method.Identifier.Text}.");
-                    }
-
-                    var endpointId = UniqueId(graph, classId + "." + method.Identifier.Text);
-                    graph.Nodes.Add(new CypherNode(label, endpointId, new Dictionary<string, object?>
-                    {
-                        ["httpMethod"] = httpMethod,
-                        ["route"] = route
-                    }));
-                    graph.Edges.Add(new CypherEdge("CONTAINS", "Host", hostId, label, endpointId));
-
-                    foreach (var invocation in method.DescendantNodes().OfType<InvocationExpressionSyntax>())
-                    {
-                        if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess ||
-                            memberAccess.Expression is not IdentifierNameSyntax receiver ||
-                            !serviceFields.TryGetValue(receiver.Identifier.Text, out var interfaceName))
-                        {
-                            continue;
-                        }
-
-                        // `IOrderService` -> `OrderService` is the convention; the interface lookup is the
-                        // fallback for decorators (`CachedCatalogNavigationService : ICatalogNavigationService`).
-                        // Both refuse to answer when the name is declared more than once, so an ambiguous
-                        // service produces a warning rather than an edge to an arbitrarily picked class.
-                        var concreteName = interfaceName[1..];
-                        var ambiguous = applicationSymbols.IsAmbiguous(concreteName) || applicationSymbols.IsAmbiguous(interfaceName);
-                        var concreteType = ambiguous
-                            ? null
-                            : applicationSymbols.Resolve(concreteName) ?? applicationSymbols.ResolveImplementation(interfaceName);
-                        var actionId = concreteType is null ? null : concreteType + "." + memberAccess.Name.Identifier.Text;
-                        if (actionId is null || !actionIds.Contains(actionId))
-                        {
-                            var reason = ambiguous ? " (more than one type declares that name)" : "";
-                            warnings.Add($"Could not resolve action for {classId}.{method.Identifier.Text}: {interfaceName}.{memberAccess.Name.Identifier.Text}{reason}.");
-                            continue;
-                        }
-
-                        graph.Edges.Add(new CypherEdge("EXPOSED_BY", "Action", actionId, label, endpointId));
-                    }
+                    var nodeId = UniqueId(ids, classId + "." + method.Identifier.Text);
+                    yield return new ControllerActionSite(file, classId, controller, method, nodeId);
                 }
             }
         }
-
-        return new ParserResult(graph, warnings);
     }
 
     private static bool HasAttribute(SyntaxList<AttributeListSyntax> attributes, string name) =>
@@ -163,9 +182,9 @@ internal static class ControllerParserSupport
         _ => null
     };
 
-    private static string UniqueId(Graph graph, string baseId)
+    private static string UniqueId(HashSet<string> ids, string baseId)
     {
-        if (!graph.Nodes.Any(node => node.Id == baseId))
+        if (ids.Add(baseId))
         {
             return baseId;
         }
@@ -173,7 +192,7 @@ internal static class ControllerParserSupport
         for (var suffix = 2; ; suffix++)
         {
             var candidate = baseId + "#" + suffix;
-            if (!graph.Nodes.Any(node => node.Id == candidate))
+            if (ids.Add(candidate))
             {
                 return candidate;
             }

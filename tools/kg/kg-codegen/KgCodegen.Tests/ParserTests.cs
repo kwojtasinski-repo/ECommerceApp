@@ -241,4 +241,129 @@ public sealed class ParserTests
             warning.Contains("more than one type declares that name", StringComparison.Ordinal));
         Directory.Delete(root, true);
     }
+
+    [Fact]
+    public void AtomicRoleCatalog_reads_declared_role_constants_instead_of_hardcoding_names()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "kg-role-catalog-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        File.WriteAllText(Path.Combine(root, "UserPermissions.cs"), "public static class UserPermissions { public static class Roles { public const string Administrator = \"Administrator\"; public const string Customer = \"Customer\"; } }");
+
+        var catalog = AtomicRoleCatalog.Build(root);
+
+        Assert.Equal(2, catalog.Count);
+        Assert.Equal("Customer", catalog.ResolveConstant("Customer"));
+        Assert.True(catalog.IsDeclaredValue("Customer"));
+        Assert.False(catalog.IsDeclaredValue("User"));
+        Assert.Empty(catalog.Warnings);
+        Directory.Delete(root, true);
+    }
+
+    [Fact]
+    public void RolePolicyParser_splits_alias_and_interpolation_without_alias_nodes()
+    {
+        var root = CreateRoleFixture(
+            "public const string MaintenanceRole = \"Administrator, Manager, Service\";",
+            "[Authorize(Roles = MaintenanceRole)] public IActionResult Bare() => Ok();\n[Authorize(Roles = $\"{MaintenanceRole}\")] public IActionResult Interpolated() => Ok();");
+
+        var result = ParseRoleFixture(root.Api, root.Web);
+
+        Assert.Equal(["Administrator", "Manager", "Service"], result.Graph.Nodes.Where(node => node.Label == "Role").Select(node => node.Id).OrderBy(id => id));
+        Assert.Equal(6, result.Graph.Edges.Count(edge => edge.Type == "GOVERNED_BY"));
+        Assert.DoesNotContain(result.Graph.Nodes, node => node.Id == "MaintenanceRole");
+        Directory.Delete(root.Root, true);
+    }
+
+    [Fact]
+    public void RolePolicyParser_ignores_output_cache_policy_and_bare_authorize()
+    {
+        var root = CreateRoleFixture(
+            "public const string MaintenanceRole = \"Administrator\";",
+            "[OutputCache(PolicyName = \"StorefrontIndex\")] public IActionResult Cached() => Ok();\n[Authorize] public IActionResult Authenticated() => Ok();");
+
+        var result = ParseRoleFixture(root.Api, root.Web);
+
+        Assert.Empty(result.Graph.Nodes);
+        Assert.Empty(result.Graph.Edges);
+        Assert.DoesNotContain(result.Warnings, warning => warning.Contains("Authorize", StringComparison.Ordinal));
+        Directory.Delete(root.Root, true);
+    }
+
+    [Fact]
+    public void RolePolicyParser_resolves_aliases_per_project_and_intersects_levels()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "kg-role-projects-" + Guid.NewGuid().ToString("N"));
+        var api = Path.Combine(root, "api");
+        var web = Path.Combine(root, "web");
+        Directory.CreateDirectory(Path.Combine(api, "Controllers"));
+        Directory.CreateDirectory(Path.Combine(web, "Controllers"));
+        var application = Path.Combine(root, "application");
+        Directory.CreateDirectory(application);
+        File.WriteAllText(Path.Combine(application, "UserPermissions.cs"), "public static class UserPermissions { public static class Roles { public const string Administrator = \"Administrator\"; public const string Manager = \"Manager\"; public const string Service = \"Service\"; } }");
+        File.WriteAllText(Path.Combine(api, "Controllers", "BaseController.cs"), "public class BaseController : Microsoft.AspNetCore.Mvc.ControllerBase { public const string MaintenanceRole = \"Administrator, Manager, Service\"; }");
+        File.WriteAllText(Path.Combine(web, "Controllers", "BaseController.cs"), "public class BaseController : Microsoft.AspNetCore.Mvc.Controller { public const string MaintenanceRole = \"Administrator, Manager\"; public const string ManagingRole = \"Administrator, Manager\"; }");
+        File.WriteAllText(Path.Combine(api, "Controllers", "OrdersController.cs"), "using Microsoft.AspNetCore.Authorization; using Microsoft.AspNetCore.Mvc; [ApiController] public class OrdersController : BaseController { [Authorize(Roles = MaintenanceRole)] public IActionResult Get() => Ok(); }");
+        File.WriteAllText(Path.Combine(web, "Controllers", "StorefrontController.cs"), "using Microsoft.AspNetCore.Authorization; using Microsoft.AspNetCore.Mvc; public class StorefrontController : BaseController { [Authorize(Roles = MaintenanceRole)] public IActionResult Get() => View(); }");
+
+        var result = ParseRoleFixture(api, web, application);
+        var apiId = Assert.Single(result.Graph.Edges.Where(edge => edge.SourceLabel == "Endpoint").Select(edge => edge.SourceId).Distinct(StringComparer.Ordinal));
+        var webId = Assert.Single(result.Graph.Edges.Where(edge => edge.SourceLabel == "Page").Select(edge => edge.SourceId).Distinct(StringComparer.Ordinal));
+        Assert.Contains(result.Graph.Edges, edge => edge.SourceId == apiId && edge.TargetId == "Service");
+        Assert.DoesNotContain(result.Graph.Edges, edge => edge.SourceId == webId && edge.TargetId == "Service");
+        Directory.Delete(root, true);
+    }
+
+    [Fact]
+    public void RolePolicyParser_intersects_class_and_method_role_attributes()
+    {
+        var root = CreateRoleFixture(
+            "public const string MaintenanceRole = \"Administrator, Manager, Service\"; public const string ManagingRole = \"Administrator, Manager\";",
+            "[Authorize(Roles = ManagingRole)] public IActionResult Update() => Ok();",
+            "[Authorize(Roles = MaintenanceRole)]");
+
+        var result = ParseRoleFixture(root.Api, root.Web);
+
+        Assert.Equal(["Administrator", "Manager"], result.Graph.Edges.Select(edge => edge.TargetId).OrderBy(id => id));
+        Assert.DoesNotContain(result.Graph.Edges, edge => edge.TargetId == "Service");
+        Assert.Empty(result.Warnings);
+        Directory.Delete(root.Root, true);
+    }
+
+    [Fact]
+    public void RolePolicyParser_warns_for_unknown_alias_without_fabricating_node()
+    {
+        var root = CreateRoleFixture(
+            "public const string MaintenanceRole = \"Administrator\";",
+            "[Authorize(Roles = MissingRole)] public IActionResult Get() => Ok();");
+
+        var result = ParseRoleFixture(root.Api, root.Web);
+
+        Assert.Empty(result.Graph.Nodes);
+        Assert.Contains(result.Warnings, warning => warning.Contains("MissingRole", StringComparison.Ordinal));
+        Directory.Delete(root.Root, true);
+    }
+
+    private static (string Root, string Api, string Web) CreateRoleFixture(string alias, string methods, string classAttributes = "")
+    {
+        var root = Path.Combine(Path.GetTempPath(), "kg-role-" + Guid.NewGuid().ToString("N"));
+        var api = Path.Combine(root, "api");
+        var web = Path.Combine(root, "web");
+        Directory.CreateDirectory(Path.Combine(api, "Controllers"));
+        Directory.CreateDirectory(Path.Combine(web, "Controllers"));
+        var application = Path.Combine(root, "application");
+        Directory.CreateDirectory(application);
+        File.WriteAllText(Path.Combine(application, "UserPermissions.cs"), "public static class UserPermissions { public static class Roles { public const string Administrator = \"Administrator\"; public const string Manager = \"Manager\"; public const string Service = \"Service\"; } }");
+        File.WriteAllText(Path.Combine(api, "Controllers", "BaseController.cs"), $"public class BaseController : Microsoft.AspNetCore.Mvc.ControllerBase {{ {alias} }}");
+        File.WriteAllText(Path.Combine(api, "Controllers", "OrdersController.cs"), $"using Microsoft.AspNetCore.Authorization; using Microsoft.AspNetCore.Mvc; [ApiController] {classAttributes} public class OrdersController : BaseController {{ {methods} }}");
+        return (root, api, web);
+    }
+
+    private static ParserResult ParseRoleFixture(string api, string web, string? application = null)
+    {
+        application ??= Path.Combine(Directory.GetParent(api)!.FullName, "application");
+        var symbols = DomainSymbolIndex.Build(application);
+        var endpoint = new EndpointParser().Parse(api, symbols, []);
+        var page = new PageParser().Parse(web, symbols, []);
+        return new RolePolicyParser().Parse(application, api, web, endpoint.Graph.Nodes, page.Graph.Nodes);
+    }
 }

@@ -47,9 +47,13 @@ Parsers run in this order; it is a real dependency chain, not a style choice.
 | `ActionParser` | `ECommerceApp.Application` | `Action` (public methods of `*Service.cs`) |
 | `EndpointParser` | `ECommerceApp.API` | `Endpoint`, `Action-[:EXPOSED_BY]->Endpoint` |
 | `PageParser` | `ECommerceApp.Web` | `Page`, `Action-[:EXPOSED_BY]->Page` |
+| `RolePolicyParser` | `ECommerceApp.Application` + `ECommerceApp.API` + `ECommerceApp.Web` | atomic `Role`/`Policy`, `Endpoint/Page-[:GOVERNED_BY]->Role/Policy` |
 
 `Endpoint`/`Page` must run after `Action` — an `EXPOSED_BY` edge is only emitted
-when its target `Action` id already exists.
+when its target `Action` id already exists. `RolePolicy` must run after both
+controller parsers because its governance edges target their generated nodes.
+Role names are read from `UserPermissions.Roles`; only roles actually reached
+by a governance edge become graph nodes.
 
 ## Warnings are the product, not noise
 
@@ -69,6 +73,14 @@ parser guess.
   types share a simple name. Harmless for resolution paths that never look that
   name up; the ambiguity guard above is what keeps it from producing a wrong
   edge.
+
+Additional role/policy warnings are emitted when an alias has conflicting
+project-local declarations, an authorization expression cannot be resolved, a
+governance source id has no matching Endpoint/Page node, or class and method
+role sets have an empty intersection. These cases never fabricate a node or
+edge. The parser is intentionally attribute-only: imperative
+`User.IsInRole(...)` branches in action bodies are a documented coverage gap
+and do not produce `GOVERNED_BY` edges.
 
 Action resolution goes `IFooService` → `FooService` (the repo-wide convention)
 and falls back to "the single class implementing `IFooService`" for decorators

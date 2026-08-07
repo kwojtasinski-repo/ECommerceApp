@@ -111,6 +111,73 @@ public sealed class PinnedRealGraphTests
     }
 
     [Fact]
+    public void Real_graph_has_atomic_roles_and_trusted_policy_only()
+    {
+        var graph = BuildRealGraph();
+
+        Assert.Equal(["Administrator", "Manager", "Service"],
+            graph.Nodes.Where(node => node.Label == "Role").Select(node => node.Id).OrderBy(id => id));
+        Assert.Equal(["TrustedApiUser"],
+            graph.Nodes.Where(node => node.Label == "Policy").Select(node => node.Id));
+        Assert.DoesNotContain(graph.Nodes, node => node.Id is "ManagingRole" or "MaintenanceRole" or "StorefrontIndex");
+    }
+
+    [Fact]
+    public void Real_graph_intersects_class_and_method_roles()
+    {
+        var graph = BuildRealGraph();
+        var stockEdges = graph.Edges
+            .Where(edge => edge.Type == "GOVERNED_BY" && edge.SourceId.Contains("StockController", StringComparison.Ordinal))
+            .ToArray();
+
+        Assert.DoesNotContain(stockEdges, edge => edge.SourceId.EndsWith("Adjust", StringComparison.Ordinal) && edge.TargetId == "Service");
+        Assert.DoesNotContain(stockEdges, edge => edge.SourceId.EndsWith("Release", StringComparison.Ordinal) && edge.TargetId == "Service");
+        Assert.DoesNotContain(stockEdges, edge => edge.SourceId.EndsWith("Confirm", StringComparison.Ordinal) && edge.TargetId == "Service");
+        Assert.DoesNotContain(stockEdges, edge => edge.SourceId.EndsWith("Withdraw", StringComparison.Ordinal) && edge.TargetId == "Service");
+        foreach (var method in new[] { "Adjust", "Release", "Confirm", "Withdraw" })
+        {
+            Assert.Contains(stockEdges, edge => edge.SourceId.EndsWith(method, StringComparison.Ordinal) && edge.TargetId == "Administrator");
+            Assert.Contains(stockEdges, edge => edge.SourceId.EndsWith(method, StringComparison.Ordinal) && edge.TargetId == "Manager");
+        }
+    }
+
+    [Fact]
+    public void Real_graph_has_five_policy_governance_edges()
+    {
+        var graph = BuildRealGraph();
+        var policyEdges = graph.Edges
+            .Where(edge => edge.Type == "GOVERNED_BY" && edge.TargetLabel == "Policy" && edge.TargetId == "TrustedApiUser")
+            .ToArray();
+
+        Assert.Equal(5, policyEdges.Length);
+        Assert.All(policyEdges, edge =>
+            Assert.True(edge.SourceId.Contains("CartController", StringComparison.Ordinal) ||
+                        edge.SourceId.Contains("CheckoutController", StringComparison.Ordinal)));
+    }
+
+    [Fact]
+    public void Real_graph_has_no_role_policy_source_alignment_warnings()
+    {
+        BuildRealGraph(out var rolePolicyWarnings);
+
+        Assert.DoesNotContain(rolePolicyWarnings, warning => warning.Contains("has no matching", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Real_graph_preserves_overload_suffix_and_imperative_authorization_gap()
+    {
+        var graph = BuildRealGraph();
+        var orderEdges = graph.Edges
+            .Where(edge => edge.Type == "GOVERNED_BY" && edge.SourceId.Contains("Web.Areas.Sales.Controllers.OrdersController.Index", StringComparison.Ordinal))
+            .ToArray();
+
+        Assert.Equal(6, orderEdges.Length);
+        Assert.Equal(3, orderEdges.Count(edge => edge.SourceId.EndsWith("Index", StringComparison.Ordinal)));
+        Assert.Equal(3, orderEdges.Count(edge => edge.SourceId.EndsWith("Index#2", StringComparison.Ordinal)));
+        Assert.DoesNotContain(graph.Edges, edge => edge.Type == "GOVERNED_BY" && edge.SourceId.Contains("API.Controllers.Sales.OrdersController.GetById", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Full_graph_has_expected_lower_bounds_and_zero_unknown_label_warnings()
     {
         var graph = BuildRealGraph();
@@ -124,7 +191,9 @@ public sealed class PinnedRealGraphTests
         Assert.Empty(report.Warnings);
     }
 
-    private static Graph BuildRealGraph()
+    private static Graph BuildRealGraph() => BuildRealGraph(out _);
+
+    private static Graph BuildRealGraph(out IReadOnlyList<string> rolePolicyWarnings)
     {
         var root = FindRepositoryRoot();
         var resolver = new ModuleResolver();
@@ -149,6 +218,14 @@ public sealed class PinnedRealGraphTests
             applicationSymbols,
             graph.Nodes.Where(node => node.Label == "Action").ToList());
         page.Graph.MergeInto(graph);
+        var rolePolicy = new RolePolicyParser().Parse(
+            Path.Combine(root, "ECommerceApp.Application"),
+            Path.Combine(root, "ECommerceApp.API"),
+            Path.Combine(root, "ECommerceApp.Web"),
+            graph.Nodes.Where(node => node.Label == "Endpoint").ToList(),
+            graph.Nodes.Where(node => node.Label == "Page").ToList());
+        rolePolicy.Graph.MergeInto(graph);
+        rolePolicyWarnings = rolePolicy.Warnings;
 
         var report = GraphValidator.Validate(
             graph,

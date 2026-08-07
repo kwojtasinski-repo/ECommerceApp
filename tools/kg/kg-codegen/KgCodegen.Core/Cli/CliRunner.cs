@@ -31,13 +31,22 @@ public static class CliRunner
         // Endpoint/Page must run after Action: their EXPOSED_BY edges only target Action nodes that
         // already exist, so `actions` is threaded through explicitly rather than read back off `graph`.
         var actions = new ActionParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Application"));
+        var endpoints = new EndpointParser().Parse(Path.Combine(root, "ECommerceApp.API"), applicationSymbols, actions.Graph.Nodes);
+        var pages = new PageParser().Parse(Path.Combine(root, "ECommerceApp.Web"), applicationSymbols, actions.Graph.Nodes);
         var parsers = new (string Name, ParserResult Result)[]
         {
             ("Entity", entity),
             ("Repository", new RepositoryParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Domain"), graph.Nodes.Where(x => x.Label == "Entity").ToList())),
             ("Action", actions),
-            ("Endpoint", new EndpointParser().Parse(Path.Combine(root, "ECommerceApp.API"), applicationSymbols, actions.Graph.Nodes)),
-            ("Page", new PageParser().Parse(Path.Combine(root, "ECommerceApp.Web"), applicationSymbols, actions.Graph.Nodes))
+            ("Endpoint", endpoints),
+            ("Page", pages),
+            // RolePolicy must run after Endpoint/Page: GOVERNED_BY sources are their generated nodes.
+            ("RolePolicy", new RolePolicyParser().Parse(
+                Path.Combine(root, "ECommerceApp.Application"),
+                Path.Combine(root, "ECommerceApp.API"),
+                Path.Combine(root, "ECommerceApp.Web"),
+                endpoints.Graph.Nodes,
+                pages.Graph.Nodes))
         };
 
         foreach (var (indexName, index) in new[] { ("Domain", symbols), ("Application", applicationSymbols) })
