@@ -33,6 +33,10 @@ public static class CliRunner
         var actions = new ActionParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Application"));
         var messages = new MessageParser().Parse(Path.Combine(root, "ECommerceApp.Application"), actions.Graph.Nodes);
         var messageHandlers = new MessageHandlerParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Application"), messages.Graph.Nodes);
+        // Query must run after Action because its USES pass targets Action nodes.
+        var queries = new QueryParser().Parse(Path.Combine(root, "ECommerceApp.Application"), actions.Graph.Nodes);
+        // QueryHandler must run after Query because HANDLED_BY targets Query nodes; handlers live in Infrastructure.
+        var queryHandlers = new QueryHandlerParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Infrastructure"), queries.Graph.Nodes);
         var endpoints = new EndpointParser().Parse(Path.Combine(root, "ECommerceApp.API"), applicationSymbols, actions.Graph.Nodes);
         var pages = new PageParser().Parse(Path.Combine(root, "ECommerceApp.Web"), applicationSymbols, actions.Graph.Nodes);
         var parsers = new (string Name, ParserResult Result)[]
@@ -44,6 +48,10 @@ public static class CliRunner
             ("Message", messages),
             // MessageHandler must run after Message because HANDLED_BY targets Message nodes.
             ("MessageHandler", messageHandlers),
+            // Query must run after Action because USES targets Action nodes.
+            ("Query", queries),
+            // QueryHandler must run after Query because HANDLED_BY targets Query nodes.
+            ("QueryHandler", queryHandlers),
             ("Endpoint", endpoints),
             ("Page", pages),
             // RolePolicy must run after Endpoint/Page: GOVERNED_BY sources are their generated nodes.

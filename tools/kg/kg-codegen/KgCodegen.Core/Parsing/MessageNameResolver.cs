@@ -5,21 +5,25 @@ namespace KgCodegen.Core.Parsing;
 
 internal sealed class MessageNameResolver
 {
-    private readonly IReadOnlyDictionary<string, IReadOnlyList<string>> messagesBySimpleName;
-    private readonly IReadOnlySet<string> messageIds;
+    private readonly IReadOnlyDictionary<string, IReadOnlyList<string>> typesBySimpleName;
+    private readonly IReadOnlySet<string> typeIds;
+    private readonly string label;
+    private readonly string noun;
 
-    internal MessageNameResolver(IReadOnlyList<CypherNode> messages)
+    internal MessageNameResolver(IReadOnlyList<CypherNode> types, string label = "Message", string noun = "message")
     {
-        messageIds = messages
-            .Where(message => message.Label.Equals("Message", StringComparison.Ordinal))
-            .Select(message => message.Id)
+        this.label = label;
+        this.noun = noun;
+        typeIds = types
+            .Where(type => type.Label.Equals(label, StringComparison.Ordinal))
+            .Select(type => type.Id)
             .ToHashSet(StringComparer.Ordinal);
-        messagesBySimpleName = messages
-            .Where(message => message.Label.Equals("Message", StringComparison.Ordinal))
-            .GroupBy(message => message.Id.Split('.').Last(), StringComparer.Ordinal)
+        typesBySimpleName = types
+            .Where(type => type.Label.Equals(label, StringComparison.Ordinal))
+            .GroupBy(type => type.Id.Split('.').Last(), StringComparer.Ordinal)
             .ToDictionary(
                 group => group.Key,
-                group => (IReadOnlyList<string>)group.Select(message => message.Id).ToArray(),
+                group => (IReadOnlyList<string>)group.Select(type => type.Id).ToArray(),
                 StringComparer.Ordinal);
     }
 
@@ -33,12 +37,12 @@ internal sealed class MessageNameResolver
                 usingDirective => usingDirective.Name?.ToString() ?? "",
                 StringComparer.Ordinal);
 
-        if (aliases.TryGetValue(simpleOrQualifiedName, out var aliasTarget) && messageIds.Contains(aliasTarget))
+        if (aliases.TryGetValue(simpleOrQualifiedName, out var aliasTarget) && typeIds.Contains(aliasTarget))
         {
             return aliasTarget;
         }
 
-        if (simpleOrQualifiedName.Contains('.', StringComparison.Ordinal) && messageIds.Contains(simpleOrQualifiedName))
+        if (simpleOrQualifiedName.Contains('.', StringComparison.Ordinal) && typeIds.Contains(simpleOrQualifiedName))
         {
             return simpleOrQualifiedName;
         }
@@ -48,7 +52,7 @@ internal sealed class MessageNameResolver
             .Select(usingDirective => usingDirective.Name!.ToString())
             .Concat(EnclosingNamespaceAndAncestors(file))
             .ToHashSet(StringComparer.Ordinal);
-        var candidates = messagesBySimpleName.TryGetValue(simpleOrQualifiedName, out var matches)
+        var candidates = typesBySimpleName.TryGetValue(simpleOrQualifiedName, out var matches)
             ? matches.Where(id => candidateNamespaces.Contains(GetNamespace(id))).ToArray()
             : [];
 
@@ -57,18 +61,18 @@ internal sealed class MessageNameResolver
             return candidates[0];
         }
 
-        if (candidates.Length == 0 && messagesBySimpleName.TryGetValue(simpleOrQualifiedName, out var globalMatches))
+        if (candidates.Length == 0 && typesBySimpleName.TryGetValue(simpleOrQualifiedName, out var globalMatches))
         {
             if (globalMatches.Count == 1)
             {
                 return globalMatches[0];
             }
 
-            warning = $"Could not resolve message type '{simpleOrQualifiedName}' in {file.SyntaxTree.FilePath}: multiple message types match.";
+            warning = $"Could not resolve {noun} type '{simpleOrQualifiedName}' in {file.SyntaxTree.FilePath}: multiple {noun} types match.";
             return null;
         }
 
-        warning = $"Could not resolve message type '{simpleOrQualifiedName}' in {file.SyntaxTree.FilePath}: multiple namespaces match.";
+        warning = $"Could not resolve {noun} type '{simpleOrQualifiedName}' in {file.SyntaxTree.FilePath}: multiple namespaces match.";
         return null;
     }
 

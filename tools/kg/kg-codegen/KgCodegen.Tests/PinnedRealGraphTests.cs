@@ -204,7 +204,7 @@ public sealed class PinnedRealGraphTests
             graph.Edges.Where(edge => edge.Type == "PUBLISHES"),
             edge => Assert.Equal("Action", edge.SourceLabel));
         Assert.All(
-            graph.Edges.Where(edge => edge.Type == "HANDLED_BY"),
+            graph.Edges.Where(edge => edge.Type == "HANDLED_BY" && edge.SourceLabel == "Message"),
             edge =>
             {
                 Assert.Equal("Message", edge.SourceLabel);
@@ -397,6 +397,55 @@ public sealed class PinnedRealGraphTests
             warning.Contains("PaymentExpired", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void Real_graph_has_exact_query_contracts_and_handlers()
+    {
+        var graph = BuildRealGraph();
+
+        Assert.Equal(
+            [
+                "ECommerceApp.Application.Messaging.CompletedOrderCountQuery",
+                "ECommerceApp.Application.Messaging.OrderExistsQuery",
+                "ECommerceApp.Application.Messaging.StockAvailableQuery"
+            ],
+            graph.Nodes.Where(node => node.Label == "Query").Select(node => node.Id).OrderBy(id => id, StringComparer.Ordinal));
+        Assert.Equal(
+            [
+                "ECommerceApp.Infrastructure.Inventory.Handlers.StockAvailableQueryHandler",
+                "ECommerceApp.Infrastructure.Sales.Orders.Handlers.CompletedOrderCountQueryHandler",
+                "ECommerceApp.Infrastructure.Sales.Orders.Handlers.OrderExistsQueryHandler"
+            ],
+            graph.Nodes.Where(node => node.Label == "QueryHandler").Select(node => node.Id).OrderBy(id => id, StringComparer.Ordinal));
+        Assert.DoesNotContain(graph.Nodes, node => node.Label == "QueryHandler" && node.Id.StartsWith("ECommerceApp.Application.", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Real_graph_has_query_handler_edges_and_result_types()
+    {
+        var graph = BuildRealGraph();
+
+        Assert.Equal(3, graph.Edges.Count(edge => edge.Type == "HANDLED_BY" && edge.SourceLabel == "Query" && edge.TargetLabel == "QueryHandler"));
+        Assert.Equal(3, graph.Edges.Count(edge => edge.Type == "CONTAINS" && edge.TargetLabel == "QueryHandler"));
+        Assert.Equal(2, graph.Edges.Count(edge => edge.Type == "CONTAINS" && edge.SourceId == "Orders" && edge.TargetLabel == "QueryHandler"));
+        Assert.Single(graph.Edges, edge => edge.Type == "CONTAINS" && edge.SourceId == "Inventory" && edge.TargetLabel == "QueryHandler");
+        Assert.Equal("bool", Assert.Single(graph.Nodes, node => node.Id.EndsWith("OrderExistsQuery", StringComparison.Ordinal)).Properties["resultType"]);
+        Assert.Equal("int", Assert.Single(graph.Nodes, node => node.Id.EndsWith("CompletedOrderCountQuery", StringComparison.Ordinal)).Properties["resultType"]);
+        Assert.Equal("bool", Assert.Single(graph.Nodes, node => node.Id.EndsWith("StockAvailableQuery", StringComparison.Ordinal)).Properties["resultType"]);
+    }
+
+    [Fact]
+    public void Real_graph_pins_query_uses_coverage_gap_and_no_query_containment()
+    {
+        var graph = BuildRealGraph();
+
+        Assert.Equal(3, graph.Edges.Count(edge => edge.Type == "USES" && edge.TargetLabel == "Query"));
+        Assert.Equal(3, graph.Edges.Count(edge => edge.Type == "USES" && edge.TargetId == "ECommerceApp.Application.Messaging.OrderExistsQuery"));
+        Assert.DoesNotContain(graph.Edges, edge => edge.Type == "USES" && edge.TargetId != "ECommerceApp.Application.Messaging.OrderExistsQuery");
+        Assert.DoesNotContain(graph.Edges, edge => edge.Type == "CONTAINS" && edge.TargetLabel == "Query");
+        Assert.DoesNotContain(graph.Nodes, node => node.Label == "Job");
+        Assert.DoesNotContain(graph.Edges, edge => edge.Type == "SCHEDULES");
+    }
+
     private static Graph BuildRealGraph() => BuildRealGraph(out _, out _);
 
     private static Graph BuildRealGraph(out IReadOnlyList<string> rolePolicyWarnings) =>
@@ -427,6 +476,14 @@ public sealed class PinnedRealGraphTests
             Path.Combine(root, "ECommerceApp.Application"),
             message.Graph.Nodes);
         messageHandler.Graph.MergeInto(graph);
+        var query = new QueryParser().Parse(
+            Path.Combine(root, "ECommerceApp.Application"),
+            graph.Nodes.Where(node => node.Label == "Action").ToList());
+        query.Graph.MergeInto(graph);
+        var queryHandler = new QueryHandlerParser(resolver).Parse(
+            Path.Combine(root, "ECommerceApp.Infrastructure"),
+            query.Graph.Nodes);
+        queryHandler.Graph.MergeInto(graph);
         var applicationSymbols = DomainSymbolIndex.Build(Path.Combine(root, "ECommerceApp.Application"));
         var endpoint = new EndpointParser().Parse(
             Path.Combine(root, "ECommerceApp.API"),

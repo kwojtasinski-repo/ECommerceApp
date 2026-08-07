@@ -629,6 +629,69 @@ public sealed class ParserTests
         Directory.Delete(root.Root, true);
     }
 
+    [Fact]
+    public void QueryParser_uses_declared_namespace_when_folder_disagrees()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "kg-queries-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(root, "Wrong", "Queries"));
+        File.WriteAllText(Path.Combine(root, "Wrong", "Queries", "OrderExistsQuery.cs"),
+            "namespace Demo.Contracts; public sealed record OrderExistsQuery : IQuery<bool>; public interface IQuery<T> { }");
+
+        var result = new QueryParser().Parse(root, []);
+
+        Assert.Equal("Demo.Contracts.OrderExistsQuery", Assert.Single(result.Graph.Nodes).Id);
+        Directory.Delete(root, true);
+    }
+
+    [Fact]
+    public void QueryParser_type_gate_rejects_non_module_client_service_field()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "kg-query-gate-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        File.WriteAllText(Path.Combine(root, "EmailService.cs"), """
+            namespace Demo;
+            public interface IEmailSender { System.Threading.Tasks.Task SendAsync(object value); }
+            public sealed class EmailService
+            {
+                private readonly IEmailSender _email;
+                public EmailService(IEmailSender email) => _email = email;
+                public void Send() => _email.SendAsync(new object());
+            }
+            """);
+        var actions = new[] { new CypherNode("Action", "Demo.EmailService.Send", new Dictionary<string, object?>()) };
+
+        var result = new QueryParser().Parse(root, actions);
+
+        Assert.Empty(result.Graph.Edges);
+        Assert.Empty(result.Warnings);
+        Directory.Delete(root, true);
+    }
+
+    [Fact]
+    public void QueryParser_skips_chained_send_async_receiver()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "kg-query-chain-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        File.WriteAllText(Path.Combine(root, "NotifyService.cs"), """
+            namespace Demo;
+            public sealed class NotifyService
+            {
+                private readonly Hub _hub = new();
+                public void Notify() => _hub.Clients.User("id").SendAsync(new object());
+            }
+            public sealed class Hub { public Clients Clients { get; } = new(); }
+            public sealed class Clients { public User User(string id) => new(); }
+            public sealed class User { public void SendAsync(object value) { } }
+            """);
+        var actions = new[] { new CypherNode("Action", "Demo.NotifyService.Notify", new Dictionary<string, object?>()) };
+
+        var result = new QueryParser().Parse(root, actions);
+
+        Assert.Empty(result.Graph.Edges);
+        Assert.Empty(result.Warnings);
+        Directory.Delete(root, true);
+    }
+
     private static (string Root, string Api, string Web) CreateRoleFixture(string alias, string methods, string classAttributes = "")
     {
         var root = Path.Combine(Path.GetTempPath(), "kg-role-" + Guid.NewGuid().ToString("N"));

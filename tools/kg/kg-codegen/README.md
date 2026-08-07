@@ -47,6 +47,8 @@ Parsers run in this order; it is a real dependency chain, not a style choice.
 | `ActionParser` | `ECommerceApp.Application` | `Action` (public methods of `*Service.cs`) |
 | `MessageParser` | `ECommerceApp.Application` | `Message` (types implementing `IMessage`), `Action-[:PUBLISHES]->Message` |
 | `MessageHandlerParser` | `ECommerceApp.Application` | `MessageHandler`, `Message-[:HANDLED_BY]->MessageHandler` |
+| `QueryParser` | `ECommerceApp.Application` | `Query`, `Action-[:USES]->Query` |
+| `QueryHandlerParser` | `ECommerceApp.Infrastructure` | `QueryHandler`, `Module-[:CONTAINS]->QueryHandler`, `Query-[:HANDLED_BY]->QueryHandler` |
 | `EndpointParser` | `ECommerceApp.API` | `Endpoint`, `Action-[:EXPOSED_BY]->Endpoint` |
 | `PageParser` | `ECommerceApp.Web` | `Page`, `Action-[:EXPOSED_BY]->Page` |
 | `RolePolicyParser` | `ECommerceApp.Application` + `ECommerceApp.API` + `ECommerceApp.Web` | atomic `Role`/`Policy`, `Endpoint/Page-[:GOVERNED_BY]->Role/Policy` |
@@ -121,6 +123,11 @@ Two publish sites are silent by design rather than warned about: handlers
 `MessageHandler-[:PUBLISHES]->Message` triple — the edge is not merely
 unemitted, it is currently unrepresentable. Adding that triple is a candidate
 ontology amendment.
+
+Query warnings use the same warn-don't-fabricate rule:
+
+- `Could not resolve query type 'X' in <file>` — a module-client send site did not resolve to a known `Query`; no `USES` edge is emitted.
+- `Could not resolve handled query 'X' for <handler>` — an `IQueryHandler<X, TResult>` does not resolve to a known `Query`; the handler node is still emitted.
 
 Action resolution goes `IFooService` → `FooService` (the repo-wide convention)
 and falls back to "the single class implementing `IFooService`" for decorators

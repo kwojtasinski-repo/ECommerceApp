@@ -366,11 +366,20 @@ used (decided 2026-08-07, see [[project_ecommerceapp_kg_meta_skill_plan]]).
 4a. Roslyn parser: `Message`/`MessageHandler` (async Outbox/Inbox side of
     the variability point — `IMessage`/`MessageTypeRegistry`,
     `IMessageHandler<T>`/`IIdAwareMessageHandler<T>`).
-4b. Roslyn parser: `Query`/`QueryHandler` (sync `ModuleClient` side —
-    `IQuery<TResult>`, `IQueryHandler<TQuery,TResult>`). Split from 4a
-    because the two channels have opposite delivery guarantees (0..N
-    eventual-consistency handlers vs. exactly-one immediate response) and
-    are extracted from different marker interfaces.
+4b. ✅ **Built** — Roslyn parser: `Query`/`QueryHandler` (sync `ModuleClient`
+   side — `IQuery<TResult>`, `IQueryHandler<TQuery,TResult>`). Split from 4a
+   because the two channels have opposite delivery guarantees (0..N
+   eventual-consistency handlers vs. exactly-one immediate response) and
+   are extracted from different marker interfaces. The measured graph contains
+   `Query: 3`, `QueryHandler: 3`, and `Edges: 1291` (`Action: 201`, `Role: 3`);
+   `USES` covers **3 of the 5** real query-send sites (60 %). **1 of 3**
+   `Query` nodes (`OrderExistsQuery`) carries any `USES` in-edge.
+   `StockAvailableQuery` and `CompletedOrderCountQuery` are sent only from
+   `ECommerceApp.Infrastructure/Sales/Coupons/Adapters/`, which produces no
+   `Action` node. Closing the gap requires `Action` to cover Infrastructure
+   Adapter classes — a deliberate scope decision, deferred. Consequently,
+   TQ4's `Module→Action→…` and `Query` equivalent do not show Coupons'
+   synchronous dependency on Inventory or Orders.
 4c. Roslyn parser: `Job` (+ the new `SCHEDULES` verb from
     `{Action,MessageHandler} -[:SCHEDULES]-> Job`) — depends on 4a/4b
     existing first since `SCHEDULES` sources from `Action`/`MessageHandler`
