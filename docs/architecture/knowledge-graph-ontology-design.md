@@ -356,16 +356,31 @@ used (decided 2026-08-07, see [[project_ecommerceapp_kg_meta_skill_plan]]).
     yields a warning, never an edge to an arbitrarily picked class. The index'
     duplicate-name warnings are now surfaced by `CliRunner` instead of being
     collected and dropped. 27/27 tests pass.
-3b. Roslyn parser: `Role`/`Policy` (`[Authorize(Roles=...)]` /
+3b. ✅ **Built** — Roslyn parser: `Role`/`Policy` (`[Authorize(Roles=...)]` /
     `[Authorize(Policy=...)]` on the controllers found in 3a — `{Endpoint|
     Page} -[:GOVERNED_BY]-> {Role|Policy}`), with the alias-splitting rule
     from Guardrail 3 (a comma-joined role constant must resolve to atomic
     `Role` nodes, never a node for the alias string itself). Kept separate
     from 3a because the guardrail adds real parsing risk (splitting logic)
-    that a plain attribute-presence parser doesn't have.
-4a. Roslyn parser: `Message`/`MessageHandler` (async Outbox/Inbox side of
-    the variability point — `IMessage`/`MessageTypeRegistry`,
-    `IMessageHandler<T>`/`IIdAwareMessageHandler<T>`).
+    that a plain attribute-presence parser doesn't have. Committed `e3151424`,
+    validation findings closed in `c1630c35`. **`Role` is usage-derived**: the
+    allowed set is parsed from `UserPermissions.Roles` (never hard-coded, so a
+    rename propagates), but a role no `[Authorize]` names gets no node — 3 roles
+    today, `Roles.User` is referenced nowhere and would be an orphan. Class- and
+    method-level `[Authorize(Roles=…)]` combine by **set intersection**, matching
+    real ASP.NET semantics. Known gap: imperative `User.IsInRole(...)` checks in
+    action bodies are structurally invisible to an attribute-only parser.
+4a. ✅ **Built** — Roslyn parser: `Message`/`MessageHandler` (async Outbox/Inbox
+    side of the variability point — `IMessage`/`MessageTypeRegistry`,
+    `IMessageHandler<T>`/`IIdAwareMessageHandler<T>`). Committed `cf8f2092`,
+    findings closed in `c1630c35`; real graph `Message: 26`,
+    `MessageHandler: 53`. Two decisions later phases must not re-litigate: an
+    unregistered `IMessage` type still gets a node with `key: null` and keeps its
+    `HANDLED_BY` edges (6 such today), and **`MessageHandler`-sourced publishes
+    are unrepresentable** — the ontology declares no
+    `MessageHandler-[:PUBLISHES]->Message` triple, so the three real
+    `StockReconciliationRequired` enqueues produce no edge and deliberately no
+    warning. That triple is a candidate ontology amendment.
 4b. ✅ **Built** — Roslyn parser: `Query`/`QueryHandler` (sync `ModuleClient`
    side — `IQuery<TResult>`, `IQueryHandler<TQuery,TResult>`). Split from 4a
    because the two channels have opposite delivery guarantees (0..N
@@ -380,14 +395,52 @@ used (decided 2026-08-07, see [[project_ecommerceapp_kg_meta_skill_plan]]).
    Adapter classes — a deliberate scope decision, deferred. Consequently,
    TQ4's `Module→Action→…` and `Query` equivalent do not show Coupons'
    synchronous dependency on Inventory or Orders.
-4c. Roslyn parser: `Job` (+ the new `SCHEDULES` verb from
-    `{Action,MessageHandler} -[:SCHEDULES]-> Job`) — depends on 4a/4b
-    existing first since `SCHEDULES` sources from `Action`/`MessageHandler`
-    nodes. Three trigger modes per `JobTriggerSource`; `Scheduled`'s cron
-    string is runtime DB data, not statically extractable (stays a gap
-    until Phase 6's `overrides.yaml`).
-5. JS/AMD parser: `ScriptModule` — lowest confidence, built last, carries the
-   staleness-warning requirement from Guardrail 5.
+4c. ✅ **Built** — Roslyn parser: `Job` (+ the new `SCHEDULES` verb from
+    `{Action,MessageHandler} -[:SCHEDULES]-> Job`, plus `Job -[:OPERATES_ON]->
+    Entity` and `Job -[:PUBLISHES]-> Message`) — depends on 4a existing first
+    since `SCHEDULES` sources from `Action`/`MessageHandler` nodes, and on
+    `Repository` for `OPERATES_ON`. Real graph: `Job: 9`, 9 `CONTAINS`,
+    4 `SCHEDULES`, 9 `OPERATES_ON`, 2 `PUBLISHES`, `Edges: 1315`.
+    **This entry previously claimed "three trigger modes per `JobTriggerSource`";
+    that framing was a hypothesis and planning disproved it.** Only `Deferred`
+    is statically decidable: `IDeferredJobScheduler.ScheduleAsync` is the sole
+    trigger with a findable call site. `Scheduled` and `Manual` are properties of
+    rows in the runtime `ScheduledJob` table (read by `CronSchedulerService` /
+    `JobTriggerService`), so **both the mode and the cron string** stay a gap
+    until Phase 6's `overrides.yaml` — not just the cron string. 4 jobs get
+    `triggerMode: "Deferred"`, the other 5 get `null` plus a warning; the parser
+    never defaults to a mode.
+    Two collisions drove the design and are pinned by fixtures: `CancelAsync`
+    shares `ScheduleAsync`'s first-argument shape with twice as many call sites
+    (8 vs 4), and three distinct `OrderPlacedHandler` classes make any
+    simple-class-name lookup for the edge *source* ambiguous. Two modelling gaps
+    surfaced: `IInboxCleanupRepository`/`IOutboxRepository` live under
+    `Application/Messaging/` and so have no `Repository` node at all (one warning
+    each), and `Action -[:OPERATES_ON]-> Entity` (declared at ontology line 33)
+    still belongs to **no scheduled phase** — deliberately not emitted here.
+5. ✅ **Built** — convention parser for RequireJS/AMD `ScriptModule` declarations
+   under `ECommerceApp.Web/wwwroot/js` plus Razor view usage sites. It uses
+   column-zero regex matching (with UTF-8 BOM trimming), scans recursively,
+   considers only the first `define([...], ...)` per file, and resolves in two
+   passes so file order cannot affect dependencies. It deliberately does not
+   treat `require([...], ...)` as a declaration. The real graph yields 10
+   `ScriptModule` nodes from 12 JS files, 10 `Host-[:CONTAINS]` edges, exactly
+   3 `DEPENDS_ON` edges (`modalService`→`dialogTemplate`,
+   `modalService`→`buttonTemplate`, `cartNotification`→`modalService`), exactly
+   2 `Page-[:USES]->ScriptModule` edges (both `PlaceOrder` overloads), and 0
+   `Page-[:USES]->Endpoint` edges. It matches Razor views by area, controller,
+   and method, including `#N` overload suffixes; shared/partial views are
+   excluded structurally. It emits no `Module→ScriptModule` edge.
+   This is regex/text matching, not an AST: commented or template-literal
+   column-zero `define` text may false-positive, indented/IIFE-wrapped modules
+   may be missed, and named multi-define bundles are unsupported. A JS parser
+   dependency was not justified for the current convention-bound tool.
+   Guardrail 5 remains only partially implemented: `YieldTracker` detects a
+   zero yield in the current run, not a previously non-zero parser dropping to
+   zero; persisted cross-run counts are a follow-up. The real same-host AJAX
+   calls also expose an ontology gap because no `Page→Page` usage triple is
+   declared in `ontology.json` or `ontology.cypher`; no such undeclared edge is
+   emitted here.
 6. `compose.yml` (Neo4j) + `overrides.yaml` for facts no parser can infer
    (e.g. the real cron string for `Scheduled` jobs), replacing the Phase 0+1
    stand-in `SpineCatalog.cs`. Includes the load step (seed `.cypher` →

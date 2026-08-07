@@ -4,6 +4,28 @@ using KgCodegen.Core.Model;
 
 namespace KgCodegen.Core.Parsing;
 
+/// <summary>
+/// `Job` nodes plus `SCHEDULES`, `OPERATES_ON` and `PUBLISHES`. The marker is the `IScheduledTask`
+/// interface and nothing else: the nine real implementers split across two folder conventions
+/// (`*/Handlers/`, `*/Services/`) and two filename suffixes (`*Job.cs`, `*Task.cs`), so the sibling
+/// parsers' filename globs would each miss about half of them.
+/// Two shape collisions make this parser's output plausible-but-wrong if either gate is dropped, and
+/// neither fails loudly — see `ParserTests.JobParser_*` for the fixtures that pin them:
+/// <list type="bullet">
+/// <item>`IDeferredJobScheduler` declares `ScheduleAsync(name, entityId, runAt, ct)` and
+/// `CancelAsync(name, entityId, ct)` — identical in the only two arguments a syntax parser reads.
+/// There are twice as many `CancelAsync` sites as `ScheduleAsync` ones, so the invoked method name
+/// must be compared explicitly; the field's declared type is not enough.</item>
+/// <item>Three distinct `OrderPlacedHandler` classes exist. The edge *source* is therefore computed
+/// from the enclosing type's own namespace declaration and never looked up by simple class name.
+/// Only the *target* uses a simple name, because `<c>&lt;Type&gt;.JobTaskName</c>` carries none.</item>
+/// </list>
+/// `triggerMode` is deliberately narrow. `JobTriggerSource.Scheduled` and `.Manual` are properties of
+/// rows in the runtime `ScheduledJob` table (read by `CronSchedulerService`/`JobTriggerService`), not
+/// of any C# declaration, so no syntax parser can see them. Only `Deferred` has a findable call site;
+/// every other job gets `null` plus a warning, to be filled in by Phase 6's `overrides.yaml`. Never
+/// default to a mode — that is a guess presented as a fact.
+/// </summary>
 public sealed class JobParser(ModuleResolver modules)
 {
     public ParserResult Parse(
@@ -25,6 +47,8 @@ public sealed class JobParser(ModuleResolver modules)
         {
             foreach (var type in file.Root.DescendantNodes().OfType<ClassDeclarationSyntax>())
             {
+                // Exact base-list entry, not a substring: a `Contains`/`StartsWith` match would also
+                // accept an unrelated `IScheduledTaskFactory`-style name.
                 if (type.BaseList?.Types.Any(baseType => baseType.Type.ToString().Equals("IScheduledTask", StringComparison.Ordinal)) != true)
                 {
                     continue;
@@ -47,7 +71,16 @@ public sealed class JobParser(ModuleResolver modules)
             }
         }
 
-        var jobByName = jobs.ToDictionary(job => job.Type.Identifier.Text, StringComparer.Ordinal);
+        // The nine real job class names are unique, so this index is unambiguous today. A future
+        // duplicate must refuse to answer rather than pick one — and rather than throw out of the run,
+        // which is what a plain `ToDictionary` would do.
+        var jobsByName = jobs.GroupBy(job => job.Type.Identifier.Text, StringComparer.Ordinal).ToArray();
+        foreach (var ambiguous in jobsByName.Where(group => group.Count() > 1))
+        {
+            warnings.Add($"Could not index job class name '{ambiguous.Key}': {ambiguous.Count()} classes declare it, so no SCHEDULES edge can name it unambiguously.");
+        }
+
+        var jobByName = jobsByName.Where(group => group.Count() == 1).ToDictionary(group => group.Key, group => group.First(), StringComparer.Ordinal);
         var actionIds = actions.Where(node => node.Label.Equals("Action", StringComparison.Ordinal)).Select(node => node.Id).ToHashSet(StringComparer.Ordinal);
         var handlerIds = messageHandlers.Where(node => node.Label.Equals("MessageHandler", StringComparison.Ordinal)).Select(node => node.Id).ToHashSet(StringComparer.Ordinal);
         var messageResolver = new MessageNameResolver(messages);
@@ -56,6 +89,10 @@ public sealed class JobParser(ModuleResolver modules)
         {
             foreach (var invocation in file.Root.DescendantNodes().OfType<InvocationExpressionSyntax>())
             {
+                // The method name is load-bearing, not decoration: `CancelAsync` has the same receiver
+                // type and the same first argument, and dropping this comparison turns the repo's 4
+                // real edges into 10. Field names vary (`_scheduler`, `_deferredScheduler`), so the
+                // receiver is checked by declared type below instead.
                 if (invocation.Expression is not MemberAccessExpressionSyntax memberAccess ||
                     !memberAccess.Name.Identifier.Text.Equals("ScheduleAsync", StringComparison.Ordinal) ||
                     memberAccess.Expression is not IdentifierNameSyntax receiver)
@@ -77,6 +114,11 @@ public sealed class JobParser(ModuleResolver modules)
                     continue;
                 }
 
+                // `MessageHandler` ids are `{Namespace}.{Class}` and `Action` ids are
+                // `{Namespace}.{Class}.{Method}`, so the two lookups cannot collide: a handler's
+                // `HandleAsync` is never an Action (those come from `*Service.cs` only) and a service
+                // FQCN is never a MessageHandler. Both are exact set membership — a substring or
+                // simple-name match here is what the three `OrderPlacedHandler` classes punish.
                 var classId = SyntaxNaming.FullyQualifiedName(file.Root, enclosingClass);
                 var sourceId = handlerIds.Contains(classId)
                     ? classId
@@ -102,18 +144,30 @@ public sealed class JobParser(ModuleResolver modules)
         {
             foreach (var field in job.Type.Members.OfType<FieldDeclarationSyntax>())
             {
+                // Two kinds of empty, deliberately distinguished. A field that is not an `I*Repository`
+                // at all (`IOutboxWriter`, `IMemoryCache`, `ILogger<…>`, `ICurrencyRateService`, the
+                // unit-of-work interfaces) is filtered silently — nothing was left unresolved. A field
+                // that *is* one but matches no `Repository` node warns, because that is a real
+                // modelling gap: `IInboxCleanupRepository`/`IOutboxRepository` live under
+                // `Application/Messaging/`, which `RepositoryParser` (Domain-only) never scans.
                 var interfaceName = GetDeclaredTypeName(field);
                 if (interfaceName is null || !interfaceName.StartsWith("I", StringComparison.Ordinal) || !interfaceName.EndsWith("Repository", StringComparison.Ordinal))
                 {
                     continue;
                 }
 
-                var repository = repositories.FirstOrDefault(node => node.Label.Equals("Repository", StringComparison.Ordinal) && node.Id.Split('.').Last().Equals(interfaceName, StringComparison.Ordinal));
-                if (repository is null)
+                var matches = repositories
+                    .Where(node => node.Label.Equals("Repository", StringComparison.Ordinal) && node.Id.Split('.').Last().Equals(interfaceName, StringComparison.Ordinal))
+                    .ToArray();
+                if (matches.Length != 1)
                 {
-                    warnings.Add($"Could not resolve repository interface '{interfaceName}' for job {job.Id}.");
+                    warnings.Add(matches.Length == 0
+                        ? $"Could not resolve repository interface '{interfaceName}' for job {job.Id}."
+                        : $"Could not resolve repository interface '{interfaceName}' for job {job.Id}: {matches.Length} Repository nodes declare that name.");
                     continue;
                 }
+
+                var repository = matches[0];
 
                 foreach (var persistedBy in persistedByEdges.Where(edge => edge.Type.Equals("PERSISTED_BY", StringComparison.Ordinal) && edge.TargetId.Equals(repository.Id, StringComparison.Ordinal)))
                 {
@@ -144,8 +198,7 @@ public sealed class JobParser(ModuleResolver modules)
                             continue;
                         }
 
-                        var resolver = new MessageNameResolver(messages);
-                        var resolved = OutboxPublishResolver.ResolvePublishedMessage(invocation, method, job.Id, resolver, job.Root, out var warning);
+                        var resolved = OutboxPublishResolver.ResolvePublishedMessage(invocation, method, job.Id, messageResolver, job.Root, out var warning);
                         if (warning is not null)
                         {
                             warnings.Add(warning);
@@ -166,6 +219,8 @@ public sealed class JobParser(ModuleResolver modules)
             }
         }
 
+        // Not "this job is never triggered" — the wording matters. These jobs are almost certainly
+        // live; their cron row simply lives in the database, where no syntax parser can reach it.
         foreach (var job in jobs.Where(job => !graph.Edges.Any(edge => edge.Type.Equals("SCHEDULES", StringComparison.Ordinal) && edge.TargetId.Equals(job.Id, StringComparison.Ordinal))))
         {
             warnings.Add($"Could not statically determine trigger mode for job {job.Id}.");

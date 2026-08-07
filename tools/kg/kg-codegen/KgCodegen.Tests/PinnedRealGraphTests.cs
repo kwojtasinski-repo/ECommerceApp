@@ -293,6 +293,41 @@ public sealed class PinnedRealGraphTests
         }
     }
 
+    [Fact]
+    public void Real_graph_has_pinned_script_module_nodes_and_edges()
+    {
+        var graph = BuildRealGraph();
+
+        Assert.Equal(10, graph.Nodes.Count(node => node.Label == "ScriptModule"));
+        Assert.DoesNotContain(graph.Nodes, node => node.Label == "ScriptModule" && (node.Id == "config" || node.Id == "site"));
+        Assert.Equal(
+            [
+                "cartNotification->modalService",
+                "modalService->buttonTemplate",
+                "modalService->dialogTemplate"
+            ],
+            graph.Edges
+                .Where(edge => edge.Type == "DEPENDS_ON" && edge.SourceLabel == "ScriptModule" && edge.TargetLabel == "ScriptModule")
+                .Select(edge => $"{edge.SourceId}->{edge.TargetId}")
+                .OrderBy(edge => edge, StringComparer.Ordinal));
+        Assert.Equal(10, graph.Edges.Count(edge => edge.Type == "CONTAINS" && edge.SourceLabel == "Host" && edge.TargetLabel == "ScriptModule"));
+        Assert.DoesNotContain(graph.Edges, edge => edge.TargetLabel == "ScriptModule" && edge.SourceLabel == "Module");
+
+        var checkoutSources = graph.Edges
+            .Where(edge => edge.Type == "USES" && edge.TargetLabel == "ScriptModule" && edge.TargetId == "checkout-placeorder")
+            .Select(edge => edge.SourceId)
+            .OrderBy(id => id, StringComparer.Ordinal)
+            .ToArray();
+        Assert.Equal(
+            [
+                "ECommerceApp.Web.Areas.Presale.Controllers.CheckoutController.PlaceOrder",
+                "ECommerceApp.Web.Areas.Presale.Controllers.CheckoutController.PlaceOrder#2"
+            ],
+            checkoutSources);
+        Assert.Equal(2, graph.Edges.Count(edge => edge.Type == "USES" && edge.TargetLabel == "ScriptModule"));
+        Assert.Equal(0, graph.Edges.Count(edge => edge.Type == "USES" && edge.SourceLabel == "Page" && edge.TargetLabel == "Endpoint"));
+    }
+
     /// <summary>
     /// `ProductDiscontinued` is unregistered, so it carries `key: null` — but it keeps its handler
     /// edges, because three handlers genuinely run on it. Nothing in `Application` constructs it,
@@ -575,6 +610,11 @@ public sealed class PinnedRealGraphTests
             applicationSymbols,
             graph.Nodes.Where(node => node.Label == "Action").ToList());
         page.Graph.MergeInto(graph);
+        var scriptModules = new ScriptModuleParser().Parse(
+            Path.Combine(root, "ECommerceApp.Web"),
+            graph.Nodes.Where(node => node.Label == "Page").ToList(),
+            graph.Nodes.Where(node => node.Label == "Endpoint").ToList());
+        scriptModules.Graph.MergeInto(graph);
         var rolePolicy = new RolePolicyParser().Parse(
             Path.Combine(root, "ECommerceApp.Application"),
             Path.Combine(root, "ECommerceApp.API"),

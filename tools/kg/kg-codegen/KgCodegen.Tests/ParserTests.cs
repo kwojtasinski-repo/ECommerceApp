@@ -866,6 +866,132 @@ public sealed class ParserTests
         Directory.Delete(root, true);
     }
 
+    [Fact]
+    public void ScriptModuleParser_does_not_treat_require_as_a_module_declaration()
+    {
+        var root = CreateScriptModuleFixture(("wwwroot/js/config.js", "require(['known'], function (known) { });"));
+
+        var result = ParseScriptModuleFixture(root);
+
+        Assert.Empty(result.Graph.Nodes);
+        Assert.Empty(result.Warnings);
+        Directory.Delete(root, true);
+    }
+
+    [Fact]
+    public void ScriptModuleParser_accepts_empty_dependency_array_without_warning()
+    {
+        var root = CreateScriptModuleFixture(("wwwroot/js/common.js", "define([], function () { });"));
+
+        var result = ParseScriptModuleFixture(root);
+
+        Assert.Single(result.Graph.Nodes, node => node.Id == "common");
+        Assert.DoesNotContain(result.Graph.Edges, edge => edge.Type == "DEPENDS_ON");
+        Assert.Empty(result.Warnings);
+        Directory.Delete(root, true);
+    }
+
+    [Fact]
+    public void ScriptModuleParser_warns_without_fabricating_unknown_dependency()
+    {
+        var root = CreateScriptModuleFixture(("wwwroot/js/common.js", "define(['nope'], function (nope) { });"));
+
+        var result = ParseScriptModuleFixture(root);
+
+        Assert.Single(result.Graph.Nodes, node => node.Id == "common");
+        Assert.DoesNotContain(result.Graph.Nodes, node => node.Id == "nope");
+        Assert.DoesNotContain(result.Graph.Edges, edge => edge.Type == "DEPENDS_ON");
+        Assert.Contains(result.Warnings, warning => warning.Contains("unknown module 'nope'", StringComparison.Ordinal));
+        Directory.Delete(root, true);
+    }
+
+    [Fact]
+    public void ScriptModuleParser_attaches_view_usage_to_all_overload_pages()
+    {
+        var root = CreateScriptModuleFixture(
+            ("wwwroot/js/checkout-placeorder.js", "define([], function () { });"),
+            ("Areas/Presale/Views/Checkout/PlaceOrder.cshtml", "require(['checkout-placeorder'], function () { });"));
+        var pages = new[]
+        {
+            new CypherNode("Page", "Demo.Web.Areas.Presale.Controllers.CheckoutController.PlaceOrder", new Dictionary<string, object?>()),
+            new CypherNode("Page", "Demo.Web.Areas.Presale.Controllers.CheckoutController.PlaceOrder#2", new Dictionary<string, object?>())
+        };
+
+        var result = ParseScriptModuleFixture(root, pages);
+
+        Assert.Equal(2, result.Graph.Edges.Count(edge => edge.Type == "USES"));
+        Assert.All(result.Graph.Edges.Where(edge => edge.Type == "USES"), edge =>
+        {
+            Assert.Equal("checkout-placeorder", edge.TargetId);
+            Assert.Contains(edge.SourceId, pages.Select(page => page.Id));
+        });
+        Directory.Delete(root, true);
+    }
+
+    [Fact]
+    public void ScriptModuleParser_ignores_layout_usage_structurally()
+    {
+        var root = CreateScriptModuleFixture(
+            ("wwwroot/js/errors.js", "define([], function () { });"),
+            ("Views/Shared/_Layout.cshtml", "require(['errors'], function () { });"));
+
+        var result = ParseScriptModuleFixture(root);
+
+        Assert.DoesNotContain(result.Graph.Edges, edge => edge.Type == "USES");
+        Assert.Empty(result.Warnings);
+        Directory.Delete(root, true);
+    }
+
+    [Fact]
+    public void ScriptModuleParser_matches_view_area_before_controller_and_method()
+    {
+        var root = CreateScriptModuleFixture(
+            ("wwwroot/js/orders.js", "define([], function () { });"),
+            ("Areas/A/Views/Orders/Index.cshtml", "require(['orders'], function () { });"));
+        var pages = new[]
+        {
+            new CypherNode("Page", "Demo.Web.Areas.B.Controllers.OrdersController.Index", new Dictionary<string, object?>()),
+            new CypherNode("Page", "Demo.Web.Areas.A.Controllers.OrdersController.Index", new Dictionary<string, object?>())
+        };
+
+        var result = ParseScriptModuleFixture(root, pages);
+
+        Assert.Single(result.Graph.Edges, edge => edge.Type == "USES");
+        Assert.Equal("Demo.Web.Areas.A.Controllers.OrdersController.Index", result.Graph.Edges.Single(edge => edge.Type == "USES").SourceId);
+        Directory.Delete(root, true);
+    }
+
+    [Fact]
+    public void ScriptModuleParser_silences_unresolved_same_host_fetch()
+    {
+        var root = CreateScriptModuleFixture(("Views/Orders/Index.cshtml", "fetch('/Area/Controller/Action', { });"));
+        var pages = new[]
+        {
+            new CypherNode("Page", "Demo.Web.Controllers.OrdersController.Index", new Dictionary<string, object?>())
+        };
+
+        var result = ParseScriptModuleFixture(root, pages);
+
+        Assert.DoesNotContain(result.Graph.Edges, edge => edge.Type == "USES");
+        Assert.Empty(result.Warnings);
+        Directory.Delete(root, true);
+    }
+
+    [Fact]
+    public void ScriptModuleParser_warns_for_unresolved_api_fetch()
+    {
+        var root = CreateScriptModuleFixture(("Views/Orders/Index.cshtml", "fetch('/api/whatever', { });"));
+        var pages = new[]
+        {
+            new CypherNode("Page", "Demo.Web.Controllers.OrdersController.Index", new Dictionary<string, object?>())
+        };
+
+        var result = ParseScriptModuleFixture(root, pages);
+
+        Assert.Contains(result.Warnings, warning => warning.Contains("/api/whatever", StringComparison.Ordinal));
+        Directory.Delete(root, true);
+    }
+
     private static string CreateQueryFixture(params (string Path, string Content)[] files)
     {
         var root = Path.Combine(Path.GetTempPath(), "kg-query-" + Guid.NewGuid().ToString("N"));
@@ -909,6 +1035,20 @@ public sealed class ParserTests
     private static ModuleResolver QueryFixtureModules() =>
         new(new Dictionary<string, string> { ["Inventory"] = "Inventory" });
 
+    private static string CreateScriptModuleFixture(params (string Path, string Content)[] files)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "kg-script-modules-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(Path.Combine(root, "wwwroot", "js"));
+        WriteFixtureFiles(root, files);
+        return root;
+    }
+
+    private static ParserResult ParseScriptModuleFixture(
+        string root,
+        IReadOnlyList<CypherNode>? pages = null,
+        IReadOnlyList<CypherNode>? endpoints = null) =>
+        new ScriptModuleParser().Parse(root, pages ?? [], endpoints ?? []);
+
     private static (string Root, string Api, string Web) CreateRoleFixture(string alias, string methods, string classAttributes = "")
     {
         var root = Path.Combine(Path.GetTempPath(), "kg-role-" + Guid.NewGuid().ToString("N"));
@@ -932,4 +1072,372 @@ public sealed class ParserTests
         var page = new PageParser().Parse(web, symbols, []);
         return new RolePolicyParser().Parse(application, api, web, endpoint.Graph.Nodes, page.Graph.Nodes);
     }
+
+    /// <summary>
+    /// `CurrencyRateSyncTask` really declares `TaskName => "CurrencyDownloader"`, and the three
+    /// `*CleanupTask` classes drop their suffix. A parser that derives the task name from the class
+    /// name gets four of the nine real jobs wrong while still emitting nine plausible nodes.
+    /// </summary>
+    [Fact]
+    public void JobParser_reads_task_name_from_a_literal_unrelated_to_the_class_name()
+    {
+        var root = CreateJobFixture(("Jobs/CurrencyRateSyncTask.cs", """
+            namespace Demo.Jobs;
+            public interface IScheduledTask { }
+            internal sealed class CurrencyRateSyncTask : IScheduledTask
+            {
+                public string TaskName => "CurrencyDownloader";
+            }
+            """));
+
+        var result = ParseJobFixture(root);
+
+        var job = Assert.Single(result.Graph.Nodes, node => node.Label == "Job");
+        Assert.Equal("Demo.Jobs.CurrencyRateSyncTask", job.Id);
+        Assert.Equal("CurrencyDownloader", job.Properties["taskName"]);
+        Assert.Single(result.Graph.Edges, edge => edge.Type == "CONTAINS" && edge.SourceId == "Demo" && edge.TargetId == job.Id);
+        Directory.Delete(root, true);
+    }
+
+    /// <summary>
+    /// `SnapshotOrderItemsJob` declares `private const int BatchSize = 64;` before its
+    /// `JobTaskName` const. "The first const in the class" would yield `64`; the identifier the
+    /// `TaskName` getter actually names is the only correct source.
+    /// </summary>
+    [Fact]
+    public void JobParser_resolves_the_backing_const_by_name_not_by_declaration_order()
+    {
+        var root = CreateJobFixture(("Jobs/SnapshotOrderItemsJob.cs", """
+            namespace Demo.Jobs;
+            public interface IScheduledTask { }
+            public sealed class SnapshotOrderItemsJob : IScheduledTask
+            {
+                private const int BatchSize = 64;
+                public const string JobTaskName = "SnapshotOrderItemsJob";
+                public string TaskName => JobTaskName;
+            }
+            """));
+
+        var result = ParseJobFixture(root);
+
+        Assert.Equal("SnapshotOrderItemsJob", Assert.Single(result.Graph.Nodes, node => node.Label == "Job").Properties["taskName"]);
+        Directory.Delete(root, true);
+    }
+
+    /// <summary>
+    /// The highest-value test in Phase 4c. `IDeferredJobScheduler` declares `ScheduleAsync` and
+    /// `CancelAsync` with an identical first-argument shape, and the real repo has 8 `CancelAsync`
+    /// call sites against 4 `ScheduleAsync` ones. A parser gated only on the field's declared type
+    /// emits 10 plausible `SCHEDULES` edges instead of 4.
+    /// The fixture carries **both** real shapes, because only the second one is detectable:
+    /// `Adjust` mirrors `StockService.AdjustAsync`, which cancels and schedules the *same* job on
+    /// adjacent lines — edge de-duplication hides a missing gate there entirely. `Release` mirrors
+    /// `OrderPlacementFailedHandler`, which only ever cancels; that is the site where an ungated
+    /// parser produces a second, distinct, entirely wrong edge.
+    /// </summary>
+    [Fact]
+    public void JobParser_ignores_cancel_async_on_a_field_of_the_scheduler_type()
+    {
+        var root = CreateJobFixture(
+            ("Jobs/ExpiryJob.cs", JobClass("Demo.Jobs", "ExpiryJob", "Expiry")),
+            ("Jobs/HoldJob.cs", JobClass("Demo.Jobs", "HoldJob", "Hold")),
+            ("Services/StockService.cs", """
+                using Demo.Jobs;
+                namespace Demo.Services;
+                public interface IDeferredJobScheduler { }
+                public sealed class StockService
+                {
+                    private readonly IDeferredJobScheduler _scheduler;
+                    public StockService(IDeferredJobScheduler scheduler) => _scheduler = scheduler;
+                    public void Adjust()
+                    {
+                        _scheduler.CancelAsync(ExpiryJob.JobTaskName, "1");
+                        _scheduler.ScheduleAsync(ExpiryJob.JobTaskName, "1", default);
+                    }
+                    public void Release() => _scheduler.CancelAsync(HoldJob.JobTaskName, "1");
+                }
+                """));
+        var actions = new[]
+        {
+            new CypherNode("Action", "Demo.Services.StockService.Adjust", new Dictionary<string, object?>()),
+            new CypherNode("Action", "Demo.Services.StockService.Release", new Dictionary<string, object?>())
+        };
+
+        var result = ParseJobFixture(root, actions: actions);
+
+        Assert.Equal(1, result.Graph.Edges.Count(edge => edge.Type == "SCHEDULES"));
+        var edge = Assert.Single(result.Graph.Edges, x => x.Type == "SCHEDULES");
+        Assert.Equal("Action", edge.SourceLabel);
+        Assert.Equal("Demo.Services.StockService.Adjust", edge.SourceId);
+        Assert.Equal("Demo.Jobs.ExpiryJob", edge.TargetId);
+        Assert.Equal("Deferred", Assert.Single(result.Graph.Nodes, node => node.Id == "Demo.Jobs.ExpiryJob").Properties["triggerMode"]);
+        Assert.Null(Assert.Single(result.Graph.Nodes, node => node.Id == "Demo.Jobs.HoldJob").Properties["triggerMode"]);
+        Directory.Delete(root, true);
+    }
+
+    /// <summary>
+    /// The fourth real `ScheduleAsync` site is in `OrderPlacedHandler`, not a service — so the scan
+    /// cannot reuse `ActionParser`'s `*Service.cs` glob, and the edge is `MessageHandler`-sourced.
+    /// </summary>
+    [Fact]
+    public void JobParser_emits_a_message_handler_sourced_schedules_edge()
+    {
+        var root = CreateJobFixture(
+            ("Jobs/ExpiryJob.cs", JobClass("Demo.Jobs", "ExpiryJob", "Expiry")),
+            ("Handlers/OrderPlacedHandler.cs", """
+                using Demo.Jobs;
+                namespace Demo.Sales.Handlers;
+                public interface IDeferredJobScheduler { }
+                public sealed class OrderPlacedHandler
+                {
+                    private readonly IDeferredJobScheduler _deferredScheduler;
+                    public OrderPlacedHandler(IDeferredJobScheduler scheduler) => _deferredScheduler = scheduler;
+                    public void HandleAsync()
+                    {
+                        _deferredScheduler.ScheduleAsync(
+                            ExpiryJob.JobTaskName,
+                            "1",
+                            default);
+                    }
+                }
+                """));
+        var handlers = new[] { new CypherNode("MessageHandler", "Demo.Sales.Handlers.OrderPlacedHandler", new Dictionary<string, object?>()) };
+
+        var result = ParseJobFixture(root, messageHandlers: handlers);
+
+        var edge = Assert.Single(result.Graph.Edges, x => x.Type == "SCHEDULES");
+        Assert.Equal("MessageHandler", edge.SourceLabel);
+        Assert.Equal("Demo.Sales.Handlers.OrderPlacedHandler", edge.SourceId);
+        Directory.Delete(root, true);
+    }
+
+    /// <summary>
+    /// Three distinct `OrderPlacedHandler` classes exist in the real repo (Inventory, Presale, Sales)
+    /// and only the Sales one schedules. A simple-class-name lookup for the edge's *source* is
+    /// genuinely ambiguous, so the source id must come from the enclosing type's own namespace
+    /// declaration. Only the target is resolved by simple name, against the job index.
+    /// </summary>
+    [Fact]
+    public void JobParser_sources_the_edge_from_the_scheduling_namespace_not_the_class_name()
+    {
+        var root = CreateJobFixture(
+            ("Jobs/ExpiryJob.cs", JobClass("Demo.Jobs", "ExpiryJob", "Expiry")),
+            ("Inventory/OrderPlacedHandler.cs", """
+                namespace Demo.Inventory.Handlers;
+                public sealed class OrderPlacedHandler
+                {
+                    public void HandleAsync() { }
+                }
+                """),
+            ("Sales/OrderPlacedHandler.cs", """
+                using Demo.Jobs;
+                namespace Demo.Sales.Handlers;
+                public interface IDeferredJobScheduler { }
+                public sealed class OrderPlacedHandler
+                {
+                    private readonly IDeferredJobScheduler _scheduler;
+                    public OrderPlacedHandler(IDeferredJobScheduler scheduler) => _scheduler = scheduler;
+                    public void HandleAsync() => _scheduler.ScheduleAsync(ExpiryJob.JobTaskName, "1", default);
+                }
+                """));
+        var handlers = new[]
+        {
+            new CypherNode("MessageHandler", "Demo.Inventory.Handlers.OrderPlacedHandler", new Dictionary<string, object?>()),
+            new CypherNode("MessageHandler", "Demo.Sales.Handlers.OrderPlacedHandler", new Dictionary<string, object?>())
+        };
+
+        var result = ParseJobFixture(root, messageHandlers: handlers);
+
+        var edge = Assert.Single(result.Graph.Edges, x => x.Type == "SCHEDULES");
+        Assert.Equal("Demo.Sales.Handlers.OrderPlacedHandler", edge.SourceId);
+        Assert.DoesNotContain(result.Graph.Edges, x => x.SourceId == "Demo.Inventory.Handlers.OrderPlacedHandler");
+        Directory.Delete(root, true);
+    }
+
+    /// <summary>
+    /// First of the two-kinds-of-empty pair. `CurrencyRateSyncTask` injects only
+    /// `ICurrencyRateService` — nothing was left unresolved, the job simply touches no repository, so
+    /// the correct output is zero edges and **no** repository warning. (The trigger-mode warning is a
+    /// separate, deliberate one; see the `triggerMode` test.)
+    /// </summary>
+    [Fact]
+    public void JobParser_is_silent_for_a_job_with_no_repository_field()
+    {
+        var root = CreateJobFixture(("Jobs/CurrencyRateSyncTask.cs", """
+            namespace Demo.Jobs;
+            public interface IScheduledTask { }
+            public interface ICurrencyRateService { }
+            public sealed class CurrencyRateSyncTask : IScheduledTask
+            {
+                private readonly ICurrencyRateService _rates;
+                public CurrencyRateSyncTask(ICurrencyRateService rates) => _rates = rates;
+                public string TaskName => "CurrencyDownloader";
+            }
+            """));
+
+        var result = ParseJobFixture(root);
+
+        Assert.DoesNotContain(result.Graph.Edges, edge => edge.Type == "OPERATES_ON");
+        Assert.DoesNotContain(result.Warnings, warning => warning.Contains("repository interface", StringComparison.Ordinal));
+        Directory.Delete(root, true);
+    }
+
+    /// <summary>
+    /// Second of the pair. `IInboxCleanupRepository` and `IOutboxRepository` are declared under
+    /// `ECommerceApp.Application/Messaging/`, which `RepositoryParser` never scans — so no
+    /// `Repository` node exists for them at all. That is a real modelling gap and must be named in a
+    /// warning, not silently indistinguishable from the no-field case above.
+    /// </summary>
+    [Fact]
+    public void JobParser_warns_once_for_a_repository_field_with_no_matching_node()
+    {
+        var root = CreateJobFixture(("Jobs/InboxCleanupTask.cs", """
+            namespace Demo.Jobs;
+            public interface IScheduledTask { }
+            public interface IInboxCleanupRepository { }
+            public sealed class InboxCleanupTask : IScheduledTask
+            {
+                private readonly IInboxCleanupRepository _inbox;
+                public InboxCleanupTask(IInboxCleanupRepository inbox) => _inbox = inbox;
+                public string TaskName => "InboxCleanup";
+            }
+            """));
+
+        var result = ParseJobFixture(root);
+
+        Assert.DoesNotContain(result.Graph.Edges, edge => edge.Type == "OPERATES_ON");
+        var warning = Assert.Single(result.Warnings, item => item.Contains("repository interface", StringComparison.Ordinal));
+        Assert.Contains("IInboxCleanupRepository", warning, StringComparison.Ordinal);
+        Directory.Delete(root, true);
+    }
+
+    /// <summary>
+    /// The positive half: an `OPERATES_ON` target is reached by walking a real
+    /// `Entity-[:PERSISTED_BY]->Repository` edge backwards, so the edge lands on the `Entity` and
+    /// never on the `Repository` the job actually injects.
+    /// </summary>
+    [Fact]
+    public void JobParser_walks_persisted_by_backwards_to_reach_the_entity()
+    {
+        var root = CreateJobFixture(("Jobs/StockAdjustmentJob.cs", """
+            namespace Demo.Jobs;
+            public interface IScheduledTask { }
+            public interface IStockItemRepository { }
+            public sealed class StockAdjustmentJob : IScheduledTask
+            {
+                private readonly IStockItemRepository _stock;
+                public StockAdjustmentJob(IStockItemRepository stock) => _stock = stock;
+                public string TaskName => "StockAdjustmentJob";
+            }
+            """));
+        var repositories = new[] { new CypherNode("Repository", "Demo.Domain.IStockItemRepository", new Dictionary<string, object?>()) };
+        var persistedBy = new[] { new CypherEdge("PERSISTED_BY", "Entity", "Demo.Domain.StockItem", "Repository", "Demo.Domain.IStockItemRepository") };
+
+        var result = ParseJobFixture(root, repositories: repositories, persistedByEdges: persistedBy);
+
+        var edge = Assert.Single(result.Graph.Edges, x => x.Type == "OPERATES_ON");
+        Assert.Equal("Job", edge.SourceLabel);
+        Assert.Equal("Demo.Jobs.StockAdjustmentJob", edge.SourceId);
+        Assert.Equal("Entity", edge.TargetLabel);
+        Assert.Equal("Demo.Domain.StockItem", edge.TargetId);
+        Assert.DoesNotContain(result.Warnings, warning => warning.Contains("repository interface", StringComparison.Ordinal));
+        Directory.Delete(root, true);
+    }
+
+    /// <summary>
+    /// `JobTriggerSource.Scheduled` and `.Manual` are properties of rows in the runtime `ScheduledJob`
+    /// table, invisible to a syntax parser. Only `Deferred` has a findable call site, so a job without
+    /// one gets `null` plus a warning — never a guessed mode presented as a fact.
+    /// </summary>
+    [Fact]
+    public void JobParser_leaves_trigger_mode_null_and_warns_rather_than_guessing()
+    {
+        var root = CreateJobFixture(("Jobs/RefreshTokenCleanupTask.cs", """
+            namespace Demo.Jobs;
+            public interface IScheduledTask { }
+            public sealed class RefreshTokenCleanupTask : IScheduledTask
+            {
+                public string TaskName => "RefreshTokenCleanup";
+            }
+            """));
+
+        var result = ParseJobFixture(root);
+
+        var job = Assert.Single(result.Graph.Nodes, node => node.Label == "Job");
+        Assert.Null(job.Properties["triggerMode"]);
+        var warning = Assert.Single(result.Warnings, item => item.Contains("trigger mode", StringComparison.Ordinal));
+        Assert.Contains("Demo.Jobs.RefreshTokenCleanupTask", warning, StringComparison.Ordinal);
+        Assert.DoesNotContain("unscheduled", warning, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(result.Graph.Nodes, node =>
+            Equals(node.Properties.GetValueOrDefault("triggerMode"), "Scheduled") ||
+            Equals(node.Properties.GetValueOrDefault("triggerMode"), "Manual"));
+        Directory.Delete(root, true);
+    }
+
+    /// <summary>
+    /// Emit-only-if-it-exists: an enqueued type that resolves to no `Message` node produces no edge.
+    /// A fabricated target would validate against the ontology and look correct in a graph browser.
+    /// </summary>
+    [Fact]
+    public void JobParser_emits_no_publish_edge_for_a_message_with_no_node()
+    {
+        var root = CreateJobFixture(("Jobs/GhostJob.cs", """
+            namespace Demo.Jobs;
+            public interface IScheduledTask { }
+            public interface IOutboxWriter { }
+            public sealed record Ghost;
+            public sealed class GhostJob : IScheduledTask
+            {
+                private readonly IOutboxWriter _outboxWriter;
+                public GhostJob(IOutboxWriter outboxWriter) => _outboxWriter = outboxWriter;
+                public string TaskName => "Ghost";
+                public void ExecuteAsync() => _outboxWriter.EnqueueAsync(new Ghost(), null, default);
+            }
+            """));
+
+        var result = ParseJobFixture(root);
+
+        Assert.DoesNotContain(result.Graph.Edges, edge => edge.Type == "PUBLISHES");
+        Assert.Contains(result.Warnings, warning =>
+            warning.Contains("Could not resolve message type", StringComparison.Ordinal) &&
+            warning.Contains("Ghost", StringComparison.Ordinal));
+        Directory.Delete(root, true);
+    }
+
+    private static string JobClass(string namespaceName, string className, string taskName) => $$"""
+        namespace {{namespaceName}};
+        public interface IScheduledTask { }
+        public sealed class {{className}} : IScheduledTask
+        {
+            public const string JobTaskName = "{{taskName}}";
+            public string TaskName => JobTaskName;
+        }
+        """;
+
+    private static string CreateJobFixture(params (string Path, string Content)[] files)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "kg-jobs-" + Guid.NewGuid().ToString("N"));
+        WriteFixtureFiles(root, files);
+        return root;
+    }
+
+    private static ParserResult ParseJobFixture(
+        string root,
+        IReadOnlyList<CypherNode>? actions = null,
+        IReadOnlyList<CypherNode>? messageHandlers = null,
+        IReadOnlyList<CypherNode>? messages = null,
+        IReadOnlyList<CypherNode>? repositories = null,
+        IReadOnlyList<CypherEdge>? persistedByEdges = null)
+    {
+        return new JobParser(JobFixtureModules()).Parse(
+            root,
+            actions ?? [],
+            messageHandlers ?? [],
+            messages ?? [],
+            repositories ?? [],
+            persistedByEdges ?? []);
+    }
+
+    private static ModuleResolver JobFixtureModules() =>
+        new(new Dictionary<string, string> { ["Demo"] = "Jobs" });
 }

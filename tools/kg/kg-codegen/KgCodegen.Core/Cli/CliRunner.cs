@@ -66,6 +66,9 @@ public static class CliRunner
             ("QueryHandler", queryHandlers),
             ("Endpoint", endpoints),
             ("Page", pages),
+            // ScriptModule must run after Page/Endpoint: its USES edges source from their generated nodes.
+            ("ScriptModule", new ScriptModuleParser().Parse(
+                Path.Combine(root, "ECommerceApp.Web"), pages.Graph.Nodes, endpoints.Graph.Nodes)),
             // RolePolicy must run after Endpoint/Page: GOVERNED_BY sources are their generated nodes.
             ("RolePolicy", new RolePolicyParser().Parse(
                 Path.Combine(root, "ECommerceApp.Application"),
