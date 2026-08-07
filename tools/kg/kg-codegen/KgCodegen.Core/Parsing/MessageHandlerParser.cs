@@ -4,6 +4,13 @@ using KgCodegen.Core.Model;
 
 namespace KgCodegen.Core.Parsing;
 
+/// <summary>
+/// Emits `MessageHandler` nodes and `Message-[:HANDLED_BY]->MessageHandler` edges.
+///
+/// A handler class is counted once no matter how many `IMessageHandler&lt;T&gt;` interfaces it
+/// declares — `ProductCacheInvalidationHandler` implements four and is one node with four in-edges.
+/// Taking only the first interface would silently halve the graph's view of what runs on a message.
+/// </summary>
 public sealed class MessageHandlerParser(ModuleResolver modules)
 {
     public ParserResult Parse(string applicationRoot, IReadOnlyList<CypherNode> messages)
@@ -38,7 +45,7 @@ public sealed class MessageHandlerParser(ModuleResolver modules)
                     continue;
                 }
 
-                var handlerId = GetFullyQualifiedName(root, handler);
+                var handlerId = SyntaxNaming.FullyQualifiedName(root, handler);
                 var idAware = markers.Any(marker => marker.Identifier.Text.Equals("IIdAwareMessageHandler", StringComparison.Ordinal));
                 graph.Nodes.Add(new CypherNode("MessageHandler", handlerId, new Dictionary<string, object?> { ["idAware"] = idAware }));
                 graph.Edges.Add(new CypherEdge("CONTAINS", "Module", module, "MessageHandler", handlerId));
@@ -52,16 +59,19 @@ public sealed class MessageHandlerParser(ModuleResolver modules)
                         continue;
                     }
 
+                    // One unresolved type argument produces one warning: the resolver's own message
+                    // already says why it could not be resolved, so a second generic one on top of
+                    // it would read as two separate problems.
                     var resolved = resolver.Resolve(messageName, root, out var warning);
+                    if (resolved is null || !messageIds.Contains(resolved))
+                    {
+                        warnings.Add(warning ?? $"Could not resolve handled message '{messageName}' for {handlerId} in {file}.");
+                        continue;
+                    }
+
                     if (warning is not null)
                     {
                         warnings.Add(warning);
-                    }
-
-                    if (resolved is null || !messageIds.Contains(resolved))
-                    {
-                        warnings.Add($"Could not resolve handled message '{messageName}' for {handlerId} in {file}.");
-                        continue;
                     }
 
                     graph.Edges.Add(new CypherEdge("HANDLED_BY", "Message", resolved, "MessageHandler", handlerId));
@@ -70,14 +80,5 @@ public sealed class MessageHandlerParser(ModuleResolver modules)
         }
 
         return new ParserResult(graph, warnings);
-    }
-
-    private static string GetFullyQualifiedName(CompilationUnitSyntax root, TypeDeclarationSyntax type)
-    {
-        var namespaceName = root.DescendantNodes()
-            .OfType<BaseNamespaceDeclarationSyntax>()
-            .FirstOrDefault(namespaceDeclaration => namespaceDeclaration.Span.Contains(type.SpanStart))
-            ?.Name.ToString();
-        return string.IsNullOrEmpty(namespaceName) ? type.Identifier.Text : $"{namespaceName}.{type.Identifier.Text}";
     }
 }

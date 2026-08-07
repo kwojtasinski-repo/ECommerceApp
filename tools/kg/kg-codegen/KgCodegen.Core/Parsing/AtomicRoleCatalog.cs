@@ -71,7 +71,7 @@ public sealed class AtomicRoleCatalog
         foreach (var field in rolesClass.Members.OfType<FieldDeclarationSyntax>())
         {
             if (!field.Modifiers.Any(modifier => modifier.IsKind(SyntaxKind.ConstKeyword)) ||
-                field.Declaration.Type.ToString() != "string")
+                !field.Declaration.Type.ToString().Equals("string", StringComparison.Ordinal))
             {
                 continue;
             }

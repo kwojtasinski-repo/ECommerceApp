@@ -31,7 +31,7 @@ public static class CliRunner
         // Endpoint/Page must run after Action: their EXPOSED_BY edges only target Action nodes that
         // already exist, so `actions` is threaded through explicitly rather than read back off `graph`.
         var actions = new ActionParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Application"));
-        var messages = new MessageParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Application"), actions.Graph.Nodes);
+        var messages = new MessageParser().Parse(Path.Combine(root, "ECommerceApp.Application"), actions.Graph.Nodes);
         var messageHandlers = new MessageHandlerParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Application"), messages.Graph.Nodes);
         var endpoints = new EndpointParser().Parse(Path.Combine(root, "ECommerceApp.API"), applicationSymbols, actions.Graph.Nodes);
         var pages = new PageParser().Parse(Path.Combine(root, "ECommerceApp.Web"), applicationSymbols, actions.Graph.Nodes);

@@ -39,7 +39,7 @@ public sealed class RoleAliasIndex
             {
                 if (!field.Modifiers.Any(modifier => modifier.IsKind(SyntaxKind.PublicKeyword)) ||
                     !field.Modifiers.Any(modifier => modifier.IsKind(SyntaxKind.ConstKeyword)) ||
-                    field.Declaration.Type.ToString() != "string")
+                    !field.Declaration.Type.ToString().Equals("string", StringComparison.Ordinal))
                 {
                     continue;
                 }
@@ -74,6 +74,12 @@ public sealed class RoleAliasIndex
 
             if (candidates.Length == 0)
             {
+                // Not an alias at all. This scan sees every public string constant in the project,
+                // most of which (route names, policy names) are not role lists, so silence is the
+                // correct outcome here. A constant that *is* meant to be a role alias but no longer
+                // evaluates — because a role was renamed out from under it — still gets reported,
+                // by `RolePolicyParser` at the `[Authorize]` site that uses it, where the warning
+                // can name the affected endpoint.
                 continue;
             }
 

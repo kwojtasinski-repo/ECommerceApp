@@ -191,9 +191,220 @@ public sealed class PinnedRealGraphTests
         Assert.Empty(report.Warnings);
     }
 
-    private static Graph BuildRealGraph() => BuildRealGraph(out _);
+    [Fact]
+    public void Real_graph_has_message_and_handler_coverage()
+    {
+        var graph = BuildRealGraph();
 
-    private static Graph BuildRealGraph(out IReadOnlyList<string> rolePolicyWarnings)
+        Assert.True(graph.Nodes.Count(node => node.Label == "Message") >= 24);
+        Assert.True(graph.Nodes.Count(node => node.Label == "MessageHandler") >= 50);
+        Assert.DoesNotContain(graph.Nodes, node => node.Label == "Job");
+        Assert.DoesNotContain(graph.Nodes, node => node.Label == "MessageHandler" && node.Id.EndsWith("StockAdjustmentJob", StringComparison.Ordinal));
+        Assert.All(
+            graph.Edges.Where(edge => edge.Type == "PUBLISHES"),
+            edge => Assert.Equal("Action", edge.SourceLabel));
+        Assert.All(
+            graph.Edges.Where(edge => edge.Type == "HANDLED_BY"),
+            edge =>
+            {
+                Assert.Equal("Message", edge.SourceLabel);
+                Assert.Equal("MessageHandler", edge.TargetLabel);
+            });
+        Assert.DoesNotContain(graph.Nodes, node =>
+            node.Label == "Message" && node.Id.StartsWith("ECommerceApp.Domain", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Real_graph_has_no_message_source_alignment_warnings()
+    {
+        BuildRealGraph(out _, out var messageWarnings);
+
+        Assert.DoesNotContain(messageWarnings, warning => warning.Contains("has no matching Action node", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// The name-collision case this phase exists for. Two `RefundApproved` records live in sibling
+    /// namespaces; only the Fulfillment one is registered, and every handler means that one —
+    /// including `PaymentRefundApprovedHandler`, which sits in the *other* namespace's module.
+    /// </summary>
+    [Fact]
+    public void Real_graph_separates_the_two_RefundApproved_messages()
+    {
+        var graph = BuildRealGraph();
+        const string fulfillment = "ECommerceApp.Application.Sales.Fulfillment.Messages.RefundApproved";
+        const string payments = "ECommerceApp.Application.Sales.Payments.Messages.RefundApproved";
+
+        Assert.Equal("fulfillment.refund.approved",
+            Assert.Single(graph.Nodes, node => node.Label == "Message" && node.Id == fulfillment).Properties["key"]);
+        Assert.Null(Assert.Single(graph.Nodes, node => node.Label == "Message" && node.Id == payments).Properties["key"]);
+        Assert.DoesNotContain(graph.Edges, edge => edge.SourceId == payments || edge.TargetId == payments);
+
+        string[] handlers =
+        [
+            "ECommerceApp.Application.Inventory.Availability.Handlers.RefundApprovedHandler",
+            "ECommerceApp.Application.Sales.Orders.Handlers.OrderRefundApprovedHandler",
+            "ECommerceApp.Application.Sales.Payments.Handlers.PaymentRefundApprovedHandler",
+            "ECommerceApp.Application.Supporting.Communication.Handlers.RefundApprovedEmailHandler",
+            "ECommerceApp.Application.Supporting.Communication.Handlers.RefundApprovedNotificationHandler"
+        ];
+        foreach (var handler in handlers)
+        {
+            Assert.Contains(graph.Edges, edge =>
+                edge.Type == "HANDLED_BY" && edge.SourceId == fulfillment && edge.TargetId == handler);
+        }
+    }
+
+    [Fact]
+    public void Real_graph_registry_keys_are_resolved_through_using_aliases()
+    {
+        var graph = BuildRealGraph();
+
+        // The two aliased registrations must land on the real FQCNs, never on a node named after
+        // the alias.
+        Assert.DoesNotContain(graph.Nodes, node =>
+            node.Id.EndsWith("FulfillmentRefundApproved", StringComparison.Ordinal) ||
+            node.Id.EndsWith("FulfillmentRefundRejected", StringComparison.Ordinal));
+        Assert.Equal(
+            [
+                "ECommerceApp.Application.Catalog.Products.Messages.CategoryNameChanged",
+                "ECommerceApp.Application.Catalog.Products.Messages.ProductDiscontinued",
+                "ECommerceApp.Application.Catalog.Products.Messages.ProductNameChanged",
+                "ECommerceApp.Application.Catalog.Products.Messages.TagNameChanged",
+                "ECommerceApp.Application.Sales.Orders.Messages.OrderRequiresAttention",
+                "ECommerceApp.Application.Sales.Payments.Messages.RefundApproved"
+            ],
+            graph.Nodes
+                .Where(node => node.Label == "Message" && node.Properties["key"] is null)
+                .Select(node => node.Id)
+                .OrderBy(id => id, StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void Real_graph_counts_multi_interface_handlers_once()
+    {
+        var graph = BuildRealGraph();
+
+        foreach (var handler in new[]
+        {
+            "ECommerceApp.Application.Catalog.Products.Handlers.ProductCacheInvalidationHandler",
+            "ECommerceApp.Application.Presale.Checkout.Handlers.ProductDetailsCacheInvalidationHandler"
+        })
+        {
+            Assert.Single(graph.Nodes, node => node.Label == "MessageHandler" && node.Id == handler);
+            Assert.Equal(4, graph.Edges.Count(edge => edge.Type == "HANDLED_BY" && edge.TargetId == handler));
+        }
+    }
+
+    /// <summary>
+    /// `ProductDiscontinued` is unregistered, so it carries `key: null` — but it keeps its handler
+    /// edges, because three handlers genuinely run on it. Nothing in `Application` constructs it,
+    /// so it has no inbound publish. The `ECommerceApp.Domain` type of the same name must not leak
+    /// in through the simple-name lookup.
+    /// </summary>
+    [Fact]
+    public void Real_graph_keeps_handler_edges_for_the_unregistered_ProductDiscontinued()
+    {
+        var graph = BuildRealGraph();
+        const string id = "ECommerceApp.Application.Catalog.Products.Messages.ProductDiscontinued";
+
+        Assert.Null(Assert.Single(graph.Nodes, node => node.Label == "Message" && node.Id == id).Properties["key"]);
+        Assert.Equal(
+            [
+                "ECommerceApp.Application.Catalog.Products.Handlers.ProductCacheInvalidationHandler",
+                "ECommerceApp.Application.Inventory.Availability.Handlers.ProductDiscontinuedHandler",
+                "ECommerceApp.Application.Presale.Checkout.Handlers.ProductDetailsCacheInvalidationHandler"
+            ],
+            graph.Edges
+                .Where(edge => edge.Type == "HANDLED_BY" && edge.SourceId == id)
+                .Select(edge => edge.TargetId)
+                .OrderBy(target => target, StringComparer.Ordinal));
+        Assert.DoesNotContain(graph.Edges, edge => edge.Type == "PUBLISHES" && edge.TargetId == id);
+    }
+
+    [Fact]
+    public void Real_graph_marks_id_aware_handlers()
+    {
+        var graph = BuildRealGraph();
+        var handlers = graph.Nodes.Where(node => node.Label == "MessageHandler").ToArray();
+
+        Assert.True(handlers.Count(node => node.Properties["idAware"] is true) >= 22);
+        Assert.True(handlers.Count(node => node.Properties["idAware"] is false) >= 27);
+        Assert.All(handlers, node => Assert.IsType<bool>(node.Properties["idAware"]));
+        Assert.True(Assert.Single(handlers, node => node.Id == "ECommerceApp.Application.Inventory.Availability.Handlers.RefundApprovedHandler").Properties["idAware"] is true);
+        Assert.True(Assert.Single(handlers, node => node.Id == "ECommerceApp.Application.Sales.Payments.Handlers.PaymentRefundApprovedHandler").Properties["idAware"] is false);
+    }
+
+    [Fact]
+    public void Real_graph_publishes_coupon_and_refund_messages_from_their_services()
+    {
+        var graph = BuildRealGraph();
+
+        (string Action, string Message, string? Key)[] expected =
+        [
+            ("Sales.Coupons.Services.CouponService.ApplyCouponAsync", "Sales.Coupons.Messages.CouponApplied", "coupons.coupon.applied"),
+            ("Sales.Coupons.Services.CouponService.ApplyCouponAsync", "Sales.Coupons.Messages.OrderPriceAdjusted", "coupons.order-price.adjusted"),
+            ("Sales.Coupons.Services.CouponService.RemoveCouponAsync", "Sales.Coupons.Messages.CouponRemovedFromOrder", "coupons.coupon.removed-from-order"),
+            ("Sales.Fulfillment.Services.RefundService.ApproveRefundAsync", "Sales.Fulfillment.Messages.RefundApproved", "fulfillment.refund.approved"),
+            ("Sales.Fulfillment.Services.RefundService.RejectRefundAsync", "Sales.Fulfillment.Messages.RefundRejected", "fulfillment.refund.rejected")
+        ];
+
+        foreach (var (action, message, key) in expected)
+        {
+            var actionId = "ECommerceApp.Application." + action;
+            var messageId = "ECommerceApp.Application." + message;
+            Assert.Contains(graph.Edges, edge =>
+                edge.Type == "PUBLISHES" && edge.SourceId == actionId && edge.TargetId == messageId);
+            Assert.Equal(key, Assert.Single(graph.Nodes, node => node.Label == "Message" && node.Id == messageId).Properties["key"]);
+        }
+
+        // `new RefundApprovedItem(...)` in the same method is not an `IMessage` type and must not
+        // become a publish.
+        Assert.DoesNotContain(graph.Edges, edge => edge.Type == "PUBLISHES" && edge.TargetId.EndsWith("RefundApprovedItem", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// `OrderService` declares the message in a local variable and enqueues the identifier, not a
+    /// `new` expression. Missing this edge is the difference between seeing order placement in the
+    /// graph and not seeing it at all.
+    /// </summary>
+    [Fact]
+    public void Real_graph_follows_a_message_published_through_a_local_variable()
+    {
+        var graph = BuildRealGraph();
+
+        Assert.Contains(graph.Edges, edge =>
+            edge.Type == "PUBLISHES" &&
+            edge.SourceId == "ECommerceApp.Application.Sales.Orders.Services.OrderService.PlaceOrderAsync" &&
+            edge.TargetId == "ECommerceApp.Application.Sales.Orders.Messages.OrderPlaced");
+    }
+
+    /// <summary>
+    /// The three `StockReconciliationRequired` publishes live in handlers, and the two job publishes
+    /// in `*Job.cs`. Neither can originate a `PUBLISHES` edge, and neither is a parse failure — so
+    /// both are silent. Pinned so the silence stays deliberate. See `MessageParser`'s summary.
+    /// </summary>
+    [Fact]
+    public void Real_graph_omits_handler_and_job_sourced_publishes_without_warning()
+    {
+        var graph = BuildRealGraph(out _, out var messageWarnings);
+
+        Assert.DoesNotContain(graph.Edges, edge =>
+            edge.Type == "PUBLISHES" && edge.TargetId.EndsWith("StockReconciliationRequired", StringComparison.Ordinal));
+        Assert.DoesNotContain(graph.Edges, edge =>
+            edge.Type == "PUBLISHES" && edge.TargetId.EndsWith("PaymentExpired", StringComparison.Ordinal));
+        Assert.DoesNotContain(messageWarnings, warning =>
+            warning.Contains("StockReconciliationRequired", StringComparison.Ordinal) ||
+            warning.Contains("PaymentExpired", StringComparison.Ordinal));
+    }
+
+    private static Graph BuildRealGraph() => BuildRealGraph(out _, out _);
+
+    private static Graph BuildRealGraph(out IReadOnlyList<string> rolePolicyWarnings) =>
+        BuildRealGraph(out rolePolicyWarnings, out _);
+
+    private static Graph BuildRealGraph(
+        out IReadOnlyList<string> rolePolicyWarnings,
+        out IReadOnlyList<string> messageWarnings)
     {
         var root = FindRepositoryRoot();
         var resolver = new ModuleResolver();
@@ -207,6 +418,15 @@ public sealed class PinnedRealGraphTests
         repository.Graph.MergeInto(graph);
         var action = new ActionParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Application"));
         action.Graph.MergeInto(graph);
+        // Message runs after Action (PUBLISHES targets Action ids) and MessageHandler after Message
+        // (HANDLED_BY targets Message ids) — the same order `CliRunner` uses.
+        var message = new MessageParser().Parse(Path.Combine(root, "ECommerceApp.Application"), action.Graph.Nodes);
+        message.Graph.MergeInto(graph);
+        messageWarnings = message.Warnings;
+        var messageHandler = new MessageHandlerParser(resolver).Parse(
+            Path.Combine(root, "ECommerceApp.Application"),
+            message.Graph.Nodes);
+        messageHandler.Graph.MergeInto(graph);
         var applicationSymbols = DomainSymbolIndex.Build(Path.Combine(root, "ECommerceApp.Application"));
         var endpoint = new EndpointParser().Parse(
             Path.Combine(root, "ECommerceApp.API"),

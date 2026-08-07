@@ -9,21 +9,19 @@ public sealed class ActionParser(ModuleResolver modules)
     public ParserResult Parse(string applicationRoot)
     {
         var graph = Graph.Empty();
-        foreach (var file in Directory.EnumerateFiles(applicationRoot, "*Service.cs", SearchOption.AllDirectories))
+        foreach (var file in Directory.EnumerateFiles(applicationRoot, ServiceActionSites.ServiceFilePattern, SearchOption.AllDirectories))
         {
             var root = CSharpSyntaxTree.ParseText(File.ReadAllText(file)).GetRoot();
-            var ns = root.DescendantNodes().OfType<BaseNamespaceDeclarationSyntax>().FirstOrDefault()?.Name.ToString() ?? "";
             var module = modules.Resolve(Path.GetRelativePath(applicationRoot, file));
-            if (module is null) continue;
-            foreach (var service in root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(x => x.Identifier.Text.EndsWith("Service", StringComparison.Ordinal)))
+            if (module is null)
             {
-                var classId = string.IsNullOrEmpty(ns) ? service.Identifier.Text : ns + "." + service.Identifier.Text;
-                foreach (var method in service.Members.OfType<MethodDeclarationSyntax>().Where(x => x.Modifiers.Any(modifier => modifier.RawKind == (int)SyntaxKind.PublicKeyword)))
-                {
-                    var id = classId + "." + method.Identifier.Text;
-                    graph.Nodes.Add(new CypherNode("Action", id, new Dictionary<string, object?>()));
-                    graph.Edges.Add(new CypherEdge("CONTAINS", "Module", module, "Action", id));
-                }
+                continue;
+            }
+
+            foreach (var site in ServiceActionSites.Enumerate(root))
+            {
+                graph.Nodes.Add(new CypherNode("Action", site.ActionId, new Dictionary<string, object?>()));
+                graph.Edges.Add(new CypherEdge("CONTAINS", "Module", module, "Action", site.ActionId));
             }
         }
         return new ParserResult(graph, []);

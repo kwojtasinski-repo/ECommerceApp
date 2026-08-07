@@ -143,7 +143,10 @@ public sealed class RolePolicyParser
         var intersection = classRoles.Values.Intersect(methodRoles.Values, StringComparer.Ordinal).ToArray();
         if (intersection.Length == 0)
         {
-            warnings.Add($"Authorization role intersection is empty for {nodeId}: class [{string.Join(", ", classRoles.Values)}], method [{string.Join(", ", methodRoles.Values)}].");
+            // One warning, and it says what the empty set means: no role satisfies both filters, so
+            // the action is unreachable by role. Emitting no edge without saying this would look
+            // identical to an action that simply carries no [Authorize(Roles = ...)].
+            warnings.Add($"Authorization role intersection is empty for {nodeId}: class [{string.Join(", ", classRoles.Values)}] and method [{string.Join(", ", methodRoles.Values)}] share no role, so no principal can reach it.");
         }
 
         return RoleConstraint.Of(intersection);
@@ -326,7 +329,7 @@ public sealed class RolePolicyParser
             {
                 if (!field.Modifiers.Any(modifier => modifier.IsKind(SyntaxKind.PublicKeyword)) ||
                     !field.Modifiers.Any(modifier => modifier.IsKind(SyntaxKind.ConstKeyword)) ||
-                    field.Declaration.Type.ToString() != "string")
+                    !field.Declaration.Type.ToString().Equals("string", StringComparison.Ordinal))
                 {
                     continue;
                 }

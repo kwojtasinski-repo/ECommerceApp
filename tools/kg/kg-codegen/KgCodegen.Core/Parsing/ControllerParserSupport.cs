@@ -6,7 +6,6 @@ using KgCodegen.Core.Model;
 namespace KgCodegen.Core.Parsing;
 
 internal readonly record struct ControllerActionSite(
-    string FilePath,
     string ClassId,
     ClassDeclarationSyntax Class,
     MethodDeclarationSyntax Method,
@@ -28,18 +27,29 @@ internal static class ControllerParserSupport
             .Select(node => node.Id)
             .ToHashSet(StringComparer.Ordinal);
 
+        // Sites arrive grouped by controller, so the two pieces of per-class work — the injected
+        // service fields and the class-level [Route] — are computed once per class rather than
+        // once per action.
+        ClassDeclarationSyntax? currentClass = null;
+        var serviceFields = new Dictionary<string, string>(StringComparer.Ordinal);
+        string? classRoute = null;
+
         foreach (var site in EnumerateActionSites(rootPath, isController))
         {
             var classId = site.ClassId;
             var controller = site.Class;
             var method = site.Method;
-            var serviceFields = controller.Members.OfType<FieldDeclarationSyntax>()
+            if (!ReferenceEquals(currentClass, controller))
+            {
+                currentClass = controller;
+                serviceFields = controller.Members.OfType<FieldDeclarationSyntax>()
                     .SelectMany(field => field.Declaration.Variables.Select(variable =>
                         (Field: variable.Identifier.Text, Interface: GetSimpleTypeName(field.Declaration.Type))))
                     .Where(pair => pair.Interface is not null && pair.Interface.StartsWith("I", StringComparison.Ordinal) && pair.Interface.EndsWith("Service", StringComparison.Ordinal))
                     .ToDictionary(pair => pair.Field, pair => pair.Interface!, StringComparer.Ordinal);
+                classRoute = GetStringAttributeValue(controller.AttributeLists, "Route");
+            }
 
-            var classRoute = GetStringAttributeValue(controller.AttributeLists, "Route");
             var httpMethod = GetHttpMethod(method.AttributeLists);
             var route = CombineRoute(classRoute, GetMethodRoute(method.AttributeLists));
             if (route is null)
@@ -65,6 +75,8 @@ internal static class ControllerParserSupport
 
                 // `IOrderService` -> `OrderService` is the convention; the interface lookup is the
                 // fallback for decorators (`CachedCatalogNavigationService : ICatalogNavigationService`).
+                // Both refuse to answer when the name is declared more than once, so an ambiguous
+                // service produces a warning rather than an edge to an arbitrarily picked class.
                 var concreteName = interfaceName[1..];
                 var ambiguous = applicationSymbols.IsAmbiguous(concreteName) || applicationSymbols.IsAmbiguous(interfaceName);
                 var concreteType = ambiguous
@@ -101,7 +113,7 @@ internal static class ControllerParserSupport
                     .Where(method => method.Modifiers.Any(modifier => modifier.IsKind(SyntaxKind.PublicKeyword))))
                 {
                     var nodeId = UniqueId(ids, classId + "." + method.Identifier.Text);
-                    yield return new ControllerActionSite(file, classId, controller, method, nodeId);
+                    yield return new ControllerActionSite(classId, controller, method, nodeId);
                 }
             }
         }

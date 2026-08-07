@@ -45,6 +45,8 @@ Parsers run in this order; it is a real dependency chain, not a style choice.
 | `EntityParser` | `ECommerceApp.Infrastructure` | `Entity` (from `IEntityTypeConfiguration<T>` + `ToTable(...)`) |
 | `RepositoryParser` | `ECommerceApp.Domain` | `Repository`, `Entity-[:PERSISTED_BY]->Repository` |
 | `ActionParser` | `ECommerceApp.Application` | `Action` (public methods of `*Service.cs`) |
+| `MessageParser` | `ECommerceApp.Application` | `Message` (types implementing `IMessage`), `Action-[:PUBLISHES]->Message` |
+| `MessageHandlerParser` | `ECommerceApp.Application` | `MessageHandler`, `Message-[:HANDLED_BY]->MessageHandler` |
 | `EndpointParser` | `ECommerceApp.API` | `Endpoint`, `Action-[:EXPOSED_BY]->Endpoint` |
 | `PageParser` | `ECommerceApp.Web` | `Page`, `Action-[:EXPOSED_BY]->Page` |
 | `RolePolicyParser` | `ECommerceApp.Application` + `ECommerceApp.API` + `ECommerceApp.Web` | atomic `Role`/`Policy`, `Endpoint/Page-[:GOVERNED_BY]->Role/Policy` |
@@ -54,6 +56,19 @@ when its target `Action` id already exists. `RolePolicy` must run after both
 controller parsers because its governance edges target their generated nodes.
 Role names are read from `UserPermissions.Roles`; only roles actually reached
 by a governance edge become graph nodes.
+
+`Message` must run after `Action` (a `PUBLISHES` edge needs its source `Action`
+id to exist) and `MessageHandler` after `Message` (a `HANDLED_BY` edge needs its
+source `Message` id). `Message` keys come from `MessageTypeRegistry`, resolved
+through that file's `using` aliases so a registration reaches the real type
+rather than the alias name. Like `Role`/`Policy`, `Message` is deliberately
+un-contained: no `Module-[:CONTAINS]->Message` edge is emitted, because a
+message is a contract between modules rather than a member of one.
+
+A message type is matched by an exact `IMessage` base-list entry, so DTOs and
+enums that merely live in a `Messages/` folder produce no node. A handler class
+is one node however many `IMessageHandler<T>` interfaces it declares, and
+`idAware` records whether any of them is `IIdAwareMessageHandler<T>`.
 
 ## Warnings are the product, not noise
 
@@ -81,6 +96,31 @@ role sets have an empty intersection. These cases never fabricate a node or
 edge. The parser is intentionally attribute-only: imperative
 `User.IsInRole(...)` branches in action bodies are a documented coverage gap
 and do not produce `GOVERNED_BY` edges.
+
+Message and handler warnings:
+
+- `Message 'X' is not registered in MessageTypeRegistry` — the type implements
+  `IMessage` but no `Register(typeof(X), "key")` call names it. The node is
+  emitted with `key = null` and keeps its `HANDLED_BY` edges, because the
+  handlers genuinely run; the missing registration is reported as a fact about
+  the code, not hidden by dropping the node. 6 of these today.
+- `Could not resolve message type 'X' in <file>` — a simple name that the
+  file's `using` directives do not disambiguate, typically because two
+  namespaces declare the same message name and both are imported. No edge is
+  emitted; the resolver never picks a winner.
+- `Could not resolve handled message 'T' for <handler>` — an
+  `IMessageHandler<T>` whose `T` matches no known `Message` node. The handler
+  node is still emitted, without the edge.
+- `Could not extract published message in <action>` — an `EnqueueAsync` /
+  `PublishAsync` argument that is neither a `new` expression nor a local
+  variable assigned from one.
+
+Two publish sites are silent by design rather than warned about: handlers
+(three `StockReconciliationRequired` enqueues) and `*Job.cs` files. A
+`PUBLISHES` edge must start at an `Action`, and the ontology has no
+`MessageHandler-[:PUBLISHES]->Message` triple — the edge is not merely
+unemitted, it is currently unrepresentable. Adding that triple is a candidate
+ontology amendment.
 
 Action resolution goes `IFooService` → `FooService` (the repo-wide convention)
 and falls back to "the single class implementing `IFooService`" for decorators

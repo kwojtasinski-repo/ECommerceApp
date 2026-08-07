@@ -4,12 +4,37 @@ using KgCodegen.Core.Model;
 
 namespace KgCodegen.Core.Parsing;
 
-public sealed class MessageParser(ModuleResolver modules)
+/// <summary>
+/// Emits `Message` nodes (types implementing `IMessage`) and `Action-[:PUBLISHES]->Message` edges.
+///
+/// `Message` nodes are deliberately un-contained: no `Module-[:CONTAINS]->Message` edge is emitted,
+/// matching how `Role`/`Policy` are treated. A message is a contract between modules, not a member
+/// of one.
+///
+/// Three deliberate limits, all of which under-report rather than guess:
+///
+/// 1. **Publishes are read from `*Service.cs` only**, because `PUBLISHES` must originate at an
+///    `Action` node and only service methods become actions. Three real publish sites therefore
+///    produce no edge: `Inventory/Availability/Handlers/ShipmentDeliveredHandler.cs`,
+///    `ShipmentFailedHandler.cs` and `ShipmentPartiallyDeliveredHandler.cs` all enqueue
+///    `StockReconciliationRequired`. The ontology has no `MessageHandler-[:PUBLISHES]->Message`
+///    triple, so the edge is not merely unemitted here — it is currently unrepresentable. Adding
+///    that triple is a candidate ontology amendment; until it lands, this gap is silent by design
+///    rather than warned about, because the parser is doing exactly what the ontology allows.
+///    Publishes from `*Job.cs` are the same case and are Phase 4c's concern.
+/// 2. **An `IMessage` type that `MessageTypeRegistry` does not register still gets a node**, with
+///    `key: null` and a warning, and keeps its `HANDLED_BY` edges. Six real messages are in this
+///    state. Dropping them would hide handlers that genuinely run — the missing registry entry is
+///    reported as a fact about the code, not papered over by omitting the node.
+/// 3. **`PublishAsync` is accepted alongside `EnqueueAsync` but is currently dead**: the repo has
+///    exactly two `PublishAsync` occurrences, both interface declarations in `Messaging/`, and no
+///    call sites. The branch exists so a future call site is not silently skipped; it has never
+///    been exercised against real code.
+/// </summary>
+public sealed class MessageParser
 {
     public ParserResult Parse(string applicationRoot, IReadOnlyList<CypherNode> actions)
     {
-        _ = modules;
-        _ = actions;
         var graph = Graph.Empty();
         var warnings = new List<string>();
         var messageFiles = Directory.EnumerateFiles(
@@ -33,7 +58,7 @@ public sealed class MessageParser(ModuleResolver modules)
         }
 
         var messages = messageSyntax
-            .Select(item => new CypherNode("Message", GetFullyQualifiedName(item.Root, item.Type), new Dictionary<string, object?>()))
+            .Select(item => new CypherNode("Message", SyntaxNaming.FullyQualifiedName(item.Root, item.Type), new Dictionary<string, object?>()))
             .ToArray();
         var resolver = new MessageNameResolver(messages);
         var registry = MessageTypeRegistryIndex.Build(applicationRoot, resolver, messages);
@@ -69,7 +94,7 @@ public sealed class MessageParser(ModuleResolver modules)
         List<string> warnings)
     {
         var messageFiles = messageSyntax.Select(item => item.Path).ToHashSet(StringComparer.Ordinal);
-        foreach (var file in Directory.EnumerateFiles(applicationRoot, "*Service.cs", SearchOption.AllDirectories))
+        foreach (var file in Directory.EnumerateFiles(applicationRoot, ServiceActionSites.ServiceFilePattern, SearchOption.AllDirectories))
         {
             if (messageFiles.Contains(file))
             {
@@ -77,60 +102,59 @@ public sealed class MessageParser(ModuleResolver modules)
             }
 
             var root = CSharpSyntaxTree.ParseText(File.ReadAllText(file), path: file).GetCompilationUnitRoot();
-            var namespaceName = root.DescendantNodes().OfType<BaseNamespaceDeclarationSyntax>().FirstOrDefault()?.Name.ToString() ?? "";
-            foreach (var service in root.DescendantNodes().OfType<ClassDeclarationSyntax>().Where(type => type.Identifier.Text.EndsWith("Service", StringComparison.Ordinal)))
+            foreach (var site in ServiceActionSites.Enumerate(root))
             {
-                var classId = string.IsNullOrEmpty(namespaceName) ? service.Identifier.Text : $"{namespaceName}.{service.Identifier.Text}";
-                foreach (var method in service.Members.OfType<MethodDeclarationSyntax>().Where(method => method.Modifiers.Any(modifier => modifier.RawKind == (int)SyntaxKind.PublicKeyword)))
+                // The id has to be one `ActionParser` actually produced; a publish from a method
+                // that is not an action has nowhere to originate.
+                if (!actionIds.Contains(site.ActionId))
                 {
-                    var actionId = $"{classId}.{method.Identifier.Text}";
-                    if (!actionIds.Contains(actionId))
+                    continue;
+                }
+
+                foreach (var invocation in site.Method.DescendantNodes().OfType<InvocationExpressionSyntax>())
+                {
+                    var methodName = invocation.Expression switch
+                    {
+                        IdentifierNameSyntax identifier => identifier.Identifier.Text,
+                        MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.Text,
+                        _ => ""
+                    };
+                    if (!methodName.Equals("EnqueueAsync", StringComparison.Ordinal) && !methodName.Equals("PublishAsync", StringComparison.Ordinal))
                     {
                         continue;
                     }
 
-                    foreach (var invocation in method.DescendantNodes().OfType<InvocationExpressionSyntax>())
+                    // Only the enqueued argument counts. Scanning the whole method body for
+                    // `new SomeMessage(...)` would turn every constructed value — including
+                    // non-message types such as `RefundApprovedItem` — into a publish.
+                    var argument = invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
+                    var messageName = argument switch
                     {
-                        var methodName = invocation.Expression switch
-                        {
-                            IdentifierNameSyntax identifier => identifier.Identifier.Text,
-                            MemberAccessExpressionSyntax memberAccess => memberAccess.Name.Identifier.Text,
-                            _ => ""
-                        };
-                        if (!methodName.Equals("EnqueueAsync", StringComparison.Ordinal) && !methodName.Equals("PublishAsync", StringComparison.Ordinal))
-                        {
-                            continue;
-                        }
+                        ObjectCreationExpressionSyntax creation => creation.Type.ToString(),
+                        IdentifierNameSyntax identifier => FindLocalMessageType(site.Method, identifier.Identifier.Text),
+                        _ => null
+                    };
+                    if (messageName is null)
+                    {
+                        warnings.Add($"Could not extract published message in {site.ActionId}: {argument ?? invocation}.");
+                        continue;
+                    }
 
-                        var argument = invocation.ArgumentList.Arguments.FirstOrDefault()?.Expression;
-                        var messageName = argument switch
-                        {
-                            ObjectCreationExpressionSyntax creation => creation.Type.ToString(),
-                            IdentifierNameSyntax identifier => FindLocalMessageType(method, identifier.Identifier.Text),
-                            _ => null
-                        };
-                        if (messageName is null)
-                        {
-                            warnings.Add($"Could not extract published message in {actionId}: {argument ?? invocation}.");
-                            continue;
-                        }
+                    var resolved = resolver.Resolve(messageName, root, out var warning);
+                    if (warning is not null)
+                    {
+                        warnings.Add(warning);
+                    }
 
-                        var resolved = resolver.Resolve(messageName, root, out var warning);
-                        if (warning is not null)
-                        {
-                            warnings.Add(warning);
-                        }
+                    if (resolved is null || !messages.Any(message => message.Id.Equals(resolved, StringComparison.Ordinal)))
+                    {
+                        continue;
+                    }
 
-                        if (resolved is null || !messages.Any(message => message.Id.Equals(resolved, StringComparison.Ordinal)))
-                        {
-                            continue;
-                        }
-
-                        var edge = new CypherEdge("PUBLISHES", "Action", actionId, "Message", resolved);
-                        if (!graph.Edges.Contains(edge))
-                        {
-                            graph.Edges.Add(edge);
-                        }
+                    var edge = new CypherEdge("PUBLISHES", "Action", site.ActionId, "Message", resolved);
+                    if (!graph.Edges.Contains(edge))
+                    {
+                        graph.Edges.Add(edge);
                     }
                 }
             }
@@ -145,14 +169,5 @@ public sealed class MessageParser(ModuleResolver modules)
             .Select(variable => variable.Initializer?.Value as ObjectCreationExpressionSyntax)
             .FirstOrDefault(creation => creation is not null)
             ?.Type.ToString();
-    }
-
-    private static string GetFullyQualifiedName(CompilationUnitSyntax root, TypeDeclarationSyntax type)
-    {
-        var namespaceName = root.DescendantNodes()
-            .OfType<BaseNamespaceDeclarationSyntax>()
-            .FirstOrDefault(namespaceDeclaration => namespaceDeclaration.Span.Contains(type.SpanStart))
-            ?.Name.ToString();
-        return string.IsNullOrEmpty(namespaceName) ? type.Identifier.Text : $"{namespaceName}.{type.Identifier.Text}";
     }
 }
