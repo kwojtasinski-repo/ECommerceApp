@@ -162,7 +162,10 @@ not a modeling defect.
 - `Entity`: `IEntityTypeConfiguration<T>` implementation under
   `Infrastructure/<Module>/Configurations/*Configuration.cs`; table name from
   that file's `builder.ToTable(...)` call.
-- `Repository`: `I*Repository` interface + implementation under
+- `Repository`: `I*Repository` interface under `Domain/<Module>/` (verified —
+  28 of 30 repository interfaces in the repo live in Domain, not Application;
+  the 2 exceptions are `Messaging`'s own `IOutboxRepository`/
+  `IInboxCleanupRepository`) + implementation under
   `Infrastructure/<Module>/Repositories`.
 - `Action`: public method on an Application-layer `*Service` class.
   query/command classification deliberately **not modeled** — .NET has no
@@ -227,24 +230,38 @@ wiring) — the graph would surface this on its own once built (a `Message`
 node with zero `PUBLISHES` in-edges and zero `HANDLED_BY` out-edges), no
 special node type needed to detect it.
 
-## Implementation plan (kg-codegen) — not yet built
+## Implementation plan (kg-codegen)
 
 Phased, one source domain at a time (see Guardrail-adjacent principle:
 resist modeling/building everything at once):
 
-0. Port `Graph`/`CypherNode`/`CypherEdge`/`MergeGraph`/`Validator`/`Emitter`
-   from AJ's TypeScript to a new C# console app under `tools/kg/kg-codegen/`
-   (near-verbatim — zero AJ-specific logic in these pieces).
-1. Roslyn parser: `Module`, `Entity`, `Repository`, `Action` (the foundation
-   everything else references).
-2. Roslyn parser: `Endpoint`, `Page`, `Role`/`Policy` (with alias-splitting,
+0.–1. ✅ **Built** (`tools/kg/kg-codegen/`, C# console app + `KgCodegen.Core`
+   library, `net10.0`, syntax-only Roslyn — no `MSBuildWorkspace`). Ports
+   `Graph`/`CypherNode`/`CypherEdge`/`GraphMerge`/`Validator`/`Emitter` from
+   AJ's TypeScript, plus Roslyn parsers for `Module` (hand-authored
+   `SpineCatalog`), `Entity`, `Repository`, `Action`. Validated clean against
+   the real repo: 14 `Module`, 33 `Entity`, 28 `Repository`, 201 `Action`
+   nodes, 0 ontology errors. Found and fixed one real bug during independent
+   validation: `RepositoryParser`'s original `PERSISTED_BY` matching used
+   substring `Contains` instead of exact leaf-type-name matching, producing
+   false edges wherever entity names share a prefix (`Coupon` vs.
+   `CouponUsed` vs. `CouponApplicationRecord` — all real, all in this repo).
+   Fixed to unwrap `Task<T>`/`IReadOnlyList<T>`/`T?`/`T[]` and compare exact
+   simple names; regression test added.
+2. Test hardening (new) — a handful of end-to-end tests pinned on real,
+   hand-verified fragments of the actual graph output (not just "count > 0"),
+   so a future phase's refactor can't silently corrupt Phase 0+1's output
+   while adding Phase 2+ node types. See phase file for the exact target
+   list.
+3. Roslyn parser: `Endpoint`, `Page`, `Role`/`Policy` (with alias-splitting,
    Guardrail 3).
-3. Roslyn parser: `Message`/`MessageHandler`/`Query`/`QueryHandler`/`Job`
+4. Roslyn parser: `Message`/`MessageHandler`/`Query`/`QueryHandler`/`Job`
    (+ `SCHEDULES`) — the highlight layer this whole design exists for.
-4. JS/AMD parser: `ScriptModule` — lowest confidence, built last, carries the
+5. JS/AMD parser: `ScriptModule` — lowest confidence, built last, carries the
    staleness-warning requirement from Guardrail 5.
-5. `compose.yml` (Neo4j) + `overrides.yaml` for facts no parser can infer
-   (e.g. the real cron string for `Scheduled` jobs).
+6. `compose.yml` (Neo4j) + `overrides.yaml` for facts no parser can infer
+   (e.g. the real cron string for `Scheduled` jobs), replacing the Phase 0+1
+   stand-in `SpineCatalog.cs`.
 
 ## Why two skills, not one
 

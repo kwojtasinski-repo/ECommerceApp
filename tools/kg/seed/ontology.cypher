@@ -70,7 +70,7 @@ SET et.label = 'Entity', et.layer = 2,
 
 MERGE (et:Ontology:EntityType {name: 'Repository'})
 SET et.label = 'Repository', et.layer = 2,
-    et.description = 'Persistence component for an Entity. Marker: interface I*Repository (Application) with an implementation under Infrastructure/<Module>/Repositories.';
+    et.description = 'Persistence component for an Entity. Marker: interface I*Repository (Domain — verified against real code during kg-codegen Phase 0+1 implementation; 28 of 30 I*Repository interfaces in the repo live under Domain, not Application) with an implementation under Infrastructure/<Module>/Repositories.';
 
 MERGE (et:Ontology:EntityType {name: 'Action'})
 SET et.label = 'Action', et.layer = 2,
