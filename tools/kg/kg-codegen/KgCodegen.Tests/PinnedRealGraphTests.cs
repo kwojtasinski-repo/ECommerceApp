@@ -438,9 +438,25 @@ public sealed class PinnedRealGraphTests
     {
         var graph = BuildRealGraph();
 
-        Assert.Equal(3, graph.Edges.Count(edge => edge.Type == "USES" && edge.TargetLabel == "Query"));
-        Assert.Equal(3, graph.Edges.Count(edge => edge.Type == "USES" && edge.TargetId == "ECommerceApp.Application.Messaging.OrderExistsQuery"));
-        Assert.DoesNotContain(graph.Edges, edge => edge.Type == "USES" && edge.TargetId != "ECommerceApp.Application.Messaging.OrderExistsQuery");
+        Assert.Equal(
+            [
+                "ECommerceApp.Application.Sales.Coupons.Services.CouponService.ApplyCouponAsync",
+                "ECommerceApp.Application.Sales.Fulfillment.Services.RefundService.RequestRefundAsync",
+                "ECommerceApp.Application.Sales.Fulfillment.Services.ShipmentService.CreateShipmentAsync"
+            ],
+            graph.Edges
+                .Where(edge => edge.Type == "USES" && edge.TargetId == "ECommerceApp.Application.Messaging.OrderExistsQuery")
+                .Select(edge => edge.SourceId)
+                .OrderBy(id => id, StringComparer.Ordinal));
+
+        // The pinned absence, scoped to `Query` targets. `USES` is a shared verb — `ontology.json`
+        // also declares `Page-[:USES]->Endpoint` and `Page-[:USES]->ScriptModule` (Phase 5) — so an
+        // unscoped assertion would break on an unrelated phase and invite being weakened rather than
+        // re-derived. Closing the Adapter coverage gap must stay a deliberate, visible change here.
+        Assert.DoesNotContain(
+            graph.Edges,
+            edge => edge.Type == "USES" && edge.TargetLabel == "Query" &&
+                    edge.TargetId != "ECommerceApp.Application.Messaging.OrderExistsQuery");
         Assert.DoesNotContain(graph.Edges, edge => edge.Type == "CONTAINS" && edge.TargetLabel == "Query");
         Assert.DoesNotContain(graph.Nodes, node => node.Label == "Job");
         Assert.DoesNotContain(graph.Edges, edge => edge.Type == "SCHEDULES");

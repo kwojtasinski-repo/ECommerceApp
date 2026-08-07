@@ -692,6 +692,223 @@ public sealed class ParserTests
         Directory.Delete(root, true);
     }
 
+    /// <summary>
+    /// Two real occurrences name `IQuery<T>` without being a query: the `where TQuery : IQuery<TResult>`
+    /// constraint on `IQueryHandler<,>` and the `IQuery<TResult>` parameter on `IModuleClient.SendAsync`.
+    /// Matching on the base list rather than searching descendants is what keeps both out; a text or
+    /// descendant search would emit two phantom `Query` nodes that nothing ever links to.
+    /// </summary>
+    [Fact]
+    public void QueryParser_ignores_generic_constraint_and_parameter_occurrences()
+    {
+        var root = CreateQueryFixture(
+            ("Messaging/IQuery.cs", "namespace Demo.Messaging; public interface IQuery<TResult> { }"),
+            ("Messaging/IQueryHandler.cs", "namespace Demo.Messaging; public interface IQueryHandler<TQuery, TResult> where TQuery : IQuery<TResult> { }"),
+            ("Messaging/IModuleClient.cs", "namespace Demo.Messaging; public interface IModuleClient { System.Threading.Tasks.Task<TResult> SendAsync<TResult>(IQuery<TResult> query); }"),
+            ("Orders/Queries/RealQuery.cs", "namespace Demo.Messaging; public sealed record RealQuery : IQuery<bool>;"));
+
+        var result = new QueryParser().Parse(root, []);
+
+        Assert.Equal("Demo.Messaging.RealQuery", Assert.Single(result.Graph.Nodes, node => node.Label == "Query").Id);
+        Directory.Delete(root, true);
+    }
+
+    /// <summary>
+    /// The cross-project pin: queries live in `ECommerceApp.Application`, their handlers in
+    /// `ECommerceApp.Infrastructure`. A single-root fixture cannot exercise this — pointing the
+    /// handler scan at the query root (the natural carry-over from Phase 4a, where both live under
+    /// `Application`) yields zero handlers against the real repo.
+    /// </summary>
+    [Fact]
+    public void QueryHandlerParser_resolves_handled_by_across_two_roots()
+    {
+        var (root, application, infrastructure) = CreateSplitQueryFixture(
+            ("Inventory/Availability/Queries/StockAvailableQuery.cs", "namespace Demo.Messaging; public sealed record StockAvailableQuery : IQuery<bool>; public interface IQuery<T> { }"),
+            ("Inventory/Handlers/StockAvailableQueryHandler.cs", "using Demo.Messaging; namespace Demo.Infrastructure.Inventory.Handlers; internal sealed class StockAvailableQueryHandler : IQueryHandler<StockAvailableQuery, bool> { } public interface IQueryHandler<TQuery, TResult> { }"));
+
+        var queries = new QueryParser().Parse(application, []);
+        var handlers = new QueryHandlerParser(QueryFixtureModules()).Parse(infrastructure, queries.Graph.Nodes);
+
+        var handler = Assert.Single(handlers.Graph.Nodes, node => node.Label == "QueryHandler");
+        Assert.Equal("Demo.Infrastructure.Inventory.Handlers.StockAvailableQueryHandler", handler.Id);
+        Assert.Equal("bool", handler.Properties["resultType"]);
+        var edge = Assert.Single(handlers.Graph.Edges, x => x.Type == "HANDLED_BY");
+        Assert.Equal("Demo.Messaging.StockAvailableQuery", edge.SourceId);
+        Assert.Equal(handler.Id, edge.TargetId);
+        Assert.Empty(handlers.Warnings);
+        Directory.Delete(root, true);
+    }
+
+    /// <summary>
+    /// No real handler implements `IQueryHandler<,>` twice, so only a fixture can prove the parser
+    /// collects every base-list match instead of taking the first. The node count is the load-bearing
+    /// assertion: two duplicate nodes would also yield two edges, and `Graph.MergeInto` would later
+    /// collapse them, hiding the defect at the graph level.
+    /// </summary>
+    [Fact]
+    public void QueryHandlerParser_counts_a_double_implementing_handler_once()
+    {
+        var (root, application, infrastructure) = CreateSplitQueryFixture(
+            ("Queries/Catalog.cs", "namespace Demo.Messaging; public sealed record One : IQuery<bool>; public sealed record Two : IQuery<int>; public interface IQuery<T> { }"),
+            ("Inventory/Handlers/BothHandler.cs", "using Demo.Messaging; namespace Demo.Infrastructure.Inventory.Handlers; internal sealed class BothHandler : IQueryHandler<One, bool>, IQueryHandler<Two, int> { } public interface IQueryHandler<TQuery, TResult> { }"));
+
+        var queries = new QueryParser().Parse(application, []);
+        var handlers = new QueryHandlerParser(QueryFixtureModules()).Parse(infrastructure, queries.Graph.Nodes);
+
+        Assert.Single(handlers.Graph.Nodes, node => node.Label == "QueryHandler");
+        Assert.Equal(2, handlers.Graph.Edges.Count(edge => edge.Type == "HANDLED_BY"));
+        Assert.Empty(handlers.Warnings);
+        Directory.Delete(root, true);
+    }
+
+    /// <summary>
+    /// Today's three queries all share one namespace and cannot collide, so this refusal is
+    /// unreachable from the real repo. It is pinned anyway: a resolver that guesses on ambiguity is
+    /// wrong regardless of whether current data happens to expose it.
+    /// </summary>
+    [Fact]
+    public void QueryHandlerParser_refuses_to_guess_between_same_named_queries()
+    {
+        var (root, application, infrastructure) = CreateSplitQueryFixture(
+            ("Orders/Queries/OrderExists.cs", "namespace Demo.Orders.Queries; public sealed record OrderExists : IQuery<bool>; public interface IQuery<T> { }"),
+            ("Fulfillment/Queries/OrderExists.cs", "namespace Demo.Fulfillment.Queries; public sealed record OrderExists : IQuery<bool>;"),
+            ("Inventory/Handlers/AmbiguousHandler.cs", "namespace Demo.Infrastructure.Inventory.Handlers; internal sealed class AmbiguousHandler : IQueryHandler<OrderExists, bool> { } public interface IQueryHandler<TQuery, TResult> { }"));
+
+        var queries = new QueryParser().Parse(application, []);
+        var handlers = new QueryHandlerParser(QueryFixtureModules()).Parse(infrastructure, queries.Graph.Nodes);
+
+        Assert.Equal(2, queries.Graph.Nodes.Count(node => node.Label == "Query"));
+        Assert.Single(handlers.Graph.Nodes, node => node.Label == "QueryHandler");
+        Assert.DoesNotContain(handlers.Graph.Edges, edge => edge.Type == "HANDLED_BY");
+        var warning = Assert.Single(handlers.Warnings);
+        Assert.Contains("OrderExists", warning, StringComparison.Ordinal);
+        Directory.Delete(root, true);
+    }
+
+    [Fact]
+    public void QueryHandlerParser_skips_a_handler_whose_path_resolves_to_no_module()
+    {
+        var (root, application, infrastructure) = CreateSplitQueryFixture(
+            ("Queries/Catalog.cs", "namespace Demo.Messaging; public sealed record One : IQuery<bool>; public interface IQuery<T> { }"),
+            ("Unmapped/Handlers/OneQueryHandler.cs", "using Demo.Messaging; namespace Demo.Infrastructure.Unmapped.Handlers; internal sealed class OneQueryHandler : IQueryHandler<One, bool> { } public interface IQueryHandler<TQuery, TResult> { }"));
+
+        var queries = new QueryParser().Parse(application, []);
+        var handlers = new QueryHandlerParser(QueryFixtureModules()).Parse(infrastructure, queries.Graph.Nodes);
+
+        Assert.Empty(handlers.Graph.Nodes);
+        Assert.Empty(handlers.Graph.Edges);
+        Assert.Empty(handlers.Warnings);
+        Directory.Delete(root, true);
+    }
+
+    /// <summary>
+    /// Handler selection reads the base list, not any `IQueryHandler` mention. The real DI
+    /// registrations that would trip a descendant search live in `Extensions.cs` and `ModuleClient.cs`,
+    /// which the `*Handler.cs` glob already excludes — so the gate is only provable in a fixture that
+    /// puts the registration inside a `*Handler.cs` file.
+    /// </summary>
+    [Fact]
+    public void QueryHandlerParser_ignores_a_di_registration_mention_of_the_marker()
+    {
+        var (root, application, infrastructure) = CreateSplitQueryFixture(
+            ("Queries/Catalog.cs", "namespace Demo.Messaging; public sealed record One : IQuery<bool>; public interface IQuery<T> { }"),
+            ("Inventory/Handlers/RegistrationHandler.cs", "using Demo.Messaging; namespace Demo.Infrastructure.Inventory.Handlers; internal static class RegistrationHandler { public static void Register(IServiceCollection services) { services.AddScoped<IQueryHandler<One, bool>, SomeHandler>(); } } public interface IQueryHandler<TQuery, TResult> { } public interface IServiceCollection { }"));
+
+        var queries = new QueryParser().Parse(application, []);
+        var handlers = new QueryHandlerParser(QueryFixtureModules()).Parse(infrastructure, queries.Graph.Nodes);
+
+        Assert.Empty(handlers.Graph.Nodes);
+        Assert.Empty(handlers.Graph.Edges);
+        Directory.Delete(root, true);
+    }
+
+    /// <summary>
+    /// No real send site uses a local today, so this path is fixture-only. Left untested it would
+    /// fail silently — a missing `USES` edge produces no warning and no error.
+    /// </summary>
+    [Fact]
+    public void QueryParser_emits_uses_for_a_query_held_in_a_local()
+    {
+        var root = CreateQueryFixture(
+            ("Messaging/IModuleClient.cs", "namespace Demo.Messaging; public interface IModuleClient { }"),
+            ("Orders/Queries/OrderExistsQuery.cs", "namespace Demo.Messaging; public sealed record OrderExistsQuery : IQuery<bool>; public interface IQuery<T> { }"),
+            ("Orders/Services/OrderService.cs", "using Demo.Messaging; namespace Demo.Orders.Services; public sealed class OrderService { private readonly IModuleClient _client; public OrderService(IModuleClient client) => _client = client; public void Check() { var query = new OrderExistsQuery(); _client.SendAsync(query, default); } }"));
+        var actions = new[] { new CypherNode("Action", "Demo.Orders.Services.OrderService.Check", new Dictionary<string, object?>()) };
+
+        var result = new QueryParser().Parse(root, actions);
+
+        var edge = Assert.Single(result.Graph.Edges, x => x.Type == "USES");
+        Assert.Equal("Demo.Orders.Services.OrderService.Check", edge.SourceId);
+        Assert.Equal("Demo.Messaging.OrderExistsQuery", edge.TargetId);
+        Assert.Empty(result.Warnings);
+        Directory.Delete(root, true);
+    }
+
+    /// <summary>
+    /// `Query` is a cross-context contract owned by no module, and `Module-[:CONTAINS]->Query` is not
+    /// a declared triple — emitting one would fail `GraphValidator`. Its handler is contained; the
+    /// query is not.
+    /// </summary>
+    [Fact]
+    public void Query_parsers_emit_no_module_contains_query_edge()
+    {
+        var (root, application, infrastructure) = CreateSplitQueryFixture(
+            ("Queries/Catalog.cs", "namespace Demo.Messaging; public sealed record One : IQuery<bool>; public interface IQuery<T> { }"),
+            ("Inventory/Handlers/OneQueryHandler.cs", "using Demo.Messaging; namespace Demo.Infrastructure.Inventory.Handlers; internal sealed class OneQueryHandler : IQueryHandler<One, bool> { } public interface IQueryHandler<TQuery, TResult> { }"));
+
+        var queries = new QueryParser().Parse(application, []);
+        var handlers = new QueryHandlerParser(QueryFixtureModules()).Parse(infrastructure, queries.Graph.Nodes);
+
+        Assert.DoesNotContain(queries.Graph.Edges, edge => edge.Type == "CONTAINS");
+        Assert.All(
+            handlers.Graph.Edges.Where(edge => edge.Type == "CONTAINS"),
+            edge => Assert.Equal("QueryHandler", edge.TargetLabel));
+        Directory.Delete(root, true);
+    }
+
+    private static string CreateQueryFixture(params (string Path, string Content)[] files)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "kg-query-" + Guid.NewGuid().ToString("N"));
+        WriteFixtureFiles(root, files);
+        return root;
+    }
+
+    /// <summary>
+    /// Two sibling roots under one temp directory, mirroring the real `ECommerceApp.Application` /
+    /// `ECommerceApp.Infrastructure` split. Files are routed by their leading `Queries`/`Orders`/
+    /// `Fulfillment` segment being an application concern and `Inventory`/`Unmapped` handler folders
+    /// being an infrastructure one — the two parsers must be handed genuinely different roots.
+    /// </summary>
+    private static (string Root, string Application, string Infrastructure) CreateSplitQueryFixture(
+        params (string Path, string Content)[] files)
+    {
+        var root = Path.Combine(Path.GetTempPath(), "kg-query-split-" + Guid.NewGuid().ToString("N"));
+        var application = Path.Combine(root, "application");
+        var infrastructure = Path.Combine(root, "infrastructure");
+        foreach (var (path, content) in files)
+        {
+            var target = path.Contains("/Handlers/", StringComparison.Ordinal) ? infrastructure : application;
+            WriteFixtureFiles(target, [(path, content)]);
+        }
+
+        Directory.CreateDirectory(application);
+        Directory.CreateDirectory(infrastructure);
+        return (root, application, infrastructure);
+    }
+
+    private static void WriteFixtureFiles(string root, (string Path, string Content)[] files)
+    {
+        foreach (var (path, content) in files)
+        {
+            var full = Path.Combine(root, path.Replace('/', Path.DirectorySeparatorChar));
+            Directory.CreateDirectory(Path.GetDirectoryName(full)!);
+            File.WriteAllText(full, content);
+        }
+    }
+
+    private static ModuleResolver QueryFixtureModules() =>
+        new(new Dictionary<string, string> { ["Inventory"] = "Inventory" });
+
     private static (string Root, string Api, string Web) CreateRoleFixture(string alias, string methods, string classAttributes = "")
     {
         var root = Path.Combine(Path.GetTempPath(), "kg-role-" + Guid.NewGuid().ToString("N"));

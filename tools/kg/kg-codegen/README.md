@@ -126,6 +126,7 @@ ontology amendment.
 
 Query warnings use the same warn-don't-fabricate rule:
 
+- `Could not extract query in <action>: <argument>` — an `IModuleClient` send site passed an argument that is neither a `new …Query(…)` nor a local holding one, so no query name could be read; no `USES` edge is emitted. Send sites on any other receiver type are skipped silently rather than warned about.
 - `Could not resolve query type 'X' in <file>` — a module-client send site did not resolve to a known `Query`; no `USES` edge is emitted.
 - `Could not resolve handled query 'X' for <handler>` — an `IQueryHandler<X, TResult>` does not resolve to a known `Query`; the handler node is still emitted.
 

@@ -6,6 +6,16 @@ namespace KgCodegen.Core.Parsing;
 
 public sealed class QueryParser
 {
+    /// <summary>
+    /// Derived from <see cref="ServiceActionSites.ServiceFilePattern"/> rather than written out, so
+    /// the set of files this parser treats as service files cannot drift from the set
+    /// <see cref="ActionParser"/> builds `Action` nodes from. A literal here would silently start
+    /// disagreeing the moment that pattern changes. It is a suffix test rather than a second
+    /// <see cref="Directory.EnumerateFiles(string, string, SearchOption)"/> pass because query
+    /// discovery already needs every `*.cs` file, and the tree is walked once.
+    /// </summary>
+    private static readonly string ServiceFileSuffix = ServiceActionSites.ServiceFilePattern.TrimStart('*');
+
     public ParserResult Parse(string applicationRoot, IReadOnlyList<CypherNode> actions)
     {
         var graph = Graph.Empty();
@@ -16,7 +26,7 @@ public sealed class QueryParser
         foreach (var file in Directory.EnumerateFiles(applicationRoot, "*.cs", SearchOption.AllDirectories))
         {
             var root = CSharpSyntaxTree.ParseText(File.ReadAllText(file), path: file).GetCompilationUnitRoot();
-            if (file.EndsWith("Service.cs", StringComparison.Ordinal))
+            if (file.EndsWith(ServiceFileSuffix, StringComparison.Ordinal))
             {
                 serviceRoots.Add(root);
             }
@@ -52,7 +62,10 @@ public sealed class QueryParser
 
         foreach (var query in queries)
         {
-            graph.Nodes.Add(query);
+            if (!graph.Nodes.Contains(query))
+            {
+                graph.Nodes.Add(query);
+            }
         }
 
         // USES covers **3 of the 5** real query-send sites (60 %). **1 of 3** `Query` nodes
