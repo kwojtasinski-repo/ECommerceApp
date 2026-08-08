@@ -41,6 +41,7 @@ Short visual/diagram assets live in [assets/README.md](assets/README.md).
 - Bounded contexts: [docs/architecture/bounded-context-map.md](docs/architecture/bounded-context-map.md)
 - ADR index: [docs/adr](docs/adr)
 - Roadmap: [docs/roadmap/README.md](docs/roadmap/README.md)
+- Structural knowledge graph: [ADR-0031](docs/adr/0031/0031-structural-knowledge-graph.md) — a Neo4j graph generated from this repo's source by [`tools/kg/kg-codegen`](tools/kg/kg-codegen/README.md) and queried through the read-only MCP server [`tools/kg/kg-mcp`](tools/kg/kg-mcp/README.md). Answers structural questions (what breaks if I change this message, which module owns this action) from code rather than from prose about code. Tool reference: [docs/reference/kg-mcp-tools.md](docs/reference/kg-mcp-tools.md).
 - Workflow specifications index: [docs/specifications/README.md](docs/specifications/README.md)
 - Orders checkout spec: [docs/specifications/orders-checkout.md](docs/specifications/orders-checkout.md)
 - Payments lifecycle spec: [docs/specifications/payments-lifecycle.md](docs/specifications/payments-lifecycle.md)

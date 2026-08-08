@@ -102,6 +102,14 @@ Current census from the loaded Phase 6 graph: 201 `Action`, 176 `Page`, 53 `Mess
 9 `Job`, 3 `Query`, 3 `QueryHandler`, 3 `Role`, 2 `Host`, 1 `Policy`,
 1 `System`; **1330 generated structural edges** and **1441 loaded edges** including ontology metadata.
 
+Every count in this ADR is a **measurement of the tree at the time of writing, not a decision** —
+it changes when the codebase does, and none of them is hardcoded anywhere. Do not trust a number
+here; re-derive it. [`docs/reference/kg-mcp-tools.md`](../../reference/kg-mcp-tools.md) §"Where the
+numbers come from" carries a one-line reproduction command for each one, and records the trap that
+already cost one false defect report: 1441 is 1330 generated **plus 111 ontology-layer** edges —
+two disjoint populations, so comparing the raw Neo4j total against the generator's `Edges:` line
+looks like a discrepancy and is not.
+
 ## Outcome and implementation summary
 
 Phase 6 added the reproducible local graph runtime. `overrides.yaml` is loaded
@@ -180,6 +188,26 @@ also passed**, both in the same family:
   id-taking traversal skips that guard, so the rule outlives the ten tools that
   exist today.
 
+The response to those two was not another fixture. Both were invisible to a hand-built graph by
+construction — one needed a topology nobody had thought to add, the other needed a *real* id to get
+wrong — so a **third suite** was added rather than a wider fixture: `RealGraphE2ETests` runs the
+actual `kg-codegen` executable against this repository on every execution, loads the result into an
+ephemeral Neo4j container, and asserts against the graph the repository really produces. Source →
+parsers → Cypher → database → traversal, with no step stubbed. The load itself is an assertion: a
+seed carrying `key: null` again would be rejected by Neo4j and take the whole class down at startup.
+
+Two properties make it evidence rather than restatement. **No expected value is hardcoded** — the
+per-label counts and the edge total are read back out of what the generator printed on that run and
+compared with what the database received, so the suite cannot rot into pinning a number that stopped
+being true. And every reported `depth` is cross-checked against Neo4j's own `shortestPath`, an
+oracle sharing no code with the traversal under test; a test that re-issues the implementation's own
+query proves only that the query is deterministic. It reads no seed file, because seeds are
+gitignored and timestamped and a suite depending on one would pass or fail by machine. Verified by
+mutation as the pipeline requires: reverting `GetBlastRadius` to the pre-fix `DISTINCT` form turns
+both invariant tests red on the real graph and correctly leaves the other six green. A run takes
+~56 s, which is the honest price of the coverage and the reason it is a third suite rather than a
+replacement for either of the first two.
+
 The remaining graph-model questions are intentionally preserved: ontology
 declares `triggerModes` while emitted job nodes use `triggerMode`, and
 cron/runtime rows are not statically captured. `StockAvailableQuery` and
@@ -250,11 +278,28 @@ extension of the model: Phase 8 adds no node type, no parser, and no tool.
   lengths) and no test asked what an unknown id returns. When adding a
   traversal, add the *shape* it can be wrong about to `Neo4jFixture`, and assert
   the error paths, not only the happy one.
+- Consequently the server carries **three suites, and each covers something the
+  other two structurally cannot**: `ContractTests` (no graph, reads source text)
+  holds rules about the shape of the code, which outlive today's ten tools;
+  `GraphServiceTests` (hand-built fixture) holds exact named behaviour; and
+  `RealGraphE2ETests` (the repository's own graph, regenerated per run) holds
+  whatever the codebase actually contains. Extending the wrong one is how a
+  defect gets recorded instead of caught — the layering is written out in
+  [`docs/reference/kg-mcp-tools.md`](../../reference/kg-mcp-tools.md) §"How the
+  tests are layered". The cost is a ~56 s suite requiring Docker, accepted.
+- **A published number is a liability unless it can be re-derived.** Counts in
+  this ADR and in the reference doc are measurements of a moving tree, and one
+  of them (1441 vs 1330) was already read as a defect by a reviewer comparing
+  two populations that were never the same set. Every number therefore ships
+  with a reproduction command, and no test hardcodes one; a count stated
+  anywhere without a way to regenerate it should be treated as stale.
 
 ## Related
 
 - Design and phase ledger: [`docs/architecture/knowledge-graph-ontology-design.md`](../../architecture/knowledge-graph-ontology-design.md)
-- Tool: [`tools/kg/kg-codegen/README.md`](../../../tools/kg/kg-codegen/README.md)
+- Query surface, number provenance, test layering: [`docs/reference/kg-mcp-tools.md`](../../reference/kg-mcp-tools.md)
+- Build methodology (both planner skills point here): [`docs/architecture/kg-implementation-planning/README.md`](../../architecture/kg-implementation-planning/README.md)
+- Tools: [`tools/kg/kg-codegen/README.md`](../../../tools/kg/kg-codegen/README.md), [`tools/kg/kg-mcp/README.md`](../../../tools/kg/kg-mcp/README.md)
 - Ontology seed: `tools/kg/seed/ontology.json`, `tools/kg/seed/ontology.cypher`
 - ADR-0028 — RAG MCP server (documentation search; complementary, not overlapping)
 - ADR-0029 — context-mode MCP sandbox (runtime tool output; complementary)

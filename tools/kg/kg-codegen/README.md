@@ -268,3 +268,33 @@ than one type matches.
   lower-bound floors. Floors move up, never down.
 - **Subprocess test** — runs the actual built executable once, to catch
   packaging problems no in-process test can see.
+
+A fourth kind lives in the sibling solution rather than here, deliberately:
+`kg-mcp`'s `RealGraphE2ETests` runs this executable end to end — source →
+parsers → Cypher → Neo4j → traversal — and asserts that what the database
+received matches what this tool printed. It lives there because it needs
+`Testcontainers.Neo4j`, and keeping that dependency out of the codegen build is
+the whole reason the two solutions are separate. See
+[`tools/kg/kg-mcp/README.md`](../kg-mcp/README.md) §Tests.
+
+## The counts on this page are measurements, not decisions
+
+Every number above — ~209 warnings, 185 omitted properties, 10 of 12 `.js`
+files, 7 of 12 call sites, the per-label census — describes the tree at the time
+of writing and moves when the repository does. **Re-derive rather than trust**:
+`--check` reprints all of them in one run, and no test hardcodes one (the pinned
+tests pin *facts* such as `Coupon`'s table name and lower-bound floors, which is
+a different thing from pinning a total).
+
+```bash
+dotnet run --project tools/kg/kg-codegen/KgCodegen -- --root . --check
+```
+
+Two of these numbers have already been misread, which is why the rule is stated
+rather than assumed. The generator's `Edges: 1330` and Neo4j's `1441` are
+**different populations** — 1330 generated plus 111 ontology-layer edges — and
+comparing them looks like a defect. And "property missing" means *not inferable
+from source*, never *not declared in the ontology*. The full provenance table,
+one reproduction command per published number, is in
+[`docs/reference/kg-mcp-tools.md`](../../../docs/reference/kg-mcp-tools.md)
+§"Where the numbers come from".

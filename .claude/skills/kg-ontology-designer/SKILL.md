@@ -93,6 +93,20 @@ MCP tool contracts. Never write ontology files before step 4 has actually run.
   when the convention changes (silent zero-yield is not success — the
   codegen must warn on a previously-nonzero parser suddenly returning zero).
 - **Target-questions-first** — never draft node/edge types before step 2.
+- **Every count you write down carries its reproduction command.** The figures
+  quoted above (185 omitted properties, the per-label census) are measurements
+  of a moving tree, not decisions. When you state one in the design doc, state
+  the one-liner that regenerates it and what population it counts — the
+  provenance table is in
+  [`docs/reference/kg-mcp-tools.md`](../../../docs/reference/kg-mcp-tools.md)
+  §"Where the numbers come from". A generated total and a loaded total have
+  already been compared as one population when they were two; that read as a
+  defect and was not.
+- **Never propose a tool whose emptiness is ambiguous.** When tiering, say for
+  each tool what an empty result means. If "nothing found" and "you asked the
+  wrong question" are indistinguishable to the caller, the tool needs an error
+  path, not a fallback — that ambiguity is the root cause of five defects in
+  the served layer so far.
 
 ## Relationship to the GitHub Copilot version
 

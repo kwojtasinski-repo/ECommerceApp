@@ -79,6 +79,12 @@ on validation PASS by convention. Ephemeral artifacts are not a place to store d
 design doc while the same disproved claim survived in the phase list 150 lines later, with the full
 correction living only in a plan file scheduled for deletion.
 
+The same principle applies to **numbers**, which decay differently from claims: a count is
+plausible forever, so nothing ever flags it as stale. Every count a phase publishes therefore ships
+with the command that regenerates it and a statement of what population it counts — otherwise it
+can only be copied forward, never confirmed or retired. See
+[verification.md](verification.md#a-published-number-carries-its-reproduction-command).
+
 ## Worked example
 
 ECommerceApp's `kg-codegen` — a 9-phase build (0–1, 2, 3a, 3b, 4a, 4b, 4c, 5, 6, 7) driven from a

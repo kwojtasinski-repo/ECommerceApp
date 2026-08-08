@@ -67,6 +67,18 @@ about intent or scope; never compress a design decision into an option list.
 - **Noise is not success either.** Expected non-matches must be silent; only a genuine unresolved
   reference warns. An over-warning parser hides the drop-to-zero signal as effectively as a silent
   one. Pin the warning count against the real tree, not just the node count.
+- **Name the layer that catches it.** Three test layers — source-level, fixture, real-input
+  end-to-end — and each is structurally blind to what the others catch. For every defect class the
+  phase can plausibly ship, name the layer able to *observe* it; a fixture suite alone is not
+  enough, and a fourth assertion in a blind layer is not a fix. A serving surface needs the
+  real-input layer. → `verification.md`
+- **A fixture is only as good as the topology it contains.** Add the shape the code can be wrong
+  about, then break the code and watch the test go red. Assert the error paths — "does not exist"
+  and "wrong kind" — not only the happy one.
+- **Publish numbers with their reproduction command; pin facts, not totals.** Every count written
+  into durable docs ships with a one-liner that regenerates it and states what population it
+  counts. Tests pin things true regardless of size, never a total that any legitimate commit
+  breaks. → `verification.md`
 - **Propagate corrections everywhere** the docs state the fact — phase artifacts get deleted on
   PASS, so a correction living only there is lost.
 - **Per-series phase numbering.** Unrelated series may share numbers; never renumber someone

@@ -122,6 +122,16 @@ Stop and get explicit confirmation before writing/editing
   not catch a convention silently going stale.
 - MUST NOT draft node/edge types before target questions are collected
   (Checkpoint 1).
+- MUST ship every count it writes into documentation with the one-line command
+  that regenerates it and a statement of what population it counts. The figures
+  quoted above are measurements of a moving tree, not decisions; a generated
+  total and a loaded total have already been compared as one population when
+  they were two, and that read as a defect. Provenance table:
+  `docs/reference/kg-mcp-tools.md` §"Where the numbers come from".
+- MUST state, for every tool it tiers, what an empty result means. If "nothing
+  found" and "wrong question" are indistinguishable to the caller, the tool
+  needs an error path rather than a fallback — that ambiguity is the root cause
+  of five defects in the served layer so far.
 - MUST keep this file's content limited to Copilot-specific mechanics —
   the model and guardrail rationale live in
   `docs/architecture/knowledge-graph-ontology-design.md`, not here.

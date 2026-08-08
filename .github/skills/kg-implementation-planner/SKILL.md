@@ -102,6 +102,16 @@ Verification runs after **every** step, not at the end → `verification.md`.
 - MUST require silence for every *expected* non-match, and a warning only for a genuine unresolved
   reference. An over-warning parser defeats the zero-yield guardrail as thoroughly as a silent one,
   because the signal arrives into noise nobody reads. Pin the warning count, not just the node count.
+- MUST name, for every defect class the phase can plausibly ship, the test layer able to observe
+  it — source-level, fixture, or real-input end-to-end. The three are structurally blind to each
+  other's failures; a green fixture suite is not evidence, and another assertion in a blind layer
+  is not a fix. A phase producing a serving surface MUST have the real-input layer.
+- MUST add to the fixture the shape the code can be wrong about, and MUST assert the error paths —
+  input that does not exist, input of the wrong kind — not only the happy path. An empty result for
+  either makes a typo indistinguishable from a true negative.
+- MUST ship every published count with a one-line command that regenerates it and a statement of
+  what population it counts. MUST pin facts rather than totals in tests: a total breaks on every
+  legitimate commit and gets weakened or deleted.
 - MUST propagate a corrected fact to every place the docs state it — phase artifacts are deleted
   on PASS and cannot hold durable knowledge.
 - MUST treat phase numbering as per-series with a distinguishing slug; never renumber another

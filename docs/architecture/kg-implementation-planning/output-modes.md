@@ -50,12 +50,24 @@ regressing the reasoning behind it. Losing them is invisible until it is expensi
    that does not exist, and what it returns for an input of the wrong kind. An empty list for
    either is a defect — it makes a typo indistinguishable from a true negative. Phase 7 shipped
    that defect in nine of ten tools past a green behavioural suite that simply never asked.
+
+   Before ticking this section, name **which test layer** could observe each defect class the phase
+   can plausibly ship — source-level, fixture, or real-input end-to-end. The three-layer model and
+   why a fixture suite alone is not sufficient are in
+   [verification.md](verification.md#three-test-layers-and-what-only-each-one-can-catch); a phase
+   that produces a serving surface needs the real-input layer, and adding another assertion to a
+   layer that is structurally blind to the defect does not substitute for it.
 3. **Spec-conformance checklist** — every triple declared, coverage ratio reported as a number, no
    later-phase labels leaked (that list is generated in Step 1).
 4. **Standard code-review pass** — reuse of existing shared helpers rather than duplicated
    resolution logic; consistent warning discipline; correct ordering of generation stages.
 5. **On PASS** — delete only this phase's own artifacts, update the phase-status ledger with the
-   real numbers found, and propagate any corrected fact to every place the docs state it.
+   real numbers found, and propagate any corrected fact to every place the docs state it. Every
+   count the phase writes into durable documentation carries the one-line command that regenerates
+   it, and says what population it counts; see
+   [verification.md](verification.md#a-published-number-carries-its-reproduction-command). A number
+   published without its derivation cannot be confirmed or retired later — it can only be copied
+   forward.
 6. **On FAIL** — delete nothing, report findings, no auto-retry.
 
 It opens by telling the reader not to trust the implementing session's summary and to re-derive
