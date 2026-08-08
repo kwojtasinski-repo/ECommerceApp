@@ -74,6 +74,7 @@ Use when generating or validating code. Load via the `read_file` tool or invoke 
 | Scaffold `.http` test scenario file | `.github/skills/create-http-scenario/SKILL.md` |
 | Scaffold integration test (BaseTest, in-memory DB) | `.github/skills/create-integration-test/SKILL.md` |
 | Scaffold cross-BC IMessage contract (publisher side) | `.github/skills/create-message-contract/SKILL.md` |
+| Scaffold/extend browser Web E2E POMs and scenarios | `.github/skills/create-web-e2e-test/SKILL.md` |
 | Scaffold unit test (Moq, FluentAssertions) | `.github/skills/create-unit-test/SKILL.md` |
 | Scaffold FluentValidation AbstractValidator | `.github/skills/create-validator/SKILL.md` |
 

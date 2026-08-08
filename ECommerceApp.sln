@@ -610,6 +610,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "skills", "skills", "{2FBD2A
 		.github\skills\create-http-scenario\SKILL.md = .github\skills\create-http-scenario\SKILL.md
 		.github\skills\create-integration-test\SKILL.md = .github\skills\create-integration-test\SKILL.md
 		.github\skills\create-message-contract\SKILL.md = .github\skills\create-message-contract\SKILL.md
+		.github\skills\create-web-e2e-test\SKILL.md = .github\skills\create-web-e2e-test\SKILL.md
 		.github\skills\diagnose-integration-e2e-tests\SKILL.md = .github\skills\diagnose-integration-e2e-tests\SKILL.md
 		.github\skills\create-unit-test\SKILL.md = .github\skills\create-unit-test\SKILL.md
 		.github\skills\create-validator\SKILL.md = .github\skills\create-validator\SKILL.md
@@ -644,6 +645,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "skills", "skills", "{2FBD2A
 		.github\skills\setup-mcp-clients\SKILL.md = .github\skills\setup-mcp-clients\SKILL.md
 		.github\skills\setup-rag-new-project\SKILL.md = .github\skills\setup-rag-new-project\SKILL.md
 		.github\skills\tune-rag-weights\SKILL.md = .github\skills\tune-rag-weights\SKILL.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "create-web-e2e-test", "create-web-e2e-test", "{A3F6E2C1-7D44-4B9A-8C52-19E7D6F0B3A1}"
+	ProjectSection(SolutionItems) = preProject
+		.github\skills\create-web-e2e-test\SKILL.md = .github\skills\create-web-e2e-test\SKILL.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "create-dbcontext", "create-dbcontext", "{454D908B-026B-44BF-BC5B-21687F7F3181}"
@@ -1063,6 +1069,7 @@ Global
 		{7C3E91A2-B4D5-4F68-9A1C-E2F30748D6B1} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 		{2FBD2A37-7C7A-4EE9-87FD-DECAC3085916} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{454D908B-026B-44BF-BC5B-21687F7F3181} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
+		{A3F6E2C1-7D44-4B9A-8C52-19E7D6F0B3A1} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
 		{85AD127C-4128-4C3B-9BC1-9CA2EDA721A3} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
 		{65AFD939-5CC2-4C42-9599-4B77A0DA4571} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}
 		{8845B7FC-77A8-4375-9474-5FC43CA45C77} = {2FBD2A37-7C7A-4EE9-87FD-DECAC3085916}

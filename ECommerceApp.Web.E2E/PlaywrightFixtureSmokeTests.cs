@@ -1,4 +1,5 @@
 using ECommerceApp.Web.E2E.Infrastructure;
+using ECommerceApp.Web.E2E.PageObjects;
 using Shouldly;
 using System.Threading.Tasks;
 using Xunit;
@@ -26,9 +27,22 @@ namespace ECommerceApp.Web.E2E
             await using var context = await _browserFixture.Browser.NewContextAsync();
             var page = await context.NewPageAsync();
 
-            await page.GotoAsync($"{_factory.ServerAddress}/Identity/Account/Login");
+            ILoginPage loginPage = await LoginPage.NavigateAsync(page, _factory.ServerAddress);
 
-            (await page.Locator("input[type='email']").CountAsync()).ShouldBeGreaterThan(0);
+            (await loginPage.IsDisplayed()).ShouldBeTrue();
+        }
+
+        [Fact]
+        public async Task LoginPage_SubmitLogin_BlankCredentials_ShowsValidationError()
+        {
+            _factory.StartKestrelHost();
+            await using var context = await _browserFixture.Browser.NewContextAsync();
+            var page = await context.NewPageAsync();
+
+            ILoginPage loginPage = await LoginPage.NavigateAsync(page, _factory.ServerAddress);
+            loginPage = await loginPage.SubmitLogin(string.Empty, string.Empty);
+
+            (await loginPage.HasValidationError()).ShouldBeTrue();
         }
     }
 }

@@ -122,14 +122,51 @@ real element and let the real script run — that's the whole point of this tier
 "shortcut" by POSTing to the endpoint directly from test code instead of clicking; that reintroduces
 exactly the gap (untested JS wiring) this tier exists to close.
 
-## Locators (once Page Object Models exist)
+## Page Objects, Components, and Scenarios
 
-No Page Object Model / Component / Scenario layer exists yet in this project (planned, not yet
-built as of this skill's writing). Until then, write `page.Locator(...)` calls directly in the test.
-When the POM layer lands: locators must always be hidden behind a method on the page/component
-object, never exposed as a public selector string — check whether this skill has been updated with
-the concrete base classes before scaffolding new tests, and prefer reusing them over writing raw
-`page.Locator(...)` again.
+This project uses a composition-first test-support model. The reference implementation is
+`ECommerceApp.Web.E2E/PageObjects/LoginPage.cs`, with its narrow `ILoginPage` contract. A POM is a
+sealed class that owns a private `IPage` reference for one view. Locators and the underlying page
+are never public. When a POM already exists for a page, new tests must use or extend that POM;
+do not add raw `page.Locator(...)` calls for behavior the POM already owns.
+
+The hierarchy is `Scenario -> POM -> Component`:
+
+- A Component is a private implementation detail of a POM, scoped to a root `ILocator`. A POM may
+  return a narrow component/modal interface only when the caller genuinely needs to operate on a
+  same-page fragment. A modal may expose `Task<bool> IsOpenAsync()` when a shared UI-state check is
+  useful. Do not use `IDisposable` to mean that a modal closed; Playwright resources belong to the
+  test/session owner.
+- A Scenario composes POM interfaces, never hidden Components or raw `IPage`. It represents a
+  repeatable business intention, is not a catch-all workflow object, and returns a small immutable
+  business result rather than a POM. Detailed locator and expected-error assertions belong to the
+  relevant POM/component unless an explicit flow-level exception is agreed.
+- For redirect, popup, new tab, or new window, the test/Scenario owns the Playwright event and page
+  lifetime, then constructs the next POM. A POM must not hide context creation, popup watchers, or
+  page selection. For a same-page modal, the POM owns `Open...` and may return the modal/component
+  interface.
+
+POM actions may return `Task` or a narrow `Task<IPom>` when the action remains on the same surface
+and fluent chaining helps readability. A redirecting action normally returns `Task` so the host can
+observe the new surface. The call-site form for a same-page fluent operation is:
+
+```csharp
+var loginPage = await LoginPage.NavigateAsync(page, serverAddress);
+loginPage = await loginPage.SubmitLogin(email, password);
+```
+
+An inline nested await is acceptable for one follow-up operation:
+
+```csharp
+var loginPage = await (await LoginPage.NavigateAsync(page, serverAddress))
+    .SubmitLogin(email, password);
+```
+
+Prefer `Task`/`Task<T>` for Playwright operations. Never use `async void`; a deliberately delayed
+operation must retain its `Task` and await it later. `IBrowser` may be shared by the fixture, but
+`BrowserContext`, `IPage`, POMs, Components, and Scenarios are per test/session and are never
+singletons. Do not introduce a global `GetService<T>()` resolver until a real Scenario demonstrates
+the required factory or session lifetime.
 
 ## Related project rules
 
