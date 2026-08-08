@@ -992,6 +992,65 @@ public sealed class ParserTests
         Directory.Delete(root, true);
     }
 
+    /// <summary>
+    /// The real specimens are `Areas/Catalog/Views/Product/{Add,Edit}ItemNew.cshtml`: view files
+    /// rendered by `Create`/`Edit` through `return View("AddItemNew", …)`, so no `Page` id can ever
+    /// carry their filename. They contain only same-host MVC `fetch(...)` calls, which resolve to no
+    /// `Endpoint` — nothing was left unresolved, so nothing may be reported.
+    /// </summary>
+    [Fact]
+    public void ScriptModuleParser_stays_silent_when_an_unmatched_view_has_no_attachable_usage()
+    {
+        var root = CreateScriptModuleFixture(
+            ("Areas/Catalog/Views/Product/AddItemNew.cshtml", "fetch('/Catalog/Image/InitUpload', { });"));
+        var pages = new[]
+        {
+            new CypherNode("Page", "Demo.Web.Areas.Catalog.Controllers.ProductController.Create", new Dictionary<string, object?>())
+        };
+
+        var result = ParseScriptModuleFixture(root, pages);
+
+        Assert.DoesNotContain(result.Graph.Edges, edge => edge.Type == "USES");
+        Assert.Empty(result.Warnings);
+        Directory.Delete(root, true);
+    }
+
+    [Fact]
+    public void ScriptModuleParser_warns_when_an_unmatched_view_blocks_a_real_module_edge()
+    {
+        var root = CreateScriptModuleFixture(
+            ("wwwroot/js/checkout-placeorder.js", "define([], function () { });"),
+            ("Areas/Presale/Views/Checkout/Orphan.cshtml", "require(['checkout-placeorder'], function () { });"));
+
+        var result = ParseScriptModuleFixture(root);
+
+        Assert.DoesNotContain(result.Graph.Edges, edge => edge.Type == "USES");
+        Assert.Contains(result.Warnings, warning => warning.Contains("Orphan.cshtml", StringComparison.Ordinal) && warning.Contains("to a Page node", StringComparison.Ordinal));
+        Directory.Delete(root, true);
+    }
+
+    /// <summary>
+    /// Razor Pages and any other non-`Views/{Controller}/{Method}.cshtml` shape yield no view shape at
+    /// all. Same rule: report only when an edge was genuinely blocked.
+    /// </summary>
+    [Fact]
+    public void ScriptModuleParser_reports_an_unmappable_view_shape_only_when_it_blocks_an_edge()
+    {
+        var silent = CreateScriptModuleFixture(
+            ("Areas/Identity/Pages/Account/Manage.cshtml", "fetch('/Identity/Account/Profile', { });"));
+        var blocked = CreateScriptModuleFixture(
+            ("wwwroot/js/errors.js", "define([], function () { });"),
+            ("Areas/Identity/Pages/Account/Manage.cshtml", "require(['errors'], function () { });"));
+
+        var silentResult = ParseScriptModuleFixture(silent);
+        var blockedResult = ParseScriptModuleFixture(blocked);
+
+        Assert.Empty(silentResult.Warnings);
+        Assert.Contains(blockedResult.Warnings, warning => warning.Contains("Could not map Razor view", StringComparison.Ordinal));
+        Directory.Delete(silent, true);
+        Directory.Delete(blocked, true);
+    }
+
     private static string CreateQueryFixture(params (string Path, string Content)[] files)
     {
         var root = Path.Combine(Path.GetTempPath(), "kg-query-" + Guid.NewGuid().ToString("N"));

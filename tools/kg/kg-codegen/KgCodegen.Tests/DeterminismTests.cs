@@ -1,5 +1,6 @@
 using KgCodegen.Core.Emit;
 using KgCodegen.Core.Model;
+using KgCodegen.Core.Overrides;
 using KgCodegen.Core.Parsing;
 using KgCodegen.Core.Spine;
 
@@ -19,8 +20,9 @@ public sealed class DeterminismTests
     private static string EmitRealGraph()
     {
         var root = FindRepositoryRoot();
-        var resolver = new ModuleResolver();
-        var graph = SpineCatalog.Create();
+        var modules = OverridesLoader.Load(Path.Combine(root, "tools", "kg", "seed", "overrides.yaml")).Modules;
+        var resolver = new ModuleResolver(modules.ToDictionary(module => module.Id, module => module.Path));
+        var graph = SpineCatalog.Create(modules);
         var symbols = DomainSymbolIndex.Build(Path.Combine(root, "ECommerceApp.Domain"));
         var entity = new EntityParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Infrastructure"), symbols);
         entity.Graph.MergeInto(graph);

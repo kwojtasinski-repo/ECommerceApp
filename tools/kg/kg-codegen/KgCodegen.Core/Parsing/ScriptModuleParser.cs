@@ -80,19 +80,20 @@ public sealed class ScriptModuleParser
                 continue;
             }
 
-            if (!TryGetViewShape(webRoot, file, out var view))
-            {
-                warnings.Add($"Could not map Razor view '{Path.GetRelativePath(webRoot, file)}' to a Page.");
-                continue;
-            }
+            var relativePath = Path.GetRelativePath(webRoot, file);
+            var hasViewShape = TryGetViewShape(webRoot, file, out var view);
+            var matchingPages = hasViewShape
+                ? pages.Where(page => page.Label == "Page" && MatchesPage(page, view)).ToArray()
+                : [];
 
-            var matchingPages = pages
-                .Where(page => page.Label == "Page" && MatchesPage(page, view))
-                .ToArray();
-            if (matchingPages.Length == 0)
-            {
-                warnings.Add($"Could not resolve Razor view '{Path.GetRelativePath(webRoot, file)}' to a Page node.");
-            }
+            // A view that resolves to no `Page` node is only worth a warning once something in it
+            // would actually have become an edge. Razor view files outnumber controller actions —
+            // `Areas/Catalog/Views/Product/{Add,Edit}ItemNew.cshtml` are rendered by `Create`/`Edit`
+            // via `return View("AddItemNew", …)`, so no `Page` id can ever match their filename — and
+            // both contain only same-host MVC `fetch(...)` calls, which fact #5 requires to be silent.
+            // Warning on the resolution itself would report those two as failures every run and bury
+            // the Guardrail-5 signal under noise.
+            var blockedBySource = false;
 
             foreach (Match require in requireMatches)
             {
@@ -100,7 +101,13 @@ public sealed class ScriptModuleParser
                 {
                     if (!knownModules.Contains(dependency))
                     {
-                        warnings.Add($"Page view '{Path.GetRelativePath(webRoot, file)}' uses unknown ScriptModule '{dependency}'.");
+                        warnings.Add($"Page view '{relativePath}' uses unknown ScriptModule '{dependency}'.");
+                        continue;
+                    }
+
+                    if (matchingPages.Length == 0)
+                    {
+                        blockedBySource = true;
                         continue;
                     }
 
@@ -116,17 +123,33 @@ public sealed class ScriptModuleParser
                 var url = urlMatch.Groups["url"].Value;
                 var endpoint = endpoints.FirstOrDefault(candidate =>
                     candidate.Label == "Endpoint" && EndpointMatches(candidate, url));
-                if (endpoint is not null)
+                if (endpoint is null)
                 {
-                    foreach (var page in matchingPages)
+                    if (url.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
                     {
-                        graph.Edges.Add(new CypherEdge("USES", "Page", page.Id, "Endpoint", endpoint.Id));
+                        warnings.Add($"Could not resolve API URL '{url}' from Razor view '{relativePath}'.");
                     }
+
+                    continue;
                 }
-                else if (url.StartsWith("/api/", StringComparison.OrdinalIgnoreCase))
+
+                if (matchingPages.Length == 0)
                 {
-                    warnings.Add($"Could not resolve API URL '{url}' from Razor view '{Path.GetRelativePath(webRoot, file)}'.");
+                    blockedBySource = true;
+                    continue;
                 }
+
+                foreach (var page in matchingPages)
+                {
+                    graph.Edges.Add(new CypherEdge("USES", "Page", page.Id, "Endpoint", endpoint.Id));
+                }
+            }
+
+            if (blockedBySource)
+            {
+                warnings.Add(hasViewShape
+                    ? $"Could not resolve Razor view '{relativePath}' to a Page node."
+                    : $"Could not map Razor view '{relativePath}' to a Page.");
             }
         }
 

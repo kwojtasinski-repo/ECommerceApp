@@ -2,6 +2,7 @@ using KgCodegen.Core.Parsing;
 using KgCodegen.Core.Spine;
 using KgCodegen.Core.Validation;
 using KgCodegen.Core.Ontology;
+using KgCodegen.Core.Overrides;
 
 namespace KgCodegen.Tests;
 
@@ -11,8 +12,9 @@ public sealed class RealRepoSmokeTests
     public void Real_repository_produces_all_phase_one_node_types_without_ontology_errors()
     {
         var root = FindRepositoryRoot();
-        var resolver = new ModuleResolver();
-        var graph = SpineCatalog.Create();
+        var modules = OverridesLoader.Load(Path.Combine(root, "tools", "kg", "seed", "overrides.yaml")).Modules;
+        var resolver = new ModuleResolver(modules.ToDictionary(module => module.Id, module => module.Path));
+        var graph = SpineCatalog.Create(modules);
         var symbols = DomainSymbolIndex.Build(Path.Combine(root, "ECommerceApp.Domain"));
         var entity = new EntityParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Infrastructure"), symbols);
         entity.Graph.MergeInto(graph);

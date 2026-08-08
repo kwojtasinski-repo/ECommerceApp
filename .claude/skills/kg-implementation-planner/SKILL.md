@@ -61,7 +61,12 @@ about intent or scope; never compress a design decision into an option list.
   validated.
 - **Validation stays independent**, in every mode — the implementer is never the validator.
 - **Coverage is a number.** Report `X of Y resolved`, never "non-zero".
+- **The planned test list is a contract.** Every test the plan enumerates either exists or is
+  declined explicitly in the report. Shipping fewer is a FAIL on its own, however green the suite.
 - **Silence is not success.** A previously-nonzero label yielding zero is a failure.
+- **Noise is not success either.** Expected non-matches must be silent; only a genuine unresolved
+  reference warns. An over-warning parser hides the drop-to-zero signal as effectively as a silent
+  one. Pin the warning count against the real tree, not just the node count.
 - **Propagate corrections everywhere** the docs state the fact — phase artifacts get deleted on
   PASS, so a correction living only there is lost.
 - **Per-series phase numbering.** Unrelated series may share numbers; never renumber someone

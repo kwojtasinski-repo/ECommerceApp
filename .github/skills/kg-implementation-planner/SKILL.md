@@ -96,7 +96,12 @@ Verification runs after **every** step, not at the end → `verification.md`.
   implemented **and** validated.
 - MUST keep validation independent of implementation in every mode, including implement-here.
 - MUST report heuristic coverage as `X of Y resolved`, never as "non-zero".
+- MUST treat the planned test list as a contract: every enumerated test either exists or is
+  declined explicitly in the report. Shipping fewer is a FAIL however green the suite.
 - MUST treat a previously-nonzero label yielding zero as a failure, not as success.
+- MUST require silence for every *expected* non-match, and a warning only for a genuine unresolved
+  reference. An over-warning parser defeats the zero-yield guardrail as thoroughly as a silent one,
+  because the signal arrives into noise nobody reads. Pin the warning count, not just the node count.
 - MUST propagate a corrected fact to every place the docs state it — phase artifacts are deleted
   on PASS and cannot hold durable knowledge.
 - MUST treat phase numbering as per-series with a distinguishing slug; never renumber another
