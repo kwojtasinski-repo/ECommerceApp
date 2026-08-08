@@ -95,6 +95,7 @@ namespace ECommerceApp.Web.E2E.Infrastructure
                         .UseStartup<Startup>();
 
                     ConfigureWebHost(webHostBuilder);
+                    webHostBuilder.UseEnvironment("Development");
                 });
 
             _kestrelHost = hostBuilder.Build();

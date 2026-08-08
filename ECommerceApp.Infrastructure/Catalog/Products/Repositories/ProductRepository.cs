@@ -60,7 +60,7 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
             return await _context.Products
                 .AsNoTracking()
                 .Where(p => string.IsNullOrEmpty(searchString) || p.Description.Value.Contains(searchString))
-                .OrderBy(p => p.Id)
+                .OrderBy(p => p.Id.Value)
                 .Skip((pageNo - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();
@@ -81,7 +81,7 @@ namespace ECommerceApp.Infrastructure.Catalog.Products.Repositories
                 .Where(p => p.Status == ProductStatus.Published
                          && (!categoryId.HasValue || p.CategoryId == new CategoryId(categoryId.Value))
                          && (string.IsNullOrEmpty(searchString) || p.Description.Value.Contains(searchString)))
-                .OrderBy(p => p.Id)
+                .OrderBy(p => p.Id.Value)
                 .Skip((pageNo - 1) * pageSize)
                 .Take(pageSize)
                 .ToListAsync();

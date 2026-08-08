@@ -1,4 +1,5 @@
 using Microsoft.Playwright;
+using System;
 using System.Threading.Tasks;
 
 namespace ECommerceApp.Web.E2E.PageObjects
@@ -16,6 +17,19 @@ namespace ECommerceApp.Web.E2E.PageObjects
         {
             await page.GotoAsync($"{baseAddress}/Identity/Account/Login");
             return new LoginPage(page);
+        }
+
+        public async Task LoginAsync(string email, string password)
+        {
+            await EmailInput().FillAsync(email);
+            await PasswordInput().FillAsync(password);
+            await SubmitButton().ClickAsync();
+
+            if (_page.Url.Contains("/Identity/Account/Login", StringComparison.OrdinalIgnoreCase))
+            {
+                var message = await _page.Locator("#account").InnerTextAsync();
+                throw new InvalidOperationException($"Browser login failed for '{email}'. Page message: {message}");
+            }
         }
 
         public async Task<ILoginPage> SubmitLogin(string email, string password)
