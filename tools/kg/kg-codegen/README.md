@@ -99,7 +99,7 @@ names, resolved by identifier, never derived from the class name (the real
 `triggerMode` is deliberately narrow. `IDeferredJobScheduler.ScheduleAsync` is
 the only trigger with a statically findable call site, so exactly the jobs
 reached by a resolved `SCHEDULES` edge get `"Deferred"` and every other job gets
-`null`. `JobTriggerSource.Scheduled` and `.Manual` are properties of rows in the
+**no `triggerMode` property at all**. `JobTriggerSource.Scheduled` and `.Manual` are properties of rows in the
 runtime `ScheduledJob` table, read by `CronSchedulerService` and
 `JobTriggerService` — invisible to a syntax parser, and filled in later by Phase
 6's `overrides.yaml`. The parser never defaults to a mode.
@@ -111,9 +111,19 @@ The parsers are convention-dependent by design, so anything they cannot extract
 prints ~209 warnings; that is expected. Do not "fix" a warning by making a
 parser guess.
 
+A value the parser could not extract is **omitted from the emitted node, not
+written as `null`** — Neo4j rejects a null inside a `MERGE` map, so a seed
+containing one would not load. 185 properties are absent on that basis today
+(171 `route`, 6 `key`, 5 `triggerMode`, 3 `httpMethod`). Read "property missing"
+as "not inferable from source", never as "not declared in the ontology". The
+warnings below name every case, so absence in the graph is always paired with a
+line in the run output — which is the point: the tool warns rather than
+fabricates, and it does not quietly rewrite the seed on the way into the
+database either.
+
 - `Could not confidently extract route for …` — an MVC page using conventional
-  routing with no explicit `[Route]`. The node is emitted with `route = null`.
-  ~171 of these.
+  routing with no explicit `[Route]`. The node is emitted with **no `route`
+  property**. ~171 of these.
 - `Could not resolve action for X.Y: IFooService.Bar` — a controller calls a
   service the parser could not map to a concrete `Action` id. No edge is
   emitted. The suffix `(more than one type declares that name)` means the name
@@ -135,7 +145,7 @@ Message and handler warnings:
 
 - `Message 'X' is not registered in MessageTypeRegistry` — the type implements
   `IMessage` but no `Register(typeof(X), "key")` call names it. The node is
-  emitted with `key = null` and keeps its `HANDLED_BY` edges, because the
+  emitted with **no `key` property** and keeps its `HANDLED_BY` edges, because the
   handlers genuinely run; the missing registration is reported as a fact about
   the code, not hidden by dropping the node. 6 of these today.
 - `Could not resolve message type 'X' in <file>` — a simple name that the
@@ -163,7 +173,7 @@ implementation of that resolution, not two.
 Job warnings:
 
 - `Could not statically determine trigger mode for job <job>` — no
-  `ScheduleAsync` call site names it, so `triggerMode` is `null`. This says the
+  `ScheduleAsync` call site names it, so `triggerMode` is omitted. This says the
   mode is not visible in source, **not** that the job never runs; 5 of these
   today, one per non-deferred job. They are structural and fire on every run.
 - `Could not resolve repository interface 'I…Repository' for job <job>` — the

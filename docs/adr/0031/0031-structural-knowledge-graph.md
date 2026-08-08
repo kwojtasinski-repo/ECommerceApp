@@ -109,7 +109,12 @@ once into typed records, supplies the 14 module facts and optional job runtime
 facts, and is applied before validation. `SpineCatalog` now consumes those facts
 without changing its byte output. `load-graph.ps1` selects the newest generated
 seed, wipes stale projection data, loads both `ontology.cypher` and the seed,
-strips null properties rejected by Neo4j, waits for indexes, and prints counts.
+waits for indexes, and prints counts. Neo4j rejects a null inside a `MERGE` map,
+so `CypherEmitter` **omits** a property the parser could not infer rather than
+emitting `key: null`; 185 properties are absent on that basis today (171 `route`,
+6 `key`, 5 `triggerMode`, 3 `httpMethod`). Handling this in the emitter rather
+than by rewriting the seed inside the loader is what keeps the loaded graph equal
+to the file it was loaded from.
 The Neo4j Compose service is opt-in under the `kg` profile with loopback-only
 ports and `NEO4J_AUTH=none` permitted only for this local development graph.
 
@@ -151,6 +156,29 @@ container and asserts each traversal's *results*. `GetOrphanContracts` went from
 2 rows on the real graph — both mislabelled `high` — to 14 correctly graded rows,
 and `GetGovernedActions` from 0 rows to the 94 surfaces the `Service` role
 actually governs.
+
+A review before Phase 8 found **two further defects that the new container suite
+also passed**, both in the same family:
+
+- `GetBlastRadius` and `GetNodeDependencies` returned `DISTINCT` over
+  `(id, label, length(path))`, so a node reachable by several paths appeared once
+  per distinct path length and `depth` meant "some path length" rather than a
+  distance. On the real graph `GetBlastRadius("ECommerceApp", 5)` returned 940
+  rows for 602 nodes. Both now aggregate `min(length(path))`. The reason the
+  behavioural suite missed it is worth recording: **both depth tests traversed
+  `S1..S8`, the one fixture shape with no branching**, so the assertion could not
+  observe the bug. A behavioural test is only as good as the topology its fixture
+  contains.
+- Nine of the ten tools still returned an empty list for an id that matches no
+  node — the exact "empty reads as a true negative" failure the phase set out to
+  eliminate, fixed only in `GetActionExposure`. Four tools never resolved the id
+  at all; four more called the resolver and discarded its result, so the call
+  caught ambiguity but not absence. All id-taking tools now go through
+  `RequireLabelAsync`, which raises `UnknownNodeIdException` for an unmatched id
+  and `UnsupportedNodeLabelException` for a node of the wrong kind, before any
+  traversal runs. A `KgMcp.Tests` contract test fails the build if a future
+  id-taking traversal skips that guard, so the rule outlives the ten tools that
+  exist today.
 
 The remaining graph-model questions are intentionally preserved: ontology
 declares `triggerModes` while emitted job nodes use `triggerMode`, and
@@ -216,6 +244,12 @@ extension of the model: Phase 8 adds no node type, no parser, and no tool.
   declare; each returned an empty list, which reads as "nothing found" rather
   than "wrong question". The mitigation is behavioural container tests per tool
   (`KgMcp.Tests`), not review — a source-level suite passed all three.
+- Behavioural tests are **necessary but not sufficient**: the review before
+  Phase 8 found two more defects that the container suite passed, because the
+  fixture lacked the topology one of them needed (a node reachable by two path
+  lengths) and no test asked what an unknown id returns. When adding a
+  traversal, add the *shape* it can be wrong about to `Neo4jFixture`, and assert
+  the error paths, not only the happy one.
 
 ## Related
 

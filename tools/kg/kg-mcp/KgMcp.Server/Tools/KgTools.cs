@@ -13,7 +13,7 @@ namespace KgMcp.Server;
 [McpServerToolType]
 public sealed class KgTools(KgGraphService graph)
 {
-    [McpServerTool(Name = "GetNodeNeighbors"), Description("Returns every incoming and outgoing edge of one node, as a structural connection map. Start here when you know a type or endpoint name and need to see what it touches. An id matching several nodes returns an error naming the labels rather than guessing one.")]
+    [McpServerTool(Name = "GetNodeNeighbors"), Description("Returns every incoming and outgoing edge of one node, as a structural connection map. Start here when you know a type or endpoint name and need to see what it touches. Ids are exact and case-sensitive: an id matching no node, or several nodes, returns an error rather than an empty list or a guess. This holds for every id-taking tool here, so an empty result always means the node exists and has nothing to report.")]
     public Task<string> GetNodeNeighbors(
         [Description("Exact node id, e.g. a fully-qualified type name.")] string nodeId)
         => RunAsync("GetNodeNeighbors", () => graph.GetNodeNeighborsAsync(nodeId));
@@ -66,9 +66,10 @@ public sealed class KgTools(KgGraphService graph)
         => RunAsync("FindStructurallySimilarActions", () => graph.FindStructurallySimilarActionsAsync(actionId, limit));
 
     /// <summary>
-    /// One guard for every tool body. Domain failures keep their own message — an ambiguous id is
-    /// a question the caller can fix, and hiding it behind a connectivity hint sends them to the
-    /// wrong problem. Anything else is reported as infrastructure, with the bring-up commands.
+    /// One guard for every tool body. Domain failures keep their own message — an unknown, ambiguous,
+    /// or wrong-kind id is a question the caller can fix, and hiding it behind a connectivity hint
+    /// sends them to the wrong problem. Anything else is reported as infrastructure, with the
+    /// bring-up commands.
     /// </summary>
     private static async Task<string> RunAsync<T>(string tool, Func<Task<T>> action)
     {
@@ -76,7 +77,7 @@ public sealed class KgTools(KgGraphService graph)
         {
             return Serialize(new ToolResult(tool, await action()));
         }
-        catch (Exception exception) when (exception is AmbiguousNodeIdException or UnsupportedNodeLabelException)
+        catch (Exception exception) when (exception is AmbiguousNodeIdException or UnsupportedNodeLabelException or UnknownNodeIdException)
         {
             Console.Error.WriteLine($"[kg-mcp] {tool}: {exception.Message}");
             return Serialize(new ToolError(tool, exception.Message));

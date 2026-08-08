@@ -30,6 +30,14 @@ instance seed. Before changing Job properties, compare the declared
 `Ontology:Property` layer with emitted nodes; the known `triggerModes` versus
 `triggerMode` and runtime-cron mismatch is an explicit follow-up decision.
 
+When you make that comparison, expect declared properties to be **absent** on
+some nodes rather than null: Neo4j rejects a null inside a `MERGE` map, so
+`CypherEmitter` omits a property the parser could not infer (185 such today —
+171 `route`, 6 `key`, 5 `triggerMode`, 3 `httpMethod`). Absence therefore means
+"not inferable", never "not declared", and a property you add to the ontology
+must stay meaningful when missing. If you need to distinguish "no value" from
+"parser could not tell", that is a new property, not a null.
+
 ## When to use
 
 - The human wants a new node/edge type added to the graph, or a new

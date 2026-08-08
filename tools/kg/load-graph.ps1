@@ -20,16 +20,17 @@ function Invoke-ComposeNeo4j {
 function Invoke-ComposeNeo4jSeed {
     param([string]$Path)
 
-    # Neo4j rejects null properties inside MERGE maps; the syntax seed uses null
-    # to represent values the parser could not infer, so omit those properties.
-    $content = (Get-Content -Path $Path -Raw) -replace ', [A-Za-z][A-Za-z0-9_]*: null', ''
-
-    # Stage the rewritten seed as a file and load it with --file, the same way the
+    # Stage the seed inside the bind-mounted tree and load it with --file, the same way the
     # ontology is loaded. Piping it to cypher-shell's stdin instead would break under
     # Windows PowerShell 5.1, which prefixes a UTF-8 BOM onto a native command's stdin
     # and makes Neo4j reject the very first statement.
+    #
+    # The staged copy is byte-for-byte the seed: CypherEmitter omits null properties rather
+    # than emitting `key: null`, so nothing has to be rewritten on the way in and the graph
+    # matches the file it was loaded from. Staging survives because -SeedFile may point
+    # outside the bind mount.
     $stagedHostPath = Join-Path $seedDirectory '.load-seed.staged.cypher'
-    [System.IO.File]::WriteAllText($stagedHostPath, $content, (New-Object System.Text.UTF8Encoding $false))
+    Copy-Item -Path $Path -Destination $stagedHostPath -Force
     try {
         Invoke-ComposeNeo4j @('--profile', 'kg', 'exec', '-T', 'neo4j', 'cypher-shell', '--format', 'plain', '--file', '/tools/kg/.load-seed.staged.cypher')
     }
@@ -90,8 +91,13 @@ try {
     Invoke-ComposeNeo4j @('--profile', 'kg', 'exec', '-T', 'neo4j', 'cypher-shell', '--format', 'plain', '--file', '/tools/kg/seed/ontology.cypher')
     Invoke-ComposeNeo4j @('--profile', 'kg', 'exec', '-T', 'neo4j', 'cypher-shell', '--format', 'plain', 'CALL db.awaitIndexes()')
 
-    $relativeSeed = $seedFile.Substring($seedDirectory.Length).TrimStart('\', '/').Replace('\', '/')
-    Write-Host "Loading seed: $relativeSeed"
+    # Display only. -SeedFile may point outside tools\kg, so this must not assume a common prefix.
+    if ($seedFile.StartsWith($seedDirectory, [System.StringComparison]::OrdinalIgnoreCase)) {
+        $displaySeed = $seedFile.Substring($seedDirectory.Length).TrimStart('\', '/').Replace('\', '/')
+    } else {
+        $displaySeed = $seedFile
+    }
+    Write-Host "Loading seed: $displaySeed"
     Invoke-ComposeNeo4jSeed $seedFile
     Invoke-ComposeNeo4j @('--profile', 'kg', 'exec', '-T', 'neo4j', 'cypher-shell', '--format', 'plain', 'CALL db.awaitIndexes()')
 

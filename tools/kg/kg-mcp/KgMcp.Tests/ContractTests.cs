@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using KgMcp.Core;
 
 namespace KgMcp.Tests;
 
@@ -106,6 +107,37 @@ public sealed class ContractTests
                     $"{Path.GetFileName(file)} writes to stdout; diagnostics must use Console.Error.");
             }
         }
+    }
+
+    [Fact]
+    public void Every_id_taking_traversal_validates_its_id_before_querying()
+    {
+        var source = ReadSource("KgMcp.Core", "KgGraphService.cs");
+
+        // Behavioural coverage exists per tool, but it can only see the tools that exist today.
+        // This pins the rule for the next one: a public traversal that accepts an id must resolve
+        // it first, so an unknown id fails loudly instead of returning an empty list.
+        // Each match starts at a public async signature; the body is everything up to the next
+        // member declaration, which is enough to see whether the guard is called and avoids
+        // brace-counting in a regex.
+        var signatures = Regex.Matches(source, @"    public async Task<[^\n]*> (?<name>\w+Async)\((?<parameters>[^)]*)\)").ToArray();
+
+        var unguarded = signatures
+            .Where(signature => Regex.IsMatch(signature.Groups["parameters"].Value, @"\bstring \w*(nodeId|moduleId|jobId|actionId|roleOrPolicyId)\b"))
+            .Where(signature => signature.Groups["name"].Value != nameof(KgGraphService.ResolveLabelAsync))
+            .Where(signature =>
+            {
+                var next = signatures.FirstOrDefault(candidate => candidate.Index > signature.Index);
+                var end = next?.Index ?? source.Length;
+                var body = source[signature.Index..end];
+                return !body.Contains("RequireLabelAsync", StringComparison.Ordinal);
+            })
+            .Select(signature => signature.Groups["name"].Value)
+            .ToArray();
+
+        Assert.True(
+            unguarded.Length == 0,
+            $"These traversals accept an id but never resolve it, so an unknown id returns an empty list: {string.Join(", ", unguarded)}");
     }
 
     private static string SourceRoot(string project)

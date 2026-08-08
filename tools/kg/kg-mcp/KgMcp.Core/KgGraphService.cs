@@ -18,6 +18,14 @@ public sealed class UnsupportedNodeLabelException(string nodeId, string? label, 
 {
 }
 
+/// <summary>Raised when no node carries this id. Distinct from an empty result: a caller that
+/// cannot tell a typo from a true negative will read "no such node" as "nothing depends on it".</summary>
+public sealed class UnknownNodeIdException(string nodeId)
+    : InvalidOperationException($"No node has id '{nodeId}'. Ids are exact and case-sensitive, usually a fully-qualified type or member name; the graph may also predate the code you are asking about, in which case regenerate and reload it.")
+{
+    public string NodeId { get; } = nodeId;
+}
+
 /// <summary>
 /// Every graph traversal lives here. The MCP layer is a delegation shell on purpose: keeping
 /// Cypher out of the tool attributes is what lets these traversals be tested against a real
@@ -30,7 +38,7 @@ public sealed class KgGraphService(string uri, IAuthToken? authToken = null) : I
     /// <summary>All edges touching a node, in both directions.</summary>
     public async Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> GetNodeNeighborsAsync(string nodeId, CancellationToken cancellationToken = default)
     {
-        await ResolveLabelAsync(nodeId, cancellationToken);
+        await RequireLabelAsync(nodeId, expectedLabels: null, cancellationToken);
         return await QueryAsync(
             """
             MATCH (n {id: $nodeId})-[r]-(m)
@@ -47,12 +55,13 @@ public sealed class KgGraphService(string uri, IAuthToken? authToken = null) : I
     /// so no transport can widen it.</summary>
     public async Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> GetBlastRadiusAsync(string nodeId, int maxDepth, CancellationToken cancellationToken = default)
     {
-        await ResolveLabelAsync(nodeId, cancellationToken);
+        await RequireLabelAsync(nodeId, expectedLabels: null, cancellationToken);
         var depth = Math.Clamp(maxDepth, MinDepth, MaxDepth);
         return await QueryAsync(
             $$"""
             MATCH path = (n {id: $nodeId})-[*1..{{depth}}]->(m)
-            RETURN DISTINCT m.id AS nodeId, labels(m)[0] AS label, length(path) AS depth
+            WITH m, min(length(path)) AS depth
+            RETURN m.id AS nodeId, labels(m)[0] AS label, depth
             ORDER BY depth, nodeId
             """,
             new Dictionary<string, object?> { ["nodeId"] = nodeId },
@@ -62,12 +71,13 @@ public sealed class KgGraphService(string uri, IAuthToken? authToken = null) : I
     /// <summary>Structural prerequisites: what must exist for this node to work, by reverse traversal.</summary>
     public async Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> GetNodeDependenciesAsync(string nodeId, int maxDepth, CancellationToken cancellationToken = default)
     {
-        await ResolveLabelAsync(nodeId, cancellationToken);
+        await RequireLabelAsync(nodeId, expectedLabels: null, cancellationToken);
         var depth = Math.Clamp(maxDepth, MinDepth, MaxDepth);
         return await QueryAsync(
             $$"""
             MATCH path = (n {id: $nodeId})<-[*1..{{depth}}]-(m)
-            RETURN DISTINCT m.id AS nodeId, labels(m)[0] AS label, length(path) AS depth
+            WITH m, min(length(path)) AS depth
+            RETURN m.id AS nodeId, labels(m)[0] AS label, depth
             ORDER BY depth, nodeId
             """,
             new Dictionary<string, object?> { ["nodeId"] = nodeId },
@@ -78,6 +88,7 @@ public sealed class KgGraphService(string uri, IAuthToken? authToken = null) : I
     /// the ontology; these are derived through the contracts that actually cross the boundary.</summary>
     public async Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> GetModuleDependenciesAsync(string moduleId, CancellationToken cancellationToken = default)
     {
+        await RequireLabelAsync(moduleId, "Module", cancellationToken);
         return await QueryAsync(
             """
             MATCH (source:Module {id: $moduleId})-[:CONTAINS]->(a:Action)-[:PUBLISHES]->(m:Message)-[:HANDLED_BY]->(h:MessageHandler)
@@ -97,6 +108,7 @@ public sealed class KgGraphService(string uri, IAuthToken? authToken = null) : I
     /// <summary>What a module owns.</summary>
     public async Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> GetModuleOwnershipAsync(string moduleId, CancellationToken cancellationToken = default)
     {
+        await RequireLabelAsync(moduleId, "Module", cancellationToken);
         return await QueryAsync(
             """
             MATCH (m:Module {id: $moduleId})-[:CONTAINS]->(n)
@@ -115,7 +127,7 @@ public sealed class KgGraphService(string uri, IAuthToken? authToken = null) : I
     /// </summary>
     public async Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> GetActionExposureAsync(string nodeId, CancellationToken cancellationToken = default)
     {
-        var label = await ResolveLabelAsync(nodeId, cancellationToken);
+        var label = await RequireLabelAsync(nodeId, "Action|Job", cancellationToken);
         return label switch
         {
             "Action" => await QueryAsync(
@@ -206,6 +218,7 @@ public sealed class KgGraphService(string uri, IAuthToken? authToken = null) : I
     /// <summary>Static schedulers for a Job, plus its trigger mode.</summary>
     public async Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> GetJobSchedulersAsync(string jobId, CancellationToken cancellationToken = default)
     {
+        await RequireLabelAsync(jobId, "Job", cancellationToken);
         return await QueryAsync(
             """
             MATCH (j:Job {id: $jobId})
@@ -228,6 +241,7 @@ public sealed class KgGraphService(string uri, IAuthToken? authToken = null) : I
     /// </summary>
     public async Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> GetGovernedActionsAsync(string roleOrPolicyId, CancellationToken cancellationToken = default)
     {
+        await RequireLabelAsync(roleOrPolicyId, "Role|Policy", cancellationToken);
         return await QueryAsync(
             """
             MATCH (surface)-[:GOVERNED_BY]->(governor {id: $id})
@@ -248,7 +262,7 @@ public sealed class KgGraphService(string uri, IAuthToken? authToken = null) : I
     /// </summary>
     public async Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> FindStructurallySimilarActionsAsync(string actionId, int limit, CancellationToken cancellationToken = default)
     {
-        await ResolveLabelAsync(actionId, cancellationToken);
+        await RequireLabelAsync(actionId, "Action", cancellationToken);
         return await QueryAsync(
             """
             MATCH (a:Action {id: $id})-[r]->()
@@ -287,6 +301,25 @@ public sealed class KgGraphService(string uri, IAuthToken? authToken = null) : I
         }
 
         return matches.Count == 0 ? null : matches[0]["label"].As<string>();
+    }
+
+    /// <summary>
+    /// Resolves an id that the caller has asserted exists, and refuses the two ways a question can
+    /// be wrong before any traversal runs: an id nothing matches, and an id whose node is the wrong
+    /// kind for the tool. Both would otherwise surface as an empty list — the one answer shape a
+    /// caller cannot distinguish from a true negative.
+    /// </summary>
+    private async Task<string> RequireLabelAsync(string nodeId, string? expectedLabels, CancellationToken cancellationToken)
+    {
+        var label = await ResolveLabelAsync(nodeId, cancellationToken)
+            ?? throw new UnknownNodeIdException(nodeId);
+
+        if (expectedLabels is not null && !expectedLabels.Split('|').Contains(label, StringComparer.Ordinal))
+        {
+            throw new UnsupportedNodeLabelException(nodeId, label, expectedLabels.Replace("|", " or "));
+        }
+
+        return label;
     }
 
     private async Task<IReadOnlyList<IReadOnlyDictionary<string, object?>>> QueryAsync(string cypher, IDictionary<string, object?>? parameters, CancellationToken cancellationToken)

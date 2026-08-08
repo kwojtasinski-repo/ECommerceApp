@@ -68,6 +68,30 @@ Empty/low-score `query_docs`/`read_docs` retry order:
 2. Retry with reworded full-name/domain-synonym query.
 3. Only then fallback to direct tools and state retries were attempted.
 
+## KG quick rules
+
+Full reference: `docs/reference/kg-mcp-tools.md`.
+
+- Ids are **exact and case-sensitive**, usually a fully-qualified type or member name. An id that
+  matches no node, matches several, or is the wrong kind for the tool returns an **error**, never
+  an empty list. Read the error and fix the question — do not retry the same id or fall back to
+  grep as if the graph had answered.
+- An empty result therefore means the node exists and genuinely has nothing to report. It is an
+  answer; treat it as one.
+- `GetBlastRadius` / `GetNodeDependencies` return one row per node, `depth` being the **shortest**
+  distance. Start at depth 2 and widen only if the answer is too narrow.
+- `GetOrphanContracts`: read the `Confidence` column. **Never delete code on an `ambiguous` row** —
+  those are known false-positive classes (runtime-scheduled jobs, adapter-sourced query callers,
+  handler-sourced publishes), not dead code.
+- The graph is **structural and static**. It cannot answer effort, duration, pattern/archetype
+  identity, test coverage, git authorship, or runtime behaviour. Do not infer any of these from a
+  traversal result.
+- The graph is a projection of the last `kg-codegen` run, not live source. If a query contradicts
+  code you can see, the graph is stale: regenerate and reload
+  (`dotnet run --project tools/kg/kg-codegen/KgCodegen -- --root .`, then `tools/kg/load-graph.ps1`).
+- Server down or graph not loaded → every tool returns an error carrying a `Remedy` with the
+  bring-up commands. That is infrastructure, not a negative answer.
+
 ## context-mode quick rules
 
 Definition: context-mode is the local sandbox for thinking in code. Use it to read local files/snippets, search indexed session data, compute reductions, compare outputs, generate code fragments, and turn repo facts into a concrete result. It is not the place for classic repo browsing or final file editing; it is the place to derive the answer before you touch files.

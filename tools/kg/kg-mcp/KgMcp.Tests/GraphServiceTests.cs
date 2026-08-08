@@ -195,6 +195,100 @@ public sealed class GraphServiceTests(Neo4jFixture fixture)
         Assert.Equal(5, rows.Max(row => row["depth"].As<int>()));
     }
 
+    // --- one row per node, at its shortest distance ---------------------------------------------
+    // The clamp tests above traverse S1..S8, a straight chain, where every node is reachable by
+    // exactly one path — the one shape that cannot expose this. M.Sales is the diamond:
+    // it CONTAINS J.Scheduled directly, and also reaches it via A.Schedule-[:SCHEDULES]->.
+    // A DISTINCT over (id, label, length(path)) emits that node once per distinct path length,
+    // which inflates the result and turns `depth` into "some path length" rather than a distance.
+
+    [Fact]
+    public async Task Blast_radius_reports_each_node_once_at_its_shortest_distance()
+    {
+        await using var graph = CreateService();
+
+        var rows = await graph.GetBlastRadiusAsync("M.Sales", 5);
+
+        var ids = rows.Select(row => row["nodeId"].As<string>()).ToArray();
+        Assert.Equal(ids.Distinct(StringComparer.Ordinal).Count(), ids.Length);
+
+        var scheduled = Assert.Single(rows, row => row["nodeId"].As<string>() == "J.Scheduled");
+        Assert.Equal(1, scheduled["depth"].As<int>());
+    }
+
+    [Fact]
+    public async Task Node_dependencies_report_each_node_once_at_its_shortest_distance()
+    {
+        await using var graph = CreateService();
+
+        var rows = await graph.GetNodeDependenciesAsync("J.Scheduled", 5);
+
+        var ids = rows.Select(row => row["nodeId"].As<string>()).ToArray();
+        Assert.Equal(ids.Distinct(StringComparer.Ordinal).Count(), ids.Length);
+
+        var sales = Assert.Single(rows, row => row["nodeId"].As<string>() == "M.Sales");
+        Assert.Equal(1, sales["depth"].As<int>());
+    }
+
+    // --- unknown and wrong-kind ids -------------------------------------------------------------
+    // An id nothing matches must fail loudly. Returning an empty list makes a typo
+    // indistinguishable from a true negative, which is the defect class this suite exists for —
+    // and after Phase 7 it still applied to nine of the ten tools.
+
+    public static TheoryData<string> IdTakingTools =>
+    [
+        "GetNodeNeighbors",
+        "GetBlastRadius",
+        "GetNodeDependencies",
+        "GetModuleDependencies",
+        "GetModuleOwnership",
+        "GetActionExposure",
+        "GetJobSchedulers",
+        "GetGovernedActions",
+        "FindStructurallySimilarActions",
+    ];
+
+    [Theory]
+    [MemberData(nameof(IdTakingTools))]
+    public async Task An_unknown_id_is_an_error_not_an_empty_list(string tool)
+    {
+        await using var graph = CreateService();
+
+        var exception = await Assert.ThrowsAsync<UnknownNodeIdException>(() => Invoke(graph, tool, "No.Such.Node"));
+
+        Assert.Equal("No.Such.Node", exception.NodeId);
+    }
+
+    [Theory]
+    [InlineData("GetModuleDependencies", "A.PlaceOrder", "Module")]
+    [InlineData("GetModuleOwnership", "A.PlaceOrder", "Module")]
+    [InlineData("GetJobSchedulers", "A.PlaceOrder", "Job")]
+    [InlineData("GetGovernedActions", "A.PlaceOrder", "Role or Policy")]
+    [InlineData("GetActionExposure", "M.Sales", "Action or Job")]
+    [InlineData("FindStructurallySimilarActions", "M.Sales", "Action")]
+    public async Task An_id_of_the_wrong_kind_names_the_kinds_the_tool_answers_for(string tool, string nodeId, string expected)
+    {
+        await using var graph = CreateService();
+
+        var exception = await Assert.ThrowsAsync<UnsupportedNodeLabelException>(() => Invoke(graph, tool, nodeId));
+
+        Assert.Contains(expected, exception.Message, StringComparison.Ordinal);
+    }
+
+    private static Task Invoke(KgGraphService graph, string tool, string nodeId) => tool switch
+    {
+        "GetNodeNeighbors" => graph.GetNodeNeighborsAsync(nodeId),
+        "GetBlastRadius" => graph.GetBlastRadiusAsync(nodeId, 3),
+        "GetNodeDependencies" => graph.GetNodeDependenciesAsync(nodeId, 3),
+        "GetModuleDependencies" => graph.GetModuleDependenciesAsync(nodeId),
+        "GetModuleOwnership" => graph.GetModuleOwnershipAsync(nodeId),
+        "GetActionExposure" => graph.GetActionExposureAsync(nodeId),
+        "GetJobSchedulers" => graph.GetJobSchedulersAsync(nodeId),
+        "GetGovernedActions" => graph.GetGovernedActionsAsync(nodeId),
+        "FindStructurallySimilarActions" => graph.FindStructurallySimilarActionsAsync(nodeId, 10),
+        _ => throw new ArgumentOutOfRangeException(nameof(tool), tool, "Unmapped tool; add it here when the surface grows."),
+    };
+
     // --- remaining tool surface ---------------------------------------------------------------
 
     [Fact]

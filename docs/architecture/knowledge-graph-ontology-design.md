@@ -392,8 +392,10 @@ used (decided 2026-08-07, see [[project_ecommerceapp_kg_meta_skill_plan]]).
     `IMessageHandler<T>`/`IIdAwareMessageHandler<T>`). Committed `cf8f2092`,
     findings closed in `c1630c35`; real graph `Message: 26`,
     `MessageHandler: 53`. Two decisions later phases must not re-litigate: an
-    unregistered `IMessage` type still gets a node with `key: null` and keeps its
-    `HANDLED_BY` edges (6 such today), and **`MessageHandler`-sourced publishes
+    unregistered `IMessage` type still gets a node with **no `key` property** and
+    keeps its `HANDLED_BY` edges (6 such today) — a property the parser could not
+    infer is omitted, never emitted as `key: null`, because Neo4j rejects a null
+    inside a `MERGE` map — and **`MessageHandler`-sourced publishes
     are unrepresentable** — the ontology declares no
     `MessageHandler-[:PUBLISHES]->Message` triple, so the three real
     `StockReconciliationRequired` enqueues produce no edge and deliberately no
@@ -509,6 +511,20 @@ used (decided 2026-08-07, see [[project_ecommerceapp_kg_meta_skill_plan]]).
    JSON-RPC channel. The server is registered as `ecommerceapp-kg` for VS Code
    and Claude Code; Copilot Web is intentionally excluded because it cannot
    reach local Bolt or spawn the local process.
+
+   Hardened again before Phase 8, after two defects survived the phase's own
+   container suite. `GetBlastRadius`/`GetNodeDependencies` returned one row per
+   distinct *path length* instead of one per node, so `depth` was not a
+   distance — both now aggregate `min(length(path))`; the tests missed it
+   because the only fixture shape they traversed had no branching. And nine of
+   the ten tools still answered an unmatched id with an empty list, the very
+   failure the phase set out to remove: all id-taking tools now resolve the id
+   through `RequireLabelAsync` first, raising `UnknownNodeIdException` for an
+   id nothing matches and `UnsupportedNodeLabelException` for a node of the
+   wrong kind, with a `KgMcp.Tests` contract test failing the build if a future
+   traversal skips the guard. **An empty result from any tool is now a fact
+   about the graph, not a possible typo** — which is what makes the empty-result
+   readings documented in `docs/reference/kg-mcp-tools.md` safe to rely on.
 
 ## Querying the graph today
 

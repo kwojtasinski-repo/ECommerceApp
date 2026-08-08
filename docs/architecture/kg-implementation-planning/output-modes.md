@@ -39,7 +39,17 @@ regressing the reasoning behind it. Losing them is invisible until it is expensi
    the validator should **mutate the parser to that wrong implementation and confirm the test fails**
    — a test that passes both ways is decoration. (Phase 4c's first attempt at its highest-value
    fixture passed under the exact bug it was written to catch: edge de-duplication swallowed the
-   spurious edge because the fixture reused one target job.)
+   spurious edge because the fixture reused one target job. Phase 7 repeated it against a live
+   database: both depth tests traversed the one fixture chain with no branching, so neither could
+   observe a traversal that reported a node once per path length.) The rule these share: **a
+   fixture must contain the shape the code can be wrong about**, and the cheapest way to find out
+   whether it does is to break the code and watch the test go red.
+
+   For a phase that adds *queries* rather than parsers, two assertions are mandatory beyond the
+   happy path, because both failures are silent by construction: what a query returns for an input
+   that does not exist, and what it returns for an input of the wrong kind. An empty list for
+   either is a defect — it makes a typo indistinguishable from a true negative. Phase 7 shipped
+   that defect in nine of ten tools past a green behavioural suite that simply never asked.
 3. **Spec-conformance checklist** — every triple declared, coverage ratio reported as a number, no
    later-phase labels leaked (that list is generated in Step 1).
 4. **Standard code-review pass** — reuse of existing shared helpers rather than duplicated

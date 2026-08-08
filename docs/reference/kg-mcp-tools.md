@@ -23,8 +23,12 @@ Without them every tool returns an error envelope naming `KG_NEO4J_URL` and thes
 
 ## Tools
 
-`nodeId` is always an exact id (usually a fully-qualified type or member name). An id matching
-more than one node returns an error naming the matched labels — never an arbitrary pick.
+`nodeId` is always an exact, case-sensitive id (usually a fully-qualified type or member name).
+Every id-taking tool resolves the id *before* traversing and fails loudly on a bad one: an id
+matching no node returns an error, and an id matching more than one returns an error naming the
+matched labels — never an empty list, never an arbitrary pick. **So an empty result always means
+the node exists and genuinely has nothing to report**, which is what makes the empty results in
+the section below safe to read as answers.
 
 | Tool | Parameters | Returns (per row) |
 |---|---|---|
@@ -42,6 +46,12 @@ more than one node returns an error naming the matched labels — never an arbit
 Depth bounds are clamped inside the query layer, so an out-of-range `maxDepth` is silently
 narrowed rather than rejected — an unbounded traversal over ~1300 edges would flood the caller's
 context.
+
+`GetBlastRadius` and `GetNodeDependencies` return **one row per node, and `depth` is the shortest
+distance** to it. A node reachable by several paths is not repeated per path length: on the real
+graph `GetBlastRadius("ECommerceApp", 5)` reaches 602 nodes, and a per-path-length result would
+report 940 rows for them. Read `depth` as a distance, not as evidence of how many ways there are
+to reach something — the graph carries no path multiplicity in this answer.
 
 ### Where each answer comes from, when it matters
 
@@ -115,9 +125,19 @@ failure for "nothing found":
 { "Tool": "GetActionExposure", "Error": "...", "Remedy": "Check KG_NEO4J_URL, then run: ..." }
 ```
 
-Domain errors — an ambiguous id, or a label the tool cannot answer for — keep their own message
-and carry no remedy, because the caller can fix the question themselves. Only infrastructure
-failures carry the bring-up `Remedy`.
+Domain errors keep their own message and carry **no** `Remedy`, because the caller can fix the
+question themselves. Only infrastructure failures carry the bring-up `Remedy`. Three domain
+errors exist:
+
+| Situation | Message says | What to do |
+|---|---|---|
+| No node has this id | Ids are exact and case-sensitive; the graph may predate the code | Check spelling and fully-qualified form. If the code is newer than the graph, regenerate and reload. |
+| The id matches several nodes | Names every matched label | Ask against the intended label, or use a more specific id. |
+| The node is the wrong kind for the tool | Names the label found and the kinds the tool answers for | Use the tool that matches the label — e.g. `GetJobSchedulers` needs a `Job`, `GetModuleOwnership` a `Module`. |
+
+Getting an error here is the tool working. The alternative — an empty list — would make a typo
+indistinguishable from a real answer, and that failure mode has now been the root cause of five
+separate defects in this server.
 
 ## Client configuration
 

@@ -41,4 +41,34 @@ public sealed class GraphAndEmitterTests
         Assert.Contains("a\\'b", first);
         Assert.Contains("line1\\nline2\\\\x", first);
     }
+
+    [Fact]
+    public void Emitter_omits_null_properties_rather_than_writing_them_as_null()
+    {
+        // Neo4j rejects a null inside a MERGE map, so `route: null` would make the seed
+        // unloadable. Stripping it downstream in the loader instead would leave the graph
+        // silently different from the file it came from.
+        var graph = new Graph();
+        graph.Nodes.Add(new CypherNode("Endpoint", "E1", new Dictionary<string, object?>
+        {
+            ["route"] = null,
+            ["httpMethod"] = "GET",
+        }));
+
+        var cypher = CypherEmitter.Emit(graph, ["// header"]);
+
+        Assert.DoesNotContain("null", cypher, StringComparison.Ordinal);
+        Assert.Contains("MERGE (n:Endpoint {id: 'E1', httpMethod: 'GET'});", cypher, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Emitter_writes_a_node_whose_properties_are_all_null_without_a_dangling_separator()
+    {
+        var graph = new Graph();
+        graph.Nodes.Add(new CypherNode("Endpoint", "E1", new Dictionary<string, object?> { ["route"] = null }));
+
+        var cypher = CypherEmitter.Emit(graph, ["// header"]);
+
+        Assert.Contains("MERGE (n:Endpoint {id: 'E1'});", cypher, StringComparison.Ordinal);
+    }
 }
