@@ -23,9 +23,18 @@ function Invoke-ComposeNeo4jSeed {
     # Neo4j rejects null properties inside MERGE maps; the syntax seed uses null
     # to represent values the parser could not infer, so omit those properties.
     $content = (Get-Content -Path $Path -Raw) -replace ', [A-Za-z][A-Za-z0-9_]*: null', ''
-    $content | & docker compose '--profile' 'kg' 'exec' '-T' 'neo4j' 'cypher-shell' '--format' 'plain'
-    if ($LASTEXITCODE -ne 0) {
-        throw "docker compose command failed with exit code $LASTEXITCODE."
+
+    # Stage the rewritten seed as a file and load it with --file, the same way the
+    # ontology is loaded. Piping it to cypher-shell's stdin instead would break under
+    # Windows PowerShell 5.1, which prefixes a UTF-8 BOM onto a native command's stdin
+    # and makes Neo4j reject the very first statement.
+    $stagedHostPath = Join-Path $seedDirectory '.load-seed.staged.cypher'
+    [System.IO.File]::WriteAllText($stagedHostPath, $content, (New-Object System.Text.UTF8Encoding $false))
+    try {
+        Invoke-ComposeNeo4j @('--profile', 'kg', 'exec', '-T', 'neo4j', 'cypher-shell', '--format', 'plain', '--file', '/tools/kg/.load-seed.staged.cypher')
+    }
+    finally {
+        Remove-Item -Path $stagedHostPath -Force -ErrorAction SilentlyContinue
     }
 }
 
@@ -71,7 +80,7 @@ try {
     }
 
     if (-not $healthy) {
-        throw 'Neo4j did not become healthy within 60 seconds.'
+        throw "Neo4j did not become healthy within 60 seconds. Start it with: docker compose --profile kg up -d neo4j"
     }
 
     Write-Host 'Wiping existing graph data...'

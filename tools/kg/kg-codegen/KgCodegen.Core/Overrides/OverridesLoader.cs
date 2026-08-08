@@ -18,9 +18,12 @@ public static class OverridesLoader
         try
         {
             var yaml = File.ReadAllText(fullPath);
+            // Unmatched keys are NOT ignored on purpose. A misspelled `cronExpresion` that is
+            // silently dropped would leave the graph quietly missing an override the author
+            // believed they had supplied — the exact fabrication-by-omission this tool exists
+            // to prevent. Let it fail loudly instead.
             var document = new DeserializerBuilder()
                 .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                .IgnoreUnmatchedProperties()
                 .Build()
                 .Deserialize<OverridesDocument>(yaml) ?? new OverridesDocument();
 

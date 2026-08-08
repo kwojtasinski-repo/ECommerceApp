@@ -478,8 +478,9 @@ used (decided 2026-08-07, see [[project_ecommerceapp_kg_meta_skill_plan]]).
    fn)`", conflating the *declaration* marker with the *usage* marker. Only
    `define(` produces a node; `require(` produces a `Page-[:USES]->ScriptModule`
    edge and never a node. Phase 5 does not edit the seed schema, so this is
-   carried to Phase 6, which owns `ontology.cypher`. (That file also has
-   mojibake em dashes from an earlier encoding slip — fix in the same pass.)
+   carried to Phase 6, which owns `ontology.cypher`. **Tightened in Phase 6.**
+   (An earlier note here also claimed the file carried mojibake em dashes; it
+   does not — every non-ASCII byte in it is a well-formed U+2014.)
 6. ✅ **Built** — `docker-compose.yaml` provides an opt-in `kg` profile with
    pinned Neo4j `5.26.29-community`, loopback-only ports, and persistent
    `neo4j_data`. `tools/kg/seed/overrides.yaml` now owns the 14 module facts;

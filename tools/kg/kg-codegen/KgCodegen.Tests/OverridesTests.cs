@@ -76,9 +76,10 @@ public sealed class OverridesTests
     public void Applier_does_not_mutate_ambiguous_task_name_and_warns_once()
     {
         var graph = Graph.Empty();
-        var properties = new Dictionary<string, object?> { ["taskName"] = "DuplicateTask", ["triggerMode"] = null };
-        graph.Nodes.Add(new CypherNode("Job", "Demo.FirstJob", properties));
-        graph.Nodes.Add(new CypherNode("Job", "Demo.SecondJob", properties));
+        // Distinct dictionary instances on purpose: sharing one would let an in-place mutation
+        // of a single node look like it had touched both, hiding the bug this test pins.
+        graph.Nodes.Add(new CypherNode("Job", "Demo.FirstJob", new Dictionary<string, object?> { ["taskName"] = "DuplicateTask", ["triggerMode"] = null }));
+        graph.Nodes.Add(new CypherNode("Job", "Demo.SecondJob", new Dictionary<string, object?> { ["taskName"] = "DuplicateTask", ["triggerMode"] = null }));
 
         var warnings = JobOverrideApplier.Apply(graph, [new JobOverride("DuplicateTask", "0 0 * * *", "UTC", "Scheduled")]);
 
@@ -86,5 +87,23 @@ public sealed class OverridesTests
         Assert.Contains("ambiguous", warning, StringComparison.OrdinalIgnoreCase);
         Assert.All(graph.Nodes, node => Assert.DoesNotContain("cronExpression", node.Properties.Keys));
         Assert.All(graph.Nodes, node => Assert.DoesNotContain("timeZoneId", node.Properties.Keys));
+    }
+
+    [Fact]
+    public void Loader_rejects_misspelled_key_instead_of_dropping_the_override()
+    {
+        var path = Path.Combine(Path.GetTempPath(), "overrides-typo-" + Guid.NewGuid().ToString("N") + ".yaml");
+        File.WriteAllText(path, "modules: []\njobs:\n  - taskName: RefreshTokenCleanup\n    cronExpresion: \"0 0 * * *\"\n");
+
+        try
+        {
+            var exception = Assert.Throws<InvalidDataException>(() => OverridesLoader.Load(path));
+
+            Assert.Contains(path, exception.Message, StringComparison.Ordinal);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
     }
 }

@@ -86,7 +86,7 @@ SET et.label = 'Page', et.layer = 2,
 
 MERGE (et:Ontology:EntityType {name: 'ScriptModule'})
 SET et.label = 'ScriptModule', et.layer = 2,
-    et.description = 'Client-side JS module loaded via RequireJS/AMD (define([...], fn) / require([...], fn)) under Web/wwwroot/js. CONVENTION-DEPENDENT — if the frontend ever migrates off AMD to ES modules/a bundler, this parser will silently find zero ScriptModule nodes instead of erroring (no ontology triple becomes invalid, the extraction rule just stops matching). The codegen MUST warn if a previously-nonzero-yield parser returns zero nodes — do not treat silence as success.';
+    et.description = 'Client-side JS module loaded via RequireJS/AMD under Web/wwwroot/js. Node marker: a column-zero define([...], fn) declaration only. A require([...], fn) call is a *usage* marker — it yields a Page-[:USES]->ScriptModule edge and never produces a node. CONVENTION-DEPENDENT — if the frontend ever migrates off AMD to ES modules/a bundler, this parser will silently find zero ScriptModule nodes instead of erroring (no ontology triple becomes invalid, the extraction rule just stops matching). The codegen MUST warn if a previously-nonzero-yield parser returns zero nodes — do not treat silence as success.';
 
 // --- Layer 3: integration mechanism (async pub/sub + sync request/response) ---
 MERGE (et:Ontology:EntityType {name: 'Message'})
