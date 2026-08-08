@@ -1,5 +1,6 @@
 using KgCodegen.Core.Model;
 using KgCodegen.Core.Ontology;
+using KgCodegen.Core.Overrides;
 using KgCodegen.Core.Parsing;
 using KgCodegen.Core.Spine;
 using KgCodegen.Core.Validation;
@@ -72,6 +73,43 @@ public sealed class PinnedRealGraphTests
         var graph = BuildRealGraph();
 
         Assert.Equal(14, graph.Nodes.Count(node => node.Label == "Module"));
+    }
+
+    [Fact]
+    public void Spine_pins_all_modules_hosts_edges_and_empty_job_overrides()
+    {
+        var graph = BuildRealGraph();
+        var expectedModules = new Dictionary<string, string>
+        {
+            ["AccountProfile"] = "AccountProfile",
+            ["Backoffice"] = "Backoffice",
+            ["Catalog"] = "Catalog",
+            ["IAM"] = "Identity/IAM",
+            ["Inventory"] = "Inventory",
+            ["Checkout"] = "Presale/Checkout",
+            ["Orders"] = "Sales/Orders",
+            ["Payments"] = "Sales/Payments",
+            ["Coupons"] = "Sales/Coupons",
+            ["Fulfillment"] = "Sales/Fulfillment",
+            ["Communication"] = "Supporting/Communication",
+            ["Currencies"] = "Supporting/Currencies",
+            ["TimeManagement"] = "Supporting/TimeManagement",
+            ["Messaging"] = "Messaging"
+        };
+
+        Assert.Equal(expectedModules.Count, graph.Nodes.Count(node => node.Label == "Module"));
+        foreach (var expectedModule in expectedModules)
+        {
+            var module = Assert.Single(graph.Nodes, node => node.Label == "Module" && node.Id == expectedModule.Key);
+            Assert.Equal(expectedModule.Value, module.Properties["path"]);
+        }
+
+        Assert.Single(graph.Nodes, node => node.Label == "System" && node.Id == "ECommerceApp");
+        Assert.Single(graph.Nodes, node => node.Label == "Host" && node.Id == "ApiHost" && Equals(node.Properties["path"], "ECommerceApp.API"));
+        Assert.Single(graph.Nodes, node => node.Label == "Host" && node.Id == "WebHost" && Equals(node.Properties["path"], "ECommerceApp.Web"));
+        Assert.Equal(16, graph.Edges.Count(edge => edge.Type == "CONTAINS" && edge.SourceLabel == "System"));
+        Assert.DoesNotContain(graph.Nodes.Where(node => node.Label == "Job"), node => node.Properties.ContainsKey("cronExpression"));
+        Assert.DoesNotContain(graph.Nodes.Where(node => node.Label == "Job"), node => node.Properties.ContainsKey("timeZoneId"));
     }
 
     [Fact]
@@ -329,6 +367,22 @@ public sealed class PinnedRealGraphTests
     }
 
     /// <summary>
+    /// The silence half of the warn-don't-fabricate contract, pinned against the real tree. Every
+    /// non-match this repository contains today is an *expected* one — `config.js`/`site.js`,
+    /// the eight empty `define([], …)` arrays, `_Layout.cshtml`, and every same-host MVC `fetch`
+    /// URL — so the parser must say nothing at all. A parser that reports expected non-matches
+    /// buries the Guardrail-5 signal it exists to produce, which is why this is an exact zero and
+    /// not a threshold.
+    /// </summary>
+    [Fact]
+    public void Real_graph_script_module_parser_emits_no_warnings()
+    {
+        BuildRealGraph(out _, out _, out var scriptModuleWarnings);
+
+        Assert.Empty(scriptModuleWarnings);
+    }
+
+    /// <summary>
     /// `ProductDiscontinued` is unregistered, so it carries `key: null` — but it keeps its handler
     /// edges, because three handlers genuinely run on it. Nothing in `Application` constructs it,
     /// so it has no inbound publish. The `ECommerceApp.Domain` type of the same name must not leak
@@ -560,11 +614,18 @@ public sealed class PinnedRealGraphTests
 
     private static Graph BuildRealGraph(
         out IReadOnlyList<string> rolePolicyWarnings,
-        out IReadOnlyList<string> messageWarnings)
+        out IReadOnlyList<string> messageWarnings) =>
+        BuildRealGraph(out rolePolicyWarnings, out messageWarnings, out _);
+
+    private static Graph BuildRealGraph(
+        out IReadOnlyList<string> rolePolicyWarnings,
+        out IReadOnlyList<string> messageWarnings,
+        out IReadOnlyList<string> scriptModuleWarnings)
     {
         var root = FindRepositoryRoot();
-        var resolver = new ModuleResolver();
-        var graph = SpineCatalog.Create();
+        var modules = OverridesLoader.Load(Path.Combine(root, "tools", "kg", "seed", "overrides.yaml")).Modules;
+        var resolver = new ModuleResolver(modules.ToDictionary(module => module.Id, module => module.Path));
+        var graph = SpineCatalog.Create(modules);
         var symbols = DomainSymbolIndex.Build(Path.Combine(root, "ECommerceApp.Domain"));
         var entity = new EntityParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Infrastructure"), symbols);
         entity.Graph.MergeInto(graph);
@@ -615,6 +676,7 @@ public sealed class PinnedRealGraphTests
             graph.Nodes.Where(node => node.Label == "Page").ToList(),
             graph.Nodes.Where(node => node.Label == "Endpoint").ToList());
         scriptModules.Graph.MergeInto(graph);
+        scriptModuleWarnings = scriptModules.Warnings;
         var rolePolicy = new RolePolicyParser().Parse(
             Path.Combine(root, "ECommerceApp.Application"),
             Path.Combine(root, "ECommerceApp.API"),

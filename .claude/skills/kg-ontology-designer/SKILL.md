@@ -16,6 +16,12 @@ relationship-vocabulary discipline, and the guardrails below in full, with the
 concrete evidence behind each one. This SKILL.md is a thin wrapper — don't
 duplicate that content here, extend it there if the model changes.
 
+Phase 6 operational state: the local graph is available through the `kg`
+Compose profile and `tools/kg/load-graph.ps1`, which loads both ontology and
+instance seed. Before changing Job properties, compare the declared
+`Ontology:Property` layer with emitted nodes; the known `triggerModes` versus
+`triggerMode` and runtime-cron mismatch is an explicit follow-up decision.
+
 ## Flow
 
 ### 1. Ask the structural questions

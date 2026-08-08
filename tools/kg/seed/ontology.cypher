@@ -66,7 +66,7 @@ SET et.label = 'Module', et.layer = 1,
 // --- Layer 2 ---
 MERGE (et:Ontology:EntityType {name: 'Entity'})
 SET et.label = 'Entity', et.layer = 2,
-    et.description = 'Domain-owned persisted type. Marker: a class configured by an Infrastructure/<Module>/Configurations/*Configuration.cs implementing IEntityTypeConfiguration<T> — NOT [Table] attributes (Domain layer is EF-agnostic by design). The table name comes from that same file''s builder.ToTable(...) call, not from convention-guessing.';
+    et.description = 'Domain-owned persisted type. Marker: a class configured by an Infrastructure/<Module>/Configurations/*Configuration.cs implementing IEntityTypeConfiguration<T> — NOT [Table] attributes (Domain layer is EF-agnostic by design). The table name comes from that same file\'s builder.ToTable(...) call, not from convention-guessing.';
 
 MERGE (et:Ontology:EntityType {name: 'Repository'})
 SET et.label = 'Repository', et.layer = 2,
@@ -78,7 +78,7 @@ SET et.label = 'Action', et.layer = 2,
 
 MERGE (et:Ontology:EntityType {name: 'Endpoint'})
 SET et.label = 'Endpoint', et.layer = 2,
-    et.description = 'HTTP-facing entry point on ApiHost: an [HttpGet]/[HttpPost]/... method on an [ApiController] under API/Controllers/<Module>/*Controller.cs. No fixed URI-path convention encodes the module — module assignment comes from the controller''s folder.';
+    et.description = 'HTTP-facing entry point on ApiHost: an [HttpGet]/[HttpPost]/... method on an [ApiController] under API/Controllers/<Module>/*Controller.cs. No fixed URI-path convention encodes the module — module assignment comes from the controller\'s folder.';
 
 MERGE (et:Ontology:EntityType {name: 'Page'})
 SET et.label = 'Page', et.layer = 2,

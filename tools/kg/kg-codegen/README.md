@@ -20,6 +20,9 @@ dotnet run --project tools/kg/kg-codegen/KgCodegen -- --root . --check
 # emit a seed file
 dotnet run --project tools/kg/kg-codegen/KgCodegen -- --root . --out tools/kg/kg-seed.cypher
 
+# load ontology + newest generated seed into the local Neo4j profile
+pwsh tools/kg/load-graph.ps1
+
 dotnet build tools/kg/kg-codegen/KgCodegen.sln --nologo
 dotnet test tools/kg/kg-codegen/KgCodegen.Tests/KgCodegen.Tests.csproj --nologo
 ```
@@ -28,6 +31,7 @@ dotnet test tools/kg/kg-codegen/KgCodegen.Tests/KgCodegen.Tests.csproj --nologo
 | --- | --- | --- |
 | `--root` | repo root, derived from `AppContext.BaseDirectory` | Repository root to parse. |
 | `--ontology` | `<root>/tools/kg/seed/ontology.json` | Schema to validate the graph against. |
+| `--overrides` | `<root>/tools/kg/seed/overrides.yaml` | Generation-time module facts and optional job runtime facts. |
 | `--check` | off | Parse + validate, suppress all file writes. |
 | `--out` | `<out-dir>/kg-seed.<utc-timestamp>.cypher` | Explicit output path. |
 | `--out-dir` | `<root>/tools/kg` | Directory for the timestamped default name. |
@@ -41,7 +45,7 @@ Parsers run in this order; it is a real dependency chain, not a style choice.
 
 | Parser | Source | Emits |
 | --- | --- | --- |
-| `SpineCatalog` | hand-authored | `System`, `Host` (`ApiHost`/`WebHost`), `Module` |
+| `SpineCatalog` + `OverridesLoader` | `tools/kg/seed/overrides.yaml` plus stable spine facts | `System`, `Host` (`ApiHost`/`WebHost`), `Module` |
 | `EntityParser` | `ECommerceApp.Infrastructure` | `Entity` (from `IEntityTypeConfiguration<T>` + `ToTable(...)`) |
 | `RepositoryParser` | `ECommerceApp.Domain` | `Repository`, `Entity-[:PERSISTED_BY]->Repository` |
 | `ActionParser` | `ECommerceApp.Application` | `Action` (public methods of `*Service.cs`) |
@@ -54,6 +58,13 @@ Parsers run in this order; it is a real dependency chain, not a style choice.
 | `PageParser` | `ECommerceApp.Web` | `Page`, `Action-[:EXPOSED_BY]->Page` |
 | `ScriptModuleParser` | `ECommerceApp.Web/wwwroot/js` + Razor views | `ScriptModule`, `Host-[:CONTAINS]->ScriptModule`, `ScriptModule-[:DEPENDS_ON]->ScriptModule`, `Page-[:USES]->ScriptModule` and resolvable `Page-[:USES]->Endpoint` |
 | `RolePolicyParser` | `ECommerceApp.Application` + `ECommerceApp.API` + `ECommerceApp.Web` | atomic `Role`/`Policy`, `Endpoint/Page-[:GOVERNED_BY]->Role/Policy` |
+
+The loader reads `overrides.yaml` once per generation. Its module list preserves
+the emission order formerly held in `SpineCatalog`; job overrides are additive
+and keyed by the parser-emitted `taskName`. The empty production `jobs:` list
+therefore adds no runtime properties. `tools/kg/load-graph.ps1` wipes the
+point-in-time graph, loads both `tools/kg/seed/ontology.cypher` and the newest
+generated seed, waits for indexes, and prints node/edge counts.
 
 `Endpoint`/`Page` must run after `Action` — an `EXPOSED_BY` edge is only emitted
 when its target `Action` id already exists. `RolePolicy` must run after both
@@ -192,6 +203,37 @@ client URLs target MVC pages rather than API routes. Those same-host calls
 expose an ontology gap: a future decision may add `Page-[:USES]->Page` (or a
 generalized page/endpoint usage relation) to both `ontology.json` and
 `ontology.cypher`; this parser intentionally emits no undeclared triple.
+
+Two warnings report a view that resolves to no `Page` node, and both fire only
+once something in that view would otherwise have become an edge:
+
+- `Could not resolve Razor view '<path>' to a Page node.` — the path parsed into
+  an `(area, controller, method)` shape but no `Page` id matched all three.
+- `Could not map Razor view '<path>' to a Page.` — the path is not a
+  `Views/{Controller}/{Method}.cshtml` shape at all (Razor Pages, for example).
+
+Gating them on a blocked edge is load-bearing, not a nicety. Razor view files
+outnumber controller actions: `Areas/Catalog/Views/Product/AddItemNew.cshtml`
+and `EditItemNew.cshtml` are rendered by `Create`/`Edit` through
+`return View("AddItemNew", …)`, so no `Page` id can ever carry their filename.
+Both contain only same-host `fetch(...)` calls, which must be silent — warning
+on the resolution itself reported them as failures on every run and buried the
+Guardrail 5 signal this parser exists to produce. `PinnedRealGraphTests`
+pins the real tree at **exactly zero** `ScriptModuleParser` warnings.
+
+Coverage, as numbers rather than "non-zero":
+
+- **10 of 12** `.js` files under `wwwroot/js` declare a top-level `define(` and
+  become `ScriptModule` nodes (`config.js` and `site.js` are the two that do not).
+- **7 of 12** `fetch(...)`/`ajaxRequest.send(...)` call sites in the `.cshtml`
+  files this parser scans carry a literal `/`-prefixed URL. The other 5 are
+  structurally unreadable by a syntax-only scan: 4 pass a variable
+  (`oFormElement.action`, `url` twice, `form.action`) and one is the
+  `@Url.Action(…)`-derived string at
+  `Areas/IAM/Views/UserManagement/Index.cshtml:81`, expanded by Razor at runtime.
+  **0 of those 7** resolve to an `Endpoint` — every one targets an MVC page. Two
+  more literal sites exist in `Views/Shared/_Layout.cshtml`, which is excluded as
+  a source because a shared layout corresponds to no controller action.
 
 The parser's zero-yield warning is same-run only (`YieldTracker`); detecting a
 previously non-zero parser dropping to zero requires persisted cross-run

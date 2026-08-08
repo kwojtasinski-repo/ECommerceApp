@@ -1,0 +1,38 @@
+# Generation-time facts that cannot be inferred from source syntax.
+# Read by KgCodegen.Core.Overrides.OverridesLoader; use --overrides to select another file.
+modules:
+  - id: AccountProfile
+    path: AccountProfile
+  - id: Backoffice
+    path: Backoffice
+  - id: Catalog
+    path: Catalog
+  - id: IAM
+    path: Identity/IAM
+  - id: Inventory
+    path: Inventory
+  - id: Checkout
+    path: Presale/Checkout
+  - id: Orders
+    path: Sales/Orders
+  - id: Payments
+    path: Sales/Payments
+  - id: Coupons
+    path: Sales/Coupons
+  - id: Fulfillment
+    path: Sales/Fulfillment
+  - id: Communication
+    path: Supporting/Communication
+  - id: Currencies
+    path: Supporting/Currencies
+  - id: TimeManagement
+    path: Supporting/TimeManagement
+  - id: Messaging
+    path: Messaging
+jobs: []
+# Example only; values must be exported from the ScheduledJob table before enabling them.
+# jobs:
+#   - taskName: RefreshTokenCleanup
+#     cronExpression: "0 0 * * *"
+#     timeZoneId: UTC
+#     triggerMode: Scheduled

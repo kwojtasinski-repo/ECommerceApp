@@ -231,12 +231,37 @@ services:
                 ipv4_address: 172.28.0.2                # static IP — referenced by context-mode --dns
                 aliases: [adguard]
 
+    # ── Neo4j knowledge graph (profile: kg) ─────────────────────────────────
+    # Start with: docker compose --profile kg up -d neo4j
+    neo4j:
+        image: neo4j:${NEO4J_TAG:-5.26.29-community}
+        container_name: ecommerceapp-neo4j
+        profiles: [kg]
+        restart: unless-stopped
+        environment:
+            NEO4J_AUTH: none                         # dev-only graph, no user data, localhost-only ports
+        ports:
+            - "127.0.0.1:${NEO4J_HTTP_PORT:-7474}:7474"
+            - "127.0.0.1:${NEO4J_BOLT_PORT:-7687}:7687"
+        volumes:
+            - neo4j_data:/data
+            - ./tools/kg:/tools/kg:ro
+        # Neo4j needs longer than the repo's standard 15s start period while its
+        # store and indexes become available; cypher-shell checks Bolt readiness.
+        healthcheck:
+            test: ["CMD-SHELL", "cypher-shell --address bolt://localhost:7687 'RETURN 1' >/dev/null 2>&1"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            start_period: 60s
+
 volumes:
     qdrant_data:
     context-mode-data:                                          # SQLite session DB for context-mode
         name: ecommerceapp_context-mode-data                    # explicit name — created by scripts/context-mode-bootstrap.ps1 with UID 1000 ownership
         external: true
     adguard-work:                                               # AdGuard query log + cached lists
+    neo4j_data:
 
 networks:
     ctx-net:

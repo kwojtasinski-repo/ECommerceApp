@@ -124,6 +124,15 @@ both justified below).
    modules/a bundler, the parser won't error, it will silently find nothing.
    The codegen must warn when a previously-nonzero-yield parser returns zero,
    not treat silence as success.
+   **Status after Phase 5 — half built, and say so.** `YieldTracker`
+   (`tools/kg/kg-codegen/KgCodegen.Core/Parsing/YieldTracker.cs`) implements the
+   *same-run* zero check and is wired into every parser. The *previously*-nonzero
+   half needs a count persisted across runs and does not exist yet; it is a
+   follow-up, not a shipped feature. Second-order requirement learned in Phase 5:
+   a parser that reports expected non-matches as warnings defeats this guardrail
+   just as thoroughly, because the drop-to-zero signal arrives into noise nobody
+   reads. Expected non-matches must be silent, and the real-graph warning count
+   is pinned.
 
 6. **Capability verification, not memory.** Before asserting any tool/library
    capability that will shape the model, verify it against the running
@@ -189,7 +198,9 @@ not a modeling defect.
   `Web/Controllers`.
 - `ScriptModule`: client-side JS loaded via RequireJS/AMD — see Guardrail 5,
   this one is explicitly flagged as convention-dependent in the ontology file
-  itself.
+  itself. Built in Phase 5: the node marker is a **column-zero `define([...])`
+  only** (10 of the 12 files under `wwwroot/js`); a `require([...])` is a usage
+  marker and never produces a node.
 
 ### Layer 3 — the variability point (async + sync cross-module integration)
 
@@ -291,6 +302,12 @@ above) and the `ScriptModule` marker (RequireJS/AMD client JS, Layer 3) —
 not Razor template internals. TQ6 already covers "does page X trigger
 action Y" via the existing `Page -[:EXPOSED_BY]- Action` /
 `Page -[:USES]-> ScriptModule` triples; no ontology change needed.
+Phase 5 qualified this in one respect: the repo's real client-side coupling is
+`Page`→`Page` (same-host MVC `fetch`/`ajaxRequest.send` URLs, 7 literal call
+sites, 0 of them API routes), and **no `Page -[:USES]-> Page` triple is
+declared**. So TQ6 answers "which script does this page load" but not "which
+other page does this page call". Adding that triple is an open decision for
+Phase 6 — see item 5 below.
 
 ## Implementation plan (kg-codegen)
 
@@ -441,11 +458,48 @@ used (decided 2026-08-07, see [[project_ecommerceapp_kg_meta_skill_plan]]).
    calls also expose an ontology gap because no `Page→Page` usage triple is
    declared in `ontology.json` or `ontology.cypher`; no such undeclared edge is
    emitted here.
-6. `compose.yml` (Neo4j) + `overrides.yaml` for facts no parser can infer
-   (e.g. the real cron string for `Scheduled` jobs), replacing the Phase 0+1
-   stand-in `SpineCatalog.cs`. Includes the load step (seed `.cypher` →
-   running Neo4j) that nothing describes today — see "Querying the graph
-   today" below.
+   **Coverage, stated as numbers** (Guardrail 5 is meaningless against
+   "non-zero"): 10 of 12 `.js` files declare a top-level `define(`; 7 of the 12
+   `fetch`/`ajaxRequest.send` call sites in the scanned `.cshtml` files carry a
+   literal `/`-prefixed URL, and 0 of those 7 resolve to an `Endpoint`. The
+   remaining 5 pass a variable or a Razor-expanded `@Url.Action(…)` string and
+   are structurally unreadable by a syntax-only scan.
+   **Warning discipline is part of the guardrail, not cosmetics.** Validation
+   found the parser reporting `Areas/Catalog/Views/Product/{Add,Edit}ItemNew.cshtml`
+   as unresolved on every run: both are rendered by `Create`/`Edit` via
+   `return View("AddItemNew", …)`, so no `Page` id can carry their filename, and
+   both contain only same-host `fetch(...)` calls that fact #5 requires to be
+   silent. The "view resolves to no `Page`" warnings now fire only when an edge
+   was genuinely blocked, and `PinnedRealGraphTests` pins the real tree at
+   **exactly zero** `ScriptModuleParser` warnings — an over-warning parser hides
+   the drop-to-zero signal as effectively as a silent one.
+   **Marker prose to tighten in Phase 6.** `tools/kg/seed/ontology.cypher:89`
+   describes the `ScriptModule` marker as "`define([...], fn) / require([...],
+   fn)`", conflating the *declaration* marker with the *usage* marker. Only
+   `define(` produces a node; `require(` produces a `Page-[:USES]->ScriptModule`
+   edge and never a node. Phase 5 does not edit the seed schema, so this is
+   carried to Phase 6, which owns `ontology.cypher`. (That file also has
+   mojibake em dashes from an earlier encoding slip — fix in the same pass.)
+6. ✅ **Built** — `docker-compose.yaml` provides an opt-in `kg` profile with
+   pinned Neo4j `5.26.29-community`, loopback-only ports, and persistent
+   `neo4j_data`. `tools/kg/seed/overrides.yaml` now owns the 14 module facts;
+   `SpineCatalog` keeps only the stable System/Host spine. `JobOverrideApplier`
+   applies optional runtime `cronExpression`, `timeZoneId`, and explicit
+   `triggerMode` values without inventing null properties. The production jobs
+   list is intentionally empty because no ScheduledJob rows were exported.
+   `tools/kg/load-graph.ps1` wipes the point-in-time graph and loads **both**
+   `ontology.cypher` and the newest generated seed, then prints counts. The
+   real validation run produced 201 Action, 49 Endpoint, 33 Entity, 2 Host,
+   9 Job, 26 Message, 53 MessageHandler, 14 Module, 176 Page, 3 Query,
+   3 QueryHandler, 28 Repository, 3 Role, 10 ScriptModule and 1 System nodes,
+   with 1330 instance edges and 1441 edges after the ontology layer is loaded.
+   Phase 5 landed before this phase; it is consumed but not changed here.
+   A pre-existing invalid doubled-apostrophe escape in `ontology.cypher` was
+   corrected so Neo4j 5 can load the required ontology file. The ontology's
+   `Job.triggerModes` declaration and its statement that cron is not captured
+   still disagree with emitted `triggerMode` plus Phase 6's optional runtime
+   fields; that is a follow-up ontology-designer decision, not a silent Phase 6
+   schema change.
 7. MCP server — Tier-1 query tools per the target-questions tiering below,
    wrapping the Neo4j instance stood up in Phase 6. **Stdio transport
    only** — no HTTP-streamable variant, unlike this repo's RAG MCP servers
@@ -454,18 +508,16 @@ used (decided 2026-08-07, see [[project_ecommerceapp_kg_meta_skill_plan]]).
 
 ## Querying the graph today
 
-As of Phase 2, kg-codegen only emits a static `tools/kg/kg-seed.*.cypher`
-file — there is **no live Neo4j instance and no MCP server** for this
-project's own graph yet. Confirmed by inspection: `docker-compose.yaml` has
-no `neo4j` service (only `api`, `web`, `rag-tools`, `qdrant`), and
-`.vscode/mcp.json` has no Neo4j entry (only the RAG vector-search servers and
-the `context-mode` sandbox). This is different from the AJ platform's
-`neo4j-aj-kb` MCP server referenced by the `aj-kg-query` skill — that graph
-and server already exist for AJ; ECommerceApp's equivalent is Phase 6
-(stand up Neo4j, load the seed) + Phase 7 (MCP tool layer) above, neither
-started. Until then, inspecting the graph means loading
-`kg-seed.*.cypher` into a Neo4j instance by hand (e.g. `cypher-shell`) and
-querying it directly.
+Phase 6 now provides a live, local graph through the opt-in `kg` Compose
+profile. Start it with `docker compose --profile kg up -d neo4j`, generate a
+seed with `dotnet run --project tools/kg/kg-codegen/KgCodegen -- --root .`, and
+run `pwsh tools/kg/load-graph.ps1`. The loader always wipes data first because
+the generated seed is a full point-in-time snapshot and `MERGE` does not remove
+deleted facts; it then loads `ontology.cypher` before the generated seed and
+waits for indexes. Use `cypher-shell` on Bolt `127.0.0.1:7687` for direct
+inspection. Phase 7 will add the MCP query layer; no MCP entry is added here.
+The graph is intentionally separate from the AJ platform's `neo4j-aj-kb`
+server referenced by the `aj-kg-query` skill.
 
 ## Why two skills, not one
 

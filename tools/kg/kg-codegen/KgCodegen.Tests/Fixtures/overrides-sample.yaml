@@ -1,0 +1,12 @@
+modules:
+  - id: Orders
+    path: Sales/Orders
+  - id: Payments
+    path: Sales/Payments
+jobs:
+  - taskName: RefreshTokenCleanup
+    cronExpression: "0 0 * * *"
+  - taskName: PaymentWindowTimeoutJob
+    cronExpression: "*/15 * * * *"
+    timeZoneId: Europe/Warsaw
+    triggerMode: Scheduled

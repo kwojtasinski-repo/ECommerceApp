@@ -1,6 +1,7 @@
 using KgCodegen.Core.Emit;
 using KgCodegen.Core.Model;
 using KgCodegen.Core.Ontology;
+using KgCodegen.Core.Overrides;
 using KgCodegen.Core.Parsing;
 using KgCodegen.Core.Spine;
 using KgCodegen.Core.Validation;
@@ -20,10 +21,12 @@ public static class CliRunner
 
         string root = GetOption("--root") ?? Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", ".."));
         string ontologyPath = GetOption("--ontology") ?? Path.Combine(root, "tools", "kg", "seed", "ontology.json");
+        string overridesPath = GetOption("--overrides") ?? Path.Combine(root, "tools", "kg", "seed", "overrides.yaml");
         bool check = arguments.Contains("--check", StringComparer.OrdinalIgnoreCase);
 
-        var graph = SpineCatalog.Create();
-        var resolver = new ModuleResolver();
+        var overrides = OverridesLoader.Load(overridesPath);
+        var graph = SpineCatalog.Create(overrides.Modules);
+        var resolver = new ModuleResolver(overrides.Modules.ToDictionary(module => module.Id, module => module.Path));
         var symbols = DomainSymbolIndex.Build(Path.Combine(root, "ECommerceApp.Domain"));
         var applicationSymbols = DomainSymbolIndex.Build(Path.Combine(root, "ECommerceApp.Application"));
         var entity = new EntityParser(resolver).Parse(Path.Combine(root, "ECommerceApp.Infrastructure"), symbols);
@@ -102,6 +105,11 @@ public static class CliRunner
             {
                 stdout.WriteLine($"warning: {warning}");
             }
+        }
+
+        foreach (var warning in JobOverrideApplier.Apply(graph, overrides.Jobs))
+        {
+            stdout.WriteLine($"warning: {warning}");
         }
 
         var report = GraphValidator.Validate(graph, OntologyLoader.Load(ontologyPath));

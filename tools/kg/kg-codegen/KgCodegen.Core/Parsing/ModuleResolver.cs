@@ -1,12 +1,10 @@
-using KgCodegen.Core.Spine;
-
 namespace KgCodegen.Core.Parsing;
 
 public sealed class ModuleResolver
 {
     private readonly IReadOnlyDictionary<string, string> paths;
 
-    public ModuleResolver(IReadOnlyDictionary<string, string>? paths = null) => this.paths = paths ?? SpineCatalog.Paths;
+    public ModuleResolver(IReadOnlyDictionary<string, string> paths) => this.paths = paths;
 
     public string? Resolve(string relativePath)
     {

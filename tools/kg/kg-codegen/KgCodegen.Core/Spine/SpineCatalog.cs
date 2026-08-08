@@ -1,22 +1,11 @@
 using KgCodegen.Core.Model;
+using KgCodegen.Core.Overrides;
 
 namespace KgCodegen.Core.Spine;
 
 public static class SpineCatalog
 {
-    private static readonly (string Id, string Path)[] Modules =
-    [
-        ("AccountProfile", "AccountProfile"), ("Backoffice", "Backoffice"), ("Catalog", "Catalog"),
-        ("IAM", "Identity/IAM"), ("Inventory", "Inventory"), ("Checkout", "Presale/Checkout"),
-        ("Orders", "Sales/Orders"), ("Payments", "Sales/Payments"), ("Coupons", "Sales/Coupons"),
-        ("Fulfillment", "Sales/Fulfillment"), ("Communication", "Supporting/Communication"),
-        ("Currencies", "Supporting/Currencies"), ("TimeManagement", "Supporting/TimeManagement"),
-        ("Messaging", "Messaging")
-    ];
-
-    public static IReadOnlyDictionary<string, string> Paths => Modules.ToDictionary(x => x.Id, x => x.Path);
-
-    public static Graph Create()
+    public static Graph Create(IReadOnlyList<ModuleOverride> modules)
     {
         var graph = Graph.Empty();
         graph.Nodes.Add(new CypherNode("System", "ECommerceApp", new Dictionary<string, object?>()));
@@ -24,7 +13,8 @@ public static class SpineCatalog
         graph.Nodes.Add(new CypherNode("Host", "WebHost", new Dictionary<string, object?> { ["path"] = "ECommerceApp.Web" }));
         graph.Edges.Add(new CypherEdge("CONTAINS", "System", "ECommerceApp", "Host", "ApiHost"));
         graph.Edges.Add(new CypherEdge("CONTAINS", "System", "ECommerceApp", "Host", "WebHost"));
-        foreach (var module in Modules)
+        // Hosts and the system are stable spine facts; only modules need generation-time overrides.
+        foreach (var module in modules)
         {
             graph.Nodes.Add(new CypherNode("Module", module.Id, new Dictionary<string, object?> { ["path"] = module.Path }));
             graph.Edges.Add(new CypherEdge("CONTAINS", "System", "ECommerceApp", "Module", module.Id));

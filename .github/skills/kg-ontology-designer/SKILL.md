@@ -24,6 +24,12 @@ there, not here.
 
 Living artifact: `tools/kg/seed/ontology.json` / `ontology.cypher`.
 
+Phase 6 operational state: the local graph is available through the `kg`
+Compose profile and `tools/kg/load-graph.ps1`, which loads both ontology and
+instance seed. Before changing Job properties, compare the declared
+`Ontology:Property` layer with emitted nodes; the known `triggerModes` versus
+`triggerMode` and runtime-cron mismatch is an explicit follow-up decision.
+
 ## When to use
 
 - The human wants a new node/edge type added to the graph, or a new

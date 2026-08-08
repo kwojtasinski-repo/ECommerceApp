@@ -16,4 +16,7 @@
   <ItemGroup>
     <Using Include="Xunit" />
   </ItemGroup>
+  <ItemGroup>
+    <None Update="Fixtures\overrides-sample.yaml" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
