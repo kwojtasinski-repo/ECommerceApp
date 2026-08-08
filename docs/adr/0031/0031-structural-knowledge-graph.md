@@ -114,12 +114,15 @@ The Neo4j Compose service is opt-in under the `kg` profile with loopback-only
 ports and `NEO4J_AUTH=none` permitted only for this local development graph.
 
 Phase 7 added the sibling `tools/kg/kg-mcp/` solution so Neo4j and
-`Testcontainers.Neo4j` do not enter the codegen build. `KgMcp.Core` owns the
-read transactions, shared ambiguity-safe id resolution, and graph DTOs;
-`KgMcp.Server` owns stdio framing, input clamping, MCP descriptions, and one
-sanitized error guard. Exactly ten Tier-1 tools are exposed. No write Cypher,
-HTTP transport, seed regeneration, graph mutation, effort estimate, pattern
-classification, test-coverage claim, or git-authorship answer is provided.
+`Testcontainers.Neo4j` do not enter the codegen build. `KgMcp.Core` owns every
+traversal, the read transactions, depth clamping, and the shared ambiguity-safe
+id resolver; `KgMcp.Server` is a delegation shell owning stdio framing, MCP
+descriptions, and one error guard that keeps domain failures distinguishable
+from infrastructure failures. Clamping lives in `Core` rather than the tool
+layer so no transport can widen a bound. Exactly ten Tier-1 tools are exposed.
+No write Cypher, HTTP transport, seed regeneration, graph mutation, effort
+estimate, pattern classification, test-coverage claim, or git-authorship answer
+is provided.
 
 The server is registered as `ecommerceapp-kg` in VS Code and the tracked root
 `.mcp.json` for Claude Code. It is deliberately absent from
@@ -127,13 +130,34 @@ The server is registered as `ecommerceapp-kg` in VS Code and the tracked root
 the repository's `dotnet run` process. The human and agent routing documentation
 now distinguishes structural KG intent from RAG documentation intent.
 
-Validation completed with `dotnet build` for both solutions, `KgMcp.Tests`
-passing, the unchanged `KgCodegen.Tests` baseline, `docker compose config`,
-Neo4j health/load checks, and live stdio startup. The remaining graph-model
-questions are intentionally preserved: ontology declares `triggerModes` while
-emitted job nodes use `triggerMode`, and cron/runtime rows are not statically
-captured. `StockAvailableQuery` and `CompletedOrderCountQuery` remain known
-query false positives because their adapter callers do not emit Action nodes.
+Independent validation of Phase 7 found **four traversal defects**, all of which
+shipped past a green test suite because that suite inspected source text rather
+than behaviour. Three tools queried a triple the ontology does not declare and
+therefore returned an empty list for every input in the repository:
+`GetActionExposure` looked for incoming `EXPOSED_BY` when the edge runs
+`Action → Endpoint/Page`; `GetGovernedActions` looked for
+`Action -[:GOVERNED_BY]->` when the ontology declares that edge only from
+`Endpoint` and `Page`; and `GetOrphanContracts` required a node to have zero
+incoming *and* zero outgoing edges of any type, which the `Module -[:CONTAINS]->`
+edge alone makes impossible — leaving its `Job` and `Query` branches unreachable.
+An empty result is indistinguishable from a true negative, which is why none of
+these surfaced earlier. The fourth: the shared guard rewrote every exception as
+a Neo4j connectivity hint, so an ambiguous-id error reached the caller as a
+false diagnosis.
+
+All four are fixed, and the mitigation is structural rather than procedural:
+`KgMcp.Tests` now runs a hand-written fixture graph in an ephemeral Neo4j
+container and asserts each traversal's *results*. `GetOrphanContracts` went from
+2 rows on the real graph — both mislabelled `high` — to 14 correctly graded rows,
+and `GetGovernedActions` from 0 rows to the 94 surfaces the `Service` role
+actually governs.
+
+The remaining graph-model questions are intentionally preserved: ontology
+declares `triggerModes` while emitted job nodes use `triggerMode`, and
+cron/runtime rows are not statically captured. `StockAvailableQuery` and
+`CompletedOrderCountQuery` remain known query false positives because their
+adapter callers do not emit Action nodes — they are now reported with
+`ambiguous` confidence and that reason, rather than omitted.
 
 This is the final phase in the roadmap. No Phase 8 is implied by this ADR.
 
@@ -176,9 +200,14 @@ This is the final phase in the roadmap. No Phase 8 is implied by this ADR.
 - Guardrail 5 is **half implemented**: `YieldTracker` detects a zero yield in the
   current run; detecting a *previously* non-zero parser dropping to zero needs a
   count persisted across runs and does not exist yet.
-- Phases 6–7 are unbuilt, so today the graph is a static `.cypher` file with no
-  live instance and no MCP server. See "Querying the graph today" in the design
-  document.
+- The live graph is **local and ephemeral by design**: an opt-in Compose profile
+  with no auth and loopback-only ports. It is a developer tool, not an
+  environment, and nothing in CI depends on it being up.
+- A traversal can be **structurally valid and still ask the wrong question**.
+  Phase 7 validation found three tools querying triples the ontology does not
+  declare; each returned an empty list, which reads as "nothing found" rather
+  than "wrong question". The mitigation is behavioural container tests per tool
+  (`KgMcp.Tests`), not review — a source-level suite passed all three.
 
 ## Related
 

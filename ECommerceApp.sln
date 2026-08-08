@@ -466,11 +466,26 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "amendments", "amendments", 
 		docs\adr\0029\amendments\0029-001-host-side-rag-auto-cache.md = docs\adr\0029\amendments\0029-001-host-side-rag-auto-cache.md
 	EndProjectSection
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0030", "0030", "{00300000-0000-0000-0000-000000000030}"
+	ProjectSection(SolutionItems) = preProject
+		docs\adr\0030\0030-guest-checkout-anonymous-order-placement.md = docs\adr\0030\0030-guest-checkout-anonymous-order-placement.md
+		docs\adr\0030\checklist.md = docs\adr\0030\checklist.md
+		docs\adr\0030\migration-plan.md = docs\adr\0030\migration-plan.md
+		docs\adr\0030\README.md = docs\adr\0030\README.md
+	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "0031", "0031", "{00310000-0000-0000-0000-000000000031}"
+	ProjectSection(SolutionItems) = preProject
+		docs\adr\0031\0031-structural-knowledge-graph.md = docs\adr\0031\0031-structural-knowledge-graph.md
+		docs\adr\0031\README.md = docs\adr\0031\README.md
+	EndProjectSection
+EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ECommerce", "ECommerce", "{049E647F-D15D-4AFB-8AE6-DB2363C9F4D4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "architecture", "architecture", "{5EC11768-8E47-4C89-9EBC-78E600311851}"
 	ProjectSection(SolutionItems) = preProject
 		docs\architecture\bounded-context-map.md = docs\architecture\bounded-context-map.md
+		docs\architecture\knowledge-graph-ontology-design.md = docs\architecture\knowledge-graph-ontology-design.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "prompts", "prompts", "{BAC45AC5-6905-4FAF-956C-CD73D03DB4BD}"
@@ -549,6 +564,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reference", "reference", "{
 	ProjectSection(SolutionItems) = preProject
 		docs\reference\context-mode-tools.md = docs\reference\context-mode-tools.md
 		docs\reference\endpoint-map.md = docs\reference\endpoint-map.md
+		docs\reference\kg-mcp-tools.md = docs\reference\kg-mcp-tools.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "reports", "reports", "{7C3E91A2-B4D5-4F68-9A1C-E2F30748D6B1}"
@@ -1033,6 +1049,8 @@ Global
 		{0028A001-0000-0000-0000-000000000028} = {00280000-0000-0000-0000-000000000028}
 		{00290000-0000-0000-0000-000000000029} = {25B91C37-ECC3-46DC-8502-C91F85A1F7BC}
 		{0029A001-0000-0000-0000-000000000029} = {00290000-0000-0000-0000-000000000029}
+		{00300000-0000-0000-0000-000000000030} = {25B91C37-ECC3-46DC-8502-C91F85A1F7BC}
+		{00310000-0000-0000-0000-000000000031} = {25B91C37-ECC3-46DC-8502-C91F85A1F7BC}
 		{5EC11768-8E47-4C89-9EBC-78E600311851} = {908C6C00-47A3-455F-82C8-5BBECB045911}
 		{BAC45AC5-6905-4FAF-956C-CD73D03DB4BD} = {02EA681E-C7D8-13C7-8484-4AC65E1B71E8}
 		{DB95CC21-7869-4EAC-8EB3-F5706D958E0A} = {908C6C00-47A3-455F-82C8-5BBECB045911}

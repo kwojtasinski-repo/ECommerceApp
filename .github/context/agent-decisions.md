@@ -332,3 +332,21 @@ Rules:
 - **Action**: Keep explicit markers for special hook paths whenever a host-side chain fans out to the container. The marker should name the hook, the tool, and the chain wrapper.
 - **Promote?**: After a 2nd occurrence of a silent/opaque hook chain → add a small anti-pattern note to `pre-edit.instructions.md` or `anti-patterns-critical.context.md`.
 - **Status**: Resolved
+
+## 2026-08-08 — Validator / root `.mcp.json` is swallowed by the blanket `*.json` ignore
+
+- **Context**: Phase 7 registered the KG MCP server for Claude Code in a root-level `.mcp.json`. The repo's [.gitignore](../../.gitignore) line 14 ignores `*.json` wholesale, so the file worked locally and would never have reached a commit — the config is present for whoever created it and absent for everyone else.
+- **Decision**: Add an explicit `!.mcp.json` negation beside the four existing ones (lines 15–18), following the `!.vscode/mcp.json` precedent, rather than relaxing the blanket rule.
+- **Rationale**: The same trap already bit this repo once, on a `kg-codegen` test fixture (see ADR-0031's build ledger). Any new root-level or tool-level `*.json` needs a negation or it is invisible to version control.
+- **Action**: When adding **any** tracked `.json` to this repo, verify with `git check-ignore -v --no-index <path>` — plain `git check-ignore` skips already-tracked files and reports "not ignored" for them regardless of the rules, which is why the problem looks absent on existing configs.
+- **Promote?**: This is the 2nd occurrence → promote to a hard rule in `pre-edit.instructions.md` if it happens a third time.
+- **Status**: Resolved
+
+## 2026-08-08 — Validator / an empty MCP tool result is not evidence of a true negative
+
+- **Context**: Three of the ten `ecommerceapp-kg` tools queried a graph triple the ontology does not declare — traversing `EXPOSED_BY` and `GOVERNED_BY` in the wrong direction, and requiring zero edges of *any* type where a `Module -[:CONTAINS]->` edge always exists. Each returned `[]` for every input in the repository. The unit suite was green because it grepped source text for tool names, clamps, and write clauses.
+- **Decision**: Structural/source-level assertions cannot stand in for behavioural ones on a query tool. `KgMcp.Tests` now seeds a hand-written fixture graph in an ephemeral Neo4j (`Testcontainers.Neo4j`) and asserts each traversal's *results*, including negative controls.
+- **Rationale**: An empty result set is indistinguishable from a correct "nothing matches", so this failure class is invisible to review, to unit tests, and to a smoke check that only asks whether the server starts. Detail in [ADR-0031](../../docs/adr/0031/0031-structural-knowledge-graph.md) §Outcome.
+- **Action**: Any tool whose contract is "query X and return matches" needs at least one fixture asserting a **non-empty** expected result, and one asserting a **known-empty** case, before it is considered covered.
+- **Promote?**: After a 2nd occurrence of "green source-grep suite hid a wrong query" → promote into `pre-edit.instructions.md` testing guidance.
+- **Status**: Resolved
