@@ -139,6 +139,45 @@ Getting an error here is the tool working. The alternative — an empty list —
 indistinguishable from a real answer, and that failure mode has now been the root cause of five
 separate defects in this server.
 
+## Where the numbers come from
+
+Counts in this document and in ADR-0031 are measurements, not decisions, and every one of them
+changes when the codebase does. This section exists so nobody has to ask a year from now what
+"32" meant or whether it is still true. **Re-derive rather than trust** — each command below
+reproduces its number from scratch.
+
+| Number | What it is | Reproduce it |
+|---|---|---|
+| Per-label counts, `Edges: 1330` | What the generator produced from source | `dotnet run --project tools/kg/kg-codegen/KgCodegen -- --root . --check` |
+| `1441` loaded edges | 1330 generated **plus 111 ontology-layer** edges. These are different populations; comparing the raw total against `Edges:` looks like a defect and is not | `MATCH ()-[r]->() RETURN count(r)` after `load-graph.ps1` |
+| 111 ontology edges | The schema layer, disjoint from the instance layer by design | `MATCH (a:Ontology)-[r]->(b:Ontology) RETURN count(r)` |
+| 185 omitted properties (171 `route`, 6 `key`, 5 `triggerMode`, 3 `httpMethod`) | Values the parser could not infer, omitted rather than written as `null` | `MATCH (p:Page) RETURN count(p) - count(p.route)`, and the same shape per label |
+| `GetBlastRadius("Payments", 3)` → 32 rows | Nodes within 3 hops of the Payments module. Was **38 rows before the shortest-distance fix** — same 32 nodes, six of them repeated at a second and third path length | `MATCH path=(n {id:'Payments'})-[*1..3]->(m) WITH m, min(length(path)) AS d RETURN count(*)` |
+| `GetBlastRadius("ECommerceApp", 5)` → 602 nodes | The worst case in the repository; the pre-fix query reported 940 rows for it | same query with `{id:'ECommerceApp'}` and `[*1..5]` |
+
+None of these are hardcoded in a test. `RealGraphE2ETests` re-derives them every run: per-label
+counts and the edge total are read back out of what `kg-codegen` printed and compared against what
+Neo4j received, and every reported `depth` is cross-checked against Neo4j's own `shortestPath`,
+which shares no code with the traversal under test. A test that restates the implementation's query
+proves nothing; a test that disagrees with an independent oracle is evidence.
+
+## How the tests are layered
+
+Three suites guard this server, and each covers something the others structurally cannot. Knowing
+which one to extend is the difference between a test that catches the next defect and one that
+records the last one.
+
+| Suite | Graph it runs against | What only it can catch |
+|---|---|---|
+| `ContractTests` | none — reads source text | Rules about *shape of the code*: no Cypher in the MCP layer, no write clause in `Core`, no tool named as if it answers an out-of-scope question, no id-taking traversal that skips `RequireLabelAsync`. These outlive the ten tools that exist today. |
+| `GraphServiceTests` | `Neo4jFixture` — hand-built, ephemeral | Exact, named behaviour: this id resolves to that surface, this orphan is graded `ambiguous` and that one `high`. Precise, and blind to any shape nobody thought to add. |
+| `RealGraphE2ETests` | the actual repository graph, generated per run | Whatever the codebase really contains. Both post-Phase-7 defects were invisible to the fixture suite and obvious here: one needed a node reachable by two path lengths, the other needed a real id to typo. |
+
+The lesson worth carrying, recorded because it has now cost three separate rounds of rework: **a
+behavioural test is only as good as the topology its fixture contains.** When adding a traversal,
+add the shape it can be wrong about to `Neo4jFixture`, assert the error paths and not only the
+happy one, and confirm the new test fails against the old implementation before believing it.
+
 ## Client configuration
 
 | Client | File | Notes |

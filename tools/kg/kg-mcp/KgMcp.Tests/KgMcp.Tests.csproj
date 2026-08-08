@@ -7,6 +7,13 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\KgMcp.Core\KgMcp.Core.csproj" />
+    <!--
+      No project reference to KgCodegen: RealGraphFixture invokes the generator as a subprocess
+      instead. Two reasons, and the second is why the first was not enough. It keeps the two
+      solutions separated the way ADR-0031 intended, and it avoids loading a cross-solution
+      assembly into the test host at all — Smart App Control on this machine blocks the copied
+      KgCodegen.Core.dll with 0x800711C7, which failed every test in the class at startup.
+    -->
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.1" />
     <PackageReference Include="xunit" Version="2.9.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" />
