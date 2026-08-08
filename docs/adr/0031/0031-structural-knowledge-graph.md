@@ -159,7 +159,14 @@ cron/runtime rows are not statically captured. `StockAvailableQuery` and
 adapter callers do not emit Action nodes — they are now reported with
 `ambiguous` confidence and that reason, rather than omitted.
 
-This is the final phase in the roadmap. No Phase 8 is implied by this ADR.
+Phase 7 completes the **build** roadmap: the ontology, the generator, the loader,
+and the query server all exist and are validated. It does not complete
+**adoption**. As of this ADR the toolchain is unused by the working loop — no
+skill teaches an agent to query the graph, no pipeline agent consults it, and
+`--check` runs in no workflow, so the "staleness is a build signal" force above
+is still an aspiration rather than a fact. That gap is scoped in
+`.github/plans/08-phase-kg-workflow-adoption-*.md` and is deliberately not an
+extension of the model: Phase 8 adds no node type, no parser, and no tool.
 
 ## Alternatives considered
 
@@ -187,8 +194,9 @@ This is the final phase in the roadmap. No Phase 8 is implied by this ADR.
   for every node type written down and testable.
 - Every modelling gap the codebase exposes is now recorded as a gap instead of
   being silently smoothed over by an invented edge.
-- The tool is a CI-runnable check (`--check`), so convention drift becomes
-  reviewable rather than archaeological.
+- The tool has a CI-runnable check mode (`--check`) that can make convention
+  drift reviewable rather than archaeological. **It is not yet wired into any
+  workflow**, so today nothing detects drift; see Phase 8.
 
 **Negative / accepted costs**
 
