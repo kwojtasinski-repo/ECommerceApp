@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "ecommerceapp-kg": {
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project",
+        "tools/kg/kg-mcp/KgMcp.Server/KgMcp.Server.csproj",
+        "--no-launch-profile"
+      ],
+      "env": {
+        "KG_NEO4J_URL": "bolt://localhost:7687",
+        "DOTNET_CLI_TELEMETRY_OPTOUT": "1"
+      }
+    }
+  }
+}

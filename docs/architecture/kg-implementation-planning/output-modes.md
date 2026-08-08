@@ -12,17 +12,34 @@ Ask for the mode early so expectations are set, but let it affect only these ste
 Two files, following whatever naming convention Step 0 resolved.
 
 **Implementation artifact** — a summary, not a transcript. Scope · why this phase exists · risk ·
-files to modify · files to add · atomic ordered steps · verification commands · risks and open
-questions · rollback plan.
+files to modify · files to add · **tests to add** · atomic ordered steps · verification commands ·
+risks and open questions · rollback plan.
 
 Keep it short. Do **not** duplicate Step 2's verified-facts material here; the density belongs in
 Mode B, and two descriptions of one phase will drift apart.
 
+**Hard rule — the enumerated test list is a contract, not a suggestion.** Every test named in the
+implementation artifact's "tests to add" section must, by the time the phase is reported done,
+either exist or be declined *explicitly in the report* with a reason. Silently shipping fewer tests
+than the plan enumerated is a validation FAIL on its own, regardless of how green the suite is.
+
+This exists because it has happened twice in this repo's own kg-codegen build: Phase 4a shipped 1
+test against a plan naming 20, and Phase 4c shipped 0 against a plan naming 9 — both times with a
+fully passing suite and a correct emitted graph, and both times caught only by the validator. A
+phase's real-graph pins prove *today's* output; the fixtures are what stop a future edit from
+regressing the reasoning behind it. Losing them is invisible until it is expensive.
+
 **Validation artifact** — written to be executed by a *different* session:
 
 1. **Deterministic verification** — build, test, codegen check mode; expected counts.
-2. **Test-coverage checklist** — including at least one regression test proving the heuristic
-   *warns rather than fabricates* when it cannot resolve something.
+2. **Test-coverage checklist** — one line per test the implementation artifact enumerated, so a
+   missing one is a checkbox that cannot be ticked rather than an absence nobody looks for. Include
+   at least one regression test proving the heuristic *warns rather than fabricates* when it cannot
+   resolve something. For any test whose whole purpose is to catch a specific wrong implementation,
+   the validator should **mutate the parser to that wrong implementation and confirm the test fails**
+   — a test that passes both ways is decoration. (Phase 4c's first attempt at its highest-value
+   fixture passed under the exact bug it was written to catch: edge de-duplication swallowed the
+   spurious edge because the fixture reused one target job.)
 3. **Spec-conformance checklist** — every triple declared, coverage ratio reported as a number, no
    later-phase labels leaked (that list is generated in Step 1).
 4. **Standard code-review pass** — reuse of existing shared helpers rather than duplicated

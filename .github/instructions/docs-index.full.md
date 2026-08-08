@@ -15,6 +15,7 @@
 | BC migration work       | `bounded-context-map.md`          | BC's ADR → `project-state.md`       |
 | Controller migration    | `endpoint-map.md`                 | ADR-0024 → BC's ADR                 |
 | Adding Copilot config   | `docs-index.instructions.md`      | `@copilot-setup-maintainer`         |
+| Structural graph questions | `docs/reference/kg-mcp-tools.md` | ADR-0031 + `ecommerceapp-kg` |
 | Frontend/JS changes     | `frontend.instructions.md` (auto) | ADR-0021                            |
 
 ## Instruction files (`.github/instructions/`)
@@ -108,6 +109,8 @@ Use the folder `README.md` as the first stop for every ADR.
 | 0027 | [RAG pipeline design](../../docs/adr/0027/README.md)                                                       | Working on RAG/MCP setup, semantic search, embedder model, Qdrant, or ingest configuration                                                            |
 | 0028 | [Remote multi-tenant RAG ingest](../../docs/adr/0028/README.md)                                            | Working on RAG ingest, chunking, metadata-rules, multi-project index setup, or known-gap list                                                         |
 | 0029 | [context-mode MCP sandbox + DNS firewall](../../docs/adr/0029/README.md)                                   | Working on context-mode container, AdGuard DNS setup, sandbox hardening, or conformance checklist                                                     |
+| 0030 | [Guest checkout — anonymous order placement](../../docs/adr/0030/README.md)                                | Working on guest shopper identity, guest customer provisioning, account promotion, or guest profile cleanup                                            |
+| 0031 | [Code-derived structural knowledge graph](../../docs/adr/0031/README.md)                                   | Working on `tools/kg/**` — the ontology seed, a `kg-codegen` parser, the Neo4j load step, or the KG MCP server                                         |
 
 ## Root docs (`docs/`)
 
@@ -130,6 +133,8 @@ Use the folder `README.md` as the first stop for every ADR.
 | File                     | When to read                                                                                        |
 | ------------------------ | --------------------------------------------------------------------------------------------------- |
 | `bounded-context-map.md` | Before adding cross-BC dependencies, proposing new aggregates, or checking BC implementation status |
+| `knowledge-graph-ontology-design.md` | Before touching `tools/kg/**` — the node/edge ontology, the six guardrails, and the phase-by-phase build ledger for `kg-codegen` (see also ADR-0031) |
+| `kg-implementation-planning/README.md` | Planning or handing off the next `kg-codegen` phase — phase derivation, output modes, marker discovery |
 
 ## Pattern templates (`docs/patterns/`)
 

@@ -12,6 +12,7 @@ applyTo: "**"
 
 - RAG = use the repo-doc MCP servers: `ecommerceapp-rag-python`, `ecommerceapp-rag-dotnet`, or `ecommerceapp-rag`.
 - context-mode = use the sandbox MCP server: `ecommerceapp-context-mode`.
+- structural graph = use the local read-only `ecommerceapp-kg` server.
 - context-mode must not invoke RAG or any `mcp__rag*` tool; if RAG is needed, do it as a separate step outside context-mode.
 - Knowledge intent -> RAG first.
 - Analysis/execution intent -> context-mode first.
@@ -30,6 +31,7 @@ applyTo: "**"
 |---|---|---|
 | Knowledge from repo docs/context | RAG | `list_adrs`, `query_docs`, `read_docs`, `get_history` |
 | Analysis/compute/reduction/execution | context-mode | `ctx_execute`, `ctx_execute_file`, `ctx_batch_execute`, `ctx_search`, `ctx_stats` |
+| Structural facts and bounded graph traversals | KG | `GetNodeNeighbors`, `GetBlastRadius`, `GetNodeDependencies`, `GetModuleDependencies`, `GetModuleOwnership`, `GetActionExposure`, `GetOrphanContracts`, `GetJobSchedulers`, `GetGovernedActions`, `FindStructurallySimilarActions` |
 | Project-related external URLs | context-mode | `ctx_fetch_and_index` |
 
 RAG servers: `ecommerceapp-rag-python`, `ecommerceapp-rag-dotnet`, `ecommerceapp-rag`.
@@ -42,7 +44,7 @@ context-mode server: `ecommerceapp-context-mode`.
 2. Analysis/execution intent -> context-mode first.
 3. Project URL intent -> `ctx_fetch_and_index` only.
 4. If MCP is empty/unhealthy -> fallback to direct tools and name failing MCP.
-5. Never use both MCPs for one atomic intent.
+5. Do not mix MCP families inside one atomic lookup. A structural fact may be retrieved from KG first and then explained with a separate RAG knowledge lookup when the user asks for both code structure and governing documentation.
 
 ## RAG quick rules
 
@@ -50,6 +52,8 @@ Use RAG first for:
 - ADRs and architectural decisions.
 - `.github/context/*.md` knowledge (known issues, project state, agent decisions).
 - Roadmap and bounded-context map questions.
+
+Use KG first for structural questions such as what connects to a node, what a change reaches, who handles a contract, which module owns a type, or which actions a role governs.
 
 `bc=` note: it is a substring filter on breadcrumb/title. Do not use `bc="context"` to target `.github/context/*.md`.
 

@@ -13,6 +13,7 @@ tools/kg/kg-seed.*.cypher
 *.sln.docstates
 *.json
 !.vscode/mcp.json
+!.mcp.json
 !.github/hooks/*.json
 !tools/kg/seed/*.json
 !tools/kg/kg-codegen/KgCodegen.Tests/Fixtures/*.json

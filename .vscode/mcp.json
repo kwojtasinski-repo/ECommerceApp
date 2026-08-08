@@ -22,7 +22,8 @@
   //   Index docs (required before first query):
   //     cd tools/rag && .venv/Scripts/python ingest.py
   //
-  // Note: only ONE server should be enabled at a time to avoid routing confusion.
+  // Note: only ONE RAG server should be enabled at a time to avoid routing confusion.
+  // The local KG server may be enabled alongside a RAG server; it is a separate structural source.
   // ────────────────────────────────────────────────────────────────────────────
   "servers": {
 
@@ -241,6 +242,25 @@
         "ecommerceapp-context-mode",
         "context-mode"
       ]
+    },
+
+    // ── code-derived knowledge graph ────────────────────────────────────────
+    // Read-only stdio server over the Phase 6 Neo4j graph. It is not a RAG variant.
+    // Prerequisites:
+    //   docker compose --profile kg up -d neo4j
+    //   .\tools\kg\load-graph.ps1
+    "ecommerceapp-kg": {
+      "type": "stdio",
+      "command": "dotnet",
+      "args": [
+        "run",
+        "--project", "${workspaceFolder}/tools/kg/kg-mcp/KgMcp.Server/KgMcp.Server.csproj",
+        "--no-launch-profile"
+      ],
+      "env": {
+        "KG_NEO4J_URL": "bolt://localhost:7687",
+        "DOTNET_CLI_TELEMETRY_OPTOUT": "1"
+      }
     }
   }
 }

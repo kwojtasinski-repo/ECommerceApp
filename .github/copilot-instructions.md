@@ -92,6 +92,7 @@ Canonical maintenance rule: keep full routing logic in the canonical file above.
 Non-negotiable summary:
 
 - **Core precedence is mandatory**: knowledge intent → RAG, execution/analysis intent → context-mode, project URLs → `ctx_fetch_and_index`, never both MCPs for one atomic intent.
+- **Structural intent uses KG**: questions about code connections, blast radius, contract handlers, module ownership, schedulers, or governed actions route to the local read-only `ecommerceapp-kg` server; documentation rationale remains a separate RAG lookup.
 - **Intent inference is mandatory**: do not wait for the user to name a tool. Infer RAG vs context-mode from the task shape and target files.
 - **Context-mode definition**: the local sandbox for thinking in code. Use it to read local files/snippets, search indexed session data, compute reductions, compare outputs, generate code fragments, and turn repo facts into a concrete result before touching files.
 - **Derived-result rule is mandatory**: if you need code, math, a table, a transformed dataset, or a summary generated from repo knowledge, first retrieve the source with RAG if needed, then do the derivation with `ctx_execute` / `ctx_batch_execute` / `ctx_execute_file`, and cache reusable outputs with `ctx_index`.

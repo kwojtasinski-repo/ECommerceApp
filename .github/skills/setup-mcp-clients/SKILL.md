@@ -36,7 +36,7 @@ DIFFERENT JSON shape. This skill documents all three.
 | Client | Config path | Schema root key | Stdio supported? | HTTP supported? |
 |---|---|---|---|---|
 | VS Code (Copilot Chat) | `.vscode/mcp.json` | `servers` | ✅ | ✅ |
-| GitHub Copilot Web | `.github/copilot/mcp.json` | `mcpServers` | ❌ | ✅ |
+| GitHub Copilot Web | `.github/copilot/mcp.json` | `servers` (tracked repo shape) | ✅ for the tracked stdio Docker entry | ✅ |
 | Visual Studio 17.14+ | `%USERPROFILE%/.mcp/servers.json` OR per-solution `.mcp/servers.json` | `mcpServers` | ✅ (Windows only) | ✅ |
 
 ---
@@ -87,9 +87,10 @@ Reload via Command Palette → "MCP: Reload servers".
 
 ### 3. GitHub Copilot Web — `.github/copilot/mcp.json`
 
-Stdio is NOT supported (Copilot Web runs in GitHub's infrastructure, has no `docker`
-binary). HTTP only. The endpoint MUST be reachable from GitHub's network — usually
-means deploying behind a public reverse proxy with HTTPS + auth.
+The tracked repository file uses the `servers` root and currently contains a stdio Docker
+entry. Do not add the local KG server here: Copilot Web cannot reach `bolt://localhost:7687`
+or spawn this checkout's `dotnet run`. Public HTTP endpoints remain the portable option and
+must be reachable from GitHub's network, usually behind HTTPS + auth.
 
 ```jsonc
 {

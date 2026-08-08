@@ -500,11 +500,14 @@ used (decided 2026-08-07, see [[project_ecommerceapp_kg_meta_skill_plan]]).
    still disagree with emitted `triggerMode` plus Phase 6's optional runtime
    fields; that is a follow-up ontology-designer decision, not a silent Phase 6
    schema change.
-7. MCP server — Tier-1 query tools per the target-questions tiering below,
-   wrapping the Neo4j instance stood up in Phase 6. **Stdio transport
-   only** — no HTTP-streamable variant, unlike this repo's RAG MCP servers
-   (see "Querying the graph today" below for why that asymmetry is
-   intentional).
+7. ✅ **Built** — `tools/kg/kg-mcp/` is a separate solution with `KgMcp.Core`,
+   `KgMcp.Server`, and `KgMcp.Tests`. It exposes exactly the ten Tier-1 query
+   tools below over a read-only Neo4j driver. **Stdio transport only** — no
+   HTTP-streamable variant, unlike this repo's RAG MCP servers, because the
+   graph is a local developer projection and stdout must remain a clean MCP
+   JSON-RPC channel. The server is registered as `ecommerceapp-kg` for VS Code
+   and Claude Code; Copilot Web is intentionally excluded because it cannot
+   reach local Bolt or spawn the local process.
 
 ## Querying the graph today
 
@@ -515,9 +518,12 @@ run `pwsh tools/kg/load-graph.ps1`. The loader always wipes data first because
 the generated seed is a full point-in-time snapshot and `MERGE` does not remove
 deleted facts; it then loads `ontology.cypher` before the generated seed and
 waits for indexes. Use `cypher-shell` on Bolt `127.0.0.1:7687` for direct
-inspection. Phase 7 will add the MCP query layer; no MCP entry is added here.
-The graph is intentionally separate from the AJ platform's `neo4j-aj-kb`
-server referenced by the `aj-kg-query` skill.
+inspection, or enable `ecommerceapp-kg` in VS Code / use the tracked root
+`.mcp.json` in Claude Code. See `docs/reference/kg-mcp-tools.md` for the ten
+tools, confidence semantics, and explicit out-of-scope questions. No Copilot
+Web entry is added because the server is local-only. The graph is intentionally
+separate from the AJ platform's `neo4j-aj-kb` server referenced by the
+`aj-kg-query` skill.
 
 ## Why two skills, not one
 

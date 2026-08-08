@@ -83,6 +83,8 @@ Use when generating or validating code. Load via the `read_file` tool or invoke 
 |---|---|
 | Design/extend the code-derived KG ontology (modules, endpoints, message-broker flow); mandatory dry-run before writing ontology files | `.github/skills/kg-ontology-designer/SKILL.md` (methodology in [docs/architecture/knowledge-graph-ontology-design.md](../../docs/architecture/knowledge-graph-ontology-design.md); Claude Code variant at `.claude/skills/kg-ontology-designer/SKILL.md`) |
 | Turn a confirmed KG ontology into a phased build of the codegen tool — one phase at a time; requires an explicit ontology path; emits a plan pair, an unattended handoff prompt, or the implementation itself | `.github/skills/kg-implementation-planner/SKILL.md` (methodology in [docs/architecture/kg-implementation-planning/README.md](../../docs/architecture/kg-implementation-planning/README.md); Claude Code variant at `.claude/skills/kg-implementation-planner/SKILL.md`) |
+| Edit an existing `kg-codegen` parser, add a triple, or run the graph build | Read [ADR-0031](../../docs/adr/0031/README.md) and [`tools/kg/kg-codegen/README.md`](../../tools/kg/kg-codegen/README.md) first — the warn-don't-fabricate and no-undeclared-triple rules are non-negotiable, and expected non-matches must stay silent |
+| Query the live structural graph | Enable `ecommerceapp-kg` after Neo4j/load-graph setup; read [`docs/reference/kg-mcp-tools.md`](../../docs/reference/kg-mcp-tools.md) and ADR-0031 for the ten read-only tools and limits |
 
 ## Domain modeling skills
 
